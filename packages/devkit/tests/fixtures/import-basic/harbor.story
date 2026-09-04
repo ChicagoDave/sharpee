@@ -12,7 +12,13 @@ create the Lighthouse
 
 import "regions/harbor"
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lighthouse
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

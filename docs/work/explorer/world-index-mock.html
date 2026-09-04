@@ -1,0 +1,329 @@
+<title>World Index</title>
+<style>
+:root{
+  --rail:#DCE0E8; --project:#E6E9EF; --editor:#EFF1F5; --play:#E6E9EF; --border:#ACB0BE;
+  --fg:#4C4F69; --fg-dim:#6C6F85; --fg-faint:#9CA0B0; --accent:#1E66F5; --on-accent:#EFF1F5;
+  --pass:#40A02B; --fail:#D20F39; --warn:#DF8E1D;
+  --sel-soft:#1E66F51a; --warn-wash:#DF8E1D14; --pass-wash:#40A02B0f; --fail-wash:#D20F390f;
+  --ui:system-ui,-apple-system,"SF Pro Text",sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,monospace;
+  --radius:5px;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --warn:#F9E2AF;
+  --sel-soft:#89B4FA22; --warn-wash:#F9E2AF14; --pass-wash:#A6E3A114; --fail-wash:#F38BA814;
+}}
+:root[data-theme="dark"]{
+  --rail:#16171D; --project:#262832; --editor:#1E1F26; --play:#13141A; --border:#3A3C48;
+  --fg:#D8D9E0; --fg-dim:#8E90A0; --fg-faint:#5C5F6D; --accent:#89B4FA; --on-accent:#11131A;
+  --pass:#A6E3A1; --fail:#F38BA8; --warn:#F9E2AF;
+  --sel-soft:#89B4FA22; --warn-wash:#F9E2AF14; --pass-wash:#A6E3A114; --fail-wash:#F38BA814;
+}
+*{box-sizing:border-box}
+body{margin:0;padding:26px 20px 52px;background:var(--play);color:var(--fg);
+  font-family:var(--ui);font-size:13px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.page{max-width:960px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.015em}
+.sub{color:var(--fg-dim);max-width:68ch;margin:0}
+code{font-family:var(--mono);font-size:11px;background:var(--project);padding:0 4px;border-radius:3px}
+
+.tabs{display:flex;gap:2px;border-bottom:1px solid var(--border);padding:0 2px}
+.tab{padding:6px 14px;font-size:12.5px;border:1px solid transparent;border-bottom:0;
+  border-radius:6px 6px 0 0;color:var(--fg-dim);display:flex;align-items:center;gap:7px}
+.tab.on{background:var(--editor);border-color:var(--border);color:var(--fg);font-weight:600;margin-bottom:-1px}
+.tab .b{font-family:var(--mono);font-size:10px;padding:0 5px;border-radius:8px;background:var(--project);color:var(--fg-dim)}
+.tab .b.warn{background:var(--warn-wash);color:var(--warn)}
+.tab .b.ok{background:var(--pass-wash);color:var(--pass)}
+
+.panel{border:1px solid var(--border);border-radius:0 8px 8px 8px;background:var(--editor);overflow:hidden}
+.phead{display:flex;align-items:baseline;gap:10px;padding:8px 14px;background:var(--rail);border-bottom:1px solid var(--border)}
+.phead h2{margin:0;font-size:12.5px;font-weight:600}
+.phead .meta{font-family:var(--mono);font-size:11.5px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
+.pbody{padding:13px 15px}
+
+.maprow{display:grid;grid-template-columns:1fr 250px}
+@media (max-width:760px){.maprow{grid-template-columns:1fr}}
+.mapsvg{padding:12px;border-right:1px solid var(--border);overflow-x:auto}
+.mapsvg svg{display:block;min-width:400px;width:100%;height:auto}
+.mapside{padding:12px 14px;display:flex;flex-direction:column;gap:11px}
+.legend{display:flex;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:10px;color:var(--fg-dim)}
+.legend span{display:flex;align-items:center;gap:4px}
+.sw{width:11px;height:3px;border-radius:2px;display:inline-block}
+.sw.box{height:9px;width:9px}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-family:var(--mono);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--fg-faint);font-weight:400;padding:0 7px 5px;border-bottom:1px solid var(--border)}
+td{padding:5px 7px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:0}
+td.m{font-family:var(--mono);font-size:11px}
+td.r{text-align:right;font-family:var(--mono);font-size:11px;color:var(--fg-dim);font-variant-numeric:tabular-nums}
+.src{font-family:var(--mono);font-size:10.5px;color:var(--accent)}
+.ok{color:var(--pass)}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--pass);margin-right:6px}
+
+.cls{margin:0 0 20px}
+.cls:last-child{margin-bottom:0}
+.cls h3{margin:0 0 3px;font-size:13px;font-weight:600;display:flex;align-items:baseline;gap:8px}
+.cls h3 .c{font-family:var(--mono);font-size:10.5px;font-weight:400;padding:0 6px;border-radius:8px}
+.cls h3 .c.a{background:var(--fail-wash);color:var(--fail)}
+.cls h3 .c.b{background:var(--warn-wash);color:var(--warn)}
+.cls > p{margin:0 0 9px;color:var(--fg-dim);font-size:12px;max-width:72ch}
+.rowlist{display:flex;flex-direction:column;border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.rw{display:grid;grid-template-columns:1fr 1.25fr 62px;gap:10px;padding:5px 10px;align-items:baseline;
+  border-bottom:1px solid var(--border);background:var(--project)}
+.rw:last-child{border-bottom:0}
+.rw .p{font-family:var(--mono);font-size:11.5px}
+.rw .p b{color:var(--warn);font-weight:600}
+.rw .p s{color:var(--fail);text-decoration:none;font-weight:600}
+.rw .x{color:var(--fg-dim);font-size:11.5px}
+.rw .l{text-align:right}
+.rw2{display:grid;grid-template-columns:150px 1fr 52px;gap:10px;padding:5px 10px;align-items:baseline;
+  border-bottom:1px solid var(--border);background:var(--project)}
+.rw2:last-child{border-bottom:0}
+.rw2 .p{font-family:var(--mono);font-size:11.5px}
+.rw2 .p s{color:var(--fail);text-decoration:none;font-weight:600}
+.rw2 .x{color:var(--fg-dim);font-size:11.5px}
+.rw2 .x b{color:var(--fail);font-weight:600}
+.rw2 .l{text-align:right}
+.banner{border:1px solid var(--warn);background:var(--warn-wash);border-radius:var(--radius);
+  padding:8px 11px;margin:0 0 14px;font-size:12px;color:var(--fg-dim)}
+.banner b{color:var(--fg)}
+.dot.bad{background:var(--fail)}
+td.r.bad{color:var(--fail)}
+.tail{margin:7px 0 0;color:var(--fg-faint);font-size:11.5px}
+footer{color:var(--fg-faint);font-size:11.5px;max-width:74ch}
+</style>
+
+<div class="page">
+
+  <h1>World Index</h1>
+  <p class="sub">Three questions about a story, answered from the compiled IR alone. No engine run,
+  nothing walked. Map and Incomplete are real output for <code>branch-stories/fernhill</code>. Reach is
+  shown failing, on a copy of the same story with faults injected — the real one is clean.</p>
+
+  <!-- ═══════════ MAP ═══════════ -->
+  <div>
+    <div class="tabs">
+      <div class="tab on">Map <span class="b">13</span></div>
+      <div class="tab">Reach <span class="b warn">5</span></div>
+      <div class="tab">Incomplete <span class="b warn">82</span></div>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2>Map</h2><span class="meta">13 rooms · 12 connections · 3 doors · 2 gates · start: Iron Gates</span></div>
+      <div class="maprow">
+        <div class="mapsvg">
+          <svg viewBox="0 0 420 306" role="img" aria-label="Fernhill map: 13 rooms">
+            <defs><style>
+              .rm{fill:var(--project);stroke:var(--border);stroke-width:1}
+              .rm.start{fill:var(--sel-soft);stroke:var(--accent);stroke-width:1.8}
+              .lk{stroke:var(--fg-faint);stroke-width:1.2;fill:none}
+              .lk.door{stroke:var(--accent);stroke-dasharray:3 3;stroke-width:1.4}
+              .lk.gate{stroke:var(--warn);stroke-width:2}
+              .t{font-family:var(--mono);font-size:8.5px;fill:var(--fg);text-anchor:middle}
+              .d{font-family:var(--mono);font-size:7px;fill:var(--fg-faint);text-anchor:middle}
+            </style></defs>
+            <path class="lk" d="M250 268 L250 250"/>
+            <path class="lk" d="M250 230 L250 212"/>
+            <path class="lk" d="M250 192 L250 170"/>
+            <path class="lk" d="M250 150 L250 128"/>
+            <path class="lk door" d="M250 108 L250 86"/>
+            <path class="lk" d="M200 202 L184 202"/>
+            <path class="lk gate" d="M140 192 L140 170"/>
+            <path class="lk door" d="M140 150 L140 128"/>
+            <path class="lk gate" d="M200 164 L192 182 L46 182 L46 170"/>
+            <path class="lk" d="M300 202 L320 202"/>
+            <path class="lk" d="M300 160 L320 160"/>
+            <path class="lk door" d="M364 150 L364 128"/>
+
+            <rect class="rm start" x="200" y="268" width="100" height="20" rx="3"/><text class="t" x="250" y="282">Iron Gates</text>
+            <rect class="rm" x="200" y="230" width="100" height="20" rx="3"/><text class="t" x="250" y="244">Gravel Drive</text>
+            <rect class="rm" x="200" y="192" width="100" height="20" rx="3"/><text class="t" x="250" y="206">Fountain Court</text>
+            <rect class="rm" x="200" y="150" width="100" height="20" rx="3"/><text class="t" x="250" y="164">Entrance Hall</text>
+            <rect class="rm" x="200" y="108" width="100" height="20" rx="3"/><text class="t" x="250" y="122">Cellar Stairs</text>
+            <rect class="rm" x="200" y="66"  width="100" height="20" rx="3"/><text class="t" x="250" y="80">Cellar</text>
+            <rect class="rm" x="96"  y="192" width="88"  height="20" rx="3"/><text class="t" x="140" y="206">Greenhouse</text>
+            <rect class="rm" x="96"  y="150" width="88"  height="20" rx="3"/><text class="t" x="140" y="164">Folly Hill</text>
+            <rect class="rm" x="96"  y="108" width="88"  height="20" rx="3"/><text class="t" x="140" y="122">Folly</text>
+            <rect class="rm" x="8"   y="150" width="76"  height="20" rx="3"/><text class="t" x="46"  y="164">Study</text>
+            <rect class="rm" x="320" y="192" width="88"  height="20" rx="3"/><text class="t" x="364" y="206">Boiler Shed</text>
+            <rect class="rm" x="320" y="150" width="88"  height="20" rx="3"/><text class="t" x="364" y="164">Kitchen</text>
+            <rect class="rm" x="320" y="108" width="88"  height="20" rx="3"/><text class="t" x="364" y="122">Pantry</text>
+            <text class="d" x="266" y="99">down</text>
+            <text class="d" x="250" y="300">start · win</text>
+          </svg>
+        </div>
+        <div class="mapside">
+          <div class="legend">
+            <span><i class="sw box" style="background:var(--project);border:1px solid var(--border)"></i>room</span>
+            <span><i class="sw box" style="background:var(--sel-soft);border:1.5px solid var(--accent)"></i>start</span>
+            <span><i class="sw" style="background:var(--accent)"></i>door</span>
+            <span><i class="sw" style="background:var(--warn)"></i>gate</span>
+          </div>
+          <table>
+            <tr><th>Gate</th><th>Blocked while</th></tr>
+            <tr><td class="m">greenhouse N</td><td class="m">boiler is off <span class="src">:100</span></td></tr>
+            <tr><td class="m">entrance-hall W</td><td class="m">Kettle is guarded <span class="src">:142</span></td></tr>
+          </table>
+          <table>
+            <tr><th>Door</th><th class="m">Locked at start</th></tr>
+            <tr><td class="m">folly-door</td><td class="m">—</td></tr>
+            <tr><td class="m">pantry-door</td><td class="m">no · starts unlocked</td></tr>
+            <tr><td class="m">cellar-door</td><td class="m">yes · tarnished key</td></tr>
+          </table>
+          <table>
+            <tr><th>Auto-layout</th><th class="m"></th></tr>
+            <tr><td class="m">placed on the grid</td><td class="m">11 of 13</td></tr>
+            <tr><td class="m">collisions</td><td class="m" style="color:var(--warn)">1</td></tr>
+            <tr><td class="m">direction skew</td><td class="m">0</td></tr>
+          </table>
+          <p class="tail" style="margin:0">Walking exits from the start and stepping one cell per
+          compass direction places 11 of 13 rooms. <b>Study</b> and <b>Folly Hill</b> both want the cell
+          west-of-hall, so Folly Hill and the Folly behind it go unplaced. The map above is that same
+          layout with the collision resolved by hand.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ REACH ═══════════ -->
+  <div>
+    <div class="tabs">
+      <div class="tab">Map <span class="b">13</span></div>
+      <div class="tab on">Reach <span class="b warn">5</span></div>
+      <div class="tab">Incomplete <span class="b warn">82</span></div>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2>Reach</h2><span class="meta">can the player actually get to the authored content?</span></div>
+      <div class="pbody">
+        <div class="banner">Shown failing. Fernhill actually comes back clean, so this is Fernhill's
+        own IR with <b>four faults injected</b> — otherwise the tab proves nothing. The rows below are
+        the tool's real output on that copy.</div>
+
+        <table>
+          <tr><th>What</th><th>Reachable</th><th></th></tr>
+          <tr><td>Rooms, walking from Iron Gates</td><td class="m"><span class="dot bad"></span>12 of 13</td><td class="r bad">1 unreached</td></tr>
+          <tr><td>Things and people, in a room you can reach</td><td class="m"><span class="dot bad"></span>44 of 46</td><td class="r bad">2 stranded</td></tr>
+          <tr><td>Exits pointing at a room that exists</td><td class="m"><span class="dot bad"></span>20 of 21</td><td class="r bad">1 broken</td></tr>
+          <tr><td>Things with a description to read</td><td class="m"><span class="dot bad"></span>45 of 46</td><td class="r bad">1 missing</td></tr>
+          <tr><td>Gates that can be opened</td><td class="m"><span class="dot"></span>2 of 2</td><td class="r ok">clear</td></tr>
+          <tr><td>Endings declared</td><td class="m">3</td><td class="r">win, lose, kill</td></tr>
+        </table>
+
+        <div class="cls" style="margin-top:18px">
+          <h3>Cannot be reached <span class="c a">4</span></h3>
+          <div class="rowlist">
+            <div class="rw2"><span class="p"><s>Cellar</s></span><span class="x">the cellar door is locked and
+              <b>the tarnished key is inside the cellar</b> — the room it opens</span><span class="l src">:219</span></div>
+            <div class="rw2"><span class="p"><s>tarnished key</s></span><span class="x">in <code>cellar</code>, which nothing reaches</span><span class="l src">:241</span></div>
+            <div class="rw2"><span class="p"><s>crowbar</s></span><span class="x">in <code>cellar</code>, which nothing reaches</span><span class="l src">:418</span></div>
+            <div class="rw2"><span class="p">kitchen <s>east</s></span><span class="x">exit points at <code>scullery</code> — no such room</span><span class="l src">:166</span></div>
+          </div>
+        </div>
+
+        <div class="cls">
+          <h3>Nothing to read <span class="c b">1</span></h3>
+          <div class="rowlist">
+            <div class="rw2"><span class="p"><s>doormat</s></span><span class="x">reachable, examinable, and has no description</span><span class="l src">:231</span></div>
+          </div>
+        </div>
+
+        <p class="tail"><b>Topology alone would have called this story clean.</b> The cellar is one exit
+        from the stairs and a walk-the-graph check reaches it. The failure only appears once the check
+        honours locked doors and asks where the key sits — which is the one bug an author cannot see by
+        reading the map. One object here is fine and stays quiet: <code>silver-locket</code> has no
+        placement at all and enters play when the vine is pruned <span class="src">:548</span>.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ INCOMPLETE ═══════════ -->
+  <div>
+    <div class="tabs">
+      <div class="tab">Map <span class="b">13</span></div>
+      <div class="tab">Reach <span class="b warn">5</span></div>
+      <div class="tab on">Incomplete <span class="b warn">82</span></div>
+    </div>
+    <div class="panel">
+      <div class="phead"><h2>Incomplete</h2><span class="meta">the prose teaches a word the parser does not know</span></div>
+      <div class="pbody">
+        <p class="sub" style="margin-bottom:16px">
+          Every noun phrase in every description, resolved the way the parser resolves a player's
+          command: head noun against each object's name and <code>aka</code>, then the adjectives
+          against that object's own words. Three ways it fails.
+        </p>
+
+        <div class="cls">
+          <h3>Missing word <span class="c b">17</span></h3>
+          <p>The object exists, but the prose calls it something the parser will not accept. The
+          player is reading your words back to you and getting refused.</p>
+          <div class="rowlist">
+            <div class="rw"><span class="p">the <b>hurricane</b> lamp</span><span class="x"><code>oil-lamp</code> answers to <em>oil lamp, lamp</em></span><span class="l src">:252</span></div>
+            <div class="rw"><span class="p">a long <b>iron</b> poker</span><span class="x"><code>furnace-poker</code> answers to <em>furnace poker, poker</em></span><span class="l src">:502</span></div>
+            <div class="rw"><span class="p">a <b>black iron</b> range</span><span class="x"><code>cold-range</code> answers to <em>cold range, range</em></span><span class="l src">:815</span></div>
+            <div class="rw"><span class="p">the <b>dead</b> fireplace</span><span class="x"><code>fireplace</code> answers to <em>fireplace</em></span><span class="l src">:146</span></div>
+            <div class="rw"><span class="p">a <b>dusty</b> bottle</span><span class="x"><code>sherry-bottle</code> answers to <em>sherry bottle, bottle</em></span><span class="l src">:467</span></div>
+            <div class="rw"><span class="p">the <b>buried heating</b> pipes</span><span class="x"><code>iron-pipes</code> answers to <em>iron pipes, pipes</em></span><span class="l src">:753</span></div>
+            <div class="rw"><span class="p">a little <b>silver</b> locket</span><span class="x"><code>silver-locket</code> — <em>silver</em> is in the name, not an alias</span><span class="l src">:690</span></div>
+            <div class="rw"><span class="p">the <b>winding</b> hole</span><span class="x"><code>scorched-dome</code> answers to <em>dome</em></span><span class="l src">:777</span></div>
+          </div>
+          <p class="tail">…and 9 more: <code>paved court</code>, <code>estate's boiler</code>,
+          <code>wide stone mantel</code>, <code>single framed photograph</code>,
+          <code>boiler's water valve</code>, <code>buried pipes</code>, <code>folly's little dome</code>.</p>
+        </div>
+
+        <div class="cls">
+          <h3>Ambiguous <span class="c b">8</span></h3>
+          <p>Two or more objects answer to the same noun and nothing in their words tells them apart.
+          The player types it and gets a disambiguation prompt, or the wrong thing.</p>
+          <div class="rowlist">
+            <div class="rw"><span class="p">the <s>study</s> door</span><span class="x">3 doors answer to <em>door</em> — none is a study door</span><span class="l src">:662</span></div>
+            <div class="rw"><span class="p">the <s>front</s> door</span><span class="x">folly-door / pantry-door / cellar-door</span><span class="l src">:90</span></div>
+            <div class="rw"><span class="p">a little <s>brass</s> door</span><span class="x">folly-door / pantry-door / cellar-door</span><span class="l src">:777</span></div>
+            <div class="rw"><span class="p">a heavy <s>grey</s> door</span><span class="x">folly-door / pantry-door / cellar-door</span><span class="l src">:219</span></div>
+            <div class="rw"><span class="p">the letter</span><span class="x">solicitor's-letter / half-burned-letter</span><span class="l src">:329</span></div>
+          </div>
+          <p class="tail">Three head nouns collide across the whole story regardless of prose:
+          <code>door</code> (3 objects), <code>key</code> (tarnished / winding),
+          <code>letter</code> (solicitor's / half-burned).</p>
+        </div>
+
+        <div class="cls">
+          <h3>No object <span class="c a">57</span></h3>
+          <p>Named in the prose, nothing behind it. The player types it and gets
+          <em>You can't see any such thing.</em> This is a candidate list — it is read out of the prose,
+          so some entries are scenery you meant to skip and a few are extraction noise.</p>
+          <div class="rowlist">
+            <div class="rw"><span class="p">the <s>scrollwork</s></span><span class="x">Iron Gates — rust freckling the scrollwork</span><span class="l src">:69</span></div>
+            <div class="rw"><span class="p">the <s>keyhole</s></span><span class="x">cellar door</span><span class="l src">:219</span></div>
+            <div class="rw"><span class="p">the <s>bolt</s></span><span class="x">pantry door</span><span class="l src">:212</span></div>
+            <div class="rw"><span class="p">a <s>cache</s></span><span class="x">Folly</span><span class="l src">:128</span></div>
+            <div class="rw"><span class="p">the <s>windows</s></span><span class="x">Folly Hill</span><span class="l src">:121</span></div>
+            <div class="rw"><span class="p">the <s>feed pipe</s> · the <s>rain tank</s></span><span class="x">stopcock</span><span class="l src">:277</span></div>
+            <div class="rw"><span class="p">the <s>clean chimney</s> · the <s>full reservoir</s></span><span class="x">oil lamp</span><span class="l src">:252</span></div>
+            <div class="rw"><span class="p">a <s>firedog</s></span><span class="x">fireplace</span><span class="l src">:769</span></div>
+          </div>
+          <p class="tail">The four <code>wall</code> entries and the two <code>window</code> entries are the
+          honest reason this is a candidate list and not a defect list: an author may well intend those
+          to be unimplemented.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Derived from <code>branch-stories/fernhill/dist/fernhill.ir.json</code> (v0.3.0) by a static pass over
+    the IR — <code>docs/work/explorer/world-index.js</code>. Map, room and thing counts are exact. The Reach
+    tab runs against a copy of that IR carrying four injected faults (key moved into the cellar, an exit
+    pointed at a non-existent room, an object moved into the cellar, one description removed); all three
+    finished stories in the repo — Fernhill, The Alderman, Ides of March — pass Reach unmodified. The Incomplete counts come from resolving authored
+    noun phrases against each object's <code>name</code> + <code>aka</code> — which is the whole
+    vocabulary a Chord object has: the IR carries no adjectives field, and the loader never populates
+    <code>IdentityTrait.adjectives</code>, so an adjective is matchable only where the author wrote it
+    into a name or an alias. Fernhill compensates by hand: all 36 of its multi-word objects carry an
+    alias.
+  </footer>
+
+</div>

@@ -240,6 +240,18 @@ export declare function escapeHtml(s: string): string;
  */
 export declare function injectThemes(html: string, themes: WiredTheme[]): string;
 /**
+ * Strip the client's in-page menu bar from a page (ADR-290 D6, GH #196): the
+ * `<menu … id="menu-bar">…</menu>` block, on the default template or an
+ * author's custom page alike. The client tolerates its absence (`menuBar` is
+ * nullable; MenuManager wires every item with optional chaining), the dialogs
+ * stay (inert without the menu), and a page with no such block is returned
+ * unchanged. One mechanism, two consumers — never an IDE-special page.
+ *
+ * @param html the page after token/theme substitution
+ * @returns the page without its menu bar
+ */
+export declare function stripClientMenu(html: string): string;
+/**
  * Resolution-mode injection (ADR-252 D5). The two callers differ ONLY in where
  * platform-browser's styles, the templates, and the esbuild alias resolve from,
  * and where the output tree lands. Everything else is core logic.
@@ -265,6 +277,13 @@ export interface BrowserBuildOpts {
     minify?: boolean;
     sourcemap?: boolean;
     quiet?: boolean;
+    /**
+     * Keep the client's in-page menu bar (File / Settings / Help) — default
+     * true. `false` strips it (ADR-290 D6, GH #196): the IDE's Play pane always
+     * builds menu-less (its header owns those controls); a publishing author
+     * chooses, knowing Save/Restore/Restart/Quit are reachable only from it.
+     */
+    menu?: boolean;
     /** Fixed build stamp (BUILD_DATE); defaults to now. Injected by the AC test so
      *  the two callers' output is byte-identical, not merely identical-modulo-stamp. */
     buildDate?: string;
@@ -502,6 +521,13 @@ export interface TranscriptRunConfig {
     }>;
     /** Line the `point-seed:` header field appeared on, for error reporting. */
     pointSeedsLineNumber?: number;
+    /**
+     * Presence presentation (ADR-328 D3), from the `presence:` header field.
+     * Absent = the platform default (an `absent` entry is hidden, so goldens
+     * mean what a player sees). `omniscient` shows every actor emission
+     * labelled by location — for testing NPC behaviour off-stage.
+     */
+    presence?: 'default' | 'omniscient';
 }
 /**
  * Provenance header of a `.golden` recording (ADR-294 D3/D7).
@@ -1797,8 +1823,11 @@ export type TestableGame = LoadedGame;
  * @param seed      optional master seed from the transcript `seed:` header
  *   (ADR-293 D1) — the runner verifies the session seed against the pin, it
  *   never sets it, so the host must seed the engine at assembly
+ * @param channels  optional declared capture channels (ADR-294 D15)
+ * @param presence  optional presence presentation from the transcript
+ *   `presence:` header (ADR-328 D3); absent → the platform default
  */
-export declare function loadStory(storyPath: string, entry?: string, seed?: number, channels?: string[]): Promise<TestableGame>;
+export declare function loadStory(storyPath: string, entry?: string, seed?: number, channels?: string[], presence?: 'default' | 'omniscient'): Promise<TestableGame>;
 /**
  * Assemble a testable game from an already-loaded story instance.
  */

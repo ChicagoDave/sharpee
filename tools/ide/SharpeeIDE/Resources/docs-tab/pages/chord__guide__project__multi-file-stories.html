@@ -1,7 +1,8 @@
 <p>As a story grows, split it across files. A <code>.story</code> file <code>import</code>s a <code>.chord</code> fragment, and the compiler splices that fragment in at the</p>
 <pre><code class="language-chord">story
   title: Harbor
-  authors: You
+  authors:
+    You
   id: harbor
 
 create the Lighthouse
@@ -17,16 +18,24 @@ create the pier
   north to the Lighthouse
 
   A wooden pier over cold water.</code></pre>
-<p>You write <code>import &quot;regions/harbor&quot;</code> with <strong>no extension</strong>: <code>.chord</code> is assumed, so the file on disk is <code>regions/harbor.chord</code>. Paths resolve relative to the importing <code>.story</code> file.</p>
+<p>You write <code>import &quot;regions/harbor&quot;</code> with <strong>no extension</strong>: <code>.chord</code> is assumed, so the file on disk is <code>regions/harbor.chord</code>. Paths are story-rooted: every <code>import</code>, in the main file or inside a fragment, is resolved from the <code>.story</code> file's directory.</p>
 <h2 id="an-import-is-a-paste">An import is a paste</h2>
 <p>Splicing happens before anything is checked, so a fragment shares one namespace with the main story. The pier's <code>north to the Lighthouse</code> exit reaches a room declared in the main file; a fragment freely references anything the story defines, and the story references anything the fragment adds. The import's position is the arbitration position for anything order-sensitive: the fragment behaves as if written on the</p>
 <p>Because it is a plain paste, there are no new rules to learn: ordering, name collisions, and cross-references all work exactly as they would in one file.</p>
 <h2 id="what-a-fragment-may-hold">What a fragment may hold</h2>
-<p>A <code>.chord</code> fragment holds <strong>any complete declaration</strong> the story does (rooms, people, sequences, <code>define phrasebook</code> blocks, <code>##</code> comments) — including grammar alterations, so a story can keep its <a href="/chord/guide/vocabulary/extend-action">extend action</a> and <a href="/chord/guide/vocabulary/remove-from-action">remove from action</a> blocks in a <code>grammar-tweaks.chord</code> of their own — with two exceptions:</p>
-<ul><li><strong>No <code>story</code> header.</strong> The <code>story</code> block lives only in the main <code>.story</code> file.</li><li><strong>No <code>import</code> of its own.</strong> Imports are flat: only the main file imports, one level deep, so a cycle can never form.</li></ul>
+<p>A <code>.chord</code> fragment holds <strong>any complete declaration</strong> the story does (rooms, people, sequences, <code>define phrasebook</code> blocks, <code>##</code> comments) — including grammar alterations, so a story can keep its <a href="/chord/guide/vocabulary/extend-action">extend action</a> and <a href="/chord/guide/vocabulary/remove-from-action">remove from action</a> blocks in a <code>grammar-tweaks.chord</code> of their own — with one exception:</p>
+<ul><li><strong>No <code>story</code> header.</strong> The <code>story</code> block lives only in the main <code>.story</code> file, so the main file is never importable.</li></ul>
 <p>A fragment must hold <em>whole</em> declarations: you cannot split a single room or rule across two files.</p>
+<h2 id="imports-nest">Imports nest</h2>
+<p>A fragment may carry <code>import</code> lines of its own. Each is a paste at its position inside the fragment, so the assembled order is depth-first at every import line — the same one rule, applied again. Paths stay story-rooted inside a fragment: <code>regions/market.chord</code> writes <code>import &quot;npcs/teisha&quot;</code>, not a path relative to itself.</p>
+<pre><code class="language-chord">## regions/market.chord
+
+
+create the Grocery Stall
+  a room</code></pre>
+<p>A fragment reached twice along two paths is pasted twice and collides as an ordinary duplicate declaration — there is no import-once rule. A chain that returns to a file already being spliced (<code>a.chord → b.chord → a.chord</code>) is <code>analysis.import-cycle</code> on the <code>import</code> line that closes it, with the chain in the message; that import is dropped and the splice continues.</p>
 <h2 id="diagnostics">Diagnostics</h2>
-<table><thead><tr><th>Situation</th><th>Diagnostic</th></tr></thead><tbody><tr><td><code>import &quot;gone&quot;</code> and <code>gone.chord</code> is not found</td><td><code>analysis.import-unresolved</code></td></tr><tr><td>Fragment contains a <code>story</code> header</td><td><code>analysis.import-fragment-story</code></td></tr><tr><td>Fragment contains its own <code>import</code></td><td><code>analysis.import-fragment-nested</code></td></tr><tr><td>Fragment does not parse into whole declarations</td><td><code>analysis.import-fragment-content</code></td></tr><tr><td><code>import</code> without a quoted file name</td><td><code>parse.import-form</code></td></tr></tbody></table>
+<table><thead><tr><th>Situation</th><th>Diagnostic</th></tr></thead><tbody><tr><td><code>import &quot;gone&quot;</code> and <code>gone.chord</code> is not found</td><td><code>analysis.import-unresolved</code></td></tr><tr><td>Fragment contains a <code>story</code> header</td><td><code>analysis.import-fragment-story</code></td></tr><tr><td>An import chain returns to a file already being spliced</td><td><code>analysis.import-cycle</code></td></tr><tr><td>Fragment does not parse into whole declarations</td><td><code>analysis.import-fragment-content</code></td></tr><tr><td><code>import</code> without a quoted file name</td><td><code>parse.import-form</code></td></tr></tbody></table>
 <p>The <code>import-fragment-*</code> messages point into the fragment file (prefixed with its name); <code>import-unresolved</code> points at the <code>import</code> line in your main story.</p>
 <blockquote><p><strong>Phrasebooks import the same way</strong></p>
 <p>A file of <code>define phrasebook</code> blocks is just one kind of fragment: <code>import &quot;voices/winter&quot;</code> pulls it in like any other. See <a href="/chord/guide/vocabulary/define-phrasebook">define phrasebook</a>.</p></blockquote>

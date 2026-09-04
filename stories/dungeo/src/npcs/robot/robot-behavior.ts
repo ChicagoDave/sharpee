@@ -1,47 +1,20 @@
 /**
- * Robot NPC Behavior (ADR-070)
+ * Robot NPC Behavior (ADR-070; ADR-328 D5)
  *
- * A commandable robot that can:
- * - Follow the player when told "follow me" or "come"
- * - Push buttons when told "push button"
- * - Stay when told "stay" or "wait"
+ * A commandable robot that follows the player when told to. The commands
+ * themselves ("follow me", "push button", "stay") are Dungeo actions —
+ * the behavior only carries out the following, as a real `going` action
+ * run as the robot.
  *
  * The robot is essential for the Round Room puzzle - it must push
  * the triangular button to stop the carousel.
  */
 
-import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
-import { IFEntity, IdentityTrait, NpcTrait, RoomTrait, Direction } from '@sharpee/world-model';
-import { type ISemanticEvent } from '@sharpee/core';
+import { type NpcBehavior, type NpcContext, IFActions } from '@sharpee/stdlib';
+import { IFEntity, NpcTrait, RoomTrait, type DirectionType } from '@sharpee/world-model';
 
 import { RobotMessages } from './robot-messages';
-import { getRobotProps, makeRobotPushButton, RobotCustomProperties } from './robot-entity';
-
-/**
- * Check if a room is the Machine Room (well area)
- */
-function isMachineRoomWell(room: IFEntity | undefined): boolean {
-  if (!room) return false;
-  const identity = room.get(IdentityTrait);
-  if (!identity) return false;
-  // Check for the well area machine room (not coal mine one)
-  return identity.name === 'Machine Room' &&
-         identity.description?.includes('triangular button');
-}
-
-/**
- * Find the Round Room entity
- */
-function findRoundRoom(context: NpcContext): IFEntity | null {
-  const entities = context.world.getAllEntities();
-  for (const entity of entities) {
-    const identity = entity.get(IdentityTrait);
-    if (identity?.name === 'Round Room') {
-      return entity;
-    }
-  }
-  return null;
-}
+import { getRobotProps } from './robot-entity';
 
 /**
  * The Robot NPC behavior implementation
@@ -53,9 +26,9 @@ export const robotBehavior: NpcBehavior = {
   /**
    * Main turn logic - robot follows player if in following mode
    */
-  onTurn(context: NpcContext): NpcAction[] {
+  onTurn(context: NpcContext): void {
     const props = getRobotProps(context.npc);
-    if (!props) return [];
+    if (!props) return;
 
     // If following and player is in a different room, try to follow
     if (props.following && context.playerLocation !== context.npcLocation) {
@@ -65,71 +38,18 @@ export const robotBehavior: NpcBehavior = {
 
       if (roomTrait?.exits) {
         // Find an exit that leads toward the player
-        for (const [_dir, exit] of Object.entries(roomTrait.exits)) {
+        for (const [direction, exit] of Object.entries(roomTrait.exits)) {
           if (exit && 'destination' in exit && exit.destination === context.playerLocation) {
-            // Move to the player's location
-            context.world.moveEntity(context.npc.id, context.playerLocation);
-            return [{
-              type: 'emote',
-              messageId: RobotMessages.FOLLOWS,
-              data: { npcName: 'robot' }
-            }];
+            // Walk to the player's location — the real going action
+            const went = context.act(IFActions.GOING, { direction: direction as DirectionType });
+            if (went.success) {
+              context.narrate(RobotMessages.FOLLOWS, { npcName: 'robot' });
+            }
+            return;
           }
         }
       }
     }
-
-    return [];
-  },
-
-  /**
-   * When player speaks to the robot - primary interaction method
-   */
-  onSpokenTo(context: NpcContext, words: string): NpcAction[] {
-    const props = getRobotProps(context.npc);
-    if (!props) return [];
-
-    const lowerWords = words.toLowerCase();
-
-    // "push button" / "press button"
-    if (lowerWords.includes('push button') ||
-        lowerWords.includes('press button') ||
-        lowerWords.includes('push the button') ||
-        lowerWords.includes('press the button')) {
-      return handlePushButton(context, props);
-    }
-
-    // "follow" / "follow me" / "come"
-    if (lowerWords.includes('follow') ||
-        lowerWords === 'come' ||
-        lowerWords === 'come with me') {
-      props.following = true;
-      return [{
-        type: 'emote',
-        messageId: RobotMessages.COMMAND_UNDERSTOOD,
-        data: { npcName: 'robot', command: 'follow' }
-      }];
-    }
-
-    // "stay" / "wait"
-    if (lowerWords === 'stay' ||
-        lowerWords === 'wait' ||
-        lowerWords.includes('stay here') ||
-        lowerWords.includes('wait here')) {
-      props.following = false;
-      return [{
-        type: 'emote',
-        messageId: RobotMessages.WAITS,
-        data: { npcName: 'robot' }
-      }];
-    }
-
-    // Unknown command
-    return [{
-      type: 'emote',
-      messageId: RobotMessages.COMMAND_UNKNOWN,
-      data: { npcName: 'robot' }
-    }];
   },
 
   /**
@@ -150,45 +70,3 @@ export const robotBehavior: NpcBehavior = {
     }
   }
 };
-
-/**
- * Handle the "push button" command
- */
-function handlePushButton(context: NpcContext, props: RobotCustomProperties): NpcAction[] {
-  // Check if already pushed
-  if (props.buttonPushed) {
-    return [{
-      type: 'emote',
-      messageId: RobotMessages.ALREADY_PUSHED,
-      data: { npcName: 'robot' }
-    }];
-  }
-
-  // Check if robot is in the Machine Room (well area)
-  const currentRoom = context.world.getEntity(context.npcLocation);
-  if (!isMachineRoomWell(currentRoom)) {
-    return [{
-      type: 'emote',
-      messageId: RobotMessages.NO_BUTTON,
-      data: { npcName: 'robot' }
-    }];
-  }
-
-  // Push the button!
-  const roundRoom = findRoundRoom(context);
-  if (roundRoom) {
-    return [{
-      type: 'custom',
-      handler: (): ISemanticEvent[] => {
-        return makeRobotPushButton(context.world, context.npc, roundRoom.id);
-      }
-    }];
-  }
-
-  // Fallback - no round room found
-  return [{
-    type: 'emote',
-    messageId: RobotMessages.PUSHES_BUTTON,
-    data: { npcName: 'robot' }
-  }];
-}

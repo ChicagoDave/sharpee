@@ -1,4 +1,4 @@
-<p>Three forms follow <code>on</code> or <code>after</code>. The common one binds a verb to the owner: <code>on opening it</code>, where <code>it</code> means this entity for the rest of the clause. The verb is a single word in its -ing form, and it must be a verb the story's actions or the platform's standard actions understand.</p>
+<p>Three forms follow <code>on</code> or <code>after</code>. The common one binds a verb to the owner: <code>on the player opening</code>, where <code>it</code> means this entity for the rest of the clause. The verb is a single word in its -ing form, and it must be a verb the story's actions or the platform's standard actions understand.</p>
 <p>The second form listens to a verb aimed at anything, and names the role the clause cares about. Roles belong to the action: <code>taking</code> has a <code>taker</code> and an <code>item</code>, so a scarecrow can watch every theft in the garden. The third form, <code>every turn</code>, ticks with the clock rather than reacting to an action; it is <code>on</code> only, since a turn is not something you react to after the fact.</p>
 <pre><code class="language-chord">create the scarecrow
   scenery
@@ -13,4 +13,4 @@
   on every turn while dusk, once
     phrase scarecrow-shadow
   end on</code></pre>
-<p>An entity-owned <code>every turn</code> clause fires only while the player is present with its owner; the scarecrow performs to an audience or not at all. Note <code>while dusk</code>: a story-level state is referenced as a bare word in conditions.</p>
+<p>An entity-owned <code>every turn</code> clause fires wherever its owner is, whether or not the player is there: the scarecrow performs either way, and what it says is tagged with the owner's location and the player's presence so the client decides what to show — by default it hides narration tagged absent. A <code>, once</code> or a dice roll is consumed off-stage all the same. Note <code>while dusk</code>: a story-level state is referenced as a bare word in conditions.</p>

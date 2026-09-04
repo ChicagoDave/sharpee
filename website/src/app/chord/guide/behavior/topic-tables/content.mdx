@@ -6,7 +6,7 @@ alias is matched by normalized whole-topic equality, which is a direct
 lookup and never a fuzzy guess. A
 row's body is ordinary statements (`it` binds the owner), so a
 conversation can change state anywhere in the world. A miss falls to
-the owner's plain `on asking it` catch-all if it has one; on a hit the
+the owner's plain `on the player asking` catch-all if it has one; on a hit the
 row fully owns the response. Overlaps are compile errors, never runtime
 tie-breaks.
 
@@ -14,7 +14,7 @@ tie-breaks.
 define topics for tobias
   about the silver locket: phrase tobias-locket-reply
   about "the folly", "the fire":
-    change it to shaken
+    change tobias to shaken
     phrase tobias-folly-reply
 end topics
 ```

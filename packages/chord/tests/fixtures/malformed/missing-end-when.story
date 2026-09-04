@@ -17,3 +17,11 @@ end when
 define phrases en-US
   stumble:
     Careful!
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

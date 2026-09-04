@@ -49,6 +49,16 @@ export function handleRevealed(
     }
   }
 
+  // A message id with phrase params renders through the language layer
+  // (GH #245: the opened-revealed chain sends looking's container line).
+  const keyed = data as RevealedEventData & { messageId?: string; params?: Record<string, unknown> };
+  if (keyed.messageId && context.languageProvider) {
+    const message = context.languageProvider.getMessage(keyed.messageId, keyed.params ?? {});
+    if (message && message !== keyed.messageId) {
+      return createBlocks(BLOCK_KEYS.ACTION_RESULT, message);
+    }
+  }
+
   if (context.languageProvider) {
     const message = context.languageProvider.getMessage(event.type, {
       containerId: data.containerId,

@@ -1,6 +1,6 @@
 The platform gates eligibility (`cuttable`) and validates the tool
 (`with the <tool entity>`, the same contract as lockable keys); the outcome
-is the entity's own `on cutting it` clause, and exactly one
+is the entity's own `on the player cutting` clause, and exactly one
 implementation is required at load. Note there is no bare `cut X` in the
 core grammar: the tool is part of the phrasing.
 
@@ -21,8 +21,8 @@ create the bell rope
 
   A rope as thick as your wrist, humming with tension.
 
-  on cutting it
-    change it to severed
+  on the player cutting
+    change the bell rope to severed
     phrase rope-severed
   end on
 
@@ -36,7 +36,9 @@ create the butter knife
 
   A knife for butter, and butter only.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Bell Tower
   carries the butter knife
 
@@ -44,6 +46,10 @@ define phrases en-US
   rope-severed:
     The shears bite through strand after strand until the rope parts with
     a crack. Somewhere above, the bell swings free.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

@@ -65,6 +65,46 @@ function expectDecoration(
   }
 }
 
+describe('ProsePipeline.processTurn — presence tag rides to the block (ADR-328 D3)', () => {
+  it('copies presence and location from a tagged event onto every block it renders', () => {
+    const pipeline = makePipeline({ 'owl.hoot': 'The owl hoots.' });
+    const event = {
+      ...makeEvent('game.message', { messageId: 'owl.hoot' }),
+      entities: { actor: 'a_owl', location: 'r_barn' },
+      presence: 'absent' as const,
+    };
+    const blocks = pipeline.processTurn([event]);
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const block of blocks) {
+      expect(block.presence).toBe('absent');
+      expect(block.location).toBe('r_barn');
+    }
+  });
+
+  it('leaves blocks from an untagged event without presence keys', () => {
+    const pipeline = makePipeline({ 'you.wait': 'Time passes.' });
+    const blocks = pipeline.processTurn([makeEvent('game.message', { messageId: 'you.wait' })]);
+    expect(blocks.length).toBeGreaterThan(0);
+    for (const block of blocks) {
+      expect('presence' in block).toBe(false);
+      expect('location' in block).toBe(false);
+    }
+  });
+
+  it('never drops a tagged event — an absent event renders like any other', () => {
+    const pipeline = makePipeline({ 'owl.hoot': 'The owl hoots.' });
+    const absent = {
+      ...makeEvent('game.message', { messageId: 'owl.hoot' }),
+      entities: { location: 'r_barn' },
+      presence: 'absent' as const,
+    };
+    const present = { ...absent, presence: 'present' as const };
+    expect(pipeline.processTurn([absent]).map((b) => b.content)).toEqual(
+      pipeline.processTurn([present]).map((b) => b.content),
+    );
+  });
+});
+
 describe('ProsePipeline.processTurn (full pipeline)', () => {
   it('PP5: should return empty array for empty input', () => {
     expect(makePipeline().processTurn([])).toEqual([]);

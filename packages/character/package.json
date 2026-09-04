@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/character",
-  "version": "5.1.1",
+  "version": "5.3.0",
   "description": "Character model builder for Sharpee Interactive Fiction Platform (ADR-141)",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",

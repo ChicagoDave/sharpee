@@ -13,12 +13,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
-import { createSeededRandom } from '@sharpee/core';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import { bootEngine } from './helpers/boot-engine';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
-import { TraitType, WorldModel, CombatantTrait, HealthTrait } from '@sharpee/world-model';
-import { createStory } from '../src';
+import { TraitType, CombatantTrait, HealthTrait } from '@sharpee/world-model';
 
 const FIXTURE = readFileSync(
   join(__dirname, '..', '..', 'chord', 'tests', 'fixtures', 'gatehouse.story'),
@@ -39,16 +37,11 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
     expect(ir.hasHatches).toBe(false); // the ENTIRE stack is pure IR
     expect(ir.uses.sort()).toEqual(['combat', 'state-machines']);
 
-    const story = createStory(ir, { seed: 11 });
-    const world = new WorldModel();
-    story.initializeWorld(world);
-    const player = story.createPlayer(world);
-    world.setPlayer(player.id);
-    const plugins: unknown[] = [];
-    story.onEngineReady({
-      getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }),
-      getClientCapabilities: () => ({ text: true, sound: true }),
-    });
+    // A real engine (ADR-328 D5): setStory runs the story's engine-ready
+    // hook against the engine's own plugin registry and NPC service; the
+    // client's capabilities are negotiated at start, as in play.
+    const { engine, story, world, player, phase } = bootEngine(FIXTURE, 11);
+    engine.start({ capabilities: { text: true, sound: true } as never });
     const registry = new StdlibChannelRegistry();
     story.registerChannels(registry);
 
@@ -57,19 +50,17 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
     expect((ogre.get(TraitType.COMBATANT) as CombatantTrait).skill).toBe(45);
     expect((ogre.get(TraitType.HEALTH) as HealthTrait).health).toBe(24);
 
-    // NPC core + state-machines both auto-registered their real plugins.
-    const npcPlugin = plugins.find((p) => p instanceof NpcPlugin) as NpcPlugin;
-    const smPlugin = plugins.find((p) => p instanceof StateMachinePlugin) as StateMachinePlugin;
-    expect(npcPlugin).toBeDefined();
+    // State-machines auto-registered its real plugin on the engine's registry.
+    const smPlugin = engine.getPluginRegistry().getById('sharpee.plugin.state-machine') as StateMachinePlugin;
     expect(smPlugin).toBeDefined();
     expect(smPlugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
 
-    // The patrol keeper actually walks (real NpcPlugin tick).
+    // The patrol keeper actually walks (the engine's actor phase, the real going action).
     const keeperStart = world.getLocation(story.entityId('keeper')!);
-    npcPlugin.onAfterAction({
+    phase.onAfterAction({
       world,
       turn: 1,
-      random: createSeededRandom(7),
+      random: engine.getRandomService(),
       playerLocation: world.getLocation(player.id)!,
       playerId: player.id,
       actionEvents: [],

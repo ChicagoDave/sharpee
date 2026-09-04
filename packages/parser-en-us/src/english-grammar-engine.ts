@@ -316,19 +316,30 @@ export class EnglishGrammarEngine extends GrammarEngine {
     const DEBUG = process.env.PARSER_DEBUG === 'true';
     const totalPatternTokens = pattern.tokens.length;
 
-    // Quick check: do we have enough tokens?
+    // Quick check: do we have enough tokens? A too-short input still says
+    // something when its first word IS the pattern's verb (GH #318: a bare
+    // `drop` against `drop :item`): record the matched verb and the element
+    // it stopped short of, so the failure classifier can ask "What do you
+    // want to drop?" instead of shrugging.
     if (tokens.length < pattern.minTokens) {
-      return {
-        success: false,
-        failure: {
-          pattern: rule.pattern,
-          action: rule.action,
-          progress: 0,
-          tokensConsumed: 0,
-          reason: 'NOT_ENOUGH_TOKENS',
-          expected: pattern.tokens[0]?.value
-        }
-      };
+      const first = pattern.tokens[0];
+      const verbMatched = first?.type === 'literal' && tokens[0] !== undefined && tokens[0].normalized === first.value;
+      // A verb-led short input runs the full matcher below, which stops on
+      // the exact element the input ran out at (the slot for `drop`, the
+      // preposition for `put pear`) and records the verb with it.
+      if (!verbMatched) {
+        return {
+          success: false,
+          failure: {
+            pattern: rule.pattern,
+            action: rule.action,
+            progress: 0,
+            tokensConsumed: 0,
+            reason: 'NOT_ENOUGH_TOKENS',
+            expected: first?.value
+          }
+        };
+      }
     }
 
     const slots = new Map<string, SlotMatch>();

@@ -61,6 +61,28 @@ again-nothing-to-repeat           nothing_to_repeat                       There 
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.again_blocked` (ADR-052).
 
+## answer, reply, respond, say — `if.action.answering`
+
+**Group** `social` · no direct object · **Slots** `target` · **Emits** `if.event.answer_blocked`, `if.event.answered`
+
+<GrammarBlock action="if.action.answering" />
+
+ANSWER/SAY - Answer a question a character has put to you. Example: SAY YES
+
+The questioner is the speaker of the open exchange in your conversation; while one is open, a bare answer (`yes`, `norwich`) reaches it without a verb. The exchange's answer row speaks the reply; `answered` is the fallback when the row has no phrase.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+answering-no-question             no_question                             No one has asked {you} anything.
+answering-no-response             no_response                             Answer what?
+answering-not-an-answer           not_an_answer                           {capitalize the target} {verb:waits target} for an answer to the question.
+answering-answered                answered                                {You} {answer}, "{verbatim:response}."
+```
+
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.answer_blocked` (ADR-052).
+
 ## ask about, question about, inquire of about — `if.action.asking`
 
 **Group** `social` · direct object required · **Slots** `target` · **Emits** `if.event.ask_blocked`, `if.event.asked`
@@ -248,6 +270,7 @@ cutting-no-target                 no_target                               Cut wh
 cutting-not-cuttable              not_cuttable                            {capitalize the item} {verb:is item} not something {you} can cut.
 cutting-cant-cut                  cant_cut                                Cutting {the item} would achieve nothing here.
 cutting-no-tool                   no_tool                                 {You} {need} something to cut {the item} with.
+cutting-needs-tool                needs_tool                              {You} {need} {the tool} to cut {the item}.
 cutting-tool-not-held             tool_not_held                           {You} {need} to be holding {the tool}.
 cutting-wrong-tool                wrong_tool                              {capitalize the tool} won't cut {the item}.
 cutting-cut                       cut                                     {You} {cut} {the item}.
@@ -285,6 +308,7 @@ digging-no-target                 no_target                               Dig wh
 digging-not-diggable              not_diggable                            {capitalize the item} {verb:is item} not something {you} can dig.
 digging-cant-dig                  cant_dig                                Digging {the item} would achieve nothing here.
 digging-no-tool                   no_tool                                 {You} {need} something to dig {the item} with.
+digging-needs-tool                needs_tool                              {You} {need} {the tool} to dig {the item}.
 digging-tool-not-held             tool_not_held                           {You} {need} to be holding {the tool}.
 digging-wrong-tool                wrong_tool                              {capitalize the tool} won't dig {the item}.
 digging-dug                       dug                                     {You} {dig} {the item}.
@@ -740,6 +764,7 @@ looking-contents-list             contents_list                           {You} 
 looking-nothing-special           nothing_special                         {You} {see} nothing special.
 looking-container-contents        container_contents                      In {the container} {you} {see} {items}.
 looking-surface-contents          surface_contents                        On {the surface} {you} {see} {items}.
+looking-hidden-at                 hidden_at                               ({You're} hiding {verbatim:position} {the spot}.)
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.looked` (ADR-052).
@@ -785,6 +810,7 @@ opening-revealing                 revealing                               Openin
 opening-its-empty                 its_empty                               {You} {open} {the container}, which is empty.
 opening-cant-reach                cant_reach                              {You} {can't} reach {the item}.
 opening-no-tool                   no_tool                                 {You} {need} something to open {the item} with.
+opening-needs-tool                needs_tool                              {You} {need} {the tool} to open {the item}.
 opening-tool-not-held             tool_not_held                           {You} {need} to be holding {the tool}.
 opening-wrong-tool                wrong_tool                              {capitalize the tool} won't open {the item}.
 ```
@@ -1078,6 +1104,27 @@ saving-save-exported              save_exported                           Save f
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.save_blocked` (ADR-052).
+
+## goodbye, bye, farewell, say goodbye — `if.action.saying_goodbye`
+
+**Group** `social` · direct object optional · **Slots** `target` · **Emits** `if.event.goodbye_blocked`, `if.event.said_goodbye`
+
+<GrammarBlock action="if.action.saying_goodbye" />
+
+GOODBYE - End the conversation you are having. Example: BYE
+
+Closes your live conversation from your side. What the character says as it ends is their active thread's `on parting:` row; a greetings block's `on leaving:` row is the character's own departure and does not fire here.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+saying-goodbye-not-talking        not_talking                             {You} {aren't} talking to anyone.
+saying-goodbye-not-talking-to     not_talking_to                          {You} {aren't} talking to {the target}.
+saying-goodbye-said-goodbye       said_goodbye                            {You} {say} goodbye to {the target}.
+```
+
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.goodbye_blocked` (ADR-052).
 
 ## score, points — `if.action.scoring`
 

@@ -35,7 +35,7 @@ define trait windlass-basket
     already-down:
       The basket is already at the bottom.
 
-  on lowering it
+  on the player lowering
     it must be raised: already-down
     change it to lowered
     phrase basket-lowered
@@ -62,8 +62,14 @@ create the windlass crank
 
   A worn oak crank, polished smooth by many hands.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Well Head
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -95,7 +101,7 @@ platform's entire contribution to this verb family: `cant_raise_that`.
 There are three boundaries to know. The fall-through is well-defined (ADR-229): a
 clause gated out by `while` or a consumed `, once` simply sits out, and
 the command falls through to the action body, the next trait, and finally
-the `otherwise refuse` miss. An `on lowering it` clause directly on an
+the `otherwise refuse` miss. An `on the player lowering` clause directly on an
 *entity* is a load error with a pointed message. These verbs never
 consult entity-level interceptors; the trait/action pattern above is the
 way. And from TypeScript the equivalent is a capability behavior
@@ -106,7 +112,7 @@ TURN left this family on its own terms: `turn`/`rotate`/`twist X` still
 parse (just below the switching phrasal forms, so `turn lamp on` still
 switches) and the unhandled refusal is still
 `turning-cant-turn-that`, but turning now wears cutting's dual
-surface without the trait gate: an `on turning it` clause directly
+surface without the trait gate: an `on the player turning` clause directly
 on the entity is consulted (turning is one of the 38 wired actions), or a
 TypeScript capability behavior for `turning` takes the whole
 turn; no eligibility trait, no define-action scaffolding needed. WAVE and

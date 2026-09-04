@@ -16,7 +16,7 @@
  * `alias = kebab(action) + "-" + kebab(message-key)` (ADR-255 D2). Hand-curation
  * of a cryptic alias is allowed (the D5 test pins ids, not spellings); regenerate
  * the baseline by re-applying the rule to the current `lang-en-us` messages.
- * 748 aliases across 56 actions, 0 collisions.
+ * 752 aliases across 56 actions, 0 collisions (four looking keys added 2026-09-03, GH #108).
  */
 
 export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
@@ -44,21 +44,11 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'about-website',
   // if.action.again
   'again-nothing-to-repeat',
-  // if.action.answering
-  'answering-accepted',
+  // if.action.answering (GH #346: answers the open exchange)
   'answering-answered',
-  'answering-answered-no',
-  'answering-answered-yes',
-  'answering-confused-by-answer',
-  'answering-gave-answer',
-  'answering-invalid-response',
-  'answering-needs-yes-or-no',
-  'answering-no-one-asked',
   'answering-no-question',
-  'answering-noted',
-  'answering-rejected',
-  'answering-too-late',
-  'answering-unclear-answer',
+  'answering-no-response',
+  'answering-not-an-answer',
   // if.action.asking
   'asking-already-told',
   'asking-confused',
@@ -174,6 +164,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'cutting-cant-cut',
   'cutting-cut',
   'cutting-no-target',
+  'cutting-needs-tool',
   'cutting-no-tool',
   'cutting-not-cuttable',
   'cutting-tool-not-held',
@@ -182,6 +173,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'digging-cant-dig',
   'digging-dug',
   'digging-no-target',
+  'digging-needs-tool',
   'digging-no-tool',
   'digging-not-diggable',
   'digging-tool-not-held',
@@ -312,9 +304,11 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.going
   'going-already-there',
   'going-arrived',
+  'going-arrives',
   'going-cant-go',
   'going-cant-go-through',
   'going-contents-list',
+  'going-departs',
   'going-destination-not-found',
   'going-door-closed',
   'going-door-locked',
@@ -411,6 +405,11 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'looking-nothing-special',
   'looking-room-dark',
   'looking-room-description',
+  'looking-room-description-brief',
+  'looking-in-container',
+  'looking-on-supporter',
+  'looking-examine-surroundings',
+  'looking-hidden-at',
   'looking-surface-contents',
   'looking-you-see',
   // if.action.lowering
@@ -424,6 +423,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'opening-its-empty',
   'opening-locked',
   'opening-no-target',
+  'opening-needs-tool',
   'opening-no-tool',
   'opening-not-openable',
   'opening-opened',
@@ -556,6 +556,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.hunger (ADR-263) — the overridable crossing fallback + death line.
   'hunger-crossed',
   'hunger-starved',
+  // if.action.saying_goodbye (GH #300)
+  'saying-goodbye-not-talking',
+  'saying-goodbye-not-talking-to',
+  'saying-goodbye-said-goodbye',
   // if.action.scoring — six aliases (ADR-260 D4 left five; ADR-262 D3 added
   // `scoring-promotion`, the overridable crossing fallback). An alias for a
   // deleted message would be a live `override message` target that silently

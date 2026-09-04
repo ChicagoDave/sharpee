@@ -445,9 +445,9 @@ The thief's eyes gleam as he notices your possessions.
 > wait
 Time passes...
 
-The thief, badly wounded, stumbles away into the darkness.
-
 The candles sputter and go out.
+
+The thief, badly wounded, stumbles away into the darkness.
 
 > south
 Winding Passage
@@ -634,6 +634,8 @@ Living Room
 This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
 
 You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, and a hand pump here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, and a gold coffin.
 
 > inventory
 You are carrying:

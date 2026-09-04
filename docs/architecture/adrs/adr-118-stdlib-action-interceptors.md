@@ -431,3 +431,37 @@ Continue using `registerEventHandler` pattern.
 - ADR-117: Eliminate Broad Use of Event Handlers
 - Inform 7 Documentation: Before/After rules
 - TADS 3 Documentation: dobjFor pattern
+
+## Amendment 1 — composed-clause consultation order (2026-09-03)
+
+**Status**: DRAFT — awaiting David's acceptance (one open question below, rule 11a). Gates `docs/proposals/publish-readiness-defects.md` P-11 (GH #332, GH #350). Refined by ADR-228 (the lifecycle engine); this amendment changes the registry lookup ADR-228 D3-B consults, not the hook contract.
+
+### Context
+
+- `WorldModel.getInterceptorForAction` (`packages/world-model/src/world/WorldModel.ts:851-884`) collects every trait on the entity that has a binding for the action, sorts by priority, and returns `candidates[0]`. Every Chord-registered binding has priority 0, so the winner is the entity's trait-map insertion order — an accident, not a rule.
+- The Chord loader registers one merged interceptor per (trait type, action) for `define trait` clauses (`packages/story-loader/src/runtime.ts:450-458`) and one per action under `ChordBehaviorTrait` for every `create`-block clause plus the owner's topic table (`runtime.ts:372-395`). An entity composing two Chord traits with clauses for the same action, or one trait beside its own block or topic table, therefore has exactly one binding consulted; the rest are silent dead code (GH #332: the fruit stallkeeper's `wary` + `cleaning-up`).
+- GH #350 is the same defect seen from the topic table: a trait's `on the player asking while it is waiting` wins the single slot; with the guard false it returns null without answering, and the owner's `define topics` — registered under `ChordBehaviorTrait` — is never reached. Fernhill's Tobias works only because there the clause and the table share one owner arm (ADR-239 D5's catch-all).
+- The consultation rules already exist one level out and one level in: ADR-228 D3-B consults every *command entity* in a fixed published order with first-veto-wins, and the loader's `mergeArms` (`runtime.ts:910`) runs every clause of one owner in declaration order under the same rule. The gap is only *across bindings on one entity*.
+
+### Decision
+
+- **A1 — Every binding is consulted.** `getInterceptorForAction` is replaced by `getInterceptorsForAction(entity, actionId): InterceptorLookupResult[]`, returning every binding on the entity in the A2 order. `resolveLifecycle` (`packages/stdlib/src/actions/lifecycle/lifecycle-engine.ts`) pushes one consultation per (slot, action id, binding) instead of one per (slot, action id); the actor consultation (ADR-327 D1) does the same. The hook semantics ADR-228 defines carry over unchanged: validate-phase hooks run in order and the first veto wins; `postExecute` runs for every consultation; `postReport`'s first `override` wins and `emit` effects append in order (GH #340's rule). The three `hasInterceptor` sites (digging, cutting, turning) read "any binding".
+- **A2 — The order.** For one entity and one action: (1) the entity's **own clauses** — the `create` block's clauses and its topic table, the `ChordBehaviorTrait` binding — then (2) its **composed traits in composition order**: the order the trait adjectives appear on the `create` block (for a TypeScript story, `add()` order). `priority` (higher first) remains the only override of that order, and registration order is the final tie-break. Within one binding, `mergeArms`' declaration order stands. The rule in one sentence: **the specific outranks the generic** — an entity's own arm is consulted before any shared trait's.
+- **A3 — A gated-out clause falls through.** A clause whose `while` guard or `, once` sits it out returns null in validate and `{}` in report and consumes nothing: the next binding is consulted in every phase. A false guard therefore never shadows a topic table (GH #350). ADR-239 D5's catch-all rule is unchanged *inside* the owner's arm (table hit owns the response; the unfiltered clause serves misses).
+- **A4 — Refusals are validate-phase; rows are report-phase.** A trait's guarded `asking` refusal fires in `preValidate`, before the owner's table serves in `postReport`: guard true, the refusal vetoes; guard false, the table serves. That is GH #350's story need ("you cannot speak to a partner who is not your hand" across six ballgoers) without repeating the refusal on every row.
+- **A5 — No diagnostic.** Composition is legal and nothing is dead once A1 lands, so the analyzer adds no collision warning. The loader's existing refusal of two clauses for one *dispatch* action in one trait stands — the capability registry (ADR-090) is one behavior per (trait, action) and is outside this amendment.
+
+### Consequences
+
+- A world-model registry API change: the single-lookup form goes; `resolveLifecycle` and the three `hasInterceptor` sites follow in the same landing. ADR-228 D3-B's "each action resolves an interceptor per command entity" now reads "resolves every interceptor per command entity".
+- Trait placement on a `create` block becomes semantic for same-action clauses (composition order), the way definition order is semantic for grammar (ADR-268). The trait page documents it.
+- Secret Letter's GH #332 workaround (the second refusal folded into the shared keeper trait with a `when` naming the stall) reverts to two traits.
+- Open question 1 decides whether A2's order is own-block-first or traits-first; nothing else in the amendment depends on it.
+
+### Open Questions
+
+1. **Own block first (A2 as written) or composed traits first?** Recommended: own block first — specific over generic, the I7 precedent, and the topic table (own block) then serves after a trait's guard-false fall-through under the one rule. Traits-first would let a shared trait's phrase override beat an entity's own authored line.
+
+### Session
+
+effb6f, 2026-09-03 — drafted in publish-readiness plan Phase 1 (`docs/work/publish-readiness/plan.md`).

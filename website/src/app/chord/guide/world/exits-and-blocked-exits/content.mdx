@@ -1,6 +1,18 @@
 Rooms connect with direction lines. Ten directions exist: the eight
-compass points plus `up` and `down`. A connection is one-way as written;
-write the return exit in the other room.
+compass points plus `up` and `down`. A plain exit connects both ways: the
+return exit is inferred in the opposite direction, so `north to the Herb
+Garden` on the Rose Walk also puts a `south` exit on the Herb Garden. Write
+`, one-way` for an exit with no way back — a landing the story reaches only
+by moving the player there, and leaves by walking:
+
+```chord
+create Behind the Fruit Stall
+  a room
+  southwest to the Fruit Stall, one-way
+```
+
+The same modifier works on a door line (`north to the Hall through the oak
+door, one-way`): the door opens from the written side only.
 
 ```chord
 create the Rose Walk

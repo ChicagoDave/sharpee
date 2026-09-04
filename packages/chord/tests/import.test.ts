@@ -30,11 +30,16 @@ const mainWith = (importLine: string) =>
     '', //                   6
     importLine, //          7
     '', //                   8
-    'create the player', //  9
-    '  a room', //          10
-    '', //                  11
-    '  You.', //            12
-    '', //                  13
+    'create Alex', //        9
+    '  a person', //        10
+    '  playable', //        11
+    '', //                  12
+    '  You.', //            13
+    '', //                  14
+    'before the game starts', // 15
+    '  change the player to Alex', // 16
+    'end before', //        17
+    '', //                  18
   ].join('\n');
 
 describe('ADR-251 Acceptance — worked example', () => {
@@ -53,10 +58,16 @@ describe('ADR-251 Acceptance — worked example', () => {
       '',
       'import "regions/harbor"',
       '',
-      'create the player',
+      'create Alex',
+      '  a person',
+      '  playable',
       '  starts in the Lighthouse',
       '',
       '  You.',
+      '',
+      'before the game starts',
+      '  change the player to Alex',
+      'end before',
       '',
     ].join('\n');
     // Two creates + a cross-file reference: the gull is placed in the
@@ -101,12 +112,16 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
     expect(d.span.line).toBe(1); //             the fragment's own line 1 (its story header)
   });
 
-  it('nested import → analysis.import-fragment-nested at the fragment span', () => {
-    const frag = 'create the shed\n  a room\n\n  A shed.\n\nimport "deeper"\n';
-    const d = byCode(mainWith('import "frag"'), (n) => (n === 'frag.chord' ? frag : null))['analysis.import-fragment-nested'];
+  it('import cycle → analysis.import-cycle at the import line in the file that closes the loop', () => {
+    const frags: Record<string, string> = {
+      'a.chord': 'create the shed\n  a room\n\n  A shed.\n\nimport "b"\n',
+      'b.chord': 'import "a"\n',
+    };
+    const d = byCode(mainWith('import "a"'), (n) => frags[n] ?? null)['analysis.import-cycle'];
     expect(d).toBeDefined();
-    expect(d.message).toContain('[frag.chord]');
-    expect(d.span.line).toBe(6); //             the nested `import "deeper"` line WITHIN the fragment
+    expect(d.message).toContain('a.chord → b.chord → a.chord');
+    expect(d.span.file).toBe('b.chord');
+    expect(d.span.line).toBe(1); //             the `import "a"` line WITHIN b.chord
   });
 
   it('malformed fragment → analysis.import-fragment-content at the fragment span', () => {
@@ -121,5 +136,172 @@ describe('ADR-251 Acceptance — D6 rejection cases with span attribution', () =
     const d = byCode(mainWith('import'))['parse.import-form'];
     expect(d).toBeDefined();
     expect(d.span.line).toBe(7); //             the import line in the MAIN file
+  });
+});
+
+describe('ADR-251 D6 (amended 2026-08-22) — spliced spans carry the fragment file (GH #301)', () => {
+  /** Fragment whose room fires an undefined phrase at its line 6 — an ANALYZER error, raised post-splice. */
+  const fragment = [
+    'create the Market', //      1
+    '  a room', //               2
+    '', //                       3
+    '  Stalls.', //              4
+    '', //                       5
+    '  after the player entering', //    6
+    '    phrase no-such-key', // 7
+    '  end after', //            8
+    '',
+  ].join('\n');
+  const resolver: Resolver = (name) => (name === 'regions/market.chord' ? fragment : null);
+
+  it('an analyzer diagnostic inside a fragment names the fragment file and its own line', () => {
+    const diags = errorsOf(mainWith('import "regions/market"'), resolver);
+    const missing = diags.find((d) => d.code === 'analysis.missing-phrase');
+    expect(missing).toBeDefined();
+    expect(missing!.span.file).toBe('regions/market.chord');
+    expect(missing!.span.line).toBe(7);
+  });
+
+  it('in one compile, the fragment error names the fragment and the main-file error names no file', () => {
+    // Main story with its OWN missing phrase at line 13 of the main file.
+    const main = [
+      'story', //                 1
+      '  id: x', //               2
+      '  title: X', //            3
+      '  authors:', //            4
+      '    N', //                 5
+      '', //                      6
+      'import "regions/market"', // 7
+      '', //                      8
+      'create Alex', //           9
+      '  a person', //           10
+      '  playable', //           11
+      '', //                     12
+      '  You.', //               13
+      '', //                     14
+      '  after the player entering', // 15
+      '    phrase main-missing', //     16
+      '  end after', //          17
+      '', //                     18
+      'before the game starts', // 19
+      '  change the player to Alex', // 20
+      'end before', //           21
+      '',
+    ].join('\n');
+    const missing = errorsOf(main, resolver).filter((d) => d.code === 'analysis.missing-phrase');
+    expect(missing).toHaveLength(2);
+    const inFragment = missing.find((d) => d.message.includes('no-such-key'));
+    const inMain = missing.find((d) => d.message.includes('main-missing'));
+    expect(inFragment?.span).toMatchObject({ file: 'regions/market.chord', line: 7 });
+    expect(inMain?.span.file).toBeUndefined();
+    expect(inMain?.span.line).toBe(16);
+  });
+
+  it('a fragment PARSE diagnostic also carries the fragment file', () => {
+    const broken: Resolver = (name) => (name === 'bad.chord' ? 'xyzzy not a declaration\n' : null);
+    const content = byCode(mainWith('import "bad"'), broken)['analysis.import-fragment-content'];
+    expect(content.span.file).toBe('bad.chord');
+  });
+
+  it('the unresolved-import diagnostic stays on the main file (no file on its span)', () => {
+    const d = byCode(mainWith('import "nowhere"'), () => null)['analysis.import-unresolved'];
+    expect(d.span.file).toBeUndefined();
+    expect(d.span.line).toBe(7);
+  });
+});
+
+describe('ADR-251 D5 (amended 2026-08-22) — imports nest (GH #302)', () => {
+  const room = (name: string, extra = '') => `create ${name}\n  a room\n\n  ${name}.\n${extra}`;
+  const mk = (frags: Record<string, string>): Resolver => (n) => frags[n] ?? null;
+
+  it('a fragment\'s own import is spliced: declarations two levels down reach the IR', () => {
+    const r = compile(mainWith('import "regions/market"'), {
+      importResolver: mk({
+        'regions/market.chord': room('the Market', '\nimport "npcs/teisha"\n'),
+        'npcs/teisha.chord': room('the Silk Tent'),
+      }),
+    });
+    // `mainWith`'s player is `a room` (analysis.player-kind) — filter to import diagnostics.
+    expect(r.diagnostics.filter((d) => d.code.startsWith('analysis.import-'))).toEqual([]);
+    const ids = r.ir.entities.map((e) => e.id);
+    expect(ids).toContain('market');
+    expect(ids).toContain('silk-tent');
+  });
+
+  it('paths inside a fragment are story-rooted: the resolver sees the same string it would from the main file', () => {
+    const asked: string[] = [];
+    compile(mainWith('import "regions/market"'), {
+      importResolver: (n) => {
+        asked.push(n);
+        if (n === 'regions/market.chord') return 'import "npcs/teisha"\n';
+        if (n === 'npcs/teisha.chord') return room('the Silk Tent');
+        return null;
+      },
+    });
+    expect(asked).toEqual(['regions/market.chord', 'npcs/teisha.chord']);
+  });
+
+  it('paste order is depth-first at each import line (D4 unchanged)', () => {
+    const r = compile(mainWith('import "outer"'), {
+      importResolver: mk({
+        'outer.chord': room('the First') + '\nimport "inner"\n\n' + room('the Third'),
+        'inner.chord': room('the Second'),
+      }),
+    });
+    const order = r.ir.entities.map((e) => e.id).filter((id) => id !== 'player');
+    expect(order).toEqual(['first', 'second', 'third', 'alex']);
+  });
+
+  it('a span two levels down names ITS file, not the fragment that imported it', () => {
+    const diags = errorsOf(mainWith('import "regions/market"'), mk({
+      'regions/market.chord': room('the Market', '\nimport "npcs/teisha"\n'),
+      'npcs/teisha.chord': room('the Silk Tent', '\n  after the player entering\n    phrase no-such-key\n  end after\n'),
+    }));
+    const missing = diags.find((d) => d.code === 'analysis.missing-phrase');
+    expect(missing).toBeDefined();
+    expect(missing!.span.file).toBe('npcs/teisha.chord');
+    expect(missing!.span.line).toBe(7);
+  });
+
+  it('after a cycle is dropped the rest of the splice continues', () => {
+    const r = compile(mainWith('import "a"'), {
+      importResolver: mk({
+        'a.chord': 'import "b"\n\n' + room('the Shed'),
+        'b.chord': 'import "a"\n\n' + room('the Barn'),
+      }),
+    });
+    const codes = r.diagnostics.filter((d) => d.code.startsWith('analysis.import-')).map((d) => d.code);
+    expect(codes).toEqual(['analysis.import-cycle']);
+    const ids = r.ir.entities.map((e) => e.id);
+    expect(ids).toContain('shed');
+    expect(ids).toContain('barn');
+  });
+
+  it('a self-import is the one-element cycle', () => {
+    const d = byCode(mainWith('import "a"'), mk({ 'a.chord': 'import "a"\n' }))['analysis.import-cycle'];
+    expect(d).toBeDefined();
+    expect(d.message).toContain('a.chord → a.chord');
+  });
+
+  it('a diamond is pasted twice and collides as an ordinary duplicate, not an import diagnostic', () => {
+    const r = compile(mainWith('import "left"\nimport "right"'), {
+      importResolver: mk({
+        'left.chord': 'import "shared"\n',
+        'right.chord': 'import "shared"\n',
+        'shared.chord': room('the Well'),
+      }),
+    });
+    const codes = r.diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
+    expect(codes.some((c) => c.startsWith('analysis.import-'))).toBe(false);
+    expect(codes).toContain('analysis.duplicate-entity');
+  });
+
+  it('a fragment carrying a story header is rejected wherever it is reached (the main file is never importable)', () => {
+    const d = byCode(mainWith('import "outer"'), mk({
+      'outer.chord': 'import "main-copy"\n',
+      'main-copy.chord': mainWith(''),
+    }))['analysis.import-fragment-story'];
+    expect(d).toBeDefined();
+    expect(d.span.file).toBe('main-copy.chord');
   });
 });

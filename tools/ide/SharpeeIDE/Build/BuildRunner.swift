@@ -64,9 +64,19 @@ final class BuildRunner {
             return
         }
         start(executable: sharpee,
-              arguments: ["build", storyFile.path],
+              arguments: Self.buildArguments(for: storyFile),
               workingDirectory: storyFile.deletingLastPathComponent(),
               environment: ShellEnvironment.buildEnvironment())
+    }
+
+    /// The `sharpee build` invocation for the Play pane's bundle. Always
+    /// menu-less (ADR-290 D6, GH #196): the pane's header owns Restart and the
+    /// theme picker, and the IDE has native equivalents of Save / Restore /
+    /// Quit — the client's own menu bar would be a second menu system. The
+    /// author's published bundle is a separate `sharpee publish` build and
+    /// keeps its menu unless they choose otherwise there.
+    static func buildArguments(for storyFile: URL) -> [String] {
+        ["build", storyFile.path, "--no-menu"]
     }
 
     /// Spawns an arbitrary executable. This is the production spawn path; the

@@ -24,7 +24,9 @@ create the book
 
   A dusty book.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Study
 
   You.
@@ -46,3 +48,7 @@ remove from action taking
 extend action examining
   grammar
     read the target
+
+before the game starts
+  change the player to Alex
+end before

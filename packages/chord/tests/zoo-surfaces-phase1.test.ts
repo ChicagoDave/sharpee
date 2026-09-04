@@ -29,8 +29,14 @@ const WORLD = `create the Lab
 
   A bare laboratory.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
+
+before the game starts
+  change the player to Alex
+end before
 
 create the widget
   in the Lab
@@ -69,7 +75,7 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
     ['once', 'first-time'],
   ])('Z5 applies at the `select` site too: `select %s` errors naming `%s`', (retired, replacement) => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on pull it\n    select ${retired}\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
+      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select ${retired}\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.select-strategy-retired');
     const retiredError = errors.find((e) => e.code === 'parse.select-strategy-retired')!;
@@ -78,7 +84,7 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
 
   it('`select sticky` parses clean (new adverb accepted at the select site)', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on pull it\n    select sticky\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
+      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select sticky\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
@@ -133,8 +139,14 @@ describe('Z1: `first time` room descriptions', () => {
 
   You stand before the wrought-iron gates.
 
-create the player
+create Alex
+  a person
+  playable
   in the Zoo Entrance
+
+before the game starts
+  change the player to Alex
+end before
 
 `;
 
@@ -158,21 +170,21 @@ create the player
 
   it('`second time` at create scope is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Hall\n  a room\n  second time\n    Prose.\n\n  A hall.\n\ncreate the player\n  in the Hall\n`,
+      `${HEADER}create the Hall\n  a room\n  second time\n    Prose.\n\n  A hall.\n\ncreate Alex\n  a person\n  playable\n  in the Hall\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.create-ordinal-time');
   });
 
   it('`first time` on a non-room is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Lab\n  a room\n\n  A lab.\n\ncreate the player\n  in the Lab\n\ncreate the widget\n  in the Lab\n  first time\n    Shiny.\n\n  A widget.\n`,
+      `${HEADER}create the Lab\n  a room\n\n  A lab.\n\ncreate Alex\n  a person\n  playable\n  in the Lab\n\nbefore the game starts\n  change the player to Alex\nend before\n\ncreate the widget\n  in the Lab\n  first time\n    Shiny.\n\n  A widget.\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.first-time-non-room');
   });
 
   it('a duplicate `first time` block is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Hall\n  a room\n  first time\n    One.\n  first time\n    Two.\n\n  A hall.\n\ncreate the player\n  in the Hall\n`,
+      `${HEADER}create the Hall\n  a room\n  first time\n    One.\n  first time\n    Two.\n\n  A hall.\n\ncreate Alex\n  a person\n  playable\n  in the Hall\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.first-time-duplicate');
   });

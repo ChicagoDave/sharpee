@@ -218,6 +218,31 @@ describe('header run configuration (ADR-294 D3)', () => {
     });
   });
 
+  describe('presence: (ADR-328 D3 — presence presentation)', () => {
+    it('is absent from the config when not declared — the platform default', () => {
+      const transcript = parseTranscript(`title: T\n${BODY}`);
+      expect(transcript.config!.presence).toBeUndefined();
+    });
+
+    it('parses omniscient', () => {
+      const transcript = parseTranscript(`title: T\npresence: omniscient\n${BODY}`);
+      expect(transcript.config!.presence).toBe('omniscient');
+      expect(transcript.parseErrors).toBeUndefined();
+    });
+
+    it('parses default explicitly', () => {
+      const transcript = parseTranscript(`title: T\npresence: default\n${BODY}`);
+      expect(transcript.config!.presence).toBe('default');
+    });
+
+    it('rejects any other value', () => {
+      const transcript = parseTranscript(`title: T\npresence: everything\n${BODY}`);
+      expect(validateTranscript(transcript)).toEqual(
+        expect.arrayContaining([expect.stringMatching(/Invalid presence: "everything"/)])
+      );
+    });
+  });
+
   describe('point-seed: (ADR-293 D11 — per-point stream override)', () => {
     it('parses point=seed entries', () => {
       const transcript = parseTranscript(

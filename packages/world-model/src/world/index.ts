@@ -29,7 +29,9 @@ export {
   SceneReaction,
   SceneCallback,
   // Pre-removal observer seam (ADR-213)
-  EntityRemovalObserver
+  EntityRemovalObserver,
+  // `, one-way` exits (ADR-234 D4, GH #327)
+  ConnectRoomsOptions
 } from './WorldModel.js';
 
 // Re-export grammar vocabulary types from if-domain for convenience

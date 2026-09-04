@@ -21,6 +21,8 @@ const { EntityType, IdentityTrait, RoomTrait, ActorTrait, CharacterModelTrait } 
 
 function makeStory(opts?: { registerGated?: boolean }) {
   return {
+    _startRoomId: undefined as string | undefined,
+
     config: {
       id: 'channels-test',
       title: 'Channels Test',
@@ -29,8 +31,10 @@ function makeStory(opts?: { registerGated?: boolean }) {
       description: 'ADR-294 D15 channel capture test story',
     },
     createPlayer(world: any) {
+      // ADR-327 D10: initializeWorld runs first now, so the room exists.
       const player = world.createEntity('you', EntityType.ACTOR);
       player.add(new IdentityTrait({ name: 'you', description: 'An adventurer.' }));
+      if (this._startRoomId) world.moveEntity(player.id, this._startRoomId);
       return player;
     },
     initializeWorld(world: any) {
@@ -40,8 +44,7 @@ function makeStory(opts?: { registerGated?: boolean }) {
         description: 'A bare chamber for channel testing.',
       }));
       room.add(new RoomTrait({ exits: {} }));
-      const player = world.getPlayer();
-      if (player) world.moveEntity(player.id, room.id);
+      this._startRoomId = room.id;
     },
     ...(opts?.registerGated
       ? {
@@ -134,8 +137,7 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
           description: 'A bare chamber for channel testing.',
         }));
         room.add(new RoomTrait({ exits: {} }));
-        const player = world.getPlayer();
-        if (player) world.moveEntity(player.id, room.id);
+        this._startRoomId = room.id;
 
         const hermit = world.createEntity('hermit', EntityType.ACTOR);
         hermit.add(new IdentityTrait({ name: 'hermit', description: 'A hermit.' }));

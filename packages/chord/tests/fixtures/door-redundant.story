@@ -22,7 +22,13 @@ create the oak door
 
   A heavy oak door, iron-banded.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

@@ -67,7 +67,7 @@ create the tablet
 
   A stone tablet.
 
-  on reading it
+  on the player reading
     select cycling
       raise tablet-alpha by 1
       phrase alpha
@@ -86,11 +86,11 @@ create the dial
 
   A brass dial.
 
-  on reading it
-    select on its state
+  on the player reading
+    select on the dial's state
       when left
         raise dial-alpha by 1
-        change it to right
+        change the dial to right
         phrase alpha
           Alpha.
       when right
@@ -107,10 +107,10 @@ create the trap
 
   A floor trap.
 
-  on reading it
-    phrase warning when it is armed
+  on the player reading
+    phrase warning when the trap is armed
       The trap is armed.
-    change it to spent
+    change the trap to spent
   end on
 
 create the kettle
@@ -120,9 +120,9 @@ create the kettle
 
   A stern kettle.
 
-  on reading it
-    change it to softened when it is wary
-    phrase softened-note when it is softened
+  on the player reading
+    change the kettle to softened when the kettle is wary
+    phrase softened-note when the kettle is softened
       Something in her eases.
   end on
 
@@ -132,7 +132,7 @@ create the ledger
 
   A worn ledger.
 
-  on reading it
+  on the player reading
     first time
       raise ledger-alpha by 1
       phrase alpha
@@ -155,7 +155,7 @@ create the shelf
 
   A steel shelf.
 
-  on reading it
+  on the player reading
     each loose-crate
       raise crate-visits by 1
       move the match to the Vault
@@ -164,10 +164,17 @@ create the shelf
     end each
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function load() {
@@ -252,7 +259,7 @@ describe('ADR-289 D9 — the report pass narrates the branch whose mutations ran
     const cw = load();
     const report = fire(cw, 'trap', 'if.action.reading');
 
-    // `phrase warning when it is armed` precedes `change it to spent`. The
+    // `phrase warning when the trap is armed` precedes `change the trap to spent`. The
     // mutations pass spends the trap; the reports pass then re-evaluates the
     // suffix against the mutated world and drops the phrase.
     //
@@ -267,8 +274,8 @@ describe('ADR-289 D9 — the report pass narrates the branch whose mutations ran
     const cw = load();
     const report = fire(cw, 'kettle', 'if.action.reading');
 
-    // `change it to softened when it is wary` precedes
-    // `phrase softened-note when it is softened`. The phrase's suffix is only
+    // `change the kettle to softened when the kettle is wary` precedes
+    // `phrase softened-note when the kettle is softened`. The phrase's suffix is only
     // true BECAUSE the line above it ran, so a suffix pinned before the body
     // began evaluates false and the phrase vanishes.
     //

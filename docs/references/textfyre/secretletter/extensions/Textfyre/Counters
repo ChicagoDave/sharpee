@@ -1,0 +1,88 @@
+Version 2 of Counters by Textfyre begins here.
+
+"Things that happen regularly, such as every four turns, rather than every turn."
+
+Use authorial modesty.
+Include Triggers by Textfyre.
+
+Part 1 - Definitions
+
+A counter is a kind of trigger.
+A counter has a number called the internal value.
+A counter has a number called the top end.
+A counter can be repeating. A counter is usually repeating.
+
+The internal value of a counter is usually 1.
+The top end of a counter is usually 4.
+
+A busy counter is a kind of counter.
+
+A timer is a kind of counter.
+A timer is usually not repeating.
+The internal value of a timer is usually 0.
+
+Part 2 - increment/increaseing
+
+To increment/increase (c - a counter):
+	if the internal value of c is 1,
+		fire c;
+	increase the internal value of c by one;
+	if the internal value of c is greater than the top end of c and c is repeating,
+		change the internal value of c to 1;
+
+To increment/increase (c - a busy counter):
+	fire c;
+	increase the internal value of c by one;
+	if the internal value of c is greater than the top end of c and c is repeating,
+		change the internal value of c to 1;
+
+To increment/increase (c - a timer):
+	increase the internal value of c by one;
+	if the internal value of c is the top end of c:
+		fire c;
+	if the internal value of c is greater than the top end of c and c is repeating,
+		change the internal value of c to 0;
+
+Part 3 - Default firing action
+
+Rule for firing a counter (called c):
+	do nothing.
+
+Part 4 - Deferring
+
+To defer firing (C - a counter):
+	if the internal value of C is 1:
+		change the internal value of C to the top end of C;
+
+To defer firing (T - a timer):
+	if the internal value of T is 0:
+		change the internal value of T to the top end of T;
+
+Counters ends here.
+
+---- DOCUMENTATION ---- 
+
+Counters extends Triggers to implement situations where an event reoccurs with predictable frequency: for example, a monk who keeps knocking his keys off his desk every four turns.
+
+It provides no new actions, and no new activities.
+
+The extension defines a new kind of Trigger, called a Counter, which has two numerical values associated with it: the internal value, and the top end. Generally, the internal value increments every turn, while the top end value remains constant. When the two numbers match, the internal value is reset to 1.
+
+The Counter is fired when its internal value is found to be 1. By default, firing a counter does absolutely nothing, so we have to say something like this:
+
+	STEPS_COUNTER is a counter. The top end is 4. The internal value is 2.
+
+	Every turn when in the Counting House Steps:
+		increment STEPS_COUNTER;
+
+	Rule for firing STEPS_COUNTER:
+		say "[one of]A carriage rattles along the cobbled street behind me.[or]The guards stand as motionless as hour hands; although one seems to have an itch on his nose.[or]The sun shining off the brass doors of the Counting House is almost blinding.[or]A few pigeons scatter between the pillars of the Counting House.[at random]";
+
+Note that it is our responsibility to increment the counters when the circumstances are right (e.g. "when in Counting House Steps:") -- this is more efficient than keeping them all running by automatic means, especially as most counters are limited in their effects to a single room or a region.
+
+Note further that in this case the internal value is initialised to 2. This is because otherwise the counter, defaulting to 1, would fire on the first turn after entry. Sometimes this is exactly what we want, but if there are more dramatic events associated with entry to the room, or the room description itself has a dramatic effect, then it is important not to diminish the impact of these with unwanted atmospheric details.
+
+Chapter: 'Busy' counters
+
+A Busy Counter is a different kind of Counter, intended for situations where things happen in a repeating cycle, but where a normal text substitution involving cycling is insufficient to implement them - usually because they have a tangible effect on the game world. The only difference between a standard Counter and a Busy Counter, is that a Busy Counter fires every time it is incremented -- specifically, just *before* it is incremented. The game author can act accordingly depending on the internal value at that time.
+

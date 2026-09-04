@@ -1,0 +1,1217 @@
+## ===========================================================================
+## THE WARES — what the stalls sell, and the source's rule for stealing it
+##
+## Book 2's "Contents" chapters for the eight stalls that are not the Fruit
+## Stall (`story.ni:2252-2950`), carried as the source has them: each stall's
+## collective wares as an examinable, its displays as scenery a single
+## corresponding item sits on, the item itself, and the refusals Gentry wrote
+## for the things that cannot be nicked (the saddle, the swords, the hats, the
+## gems). The Fruit Stall's own displays stay with the fruit in
+## `grubbers-market.chord`, where the apple's and the banana's rulings live;
+## this file is imported from there, after the fruit, so the wares stand in
+## rooms already declared.
+##
+## THE THEFT RULE (`story.ni:1978-1998`, "Carry out stealing" and its two
+## "After stealing" messages), as the change document makes it situational
+## ("Theft — calm theft is quiet, chase theft is noisy"): while the market is
+## calm a lift is quiet and nothing is blocked; once the mercenaries are
+## sweeping (`hunted` or `chase`) the source's rule runs unchanged — the
+## stallkeeper sees, Jack keeps the item (into the satchel), she is thrown
+## into a random adjacent stall, and the stall is BLOCKED: coming back to it
+## bounces her out again with Gentry's "As soon as you get near…" line
+## (`story.ni:1825-1835`). The source picks one of two openers by whether
+## Jack has stolen before ("a mere urchin" / "a successful thief") — that
+## flag is the `thefts` counter below, raised by every noisy theft; the
+## banana's fruit-stall theft raises it too (`grubbers-market.chord`), as
+## the source's one `Carry out stealing` did for every steal. During Market
+## Escape stealing is refused with the scene's own line (`story.ni:4160`),
+## which gives `escape-no-time` its second consumer.
+##
+## HOW IT IS BUILT. One trait per stall (`grocer-ware`, `leather-ware`, …):
+## a dispatch clause that names a room is a trait's, and the blocked stall
+## is a static name. Every ware composes its stall's trait; the trait's
+## `on the player taking` carries the openers and the `after` does the
+## moving. The theft text names the item through `{the item}` — the taking
+## action's own grammar slot, which the runtime binds into any `on the
+## player taking` body (`runtime.ts:3044`); no `with` binding is needed
+## (one could be written now — GH #335's `with … when` order parses since
+## 2026-09-03). The reins are plural, so they carry their own pair of openers
+## ("from their shelf") on a second leather trait.
+##
+## The displays are scenery supporters the item SITS on (the shape the
+## fruit chose: the source's off-stage corresponding item materialised on
+## theft has no port equivalent, so the item is simply there). A ware is
+## `shelved` until it is taken and `nicked` after, so a dropped ware taken
+## again is a plain take, as the source's on-stage `try taking` was.
+##
+## READINGS FLAGGED FOR DAVID — the change document's theft rule was written
+## about the fruit; this file applies it to every stall as its wording says:
+##   1. A calm lift of ANY ware is quiet — a knife from the weaponsmith, a
+##      belt, a candle — with one TODO line for all of them
+##      (`stall-lift-quietly`), since the source has no calm theft text at
+##      all. The apple keeps David's own line.
+##   2. A quiet calm lift does NOT make Jack a "successful thief" for the
+##      source's opener choice — the same reading the banana took (the 2009
+##      player was never `stealing` the apple she started with). The first
+##      NOISY theft gets the urchin opener.
+##   3. Eating a stolen grocery is refused with the source's "You don't have
+##      time for breakfast now!" in every state — its scarf-down line
+##      (`story.ni:2306`) sits behind an `Instead` that always fires, dead
+##      code in 2009 too. In the remake's calm walk that reads oddly beside
+##      the apple's appetite thread; carried as the source has it.
+##
+## The refusals on scenery TAKES — the saddle's "way too huge", the swords'
+## "too big", the hats' "perfectly serviceable hat", the gems' "constantly
+## glaring" — DO fire (probed 2026-08-30): a story `on the player taking`
+## clause is consulted ahead of stdlib's scenery gate, so the older note
+## with the fruit ("stdlib's `taking` refuses scenery inside `validate`,
+## before any story hook") no longer describes the platform. The displays
+## still carry their item as a supporter, which is the shape that lets the
+## item be a real thing in the world.
+##
+## NOT CARRIED, with reasons:
+##   * `steal <collective wares>` picking a random display (leather goods,
+##     candles, pottery, the fruit bins) — no random-entity draw in Chord;
+##     the collective wares refuse with `sticky-fingers` instead.
+##   * The blocked tail on the stalls' distant descriptions ("The
+##     stallkeeper looks like he's still keeping a sharp eye out for you") —
+##     the peering phrases are `randomly` arms with no conditional tail.
+##   * Bare `smell` in the Leather and Candle stalls (`story.ni:2557, 2795`)
+##     — a bare verb reaches no entity clause (the same gap as the alley's
+##     bare `listen`); the lines ride the stalls' wares and fumes instead.
+##   * The knife-into-scabbard refusal (`story.ni:2599`) — a clause cannot
+##     test which item is being inserted.
+##   * Tasting (no stdlib action), peeling (`story.ni:2453`, a fruit verb
+##     with no consumer here), the wax colour drawn at random for a bare
+##     `steal wax candles` (`story.ni:2830`) — the four colours are four
+##     displays and the parser asks which.
+##   * `story.ni:1825`'s draw of an UNBLOCKED adjacent room — ADR-326's draw
+##     skips blocked exits, not blocked rooms, so a throw can land Jack in a
+##     stall that is itself blocked; she is not bounced until she walks out
+##     and back in (an authorial move fires no entering clause).
+##
+## STRUCTURAL CHOICES David may rename at will: the two peg entities (`hat
+## pegs`, `rope pegs` — the source's one backdrop in two rooms, split because
+## an entity has one name); the display names where the source's printed
+## name was the item's own word (`pyramid display`, `strips display`); and
+## the bonnets carry no singular `bonnet` alias — that word is the
+## fashionable hat's (`disguise.chord`), and the tree's pins on the trade
+## name the hat by it (a `states:` pin takes one word).
+## Every finished line is Gentry's; the marked TODO texts are David's.
+## ===========================================================================
+
+define counter thefts starts 0
+
+## ---------------------------------------------------------------------------
+## THE SHARED REFUSALS AND THE THEFT TEXT
+## ---------------------------------------------------------------------------
+
+## `story.ni:1939-1945` — any handling of a display but examining or
+## smelling, while the stallkeeper is there (he always is).
+
+define phrase sticky-fingers
+  'Hey!' the stallkeeper glares at you. 'Keep your sticky fingers away from
+  the goods.'
+end phrase
+
+## DAVID: the quiet lift. The source has no calm theft text — its every
+## theft was noisy — so one line stands in for every ware but the apple,
+## which keeps your own.
+
+define phrase stall-lift-quietly
+  (TODO during play-testing — A quiet lift of {the item} from its display
+  while the market is calm; the stallkeeper never looks up.)
+end phrase
+
+## `story.ni:1990` — the first noisy theft.
+
+define phrase stall-theft-urchin
+  Ah, *this* is something you know how to do, at least. You sidle up casually
+  to the stall, wait until the stallkeeper seems preoccupied, then reach out
+  and pluck {the item} from its shelf.
+
+  Suddenly the stallkeeper jabs his finger at you and screams, *'Stop,
+  thief!'*
+
+  Apparently, he wasn't quite as preoccupied as you thought.
+
+  You sprint through the crowd, stuffing {the item} into your satchel. This
+  stallkeeper will be on the lookout for you now; probably best to stay away
+  from this part of Grubber's for a while.
+end phrase
+
+## `story.ni:1997` — every noisy theft after the first.
+
+define phrase stall-theft-thief
+  With the stallkeepers all on edge about the mercenaries, it's not likely
+  you'll be able to nick anything without someone noticing. Still, nothing
+  ventured...
+
+  *'Thief!'*
+
+  Here you go again.
+
+  You sprint through the crowd, stuffing {the item} into your satchel. This
+  stallkeeper will be on the lookout for you now; probably best to stay away
+  from this part of Grubber's for a while.
+end phrase
+
+## The same two, for the one plural ware (the reins): "from their shelf".
+
+define phrase stall-theft-urchin-plural
+  Ah, *this* is something you know how to do, at least. You sidle up casually
+  to the stall, wait until the stallkeeper seems preoccupied, then reach out
+  and pluck {the item} from their shelf.
+
+  Suddenly the stallkeeper jabs his finger at you and screams, *'Stop,
+  thief!'*
+
+  Apparently, he wasn't quite as preoccupied as you thought.
+
+  You sprint through the crowd, stuffing {the item} into your satchel. This
+  stallkeeper will be on the lookout for you now; probably best to stay away
+  from this part of Grubber's for a while.
+end phrase
+
+## `story.ni:1825-1835` — coming back to a stall whose keeper is watching
+## for her.
+
+define phrase stall-blocked-bounce
+  As soon as you get near, the stallkeeper spots you and starts yelling
+  again. Before the idiot can bring the mercenaries right to you, you dart
+  away through the crowd.
+end phrase
+
+## `story.ni:1940` and `:2281` — the sticky-fingers rule's cousins for the
+## displays: handling them is refused; only looking and smelling are free.
+
+define trait stall-display
+  on the player touching
+    refuse sticky-fingers
+  end on
+
+  on the player pushing
+    refuse sticky-fingers
+  end on
+
+  on the player pulling
+    refuse sticky-fingers
+  end on
+
+  on the player searching
+    refuse sticky-fingers
+  end on
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+end trait
+
+## ---------------------------------------------------------------------------
+## THE GROCERY STALL (`story.ni:2252-2312`)
+## ---------------------------------------------------------------------------
+
+define trait grocer-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Grocery Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+create the baskets
+  aka basket, display, displays, fare, grocer's displays, wares, merchandise, goods
+  scenery, plural
+  in the Grocery Stall
+
+  There are baskets bristling with loaves of bread, yellow pyramids of cheese,
+  and spiced jerky hanging in bundles overhead.
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+create the display of loaves
+  aka loaves, loaves of bread, dark loaves, grainy loaves, rock-hard loaves, bread display
+  scenery, a supporter, plural
+  stall-display
+  in the Grocery Stall
+
+  The loaves are dark and grainy and look rock-hard.
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+  on the player eating
+    refuse no-time-for-breakfast
+  end on
+
+create the pyramid display
+  aka pyramids, pyramids of cheese, cheese pyramids, yellow pyramids, cheese display
+  scenery, a supporter, plural
+  stall-display
+  in the Grocery Stall
+
+  The cheese is a rich, milky-yellow color, with a thick, brown rind.
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+  on the player eating
+    refuse no-time-for-breakfast
+  end on
+
+create the strips display
+  aka strips, strips of jerky, bundles, bundles of jerky, spiced jerky, jerky display
+  scenery, a supporter, plural
+  stall-display
+  in the Grocery Stall
+
+  The jerky hangs in dried, shriveled strips, and looks just slightly more
+  appetizing than eating your own belt.
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+  on the player eating
+    refuse no-time-for-breakfast
+  end on
+
+create the loaf
+  aka bread, loaf of bread, dark loaf, grainy loaf
+  edible
+  grocer-ware
+  states: shelved, nicked
+  on the display of loaves
+
+  The loaf is dark and grainy and looks rock-hard.
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+  on the player eating
+    refuse no-time-for-breakfast
+  end on
+
+create the cheese
+  aka wedge of cheese, yellow cheese, milky cheese
+  edible
+  grocer-ware
+  states: shelved, nicked
+  on the pyramid display
+
+  The cheese is a rich, milky-yellow color, with a thick, brown rind.
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+  on the player eating
+    refuse no-time-for-breakfast
+  end on
+
+create the strip of beef jerky
+  aka jerky, strip of jerky, beef jerky, beef, strip, salt-beef, dried beef
+  edible
+  grocer-ware
+  states: shelved, nicked
+  on the strips display
+
+  It's a twisted, shriveled strip of dried salt-beef. Yum.
+
+  on the player smelling
+    phrase food-smells-tasty
+  end on
+
+  on the player eating
+    refuse no-time-for-breakfast
+  end on
+
+define phrase food-smells-tasty
+  The food smells tasty!
+end phrase
+
+define phrase no-time-for-breakfast
+  You don't have time for breakfast now!
+end phrase
+
+## Kept aside, unreachable in the source as well (`story.ni:2306`, behind
+## the always-firing refusal above): "You scarf [the noun] down. Dry, but
+## tasty."
+
+## ---------------------------------------------------------------------------
+## THE HAT STALL (`story.ni:2505-2544`) — nothing here can be nicked
+## ---------------------------------------------------------------------------
+
+create the hat pegs
+  aka wooden pegs, pegs, peg, wood pegs, scores of pegs
+  scenery, plural
+  in the Hat Stall
+
+  There's nothing special about the wooden pegs; they're just there to hold
+  the hats up.
+
+create the stock of hats
+  aka hats, headgear, forest of headgear, varied headgear, display, displays, fare, wares, merchandise, goods
+  scenery, plural
+  in the Hat Stall
+
+  If you can wear it on your head, it's sold here. Big, flop-brimmed traveling
+  hats; small, leather workman's caps; wide *sappans* of woven straw from the
+  Kozar delta; fancy, feathered hats for courtly balls; and even a few
+  ordinary bonnets.
+
+  on the player taking
+    refuse hats-serviceable
+  end on
+
+create the traveling hats
+  aka traveling hat, travelling hats, travelling hat, floppy hats, flop-brimmed hats, brimmed hats
+  scenery, plural
+  in the Hat Stall
+
+  The traveling hats have big, floppy brims to keep the sun out of your eyes
+  while on the road.
+
+  on the player taking
+    refuse hats-serviceable
+  end on
+
+create the workmans caps
+  aka workman's caps, workmans cap, workman's cap, leather caps, leather cap, caps
+  scenery, plural
+  in the Hat Stall
+
+  These leather caps are small and functional, more to protect your head from
+  things falling on it than anything else.
+
+  on the player taking
+    refuse hats-serviceable
+  end on
+
+create the sappans
+  aka sappan, straw hats, straw hat, woven hats, round hats, pointy hats, kozarian hats
+  scenery, plural
+  in the Hat Stall
+
+  The *sappan* is a wide, round hat made of woven straw, pointy at the top.
+  They're popular in the southern regions. You never see anyone wearing them
+  in this part of the kingdom.
+
+  on the player taking
+    refuse hats-serviceable
+  end on
+
+create the fancy hats
+  aka fancy hat, feathered hats, feathered hat, courtly hats, gaudy hats, cheap hats
+  scenery, plural
+  in the Hat Stall
+
+  At a closer look, the 'fancy' hats are actually sort of cheap and gaudy.
+  Anyone who is attending a real courtly ball probably wouldn't be shopping
+  for hats in Grubber's Market anyway.
+
+  on the player taking
+    refuse hats-serviceable
+  end on
+
+create the bonnets
+  aka white caps, peasant bonnets, ordinary bonnets
+  scenery, plural
+  in the Hat Stall
+
+  The bonnets are just ordinary peasant wear, little white caps that tie
+  under the chin.
+
+  on the player taking
+    refuse hats-serviceable
+  end on
+
+define phrase hats-serviceable
+  You already have a perfectly serviceable hat. And anyway, you're going to
+  need more than just a new hat to fool these mercenaries.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE LEATHER STALL (`story.ni:2546-2611`)
+## ---------------------------------------------------------------------------
+
+define trait leather-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Leather Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+define trait leather-ware-plural
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin-plural when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Leather Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+create the leather goods
+  aka leather-goods, goods, riding equipment, equipment, display, displays, fare, wares, merchandise, leatherware
+  scenery, plural
+  in the Leather Stall
+
+  This merchant mostly deals in riding equipment — reins, harnesses,
+  stirrups, and the like. A full riding saddle sits on proud display near
+  the back. There are a few scabbards and belts for sale, as well.
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+
+  on the player smelling
+    phrase leather-smell
+  end on
+
+create the riding saddle
+  aka saddle, saddles, full saddle, polished saddle, lacquered saddle
+  scenery
+  in the Leather Stall
+
+  The saddle is made of many layers of leather, shaped into sweeping curves
+  and polished and lacquered until it gleams.
+
+  on the player taking
+    refuse saddle-too-huge
+  end on
+
+create the collective reins
+  aka reins display, ordinary reins, riding reins display
+  scenery, a supporter, plural
+  stall-display
+  in the Leather Stall
+
+  They're ordinary riding reins, used for steering horses.
+
+create the harnesses
+  aka harness display, harnesses display, complicated harnesses, contraptions
+  scenery, a supporter, plural
+  stall-display
+  in the Leather Stall
+
+  The harnesses are complicated contraptions of tough leather straps and
+  buckles, for hitching horses to wagons.
+
+create the stirrups
+  aka stirrup display, stirrups display, ordinary stirrups, riding stirrups
+  scenery, a supporter, plural
+  stall-display
+  in the Leather Stall
+
+  They're ordinary riding stirrups, for getting up on horses.
+
+create the scabbards
+  aka scabbard display, scabbards display, sheaths, plain scabbards, unadorned scabbards
+  scenery, a supporter, plural
+  stall-display
+  in the Leather Stall
+
+  The scabbards are mostly plain, unadorned leather, good for sliding a sword
+  into and not much else.
+
+create the rack of belts
+  aka rack, belt rack, belts, belts display, sturdy belts, well-crafted belts
+  scenery, a supporter
+  stall-display
+  in the Leather Stall
+
+  The belts on display here aren't anything fancy, but they're sturdy and
+  well-crafted.
+
+create the riding reins
+  aka reins, rein, useless reins
+  leather-ware-plural
+  plural
+  states: shelved, nicked
+  on the collective reins
+
+  They're ordinary riding reins, used for steering horses. What use they are
+  to you without a horse, you're not sure yet.
+
+create the harness
+  aka leather harness, tough harness, complicated contraption, contraption
+  leather-ware
+  states: shelved, nicked
+  on the harnesses
+
+  It's a complicated contraption of tough leather straps and buckles, for
+  hitching horses to wagons.
+
+create the stirrup
+  aka riding stirrup, ordinary stirrup
+  leather-ware
+  states: shelved, nicked
+  on the stirrups
+
+  It's an ordinary riding stirrup, for getting up on a horse. What use it is
+  to you without a horse, you're not sure yet.
+
+create the plain scabbard
+  aka scabbard, sheath, unadorned scabbard, leather scabbard, good scabbard
+  wearable
+  leather-ware
+  states: shelved, nicked
+  on the scabbards
+
+  It's a sheath of plain, unadorned leather. You've got no sword to put in
+  it, nor any belt to hang it on, but for all that it's a perfectly good
+  scabbard.
+
+  on the player wearing
+    refuse scabbard-needs-belt
+  end on
+
+create the belt
+  aka good belt, sturdy belt, leather belt, strap, well-crafted belt
+  wearable
+  leather-ware
+  states: shelved, nicked
+  on the rack of belts
+
+  Now, a good belt is always useful. This one isn't anything fancy, but it's
+  sturdy and well-crafted.
+
+define phrase leather-smell
+  The smell of leather always makes you think of traveling in distant,
+  dangerous lands. It's the smell of camping out under the stars, the smell
+  of adventure.
+end phrase
+
+define phrase saddle-too-huge
+  The saddle is way too huge for you to nick. Anyway, horses make you
+  nervous.
+end phrase
+
+define phrase scabbard-needs-belt
+  You need a belt in order to wear this thing.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE WEAPONSMITH'S STALL (`story.ni:2613-2647`)
+## ---------------------------------------------------------------------------
+
+define trait weapons-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Weapons Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+create the weaponry
+  aka weapons, display of various weaponry, various weaponry, display, displays, fare, wares, merchandise, goods
+  scenery, plural
+  in the Weaponsmith's Stall
+
+  Swords and knives, mostly. Nothing fancy — just sharp, practical, and
+  deadly.
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+
+create the longswords
+  aka swords, sword, longsword, heavy swords, blades, picket fence, fence of blades
+  scenery, plural
+  in the Weaponsmith's Stall
+
+  The swords vary from three to four feet long. They look too heavy for you
+  to even lift, much less swing at a rapidly approaching mercenary.
+
+  on the player taking
+    refuse swords-too-big
+  end on
+
+create the knives
+  aka knife display, knives display, daggers, short knives, wicked knives, sharp knives
+  scenery, a supporter, plural
+  stall-display
+  in the Weaponsmith's Stall
+
+  The knives are just your speed: short and wicked sharp.
+
+create the knife
+  aka dagger, blade, short knife, wicked knife, sharp knife
+  weapons-ware
+  states: shelved, nicked
+  on the knives
+
+  The knife is short and wicked sharp.
+
+define phrase swords-too-big
+  The swords are too big for you to nick.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE EXOTIC GEMS STALL (`story.ni:2649-2690`) — nothing here can be nicked
+## ---------------------------------------------------------------------------
+
+create the precious gems
+  aka gems, gem, jewels, cheap gems, smuggled gems, display, displays, fare, wares, merchandise, goods
+  scenery, plural
+  in the Exotic Gems Stall
+
+  Some of them are loose stones; others are set in finely wrought rings and
+  necklaces. Most of them were probably illegally smuggled from over the
+  western mountains, which is why they're cheap enough to be affordable by
+  anyone in Grubber's Market. Still, they're far, far out of your price
+  range.
+
+  on the player taking
+    refuse gems-glaring
+  end on
+
+create the loose stones
+  aka stones, stone, gemstones, gemstone, gem stones, loose gems, tiny stones, shiny stones
+  scenery, plural
+  in the Exotic Gems Stall
+
+  Most of the loose stones are tiny, some no bigger than your little
+  fingernail. They sure are shiny, though.
+
+  on the player taking
+    refuse gems-glaring
+  end on
+
+create the pretty jewelry
+  aka jewelry, jewelery, rings, ring, necklaces, flashy jewelry, flashy rings
+  scenery, plural
+  in the Exotic Gems Stall
+
+  The rings and necklaces are pretty, but they all look a bit *too* flashy.
+  You have a sneaking suspicion that some of them might turn your skin green
+  if you wore them too long.
+
+  on the player taking
+    refuse gems-glaring
+  end on
+
+define phrase gems-glaring
+  The angry stallkeeper is constantly glaring at you; there's no way you'd
+  manage to nick something and get away with it.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE HERB STALL (`story.ni:2711-2767`)
+## ---------------------------------------------------------------------------
+
+define trait herb-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Herb Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+create the jars of herbs
+  aka herbwares, jars, tiny jars, herb jars, display, displays, fare, wares, merchandise, goods
+  scenery, plural
+  in the Herb Stall
+
+  The dozens of tiny jars are filled with dried and crushed bits of leaves,
+  roots, berries, petals, moss, bark — basically, if it's from a plant, and
+  it smells bad, you can find some shriveled piece of it here.
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+
+  on the player smelling
+    phrase herbs-strong-stuff
+  end on
+
+create the collective herbs
+  aka herbs, herb stuff, stuff, crushed bits, leaves, roots, berries, petals, moss, bark, shriveled pieces
+  scenery, a supporter, plural
+  stall-display
+  in the Herb Stall
+
+  All of this herb stuff looks pretty much the same to you.
+
+  on the player smelling
+    phrase herbs-strong-stuff
+  end on
+
+create the herb jar
+  aka jar, little jar, glass jar, little glass jar
+  a container
+  herb-ware
+  states: shelved, nicked
+  on the collective herbs
+
+  It's a little glass jar containing a few crumbling, dried weeds.
+
+  on the player smelling
+    phrase herbs-strong-stuff
+  end on
+
+  on the player opening
+    refuse jar-still-there
+  end on
+
+  on the player searching
+    refuse jar-still-there
+  end on
+
+  on the player closing
+    refuse jar-closed
+  end on
+
+  on the player inserting
+    refuse jar-keeps-weed
+  end on
+
+create the dried weeds
+  aka weeds, weed, crumbling weeds, dark weeds, pungent weeds
+  plural
+  in the herb jar
+
+  The stuff is dark and pungent.
+
+  on the player taking
+    refuse weeds-spill
+  end on
+
+  on the player smelling
+    phrase herbs-strong-stuff
+  end on
+
+define phrase herbs-strong-stuff
+  Phew, strong stuff.
+end phrase
+
+define phrase jar-still-there
+  You check the jar: yep, the weeds are still in there.
+end phrase
+
+define phrase jar-closed
+  The jar is closed; those weeds aren't going anywhere.
+end phrase
+
+## `story.ni:2760` reads "You can't put [the noun] in the jar" — the inserted
+## item cannot be named from a container's clause, so "that" stands in
+## (deviation 7 in the story header's list).
+
+define phrase jar-keeps-weed
+  You can't put that in the jar; you keep your weed in there.
+end phrase
+
+define phrase weeds-spill
+  They'd just spill everywhere.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE ROPE STALL (`story.ni:2769-2785`)
+## ---------------------------------------------------------------------------
+
+define trait rope-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Rope Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+create the rope pegs
+  aka wooden pegs, pegs, peg, wood pegs
+  scenery, plural
+  in the Rope Stall
+
+  There's nothing special about the wooden pegs; they're just there to hold
+  the lengths of rope up.
+
+create the rope wares
+  aka ropes, coils, coils of rope, heaps of rope, knotted rope, loose rope, thick rope, thin rope, display, displays, wares, merchandise, goods
+  scenery, a supporter, plural
+  stall-display
+  in the Rope Stall
+
+  It's all rope, and lots of it: thick and thin, knotted and loose, in heaps
+  and in coils, stacked on the floor and hanging from pegs.
+
+create the length of rope
+  aka rope, piece of rope, short rope, stiff rope, scratchy rope, five feet of rope
+  rope-ware
+  states: shelved, nicked
+  on the rope wares
+
+  The piece of rope is about five feet long, stiff and scratchy.
+
+## ---------------------------------------------------------------------------
+## THE CANDLEMAKER'S STALL (`story.ni:2787-2902`)
+## ---------------------------------------------------------------------------
+
+define trait candle-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Candle Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+create the stock of candles
+  aka candles, pairs of candles, pairs, display, displays, fare, wares, merchandise, goods
+  scenery, plural
+  in the Candlemaker's Stall
+
+  The candles hang in pairs, connected to each other by a common wick. Most
+  of them are tallow, fast-burning and cheap, but there are also a number of
+  premade wax candles in different colors.
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+
+create the tallow candles
+  aka tallow display, yellow candles, lumpy candles, cheap candles
+  scenery, a supporter, plural
+  stall-display
+  in the Candlemaker's Stall
+
+  The tallow candles are yellow and slightly lumpy.
+
+create the wax candles
+  aka wax display, premade candles, colored candles, coloured candles, smooth candles, straight candles
+  scenery, plural
+  stall-display
+  in the Candlemaker's Stall
+
+  The wax candles are smooth and straight, and come in several colors.
+
+create the red wax candles
+  aka red candles, red wax display
+  scenery, a supporter, plural
+  stall-display
+  in the Candlemaker's Stall
+
+  The wax candles are smooth and straight, and come in several colors,
+  including red.
+
+create the blue wax candles
+  aka blue candles, blue wax display
+  scenery, a supporter, plural
+  stall-display
+  in the Candlemaker's Stall
+
+  The wax candles are smooth and straight, and come in several colors,
+  including blue.
+
+create the green wax candles
+  aka green candles, green wax display
+  scenery, a supporter, plural
+  stall-display
+  in the Candlemaker's Stall
+
+  The wax candles are smooth and straight, and come in several colors,
+  including green.
+
+create the white wax candles
+  aka white candles, white wax display
+  scenery, a supporter, plural
+  stall-display
+  in the Candlemaker's Stall
+
+  The wax candles are smooth and straight, and come in several colors,
+  including white.
+
+create the tallow candle
+  aka candle, yellow candle, lumpy candle, cheap candle
+  candle-ware
+  states: shelved, nicked
+  on the tallow candles
+
+  The tallow candle is yellow and slightly lumpy.
+
+create the red wax candle
+  aka red candle, wax candle, candle
+  candle-ware
+  states: shelved, nicked
+  on the red wax candles
+
+  The wax candle is smooth and straight, and colored bright red.
+
+create the blue wax candle
+  aka blue candle, wax candle, candle
+  candle-ware
+  states: shelved, nicked
+  on the blue wax candles
+
+  The wax candle is smooth and straight, and colored bright blue.
+
+create the green wax candle
+  aka green candle, wax candle, candle
+  candle-ware
+  states: shelved, nicked
+  on the green wax candles
+
+  The wax candle is smooth and straight, and colored bright green.
+
+create the white wax candle
+  aka white candle, wax candle, candle
+  candle-ware
+  states: shelved, nicked
+  on the white wax candles
+
+  The wax candle is smooth and straight, and colored bright white.
+
+create the tallow pots
+  aka pots, pot, cauldron, cauldrons, tallow pot, boiling goop, goop, yellow goop
+  scenery, plural
+  in the Candlemaker's Stall
+
+  The yellow, bubbling goop is kept at a constant boil.
+
+  on the player smelling
+    phrase tallow-fumes-smell
+  end on
+
+  on the player touching
+    refuse stay-out-of-pots
+  end on
+
+  on the player searching
+    refuse stay-out-of-pots
+  end on
+
+  on the player taking
+    refuse stay-out-of-pots
+  end on
+
+  on the player pushing
+    refuse stay-out-of-pots
+  end on
+
+  on the player pulling
+    refuse stay-out-of-pots
+  end on
+
+create the dowel rods
+  aka dowels, dowel, rods, rod, wooden dowels, long dowels
+  scenery, plural
+  in the Candlemaker's Stall
+
+  The long, wooden dowels run the width of the stall.
+
+create the fumes
+  aka fume, steam, vapor, vapors, pungent fumes
+  scenery, plural
+  in the Candlemaker's Stall
+
+  Pungent fumes rise from the tallow pots.
+
+  on the player smelling
+    phrase tallow-fumes-smell
+  end on
+
+  on the player touching
+    refuse insubstantial-fumes
+  end on
+
+  on the player taking
+    refuse insubstantial-fumes
+  end on
+
+  on the player searching
+    refuse insubstantial-fumes
+  end on
+
+define phrase tallow-fumes-smell
+  The fumes from the boiling tallow make your eyes water.
+end phrase
+
+define phrase stay-out-of-pots
+  'Hey,' snaps the stallkeeper, 'stay out of my tallow pots!'
+end phrase
+
+define phrase insubstantial-fumes
+  They're just insubstantial fumes.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE POTTERY STALL (`story.ni:2904-2949`)
+## ---------------------------------------------------------------------------
+
+define trait pottery-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase stall-theft-urchin when (hunted or chase) and thefts is 0
+    phrase stall-theft-thief when (hunted or chase) and thefts is at least 1
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Pottery Stall to blocked when hunted or chase
+    move the player to a random adjacent room when hunted or chase
+  end after
+
+  on the player inserting
+    refuse ceramic-too-small
+  end on
+end trait
+
+create the assorted pottery
+  aka pottery, assorted-pottery, wares, display, displays, fare, merchandise, goods, glazes, fired clay
+  scenery, plural
+  in the Pottery Stall
+
+  From tall, narrow, precariously balanced urns to round, gourd-like jars to
+  shallow bowls, each is uniquely shaped, yet they all share a common,
+  graceful curve. Most of them are made of fired clay from the Westlands,
+  decorated with colorful glazes.
+
+  on the player taking
+    refuse sticky-fingers
+  end on
+
+create the clay pots
+  aka pots, pot display, simple pots, functional pots
+  scenery, a supporter, plural
+  stall-display
+  in the Pottery Stall
+
+  The clay pots are simple but functional, and come in all sizes.
+
+create the urns
+  aka urn display, tall urns, narrow urns, decorative urns, precarious urns
+  scenery, a supporter, plural
+  stall-display
+  in the Pottery Stall
+
+  The urns are mostly decorative, for putting flowers or rushes in.
+
+create the clay jars
+  aka jars, jar display, round jars, gourd-like jars, gourds
+  scenery, a supporter, plural
+  stall-display
+  in the Pottery Stall
+
+  The round jars are just the thing for keeping in a pantry.
+
+create the bowls
+  aka bowl display, shallow bowls, dishes, dish
+  scenery, a supporter, plural
+  stall-display
+  in the Pottery Stall
+
+  The shallow bowls are ideal for holding fruit or wine.
+
+create the clay pot
+  aka pot, little pot, small pot
+  a container
+  pottery-ware
+  states: shelved, nicked
+  on the clay pots
+
+  It's a little clay pot, small enough to fit comfortably in your hand.
+
+create the clay urn
+  aka urn, small urn, thin urn, narrow urn, decorative urn
+  a container
+  pottery-ware
+  states: shelved, nicked
+  on the urns
+
+  You grabbed one of the smaller, thinner, urns.
+
+create the clay jar
+  aka small jar, round jar, gourd-like jar, gourd
+  a container
+  pottery-ware
+  states: shelved, nicked
+  on the clay jars
+
+  It's a small, round jar, just the thing for keeping in a pantry.
+
+create the clay bowl
+  aka bowl, small bowl, shallow bowl, dish
+  a container
+  pottery-ware
+  states: shelved, nicked
+  on the bowls
+
+  It's a small, shallow bowl, ideal for holding fruit or wine.
+
+define phrase ceramic-too-small
+  It's really too small to conveniently hold things while you're carrying
+  it.
+end phrase

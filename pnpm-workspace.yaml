@@ -4,6 +4,7 @@ packages:
   - packages/extensions/basic-combat
   - packages/extensions/scoring
   - packages/extensions/hunger
+  - packages/extensions/chapters
   - '!packages/map-editor'
   # packages/interpreter retired 2026-08-13 (David) — the legacy Tauri
   # runner, unbuilt and importerless. Archived at

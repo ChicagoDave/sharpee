@@ -1,8 +1,10 @@
 /**
  * Basic Combat Interceptor
  *
- * Wraps CombatService as an ActionInterceptor for PC→NPC attacks.
- * Registered on CombatantTrait for if.action.attacking.
+ * Wraps CombatService as an ActionInterceptor for attacks in both
+ * directions. Registered on CombatantTrait for if.action.attacking, it
+ * resolves whoever swings — the player at an NPC, or an NPC acting through
+ * the execution entry at the player (ADR-328 D5) — with one rule set.
  */
 
 import { type RandomService, definePoint } from '@sharpee/core';
@@ -26,6 +28,14 @@ const HERO_BLOW_POINT = definePoint('basic-combat.blow.hero', {
   classes: ['missed', 'hit', 'knocked_out', 'killed'],
 });
 
+/**
+ * NPC→target blow point (ADR-293 D2/D10) — drawn when the attacker is not
+ * the player.
+ */
+const VILLAIN_BLOW_POINT = definePoint('basic-combat.blow.villain', {
+  classes: ['missed', 'hit', 'knocked_out', 'killed'],
+});
+
 /** Outcome class of a CombatService result (shared with the villain point). */
 export function combatResultClass(result: CombatResult): 'missed' | 'hit' | 'knocked_out' | 'killed' {
   if (result.targetKilled) return 'killed';
@@ -34,7 +44,9 @@ export function combatResultClass(result: CombatResult): 'missed' | 'hit' | 'kno
 }
 
 /**
- * ActionInterceptor that uses CombatService for PC→NPC combat resolution.
+ * ActionInterceptor that uses CombatService for combat resolution in either
+ * direction. The blow draws on the hero point when the player swings and
+ * on the villain point otherwise, so the two streams stay independent.
  *
  * postExecute populates sharedData with:
  *   - attackResult: AttackResult-shaped object
@@ -64,10 +76,11 @@ export const BasicCombatInterceptor: ActionInterceptor = {
       : findWieldedWeapon(attacker, world);
 
     const combatService = new CombatService();
-    // The skill roll draws on the hero blow point's own stream; the world
+    const blowPoint = attacker.id === world.getPlayer()?.id ? HERO_BLOW_POINT : VILLAIN_BLOW_POINT;
+    // The skill roll draws on the blow point's own stream; the world
     // mutation (applyCombatResult) stays outside the resolve (D8).
     const { value: combatResult } = random.resolve(
-      HERO_BLOW_POINT,
+      blowPoint,
       (draw) => {
         const sampled = combatService.resolveAttack({
           attacker,

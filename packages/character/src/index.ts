@@ -245,6 +245,8 @@ export {
 // ordered sub-steps; the per-subsystem factories folded into it)
 export {
   type CharacterPhaseConfig,
+  type ArrivedFact,
+  type ArrivalReaction,
   CharacterPhaseRegistry,
   createCharacterModelPhase,
   registerCharacterModelPhase,

@@ -7,13 +7,19 @@
  * or EOF. Deliberately lean — the platform bundle keeps the debug REPL
  * (/debug, /trace, …); this is the author's quick play loop.
  *
- * Public interface: runPlayCommand(rest) → process exit code (resolves on
- * REPL close).
+ * Pipe-safe (GH #240): commands arrive through readline's async iterator,
+ * so `printf 'north\nnorth\n' | sharpee play` runs every line in order and
+ * exits at EOF — the old `question()` loop re-armed only after each turn's
+ * await and lost every queued line to the close event.
+ *
+ * Public interface: runPlayCommand(rest, io?) → process exit code (resolves
+ * on REPL close); `io` injects the input/output streams (tests).
  * Owner context: @sharpee/devkit (author tool).
  */
 import * as path from 'node:path';
 import * as readline from 'node:readline';
 import { existsSync, statSync } from 'node:fs';
+import type { Readable, Writable } from 'node:stream';
 import { loadAuthorGame } from '../standalone/author-game.js';
 import { lookupStory } from '../registry.js';
 
@@ -27,7 +33,14 @@ const USAGE = 'usage: sharpee play [name|path]';
  * @returns process exit code — 0 on clean quit/EOF, 2 usage error, 3 story
  *   load error.
  */
-export async function runPlayCommand(rest: string[]): Promise<number> {
+export async function runPlayCommand(
+  rest: string[],
+  io: { input: Readable; output: Writable; isTTY?: boolean } = {
+    input: process.stdin,
+    output: process.stdout,
+    isTTY: process.stdin.isTTY === true,
+  },
+): Promise<number> {
   let projectDir: string | undefined;
   for (const arg of rest) {
     if (arg.startsWith('-')) {
@@ -64,26 +77,30 @@ export async function runPlayCommand(rest: string[]): Promise<number> {
   console.log("\n--- Play Mode ---  (/quit or /q to exit)\n");
   console.log(await game.executeCommand('look'));
 
-  const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  return new Promise<number>((resolve) => {
-    rl.on('close', () => resolve(0)); // EOF (^D) ends the session cleanly
-    const prompt = () => {
-      rl.question('\n> ', async (input) => {
-        const trimmed = input.trim();
-        if (trimmed === '/quit' || trimmed === '/q') {
-          rl.close();
-          return;
-        }
-        if (trimmed) {
-          try {
-            console.log(await game.executeCommand(trimmed));
-          } catch (error) {
-            console.error(`error: ${error instanceof Error ? error.message : error}`);
-          }
-        }
-        prompt();
-      });
-    };
-    prompt();
+  // A TTY gets the prompt echoed by readline; a pipe gets the command echoed
+  // (`> north`) so the transcript reads as a play session.
+  const rl = readline.createInterface({
+    input: io.input,
+    output: io.isTTY ? io.output : undefined,
+    terminal: io.isTTY === true,
+    prompt: '\n> ',
   });
+  if (io.isTTY) rl.prompt();
+  for await (const line of rl) {
+    const trimmed = line.trim();
+    if (trimmed === '/quit' || trimmed === '/q') {
+      rl.close();
+      break;
+    }
+    if (trimmed) {
+      if (!io.isTTY) console.log(`\n> ${trimmed}`);
+      try {
+        console.log(await game.executeCommand(trimmed));
+      } catch (error) {
+        console.error(`error: ${error instanceof Error ? error.message : error}`);
+      }
+    }
+    if (io.isTTY) rl.prompt();
+  }
+  return 0; // EOF (^D, or the end of the pipe) ends the session cleanly
 }

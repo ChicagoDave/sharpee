@@ -1,0 +1,45 @@
+bug list
+
+______________________________________
+BAKERY, AFTER JAIL SCENE
+
+> nw
+Bakery
+The air is heavy with the warm and slightly damp smell of freshly baked bread, and the counters are piled high with golden loaves, baguettes, and rolls. You can leave the bakery to the south.
+
+A man dressed in flour-dusted baker’s whites stands behind the counter, busily rolling out dough.
+
+Germaise the baker looks up at you and scowls. You’re utterly filthy, of course, and he doesn’t appear to be too happy about you fouling up his shop.
+
+1. “Have you seen Bobby?”
+2. “Is there a back door here?”
+
+> 2
+“Is there a back door in your shop?” you ask.
+
+Germaise looks at you incredulously. “No, there isn’t, and no, you can’t use it. And why would I tell you anyway, eh? So you can tell your cretin friend Bobby so he can break in and steal all my beautiful pastries?” He shakes his head, dislodging fine drifts of flour from his hair. “Go away, Jack. I am very, very busy.”
+
+*** Couldn’t remove: the value GE18 *FIRED* was not present in the list {GE17 (unfired)} ***
+
+> 1
+“Have you seen Bobby this morning?” you ask, trying to keep the edge of fear out of your voice.
+
+“No,” Germaise sniffs. “And I’d like to keep it that way.”
+
+*** Couldn’t remove: the value GE17 *FIRED* was not present in the list {GE18 *FIRED*} ***
+
+> 
+
+_______________________________
+
+
+ROOFTOPS:
+needs some description so you know to go east
+(had to look at walkthrough)
+
+____________________________
+
+EAST COMMERCE STREET:
+
+Not sure how to open the Red Gate estate
+(had to look at walkthrough)

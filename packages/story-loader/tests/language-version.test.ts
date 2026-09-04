@@ -20,8 +20,15 @@ create the Hall
 
   A hall.
 
-create the player
-  starts in the Hall`;
+create Alex
+  a person
+  playable
+  starts in the Hall
+
+before the game starts
+  change the player to Alex
+end before
+`;
 
 const irOf = (src: string) => {
   const r = compile(src);

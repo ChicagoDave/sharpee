@@ -40,6 +40,10 @@ export const deadlyRoomDeathAction: Action = {
     const cause = (extras[DEADLY_ROOM_CAUSE_KEY] as string | undefined) ?? 'hazard';
     const messageId = extras[DEADLY_ROOM_MESSAGE_KEY] as string | undefined;
 
+    // Deliberately `player`, not `actor`: killPlayer is the player-death
+    // primitive (ADR-224) and the deadly-room redirect only fires for the
+    // player's own movement. An NPC entering a deadly room is an NPC-death
+    // question with no word on either side yet (ADR-328 D7's child ADR).
     const event = killPlayer(context.world, context.player, {
       cause,
       messageId,

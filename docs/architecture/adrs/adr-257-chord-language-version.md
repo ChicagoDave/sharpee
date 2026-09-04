@@ -50,6 +50,20 @@ changes:
 
 Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it.
 
+**Amendment (2026-08-29, session 9de27b — the public number moves at publish).** The rules
+above grade *what kind* of change the language has absorbed; they no longer fire once per
+landing. `CHORD_LANGUAGE_VERSION` is the **public** language version and moves **once per
+npm publish** of the `@sharpee/*` packages: everything landed since the last publish is one
+revision, graded by the rules above over the whole set (a breaking change anywhere in it makes
+the revision a major — unless the owner rules otherwise at the cut, as the exception list below
+records has happened). Between publishes the number stands; the per-landing history — what
+landed, and what the rules would have called it on its own — is kept in `chord/src/version.ts`
+and `chord-grammar-changes.md`, and the EBNF surface pin (D5) re-records its hash under the
+standing number. Six recorded exceptions in five weeks were all the same finding: a number that
+moved per landing counted internal work the public never saw. This amendment is what the
+fourth exception's note asked for. The `IR_FORMAT` wire stamp is unaffected — internal, not
+author-visible, and not a version the owner tracks (David, 2026-08-29).
+
 > **Recorded exception (2026-07-23, session 7f133e).** ADR-261 places `score`, `award`, and `ranks`
 > behind a `use scoring` gate, which stops previously-valid stories from compiling — a **major** by
 > this rule — and the owner ruled it ships as **Chord 1.1** regardless. That is a one-time override,
@@ -93,6 +107,25 @@ Compiler bug fixes, IR-shape refactors, and platform releases do **not** bump it
 > the release. Fifth departure from D2's letter — of the unpublished-consolidation kind,
 > not the majors-as-minors kind the paragraph above flags, so the amend-vs-override question it
 > poses remains open rather than triggered.
+
+> **Recorded exception (2026-08-29, session 9de27b — consolidation at 3.5.0).** Sharpee 5.1.1
+> shipped Chord 3.3.0; every landing since — 3.4.0 (ADR-326), the 4.0.0 major (ADR-327), 4.1.0
+> (ADR-329), and ADR-329 D10's `perform` goal step — is unpublished. The owner ruled they are
+> **one** public revision, **3.5.0**, shipping alongside Sharpee **5.2.0**: the consolidation
+> species of the 2.0.0 and 3.0.0 rulings, and — because the ADR-327 major folds into a minor —
+> the majors-as-minors kind as well. Sixth departure from D2's letter. The owner's direction with
+> it: *the version bumps slow down* — the public number moves with a publish, not with each
+> landing; the per-landing history stays in `chord/src/version.ts`. That is the amendment the
+> paragraph above asked about — and D2 is amended to say it (the **Amendment** paragraph at the
+> head of this section, same day, on the owner's "yes - make the edit").
+
+> **Recorded bump (2026-09-03, session 0135ed — 3.6.0 alongside Sharpee 5.3.0).** 3.5.0 / 5.2.0
+> were never published (npm carries 5.1.1 / Chord 3.3.0), so this is the ordinary bump-at-the-cut
+> D2 as amended describes, not a seventh departure: the owner asked for the next minor, and the
+> number carries the 3.5.0 set plus the landings folded into it since — ADR-330 chapters,
+> `, one-way` exits (GH #327), `proper` on any create block (GH #342), the publish-readiness fixes
+> (session effb6f) — all additive over 3.5.0. The EBNF pin hash is unchanged by the bump. The
+> public delta at publish is Chord 3.3.0 → 3.6.0.
 
 ### D3 — "Breaking change" quantified: two independent axes; the loader gates only on the wire
 

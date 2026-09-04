@@ -65,8 +65,6 @@ describe('quittingAction', () => {
       expect(quittingAction.requiredMessages).toContain('quit_confirm_query');
       expect(quittingAction.requiredMessages).toContain('quit_save_query');
       expect(quittingAction.requiredMessages).toContain('quit_unsaved_query');
-      expect(quittingAction.requiredMessages).toContain('quit_requested');
-      expect(quittingAction.requiredMessages).toContain('game_ending');
     });
 
     test('should belong to meta group', () => {

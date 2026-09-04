@@ -1,0 +1,182 @@
+## ===========================================================================
+## TEISHA'S WARES — the silks in the tent, and the buy verb
+##
+## Book 2 Part 17 Chapter 2 (`story.ni:3023-3057`): the collective display of
+## silk garments, the five kinds a browser can pick out — gowns, capes,
+## cloaks, shawls, robes — and the rules the source hangs on them: stealing
+## refused with the friendship line, buying refused for want of money. The
+## buy verb itself is the source's Part 27 (`story.ni:688-693`): a global
+## action whose every other answer is "Nothing is on sale."
+##
+## THE TRADE IS GIVING'S ALONE — RULED (David, 2026-08-31: "'give necklace
+## to teisha' should still be the action"). The source's buy-with-necklace
+## redirect (`story.ni:3035`, `try trading the necklace with Teisha`) is
+## NOT carried: buying the silks always answers the no-money line, and the
+## TE20 trade runs only through giving or showing the necklace to Teisha
+## (`npc-teisha.chord`, `trade-for-the-necklace`). The ruling supersedes
+## the earlier flag-drain build that ran the trade from `buy`.
+##
+## READINGS:
+##   1. The cloaks' `[first time]` tail — "You realize suddenly that this is
+##      exactly what you need: the perfect disguise!" (`story.ni:3050`) — is
+##      carried verbatim ON THE CLOAKS for now. Its placement (the remake's
+##      disguise is the dress) and its calm-walk timing belong to the full
+##      cloak-era text sweep David ruled into a GitHub issue (2026-08-31).
+##   2. The source's shared silkware vocabulary ("silk", "silks", "garment",
+##      "clothes", "fabric"…) named all five kinds at once, with a clarify
+##      rule quietly picking the cloaks. Chord has no clarify rule, so the
+##      shared words live on the silk garments collective instead: `x silks`
+##      answers with the display, never a which-do-you-mean prompt among
+##      five. Each kind keeps only its own words.
+##
+## NOT CARRIED, with reasons:
+##   * The buy-with-necklace redirect (`story.ni:3035`) — David's ruling
+##     above.
+##   * `trade <silks> for <necklace>` and `buy <something> with <something>`
+##     (`story.ni:818, 3038`) — a story grammar line carries one slot; the
+##     trade rides giving or showing the necklace.
+##   * The "does the player mean buying something when the player has the
+##     noun: very unlikely" nudge (`story.ni:693`) — no disambiguation
+##     preferences in Chord.
+##   * The clarifying-the-parser's-choice rule (`story.ni:3052`) — see
+##     reading 2.
+##
+## STRUCTURAL CHOICES David may rename at will: the cloaks carry no singular
+## `cloak` alias — that exact word is the old gray cloak's, and the tree's
+## pins on the slides and the outfit change name the gray cloak by it (a
+## `states:` pin takes one word; the bonnets made the same choice for the
+## fashionable hat). A typed `cloak` still reaches the cloaks through the
+## parser's own singularising, prompting against the carried gray cloak —
+## the same collision the 2009 Understand lines had.
+##
+## "silk" and "silks" also name the tent itself (its own aka), so `x silk`
+## can prompt between the tent and the garments — the same ambiguity the
+## 2009 Understand lines created, answered there by the clarify rule and
+## here by the parser's question.
+##
+## Imported from `grubbers-market.chord` after the tent room stands.
+## Every finished line is Gentry's.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE BUY VERB (`story.ni:688-693`)
+## ---------------------------------------------------------------------------
+
+define action buying
+  grammar
+    buy the target
+  otherwise refuse nothing-on-sale
+
+define phrase nothing-on-sale
+  Nothing is on sale.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SILKS' SHARED RULES
+##
+## Taking is the theft here — the market's steal verb is the take (the
+## `wares.chord` ruling) — and Teisha's refusal is the friendship line, not
+## a stallkeeper's bark. Buying always wants money (the trade is giving's
+## alone — the ruling in the header), so the refusal names no entity and
+## holds in every story state.
+## ---------------------------------------------------------------------------
+
+define trait silk-ware
+  on the player taking
+    refuse sooner-go-hungry
+  end on
+
+  on the player buying
+    refuse silks-no-money
+  end on
+end trait
+
+define phrase sooner-go-hungry
+  You'd sooner go hungry than steal from Teisha. She's your friend.
+end phrase
+
+define phrase silks-no-money
+  You'd love to, but you haven't any money.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE DISPLAY (`story.ni:3025-3027`)
+## ---------------------------------------------------------------------------
+
+create the silk garments
+  aka display, displays, fare, wares, merchandise, goods, teishas wares, beautiful silks, silks, garment, clothes, fabric, fabrics, rippling, shimmering
+  scenery, plural
+  silk-ware
+  starts in Inside the Silk Tent
+
+  Gowns, robes, capes, cloaks, and shawls — the fabric rippling with the
+  slightest movement of air, shimmering with that soft, liquid glow that only
+  silk has. You sigh. Dressing up like a boy is definitely *fun*, but looking
+  at Teisha's wares always makes you yearn for something a little bit more...
+  elegant.
+
+## ---------------------------------------------------------------------------
+## THE FIVE KINDS (`story.ni:3046-3057`)
+## ---------------------------------------------------------------------------
+
+create the gowns
+  aka gown, simple, design, designs, elegant
+  scenery, plural
+  silk-ware
+  starts in Inside the Silk Tent
+
+  The gowns are simple designs; not like the over-decorated things all the
+  rich women wear to high-fashion parties. Just elegant and beautiful.
+
+create the capes
+  aka cape, short, waist, length, decorative, inner, lining, linings, outer, color, colors, colored, colour, colours, coloured
+  scenery, plural
+  silk-ware
+  starts in Inside the Silk Tent
+
+  The capes are short, waist-length, more for decoration than to actually
+  keep you warm. Most of them have different-colored inner linings that
+  complement the outer fabric.
+
+## The `[first time]` tail rides an after-examining phrase — the base text
+## is the description, the realization its own paragraph after it, the
+## nearest shape to the source's in-description alternation. See reading 1
+## in the header: carried verbatim, placement and timing David's call.
+
+create the cloaks
+  aka long, voluminous, hood, hoods
+  scenery, plural
+  silk-ware
+  starts in Inside the Silk Tent
+
+  The cloaks are long and voluminous. Most of them would reach down to your
+  ankles and wrap completely around your shoulders, and with the hood up
+  your face would be draped in shadow.
+
+  after the player examining
+    phrase cloaks-realization
+  end after
+
+define phrase cloaks-realization, first-time
+  You realize suddenly that this is exactly what you need: the perfect
+  disguise!
+or
+  The perfect disguise, if only you could afford one.
+end phrase
+
+create the shawls
+  aka shawl, wrap, wraps, bright, brightly, color, colors, colored, colour, colours, coloured
+  scenery, plural
+  silk-ware
+  starts in Inside the Silk Tent
+
+  The shawls are just simple wraps of brightly colored silk, to cover your
+  arms and shoulders.
+
+create the robes
+  aka robe, sleeve, sleeves, long, sleeved, tie, ties
+  scenery, plural
+  silk-ware
+  starts in Inside the Silk Tent
+
+  The robes are long-sleeved, with ties in the front.

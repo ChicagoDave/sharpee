@@ -3,7 +3,11 @@
  *
  * Uses four-phase pattern:
  * 1. validate: Check object can be taken (not scenery, not self, etc.)
- * 2. execute: Transfer the item to actor's inventory
+ * 2. execute: Transfer the item to the actor's inventory
+ *
+ * Pilot for ADR-328 D2: every "who is taking" read is `context.actor`, so the
+ * same four phases run for the player and for a non-player actor invoked
+ * through `CommandExecutor.executeAsActor`.
  * 3. report: Generate success events with item and container snapshots
  * 4. blocked: Generate error events when validation fails
  *
@@ -77,7 +81,7 @@ export const takingLifecycle: ActionLifecycleDescriptor = {
  * the lifecycle engine wraps this with pre/postValidate hooks).
  */
 function validateSingleEntity(context: ActionContext, noun: IFEntity): ValidationResult {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Check scope - must be able to reach the item
   const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
@@ -170,7 +174,7 @@ function executeSingleEntity(
   noun: IFEntity,
   scratch: TakingItemScratch
 ): void {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Capture context BEFORE any mutations
   const previousLocation = context.world.getLocation(noun.id);
@@ -196,9 +200,12 @@ function executeSingleEntity(
   // Perform the actual move
   context.world.moveEntity(noun.id, actor.id);
 
-  // Score points for taking items with points value (ADR-129)
+  // Score points for taking items with points value (ADR-129). The score is
+  // the protagonist's: a non-player actor taking a pointed item (the thief
+  // robbing a room through this same action, ADR-328 D5) awards nothing.
+  // `context.player` survives here on purpose — this asks who holds the role.
   const identity = noun.getTrait(IdentityTrait);
-  if (identity?.points) {
+  if (identity?.points && actor.id === context.player.id) {
     context.world.awardScore(
       noun.id,
       identity.points,
@@ -220,7 +227,7 @@ function reportSingleSuccess(
   events: ISemanticEvent[],
   isMultiObject: boolean = false
 ): void {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Check if we implicitly removed a worn item
   if (scratch.implicitlyRemoved) {
@@ -326,20 +333,27 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     'nothing_to_take'
   ],
 
+  // GH #313: the target resolves at VISIBLE so a visible-but-unreachable
+  // item (another actor's inventory without OpenInventoryTrait, a closed
+  // glass case) reaches validate — an authored refusal fires there through
+  // preValidate, and absent one, this action's own not-reachable refusal
+  // speaks (requireScope REACHABLE in validateSingleEntity). preferredScope
+  // keeps disambiguation choosing the reachable candidate.
   metadata: {
     requiresDirectObject: true,
     requiresIndirectObject: false,
-    directObjectScope: ScopeLevel.REACHABLE
+    directObjectScope: ScopeLevel.VISIBLE,
+    preferredScope: ScopeLevel.REACHABLE
   },
 
   validate(context: ActionContext): ValidationResult {
     // Check for multi-object command — full per-item lifecycle (ADR-228 D4)
     if (isMultiObjectCommand(context)) {
-      const playerId = context.player.id;
+      const actorId = context.actor.id;
       const items = expandMultiObject(context, {
         scope: 'reachable',
-        // Filter out items already carried by the player
-        filter: (entity, world) => world.getLocation(entity.id) !== playerId
+        // Filter out items already carried by the actor
+        filter: (entity, world) => world.getLocation(entity.id) !== actorId
       }).map(i => i.entity);
 
       if (items.length === 0) {

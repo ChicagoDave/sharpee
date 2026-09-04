@@ -2,6 +2,11 @@
 
 ## Status: ACCEPTED (2026-08-01, session 06425d) and IMPLEMENTED (2026-08-01, commit `118cd95a` — the D12 arc completed as sequenced: handler-access discussion → ADR-293 Phase B → this rebuild). Drafted, feature-swept, interviewed (six questions resolved), and `adr-review`ed the same day (10/15 → 15/15 after three folds: Acceptance section, `.golden` format block, status wording); accepted by David on the folded result. Status-line updated 2026-08-02 (session 1d3b6f, ADR-293 Phase D plan-review fixup) — the previous wording still described implementation as not yet started.
 
+> **Amended 2026-08-20** (session c5bc96): **D21** — transcript commands never use
+> pronouns, with a required exception. **D22** — D20's dedup mechanism cannot work as
+> specified, and D20 is superseded by `docs/proposals/state-space-analysis.md`.
+> See Amendment 1.
+
 > **D15 superseded in part** by [ADR-300 D11](adr-300-addressable-channels-and-canonical-transcript.md) (2026-08-04): golden recordings still capture declared channels exactly as D15 says, but recordings are no longer the only consumer — the assertion tier reads channels too, via `[CHANNEL: <id>, contains "…"]`.
 
 > **D1 scoped** by [ADR-306 D3](adr-306-testing-play-surface-revamp.md) (2026-08-09): "golden
@@ -181,6 +186,48 @@ The explorer searches the story's state space: from a start state (fresh world, 
 What it reports, each finding replayable as a command path plus declared forces: crashes and unhandled error events; softlock candidates (states from which a goal predicate — "trophy case complete", "endgame reachable" — is unreachable within the remaining budget); unreachable content (cross-checked against D13's coverage families); invariant violations (story- or platform-declared, e.g. darkness without a light source producing non-grue output).
 
 **The soundness contract is explicit and honest**: findings are real (a reported crash reproduces by construction); absence is not proof (exhaustion within budget ≠ exhaustion of the space). The explorer never claims "no softlocks exist" — it claims "none found within N states / depth D / T minutes", and the budget is part of the report. Lineage: this is ADR-292's bounded outcome search and `@sharpee/skein` reborn at the right altitude — a batch tool over the substrate (CLI first, long-running; IDE surfaces findings), not an interface baked into the seed authority. Dependencies: forcing (Phase C) for the randomness branching; without it the explorer still runs with sampled draws at pinned seeds, weaker but useful.
+
+---
+
+## Amendment 1 (2026-08-20, session c5bc96)
+
+Two additions, from a session that started as an ADR-303 review and found that
+D20 is the live home for the feature ADR-303 describes. D20 is unbuilt; nothing
+below disturbs running code.
+
+### D21. A transcript command never uses a pronoun
+
+`it`, `them`, `him`, `her` — a command carrying one binds its meaning to whatever
+the previous turn happened to mention, so inserting a turn above it silently
+changes what the test tests. Same fragility ADR-302 D1 rejected interior
+addressing for. Every pronoun command has an explicit form; tests state their
+nouns.
+
+**Required exception: the test whose subject is pronoun resolution.**
+`stories/dungeo/tests/transcripts/implicit-inference.transcript` asserts that
+pronouns always refer to the pronoun context even when the entity fails the
+action's requirements (ADR-104 inference deliberately disabled). That test is
+required, and it cannot be written without pronouns.
+
+Measured before writing: Fernhill's tests use no pronoun commands; Dungeo's
+corpus has two, both in that file. This codifies existing practice — no cleanup
+follows. ADR-307's tree document should carry the same rule; not edited here.
+
+### D22. D20 is superseded — see the state-space analysis proposal
+
+D20's deduplication cannot work as specified: it hashes the save-format-3.0.0 snapshot,
+*"world + turn + stream states"*, and the turn counter and per-point stream states differ
+for irrelevant reasons, so two arrivals at the same world never hash equal and the walk
+explodes rather than converging.
+
+**The live analysis is `docs/proposals/state-space-analysis.md`**, which supersedes D20
+entire — carrying forward its soundness contract, validate-only pruning and enumerated
+randomness, and replacing the rest. That document is a proposal, not a decision; no
+platform work is authorized by it or by this note.
+
+*Nothing here shipped — no explorer package exists — so this is a design supersession, not
+a retirement of running code.*
+
 
 ## Acceptance
 

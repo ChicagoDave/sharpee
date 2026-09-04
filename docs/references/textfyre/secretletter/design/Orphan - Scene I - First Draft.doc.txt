@@ -1,0 +1,140 @@
+Prologue
+Mid-morning always sees the Grubber's Market at its most crowded. Servants from the aristocratic districts and villagers from outside Toresal crush themselves into the maze of stalls and stretched canvas, hoping to beat the noontime heat and get the farmers' produce while it's still fresh. The press of bodies, the din of haggling and bargains struck – it all makes getting around unnoticed easier, although not necessarily more pleasant. No fewer than half a dozen stall-gazing bumpkins have trod on your feet already this morning. You've kept your mouth shut, though. People remember an urchin who gives lip.
+"See anything you like?" asks the woman at the silk stall, with a teasing smile. You smile back. You couldn't afford the cheapest of her cloaks if you nicked ten purses in a morning, as Teisha well knows.
+"Oh, these are much too plain," you scoff, even as you gaze wistfully at the bright colors, the beautiful embroidery. Time for a bit of breakfast, you decide, and anyway if you linger too long, people will wonder what a boy is doing shopping for women's cloaks. "Perhaps I'll come back this afternoon, when you've put out your better wares."
+Teisha laughs. "Don't be a stranger, Jack."
+You make your way through the market, nicking an apple from the fruit stall while its owner haggles with some fat outlander over a bushel of kello fruit, until you reach a quiet alley where you can catch a breath from the crowds and enjoy your breakfast in peace. All in all, just another ordinary day at Grubber's Market.
+But the first bite is barely in your mouth before you hear rough voices at the alley's entrance, and in a moment your life is turned upside-down.
+The Player
+Description: Most people know you as "Jack," a fourteen-year-old street urchin of uncertain means. You are slight of build for a boy your age, though your baggy clothes hide much of your physique. Your hair is ragged and short, a victim of many self-inflicted trimmings. Though usually in need of a good scrubbing, you are an attractive youth, with a softness to your face that makes you seem younger than your years.
+Fortunately, it also leads people to underestimate your wiles and resourcefulness, which has caused more than one stall keeper to call you by your second most common sobriquet, "That Damn Thief!"
+Only a few people know you by your real name, and you are pleased to keep it that way.
+Apple 
+Description: Round, taut, green at the bottom shading up to red near the stem.
+Eating or tasting while the soldiers are in the marketplace: No time for breakfast right now!
+Eating or tasting after the first scene: Crisp and delicious!
+Cloak
+Description: Your cloak is made of un-dyed wool, stained and patched in several places. You wear it in the masculine style, buckled to the side and thrown back over your right shoulder.
+Satchel
+Description: Your trusty cloth satchel: big enough to hold the things you nick, small enough to not hamper your getaway.
+Alley 
+Description: This narrow alley is tucked away between a wooden storehouse on one side and the canvas wall of a stall keeper's tent on the other. It serves primarily as somewhere out-of-the-way for stallkeepers to sweep their garbage into, so it's not exactly the most pleasant-smelling place in all of Miradan, but at least no one is likely to bother you here. You can leave to the southwest.
+At night: The shadows in the alley are nearly impenetrable at night. You can barely see your way in the gloom.
+Crates
+Initial appearance: Several crates are stacked up against the back wall of the alley.
+Description: Just ordinary wooden crates, used by merchants throughout Miradan to store and ship goods. There are scores more just like these to be found all over the market.
+Taking or pushing: Oof! What's in these things, gold bricks? At any rate, the crates are far too heavy for you to move.
+Opening or searching : The crates are all nailed shut.
+Climbing on: You nimbly hop up on top of the crates; from there, it's only a short scramble to the roof of the market.
+Northwest Junction
+Description: This is the northwest corner of Grubber's Market. You can skirt around the edge of the market to the northeast or south, or head into the center of the market to the southeast. A wide, paved road leads north, towards Lord's Keep. You can also duck back into the alley to the northwest.
+Fruit Stall
+Description: Bins heaped high with bright-colored fruit lend a pleasant fragrance to this end of the market (though by afternoon it will have become a cloying reek that attracts more flies than customers). Aisles between the stalls lead southwest and southeast.
+Bins/Fruit (collectively)
+Description: Mostly domestic, apples and pears from the city orchards, or brambleberries from the northern counties. A few of the baskets contain more exotic fare: oranges, limes, and kello fruit – even a bushel of bananas from the Kozar Delta.
+Kello Fruit: Normally you'd kill for a slice of kello, but these look a bit too green. Not quite in season.
+Bananas: You rarely see bananas this far north. These look just about perfect – plump, bright yellow with just a sprinkling of brown freckles.
+Food Stall
+Description: Baskets bristling with loaves of bread; yellow pyramids of cheese; spiced jerky hanging in bundles overhead – a typical grocer's stall. You can continue along the market's outer ring to the northwest or south.
+Eastern Junction
+Description: You're near the eastern edge of Grubber's Market. You can travel along the outer ring of stalls to the north or south, or head towards the market's central hub to the west.
+Hat Stall
+Description: Hats of all styles and sizes hang from scores of wooden pegs, surrounding the stall itself in forest of varied headgear. More stalls lie to the north and southwest.
+Hats (collectively)
+Description: If you can wear it on your head, it's sold here. Big, flop-brimmed traveling hats; small, leather workman's caps; wide sappans of woven straw from the Kozar delta; fancy, feathered hats for courtly balls; and even a few ordinary bonnets.
+Exotic Gems Stall
+Description: The shelves of this stall are lined with black velvet cloth, across which are spread dozens of jewels in exotic colors and cuts, all glittering in the dusty sunlight..Other stalls lie to the west and northeast.
+	Gems (collectively)
+Description: Some of them are loose stones; others are set in finely wrought rings and necklaces. Most of them were probably illegally smuggled from over the western mountains, which is why they're cheap enough to be affordable by anyone in Grubber's Market. Still, they're far, far out of your price range.
+Monkey
+First time player enters Exotic Gems: Suddenly you hear a commotion from the back of the stall: the crash of a display case hitting the ground; shouts and curses from the stallkeeper; and a horrific, gibbering shriek. 
+"Come back here, you flea-bitten thief!" yells the stallkeeper, and for a panicked moment you think he means you. Then you see something small and gray dart up to the roof of the stall… it's just a forest monkey, probably someone's pet running loose. And it's clutching one of the stallkeeper's necklaces in its tiny black fist.
+The monkey turns and screeches back at the stallkeeper, dodges a clumsily thrown dirt clod, and scampers up the nearby support pole.
+Initial appearance (up on the pole): The monkey is here, bouncing up and down on the wire a few feet away.
+Description: It has silvery fur and black mask-like markings on its startlingly human face. It seems to regard you with a mixture of curiosity and amusement – as though you were some strange little animal whose antics it found entertaining. [if it has the necklace] It grips the necklace protectively, tight against its tiny chest.
+If you are holding the banana: The monkey sniffs the air excitedly as you come closer, and emits a hopeful chirp.
+Taking the necklace from the monkey: The monkey screeches at you and backs away.
+Trading the banana for the necklace/giving banana to the monkey: Chattering with glee, the monkey lunges for the banana. In its haste, the necklace slips from its grasp – and you barely manage to snatch it up before it falls to the market below.
+The monkey, meanwhile, tears the banana peel open and scarfs down the soft white fruit in a matter of moments, after which it saunters off down the wire, hooting contentedly.
+Necklace
+Description: It's a beautiful gem, clear blue with a deep indigo star in its center, set in a silver-wrought starburst on a silver chain. You could easily trade it for any piece of merchandise in the market. Or you could… you know… wear it.
+Weapons Stall
+Description: The weaponsmith's wares hang from wooden racks along the sides of this stall, a grim picket fence of down-hanging blades. You can find less intimidating stalls to the east and northwest.
+Weapons/Swords/Knives (collectively)
+Description: Swords and knives, mostly. Nothing fancy; just sharp, practical, and deadly.
+Leather Goods Stall
+Description: You pause here for a few deep breaths – you've always enjoyed the smell around the leather merchant's stall. More stalls lie to the north and southeast.
+Smelling (anything): The smell of leather reminds always makes you think of long traveling in dangerous lands. It's the smell of adventure.
+Leather Goods (collectively)
+Description: This merchant deals in riding equipment – reins, harnesses, stirrups, and the like. A full riding saddle sits on proud display near the back. There are a few items of clothing for sale as well, mostly various styles of scabbards and belts.
+Herb Stall
+Description: The herb stall is usually a quieter place. Customers like to browse, poke their noses into the various jars and pouches, and judge the potency of a potential purchase at their leisure. You've never understood the fascination, yourself. More interesting stalls are to the south, and the market opens out a little to the north.
+Herbs (collectively)
+Description: The shelves are lined with row upon row of little clay jars, all filled with leaves, seeds, roots, stems, and buds, all ground, crushed, pulped, shredded, or just left whole to dry up and shrivel. It smells interesting, at least. You suppose.
+Support Post
+Initial Appearance: Next to the herb stall stands a thick wooden post.
+Description: It's one of several posts that support the large canvas awnings stretched above the market square. You can see one of the main support wires running from the top of this post to the top of the high post rising up from the center of the market.
+Climbing the post: You could shimmy up there easily enough, but it would attract too much attention.
+Candle Maker Stall
+Description: The heat and fumes from the candle maker's tallow pots make this stall an unpleasant place to loiter. Still, people need candles, and customers seem to be buying them as fast as the stallkeeper can dip them. Other stalls are to the southeast and southwest.
+Candles (collectively)
+Description: The candles hang in pairs from long wooden dowels, connected to each other by their common wick. Most of them are tallow, fast-burning and cheap, but near the back there are boxes of premade wax candles in different colors.
+Tallow Pots
+Description: The candle merchant keeps a pair of small cauldrons at a constant boil, filled with bubbling, yellowing goop.
+Rope Stall
+Description: One thing you can say about the rope stall: you'll never spend a moment wondering what's for sale. Rope, and lots of it, thick and thin, knotted or loose, in heaps and in coils, stacked on the floor or hanging from pegs. More stalls are to the northeast and southeast, and the market opens out a bit to the northwest.
+Rope
+Description: Coarse braids of scratchy hemp, stiff and tough.
+Pottery Stall
+Description: The wares at the pottery stall are spread out on the ground or set on low benches, forcing browsers and passers-by to step carefully around them. There are more stalls to the northwest and southwest, or you can head out to the market's edge to the east.
+Pottery (collectively)
+Description: From tall, narrow, precariously balanced urns to round, gourd-like jars to shallow bowls, each is uniquely shaped, yet they all share a common, graceful curve. Most of them are made of fired clay from the Westlands, decorated with colorful glazes.
+Silk Tent
+Description: Teisha has done well enough for herself that her "stall" is actually a full-on tent. You can enter the tent to the north, or continue on to other stalls to the northeast or northwest.
+Inside the Silk Tent
+Description: The fabric walls lend a bit of privacy and quiet from the crowds outside (in addition to keeping dust off the merchandise). Beautiful silk garments hang from racks on either side. The main market lies to the south. A narrow gap in the back leads behind the tent.
+Garments (collectively)
+Description: Gowns, robes, capes, cloaks, shawls – their hems rippling with the slightest movement of air, shimmering with that soft, liquid glow that only silk has. You sigh. Dressing up like a boy is definitely fun, but looking at Teisha's wares always makes you yearn for something a little bit more… elegant.
+Teisha (in the Silk Tent)
+Initial Appearance: Teisha sits on a stool in back, smiling distractedly.
+Description: Teisha is a short, busty woman with a smile as warm as her tumbling red curls. She likes you, and she knows that you'd never nick from her stall, so she lets you hang around the stall and look through the merchandise. She also knows your big secret (guessed it the very first time she caught you loitering at the tent flap), which is a little bit scary and a little bit of a relief – it's nice to be able to let your guard down and talk to someone outside the Maiden's House.
+Idle Actions (at random): Teisha hums quietly to herself. / Teisha smiles at you wamly. / Teisha brushes a loose thread from the sleeve of one of her gowns. / Teisha toys with her measuring cord, spinning it idly.
+Entering the tent (first time): "Hello, Jack," says Teisha. "Change your mind about that cloak?" Then she gets a look at your face and frowns. "Something the matter, sweetie? You look spooked."
+Entering the tent (subsequent): Teisha looks up. "Hi Jack. Hanging in there?"
+Talk to Teisha about the mercenaries (first time): "Mercenaries searching the market?" Teisha peeks out through the front flap. "Brigid help us," she mutters, glancing back at you. Although you know she cares about you, you also know that Teisha is a smart, practical woman, and first and foremost she is worried about losing her customers. "All right," she sighs, letting the flap fall closed. "You don't need to tell me if they're after you. I don't want to know. There's no room for you to hide in here, but if you want to you can slip out that way—" she points to the narrow gap in the back wall of the tent— "and I'll pretend I never saw you."
+Talk to Teisha about the mercenaries (subsequent): She makes a face. "I don't like it, Jack, but there's nothing I can do. Just try to stay out of their way."
+Talk to Teisha about the monkey: Teisha rolls her eyes. "That pesky thing came in on with the fruit vendor's wagon yesterday and just made itself at home. Now it's all over the place, bothering everybody. Fortunately, it likes shiny things more than it likes women's clothes. Oh, and bananas. The little rodent loves bananas. Constantly drops the peels on the roof of my tent, too."
+Talk to Teisha about the necklace: "That monkey got one of Hathid's necklaces?" Teisha laughs. "Ha! Serves the old huckster right. You should try giving it a banana, see if it'll trade."
+Talk to Teisha about the cloak: "I can't just give you one, sweetie," Teisha says, sadly. "These silks are expensive, and I have to pay my suppliers and make a living for myself. If you have coin, or something worth trading, maybe I can cut you a deal. Otherwise…"
+Trade something (not the necklace) for cloak: Teisha shakes her head and hands the [whatever] back to you. "This just won't do," she says, not unkindly. 
+Trade necklace for cloak: Teisha's eyebrow shoots up when you show her the necklace, but she manages to hide her excitement with the coolness of a professional haggler. "Not top quality," she mutters, "but very nice…" She gives you a look. "Now, tell me the truth, Jack, you didn't just steal this from somewhere, did you?"
+You shake your head proudly. It's not exactly a lie.
+"All right." The necklace disappears into one of Teisha's pockets. "Let's see…" she starts searching through the clothes on the racks, looking for something in your size. "This should fit. I think it suits you, too." She holds out a girl's cloak, simple but elegant. "What do you think?"
+It's beautiful. Eagerly you nod your agreement.
+Teisha smiles. "Then it's yours."
+Wearing cloak in Teisha's presence (first time): Teisha leans over and adjusts the fit, plucking at the fabric where it hangs from your shoulders. "I was right," she says. "It brings out your eyes."
+Leaving by the back exit (first time): Teisha holds the back flap back as you duck through. "Be careful now…" she says, "…Jacqueline."
+Leaving by the back exit (subsequent): "Careful out there," calls Teisha as you duck through the back again.
+Silk Cloak
+Description: It comes down to your ankles, a simple drape of soft, dusky green with silver trim. You're wearing it in the feminine style, forward over both shoulders and clasped under your chin.
+Support Post (located at Fruit, Weapon, Gem, and Herb Stalls, and East Junction)
+Initial Appearance: Nearby stands a thick wooden post.
+Description: It's one of several posts that support the large canvas awnings stretched above the market square. You can see one of the main support wires running from the top of this post to the top of the high post rising up from the center of the market.
+Climbing the post: You could shimmy up there easily enough, but it would attract too much attention.
+Center Post (as seen from Rope, Silk, and Pottery Stalls)
+Initial Appearance: Rising up behind the stall is a tall wooden post.
+Description: The central post that holds up the system of canvas awnings stretched over the market square. It rises up from the midst of a cluster of stalls in the middle of the market, to a height of about twenty feet. Thick, taut support wires stretch from the top of the post to the four cardinal directions.
+Doing anything to the post when not right next to it: The stalls surrounding the center post are backed up tightly against it. You'll have to find away behind them to get to the post.
+Center Post (room)
+Description: This is an empty space formed by the backs of three stalls and Teisha's tent, meeting at the corners to form a cramped little square. It's barely big enough to stretch your arms out in. Right in the middle is the base of the huge central support post, which rises up a good twenty feet from here. You can duck back into Teisha's tent to the south.
+Center Post (the object itself)
+Description: It's huge, almost too big to put your arms around. Way up at the top, you can see wires stretching out in each of the cardinal directions.
+Climb Post: You're totally hidden back here, so there's no one to stop you from climbing. By the time you're high enough for people to see you, you're also high enough that no one will notice anyway; no one ever bothers to look up in the Grubber's Market. After a minute or so of grunting and sweating, you reach the top.
+Top of the Post
+Description: Perched atop the high central post, you can look out over the whole market square. To the north, Lord's Road heads out of the city towards Lord's Keep. Commerce Street and the rest of the city beckons to the east. In every other direction the city is surrounded by rolling meadows and farmlands.
+Attached to the top of the post are four thick, braided anchor cables, stretching away in the four cardinal directions. Their other ends are tied to four smaller support posts around the perimeter of the market, far below.
+Sliding down cables (with bare hands): The cable is too steep for you to climb down, but you could slide down one if you had something you could loop over it and hang onto.
+Sliding down cables (with rope): You loop the rope over the cable and push off from the support post. Almost immediately, you realize this isn't going to work: the rope is too thick, too stiff and hard to hold. Halfway down your grip fails, and you land with a crash in the middle of the [room where player ends up].
+Sliding down cables (with belt): You wrap one end of the belt around your hand and sling the supple leather over the anchor cable. Then, after giving it one more good yank to test your grip, you push off.
+The wind is exhilarating as you zip down the line to the ground below. Several people look up, including the mercenaries. Shouts ring out and fingers point. You hit the support post with your feet, let go of the belt, and drop to the ground next to the [room where player ends up], slightly breathless. You've only got a few moments while the guards' chins are still in the air – better make the most of them.
+

@@ -39,12 +39,17 @@
 
 import { type Phrase, type NounPhrase, type Slot } from '@sharpee/if-domain';
 
-/** Leading hint → the article it selects on a `NounPhrase`. */
+/**
+ * Leading hint → the article it selects on a `NounPhrase`. `bare` (GH #337)
+ * selects no article at all, for a determiner the template supplies itself
+ * ("another {bare item}", "that {bare item}").
+ */
 const ARTICLE_HINTS: Record<string, NounPhrase['articleType']> = {
   the: 'definite',
   a: 'indefinite',
   an: 'indefinite',
   some: 'some',
+  bare: 'none',
 };
 
 /**

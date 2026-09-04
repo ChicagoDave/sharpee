@@ -7,8 +7,10 @@ description: Deterministic scheduler beats as behavior-parity proof (AC-2
   while in the Petting Zoo. Authored against the TS story 2026-07-11, then
   frozen. Revised + extended in Phase C P5 (gate-delta audit Entries 2-4,
   David sign-off 2026-07-12): goats start hungry so bleats are pinned from
-  turn 3; feeding is repeatable after each bell; keeper departure is
-  witnessed-only (decision 10) with `, once` preserved off-stage.
+  turn 3; feeding is repeatable after each bell. Re-pinned 2026-08-28 (ADR-328
+  D3, Phase 2b): the keeper's `, once` departure fires the first after-hours
+  turn wherever the player is — tagged absent and hidden, never dropped — so
+  by turn 29 he has already left for the parking lot unseen.
 
 ---
 
@@ -117,12 +119,14 @@ description: Deterministic scheduler beats as behavior-parity proof (AC-2
 > feed goats
 [OK: contains "devour the corn and pellets"]
 
-# Turn 29: into the Main Path — the keeper is still here, and the armed
-# departure clause fires the first turn it is witnessed (`, once` was not
-# consumed off-stage)
+# Turn 29: into the Main Path — the keeper is already gone. His departure
+# clause fired on the first after-hours turn while we were in the Petting
+# Zoo (ADR-328 D3: `, once` consumes off-stage; the farewell was tagged
+# absent and hidden), and its `move` took him to the Staff Parking Lot then.
 > west
-[OK: contains "zookeeper"]
-[OK: contains "that's me done for the day"]
+[OK: contains "Main Path"]
+[OK: not contains "zookeeper"]
+[OK: not contains "that's me done for the day"]
 
 # Turn 30: he's gone — moved to the Staff Parking Lot
 > look

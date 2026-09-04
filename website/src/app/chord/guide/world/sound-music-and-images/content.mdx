@@ -1,0 +1,92 @@
+A story declares its media assets once, by name, and then plays or shows
+them from any statement body. The files live under the project's `assets/`
+directory and ship with the browser build; a client that cannot play a
+kind of media simply ignores the cue, and the `when client has …`
+condition lets the story say something else instead.
+
+## Declaring assets
+
+```chord
+define sound night-wind from "audio/night-wind.wav"
+define sound boiler-thump from "audio/boiler-thump.wav"
+define music dawn-theme from "audio/dawn-theme.wav"
+define image folly-photograph from "images/folly-photograph.png"
+```
+
+Three kinds: a **sound** is a one-shot cue, **music** is a track, an
+**image** is a picture. The path is relative to `assets/`. Every `play` or
+`show` names one of these declarations, and the compiler checks the name
+and the kind — a `play music` of a `define sound` is a diagnostic, and a
+misspelled asset carries a nearest-match suggestion.
+
+## Playing and showing
+
+```chord
+create the primer plunger
+  aka plunger
+  scenery
+  in the Boiler Shed
+
+  A stiff brass plunger on the boiler's flank.
+
+  after the player pushing
+    play sound boiler-thump when client has sound
+    phrase primer-thumps
+  end after
+```
+
+| Statement | Effect |
+| --- | --- |
+| `play sound <name>` | play the sound once |
+| `play music <name>` | start the track; add `looping` to repeat it |
+| `stop music` | stop the track |
+| `play ambient <name>` | loop a **sound** as a bed; `in <bed>` names a bed other than the default |
+| `stop ambient` | stop the default bed; `stop ambient in <bed>` stops a named one |
+| `show image <name>` | show the picture; `in <slot>` names where the page puts it |
+| `hide image` | take the picture down |
+| `transition <kind>` | a visual transition the client renders |
+| `clear` | clear the client's prose pane |
+
+Every one of these takes the ordinary `when <condition>` suffix, so a cue
+can wait on a state or a client capability:
+
+```chord
+create the Iron Gates
+  a room
+
+  Wrought-iron gates stand open on one hinge apiece.
+
+  after the player entering while the player has the deed
+    play music dawn-theme when client has music
+    win fernhill-saved
+  end after
+```
+
+`client has sound`, `client has music`, and `client has images` are true
+when the client running the story can play that kind of media. A cue
+without the guard is harmless on a client that cannot honour it — the
+guard is for the story that wants to *say* something different when the
+music cannot play.
+
+## Ambients follow the player
+
+An ambient is a looping bed the rooms of a region can share. Start it on
+arrival and stop it on leaving, and the wind follows the player across the
+grounds and stops at the door:
+
+```chord
+create the Grounds
+  a region
+  containing the Gravel Drive, the Fountain Court
+
+  after the player entering
+    play ambient night-wind when client has sound
+  end after
+
+  after the player leaving
+    stop ambient when client has sound
+  end after
+```
+
+The [Fernhill walkthrough](/learn/fernhill/browser) shows all three kinds
+wired into a complete story and played in the browser build.

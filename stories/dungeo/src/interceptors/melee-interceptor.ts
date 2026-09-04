@@ -1,18 +1,28 @@
 /**
- * Melee Combat Interceptor (Phase 3)
+ * Melee Combat Interceptor (Phase 3; ADR-328 D5)
  *
  * Replaces the generic CombatService with the canonical MDL melee engine
- * for all Dungeo villains (thief, troll, cyclops).
+ * for all Dungeo villains (thief, troll, cyclops) — in BOTH directions.
  *
- * Registered on CombatantTrait for if.action.attacking.
+ * Registered on CombatantTrait for if.action.attacking. The hero and every
+ * villain carry the trait, so the same interceptor resolves the hero's blow
+ * at a villain and a villain's blow at the hero: a villain attacks by
+ * running the real attacking action through the engine's execution entry
+ * (ADR-328 D5), and the branch is chosen by who swung.
  *
- * Flow:
- * 1. preValidate: Check if hero is staggered (block attack if so)
- * 2. postExecute: Run melee engine instead of CombatService
- *    - Resolve blow using canonical tables
- *    - Apply wound/stagger/weapon-loss side effects
- *    - Populate sharedData with melee results
- * 3. postReport: Emit melee-specific combat message
+ * Flow (hero → villain):
+ * 1. preValidate: bare hands and a staggered hero block the attack
+ * 2. postExecute: resolve the hero's blow on the canonical tables; apply
+ *    wound/stagger/weapon-loss/death side effects to the villain
+ * 3. postReport: the melee blow narration, plus villain death messages
+ *
+ * Flow (villain → hero):
+ * 1. preValidate: a staggered villain recovers instead of attacking
+ * 2. postExecute: resolve the villain's blow; apply wounds/stagger/weapon
+ *    loss to the hero; a fatal blow runs through `killPlayer`
+ * 3. postReport: the canonical villain attack narration, plus the death event
+ *
+ * Source: docs/references/dungeon-81/original_source/melee.137
  */
 
 import {
@@ -39,10 +49,15 @@ import { type RandomService } from '@sharpee/core';
 import {
   HERO_BLOW_POINT,
   HERO_MESSAGE_VARIANT_POINT,
+  VILLAIN_BLOW_POINT,
+  VS_UNCONSCIOUS_BLOW_POINT,
+  VILLAIN_MESSAGE_VARIANT_POINT,
   MeleeBlowClass,
   meleeOutcomeClass,
   meleeOutcomeFromClass,
 } from '../combat/melee-points';
+import { findWieldedWeapon, killPlayer, PLAYER_DIED_EVENT } from '@sharpee/stdlib';
+import { getGDTFlags } from '../actions/gdt/gdt-context';
 
 import {
   fightStrength,
@@ -285,6 +300,129 @@ export function applyVillainDeathSideEffects(villain: IFEntity, world: WorldMode
   return (sharedData.deathMessages as string[] | undefined) ?? [];
 }
 
+/**
+ * The villain's blow at the hero (NPC→PC), the canonical MDL melee for a
+ * troll/thief/cyclops attack — reached when an NPC runs the real attacking
+ * action through the engine's execution entry (ADR-328 D5). Applies the
+ * blow's side effects to the hero (wounds, stagger, weapon loss, death) and
+ * stores the narration for postReport.
+ *
+ * A fatal blow runs through `killPlayer` HERE, the canonical sink, and the
+ * event is emitted by postReport: the attacking action's own death routing
+ * would add `combat.player_died` ("You have been slain!") on top of the blow
+ * message, which already carries the death. GDT ND (immortality) suppresses
+ * the death entirely; the blow narration stands.
+ */
+function villainBlow(
+  villain: IFEntity,
+  hero: IFEntity,
+  world: WorldModel,
+  sharedData: InterceptorSharedData,
+  random: RandomService
+): void {
+  const villainKey = getVillainKey(villain);
+  const currentOstrength = getVillainOstrength(villain);
+  const isThiefEngrossed = villain.attributes.thiefEngrossed === true;
+  // Villain doesn't benefit from best-weapon penalty when attacking
+  const villainStr = villainStrength(currentOstrength, isThiefEngrossed);
+
+  const score = getPlayerScore(world);
+  const woundAdjust = (hero.attributes[MELEE_STATE.WOUND_ADJUST] as number) ?? 0;
+  const heroStr = Math.max(1, fightStrength(score, woundAdjust));
+
+  // ADR-293 D10: a conscious hero draws on the villain blow point (KILLED
+  // here is player death — its own coverage row); an unconscious hero draws
+  // on vsUnconscious, whose outcomes remap to HESITATE/SITTING_DUCK.
+  const heroUnconscious = hero.attributes[MELEE_STATE.STAGGERED] === true;
+  const blowPoint = heroUnconscious ? VS_UNCONSCIOUS_BLOW_POINT : VILLAIN_BLOW_POINT;
+  const { value: blowResult } = random.resolve(
+    blowPoint,
+    (draw) => {
+      const sampled = resolveBlow(villainStr, heroStr, false, heroUnconscious, draw);
+      return { cls: meleeOutcomeClass(sampled.outcome), value: sampled };
+    },
+    // Forced path (ADR-293 D8, Phase C): zero draws, same consequence math
+    // as a drawn blow — the switch below applies wounds/death identically.
+    (forced) => materializeBlow(meleeOutcomeFromClass(forced), heroStr, false)
+  );
+
+  const heroWeapon = findWieldedWeapon(hero, world);
+  const heroWeaponName = heroWeapon?.name ?? 'weapon';
+  const baseFight = fightStrength(score, 0, false);
+  let heroKilled = false;
+
+  switch (blowResult.outcome) {
+    case MeleeOutcome.MISSED:
+    case MeleeOutcome.HESITATE:
+      break;
+
+    case MeleeOutcome.STAGGER:
+      // Hero is staggered — misses next attack
+      hero.attributes[MELEE_STATE.STAGGERED] = true;
+      break;
+
+    case MeleeOutcome.LIGHT_WOUND:
+    case MeleeOutcome.SERIOUS_WOUND: {
+      const newWound = applyVillainBlowToHero(woundAdjust, blowResult, baseFight);
+      hero.attributes[MELEE_STATE.WOUND_ADJUST] = newWound;
+      heroKilled = isHeroDeadFromWounds(score, newWound);
+      break;
+    }
+
+    case MeleeOutcome.LOSE_WEAPON:
+      // Drop hero's weapon to the room
+      if (heroWeapon) {
+        const heroRoom = world.getLocation(hero.id);
+        if (heroRoom) world.moveEntity(heroWeapon.id, heroRoom);
+      }
+      break;
+
+    case MeleeOutcome.UNCONSCIOUS:
+      // MDL melee.137:246-248 — UNCONSCIOUS only negates DEF when the hero
+      // is the attacker. When the villain attacks, DEF is NOT modified, so
+      // the blow is dramatic but mechanically a no-op.
+      break;
+
+    case MeleeOutcome.KILLED:
+    case MeleeOutcome.SITTING_DUCK:
+      heroKilled = true;
+      break;
+  }
+
+  // GDT ND (immortality): a debug-immortal player shrugs the blow off — no
+  // canonical death event. The blow narration is emitted regardless.
+  if (heroKilled && !getGDTFlags(world).immortal) {
+    // Canonical terminal death (ADR-224), cause 'combat'. The blow message
+    // carries the death narration, so no messageId here.
+    const deathEvent = killPlayer(world, hero, { cause: 'combat', terminal: true });
+    if (deathEvent) sharedData.heroDeathEvent = deathEvent;
+  }
+
+  const message = getVillainAttackMessage(
+    villainKey,
+    blowResult.outcome,
+    heroWeaponName,
+    (arr) => random.pick(VILLAIN_MESSAGE_VARIANT_POINT, arr)
+  ) ?? `The ${villainKey} attacks!`;
+
+  // Death is handled above, so the attacking action's own death routing
+  // stays off; the reported type is what the blow did to the hero.
+  sharedData.attackResult = {
+    success: true,
+    type: blowResult.outcome === MeleeOutcome.MISSED || blowResult.outcome === MeleeOutcome.HESITATE ? 'missed' : 'hit',
+    damage: 0,
+    remainingHitPoints: 0,
+    targetDestroyed: false,
+    targetKilled: false,
+    targetKnockedOut: false,
+  };
+  sharedData.customMessage = MeleeMessages.VILLAIN_ATTACK;
+  sharedData.usedCombatService = false;
+  sharedData.meleeMessage = message;
+  sharedData.meleeMessageId = MeleeMessages.VILLAIN_ATTACK;
+  sharedData.meleeOutcome = blowResult.outcome;
+}
+
 // ============= The Interceptor =============
 
 export const MeleeInterceptor: ActionInterceptor = {
@@ -300,6 +438,20 @@ export const MeleeInterceptor: ActionInterceptor = {
   ): InterceptorResult | null {
     const player = world.getEntity(actorId);
     if (!player) return null;
+
+    // Villain → hero: a staggered villain spends the turn recovering.
+    if (actorId !== world.getPlayer()?.id) {
+      if (player.attributes[MELEE_STATE.VILLAIN_STAGGERED]) {
+        player.attributes[MELEE_STATE.VILLAIN_STAGGERED] = false;
+        return { valid: false, error: MeleeMessages.VILLAIN_RECOVERS };
+      }
+      // A villain with no strength left (dead or unconscious) cannot swing;
+      // the actor phase never drives one, so this is a backstop.
+      if (getVillainOstrength(player) <= 0) {
+        return { valid: false, error: MeleeMessages.VILLAIN_NO_STRENGTH };
+      }
+      return null;
+    }
 
     // MDL act1.mud KILLER: attacking a villain with no weapon is suicidal —
     // no combat round happens (checked before stagger, which BLOW never
@@ -348,6 +500,11 @@ export const MeleeInterceptor: ActionInterceptor = {
       throw new Error(
         'MeleeInterceptor: no RandomService was passed to postExecute — combat draws are gated (ADR-293 D6)'
       );
+    }
+    // Villain → hero: `villain` here is the TARGET (the hero); the actor is the villain.
+    if (actorId !== world.getPlayer()?.id) {
+      villainBlow(player, villain, world, sharedData, random);
+      return;
     }
     const weaponName = sharedData.weaponName as string | undefined;
     const villainKey = getVillainKey(villain);
@@ -507,6 +664,7 @@ export const MeleeInterceptor: ActionInterceptor = {
 
     // Store for postReport
     sharedData.meleeMessage = message;
+    sharedData.meleeMessageId = MeleeMessages.HERO_ATTACK;
     sharedData.meleeOutcome = blowResult.outcome;
     sharedData.meleeTargetKilled = targetKilled;
   },
@@ -527,12 +685,19 @@ export const MeleeInterceptor: ActionInterceptor = {
     const message = sharedData.meleeMessage as string | undefined;
     if (message) {
       // Pre-rendered combat string flows through the text-service's
-      // inline-text fallback path when MeleeMessages.HERO_ATTACK has
-      // no language template.
+      // inline-text fallback path when the melee message id has no
+      // language template.
       result.override = {
-        messageId: MeleeMessages.HERO_ATTACK,
+        messageId: (sharedData.meleeMessageId as string | undefined) ?? MeleeMessages.HERO_ATTACK,
         text: message,
       };
+    }
+
+    // Villain → hero: the fatal blow's canonical death event (killPlayer ran
+    // in postExecute; the blow message above carried the narration).
+    const heroDeath = sharedData.heroDeathEvent as { data?: Record<string, unknown> } | undefined;
+    if (heroDeath) {
+      result.emit = [...(result.emit ?? []), createEffect(PLAYER_DIED_EVENT, heroDeath.data ?? {})];
     }
 
     // Emit villain death messages (e.g., thief's "black fog" / "booty remains")
@@ -553,11 +718,21 @@ export const MeleeInterceptor: ActionInterceptor = {
    */
   onBlocked(
     _entity: IFEntity,
-    _world: WorldModel,
-    _actorId: string,
+    world: WorldModel,
+    actorId: string,
     error: string,
     _sharedData: InterceptorSharedData
   ): InterceptorBlockedResult | null {
+    if (error === MeleeMessages.VILLAIN_RECOVERS) {
+      const villain = world.getEntity(actorId);
+      const key = villain ? getVillainKey(villain) : 'troll';
+      return {
+        override: {
+          messageId: MeleeMessages.VILLAIN_RECOVERS,
+          text: `The ${key} slowly regains his composure.`,
+        },
+      };
+    }
     if (error === MeleeMessages.STILL_RECOVERING) {
       return {
         override: {

@@ -23,7 +23,9 @@ create the Interview Room
 
   A bare room with two hard chairs and a shaded lamp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Interview Room
 
   You.
@@ -35,7 +37,7 @@ create the Witness
   knows the-secret, witnessed, certain, confided
   temperament duty over fear
 
-  on attacking it
+  on the player attacking
     change mood to panicked
   end on
 
@@ -66,3 +68,7 @@ end phrasebook
 define phrases en-US
   witness-secret-reveal:
     "All right. All right! It is buried behind the mill. That is what I saw."
+
+before the game starts
+  change the player to Alex
+end before

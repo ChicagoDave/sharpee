@@ -41,7 +41,7 @@ create the gilt mirror
 
   The landlord's prized gilt mirror, hung above the bar.
 
-  on throwing it
+  on the player throwing
     refuse mirror-luck
   end on
 
@@ -53,9 +53,15 @@ create the green bottle
 
   An empty green glass bottle.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Taproom
   carries the green bottle
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees (one genuine run, where the second command rolls live
@@ -79,7 +85,7 @@ the same command can also miss, or hit without breaking. This run's
 | Outcomes | `hits_target` · `misses_target` · `target_ducks` · `target_catches` · `target_angry` · `lands_on` · `lands_in` · `bounces_off` · `breaks_against` · `breaks_on_impact` · `fragile_breaks` · `thrown_down` · `thrown_gently` · `sails_through` |
 | Events | `thrown` (`throwType`, `hit`, `willBreak`, `finalLocation` in the payload — enough for a story reaction to know exactly what happened) / `throw_blocked` · `item_destroyed` (`cause: 'thrown'`) |
 
-Interceptors: both the item and the target are consulted (`on throwing it`
+Interceptors: both the item and the target are consulted (`on the player throwing`
 on either). A glacier can react to being hit in the same command as an
 explosive reacts to being thrown; a capability behavior registered for
 `throwing` on the target takes over the whole throw.

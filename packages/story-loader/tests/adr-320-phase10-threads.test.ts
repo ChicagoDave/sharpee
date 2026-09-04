@@ -33,7 +33,8 @@ import {
   readSceneStore,
   sceneWith,
 } from '@sharpee/world-model';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import type { ActorTurnPlugin } from '@sharpee/engine';
+import { bootEngine } from './helpers/boot-engine';
 import {
   createSeededRandom,
   deriveStreamSeed,
@@ -58,7 +59,7 @@ function storySource(thread: string, extra = ''): string {
   return (
     'story\n  title: T\n  authors:\n    N\n  id: phase104\n  story-version: 0.0.1\n\n' +
     'create the Hall\n  a room\n\n  A hall.\n\n' +
-    'create the player\n  in the Hall\n\n  Me.\n\n' +
+    'create Alex\n  a person\n  playable\n  in the Hall\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
     'create Kemp\n  a person, proper\n  in the Hall\n  mood cheerful\n  spreads nothing\n\n  The clown.\n\n' +
     'define topics for Kemp\n' +
     '  about "the weather":\n' +
@@ -92,7 +93,7 @@ function threadBlock(opts: { strength?: string; opensWhen?: string; beatTwoWhen?
     (opts.omitRefusing ? '' : '  on refusing:\n    phrase refusing-line\n') +
     '  conclusion:\n' +
     (opts.gatedConclusion
-      ? '    phrase conclusion-line when it is cheerful\n    phrase parting-line\n'
+      ? '    phrase conclusion-line when Kemp is cheerful\n    phrase parting-line\n'
       : '    phrase conclusion-line\n') +
     'end conversation\n'
   );
@@ -133,27 +134,14 @@ interface Loaded {
   story: ChordStory;
   world: WorldModel;
   player: IFEntity;
-  npcPlugin: NpcPlugin;
+  phase: ActorTurnPlugin;
   sounds: ISound[];
 }
 
 function load(source: string): Loaded {
-  const story = createStory(compileSource(source), { seed: 7 });
-  const world = new WorldModel();
-  story.initializeWorld(world);
-  const player = story.createPlayer(world);
-  world.setPlayer(player.id);
-
-  const registered: unknown[] = [];
-  story.onEngineReady({
-    getPluginRegistry: () => ({ register: (p: unknown) => registered.push(p) }),
-  } as never);
-  const npcPlugin = registered.find(
-    (p) => (p as { id?: string }).id === 'sharpee.plugin.npc',
-  ) as NpcPlugin;
-  expect(npcPlugin).toBeDefined();
-
-  return { story, world, player, npcPlugin, sounds: [] };
+  // A REAL engine; its actor phase is what the test ticks (ADR-328 D5).
+  const { story, world, player, phase } = bootEngine(source, 7);
+  return { story, world, player, phase, sounds: [] };
 }
 
 const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
@@ -162,9 +150,9 @@ const traitOf = (l: Loaded, irId: string): CharacterModelTrait =>
 const threadState = (l: Loaded) =>
   traitOf(l, 'kemp').conversationThreads?.[l.player.id]?.['the-defection'];
 
-/** One NPC turn through the real plugin (the engine's own call shape). */
+/** One NPC turn through the engine's actor phase (the engine's own call shape). */
 function tick(l: Loaded, turn: number, actionEvents: ISemanticEvent[] = []): ISemanticEvent[] {
-  return l.npcPlugin.onAfterAction({
+  return l.phase.onAfterAction({
     world: l.world,
     turn,
     playerId: l.player.id,
@@ -182,6 +170,7 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,
@@ -295,6 +284,27 @@ describe('AC14 — passive park and resume through dispatch', () => {
     const parked = ask(l, 'the weather');
     expect(messageId(parked)).toBe('weather-line');
     expect(threadState(l)).toMatchObject({ status: 'parked', beatCursor: 1 });
+    // ADR-320 D10a (2026-09-02): the park renders its authored `on parting`
+    // through the one shared deliverer — the prose event with the id the
+    // pipeline renders by, and the wire's thread-parting data beside it.
+    const kempId = entity(l, 'kemp').id;
+    const playerId = l.world.getPlayer()!.id;
+    expect(parked.events.find((e) => e.type === 'character.thread.parting')?.data).toMatchObject({
+      ownerId: kempId,
+      partnerId: playerId,
+      threadKey: 'the-defection',
+      messageId: 'parting-line',
+    });
+    expect(parked.events.find((e) => e.type === 'character.scene.thread-parting')?.data).toMatchObject({
+      ownerId: kempId,
+      partnerId: playerId,
+      messageId: 'parting-line',
+    });
+    expect(parked.events.find((e) => e.type === 'character.scene.thread-parked')?.data).toMatchObject({
+      ownerId: kempId,
+      partnerId: playerId,
+      beatCursor: 1,
+    });
     // The continuability affordance disappears with the park (never stale).
     const scene = sceneWith(l.world, entity(l, 'kemp').id);
     expect(scene?.threadContinuability).toBeUndefined();
@@ -396,7 +406,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   });
 
   it('an `opens when` thread opens its own scene and speaks beat 1 unprompted', () => {
-    const l = load(storySource(threadBlock({ opensWhen: 'it is cheerful' })));
+    const l = load(storySource(threadBlock({ opensWhen: 'Kemp is cheerful' })));
 
     const events = tick(l, 1);
 
@@ -417,7 +427,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   it("a thread beat's `then asks` opens its exchange from the owner's own turn", () => {
     const l = load(
       storySource(
-        threadBlock({ opensWhen: 'it is cheerful', beatOneExtra: 'then asks the-offer' }),
+        threadBlock({ opensWhen: 'Kemp is cheerful', beatOneExtra: 'then asks the-offer' }),
         'define exchange the-offer for Kemp\n  answer "aye":\n    phrase offer-aye\nend exchange\n\n' +
           'define phrase offer-aye\n  "Good."\nend phrase\n',
       ),
@@ -435,7 +445,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   });
 
   it('an `opens when` thread parked mid-story resumes on the owner turn via `on resuming:`', () => {
-    const l = load(storySource(threadBlock({ opensWhen: 'it is cheerful' })));
+    const l = load(storySource(threadBlock({ opensWhen: 'Kemp is cheerful' })));
     tick(l, 1); // the thread opens itself and speaks beat 1
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
 
@@ -456,7 +466,7 @@ describe("AC14 — the owner's own floor turns (the tick path)", () => {
   });
 
   it('a held next beat holds the thread; the scene decays and the close parks it', () => {
-    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'Kemp is angry' })));
     ask(l, 'the rose');
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
 
@@ -523,7 +533,7 @@ describe('AC14 — continuation prompts (Phase 10.5: the targetless advance)', (
   });
 
   it('does not advance a held beat (unmet `beat, when` gate)', () => {
-    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'Kemp is angry' })));
     ask(l, 'the rose');
     expect(threadState(l)).toMatchObject({ status: 'active', beatCursor: 1 });
 
@@ -653,7 +663,7 @@ describe('AC14 (D12 leg, Phase 10.6) — the thread-affordances channel projects
   });
 
   it('advertises continuable: false while the next beat holds on its gate', () => {
-    const l = load(storySource(threadBlock({ beatTwoWhen: 'it is angry' })));
+    const l = load(storySource(threadBlock({ beatTwoWhen: 'Kemp is angry' })));
     ask(l, 'the rose');
     expect(threadAffordancesChannel.produce(channelCtx(l))).toEqual([
       expect.objectContaining({ threadKey: 'the-defection', beatCursor: 1, continuable: false }),
@@ -681,6 +691,7 @@ describe('AC14 (persistence leg, Phase 10.6) — the real SaveRestoreService rou
         ({
           currentTurn: 6,
           player: l.player,
+          actor: l.player,
           history: [],
           metadata: { started: new Date() },
         }) as unknown as GameContext,

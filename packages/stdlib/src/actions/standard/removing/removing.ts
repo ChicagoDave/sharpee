@@ -145,7 +145,7 @@ function validateSingleEntity(
   item: IFEntity,
   source: IFEntity
 ): ValidationResult {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Check if player already has the item
   if (ActorBehavior.isHolding(actor, item.id, context.world)) {
@@ -262,7 +262,7 @@ function executeSingleEntity(
   source: IFEntity,
   scratch: RemovingItemScratch
 ): void {
-  const actor = context.player;
+  const actor = context.actor;
 
   // First validate removal from source using appropriate behavior
   let removeResult: IRemoveItemResult | IRemoveItemFromSupporterResult | null = null;
@@ -295,7 +295,7 @@ function reportSingleSuccess(
   _scratch: RemovingItemScratch,
   events: ISemanticEvent[]
 ): void {
-  const actor = context.player;
+  const actor = context.actor;
 
   // Build message params — EntityInfo for the formatter chain (ADR-158)
   const params: Record<string, any> = {
@@ -378,8 +378,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     'removed_from',
     'removed_from_surface',
     'cant_reach',
-    'already_have',
-    'nothing_to_remove'
+    'already_have'
   ],
   group: 'object_manipulation',
 
@@ -506,7 +505,7 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Single object report
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject!.entity!;
 
     // Build message params — EntityInfo for the formatter chain (ADR-158)

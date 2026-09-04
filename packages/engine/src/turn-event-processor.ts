@@ -9,7 +9,8 @@ import {
   type ISemanticEvent,
   type ISemanticEventSource,
   isPlatformRequestEvent,
-  type IPlatformEvent
+  type IPlatformEvent,
+  type Presence
 } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { type IPerceptionService } from '@sharpee/stdlib';
@@ -32,6 +33,15 @@ export interface EventProcessingContext {
    * platform-op completions) — safe under the sort's never-group rule.
    */
   transactionId?: string;
+  /**
+   * Presence resolver for the ADR-328 D3 tag. When set, enrichment stamps
+   * `presence` on every event that ARRIVES with a producer-set
+   * `entities.location` — the room the event happened in — evaluated
+   * before the player-location default below is applied, so a defaulted
+   * location never masquerades as a witnessed one. Events without a
+   * producer location (player actions today) are left untagged.
+   */
+  presenceOf?: (locationId: string) => Presence;
 }
 
 /**
@@ -86,6 +96,18 @@ function enrichEvent(
       ) {
         enriched.data = { ...enriched.data, _transactionId: context.transactionId };
       }
+    }
+    // ADR-328 D3: tag presence from the producer's location, before the
+    // player-location default can stand in for it. The player is present
+    // at their own events by identity — the action context locates them
+    // at context creation (`action-context-factory.ts`), so a `going`
+    // event sits at the origin room after the move and would otherwise
+    // read as unwitnessed.
+    if (context.presenceOf && enriched.entities.location && enriched.presence === undefined) {
+      enriched.presence =
+        context.playerId !== undefined && enriched.entities.actor === context.playerId
+          ? 'present'
+          : context.presenceOf(enriched.entities.location);
     }
     if (context.playerId && !enriched.entities.actor) {
       enriched.entities = { ...enriched.entities, actor: context.playerId };

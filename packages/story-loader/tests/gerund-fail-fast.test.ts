@@ -51,10 +51,17 @@ end phrase
 
 ${body}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shed
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D5 gerund fail-fast (ADR-228)', () => {
@@ -69,7 +76,7 @@ create the biscuit
 
   A biscuit.
 
-  on tasting it
+  on the player tasting
     phrase nope
   end on`);
     expect(() => loadStory(source)).toThrowError(LoadError);
@@ -87,7 +94,7 @@ create the basket
 
   A basket.
 
-  on lowering it
+  on the player lowering
     phrase nope
   end on`);
     expect(() => loadStory(source)).toThrowError(/full-delegation capability action/);
@@ -95,7 +102,7 @@ create the basket
 
   it('rejects a trait clause whose gerund no standard action consults', () => {
     const source = storyWith(`define trait lickable
-  on tasting it
+  on the player tasting
     phrase nope
   end on
 end trait
@@ -125,7 +132,7 @@ create the badger
 
   A badger.
 
-  on prodding it
+  on the player prodding
     phrase nope
   end on`);
     expect(() => loadStory(source)).toThrowError(/dispatch action/);
@@ -144,7 +151,7 @@ create the badger
 
   A badger.
 
-  after prodding it
+  after the player prodding
     phrase nope
   end after`);
     const { story, world } = loadStory(source);
@@ -160,7 +167,7 @@ create the badger
 
   A shed.
 
-  after entering it
+  after the player entering
     phrase nope
   end after
 
@@ -169,11 +176,11 @@ create the note
 
   A note.
 
-  on reading it
+  on the player reading
     phrase nope
   end on
 
-  after taking it
+  after the player taking
     phrase nope
   end after`);
     const { story, world } = loadStory(source);

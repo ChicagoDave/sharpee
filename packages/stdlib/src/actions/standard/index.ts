@@ -73,7 +73,8 @@ export * from './drinking/index.js';
 export * from './talking/index.js';
 // export * from './asking/index.js'; // Moved to conversation extension
 // export * from './telling/index.js'; // Moved to conversation extension
-// export * from './answering'; // Moved to conversation extension
+export * from './answering/index.js'; // GH #346
+export * from './saying-goodbye/index.js'; // GH #300
 export * from './attacking/index.js';
 export * from './saving/index.js';
 export * from './restoring/index.js';
@@ -138,7 +139,8 @@ import { drinkingAction } from './drinking/index.js';
 import { talkingAction } from './talking/index.js'; // Now from folder
 // import { askingAction } from './asking/index.js'; // Moved to conversation extension
 // import { tellingAction } from './telling/index.js'; // Moved to conversation extension
-// import { answeringAction } from './answering'; // Moved to conversation extension
+import { answeringAction } from './answering/index.js'; // GH #346
+import { sayingGoodbyeAction } from './saying-goodbye/index.js'; // GH #300
 import { attackingAction } from './attacking/index.js'; // Now from folder
 import { savingAction } from './saving/index.js'; // Now from folder
 import { restoringAction } from './restoring/index.js'; // Now from folder
@@ -207,7 +209,8 @@ export const standardActions = [
   talkingAction,
   askingAction, // ADR-230 Phase 6: minimal interceptable ASK (conversation system TBD)
   tellingAction, // ADR-230 Phase 6: minimal interceptable TELL
-  // answeringAction, // Removed pending a question system (ADR-230 Phase 6 ruling)
+  answeringAction, // GH #346: answers the open exchange of the player's scene
+  sayingGoodbyeAction, // GH #300: the player's farewell closes the scene
   attackingAction,
   deadlyRoomDeathAction,
   savingAction,

@@ -20,6 +20,7 @@ import {
   type RandomForceStatus,
   RandomForceLoadError
 } from '@sharpee/core';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import {
   Transcript,
   TranscriptCommand,
@@ -145,6 +146,8 @@ interface WorldModel {
   getLocation?(entityId: string): string | undefined;
   getContents?(containerId: string): any[];
   getPlayer?(): any;
+  /** World-state lookup — carries the Chord story phase (`story.state` claims). */
+  getStateValue?(key: string): unknown;
 }
 
 /**
@@ -1186,14 +1189,42 @@ function checkStateAssertion(assertion: Assertion, world?: WorldModel): Assertio
 }
 
 /**
- * Evaluate a state expression against the world model
- * Supports: entity.property = value, entity.property != value,
- *           collection contains item, collection not-contains item
+ * Evaluate a state expression against the world model.
+ *
+ * Supports, tried in this order:
+ *   story.state = value / story.state != value        (the story's phase)
+ *   entity.property = value / entity.property != value
+ *   entity.collection contains item / not-contains item
+ *   [the] name is state / [the] name is not state     (a Chord entity's own
+ *     `states:`, spelled the way Chord spells the condition — GH #355;
+ *     `the story is state` reads the story's phase the same way)
+ *
+ * @param expression - The pin text from a tree-document card
+ * @param world - The live world after the card's command ran
+ * @returns Whether the pin holds, with a details line on a miss
  */
-function evaluateStateExpression(
+export function evaluateStateExpression(
   expression: string,
   world: WorldModel
 ): { matches: boolean; details?: string } {
+  // Reserved head: "story.state = <state>" / "story.state != <state>" — the
+  // Chord story object's phase (`states:` in the header, moved by `change the
+  // story to`). It is a world-state value, not an entity property, so it
+  // cannot ride the entity form below.
+  const storyStateMatch = expression.match(/^story\.state\s*(=|!=)\s*(\S+)$/);
+  if (storyStateMatch) {
+    const [, operator, expected] = storyStateMatch;
+    const actual = world.getStateValue?.(CHORD_STORY_STATE_KEY);
+    if (actual === undefined) {
+      return { matches: false, details: 'story.state: this story declares no states' };
+    }
+    const isEqual = actual === expected;
+    if (operator === '=') {
+      return { matches: isEqual, details: isEqual ? undefined : `story.state is "${actual}", expected "${expected}"` };
+    }
+    return { matches: !isEqual, details: !isEqual ? undefined : `story.state should not be "${expected}"` };
+  }
+
   // Parse "entity.property = value" or "entity.property != value"
   const equalityMatch = expression.match(/^(\w+)\.(\w+)\s*(=|!=)\s*(.+)$/);
   if (equalityMatch) {
@@ -1250,7 +1281,57 @@ function evaluateStateExpression(
     }
   }
 
+  // Reserved form spelled the way Chord spells the condition (GH #355,
+  // ruled 2026-09-03): "[the] <name> is <state>" / "[the] <name> is not
+  // <state>". Tried last so the dotted forms keep their exact behaviour.
+  // The name may carry spaces (`first partner`) and resolves through the
+  // same lookup as the dotted head: name, id, IdentityTrait name, alias.
+  const chordStateMatch = expression.match(/^(?:the\s+)?(.+?)\s+is\s+(not\s+)?(\S+)$/);
+  if (chordStateMatch) {
+    const [, name, negation, expected] = chordStateMatch;
+    return evaluateChordStateClaim(name.trim(), negation !== undefined, expected, world);
+  }
+
   return { matches: false, details: `Could not parse expression: ${expression}` };
+}
+
+/**
+ * The Chord-spelled state claim: `the story` reads the story-phase key; any
+ * other name resolves to an entity and reads `chord.state.<ir-id>` through
+ * the IR-id attribute the loader stamps on every entity it creates.
+ */
+function evaluateChordStateClaim(
+  name: string,
+  negated: boolean,
+  expected: string,
+  world: WorldModel
+): { matches: boolean; details?: string } {
+  const label = `the ${name}`;
+  let actual: unknown;
+  if (name === 'story') {
+    actual = world.getStateValue?.(CHORD_STORY_STATE_KEY);
+    if (actual === undefined) {
+      return { matches: false, details: `${label}: this story declares no states` };
+    }
+  } else {
+    const entity = findEntity(name, world);
+    if (!entity) {
+      return { matches: false, details: `Entity "${name}" not found` };
+    }
+    const irId = entity.attributes?.[CHORD_IR_ID_ATTRIBUTE];
+    if (typeof irId !== 'string') {
+      return { matches: false, details: `${label}: not a Chord entity (no IR id), so it has no states` };
+    }
+    actual = world.getStateValue?.(CHORD_STATE_PREFIX + irId);
+    if (actual === undefined) {
+      return { matches: false, details: `${label}: declares no states` };
+    }
+  }
+  const isEqual = actual === expected;
+  if (!negated) {
+    return { matches: isEqual, details: isEqual ? undefined : `${label} is "${actual}", expected "${expected}"` };
+  }
+  return { matches: !isEqual, details: !isEqual ? undefined : `${label} should not be "${expected}"` };
 }
 
 /**

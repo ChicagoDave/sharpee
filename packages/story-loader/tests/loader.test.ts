@@ -108,9 +108,12 @@ describe('cloak.story loads into a playable world', () => {
     expect(world.evaluate(darkKey(entity('foyer-bar').id))).toBe(true);
   });
 
-  it('creates the default player with the story description, placed in the foyer', () => {
+  it('returns the named protagonist, carrying the role vocabulary, placed in the foyer', () => {
+    // ADR-327 D10: the player is a character the story names, not a synthetic
+    // `yourself` actor. What the ROLE contributes is the self-vocabulary and
+    // the carrying capacity; the name and description are the character's own.
     const identity = player.get(TraitType.IDENTITY) as IdentityTrait;
-    expect(identity.name).toBe('yourself');
+    expect(identity.name).toBe('Alex');
     expect(identity.aliases).toEqual(expect.arrayContaining(['self', 'me', 'myself']));
     expect(identity.description).toBe('As good-looking as ever.');
     const container = player.get(TraitType.CONTAINER) as ContainerTrait;
@@ -168,15 +171,16 @@ describe('cloak.story loads into a playable world', () => {
   });
 });
 
-describe('engine lifecycle order: createPlayer BEFORE initializeWorld (GameEngine.setStory)', () => {
-  // The engine creates the player first "so initializeWorld() can place
-  // them" — finalization (placement, worn items, initial darkness) must run
-  // from initializeWorld in that order, and exactly once.
+describe('engine lifecycle order: initializeWorld BEFORE createPlayer (GameEngine.setStory)', () => {
+  // ADR-327 D10: the engine builds the world first and claims the role second,
+  // because the protagonist is one of the world's own characters. Placement,
+  // worn items and initial darkness must all be settled by the time
+  // `createPlayer` returns.
   it('places and equips the player, and darkens the bar', () => {
     const story = createStory(compileFixture('cloak.story'), { hatchModules: CLOAK_MODULES });
     const world = new WorldModel();
-    const player = story.createPlayer(world);
     story.initializeWorld(world);
+    const player = story.createPlayer(world);
 
     expect(world.getLocation(player.id)).toBe(story.entityId('foyer-of-the-opera-house'));
     const cloak = world.getEntity(story.entityId('velvet-cloak')!)!;
@@ -236,10 +240,17 @@ create the direction signs
 
   Painted arrows.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Pantry
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const story = createStory(ir);
     const world = new WorldModel();
@@ -254,6 +265,60 @@ create the player
     const identity = signs.get(TraitType.IDENTITY) as IdentityTrait;
     expect((identity as unknown as Record<string, unknown>).grammaticalNumber).toBe('plural');
     expect(signs.has(TraitType.SCENERY)).toBe(true);
+  });
+
+  it("places a character's `carries` and `wears` at load — every entity's, not only the role-holder's (found 2026-08-29, ADR-329 Phase 9b)", () => {
+    const ir = compileSource(`story
+  title: Coverage
+  authors:
+    Nobody
+  id: coverage-3
+  story-version: 0.0.1
+
+create the Pantry
+  a room
+
+  A pantry.
+
+create the sword
+
+  A sword.
+
+create the hat
+  wearable
+
+  A hat.
+
+create Teisha
+  a person
+  in the Pantry
+  carries the sword
+  wears the hat
+
+  Teisha.
+
+create Alex
+  a person
+  playable
+  starts in the Pantry
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+
+`);
+    const story = createStory(ir);
+    const world = new WorldModel();
+    story.initializeWorld(world);
+    const teisha = story.entityId('teisha')!;
+    expect(world.getLocation(story.entityId('sword')!)).toBe(teisha);
+    const hatId = story.entityId('hat')!;
+    expect(world.getLocation(hatId)).toBe(teisha);
+    const wearable = world.getEntity(hatId)!.get(TraitType.WEARABLE) as WearableTrait;
+    expect(wearable.worn).toBe(true);
+    expect(wearable.wornBy).toBe(teisha);
   });
 
   it('backstop: rejects rogue IR wearing a non-wearable (ADR-276 census 12 — the compiler gates this as analysis.worn-not-wearable)', () => {
@@ -277,24 +342,25 @@ create the anvil
 
   Heavy.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Pantry
   wears the anvil
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const rogue = structuredClone(ir);
     rogue.entities.find((e) => e.id === 'anvil')!.traits = [];
-    const story = createStory(rogue);
-    const world = new WorldModel();
-    story.initializeWorld(world);
-    expect(() => story.createPlayer(world)).toThrow(LoadError);
-    expect(() => {
-      const s = createStory(rogue);
-      const w = new WorldModel();
-      s.initializeWorld(w);
-      s.createPlayer(w);
-    }).toThrow(/not wearable/);
+    // ADR-327 D10: the role's equipment is applied when the role is settled,
+    // at the end of `initializeWorld` — so that is where the backstop fires.
+    expect(() => createStory(rogue).initializeWorld(new WorldModel())).toThrow(LoadError);
+    expect(() => createStory(rogue).initializeWorld(new WorldModel())).toThrow(/not wearable/);
   });
 });
 
@@ -304,7 +370,7 @@ describe('atomic load rejections', () => {
   it('rejects an unknown IR format', () => {
     const ir = { ...cloakIr(), format: 'story language 99' } as unknown as StoryIR;
     expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(LoadError);
-    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 2/);
+    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 4/);
   });
 
   it('rejects the retired `story language 1` (ADR-289 D2, AC6)', () => {

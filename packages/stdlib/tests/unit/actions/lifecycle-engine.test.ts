@@ -21,6 +21,8 @@ import { ISemanticEvent } from '@sharpee/core';
 import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
 import {
   ActionLifecycleDescriptor,
+  ACTOR_SLOT_ID,
+  actorConsultationId,
   resolveLifecycle,
   getLifecycleState,
   runPreValidate,
@@ -34,7 +36,7 @@ import {
   runMultiObjectReport
 } from '../../../src/actions/lifecycle';
 import { Action, ActionContext } from '../../../src/actions/enhanced-types';
-import { setupBasicWorld, createRealTestContext, createCommand } from '../../test-utils';
+import { setupBasicWorld, createRealTestContext, createCommand, addTestMarker, TEST_MARKER_TRAIT } from '../../test-utils';
 
 const TEST_ACTION = 'test.action.frobbing';
 const SECOND_ID = 'test.action.frobbing_specific';
@@ -158,6 +160,59 @@ describe('resolveLifecycle (D3 resolution)', () => {
     const state = resolveLifecycle(context, seeded);
 
     expect(state.consultations[0].data.containerId).toBe(box.id);
+  });
+});
+
+describe('the actor consultation (ADR-327 D1, ruled 2026-08-26)', () => {
+  test('the acting entity is consulted last, under the actor key, with actorId === its own id', () => {
+    const { world, player, item } = setup();
+    world.registerActionInterceptor(TraitType.READABLE, TEST_ACTION, { postExecute() {} });
+    const seen: Array<{ target: string; actor: string }> = [];
+    addTestMarker(player);
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, actorConsultationId(TEST_ACTION), {
+      postExecute(target, _world, actorId) {
+        seen.push({ target: target.id, actor: actorId });
+      }
+    });
+
+    const context = makeContext(world, item);
+    const state = resolveLifecycle(context, descriptor);
+
+    expect(state.consultations.map(c => c.slotId)).toEqual(['item', ACTOR_SLOT_ID]);
+    expect(state.consultations[1]).toMatchObject({ actionId: actorConsultationId(TEST_ACTION), entity: player });
+    runPostExecute(context, state);
+    expect(seen).toEqual([{ target: player.id, actor: player.id }]);
+  });
+
+  test('an actor with no actor-keyed interceptor adds no consultation', () => {
+    const { world, item } = setup();
+    world.registerActionInterceptor(TraitType.READABLE, TEST_ACTION, { postExecute() {} });
+    const state = resolveLifecycle(makeContext(world, item), descriptor);
+    expect(state.consultations.map(c => c.slotId)).toEqual(['item']);
+  });
+
+  test("a binding on a trait the actor carries, keyed on the action's own id, is NOT consulted as the actor", () => {
+    const { world, player, item } = setup();
+    world.registerActionInterceptor(TraitType.READABLE, TEST_ACTION, { postExecute() {} });
+    // The player carries this trait too (as a give/show recipient would carry
+    // ACTOR) — a target-keyed binding must not fire a second time for the actor.
+    addTestMarker(player);
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, TEST_ACTION, { postExecute() {} });
+    const state = resolveLifecycle(makeContext(world, item), descriptor);
+    expect(state.consultations.map(c => [c.slotId, c.entity.id])).toEqual([['item', item.id]]);
+  });
+
+  test('the actor as direct object still consults once as the target and once as the actor, under distinct keys', () => {
+    const { world, player } = setup();
+    addTestMarker(player);
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, TEST_ACTION, { postExecute() {} });
+    world.registerActionInterceptor(TEST_MARKER_TRAIT, actorConsultationId(TEST_ACTION), { postExecute() {} });
+    const context = createRealTestContext(stubAction, world, createCommand(TEST_ACTION, { entity: player }));
+    const state = resolveLifecycle(context, descriptor);
+    expect(state.consultations.map(c => [c.slotId, c.actionId])).toEqual([
+      ['item', TEST_ACTION],
+      [ACTOR_SLOT_ID, actorConsultationId(TEST_ACTION)],
+    ]);
   });
 });
 
@@ -331,7 +386,7 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
     expect((events[1].data as any).messageId).toBe('test.second_item_message');
   });
 
-  test('two consultations both returning an override is a hard error', () => {
+  test('two consultations both returning an override: the first wins, the later override is dropped, its emit still applies (GH #340)', () => {
     const { world, item, box } = setup();
     world.registerActionInterceptor(TraitType.READABLE, TEST_ACTION, {
       postReport() {
@@ -340,7 +395,10 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
     });
     world.registerActionInterceptor(TraitType.OPENABLE, TEST_ACTION, {
       postReport() {
-        return { override: { messageId: 'test.container_override' } };
+        return {
+          override: { messageId: 'test.container_override' },
+          emit: [{ type: 'if.event.container_grumbled', data: {} }]
+        };
       }
     });
 
@@ -350,8 +408,11 @@ describe('runPostReport (D2 shape, override arbitration)', () => {
       context.event('if.event.frobbed', { messageId: 'test.standard' })
     ];
 
-    expect(() => runPostReport(context, state, events, 'if.event.frobbed'))
-      .toThrow(/multiple consultations/);
+    expect(() => runPostReport(context, state, events, 'if.event.frobbed')).not.toThrow();
+    // First in consultation order (the item slot precedes the container slot) wins.
+    expect((events[0].data as any).messageId).toBe('test.item_override');
+    // The losing consultation's other effects still apply.
+    expect(events.some((e) => e.type === 'if.event.container_grumbled')).toBe(true);
   });
 });
 

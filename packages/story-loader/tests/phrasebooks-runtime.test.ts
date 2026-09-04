@@ -31,14 +31,20 @@ create the bell
 
   A hand bell.
 
-  on pushing it
+  on the player pushing
     change the story to midnight
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Parlour
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase told-tale
   The story text wins.

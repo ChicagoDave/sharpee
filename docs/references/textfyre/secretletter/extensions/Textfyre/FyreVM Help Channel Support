@@ -1,0 +1,31 @@
+Version 1/080509 of FyreVM Help Channel Support (for Glulx only) by Textfyre begins here.
+
+Include Version 1 of FyreVM Support by Textfyre.
+
+To add the help topic (topic-name - text):
+	if there is a topic name of topic-name in the Table of Help Topics, stop;
+	choose a blank row in the Table of Help Topics;
+	change topic name entry to topic-name.
+
+To remove the help topic (topic-name - text):
+	if there is a topic name of topic-name in the Table of Help Topics:
+		blank out the whole row.
+
+Every turn (this is the write help topics rule):
+	if the help switch is on:
+		select the help channel;
+		say "<help>";
+		repeat through the Table of Help Topics:
+			let the topicname be topic name entry;
+			say "<topic>";
+			say "[topic name entry]";
+			say "</topic>";
+		say "</help>";
+	select the main channel.
+
+Table of Help Topics
+topic name
+text
+with 100 blank rows
+
+FyreVM Help Channel Support ends here.

@@ -18,6 +18,14 @@ const story = (body: string) => `story
   id: estate
   story-version: 0.0.1
 
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
+
 create the Hall
   a room
 
@@ -53,18 +61,20 @@ describe('`proper` trait adjective (ADR-242 D1)', () => {
     expect('pronouns' in tobias).toBe(false);
   });
 
-  it('`proper` on a non-person kind is rejected with the person-only diagnostic (AC-2)', () => {
-    expect(codesOf(`create the lantern
+  it('`proper` composes on a non-person kind — a named thing is as proper as a named person (GH #342)', () => {
+    const ir = compiled(`create the lantern
   a container, proper
   in the Hall
-`)).toContain('analysis.proper-person-only');
+`);
+    expect(ir.entities.find((e) => e.id === 'lantern')!.traits.map((t) => t.name)).toContain('proper');
   });
 
-  it('`proper` on a plain thing (no kind noun) is rejected too (AC-2)', () => {
-    expect(codesOf(`create the doormat
+  it('`proper` composes on a plain thing with no kind noun (GH #342)', () => {
+    const ir = compiled(`create the doormat
   proper
   in the Hall
-`)).toContain('analysis.proper-person-only');
+`);
+    expect(ir.entities.find((e) => e.id === 'doormat')!.traits.map((t) => t.name)).toContain('proper');
   });
 
   it('`proper while <cond>` is rejected — identity is not conditional (AC-2)', () => {

@@ -17,6 +17,8 @@ function gateErrors(name: string) {
 }
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
+/** ADR-327 D10: a story must say who the player is. */
+const ROLE = '\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n';
 
 function errorsOf(source: string) {
   return compile(source).diagnostics.filter((d) => d.severity === 'error');
@@ -49,13 +51,13 @@ describe('three-ring boolean-state gate (D9)', () => {
   });
 
   it('ring 3 catches shared-stem pairs (active/inactive) on the story set', () => {
-    const errors = errorsOf('story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n  states: active, inactive\n');
+    const errors = errorsOf('story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n  states: active, inactive\n' + ROLE);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.negated-state');
   });
 
   it('rings check every scope: trait state sets too', () => {
-    const errors = errorsOf(`${HEADER}define trait togglish\n  states: on, off\nend trait\n`);
+    const errors = errorsOf(`${HEADER}define trait togglish\n  states: on, off\nend trait\n${ROLE}`);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.shadow-state');
     expect(errors[0].message).toContain('compose `switchable`');
@@ -96,9 +98,9 @@ describe('duplicate-clause gate (Phase C P3)', () => {
   it('condition-differentiated event clauses are legal (the aviary pattern)', () => {
     const errors = errorsOf(
       `${HEADER}create the Aviary\n  a room\n\n  A dome.\n\n` +
-        `  after entering it while after-hours\n    phrase nods\n      Nods.\n  end after\n\n` +
-        `  after entering it while not after-hours\n    phrase notices\n      Notices.\n  end after\n\n` +
-        `create the player\n  starts in the Aviary\n\n  You.\n`,
+        `  after the player entering while after-hours\n    phrase nods\n      Nods.\n  end after\n\n` +
+        `  after the player entering while not after-hours\n    phrase notices\n      Notices.\n  end after\n\n` +
+        `create Alex\n  a person\n  playable\n  starts in the Aviary\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors.filter((e) => e.code === 'analysis.duplicate-clause')).toEqual([]);
   });
@@ -119,7 +121,7 @@ describe('trait states: cross-trait resolution and the D8 collision gate', () =>
       `${HEADER}define trait feedable\n  states, reversible: hungry, content\nend trait\n\n` +
         `define trait restless\n  phrases en-US\n    paces:\n      It paces.\n\n` +
         `  on every turn while it is hungry\n    phrase paces\n  end on\nend trait\n\n` +
-        `create the llama\n  scenery\n  feedable\n  restless\n\ncreate the player\n\n  You.\n`,
+        `create the llama\n  scenery\n  feedable\n  restless\n\ncreate Alex\n  a person\n  playable\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -138,7 +140,7 @@ describe('change legality (D4)', () => {
     const errors = errorsOf(
       `${HEADER}create the vase\n  scenery\n  states, reversible: whole, broken\n\n` +
         `create the Parlor\n  a room\n\n  A parlor.\n\n` +
-        `  after entering it\n    change the vase to whole\n  end after\n\ncreate the player\n  starts in the Parlor\n\n  You.\n`,
+        `  after the player entering\n    change the vase to whole\n  end after\n\ncreate Alex\n  a person\n  playable\n  starts in the Parlor\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -149,7 +151,7 @@ describe('state adjectives (D1) and narration tags (decision 10)', () => {
     const errors = errorsOf(
       `${HEADER}create the staff gate\n  scenery\n  openable\n\n` +
         `create the Yard\n  a room\n  north is blocked while the staff gate is closed: gate-shut\n\n  A yard.\n\n` +
-        `define phrase gate-shut\n  The gate is shut.\nend phrase\n\ncreate the player\n  starts in the Yard\n\n  You.\n`,
+        `define phrase gate-shut\n  The gate is shut.\nend phrase\n\ncreate Alex\n  a person\n  playable\n  starts in the Yard\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -157,8 +159,8 @@ describe('state adjectives (D1) and narration tags (decision 10)', () => {
   it('entity clauses are presence-scoped; sequences broadcast', () => {
     const result = compile(
       `${HEADER}create the Aviary\n  a room\n\n  A dome.\n\n` +
-        `  after entering it\n    phrase notices\n      Notices.\n  end after\n\n` +
-        `define sequence closing time\n  at turn 2\n    phrase bell\n      A bell rings.\nend sequence\n\ncreate the player\n  starts in the Aviary\n\n  You.\n`,
+        `  after the player entering\n    phrase notices\n      Notices.\n  end after\n\n` +
+        `define sequence closing time\n  at turn 2\n    phrase bell\n      A bell rings.\nend sequence\n\ncreate Alex\n  a person\n  playable\n  starts in the Aviary\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const aviary = result.ir.entities.find((e) => e.id === 'aviary')!;
@@ -170,9 +172,9 @@ describe('state adjectives (D1) and narration tags (decision 10)', () => {
 describe('owner-scoped inline phrases (Phase C P3)', () => {
   const result = compile(
     `${HEADER}create the Den\n  a room\n\n  A den.\n\n` +
-      `  after entering it\n    phrase confession\n      The den confesses.\n  end after\n\n` +
-      `create the snake\n  scenery\n  in the Den\n\n  after entering it\n    phrase confession\n      The snake confesses.\n  end after\n\n` +
-      `create the player\n  starts in the Den\n\n  You.\n`,
+      `  after the player entering\n    phrase confession\n      The den confesses.\n  end after\n\n` +
+      `create the snake\n  scenery\n  in the Den\n\n  after the player entering\n    phrase confession\n      The snake confesses.\n  end after\n\n` +
+      `create Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
   );
 
   it('two owners declaring the same inline key do not collide', () => {

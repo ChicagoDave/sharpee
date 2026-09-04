@@ -45,6 +45,7 @@ export * from './traits/light-source/index.js';
 export * from './traits/exit/index.js';
 export * from './traits/climbable/index.js';
 export * from './traits/scenery/index.js';
+export * from './traits/night-vision/index.js';
 export * from './traits/supporter/index.js';
 export * from './traits/switchable/index.js';
 export * from './traits/wearable/index.js';

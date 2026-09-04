@@ -542,7 +542,7 @@ describe('attackingAction - Three-Phase Implementation', () => {
       const requiredMessages = [
         'no_target', 'not_visible', 'not_reachable', 'self',
         'not_holding_weapon', 'attacked', 'attacked_with',
-        'hit', 'hit_with', 'struck', 'struck_with',
+        'hit_with', 'struck', 'struck_with',
         'punched', 'kicked', 'unarmed_attack',
         'defends', 'dodges', 'retaliates', 'flees',
         'peaceful_solution', 'unnecessary_violence'

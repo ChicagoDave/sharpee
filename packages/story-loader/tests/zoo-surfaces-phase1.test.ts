@@ -63,14 +63,20 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     phrase mood
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase mood, ${adverb}
   One.
@@ -107,7 +113,7 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     select sticky
       phrase pick-one
         First.
@@ -117,10 +123,17 @@ create the Hall
     end select
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const hall = story.entityId('hall')!;
     const fire = () =>
@@ -162,10 +175,16 @@ create the Annex
 
   An annex.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the widget
   in the Lab
@@ -236,10 +255,17 @@ create the Zoo Entrance
 
   You stand before the wrought-iron gates.
 
-create the player
+create Alex
+  a person
+  playable
   in the Zoo Entrance
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const room = world.getEntity(story.entityId('zoo-entrance')!)!;
     const roomTrait = room.get(TraitType.ROOM) as RoomTrait;
@@ -265,10 +291,17 @@ create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const room = world.getEntity(story.entityId('hall')!)!;
     expect((room.get(TraitType.ROOM) as RoomTrait).initialDescription).toBeUndefined();

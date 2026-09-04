@@ -19,6 +19,7 @@ export const cuttingLanguage = {
     'not_cuttable': "{capitalize the item} {verb:is item} not something {you} can cut.",
     'cant_cut': "Cutting {the item} would achieve nothing here.",
     'no_tool': "{You} {need} something to cut {the item} with.",
+    'needs_tool': "{You} {need} {the tool} to cut {the item}.",
     'tool_not_held': "{You} {need} to be holding {the tool}.",
     'wrong_tool': "{capitalize the tool} won't cut {the item}.",
     'cut': "{You} {cut} {the item}."

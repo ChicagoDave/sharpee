@@ -29,10 +29,17 @@ create the Cave
 
   A cave.
 
-${mid}create the player
+${mid}create Alex
+  a person
+  playable
   starts in the Cave
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 /** A book whose key is referenced nowhere — pure declaration tests. */
@@ -148,7 +155,7 @@ describe('book coverage vs the missing-phrase gate (ADR-250 D4.6)', () => {
 
   A lamp.
 
-  on taking it
+  on the player taking
     phrase cold-returns
   end on
 
@@ -167,7 +174,7 @@ describe('book coverage vs the missing-phrase gate (ADR-250 D4.6)', () => {
   });
 
   it('an unreferenced, uncovered key still errors analysis.missing-phrase', () => {
-    const src = story('create the lamp\n  wearable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    phrase never-declared\n  end on\n\n');
+    const src = story('create the lamp\n  wearable\n  starts in the Cave\n\n  A lamp.\n\n  on the player taking\n    phrase never-declared\n  end on\n\n');
     expect(errorCodes(src)).toContain('analysis.missing-phrase');
   });
 });
@@ -200,7 +207,7 @@ describe('use phrasebook (ADR-250 D2/D3)', () => {
 
   it('a used-book key satisfies the missing-phrase gate via the manifest key list', () => {
     PHRASEBOOK_REGISTRY.set('voices', { name: 'voices', keys: ['cold-returns'] });
-    const src = story('create the lamp\n  wearable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    phrase cold-returns\n  end on\n\n', '  use phrasebook voices');
+    const src = story('create the lamp\n  wearable\n  starts in the Cave\n\n  A lamp.\n\n  on the player taking\n    phrase cold-returns\n  end on\n\n', '  use phrasebook voices');
     expect(errorCodes(src)).toEqual([]);
   });
 
@@ -257,9 +264,11 @@ describe('import "<file>" (ADR-251)', () => {
     expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-story');
   });
 
-  it('a fragment with a nested import raises analysis.import-fragment-nested', () => {
-    const bad = 'import "deeper"\n';
-    expect(errorCodes(story('import "bad"\n\n'), { importResolver: () => bad })).toContain('analysis.import-fragment-nested');
+  it('a fragment with its own import nests it (ADR-251 D5 as amended 2026-08-22)', () => {
+    const frags: Record<string, string> = { 'outer.chord': 'import "deeper"\n', 'deeper.chord': 'define phrasebook deep\n  a-key:\n    Deep.\nend phrasebook\n' };
+    const codes = errorCodes(story('import "outer"\n\n'), { importResolver: (n) => frags[n] ?? null });
+    expect(codes).not.toContain('analysis.import-fragment-nested');
+    expect(codes).not.toContain('analysis.import-unresolved');
   });
 
   it('a fragment that does not parse into declarations raises analysis.import-fragment-content', () => {

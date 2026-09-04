@@ -20,32 +20,23 @@ const parrotBehavior: NpcBehavior = {
   name: 'Parrot Behavior',
 
   // Called every turn, whether or not the player is here.
-  onTurn(context: NpcContext): NpcAction[] {
+  onTurn(context: NpcContext): void {
     // no audience, stay quiet
-    if (!context.playerVisible) return [];
+    if (!context.playerVisible) return;
 
     // 50% chance to squawk
     if (context.random.chance(PARROT_SQUAWK, 0.5)) {
       const phrase = context.random.pick(PARROT_PHRASE, PARROT_PHRASES);
-      return [{
-        type: 'speak',
-        messageId: 'npc.speech',
-        data: { text: phrase },
-      }];
+      context.narrate({ text: phrase });
     }
-    return [];
   },
 
   // Called once when the player walks into the parrot's room.
-  onPlayerEnters(context: NpcContext): NpcAction[] {
-    return [{
-      type: 'emote',
-      messageId: 'npc.emote',
-      data: {
-        text:
-          'The parrot ruffles its feathers and eyes you ' +
-          'with interest.',
-      },
-    }];
+  onPlayerEnters(context: NpcContext): void {
+    context.narrate({
+      text:
+        'The parrot ruffles its feathers and eyes you ' +
+        'with interest.',
+    });
   },
 };

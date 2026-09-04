@@ -1,0 +1,69 @@
+Version 1 of Character Listing by Textfyre begins here.
+
+Use authorial modesty.
+
+Include Quips by Textfyre.
+
+The roster of available characters is a list of objects [people] that varies.
+
+Assembling is an activity.
+
+Rule for assembling:
+	change the roster of available characters to the list of people in the location;
+	remove the player from the roster of available characters, if present;
+
+Character-listing is an activity. 
+
+To update the character list:
+	do nothing;
+
+Section 1 (For use with FyreVM Support by Textfyre)
+
+Rule for character-listing:
+	if XML is in use:
+		select the conversation channel;
+		say "<CharacterList>";
+		repeat with the individual running through the roster of available characters:
+			say "<Character Name='[The individual]' [if the individual is the current conversationalist]Current='true' [end if]/>";
+		say "</CharacterList>";
+		select the main channel;
+
+Rule for character-listing when the number of entries in the roster of available characters is 0:
+	if XML is in use:
+		select the conversation channel;
+		say "<CharacterList/>";
+		select the main channel;
+
+To update the character list:
+	let the old roster be the roster of available characters;
+	carry out the assembling activity;
+	if the old roster is set-different to the roster of available characters:
+		carry out the character-listing activity;
+
+The last after rule when an actor going somewhere:
+	update the character list;
+	continue the action;
+
+To decide whether (X - a list of objects) is set-different to (Y - a list of objects):
+	[working on the assumption that X and Y each contain no duplicates]
+	if the number of entries in X is not the number of entries in Y:
+		decide yes; [different] [ eliminate trivial case ]
+	repeat with the candidate running through X:
+		if the candidate is not listed in Y:
+			decide yes; [different]
+	[ everything in X is also in Y, and they are the same length, so that means: ]
+	decide no; [not different - identical]
+
+Character Listing ends here.
+
+---- DOCUMENTATION ---- 
+
+One of the things 'Jack & The Secret Letter' has to do is communicate to the controlling GUI which characters are available to talk to, at any given time. This extension, like the Quips extension, does this in the most general case automatically, and allows the game to define specific cases and exceptions by intercepting certain activities: most notably, the assembling activity.
+
+'The roster of available characters' is a list variable which holds a list of people that are available for the player to talk to at any given point. It is updated automatically when the player moves. It can be changed directly, but this should only be done during the Assembling activity.
+
+By default, the assembling activity adds all people in the location to the roster, except of course, the player herself. In the fairly frequent cases where this is not right, we can insert a rule in the 'after assembling' rulebook to make amends; perhaps by removing any scenery characters from the roster; perhaps by adding characters who have been added to scope by other means (in Jack & TSL, Bobby's voice as heard by the player in the Jail Cell is an example of this.)
+
+The character-listing activity is generally much less useful to the programmer. It runs through the roster and outputs a menu option for each available character, formatted as XML for the game interface to read and act upon. Interfering with this would probably be a bad idea as then the model world and the user interface would be inconsistent.
+
+Should the game move characters around the map, it is responsible for carrying out the Assembling and Character-listing activities by itself, as appropriate - for instance, if a character is moved into the player's location, then the user interface needs to be updated to show the new arrival. For convenience, the phrase "update the character list" performs these activities, only performing the second one if the roster has genuinely changed.

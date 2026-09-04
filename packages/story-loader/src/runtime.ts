@@ -18,14 +18,16 @@
  * - Select decisions are snapshotted before the execute phase so a
  *   mutation inside an arm cannot re-route the report phase (§5.4).
  */
-import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRPhrase, IRPhraseVariant, IRStatement, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
+import type { IRActionDef, IRCondition, IRConversation, IREmitField, IREmitValue, IREntity, IRExchange, IRGreetingRow, IROnClause, IRMoveClause, IRPhrase, IRPhraseVariant, IRStatement, IRTimerClause, IRTimerDef, IRTopicRow, IRValue, StoryIR } from '@sharpee/chord';
 import type { Span } from '@sharpee/chord';
 import { conditionRequiresSelfBreaking, normalizeTopic, PHRASEBOOK_REGISTRY } from '@sharpee/chord';
 import { phrasebookTemplateKey, type PhrasebookResolution } from '@sharpee/engine';
 import { PHRASEBOOK_DATA } from './phrasebook-data.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
+import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import {
+  type SceneStrength,
   type ActionInterceptor,
   type CapabilityBehavior,
   type CapabilityEffect,
@@ -58,8 +60,9 @@ import {
   type SceneWireEvent,
   type InitiativeSeizure,
   sceneWith,
+  HealthTrait,
 } from '@sharpee/world-model';
-import { exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer } from '@sharpee/stdlib';
+import { actorConsultationId, exitBlockedKey, exitMessageKey, hasTraversableExit, interceptorConsultingActionIds, killPlayer, type ActResult, type ActSlots } from '@sharpee/stdlib';
 import {
   absenceWordFor,
   activeThreadFor,
@@ -100,13 +103,16 @@ import {
   CHORD_OCCURRENCE_PREFIX,
   CHORD_STATE_PREFIX,
   CHORD_STORY_STATE_KEY,
+  CHORD_GONE_PREFIX,
   CHORD_TRAIT_PREFIX,
   counterKey,
   selectOccurrenceKey,
+  timerKey,
+  type TimerRecord,
 } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 import { stagingRenderContext } from './hatch-context.js';
-import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
+import { crossingRegionId, enteringDestination, movedActorId, EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from './event-contract.js';
 import { translateEventId } from './event-id-map.js';
 import { aliasToActionMessageId } from './message-alias-map.js';
 
@@ -150,6 +156,39 @@ const toEffect = (e: ISemanticEvent): CapabilityEffect => ({
   ...(e.entities?.actor !== undefined ? { actor: e.entities.actor } : {}),
 });
 
+/**
+ * The topics a condition gates on knowing — every `knows-topic` node under
+ * it, through `and`/`or`/`not`. One walk for both halves of the arrival
+ * contract: the loader derives `arrivalNarratedTopics` from it (which
+ * topics the platform stays silent for) and the arrival reaction consults
+ * it (which clauses fire on the tick a topic lands) — GH #353.
+ *
+ * @param condition the clause condition, or null for an unconditional clause
+ * @returns the topics named; empty for null or for a condition naming none
+ */
+export function knownTopicsIn(condition: IRCondition | null): Set<string> {
+  const topics = new Set<string>();
+  const walk = (node: IRCondition | null): void => {
+    if (!node) return;
+    switch (node.kind) {
+      case 'knows-topic':
+        topics.add(node.topic);
+        return;
+      case 'and':
+      case 'or':
+        for (const operand of node.operands) walk(operand);
+        return;
+      case 'not':
+        walk(node.operand);
+        return;
+      default:
+        return;
+    }
+  };
+  walk(condition);
+  return topics;
+}
+
 /** Hooks the runtime needs from the story (implemented by ChordStory). */
 export interface RuntimeHost {
   entityId(irId: string): string | undefined;
@@ -187,6 +226,19 @@ interface ExecContext extends EvalContext {
   owner?: string;
 }
 
+/**
+ * A refusal veto from the validate partition: the fully-qualified message id
+ * plus the render params its phrase stages (the strategy Choice, hatch
+ * producers, slot bindings). Spread into an `InterceptorResult` /
+ * `ValidationResult` / `CapabilityValidationResult` — all three carry
+ * `error` + `params`, and stdlib threads `params` through to the blocked
+ * render (lifecycle-engine `vetoOf`).
+ */
+interface RefusalVeto {
+  error: string;
+  params?: Record<string, unknown>;
+}
+
 /** What a scheduler tick provides (structural subset of plugin-scheduler's SchedulerContext). */
 export interface SchedulerTick {
   world: WorldModel;
@@ -202,10 +254,30 @@ export interface SchedulerDaemon {
   run: (ctx: SchedulerTick) => ISemanticEvent[];
 }
 
+/** ADR-327 D5: the most nested move-arrivals one turn may fire before the runtime refuses. */
+const MOVE_ARRIVAL_DEPTH_CAP = 8;
+/** ADR-329 D4: how deep an act whose reactions act again may nest — ADR-327 D5's cap, same number. */
+const ACT_DEPTH_CAP = 8;
+
 export class ChordRuntime {
   private eventSeq = 0;
   /** Declared score identities (Phase B): name → worth. */
   private readonly scoreWorth = new Map<string, number>();
+  /** ADR-325 D3: timers by `qualified` key, in declaration order. */
+  private readonly timerDefs = new Map<string, IRTimerDef>();
+  /** ADR-325 D3e: expiry clauses by timer `qualified` key, with their `it`. */
+  private readonly timerClauses = new Map<string, { clause: IRTimerClause; it: string | null }[]>();
+  /** The engine's live turn counter (wired at engine-ready); null headless. */
+  private turnProvider: (() => number) | null = null;
+  /** ADR-329 D4: the engine's execution entry, wired at engine-ready; null headless. */
+  private executionEntry: ((actorId: string, actionId: string, slots?: ActSlots) => ActResult) | null = null;
+  /** Events an acting statement produced inside an action or handler, awaiting the flush plugin / drain daemon. */
+  private readonly pendingActEvents: ISemanticEvent[] = [];
+  private actDepth = 0;
+  /** The acts in flight, for the re-entry diagnostic (`the guards taking → …`). */
+  private readonly actChain: string[] = [];
+  /** The last scheduler tick's turn — the headless fallback for `turnNow`. */
+  private lastTickTurn = 0;
 
   constructor(
     private readonly ir: StoryIR,
@@ -213,6 +285,19 @@ export class ChordRuntime {
     private readonly evaluator: Evaluator,
   ) {
     for (const score of ir.scores) this.scoreWorth.set(score.name, score.worth);
+    for (const t of ir.timers ?? []) this.timerDefs.set(t.qualified, t);
+    for (const e of ir.entities) {
+      for (const clause of e.timerClauses ?? []) {
+        const list = this.timerClauses.get(clause.timer) ?? [];
+        list.push({ clause, it: e.id });
+        this.timerClauses.set(clause.timer, list);
+      }
+    }
+    for (const clause of ir.story.timerClauses ?? []) {
+      const list = this.timerClauses.get(clause.timer) ?? [];
+      list.push({ clause, it: null });
+      this.timerClauses.set(clause.timer, list);
+    }
   }
 
   // ------------------------------------------------------------------ bind
@@ -225,6 +310,9 @@ export class ChordRuntime {
     // register one dispatching interceptor per action that routes by the
     // action's target entity.
     const byAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
+    // ADR-327 D1 bare heads — consulted through the lifecycle engine's actor
+    // slot, under `actorConsultationId(...)`, never under the action's own id.
+    const byActorAction = new Map<string, Array<{ entity: IREntity; clause: IROnClause | null }>>();
     for (const entity of this.ir.entities) {
       entity.onClauses.forEach((clause, clauseIndex) => {
         // Entity every-turn clauses are scheduler daemons, not interceptors.
@@ -239,11 +327,23 @@ export class ChordRuntime {
           this.bindEventClause(world, entity, clause, clauseIndex, trigger);
           return;
         }
-        if (REGION_EVENT_TRIGGERS[clause.action]) {
+        if (REGION_EVENT_TRIGGERS[clause.action] && !EVENT_TRIGGERS[clause.action]) {
           // `leaving` exists only as a region crossing reaction (D6) — on
           // any other owner it would silently never fire. Refuse at load.
+          // `entering` is exempt: on a THING it is the entering action's
+          // interceptor (GH #341), bound below like any other gerund.
           throw new LoadError(
-            `\`${clause.clauseKind} ${clause.action} it\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
+            `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
+            clause.span,
+          );
+        }
+        // ADR-327 D1: a bare head is the owner's own action, reached through
+        // the lifecycle engine's actor consultation — so the OWNER carries the
+        // interceptor, like any other arm. Dispatch actions consult no actor:
+        // a bare head there could never fire, so refuse at load.
+        if (clause.binding === 'self' && this.isDispatchAction(clause.action)) {
+          throw new LoadError(
+            `\`${clause.clauseKind} ${clause.action}\` in \`${entity.name}\`'s block — \`${clause.action}\` is a Chord dispatch action, which consults no actor, so a bare head could never fire. React on the thing acted on instead: \`after the player ${clause.action}\` in its block.`,
             clause.span,
           );
         }
@@ -256,16 +356,20 @@ export class ChordRuntime {
             if (clause.clauseKind === 'after') return;
             // …but an entity `on` clause has no dispatch surface at all.
             throw new LoadError(
-              `\`on ${clause.action} it\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on ${clause.action} it\`) and compose the trait, or react with \`after ${clause.action} it\`.`,
+              `\`on the player ${clause.action}\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on the player ${clause.action}\`) and compose the trait, or react with \`after the player ${clause.action}\`.`,
               clause.span,
             );
           }
           throw this.deadGerundError(clause);
         }
         this.prepareOnClauseTarget(world, entity, clause);
-        const list = byAction.get(clause.action) ?? [];
+        // Bare heads register under the actor-consultation key (the owner
+        // is consulted as the actor); explicit heads under the action's own
+        // id (the owner is consulted as the target).
+        const table = clause.binding === 'self' ? byActorAction : byAction;
+        const list = table.get(clause.action) ?? [];
         list.push({ entity, clause });
-        byAction.set(clause.action, list);
+        table.set(clause.action, list);
       });
     }
     // ADR-239: topic tables ride the asking/telling dispatch. Every table
@@ -285,11 +389,24 @@ export class ChordRuntime {
     }
 
     for (const [action, clauses] of byAction) {
-      world.registerActionInterceptor(
-        ChordBehaviorTrait.type,
-        `if.action.${action}`,
-        this.buildDispatchingInterceptor(action, clauses),
-      );
+      const interceptor = this.buildDispatchingInterceptor(action, clauses);
+      world.registerActionInterceptor(ChordBehaviorTrait.type, `if.action.${action}`, interceptor);
+    }
+    for (const [action, clauses] of byActorAction) {
+      const interceptor = this.buildDispatchingInterceptor(action, clauses);
+      world.registerActionInterceptor(ChordBehaviorTrait.type, actorConsultationId(`if.action.${action}`), interceptor);
+    }
+
+    // `when <entity> moves` clauses (ADR-325 D3h) ride the actor-moved event.
+    for (const entity of this.ir.entities) {
+      (entity.moveClauses ?? []).forEach((clause, clauseIndex) => {
+        const key = `chord.moves.${entity.id}.${clauseIndex}`;
+        world.chainEvent(
+          EVENT_TRIGGERS.entering,
+          (event, w) => this.fireMoveClause(entity, clause, key, event, w as WorldModel),
+          { key },
+        );
+      });
     }
 
     // Phase B: `define trait` clauses register per TRAIT TYPE — capability
@@ -522,19 +639,35 @@ export class ChordRuntime {
       if (irEntity.blockedExits.length === 0) continue;
       const worldId = this.host.entityId(irEntity.id);
       if (!worldId) continue;
+      // GH #315: the evaluator registry is one-value-per-key (idempotent
+      // last-wins, ADR-240 D6), so a direction's N blocked lines must compose
+      // into ONE registration per key — registering per line silently kept
+      // only the last. Group by direction, declaration order preserved.
+      const byDirection = new Map<DirectionType, typeof irEntity.blockedExits>();
       for (const blocked of irEntity.blockedExits) {
         const direction = (Direction as Record<string, DirectionType>)[blocked.direction.toUpperCase()];
         if (!direction) continue;
-        const condition = blocked.condition;
+        const group = byDirection.get(direction);
+        if (group) group.push(blocked);
+        else byDirection.set(direction, [blocked]);
+      }
+      for (const [direction, arms] of byDirection) {
+        // One arm selection per (room, direction): first line in declaration
+        // order whose condition holds; a condition-less line is the always-true
+        // fallback (the mergeArms idiom). Both keys below are views of this one
+        // selection, so the blocked boolean and the refusal phrase cannot drift.
+        const selectArm = (w: WorldModel) =>
+          arms.find(
+            (arm) => !arm.condition || this.evaluator.evalCondition(arm.condition, { world: w, it: irEntity.id }),
+          );
         world.registerEvaluator(
           exitBlockedKey(worldId, direction),
-          condition
-            ? (w) => this.evaluator.evalCondition(condition, { world: w as WorldModel, it: irEntity.id })
-            : () => true,
+          (w) => selectArm(w as WorldModel) !== undefined,
         );
-        world.registerEvaluator(exitMessageKey(worldId, direction), (w) =>
-          this.blockedPhraseText(blocked.phraseKey, w as WorldModel),
-        );
+        world.registerEvaluator(exitMessageKey(worldId, direction), (w) => {
+          const arm = selectArm(w as WorldModel) ?? arms[0];
+          return this.blockedPhraseText(arm.phraseKey, w as WorldModel);
+        });
       }
     }
   }
@@ -600,7 +733,13 @@ export class ChordRuntime {
   /** The clause's trigger event type by owner kind, or undefined for non-event clauses. */
   private eventTriggerFor(entity: IREntity, clause: IROnClause): string | undefined {
     const isRegionOwner = entity.kinds.some((k) => k.name === 'region');
-    return isRegionOwner ? REGION_EVENT_TRIGGERS[clause.action] : EVENT_TRIGGERS[clause.action];
+    if (isRegionOwner) return REGION_EVENT_TRIGGERS[clause.action];
+    // GH #341: the arrival event is a ROOM's story of a move. A THING's
+    // `entering` clause means "someone enters this thing" and rides the
+    // entering action's interceptor instead — bound to the arrival event it
+    // could never fire (the event's destination is a room, never the thing).
+    const isRoomOwner = entity.kinds.some((k) => k.name === 'room');
+    return isRoomOwner ? EVENT_TRIGGERS[clause.action] : undefined;
   }
 
   /** Test/debug entry: run every event clause bound to this event type. */
@@ -631,11 +770,14 @@ export class ChordRuntime {
     if (entity.kinds.some((k) => k.name === 'region')) {
       if (crossingRegionId(event.data) !== this.host.entityId(entity.id)) return null;
     } else if (clause.action === 'entering' && enteringDestination(event.data) !== this.host.entityId(entity.id)) {
-      // Room/enterable owners: `after entering it` fires when the
+      // Room/enterable owners: `after the player entering` fires when the
       // movement's destination IS the owner — read through the AC-9 payload
       // guard, never a blind cast (the stdlib event is a foreign surface).
       return null;
     }
+    // ADR-327 D1: the head names who arrives — the event's actor (the
+    // walker, or the `move`d entity under D5) must be the head's actor.
+    if (!this.actorMatches(clause.actor, movedActorId(event), world)) return null;
 
     const ctx: ExecContext = { world, it: entity.id };
     if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
@@ -650,11 +792,74 @@ export class ChordRuntime {
     return this.execStatements(clause.body, ctx);
   }
 
+  // ---------------------------------------------------------- move clauses
+
+  /** Test/debug entry: run every `when <entity> moves` clause for this event. */
+  fireMoveClauses(world: WorldModel, event: ISemanticEvent): ISemanticEvent[] {
+    const out: ISemanticEvent[] = [];
+    if (event.type !== EVENT_TRIGGERS.entering) return out;
+    for (const entity of this.ir.entities) {
+      (entity.moveClauses ?? []).forEach((clause, clauseIndex) => {
+        const produced = this.fireMoveClause(entity, clause, `chord.moves.${entity.id}.${clauseIndex}`, event, world);
+        if (produced) out.push(...produced);
+      });
+    }
+    return out;
+  }
+
+  /**
+   * ADR-327 D1: does this actor satisfy a clause head? `the player` is the
+   * ROLE — compared against `world.getPlayer()` at fire time, never cached,
+   * so a head follows a PC switch (ADR-132/D9); a named actor is its world
+   * entity. A null head (bare / every-turn) is gated by its own path.
+   * @param actor the IR head actor, or null
+   * @param actorId the acting entity's world id, if the path knows one
+   * @param world the live world (for the player role)
+   */
+  actorMatches(actor: IRValue | null, actorId: string | undefined, world: WorldModel): boolean {
+    if (actor === null) return true;
+    if (actorId === undefined) return false;
+    if (actor.kind === 'player') return actorId === world.getPlayer()?.id;
+    if (actor.kind === 'entity') return actorId === this.host.entityId(actor.id);
+    return false;
+  }
+
+  /**
+   * `when <entity> moves [, while <cond>]` (ADR-325 D3h): fires when the
+   * actor-moved event's actor is the mover's world entity — the completed
+   * move only (a refused go emits no actor-moved event). `it` is the owner.
+   */
+  private fireMoveClause(
+    entity: IREntity,
+    clause: IRMoveClause,
+    key: string,
+    event: ISemanticEvent,
+    world: WorldModel,
+  ): ISemanticEvent[] | null {
+    const moverId = clause.mover.kind === 'player'
+      ? world.getPlayer()?.id
+      : clause.mover.kind === 'entity' ? this.host.entityId(clause.mover.id) : undefined;
+    if (!moverId || movedActorId(event) !== moverId) return null;
+
+    const ctx: ExecContext = { world, it: entity.id };
+    if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return null;
+
+    const occKey = CHORD_OCCURRENCE_PREFIX + key;
+    const occurrence = ((world.getStateValue(occKey) as number | undefined) ?? 0) + 1;
+    world.setStateValue(occKey, occurrence);
+    ctx.occurrence = occurrence;
+    return this.execStatements(clause.body, ctx);
+  }
+
   // ------------------------------------------------------------ on-clauses
 
   /** Mark the clause's target entity so interceptor resolution finds it. */
   private prepareOnClauseTarget(world: WorldModel, entity: IREntity, clause: IROnClause): void {
     const worldId = this.host.entityId(entity.id);
+    // ADR-327 D10: every character, the role-holder included, is built by the
+    // world passes before `bind` runs — so there is no longer an entity with
+    // clauses and no world instance. The player special case retired with the
+    // player block.
     if (!worldId) throw new LoadError(`Entity \`${entity.id}\` has no world instance.`, clause.span);
     const target = world.getEntity(worldId);
     if (!target) throw new LoadError(`Entity \`${entity.id}\` vanished before binding.`, clause.span);
@@ -662,8 +867,9 @@ export class ChordRuntime {
     if (!target.has(ChordBehaviorTrait.type)) {
       target.add(new ChordBehaviorTrait());
     }
-    // `on reading it` targets must satisfy the reading action's trait gate.
-    if (clause.action === 'reading' && !target.has(TraitType.READABLE)) {
+    // `on the player reading` targets must satisfy the reading action's
+    // trait gate (a bare-head owner is the reader, not the text — untouched).
+    if (clause.action === 'reading' && clause.binding !== 'self' && !target.has(TraitType.READABLE)) {
       target.add(new ReadableTrait({ text: '' }));
     }
   }
@@ -763,6 +969,10 @@ export class ChordRuntime {
         : catchAll ?? {};
       return { entity, interceptor };
     });
+    // The consulted entity IS the arm's owner — as the action's target
+    // (explicit heads) or as the actor (ADR-327 D1 bare heads, reached
+    // through the lifecycle engine's actor consultation). Each clause then
+    // gates on who acts.
     const armFor = (target: IFEntity): ActionInterceptor | undefined =>
       arms.find((a) => runtime.host.entityId(a.entity.id) === target.id)?.interceptor;
 
@@ -791,12 +1001,17 @@ export class ChordRuntime {
    */
   private buildInterceptor(entity: IREntity, clause: IROnClause, ns: string): ActionInterceptor {
     const runtime = this;
-    const ownWorldId = () => runtime.host.entityId(entity.id);
+    // ADR-327 D1: the hook's target is always the owner — consulted as the
+    // action's object (explicit head: fire when the head's actor is acting)
+    // or as the actor itself (bare head: fire when the owner is the actor).
+    const isMine = (target: IFEntity, world: WorldModel, actorId: string): boolean =>
+      target.id === runtime.host.entityId(entity.id) &&
+      (clause.binding === 'self' ? actorId === target.id : runtime.actorMatches(clause.actor, actorId, world));
     const occurrenceKey = CHORD_OCCURRENCE_PREFIX + `on.${ns}`;
 
     return {
-      preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (target.id !== ownWorldId() || clause.clauseKind === 'after') return null;
+      preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        if (!isMine(target, world, actorId) || clause.clauseKind === 'after') return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -815,11 +1030,11 @@ export class ChordRuntime {
           return null;
         }
         const refusal = runtime.findRefusal(clause.body, ctx);
-        return refusal ? { valid: false, error: refusal } : null;
+        return refusal ? { valid: false, ...refusal } : null;
       },
 
-      postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (target.id !== ownWorldId()) return null;
+      postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+        if (!isMine(target, world, actorId)) return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8: same gate, same evaluation point (see preValidate).
@@ -838,16 +1053,16 @@ export class ChordRuntime {
         return null;
       },
 
-      postExecute(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): void {
+      postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
-        if (target.id !== ownWorldId() || bag.skip === true) return;
+        if (!isMine(target, world, actorId) || bag.skip === true) return;
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'mutations');
         runtime.execStatements(clause.body, ctx, 'mutations');
       },
 
-      postReport(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorReportResult {
+      postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
-        if (target.id !== ownWorldId() || bag.skip === true) return {};
+        if (!isMine(target, world, actorId) || bag.skip === true) return {};
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'reports');
         const reports = runtime.execStatements(clause.body, ctx, 'reports');
 
@@ -1549,8 +1764,18 @@ export class ChordRuntime {
     const thenOpens = body.filter(
       (s): s is Extract<IRStatement, { kind: 'then-open' }> => s.kind === 'then-open',
     );
+    // GH #349: a beat served on the speaker's own turn may carry `leave`
+    // exactly as one served in reply; here it is lifted out of the body
+    // (the walker refuses conversation statements) and reported as
+    // `leaves` for the tick caller to close the scene.
+    const leaveFrame = { world, it: owner.id, ...(audienceId !== undefined ? { conversationPartnerId: audienceId } : {}) };
+    const leaves = body.some((s) => {
+      if (s.kind !== 'leave') return false;
+      const when = (s as IRStatement & { stmtWhen?: IRCondition | null }).stmtWhen;
+      return !when || this.evaluator.evalCondition(when, leaveFrame);
+    });
     const reports = this.execStatements(
-      body.filter((s) => s.kind !== 'hold-tongue' && s.kind !== 'then-open'),
+      body.filter((s) => s.kind !== 'hold-tongue' && s.kind !== 'then-open' && s.kind !== 'leave'),
       {
         world,
         it: owner.id,
@@ -1636,6 +1861,7 @@ export class ChordRuntime {
       events,
       ...(spoken ? { spokenMessageId: spoken.messageId, spokenParams: spoken.params } : {}),
       ...(openExchange !== undefined && openWord !== undefined ? { openExchange, openWord } : {}),
+      ...(leaves ? { leaves: true } : {}),
     };
   }
 
@@ -2001,7 +2227,7 @@ export class ChordRuntime {
       const memory = createTraitMemoryAccess(world);
       const events: ISemanticEvent[] = [];
       const pushWire = (wire: SceneWireEvent[]): void => {
-        for (const w of wire) events.push(this.rawEvent(`character.scene.${w.kind}`, { ...w }));
+        events.push(...this.wireToEvents(wire));
       };
 
       if (move.kind === 'advance') {
@@ -2059,6 +2285,84 @@ export class ChordRuntime {
       );
       pushWire([...lifecycleWire, ...advance.wireEvents]);
       return { ...delivery, events: [...events, ...delivery.events] };
+    };
+  }
+
+  /**
+   * Scene wire → semantic events (ADR-320 D12): every kind as
+   * `character.scene.<kind>` (structured data, never prose), plus — for a
+   * `thread-parting` (D10a, 2026-09-02) — the `character.thread.parting`
+   * event the prose pipeline renders by its messageId, the same event the
+   * dispatch path has always emitted for a same-pair park.
+   *
+   * @param wire - The wire events
+   * @returns The semantic events, in order
+   */
+  wireToEvents(wire: SceneWireEvent[]): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    for (const w of wire) {
+      events.push(this.rawEvent(`character.scene.${w.kind}`, { ...w }));
+      if (w.kind === 'thread-parting') {
+        events.push(
+          this.rawEvent('character.thread.parting', {
+            sceneId: w.sceneId,
+            ownerId: w.ownerId,
+            partnerId: w.partnerId,
+            threadKey: w.threadKey,
+            messageId: w.messageId,
+            params: w.params,
+          }),
+        );
+      }
+    }
+    return events;
+  }
+
+  /**
+   * The declared strength of one thread (ADR-320 D10a): what the binding
+   * folds into a scene's grip so an interjection meets the thread's own
+   * word — `define conversation …, blocking` holds.
+   *
+   * @returns The reader the binding calls
+   */
+  buildThreadStrength(): (ownerId: string, partnerId: string, threadKey: string) => SceneStrength | undefined {
+    return (ownerId, _partnerId, threadKey) =>
+      this.irOwnerOf(ownerId)?.conversations?.find((t) => t.name === threadKey)?.strength ?? undefined;
+  }
+
+  /**
+   * The parting-line deliverer (ADR-320 D10a): executes the parked
+   * thread's authored `on parting` body under the delivery rules
+   * (occurrence key, pin filter, first phrase spoken, surplus to the
+   * author channel) and hands back the spoken line. Consulted by every
+   * park-on-close path through the binding, and by the dispatch path's
+   * same-pair park. The body's non-phrase events ride `events`; the
+   * close paths, whose result is wire, carry the line alone.
+   *
+   * @param world - The live world
+   * @returns The deliverer the binding calls
+   */
+  buildPartingLine(
+    world: WorldModel,
+  ): (
+    ownerId: string,
+    partnerId: string,
+    threadKey: string,
+  ) => { messageId: string; params: Record<string, unknown>; events: ISemanticEvent[] } | undefined {
+    return (ownerId, partnerId, threadKey) => {
+      const owner = this.irOwnerOf(ownerId);
+      const thread = owner?.conversations?.find((t) => t.name === threadKey);
+      if (!owner || !thread?.onParting) return undefined;
+      const delivery = this.deliverSeizureBody(
+        world,
+        owner,
+        ownerId,
+        thread.onParting.filter((st) => st.kind !== 'then-open' && st.kind !== 'deflect' && st.kind !== 'leave'),
+        `${CHORD_OCCURRENCE_PREFIX}thread.${owner.id}.${thread.name}.parting`,
+        partnerId,
+      );
+      if (!delivery.spokenMessageId) return undefined;
+      return { messageId: delivery.spokenMessageId, params: delivery.spokenParams ?? {}, events: delivery.events };
     };
   }
 
@@ -2219,7 +2523,7 @@ export class ChordRuntime {
         );
       }
     }
-    events.push(...wire.map((w) => this.rawEvent(`character.scene.${w.kind}`, { ...w })));
+    events.push(...this.wireToEvents(wire));
     return events;
   }
 
@@ -2393,7 +2697,7 @@ export class ChordRuntime {
         if (!row) return catchAll?.preValidate?.(target, world, actorId, data) ?? null;
         const ctx: ExecContext = { world, it: entity.id, ...frameOf(row, actorId) };
         const refusal = runtime.findRefusal(rowParts[index].plain, ctx);
-        return refusal ? { valid: false, error: refusal } : null;
+        return refusal ? { valid: false, ...refusal } : null;
       },
 
       postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
@@ -2433,49 +2737,25 @@ export class ChordRuntime {
           // spoken line per firing — the delivery freeze).
           const parked = npcWorldId ? activeThreadFor(world, npcWorldId, actorId) : undefined;
           if (npcWorldId && parked) {
-            const parkEvents: ISemanticEvent[] = [];
-            const thread = (entity.conversations ?? []).find((t) => t.name === parked.threadKey);
+            // ADR-320 D10a (2026-09-02): the same-pair park renders its
+            // `on parting` through the one shared deliverer every close
+            // path uses; the body's own non-phrase events still ride.
             const scene = sceneWith(world, npcWorldId);
-            if (thread?.onParting) {
-              const partingKey = `${CHORD_OCCURRENCE_PREFIX}thread.${entity.id}.${parked.threadKey}.parting`;
-              const partingOccurrence = ((world.getStateValue(partingKey) as number | undefined) ?? 0) + 1;
-              world.setStateValue(partingKey, partingOccurrence);
-              const partingReports = runtime.execStatements(
-                thread.onParting.filter((st) => st.kind !== 'then-open' && st.kind !== 'deflect' && st.kind !== 'leave'),
-                { world, it: entity.id, occurrence: partingOccurrence, conversationPartnerId: actorId },
-                'all',
-              );
-              for (const event of partingReports) {
-                if (event.type === 'chord.phrase') {
-                  const payload = (event.data ?? {}) as Record<string, unknown>;
-                  parkEvents.push(
-                    runtime.rawEvent('character.thread.parting', {
-                      ownerId: npcWorldId,
-                      threadKey: parked.threadKey,
-                      messageId: String(payload.messageId),
-                      params: (payload.params as Record<string, unknown>) ?? {},
-                    }),
-                  );
-                  if (scene) {
-                    parkEvents.push(
-                      runtime.rawEvent('character.scene.utterance', {
-                        sceneId: scene.id,
-                        speakerId: npcWorldId,
-                        addresseeId: actorId,
-                        messageId: String(payload.messageId),
-                        beats: [],
-                      }),
-                    );
-                  }
-                } else {
-                  parkEvents.push(event);
-                }
-              }
-            }
+            const line = runtime.buildPartingLine(world)(npcWorldId, actorId, parked.threadKey);
             const parkWire = parkThread(world, scene?.id ?? '', npcWorldId, actorId, parked.threadKey);
-            parkEvents.push(...parkWire.map((w) => runtime.rawEvent(`character.scene.${w.kind}`, { ...w })));
+            const partingWire: SceneWireEvent[] = line
+              ? [{
+                  kind: 'thread-parting',
+                  sceneId: scene?.id ?? '',
+                  ownerId: npcWorldId,
+                  partnerId: actorId,
+                  threadKey: parked.threadKey,
+                  messageId: line.messageId,
+                  params: line.params,
+                }]
+              : [];
             if (scene) stampThreadContinuability(world, scene.id, undefined);
-            data.chordThreadPark = parkEvents;
+            data.chordThreadPark = [...(line?.events ?? []), ...runtime.wireToEvents([...parkWire, ...partingWire])];
           }
         }
         return null;
@@ -2684,6 +2964,12 @@ export class ChordRuntime {
     return {
       validate(entity, world, actorId, data): CapabilityValidationResult {
         const ctx = ctxOf(entity, world, actorId, data);
+        // ADR-327 D1: the head names who acts — another actor's action is
+        // not this clause's (the dispatcher reads `chordSkip` as not claiming).
+        if (!runtime.actorMatches(clause.actor, actorId, world)) {
+          data.chordSkip = true;
+          return { valid: true };
+        }
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
         // validate time, BEFORE findRefusal — a gated-out clause sits out
         // entirely, refusals included. ADR-229 R5: the dispatch action
@@ -2701,7 +2987,9 @@ export class ChordRuntime {
           return { valid: true };
         }
         const refusal = runtime.findRefusal(clause.body, ctx);
-        if (refusal) return { valid: false, error: refusal };
+        // Key only — this path's own blocked() re-renders via phraseEvent,
+        // which stages the Choice itself; the staged params are not read.
+        if (refusal) return { valid: false, error: refusal.error };
         world.setStateValue(key, occurrence);
         ctx.occurrence = occurrence;
         data.chordOccurrence = occurrence;
@@ -2734,7 +3022,7 @@ export class ChordRuntime {
     const occurrenceKeyOf = (target: IFEntity) => `${CHORD_OCCURRENCE_PREFIX}trait.${ns}.${itOf(target)}`;
 
     return {
-      preValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+      preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         if (clause.clauseKind === 'after') return null;
         const ctx: ExecContext = { world, it: itOf(target) };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -2743,6 +3031,12 @@ export class ChordRuntime {
         // evaluate the gate: no mutation occurs between them within one
         // action, so the answers cannot differ. Do not move this evaluation.
         const bag = runtime.clauseBag(data, ns);
+        // ADR-327 D1: the head names who acts — a clause for another actor
+        // sits out entirely, refusals included.
+        if (!runtime.actorMatches(clause.actor, actorId, world)) {
+          bag.skip = true;
+          return null;
+        }
         if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
           bag.skip = true;
           return null;
@@ -2754,11 +3048,16 @@ export class ChordRuntime {
           return null;
         }
         const refusal = runtime.findRefusal(clause.body, ctx);
-        return refusal ? { valid: false, error: refusal } : null;
+        return refusal ? { valid: false, ...refusal } : null;
       },
-      postValidate(target: IFEntity, world: WorldModel, _actorId: string, data: InterceptorSharedData): InterceptorResult | null {
+      postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: itOf(target) };
+        // ADR-327 D1: same actor gate as preValidate (after-clauses reach here first).
+        if (!runtime.actorMatches(clause.actor, actorId, world)) {
+          bag.skip = true;
+          return null;
+        }
         // D8: same gate, same evaluation point (see preValidate).
         if (clause.condition && !runtime.evaluator.evalCondition(clause.condition, ctx)) {
           bag.skip = true; // `while <cond>` gate — clause sits out this firing
@@ -2813,6 +3112,25 @@ export class ChordRuntime {
     return this.ir.actions.map((def) => this.buildDispatchAction(def));
   }
 
+  /**
+   * The canonical word a `directions` block declares for `word` (GH #285):
+   * matched case-insensitively against each entry's canonical and aliases,
+   * so the parser's `NORTHEAST` binds as the author's `northeast`. A word
+   * no entry declares is returned unchanged.
+   *
+   * @param def the dispatch action whose `directions` block applies
+   * @param word the value the parser bound for the `direction` slot
+   */
+  private canonicalDirectionWord(def: IRActionDef, word: string): string {
+    const lower = word.toLowerCase();
+    for (const entry of def.directions ?? []) {
+      if (entry.canonical.toLowerCase() === lower || entry.aliases.some((a) => a.toLowerCase() === lower)) {
+        return entry.canonical;
+      }
+    }
+    return word;
+  }
+
   private buildDispatchAction(def: IRActionDef) {
     const runtime = this;
     const actionId = `chord.action.${def.name}`;
@@ -2820,7 +3138,12 @@ export class ChordRuntime {
     // the primary (entity) slot skips it, and entity-less patterns are the
     // ones carrying no entity slot at all.
     const hasDirections = (def.directions ?? []).length > 0;
-    const isEntitySlot = (word: string) => !(hasDirections && word === 'direction');
+    // GH #333: an instrument-typed slot is parsed into the command's
+    // instrument seat, so it is never the primary (direct-object) slot —
+    // `hang the item on the target` with `the item is an instrument` has
+    // `target` as its primary slot wherever the instrument sits.
+    const instrumentSlotNames = new Set((def.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
+    const isEntitySlot = (word: string) => !(hasDirections && word === 'direction') && !instrumentSlotNames.has(word);
     const primarySlot = def.patterns
       .flatMap((p) => p.parts)
       .filter((part): part is { kind: 'slot'; word: string } => part.kind === 'slot')
@@ -2837,23 +3160,44 @@ export class ChordRuntime {
 
     interface DispatchContext {
       world: WorldModel;
+      /** Whoever is acting (ADR-328 D2) — the player, or a character performing the action. */
+      actor?: IFEntity;
       player: IFEntity;
       // ADR-275 D2 (review fix): `parsed.extras` carries the matched rule's
       // defaultSemantics (merged parser-side, ADR-148) — the access seam
       // for semantic word bindings.
-      command: { directObject?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
+      command: { directObject?: { entity?: IFEntity }; instrument?: { entity?: IFEntity }; parsed?: { extras?: Record<string, unknown> } };
       sharedData: Record<string, unknown>;
       event(type: string, data: Record<string, unknown>): ISemanticEvent;
     }
 
     /** Entity bindings + declared semantic WORDS (ADR-275 D2), one map. */
     const bindings = (entity: IFEntity | undefined, context: DispatchContext): Record<string, string> => {
-      const slots: Record<string, string> = { actor: context.player.id };
+      // `the actor` is whoever performs the action — a character acting
+      // through the execution entry (ADR-329 D1/D10) as much as the player.
+      const slots: Record<string, string> = { actor: (context.actor ?? context.player).id };
       if (entity && primarySlot) slots[primarySlot] = entity.id;
+      // GH #333: an instrument-typed slot (`the item is an instrument`) is
+      // parsed into the command's instrument seat, never the direct object —
+      // bind it under its own slot name so `{the item}` in a clause body
+      // renders whatever the pattern's position was.
+      const instrumentEntity = context.command.instrument?.entity;
+      if (instrumentEntity) {
+        for (const typed of def.slotTypes ?? []) {
+          if (typed.type === 'instrument' && slots[typed.slot] === undefined) slots[typed.slot] = instrumentEntity.id;
+        }
+      }
       const extras = context.command.parsed?.extras ?? {};
       for (const key of semanticKeys) {
         const v = extras[key];
-        if (typeof v === 'string' && slots[key] === undefined) slots[key] = v;
+        if (typeof v !== 'string' || slots[key] !== undefined) continue;
+        // GH #285: the parser converts a compass word in `extras.direction`
+        // to the platform's Direction constant (`NORTHEAST`) — right for
+        // stdlib going, wrong for a `directions` block whose canonicals the
+        // analyzer validated as lowercase words. Bind the DECLARED canonical:
+        // the entry whose canonical or alias spells the value, whatever case
+        // the parser handed back. An undeclared word binds as it came.
+        slots[key] = key === 'direction' && hasDirections ? runtime.canonicalDirectionWord(def, v) : v;
       }
       return slots;
     };
@@ -2926,7 +3270,7 @@ export class ChordRuntime {
             const candidate = context.world.getBehaviorBinding(trait.type, actionId)?.behavior;
             if (!candidate) continue;
             const candidateShared: CapabilitySharedData = { chordSlots: slots };
-            const result = candidate.validate(entity, context.world, context.player.id, candidateShared);
+            const result = candidate.validate(entity, context.world, (context.actor ?? context.player).id, candidateShared);
             if (!result.valid) return { valid: false, error: result.error };
             if (candidateShared.chordSkip === true) continue; // gated out — not claiming
             behavior = candidate;
@@ -2944,7 +3288,7 @@ export class ChordRuntime {
           // Routing is decided by the mutations pass, not here (ADR-289 D1).
           const bodyCtx: ExecContext = { world: context.world, slots };
           const refusal = runtime.findRefusal(def.body, bodyCtx);
-          if (refusal) return { valid: false, error: refusal };
+          if (refusal) return { valid: false, ...refusal };
         }
         context.sharedData.capEntity = entity;
         context.sharedData.capBehavior = behavior;
@@ -2958,7 +3302,7 @@ export class ChordRuntime {
         const entity = context.sharedData.capEntity as IFEntity | undefined;
         const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
         if (entity && behavior) {
-          behavior.execute(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
+          behavior.execute(entity, context.world, (context.actor ?? context.player).id, context.sharedData.capShared as CapabilitySharedData);
         }
         if (def.body.length) {
           runtime.execStatements(def.body, runtime.actionBodyCtxFromSlots(context, 'mutations'), 'mutations');
@@ -2969,7 +3313,7 @@ export class ChordRuntime {
         const behavior = context.sharedData.capBehavior as CapabilityBehavior | undefined;
         const events: ISemanticEvent[] = [];
         if (entity && behavior) {
-          const effects = behavior.report(entity, context.world, context.player.id, context.sharedData.capShared as CapabilitySharedData);
+          const effects = behavior.report(entity, context.world, (context.actor ?? context.player).id, context.sharedData.capShared as CapabilitySharedData);
           // The same D9 attribution override as the engine's
           // effectsToEvents: context.event stamps the acting player,
           // which is wrong for NPC-originated effects.
@@ -2983,7 +3327,7 @@ export class ChordRuntime {
         }
         // After-clauses bind to the target entity — an entity-less command
         // has no owner to react (ADR-275 D1).
-        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world));
+        if (entity) events.push(...runtime.fireAfterClauses(def.name, entity, context.world, (context.actor ?? context.player).id));
         return events;
       },
       blocked(context: DispatchContext, result: { error?: string }): ISemanticEvent[] {
@@ -3021,6 +3365,8 @@ export class ChordRuntime {
   private actionBodyCtxFromSlots(
     context: {
       world: WorldModel;
+      /** Whoever is acting (ADR-328 D2); the player when absent. */
+      actor?: IFEntity;
       player: IFEntity;
       sharedData: Record<string, unknown>;
     },
@@ -3028,7 +3374,7 @@ export class ChordRuntime {
   ): ExecContext {
     return {
       world: context.world,
-      slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: context.player.id },
+      slots: (context.sharedData.chordSlotMap as Record<string, string> | undefined) ?? { actor: (context.actor ?? context.player).id },
       ledger: this.ledgerFor(context.sharedData, 'chordBodyDecisions', phase),
     };
   }
@@ -3064,6 +3410,16 @@ export class ChordRuntime {
   buildSchedulerDaemons(): SchedulerDaemon[] {
     const daemons: SchedulerDaemon[] = [];
 
+    // ADR-325 D3f: the timer stepper runs ahead of every other daemon
+    // kind — a timer's turn is decided before anything else reacts to it.
+    if (this.timerDefs.size > 0) {
+      daemons.push({
+        id: 'chord.timers',
+        name: 'ADR-325 timers',
+        run: (ctx) => this.stepTimers(ctx),
+      });
+    }
+
     for (const sequence of this.ir.sequences) {
       // Steps arm in order: `at turn N` on the wall clock, `N turns later`
       // relative to the PREVIOUS step's firing turn, `when <owner> becomes
@@ -3097,6 +3453,7 @@ export class ChordRuntime {
           return next < sequence.steps.length && stepReady(sequence.steps[next], ctx.world, ctx.turn);
         },
         run: (ctx) => {
+          if (this.storyOver(ctx.world)) return [];
           const next = (ctx.world.getStateValue(key) as number | undefined) ?? 0;
           ctx.world.setStateValue(key, next + 1);
           ctx.world.setStateValue(firedKey, ctx.turn);
@@ -3113,25 +3470,10 @@ export class ChordRuntime {
     this.ir.entities.forEach((irEntity) => {
       irEntity.onClauses.forEach((clause, clauseIndex) => {
         if (clause.binding !== 'every-turn') return;
-        const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
         daemons.push({
           id: `chord.entity-turn.${irEntity.id}.${clauseIndex}`,
           name: `on every turn (${irEntity.id})`,
-          run: (ctx) => {
-            // Presence gate (decision 10): performances need an audience —
-            // the clause does not FIRE off-stage. Checked before the
-            // condition so an off-stage `one chance in N` never draws the
-            // RNG (AC-5 determinism for on-stage firings) and `, once` is
-            // never consumed unwitnessed. Presence, not sight.
-            if (!this.playerPresentAt(ctx.world, irEntity.id)) return [];
-            const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
-            if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
-            const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
-            if (clause.once && fired > 1) return []; // `, once` (D5)
-            ctx.world.setStateValue(key, fired);
-            evalCtx.occurrence = fired;
-            return this.narrated(this.execStatements(clause.body, evalCtx));
-          },
+          run: (ctx) => this.runEntityTurnClause(irEntity, clause, clauseIndex, ctx.world),
         });
       });
     });
@@ -3148,6 +3490,7 @@ export class ChordRuntime {
         id: `chord.story-turn.${clauseIndex}`,
         name: 'on every turn (story)',
         run: (ctx) => {
+          if (this.storyOver(ctx.world)) return [];
           const evalCtx: ExecContext = { world: ctx.world };
           if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
           const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
@@ -3172,15 +3515,18 @@ export class ChordRuntime {
           name: `on every turn (${trait.name})`,
           run: (ctx) => {
             const out: ISemanticEvent[] = [];
+            if (this.storyOver(ctx.world)) return out;
             for (const irEntity of this.ir.entities) {
               const comp = irEntity.traits.find((t) => t.name === trait.name);
               if (!comp) continue;
               const worldId = this.host.entityId(irEntity.id);
               const entity = worldId ? ctx.world.getEntity(worldId) : undefined;
               if (!entity?.has(traitType)) continue;
-              // Presence gate (decision 10) — before any condition so the
-              // RNG stream and `, once` are untouched off-stage.
-              if (!this.playerPresentAt(ctx.world, irEntity.id)) continue;
+              // Role gate (ADR-327 D9) before any condition, so the RNG
+              // stream and `, once` are untouched while the owner is the PC.
+              // No presence gate (ADR-328 D3): off-stage firings are tagged,
+              // not dropped.
+              if (this.holdsPlayerRole(ctx.world, irEntity.id)) continue;
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.evaluator.evalCondition(comp.condition, evalCtx)) continue;
               if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) continue;
@@ -3189,7 +3535,8 @@ export class ChordRuntime {
               if (clause.once && fired > 1) continue; // `, once` (D5)
               ctx.world.setStateValue(key, fired);
               evalCtx.occurrence = fired;
-              out.push(...this.execStatements(clause.body, evalCtx));
+              const at = this.placeOf(irEntity.id, ctx.world);
+              out.push(...this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, ctx.world, at));
             }
             return this.narrated(out);
           },
@@ -3211,6 +3558,20 @@ export class ChordRuntime {
         run: () => this.drainChannelEvents(),
       });
     }
+    // ADR-329 D4: an act fired inside a daemon body (every-turn, a timer's
+    // expiry) has no player action for the flush plugin to follow; this
+    // daemon delivers its events on the same tick. Registered only when the
+    // story carries an acting statement or a `move` (GH #331: a moved
+    // player's arrival description rides the same queue), so every other
+    // story keeps its exact daemon roster.
+    if (this.hasDeferredNarration()) {
+      daemons.push({
+        id: 'chord.act-drain',
+        name: 'Acting-statement narration drain',
+        condition: () => this.pendingActEvents.length > 0,
+        run: () => this.drainActEvents(),
+      });
+    }
 
     return daemons;
   }
@@ -3218,6 +3579,139 @@ export class ChordRuntime {
   /** Scheduler-returned events must narrate to reach the transcript. */
   private narrated(events: ISemanticEvent[]): ISemanticEvent[] {
     return events.map((e) => ({ ...e, narrate: true } as ISemanticEvent));
+  }
+
+  /**
+   * Whether the story is over (GH #245 defect 2): an ending was triggered
+   * (`win`/`lose`) or the player is dead (`kill the player`). Every daemon
+   * body — entity, story and trait every-turn clauses, sequence steps —
+   * checks this before running, so nothing narrates after the turn that
+   * ended the game ("Sparks walk the waxed cord" after the blast).
+   */
+  private storyOver(world: WorldModel): boolean {
+    if (world.getStateValue(STORY_ENDING_FLAG) !== undefined) return true;
+    const player = world.getPlayer();
+    const health = player?.get(HealthTrait) as { dead?: boolean } | undefined;
+    return health?.dead === true;
+  }
+
+  /**
+   * Run one entity every-turn clause (`on every turn while …[, once]` in a
+   * create block) now, `it` = the owner — the one body its scheduler daemon
+   * and the arrival reaction (GH #353) share, so a clause fired by either is
+   * spent for both.
+   *
+   * Role gate first (ADR-327 D9): a character's autonomous clauses drive them
+   * only while they are NOT the one being played, checked before the
+   * condition so the RNG stream and `, once` are untouched for as long as the
+   * owner holds the role — the clause wakes, unconsumed, the turn the role
+   * moves off them. No presence gate (ADR-328 D3): the clause fires wherever
+   * the player is — `, once` and RNG conditions consume off-stage, and
+   * `sourced` stamps the owner's place so the engine tags `presence` and the
+   * client decides what to show.
+   *
+   * @param irEntity the owning entity
+   * @param clause the every-turn clause
+   * @param clauseIndex its index among the owner's clauses (the occurrence key)
+   * @param world the live world
+   * @returns the clause's events, or none when a gate holds it
+   */
+  private runEntityTurnClause(irEntity: IREntity, clause: IROnClause, clauseIndex: number, world: WorldModel): ISemanticEvent[] {
+    const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
+    if (this.storyOver(world)) return [];
+    if (this.holdsPlayerRole(world, irEntity.id)) return [];
+    const evalCtx: ExecContext = { world, it: irEntity.id };
+    if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
+    const fired = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
+    if (clause.once && fired > 1) return []; // `, once` (D5)
+    world.setStateValue(key, fired);
+    evalCtx.occurrence = fired;
+    const at = this.placeOf(irEntity.id, world);
+    return this.narrated(this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, world, at));
+  }
+
+  /**
+   * The owner's place for ADR-328 D3 sourcing: a room owner is the room, a
+   * region owner the region, anything else its containing room (or bare
+   * location). `null` when the owner has no place (offstage); `undefined`
+   * when it has no world entity at all.
+   *
+   * @param ownerIrId the owner, as an IR id
+   * @param world the live world
+   */
+  private placeOf(ownerIrId: string, world: WorldModel): string | null | undefined {
+    const ownerId = this.host.entityId(ownerIrId);
+    if (!ownerId) return undefined;
+    const owner = world.getEntity(ownerId);
+    if (owner?.has(TraitType.ROOM) || owner?.has(TraitType.REGION)) return ownerId;
+    return world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId) ?? null;
+  }
+
+  /**
+   * The arrival reaction the loader binds on the character registry (GH
+   * #353): a fact just landed on `listenerWorldId` by propagation, so each of
+   * that owner's every-turn clauses gated on knowing `topic` runs NOW, on the
+   * arrival tick, in the author's words — the contract `arrivalNarratedTopics`
+   * names (the platform's generic "mentions something" line already stands
+   * down for these). Occurrence bookkeeping is the daemon's own, so a `, once`
+   * clause fired here is spent when the scheduler next looks.
+   *
+   * @param listenerWorldId the listener, as a world id
+   * @param topic the topic that arrived
+   * @param world the live world
+   * @returns the clauses' events, in clause order; none for an unmodeled listener
+   */
+  fireArrivalReaction(listenerWorldId: string, topic: string, world: WorldModel): ISemanticEvent[] {
+    const irId = this.host.irIdOf(listenerWorldId);
+    const irEntity = irId ? this.ir.entities.find((e) => e.id === irId) : undefined;
+    if (!irEntity) return [];
+    const out: ISemanticEvent[] = [];
+    irEntity.onClauses.forEach((clause, clauseIndex) => {
+      if (clause.binding !== 'every-turn') return;
+      if (!knownTopicsIn(clause.condition).has(topic)) return;
+      out.push(...this.runEntityTurnClause(irEntity, clause, clauseIndex, world));
+    });
+    return out;
+  }
+
+  /**
+   * ADR-328 D3, producer half: an owner's autonomous narration carries the
+   * owner as `entities.actor` and the place it happened as
+   * `entities.location` — a room owner is the room, a region owner the
+   * region, anything else its containing room. The engine's enrichment
+   * funnel reads the location to tag `presence`; without it the funnel
+   * would default both to the player. A value the statement already set
+   * wins. An owner with no place at all (offstage) has nowhere the player
+   * could be present, so its narration is tagged `absent` here — the
+   * funnel never overwrites a producer-set presence.
+   *
+   * "The place it happened" is where the owner stood when the clause FIRED:
+   * a body that moves its owner (`move Kemp to the Tavern` after the storm-off
+   * line) narrates the leaving, not the arriving, so a caller that runs a body
+   * snapshots the place with `placeOf` first and passes it as `at` (GH #353).
+   * Omitted, the place is read now.
+   *
+   * @param events the events to stamp
+   * @param ownerIrId the owner, as an IR id
+   * @param world the live world
+   * @param at the owner's place when the events happened (`null` = no place);
+   *   omitted → the owner's place now
+   */
+  private sourced(events: ISemanticEvent[], ownerIrId: string, world: WorldModel, at?: string | null): ISemanticEvent[] {
+    const ownerId = this.host.entityId(ownerIrId);
+    if (!ownerId) return events;
+    const location = (at === undefined ? this.placeOf(ownerIrId, world) : at) ?? undefined;
+    return events.map((e) => ({
+      ...e,
+      entities: {
+        ...e.entities,
+        actor: e.entities?.actor ?? ownerId,
+        ...(location !== undefined && e.entities?.location === undefined ? { location } : {}),
+      },
+      ...(location === undefined && e.entities?.location === undefined && e.presence === undefined
+        ? { presence: 'absent' as const }
+        : {}),
+    }));
   }
 
   /**
@@ -3231,25 +3725,226 @@ export class ChordRuntime {
     return this.narrated(this.execStatements(statements, { world }));
   }
 
+  // ---------------------------------------------------------------- timers
+
+  /** Wire the engine's turn counter (loader-only; ADR-325 D3f). */
+  setTurnProvider(provider: () => number): void {
+    this.turnProvider = provider;
+  }
+
+  /** ADR-329 D4: the engine's execution entry (`GameEngine.executeAsActor`), set at engine-ready. */
+  setExecutionEntry(entry: (actorId: string, actionId: string, slots?: ActSlots) => ActResult): void {
+    this.executionEntry = entry;
+  }
+
+  /** True when any clause body in the story carries an acting statement (ADR-329). */
+  hasActingStatements(): boolean {
+    return this.irCarries((rec) => rec.kind === 'act' && typeof rec.action === 'string' && Array.isArray(rec.slots));
+  }
+
   /**
-   * Decision 10 presence semantics: the player shares the owner's location.
-   * A room owner means the player is IN that room; a region owner "is" at
-   * every member room — presence is `isInRegion(player, region)`, transitive
-   * through nesting (ADR-236 D4); for anything else the two share a
-   * containing room (same co-location rule as can-see/can-reach — presence,
-   * not sight, so the snake speaks in darkness).
+   * True when the story can queue narration for the act flush: an acting
+   * statement (ADR-329 D4) or a `move` statement — an authorial move of the
+   * player describes the destination through the same queue (GH #331).
+   * Which entity a `move` moves is a runtime fact, so any `move` counts.
    */
-  private playerPresentAt(world: WorldModel, irEntityId: string): boolean {
-    const ownerId = this.host.entityId(irEntityId);
-    const playerId = world.getPlayer()?.id;
-    if (!ownerId || !playerId) return false;
-    if (ownerId === playerId) return true;
-    const owner = world.getEntity(ownerId);
-    if (owner?.has(TraitType.REGION)) return world.isInRegion(playerId, ownerId);
-    const playerRoom = world.getContainingRoom(playerId)?.id ?? world.getLocation(playerId);
-    if (owner?.has(TraitType.ROOM)) return playerRoom === ownerId;
-    const ownerRoom = world.getContainingRoom(ownerId)?.id ?? world.getLocation(ownerId);
-    return ownerRoom !== undefined && ownerRoom === playerRoom;
+  hasDeferredNarration(): boolean {
+    return this.hasActingStatements()
+      || this.irCarries((rec) => rec.kind === 'move' && 'entity' in rec && 'place' in rec);
+  }
+
+  /** Walk the IR for any object node the predicate accepts. */
+  private irCarries(predicate: (rec: Record<string, unknown>) => boolean): boolean {
+    const visit = (node: unknown): boolean => {
+      if (Array.isArray(node)) return node.some(visit);
+      if (node && typeof node === 'object') {
+        const rec = node as Record<string, unknown>;
+        if (predicate(rec)) return true;
+        return Object.values(rec).some(visit);
+      }
+      return false;
+    };
+    return visit(this.ir);
+  }
+
+  /**
+   * Drain the events acting statements produced inside actions and handlers
+   * (ADR-329 D4). Consumed by the loader's `chord.acted-events` turn plugin
+   * — right after the player's action, before the actor phase — and by the
+   * act drain daemon for acts fired inside scheduler daemons. Never rendered
+   * through an action's own return: the entry already applied them.
+   */
+  drainActEvents(): ISemanticEvent[] {
+    return this.pendingActEvents.splice(0, this.pendingActEvents.length);
+  }
+
+  /**
+   * Perform an acting statement (ADR-329 D1/D4/D5): resolve the actor and
+   * the action id (story-first, as clause heads resolve), bind the shape's
+   * slots to roles, and run the action NOW as that actor through the
+   * engine's execution entry. Returns every event the action emitted —
+   * a refusal's included (D5: the pipeline's own answer).
+   *
+   * @throws LoadError `runtime.act-no-entry` headless; `runtime.act-player-actor`
+   *   when the actor currently holds the player role; `runtime.act-reentry`
+   *   past 8 nested acts.
+   */
+  private performAct(stmt: Extract<IRStatement, { kind: 'act' }>, ctx: ExecContext): ISemanticEvent[] {
+    if (!this.executionEntry) {
+      throw new LoadError(`runtime.act-no-entry: \`${stmt.action}\` needs the engine's execution entry — the story is running without an engine.`, stmt.span);
+    }
+    const world = ctx.world;
+    const actorId = this.evaluator.entityValue(stmt.actor, ctx);
+    const actorName = world.getEntity(actorId)?.name ?? actorId;
+    // The runtime half of D1's exclusion: the compiler refuses the spelled
+    // role; a named character who currently holds it is refused here.
+    if (world.getPlayer()?.id === actorId) {
+      throw new LoadError(`runtime.act-player-actor: ${actorName} holds the player role this turn and cannot be made to act.`, stmt.span);
+    }
+    const storyDef = this.ir.actions.find((a) => a.name === stmt.action);
+    const actionId = storyDef ? `chord.action.${stmt.action}` : `if.action.${stmt.action}`;
+    const instrumentSlots = new Set((storyDef?.slotTypes ?? []).filter((t) => t.type === 'instrument').map((t) => t.slot));
+
+    const slots: ActSlots = {};
+    let entitySlots = 0;
+    for (const bound of stmt.slots) {
+      if (bound.slot === 'direction') {
+        const word = bound.value.kind === 'literal' ? bound.value.value : this.evaluator.entityValue(bound.value, ctx);
+        const direction = (Direction as Record<string, DirectionType>)[word.toUpperCase()];
+        if (!direction) throw new LoadError(`Unknown direction \`${word}\`.`, stmt.span);
+        slots.direction = direction;
+        continue;
+      }
+      const entity = world.getEntity(this.evaluator.entityValue(bound.value, ctx));
+      if (!entity) throw new LoadError(`\`${bound.slot}\` names nothing in the world.`, stmt.span);
+      if (instrumentSlots.has(bound.slot)) slots.instrument = entity;
+      else if (entitySlots++ === 0) slots.directObject = entity;
+      else slots.indirectObject = entity;
+    }
+
+    const link = `${actorName} ${stmt.action}`;
+    if (this.actDepth >= ACT_DEPTH_CAP) {
+      throw new LoadError(
+        `runtime.act-reentry: an acting statement re-entered ${ACT_DEPTH_CAP} times (${[...this.actChain, link].join(' → ')}) — a reaction keeps making a character act in a way whose reactions make one act again.`,
+        stmt.span,
+      );
+    }
+    this.actDepth++;
+    this.actChain.push(link);
+    try {
+      return this.executionEntry(actorId, actionId, slots).events;
+    } finally {
+      this.actDepth--;
+      this.actChain.pop();
+    }
+  }
+
+  /** The current turn: the engine's when wired, else the last tick's. */
+  private turnNow(): number {
+    return this.turnProvider ? this.turnProvider() : this.lastTickTurn;
+  }
+
+  private timerRecord(qualified: string, world: WorldModel): TimerRecord {
+    return this.evaluator.timerRecord(qualified, { world });
+  }
+
+  private writeTimer(qualified: string, world: WorldModel, record: TimerRecord): void {
+    world.setStateValue(timerKey(qualified), record);
+  }
+
+  /**
+   * ADR-325 D3c verb semantics. `start` on a started timer is a no-op;
+   * `restart` always runs from the top; `reset` returns to idle;
+   * `stop` holds; `interrupt` expires any started timer now (idle: no-op).
+   */
+  private runTimerVerb(verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt', qualified: string, ctx: ExecContext): ISemanticEvent[] {
+    const world = ctx.world;
+    const record = this.timerRecord(qualified, world);
+    switch (verb) {
+      case 'start':
+        if (record.phase === 'idle') this.writeTimer(qualified, world, { phase: 'running', index: 0, startedTurn: this.turnNow() });
+        return [];
+      case 'restart':
+        this.writeTimer(qualified, world, { phase: 'running', index: 0, startedTurn: this.turnNow() });
+        return [];
+      case 'reset':
+        this.writeTimer(qualified, world, { phase: 'idle', index: 0, startedTurn: -1 });
+        return [];
+      case 'stop':
+        if (record.phase === 'running') this.writeTimer(qualified, world, { ...record, phase: 'stopped' });
+        return [];
+      case 'interrupt':
+        if (record.phase === 'idle' || record.phase === 'expired') return [];
+        return this.expireTimer(qualified, world);
+    }
+  }
+
+  /** Mark a timer expired and fire its `when … expires` clauses (once per run). */
+  private expireTimer(qualified: string, world: WorldModel): ISemanticEvent[] {
+    const record = this.timerRecord(qualified, world);
+    this.writeTimer(qualified, world, { ...record, phase: 'expired' });
+    const out: ISemanticEvent[] = [];
+    for (const { clause, it } of this.timerClauses.get(qualified) ?? []) {
+      const evalCtx: ExecContext = it ? { world, it } : { world };
+      if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) continue;
+      out.push(...this.execStatements(clause.body, evalCtx));
+    }
+    return out;
+  }
+
+  /**
+   * ADR-325 D3f: one step for every running timer, in declaration order.
+   * A timer started this turn waits for the next. Each step: the
+   * `interrupted` roll, then the next named turn (its prose spoken, owner
+   * present) or expiry; `meanwhile` only while still running afterward.
+   */
+  private stepTimers(tick: SchedulerTick): ISemanticEvent[] {
+    this.lastTickTurn = tick.turn;
+    const world = tick.world;
+    const out: ISemanticEvent[] = [];
+    for (const def of this.timerDefs.values()) {
+      const record = this.timerRecord(def.qualified, world);
+      if (record.phase !== 'running') continue;
+      if (record.startedTurn === tick.turn) continue; // first named turn is next turn
+      const ownerCtx: ExecContext = def.owner && def.owner !== 'player' ? { world, it: def.owner } : { world };
+      if (def.interrupted !== null && this.evaluator.evalCondition({ kind: 'chance', n: def.interrupted }, ownerCtx)) {
+        out.push(...this.expireTimer(def.qualified, world));
+        continue;
+      }
+      const index = record.index + 1;
+      if (index > def.states.length) {
+        out.push(...this.expireTimer(def.qualified, world));
+        continue;
+      }
+      this.writeTimer(def.qualified, world, { ...record, index });
+      const state = def.states[index - 1];
+      const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+      if (table[`${def.qualified}.${state}`]) {
+        // ADR-328 D3: a named turn's prose fires wherever the player is;
+        // an entity owner's place rides the event so it is tagged, not dropped.
+        const spoken = this.phraseEvent(`${def.qualified}.${state}`, { world });
+        out.push(...(def.owner && def.owner !== 'player' ? this.sourced([spoken], def.owner, world) : [spoken]));
+      }
+      if (def.meanwhile && (def.meanwhile.chance === null || this.evaluator.evalCondition({ kind: 'chance', n: def.meanwhile.chance }, ownerCtx))) {
+        out.push(...this.execStatements(def.meanwhile.body, ownerCtx));
+      }
+    }
+    return this.narrated(out);
+  }
+
+  /**
+   * Is this IR entity the one currently holding the player role (ADR-327 D9)?
+   *
+   * Asked at fire time, never stored: the role moves, and a clause silenced
+   * this turn must be able to speak the next one.
+   *
+   * @param world the live world
+   * @param irEntityId the clause owner's IR id
+   * @returns true when that character is the current PC
+   */
+  private holdsPlayerRole(world: WorldModel, irEntityId: string): boolean {
+    const worldId = this.host.entityId(irEntityId);
+    return worldId !== undefined && worldId === world.getPlayer()?.id;
   }
 
   /**
@@ -3258,7 +3953,7 @@ export class ChordRuntime {
    * confirmed (interceptor hooks never fire on the dispatch path; the
    * runtime owns these actions, so reactions run in their report phase).
    */
-  private fireAfterClauses(actionName: string, target: IFEntity, world: WorldModel): ISemanticEvent[] {
+  private fireAfterClauses(actionName: string, target: IFEntity, world: WorldModel, actorId: string): ISemanticEvent[] {
     const out: ISemanticEvent[] = [];
     const targetIrId = this.host.irIdOf(target.id);
     if (targetIrId === undefined) return out;
@@ -3267,6 +3962,8 @@ export class ChordRuntime {
 
     irEntity.onClauses.forEach((clause, clauseIndex) => {
       if (clause.clauseKind !== 'after' || clause.action !== actionName) return;
+      // ADR-327 D1: the head names who acts.
+      if (!this.actorMatches(clause.actor, actorId, world)) return;
       const ctx: ExecContext = { world, it: targetIrId };
       if (clause.condition && !this.evaluator.evalCondition(clause.condition, ctx)) return;
       const key = `${CHORD_OCCURRENCE_PREFIX}after.${irEntity.id}.${actionName}.${clauseIndex}`;
@@ -3347,6 +4044,44 @@ export class ChordRuntime {
    * 'mutations' applies change/set/move only; 'reports' collects
    * phrase/emit/win/lose only; 'all' (rules) does both in source order.
    */
+  /**
+   * The world entity the start block assigned the player role to (ADR-327
+   * D10). Set by the `change-player` effect while the world has no player;
+   * read once by the loader's `createPlayer`. Undefined means the block ran
+   * and never assigned — a load error, not a default.
+   */
+  assignedPlayerId?: string;
+
+  /**
+   * True only while `runStartBlock` is executing. This — not "does the world
+   * have a player yet" — is what tells `change the player to` which of its two
+   * meanings applies. Hosts are free to seed a placeholder player before
+   * `setStory` (bootstrap does), so the world's own answer says nothing about
+   * whether the story has opened.
+   */
+  private inStartBlock = false;
+
+  /**
+   * Run the story's `before the game starts` body against the fully built
+   * world (ADR-327 D10).
+   *
+   * @param world the world every entity has already been built into
+   * @returns the events the block's effects produced — ordinarily none, since
+   *   the block takes effect statements only (`analysis.start-block-narration`)
+   */
+  runStartBlock(world: WorldModel): ISemanticEvent[] {
+    const block = this.ir.startBlock;
+    if (!block) return [];
+    this.inStartBlock = true;
+    try {
+      // A story-owned context: no owner entity, so `it` is unbound — the same
+      // shape a story-owned daemon body runs in.
+      return this.execStatements(block.body, { world });
+    } finally {
+      this.inStartBlock = false;
+    }
+  }
+
   private execStatements(
     body: IRStatement[],
     ctx: ExecContext,
@@ -3447,29 +4182,71 @@ export class ChordRuntime {
           }
           break;
         }
+        case 'change-player': {
+          // ADR-327 D9/D10 — one statement, two moments. Inside the start
+          // block it IS the assignment: the loader reads `assignedPlayerId`
+          // and returns that entity from `createPlayer`. Anywhere else it is a
+          // request the engine drains at turn end, because the loader holds no
+          // engine handle (the `triggerEnding` seam).
+          if (holds) {
+            if (this.inStartBlock) {
+              // A state change: it belongs to the mutations pass.
+              if (phase !== 'reports') this.assignedPlayerId = this.evaluator.entityValue(stmt.entity, ctx);
+            } else if (phase !== 'mutations') {
+              // A signal for the engine to act on at the turn boundary, so it
+              // rides the REPORTS pass — the mutations pass's events are
+              // recorded and dropped, which is where this request went missing.
+              const targetId = this.evaluator.entityValue(stmt.entity, ctx);
+              if (targetId) {
+                events.push(this.rawEvent('if.event.player.switch_requested', { entityId: targetId }));
+              }
+            }
+          }
+          break;
+        }
         case 'move': {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
-            const place = this.evaluator.entityValue(stmt.place, ctx);
-            this.moveWithLifecycle(thing, place, ctx);
+            this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx, thing), ctx);
+          }
+          break;
+        }
+        case 'act': {
+          // ADR-329 D4: one action, now, as the named character, through the
+          // engine's execution entry. Runs ONCE — in a single pass, or the
+          // mutations pass of a two-pass body. Its events were applied inside
+          // the entry, so they never join this body's return (an action's or
+          // a handler's return is re-applied); they wait in the act buffer
+          // for the flush plugin, which lands them right after the report
+          // that caused them — or for the drain daemon, on the tick.
+          if (phase !== 'reports' && holds) {
+            for (const e of this.performAct(stmt, ctx)) this.pendingActEvents.push(e);
           }
           break;
         }
         case 'remove': {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
-            // Z6 (ADR-213): the loader's pre-removal observer fires inside
-            // removeEntity and enqueues any witnessed `disappeared`
-            // narration; the report-collecting pass drains it. Never
-            // rendered inline from the mutation pass.
-            ctx.world.removeEntity(thing);
+            // ADR-325 Z6 as amended (GH #345, #330): `remove` marks the
+            // entity GONE rather than destroying it — offstage through the
+            // move lifecycle (which narrates `disappeared` exactly as
+            // `move … offstage` does), plus the gone flag. Conditions that
+            // still name it evaluate; nothing throws.
+            this.markGone(thing, ctx);
           }
           break;
         }
         case 'set': {
-          if (phase !== 'reports') {
+          if (phase !== 'reports' && holds) {
             const value = this.evaluator.evalValue(stmt.value, ctx);
-            if (stmt.target.kind === 'field') {
+            if (stmt.target.kind === 'field' && stmt.target.field === 'landing') {
+              // `set <region>'s landing to <room>` (ADR-325 D5).
+              const regionId = this.evaluator.entityValue(stmt.target.base, ctx);
+              if (typeof value !== 'string' || !ctx.world.getEntity(value)?.has(TraitType.ROOM)) {
+                throw new LoadError('A landing is set to a room.', stmt.span);
+              }
+              this.evaluator.setLanding(regionId, value, ctx.world);
+            } else if (stmt.target.kind === 'field') {
               // Trait data fields (`set its treats to 3`) write the entity's
               // chord trait instance — world state via traits (AC-6-safe).
               const baseId = this.evaluator.entityValue(stmt.target.base, ctx);
@@ -3497,6 +4274,15 @@ export class ChordRuntime {
           }
           break;
         }
+        case 'timer': {
+          // ADR-325 D3c: the five verbs. `interrupt` expires the timer now
+          // and fires its expiry clauses in place — decided once in the
+          // mutations pass, their narration replayed to the reports pass.
+          if (!holds) break;
+          const fired = ledger.resolve(stmt, 'expiry', () => this.runTimerVerb(stmt.verb, stmt.timer, ctx));
+          if (phase !== 'mutations') events.push(...fired);
+          break;
+        }
         case 'raise':
         case 'lower': {
           // ADR-264 D2: additive counter mutation with silent two-sided clamp.
@@ -3506,6 +4292,21 @@ export class ChordRuntime {
             const bounds = this.counterBounds(stmt.counter, ownerIrId);
             const current = Number(ctx.world.getStateValue(key) ?? 0);
             let next = current + (stmt.kind === 'raise' ? stmt.amount : -stmt.amount);
+            if (bounds) {
+              if (bounds.lo !== null && next < bounds.lo) next = bounds.lo;
+              if (bounds.hi !== null && next > bounds.hi) next = bounds.hi;
+            }
+            ctx.world.setStateValue(key, next);
+          }
+          break;
+        }
+        case 'set-counter': {
+          // ADR-325 D4: absolute tally assignment, clamped like raise/lower.
+          if (phase !== 'reports' && holds) {
+            const ownerIrId = stmt.owner === null ? null : this.irIdOfValue(stmt.owner, ctx);
+            const key = counterKey(stmt.counter, ownerIrId ?? undefined);
+            const bounds = this.counterBounds(stmt.counter, ownerIrId);
+            let next = stmt.value;
             if (bounds) {
               if (bounds.lo !== null && next < bounds.lo) next = bounds.lo;
               if (bounds.hi !== null && next > bounds.hi) next = bounds.hi;
@@ -3604,39 +4405,207 @@ export class ChordRuntime {
   }
 
   /**
-   * Z3: `move` with witnessed-only lifecycle narration (D11). `exited`
-   * fires when the player shares the mover's SOURCE room at the transition
-   * (and the move really changes rooms); `entered` when the player shares
-   * the DESTINATION room after arrival. Unwitnessed transitions narrate
-   * nothing and consume nothing; narration is enqueued, never emitted
-   * inline from the mutation pass. Moving the player itself never narrates.
+   * Z3: `move` with lifecycle narration (D11, as amended by ADR-328 D3).
+   * `exited` fires for the mover's SOURCE room at the transition (when the
+   * move really changes rooms); `entered` for the DESTINATION room after
+   * arrival. Both rows fire wherever the player is, each stamped with its
+   * room; the engine tags `presence` and the client hides what the player
+   * was absent from. Narration is enqueued, never emitted inline from the
+   * mutation pass. Moving the player itself never narrates.
    *
    * @param thingWorldId the moved entity's world id
    * @param placeWorldId the destination's world id
    * @param ctx the executing context (live world)
    */
-  private moveWithLifecycle(thingWorldId: string, placeWorldId: string, ctx: ExecContext): void {
+  /**
+   * Resolve a `move` destination (ADR-325 D1–D2) to a world id, or null for
+   * `offstage`. A possessive `location` whose owner is offstage has no
+   * place to move to: a diagnostic naming the owner, never a silent no-op.
+   */
+  private resolvePlace(place: IRValue, ctx: ExecContext, moverWorldId: string): string | null {
+    if (place.kind === 'symbol' && place.name === 'offstage') return null;
+    if (place.kind === 'symbol' && place.name === 'adjacent-room') {
+      // ADR-326 D1–D3: drawn at effect time from the mover's own room.
+      const drawn = this.evaluator.drawAdjacentRoom(moverWorldId, ctx.world);
+      if (drawn === undefined) {
+        const mover = ctx.world.getEntity(moverWorldId);
+        const roomId = ctx.world.getContainingRoom(moverWorldId)?.id ?? ctx.world.getLocation(moverWorldId);
+        const room = roomId ? ctx.world.getEntity(roomId) : undefined;
+        throw new LoadError(
+          `Cannot move ${mover?.name ?? moverWorldId} to a random adjacent room — no exit from ${room?.name ?? 'its location'} is traversable right now.`,
+        );
+      }
+      return drawn;
+    }
+    const resolved = this.evaluator.evalValue(place, ctx);
+    if (typeof resolved === 'string' && ctx.world.getEntity(resolved)) {
+      // ADR-325 D5: a region with a landing is a place — land there.
+      return this.evaluator.drawLanding(resolved, ctx.world) ?? resolved;
+    }
+    if (place.kind === 'field' && place.field === 'location') {
+      const ownerId = this.evaluator.evalValue(place.base, ctx);
+      const owner = typeof ownerId === 'string' ? ctx.world.getEntity(ownerId) : undefined;
+      const name = owner?.name ?? 'the owner';
+      throw new LoadError(`Cannot move to ${name}'s location — ${name} is offstage.`);
+    }
+    throw new LoadError(`Expected a place, got \`${String(resolved)}\`.`);
+  }
+
+  /**
+   * Move an entity and enqueue its lifecycle narration: `exited` for the
+   * room it leaves, `entered` for the room it arrives in, and `disappeared`
+   * (ADR-325 D2, the same row `remove` uses) when it goes offstage — each
+   * tagged by room (ADR-328 D3), none dropped. `placeWorldId` null detaches
+   * the entity (offstage).
+   */
+  /**
+   * Take an entity out of play (ADR-325 Z6 as amended, GH #345): move it
+   * offstage through the ordinary move lifecycle — the `disappeared` row
+   * fires for whoever witnessed it — and stamp the gone flag under its IR
+   * id. The entity stays in the world: conditions naming it evaluate
+   * (`is here` false, `has` false, location nowhere), its states read as
+   * last set, and a save carries the flag. Already gone → nothing happens.
+   * A non-story entity (no IR id) is only moved offstage.
+   *
+   * @param worldId the entity to remove
+   * @param ctx the executing clause's context
+   */
+  private markGone(worldId: string, ctx: ExecContext): void {
+    const irId = this.host.irIdOf(worldId);
+    if (irId !== undefined && ctx.world.getStateValue(CHORD_GONE_PREFIX + irId) === true) return;
+    this.moveWithLifecycle(worldId, null, ctx);
+    if (irId !== undefined) ctx.world.setStateValue(CHORD_GONE_PREFIX + irId, true);
+  }
+
+  /** True while a Chord `remove` has taken the entity out of play. */
+  isGone(worldId: string, world: WorldModel): boolean {
+    const irId = this.host.irIdOf(worldId);
+    return irId !== undefined && world.getStateValue(CHORD_GONE_PREFIX + irId) === true;
+  }
+
+  private moveWithLifecycle(thingWorldId: string, placeWorldId: string | null, ctx: ExecContext): void {
     const world = ctx.world;
     const roomOf = (id: string): string | undefined =>
       world.getContainingRoom(id)?.id ?? world.getLocation(id);
     const fromRoom = roomOf(thingWorldId);
     world.moveEntity(thingWorldId, placeWorldId);
+    const toRoom = roomOf(thingWorldId);
+    // A move back into the world revives a gone entity (ADR-325 Z6 as
+    // amended): the flag is the story's "over", and a later `move` unsays it.
+    if (placeWorldId !== null) {
+      const irId = this.host.irIdOf(thingWorldId);
+      if (irId !== undefined && world.getStateValue(CHORD_GONE_PREFIX + irId) === true) {
+        world.setStateValue(CHORD_GONE_PREFIX + irId, false);
+      }
+    }
 
-    const playerId = world.getPlayer()?.id;
-    if (!playerId || thingWorldId === playerId) return;
+    this.witnessMove(thingWorldId, placeWorldId, fromRoom, toRoom, world);
+
+    // ADR-327 D5: an arrival is an arrival, walked or moved — a room
+    // transition fires the destination's entering clauses and every
+    // `when <entity> moves` clause for the mover, whoever the mover is.
+    if (placeWorldId !== null && toRoom !== undefined && fromRoom !== toRoom) {
+      const outermost = this.moveArrivalDepth === 0;
+      this.fireMoveArrival(thingWorldId, fromRoom, toRoom, world);
+      // GH #331: an authorial move of the PLAYER describes the destination,
+      // as a walked arrival does — the real looking action, run as the
+      // player through the engine's execution entry, its events riding the
+      // acting-statement flush (right after the action, ahead of the
+      // scheduler, so the description precedes the arrival clauses'
+      // narration exactly as it does for `going`). Only the outermost move
+      // of a re-entry chain describes, so a blocked-stall bounce shows the
+      // room the player ends in, not every room passed through.
+      if (outermost && thingWorldId === world.getPlayer()?.id) {
+        this.describeArrival(thingWorldId);
+      }
+    }
+  }
+
+  /**
+   * Describe the player's surroundings after an authorial move (GH #331):
+   * runs `if.action.looking` as the player through the engine's execution
+   * entry and queues its events for the act flush. A no-op before the
+   * engine is ready (a `before the game starts` move — the boot look
+   * describes the start room anyway).
+   *
+   * @param playerId the player's world id, the mover
+   */
+  private describeArrival(playerId: string): void {
+    if (!this.executionEntry) return;
+    for (const e of this.executionEntry(playerId, 'if.action.looking').events) this.pendingActEvents.push(e);
+  }
+
+  /**
+   * The `exited`/`entered`/`disappeared` rows for a move (ADR-325 D2, Z3),
+   * as amended by ADR-328 D3: both rows fire on every room transition,
+   * each stamped with the room it happened in (`exited`/`disappeared` the
+   * source, `entered` the destination) and the mover as actor. The engine
+   * tags `presence` from that room and the client hides what the player
+   * was absent from — the rows are no longer dropped here, so the
+   * `(owner, channel)` Choice counters advance off-stage.
+   */
+  private witnessMove(
+    thingWorldId: string,
+    placeWorldId: string | null,
+    fromRoom: string | undefined,
+    toRoom: string | undefined,
+    world: WorldModel,
+  ): void {
+    if (thingWorldId === world.getPlayer()?.id) return; // the player's own move narrates as travel
     const irId = this.host.irIdOf(thingWorldId);
     if (!irId) return;
-    const toRoom = roomOf(thingWorldId);
     if (fromRoom === toRoom) return; // not a room transition — nothing to witness
-    const playerRoom = roomOf(playerId);
-    if (playerRoom === undefined) return;
-    if (playerRoom === fromRoom) {
-      const event = this.channelEvent(irId, 'exited', world);
-      if (event) this.enqueueChannelEvent(event);
+    const placed = (event: ISemanticEvent | null, room: string): void => {
+      if (!event) return;
+      this.enqueueChannelEvent({
+        ...event,
+        entities: { ...event.entities, actor: event.entities?.actor ?? thingWorldId, location: room },
+      });
+    };
+    if (fromRoom !== undefined) {
+      placed(this.channelEvent(irId, placeWorldId === null ? 'disappeared' : 'exited', world), fromRoom);
     }
-    if (playerRoom === toRoom) {
-      const event = this.channelEvent(irId, 'entered', world);
-      if (event) this.enqueueChannelEvent(event);
+    if (toRoom !== undefined) {
+      placed(this.channelEvent(irId, 'entered', world), toRoom);
+    }
+  }
+
+  /** Nesting depth of move-arrival firings in flight (ADR-327 D5's re-entry cap). */
+  private moveArrivalDepth = 0;
+  /** The rooms of the arrival chain in flight, for the diagnostic. */
+  private readonly moveArrivalChain: string[] = [];
+
+  /**
+   * Fire the loader's own arrival for a `move` (ADR-327 D5): the destination
+   * room's `entering` event clauses and the `when <entity> moves` clauses,
+   * exactly as a walked arrival's `actor_moved` would through the engine's
+   * chain — but fired here, not emitted, so the engine never fires them a
+   * second time. Whatever the clauses produce is enqueued as channel
+   * narration and drained by the enclosing report pass (the Z3 sink).
+   * @throws LoadError `runtime.move-arrival-reentry` past 8 nested arrivals
+   */
+  private fireMoveArrival(actorId: string, fromRoom: string | undefined, toRoom: string, world: WorldModel): void {
+    if (this.moveArrivalDepth >= MOVE_ARRIVAL_DEPTH_CAP) {
+      const chain = [...this.moveArrivalChain, toRoom].map((id) => world.getEntity(id)?.name ?? id).join(' → ');
+      throw new LoadError(
+        `runtime.move-arrival-reentry: a \`move\` arrival re-entered ${MOVE_ARRIVAL_DEPTH_CAP} times (${chain}) — an entering clause keeps moving the arriver into a room whose entering clause moves them again.`,
+      );
+    }
+    const event: ISemanticEvent = {
+      id: `chord-move-arrival-${++this.eventSeq}`,
+      type: EVENT_TRIGGERS.entering,
+      timestamp: Date.now(),
+      entities: { actor: actorId },
+      data: { actorId, fromRoom, toRoom },
+    };
+    this.moveArrivalDepth++;
+    this.moveArrivalChain.push(toRoom);
+    try {
+      const produced = [...this.fireEventClauses(world, event), ...this.fireMoveClauses(world, event)];
+      for (const e of produced) this.enqueueChannelEvent(e);
+    } finally {
+      this.moveArrivalDepth--;
+      this.moveArrivalChain.pop();
     }
   }
 
@@ -3694,15 +4663,15 @@ export class ChordRuntime {
    * and `refuse when` prohibitions (refuse when the hazard HOLDS) — checked
    * in source order until the first non-refusal statement.
    */
-  private findRefusal(body: IRStatement[], ctx: ExecContext): string | null {
+  private findRefusal(body: IRStatement[], ctx: ExecContext): RefusalVeto | null {
     for (const stmt of body) {
-      if (stmt.kind === 'refuse') return this.resolvePhraseKey(stmt.phraseKey, ctx);
+      if (stmt.kind === 'refuse') return this.refusalOf(stmt.phraseKey, ctx);
       if (stmt.kind === 'must') {
-        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return this.resolvePhraseKey(stmt.phraseKey, ctx);
+        if (!this.evaluator.evalCondition(stmt.condition, ctx)) return this.refusalOf(stmt.phraseKey, ctx);
         continue;
       }
       if (stmt.kind === 'refuse-when') {
-        if (this.evaluator.evalCondition(stmt.condition, ctx)) return this.resolvePhraseKey(stmt.phraseKey, ctx);
+        if (this.evaluator.evalCondition(stmt.condition, ctx)) return this.refusalOf(stmt.phraseKey, ctx);
         continue;
       }
       break; // first non-refusal statement ends the validate partition
@@ -3711,16 +4680,27 @@ export class ChordRuntime {
   }
 
   /**
-   * Resolve a refusal phrase key to its registered message id. A
-   * per-entity `phrase <key>:` declaration registers entity-scoped as
-   * `<irId>.<key>` — the same override rule `phraseEvent` applies at emit
-   * time — so a bare refusal key written inside that entity's clause must
-   * travel as the scoped id: the key crosses into stdlib's blocked() as a
-   * fully-qualified message id (ADR-231 D1) and is rendered verbatim.
+   * Resolve a refusal phrase key to its veto payload. A per-entity
+   * `phrase <key>:` declaration registers entity-scoped as `<irId>.<key>` —
+   * the same override rule `phraseEvent` applies at emit time — so a bare
+   * refusal key written inside that entity's clause must travel as the
+   * scoped id: the key crosses into stdlib's blocked() as a fully-qualified
+   * message id (ADR-231 D1). A key with a phrase-table entry additionally
+   * stages that phrase's render params — in particular the strategy
+   * variants as a Choice — so the refusal selects an arm exactly as a
+   * `phrase <key>` statement does, instead of rendering the registered
+   * `{variants}` template's placeholder literally (GH #304). A key with no
+   * table entry (a bare message id, or a book-covered key whose template
+   * the render-path book layer supplies, ADR-250) travels alone, as before.
    */
-  private resolvePhraseKey(key: string, ctx: ExecContext): string {
+  private refusalOf(key: string, ctx: ExecContext): RefusalVeto {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-    return ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
+    const overrideKey = ctx.it && table[`${ctx.it}.${key}`] ? `${ctx.it}.${key}` : key;
+    const phrase = table[overrideKey];
+    if (!phrase) return { error: overrideKey };
+    const params: Record<string, unknown> = {};
+    this.stagePhraseParams(params, overrideKey, phrase, null, ctx);
+    return Object.keys(params).length > 0 ? { error: overrideKey, params } : { error: overrideKey };
   }
 
   /**
@@ -3849,6 +4829,32 @@ export class ChordRuntime {
       const asEntity = typeof value === 'string' ? ctx.world.getEntity(value) : undefined;
       params[p.param] = asEntity ? asEntity.name : (value as string | number | boolean);
     }
+    this.stagePhraseParams(params, overrideKey, phrase ?? null, bookVariants, ctx, counter);
+    return this.rawEvent('chord.phrase', { messageId: overrideKey, params });
+  }
+
+  /**
+   * Stage the render params a phrase's template consumes — hatch producers
+   * bound by marker name, grammar-slot bindings, verbatim text, and the
+   * strategy variants as a persistent Choice atom. Shared by `phraseEvent`
+   * (`phrase <key>` statements) and `refusalOf` (the validate partition's
+   * veto path): a refusal keyed to a strategy phrase must carry the same
+   * Choice the statement path carries, or the registered `{variants}`
+   * template renders its raw placeholder.
+   *
+   * @param params Mutated in place. Keys already present (authored `with`
+   *   bindings) are overridden by hatch producers but win over grammar-slot
+   *   bindings — exactly the precedence `phraseEvent` had before this was
+   *   extracted.
+   */
+  private stagePhraseParams(
+    params: Record<string, unknown>,
+    overrideKey: string,
+    phrase: IRPhrase | null,
+    bookVariants: IRPhraseVariant[] | null,
+    ctx: ExecContext,
+    counter?: { entityId: string; messageKey: string },
+  ): void {
     for (const variant of phrase ? phrase.variants : bookVariants!) {
       for (const marker of variant.markers) {
         const producer = this.host.producers.get(marker);
@@ -3900,8 +4906,6 @@ export class ChordRuntime {
       };
       params.variants = choice;
     }
-
-    return this.rawEvent('chord.phrase', { messageId: overrideKey, params });
   }
 
   /**

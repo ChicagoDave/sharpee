@@ -25,7 +25,7 @@ skipped-transcript semantics.
 
 ### P-3: Web-client Reset menu item
 - **Done when**: the published client's menu offers Reset; confirming it deletes every storage key under the story's storage prefix (saves, autosave, theme preference) and restarts the story; a real-path test verifies the keys are gone. (Issue 248. Open UX points: which menu, confirmation shape, restart-after-wipe.)
-- **Status**: PLANNED
+- **Status**: DONE — built 2026-08-08 under `docs/work/ide-go-live/plan-20260806-go-live.md` Phase 6a (session c29681): `wipeStoryStorage` + `handleReset` + `#menu-reset`, confirmation, reboot to classic, real-path build test and Playwright live-client spec. Issue 248 closed 2026-09-03. (The 2026-09-03 session b6d0a8 stamp "superseded by publish-readiness-defects P-34 — no plan file exists for this item" was wrong and is withdrawn; P-34 is recorded DONE as already built, session 639650.)
 
 ### P-4: ThemeManager renders its own theme menu
 - **Done when**: the build-time `#theme-menu` regex rewrite in `injectThemes` is gone (link injection stays); the menu renders at runtime from the wired theme list; existing switching/persistence behavior stays green; ADR-253 custom pages that keep `#theme-menu` get it populated the same way. (Issue 251 — do alongside P-3, same code.)

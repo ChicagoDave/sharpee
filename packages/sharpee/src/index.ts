@@ -107,7 +107,6 @@ export {
 
 // Plugin system (ADR-120)
 export { TurnPlugin, TurnPluginContext, TurnPluginActionResult, PluginRegistry } from '@sharpee/plugins';
-export { NpcPlugin } from '@sharpee/plugin-npc';
 export { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 export { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 

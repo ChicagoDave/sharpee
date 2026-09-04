@@ -98,6 +98,7 @@ serialized with the world save like the turn mirror.
 - What stays on the trait: everything per-character — the §2 conversation memory
   (per-pair, on the modeled holder), and the existing `activeConversation`
   marker (D16 suspension), unchanged.
+- **D10a (2026-09-02)**: unchanged home; the scene wire gains `thread-parting` (the parked thread's authored `on parting` as `messageId` + `params`, delivered on every park-on-close path) and `thread-parked` gains `partnerId` — see ADR-320's D10a amendment.
 - D17 compliance: the D17 rule bans *module-level service state and closures*
   (the `ConversationLifecycle` singleton's `toJSON()` side path is the named
   offender). A world-state key is inside the save format, not beside it —

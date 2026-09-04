@@ -1,18 +1,10 @@
 {
   "name": "@sharpee/story-cloak-of-darkness",
   "version": "0.9.79-beta",
-  "description": "The classic Cloak of Darkness IF demonstration game",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
+  "description": "The classic Cloak of Darkness IF demonstration game — a Chord story (cloak.story) with one TypeScript hatch module (src/extras.ts)",
   "scripts": {
     "build": "tsc -p tsconfig.chord.json",
-    "build:legacy": "tsc",
-    "build:dev": "tsc -p tsconfig.dev.json",
-    "build:deps": "tsc --build tsconfig.dev.json",
-    "dev": "tsc -p tsconfig.dev.json --watch",
-    "clean": "rimraf dist",
-    "test": "vitest",
-    "play": "node dist/test-runner.js"
+    "clean": "rimraf dist"
   },
   "dependencies": {
     "@sharpee/core": "workspace:*",

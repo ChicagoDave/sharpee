@@ -12,7 +12,9 @@ create the Petting Zoo
 
   A straw-floored yard full of amiable animals.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Petting Zoo
 
   You.
@@ -59,7 +61,7 @@ define trait pettable
     glass-way:
       You press your hand to the glass. The snake regards you coolly from the other side.
 
-  on petting it
+  on the player petting
     refuse when kind is snake: glass-way
     emit petted
     award petted
@@ -87,7 +89,7 @@ define trait feedable
     fed:
       {capitalize the animal} eagerly gobbles up the feed.
 
-  on feeding it
+  on the player feeding
     the actor must have its food: no-food
     it must be hungry: already-fed
     change it to content
@@ -106,7 +108,7 @@ create the pygmy goats
   phrase fed:
     The goats butt each other out of the way to get at the feed. Happy chaos.
 
-  after feeding it
+  after the player feeding
     award fed
   end after
 
@@ -122,3 +124,7 @@ create the garden snake
   pettable with kind snake
 
   Coiled behind glass, radiating disdain.
+
+before the game starts
+  change the player to Alex
+end before

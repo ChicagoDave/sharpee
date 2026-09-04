@@ -25,10 +25,16 @@ create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase clock-tick
   Somewhere, a clock ticks.
@@ -96,7 +102,7 @@ describe('story-owned `on every turn` (ADR-236 D7, ratchet R4)', () => {
     expect(
       errorCodes(
         story(`
-  on taking it
+  on the player taking
     phrase clock-tick
   end on
 `),

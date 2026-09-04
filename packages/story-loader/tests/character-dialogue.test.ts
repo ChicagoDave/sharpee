@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { EngineRandomService } from '@sharpee/engine';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import { bootEngine } from './helpers/boot-engine';
 import { askingAction } from '@sharpee/stdlib';
 import { CharacterModelTrait, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
@@ -26,7 +26,7 @@ const SOURCE =
   'define fact the killer\n  Viola, nobody\nend fact\n\n' +
   'create the Parlor\n  a room\n\n  A parlor.\n\n' +
   'create the Study\n  a room\n\n  A study.\n\n' +
-  'create the player\n  in the Parlor\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Parlor\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create Viola\n  a person, proper\n  in the Study\n\n  An actress.\n\n' +
   'create Watson\n  a person, proper\n  in the Parlor\n  mood calm\n\n  A friend.\n\n' +
   'create the Maid\n' +
@@ -41,7 +41,7 @@ const SOURCE =
   'define topic the Maid betrays a confidence as the-betrayal\n\n' +
   'define topics for the Maid\n' +
   '  about "the killer":\n' +
-  '    phrase maid-killer-lie when it is calm\n' +
+  '    phrase maid-killer-lie when the Maid is calm\n' +
   '    phrase maid-killer-truth\n' +
   '  about "the secret": phrase maid-secret-reveal\n' +
   '  about "the weather": phrase maid-weather\n' +
@@ -85,6 +85,7 @@ function makeContext(l: Loaded, command: Record<string, unknown>): any {
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action: askingAction,
     currentLocation,
     command,
@@ -160,14 +161,12 @@ describe('the mint rule and the pin (ADR-318 D9) through the real ask path', () 
   });
 
   it('after real NPC ticks, a mint stamps the mirrored turn + 1 (not the unset-mirror fallback)', () => {
-    const l = load();
-    // The real tick path writes the CHARACTER_TURN_KEY mirror.
-    const plugins: unknown[] = [];
-    l.story.onEngineReady({ getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
-    const npcPlugin = plugins.find((p): p is NpcPlugin => p instanceof NpcPlugin)!;
+    // A real engine: its actor phase's tick path writes the
+    // CHARACTER_TURN_KEY mirror (ADR-328 D5).
+    const l = bootEngine(SOURCE, 7);
     const random = new EngineRandomService(7);
     for (const turn of [1, 2]) {
-      npcPlugin.onAfterAction({
+      l.phase.onAfterAction({
         world: l.world,
         turn,
         random,

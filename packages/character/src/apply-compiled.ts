@@ -30,7 +30,7 @@ import { conditionRequiresSelfBreaking } from '@sharpee/chord';
 import { CharacterBuilder } from './character-builder.js';
 import { applyCharacter, AppliedCharacter } from './apply.js';
 import { VocabularyExtension } from './vocabulary-extension.js';
-import type { GoalPriority, GoalStep } from './goals/goal-types.js';
+import type { GoalPriority, GoalStep, PerformSlots } from './goals/goal-types.js';
 import type { GoalBuilder } from './goals/builder.js';
 
 /**
@@ -51,6 +51,14 @@ export interface CompiledCharacterContext {
    * ref here is rogue IR, not a story state.
    */
   resolveEntityId?: (irId: string) => string;
+  /**
+   * Qualifies a `perform` step's bare action name (ADR-329 D10) to the id
+   * the execution entry runs — `chord.action.<name>` for the story's own
+   * actions, `if.action.<name>` for the standard ones. The LOADER owns the
+   * story's action list, so it supplies the rule; absent, every name is
+   * taken as standard.
+   */
+  resolveActionId?: (name: string) => string;
 }
 
 /**
@@ -78,6 +86,8 @@ function buildVocabulary(ctx?: CompiledCharacterContext): VocabularyExtension | 
 
 /** IR→world entity-id mapping function (identity when no loader is involved). */
 type ResolveEntityId = (irId: string) => string;
+/** Qualifies a `perform` step's bare action name to its execution id (ADR-329 D10). */
+type ResolveActionId = (name: string) => string;
 
 /**
  * Canonical trait-side spelling of a wire scope ref (ADR-318 D4/D7):
@@ -112,8 +122,16 @@ export function temperamentDefsFrom(defs: readonly IRTemperamentDef[]): Record<s
 }
 
 /** Map one compiled goal step to the builder-native GoalStep shape (entity refs through the loader's id mapping). */
-function mapGoalStep(step: IRGoalStep, resolve: ResolveEntityId): GoalStep {
+function mapGoalStep(step: IRGoalStep, resolve: ResolveEntityId, resolveAction: ResolveActionId): GoalStep {
   switch (step.kind) {
+    case 'perform': {
+      const slots: PerformSlots = {};
+      if (step.slots.directObject !== undefined) slots.directObject = resolve(step.slots.directObject);
+      if (step.slots.indirectObject !== undefined) slots.indirectObject = resolve(step.slots.indirectObject);
+      if (step.slots.instrument !== undefined) slots.instrument = resolve(step.slots.instrument);
+      if (step.slots.direction !== undefined) slots.direction = step.slots.direction;
+      return { type: 'perform', actionId: resolveAction(step.action), slots };
+    }
     case 'seek':
       return { type: 'seek', target: resolve(step.target), ...(step.in !== undefined ? { from: resolve(step.in) } : {}) };
     case 'acquire':
@@ -154,6 +172,7 @@ export function applyCompiledCharacter(
 ): AppliedCharacter {
   const builder = new CharacterBuilder(entity.id);
   const resolve: ResolveEntityId = ctx?.resolveEntityId ?? ((irId) => irId);
+  const resolveAction: ResolveActionId = ctx?.resolveActionId ?? ((name) => `if.action.${name}`);
 
   const vocabulary = buildVocabulary(ctx);
   if (vocabulary) builder.withVocabulary(vocabulary);
@@ -206,7 +225,7 @@ export function applyCompiledCharacter(
     const gb = builder.goal(g.id) as GoalBuilder<CharacterBuilder>;
     gb.priority(g.priority as GoalPriority)
       .mode('sequential')
-      .pursues(g.steps.map((s) => mapGoalStep(s, resolve)));
+      .pursues(g.steps.map((s) => mapGoalStep(s, resolve, resolveAction)));
     if (g.activeWhen !== null) {
       gb.activeWhenCompiled(g.activeWhen);
       // Seam-2 ruling (2026-08-16): a goal provably gated on the owner's

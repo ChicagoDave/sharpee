@@ -22,8 +22,6 @@ zookeeper.add(new NpcTrait({
   canMove: true,                    // allowed to change rooms
   // "The zookeeper leaves to the east."
   announcesMovement: true,
-  isAlive: true,
-  isConscious: true,
 }));
 
 world.moveEntity(zookeeper.id, mainPath.id);

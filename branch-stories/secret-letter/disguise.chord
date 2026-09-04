@@ -1,0 +1,229 @@
+## ===========================================================================
+## THE DISGUISE — the dress and hat, the change behind the stall, the boots,
+## and the way out
+##
+## The escape's shape (change document, "The escape disguise", with its
+## 2026-08-23/24 amendments): necklace → Teisha → the dress and the fashionable
+## hat into the satchel → back up the post → slide on the gray cloak → let go
+## mid-wire → Behind Fruit Stall → change → out to the Fruit Stall → east.
+##
+## THE LOOK IS A STATE, NOT A SET OF OBJECTS (David, 2026-08-24: "all clothing
+## is scenery and not directly removable"). Jack carries `states: urchin,
+## dressed, identified` in `secret-letter.story`. The dress and hat are items
+## only until the change; CHANGE OUTFIT consumes them into the look — they
+## leave play, the cap goes into the satchel, and Jack is `dressed`. The
+## gray cloak already lies wherever the slide left it. Nothing is worn or
+## taken off piece by piece.
+##
+## THE WINDOWS, in turns (change document, "Both timing questions"):
+##
+##   1. `let go` mid-wire drops her Behind Fruit Stall and starts the
+##      player's `lingering` clock (one named turn, `changing`).
+##   2. The next command is the change. If she is STILL behind the stall on
+##      the turn after that, `lingering` expires there: the mercenaries move
+##      to the Fruit Stall and stepping out is death (the clause lives on
+##      Behind Fruit Stall in `aerial-runway.chord`).
+##   3. Coming out to the Fruit Stall while `dressed` starts the player's
+##      `exposure` clock (no named turns — it expires on the following
+##      turn). Leave the stall on that turn and the head start holds; stay,
+##      and the boots-spotted beat fires: Jack becomes `identified`, the
+##      mercenaries arrive knowing what she wears, and the sweep reads her
+##      again.
+##
+## RECOGNITION (change document, "The recognition rule, sharpened"): the sweep
+## reads Jack in every state except `dressed`. `after going while hunted` in
+## Jack's block restarts `waiting` only while she is not `dressed`; once
+## `identified` it reads her again. No suppression is keyed to the cap.
+##
+## The east exit is HELD for David beyond the placeholders below: the
+## source's Eastern Junction rules (`story.ni:2481-2496`) are the cap-off-era
+## captain text the recognition ruling supersedes, kept aside in the comment
+## at the bottom of this file.
+##
+## Every finished line below is Gentry's; every TODO is David's.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE GARMENTS — Teisha's, until the trade (`npc-teisha.chord` gives them)
+## ---------------------------------------------------------------------------
+
+## DAVID: the dress replaces the source's green silk cloak (`story.ni:3061`,
+## "a simple drape of soft, dusky green with silver trim and a voluminous
+## hood"); no dress text exists in 2009. Name, colour, and description are
+## yours — the noun `dress` and the aliases below are structural stand-ins.
+
+create the dress
+  aka gown, green dress, new dress
+
+  (TODO during play-testing — The dress Teisha trades for the necklace.)
+
+  on the player wearing
+    refuse change-outfit-instead
+  end on
+
+## DAVID: the fashionable hat is the remake's own object. `hat` alone also
+## names the woolen cap, so the parser will ask which while both exist.
+
+create the fashionable hat
+  aka fashionable hat, new hat, lady's hat, bonnet
+
+  (TODO during play-testing — The fashionable hat that comes with the dress.)
+
+  on the player wearing
+    refuse change-outfit-instead
+  end on
+
+## Wearing either garment directly is redirected to the outfit change (the
+## clothing-is-the-look ruling). Line is David's.
+
+define phrase change-outfit-instead
+  (TODO during play-testing — Not piece by piece — CHANGE OUTFIT.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CHANGE — one action, one turn, Behind Fruit Stall only
+##
+## Grammar carries David's three phrasings (CHANGE OUTFIT, SWITCH HATS, WEAR
+## DRESS) plus the plain ones a player types. The words are LITERAL: in a
+## grammar line `the <word>` declares a slot (`kick the target`), so `wear
+## the dress` would have bound any reachable thing as "the dress" and made
+## the body's `the dress` a slot reference (unmet on `change outfit` —
+## ADR-275 D6). `wear dress` is also stdlib `wearing`'s shape; whether the
+## story grammar wins is measured at play time (GH #317's scoping question)
+## — the intercepts above catch the case where stdlib wins.
+## ---------------------------------------------------------------------------
+
+define action changing-outfit
+  grammar
+    change outfit
+    change clothes
+    switch hats
+    put on dress
+    wear dress
+  the player must have the dress: change-no-dress
+  refuse when the player is not in Behind Fruit Stall: change-not-here
+  refuse when Jack is not urchin: change-already
+  phrase change-outfit
+  change Jack to dressed
+  remove the dress
+  remove the fashionable hat
+  move the woolen cap to the cloth satchel
+
+## DAVID: the change itself — the one turn behind the stall. The source's
+## nearest line is the cloak's (`story.ni:3087`): "You slip the silk cloak
+## over your shoulders and pull the hood up. The fabric feels smooth and
+## cool on your skin, but you don't have time to admire it now — you've got
+## to run!" — kept aside; the dress and hat need their own.
+
+define phrase change-outfit
+  (TODO during play-testing — Jack changes into the dress and the fashionable
+  hat behind the stall; the cap goes into the satchel.)
+end phrase
+
+define phrase change-no-dress
+  (TODO during play-testing — Nothing to change into yet.)
+end phrase
+
+define phrase change-not-here
+  (TODO during play-testing — Not out here, in the open.)
+end phrase
+
+define phrase change-already
+  (TODO during play-testing — Already changed.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CLOCKS
+## ---------------------------------------------------------------------------
+
+## One turn to change, one turn to return (change document, amended
+## 2026-08-23). Started by `let go` / `drop` in `aerial-runway.chord`.
+
+define timer lingering for the player
+  changing
+end timer
+
+## One turn at the Fruit Stall before identification (change document, "Both
+## timing questions", 1). Started by the Fruit Stall's own `after the player
+## entering while Jack is dressed` clause (`grubbers-market.chord`) — on the
+## room itself, not a composed trait: a trait's `entering` clause did not
+## fire for the room that carried it (2026-08-29).
+
+define timer exposure for the player
+end timer
+
+## ---------------------------------------------------------------------------
+## THE BOOTS — the thread the parchment never mentioned
+## ---------------------------------------------------------------------------
+
+## The identification beat itself is a `when the player's exposure expires`
+## clause on the mercenaries' own block (`mercenaries.chord`), beside the
+## rest of the sweep's clocks; only its line lives here.
+
+## DAVID: the boots-spotted beat — a mercenary notices an urchin's boots
+## under a lady's dress; the chase is back on, and now they know what she is
+## wearing. No source text (the 2009 game has no footwear).
+
+define phrase boots-spotted
+  (TODO during play-testing — A mercenary notices the boots under the dress.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE WAY OUT — Commerce Street
+##
+## The chapter's end room. Its arrival line in 2009 (`story.ni:4266`) is
+## Gentry's "You made it." block — kept aside below because its last
+## sentence removes the cloak, and this Jack is in a dress. What happens on
+## arrival beyond the text (a chapter break? `win`?) is David's call and is
+## not wired.
+## ---------------------------------------------------------------------------
+
+create Commerce Street
+  a room
+  aka commerce, the street
+  west to the Eastern Junction
+  first time
+    (TODO during play-testing — "You made it." — Gentry's arrival block is
+    kept aside in this file's comments; it ends by removing the cloak.)
+
+  (TODO during play-testing — Commerce Street, the chapter's way out.)
+
+  after the player entering while the player's market-escape has started
+    reset the player's market-escape
+  end after
+
+## Gentry's arrival block (`story.ni:4266`), verbatim, for David to rework:
+##   "You made it.
+##   You let out a long, shaky breath. You're safe now. Commerce Street is
+##   home to a slightly more upscale class of merchant, and business here is
+##   not quite as frantic as in Grubber's Market. Transactions tend to be
+##   calmer and more deliberate, and involve significantly more money. The
+##   Lord's Guard will be far less tolerant of a pack of armed bullies
+##   menacing the citizens of the upper class, so it's unlikely that the
+##   mercenaries will follow you here. And even if they did, there are too
+##   many streets and side alleys for them to block off your escape.
+##   Gratefully, you remove the cloak, which was beginning to stick to your
+##   skin with all the sweat. Now it's time to pause, catch your breath, and
+##   try to figure out why they were after you in the first place."
+
+## The Eastern Junction's east exit (its blocked lines live on the junction
+## in `grubbers-market.chord`): deflected while calm, watched while hunted
+## and undisguised, open once she is dressed. Both refusal lines are David's;
+## Gentry's captain text (`story.ni:2481-2496`) is cap-off-era and is kept
+## aside here, not carried:
+##   "Just as you reach the edge of the market square, you notice the
+##   mercenary captain standing watch at the entrance to Commerce Street.
+##   His eyes fall on you before you can duck out of the way, and the next
+##   moment you are sprinting back into the market with the captain hot on
+##   your heels. You manage to lose him in the crowd... barely."
+##   "The mercenary captain is too sharp; you'll need a disguise if you're
+##   to have any chance of sneaking past him."
+
+define phrase east-deflected
+  (TODO during play-testing — The calm walk does not leave the market east.)
+end phrase
+
+define phrase east-watched
+  (TODO during play-testing — The captain watches the Commerce Street
+  entrance; not as Jack looks now.)
+end phrase

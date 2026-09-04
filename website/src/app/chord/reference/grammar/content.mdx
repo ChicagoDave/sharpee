@@ -23,7 +23,8 @@ A `.story` file is a header followed by declarations:
 ```chord
 story
   title: The Folly at Fernhill
-  authors: The Sharpee Project
+  authors:
+    The Sharpee Project
   id: fernhill
   story-version: 0.1.0
   description: One winter night to find the deed.
@@ -32,7 +33,8 @@ story
 ```
 
 The header holds `key: value` facts, story-wide `states:`, `use`
-lines admitting platform extensions (`combat`, `state-machines`), and
+lines admitting platform extensions (`combat`, `state-machines`,
+`scoring`, `hunger`, `chapters`), and
 the story-owned daemon (`on every turn … end on`). Everything after it
 is declarations: `create` blocks and `define` forms.
 
@@ -52,7 +54,8 @@ is declarations: `create` blocks and `define` forms.
 | Blocked exits (rooms) | `west is blocked while the boiler is off: frost-sealed` |
 | Region membership (regions) | `containing the Drive, the Hall` |
 | First-visit prose (rooms) | `first time` + indented paragraph |
-| Behavior clauses | `on giving it … end on` · `after entering it … end after` |
+| Behavior clauses | `on the player giving … end on` · `after the player entering … end after` |
+| Goals (people) | `goal secure-the-key, high … end goal` — steps are `seek`, `acquire`, `wait for`, `move to`, `act`, `say`, `give`, `drop`, or an action's own words (`open the door`, `go east`, `conjure the key into the Vault`); see [Goals](/chord/guide/characters-and-conversation/goals) |
 | Description | any bare paragraph after a blank line |
 
 Composition reads naturally: an article starts a kind noun (`a room`),
@@ -63,16 +66,19 @@ Yard] and wait-turns 5`).
 ## Behavior clauses
 
 ```chord
-on giving it while it is guarded, once
+on the player giving while the strongbox is guarded, once
   …statements…
 end on
 ```
 
-`on <verb> it` intercepts an action and may refuse it; `after <verb>
-it` reacts once the action has happened (no refusals inside). `on every
-turn` is the owner's daemon, firing only in the owner's presence. Every
-clause takes an optional `while <condition>` gate and modifiers such as
-`, once` (fire a single time, ever).
+`on <actor> <verb>` intercepts an action and may refuse it; `after
+<actor> <verb>` reacts once the action has happened (no refusals
+inside). The head names who acts; the block it sits in is what is acted
+on. Inside a character's own block the actor is dropped — `on going` is
+that character's own going. `on every turn` is the owner's daemon,
+firing only in the owner's presence. Every clause takes an optional
+`while <condition>` gate and modifiers such as `, once` (fire a single
+time, ever).
 
 ## Statements
 
@@ -83,7 +89,8 @@ The working vocabulary inside clause and action bodies:
 | `phrase <key>` | speak a declared phrase |
 | `refuse <key>` | block the action with a reason (in `on` clauses) |
 | `change <name> to <state>` | move an entity (or `the story`) to a declared state |
-| `move <name> to <name>` | relocate an entity |
+| `move <name> to <name>` | relocate an entity — *move puts* |
+| `<character> <verb> [<object>] [<preposition> <object>]` | that character performs the action now, through the same pipeline as a typed command — *acting does*: it can be refused, witnessed, and reacted to (never `the player`; not in `on` intercepts) |
 | `remove <name>` | take an entity out of play, permanently |
 | `award <words>` | score |
 | `win` / `lose` | end the game |
@@ -113,6 +120,12 @@ not (the fuse is lit) and the study door is open
 (`open`, `locked`, `lit`, …) resolve from trait state; declared states
 resolve by name; `any` / `no` quantify over a named open condition.
 
+Under `use chapters`, a chapter is readable: `during market` (it is the
+current chapter), `before market`, `after market`. On an `on`/`after`
+head — and anywhere else a line takes `while` — `during market` may
+stand alone as the suffix: `on the player talking during commerce` is
+`… while during commerce`.
+
 ## The define forms
 
 | Form | Declares |
@@ -126,6 +139,7 @@ resolve by name; `any` / `no` quantify over a named open condition.
 | `define action <name>` | an authored action: grammar, requirements, refusals, body |
 | `define sequence <name> … end sequence` | a timeline: `at turn N`, `N turns later`, `when <entity> becomes <state>` |
 | `define machine … end machine` | a state machine (`use state-machines`) |
+| `define chapters … end chapters` | the story's chapters (`use chapters`): one row per chapter — `<name> - <title>`, an optional description paragraph, and `begins when <event>` (`the game starts`, `the player visits <room> for the first time`, `<timer> expires`, `<entity> becomes <state>`); a chapter ends when the next begins, and the client is told on its own `story.chapter` channel |
 | `define sound/image/music <name> from "<file>"` | a media asset |
 
 ## The alteration forms

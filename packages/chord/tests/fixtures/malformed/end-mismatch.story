@@ -9,8 +9,8 @@ create the message
   scenery
   states: intact, trampled
 
-  on reading it
-    select on its state
+  on the player reading
+    select on the message's state
       when intact
         phrase message-intact
     end on
@@ -19,3 +19,11 @@ create the message
 define phrases en-US
   message-intact:
     Fine.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

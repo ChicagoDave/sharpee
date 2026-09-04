@@ -261,7 +261,7 @@ export const switchingOffAction: Action & { metadata: ActionMetadata } = {
         // Domain data (for event sourcing / handlers)
         target: sharedData.targetId,
         targetName: sharedData.targetName,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         isLightSource: sharedData.isLightSource,
         willDarkenLocation: sharedData.willDarkenLocation,
         wasTemporary: sharedData.wasTemporary,

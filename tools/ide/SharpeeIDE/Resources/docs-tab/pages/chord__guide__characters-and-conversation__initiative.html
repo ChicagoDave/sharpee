@@ -1,11 +1,11 @@
 <p><strong>Initiative</strong> is a person speaking without being spoken to. <code>define initiative for &lt;person&gt;</code> lists occasions, and each occasion says when the character might take the floor: <code>on an open floor:</code> when nobody is saying anything in particular, <code>on silence:</code> when the player declines to speak, <code>when the subject changes:</code> when the talk turns, and <code>on &lt;act&gt;:</code> for a witnessed act such as <code>on harm:</code>.</p>
-<p>Every occasion takes an optional refinement, <code>, when &lt;condition&gt;</code> — so <code>on an open floor, when it is cheerful:</code> fires only in that mood. Whether a character actually seizes an occasion also reads their disposition, so two people with identical rows behave differently in the same room, and the same person behaves differently once their mood has moved.</p>
+<p>Every occasion takes an optional refinement, <code>, when &lt;condition&gt;</code> — so <code>on an open floor, when Will Kemp is cheerful:</code> fires only in that mood. Whether a character actually seizes an occasion also reads their disposition, so two people with identical rows behave differently in the same room, and the same person behaves differently once their mood has moved.</p>
 <p>Bodies use the conversation statements. <code>hold their tongue</code> is the explicit choice to say nothing, which is how you stop a normally talkative character from filling every silence. <code>deflect to &quot;&lt;topic&gt;&quot;</code> changes the subject to one of the owner's own topic rows. <code>phrase &lt;key&gt;</code> speaks a line, and <code>then asks &lt;exchange&gt;</code> opens an <a href="/chord/guide/characters-and-conversation/exchanges">exchange</a>.</p>
 <p>Use initiative sparingly. A character who takes every open floor becomes the scene, and an authored <code>on silence</code> row in particular keeps a conversation alive that would otherwise have ended.</p>
 <pre><code class="language-chord">define initiative for Will Kemp
-  on an open floor, when it is cheerful:
+  on an open floor, when Will Kemp is cheerful:
     phrase kemp-interjects
-  on an open floor, when it is stung:
+  on an open floor, when Will Kemp is stung:
     hold their tongue
   when the subject changes:
     deflect to &quot;the offer&quot;

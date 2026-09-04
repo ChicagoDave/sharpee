@@ -2,7 +2,7 @@
  * Action Context Factory - Creates ActionContext for action execution
  */
 
-import { type ActionContext, type Action, type ScopeResolver, type ValidatedCommand, ScopeLevel, type ScopeCheckResult, ScopeErrors, type ImplicitTakeResult, takingAction } from '@sharpee/stdlib';
+import { type ActionContext, type Action, type ScopeResolver, type ValidatedCommand, ScopeLevel, type ScopeCheckResult, ScopeErrors, type ImplicitTakeResult, takingAction, nounPhraseFor } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { type ISemanticEvent, createEvent as coreCreateEvent, type RandomService } from '@sharpee/core';
 import { type ISound } from '@sharpee/if-domain';
@@ -35,22 +35,27 @@ function getScopeError(
   required: ScopeLevel,
   actual: ScopeLevel,
   entity: IFEntity
-): { valid: false; error: string; params?: Record<string, any> } {
-  const params = { item: entity.name };
+): { valid: false; error: string; errorQualified: true; params?: Record<string, any> } {
+  // The `scope.*` keys are the shared namespace lang-en-us registers once
+  // (ADR-231 D1): fully-qualified, so `errorQualified` keeps blocked() from
+  // prefixing them into the action's namespace (GH #245: the closed-box
+  // deed rendered blank as `if.action.taking.scope.not_known`). The item
+  // rides as a noun phrase (ADR-158), exactly as stdlib's own copy sends it.
+  const params = { item: nounPhraseFor(entity) };
 
   if (actual === ScopeLevel.UNAWARE) {
-    return { valid: false, error: ScopeErrors.NOT_KNOWN, params };
+    return { valid: false, error: ScopeErrors.NOT_KNOWN, errorQualified: true, params };
   }
   if (required >= ScopeLevel.VISIBLE && actual < ScopeLevel.VISIBLE) {
-    return { valid: false, error: ScopeErrors.NOT_VISIBLE, params };
+    return { valid: false, error: ScopeErrors.NOT_VISIBLE, errorQualified: true, params };
   }
   if (required >= ScopeLevel.REACHABLE && actual < ScopeLevel.REACHABLE) {
-    return { valid: false, error: ScopeErrors.NOT_REACHABLE, params };
+    return { valid: false, error: ScopeErrors.NOT_REACHABLE, errorQualified: true, params };
   }
   if (required >= ScopeLevel.CARRIED && actual < ScopeLevel.CARRIED) {
-    return { valid: false, error: ScopeErrors.NOT_CARRIED, params };
+    return { valid: false, error: ScopeErrors.NOT_CARRIED, errorQualified: true, params };
   }
-  return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, params };
+  return { valid: false, error: ScopeErrors.OUT_OF_SCOPE, errorQualified: true, params };
 }
 
 /**
@@ -67,6 +72,12 @@ function getScopeError(
  *                    declared `ChoicePoint` handles; each drawn point's
  *                    stream state rides the save. Required — D6 gates
  *                    randomness construction, so there is no fallback.
+ * @param actor       The entity performing the action (ADR-328 D1).
+ *                    Defaults to the player, so parser-driven turns are
+ *                    unchanged; the programmatic entry passes the named
+ *                    actor. `currentLocation`, every scope helper,
+ *                    `event()`'s `entities.actor`, and `emitSound`'s source
+ *                    all derive from it. `player` stays the player.
  */
 export function createActionContext(
   world: WorldModel,
@@ -75,7 +86,8 @@ export function createActionContext(
   action: Action,
   scopeResolver: ScopeResolver,
   soundBuffer?: ISound[],
-  randomService?: RandomService
+  randomService?: RandomService,
+  actor: IFEntity = gameContext.player
 ): ActionContext {
   const player = gameContext.player;
   if (!randomService) {
@@ -84,19 +96,20 @@ export function createActionContext(
     );
   }
   const random = randomService;
-  const currentLocation = world.getLocation(player.id)
-    ? world.getEntity(world.getLocation(player.id)!)
-    : player;
+  const currentLocation = world.getLocation(actor.id)
+    ? world.getEntity(world.getLocation(actor.id)!)
+    : actor;
 
   // Create sharedData object separately so it can be referenced in closures
   const sharedData: EngineSharedData = {};
 
   // Create the event method
-  const event = (type: string, data: Record<string, any>): ISemanticEvent => {
-    // Add standard entities
+  const event = (type: string, data: Record<string, any>, at?: { location: string }): ISemanticEvent => {
+    // Add standard entities. `at` places a fact somewhere other than where
+    // the actor began the action (ADR-328 D3) — an arrival at its destination.
     const entities: Record<string, string> = {
-      actor: player.id,
-      location: currentLocation?.id || player.id
+      actor: actor.id,
+      location: at?.location ?? (currentLocation?.id || actor.id)
     };
 
     // Add entities from command
@@ -125,6 +138,7 @@ export function createActionContext(
   return {
     // World querying
     world,
+    actor,
     player,
     currentLocation: currentLocation!,
     command,
@@ -143,11 +157,11 @@ export function createActionContext(
 
     // Scope checking methods (delegate to scopeResolver)
     canSee: (entity: IFEntity) => {
-      return scopeResolver.canSee(player, entity);
+      return scopeResolver.canSee(actor, entity);
     },
     
     canReach: (entity: IFEntity) => {
-      return scopeResolver.canReach(player, entity);
+      return scopeResolver.canReach(actor, entity);
     },
     
     canTake: (entity: IFEntity) => {
@@ -159,26 +173,26 @@ export function createActionContext(
     },
     
     isInScope: (entity: IFEntity) => {
-      const level = scopeResolver.getScope(player, entity);
+      const level = scopeResolver.getScope(actor, entity);
       return level >= ScopeLevel.AWARE;
     },
 
     getVisible: () => {
-      return scopeResolver.getVisible(player);
+      return scopeResolver.getVisible(actor);
     },
 
     getInScope: () => {
       // Get all entities and filter by scope
       const allEntities = world.getAllEntities();
       return allEntities.filter(entity => {
-        const level = scopeResolver.getScope(player, entity);
+        const level = scopeResolver.getScope(actor, entity);
         return level >= ScopeLevel.AWARE;
       });
     },
 
     // Scope validation methods (Phase 4 parser refactor)
     getEntityScope: (entity: IFEntity): ScopeLevel => {
-      return scopeResolver.getScope(player, entity);
+      return scopeResolver.getScope(actor, entity);
     },
 
     getSlotScope: (slot: string): ScopeLevel => {
@@ -186,11 +200,11 @@ export function createActionContext(
       if (!entity) {
         return ScopeLevel.UNAWARE;
       }
-      return scopeResolver.getScope(player, entity);
+      return scopeResolver.getScope(actor, entity);
     },
 
     requireScope: (entity: IFEntity, required: ScopeLevel): ScopeCheckResult => {
-      const actualScope = scopeResolver.getScope(player, entity);
+      const actualScope = scopeResolver.getScope(actor, entity);
       if (actualScope >= required) {
         return { ok: true, actualScope };
       }
@@ -206,7 +220,7 @@ export function createActionContext(
           error: { valid: false, error: 'no_target', params: { slot } }
         };
       }
-      const actualScope = scopeResolver.getScope(player, entity);
+      const actualScope = scopeResolver.getScope(actor, entity);
       if (actualScope >= required) {
         return { ok: true, actualScope };
       }
@@ -215,7 +229,7 @@ export function createActionContext(
     },
 
     requireCarriedOrImplicitTake: (entity: IFEntity): ImplicitTakeResult => {
-      const actualScope = scopeResolver.getScope(player, entity);
+      const actualScope = scopeResolver.getScope(actor, entity);
 
       // Case 1: Already carried - success, no implicit take needed
       if (actualScope >= ScopeLevel.CARRIED) {
@@ -284,7 +298,8 @@ export function createActionContext(
         takingAction,
         scopeResolver,
         soundBuffer,
-        random
+        random,
+        actor
       );
 
       // Run the taking action's validate phase
@@ -314,9 +329,9 @@ export function createActionContext(
         item: entity.id,
         itemName: entity.name
       }, {
-        actor: player.id,
+        actor: actor.id,
         target: entity.id,
-        location: currentLocation?.id || player.id
+        location: currentLocation?.id || actor.id
       });
 
       // Combine: implicit take notification + state change events (no success message)
@@ -336,7 +351,7 @@ export function createActionContext(
     event,
 
     // Sound emission (ADR-172 Phase 6) — fills sourceEntity from the
-    // actor (player) and sourceLocation from the actor's current room,
+    // actor and sourceLocation from the actor's current room,
     // then appends to the engine's per-turn sound buffer. When no
     // buffer was wired (test mocks, recursive contexts without one),
     // this is a silent no-op per ADR-172's "emission dropped silently"
@@ -345,8 +360,8 @@ export function createActionContext(
       if (!soundBuffer) return;
       soundBuffer.push({
         ...partial,
-        sourceEntity: player.id,
-        sourceLocation: currentLocation?.id ?? player.id,
+        sourceEntity: actor.id,
+        sourceLocation: currentLocation?.id ?? actor.id,
       });
     }
   };

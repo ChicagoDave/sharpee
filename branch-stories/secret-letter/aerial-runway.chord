@@ -1,0 +1,493 @@
+## ===========================================================================
+## THE AERIAL RUNWAY — the two-turn slide and the hidden landing
+##
+## The slide down the anchor cable (`story.ni:3700-3830`, the source's own
+## "Aerial Runway" chapter), reshaped by the change document's escape-disguise
+## amendments (2026-08-23): the slide takes TWO turns, and the mid-slide text
+## reveals the open spot behind the fruit stall — let go there and Jack drops
+## in unseen; ride it out and she lands in front of the stall with Gentry's
+## knocking-over-shoppers ending, seen.
+##
+## The machine, in turns:
+##
+##   1. `slide down northeast cable` (Top of the Post, cloak required) moves Jack to
+##      On the Wire and starts the cables' one-turn `sliding` clock. The
+##      turn's text is Gentry's first half; the room's own description is the
+##      mid-slide reveal.
+##   2. `let go` on the mid-slide turn drops her into Behind Fruit Stall —
+##      the ONLY way in (change document: "only surfaces from that landing").
+##      Any other command lets the clock expire: the slide completes, Gentry's
+##      landing block runs unchanged, and she is standing in the Fruit Stall.
+##
+## Not built yet, by design — these land with the chase + dress increment
+## (TE20, the satchel, the boots): the capture on the ride-out landing, the
+## one-turn change window behind the stall, the one-turn return window, the
+## boots identification at the Fruit Stall, and the mercenaries moving to the
+## stall when she lingers. Until then the sweep model alone reads her moves.
+##
+## THE FOUR CABLES (2026-08-30): the source's four named cables and its
+## landing table (`story.ni:3728-3830`) are carried — northeast: Fruit Stall
+## (the designed two-turn path above), southeast: Hat Stall, southwest:
+## Exotic Gems Stall, northwest: Northwest Junction. The other three are
+## single-turn slides running Gentry's whole block and landing her, as the
+## source does — no death on the landing. What follows is the source's too
+## (David, 2026-08-30: "whatever the original source does and if there's a
+## gap, then I want to know"): during `chase` the landing opens the source's
+## `Market Escape` (`story.ni:4132-4200`, built in `mercenaries.chord`) —
+## the six-row spool of closing shouts, capture on the sixth; during
+## `hunted` the sweep simply resumes. A bare `slide down cables` takes the
+## SOUTHEAST cable, as the source's "does the player mean" default does
+## (`story.ni:3756-3758`) — RULED (David, 2026-08-30): "if the default was SE
+## in the original source, it stays that way." The designed path must be
+## named: `slide down northeast cable`.
+##
+## THE GAP, RULED (David, 2026-08-30): "the other three scenarios are
+## intentional — only the one wire is the escape route." In the source every
+## landing was survivable (the silk cloak went on anywhere); in the remake
+## the change happens only Behind Fruit Stall and the east exit is watched
+## while she is the urchin, so from the three seen landings the spool can
+## only end in capture — by design. The ride-out landing (front of the
+## Fruit Stall) is the ruled instant death and opens no spool. Recorded in
+## the change document ("The other three cables").
+##
+## The source's `slide down <cable> with <garment>` and `hang/loop/wrap
+## <garment> on <cable>` phrasings — the walkthrough's own (`story.ni:12419`)
+## — are the same action with an instrument slot. Only the gray cloak is
+## slide-worthy in Chapter 1 (the belt, rope, reins and harness are later
+## chapters' objects), so the barehanded gate is the only check: an
+## instrument that is not the cloak is ignored and the slide runs on the
+## cloak. Gentry's "You can't loop [that] around the cable" waits on a slot
+## test in a must-line, which Chord does not have (noted seam).
+## AUTHORED BUT UNREACHABLE (GH #333): the instrument-FIRST shapes
+## (`hang/loop/wrap the item … the target`, `put the item over the target`)
+## never reach the cable — the parser seats slots by position, so the
+## target at position 1 lands in the indirect-object seat and the direct
+## object stays empty ("You can't do that."); `hang … on` is also stdlib's
+## own `putting` shape. The `with`/`using` shapes, target first, work. No
+## story change needed when the seat is fixed.
+##
+## Sliding while held refuses with the grab line (`merc-held`), mirroring
+## the player's `on going` refusal — found 2026-08-30 when a held Jack slid
+## away on the hunted probe; the source's chase never lets them up the post,
+## but the port's sweep can reach the top.
+##
+## Not carried: the per-cable description's "attached to the ground at [the
+## landing, once visited]" tail — Chord has no visited condition, so every
+## cable names its corner of the market; and `untie cable` — no stdlib
+## untying. `cut`, `climb`, `push`/`pull` refuse with Gentry's lines (the
+## `anchor-cable` trait; the southeast cable carries its own push/pull so the
+## monkey's chatter can ride on them — one interceptor per (entity, action),
+## GH #332). The four diagonal exits at the Top of the Post refuse with the
+## barehanded line, as the source's `Before going` rule does.
+##
+## Also held: `hang <garment> on cable` with the other slide-worthy garments
+## (none exist yet).
+##
+## Structural choices for David to rename or redirect at will: the mid-slide
+## room's name ("On the Wire") and Behind Fruit Stall's return exit direction
+## (southwest). Every finished line is Gentry's; the marked TODO texts
+## are David's to write.
+##
+## Known seam: `move the player to <room>` narrates nothing, so a landing
+## prints only its authored line, not the destination's description (`look`
+## still answers). The reveal is therefore emitted as its own phrase on the
+## slide turn. Whether the landings should also re-describe is polish for the
+## change-window increment.
+## ===========================================================================
+
+define timer sliding for the cables
+end timer
+
+## The ride-out clock expires after exactly one mid-slide command — Gentry's
+## landing block (`story.ni:3822`) runs unchanged; the change document's
+## caught-on-landing consequence waits on the chase increment.
+
+create the cables
+  aka cable, anchor cables, anchor cable, wires, wire, braided wire
+  scenery, plural
+  in the Top of the Post
+  slides-to-hat-stall
+  anchor-cable
+  taut-cable
+
+  There are four cables, each made of thick, braided wire. They stretch
+  southwest, southeast, northeast, and northwest to the four corners of the
+  market.
+
+  when sliding expires, while the player is in On the Wire
+    phrase slide-ground
+    phrase slide-spotted when chase
+    phrase slide-landing
+    move the old gray cloak to the Fruit Stall
+    move the player to the Fruit Stall
+    kill the player ride-out-caught
+  end when
+
+## The four named cables (`story.ni:3728-3760`). Each description is Gentry's
+## cable text with the corner tail (see the header on the visited tail). The
+## northeast cable carries the designed two-turn machine (`slideable`); the
+## other three run the source's single-turn slide to their landing, and the
+## collective `cables` — a bare `slide down cables` — takes the southeast
+## one, the source's default (David's ruling, header). The `sliding` clock
+## stays declared on the collective; only its expiry clause lives here.
+
+create the northeast cable
+  aka ne cable, northeast wire, northeast anchor cable
+  scenery
+  in the Top of the Post
+  slideable
+  anchor-cable
+
+  The cable is made of thick, braided wire. One end is attached to the top
+  of the pole that you are currently balancing on; the other end is attached
+  to the ground at the northeast corner of the market, far below.
+
+create the southeast cable
+  aka se cable, southeast wire, southeast anchor cable
+  scenery
+  in the Top of the Post
+  anchor-cable
+  slides-to-hat-stall
+
+  The cable is made of thick, braided wire. One end is attached to the top
+  of the pole that you are currently balancing on; the other end is attached
+  to the ground at the southeast corner of the market, far below.
+
+  phrase detail while the monkey is here:
+    The monkey balances easily on the cable, about 3 feet out from the top of
+    the post.
+
+  on the player pulling
+    refuse when the monkey is not here: cable-taut
+    refuse cable-taut-monkey
+  end on
+
+  on the player pushing
+    refuse when the monkey is not here: cable-taut
+    refuse cable-taut-monkey
+  end on
+
+create the southwest cable
+  aka sw cable, southwest wire, southwest anchor cable
+  scenery
+  in the Top of the Post
+  anchor-cable
+  slides-to-gems-stall
+  taut-cable
+
+  The cable is made of thick, braided wire. One end is attached to the top
+  of the pole that you are currently balancing on; the other end is attached
+  to the ground at the southwest corner of the market, far below.
+
+create the northwest cable
+  aka nw cable, northwest wire, northwest anchor cable
+  scenery
+  in the Top of the Post
+  anchor-cable
+  slides-to-junction
+  taut-cable
+
+  The cable is made of thick, braided wire. One end is attached to the top
+  of the pole that you are currently balancing on; the other end is attached
+  to the ground at the northwest corner of the market, far below.
+
+## The three single-turn slides (`story.ni:3822`): one trait per landing,
+## because a dispatch action's clause lives in a trait and a `move`'s place
+## is a static name — flat and greppable, the peering precedent.
+
+define trait slides-to-hat-stall
+  on the player sliding
+    refuse when the wandering mercenaries is aggressive and the wandering mercenaries is here: merc-held
+    the player must have the old gray cloak: slide-barehanded
+    phrase slide-first-half
+    phrase slide-monkey-leaps when the monkey is here
+    phrase slide-wind
+    phrase slide-ground
+    phrase slide-spotted when chase
+    phrase slide-landing
+    reset the player's waiting
+    reset the player's pole-escape
+    reset the player's pole-problem
+    reset the player's pole-destruction
+    move the old gray cloak to the Hat Stall
+    move the player to the Hat Stall
+    phrase escape-shouting when chase
+    start the player's market-escape when chase
+  end on
+end trait
+
+define trait slides-to-gems-stall
+  on the player sliding
+    refuse when the wandering mercenaries is aggressive and the wandering mercenaries is here: merc-held
+    the player must have the old gray cloak: slide-barehanded
+    phrase slide-first-half
+    phrase slide-wind
+    phrase slide-ground
+    phrase slide-spotted when chase
+    phrase slide-landing
+    reset the player's waiting
+    reset the player's pole-escape
+    reset the player's pole-problem
+    reset the player's pole-destruction
+    move the old gray cloak to the Exotic Gems Stall
+    move the player to the Exotic Gems Stall
+    phrase escape-shouting when chase
+    start the player's market-escape when chase
+  end on
+end trait
+
+define trait slides-to-junction
+  on the player sliding
+    refuse when the wandering mercenaries is aggressive and the wandering mercenaries is here: merc-held
+    the player must have the old gray cloak: slide-barehanded
+    phrase slide-first-half
+    phrase slide-wind
+    phrase slide-ground
+    phrase slide-spotted when chase
+    phrase slide-landing
+    reset the player's waiting
+    reset the player's pole-escape
+    reset the player's pole-problem
+    reset the player's pole-destruction
+    move the old gray cloak to the Northwest Junction
+    move the player to the Northwest Junction
+    phrase escape-shouting when chase
+    start the player's market-escape when chase
+  end on
+end trait
+
+## The cables' refusals (`story.ni:3763-3790`): climbing a cable is the
+## source's sliding-barehanded; cutting and interfering have their own lines.
+## `taut-cable` is the push/pull pair for the cables the monkey never sits on.
+
+define trait anchor-cable
+  on the player climbing
+    refuse slide-barehanded
+  end on
+
+  on the player cutting
+    refuse cable-too-tough
+  end on
+end trait
+
+define trait taut-cable
+  on the player pulling
+    refuse cable-taut
+  end on
+
+  on the player pushing
+    refuse cable-taut
+  end on
+end trait
+
+## DAVID: the ride-out death — seen landing in front of the stall, no place
+## to change, the sweep converging (ruled 2026-08-24: "she's caught and
+## killed"). Keyed rather than inline: an inline `kill` body is named by its
+## fragment-relative line and column, and two fragments can collide (GH
+## #324).
+
+define phrase ride-out-caught
+  (TODO during play-testing — Caught on the ride-out landing and killed — a
+  hard ending.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SLIDE — first turn
+## ---------------------------------------------------------------------------
+
+define action sliding
+  grammar
+    slide the target
+    slide down the target
+    slide along the target
+    slide the target with or using the item
+    slide down the target with or using the item
+    slide along the target with or using the item
+    hang the item on or over or around the target
+    loop the item on or over or around the target
+    wrap the item on or over or around the target
+    put the item over or around the target
+  the item is an instrument
+
+define trait slideable
+  on the player sliding
+    refuse when the wandering mercenaries is aggressive and the wandering mercenaries is here: merc-held
+    the player must have the old gray cloak: slide-barehanded
+    phrase slide-first-half
+    reset the player's waiting
+    reset the player's pole-escape
+    reset the player's pole-problem
+    reset the player's pole-destruction
+    move the player to On the Wire
+    phrase on-the-wire-reveal
+    start the cables' sliding
+  end on
+end trait
+
+## The mid-slide texts are David's — RULED (2026-08-24), with the design
+## stated: "learn by dying." The reveal is the extended wind sentence at the
+## end of the slide turn (`on-the-wire-reveal` below — Gentry's arms now end
+## before the wind sentence so it prints once); nothing surfaces `let go` as
+## the move, and the ride-out is fatal. A mid-air `look` answers with the
+## terse room body below.
+
+create On the Wire
+  a room
+
+  The wire (sliding towards the Fruit Stall).
+
+## ---------------------------------------------------------------------------
+## LETTING GO — the hidden landing
+## ---------------------------------------------------------------------------
+
+define action letting-go
+  grammar
+    let go
+  refuse when the player is not in On the Wire: let-go-nothing
+  phrase let-go-drop
+  move the old gray cloak to Behind Fruit Stall
+  move the player to Behind Fruit Stall
+  reset the cables' sliding
+  start the player's lingering
+
+## Bare `drop` is the mid-slide synonym (David, 2026-08-24) — its own action
+## so its elsewhere-refusal can differ from LET GO's. Outside the wire it
+## prints a static stand-in for the stdlib missing-noun prompt: the real
+## routing (story grammar losing to the stdlib parse outside its room, and
+## the next-command answer flow) is platform work — GH #317 and #318.
+
+define action releasing
+  grammar
+    drop
+  refuse when the player is not in On the Wire: drop-what
+  phrase let-go-drop
+  move the old gray cloak to Behind Fruit Stall
+  move the player to Behind Fruit Stall
+  reset the cables' sliding
+  start the player's lingering
+
+define phrase drop-what
+  What do you want to drop?
+end phrase
+
+## The two windows (change document, "Both timing questions"): a second turn
+## back here expires the player's `lingering` clock, moves the pair to the
+## Fruit Stall and marks this room `watched`; stepping out then is death
+## (ruled 2026-08-24: "she's caught and killed"). The death is an `after
+## going` REACTION, not an `on going` intercept: a `kill` inside an intercept
+## does not stop the move (the room description, the dash-away line and a
+## platform warning all printed before the engine stopped — 2026-08-29), and
+## the pair's posture is left alone so Jack's own `on going … aggressive`
+## refusal cannot swallow the step. The clocks are declared in
+## `disguise.chord`.
+
+create Behind Fruit Stall
+  a room
+  aka behind the fruit stall
+  states: hidden, watched
+  southwest to the Fruit Stall, one-way
+
+  Cramped and flea-ridden with barely room to move. The market is out to the
+  southwest.
+
+  when the player's lingering expires, while the player is in Behind Fruit Stall
+    move the wandering mercenaries to the Fruit Stall
+    change Behind Fruit Stall to watched
+  end when
+
+  after the player going while Behind Fruit Stall is watched
+    kill the player stepped-out-caught
+  end after
+
+define phrase stepped-out-caught
+  (TODO during play-testing — She steps out into the mercenaries waiting at
+  the Fruit Stall: caught and killed, no free turn.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE LINES — Gentry's, split across the two turns
+##
+## The source's single slide block (`story.ni:3822`) splits at the wind
+## sentence: the wrap-and-kick-off half is turn one, the ground-rushes-up
+## half is the ride-out. The heartbeat sentences are the source's own
+## `[first time]` insert, carried as the first-time arm.
+## ---------------------------------------------------------------------------
+
+define phrase slide-first-half, first-time
+  You wrap one end of your cloak around your hand, then squat down and sling
+  the other end around the anchor cable. You give it a good, hard yank to
+  test your grip. You take a deep breath. You try to convince your heartbeat
+  to slow down, or at least continue its dreadful hammering in some part of
+  your body other than your throat. You fail. Then, finally, you swing down
+  under the wire and kick off into space.
+or
+  You wrap one end of your cloak around your hand, then squat down and sling
+  the other end around the anchor cable. You give it a good, hard yank to
+  test your grip. Then you swing down under the wire and kick off into space.
+end phrase
+
+## The landing half is three phrases so the source's own inserts keep their
+## places: the `[if final chase is happening]` shout sentence sits between
+## the harness holding and the feet hitting dirt, and the southeast cable's
+## monkey leap sits before the wind sentence.
+
+define phrase slide-wind
+  The wind is exhilarating as you zip down the line.
+end phrase
+
+define phrase slide-ground
+  The ground rushes up at you with terrifying speed. Your cloak whizzes
+  hotly against the rough wire, and you vaguely smell smoke, but your
+  impromptu harness holds.
+end phrase
+
+define phrase slide-spotted
+  Shouts ring out and fingers point as the mercenaries spot you and race to
+  where they think you will land.
+end phrase
+
+define phrase slide-landing
+  Suddenly your feet hit dirt. You let go of the cloak and tumble to the
+  hard ground, knocking over a couple of shoppers before you roll to a stop.
+  The next moment you are back on your feet, bruised and breathless.
+end phrase
+
+define phrase slide-monkey-leaps
+  The monkey sees you coming and leaps over you, landing deftly on the top
+  of the post. Its angry shrieks fade quickly as you pick up speed.
+end phrase
+
+define phrase cable-too-tough
+  The cables are far too thick and tough for you to cut.
+end phrase
+
+define phrase cable-taut
+  The cables are so thick and so taut, they don't even budge.
+end phrase
+
+define phrase cable-taut-monkey
+  The cables are so thick and so taut, they don't even budge. The monkey
+  chatters happily at your fruitless efforts to dislodge it.
+end phrase
+
+define phrase slide-barehanded
+  The cable is too steep for you to climb down, and the rough wire would tear
+  up your hands. But if you had something you could loop over the cable, you
+  might be able to slide down while hanging underneath.
+end phrase
+
+define phrase on-the-wire-reveal
+  The wind is exhilarating as you zip down the line...coming up behind the
+  fruit stall...
+end phrase
+
+define phrase let-go-drop
+  You release one side of the cloak, dropping hard to a small space behind
+  the fruit stall.
+end phrase
+
+## `let go` anywhere but mid-slide — David's line (2026-08-24).
+
+define phrase let-go-nothing
+  You meditate for a second, just like they showed you in Maiden House.
+end phrase

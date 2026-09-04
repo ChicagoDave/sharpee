@@ -54,14 +54,14 @@ export const revealingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    const player = context.player;
+    const actor = context.actor;
 
-    if (!isConcealed(player)) {
+    if (!isConcealed(actor)) {
       return { valid: false, error: 'not_hidden' };
     }
 
     // Store current concealment info for report
-    const concealment = getConcealmentState(player);
+    const concealment = getConcealmentState(actor);
     const sharedData = getRevealingSharedData(context);
     sharedData.wasHidingBehind = concealment?.targetId;
     sharedData.position = concealment?.position;
@@ -70,8 +70,8 @@ export const revealingAction: Action & { metadata: ActionMetadata } = {
   },
 
   execute(context: ActionContext): void {
-    const player = context.player;
-    player.remove(ConcealedStateTrait.type);
+    const actor = context.actor;
+    actor.remove(ConcealedStateTrait.type);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {

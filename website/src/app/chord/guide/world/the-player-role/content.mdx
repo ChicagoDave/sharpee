@@ -1,0 +1,84 @@
+The player is a **role**, not a block. No entity is the player by
+construction: an author writes characters, marks the ones eligible to
+be played `playable`, and hands the role to one of them in the story's
+start block.
+
+```chord
+create Alex
+  a person
+  playable
+  starts in the Greenhouse
+
+  Mud on your boots, dirt under your nails.
+
+before the game starts
+  change the player to Alex
+end before
+```
+
+`create the player` is removed (`parse.removed-create-player`). There is
+no header field for it either — assigning the role is an action, and a
+field would give the language two spellings for one thing.
+
+## `playable`
+
+A bare composition word marking a character eligible for the role. It is
+person-only: `playable` on anything else is
+`analysis.playable-non-person`. It says nothing about who is playing
+now — a `playable` character the story never assigns is simply an NPC.
+
+Everything else about the character is written the way it always was.
+`starts in` stays on the character, because where someone begins is a
+fact about them, not about the role.
+
+## `before the game starts`
+
+One block per story, at the top level, running once after the world is
+built and before turn one — ahead of the first room description, so what
+it changes is what the player first sees.
+
+```chord
+before the game starts
+  change the player to Alex
+  move the brass key to the Potting Bench
+end before
+```
+
+Its body takes effect statements only. `phrase` and `emit` there are
+`analysis.start-block-narration`, which points at the header's
+`prologue:` — the block runs before any turn exists to carry prose.
+Opening prose belongs in the header.
+
+The role must end up filled. A story with no start block is
+`analysis.start-block-missing`; one whose block never assigns the role is
+`analysis.start-block-no-role`; a second block is
+`analysis.duplicate-start-block`. The runtime never reaches turn one with
+nobody in the role.
+
+## `change the player to <character>`
+
+The same statement anywhere, not only in the start block — it is what
+moves the role during play.
+
+```chord
+create the standing mirror
+  in the Long Gallery
+
+  A tall mirror, silvered and slightly warped.
+
+  after the player touching
+    change the player to Viola
+    phrase the-swap
+  end after
+```
+
+The target must be a person and must be `playable`
+(`analysis.player-target-not-person`, `analysis.player-target-not-playable`),
+both checked at compile time.
+
+The character who held the role keeps their own clauses and goes on
+acting as an NPC. This is the distinction clause heads draw: `the player`
+in a head means whoever holds the role when the clause fires, while a
+head naming a character means that character whether or not they are
+being played. See [`on` and `after`](/chord/guide/behavior/on-and-after)
+for how a head chooses between the two.

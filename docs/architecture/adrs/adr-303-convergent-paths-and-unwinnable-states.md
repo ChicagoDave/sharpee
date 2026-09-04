@@ -1,6 +1,20 @@
 # ADR-303: Convergent Paths and Unwinnable States
 
-**Status**: **DRAFT** (2026-08-05, session f2a7e6) — all three open questions
+**Status**: **SUPERSEDED** (2026-08-20, session c5bc96) by
+`docs/proposals/state-space-analysis.md`, which covers this ADR's subject at a
+higher altitude and with the prior art this document was drafted without. **Never
+accepted; nothing here was built.**
+
+Where each decision went: **D1** (a loss is an authored outcome; unwinnability is
+the absence of a reachable ending) is re-homed in that document's §3 taxonomy,
+which splits it further on authored-prose-versus-library-default. **D4**
+(convergence assertions) re-homed in §4E. **D5**'s declared-invariants layer
+becomes §7's claims block; **D5**'s probe — replay a known winning suffix — is
+replaced by the sweep, which does not need an answer key. **D6**'s widening of
+ADR-131 is moot: ADR-321 subsumed ADR-131's static half on 2026-08-19, and the
+proposal's §4A consumes ADR-321's Reach rather than rebuilding it.
+
+*Historical status*: DRAFT (2026-08-05, session f2a7e6) — all three open questions
 resolved by interview the same session (D4, D5, D6); awaiting review and the
 acceptance flip. Raised by usage after ADR-302 shipped, not by review of it.
 **Date**: 2026-08-05 (session f2a7e6)

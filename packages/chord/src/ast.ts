@@ -133,6 +133,8 @@ export interface StoryHeader {
    * header hosts.
    */
   onClauses: OnClause[];
+  /** `when <timer> expires` clauses for story-owned timers (ADR-325 D3e). */
+  timerClauses: TimerClause[];
   /**
    * `use <extension>` lines in the header's indented body (ADR-215):
    * static, one trusted platform-extension name per line. Each admits that
@@ -266,6 +268,8 @@ export type Declaration =
   | DefineAction
   | DefineHatch
   | DefineSequence
+  | DefineTimer
+  | DefineChapters
   // ADR-264 story-global numeric counter:
   | DefineCounter
   // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
@@ -307,7 +311,23 @@ export type Declaration =
   | ImportDecl
   // ADR-270 author alteration model (David 2026-07-26):
   | ExtendAction
-  | RemoveFromAction;
+  | RemoveFromAction
+  // ADR-327 D10 the start block (David 2026-08-26):
+  | StartBlockDecl;
+
+/**
+ * `before the game starts … end before` (ADR-327 D10) — the one place a
+ * story assigns the player role before play begins. Effect statements only:
+ * `phrase`/`emit` are an analyzer gate, because the block runs before any
+ * turn exists to carry prose (the story header's `prologue:` is that seam).
+ * Exactly one per story; the analyzer also requires that one to assign the
+ * role on some path.
+ */
+export interface StartBlockDecl {
+  kind: 'start-block';
+  body: Statement[];
+  span: Span;
+}
 
 /**
  * `define phrasebook <name> [while <condition>] … end phrasebook`
@@ -332,7 +352,8 @@ export interface DefinePhrasebook {
  * `path` is the name as written, WITHOUT extension: the compiler appends
  * `.chord` before handing it to the host `importResolver`, which resolves
  * it to the fragment's source text. The fragment's complete declarations
- * (any kind except a `story` header or a nested `import`) are spliced at
+ * (any kind except a `story` header; its own `import` lines nest, spliced
+ * depth-first at their own position) are spliced at
  * this position (import site = arbitration position — D4). Unresolved at
  * analysis time = `analysis.import-unresolved`. Supersedes ADR-250 D2's
  * typed `import phrasebook`/`.story` form.
@@ -751,6 +772,12 @@ export interface CreateDecl {
    * only on region blocks (the analyzer's gate).
    */
   containing: NameRef[];
+  /**
+   * `landing <room>` / `landing, <strategy>: <rooms>` (ADR-325 D5) — where
+   * something put in the region lands. One per region (the parser rejects
+   * a second); region-only and contained-only are the analyzer's gates.
+   */
+  landing: LandingDecl | null;
   exits: ExitDecl[];
   blockedExits: BlockedExitDecl[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */
@@ -775,6 +802,10 @@ export interface CreateDecl {
   /** Per-entity phrase overrides: `phrase <key>: <text>` lines. */
   phraseOverrides: PhraseOverride[];
   onClauses: OnClause[];
+  /** `when <timer> expires` clauses (ADR-325 D3e). */
+  timerClauses: TimerClause[];
+  /** `when <entity> moves` clauses (ADR-325 D3h). */
+  moveClauses: MoveClause[];
   /**
    * `mood <word>` lines (ADR-310 D3) — collected in order so the analyzer
    * can reject duplicates with the second line's span (the pronouns idiom).
@@ -900,7 +931,14 @@ export interface GoalDecl {
   span: Span;
 }
 
-/** One goal step line (ADR-310 D8) — verbs per ADR-145's step types. */
+/**
+ * One goal step line (ADR-310 D8) — verbs per ADR-145's step types — or, when
+ * the line is none of them, a `perform` step (ADR-329 D10): an action's own
+ * words with the block's owner implied as the actor. The parser admits a
+ * `perform` line when its first word lemma-matches a known action verb and
+ * carries the words raw; the analyzer matches the shape and resolves the slots
+ * exactly as it does for an acting statement.
+ */
 export type GoalStepDecl =
   | { kind: 'seek'; target: NameRef; in: NameRef | null; span: Span }
   | { kind: 'acquire'; target: NameRef; span: Span }
@@ -909,7 +947,8 @@ export type GoalStepDecl =
   | { kind: 'act'; phraseKey: string; span: Span }
   | { kind: 'say'; phraseKey: string; target: NameRef | null; span: Span }
   | { kind: 'give'; item: NameRef; target: NameRef; span: Span }
-  | { kind: 'drop'; item: NameRef; in: NameRef | null; span: Span };
+  | { kind: 'drop'; item: NameRef; in: NameRef | null; span: Span }
+  | { kind: 'perform'; words: Array<{ text: string; span: Span }>; span: Span };
 
 /**
  * An `influence` block (ADR-310 D9): author-invented name, mode and range
@@ -1150,6 +1189,13 @@ export interface ExitDecl {
    * never creates one.
    */
   via: NameRef | null;
+  /**
+   * `, one-way` (ADR-234 D4, wired for GH #327): traversable in the written
+   * direction only — the loader infers no reverse exit, and a door on the
+   * line is one-way too. Present only when declared (the golden ASTs of
+   * stories without it stay byte-identical).
+   */
+  oneWay?: true;
   span: Span;
 }
 
@@ -1217,13 +1263,19 @@ export interface PhraseOverride {
 
 /**
  * `on|after … end on|end after` behavior clause — inside a create block or a
- * `define trait`. Header forms (design.md §2.2 + ownership package D3/D5):
- *   `on <action> it [, before <trait> | , after <trait>] [, once]`
- *   `after <action> it [while <condition>] [, once]`       → reaction (D3)
- *   `on <action> anything as the <role>`                    → binding 'role'
+ * `define trait`. Header forms (ADR-327 D1 heads; ownership package D3/D5):
+ *   `on <actor> <action> [, before <trait> | , after <trait>] [, once]`
+ *   `after <actor> <action> [while <condition>] [, once]`   → reaction (D3)
+ *   `on <actor> <action> anything as the <role>`            → binding 'role'
  *   `on every turn [while <condition>] [, once]`            → binding 'every-turn'
- * `on` intercepts (may refuse; phrase output is primary); `after` reacts
- * (refuse is a parse error; phrase output appends).
+ *   `on <action> [while <condition>]` / `after <action> …`  → binding 'self'
+ *     (own-block bare head: the block owner's own action; legal only in the
+ *     player's or a character's block — the analyzer's gate)
+ * The actor is `the player` (the role, resolved at fire time) or a
+ * character's name; the block owner is the action's object (`object`) or,
+ * with a role tail, the named role. `on` intercepts (may refuse; phrase
+ * output is primary); `after` reacts (refuse is a parse error; phrase
+ * output appends).
  */
 export interface OnClause {
   kind: 'on-clause';
@@ -1231,8 +1283,20 @@ export interface OnClause {
   clauseKind: 'on' | 'after';
   /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
-  /** How the clause binds (Phase A only had 'it'). */
-  binding: 'it' | 'role' | 'every-turn';
+  /**
+   * Who acts (ADR-327 D1): the words before the gerund — `the player` or a
+   * character's name — as a value expression the analyzer resolves. Null for
+   * a bare head (`self`) and for `every turn`.
+   * Invariant: non-null iff `binding` is 'object' or 'role' — except after
+   * `parse.removed-head-it`, where the parser leaves it null with binding
+   * 'object' so the analyzer knows the head was already reported.
+   */
+  actor: ValueExpr | null;
+  /**
+   * How the clause binds: the owner is the action's object (`object`), the
+   * named role (`role`), every turn, or the owner's own action (`self`).
+   */
+  binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for `anything as the <role>` clauses. */
   role: string | null;
   /** `while <condition>` qualifier (all bindings since the ownership package). */
@@ -1682,6 +1746,97 @@ export interface MachineTransition {
   span: Span;
 }
 
+/**
+ * `define timer <name> [for <owner>] … end timer` (ADR-325 D3a) — a timer
+ * counts turns by name: once started it steps through `states` one per
+ * turn and ends in the built-in `expired`. `owner` null = the story's.
+ */
+/**
+ * The moment a chapter begins (ADR-330 D2) — one of the four event
+ * spellings drawn from the vocabulary the language already has. `<entity>
+ * moves` is deliberately not one of them (the parser names it in a fix-it).
+ */
+export type ChapterTrigger =
+  | { kind: 'game-starts'; span: Span }
+  | { kind: 'first-visit'; room: NameRef; span: Span }
+  | { kind: 'timer-expires'; timer: ValueExpr; span: Span }
+  | { kind: 'becomes'; owner: NameRef; state: string; span: Span };
+
+/** One `define chapters` row (ADR-330 D1): `<name> - <title>`, an optional description, `begins when <event>`. */
+export interface ChapterRowDecl {
+  /** The identifier conditions name — one kebab word, lowercased. */
+  name: string;
+  /** The title as written after the dash — prose the client prints, never parsed. */
+  title: string;
+  /** The optional indented paragraph — joined text, or null when absent. */
+  description: string | null;
+  /** Null only when the row's `begins when` line is missing (already reported). */
+  trigger: ChapterTrigger | null;
+  span: Span;
+}
+
+/** `define chapters … end chapters` (ADR-330 D1) — admitted only under `use chapters` (analyzer gate). */
+export interface DefineChapters {
+  kind: 'define-chapters';
+  rows: ChapterRowDecl[];
+  span: Span;
+}
+
+export interface DefineTimer {
+  kind: 'define-timer';
+  name: string;
+  /** `for <owner>` — an entity or the player; null = story-owned. */
+  owner: NameRef | null;
+  states: TimerStateDecl[];
+  /** `meanwhile[, one chance in n]` body — runs each turn the timer is running. */
+  meanwhile: { chance: number | null; body: Statement[]; span: Span } | null;
+  /** `interrupted one chance in n` — per-turn chance of expiring early. */
+  interrupted: number | null;
+  span: Span;
+}
+
+/** One named turn of a timer, with optional prose spoken when it is reached. */
+export interface TimerStateDecl {
+  name: string;
+  text: TextValue | null;
+  span: Span;
+}
+
+/**
+ * `when <timer> expires [, while <cond>] … end when` (ADR-325 D3e) — the
+ * expiry clause head on the owner's block. `timer` is a bare name (the
+ * block owner's, then the story's) or a possessive (`the player's waiting`).
+ */
+export interface TimerClause {
+  kind: 'timer-clause';
+  timer: ValueExpr;
+  condition: ConditionNode | null;
+  body: Statement[];
+  span: Span;
+}
+
+/** A region's landing line (ADR-325 D5). `strategy` is null for a single room. */
+export interface LandingDecl {
+  rooms: NameRef[];
+  strategy: 'randomly' | 'cycling' | 'stopping' | null;
+  span: Span;
+}
+
+/**
+ * `when <entity> moves [, while <cond>] … end when` (ADR-325 D3h) — an
+ * event clause head on any entity block, riding the actor-moved event the
+ * `going` action emits. Fires on the COMPLETED move only; a refusal belongs
+ * on the mover's own `on going`. `it` inside the body is the clause owner.
+ */
+export interface MoveClause {
+  kind: 'move-clause';
+  /** The mover — an entity name or `the player`. */
+  mover: ValueExpr;
+  condition: ConditionNode | null;
+  body: Statement[];
+  span: Span;
+}
+
 /** `define sequence <name> … end sequence` — timeline of chained steps. */
 export interface DefineSequence {
   kind: 'define-sequence';
@@ -1733,12 +1888,15 @@ export type Statement =
   | MediaStmt
   | SetStmt
   | ChangeStmt
+  | ChangePlayerStmt
   | ChangeMoodStmt
   | ChangeFeelingStmt
   | MoveStmt
+  | ActStmt
   | RemoveStmt
   | AwardStmt
   | CounterMutateStmt
+  | TimerVerbStmt
   | WinStmt
   | LoseStmt
   | KillStmt
@@ -1900,11 +2058,13 @@ export type EmitValue =
   | { kind: 'array'; items: EmitValue[]; span: Span }
   | { kind: 'object'; fields: EmitField[]; span: Span };
 
-/** `set <field-path> to <value>` */
+/** `set <field-path> to <value> [when <cond>]` */
 export interface SetStmt {
   kind: 'set';
   target: ValueExpr;
   value: ValueExpr;
+  /** Statement `when` suffix (ratchet D7) — execute only if it holds. */
+  stmtWhen: ConditionNode | null;
   span: Span;
 }
 
@@ -1913,6 +2073,22 @@ export interface ChangeStmt {
   kind: 'change';
   entity: NameRef;
   state: string;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `change the player to <entity> [when <cond>]` (ADR-327 D9/D10) — moves the
+ * player role to a named character. Distinguished from `ChangeStmt` in the
+ * parser by the target reading exactly `the player`, which lets the tail
+ * parse as a multi-word name ref rather than the single state word
+ * `ChangeStmt` takes. The analyzer requires the target to be a `playable`
+ * person; the loader reads it two ways — assignment inside the start block,
+ * a runtime switch request on any turn after that.
+ */
+export interface ChangePlayerStmt {
+  kind: 'change-player';
+  target: NameRef;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -1941,11 +2117,55 @@ export interface ChangeFeelingStmt {
   span: Span;
 }
 
-/** `move <entity> to <place> [when <cond>]` */
+/**
+ * A place, wherever the grammar wants one (ADR-325 D1–D2): the destination
+ * of `move … to`, the object of `is in`.
+ *
+ * - `name` — a room or holder by name (`the Rope Stall`, `the crate`).
+ * - `location` — `<owner>'s location` / `its location`: the owner's
+ *   containing room, always (a room is its own).
+ * - `here` — sugar for the player's location (`move it here`).
+ * - `offstage` — no location at all (`move it offstage`); the entity stays
+ *   in the world, detached, until a later `move` reattaches it.
+ * - `adjacent-room` — `a random adjacent room` (ADR-326 D1): a room one
+ *   traversable exit from the mover's room, drawn at effect time. The
+ *   randomness is in the noun; there is no strategy word. Legal only as a
+ *   `move` destination.
+ */
+export type PlaceExpr =
+  | { kind: 'name'; ref: NameRef; span: Span }
+  | { kind: 'location'; owner: ValueExpr; span: Span }
+  | { kind: 'here'; span: Span }
+  | { kind: 'offstage'; span: Span }
+  | { kind: 'adjacent-room'; span: Span };
+
+/** `move <entity> to <place> | here | offstage [when <cond>]` (ADR-325 D1–D2) */
+/**
+ * A name-led acting statement — `<actor> <verb> [<object>] [<preposition>
+ * <object>] [when <condition>]` (ADR-329 D1). The parser admits the line when
+ * some word after the first lemma-matches a known action verb and carries the
+ * words raw; the analyzer — the layer that knows the story's entities and its
+ * own `define action` shapes — splits actor from verb, matches the grammar
+ * shape (D2), resolves the slots, and gates the body (D3).
+ */
+export interface ActStmt {
+  kind: 'act';
+  /** Every word/number token before the `when` suffix, in source order. */
+  words: Array<{ text: string; span: Span }>;
+  /**
+   * The enclosing body's kind as the parser classifies it: `after`, `when`,
+   * `every-turn`, `timer`, `on` (an intercept), `before` (the start block),
+   * `topics`/`exchange`/`initiative`/`conversation` (rows), `action`, …
+   */
+  bodyKind: string;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
 export interface MoveStmt {
   kind: 'move';
   entity: NameRef;
-  place: NameRef;
+  place: PlaceExpr;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -1959,6 +2179,18 @@ export interface MoveStmt {
 export interface RemoveStmt {
   kind: 'remove';
   entity: NameRef;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `start|stop|restart|reset|interrupt <timer> [when <cond>]` (ADR-325 D3c).
+ * `target` is a bare name (owner-first, then story) or a possessive.
+ */
+export interface TimerVerbStmt {
+  kind: 'timer-verb';
+  verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt';
+  target: ValueExpr;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2010,6 +2242,12 @@ export interface LoseStmt {
 export interface KillStmt {
   kind: 'kill';
   phraseKey: string | null;
+  /**
+   * ADR-325 D3i: an indented prose block in place of the key — the death
+   * text, registered under a synthesized key by the analyzer. Null when a
+   * key (or nothing) was written.
+   */
+  inlineText: TextValue | null;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2063,7 +2301,22 @@ export type ConditionNode =
   | NoneOfNode
   | ClientHasNode
   | SubjectChangesNode
-  | AskedNode;
+  | AskedNode
+  | ChapterConditionNode;
+
+/**
+ * `during <chapter>` / `before <chapter>` / `after <chapter>` (ADR-330 D5) —
+ * the current chapter is / has not reached / has passed the named row.
+ * `during` also stands as a head suffix beside `while` (sugar for
+ * `while during <chapter>`). The name resolves to the row's ordinal in the
+ * analyzer.
+ */
+export interface ChapterConditionNode {
+  kind: 'chapter';
+  relation: 'during' | 'before' | 'after';
+  name: string;
+  span: Span;
+}
 
 /**
  * `the subject changes` (ADR-320 D9, frozen 2026-08-17) — true when the
@@ -2178,11 +2431,13 @@ export type Predicate =
    */
   | { kind: 'compare'; op: 'gte' | 'gt' | 'lte' | 'lt' | 'eq'; value: ValueExpr; span: Span }
   | { kind: 'is-a'; negated: boolean; classifier: string[]; span: Span }
-  | { kind: 'is-in'; negated: boolean; place: NameRef; span: Span }
+  | { kind: 'is-in'; negated: boolean; place: PlaceExpr; span: Span }
   /** `<subject> is here` — the Z4 deictic: subject shares the player's location. */
   | { kind: 'is-here'; negated: boolean; span: Span }
   | { kind: 'holds'; thing: NameRef; span: Span }
   | { kind: 'has'; thing: NameRef; span: Span }
+  /** `<timer> has started` / `has expired` (ADR-325 D3d) — the lifecycle reads. */
+  | { kind: 'timer-has'; negated: boolean; what: 'started' | 'expired'; span: Span }
   | { kind: 'wears'; thing: NameRef; span: Span }
   /** `can see <thing>` / `can reach <thing>` (design.md §2.7; Phase B). */
   | { kind: 'can'; ability: string; thing: NameRef; span: Span }

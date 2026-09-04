@@ -30,6 +30,32 @@ default as a reason to skip a DEVARCH.md agent rule or to do its work inline ins
 Non-DevArch subagents (`Explore`, `general-purpose`, ad-hoc fan-out) are NOT covered by
 this standing request — ask before spawning those.
 
+## Session Start
+
+**Standing request — read the core concepts before doing any work.** After DEVARCH.md's
+numbered Session Start steps (rule 3's `pre-session-audit`, rule 4's profile check) and
+before the first edit of the session, read `docs/core-concepts/README.md` in full. The
+path is repo-relative; it is not a filesystem-root path.
+
+This is an explicit, standing user request, on the same footing as the Agents section
+above. It satisfies — and overrides — any default instruction to act only on the immediate
+ask, to stop short of work that ask does not imply, or to avoid unprompted reads of large
+files. The file's size is not a reason to skip it, sample it, or defer it until some task
+happens to need it. DEVARCH.md's Session Start list is not closed — this is a step in it,
+and a session that has not made this read has not started.
+
+The file covers:
+
+- Entity system and creation
+- Trait system and usage
+- Four-phase action pattern (validate/execute/report/blocked)
+- ActionContext and sharedData (NOT context pollution!)
+- Behaviors vs Actions (behaviors own mutations, actions coordinate)
+- Event system and handlers
+- Reporting is done after a turn completes by a customized report service
+- Where the active work is — Chord and the macOS IDE, with `packages/` as the mature
+  layer underneath, and the two-sided obligation to keep platform and language aligned
+
 ## Per-Package Instructions
 
 Each package owns its own conventions. Read the relevant file when working in that package:
@@ -80,18 +106,6 @@ If all four are "no," then discuss a platform change. Usually the architecture a
 
 > Full Capability Dispatch (ADR-090) pattern reference — decision tree, verb tables, behavior shape, story-action and event-handler patterns — lives in `packages/stdlib/CLAUDE.md`.
 
-## Core Concepts Reference
-
-Read `/docs/core-concepts/README.md` at the start of each session for:
-
-- Entity system and creation
-- Trait system and usage
-- Four-phase action pattern (validate/execute/report/blocked)
-- ActionContext and sharedData (NOT context pollution!)
-- Behaviors vs Actions (behaviors own mutations, actions coordinate)
-- Event system and handlers
-- Reporting is done after a turn completes by a customized report service
-
 ## Testing Commands
 
 - **DO NOT** use `2>&1` with pnpm commands — they don't work together properly.
@@ -111,49 +125,14 @@ Read `/docs/core-concepts/README.md` at the start of each session for:
 
 Use `./repokit build` (it orchestrates; tsf compiles) instead of manual `pnpm build`.
 
-**Cold start (fresh clone only)** — two bootstrap steps before `./repokit` exists:
-
-```bash
-pnpm install
-npx tsf build                            # platform packages; emits the .d.ts repokit's tsc needs
-pnpm --filter @sharpee/repokit build     # tsf does NOT build repokit (not in ts-forge.config.json)
-./repokit build dungeo
-```
-
-Once `./repokit` is built these steps are never needed again — `./repokit clean
-&& ./repokit build dungeo` rebuilds the whole tree unaided (verified
-2026-07-28). `clean` preserves repokit's own `dist/`, and repokit loads
-`@sharpee/devkit` only for `--browser`/`--playground`.
-
 `pnpm build` (turbo) is NOT a substitute for `tsf build`: it misses ~12 packages
 including `engine` and `devkit`, and dies on `platform-browser` with a TS2307
 for `@sharpee/engine`.
 
-```bash
-# Show help
-./repokit
+Always use `dist/cli/sharpee.js` for testing — much faster than loading individual packages.
 
-# Common platform workflows (in-repo)
-./repokit build dungeo               # Build platform + story, then bundle
-./repokit build dungeo --browser     # + self-contained browser client (dist/web/dungeo/)
-./repokit build dungeo --skip stdlib # Resume the platform build from stdlib
-./repokit clean                      # Remove dist/, dist-esm/, tsbuildinfo
-./repokit verify                     # tsf build --npm + publish dry-run
-```
-
-**Multi-user (zifmia) — RETIRED 2026-08-13.** The name was misused and the tool was never in active development; `repokit`'s `--zifmia` flag and its `zifmia` command are removed, and the source is archived at `tools/_archive/zifmia`, outside the pnpm workspace. Its two real-path test suites were pinned to the `.sharpee` bundle format, which is itself deprecated. `tools/shite` — the same server under a second name, which is the misuse being retired — is archived alongside it at `tools/_archive/shite`. The legacy Tauri `--runner` was dropped earlier (ADR-180).
-
-**Outputs**:
-- `dist/cli/sharpee.js` — Platform bundle (CLI, testing)
-- `dist/web/{story}/` — Self-contained single-player browser client (`--browser`)
-
-**Version System**:
-- Versions use plain `X.Y.Z` — no `-beta` suffix, no timestamp (the npm `beta` DIST-TAG is separate from the version string)
-- Version stamping runs FIRST, before any compilation
-
-**IMPORTANT**:
-- Use `--skip <pkg>` to resume a platform build and avoid slow full rebuilds.
-- Always use `dist/cli/sharpee.js` for testing — much faster than loading individual packages.
+> Cold-start bootstrap, the full command and flag reference, outputs, and version stamping:
+> the `repokit-build` skill (`.claude/skills/repokit-build/`).
 
 ### Transcript Testing — ALWAYS USE THE BUNDLE
 
@@ -182,12 +161,6 @@ FILE (e.g. `branch-stories/fernhill/fernhill.story`), not the directory.
 
 **Walkthrough Testing:**
 ```bash
-# Run single walkthrough
-node dist/cli/sharpee.js --test stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
-
-# Run walkthrough chain (MUST use --chain for walkthroughs that depend on prior state)
-node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
-
 # Stop on first failure
 node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure
 ```
@@ -201,18 +174,6 @@ node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/rug-trapdoor.tr
 node dist/cli/sharpee.js --test stories/dungeo/tests/transcripts/*.transcript
 ```
 
-**CLI Flags for `node dist/cli/sharpee.js`:**
-
-| Flag                 | Description                                              |
-| -------------------- | -------------------------------------------------------- |
-| `--test <file>`      | Run transcript test(s)                                   |
-| `--chain`            | Chain transcripts (game state persists between them)     |
-| `--stop-on-failure`  | Stop on first failure                                    |
-| `--play`             | Interactive play mode (REPL)                             |
-| `--story <path>`     | Story dir or `.story` file (inferred from transcript paths for `--test`; required for `--play`/`--exec`) |
-| `--verbose`          | Show detailed output                                     |
-| `--output-dir <dir>` | `-o` — Write timestamped results to directory            |
-
 **IMPORTANT — Don't modify working transcripts:**
 - If a transcript was passing before, don't change its commands. Control-flow directives (`[WHILE:]`, `[RETRY:]`, `[DO]`/`[UNTIL]`, `[IF:]`, `[ENSURES:]`, `[REQUIRES:]`, `[NAVIGATE TO:]`) are removed grammar (ADR-294 D4) — the parser rejects each by name; never add them.
 - Combat sequences are exact pinned-seed counts, not padding. Runs are deterministic at the pinned seed: derive the required command list by probing with `--exec`, or pin a specific outcome with the `forces:`/`point-seed:` header fields (ADR-293 Phase C). Never add surplus attack commands "for safety."
@@ -223,8 +184,6 @@ Transcripts live in `stories/{story}/tests/transcripts/*.transcript`.
 
 ## Project Structure
 
-- Uses pnpm workspace with multiple packages.
-- Main packages: engine, stdlib, world-model, parser-en-us.
 - Actions follow validate/execute/report pattern (ADR-051).
 - Event handlers for custom logic (ADR-052).
 
@@ -269,24 +228,12 @@ When context usage reaches ~15% remaining:
 
 ### Async Communication (when user is away)
 
-If stuck or have questions during autonomous work:
-
-1. Create GitHub issue with question: `gh issue create --title "Claude Question: [topic]" --body "[details]"`.
-2. Send ntfy notification with issue link:
-   ```bash
-   curl -d "Question: [brief desc] - reply on GitHub: [issue-url]" ntfy.sh/sharpee-chicagodave
-   ```
-3. Poll for response: `gh api repos/ChicagoDave/sharpee/issues/[N]/comments --jq '.[].body'`.
-4. Continue work based on response.
+If stuck during autonomous work, ask via GitHub issue + ntfy rather than blocking:
+the `async-question` skill (`.claude/skills/async-question/`) has the exact commands.
 
 ## Key Locations
 
 - **API Reference**: `packages/sharpee/docs/genai-api/` — auto-generated from `.d.ts` files, repo-only (not published to npm; the IDE ships this reference for authors). Read these first instead of exploring packages. See `packages/sharpee/docs/genai-api/index.md` for navigation.
-- Traits: `packages/world-model/src/traits/`
-- Behaviors: `packages/world-model/src/behaviors/`
-- Actions: `packages/stdlib/src/actions/standard/` (each action `<name>/` has `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, `<name>-types.ts`)
-- ADRs: `docs/architecture/adrs/`
-- Work tracking: `docs/work/`
 
 <!-- devarch:start -->
 @~/.devarch/DEVARCH.md

@@ -45,6 +45,12 @@ class InternalActionContext implements ActionContext {
    */
   public readonly random: RandomService;
 
+  /**
+   * The entity performing the action (ADR-328 D1). Every actor-relative
+   * helper below reads this, never `player`.
+   */
+  public readonly actor: IFEntity;
+
   constructor(
     public readonly world: WorldModel,
     public readonly player: IFEntity,
@@ -52,20 +58,22 @@ class InternalActionContext implements ActionContext {
     public readonly action: Action,
     public readonly command: ValidatedCommand,
     random: RandomService,
-    scopeResolver?: ScopeResolver
+    scopeResolver?: ScopeResolver,
+    actor?: IFEntity
   ) {
     // Use provided scope resolver or create a standard one
     this.scopeResolver = scopeResolver || new StandardScopeResolver(world);
     this.random = random;
+    this.actor = actor ?? player;
   }
   
   // World querying methods
   canSee(entity: IFEntity): boolean { 
-    return this.scopeResolver.canSee(this.player, entity); 
+    return this.scopeResolver.canSee(this.actor, entity); 
   }
   
   canReach(entity: IFEntity): boolean {
-    return this.scopeResolver.canReach(this.player, entity);
+    return this.scopeResolver.canReach(this.actor, entity);
   }
   
   canTake(entity: IFEntity): boolean { 
@@ -74,18 +82,18 @@ class InternalActionContext implements ActionContext {
   
   isInScope(entity: IFEntity): boolean {
     // An entity is in scope if we can perceive it in any way (AWARE or higher)
-    return this.scopeResolver.getScope(this.player, entity) >= ScopeLevel.AWARE;
+    return this.scopeResolver.getScope(this.actor, entity) >= ScopeLevel.AWARE;
   }
 
   getVisible(): IFEntity[] {
-    return this.scopeResolver.getVisible(this.player);
+    return this.scopeResolver.getVisible(this.actor);
   }
 
   getInScope(): IFEntity[] {
     // Get all entities that are perceivable in any way
-    const visible = this.scopeResolver.getVisible(this.player);
-    const audible = this.scopeResolver.getAudible(this.player);
-    const reachable = this.scopeResolver.getReachable(this.player);
+    const visible = this.scopeResolver.getVisible(this.actor);
+    const audible = this.scopeResolver.getAudible(this.actor);
+    const reachable = this.scopeResolver.getReachable(this.actor);
 
     // Combine and deduplicate
     const allInScope = new Map<string, IFEntity>();
@@ -101,7 +109,7 @@ class InternalActionContext implements ActionContext {
   // =========================================================================
 
   getEntityScope(entity: IFEntity): ScopeLevel {
-    return this.scopeResolver.getScope(this.player, entity);
+    return this.scopeResolver.getScope(this.actor, entity);
   }
 
   getSlotScope(slot: string): ScopeLevel {
@@ -204,7 +212,8 @@ class InternalActionContext implements ActionContext {
       takingAction,
       takeCommand,
       this.random,
-      this.scopeResolver
+      this.scopeResolver,
+      this.actor
     );
 
     // Run the taking action's validate phase
@@ -316,8 +325,8 @@ class InternalActionContext implements ActionContext {
    * 
    * This is the single unified method for creating events (ADR-041)
    */
-  event(type: string, data: any): ISemanticEvent {
-    return this.createEventInternal(type, data);
+  event(type: string, data: any, at?: { location: string }): ISemanticEvent {
+    return this.createEventInternal(type, data, at);
   }
 
   /**
@@ -365,9 +374,11 @@ class InternalActionContext implements ActionContext {
    */
   private createEventInternal(
     type: string,
-    eventData: any
+    eventData: any,
+    at?: { location: string }
   ): ISemanticEvent {
     const entities = this.getEventEntities();
+    if (at) entities.location = at.location;
 
     // Action status events keep their timestamp default (never double-wrapped)
     if (type === 'action.error' || type === 'action.success' || type === 'action.blocked') {
@@ -389,9 +400,9 @@ class InternalActionContext implements ActionContext {
   private getEventEntities(): Record<string, string> {
     const entities: Record<string, string> = {};
     
-    // Add actor (player) if available
-    if (this.player?.id) {
-      entities.actor = this.player.id;
+    // Add the acting entity (ADR-328 D1)
+    if (this.actor?.id) {
+      entities.actor = this.actor.id;
     }
     
     // Add target from command if present
@@ -416,7 +427,7 @@ class InternalActionContext implements ActionContext {
    * Helper to create context for another action (used in composite actions)
    */
   createSubContext(action: Action): ActionContext {
-    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.random, this.scopeResolver);
+    const subContext = new InternalActionContext(this.world, this.player, this.currentLocation, action, this.command, this.random, this.scopeResolver, this.actor);
     // Share the same data store with sub-context
     subContext.sharedData = this.sharedData;
     return subContext;
@@ -425,8 +436,12 @@ class InternalActionContext implements ActionContext {
 
 /**
  * Factory function to create unified action context
- * 
- * Phase 2: Factory pattern implementation
+ *
+ * @param actor The entity performing the action (ADR-328 D1). Defaults to
+ *              `player`, so parser-driven and test contexts are unchanged;
+ *              pass a non-player actor to run the action as that entity.
+ *              `currentLocation` is the actor's immediate location.
+ * @throws when the actor has no location in the world
  */
 export function createActionContext(
   world: WorldModel,
@@ -434,15 +449,16 @@ export function createActionContext(
   action: Action,
   command: ValidatedCommand,
   random: RandomService,
-  scopeResolver?: ScopeResolver
+  scopeResolver?: ScopeResolver,
+  actor: IFEntity = player
 ): ActionContext {
-  // Get immediate location (container/supporter/room that player is in)
-  const locationId = world.getLocation(player.id);
+  // Get immediate location (container/supporter/room that the actor is in)
+  const locationId = world.getLocation(actor.id);
   const currentLocation = locationId ? world.getEntity(locationId) : null;
   if (!currentLocation) {
-    throw new Error('Player has no valid location');
+    throw new Error(`Actor ${actor.id} has no valid location`);
   }
-  return new InternalActionContext(world, player, currentLocation, action, command, random, scopeResolver);
+  return new InternalActionContext(world, player, currentLocation, action, command, random, scopeResolver, actor);
 }
 
 /**

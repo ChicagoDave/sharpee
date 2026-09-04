@@ -9,6 +9,12 @@ create the pygmy goats
   scenery
   states: fed, unfed
 
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

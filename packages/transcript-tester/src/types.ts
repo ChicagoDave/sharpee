@@ -127,6 +127,13 @@ export interface TranscriptRunConfig {
   pointSeeds?: Array<{ point: string; seed: number }>;
   /** Line the `point-seed:` header field appeared on, for error reporting. */
   pointSeedsLineNumber?: number;
+  /**
+   * Presence presentation (ADR-328 D3), from the `presence:` header field.
+   * Absent = the platform default (an `absent` entry is hidden, so goldens
+   * mean what a player sees). `omniscient` shows every actor emission
+   * labelled by location — for testing NPC behaviour off-stage.
+   */
+  presence?: 'default' | 'omniscient';
 }
 
 /**

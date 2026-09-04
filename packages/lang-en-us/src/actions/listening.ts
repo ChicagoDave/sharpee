@@ -21,7 +21,7 @@ export const listeningLanguage = {
     'active_devices': "{You} can {hear} {devices} operating nearby.",
 
     // Success messages - specific targets
-    'no_sound': "{capitalize the target} isn't making any sound.",
+    'no_sound': "{capitalize the target} {verb:isn't target} making any sound.",
     'device_running': "{capitalize the target} {verb:is target} making a soft humming sound.",
     'device_off': "{capitalize the target} {verb:is target} silent.",
     'container_sounds': "{You} {hear} faint sounds from inside {the target}.",

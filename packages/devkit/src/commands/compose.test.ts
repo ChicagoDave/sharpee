@@ -3,7 +3,7 @@
  * (the `-o` write is asserted by re-reading the file), gate failures exit 1
  * with `.story` line numbers on stderr.
  */
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
@@ -22,7 +22,7 @@ describe('sharpee compose', () => {
 
     // The mutation under test: the file exists and holds the versioned IR.
     const ir = JSON.parse(readFileSync(out, 'utf8'));
-    expect(ir.format).toBe('story language 2');
+    expect(ir.format).toBe('story language 4');
     expect(Array.isArray(ir.entities)).toBe(true);
     expect(ir.entities.length).toBeGreaterThan(0);
   });
@@ -34,7 +34,7 @@ describe('sharpee compose', () => {
     const story =
       'story\n  title: T\n  authors:\n    A\n  id: t\n  story-version: 0.0.1\n\n' +
       'create the Den\n  a room\n\n  A small den.\n\n' +
-      'create the player\n  starts in the Den\n\n  You.\n';
+      'create Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
     const storyFile = join(dir, 't.story');
     writeFileSync(storyFile, story);
     writeFileSync(join(dir, 't.config.json'), '{ not json');
@@ -63,6 +63,34 @@ describe('sharpee compose', () => {
       expect(output).toMatch(/missing-phrase\.story:\d+:\d+/);
     } finally {
       stderr.mockRestore();
+    }
+  });
+
+  it('reports an analyzer error inside an imported fragment at the FRAGMENT path and line (ADR-251 D6 amended, GH #301)', async () => {
+    // Dedicated fixture: a story importing `regions/market`, whose room fires
+    // an undefined phrase at line 7 of the fragment. Pre-fix this was reported
+    // as `<story>:7` — an innocent main-file line.
+    const dir = mkdtempSync(join(tmpdir(), 'compose-fragment-span-'));
+    const story =
+      'story\n  title: T\n  authors:\n    A\n  id: t\n  story-version: 0.0.1\n\n' +
+      'import "regions/market"\n\n' +
+      'create Alex\n  a person\n  playable\n  starts in the Market\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
+    const fragment = 'create the Market\n  a room\n\n  Stalls.\n\n  after entering it\n    phrase no-such-key\n  end after\n';
+    const storyFile = join(dir, 't.story');
+    writeFileSync(storyFile, story);
+    mkdirSync(join(dir, 'regions'));
+    writeFileSync(join(dir, 'regions', 'market.chord'), fragment);
+    const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const code = await runCompose([storyFile, '--check']);
+      expect(code).toBe(1);
+      const output = stderr.mock.calls.map((c) => c.join(' ')).join('\n');
+      expect(output).toContain(`${join(dir, 'regions', 'market.chord')}:7:`);
+      expect(output).toContain('analysis.missing-phrase');
+      expect(output).not.toMatch(/t\.story:7:/);
+    } finally {
+      stderr.mockRestore();
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 

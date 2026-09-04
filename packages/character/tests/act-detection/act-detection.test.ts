@@ -18,8 +18,7 @@ import {
   ContainerTrait,
   RoomTrait,
 } from '@sharpee/world-model';
-import type { RandomService, ISemanticEvent } from '@sharpee/core';
-import { createNpcService } from '@sharpee/stdlib';
+import type { ISemanticEvent } from '@sharpee/core';
 import {
   detectActs,
   revealConfidedTopic,
@@ -60,34 +59,22 @@ describe('derivedTopicFor (D12a — deterministic actor × act names)', () => {
 });
 
 describe('taking site → steal-candidate', () => {
-  it('fires through the real NpcService when an NPC takes from another actor', () => {
+  it('classifies an NPC take out of another actor\'s possession via if.event.taken (the pipeline\'s own fact, ADR-328 D5)', () => {
     const { world, room } = makeWorld();
-    const thief = makeNpc(world, 'Weasel', 'thief-behavior');
+    const thief = makeNpc(world, 'Weasel');
     const victim = makeNpc(world, 'Colonel');
     world.moveEntity(thief.id, room.id);
     world.moveEntity(victim.id, room.id);
-    const watch = world.createEntity('gold watch', 'object');
-    world.moveEntity(watch.id, victim.id);   // in the Colonel's possession
 
-    const service = createNpcService();
-    service.registerBehavior({
-      id: 'thief-behavior',
-      onTurn: () => [{ type: 'take', target: watch.id }],
-    });
+    // The taking action, run as the thief, emits `if.event.taken` with the
+    // prior holder in `fromLocation` — the same fact a player take carries.
+    const event: ISemanticEvent = {
+      id: 'e0', type: 'if.event.taken', timestamp: 0,
+      entities: { actor: thief.id },
+      data: { item: 'gold watch', fromLocation: victim.id },
+    };
 
-    const events = service.tick({
-      world, turn: 1, random: {} as unknown as RandomService,
-      playerLocation: room.id, playerId: world.getPlayer()!.id,
-    });
-
-    // The real event stream carries the prior holder…
-    const took = events.find(e => e.type === 'npc.took')!;
-    expect((took.data as { from?: string }).from).toBe(victim.id);
-    // …and the world actually moved the item (real dispatched state)
-    expect(world.getLocation(watch.id)).toBe(thief.id);
-
-    const acts = events.flatMap(e => detectActs(e, world));
-    expect(acts).toEqual([{
+    expect(detectActs(event, world)).toEqual([{
       category: 'steal',
       actorId: thief.id,
       targetId: victim.id,
@@ -103,9 +90,9 @@ describe('taking site → steal-candidate', () => {
     world.moveEntity(coin.id, room.id);      // on the floor, owned by no one
 
     const event: ISemanticEvent = {
-      id: 'e1', type: 'npc.took', timestamp: 0,
+      id: 'e1', type: 'if.event.taken', timestamp: 0,
       entities: { actor: npc.id },
-      data: { npc: npc.id, target: coin.id, from: room.id },
+      data: { item: 'coin', fromLocation: room.id },
     };
 
     expect(detectActs(event, world)).toEqual([]);
@@ -133,15 +120,15 @@ describe('taking site → steal-candidate', () => {
 });
 
 describe('combat site → harm', () => {
-  it('classifies npc.attacked into a harm act', () => {
+  it('classifies an NPC\'s if.event.attacked into a harm act', () => {
     const { world } = makeWorld();
     const brute = makeNpc(world, 'Brute');
     const victim = makeNpc(world, 'Vicar');
 
     const event: ISemanticEvent = {
-      id: 'e3', type: 'npc.attacked', timestamp: 0,
+      id: 'e3', type: 'if.event.attacked', timestamp: 0,
       entities: { actor: brute.id },
-      data: { npc: brute.id, target: victim.id },
+      data: { target: victim.id },
     };
 
     expect(detectActs(event, world)).toEqual([{

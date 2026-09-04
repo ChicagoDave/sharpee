@@ -10,7 +10,7 @@
  * a `silence` close (the ADR-142 attention-decay machinery wired live).
  * All turn reads go through the character clock seam (D6).
  *
- * Public interface: OpenSceneOptions, openScene, closeScene,
+ * Public interface: OpenSceneOptions, PartingLine, openScene, closeScene,
  *   recordSceneMove, applySceneDirectives, stampThreadContinuability,
  *   ageScenes.
  * Owner context: @sharpee/character / conversation
@@ -107,13 +107,27 @@ export function openScene(
  * @param sceneId - The scene to close
  * @param boundary - Which boundary closed it (`exit` or `silence`)
  * @param memory - The per-pair memory home
- * @returns The scene-closed wire event, or none when the id is not live
+ * @param partingLine - The parting-line deliverer (D10a); absent = parks render nothing
+ * @returns The thread-parked, thread-parting and scene-closed wire events, or none when the id is not live
  */
+/**
+ * The parting-line deliverer (ADR-320 D10a, 2026-09-02): the registrar's
+ * runner executes a parked thread's authored `on parting` body and hands
+ * back the spoken line, or undefined when none is authored. Bound by the
+ * loader; absent in builder-authored stories.
+ */
+export type PartingLine = (
+  ownerId: string,
+  partnerId: string,
+  threadKey: string,
+) => { messageId: string; params: Record<string, unknown> } | undefined;
+
 export function closeScene(
   world: WorldModel,
   sceneId: string,
   boundary: SceneBoundaryKind,
   memory: ConversationMemoryAccess,
+  partingLine?: PartingLine,
 ): SceneWireEvent[] {
   const store = readSceneStore(world);
   const scene = store.scenes[sceneId];
@@ -135,7 +149,27 @@ export function closeScene(
   // next engagement resumes via `on resuming` (ADR-320 D14 persistence).
   const threadWire = parkActiveThreadsOnClose(world, sceneId, scene.participantIds);
 
-  return [...threadWire, { kind: 'scene-closed', sceneId, boundary }];
+  // ADR-320 D10a (2026-09-02): every park-on-close renders the parked
+  // thread's authored `on parting` — interruption, exit, silence alike —
+  // as `thread-parting` wire the hosts turn into the prose event. One
+  // step for every path; nothing authored, nothing rendered.
+  const partingWire: SceneWireEvent[] = [];
+  for (const w of threadWire) {
+    if (w.kind !== 'thread-parked') continue;
+    const line = partingLine?.(w.ownerId, w.partnerId, w.threadKey);
+    if (!line) continue;
+    partingWire.push({
+      kind: 'thread-parting',
+      sceneId,
+      ownerId: w.ownerId,
+      partnerId: w.partnerId,
+      threadKey: w.threadKey,
+      messageId: line.messageId,
+      params: line.params,
+    });
+  }
+
+  return [...threadWire, ...partingWire, { kind: 'scene-closed', sceneId, boundary }];
 }
 
 /**
@@ -213,6 +247,7 @@ export function stampThreadContinuability(
  * @param sceneId - The scene the directives target
  * @param directives - The selection's directives, in order
  * @param memory - The per-pair memory home (for `close-scene`)
+ * @param partingLine - The parting-line deliverer for a `close-scene` (D10a)
  * @returns Wire events the directives produced
  */
 export function applySceneDirectives(
@@ -220,6 +255,7 @@ export function applySceneDirectives(
   sceneId: string,
   directives: SceneDirective[],
   memory: ConversationMemoryAccess,
+  partingLine?: PartingLine,
 ): SceneWireEvent[] {
   const wireEvents: SceneWireEvent[] = [];
 
@@ -247,7 +283,7 @@ export function applySceneDirectives(
         break;
 
       case 'close-scene':
-        wireEvents.push(...closeScene(world, sceneId, directive.boundary, memory));
+        wireEvents.push(...closeScene(world, sceneId, directive.boundary, memory, partingLine));
         break;
     }
   }
@@ -265,18 +301,20 @@ export function applySceneDirectives(
  * @param world - The live world
  * @param memory - The per-pair memory home
  * @param threshold - Silent turns before a scene closes
+ * @param partingLine - The parting-line deliverer (D10a)
  * @returns The scene-closed wire events, oldest scene first
  */
 export function ageScenes(
   world: WorldModel,
   memory: ConversationMemoryAccess,
   threshold: number = DEFAULT_DECAY_THRESHOLDS.neutral,
+  partingLine?: PartingLine,
 ): SceneWireEvent[] {
   const turn = dialogueTurn(world);
   const wireEvents: SceneWireEvent[] = [];
   for (const scene of Object.values(readSceneStore(world).scenes)) {
     if (turn - scene.lastMoveTurn >= threshold) {
-      wireEvents.push(...closeScene(world, scene.id, 'silence', memory));
+      wireEvents.push(...closeScene(world, scene.id, 'silence', memory, partingLine));
     }
   }
   return wireEvents;

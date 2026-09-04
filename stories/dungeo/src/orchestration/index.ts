@@ -15,7 +15,6 @@
 import type { GameEngine } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
-import { NpcPlugin } from '@sharpee/plugin-npc';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { IdentityTrait } from '@sharpee/world-model';
 
@@ -156,10 +155,8 @@ export function initializeOrchestration(
   };
   registerPuzzleHandlers(engine, world, puzzleConfig, schedulerPlugin.getScheduler());
 
-  // 4. NPC Registration (ADR-120 Phase 3)
-  // Register NPC plugin and set up behaviors
-  const npcPlugin = new NpcPlugin();
-  engine.getPluginRegistry().register(npcPlugin);
+  // 4. NPC Registration (ADR-120 Phase 3; ADR-328 D5)
+  // The engine owns the actor turn phase; behaviors register on its service.
 
   // Calculate surface rooms (thief forbidden from surface)
   const surfaceRoomIds = [
@@ -174,7 +171,7 @@ export function initializeOrchestration(
     cyclopsRoomId: config.mazeIds.cyclopsRoom,
     dungeonEntranceId: config.endgameIds.dungeonEntrance
   };
-  registerNpcs(engine, npcPlugin.getNpcService(), world, npcConfig);
+  registerNpcs(engine, engine.getNpcService(), world, npcConfig);
 
   // 5. State Machine Plugin (ADR-119, ADR-120 Phase 4)
   // Register state machine plugin for declarative puzzle orchestration

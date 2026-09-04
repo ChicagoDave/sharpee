@@ -56,13 +56,14 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
       'create', // Foyer
       'create', // Cloakroom
       'create', // Foyer Bar
-      'create', // player
+      'create', // Alex
       'create', // velvet cloak
       'create', // brass hook
       'create', // message
       'extend-action',
       'define-phrases',
       'define-text',
+      'start-block', // ADR-327 D10 — last in cloak.story
     ]);
   });
 
@@ -154,7 +155,7 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
     const bar = creates[2];
     expect(bar.onClauses).toHaveLength(1);
     const clause = bar.onClauses[0];
-    expect(clause).toMatchObject({ clauseKind: 'after', action: 'entering', binding: 'it', once: false });
+    expect(clause).toMatchObject({ clauseKind: 'after', action: 'entering', binding: 'object', once: false });
     expect(clause.condition).toMatchObject({ kind: 'condition-ref', name: 'in-darkness' });
     expect(clause.body).toHaveLength(3);
     expect(clause.body[0]).toMatchObject({ kind: 'phrase', phraseKey: 'stumble' } satisfies Partial<PhraseStmt>);
@@ -245,7 +246,7 @@ describe('malformed fixtures — one mistake, one diagnostic, parsing continues'
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.removed-when');
-    expect(errors[0].message).toContain('after <verb> it');
+    expect(errors[0].message).toContain('after the player <verb>');
     expect(result.ast.declarations.some((d) => d.kind === 'create')).toBe(true);
     expect(result.ast.declarations.some((d) => d.kind === 'define-phrases')).toBe(true);
   });
@@ -319,7 +320,7 @@ describe('ownership-package removals — parse errors with fix-its (ratchet 2026
 
   it('if statement: removed, fix-it names must, the when suffix, and select', () => {
     const errors = errorsOf(
-      `${HEADER}create the Hall\n  a room\n\n  A hall.\n\n  on entering it\n    if it is a room\n      win\n    end if\n  end on\n`,
+      `${HEADER}create the Hall\n  a room\n\n  A hall.\n\n  on the player entering\n    if it is a room\n      win\n    end if\n  end on\n`,
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.removed-if');
@@ -336,14 +337,14 @@ describe('ownership-package removals — parse errors with fix-its (ratchet 2026
   });
 
   it('refuse inside an after clause: reactions cannot refuse (D3)', () => {
-    const errors = errorsOf(`${HEADER}create the Hall\n  a room\n\n  A hall.\n\n  after entering it\n    refuse nope\n  end after\n`);
+    const errors = errorsOf(`${HEADER}create the Hall\n  a room\n\n  A hall.\n\n  after the player entering\n    refuse nope\n  end after\n`);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.react-refusal');
     expect(errors[0].message).toContain('`on` clause');
   });
 
   it('must not: negative requirements are not a form (D6)', () => {
-    const errors = errorsOf(`${HEADER}define trait guard\n  on opening it\n    it must not be locked: nope\n  end on\nend trait\n`);
+    const errors = errorsOf(`${HEADER}define trait guard\n  on the player opening\n    it must not be locked: nope\n  end on\nend trait\n`);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.must-negative');
     expect(errors[0].message).toContain('refuse when');

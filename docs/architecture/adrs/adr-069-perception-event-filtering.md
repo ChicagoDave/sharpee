@@ -488,3 +488,20 @@ event.data.renderings = {
 - **Scope.** This supersedes the type-matching filter *for witnessable events*. The original type-based path (room-description darkness) remains for events that do not yet carry a renderings map; migrating those is follow-on work, not required by #159. If the sense set grows into a documented taxonomy, that taxonomy supersedes this amendment as its own ADR.
 
 **Session.** Branch `fix/platform-issues-book-qa`, issue #159.
+
+## Amendment — Absent events pass through (ADR-328 D3, 2026-08-28)
+
+**Context.** [ADR-328](adr-328-actors-are-a-platform-concept.md) D3 tags every actor-sourced
+narration event with `presence` (`present | absent | concealed`) and leaves presentation to
+the client. `filterEvents` is a transform over what the player *is present for*: darkness
+and the per-sense renderings selection are facts about the room the player is in.
+
+**Change.** `filterEvents` returns an event whose `presence === 'absent'` untouched — the
+same object, tag intact — before the renderings selection and before the darkness check.
+Transforming an off-stage event into `if.event.perception.blocked` would narrate the wrong
+place, and the blocked event would lose the tag the client hides on. Everything else in this
+ADR stands: a `present`/`concealed` visual event in a dark room is still transformed, and a
+witnessable fact still has its rendering selected per sense.
+
+**Session.** 2026-08-28, session 5c0980 — Phase 2b of
+`docs/work/adr-328-actors-platform-concept/plan.md`.

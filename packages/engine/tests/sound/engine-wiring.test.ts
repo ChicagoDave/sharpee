@@ -75,6 +75,8 @@ class ShoutTestStory implements Story {
   };
 
   private _player: IFEntity | null = null;
+  /** Starting room, recorded by initializeWorld (ADR-327 D10 order). */
+  private _startRoomId: string | undefined;
   private _room: IFEntity | null = null;
 
   createPlayer(world: WorldModel): IFEntity {
@@ -83,17 +85,17 @@ class ShoutTestStory implements Story {
     p.add(new ContainerTrait());
     p.add(new IdentityTrait({ name: 'yourself', article: '' }));
     this._player = p;
+    // ADR-327 D10: initializeWorld runs first now, so the room exists.
+    if (this._startRoomId) world.moveEntity(p.id, this._startRoomId);
     return p;
   }
 
   initializeWorld(world: WorldModel): void {
     const r = world.createEntity('Parlor', 'room');
+    this._startRoomId = r.id;
     r.add(new RoomTrait());
     r.add(new IdentityTrait({ name: 'Parlor', article: 'the' }));
     this._room = r;
-    if (this._player) {
-      world.moveEntity(this._player.id, r.id);
-    }
   }
 
   getCustomActions(): Action[] {

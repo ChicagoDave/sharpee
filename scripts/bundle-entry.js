@@ -96,9 +96,6 @@ if (require.main === module) {
   const fs = require('fs');
   const readline = require('readline');
   const transcriptTester = require('../packages/transcript-tester/dist/index.js');
-  // ADR-302 D15: a separate harness, not a mode of the first. Which one runs
-  // is decided by the story's directory (D16), never by a flag.
-  const branchTester = require('../packages/branch-tester/dist/index.js');
   const bootstrap = require('@sharpee/bootstrap');
   // Chord (ADR-210 Phase A): the CLI is the host layer for `.story` stories —
   // it compiles the source and owns hatch-module resolution. These live here,
@@ -146,6 +143,9 @@ if (require.main === module) {
       // the transcript argument is the command driver.
       search: null,
       searchBudget: null,
+      // ADR-328 D3: show every actor emission, labelled by location, for
+      // --play/--exec (and --test, overriding the transcript's header).
+      omniscient: false,
       help: false
     };
 
@@ -204,6 +204,8 @@ if (require.main === module) {
         options.watch = true;
       } else if (arg === '--coverage') {
         options.coverage = true;
+      } else if (arg === '--omniscient') {
+        options.omniscient = true;
       } else if (arg === '--search') {
         i++;
         if (i < args.length) {
@@ -269,6 +271,10 @@ Options:
                        point-seed: header line to paste on success
   --search-budget <N>  Override the search try budget (default: 10 x the
                        point's declared class count)
+  --omniscient         Show every actor emission, on-stage or off, labelled
+                       by location (ADR-328 D3). The default hides what the
+                       player was absent from. For --test it overrides the
+                       transcript's presence: header
   --help, -h           Show this help message
 
 Examples:
@@ -385,13 +391,18 @@ Examples:
     }
   }
 
-  function loadStoryAndCreateGame(storyPath, entry, seed, channels) {
+  function loadStoryAndCreateGame(storyPath, entry, seed, channels, presence) {
     // ADR-293: forward the resolved master seed to EngineConfig.seed; a
     // restart reboot reuses it, so pinned runs survive in-transcript RESTART.
     const seedOption = seed !== undefined ? { seed } : {};
     // ADR-294 D15: declared capture channels flow to assembly — the
     // capability profile and per-command channel capture are fixed there.
-    const channelsOption = channels !== undefined ? { channels } : {};
+    // ADR-328 D3: so does the presence presentation — `lastOutput` is
+    // composed once, at the packet, under one mode for the session.
+    const channelsOption = {
+      ...(channels !== undefined ? { channels } : {}),
+      ...(presence !== undefined ? { presence } : {}),
+    };
     if (storyPath.endsWith('.story')) {
       // ADR-293 D1: one master seed governs the engine AND the chord
       // evaluator. When none was injected, read the clock once HERE so both
@@ -588,127 +599,6 @@ Examples:
     process.exit(1);
   }
 
-  /**
-   * Run a v2 story as a tree (ADR-302 D10, D11).
-   *
-   * Uses the bundle's own loader, so a Chord `.story` compiles and runs here
-   * exactly as it does for v1 — that capability lives in the bundle, not in
-   * either harness package.
-   *
-   * The tree is the input: every transcript is parsed and assembled, and the
-   * whole tree is validated before a single command runs. A root gets a fresh
-   * game built from its own header when the walk reaches it.
-   *
-   * `resolveSeed` is passed in rather than re-derived: it carries ADR-293 D1's
-   * precedence (`--seed` | `--vary` → `seed:` → the clock), and a second copy
-   * would be a second answer.
-   */
-  async function runBranchTree(options, resolveSeed) {
-    const parsed = [];
-    let parseFailures = 0;
-    for (const transcriptPath of options.transcriptPaths) {
-      const transcript = branchTester.parseTranscriptFile(transcriptPath);
-      const errors = branchTester.validateTranscript(transcript);
-      if (errors.length > 0) {
-        parseFailures++;
-        console.error(`${transcriptPath}:`);
-        for (const error of errors) console.error(`  ${error}`);
-        continue;
-      }
-      parsed.push(transcript);
-    }
-    if (parseFailures > 0) {
-      console.error(`\n${parseFailures} transcript(s) failed to parse — nothing ran.`);
-      process.exit(2);
-    }
-
-    const storyName = path.basename(storyDirOf(options.storyPath));
-    const tree = branchTester.assembleTree(parsed, storyName);
-    if (tree.defects.length > 0) {
-      for (const line of branchTester.formatTreeRun({
-        outcomes: [],
-        defects: tree.defects,
-        executedCommands: 0,
-        authoredCommands: 0
-      })) {
-        console.error(line);
-      }
-      process.exit(2);
-    }
-
-    const coverageTracker = new branchTester.CoverageTracker();
-
-    // A root is a fresh game (D1) built from ITS OWN header — `entry:`, the
-    // pinned seed, and any declared channels. Children inherit through the
-    // effective header rather than by reloading (D8).
-    //
-    // D17 asks for a boot per FORK as well as per root, so the same root may be
-    // booted several times and every one of them must land on the same seed —
-    // a root that declared none would otherwise draw a new clock seed per boot
-    // and its replayed prefix would diverge from the one its first child saw.
-    // The seed the first boot actually resolved is therefore remembered and
-    // re-pinned, and the announcement is made once.
-    // The re-pin rule itself lives in @sharpee/branch-tester's
-    // `createRootGameFactory` — this was a hand-copy of it, and the copy is why
-    // the rule had to be rediscovered when only the package side was updated.
-    // What stays here is what is genuinely the CLI's: `resolveSeed`, which lets
-    // `--seed` and `--vary` outrank the transcript's own pin. It runs inside
-    // `load`, so an override wins on the first boot AND on every re-boot.
-    let lastSource = 'clock';
-    const freshGameForRoot = branchTester.createRootGameFactory({
-      load: (spec) => {
-        const resolved = resolveSeed(spec.seed);
-        lastSource = resolved.source;
-        return loadStoryAndCreateGame(
-          options.storyPath,
-          spec.entry,
-          resolved.seed,
-          spec.channels
-        );
-      },
-      masterSeedOf: (game) => game.engine.getMasterSeed(),
-      // `load` runs immediately before this, awaited, so `lastSource` is that
-      // boot's. Announced once per root, not once per fork below it.
-      onFirstBoot: (stem, seed) => console.log(`Seed: ${seed} (${lastSource})`)
-    });
-
-    const run = await branchTester.runTree(tree, freshGameForRoot, {
-      verbose: options.verbose,
-      emitTraits: options.emitTraits,
-      stopOnFailure: options.stopOnFailure,
-      bless: options.bless,
-      savesDirectory: path.join(storyDirOf(options.storyPath), 'saves'),
-      storyName,
-      coverage: coverageTracker
-    });
-
-    const results = [];
-    for (const outcome of run.outcomes) {
-      if (!outcome.result) continue;
-      results.push(outcome.result);
-      branchTester.reportTranscript(outcome.result, {
-        verbose: options.verbose,
-        emitTraits: options.emitTraits
-      });
-    }
-
-    // D13: unreached is not failed. Printed after the runs, so the tally reads
-    // as blast radius rather than as more failures.
-    console.log();
-    for (const line of branchTester.formatTreeRun(run)) console.log(line);
-
-    const coverageReport = coverageTracker.buildReport();
-    console.log();
-    console.log(branchTester.formatCoverageSummary(coverageReport));
-    if (options.coverage) {
-      console.log();
-      console.log(branchTester.formatCoverageBreakdown(coverageReport));
-    }
-
-    const runResult = branchTester.aggregateTestRun(results);
-    process.exit(run.defects.length > 0 ? 2 : branchTester.getExitCode(runResult));
-  }
-
   async function main() {
     const options = parseArgs(args);
 
@@ -798,7 +688,8 @@ Examples:
         options.storyPath,
         undefined,
         resolveSeed(undefined).seed,
-        OPENING_CHANNELS
+        OPENING_CHANNELS,
+        options.omniscient ? 'omniscient' : undefined
       );
       console.log(`Seed: ${game.engine.getMasterSeed()}`);
 
@@ -979,7 +870,8 @@ Examples:
         options.storyPath,
         undefined,
         resolveSeed(undefined).seed,
-        OPENING_CHANNELS
+        OPENING_CHANNELS,
+        options.omniscient ? 'omniscient' : undefined
       );
       // ADR-293 D14: author surfaces show the seed automatically — one
       // number plus a command list reproduces the session.
@@ -1067,24 +959,24 @@ Examples:
       console.log(`Found ${options.transcriptPaths.length} transcript(s) to run`);
 
       // ── Which harness? The directory decides (ADR-302 D16) ──────────
-      // Not a flag and not a header field: `branch-stories/` is v2's, and
-      // everything else is v1's. Mixed paths are a hard error rather than a
-      // pick, for the same reason mixed story prefixes are — the two
-      // harnesses disagree on grammar and runtime semantics, so a run that
-      // spanned both would mean two different things at once.
+      // This CLI owns ONE harness: the v1 text transcripts under `stories/`
+      // and `tutorials/`. A Chord story under `branch-stories/` has no
+      // transcripts at all — ADR-307's cutover made `<story-id>.tests.json`
+      // the tree's only serialization and retired the v2 `continues:`
+      // grammar this command used to dispatch to. So a branch-stories path
+      // is refused with the command that does run it, rather than being fed
+      // to a parser that would report it as malformed v1.
       const underBranch = options.transcriptPaths.map((p) =>
         /(^|\/)branch-stories\//.test(p.replace(/\\/g, '/'))
       );
-      if (underBranch.some(Boolean) && !underBranch.every(Boolean)) {
+      if (underBranch.some(Boolean)) {
         console.error(
-          'Transcripts span both branch-stories/ and stories/ — each harness reads only its ' +
-          'own directory (ADR-302 D16). Run them separately.'
+          'branch-stories/ has no transcript tests: a Chord story is tested by its tree ' +
+          'document (<story-id>.tests.json), recorded in the Testing tab and run with ' +
+          '`sharpee test <story-dir>`. This command runs the text transcripts under ' +
+          'stories/ and tutorials/ only.'
         );
         process.exit(1);
-      }
-
-      if (underBranch.every(Boolean) && underBranch.length > 0) {
-        return await runBranchTree(options, resolveSeed);
       }
 
       if (options.chain) {
@@ -1182,7 +1074,11 @@ Examples:
             : resolveSeed(transcript.seed);
           // ADR-294 D15: assemble with the transcript's declared channels.
           const declaredChannels = (transcript.config && transcript.config.channels) || [];
-          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed, declaredChannels);
+          // ADR-328 D3: the header's presence: mode, unless --omniscient overrides.
+          const declaredPresence = options.omniscient
+            ? 'omniscient'
+            : (transcript.config && transcript.config.presence) || undefined;
+          const game = loadStoryAndCreateGame(options.storyPath, transcript.header && transcript.header.entry, resolved.seed, declaredChannels, declaredPresence);
           // ADR-293 D14: every run reports the seed it used, clock-derived included.
           console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 
@@ -1219,7 +1115,12 @@ Examples:
         const chainChannels =
           (parsedTranscripts[0] && parsedTranscripts[0].transcript.config &&
             parsedTranscripts[0].transcript.config.channels) || [];
-        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed, chainChannels);
+        // ADR-328 D3: likewise the first member's presence: mode.
+        const chainPresence = options.omniscient
+          ? 'omniscient'
+          : (parsedTranscripts[0] && parsedTranscripts[0].transcript.config &&
+              parsedTranscripts[0].transcript.config.presence) || undefined;
+        const game = loadStoryAndCreateGame(options.storyPath, undefined, resolved.seed, chainChannels, chainPresence);
         // ADR-293 D14: every run reports the seed it used, clock-derived included.
         console.log(`Seed: ${game.engine.getMasterSeed()} (${resolved.source})`);
 

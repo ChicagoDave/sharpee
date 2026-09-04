@@ -12,10 +12,12 @@ final class SyntaxHighlighterTests: XCTestCase {
 
     // MARK: - Language gating (pure)
 
-    func testCanHighlightChordStoriesOnly() {
+    func testCanHighlightChordSourceOnly() {
         let h = SyntaxHighlighter()
         XCTAssertTrue(h.canHighlight(URL(fileURLWithPath: "/x/fernhill.story")))
         XCTAssertTrue(h.canHighlight(URL(fileURLWithPath: "/x/UPPER.STORY")))
+        XCTAssertTrue(h.canHighlight(URL(fileURLWithPath: "/x/regions/harbor.chord")),
+                      "an imported fragment is Chord source (ADR-251; GH #287)")
         XCTAssertFalse(h.canHighlight(URL(fileURLWithPath: "/x/foo.ts")),
                        "the TypeScript path is dropped (ADR-258 D1/D3)")
         XCTAssertFalse(h.canHighlight(URL(fileURLWithPath: "/x/readme.md")))

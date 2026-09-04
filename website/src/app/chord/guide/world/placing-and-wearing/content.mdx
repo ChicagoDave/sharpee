@@ -12,14 +12,33 @@ create the seed packet
 
   A paper packet of runner-bean seeds.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Greenhouse
   wears the straw hat
   carries the trowel
 
   Mud on your boots, dirt under your nails.
+
+before the game starts
+  change the player to Alex
+end before
+```
+
+What a character `carries` is visible to the player but not reachable:
+you can see the thief's knife, examine it, and be refused in the story's
+own words when you try to take it, but you cannot simply grab it. Compose
+`open-inventory` on the holder when the player should be able to take
+from them — a friendly character holding something out, a horse with
+saddlebags:
+
+```chord
+create the pack horse
+  a person, open-inventory
+  carries the saddlebags
 ```
 
 Note the disambiguation: `on` followed by an article is placement
 (`on the potting table`); `on` followed by a bare word opens a behavior
-clause (`on watching it`).
+clause (`on the player watching`).

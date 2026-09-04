@@ -1,5 +1,6 @@
-<p>A <code>must</code> line states what has to be true for the action to proceed, and names the phrase spoken when it is not. The subject opens the line in lowercase (<code>the</code>, <code>it</code>, or <code>its</code>), which is how a requirement stays distinct from prose. One fixture exercises every form:</p>
-<pre><code class="language-chord">  on stocking it
+<p>A <code>must</code> line states what has to be true for the action to proceed, and names the phrase spoken when it is not. The subject opens the line in lowercase, which is how a requirement stays distinct from prose — a name (<code>the player</code>, <code>the secateurs</code>) anywhere, or <code>it</code>/<code>its</code> for the carrier inside a <code>define trait</code> body, as here. One fixture exercises every form:</p>
+<pre><code class="language-chord">define trait stockable
+  on the player stocking
     it must be a tool: not-a-tool
     it must be any loose-tool: already-racked
     the player must be in the Potting Bench: too-far-away
@@ -7,13 +8,14 @@
     the player must see the tool rack: too-dark
     the player must reach the tool rack: out-of-reach
     phrase racked
-  end on</code></pre>
+  end on
+end trait</code></pre>
 <p><code>must be a/an</code> tests kind, <code>must be in</code> tests place, <code>must be any</code> tests membership in an open condition, plain <code>must be</code> compares a state or value, <code>must have</code>/<code>hold</code>/<code>wear</code> test possession, and <code>must see</code>/<code>reach</code> test scope. Requirements are legal in <code>on</code> bodies and as <code>define action</code> lines, never in <code>after</code> bodies.</p>
 <p>There is deliberately no <code>must not</code>. Requirements are positive; prohibitions are refusals, and the two forms sit naturally side by side:</p>
-<pre><code class="language-chord">  on sharpening it
-    it must be dull: already-sharp
+<pre><code class="language-chord">  on the player sharpening
+    the secateurs must be dull: already-sharp
     refuse when the player wears the gardening mittens: mittens-on
-    change it to sharp
+    change the secateurs to sharp
     phrase sharpened
   end on</code></pre>
 <p>Writing <code>must not …</code> (or <code>must be no …</code>) is a parse error (<code>parse.must-negative</code>) whose fix-it points at <code>refuse when</code>.</p>

@@ -12,7 +12,7 @@ create the East Room
 
   A bare eastern room.
 
-  after entering it
+  after the player entering
     phrase crossing-mutter
   end after
 
@@ -22,15 +22,17 @@ create the West Room
 
   A bare western room.
 
-  after entering it
+  after the player entering
     phrase crossing-mutter
   end after
 
-  after entering it while one chance in 3
+  after the player entering while one chance in 3
     phrase lucky-draught
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the East Room
 
   Determined-looking.
@@ -46,3 +48,7 @@ end phrase
 define phrases en-US
   lucky-draught:
     A lucky draught of air sweeps past you.
+
+before the game starts
+  change the player to Alex
+end before

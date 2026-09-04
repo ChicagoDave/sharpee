@@ -128,6 +128,14 @@ which has native equivalents. For a published game it means no save/restore UI
 at all unless the author supplies one, so the publish option must say so where
 the choice is made.
 
+**Implemented (2026-09-03, publish-readiness Phase 13, GH #196)**: one flag on
+one template — `buildBrowser({ menu })` strips the `<menu id="menu-bar">` block
+(`stripClientMenu`, custom pages included; the dialogs stay, inert). The IDE's
+`BuildRunner` always passes `--no-menu`; `sharpee publish --no-menu` and the
+Publish tab's "Include the in-page menu" checkbox (default on) carry the
+consequence in their own text. Open Question 4's default is settled as
+menu-on for publish.
+
 ### D8. The save location is inferred, never asked
 
 Saving a test presents **no file panel**. The author names the test; where it

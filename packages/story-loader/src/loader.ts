@@ -34,7 +34,7 @@ import {
   type StoryIR,
 } from '@sharpee/chord';
 import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
-import type { IROnClause } from '@sharpee/chord';
+import type { IROnClause, IRChapterTrigger } from '@sharpee/chord';
 
 /**
  * Topics an entity's own TURN-TRIGGERED clauses are gated on knowing.
@@ -52,26 +52,9 @@ import type { IROnClause } from '@sharpee/chord';
  */
 function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<string> {
   const topics = new Set<string>();
-  const walk = (condition: IRCondition | null): void => {
-    if (!condition) return;
-    switch (condition.kind) {
-      case 'knows-topic':
-        topics.add(condition.topic);
-        return;
-      case 'and':
-      case 'or':
-        for (const operand of condition.operands) walk(operand);
-        return;
-      case 'not':
-        walk(condition.operand);
-        return;
-      default:
-        return;
-    }
-  };
   for (const clause of onClauses) {
     if (clause.binding !== 'every-turn') continue;
-    walk(clause.condition);
+    for (const topic of knownTopicsIn(clause.condition)) topics.add(topic);
   }
   return topics;
 }
@@ -85,18 +68,21 @@ import {
   createAmbientChannel,
   createImageChannel,
   killPlayer,
+  type INpcService,
+  type ActSlots,
+  type ActResult,
 } from '@sharpee/stdlib';
 import {
   createHungerCrossingWatcher,
   getHungerSeverity,
   setHungerSeverity,
 } from '@sharpee/ext-hunger';
-import { type ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from '@sharpee/engine';
-import { createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import { TURN_BANDS, createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
+import { CHAPTER_CURRENT_KEY, CHAPTER_FIRED_PREFIX, createChaptersPlugin, type ChapterRow, type ChapterRuntimeTrigger } from '@sharpee/ext-chapters';
 import {
   applyCompiledCharacter,
   createTraitMemoryAccess,
@@ -122,10 +108,12 @@ import {
 } from '@sharpee/stdlib';
 import {
   ActorTrait,
+  addPlayerRoleVocabulary,
   ClimbableTrait,
   CombatantTrait,
   ConcealmentTrait,
   ContainerTrait,
+  OpenInventoryTrait,
   HealthTrait,
   AuthorModel,
   CuttableTrait,
@@ -170,8 +158,8 @@ import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_F
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
-import { ChordRuntime, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
+import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -263,7 +251,8 @@ export class ChordStory implements Story {
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
-  private readonly evaluator: Evaluator;
+  /** The expression evaluator — public beside `runtime` so hosts and tests reach its wiring seams (ADR-326 D6). */
+  readonly evaluator: Evaluator;
   /** IR entity ID → world entity ID (populated by initializeWorld/createPlayer). */
   private readonly worldIds = new Map<string, string>();
 
@@ -483,9 +472,11 @@ export class ChordStory implements Story {
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
-    // Pass 1 — create every remaining non-player entity.
+    // Pass 1 — create every remaining entity. ADR-327 D10: the role-holder is
+    // one of these. There is no player block to skip any more — who holds the
+    // role is decided by the start block, after the world exists.
     for (const irEntity of this.ir.entities) {
-      if (irEntity.isPlayer || this.worldIds.has(irEntity.id)) continue;
+      if (this.worldIds.has(irEntity.id)) continue;
       built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
     }
 
@@ -505,6 +496,27 @@ export class ChordStory implements Story {
       // `starts in <room>`.
       if (irEntity.placement) {
         author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+      }
+      // `carries the X` / `wears the X` are facts about the holder, whoever it
+      // is — a character's inventory is world construction exactly as its
+      // room is (ADR-230 Phase 6 wrote them for the player; the role-holder
+      // is one character among the `a person` entities, ADR-327 D10). Found
+      // 2026-08-29 under ADR-329: an NPC's `carries` compiled and was never
+      // placed — the monkey's necklace, the mercenaries' sword, Teisha's cord.
+      for (const carriedIrId of irEntity.carries ?? []) {
+        author.moveEntity(this.requireWorldId(carriedIrId, irEntity), entity.id);
+      }
+      for (const wornIrId of irEntity.wears ?? []) {
+        const wornId = this.requireWorldId(wornIrId, irEntity);
+        author.moveEntity(wornId, entity.id);
+        const wearable = world.getEntity(wornId)?.get(TraitType.WEARABLE) as WearableTrait | undefined;
+        if (!wearable) {
+          // ADR-276 census 12: the compiler's gate refuses this
+          // (analysis.worn-not-wearable) — the loader's backstop against rogue IR.
+          throw new LoadError(`\`${wornIrId}\` is worn by ${irEntity.name} but is not wearable.`, irEntity.span);
+        }
+        wearable.worn = true;
+        wearable.wornBy = entity.id;
       }
       // ADR-236 D2: region membership through the platform seam —
       // `assignRoom` sets RoomTrait.regionId (never touched directly here);
@@ -533,21 +545,26 @@ export class ChordStory implements Story {
       for (const exit of irEntity.exits) {
         const toId = this.requireWorldId(exit.to, irEntity);
         const direction = toDirection(exit.direction, irEntity);
+        // `, one-way` (ADR-234 D4, GH #327): the written direction only —
+        // no reverse exit is inferred, so a room reached by an authorial
+        // move and left by walking has no back door.
+        const oneWay = exit.oneWay === true;
         if (exit.via === null) {
           // Defensive (Phase 8 #6, belt-and-suspenders with the analyzer's
           // door-plain-mirror gate): connectRooms stamps BOTH directions, so
           // a plain exit whose reverse side is already door-wired would
           // silently unwire that door. The compiler refuses this; reaching
-          // here means rogue IR.
+          // here means rogue IR. A one-way exit stamps nothing on the far
+          // room, so it cannot unwire anything.
           const targetRoomTrait = world.getEntity(toId)?.get(TraitType.ROOM) as RoomTrait | undefined;
           const reverseExit = targetRoomTrait?.exits?.[getOppositeDirection(direction)];
-          if (reverseExit?.via && reverseExit.destination === entity.id) {
+          if (!oneWay && reverseExit?.via && reverseExit.destination === entity.id) {
             throw new LoadError(
               `\`${irEntity.name}\`: plain \`${exit.direction}\` exit mirrors a door-wired exit on \`${exit.to}\` — rogue IR (the compiler's door-plain-mirror gate refuses this).`,
               exit.span,
             );
           }
-          world.connectRooms(entity.id, toId, direction);
+          world.connectRooms(entity.id, toId, direction, undefined, { oneWay });
           continue;
         }
         // ADR-234 D1/D2 via ADR-237 D4: the door exit wires through the
@@ -571,7 +588,7 @@ export class ChordStory implements Story {
           continue;
         }
         door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
-        world.connectRooms(entity.id, toId, direction, doorId);
+        world.connectRooms(entity.id, toId, direction, doorId, { oneWay });
       }
       // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
       // unconditional alike, are registered as live evaluators by the
@@ -699,116 +716,105 @@ export class ChordStory implements Story {
 
     this.worldBuilt = true;
 
-    // Engine order (GameEngine.setStory): createPlayer ran before world
-    // content existed — the player can be placed and equipped only now.
-    if (this.playerId) this.finalizePlayer(world);
+    // ADR-327 D10 (design C, ruled 2026-08-26): the engine now builds the
+    // world FIRST, so the start block runs here — against a world where every
+    // character already exists — and its `change the player to` assignment is
+    // what `createPlayer` then returns. Nothing is read statically: the
+    // assignment may carry a `when` tail and pick a different opening PC.
+    this.runtime.runStartBlock(world);
+    this.finalizeRoleHolder(world);
   }
 
+  /**
+   * Return the entity the start block gave the player role to (ADR-327 D10).
+   *
+   * No longer a build: under design C the engine runs `initializeWorld` first,
+   * so the role-holder is an ordinary world entity by the time this is called.
+   * What it still does is stamp the ROLE onto that character — the actor flag
+   * and the role's own vocabulary — which is the part that moves when the role
+   * moves (`GameEngine.switchPlayer`, Q2).
+   *
+   * @param world the world `initializeWorld` has already built
+   * @returns the role-holder
+   * @throws LoadError when the start block never assigned the role — the story
+   *   compiled (the assignment may be conditional), but the path taken left the
+   *   role empty, and there is no defaulting to fall back on
+   */
   createPlayer(world: WorldModel): IFEntity {
-    const irPlayer = this.ir.entities.find((e) => e.isPlayer) ?? null;
-    const description = irPlayer?.descriptionKey ? this.phraseText(irPlayer.descriptionKey) : 'An adventurer.';
-
-    const player = world.createEntity('yourself', 'actor');
-    player.add(
-      new IdentityTrait({
-        name: 'yourself',
-        description,
-        aliases: ['self', 'me', 'myself', ...(irPlayer?.aka ?? [])],
-        properName: true,
-        article: '',
-      }),
-    );
-    player.add(new ActorTrait({ isPlayer: true }));
-    player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
-    this.playerId = player.id;
-    if (irPlayer) {
-      this.worldIds.set(irPlayer.id, player.id);
-      this.irIds.set(player.id, irPlayer.id);
+    if (!this.worldBuilt) {
+      throw new LoadError(
+        'The world must be built before the player role is claimed — call `initializeWorld` first (ADR-327 D10).',
+      );
     }
-
-    // Direct/test order: the world is already built, finalize immediately.
-    // Engine order (setStory calls createPlayer FIRST, then initializeWorld
-    // — "player must exist first"): initializeWorld finalizes instead.
-    if (this.worldBuilt) this.finalizePlayer(world);
-
+    if (!this.playerId) {
+      throw new LoadError(
+        'No character holds the player role: the `before the game starts` block ran without assigning it. Add an unconditional `change the player to <character>`, or make sure one of its conditional arms always fires.',
+        this.ir.startBlock?.span,
+      );
+    }
+    const player = world.getEntity(this.playerId)!;
+    const actor = player.get(TraitType.ACTOR) as ActorTrait | undefined;
+    if (actor) actor.isPlayer = true;
+    addPlayerRoleVocabulary(player);
     return player;
   }
 
   /**
-   * Place and equip the player, then run the initial derived-property
-   * evaluation. Runs exactly once, from whichever lifecycle hook fires
-   * second — both the engine order (createPlayer → initializeWorld) and
-   * the direct order (initializeWorld → createPlayer) are supported.
+   * Settle the player role once the world is built and the start block has run
+   * (ADR-327 D10).
+   *
+   * Placement, state seeding, trait composition and character blocks are no
+   * longer this method's business — the role-holder is an ordinary entity, so
+   * passes 0-2 already did all of that. What remains is what only the ROLE
+   * needs: the `player` sentinel every load-time reference resolves through,
+   * and the equipment the role's own `carries`/`wears` lines declare.
+   *
+   * Runs exactly once. A story whose start block assigned nothing leaves
+   * `playerId` unset and is reported by `createPlayer`, not here — the world
+   * is still perfectly well-formed; it just has no protagonist.
    */
-  private finalizePlayer(world: WorldModel): void {
+  private finalizeRoleHolder(world: WorldModel): void {
     if (this.playerFinalized) return;
     this.playerFinalized = true;
-    const irPlayer = this.ir.entities.find((e) => e.isPlayer) ?? null;
-    const player = world.getEntity(this.playerId!)!;
+    const assigned = this.runtime.assignedPlayerId;
+    if (!assigned) return;
+    this.playerId = assigned;
 
-    // Starting location: whatever placement line the player carries — `in`,
-    // `on`, or `starts in` alike (ADR-289 D4) — else the first declared
-    // room. The fallback survives only for a player with NO placement line;
-    // consulting the relation sent a player declared `in the Kitchen` to the
-    // first room instead, ignoring what the author wrote.
-    const startIr =
-      irPlayer?.placement?.place ?? this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'))?.id;
-    if (startIr) {
-      world.moveEntity(player.id, this.requireWorldId(startIr, irPlayer ?? undefined));
+    // The `player` sentinel the compiler emits for `the player` in load-time
+    // positions (`feels wary of the player`, `define timer … for the player`)
+    // resolves to whoever opens the story in the role.
+    this.worldIds.set('player', assigned);
+    const irId = this.irIds.get(assigned);
+    const irPlayer = irId ? (this.ir.entities.find((e) => e.id === irId) ?? null) : null;
+
+    // Starting location fallback (ADR-289 D4): a protagonist with no placement
+    // line starts in the first declared room. Pass 2 places what the author
+    // wrote; only the unwritten case is left, and only for the role — an
+    // unplaced NPC is offstage on purpose, an unplaced PC is nowhere to play.
+    if (world.getLocation(assigned) === undefined) {
+      const firstRoom = this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'));
+      if (firstRoom) world.moveEntity(assigned, this.requireWorldId(firstRoom.id, firstRoom));
     }
 
-    // ADR-289 D4: the player seeds like any other entity. Pass 2 never
-    // reaches it — `built` excludes the player by construction — so the two
-    // seedings that pass runs (`states[0]`, per-entity counter `starts`)
-    // happen here. The divergence was an omission, not a design.
-    if (irPlayer) {
-      if (irPlayer.states.length > 0) {
-        world.setStateValue(CHORD_STATE_PREFIX + irPlayer.id, irPlayer.states[0]);
-      }
-      for (const counter of irPlayer.counters) {
-        world.setStateValue(counterKey(counter.name, irPlayer.id), counter.starts);
-      }
-    }
+    // Carried and worn items were placed in pass 2 with every other
+    // entity's — the role-holder's inventory is not a role fact.
 
-    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
-    // player composes trait adjectives + `starts` states through the SAME
-    // loader path as any entity (`a person` is analyzer-gated to a no-op;
-    // NPC behaviors are refused at compile). Runs here — the second
-    // lifecycle hook — so entity-valued configs resolve against the
-    // fully-built world regardless of createPlayer/initializeWorld order.
-    if (irPlayer) {
-      this.applyTraitAdjectives(player, irPlayer, null);
-      this.applyStartsStates(player, irPlayer);
-      this.resolvePendingEntityRefs();
-    }
-
-    // Carried items: into inventory (ADR-230 Phase 6 — `carries the X`).
-    for (const carriedIrId of irPlayer?.carries ?? []) {
-      world.moveEntity(this.requireWorldId(carriedIrId, irPlayer ?? undefined), player.id);
-    }
-
-    // Worn items: into inventory, marked worn.
-    for (const wornIrId of irPlayer?.wears ?? []) {
-      const wornId = this.requireWorldId(wornIrId, irPlayer ?? undefined);
-      world.moveEntity(wornId, player.id);
-      const worn = world.getEntity(wornId);
-      const wearable = worn?.get(TraitType.WEARABLE) as WearableTrait | undefined;
-      if (!wearable) {
-        // ADR-276 census 12: the compiler's gate refuses this
-        // (analysis.worn-not-wearable) — this is the loader's defensive
-        // backstop against rogue IR.
-        throw new LoadError(`\`${wornIrId}\` is worn by the player but is not wearable.`, irPlayer?.span);
-      }
-      wearable.worn = true;
-      wearable.wornBy = player.id;
-    }
-
-    // ADR-310/318 Phase 5: apply compiled character blocks. Runs here —
-    // the second lifecycle hook — because a block's refs (`feels …
-    // toward the player`) need the FULLY built world in either
-    // createPlayer/initializeWorld order, the same reason Gap-2
-    // composition lives here.
+    // ADR-310/318 Phase 5: apply compiled character blocks. Runs here, after
+    // the role is settled, because a block's refs (`feels … toward the
+    // player`) resolve through the `player` sentinel mapped just above.
     this.applyCharacterBlocks(world);
+
+    // ADR-330 D2: the opening chapter is current from the moment the game
+    // starts — before the first turn, so `during <opener>` holds while turn 1
+    // renders. Seeded here, not by the plugin (which runs after an action);
+    // the plugin announces it on turn 1. A restored world already carries
+    // these keys and is never re-seeded (this method runs once per boot,
+    // before any restore).
+    const opener = (this.ir.chapters ?? []).find((c) => c.trigger.kind === 'game-starts');
+    if (opener && world.getStateValue(CHAPTER_CURRENT_KEY) === undefined) {
+      world.setStateValue(CHAPTER_FIRED_PREFIX + opener.name, true);
+      world.setStateValue(CHAPTER_CURRENT_KEY, opener.ordinal);
+    }
 
     // ADR-240: no initial derived-property evaluation — derived state is
     // registered evaluators, consulted live at every read.
@@ -867,13 +873,21 @@ export class ChordStory implements Story {
       if (!entity) {
         throw new LoadError(`\`${irEntity.name}\`: the entity carrying a character block was never built.`, irEntity.span);
       }
-      if (!irEntity.isPlayer && !entity.has(TraitType.NPC)) {
+      // ADR-327 D9: every character with a character block carries the trait.
+      // The PC used to be kept out of the NPC service by construction; the
+      // service now skips whoever holds the role at fire time, which is what
+      // lets a former PC's clauses wake when the role moves off them.
+      if (!entity.has(TraitType.NPC)) {
         entity.add(new NpcTrait({ behaviorId: 'passive', canMove: false }));
       }
       const applied = applyCompiledCharacter(entity, irEntity.character, {
         ...(this.ir.customMoods?.length ? { customMoods: this.ir.customMoods } : {}),
         ...(this.ir.customPersonalities?.length ? { customPersonalities: this.ir.customPersonalities } : {}),
         resolveEntityId: (irId) => this.requireWorldId(irId, irEntity),
+        // ADR-329 D10: the one rule `performAct` (runtime.ts) applies to the
+        // acting statement — a story action is `chord.action.<name>`, a
+        // standard one `if.action.<name>` — stated here for the goal step.
+        resolveActionId: (name) => (this.ir.actions.some((a) => a.name === name) ? `chord.action.${name}` : `if.action.${name}`),
       });
       this.appliedCharacters.push({
         worldId,
@@ -911,6 +925,12 @@ export class ChordStory implements Story {
         })));
       }
       registry.setOracle(this.storyOracle());
+      // GH #353: the same-tick half of `arrivalNarratedTopics` — the tick
+      // hands a newly landed fact back, and the owner's gated every-turn
+      // clause runs on that tick rather than on the scheduler's next pass.
+      registry.setArrivalReaction((arrival, world) =>
+        this.runtime.fireArrivalReaction(arrival.listenerId, arrival.topic, world),
+      );
       this.characterRegistry = registry;
     }
 
@@ -950,6 +970,10 @@ export class ChordStory implements Story {
           ? {
               threadTurn: this.runtime.buildThreadTurn(world),
               threadTurnReady: this.runtime.buildThreadTurnReady(world),
+              // ADR-320 D10a (2026-09-02): the thread-aware grip and the
+              // parting deliverer every park-on-close path consults.
+              activeThreadStrength: this.runtime.buildThreadStrength(),
+              partingLine: this.runtime.buildPartingLine(world),
             }
           : {}),
       });
@@ -1042,22 +1066,55 @@ export class ChordStory implements Story {
    */
   onEngineReady(engine: {
     getPluginRegistry(): { register(plugin: unknown): void };
+    getNpcService(): INpcService;
     registerSlotEntry?(entry: ChordSlotEntry): void;
     registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
     getClientCapabilities?(): object;
+    getContext?(): { currentTurn: number };
+    getRandomService?(): RandomService;
+    executeAsActor?(actorId: string, actionId: string, slots?: ActSlots): ActResult;
   }): void {
+    // ADR-325 D3f: timers stamp the turn they start on from the engine's
+    // live counter, so a `start` in the player's action waits one turn.
+    if (engine.getContext) {
+      const getContext = engine.getContext.bind(engine);
+      this.runtime.setTurnProvider(() => getContext().currentTurn);
+    }
     // ADR-216 `client has`: wire the LIVE capability source (the engine
     // negotiates capabilities at start(); reads happen per evaluation).
     // Engines without the accessor leave the text-only default in place.
     if (engine.getClientCapabilities) {
       this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities!() as Record<string, unknown>);
     }
-    // ADR-215 Q4: NPCs are CORE — the plugin auto-wires unconditionally
-    // (unlike the scheduler's daemon-gated registration below), and each
-    // factory-configured behavior registers under its per-entity id.
-    const npcPlugin = new NpcPlugin();
-    engine.getPluginRegistry().register(npcPlugin);
-    const npcService = npcPlugin.getNpcService();
+    // ADR-326 D6: an adjacent-room draw that meets a computed exit consults
+    // the resolver, which draws on the engine's session random service.
+    if (engine.getRandomService) {
+      this.evaluator.setRandomService(engine.getRandomService());
+    }
+    // ADR-215 Q4: NPCs are CORE — the engine owns the actor turn phase
+    // (ADR-328 D5), so there is nothing to register; each factory-configured
+    // behavior registers under its per-entity id on the engine's service.
+    // ADR-329 D4: an acting statement performs its action through the
+    // engine's execution entry. Its events never ride an action's or a
+    // handler's own return (they were applied inside the entry and would be
+    // applied again); they wait in the runtime's act buffer for the flush
+    // plugin below, which runs right after the player's action — before the
+    // actor phase (ADR-332: the story-reactions band leads) — so the act narrates immediately after the report
+    // that caused it. Acts fired inside scheduler daemons drain on the tick.
+    if (engine.executeAsActor) {
+      this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
+      if (this.runtime.hasDeferredNarration()) {
+        engine.getPluginRegistry().register({
+          id: 'chord.acted-events',
+          // First of the story reactions (ADR-332): the flush still runs
+          // right after the player's action, ahead of the scheduler and
+          // every platform phase.
+          priority: TURN_BANDS.storyReactions.floor + 90,
+          onAfterAction: () => this.runtime.drainActEvents(),
+        } satisfies TurnPlugin);
+      }
+    }
+    const npcService = engine.getNpcService();
     for (const pending of this.npcBehaviors) {
       npcService.registerBehavior(this.buildNpcBehavior(pending) as never);
     }
@@ -1130,7 +1187,8 @@ export class ChordStory implements Story {
       // under `use hunger, announce <mode>` (default `all`).
       registry.register(createBandNarrator({
         id: 'chord.story.hunger-narrator',
-        priority: 20,
+        // Watchers band (ADR-332), after the crossing watcher: the sentence follows the event.
+        priority: TURN_BANDS.watchers.floor + 15,
         concept: 'hunger',
         value: (world) => getHungerSeverity(world),
         bands: () => bands,
@@ -1138,6 +1196,37 @@ export class ChordStory implements Story {
         narrationEventId: 'if.event.hunger_narrated',
         fallbackPhraseId: 'if.action.hunger.crossed',
       }));
+    }
+
+    // ADR-330: chapters. The rows lower here — the registry map cannot carry
+    // them (ADR-260 D5) — each trigger to what the plugin can read directly:
+    // a room's world id, a timer record's key, a state value's key. Rogue IR
+    // without the `use` is a LoadError, never silently dead (the machines
+    // precedent).
+    if ((this.ir.chapters ?? []).length > 0) {
+      if (!(this.ir.uses ?? []).includes('chapters')) {
+        throw new LoadError('`define chapters` needs `use chapters` in the story header.', this.ir.chapters![0].span);
+      }
+      const lower = (t: IRChapterTrigger): ChapterRuntimeTrigger => {
+        switch (t.kind) {
+          case 'game-starts':
+            return { kind: 'game-starts' };
+          case 'first-visit':
+            return { kind: 'first-visit', roomId: this.requireWorldId(t.room) };
+          case 'timer-expires':
+            return { kind: 'timer-expires', stateKey: timerKey(t.timer) };
+          case 'becomes':
+            return { kind: 'becomes', stateKey: t.owner === 'story' ? CHORD_STORY_STATE_KEY : CHORD_STATE_PREFIX + t.owner, state: t.state };
+        }
+      };
+      const rows: ChapterRow[] = this.ir.chapters!.map((c) => ({
+        name: c.name,
+        title: c.title,
+        description: c.description,
+        ordinal: c.ordinal,
+        trigger: lower(c.trigger),
+      }));
+      engine.getPluginRegistry().register(createChaptersPlugin(rows));
     }
 
     const daemons = this.runtime.buildSchedulerDaemons();
@@ -1194,8 +1283,8 @@ export class ChordStory implements Story {
 
     return createBandNarrator({
       id: 'chord.story.promotion-narrator',
-      // Below ext-scoring's watcher (25): the sentence follows the event.
-      priority: 20,
+      // Watchers band (ADR-332), after ext-scoring's rank watcher: the sentence follows the event.
+      priority: TURN_BANDS.watchers.floor + 15,
       concept: 'rank',
       isEnabled: (world) => world.isScoringEnabled(),
       value: (world) => world.getScore(),
@@ -1224,13 +1313,15 @@ export class ChordStory implements Story {
    * The hunger decay + death daemon (ADR-263 D1). Each turn it raises the
    * severity counter by `grows` (the `on every turn` mechanic) and, once
    * severity reaches `fatal`, kills the player (`kill the player` — a raw-value
-   * trigger, not a band). Runs at a higher priority than the crossing watcher
-   * and narrator so they observe the updated severity the same turn.
+   * trigger, not a band). Story-reactions band (ADR-332): above the crossing watcher
+   * and narrator, so they observe the updated severity the same turn.
    */
   private buildHungerDaemon(grows: number, fatal: number | undefined): TurnPlugin {
     return {
       id: 'chord.story.hunger-daemon',
-      priority: 30,
+      // Story-reactions band (ADR-332): `grows N each turn` is a story clause;
+      // it runs before every platform phase and before its own watcher.
+      priority: TURN_BANDS.storyReactions.floor + 40,
       onAfterAction(ctx): ISemanticEvent[] {
         if (grows > 0) {
           setHungerSeverity(ctx.world, getHungerSeverity(ctx.world) + grows);
@@ -1660,7 +1751,7 @@ export class ChordStory implements Story {
    */
   private regionsInParentFirstOrder(): IREntity[] {
     const regions = this.ir.entities.filter(
-      (e) => !e.isPlayer && e.kinds.some((k) => k.name === 'region'),
+      (e) => e.kinds.some((k) => k.name === 'region'),
     );
     const byId = new Map(regions.map((r) => [r.id, r]));
     this.regionParents.clear();
@@ -1737,6 +1828,13 @@ export class ChordStory implements Story {
       case 'person': {
         entity = world.createEntity(irEntity.name, 'actor');
         entity.add(new ActorTrait());
+        // ADR-327 D10 (Q4, ruled 2026-08-26): a character who can hold the
+        // player role needs somewhere to carry things — the capacity the
+        // synthetic `yourself` actor used to be born with. Non-playable
+        // persons are unchanged.
+        if (irEntity.isPlayable) {
+          entity.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
+        }
         // ADR-242 D2/D3: `proper` → the player's own proper-name shape
         // (properName + empty article); otherwise the plain IdentityTrait
         // defaults stand ('a', contextual articles). The old helpers-era
@@ -1812,6 +1910,9 @@ export class ChordStory implements Story {
     this.applyStartsStates(entity, irEntity);
     this.worldIds.set(irEntity.id, entity.id);
     this.irIds.set(entity.id, irEntity.id);
+    // GH #355: the same mapping, readable from the world alone — the
+    // tree-document runner resolves `chord.state.<ir-id>` through it.
+    entity.attributes[CHORD_IR_ID_ATTRIBUTE] = irEntity.id;
     return entity;
   }
 
@@ -1949,12 +2050,19 @@ export class ChordStory implements Story {
         );
       }
       switch (trait.name) {
-        case 'proper':
-          // ADR-242 D1: identity configuration, consumed by the person
-          // branch's IdentityTrait construction (like the room branch's
-          // `dark`) — without this case it would fall through to the
-          // authored-trait default and mint a spurious ChordDataTrait.
+        case 'proper': {
+          // ADR-242 D1 as extended by GH #342: `proper` composes on any
+          // block. The person branch already constructs its IdentityTrait
+          // with the proper shape; every other kind gets the same shape
+          // applied here (properName + empty article — re-applying to a
+          // person writes the identical values).
+          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (identity) {
+            identity.properName = true;
+            identity.article = '';
+          }
           break;
+        }
         case 'scenery':
           if (!entity.has(TraitType.SCENERY)) entity.add(new SceneryTrait());
           break;
@@ -2056,6 +2164,14 @@ export class ChordStory implements Story {
         case 'pullable':
           if (!entity.has(TraitType.PULLABLE)) entity.add(new PullableTrait({}));
           break;
+        case 'open-inventory': {
+          // GH #313 (2026-09-03): the ADR-273 D4 opt-in — what this holder
+          // carries is reachable by others, not merely visible. `carries`
+          // alone stays placement (the IF convention: you can see the
+          // thief's knife, not grab it).
+          entity.add(new OpenInventoryTrait());
+          break;
+        }
         case 'concealed': {
           // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
           // view until searching reveals it (IdentityTrait.concealed).

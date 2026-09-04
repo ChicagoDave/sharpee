@@ -1,5 +1,5 @@
 <p>Two tool verbs with one design (ADR-230 D3c): the platform action gates eligibility and validates the tool; the <em>outcome</em> belongs to the entity. <strong>cut</strong> (<code>cutting</code>) parses bare as <code>cut X</code> (also <code>slice</code>, <code>chop</code>) and tooled as <code>cut X with/using Y</code> (the tooled form outranks when a tool is named); <strong>dig</strong> (<code>digging</code>) likewise as <code>dig X</code> and <code>dig X with/using Y</code>. Eligibility is a trait (<code>cuttable</code> / <code>diggable</code>), and the tool contract mirrors the lockable key contract exactly: the trait names its implement (<code>cuttable with the billhook</code>; <code>toolId</code>/<code>toolIds</code> in TypeScript), and forward references are legal. A trait with no tool configured accepts any attempt. The checks run in order: no such trait yields <code>not_cuttable</code> / <code>not_diggable</code>; a declared requirement with no tool named yields <code>no_tool</code>; a named tool not in hand yields <code>tool_not_held</code>; and the wrong one yields <code>wrong_tool</code>.</p>
-<p>The stdlib action then performs <strong>no mutation of its own</strong>. What a cut or dig does (bramble into a gap, earth yielding a tin) is the entity's registered implementation, and it is <em>required</em>: exactly one per entity, either an <code>on cutting it</code> / <code>on digging it</code> clause (the entity's own or a composed trait's) or a capability behavior for the action id (TypeScript, ADR-090). Zero or two is a load error, never a silent runtime no-op (&quot;… is cuttable but registers no cutting implementation&quot;).</p>
+<p>The stdlib action then performs <strong>no mutation of its own</strong>. What a cut or dig does (bramble into a gap, earth yielding a tin) is the entity's registered implementation, and it is <em>required</em>: exactly one per entity, either an <code>on the player cutting</code> / <code>on the player digging</code> clause (the entity's own or a composed trait's) or a capability behavior for the action id (TypeScript, ADR-090). Zero or two is a load error, never a silent runtime no-op (&quot;… is cuttable but registers no cutting implementation&quot;).</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">create the Kitchen Garden
   a room
@@ -15,8 +15,8 @@ create the bramble
 
   A wall of thorns swallowing the back fence.
 
-  on cutting it
-    change it to cleared
+  on the player cutting
+    change the bramble to cleared
     phrase bramble-cleared
   end on
 
@@ -36,7 +36,7 @@ create the seedbed
 
   A patch of dark earth, recently disturbed.
 
-  on digging it, once
+  on the player digging, once
     move the seed tin to the Kitchen Garden
     phrase tin-unearthed
   end on
@@ -46,7 +46,9 @@ create the seed tin
 
   A rusted biscuit tin, rattling faintly.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen Garden
   carries the trowel
   carries the billhook
@@ -55,7 +57,11 @@ define phrases en-US
   bramble-cleared:
     The billhook hacks a gap through the thorns; the back fence shows through.
   tin-unearthed:
-    A few trowelfuls down you strike metal, and lever out a rusted seed tin.</code></pre>
+    A few trowelfuls down you strike metal, and lever out a rusted seed tin.
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; cut the bramble
 You need something to cut the bramble with.
@@ -76,4 +82,4 @@ You dig the seedbed.
 Taken.</code></pre>
 <p>The platform ran every check (the declared implement missing from a bare cut, the wrong tool, the winning tool) and mutated nothing itself; both outcomes are the entities' own clauses, and the second dig, its <code>, once</code> spent, falls through to the generic <code>dug</code> stub.</p>
 <table><thead><tr><th></th><th>cut (<code>cutting-*</code>)</th><th>dig (<code>digging-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_cuttable</code> · <code>no_tool</code> · <code>tool_not_held</code> · <code>wrong_tool</code> · <code>cant_cut</code></td><td><code>no_target</code> · <code>not_diggable</code> · <code>no_tool</code> · <code>tool_not_held</code> · <code>wrong_tool</code> · <code>cant_dig</code></td></tr><tr><td>Success</td><td><code>cut</code> (the generic stub — the entity's own text renders over it)</td><td><code>dug</code> (same)</td></tr><tr><td>Events</td><td><code>cut</code> / <code>cut_blocked</code></td><td><code>dug</code> / <code>dug_blocked</code></td></tr></tbody></table>
-<p>Interceptors: <code>on cutting it</code> / <code>on digging it</code> <em>are</em> the implementation here; the target's interceptor is consulted first, then an explicitly named tool's, and a cursed knife can veto the cut. Composing <code>cuttable</code>/<code>diggable</code> obliges the entity to register exactly one implementation.</p>
+<p>Interceptors: <code>on the player cutting</code> / <code>on the player digging</code> <em>are</em> the implementation here; the target's interceptor is consulted first, then an explicitly named tool's, and a cursed knife can veto the cut. Composing <code>cuttable</code>/<code>diggable</code> obliges the entity to register exactly one implementation.</p>

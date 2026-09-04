@@ -280,7 +280,7 @@ function reportSingleSuccess(
       itemName: item.name,
       targetId: target.id,
       targetName: target.name,
-      actorId: context.player.id,
+      actorId: context.actor.id,
       preposition: 'in' as const,
       itemSnapshot: captureEntitySnapshot(item, context.world, true),
       targetSnapshot: captureEntitySnapshot(target, context.world, true)
@@ -296,7 +296,7 @@ function reportSingleSuccess(
       itemName: item.name,
       targetId: target.id,
       targetName: target.name,
-      actorId: context.player.id,
+      actorId: context.actor.id,
       preposition: 'on' as const,
       itemSnapshot: captureEntitySnapshot(item, context.world, true),
       targetSnapshot: captureEntitySnapshot(target, context.world, true)
@@ -355,8 +355,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     'cant_put_in_itself',
     'cant_put_on_itself',
     'no_room',
-    'no_space',
-    'nothing_to_put'
+    'no_space'
   ],
   group: 'object_manipulation',
 
@@ -519,7 +518,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         itemName: item.name,
         targetId: target.id,
         targetName: target.name,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         preposition: 'in' as const,
         itemSnapshot: captureEntitySnapshot(item, context.world, true),
         targetSnapshot: captureEntitySnapshot(target, context.world, true)
@@ -535,7 +534,7 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
         itemName: item.name,
         targetId: target.id,
         targetName: target.name,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         preposition: 'on' as const,
         itemSnapshot: captureEntitySnapshot(item, context.world, true),
         targetSnapshot: captureEntitySnapshot(target, context.world, true)

@@ -9,6 +9,12 @@ create the switch panel
   scenery
   states: true, done
 
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

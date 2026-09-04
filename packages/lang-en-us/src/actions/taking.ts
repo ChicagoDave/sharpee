@@ -21,11 +21,11 @@ export const takingLanguage = {
     'cant_take_room': "{You} {can't} take {the item}.",
     'fixed_in_place': "{capitalize the item} {verb:is item} fixed in place.",
     'container_full': "{You're} carrying too much already.",
-    'too_heavy': "Your load is too heavy. You will have to leave something behind.",
+    'too_heavy': "{Your} load is too heavy. {You} will have to leave something behind.",
     'cannot_take': "{You} {can't} take {the item}.",
     'taken': "Taken.",
     // TAKE ALL with no takeable candidates (P7): a wink instead of a shrug.
-    'nothing_to_take': "You take in everything you see and enjoy the moment.",
+    'nothing_to_take': "{You} {take} in everything {you} {see} and {enjoy} the moment.",
     'taken_from': "{You} {take} {the item} from {the container}.",
     // Multi-take label format: rendered without article per IF convention
     // ("brass lantern: Taken." not "The brass lantern: Taken.").

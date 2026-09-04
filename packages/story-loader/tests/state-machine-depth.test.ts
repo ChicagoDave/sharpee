@@ -12,6 +12,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
@@ -67,7 +68,7 @@ describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', 
     player = story.createPlayer(world);
     world.setPlayer(player.id);
     const plugins: unknown[] = [];
-    story.onEngineReady({ getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
+    story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
     smPlugin = plugins.find((p): p is StateMachinePlugin => p instanceof StateMachinePlugin)!;
     expect(smPlugin, 'StateMachinePlugin registered under use state-machines').toBeDefined();
     turn = 0;
@@ -187,7 +188,7 @@ describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', 
     const p = rogue.createPlayer(w);
     w.setPlayer(p.id);
     expect(() =>
-      rogue.onEngineReady({ getPluginRegistry: () => ({ register: () => {} }) }),
+      rogue.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => {} }) }),
     ).toThrow(LoadError);
   });
 });

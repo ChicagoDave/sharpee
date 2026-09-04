@@ -11,10 +11,10 @@ create Mrs Kettle
   in the Entrance Hall
   states: guarded, softened
 
-  on giving it
-    change it to softened when it has the sherry bottle
-    award softened, once when it is softened
-    phrase kettle-softened when it is softened
+  on the player giving
+    change Mrs Kettle to softened when Mrs Kettle has the sherry bottle
+    award softened, once when Mrs Kettle is softened
+    phrase kettle-softened when Mrs Kettle is softened
   end on
 ```
 
@@ -23,7 +23,7 @@ create the Entrance Hall
   west is blocked while Mrs Kettle is guarded: kettle-blocks
 ```
 
-The `on giving it` clause is the **give-gate**: hand her the right bottle
+The `on the player giving` clause is the **give-gate**: hand her the right bottle
 and she softens. Because the block is a live condition, the study door
 opens the same instant, with no extra wiring. The `when` tails on each
 statement keep wrong gifts from softening anyone.
@@ -55,7 +55,7 @@ define topics for tobias
   about the silver locket:
     phrase tobias-locket-reply
   about "the folly", "the fire":
-    change it to shaken
+    change tobias to shaken
     award truth, once
     phrase tobias-folly-reply
   about "the bank": phrase tobias-bank-reply
@@ -64,11 +64,11 @@ end topics
 
 A row's body is ordinary statements: the folly row *changes Tobias's
 state* (which is what unsticks the folly door two chapters from now) and
-scores the discovery. A miss falls to the owner's `on asking it`
+scores the discovery. A miss falls to the owner's `on the player asking`
 catch-all if it has one:
 
 ```chord
-  on asking it
+  on the player asking
     phrase tobias-shrug
   end on
 ```

@@ -1,0 +1,735 @@
+## ===========================================================================
+## THE MARKET BACKDROPS — what is everywhere in Grubber's, and the smell and
+## sound of the place
+##
+## Book 2, Part 19 (`story.ni:3324-3617`): the things the source spreads
+## across the whole market as BACKDROPS — the crowd of shoppers, the pale
+## stone wall around the perimeter, the stalls as a generic thing, the
+## canvas awnings, the support wires, and Grubber's Market itself as a
+## noun — plus the source's answers to a bare `smell` and `listen`, which
+## in 2009 fell through to the market backdrop from every room that had no
+## line of its own. The Alley's garbage rides along because the alley's
+## own smell answer is its line (`story.ni:1545-1557`). Every finished line
+## is Gentry's, carried verbatim; nothing here is placeholder.
+##
+## HOW A BACKDROP IS BUILT. Chord places a thing in one room, and has no
+## backdrop kind — so each backdrop is ONE scenery entity that FOLLOWS the
+## player: a `when Jack moves` clause moves it into her room whenever she
+## arrives somewhere the backdrop belongs (which is what Inform's backdrop
+## machinery does under the hood). The clause fires on a walked arrival and
+## on an authorial `move` alike (the theft ejects, the blocked-stall bounce,
+## the slide's landing), so the backdrop is never a room behind. Where she
+## goes somewhere it does NOT belong — Commerce Street, Behind Fruit Stall,
+## On the Wire — it stays in the last room it was in and is simply out of
+## scope. Each backdrop starts in the Northwest Junction, where Jack does.
+##
+## WHERE EACH ONE BELONGS: the source's two regions are DECLARED below —
+## the Open-Air Market with the Market Perimeter nested inside it, as
+## `story.ni:3326-3330, 3455-3459` has them — and the named conditions test
+## membership (`the player is in the Open-Air Market`), which is true in
+## every member room, transitively through the nesting, and needs no
+## `landing` line (GH #339, fixed 2026-08-30). The sets regions cannot
+## carry — the whole of Grubber's including the alley, roof, tent and
+## post; the awnings' and wires' reaches; the smell/sound partitions —
+## stay as condition compositions over the region tests and room names.
+##
+## A BARE `smell` OR `listen` reaches no entity clause — there is no target
+## to consult (`smelling.ts:38-40`), and a bare head on Jack (`on smelling`)
+## fires on EVERY smell including the targeted ones (GH #340's collision is
+## fixed — target-first, 2026-08-30 — but a bare head would still answer
+## every unclaused targeted smell, which is not the location fallback the
+## source wrote) — so the two are story actions with the bare grammar only (`sniffing`, `hearkening`; the shape `peering.chord`
+## established and GH #317 records the seam of): `smell bread` still parses
+## to the platform's smelling, a bare `smell` comes here. Every matching
+## line in a story action's body fires, so the tables below are guarded to
+## be exclusive; the last line of each is Gentry's own fallback
+## (`story.ni:519, 526`) for the rooms with no answer. This also carries the
+## three bare-verb lines earlier increments recorded as unreachable: the
+## Leather and Candle stalls' smells (`story.ni:2557, 2795`), and the
+## eavesdrop's alley and roof `listen` (`story.ni:1794, 1796`), each on its
+## existing phrase key.
+##
+## NOT CARRIED, with reasons:
+##   * The conspicuous shopper (`story.ni:3389-3453`) — a one-in-ten passer-by
+##     with a printed name composed at random from nine adjectives and seven
+##     varieties, and a sentence composed from three random parts. Chord
+##     cannot compose a name or interpolate a phrase into a phrase (GH #303,
+##     item 2); spelled out as whole sentences it would be several hundred,
+##     which is a rewrite, not a carry. The change document lists the
+##     one-in-ten roll as mechanism to keep ("The sweep"); it waits on the
+##     platform.
+##   * `x stall` at a stall examining a random one of its wares, and `steal
+##     stall` stealing one (`story.ni:3480-3489`) — no random-entity draw and
+##     no `try <action>` statement. `x stall` prints the stalls' own
+##     description instead; `steal stall` falls to the platform's take.
+##   * The source's `departing` rules ("There's only two ways out of
+##     Grubber's…", `story.ni:3610-3616`) — dead code in 2009: no grammar
+##     anywhere in the source reaches the action. Not carried; the lines are
+##     kept aside in a comment at the end of this file.
+##   * "crowd of people" as the shoppers' name in a which-do-you-mean
+##     prompt, and the source's "does the player mean" preferences (the
+##     mercenaries over the shoppers for "people"; the stall over the
+##     shoppers for "merchants") — Chord has neither. `people` stays on the
+##     shoppers as the source has it, so on the roof, where the group of
+##     mercenaries also answers to it, `x people` asks which; `merchants`
+##     is on the shoppers and not the stalls, so it never asks.
+##   * The stall synonyms by location ("fruit" is the stall in the Fruit
+##     Stall, "hats" in the Hat Stall…, `story.ni:3502-3511`) — no
+##     conditional aliases; those words already name the rooms' wares.
+##   * `climb wall` → "too high" is carried; `descend wall` → try going down
+##     is not (no perimeter room has a down exit; nothing to reach).
+##   * The stalls closed "for the night" — Chapter 1 has no night.
+##   * The adjectives the source lets name the crowd (fat, gangly, pock
+##     marked…) — they exist for the vanished conspicuous shopper.
+##   * The shoppers' whole-crowd refusal ("The shopper roughly shoulders you
+##     aside…") covers the physical verbs listed on the block; the source's
+##     "doing something other than talking to or examining" has no
+##     equivalent, so verbs outside the list fall to the platform's own line.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## WHERE THINGS ARE — the source's two regions and its per-backdrop lists,
+## as named conditions (`story.ni:3326-3330, 3455-3459` and the backdrop
+## declarations). `the Weapons Stall` and `the Candle Stall` are the rooms'
+## own akas — written when a possessive name could not stand in a condition
+## (GH #336, fixed 2026-09-03: `the Candlemaker's Stall` now resolves there too).
+## ---------------------------------------------------------------------------
+
+create the Open-Air Market
+  a region
+  containing the Rope Stall, the Candle Stall, the Pottery Stall
+  containing Outside the Silk Tent, the Market Perimeter
+
+create the Market Perimeter
+  a region
+  containing the Fruit Stall, the Northwest Junction, the Grocery Stall
+  containing the Eastern Junction, the Hat Stall, the Exotic Gems Stall
+  containing the Weapons Stall, the Leather Stall, the Herb Stall
+
+define condition open-air: the player is in the Open-Air Market
+
+define condition market-perimeter: the player is in the Market Perimeter
+
+define condition within-grubbers: open-air or the player is in the Alley or the player is in the Outer Market Roof or the player is in Inside the Silk Tent or the player is in the Base of the Center Post or the player is in the Top of the Post
+
+define condition under-the-awnings: open-air or the player is in the Alley or the player is in the Outer Market Roof
+
+define condition among-the-wires: under-the-awnings or the player is in the Base of the Center Post
+
+## The rooms whose bare `smell` is the market's own — every room the market
+## backdrop stands in that has no smell line of its own (the Alley, the
+## Leather, Candle and Fruit stalls, the tent and the top have theirs).
+
+## The ten rooms where a stallkeeper stands behind the goods.
+
+define condition at-a-stall: the player is in the Grocery Stall or the player is in the Fruit Stall or the player is in the Hat Stall or the player is in the Leather Stall or the player is in the Weapons Stall or the player is in the Exotic Gems Stall or the player is in the Herb Stall or the player is in the Rope Stall or the player is in the Candle Stall or the player is in the Pottery Stall
+
+define condition market-air: the player is in the Northwest Junction or the player is in the Grocery Stall or the player is in the Eastern Junction or the player is in the Hat Stall or the player is in the Weapons Stall or the player is in the Exotic Gems Stall or the player is in the Herb Stall or the player is in the Rope Stall or the player is in the Pottery Stall or the player is in Outside the Silk Tent or the player is in the Outer Market Roof or the player is in the Base of the Center Post
+
+## The same for a bare `listen`: the tent and the top answer for
+## themselves, and the alley and the roof answer for the eavesdrop while it
+## is on.
+
+define condition market-din: open-air or the player is in the Base of the Center Post
+
+## ---------------------------------------------------------------------------
+## THE SHOPPERS (`story.ni:3334-3388`)
+##
+## The crowd. In the five rooms away from the stalls — the roof, the alley,
+## behind the tent, the top of the post, inside the tent — the source
+## answers ANY handling of the crowd with where the crowd actually is, so
+## every clause below opens with those four lines. In the market proper the
+## description grows its mercenaries sentence while the pair is in the room,
+## talking is refused twice over (`stopping`), and any laying-on of hands
+## gets one of four shoves at random. A verb outside the covered set falls
+## to the platform default, whose listening line does not agree in number
+## ("The shoppers isn't making any sound." — GH #343).
+## ---------------------------------------------------------------------------
+
+create the shoppers
+  aka main crowd, crowd, crowds, people, marketfolk, market folk, marketgoers, market goers, townsfolk, townfolk, town folk, townspeople, town people, passers by, passersby, folk, merchants, buyers, shopper, customer, customers, others, hagglers, browsers, knot, knots
+  scenery, plural
+  in the Northwest Junction
+
+  The crowd is thick with shoppers and merchants alike, all shouting at each
+  other, shuffling and squeezing against each other to get a better look at
+  the merchandise. Staying out of sight should be easy, as long as you keep
+  moving.
+
+  when Jack moves, while within-grubbers
+    move the shoppers here
+  end when
+
+  on the player examining
+    phrase shoppers-from-roof when the player is in the Outer Market Roof
+    phrase shoppers-from-back when the player is in the Alley or the player is in the Base of the Center Post
+    phrase shoppers-far-below when the player is in the Top of the Post
+    phrase shoppers-outside-tent when the player is in Inside the Silk Tent
+    phrase shoppers-wary-of-mercenaries when open-air and the wandering mercenaries is here
+  end on
+
+  on the player talking
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-no-chat
+  end on
+
+  on the player smelling
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    phrase shoppers-smell
+  end on
+
+  on the player listening
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    phrase shoppers-sound
+  end on
+
+  on the player taking
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player touching
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player pushing
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player pulling
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player attacking
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player searching
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player climbing
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+  on the player entering
+    refuse when the player is in the Outer Market Roof: shoppers-from-roof
+    refuse when the player is in the Alley or the player is in the Base of the Center Post: shoppers-from-back
+    refuse when the player is in the Top of the Post: shoppers-far-below
+    refuse when the player is in Inside the Silk Tent: shoppers-outside-tent
+    refuse shoppers-shove
+  end on
+
+define phrase shoppers-from-roof
+  The main crowd is in the market proper, shopping amidst the stalls. Nobody
+  ever climbs up here (except you).
+end phrase
+
+define phrase shoppers-from-back
+  The main crowd is in the market proper, shopping amidst the stalls. Nobody
+  comes back here.
+end phrase
+
+define phrase shoppers-far-below
+  The crowd is far below you.
+end phrase
+
+define phrase shoppers-outside-tent
+  The main crowd is outside the tent. Right now it's just you and Teisha in
+  here.
+end phrase
+
+## The description with its `[if the Wandering Mercenaries are in the
+## location]` sentence in place — a detail line would append it after the
+## last sentence, so the whole text is carried again with the sentence where
+## Gentry put it.
+
+define phrase shoppers-wary-of-mercenaries
+  The crowd is thick with shoppers and merchants alike, all shouting at each
+  other, shuffling and squeezing against each other to get a better look at
+  the merchandise. Some of them try to give the mercenaries a slightly wider
+  berth, but elsewhere it's shoulder to shoulder. Staying out of sight should
+  be easy, as long as you keep moving.
+end phrase
+
+define phrase shoppers-no-chat, stopping
+  Some of the marketfolk glance at you; a few put their hands protectively
+  around their moneypurses. But no one seems interested in having a
+  conversation with a common street urchin.
+or
+  It's no use; these people just want to get on with their business and be
+  left alone.
+end phrase
+
+define phrase shoppers-shove, randomly
+  'Here, you! Scamper off, why don't you?'
+or
+  The shopper roughly shoulders you aside.
+or
+  The shopper waves you off, irritated.
+or
+  'Take it somewhere else, kid, before I call the guard.'
+end phrase
+
+define phrase shoppers-smell
+  This many bodies, pressed this close together on a morning this hot, is not
+  exactly the most pleasant thing your nose has encountered.
+end phrase
+
+define phrase shoppers-sound
+  With dozens of people around you constantly chattering, muttering, arguing
+  and haggling, it is difficult to make out anything specific.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE MARKET WALL (`story.ni:3461-3474`) — the perimeter's nine rooms.
+## ---------------------------------------------------------------------------
+
+create the market wall
+  aka pale stone wall, stone wall, market walls, walls, wall, tall wall, smooth wall, high wall
+  scenery
+  in the Northwest Junction
+
+  The walls surrounding Grubber's are high and made of smooth, pale stone.
+
+  when Jack moves, while market-perimeter
+    move the market wall here
+  end when
+
+  on the player climbing
+    refuse wall-too-high
+  end on
+
+define phrase wall-too-high
+  The walls are too high, and you cannot get a handhold.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE STALLS (`story.ni:3476-3525`) — the generic stall, everywhere in
+## Grubber's. Entering one under a stallkeeper's eye is refused; elsewhere
+## it is the platform's own can't-enter line, as the source fell to Inform's.
+## ---------------------------------------------------------------------------
+
+create the stalls
+  aka stall, stand, stands, other stalls, other stands, sellers, vendors, dealers
+  scenery, plural
+  in the Northwest Junction
+
+  The stalls are simple constructions of wood and canvas.
+
+  when Jack moves, while within-grubbers
+    move the stalls here
+  end when
+
+  on the player examining
+    phrase stalls-from-above when the player is in the Top of the Post or the player is in the Outer Market Roof
+    phrase stalls-from-junction when the player is in the Northwest Junction or the player is in the Eastern Junction
+    phrase stalls-outside-tent when the player is in Outside the Silk Tent
+    phrase stalls-inside-tent when the player is in Inside the Silk Tent
+    phrase stalls-from-back when the player is in the Base of the Center Post
+    phrase stalls-from-alley when the player is in the Alley
+  end on
+
+  on the player entering
+    refuse when at-a-stall: stall-customers-outside
+  end on
+
+  on the player pushing
+    refuse stalls-too-heavy
+  end on
+
+define phrase stalls-from-above
+  The stalls are spread throughout the market below.
+end phrase
+
+define phrase stalls-from-junction
+  This is a relatively clear part of the market; most of the stalls are deeper
+  in.
+end phrase
+
+define phrase stalls-outside-tent
+  This part of the market is reserved for Teisha's tent. Most of the stalls
+  are elsewhere.
+end phrase
+
+define phrase stalls-inside-tent
+  There aren't any stalls here inside Teisha's tent.
+end phrase
+
+define phrase stalls-from-back
+  You can't really see much of the stalls from back here behind them.
+end phrase
+
+define phrase stalls-from-alley
+  There aren't any stalls back here in the alley.
+end phrase
+
+define phrase stall-customers-outside
+  The stallkeeper shoos you away. 'Customers on the outside!' he shouts.
+end phrase
+
+define phrase stalls-too-heavy
+  The stalls are too heavy to tip over.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE AWNINGS (`story.ni:3527-3533`) and THE SUPPORT WIRES
+## (`story.ni:3535-3544`). The wires are not at the Top of the Post — up
+## there the four anchor cables are their own things (`aerial-runway`) and
+## answer to "wires" themselves.
+## ---------------------------------------------------------------------------
+
+create the awnings
+  aka canvas awnings, huge awnings, awning, canvas, shade, shades
+  scenery, plural
+  in the Northwest Junction
+
+  The canvas awnings stretch out over the market, providing shade for the
+  merchants and customers below.
+
+  when Jack moves, while under-the-awnings
+    move the awnings here
+  end when
+
+  on the player taking
+    refuse awnings-out-of-reach
+  end on
+
+  on the player touching
+    refuse awnings-out-of-reach
+  end on
+
+  on the player pushing
+    refuse awnings-out-of-reach
+  end on
+
+  on the player pulling
+    refuse awnings-out-of-reach
+  end on
+
+  on the player climbing
+    refuse awnings-out-of-reach
+  end on
+
+  on the player cutting
+    refuse awnings-out-of-reach
+  end on
+
+  on the player searching
+    refuse awnings-out-of-reach
+  end on
+
+  on the player attacking
+    refuse awnings-out-of-reach
+  end on
+
+define phrase awnings-out-of-reach
+  The awnings are high out of your reach.
+end phrase
+
+create the wires
+  aka support wires, support wire, wire, anchor wires, anchor wire, cable, cables, anchor cable, anchor cables, thick wires, braided wires
+  scenery, plural
+  in the Northwest Junction
+
+  The wires anchor the support posts and hold the canvas awnings in place.
+
+  when Jack moves, while among-the-wires
+    move the wires here
+  end when
+
+  on the player examining
+    phrase wires-from-base when the player is in the Base of the Center Post
+  end on
+
+  on the player taking
+    refuse wires-out-of-reach
+  end on
+
+  on the player touching
+    refuse wires-out-of-reach
+  end on
+
+  on the player pushing
+    refuse wires-out-of-reach
+  end on
+
+  on the player pulling
+    refuse wires-out-of-reach
+  end on
+
+  on the player climbing
+    refuse wires-out-of-reach
+  end on
+
+  on the player cutting
+    refuse wires-out-of-reach
+  end on
+
+  on the player searching
+    refuse wires-out-of-reach
+  end on
+
+  on the player attacking
+    refuse wires-out-of-reach
+  end on
+
+define phrase wires-from-base
+  Looking straight up, you can see four support wires attached to the top of
+  the center post, stretching in four directions.
+end phrase
+
+define phrase wires-out-of-reach
+  The wires are too high up for you to reach, and you can't get to where they
+  are attached on the ground.
+end phrase
+
+## ---------------------------------------------------------------------------
+## GRUBBER'S MARKET AS A THING (`story.ni:3548-3617`) — the market named:
+## what it looks like from each place, what it smells and sounds like, and
+## `enter market` from wherever she stands. The alley and tent arms walk
+## her out (an authorial move behind the same guards the exits carry — the
+## alley's voices, a holding mercenary, the chase's sealed tent); the roof,
+## the top and the space behind the tent refuse; the market proper is
+## "already". The entity is `enterable` MECHANICALLY: a clause's `move`
+## statements ride postExecute, which only a successful enter reaches, and
+## the refusal ladder covers every room but the two walk-outs — so the
+## trait is never player-visible except as the source's own behaviour. The
+## walk narrates no destination (the ADR-326 D5 seam); `look` answers.
+## ---------------------------------------------------------------------------
+
+create Grubber's Market
+  aka market, grubbers, grubbers market, grubber, square, market square, outer ring, center, centre, market center, aisle, aisles, hub, central hub, main market, bustle, bustling market
+  scenery, enterable, proper
+  in the Northwest Junction
+
+  The market is bustling this morning.
+
+  when Jack moves, while within-grubbers
+    move Grubber's Market here
+  end when
+
+  on the player examining
+    phrase market-from-alley when the player is in the Alley
+    phrase market-from-roof when the player is in the Outer Market Roof
+    phrase market-from-tent when the player is in Inside the Silk Tent
+    phrase market-from-back when the player is in the Base of the Center Post
+    phrase market-from-top when the player is in the Top of the Post
+  end on
+
+  on the player smelling
+    phrase market-smell
+  end on
+
+  on the player listening
+    phrase market-sound
+  end on
+
+  on the player entering
+    refuse when the player is in the Outer Market Roof or the player is in the Top of the Post: market-get-down
+    refuse when the player is in the Base of the Center Post: market-behind-tent
+    refuse when open-air: market-already-here
+    refuse when the player is in the Alley and the voices is here: alley-stay-hidden
+    refuse when the wandering mercenaries is here and the wandering mercenaries is aggressive: merc-held
+    refuse when the player is in Inside the Silk Tent and chase: tent-no-way-back
+    move the player to the Northwest Junction when the player is in the Alley
+    move the player to Outside the Silk Tent when the player is in Inside the Silk Tent
+  end on
+
+define phrase market-from-alley
+  You can't see the market from back here in the alley.
+end phrase
+
+define phrase market-from-roof
+  You can see the northwest corner of the market from up here.
+end phrase
+
+define phrase market-from-tent
+  You can't see the market from inside Teisha's tent.
+end phrase
+
+define phrase market-from-back
+  You can't see much of the market from back here behind the stalls.
+end phrase
+
+define phrase market-from-top
+  The market spreads out beneath you in all directions.
+end phrase
+
+define phrase market-smell
+  The market smells of a mixture of all sorts of odors: dust and sweat, leather
+  and sawdust, spices, fruits, and groceries.
+end phrase
+
+define phrase market-sound
+  The market is a cacophony of sounds, with dozens of merchants hawking their
+  wares and scores of shoppers haggling over the price.
+end phrase
+
+define phrase market-get-down
+  You'll have to get down first.
+end phrase
+
+define phrase market-behind-tent
+  You'll have to get out from behind Teisha's tent first.
+end phrase
+
+define phrase market-already-here
+  You're already in the market.
+end phrase
+
+## Kept aside — the source's `departing` lines (`story.ni:3610-3616`),
+## unreachable in 2009 (no grammar defines the action) and so not carried:
+##   "There's only two ways out of Grubber's: north from Northwest Junction,
+##   or east from East Junction."
+
+## ---------------------------------------------------------------------------
+## THE ALLEY'S GARBAGE (`story.ni:1545-1557`) — here because the alley's
+## bare-smell answer is its line.
+## ---------------------------------------------------------------------------
+
+create the piles of garbage
+  aka garbage, trash, litter, rubbish, pile, piles, pile of garbage, little piles
+  scenery, plural
+  in the Alley
+
+  Little piles of garbage litter the alley. Some of it has been sitting back
+  here for weeks.
+
+  on the player smelling
+    phrase garbage-ripe
+  end on
+
+  on the player taking
+    refuse garbage-no-digging
+  end on
+
+  on the player touching
+    refuse garbage-no-digging
+  end on
+
+  on the player searching
+    refuse garbage-no-digging
+  end on
+
+  on the player pushing
+    refuse garbage-no-digging
+  end on
+
+  on the player pulling
+    refuse garbage-no-digging
+  end on
+
+define phrase garbage-ripe
+  The garbage smells pretty ripe.
+end phrase
+
+define phrase garbage-no-digging
+  You don't feel much like digging through garbage.
+end phrase
+
+## ---------------------------------------------------------------------------
+## A BARE `smell` AND `listen` — the source's per-room answers, in the order
+## Inform resolved them: a room's own `Instead` first, then the market
+## backdrop's line wherever the backdrop stands, then the report rulebook's
+## fallback. Every line in a body fires when its guard holds, so the guards
+## partition the rooms.
+## ---------------------------------------------------------------------------
+
+define action sniffing
+  grammar
+    smell
+    sniff
+
+  phrase garbage-ripe-here when the player is in the Alley
+  phrase leather-smell when the player is in the Leather Stall
+  phrase tallow-fumes-smell when the player is in the Candle Stall
+  phrase fruit-stall-smell when the player is in the Fruit Stall
+  phrase tent-smell when the player is in Inside the Silk Tent
+  phrase top-of-post-smell when the player is in the Top of the Post
+  phrase market-smell when market-air
+  phrase smell-nothing when not within-grubbers
+
+define action hearkening
+  grammar
+    listen
+    hear
+
+  phrase alley-strain-to-hear when the player is in the Alley and the voices is here
+  phrase market-sound when the player is in the Alley and the voices is not here
+  phrase roof-listen-carefully when the player is in the Outer Market Roof and the group of mercenaries is here
+  phrase market-sound when the player is in the Outer Market Roof and the group of mercenaries is not here
+  phrase tent-sound when the player is in Inside the Silk Tent
+  phrase top-of-post-sound when the player is in the Top of the Post
+  phrase market-sound when market-din
+  phrase ears-pricked when not within-grubbers
+
+define phrase garbage-ripe-here
+  It smells pretty ripe back here.
+end phrase
+
+define phrase fruit-stall-smell
+  It smells delicious here.
+end phrase
+
+define phrase tent-smell
+  It smells of warm, dusty fabric in here.
+end phrase
+
+define phrase tent-sound
+  The sounds of the market are muffled in here.
+end phrase
+
+define phrase top-of-post-smell
+  The air is fresh up here, although the scents of the market drift up faintly
+  from below.
+end phrase
+
+define phrase top-of-post-sound
+  It is relatively quiet and peaceful up here, although the sounds of the
+  market drift up faintly from below.
+end phrase
+
+define phrase smell-nothing
+  You smell nothing unexpected.
+end phrase
+
+define phrase ears-pricked
+  You keep your ears pricked.
+end phrase

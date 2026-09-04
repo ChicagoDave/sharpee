@@ -56,6 +56,7 @@
  * recorded as out of scope in ADR-289 D1.
  */
 import type { IRStatement } from '@sharpee/chord';
+import type { ISemanticEvent } from '@sharpee/core';
 
 /**
  * One statement's routing. Fields are populated only for the construct that
@@ -75,6 +76,8 @@ export interface RoutingDecision {
   when?: boolean;
   /** D3 `change mood`/`change feeling` — the from→to record the reports pass replays. */
   transition?: { type: string; actor: string; from: string; to: string; target?: string };
+  /** ADR-325 `interrupt` — the expiry clauses' events, fired once, replayed to reports. */
+  expiry?: ISemanticEvent[];
 }
 
 /** Routing for one clause body, keyed by statement identity. */

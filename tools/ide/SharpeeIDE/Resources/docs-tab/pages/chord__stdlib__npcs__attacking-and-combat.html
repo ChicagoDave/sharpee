@@ -1,9 +1,10 @@
-<p><strong>attack</strong> (<code>attacking</code>): verbs <code>attack/hit/strike/kill/ fight/slay/murder/break/smash/destroy X</code> (the last three landed with ADR-230 D4), plus <code>attack/hit/strike/kill X with/using Y</code> (the weapon form skips fight/slay/murder). An explicitly named weapon is implicitly taken if needed, and is a consulted command entity: a cursed sword's <code>on attacking it</code> clause fires; a weapon <em>inferred</em> from inventory is not. What happens depends on the target:</p>
+<p><strong>attack</strong> (<code>attacking</code>): verbs <code>attack/hit/strike/kill/ fight/slay/murder/break/smash/destroy X</code> (the last three landed with ADR-230 D4), plus <code>attack/hit/strike/kill X with/using Y</code> (the weapon form skips fight/slay/murder). An explicitly named weapon is implicitly taken if needed, and is a consulted command entity: a cursed sword's <code>on the player attacking</code> clause fires; a weapon <em>inferred</em> from inventory is not. What happens depends on the target:</p>
 <ul><li><strong>A combatant</strong> (the <code>combatant</code> trait) refuses <code>violence_not_the_answer</code> unless a combat interceptor is registered. Real combat <em>is</em> the interceptor (normally the basic-combat extension), and since ADR-215 a <code>.story</code> registers it itself: <code>use combat</code> in the story header wires the extension at load, no TypeScript, pure IR preserved. The interceptor's post-execute hook is contractually the combat resolution: it rolls the dice (seeded, in the extension; outcomes vary run to run and stay that way per project policy), damages through the <code>health</code> trait, and hands stdlib the result to narrate. Kills emit death events; a dead target refuses <code>already_dead</code>.</li><li><strong>A breakable</strong> (one-hit) or <strong>destructible</strong> (hit-pointed) thing genuinely breaks: <code>target_broke</code>, or <code>target_damaged</code> / <code>target_destroyed</code> across multiple blows, honoring armor, weapon-required, and wrong-weapon-type rules, with <code>transformTo</code> (shards replace the vase) and <code>revealExit</code> support.</li><li><strong>Anything else, including a plain person without <code>combatant</code></strong>: the attack is ineffective, and today prints nothing at all (the path carries a raw legacy string instead of a message ID, and the current build renders it as blank output; flagged).</li></ul>
 <p>The author writes:</p>
 <pre><code class="language-chord">story
   title: Guard Post
-  authors: stdlib reference
+  authors:
+    stdlib reference
   id: ref-combat
   story-version: 0.0.1
   use combat
@@ -33,8 +34,14 @@ create the water barrel
 
   A barrel of stale drinking water.
 
-create the player
-  starts in the Guard Post</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Guard Post
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; take the cutlass
 Taken.
@@ -46,4 +53,4 @@ Taken.
 You land a solid blow on the deserter, dealing 6 damage!</code></pre>
 <p>One <code>use</code> line buys the whole combat layer: <code>combatant</code> and <code>weapon</code> compose with typed fields, and the attack resolves through real dice. The transcript shows one genuine run, and the same command may instead answer &quot;You swing at the deserter but miss!&quot; (outcomes vary run to run, by policy). The blank line after <code>attack the barrel</code> is the flagged ineffective path, verbatim.</p>
 <table><thead><tr><th></th><th>attack (<code>attacking-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>self</code> · <code>violence_not_the_answer</code> (combatant, no interceptor) · <code>already_dead</code></td></tr><tr><td>Success</td><td>combat narration overridable via the <code>attacking-combat-*</code> alias family (the extension's, carried by the lang layer) · <code>target_broke</code> · <code>target_damaged</code> / <code>target_destroyed</code></td></tr><tr><td>Events</td><td><code>attacked</code> · death/knockout and exit-revealed events after the blow text</td></tr></tbody></table>
-<p>Interceptors: <code>on attacking it</code> on the target (a story wanting scripted fights replaces the reply there instead of registering combat) and on an explicitly named weapon; a story can also register its own combat interceptor on the same trait seam.</p>
+<p>Interceptors: <code>on the player attacking</code> on the target (a story wanting scripted fights replaces the reply there instead of registering combat) and on an explicitly named weapon; a story can also register its own combat interceptor on the same trait seam.</p>

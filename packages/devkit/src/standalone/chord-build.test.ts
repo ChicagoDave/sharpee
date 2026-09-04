@@ -86,7 +86,7 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     // The story IS in the bundle: its IR carries the format stamp and the
     // story's own id, neither of which any platform package would supply.
     // (`sharpee init -y` titles the story after its directory.)
-    expect(game).toContain('story language 2');
+    expect(game).toContain('story language 4');
     expect(game).toContain('first-light');
     // ...and the COMPILER is not. This message exists only in chord's parser
     // (verified by grep across chord/story-loader/engine/platform-browser),
@@ -153,7 +153,7 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.
     const ir = JSON.parse(readFileSync(join(projectDir, 'dist', 'first-light.ir.json'), 'utf-8'));
-    expect(ir.format).toBe('story language 2');
+    expect(ir.format).toBe('story language 4');
     expect(ir.entities.length).toBeGreaterThan(0);
   }, 120_000);
 
@@ -201,7 +201,7 @@ describe('build entry points reconcile identity (ADR-309 D3, real write moments)
       writeFileSync(
         storyFile,
         'story\n  title: Legacy\n  authors:\n    T\n  id: legacy\n  story-version: 0.0.1\n  ifid: LEGACY-ADOPT-42\n\n' +
-          'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n',
+          'create the Den\n  a room\n\n  A small den.\n\ncreate Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n',
       );
       trapExit();
       await runBuildBrowserCommand([], storyFile);
@@ -217,7 +217,7 @@ describe('build entry points reconcile identity (ADR-309 D3, real write moments)
     const brokenDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-cmd-broken-'));
     const storySource =
       'story\n  title: C\n  authors:\n    T\n  id: c\n  story-version: 0.0.1\n  ifid: CCCC-1\n\n' +
-      'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n';
+      'create the Den\n  a room\n\n  A small den.\n\ncreate Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
     try {
       writeFileSync(join(brokenDir, 'package.json'), '{ "name": "c", "version": "0.0.1" }\n');
       writeFileSync(join(brokenDir, 'c.story'), storySource);
@@ -238,7 +238,7 @@ describe('build entry points reconcile identity (ADR-309 D3, real write moments)
     const brokenDir = mkdtempSync(join(REPO_ROOT, '.tmp-chord-broken-'));
     const storySource =
       'story\n  title: B\n  authors:\n    T\n  id: b\n  story-version: 0.0.1\n  ifid: BBBB-1\n\n' +
-      'create the Den\n  a room\n\n  A small den.\n\ncreate the player\n  starts in the Den\n\n  You.\n';
+      'create the Den\n  a room\n\n  A small den.\n\ncreate Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n';
     const storyFile = join(brokenDir, 'b.story');
     try {
       writeFileSync(storyFile, storySource);

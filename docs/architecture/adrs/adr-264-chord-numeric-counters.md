@@ -59,18 +59,28 @@ persisted state.
 
 The additive mutation, usable anywhere an effect runs — `on` clauses, `after`/`before`, `on every
 turn` daemons (ADR-236). A story-global counter is named bare (`raise madness by 15`); a per-entity
-counter is named by possessive — `raise the innkeeper's suspicion by 5`, or `raise its suspicion by 5`
-inside that entity's own clauses (`it` = the entity, Chord's existing binding). `<n>` is a non-negative
+counter is named by possessive — `raise the innkeeper's suspicion by 5`. `<n>` is a non-negative
 integer literal; **`lower` exists so authors never write a negative** (`raise … by -5` reads worse and
 is rejected). When the counter declares bounds, a mutation **clamps silently** to `[lo, hi]` — no error,
 no warning: a meter naturally saturates (sanity tops out, hunger fills), so a `raise` past the ceiling
 lands at the ceiling and a `lower` past the floor lands at the floor, with no guard required at the call
 site. An unbounded counter never clamps.
 
-`raise` and `lower` are the **only** mutators — there is no `set`/multiply/derived arithmetic. A reset
-to the floor is `lower <counter> by` a large amount (it clamps); absolute assignment to an arbitrary
-value and richer arithmetic are deliberately out of scope, deferred to a later ADR if a real consumer
-needs them (Consequences).
+`raise` and `lower` were the **only** mutators as accepted — no `set`/multiply/derived arithmetic. A
+reset to the floor was `lower <counter> by` a large amount (it clamps); absolute assignment and
+richer arithmetic were deferred to a later ADR if a real consumer needed them (Consequences).
+
+> **Amended 2026-08-23 (ADR-325 D4, GH #310).** `set <counter> to <n>` is now the one absolute
+> write: the same target forms as `raise`/`lower` (bare story counter, `<entity>'s <name>`), a
+> number literal only, clamped to the declared bounds. `raise`/`lower` are no longer the
+> only mutators. Arithmetic between counters, money, and prices remain deferred (ADR-325 D4's
+> math-and-money subsystem).
+
+> **Amended 2026-08-27 (ADR-327 D2).** Syntactic `it`/`its` left the language, so the
+> `its <counter>` spelling is struck from D2's mutations, from the D4/`set` target list
+> above, and from D3's conditions below. The possessive-by-name form (`the innkeeper's
+> suspicion`) is the survivor everywhere. `it`/`its` remain legal inside `define trait`,
+> where they mean the carrier (ADR-327 D8) — that is a scoped role word, not this one.
 
 ### D3 — Counters read in conditions
 
@@ -78,8 +88,8 @@ A counter is a first-class value in the condition grammar. Comparisons come in *
 spellings** (owner decision, 2026-07-24) that lower to one IR compare node: a **word form** — `when
 madness is at least 90`, `is more than`, `is at most`, `is less than`, and plain `is` for equality — and
 a **symbolic form** — `when madness >= 90`, `<=`, `>`, `<`. Story-global counters read bare (`madness`);
-per-entity counters read by the same possessive/`its` form the mutations use (`the innkeeper's
-suspicion is at least 50`, `while its suspicion is 0`). Both spellings are accepted everywhere a
+per-entity counters read by the same possessive form the mutations use (`the innkeeper's
+suspicion is at least 50`, `while the innkeeper's suspicion is 0`). Both spellings are accepted everywhere a
 condition is — this is what lets gates, `while` blocks, and endings react to a counter, and what lets a
 banded meter (ADR-262) or `kill the player when <counter> is at least N` (ADR-263 `fatal`) test it. The
 symbolic form requires the lexer to emit compound `>=`/`<=` tokens; the word form rides the existing

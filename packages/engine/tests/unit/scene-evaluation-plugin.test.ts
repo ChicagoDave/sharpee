@@ -16,7 +16,7 @@ import {
   type SceneEventContext,
 } from '@sharpee/world-model';
 import { createSeededRandom } from '@sharpee/core';
-import type { TurnPluginContext } from '@sharpee/plugins';
+import { TURN_BANDS, type TurnPluginContext } from '@sharpee/plugins';
 import { makeProvider } from '../prose-pipeline/test-helpers';
 
 /** Pulls the game.message events (the author-visible reactions) out of a turn. */
@@ -45,7 +45,7 @@ describe('SceneEvaluationPlugin', () => {
 
   it('should have correct id and priority', () => {
     expect(plugin.id).toBe('sharpee.scene-evaluation');
-    expect(plugin.priority).toBe(60);
+    expect(plugin.priority).toBe(TURN_BANDS.platformPhases.floor + 30) // 230 — ADR-332;
   });
 
   it('should return empty array when no scenes registered', () => {

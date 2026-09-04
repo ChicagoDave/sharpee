@@ -145,7 +145,7 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
     let data: TurningDispatchData | undefined;
     if (behavior) {
       const sharedData: CapabilitySharedData = {};
-      const behaviorResult = behavior.validate(noun, context.world, context.player.id, sharedData);
+      const behaviorResult = behavior.validate(noun, context.world, context.actor.id, sharedData);
       if (!behaviorResult.valid) {
         return {
           valid: false,
@@ -177,7 +177,7 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
     const data = context.validationResult?.data as TurningDispatchData | undefined;
 
     if (data?.behavior) {
-      data.behavior.execute(noun, context.world, context.player.id, data.sharedData);
+      data.behavior.execute(noun, context.world, context.actor.id, data.sharedData);
       context.sharedData.turningDispatch = data;
     }
 
@@ -195,7 +195,7 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
     if (data?.behavior) {
       // Capability surface: the implementation owns the narration.
       events = effectsToEvents(
-        data.behavior.report(noun, context.world, context.player.id, data.sharedData),
+        data.behavior.report(noun, context.world, context.actor.id, data.sharedData),
         context
       );
     } else {
@@ -207,7 +207,7 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
           params: { target: nounPhraseFor(noun) },
           targetId: noun.id,
           targetName: noun.name,
-          actorId: context.player.id
+          actorId: context.actor.id
         })
       ];
     }

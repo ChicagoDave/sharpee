@@ -110,6 +110,28 @@ final class ProjectArtifactsTests: XCTestCase {
 
     // MARK: - Open, not strict
 
+    /// GH #287: an imported `.chord` fragment is authored story source, so it
+    /// joins the Story lens — beside the `.story` or from a subfolder alike
+    /// (ADR-280 D1: groups are typed lenses, not folder mirrors).
+    func testChordFragmentsJoinTheStoryGroupWhereverTheySit() throws {
+        try file("the-lost-key.story", "story \"The Lost Key\"")
+        try file("peering.chord", "create the lens\n  a thing\n")
+        try file("regions/harbor.chord", "create the pier\n  a room\n")
+        XCTAssertEqual(memberNames(.story), ["harbor.chord", "peering.chord", "the-lost-key.story"])
+        XCTAssertNil(group(.other), "a fragments-only folder is already covered by the Story lens")
+    }
+
+    /// A folder holding fragments AND something else keeps its place in Other —
+    /// the non-fragment content must stay reachable — while its fragments still
+    /// show in Story.
+    func testAMixedFolderKeepsItsPlaceInOtherWhileItsFragmentsJoinStory() throws {
+        try file("the-lost-key.story", "story \"The Lost Key\"")
+        try file("regions/harbor.chord", "create the pier\n  a room\n")
+        try file("regions/notes.md")
+        XCTAssertEqual(memberNames(.story), ["harbor.chord", "the-lost-key.story"])
+        XCTAssertEqual(memberNames(.other), ["regions"])
+    }
+
     func testAnUnknownFileAppearsInOtherRatherThanBeingHidden() throws {
         try buildFullFixture()
         try file("notes.txt")

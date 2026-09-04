@@ -73,6 +73,8 @@ You are at the base of the dam. A stairway leads up.
 
 You can see a pile of plastic and a sharp stick here.
 
+In the pile of plastic you see a tan label.
+
 > inflate boat with pump
 The boat inflates and rises to its full size.
 
@@ -98,13 +100,15 @@ The river turns a corner here making it impossible to see the dam. The White Cli
 
 You can see a red buoy and a magic boat here.
 
+In the magic boat you see a tan label, a sharp stick, and yourself.
+
 > take buoy
 Taken.
 
 > open buoy
 You open the red buoy.
 
-Inside the red buoy you see large emerald.
+In the red buoy you see a large emerald.
 
 > take emerald
 Taken.
@@ -126,11 +130,15 @@ The river descends here into a valley. There is a narrow beach on the east below
 
 You can see a magic boat here.
 
+In the magic boat you see a tan label, a sharp stick, yourself, and a red buoy.
+
 > west
 Rocky Shore
 This is the west shore of the river. An entrance to a cave is to the northwest. The shore is very rocky here.
 
 You can see a magic boat here.
+
+In the magic boat you see a tan label, a sharp stick, yourself, and a red buoy.
 
 > disembark
 You get out of the magic boat.
@@ -150,6 +158,8 @@ This is the west shore of the river. An entrance to a cave is to the northwest. 
 
 You can see a magic boat here.
 
+In the magic boat you see a tan label, a sharp stick, and a red buoy.
+
 > board boat
 You get into the magic boat.
 
@@ -162,11 +172,15 @@ The river is running faster here, and the sound ahead appears to be that of rush
 
 You can see a magic boat here.
 
+In the magic boat you see a tan label, a sharp stick, a red buoy, and yourself.
+
 > west
 Sandy Beach
 This is a large sandy beach at the shore of the river, which is flowing quickly by. A path runs beside the river to the south here.
 
 You can see a magic boat here.
+
+In the magic boat you see a tan label, a sharp stick, a red buoy, and yourself.
 
 > disembark
 You get out of the magic boat.
@@ -264,11 +278,15 @@ This is the kitchen of the white house. A table seems to have been used recently
 
 You can see an elongated brown sack and a glass bottle here.
 
+In the elongated brown sack you see a lunch and a clove of garlic.
+
 > west
 Living Room
 This is the living room. There is a door to the east. To the west is a wooden door with strange gothic lettering, which appears to be nailed shut. A trophy case takes up one corner of the room. A large oriental rug lies to one side of the room, moved away from the trap door it once covered.
 
 You can see an incense, a skeleton key, a guidebook, a matchbook, a large brochure, a wrench, a screwdriver, a trunk, a brass lantern, a brass bell, a black book, and a burned-out candles here.
+
+In the trophy case you see a portrait, a painting, a stack of zorkmid bills, a platinum bar, a Don Woods stamp, and a gold coffin.
 
 > open trophy case
 The trophy case is already open.

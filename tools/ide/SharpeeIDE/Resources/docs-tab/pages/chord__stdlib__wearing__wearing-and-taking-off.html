@@ -27,16 +27,22 @@ create the iron torc
 
   A ring of black iron, hinged like a shackle.
 
-  on taking_off it
+  on the player taking_off
     refuse torc-stuck
   end on
 
   phrase torc-stuck:
     The torc's hinge has seized; it will not open.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vestry
-  wears the woolen tunic</code></pre>
+  wears the woolen tunic
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; wear the vest
 (first taking the brocade vest)
@@ -57,6 +63,6 @@ You put on the iron torc.
 
 &gt; take off the torc
 The torc's hinge has seized; it will not open.</code></pre>
-<p>Three seams in one scene: <code>wears</code> starts the player dressed in the tunic, the default layers let the vest stack straight over it and the tunic slide out from underneath (the layer-default quirk, live), and the torc's <code>on taking_off it</code> guard is a cursed garment in one clause.</p>
+<p>Three seams in one scene: <code>wears</code> starts the player dressed in the tunic, the default layers let the vest stack straight over it and the tunic slide out from underneath (the layer-default quirk, live), and the torc's <code>on the player taking_off</code> guard is a cursed garment in one clause.</p>
 <table><thead><tr><th></th><th>wear (<code>wearing-*</code>)</th><th>take off (<code>taking_off-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_wearable</code> · <code>not_held</code> · <code>already_wearing</code> · <code>cant_wear_that</code> · <code>hands_full</code> (worn under a higher layer)</td><td><code>no_target</code> · <code>not_wearing</code> · <code>prevents_removal</code> (higher layer on top) · <code>cant_remove</code> (cursed)</td></tr><tr><td>Success</td><td><code>worn</code></td><td><code>removed</code> (the item stays in inventory)</td></tr><tr><td>Events</td><td><code>worn</code> / <code>wear_blocked</code></td><td><code>removed</code> / <code>take_off_blocked</code></td></tr></tbody></table>
-<p>Interceptors: <code>on wearing it</code> / <code>on taking_off it</code> on the garment: a cloak that reacts to being donned is one clause on the cloak.</p>
+<p>Interceptors: <code>on the player wearing</code> / <code>on the player taking_off</code> on the garment: a cloak that reacts to being donned is one clause on the cloak.</p>

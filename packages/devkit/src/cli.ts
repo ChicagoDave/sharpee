@@ -29,6 +29,7 @@ import { runIfidCommand } from './standalone/ifid.js';
 import { runRegister, runList } from './commands/register.js';
 import { runTestCommand } from './commands/test.js';
 import { runPlayCommand } from './commands/play.js';
+import { runWorldIndex } from './commands/world-index.js';
 import { lookupStory } from './registry.js';
 
 const USAGE = `sharpee — Interactive Fiction authoring CLI (ADR-180, ADR-187)
@@ -42,6 +43,7 @@ Usage:
   sharpee publish [<file>.story | dir]   Build + zip a distributable browser app (ADR-284)
   sharpee compose <file.story> [opts]    Compile a Chord story to Story IR (ADR-210)
   sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
+  sharpee world-index <file>.ir.json     Derive the story's map, reach, and vocabulary gaps as JSON (ADR-321)
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
   sharpee list                           List registered stories
@@ -180,6 +182,8 @@ async function main(argv: string[]): Promise<number> {
       return runTestCommand(rest);
     case 'play':
       return runPlayCommand(rest);
+    case 'world-index':
+      return runWorldIndex(rest);
     default:
       console.error(`unknown command: ${command}\n`);
       console.log(USAGE);

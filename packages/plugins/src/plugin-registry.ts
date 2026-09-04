@@ -2,7 +2,9 @@ import { TurnPlugin } from './turn-plugin.js';
 
 /**
  * Holds the turn plugins for a running game and hands them to the engine in
- * priority order each turn (ADR-120). The engine owns the single registry;
+ * priority order each turn (ADR-120; the priorities are banded — ADR-332,
+ * `TURN_BANDS`: story reactions, then platform phases, then watchers). The
+ * engine owns the single registry;
  * stories add behaviour through the plugin packages (NPC, scheduler, state
  * machine) rather than implementing {@link TurnPlugin} directly.
  */

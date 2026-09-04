@@ -10,7 +10,7 @@ create the Foyer
 
   A room.
 
-  after entering it
+  after the player entering
     change the message to smashed
   end after
 
@@ -19,8 +19,13 @@ create the message
   in the Foyer
   states: intact, trampled
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Foyer
 
   You.
 
+before the game starts
+  change the player to Alex
+end before

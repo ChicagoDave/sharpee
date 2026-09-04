@@ -145,7 +145,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject?.entity;
     const recipient = context.command.indirectObject?.entity;
 
@@ -274,7 +274,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       if (behavior) {
         sharedData.capabilityBehavior = behavior;
         sharedData.capabilityTrait = capTrait;
-        behavior.execute(recipient, context.world, context.player.id, context.sharedData);
+        behavior.execute(recipient, context.world, context.actor.id, context.sharedData);
         // Interceptor hooks still run after a capability-handled give (ADR-228 D3)
         const capState = getLifecycleState(context);
         if (capState) runPostExecute(context, capState);
@@ -377,7 +377,7 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       const recipient = context.command.indirectObject?.entity;
       if (recipient) {
         const effects = sharedData.capabilityBehavior.report(
-          recipient, context.world, context.player.id, context.sharedData
+          recipient, context.world, context.actor.id, context.sharedData
         );
         events.push(...effectsToEvents(effects, context));
       }

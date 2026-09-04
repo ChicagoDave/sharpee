@@ -19,7 +19,7 @@ define trait skittish
     scatter:
       Everything scatters.
 
-  on prodding it while any alarm-trigger
+  on the player prodding while any alarm-trigger
     refuse when no stray-treasure: all-clear
     each hungry-neighbor
       change the match to spooked
@@ -50,14 +50,16 @@ create the Trophy Barn
 
   A barn with a ledger and strong opinions.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Trophy Barn
 
 create the pygmy goat
   in the Trophy Barn
   states: hungry, content
 
-  after feeding it while no alarm-trigger
+  after the player feeding while no alarm-trigger
     each hungry-neighbor
       change the match to content
       phrase fed-note with animal = the match
@@ -88,3 +90,7 @@ define phrases en-US
     The keeper sweeps the yard.
   guard-note:
     The sign hangs steady.
+
+before the game starts
+  change the player to Alex
+end before

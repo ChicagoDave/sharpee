@@ -125,8 +125,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     'already_there',
     'inserted',
     'wont_fit',
-    'container_closed',
-    'nothing_to_insert'
+    'container_closed'
   ],
   group: 'object_manipulation',
 
@@ -175,7 +174,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     // (inherits the outer context's action RNG stream — ADR-231 D6)
     const modifiedContext = createActionContext(
       context.world,
-      context.player,
+      context.actor,
       puttingAction,
       modifiedCommand,
       context.random
@@ -211,7 +210,7 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       const modifiedCommand = createModifiedCommand(context);
       sharedData.modifiedContext = createActionContext(
         context.world,
-        context.player,
+        context.actor,
         puttingAction,
         modifiedCommand,
         context.random

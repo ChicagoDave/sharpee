@@ -114,6 +114,8 @@ class TapestryStory implements Story {
 
   private _rooms?: IRoomRefs;
   private _actors?: IActorRefs;
+  /** Starting room, recorded by initializeWorld (ADR-327 D10 order). */
+  private _libraryId?: string;
   private _props?: IPropRefs;
 
   createPlayer(world: WorldModel): IFEntity {
@@ -123,6 +125,8 @@ class TapestryStory implements Story {
     player.add(new IdentityTrait({ name: 'yourself', article: '' }));
     if (!this._actors) this._actors = { player, bystander: null as any };
     else this._actors.player = player;
+    // ADR-327 D10: initializeWorld ran first, so the library exists.
+    if (this._libraryId) world.moveEntity(player.id, this._libraryId);
     return player;
   }
 
@@ -178,9 +182,7 @@ class TapestryStory implements Story {
     });
 
     // Place the player in Library (where the shout originates).
-    if (this._actors?.player) {
-      world.moveEntity(this._actors.player.id, library.id);
-    }
+    this._libraryId = library.id;
 
     // Bystander NPC in Parlor, with an explicit ListenerTrait so the
     // dispatcher reaches them. (Phase 4's auto-attach only covers the
@@ -191,7 +193,11 @@ class TapestryStory implements Story {
     bystander.add(new IdentityTrait({ name: 'bystander', article: 'the' }));
     bystander.add(new ListenerTrait());
     world.moveEntity(bystander.id, parlor.id);
+    // ADR-327 D10: initializeWorld now runs BEFORE createPlayer, so this is
+    // the first of the two to reach `_actors` — it seeds the record rather
+    // than filling in a slot createPlayer already made.
     if (this._actors) this._actors.bystander = bystander;
+    else this._actors = { player: null as any, bystander };
   }
 
   getCustomActions(): Action[] {

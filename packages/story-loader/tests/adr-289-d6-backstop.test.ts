@@ -43,10 +43,17 @@ create the crate
 
   A crate.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const load = (ir: StoryIR) => () => {

@@ -1,8 +1,10 @@
 /**
  * ownership-runtime.test.ts — Phase C P4: the ownership semantics wired to
  * world state. D4 forward-march at runtime (the analyzer catches only the
- * static change-to-initial case), the decision-10 presence gate with its
- * RNG-not-consumed-off-stage guarantee, the dedicated body-level `must` and
+ * static change-to-initial case), owner-sourced narration under ADR-328 D3
+ * (every clause fires wherever the player is, located at its owner's place
+ * for the engine's presence tag — the decision-10 firing gate is retired),
+ * the dedicated body-level `must` and
  * statement-`when`-suffix tests (Finding 8 — fixture coverage is
  * incidental), state adjectives read live (D1), and the AC-6 transplant
  * for trait-declared state.
@@ -37,7 +39,7 @@ function load(source: string, seed = 11): { story: ChordStory; world: WorldModel
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-/** Fire the `after entering it` clauses of one room, the runtime.test.ts way. */
+/** Fire the `after the player entering` clauses of one room, the runtime.test.ts way. */
 function enterRoom(story: ChordStory, world: WorldModel, playerId: string, roomIrId: string): ISemanticEvent[] {
   const roomId = story.entityId(roomIrId)!;
   world.moveEntity(playerId, roomId);
@@ -70,7 +72,7 @@ create the Orchard
 
   An orchard.
 
-  after entering it
+  after the player entering
     change the plum to ripe
   end after
 
@@ -80,7 +82,7 @@ create the Barn
 
   A barn.
 
-  after entering it
+  after the player entering
     change the story to noon
   end after
 
@@ -89,10 +91,17 @@ create the plum
   ripenable
   in the Orchard
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Orchard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D4 forward-march at runtime (non-reversible sets)', () => {
@@ -135,7 +144,7 @@ create the Shore
 
   A shore.
 
-  after entering it
+  after the player entering
     change the tide to low
   end after
 
@@ -144,10 +153,17 @@ create the tide
   in the Shore
   states, reversible: low, high
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shore
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D4 reversible sets', () => {
@@ -183,10 +199,17 @@ define sequence ripening
     change the plum to ripe
 end sequence
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Orchard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('named-entity `change` from sequence-step scope (CP6)', () => {
@@ -271,10 +294,17 @@ create the owl
     phrase hoot
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Meadow
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('decision-10 presence gate (performances need an audience)', () => {
@@ -288,31 +318,36 @@ describe('decision-10 presence gate (performances need an audience)', () => {
     return events;
   };
 
-  it('off-stage clauses do not fire, do not draw the RNG, and do not consume `, once`', () => {
+  it('off-stage clauses fire, located at their owner, drawing the RNG and consuming `, once` (ADR-328 D3)', () => {
     const { story, world, playerId } = load(PRESENCE_STORY);
     const daemons = story.runtime.buildSchedulerDaemons();
+    const barn = story.entityId('barn')!;
+    const locationOf = (events: ISemanticEvent[], messageId: string) =>
+      events.find((e) => (e.data as { messageId?: string }).messageId === messageId)?.entities?.location;
 
     // Player is in the Meadow; the bull, owl, and the Barn's own clause are
-    // all off-stage.
-    for (let turn = 1; turn <= 6; turn++) {
-      expect(messageIdsOf(tick(daemons, world, turn))).toEqual([]);
-    }
-    // The bull's `one chance in 2` never drew: the RNG cursor is untouched
-    // (AC-5 — on-stage streams stay deterministic regardless of absence).
-    expect(world.getStateValue(CHORD_RNG_KEY)).toBeUndefined();
+    // all off-stage — and all fire, every event placed in the Barn (a room
+    // owner IS its place; the animals' place is their containing room).
+    const first = tick(daemons, world, 1);
+    expect(messageIdsOf(first)).toEqual(expect.arrayContaining(['creak', 'fidget', 'hoot']));
+    expect(locationOf(first, 'creak')).toBe(barn);
+    expect(locationOf(first, 'fidget')).toBe(barn);
+    expect(locationOf(first, 'hoot')).toBe(barn);
+    expect(world.getLocation(playerId)).not.toBe(barn);
 
-    // Walk into the Barn: room clause, trait clause, and entity clauses all
-    // find their audience.
-    world.moveEntity(playerId, story.entityId('barn')!);
-    const heard = new Set<string>();
-    for (let turn = 7; turn <= 12; turn++) {
+    // The bull's `one chance in 2` draws off-stage: the RNG cursor moves.
+    const heard = new Set<string>(messageIdsOf(first).map(String));
+    for (let turn = 2; turn <= 6; turn++) {
       for (const id of messageIdsOf(tick(daemons, world, turn))) heard.add(String(id));
     }
-    expect(heard).toContain('creak'); // room-owned clause: player IN the room
-    expect(heard).toContain('fidget'); // trait every-turn clause
-    expect(heard).toContain('snort'); // chance clause draws only on-stage
-    expect(heard).toContain('hoot'); // `, once` survived the off-stage turns
+    expect(heard).toContain('snort');
     expect(world.getStateValue(CHORD_RNG_KEY)).toBeTypeOf('number');
+
+    // `, once` was consumed off-stage: walking into the Barn never hears it.
+    world.moveEntity(playerId, barn);
+    for (let turn = 7; turn <= 12; turn++) {
+      expect(messageIdsOf(tick(daemons, world, turn))).not.toContain('hoot');
+    }
   });
 
   it('`, once` fires exactly once on-stage', () => {
@@ -357,7 +392,7 @@ define trait pokeable
     poked:
       Poked. It bristles.
 
-  on poking it
+  on the player poking
     it must be calm: too-angry
     change it to angry
     phrase poked
@@ -384,13 +419,20 @@ create the lantern
   states, reversible: dim, bright
 
   on every turn
-    phrase glow when it is bright
+    phrase glow when the lantern is bright
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 interface DispatchAction {
@@ -503,10 +545,17 @@ create the iron gate
   openable
   in the Yard
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('state adjectives read live from world trait state (D1)', () => {

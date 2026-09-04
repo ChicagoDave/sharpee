@@ -51,7 +51,10 @@ final class IndexView: NSView {
         column.resizingMask = .autoresizingMask
         tableView.addTableColumn(column)
         tableView.headerView = nil
-        tableView.rowSizeStyle = .small
+        // .custom: rows carry the author's chosen panel font (see
+        // FontPreference.panelRowHeight) — a standard style fits only one scale.
+        tableView.rowSizeStyle = .custom
+        tableView.rowHeight = FontPreference.panelRowHeight
         tableView.style = .plain
         tableView.dataSource = self
         tableView.delegate = self
@@ -120,6 +123,7 @@ final class IndexView: NSView {
     }
 
     @objc private func fontPreferenceChanged() {
+        tableView.rowHeight = FontPreference.panelRowHeight
         setState(lastState)
     }
 
@@ -252,8 +256,24 @@ extension IndexView: NSTableViewDelegate {
                 string: "   \(detail)",
                 attributes: [.foregroundColor: Theme.foregroundFaint, .font: detailFont]))
         }
-        cell.textField?.attributedStringValue = text
+        cell.textField?.attributedStringValue = Self.singleLine(text)
         return cell
+    }
+
+    /// Clamps an attributed row string to one truncated line.
+    ///
+    /// The field's `lineBreakMode` governs its `stringValue` only — an attributed
+    /// value brings its own paragraph style, and the default one wraps a long row
+    /// into a second line that draws over its neighbour.
+    ///
+    /// - Parameter text: the composed row string
+    /// - Returns: the same string, set to truncate rather than wrap
+    private static func singleLine(_ text: NSMutableAttributedString) -> NSAttributedString {
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.lineBreakMode = .byTruncatingTail
+        text.addAttribute(.paragraphStyle, value: paragraph,
+                          range: NSRange(location: 0, length: text.length))
+        return text
     }
 
     private func makeCell() -> NSTableCellView {
@@ -269,6 +289,8 @@ extension IndexView: NSTableViewDelegate {
 
         let label = NSTextField(labelWithString: "")
         label.lineBreakMode = .byTruncatingTail
+        // Belt to the paragraph style's braces: a row is one line, always.
+        label.maximumNumberOfLines = 1
         label.translatesAutoresizingMaskIntoConstraints = false
         cell.textField = label
         cell.addSubview(label)

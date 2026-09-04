@@ -12,7 +12,13 @@ create the Yard
 
   A yard. {flavor}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Yard
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

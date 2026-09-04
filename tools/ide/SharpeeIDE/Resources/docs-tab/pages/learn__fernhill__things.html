@@ -45,12 +45,12 @@ create the diary page
   readable
   states: folded, read
 
-  on reading it
-    change it to read
+  on the player reading
+    change the diary page to read
     phrase diary-text
       &quot;K. says the greenhouse will take the worst of the frost…&quot;
   end on</code></pre>
-<p>Short texts fit on the config form; anything that should <em>do</em> something when read gets an <code>on reading it</code> clause: the diary flips its own state (the gated-detail chapter builds on <code>read</code>) and speaks its text. The half-burned letter, incidentally, is a red herring: it points to the bank, and it is wrong.</p>
+<p>Short texts fit on the config form; anything that should <em>do</em> something when read gets an <code>on the player reading</code> clause: the diary flips its own state (the gated-detail chapter builds on <code>read</code>) and speaks its text. The half-burned letter, incidentally, is a red herring: it points to the bank, and it is wrong.</p>
 <h2 id="wearables">Wearables</h2>
 <pre><code class="language-chord">create the grey overcoat
   aka overcoat, coat, verity's overcoat

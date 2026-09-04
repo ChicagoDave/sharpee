@@ -34,12 +34,18 @@ create the Orchard
 
   Apple trees in crooked rows.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Meadow
 
 define phrases en-US
   hedge-thick:
     The hedge is a wall of blackthorn. Not that way.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -84,8 +90,14 @@ create the sedan chair
 
   A gilt sedan chair with a door on the near side.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Carriage House
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

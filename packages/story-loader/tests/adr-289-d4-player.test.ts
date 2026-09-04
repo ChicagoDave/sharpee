@@ -62,65 +62,107 @@ const locationName = (l: Loaded, id: string) => {
 describe('D4 seeding — the player is not a second entity model (Acceptance 12)', () => {
   it('a player declared `states: fresh, exhausted` reads `fresh`', () => {
     const l = load(`${HEADER}${ROOMS}
-create the player
+create Alex
+  a person
+  playable
   in the Hall
   states: fresh, exhausted
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
-    expect(l.world.getStateValue(CHORD_STATE_PREFIX + 'player')).toBe('fresh');
+    expect(l.world.getStateValue(CHORD_STATE_PREFIX + 'alex')).toBe('fresh');
   });
 
   it('a player counter reads its `starts` value', () => {
     const l = load(`${HEADER}${ROOMS}
-create the player
+create Alex
+  a person
+  playable
   in the Hall
   counter stamina starts 7
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     // Per-entity counter key shape (ADR-264 D1/D5), owner-qualified by the
     // IR id — the same key every other entity's counter is seeded under.
-    expect(l.world.getStateValue('chord.counter.player.stamina')).toBe(7);
+    expect(l.world.getStateValue('chord.counter.alex.stamina')).toBe(7);
   });
 
   it('a player with neither states nor counters seeds nothing and still loads', () => {
     const l = load(`${HEADER}${ROOMS}
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
-    expect(l.world.getStateValue(CHORD_STATE_PREFIX + 'player')).toBeUndefined();
+    expect(l.world.getStateValue(CHORD_STATE_PREFIX + 'alex')).toBeUndefined();
   });
 });
 
 describe('D4 placement — one placement concept, three spellings (Acceptance 13)', () => {
   it('a player declared `in the Kitchen` starts in the Kitchen, not the first room', () => {
     const l = load(`${HEADER}${ROOMS}
-create the player
+create Alex
+  a person
+  playable
   in the Kitchen
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     expect(locationName(l, l.player.id)).toBe('Kitchen');
   });
 
   it('`starts in` still works for the player — the spellings agree', () => {
     const l = load(`${HEADER}${ROOMS}
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     expect(locationName(l, l.player.id)).toBe('Kitchen');
   });
 
   it('a player with NO placement line falls back to the first declared room', () => {
     const l = load(`${HEADER}${ROOMS}
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     expect(locationName(l, l.player.id)).toBe('Hall');
   });
@@ -132,10 +174,17 @@ create the cook
 
   A cook.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     const cookId = l.story.entityId('cook')!;
     expect(locationName(l, cookId)).toBe('Kitchen');
@@ -148,10 +197,17 @@ create the cook
 
   A cook.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `);
     expect(locationName(l, l.story.entityId('cook')!)).toBe('Kitchen');
   });

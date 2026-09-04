@@ -28,7 +28,8 @@ import {
   readSceneStore,
   sceneWith,
 } from '@sharpee/world-model';
-import { NpcPlugin } from '@sharpee/plugin-npc';
+import type { ActorTurnPlugin } from '@sharpee/engine';
+import { bootEngine } from './helpers/boot-engine';
 import {
   SaveRestoreService,
   PluginRegistry,
@@ -53,7 +54,7 @@ const SOURCE =
   'create the Hall\n  a room\n  east to the Yard\n\n  A hall.\n\n' +
   'create the Yard\n  a room\n  west to the Hall\n\n  A yard.\n\n' +
   'create the Cell\n  a room\n\n  A cell.\n\n' +
-  'create the player\n  in the Hall\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Hall\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create Aemilia\n' +
   '  a person, proper\n' +
   '  in the Hall\n' +
@@ -121,39 +122,25 @@ interface Loaded {
   story: ChordStory;
   world: WorldModel;
   player: IFEntity;
-  npcPlugin: NpcPlugin;
+  phase: ActorTurnPlugin;
   sounds: ISound[];
 }
 
 function load(source: string = SOURCE): Loaded {
-  const story = createStory(compileSource(source), { seed: 7 });
-  const world = new WorldModel();
-  story.initializeWorld(world);
-  const player = story.createPlayer(world);
-  world.setPlayer(player.id);
-
-  // The story's own engine-ready hook registers the REAL NpcPlugin and
-  // the character-model tick phase on its service — no stub of owned
-  // machinery; the test drives the plugin exactly as the engine would.
-  const registered: unknown[] = [];
-  story.onEngineReady({
-    getPluginRegistry: () => ({ register: (p: unknown) => registered.push(p) }),
-  });
-  const npcPlugin = registered.find(
-    (p) => (p as { id?: string }).id === 'sharpee.plugin.npc',
-  ) as NpcPlugin;
-  expect(npcPlugin).toBeDefined();
-
-  return { story, world, player, npcPlugin, sounds: [] };
+  // A REAL engine: setStory runs the story's own engine-ready hook, which
+  // registers the character-model tick phase on the engine's NPC service.
+  // The test drives the engine's actor phase exactly as the engine does.
+  const { story, world, player, phase } = bootEngine(source, 7);
+  return { story, world, player, phase, sounds: [] };
 }
 
 const entity = (l: Loaded, irId: string): IFEntity => l.world.getEntity(l.story.entityId(irId)!)!;
 const traitOf = (l: Loaded, irId: string): CharacterModelTrait =>
   entity(l, irId).get(TraitType.CHARACTER_MODEL) as CharacterModelTrait;
 
-/** One NPC turn through the real plugin (the engine's own call shape). */
+/** One NPC turn through the engine's actor phase (the engine's own call shape). */
 function tick(l: Loaded, turn: number, actionEvents: ISemanticEvent[] = []): ISemanticEvent[] {
-  return l.npcPlugin.onAfterAction({
+  return l.phase.onAfterAction({
     world: l.world,
     turn,
     playerId: l.player.id,
@@ -171,6 +158,7 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,
@@ -342,6 +330,7 @@ describe('AC12 — mid-scene save/restore through the real SaveRestoreService', 
         ({
           currentTurn: 6,
           player: l.player,
+          actor: l.player,
           history: [],
           metadata: { started: new Date() },
         }) as unknown as GameContext,
@@ -387,5 +376,38 @@ describe('AC12 — mid-scene save/restore through the real SaveRestoreService', 
     expect(l2.world.getStateValue('chord.occurrence.exchange.aemilia.the-offer.0')).toBe(
       l1.world.getStateValue('chord.occurrence.exchange.aemilia.the-offer.0'),
     );
+  });
+});
+
+describe('GH #349 — `leave` served on the speaker’s own turn (publish-readiness Phase 6)', () => {
+  const SOURCE_LEAVE = SOURCE.replace(
+    'define initiative for Bram\n  on harm:\n    phrase bram-condemns\nend initiative\n\n',
+    'define initiative for Bram\n  on harm:\n    phrase bram-condemns\n    leave\nend initiative\n\n',
+  );
+
+  it('the seizure speaks, the scene closes, nothing throws, the next turn ticks clean', () => {
+    const l = load(SOURCE_LEAVE);
+    l.world.moveEntity(entity(l, 'bram').id, l.story.entityId('hall')!);
+
+    const attack: ISemanticEvent = {
+      id: 'evt-attack',
+      type: 'if.event.attacked',
+      timestamp: 0,
+      entities: { actor: l.player.id },
+      data: { target: entity(l, 'aemilia').id },
+    };
+    const events = tick(l, 1, [attack]);
+
+    expect(l.sounds.some((s) => s.content?.messageId === 'bram-condemns')).toBe(true);
+    expect(events.some((e) => e.type === 'command.failed')).toBe(false);
+    // Bram's scene with the player opened, he spoke, and the `leave` closed it
+    // on the exit boundary — the floor-turn counterpart of the reply path.
+    const opened = events.find((e) => e.type === 'character.scene.scene-opened' && (e.data as { participantIds: string[] }).participantIds.includes(l.player.id));
+    expect(opened).toBeDefined();
+    const sceneId = (opened!.data as { sceneId: string }).sceneId;
+    expect(events.some((e) => e.type === 'character.scene.scene-closed' && (e.data as { sceneId: string; boundary: string }).sceneId === sceneId && (e.data as { boundary: string }).boundary === 'exit')).toBe(true);
+    const playerScene = Object.values(readSceneStore(l.world).scenes).find((sc) => sc.participantIds.includes(l.player.id));
+    expect(playerScene).toBeUndefined();
+    expect(() => tick(l, 2)).not.toThrow();
   });
 });

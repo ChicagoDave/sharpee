@@ -26,7 +26,7 @@ function gateErrors(name: string) {
   return compile(fixture(join('gates', name))).diagnostics.filter((d) => d.severity === 'error');
 }
 
-const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n';
 
 function errorsOf(source: string) {
   return compile(source).diagnostics.filter((d) => d.severity === 'error');
@@ -142,9 +142,9 @@ describe('never-guess gates (each package P3)', () => {
       'analysis.closed-condition-selection',
       'analysis.closed-condition-selection',
     ]);
-    expect(errors[0].span.line).toBe(19); // on … while any sweep-time
-    expect(errors[1].span.line).toBe(23); // after … while no sweep-time
-    expect(errors[2].span.line).toBe(24); // each sweep-time
+    expect(errors[0].span.line).toBe(21); // on … while any sweep-time
+    expect(errors[1].span.line).toBe(25); // after … while no sweep-time
+    expect(errors[2].span.line).toBe(26); // each sweep-time
     for (const e of errors) {
       expect(e.message).toContain('closed condition');
       expect(e.message).toContain('Reference `it` in the condition');
@@ -154,16 +154,17 @@ describe('never-guess gates (each package P3)', () => {
   it('`the match` outside an each body errors in NameRef and value positions', () => {
     const errors = gateErrors('match-outside-each.story');
     expect(errors.map((e) => e.code)).toEqual(['analysis.match-outside-each', 'analysis.match-outside-each']);
-    expect(errors[0].span.line).toBe(19); // change the match to content
-    expect(errors[1].span.line).toBe(20); // with animal = the match
+    expect(errors[0].span.line).toBe(21); // change the match to content
+    expect(errors[1].span.line).toBe(22); // with animal = the match
     expect(errors[0].message).toContain('`each`-block binder');
   });
 
   it('a quantifier over a story state is a load error naming the story-state distinction', () => {
     const errors = errorsOf(
       'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n  states: open-hours, closing-hush\n\n' +
-        'create the goat\n\n  on prodding it while any closing-hush\n    phrase nope\n  end on\n\n' +
-        'define phrases en-US\n  nope:\n    Nope.\n',
+        'create the goat\n\n  on the player prodding while any closing-hush\n    phrase nope\n  end on\n\n' +
+        'define phrases en-US\n  nope:\n    Nope.\n' +
+        '\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n',
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.closed-condition-selection');
@@ -172,7 +173,7 @@ describe('never-guess gates (each package P3)', () => {
 
   it('a quantifier over an undeclared name is analysis.unknown-condition with a suggestion', () => {
     const errors = errorsOf(
-      `${HEADER}define condition barn-occupant: it is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n\n  on prodding it while any barn-ocupant\n    phrase nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Nope.\n`,
+      `${HEADER}define condition barn-occupant: it is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n\n  on the player prodding while any barn-ocupant\n    phrase nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Nope.\n`,
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.unknown-condition');
@@ -181,7 +182,7 @@ describe('never-guess gates (each package P3)', () => {
 
   it('`must be any <closed-condition>` hits the same closed-condition gate', () => {
     const errors = errorsOf(
-      `${HEADER}define condition sweep-time: the player is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the player\n  starts in the Barn\n\ncreate the goat\n\n  on prodding it\n    it must be any sweep-time: nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Nope.\n`,
+      `${HEADER}define condition sweep-time: the player is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n\n  on the player prodding\n    the goat must be any sweep-time: nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Nope.\n`,
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.closed-condition-selection');
@@ -201,7 +202,7 @@ describe('never-guess gates (each package P3)', () => {
 describe('each-body descent (P2 flag 1)', () => {
   it('phase order descends into each bodies — a refusal after an each mutation errors', () => {
     const errors = errorsOf(
-      `${HEADER}define condition barn-occupant: it is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n  states: hungry, content\n\n  on prodding it\n    each barn-occupant\n      change the match to content\n    end each\n    refuse when no barn-occupant: nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Nope.\n`,
+      `${HEADER}define condition barn-occupant: it is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n  states: hungry, content\n\n  on the player prodding\n    each barn-occupant\n      change the match to content\n    end each\n    refuse when no barn-occupant: nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Nope.\n`,
     );
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
@@ -209,7 +210,7 @@ describe('each-body descent (P2 flag 1)', () => {
 
   it('inline phrase text inside an each body registers its owner-scoped key', () => {
     const result = compile(
-      `${HEADER}define condition barn-occupant: it is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n\n  after prodding it\n    each barn-occupant\n      phrase bulk-note\n        A note per match.\n    end each\n  end after\n`,
+      `${HEADER}define condition barn-occupant: it is in the Barn\n\ncreate the Barn\n  a room\n\ncreate the goat\n\n  after the player prodding\n    each barn-occupant\n      phrase bulk-note\n        A note per match.\n    end each\n  end after\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ir.phrases.locales['en-US']['goat.bulk-note']).toBeTruthy();

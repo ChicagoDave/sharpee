@@ -1,0 +1,45 @@
+<p>A story declares its media assets once, by name, and then plays or shows them from any statement body. The files live under the project's <code>assets/</code> directory and ship with the browser build; a client that cannot play a kind of media simply ignores the cue, and the <code>when client has …</code> condition lets the story say something else instead.</p>
+<h2 id="declaring-assets">Declaring assets</h2>
+<pre><code class="language-chord">define sound night-wind from &quot;audio/night-wind.wav&quot;
+define sound boiler-thump from &quot;audio/boiler-thump.wav&quot;
+define music dawn-theme from &quot;audio/dawn-theme.wav&quot;
+define image folly-photograph from &quot;images/folly-photograph.png&quot;</code></pre>
+<p>Three kinds: a <strong>sound</strong> is a one-shot cue, <strong>music</strong> is a track, an <strong>image</strong> is a picture. The path is relative to <code>assets/</code>. Every <code>play</code> or <code>show</code> names one of these declarations, and the compiler checks the name and the kind — a <code>play music</code> of a <code>define sound</code> is a diagnostic, and a misspelled asset carries a nearest-match suggestion.</p>
+<h2 id="playing-and-showing">Playing and showing</h2>
+<pre><code class="language-chord">create the primer plunger
+  aka plunger
+  scenery
+  in the Boiler Shed
+
+  A stiff brass plunger on the boiler's flank.
+
+  after the player pushing
+    play sound boiler-thump when client has sound
+    phrase primer-thumps
+  end after</code></pre>
+<table><thead><tr><th>Statement</th><th>Effect</th></tr></thead><tbody><tr><td><code>play sound &lt;name&gt;</code></td><td>play the sound once</td></tr><tr><td><code>play music &lt;name&gt;</code></td><td>start the track; add <code>looping</code> to repeat it</td></tr><tr><td><code>stop music</code></td><td>stop the track</td></tr><tr><td><code>play ambient &lt;name&gt;</code></td><td>loop a <strong>sound</strong> as a bed; <code>in &lt;bed&gt;</code> names a bed other than the default</td></tr><tr><td><code>stop ambient</code></td><td>stop the default bed; <code>stop ambient in &lt;bed&gt;</code> stops a named one</td></tr><tr><td><code>show image &lt;name&gt;</code></td><td>show the picture; <code>in &lt;slot&gt;</code> names where the page puts it</td></tr><tr><td><code>hide image</code></td><td>take the picture down</td></tr><tr><td><code>transition &lt;kind&gt;</code></td><td>a visual transition the client renders</td></tr><tr><td><code>clear</code></td><td>clear the client's prose pane</td></tr></tbody></table>
+<p>Every one of these takes the ordinary <code>when &lt;condition&gt;</code> suffix, so a cue can wait on a state or a client capability:</p>
+<pre><code class="language-chord">create the Iron Gates
+  a room
+
+  Wrought-iron gates stand open on one hinge apiece.
+
+  after the player entering while the player has the deed
+    play music dawn-theme when client has music
+    win fernhill-saved
+  end after</code></pre>
+<p><code>client has sound</code>, <code>client has music</code>, and <code>client has images</code> are true when the client running the story can play that kind of media. A cue without the guard is harmless on a client that cannot honour it — the guard is for the story that wants to <em>say</em> something different when the music cannot play.</p>
+<h2 id="ambients-follow-the-player">Ambients follow the player</h2>
+<p>An ambient is a looping bed the rooms of a region can share. Start it on arrival and stop it on leaving, and the wind follows the player across the grounds and stops at the door:</p>
+<pre><code class="language-chord">create the Grounds
+  a region
+  containing the Gravel Drive, the Fountain Court
+
+  after the player entering
+    play ambient night-wind when client has sound
+  end after
+
+  after the player leaving
+    stop ambient when client has sound
+  end after</code></pre>
+<p>The <a href="/learn/fernhill/browser">Fernhill walkthrough</a> shows all three kinds wired into a complete story and played in the browser build.</p>

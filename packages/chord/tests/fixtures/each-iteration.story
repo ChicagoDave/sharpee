@@ -10,7 +10,7 @@ story
 define condition stray-crate: it is a container and it is not in the store room
 define condition penned-crate: it is a container and it is in the pen
 define condition dusty-thing: it is a supporter and it is in the pen
-define condition keeper-present: it is a person
+define condition keeper-present: it is a person and it is in the store room
 
 define action tidying
   grammar
@@ -42,7 +42,7 @@ define trait tidyable
     dusted:
       Inspection complete.
 
-  on tidying it
+  on the player tidying
     each stray-crate
       phrase spotted-red when the match is the red crate
       phrase spotted-blue when the match is the blue crate
@@ -54,7 +54,7 @@ define trait tidyable
     phrase tidy-note
   end on
 
-  on reading it
+  on the player reading
     each dusty-thing
       phrase dust-spotted when the match is in it
     end each
@@ -72,7 +72,7 @@ define trait polishable
     polished:
       Gleaming now.
 
-  on polishing it
+  on the player polishing
     it must be any penned-crate: not-penned
     change it to gleaming
     phrase polished
@@ -83,9 +83,9 @@ create the pen
   a room
   tidyable
 
-  after entering it
+  after the player entering
     each penned-crate
-      phrase both-note when the match is in it
+      phrase both-note when the match is in the pen
       each dusty-thing
         move the match to the store room
         phrase inner-note when the match is in the store room
@@ -99,13 +99,15 @@ create the pen
 create the store room
   a room
 
-  after entering it
+  after the player entering
     each penned-crate
       change the match to gleaming when one chance in 2
     end each
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the pen
 
 create the red crate
@@ -130,7 +132,7 @@ create the dust bunny
   a supporter
   in the pen
 
-  on reading it
+  on the player reading
     each stray-crate
       move the match to the store room
       phrase noted when the match is in the store room
@@ -156,3 +158,7 @@ define phrases en-US
     Noted in the ledger.
   ledger-note:
     The ledger is up to date.
+
+before the game starts
+  change the player to Alex
+end before

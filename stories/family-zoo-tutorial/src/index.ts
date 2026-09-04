@@ -67,10 +67,9 @@ import {
 } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { type ISemanticEvent } from '@sharpee/core';
-import { NpcPlugin } from '@sharpee/plugin-npc';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import {
-  type NpcBehavior, type NpcContext, type NpcAction, createPatrolBehavior,
+  type NpcBehavior, type NpcContext, createPatrolBehavior,
   type Action, type ActionContext, type ValidationResult,
 } from '@sharpee/stdlib';
 import type { Parser } from '@sharpee/parser-en-us';
@@ -268,6 +267,9 @@ export class FriendlyZooStory implements Story {
     player.add(new IdentityTrait({ name: 'yourself', description: 'Just an ordinary visitor to the zoo.', aliases: ['self', 'myself', 'me'], properName: true, article: '' }));
     player.add(new ActorTrait({ isPlayer: true }));
     player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
+    // ADR-327 D10: setStory builds the world FIRST, so the entrance exists by
+    // the time this runs — the player is placed here, not in initializeWorld.
+    world.moveEntity(player.id, this.roomIds.entrance);
     return player;
   }
 
@@ -286,9 +288,6 @@ export class FriendlyZooStory implements Story {
     // per-world, idempotent — no duplicate-registration guard needed)
     world.registerCapabilityBehavior(PettableTrait.type, PETTING_ACTION_ID, pettingBehavior);
 
-    // Place the player
-    const player = world.getPlayer();
-    if (player) world.moveEntity(player.id, rooms.entrance);
   }
 
   getCustomActions(): any[] {
@@ -349,10 +348,8 @@ export class FriendlyZooStory implements Story {
       });
     }
 
-    // --- NPC Plugin ---
-    const npcPlugin = new NpcPlugin();
-    engine.getPluginRegistry().register(npcPlugin);
-    const npcService = npcPlugin.getNpcService();
+    // --- NPC behaviors (the engine owns the actor turn phase, ADR-328 D5) ---
+    const npcService = engine.getNpcService();
 
     const keeperPatrol = createPatrolBehavior({
       route: [this.roomIds.mainPath, this.roomIds.pettingZoo, this.roomIds.aviary],

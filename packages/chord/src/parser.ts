@@ -21,7 +21,9 @@
  */
 import { SCOPE_REQUIREMENT_PREDICATES } from './catalog.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
+import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import {
+  ActStmt,
   ActionPattern,
   ActionRefusal,
   AwardStmt,
@@ -29,12 +31,14 @@ import {
   DeadlyExitDecl,
   KillStmt,
   ChangeStmt,
+  ChangePlayerStmt,
   ChangeMoodStmt,
   ChangeFeelingStmt,
   CompositionItem,
   ConditionNode,
   ConfigSetting,
   CreateDecl,
+  StartBlockDecl,
   Declaration,
   DefineAction,
   ExtendAction,
@@ -54,6 +58,11 @@ import {
   DefinePronouns,
   DefineMachine,
   DefineSequence,
+  DefineTimer,
+  DefineChapters,
+  ChapterRowDecl,
+  ChapterTrigger,
+  TimerStateDecl,
   EmitField,
   EmitValue,
   MediaStmt,
@@ -93,6 +102,7 @@ import {
   RemoveStmt,
   MustRequirement,
   NameRef,
+  PlaceExpr,
   OnClause,
   OrdinalBlock,
   ParamBinding,
@@ -118,6 +128,7 @@ import {
   DefineProfile,
   FeelsDecl,
   GoalDecl,
+  GoalStepDecl,
   InfluenceDecl,
   KnowsDecl,
   ResistsDecl,
@@ -131,6 +142,10 @@ import {
   CounterDecl,
   DefineCounter,
   CounterMutateStmt,
+  TimerVerbStmt,
+  TimerClause,
+  MoveClause,
+  LandingDecl,
   SelectArm,
   SelectOnStmt,
   SelectStrategyStmt,
@@ -161,6 +176,44 @@ import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
+
+/**
+ * The inflections a written verb may stand for (ADR-329 D1/Q-1: the author
+ * writes whichever form reads right; matching is on the lemma). `takes` →
+ * `take`, `goes` → `go`, `carries` → `carry`; the word itself always counts.
+ */
+function verbLemmas(word: string): Set<string> {
+  const w = word.toLowerCase();
+  const out = new Set([w]);
+  if (w.endsWith('ies') && w.length > 4) out.add(`${w.slice(0, -3)}y`);
+  if (w.endsWith('es') && w.length > 3) out.add(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 2) out.add(w.slice(0, -1));
+  return out;
+}
+
+/**
+ * The verbs that open a standard grammar shape (`take :item`, `give :item to
+ * :recipient`, `go north`) — the parser's admission test for a name-led acting
+ * statement. Built once from the manifest; bare-direction shapes (`north`) and
+ * every other one-word shape are excluded, because `the guards north` is not a
+ * sentence. Story-defined verbs join per file (see `storyVerbLexicon`).
+ */
+let actVerbLexicon: Set<string> | null = null;
+function stdlibActVerbs(): Set<string> {
+  if (actVerbLexicon) return actVerbLexicon;
+  const out = new Set<string>();
+  for (const shapes of Object.values(STDLIB_MANIFEST.locales['en-US'].grammarShapes)) {
+    for (const shape of shapes) {
+      const parts = shape.split(' ');
+      if (parts.length < 2 || parts[0].startsWith(':')) continue;
+      out.add(parts[0]);
+    }
+  }
+  actVerbLexicon = out;
+  return out;
+}
+/** The landing-list strategy words (ADR-325 D5) — rejected after `a random adjacent room` (ADR-326 D1). */
+const STRATEGY_WORDS = new Set(['randomly', 'cycling', 'stopping']);
 // ADR-298 D4: the structural test for a header prose value being a phrase
 // reference — a single kebab atom, nothing else on the value.
 const KEBAB_ATOM = /^[a-z][a-z0-9]*(?:-[a-z0-9]+)*$/;
@@ -193,6 +246,8 @@ const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 const TOP_KEYWORDS = new Set([
   'story', 'grammar', 'create', 'define', 'when', 'once', 'every', 'import', 'override',
   'extend', 'remove',
+  // ADR-327 D10: `before the game starts … end before`.
+  'before',
 ]);
 
 /**
@@ -242,6 +297,18 @@ function lineSpan(line: Line): Span {
   return mergeSpans(line.tokens[0].span, line.tokens[line.tokens.length - 1].span);
 }
 
+/**
+ * Blocks that react to something already done — `after` clauses and the
+ * `when … expires` / `when … moves` event clauses (ADR-325 D3e/D3h) — can
+ * never refuse: there is nothing left to refuse.
+ */
+/** Landing strategy words (ADR-325 D5) — the phrase vocabulary's choosing words. */
+const LANDING_STRATEGIES = new Set(['randomly', 'cycling', 'stopping']);
+
+function isReactionBlock(blockKeyword: string): boolean {
+  return blockKeyword === 'after' || blockKeyword === 'when';
+}
+
 function firstWord(line: Line): string | null {
   const t = line.tokens[0];
   return t && t.kind === 'word' ? t.text : null;
@@ -266,6 +333,7 @@ function looksLikeComment(line: Line): boolean {
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
   'raise', 'lower',
+  'start', 'restart', 'reset', 'interrupt',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
   // ADR-320 conversation-row statements (frozen 2026-08-17):
   'then', 'deflect', 'leave', 'hold',
@@ -379,6 +447,13 @@ class Parser {
         case 'create':
           declarations.push(this.parseCreate());
           break;
+        case 'before': {
+          // ADR-327 D10: `before the game starts` — the story's one pre-play
+          // block, where the player role is assigned.
+          const d = this.parseStartBlock();
+          if (d) declarations.push(d);
+          break;
+        }
         case 'define': {
           const d = this.parseDefine();
           if (d) declarations.push(d);
@@ -423,7 +498,7 @@ class Parser {
         case 'when':
           this.diagnostics.error(
             'parse.removed-when',
-            'Top-level `when` rules were removed (ownership package, 2026-07-11) — attach the rule to its owner: `after <verb> it` on the entity or room it is about.',
+            'Top-level `when` rules were removed (ownership package, 2026-07-11) — attach the rule to its owner: `after the player <verb>` on the entity or room it is about.',
             lineSpan(line),
           );
           this.recoverToTopLevel(true);
@@ -572,6 +647,7 @@ class Parser {
     let statesReversible = false;
     const scores: ScoreDecl[] = [];
     const onClauses: OnClause[] = [];
+    const timerClauses: TimerClause[] = [];
     const uses: UseDecl[] = [];
     const usePhrasebooks: UsePhrasebookDecl[] = [];
     const ranks: RankDecl[] = [];
@@ -599,8 +675,8 @@ class Parser {
             continue;
           }
           let bookCondition: ConditionNode | null = null;
-          if (uc.isWord('while')) {
-            uc.next();
+          if (uc.isWord('while') || uc.isWord('during')) {
+            if (uc.isWord('while')) uc.next();
             const condTokens: Token[] = [];
             while (!uc.atEnd()) condTokens.push(uc.next()!);
             bookCondition = this.parseCondition(new Cursor(condTokens, useLine), useLine);
@@ -671,6 +747,12 @@ class Parser {
       // `on every turn [while <cond>][, once]` — the story-owned daemon
       // (ADR-236 D7, ratchet R4). The only clause form the header hosts;
       // anything else keeps its owner-attached home.
+      if (this.isTimerClauseHead(peeked)) {
+        const clause = this.parseTimerClause();
+        span = mergeSpans(span, clause.span);
+        timerClauses.push(clause);
+        continue;
+      }
       if (peekedWord === 'on' || peekedWord === 'after') {
         const clause = this.parseOnClause(peeked.indent, peekedWord);
         span = mergeSpans(span, clause.span);
@@ -910,7 +992,7 @@ class Parser {
       );
     }
 
-    return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
+    return { kind: 'story-header', title, fields, states, statesReversible, scores, onClauses, timerClauses, uses, usePhrasebooks, ranks, ...(hunger !== undefined ? { hunger } : {}), span };
   }
 
   /**
@@ -1153,6 +1235,399 @@ class Parser {
     return { kind: 'define-counter', name: nameTok.text, starts, lo, hi, span: lineSpan(line) };
   }
 
+  /**
+   * `define chapters … end chapters` (ADR-330 D1). One row per chapter:
+   * `<name> - <title>` on the row line — the name is the first word, the
+   * title is everything after the dash, taken raw so a colon or a numeral in
+   * it means nothing — then, deeper, an optional description paragraph and
+   * the `begins when <event>` line. The `use chapters` gate, name
+   * uniqueness, and the opening-row rules are the analyzer's.
+   */
+  private parseDefineChapters(): DefineChapters | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define chapters
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.chapters-head', '`define chapters` takes nothing else on the line — the rows follow, indented.', c.restSpan());
+    }
+    const decl: DefineChapters = { kind: 'define-chapters', rows: [], span: lineSpan(headLine) };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('chapters', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.rows.length === 0) {
+          this.diagnostics.error('parse.chapters-empty', 'This `define chapters` block declares no chapters — add `<name> - <title>` rows, or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      this.pos++;
+      const row = this.parseChapterRow(line);
+      if (row) decl.rows.push(row);
+    }
+    this.diagnostics.error('parse.chapters-end', 'Expected `end chapters` to close the block.', decl.span);
+    return decl;
+  }
+
+  /** One chapter row and its deeper lines (ADR-330 D1). */
+  private parseChapterRow(line: Line): ChapterRowDecl | null {
+    const c = new Cursor(line.tokens, line);
+    const nameTok = c.next();
+    const dash = c.next();
+    if (!nameTok || nameTok.kind !== 'word' || !dash || dash.kind !== 'punct' || dash.text !== '-' || c.atEnd()) {
+      this.diagnostics.error(
+        'parse.chapter-row',
+        "Expected `<name> - <title>` (e.g. `market - Chapter I: Grubber's Market`).",
+        lineSpan(line),
+      );
+      this.skipDeeperLines(line.indent);
+      return null;
+    }
+    const raw = line.raw.trim();
+    const title = raw.slice(raw.indexOf(' - ') + 3).trim();
+    const row: ChapterRowDecl = { name: nameTok.text.toLowerCase(), title, description: null, trigger: null, span: lineSpan(line) };
+
+    const prose: string[] = [];
+    while (this.pos < this.lines.length) {
+      const next = this.lines[this.pos];
+      if (next.indent <= line.indent || isEndLine(next)) break;
+      if (looksLikeComment(next)) {
+        this.skipCommentInsideBlock(next);
+        continue;
+      }
+      this.pos++;
+      row.span = mergeSpans(row.span, lineSpan(next));
+      const nc = new Cursor(next.tokens, next);
+      if (firstWord(next) === 'begins' && nc.isWord('when', 1)) {
+        nc.next();
+        nc.next();
+        if (row.trigger) {
+          this.diagnostics.error('parse.chapter-trigger', 'A chapter begins once — this row already has a `begins when` line.', lineSpan(next));
+          continue;
+        }
+        row.trigger = this.parseChapterTrigger(nc, next);
+        continue;
+      }
+      prose.push(next.raw.trim());
+    }
+    if (prose.length > 0) row.description = prose.join(' ');
+    if (!row.trigger) {
+      this.diagnostics.error('parse.chapter-no-trigger', `Chapter \`${row.name}\` has no \`begins when <event>\` line — every chapter says when it begins (ADR-330 D2).`, row.span);
+    }
+    return row;
+  }
+
+  /**
+   * The four trigger spellings (ADR-330 D2): `the game starts`, `the player
+   * visits <room> for the first time`, `<timer> expires`, `<entity|the story>
+   * becomes <state>`. `<entity> moves` is named in a fix-it and refused.
+   */
+  private parseChapterTrigger(c: Cursor, line: Line): ChapterTrigger | null {
+    const span = lineSpan(line);
+    if (c.isWord('the') && c.isWord('game', 1) && c.isWord('starts', 2)) {
+      c.next();
+      c.next();
+      c.next();
+      if (!c.atEnd()) this.diagnostics.error('parse.chapter-trigger', 'Nothing follows `the game starts`.', c.restSpan());
+      return { kind: 'game-starts', span };
+    }
+    if (c.isWord('the') && c.isWord('player', 1) && c.isWord('visits', 2)) {
+      c.next();
+      c.next();
+      c.next();
+      const room = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'for');
+      const tail = c.matchWord('for') && c.matchWord('the') && c.matchWord('first') && c.matchWord('time');
+      if (room.words.length === 0 || !tail || !c.atEnd()) {
+        this.diagnostics.error('parse.chapter-trigger', 'Expected `the player visits <room> for the first time`.', c.restSpan());
+        return null;
+      }
+      return { kind: 'first-visit', room, span };
+    }
+    const words = line.tokens.filter((t) => t.kind === 'word').map((t) => t.text);
+    if (words.includes('moves')) {
+      this.diagnostics.error(
+        'parse.chapter-trigger',
+        '`<entity> moves` is not a chapter trigger (ADR-330 D2) — a chapter begins when the game starts, when the player visits a room for the first time, when a timer expires, or when something becomes a state.',
+        c.restSpan(),
+      );
+      return null;
+    }
+    if (words.includes('expires')) {
+      const timer = this.parseValueExpr(c, line, new Set(['expires']));
+      if (!c.matchWord('expires') || !c.atEnd()) {
+        this.diagnostics.error('parse.chapter-trigger', 'Expected `<timer> expires`.', c.restSpan());
+        return null;
+      }
+      return { kind: 'timer-expires', timer, span };
+    }
+    if (words.includes('becomes')) {
+      const owner = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'becomes');
+      const state = c.matchWord('becomes') ? c.next() : undefined;
+      if (owner.words.length === 0 || !state || state.kind !== 'word' || !c.atEnd()) {
+        this.diagnostics.error('parse.chapter-trigger', 'Expected `<entity> becomes <state>` or `the story becomes <state>`.', c.restSpan());
+        return null;
+      }
+      return { kind: 'becomes', owner, state: state.text.toLowerCase(), span };
+    }
+    this.diagnostics.error(
+      'parse.chapter-trigger',
+      'Expected a moment after `begins when` — `the game starts`, `the player visits <room> for the first time`, `<timer> expires`, or `<entity> becomes <state>`.',
+      c.restSpan(),
+    );
+    return null;
+  }
+
+  /** Error recovery inside a chapters block: skip the lines deeper than a bad row. */
+  private skipDeeperLines(indent: number): void {
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > indent && !isEndLine(this.lines[this.pos])) this.pos++;
+  }
+
+  /**
+   * `define timer <name> [for <owner>] … end timer` (ADR-325 D3a). Body
+   * lines: a state name (one turn, optional indented prose), `meanwhile[,
+   * one chance in n]` + statements, `interrupted one chance in n`.
+   */
+  private parseDefineTimer(): DefineTimer | null {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.next();
+    c.next(); // define timer
+    const nameTok = c.next();
+    if (!nameTok || nameTok.kind !== 'word') {
+      this.diagnostics.error('parse.timer-name', 'Expected a timer name after `define timer`.', c.restSpan());
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    let owner: NameRef | null = null;
+    if (c.matchWord('for')) {
+      owner = this.parseNameRef(c, () => false);
+      if (owner.words.length === 0) {
+        this.diagnostics.error('parse.timer-owner', 'Expected an owner after `for` (`for the player`, `for the guards`).', c.restSpan());
+      }
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.timer-head', 'Expected `define timer <name> [for <owner>]` and nothing more on the line.', c.restSpan());
+    }
+
+    const states: TimerStateDecl[] = [];
+    let meanwhile: DefineTimer['meanwhile'] = null;
+    let interrupted: number | null = null;
+    const parseChance = (lc: Cursor, line: Line): number | null => {
+      if (!(lc.matchWord('one') && lc.matchWord('chance') && lc.matchWord('in'))) {
+        this.diagnostics.error('parse.timer-chance', 'Expected `one chance in <n>`.', lc.restSpan());
+        return null;
+      }
+      const n = lc.next();
+      if (!n || n.kind !== 'number' || Number(n.text) < 1) {
+        this.diagnostics.error('parse.timer-chance', 'Expected a positive number after `one chance in`.', lc.restSpan());
+        return null;
+      }
+      return Number(n.text);
+    };
+
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent || isEndLine(line)) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'meanwhile') {
+        this.pos++;
+        lc.next();
+        let chance: number | null = null;
+        if (lc.peek()?.kind === 'comma') {
+          lc.next();
+          chance = parseChance(lc, line);
+        }
+        if (meanwhile) {
+          this.diagnostics.error('parse.timer-meanwhile', 'A timer has one `meanwhile` block.', lineSpan(line));
+        }
+        const body = this.parseStatements(line.indent, 'timer', 'meanwhile');
+        meanwhile = { chance, body, span: lineSpan(line) };
+        continue;
+      }
+      if (word === 'interrupted') {
+        this.pos++;
+        lc.next();
+        const n = parseChance(lc, line);
+        if (interrupted !== null) {
+          this.diagnostics.error('parse.timer-interrupted', 'A timer has one `interrupted` line.', lineSpan(line));
+        }
+        interrupted = n;
+        continue;
+      }
+      // A state name: one word, optionally followed by an indented prose body.
+      this.pos++;
+      const stateTok = lc.next();
+      if (!stateTok || stateTok.kind !== 'word' || !lc.atEnd()) {
+        this.diagnostics.error(
+          'parse.timer-state',
+          'Expected a state name (one word), `meanwhile`, or `interrupted one chance in <n>` inside `define timer`.',
+          lineSpan(line),
+        );
+        while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent && !isEndLine(this.lines[this.pos])) this.pos++;
+        continue;
+      }
+      if (stateTok.text === 'expired') {
+        this.diagnostics.error('parse.timer-expired', '`expired` is every timer\'s built-in final state — it is never written.', stateTok.span);
+      }
+      let text: TextValue | null = null;
+      const next = this.lines[this.pos];
+      if (next && next.indent > line.indent && !isEndLine(next)) {
+        text = this.parseProseParagraph(next.indent, line.indent);
+      }
+      states.push({ name: stateTok.text, text, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('timer', headLine);
+    return { kind: 'define-timer', name: nameTok.text, owner, states, meanwhile, interrupted, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /** At `has`: is the read `has [not] started|expired` standing alone (ADR-325 D3d)? */
+  private isTimerHasRead(c: Cursor): boolean {
+    let i = 1;
+    if (c.isWord('not', i)) i++;
+    const w = c.peek(i);
+    if (!w || w.kind !== 'word' || (w.text !== 'started' && w.text !== 'expired')) return false;
+    const after = c.peek(i + 1);
+    return !after || (after.kind === 'word' && PHRASE_STOPS.has(after.text)) || after.kind === 'comma';
+  }
+
+  /** Is this line a `when <timer> expires[, while …]` clause head (ADR-325 D3e)? */
+  private isTimerClauseHead(line: Line): boolean {
+    if (firstWord(line) !== 'when') return false;
+    return line.tokens.some((t, i) => i > 1 && t.kind === 'word' && t.text === 'expires');
+  }
+
+  /** `when <timer> expires [, while <cond>] … end when` (ADR-325 D3e). */
+  private parseTimerClause(): TimerClause {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('when');
+    const timer = this.parseValueExpr(c, headLine, new Set(['expires']));
+    if (!c.matchWord('expires')) {
+      this.diagnostics.error('parse.timer-clause', 'Expected `when <timer> expires`.', c.restSpan());
+    }
+    let condition: ConditionNode | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (c.isWord('during')) {
+        condition = this.parseCondition(c, headLine);
+      } else if (!c.matchWord('while')) {
+        this.diagnostics.error('parse.timer-clause', 'Expected `, while <condition>` after `expires`.', c.restSpan());
+      } else {
+        condition = this.parseCondition(c, headLine);
+      }
+    } else if (c.matchWord('while') || c.isWord('during')) {
+      condition = this.parseCondition(c, headLine);
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.timer-clause', 'Unexpected words after the `when … expires` head.', c.restSpan());
+    }
+    const body = this.parseStatements(headLine.indent, 'when');
+    const endSpan = this.consumeEnd('when', headLine);
+    return { kind: 'timer-clause', timer, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `landing <room>` | `landing, randomly|cycling|stopping: <room list>`
+   * (ADR-325 D5). A list with no strategy word and a strategy with a single
+   * room are both errors here — the line says how to choose, or names one.
+   */
+  private parseLandingLine(line: Line): LandingDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('landing');
+    let strategy: LandingDecl['strategy'] = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      const word = c.next();
+      if (!word || word.kind !== 'word' || !LANDING_STRATEGIES.has(word.text)) {
+        this.diagnostics.error('parse.landing-strategy', 'Expected `randomly`, `cycling`, or `stopping` after the comma.', word?.span ?? c.restSpan());
+        return null;
+      }
+      strategy = word.text as Exclude<LandingDecl['strategy'], null>;
+      if (c.peek()?.kind !== 'colon') {
+        this.diagnostics.error('parse.landing-strategy', `Expected \`:\` and the room list after \`${word.text}\`.`, c.restSpan());
+        return null;
+      }
+      c.next();
+    }
+    const rooms = this.parseNameRefList(c, line);
+    if (rooms.length === 0) return null;
+    if (rooms.length > 1 && strategy === null) {
+      this.diagnostics.error('parse.landing-strategy', 'Say how to choose — `landing, randomly: …`, `landing, cycling: …`, or `landing, stopping: …`.', lineSpan(line));
+      return null;
+    }
+    if (rooms.length === 1 && strategy !== null) {
+      this.diagnostics.error('parse.landing-strategy', 'A single landing takes no strategy word — write `landing <room>`.', lineSpan(line));
+      return null;
+    }
+    return { rooms, strategy, span: lineSpan(line) };
+  }
+
+  /**
+   * Is this `on` line a clause head rather than a placement? In a create
+   * block `on` opens both: `on the table` (placement, one line) and `on the
+   * player taking` (ADR-327 D1 head, a block). Since heads carry an actor the
+   * article no longer separates them; block structure does — a head is
+   * followed by a deeper-indented body line or by its own `end on`, a
+   * placement never is (comment lines are indent-0 only, ADR-249).
+   */
+  private isOnClauseHead(line: Line): boolean {
+    const next = this.lines[this.pos + 1];
+    if (!next) return false;
+    if (next.indent > line.indent) return true;
+    return next.indent === line.indent && firstWord(next) === 'end' && next.tokens[1]?.kind === 'word' && next.tokens[1].text === 'on';
+  }
+
+  /** Is this line a `when <entity> moves[, while …]` clause head (ADR-325 D3h)? */
+  private isMoveClauseHead(line: Line): boolean {
+    if (firstWord(line) !== 'when') return false;
+    return line.tokens.some((t, i) => i > 1 && t.kind === 'word' && t.text === 'moves');
+  }
+
+  /** `when <entity> moves [, while <cond>] … end when` (ADR-325 D3h). */
+  private parseMoveClause(): MoveClause {
+    const headLine = this.lines[this.pos++];
+    const c = new Cursor(headLine.tokens, headLine);
+    c.matchWord('when');
+    const mover = this.parseValueExpr(c, headLine, new Set(['moves']));
+    if (!c.matchWord('moves')) {
+      this.diagnostics.error('parse.move-clause', 'Expected `when <entity> moves`.', c.restSpan());
+    }
+    let condition: ConditionNode | null = null;
+    if (c.peek()?.kind === 'comma') {
+      c.next();
+      if (c.isWord('during')) {
+        condition = this.parseCondition(c, headLine);
+      } else if (!c.matchWord('while')) {
+        this.diagnostics.error('parse.move-clause', 'Expected `, while <condition>` after `moves`.', c.restSpan());
+      } else {
+        condition = this.parseCondition(c, headLine);
+      }
+    } else if (c.matchWord('while') || c.isWord('during')) {
+      condition = this.parseCondition(c, headLine);
+    }
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.move-clause', 'Unexpected words after the `when … moves` head.', c.restSpan());
+    }
+    const body = this.parseStatements(headLine.indent, 'when');
+    const endSpan = this.consumeEnd('when', headLine);
+    return { kind: 'move-clause', mover, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
@@ -1166,6 +1641,41 @@ class Parser {
     return { kind: 'counter', name: nameTok.text, starts, lo, hi, span: lineSpan(line) };
   }
 
+  // ----------------------------------------------------------- start block
+
+  /**
+   * `before the game starts` … statements … `end before` (ADR-327 D10).
+   *
+   * The head must read exactly those four words; anything else is
+   * `parse.start-block` rather than a generic error, because `before` opens
+   * nothing else at the top level. The body is an ordinary statement body —
+   * the effect-statements-only rule (D10 Q3) is an analyzer gate, not a parse
+   * one, so a `phrase` here still parses and reports against its own span.
+   *
+   * @param  none — reads from the parser's line cursor
+   * @returns the declaration, or null when the head did not parse (the parser
+   *   has already resynchronized to the next top-level line)
+   */
+  private parseStartBlock(): StartBlockDecl | null {
+    const headLine = this.lines[this.pos];
+    const words = headLine.tokens.map((t) => (t.kind === 'word' ? t.text.toLowerCase() : null));
+    const isHead =
+      words.length === 4 && words[0] === 'before' && words[1] === 'the' && words[2] === 'game' && words[3] === 'starts';
+    if (!isHead) {
+      this.diagnostics.error(
+        'parse.start-block',
+        'Expected `before the game starts` — the story\'s pre-play block, closed by `end before`.',
+        lineSpan(headLine),
+      );
+      this.recoverToTopLevel(true);
+      return null;
+    }
+    this.pos++;
+    const body = this.parseStatements(headLine.indent, 'before');
+    const endSpan = this.consumeEnd('before', headLine);
+    return { kind: 'start-block', body, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   // ---------------------------------------------------------------- create
 
   private parseCreate(): CreateDecl {
@@ -1175,6 +1685,15 @@ class Parser {
     const name = this.parseNameRef(c, () => false);
     if (name.words.length === 0) {
       this.diagnostics.error('parse.create-name', 'Expected an entity name after `create`.', lineSpan(headLine));
+    }
+    // ADR-327 D10: the player is no longer a block you create — it is a role
+    // a named character holds. The block named `player` is gone with it.
+    if (name.words.length === 1 && name.words[0].toLowerCase() === 'player') {
+      this.diagnostics.error(
+        'parse.removed-create-player',
+        '`create the player` was removed — name the character, mark it `playable`, and assign the role in a `before the game starts` block.',
+        lineSpan(headLine),
+      );
     }
 
     const decl: CreateDecl = {
@@ -1188,6 +1707,7 @@ class Parser {
       wears: [],
       carries: [],
       containing: [],
+      landing: null,
       exits: [],
       blockedExits: [],
       deadlyExits: [],
@@ -1200,6 +1720,8 @@ class Parser {
       initialDescription: null,
       phraseOverrides: [],
       onClauses: [],
+      timerClauses: [],
+      moveClauses: [],
       moods: [],
       feels: [],
       knows: [],
@@ -1386,6 +1908,17 @@ class Parser {
         this.pos++;
         cur.matchWord('containing');
         decl.containing.push(...this.parseNameRefList(cur, line));
+      } else if (word === 'landing') {
+        // ADR-325 D5: `landing <room>` or `landing, <strategy>: <rooms>`.
+        this.pos++;
+        const landing = this.parseLandingLine(line);
+        if (landing) {
+          if (decl.landing) {
+            this.diagnostics.error('parse.landing-duplicate', 'A region has one `landing` line — this is the second.', landing.span);
+          } else {
+            decl.landing = landing;
+          }
+        }
       } else if (word === 'starts' && cur.isWord('in', 1)) {
         // The `starts` dispatch is one-token lookahead (ADR-231 D5a):
         // `starts in <place>` is placement (here); `starts <known-state>` is
@@ -1396,6 +1929,11 @@ class Parser {
         cur.next();
         cur.next();
         decl.placement = this.finishPlacement('starts-in', cur, line);
+      } else if (word === 'on' && this.isOnClauseHead(line)) {
+        // Before the placement branch: `on the player taking` (ADR-327 D1)
+        // and `on the table` both open with an article — block structure
+        // tells them apart, not the article.
+        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
       } else if ((word === 'in' || word === 'on') && line.tokens[1] && line.tokens[1].kind === 'word' && ARTICLES.has(line.tokens[1].text)) {
         this.pos++;
         cur.next();
@@ -1404,6 +1942,10 @@ class Parser {
         decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
       } else if (word === 'after') {
         decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
+      } else if (this.isTimerClauseHead(line)) {
+        decl.timerClauses.push(this.parseTimerClause());
+      } else if (this.isMoveClauseHead(line)) {
+        decl.moveClauses.push(this.parseMoveClause());
       } else if (
         word === 'phrase' &&
         line.tokens[1]?.kind === 'word' &&
@@ -1469,17 +2011,24 @@ class Parser {
             via = doorRef;
           }
         }
-        // ADR-234 D4: `, one-way` is reserved (traversable in the written
-        // direction only) but NOT wired — a legible reservation error, not
-        // a generic parse failure, until its own ratchet entry lands.
+        // `, one-way` (ADR-234 D4's reservation, wired 2026-09-03 for GH
+        // #327): the exit is traversable in the written direction only —
+        // the loader infers no reverse exit, and a door on the line is
+        // one-way too. The comma-modifier slot is the `, once` pattern.
+        let oneWay = false;
         if (cur.peek()?.kind === 'comma' && cur.isWord('one-way', 1)) {
-          this.diagnostics.error(
-            'parse.exit-one-way-reserved',
-            '`, one-way` is reserved but not yet wired — exits and doors are bidirectional for now.',
-            lineSpan(line),
-          );
+          cur.next();
+          cur.next();
+          oneWay = true;
         }
-        decl.exits.push({ kind: 'exit', direction: word, to, via, span: lineSpan(line) } as ExitDecl);
+        decl.exits.push({
+          kind: 'exit',
+          direction: word,
+          to,
+          via,
+          ...(oneWay ? { oneWay: true as const } : {}),
+          span: lineSpan(line),
+        } as ExitDecl);
       } else if (word && DIRECTIONS.has(word) && cur.isWord('is', 1) && cur.isWord('blocked', 2)) {
         this.pos++;
         const blocked = this.parseBlockedExit(word, line);
@@ -1863,9 +2412,50 @@ class Parser {
       decl.steps.push({ kind: 'drop', item, in: inRef, span: lineSpan(line) });
       return;
     }
+    const perform = this.tryParsePerformStep(line);
+    if (perform === 'errored') return;
+    if (perform) {
+      decl.steps.push(perform);
+      return;
+    }
     stepError(
-      `Unrecognized goal line: \`${line.raw.trim()}\` — expected \`active when\`, seek, acquire, wait for, move to, act, say, give, or drop.`,
+      `Unrecognized goal line: \`${line.raw.trim()}\` — expected \`active when\`, seek, acquire, wait for, move to, act, say, give, drop, or an action's own words (\`open the door\`, \`go east\`).`,
     );
+  }
+
+  /**
+   * ADR-329 D10: a goal line that is none of the step verbs is a `perform`
+   * step when its first word lemma-matches a verb that opens a standard shape
+   * or one of this file's own action grammar lines — the acting statement's
+   * admission (`tryParseActStatement`), with the actor implied. The words are
+   * carried raw for the analyzer to match. A `when` suffix is refused by name:
+   * a step that should not run yet waits (`wait for`).
+   *
+   * @returns the step; `'errored'` when the line was admitted but refused
+   *   (diagnostic already reported); null when the line is not a candidate
+   */
+  private tryParsePerformStep(line: Line): GoalStepDecl | 'errored' | null {
+    const tokens = line.tokens;
+    const first = tokens[0];
+    if (!first || first.kind !== 'word') return null;
+    if (!tokens.every((t) => t.kind === 'word' || t.kind === 'number')) return null;
+    const lexicon = stdlibActVerbs();
+    const story = this.storyVerbLexicon();
+    let opens = false;
+    for (const lemma of verbLemmas(first.text)) {
+      if (lexicon.has(lemma) || story.has(lemma)) { opens = true; break; }
+    }
+    if (!opens) return null;
+    const whenAt = tokens.findIndex((t, i) => i > 0 && t.kind === 'word' && t.text === 'when');
+    if (whenAt !== -1) {
+      this.diagnostics.error(
+        'parse.goal-step',
+        'A goal step carries no `when` — a step that should not run yet waits: put `wait for <condition>` on the line before it.',
+        tokens[whenAt].span,
+      );
+      return 'errored';
+    }
+    return { kind: 'perform', words: tokens.map((t) => ({ text: t.text, span: t.span })), span: lineSpan(line) };
   }
 
   /**
@@ -2240,7 +2830,7 @@ class Parser {
     c.next(); // is
     c.next(); // blocked
     let condition: ConditionNode | null = null;
-    if (c.matchWord('while')) {
+    if (c.matchWord('while') || c.isWord('during')) {
       const condTokens: Token[] = [];
       while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, line), line);
@@ -2266,7 +2856,7 @@ class Parser {
     c.next(); // is
     c.next(); // deadly
     let condition: ConditionNode | null = null;
-    if (c.matchWord('while')) {
+    if (c.matchWord('while') || c.isWord('during')) {
       const condTokens: Token[] = [];
       while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, line), line);
@@ -2348,7 +2938,7 @@ class Parser {
       if (c.matchWord('with')) {
         config.push(...this.parseConfigSettings(c, line));
       }
-      if (c.matchWord('while')) {
+      if (c.matchWord('while') || c.isWord('during')) {
         condition = this.parseCondition(c, line);
       }
       const endTok = c.tokens[c.i - 1] ?? startTok;
@@ -2535,8 +3125,8 @@ class Parser {
     // Z3b: optional `while <condition>` up to the colon — `phrase detail
     // while it is on:` (`it` = the owner; the analyzer resolves).
     let condition: ConditionNode | null = null;
-    if (c.isWord('while')) {
-      c.next();
+    if (c.isWord('while') || c.isWord('during')) {
+      if (c.isWord('while')) c.next();
       const condTokens: Token[] = [];
       while (!c.atEnd() && c.peek()!.kind !== 'colon') condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, line), line);
@@ -2794,7 +3384,7 @@ class Parser {
         // removed rather than repaired.
         this.diagnostics.error(
           'parse.removed-behavior-hatch',
-          '`define behavior … from` was removed (ADR-235 D2) — it had no binding key and could never fire. Author the behavior in-language (`define trait <name>` with `on <verb> it` clauses, composed on the entity), or ship a full action with `define action <name> from "<module>"`.',
+          '`define behavior … from` was removed (ADR-235 D2) — it had no binding key and could never fire. Author the behavior in-language (`define trait <name>` with `on the player <verb>` clauses, composed on the entity), or ship a full action with `define action <name> from "<module>"`.',
           lineSpan(this.lines[this.pos]),
         );
         this.pos++;
@@ -2810,6 +3400,9 @@ class Parser {
         return null;
       case 'sequence':
         return this.parseDefineSequence();
+      case 'timer':
+        // ADR-325 D3a: a named-turn timer.
+        return this.parseDefineTimer();
       case 'counter':
         // ADR-264: a story-global numeric counter.
         return this.parseDefineCounter();
@@ -2830,6 +3423,9 @@ class Parser {
       case 'channel':
         // ADR-216 custom channels (spelling A, 2026-07-18) — data projections.
         return this.parseDefineChannel();
+      case 'chapters':
+        // ADR-330 D1 — the chapter table; `use chapters` is the analyzer's gate.
+        return this.parseDefineChapters();
       case 'fact':
         // ADR-310 D14 — a closed value set for valued beliefs.
         return this.parseDefineFact();
@@ -2983,6 +3579,13 @@ class Parser {
     if (c.isWord('while')) {
       c.next();
       condition = this.parseCondition(c, headLine);
+      if (c.isWord('during')) {
+        this.diagnostics.error('parse.head-while-during', 'A phrase line takes `while <condition>` or `during <chapter>`, not both — write one `while`: `while during <chapter> and …`.', c.restSpan());
+        c.next();
+        if (c.peek()?.kind === 'word') c.next();
+      }
+    } else if (c.isWord('during') && c.peek(1)?.kind === 'word') {
+      condition = this.parseCondition(c, headLine);
     }
 
     const variants: TextValue[] = [];
@@ -3062,8 +3665,8 @@ class Parser {
       name = nameTok.text;
     }
     let condition: ConditionNode | null = null;
-    if (c.isWord('while')) {
-      c.next();
+    if (c.isWord('while') || c.isWord('during')) {
+      if (c.isWord('while')) c.next();
       const condTokens: Token[] = [];
       while (!c.atEnd()) condTokens.push(c.next()!);
       condition = this.parseCondition(new Cursor(condTokens, headLine), headLine);
@@ -3627,7 +4230,7 @@ class Parser {
         }
         if (c.isWord('in')) {
           c.next();
-          const place = this.parseNameRef(c, () => false);
+          const place = this.parsePlace(c, line, new Set());
           return { kind: 'is-in', negated: false, place, span: place.span };
         }
         // `be any <name>` — membership over a named open condition (David,
@@ -5048,56 +5651,107 @@ class Parser {
   // ------------------------------------------------------------- on clause
 
   /**
-   * `on <verb> it` (intercept) / `after <verb> it` (react, ratchet D3) /
-   * `on every turn` — with `while <cond>` on any binding and the `, once`
-   * clause modifier (D5). Terminated by `end on` / `end after`.
+   * `on|after <actor> <gerund>` (intercept / react, ADR-327 D1) — the words
+   * before the gerund name who acts (`the player`, or a character); a bare
+   * `on <gerund>` is the block owner's own action (the own-block exception,
+   * legal only in an actor's block — the analyzer's gate). `anything as the
+   * <role>` may follow the gerund; `on every turn` is unchanged. `while
+   * <cond>` on any binding and the `, once` clause modifier (D5). Terminated
+   * by `end on` / `end after`.
+   *
+   * The head is split syntactically — D3's effect (the gerund is matched,
+   * never guessed) without the gerund set, which lives in other files: the
+   * LAST head word is the gerund, everything before it is the actor. A
+   * trailing `it` is the removed pre-ADR-327 spelling (`parse.removed-head-it`);
+   * the rest of the clause still parses so one migration line yields one
+   * diagnostic.
    */
   private parseOnClause(indent: number, clauseKind: 'on' | 'after'): OnClause {
     const headLine = this.lines[this.pos++];
     const c = new Cursor(headLine.tokens, headLine);
     c.matchWord(clauseKind);
-    const action = c.next();
-    let actionWord = '';
-    if (action && action.kind === 'word') {
-      actionWord = action.text;
-    } else {
-      this.diagnostics.error('parse.on-action', `Expected an action word after \`${clauseKind}\`.`, lineSpan(headLine));
-    }
 
-    let binding: OnClause['binding'] = 'it';
+    let actionWord = '';
+    let actor: ValueExpr | null = null;
+    let binding: OnClause['binding'] = 'object';
     let role: string | null = null;
     let condition: ConditionNode | null = null;
     let once = false;
     let ordering: OnClause['ordering'] = null;
 
-    if (actionWord === 'every' && c.isWord('turn')) {
+    if (c.isWord('every') && c.isWord('turn', 1)) {
       // `on every turn [while <condition>] [, once]` (§3.3 + D5).
+      c.next();
       c.next();
       binding = 'every-turn';
       actionWord = 'every-turn';
       if (clauseKind === 'after') {
         this.diagnostics.error('parse.after-every-turn', '`after every turn` is not a form — every-turn clauses are `on every turn` (they are not reactions to an action).', lineSpan(headLine));
       }
-    } else if (c.matchWord('anything')) {
-      // `on <action> anything as the <role>` (design.md §2.2 role binding).
-      binding = 'role';
-      if (!c.matchWord('as') || !c.matchWord('the')) {
-        this.diagnostics.error('parse.on-role', 'Expected `as the <role>` after `anything`.', c.restSpan());
-      }
-      const roleTok = c.next();
-      if (roleTok && roleTok.kind === 'word') {
-        role = roleTok.text;
-      } else {
-        this.diagnostics.error('parse.on-role', 'Expected a role name after `as the`.', c.restSpan());
-      }
     } else {
-      if (!c.matchWord('it')) {
-        this.diagnostics.error('parse.on-target', `Expected \`it\`, \`anything as the <role>\`, or \`every turn\` in the \`${clauseKind}\` header.`, c.restSpan());
+      // Head words: everything up to `while`, `anything`, a comma, or EOL.
+      const headWords: Token[] = [];
+      while (!c.atEnd()) {
+        const t = c.peek()!;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+        headWords.push(t);
+        c.next();
+      }
+      if (headWords.length === 0) {
+        this.diagnostics.error('parse.on-head', `Expected \`${clauseKind} <who acts> <action>\` — e.g. \`${clauseKind} the player taking\`.`, c.restSpan());
+      } else {
+        let gerundTok = headWords[headWords.length - 1];
+        let actorToks = headWords.slice(0, -1);
+        if (gerundTok.text === 'it' && actorToks.length > 0) {
+          // The removed spelling: `on taking it`. Drop the `it`, keep parsing.
+          const spelled = `${clauseKind} ${headWords.map((t) => t.text).join(' ')}`;
+          const gerund = actorToks[actorToks.length - 1].text;
+          this.diagnostics.error(
+            'parse.removed-head-it',
+            `\`${spelled}\` is no longer a form — name who acts: \`${clauseKind} the player ${gerund}\` (or the actor's name).`,
+            mergeSpans(headWords[0].span, gerundTok.span),
+          );
+          gerundTok = actorToks[actorToks.length - 1];
+          actorToks = [];
+          // actor stays null with binding 'object': the AST's marker that the
+          // head was already reported (OnClause.actor invariant).
+        } else if (actorToks.length > 0) {
+          actor = this.headActorExpr(actorToks);
+        } else {
+          // Bare head — the block owner's own action; the analyzer gates the owner.
+          binding = 'self';
+        }
+        actionWord = gerundTok.text;
+      }
+
+      if (c.matchWord('anything')) {
+        // `on <actor> <action> anything as the <role>` (design.md §2.2 role binding).
+        if (binding === 'self') {
+          this.diagnostics.error('parse.on-head', `A role head names who acts — write \`${clauseKind} the player ${actionWord} anything as the <role>\` (or the actor's name).`, lineSpan(headLine));
+        }
+        binding = 'role';
+        if (!c.matchWord('as') || !c.matchWord('the')) {
+          this.diagnostics.error('parse.on-role', 'Expected `as the <role>` after `anything`.', c.restSpan());
+        }
+        const roleTok = c.next();
+        if (roleTok && roleTok.kind === 'word') {
+          role = roleTok.text;
+        } else {
+          this.diagnostics.error('parse.on-role', 'Expected a role name after `as the`.', c.restSpan());
+        }
       }
     }
 
-    // `while <condition>` — legal on every binding (ownership package).
+    // `while <condition>` — legal on every binding (ownership package) — or
+    // ADR-330 D5's `during <chapter>`, sugar for `while during <chapter>`.
     if (c.matchWord('while')) {
+      condition = this.parseCondition(c, headLine);
+      if (c.isWord('during')) {
+        this.diagnostics.error('parse.head-while-during', 'A head takes `while <condition>` or `during <chapter>`, not both — write one `while`: `while during <chapter> and …`.', c.restSpan());
+        c.next();
+        if (c.peek()?.kind === 'word') c.next();
+      }
+    } else if (c.isWord('during') && c.peek(1)?.kind === 'word') {
       condition = this.parseCondition(c, headLine);
     }
 
@@ -5119,13 +5773,19 @@ class Parser {
       }
     }
 
-    const body = this.parseStatements(headLine.indent, clauseKind);
+    // ADR-329 D3: an every-turn body is a turn-phase site where a character
+    // may act; an intercept body is not. The statement parser sees the
+    // difference through the body kind it is handed.
+    const body = binding === 'every-turn'
+      ? this.parseStatements(headLine.indent, 'every-turn', 'on every turn')
+      : this.parseStatements(headLine.indent, clauseKind);
     const endSpan = this.consumeEnd(clauseKind, headLine);
 
     return {
       kind: 'on-clause',
       clauseKind,
       action: actionWord,
+      actor,
       binding,
       role,
       condition,
@@ -6301,8 +6961,8 @@ class Parser {
     // `<subject> must <predicate>: <key>` body statement (ratchet D6).
     if (lineHasMust(line)) {
       this.pos++;
-      if (blockKeyword === 'after') {
-        this.reportRefusalInAfter(line);
+      if (isReactionBlock(blockKeyword)) {
+        this.reportRefusalInAfter(line, blockKeyword);
         return null;
       }
       return this.parseMustLine(line);
@@ -6316,8 +6976,8 @@ class Parser {
         // `refuse when <condition>: <key>` — the prohibition form (D6) in
         // body position; same shape as the define-action line.
         if (word === 'refuse' && c.isWord('when')) {
-          if (blockKeyword === 'after') {
-            this.reportRefusalInAfter(line);
+          if (isReactionBlock(blockKeyword)) {
+            this.reportRefusalInAfter(line, blockKeyword);
             return null;
           }
           return this.parseRefuseWhenStatement(line);
@@ -6329,8 +6989,8 @@ class Parser {
         }
         const params = this.parseParams(c, line);
         if (word === 'refuse') {
-          if (blockKeyword === 'after') {
-            this.reportRefusalInAfter(line);
+          if (isReactionBlock(blockKeyword)) {
+            this.reportRefusalInAfter(line, blockKeyword);
             return null;
           }
           // Misordered prohibition (platform-issue-sweep Phase 8 #15c):
@@ -6348,6 +7008,10 @@ class Parser {
           return { kind: 'refuse', phraseKey: key, params, span: lineSpan(line) } as RefuseStmt;
         }
         const stmtWhen = this.parseStatementWhen(c, line);
+        // GH #335: the other order — `phrase <key> when <cond> with <p> = <v>`.
+        // The condition stops at `with` (a PHRASE_STOP), so any bindings that
+        // follow it are read now rather than left unconsumed.
+        if (c.isWord('with')) params.push(...this.parseParams(c, line));
         // Declare-and-emit sugar (§2.6/§3.3): a deeper-indented bare prose
         // block after `phrase <key>` registers the text under the key.
         let inlineText: TextValue | null = null;
@@ -6390,8 +7054,20 @@ class Parser {
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'emit', event, payload, stmtWhen, span: lineSpan(line) } as EmitStmt;
       }
+      case 'stop': {
+        // `stop music` / `stop ambient` are media (ADR-216); any other
+        // object is a timer (ADR-325 D3c).
+        if (c.isWord('music', 1) || c.isWord('ambient', 1)) {
+          this.pos++;
+          return this.parseMediaStatement(word, c, line);
+        }
+        this.pos++;
+        c.next();
+        const target = this.parseValueExpr(c, line, new Set(['when']));
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'timer-verb', verb: 'stop', target, stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
+      }
       case 'play':
-      case 'stop':
       case 'show':
       case 'hide':
       case 'transition':
@@ -6407,8 +7083,25 @@ class Parser {
           this.diagnostics.error('parse.set-to', `Expected \`to <value>\` in the \`set\` statement.${this.misparseHint(line)}`, c.restSpan());
           return null;
         }
-        const value = this.parseValueExpr(c, line, new Set());
-        return { kind: 'set', target, value, span: lineSpan(line) } as SetStmt;
+        const value = this.parseValueExpr(c, line, new Set(['when']));
+        const stmtWhen = this.parseStatementWhen(c, line);
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.set-trailing', `Unexpected words after the \`set\` value: \`${c.peek()!.text}\`.`, c.restSpan());
+          return null;
+        }
+        return { kind: 'set', target, value, stmtWhen, span: lineSpan(line) } as SetStmt;
+      }
+      case 'start':
+      case 'restart':
+      case 'reset':
+      case 'interrupt': {
+        // ADR-325 D3c: `<verb> <timer> [when <cond>]`.
+        this.pos++;
+        c.next();
+        const target = this.parseValueExpr(c, line, new Set(['when']));
+        if (target.kind === 'bare' && target.words.length === 0) return null;
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: 'timer-verb', verb: word, target, stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
       }
       case 'raise':
       case 'lower': {
@@ -6474,6 +7167,25 @@ class Parser {
             span: lineSpan(line),
           } as ChangeFeelingStmt;
         }
+        // ADR-327 D9/D10: `change the player to <entity>` — the role moves to
+        // a named character. The tail is a name ref, not the single state word
+        // the generic `change` takes, so this is its own statement kind and
+        // has to be recognized before the generic target parse consumes `to`.
+        const playerAt = c.isWord('the') && c.isWord('player', 1) ? 2 : c.isWord('player') ? 1 : -1;
+        if (playerAt > 0 && c.isWord('to', playerAt)) {
+          for (let i = 0; i <= playerAt; i++) c.next();
+          const target = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+          if (target.words.length === 0) {
+            this.diagnostics.error(
+              'parse.change-player',
+              'Expected a character name after `change the player to`.',
+              c.restSpan(),
+            );
+            return null;
+          }
+          const stmtWhen = this.parseStatementWhen(c, line);
+          return { kind: 'change-player', target, stmtWhen, span: lineSpan(line) } as ChangePlayerStmt;
+        }
         const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
         if (!c.matchWord('to')) {
           this.diagnostics.error('parse.change-to', 'Expected `to <state>` in the `change` statement.', c.restSpan());
@@ -6488,14 +7200,25 @@ class Parser {
         return { kind: 'change', entity, state: state.text, stmtWhen, span: lineSpan(line) } as ChangeStmt;
       }
       case 'move': {
+        // ADR-325 D1–D2: `move X to <place>` | `move X here` | `move X offstage`.
+        // A trailing `here`/`offstage` (end of line or before `when`) ends
+        // the entity; anywhere else it is part of the entity's name.
         this.pos++;
         c.next();
-        const entity = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
-        if (!c.matchWord('to')) {
-          this.diagnostics.error('parse.move-to', `Expected \`to <place>\` in the \`move\` statement.${this.misparseHint(line)}`, c.restSpan());
-          return null;
+        const entity = this.parseNameRef(c, (t) =>
+          t.kind === 'word' && (t.text === 'to' || (this.isTrailingPlaceWord(c, t.text))),
+        );
+        let place: PlaceExpr;
+        if (c.isWord('here') || c.isWord('offstage')) {
+          const tok = c.next()!;
+          place = { kind: tok.text as 'here' | 'offstage', span: tok.span };
+        } else {
+          if (!c.matchWord('to')) {
+            this.diagnostics.error('parse.move-to', `Expected \`to <place>\`, \`here\`, or \`offstage\` in the \`move\` statement.${this.misparseHint(line)}`, c.restSpan());
+            return null;
+          }
+          place = this.parsePlace(c, line, new Set(['when']), true);
         }
-        const place = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'move', entity, place, stmtWhen, span: lineSpan(line) } as MoveStmt;
       }
@@ -6562,7 +7285,22 @@ class Parser {
           c.next();
         }
         const stmtWhen = this.parseStatementWhen(c, line);
-        return { kind: 'kill', phraseKey, stmtWhen, span: lineSpan(line) } as KillStmt;
+        // ADR-325 D3i: an indented prose block in place of the key — the
+        // same declare-and-emit shape `phrase <key>` takes.
+        let inlineText: TextValue | null = null;
+        const next = this.lines[this.pos];
+        if (next && next.indent > line.indent && !isStatementLine(next)) {
+          if (phraseKey) {
+            this.diagnostics.error(
+              'parse.kill-body',
+              '`kill the player` takes a phrase key or an indented text body, not both.',
+              lineSpan(next),
+            );
+          }
+          inlineText = this.parseProseParagraph(line.indent + 1, line.indent);
+        }
+        const span = inlineText ? mergeSpans(lineSpan(line), inlineText.span) : lineSpan(line);
+        return { kind: 'kill', phraseKey, inlineText, stmtWhen, span } as KillStmt;
       }
       case 'then': {
         // ADR-320 D4/D8: `then asks|invites <exchange-key>` — open the
@@ -6667,7 +7405,12 @@ class Parser {
         return this.parseSelect(line, blockKeyword);
       case 'each':
         return this.parseEachBlock(line, blockKeyword);
-      default:
+      default: {
+        // ADR-329 D1: a name-led line whose later words include an action
+        // verb is an acting statement candidate — `the guards take the
+        // sword`. Anything else stays the unknown statement it always was.
+        const act = this.tryParseActStatement(line, blockKeyword);
+        if (act) return act;
         this.diagnostics.error(
           'parse.unknown-statement',
           `Unknown statement \`${word ?? line.raw.trim()}\` in \`${blockName}\` block.${this.misparseHint(line)}`,
@@ -6675,7 +7418,82 @@ class Parser {
         );
         this.pos++;
         return null;
+      }
     }
+  }
+
+  /**
+   * ADR-329 D1: admit `<actor> <verb> …` as an acting statement when the line
+   * is all words (a `when` suffix aside) and some word after the first lemma-
+   * matches a verb that opens a standard shape or one of this file's own
+   * `define action`/`extend action` grammar lines. The words are carried raw:
+   * only the analyzer knows the story's entities, so only it can split the
+   * actor from the verb. Returns null — and consumes nothing — when the line
+   * is not a candidate.
+   */
+  private tryParseActStatement(line: Line, blockKeyword: string): ActStmt | null {
+    const tokens = line.tokens;
+    if (tokens.length < 2 || tokens[0].kind !== 'word') return null;
+    let whenIndex = tokens.length;
+    for (let i = 2; i < tokens.length; i++) {
+      if (tokens[i].kind === 'word' && tokens[i].text === 'when') { whenIndex = i; break; }
+    }
+    const words = tokens.slice(0, whenIndex);
+    if (words.length < 2) return null;
+    if (!words.every((t) => t.kind === 'word' || t.kind === 'number')) return null;
+    const lexicon = stdlibActVerbs();
+    const story = this.storyVerbLexicon();
+    const hasVerb = words.slice(1).some((t) => {
+      for (const lemma of verbLemmas(t.text)) if (lexicon.has(lemma) || story.has(lemma)) return true;
+      return false;
+    });
+    if (!hasVerb) return null;
+    this.pos++;
+    const c = new Cursor(tokens, line);
+    c.i = whenIndex;
+    const stmtWhen = this.parseStatementWhen(c, line);
+    return {
+      kind: 'act',
+      words: words.map((t) => ({ text: t.text, span: t.span })),
+      bodyKind: blockKeyword,
+      stmtWhen,
+      span: lineSpan(line),
+    };
+  }
+
+  private storyVerbs: Set<string> | null = null;
+
+  /**
+   * The verbs this file's own `define action` / `extend action` grammar lines
+   * open with — scanned once, structurally: an indent-0 `define action` or
+   * `extend action` line, then the first word of every line deeper than its
+   * `grammar` line until the block ends. A heuristic for admission only; the
+   * analyzer matches the real shapes.
+   */
+  private storyVerbLexicon(): Set<string> {
+    if (this.storyVerbs) return this.storyVerbs;
+    const out = new Set<string>();
+    let inAction = false;
+    let grammarIndent: number | null = null;
+    for (const line of this.lines) {
+      const first = line.tokens[0];
+      if (line.indent === 0) {
+        inAction = first?.kind === 'word' && (first.text === 'define' || first.text === 'extend')
+          && line.tokens[1]?.kind === 'word' && line.tokens[1].text === 'action';
+        grammarIndent = null;
+        continue;
+      }
+      if (!inAction || !first) continue;
+      if (first.kind === 'word' && first.text === 'grammar' && line.tokens.length === 1) {
+        grammarIndent = line.indent;
+        continue;
+      }
+      if (grammarIndent === null) continue;
+      if (line.indent <= grammarIndent) { grammarIndent = null; continue; }
+      if (first.kind === 'word') out.add(first.text.toLowerCase());
+    }
+    this.storyVerbs = out;
+    return out;
   }
 
   /** The statement `when <condition>` suffix (ratchet D7); null when absent. */
@@ -6717,10 +7535,12 @@ class Parser {
   }
 
   /** `refuse`/`must` inside an `after` clause — reactions cannot refuse (D3). */
-  private reportRefusalInAfter(line: Line): void {
+  private reportRefusalInAfter(line: Line, blockKeyword: string): void {
     this.diagnostics.error(
       'parse.react-refusal',
-      'Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.',
+      blockKeyword === 'when'
+        ? 'Refusals (`refuse`, `must`) cannot appear in a `when … moves` or `when … expires` clause — the event has already happened. A refusal belongs on the mover\'s own `on going`.'
+        : 'Refusals (`refuse`, `must`) cannot appear in an `after` clause — reactions run after the action succeeded. Use an `on` clause to intercept.',
       lineSpan(line),
     );
   }
@@ -6772,7 +7592,9 @@ class Parser {
         this.diagnostics.error('parse.param-eq', 'Expected `= <value>` in the `with` binding.', c.restSpan());
         break;
       }
-      const value = this.parseValueExpr(c, line, new Set(['with']));
+      // GH #335: `when` stops the value too, so `with item = it when calm`
+      // reads as a binding followed by the statement's condition.
+      const value = this.parseValueExpr(c, line, new Set(['with', 'when']));
       params.push({ param, value, span: start ? mergeSpans(start.span, value.span) : value.span });
     }
     return params;
@@ -6936,6 +7758,93 @@ class Parser {
   // ----------------------------------------------------------- expressions
 
   /** Parse a name reference: optional article + words until a stop. */
+  /**
+   * Is `word` at the cursor a trailing `here`/`offstage` — the last word of
+   * the line, or followed only by a `when` clause? Only then does it end the
+   * `move` entity (ADR-325 D1–D2); `the stage crew` keeps its name.
+   */
+  private isTrailingPlaceWord(c: Cursor, word: string): boolean {
+    if (word !== 'here' && word !== 'offstage') return false;
+    const after = c.peek(1);
+    return !after || (after.kind === 'word' && after.text === 'when');
+  }
+
+  /**
+   * Parse a place (ADR-325 D1): a possessive `location` (`Teisha's
+   * location`, `its location`, `the player's location`), or otherwise a
+   * name exactly as before — an apostrophe inside a name (`the
+   * Weaponsmith's Stall`) is part of the name, not a possessive. Stops at
+   * PHRASE_STOPS or `extraStops`.
+   */
+  private parsePlace(c: Cursor, line: Line, extraStops: Set<string>, allowAdjacent = false): PlaceExpr {
+    const adjacent = this.parseAdjacentRoomPlace(c);
+    if (adjacent) {
+      if (!allowAdjacent) {
+        // ADR-326 D1: the computed place is a `move` destination only — in a
+        // condition it would be a predicate, and the ADR deliberately adds no
+        // adjacency condition (Non-goals). One gate here covers every caller.
+        this.diagnostics.error(
+          'parse.adjacent-room-placement',
+          '`a random adjacent room` is a place for `move … to`, not a condition — write `is in <room>`.',
+          adjacent.span,
+        );
+      }
+      return adjacent;
+    }
+    const start = c.i;
+    const expr = this.parseValueExpr(c, line, extraStops);
+    if (expr.kind === 'possessive' && expr.field.length === 1 && expr.field[0] === 'location') {
+      return { kind: 'location', owner: expr.base, span: expr.span };
+    }
+    c.i = start;
+    const ref = this.parseNameRef(c, (t) => t.kind === 'word' && (PHRASE_STOPS.has(t.text) || extraStops.has(t.text)));
+    return { kind: 'name', ref, span: ref.span };
+  }
+
+  /**
+   * `a random adjacent room` (ADR-326 D1) — the one computed place. The
+   * spelling is exact: the randomness lives in the noun, so a missing
+   * `random` and a trailing strategy word are both named errors with the
+   * ruled spelling as the fix-it. Returns null when the words are not an
+   * adjacent-room place at all (an ordinary name follows).
+   */
+  private parseAdjacentRoomPlace(c: Cursor): PlaceExpr | null {
+    const words: string[] = [];
+    for (let i = 0; i < 4; i++) {
+      const t = c.peek(i);
+      if (!t || t.kind !== 'word') break;
+      words.push(t.text.toLowerCase());
+    }
+    const idx = words.indexOf('adjacent');
+    if (idx === -1 || words[idx + 1] !== 'room') return null;
+    const lead = words.slice(0, idx);
+    const exact = lead.length === 2 && lead[0] === 'a' && lead[1] === 'random';
+    const first = c.peek()!;
+    let span = first.span;
+    for (let i = 0; i < idx + 2; i++) span = mergeSpans(span, c.next()!.span);
+    if (!exact) {
+      this.diagnostics.error(
+        'parse.adjacent-room-spelling',
+        'The adjacent-room place is spelled `a random adjacent room` — the randomness is in the noun (ADR-326).',
+        span,
+      );
+    }
+    // A strategy word after the place (`, randomly`) says the randomness twice.
+    const afterComma = c.peek()?.kind === 'comma' ? 1 : 0;
+    const next = c.peek(afterComma);
+    if (next && next.kind === 'word' && STRATEGY_WORDS.has(next.text.toLowerCase())) {
+      let strategySpan = next.span;
+      if (afterComma) strategySpan = mergeSpans(c.next()!.span, strategySpan);
+      c.next();
+      this.diagnostics.error(
+        'parse.adjacent-room-strategy',
+        `\`a random adjacent room\` takes no strategy word — drop \`${next.text}\`; the candidate set is drawn afresh each time, so \`random\` already says how (ADR-326).`,
+        strategySpan,
+      );
+    }
+    return { kind: 'adjacent-room', span };
+  }
+
   private parseNameRef(c: Cursor, stop: (t: Token) => boolean): NameRef {
     let article: string | null = null;
     const first = c.peek();
@@ -6954,6 +7863,20 @@ class Parser {
       c.next();
     }
     return { kind: 'name', article, words, span: span ?? spanOf(c.line.lineNo, 1) };
+  }
+
+  /**
+   * The actor of a clause head (ADR-327 D1) as a value expression: an
+   * optional article then the name words, already split from the gerund by
+   * `parseOnClause`. Never empty — the caller passes at least one token. A
+   * lone article stays a word so the analyzer can name what it saw.
+   */
+  private headActorExpr(toks: Token[]): ValueExpr {
+    const span = mergeSpans(toks[0].span, toks[toks.length - 1].span);
+    const hasArticle = toks.length > 1 && ARTICLES.has(toks[0].text);
+    const article = hasArticle ? toks[0].text : null;
+    const words = (hasArticle ? toks.slice(1) : toks).map((t) => t.text);
+    return { kind: 'ref', ref: { kind: 'name', article, words, span }, span };
   }
 
   /**
@@ -7011,7 +7934,8 @@ class Parser {
       if (PHRASE_STOPS.has(t.text) || extraStops.has(t.text)) break;
       c.next();
       span = mergeSpans(span, t.span);
-      const poss = /^(.*)'s$/.exec(t.text);
+      // `innkeeper's` → innkeeper; `guards'` → guards (plural possessive, GH #305).
+      const poss = /^(.*)'s$/.exec(t.text) ?? /^(.*s)'$/.exec(t.text);
       if (poss) {
         words.push(poss[1]);
         possessiveBase = poss[1];
@@ -7178,6 +8102,14 @@ class Parser {
       }
     }
 
+    // ADR-330 D5: `during|before|after <chapter>` — the chapter's name is one
+    // standalone word; the analyzer resolves it to the row's ordinal.
+    if (t.kind === 'word' && (t.text === 'during' || t.text === 'before' || t.text === 'after') && c.peek(1)?.kind === 'word' && this.isBareConditionRef(c, 1)) {
+      c.next();
+      const name = c.next()!;
+      return { kind: 'chapter', relation: t.text as 'during' | 'before' | 'after', name: name.text.toLowerCase(), span: mergeSpans(t.span, name.span) };
+    }
+
     // Bare single word (before a connective or end of condition): a named
     // condition reference, e.g. `while in-darkness`.
     if (t.kind === 'word' && !ARTICLES.has(t.text) && this.isBareConditionRef(c)) {
@@ -7235,7 +8167,7 @@ class Parser {
       }
       if (c.isWord('in')) {
         c.next();
-        const place = this.parseNameRef(c, () => false);
+        const place = this.parsePlace(c, line, new Set());
         return {
           kind: 'predicate',
           subject,
@@ -7315,6 +8247,19 @@ class Parser {
         subject,
         predicate: { kind: 'is', negated, value, span: value.span },
         span: mergeSpans(subject.span, value.span),
+      };
+    }
+
+    if (t.text === 'has' && this.isTimerHasRead(c)) {
+      // ADR-325 D3d: `<timer> has [not] started|expired` — the lifecycle reads.
+      c.next();
+      const negated = !!c.matchWord('not');
+      const what = c.next()!;
+      return {
+        kind: 'predicate',
+        subject,
+        predicate: { kind: 'timer-has', negated, what: what.text as 'started' | 'expired', span: what.span },
+        span: mergeSpans(subject.span, what.span),
       };
     }
 

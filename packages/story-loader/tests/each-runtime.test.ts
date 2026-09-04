@@ -87,7 +87,7 @@ function runAction(l: Loaded, actionId: string, targetIrId: string) {
   return { validation, events: action.report(ctx) };
 }
 
-/** Fire a room's `after entering it` clauses, the runtime.test.ts way. */
+/** Fire a room's `after the player entering` clauses, the runtime.test.ts way. */
 function enter(l: Loaded, roomIrId: string): ISemanticEvent[] {
   const roomId = l.story.entityId(roomIrId)!;
   l.world.moveEntity(l.player.id, roomId);
@@ -291,7 +291,7 @@ describe('each through the standard-action interceptor paths (§5.4 two-phase)',
 
   it('trait on-clause (buildTraitInterceptor): each + the match/it coexist through the trait path', () => {
     const l = load();
-    const result = drivePhases(l, 'pen'); // tidyable's `on reading it`
+    const result = drivePhases(l, 'pen'); // tidyable's `on the player reading`
     // `phrase dust-spotted when the match is in it` — match=dust, it=pen.
     expect(result.override).toMatchObject({ messageId: 'dust-spotted' });
     const emitted = (result.emit ?? []).map((e: { payload: Record<string, unknown> }) => e.payload.messageId);

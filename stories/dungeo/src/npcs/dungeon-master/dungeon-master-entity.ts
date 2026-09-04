@@ -15,7 +15,7 @@ import {
   IdentityTrait,
   ActorTrait,
   NpcTrait,
-  EntityType
+  EntityType, NightVisionTrait
 } from '@sharpee/world-model';
 
 /**
@@ -82,6 +82,7 @@ export function createDungeonMaster(
   }));
 
   // NPC behavior - uses custom 'dungeon-master' behavior
+  dm.add(new NightVisionTrait()); // the underground is dark; its residents see (ADR-328 D5)
   dm.add(new NpcTrait({
     behaviorId: 'dungeon-master',
     isHostile: false,  // Never hostile - an ally

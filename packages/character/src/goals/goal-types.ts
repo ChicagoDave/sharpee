@@ -110,6 +110,30 @@ export interface DropStep extends StepBase {
   location?: string;
 }
 
+/**
+ * The slots of a `perform` step, as the execution entry's roles: world
+ * entity ids for the objects, the direction word for a `going` action.
+ */
+export interface PerformSlots {
+  directObject?: string;
+  indirectObject?: string;
+  instrument?: string;
+  direction?: string;
+}
+
+/**
+ * Perform one action now, as the NPC (ADR-329 D10): a Chord goal line in
+ * an action's own words — `conjure the key into the Vault`, `go east`,
+ * `open the door`. No planning half: the action's own validate is the only
+ * gate, and a refusal retries next tick (D6's ruling).
+ */
+export interface PerformStep extends StepBase {
+  type: 'perform';
+  /** The qualified action id (`if.action.<name>` or `chord.action.<name>`). */
+  actionId: string;
+  slots: PerformSlots;
+}
+
 /** Union of all goal step types. */
 export type GoalStep =
   | SeekStep
@@ -119,7 +143,8 @@ export type GoalStep =
   | ActStep
   | SayStep
   | GiveStep
-  | DropStep;
+  | DropStep
+  | PerformStep;
 
 // ---------------------------------------------------------------------------
 // Goal definition
@@ -224,7 +249,8 @@ export type StepMutation =
   | { kind: 'move'; toRoom: string }
   | { kind: 'take'; itemId: string }
   | { kind: 'give'; itemId: string; toId: string }
-  | { kind: 'drop'; itemId: string };
+  | { kind: 'drop'; itemId: string }
+  | { kind: 'perform'; actionId: string; slots: PerformSlots };
 
 /** Result of evaluating a single goal step. */
 export type StepResult =

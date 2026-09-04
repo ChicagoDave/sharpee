@@ -15,7 +15,7 @@ create the green door
 
   A green door in the north wall, painted and peeling.
 
-  on going it
+  on the player going
     refuse when the player holds the wheelbarrow: barrow-too-wide
   end on
 
@@ -27,7 +27,7 @@ create the Potting Shed
 
   Clay pots on every shelf, and the smell of compost.
 
-  after entering it, once
+  after the player entering, once
     phrase shed-memory
       You spent a whole summer in here once, pricking out seedlings.
   end after
@@ -44,12 +44,18 @@ create the wheelbarrow
 
   A wooden wheelbarrow, wider than it needs to be.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Walled Garden
 
 define phrases en-US
   wall-too-high:
-    The south wall is twelve feet of smooth brick. Not without a ladder.</code></pre>
+    The south wall is twelve feet of smooth brick. Not without a ladder.
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; south
 The south wall is twelve feet of smooth brick. Not without a ladder.
@@ -83,6 +89,6 @@ Potting Shed
 Clay pots on every shelf, and the smell of compost.
 
 You spent a whole summer in here once, pricking out seedlings.</code></pre>
-<p>One walk covers the seams: the blocked wall speaks the story's phrase, the dark Grotto lets you in but shows you nothing, the closed door refuses, the door's own <code>on going it</code> guard vetoes the wheelbarrow, and the shed's <code>after entering it, once</code> greets the first arrival.</p>
+<p>One walk covers the seams: the blocked wall speaks the story's phrase, the dark Grotto lets you in but shows you nothing, the closed door refuses, the door's own <code>on the player going</code> guard vetoes the wheelbarrow, and the shed's <code>after the player entering, once</code> greets the first arrival.</p>
 <table><thead><tr><th></th><th>go (<code>going-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_direction</code> · <code>not_in_room</code> (in a vehicle, not a room) · <code>no_exits</code> · <code>no_exit_that_way</code> · <code>movement_blocked</code> (the story's blocked phrase) · <code>door_locked</code> · <code>door_closed</code> · <code>destination_not_found</code></td></tr><tr><td>Success</td><td><code>moved</code> · <code>moved_to</code> · <code>first_visit</code> · <code>too_dark</code> (you arrived; you just can't see)</td></tr><tr><td>Events</td><td><code>actor_exited</code> / <code>actor_moved</code> / <code>actor_entered</code>, plus <code>region_exited</code> / <code>region_entered</code> on region crossings: what <code>after going</code> clauses and daemons key off</td></tr></tbody></table>
-<p>Interceptors: going consults three parties in order: the room being left (<code>on going it</code>), the room being entered (its clauses bind as <code>entering_room</code> conditions; this is how a room refuses entry rather than refusing exit), and the door being passed through (<code>on going it</code> on the door, as the green door shows). First refusal wins. Regions can react to the crossing events on their own blocks: <code>after entering it</code> / <code>after leaving it</code>.</p>
+<p>Interceptors: going consults three parties in order: the room being left (<code>on the player going</code>), the room being entered (its clauses bind as <code>entering_room</code> conditions; this is how a room refuses entry rather than refusing exit), and the door being passed through (<code>on the player going</code> on the door, as the green door shows). First refusal wins. Regions can react to the crossing events on their own blocks: <code>after the player entering</code> / <code>after the player leaving</code>.</p>

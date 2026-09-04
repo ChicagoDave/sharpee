@@ -46,7 +46,7 @@ create the dead letters bin
 
   A wire bin for letters no one will ever claim.
 
-  on putting it
+  on the player putting
     refuse bin-sealed
   end on
 
@@ -63,12 +63,18 @@ create the stamp
 
   A commemorative stamp, unlicked.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Sorting Office
 
 override message putting-put-in
   It slides in with a papery whisper.
 end override
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -100,7 +106,7 @@ You put the letter on the oak counter.
 ```
 
 The delegation in one scene: a single `override message` under putting's
-`put_in` re-voices both phrasings, and the bin's single `on putting it`
+`put_in` re-voices both phrasings, and the bin's single `on the player putting`
 guard catches the `insert` command too, while `put … on` renders `put_on`
 untouched.
 
@@ -110,9 +116,9 @@ untouched.
 | Success | `put_in` · `put_on` (INSERT reports through `put_in`) | — (delegates to putting) |
 | Events | `put_in` / `put_on` / `put_blocked` | `insert_blocked` |
 
-Interceptors: `on putting it` / `on inserting it` on the item or the
-container. An INSERT consults `on inserting it` first, then (through the
-delegation) `on putting it` on both entities, so register a given entity
+Interceptors: `on the player putting` / `on the player inserting` on the item or the
+container. An INSERT consults `on the player inserting` first, then (through the
+delegation) `on the player putting` on both entities, so register a given entity
 under **one** of the two gerunds, not both, or it will run twice;
-`on putting it` covers both phrasings, and in `put all in the case` a
+`on the player putting` covers both phrasings, and in `put all in the case` a
 container-side clause runs once per deposited item.

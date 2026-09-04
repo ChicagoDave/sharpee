@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-loader",
-  "version": "5.1.1",
+  "version": "5.3.0",
   "description": "Story IR interpreter for Sharpee — a generic Story implementation constructed from Chord-compiled IR (ADR-210)",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
@@ -27,16 +27,18 @@
     "@sharpee/ext-basic-combat": "workspace:*",
     "@sharpee/ext-scoring": "workspace:*",
     "@sharpee/ext-hunger": "workspace:*",
+    "@sharpee/ext-chapters": "workspace:*",
     "@sharpee/if-domain": "workspace:*",
     "@sharpee/plugins": "workspace:*",
-    "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/world-model": "workspace:*"
   },
   "devDependencies": {
+    "@sharpee/event-processor": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
+    "@sharpee/parser-en-us": "workspace:*",
     "@types/node": "^20.11.19",
     "rimraf": "^5.0.5",
     "typescript": "^5.3.3",

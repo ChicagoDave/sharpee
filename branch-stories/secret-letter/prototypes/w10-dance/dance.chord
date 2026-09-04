@@ -1,0 +1,247 @@
+## ---------------------------------------------------------------------------
+## THE DANCE — the rotation, the turn budget, the hand-off, the music's end.
+##
+## `the dance` is a scenery thing whose state is the current hand. Its `hand`
+## timer is the turn budget: one named turn, so a hand lasts two turns, then
+## the expiry passes the player on and restarts the clock. The partners'
+## own `waiting`/`dancing` states are what their threads and the refusal
+## trait read, so a partner never has to know the dance's state by name.
+## ---------------------------------------------------------------------------
+
+define timer hand for the dance
+  turning
+end timer
+
+create the dance
+  scenery
+  aka circle, circles, music, rotation
+  states, reversible: first, second, third
+  in the Ballroom
+
+  (W-10 placeholder — the dance: concentric circles, the hand changes every
+  two turns.)
+
+  ## ONE expiry clause, arms by state. Three `when hand expires, while the
+  ## dance is <state>` clauses cascade: each `while` is read after the
+  ## clause before it has changed the state, so one expiry ran first,
+  ## second, third in a single turn (observed 2026-09-02). `select on`
+  ## reads the state once.
+
+  when hand expires
+    select on the dance's state
+      when first
+        change the dance to second
+        change the first partner to waiting
+        change the second partner to dancing
+        phrase hand-off
+      when second
+        change the dance to third
+        change the second partner to waiting
+        change the third partner to dancing
+        phrase hand-off
+      when third
+        change the dance to first
+        change the third partner to waiting
+        change the first partner to dancing
+        raise rounds by 1
+        phrase round-again
+    end select
+    restart hand
+  end when
+
+  ## The music's end: every partner's thread concluded — "had her say".
+
+  on every turn while spoken is 3, once
+    change the story to ended
+    stop hand
+    phrase music-stops
+  end on
+
+## A partner who is not the current hand cannot be spoken to: the circle has
+## her by the other hand.
+
+define trait hand-of-the-dance
+  on the player talking while it is waiting
+    refuse not-your-hand
+  end on
+end trait
+
+## ---------------------------------------------------------------------------
+## THE PARTNERS — three placeholders, each with a thread of TODO beats the
+## partner carries himself (`opens when` dancing), and one topic row keyed
+## to the round, the cross-round memory check.
+## ---------------------------------------------------------------------------
+
+create the first partner
+  a person
+  hand-of-the-dance
+  aka first
+  pronouns he
+  states, reversible: dancing, waiting
+  mood calm
+  in the Ballroom
+
+  (W-10 placeholder — the first partner.)
+
+define conversation first-hand for the first partner, passive
+  opens when the first partner is dancing
+  beat:
+    phrase first-beat-one
+  beat:
+    phrase first-beat-two
+  beat:
+    phrase first-beat-three
+  on parting:
+    phrase first-parting
+  on resuming:
+    phrase first-resuming
+  conclusion:
+    phrase first-conclusion
+    raise spoken by 1
+end conversation
+
+define topics for the first partner
+  about "the weather":
+    phrase first-weather-round-one when rounds is at most 1
+    phrase first-weather-later when rounds is at least 2
+end topics
+
+create the second partner
+  a person
+  hand-of-the-dance
+  aka second
+  pronouns she
+  states, reversible: waiting, dancing
+  mood calm
+  in the Ballroom
+
+  (W-10 placeholder — the second partner.)
+
+define conversation second-hand for the second partner, passive
+  opens when the second partner is dancing
+  beat:
+    phrase second-beat-one
+  beat:
+    phrase second-beat-two
+  on parting:
+    phrase second-parting
+  on resuming:
+    phrase second-resuming
+  conclusion:
+    phrase second-conclusion
+    raise spoken by 1
+end conversation
+
+define topics for the second partner
+  about "the weather":
+    phrase second-weather
+end topics
+
+create the third partner
+  a person
+  hand-of-the-dance
+  aka third
+  pronouns they
+  states, reversible: waiting, dancing
+  mood calm
+  in the Ballroom
+
+  (W-10 placeholder — the third partner.)
+
+define conversation third-hand for the third partner, passive
+  opens when the third partner is dancing
+  beat:
+    phrase third-beat-one
+  on parting:
+    phrase third-parting
+  on resuming:
+    phrase third-resuming
+  conclusion:
+    phrase third-conclusion
+    raise spoken by 1
+end conversation
+
+define topics for the third partner
+  about "the weather":
+    phrase third-weather
+end topics
+
+## ---------------------------------------------------------------------------
+## THE MARKERS — every one a placeholder.
+## ---------------------------------------------------------------------------
+
+define phrase hand-off
+  (W-10 marker — HAND-OFF: the circle turns and a new hand takes yours.)
+end phrase
+
+define phrase round-again
+  (W-10 marker — ROUND: the circle has come back to the first hand.)
+end phrase
+
+define phrase music-stops
+  (W-10 marker — MUSIC STOPS: every partner has had their say.)
+end phrase
+
+define phrase not-your-hand
+  (W-10 marker — NOT YOUR HAND: the circle has you by the other hand.)
+end phrase
+
+define phrase first-beat-one
+  (W-10 marker — first partner, beat 1.)
+end phrase
+define phrase first-beat-two
+  (W-10 marker — first partner, beat 2.)
+end phrase
+define phrase first-beat-three
+  (W-10 marker — first partner, beat 3.)
+end phrase
+define phrase first-parting
+  (W-10 marker — first partner, PARTING.)
+end phrase
+define phrase first-resuming
+  (W-10 marker — first partner, RESUMING where we left off.)
+end phrase
+define phrase first-conclusion
+  (W-10 marker — first partner, CONCLUSION.)
+end phrase
+define phrase first-weather-round-one
+  (W-10 marker — first partner on the weather, ROUND ONE.)
+end phrase
+define phrase first-weather-later
+  (W-10 marker — first partner on the weather, A LATER ROUND: memory across rounds.)
+end phrase
+
+define phrase second-beat-one
+  (W-10 marker — second partner, beat 1.)
+end phrase
+define phrase second-beat-two
+  (W-10 marker — second partner, beat 2.)
+end phrase
+define phrase second-parting
+  (W-10 marker — second partner, PARTING.)
+end phrase
+define phrase second-resuming
+  (W-10 marker — second partner, RESUMING.)
+end phrase
+define phrase second-conclusion
+  (W-10 marker — second partner, CONCLUSION.)
+end phrase
+define phrase second-weather
+  (W-10 marker — second partner on the weather.)
+end phrase
+
+define phrase third-beat-one
+  (W-10 marker — third partner, beat 1.)
+end phrase
+define phrase third-parting
+  (W-10 marker — third partner, PARTING.)
+end phrase
+define phrase third-resuming
+  (W-10 marker — third partner, RESUMING.)
+end phrase
+define phrase third-conclusion
+  (W-10 marker — third partner, CONCLUSION.)
+end phrase
+define phrase third-weather
+  (W-10 marker — third partner on the weather.)
+end phrase

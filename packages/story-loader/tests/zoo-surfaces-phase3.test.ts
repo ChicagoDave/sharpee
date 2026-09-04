@@ -2,12 +2,15 @@
  * zoo-surfaces-phase3.test.ts — Z3/Z3b/Z6 loader half (chord-zoo-surfaces
  * Phase 3, 2026-07-14): `present` blocks → ADR-212 slot entries (order,
  * counter keys, predicate gate ANDed with presence), `entered`/`exited`
- * witnessed-only narration on the `move` statement, `disappeared` riding
- * the ADR-213 observer (statement AND TS-initiated removals; unwitnessed
- * silent; orphaning never fires), and `detail` compiling to the shipped
+ * narration on the `move` statement (ADR-328 D3, 2026-08-28: both rows fire
+ * on every transition, each located at its room for the engine's presence
+ * tag — no longer witnessed-only), `disappeared` riding the ADR-213
+ * observer (statement AND TS-initiated removals; orphaning never fires),
+ * and `detail` compiling to the shipped
  * trait fields or the loader-owned state-clause provider.
  */
 import { describe, expect, it, vi } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
@@ -48,7 +51,7 @@ function boot(source: string): Booted {
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-/** Fire a room's `after entering it` clauses with the player already there. */
+/** Fire a room's `after the player entering` clauses with the player already there. */
 function enterRoom(booted: Booted, roomIrId: string): ISemanticEvent[] {
   const roomId = booted.story.entityId(roomIrId)!;
   booted.world.moveEntity(booted.playerId, roomId);
@@ -101,16 +104,23 @@ create the ghost
   phrase present while after-hours:
     A translucent shape drifts by.
 
-create the player
+create Alex
+  a person
+  playable
   in the Zoo
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   function bootWithEngine() {
     const booted = boot(SOURCE);
     const registered: Array<Record<string, unknown>> = [];
-    booted.story.onEngineReady({
+    booted.story.onEngineReady({ getNpcService: () => createNpcService(),
       getPluginRegistry: () => ({ register: () => {} }),
       registerSlotEntry: (entry: Record<string, unknown>) => void registered.push(entry),
     } as never);
@@ -160,7 +170,7 @@ create the player
   });
 });
 
-describe('Z3 entered/exited: witnessed-only on the move statement', () => {
+describe('Z3 entered/exited on the move statement — located, not gated (ADR-328 D3)', () => {
   const SOURCE = `story
   title: P3
   authors:
@@ -173,7 +183,7 @@ create the Lab
 
   A lab.
 
-  after entering it
+  after the player entering
     move the cat to the Annex when the cat is in the Lab
     move the cat to the Annex when the cat is in the Hall
   end after
@@ -188,7 +198,7 @@ create the Hall
 
   A hall.
 
-  after entering it
+  after the player entering
     move the cat to the Hall when the cat is in the Annex
   end after
 
@@ -205,17 +215,29 @@ create the cat
   phrase entered:
     The cat wanders in.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
-  it('exited fires when the player shares the source room, with counters keyed (owner, exited)', () => {
+  const eventFor = (events: ISemanticEvent[], messageId: string) =>
+    events.find((e) => (e.data as { messageId?: string }).messageId === messageId)!;
+
+  it('exited is located at the source room, with counters keyed (owner, exited)', () => {
     const booted = boot(SOURCE);
     const events = enterRoom(booted, 'lab'); // cat Lab → Annex, player in Lab
     expect(messageIdsOf(events)).toContain('cat.exited');
-    const exited = events.find((e) => (e.data as { messageId?: string }).messageId === 'cat.exited')!;
+    const exited = eventFor(events, 'cat.exited');
+    expect(exited.entities.location).toBe(booted.story.entityId('lab'));
+    expect(exited.entities.actor).toBe(booted.story.entityId('cat'));
     const variants = (exited.data as { params: { variants: Choice } }).params.variants;
     expect(variants).toMatchObject({
       kind: 'choice',
@@ -225,22 +247,25 @@ create the player
     });
   });
 
-  it('entered fires when the player shares the destination room', () => {
+  it('entered is located at the destination room — and the source row fires too, located at the source', () => {
     const booted = boot(SOURCE);
     enterRoom(booted, 'lab'); // cat → Annex
     const events = enterRoom(booted, 'hall'); // cat Annex → Hall = player's room
     expect(messageIdsOf(events)).toContain('cat.entered');
-    expect(messageIdsOf(events)).not.toContain('cat.exited'); // source unwitnessed
+    expect(eventFor(events, 'cat.entered').entities.location).toBe(booted.story.entityId('hall'));
+    // The source row is no longer dropped for being unwitnessed: it rides,
+    // located at the Annex, for the engine to tag absent and the client to hide.
+    expect(messageIdsOf(events)).toContain('cat.exited');
+    expect(eventFor(events, 'cat.exited').entities.location).toBe(booted.story.entityId('annex'));
   });
 
-  it('a transition between two rooms the player is in neither of narrates nothing', () => {
+  it('a transition between two rooms the player is in neither of still narrates both rows, located', () => {
     const booted = boot(SOURCE);
     enterRoom(booted, 'lab'); // cat → Annex
     enterRoom(booted, 'hall'); // cat → Hall
     const events = enterRoom(booted, 'lab'); // cat Hall → Annex; player in Lab
-    expect(messageIdsOf(events)).not.toContain('cat.exited');
-    expect(messageIdsOf(events)).not.toContain('cat.entered');
-    // The move itself still happened — only the narration was unwitnessed.
+    expect(eventFor(events, 'cat.exited').entities.location).toBe(booted.story.entityId('hall'));
+    expect(eventFor(events, 'cat.entered').entities.location).toBe(booted.story.entityId('annex'));
     expect(booted.world.getLocation(booted.story.entityId('cat')!)).toBe(booted.story.entityId('annex'));
   });
 });
@@ -258,7 +283,7 @@ create the Lab
 
   A lab.
 
-  after entering it
+  after the player entering
     remove the cat when the cat is here
   end after
 
@@ -275,18 +300,29 @@ create the cat
   phrase disappeared:
     The cat is simply gone.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
-  it('the remove statement removes the entity and narrates the witnessed disappearance (AC-6)', () => {
+  it('the remove statement marks the entity gone and narrates the witnessed disappearance (AC-6; ADR-325 Z6 as amended)', () => {
     const booted = boot(REMOVE_SOURCE);
     const catId = booted.story.entityId('cat')!;
     const events = enterRoom(booted, 'lab');
     expect(messageIdsOf(events)).toContain('cat.disappeared');
-    expect(booted.world.hasEntity(catId)).toBe(false);
+    // GH #345: `remove` no longer destroys — the cat stays in the world,
+    // nowhere, flagged gone, so conditions naming it still evaluate.
+    expect(booted.world.hasEntity(catId)).toBe(true);
+    expect(booted.world.getLocation(catId)).toBeUndefined();
+    expect(booted.story.runtime.isGone(catId, booted.world)).toBe(true);
   });
 
   it('an unwitnessed removal removes silently — nothing narrated, nothing consumed', () => {
@@ -356,7 +392,7 @@ create the flashlight
 
   A flashlight.
 
-  phrase detail while it is on:
+  phrase detail while the flashlight is on:
     It clicks faintly.
 
 create the lantern
@@ -365,7 +401,7 @@ create the lantern
 
   A lantern.
 
-  phrase detail while it is lit:
+  phrase detail while the lantern is lit:
     Its glow steadies.
 
 create the jar
@@ -381,10 +417,17 @@ create the cat
 
   A cat.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('`while it is on` / `while it is lit` bind the shipped trait fields', () => {

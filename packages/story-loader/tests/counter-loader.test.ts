@@ -48,10 +48,17 @@ create the guard
 
   A bored guard.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('counter loader lowering (ADR-264 P1)', () => {
@@ -97,10 +104,17 @@ create the Camp
 
   A camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 function loadDaemons(text: string) {
@@ -142,6 +156,38 @@ describe('raise / lower runtime mutation (ADR-264 D2)', () => {
     tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(60);
     tick(daemons, world, 2); expect(world.getStateValue(counterKey('madness'))).toBe(20);
     tick(daemons, world, 3); expect(world.getStateValue(counterKey('madness'))).toBe(0); // clamped, not -20
+  });
+});
+
+describe('set <tally> to <n> runtime mutation (ADR-325 D4)', () => {
+  it('assigns absolutely, regardless of the current value', () => {
+    const { world, daemons } = loadDaemons(
+      DAEMON_STORY('  on every turn\n    raise madness by 30\n    set madness to 7\n  end on', 'define counter madness between 0 and 100'),
+    );
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(7);
+    tick(daemons, world, 2); expect(world.getStateValue(counterKey('madness'))).toBe(7);
+  });
+
+  it('clamps to the declared bounds', () => {
+    const { world, daemons } = loadDaemons(
+      DAEMON_STORY('  on every turn\n    set madness to 500\n  end on', 'define counter madness between 0 and 100'),
+    );
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(100);
+    const low = loadDaemons(
+      DAEMON_STORY('  on every turn\n    set madness to 2\n  end on', 'define counter madness starts 50 between 10 and 100'),
+    );
+    tick(low.daemons, low.world, 1); expect(low.world.getStateValue(counterKey('madness'))).toBe(10);
+  });
+});
+
+describe('set … when <cond> (statement suffix)', () => {
+  it('resets only once the gate holds', () => {
+    const { world, daemons } = loadDaemons(
+      DAEMON_STORY('  on every turn\n    raise madness by 4\n    set madness to 0 when madness is at least 8\n  end on', 'define counter madness between 0 and 10'),
+    );
+    tick(daemons, world, 1); expect(world.getStateValue(counterKey('madness'))).toBe(4);
+    tick(daemons, world, 2); expect(world.getStateValue(counterKey('madness'))).toBe(0);
+    tick(daemons, world, 3); expect(world.getStateValue(counterKey('madness'))).toBe(4);
   });
 });
 

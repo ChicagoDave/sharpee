@@ -266,3 +266,58 @@ sequencing (ADR-271 landed the previous session). Grounded in the umbrella's D12
 analysis (`sharpee-chord-grammar-syntax.md`); the construct set here is the *corrected* seven (semantic
 defaults 154 not 2; verb-list shorthand dropped; greedy slot added), not D14's original table. The
 EBNF productions quoted were re-verified against `docs/reference/chord.ebnf:372,408` before writing.
+
+## Amendment 1 — rule-level applicability: `only while <condition>` (2026-09-03)
+
+**Status**: DRAFT — awaiting David's acceptance (one open question below, rule 11a). Gates `docs/proposals/publish-readiness-defects.md` P-21 (GH #317). Amends ADR-087 (the builder surface gains one method) and ADR-231 D2a (a second parse-time gate) by reference; leaves ADR-268 D2 and ADR-270 untouched.
+
+### Context
+
+- A `define action` grammar line is a global story-tier claim: story beats standard unconditionally at equal confidence (ADR-268 D2). Secret Letter's `drop` — the mid-slide synonym for `let go`, meaningful in On the Wire only — shadows stdlib's `drop` everywhere; outside the room, bare `drop` can only print the story's refusal, never reach the parser's own MISSING_OBJECT prompt (`packages/parser-en-us/src/english-parser.ts` ~1497). The interim in `branch-stories/secret-letter/aerial-runway.chord:359-371` is a second action, `releasing`, whose elsewhere-refusal prints a static "What do you want to drop?" with no follow-up.
+- `refuse when` is the action's *refusal voice*, evaluated after the parse has chosen the action; it cannot hand the input back. GH #317's two shapes converge: "fall through when the only failing gate is a `refuse when`" would swallow every authored refusal (the kick verb's "Not so hard really, was it?"), so fall-through needs a marker that distinguishes *does not apply here* from *applies and refuses* — and a marker evaluated before the action is chosen is a scoped grammar line.
+- ADR-270's `extend action` / `remove from action` narrow the *standard* grammar; nothing scopes a story rule. ADR-231 D2a names slot `.where()` as the one parse-time gate; it gates a slot's candidates, not a rule's applicability. Neither existing mechanism covers this.
+
+### Decision
+
+- **A1 — The construct.** A `define action` body line, in the same declarative family as `the <slot> must be reachable`:
+
+  ```
+  only while <condition>
+  ```
+
+  At most one per action. The condition grammar is the clause `while` guard's, minus `it` (an action has no owner). Legal in `extend action` too, where it scopes the extension's added lines only (ADR-270 D2's grammar-surface list grows by this line).
+- **A2 — Semantics.** While the condition is false, the action's grammar rules are **not candidates**: the parse proceeds exactly as if the action were not defined — the standard tier's own rules apply, including their clarification errors. ADR-268 D2 is untouched: tier is compared *among candidates*, and an inapplicable rule is not one, the same status a slot-scope miss has under ADR-271 D2. The line covers every pattern of the action, bare-verb prefixes included.
+- **A3 — Landing whole (D3).** EBNF → parser (body line) → analyzer (condition resolved like a `while` guard; a second line is `analysis.duplicate-only-while`) → IR `IRActionDef.onlyWhile?: IRCondition` and `IRGrammarExtension.onlyWhile?` (absent keeps IR byte-identical) → loader emits a rule-level predicate closing over its condition evaluator → if-domain `GrammarRule.applies?: (context: ScopeContext) => boolean`, set by `.onlyWhen(fn)` on the pattern builder (ADR-087's surface gains one method; a TypeScript story gets the same gate) → parser-en-us `findMatches` evaluates `applies` before slot resolution and skips the rule when false. ADR-231 D2a reads, after this: two parse-time gates — slot scope (`.where()`) and rule applicability (`.onlyWhen()`), both world-evaluated, neither producing a diagnostic.
+- **A4 — Refusal fall-through is rejected** as a separate mechanism: it needs the same marker and adds a re-parse on the validate path.
+- **A5 — Paper trail.** Chord MINOR bump and a `chord-grammar-changes.md` row (D4). The change is one of the publish-readiness proposal's own items, so it lands inside Phases 2–8, before Phase 9 declares the freeze.
+
+**The corpus block, as it will read** (unshipped syntax; `aerial-runway.chord`, replacing the `releasing` interim):
+
+```
+define action letting-go
+  grammar
+    let go
+    drop
+  only while the player is in On the Wire
+  phrase let-go-drop
+  move the old gray cloak to Behind Fruit Stall
+  move the player to Behind Fruit Stall
+  reset the cables' sliding
+  start the player's lingering
+```
+
+Off the wire, `drop` is not this action's; bare `drop` reaches stdlib's dropping and its "What do you want to drop?" prompt, which P-20 (ADR-225's held command, plan Phase 9) then completes from the next input.
+
+### Consequences
+
+- The loader's `LoadError` for a `must`-less condition referencing `it` inside `only while` names the rule ("an action has no owner").
+- The parser evaluates one predicate per applicable story rule per parse; the cost is a condition evaluation, the same as a `while` guard.
+- `define action releasing` and `define phrase drop-what` leave Secret Letter (plan Phase 8's acceptance check).
+
+### Open Questions
+
+1. **Spelling.** Recommended: `only while <condition>` — `while` is Chord's standing-condition word (`dark while`, `blocked while`, the clause `while` guard), and `only` says the rule is *otherwise absent*, not refused. Alternatives: `applies while <condition>`, `available while <condition>`.
+
+### Session
+
+effb6f, 2026-09-03 — drafted in publish-readiness plan Phase 1 (`docs/work/publish-readiness/plan.md`).

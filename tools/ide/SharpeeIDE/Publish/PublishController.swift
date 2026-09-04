@@ -5,7 +5,7 @@
 // types the command get the identical artifact. Reuses BuildRunner rather than
 // growing a second process owner — spawning, streaming and cancelling are
 // already solved there.
-// Public interface: publish(storyFile:to:), cancel(), isPublishing, onOutput,
+// Public interface: publish(storyFile:to:includeMenu:), arguments(storyFile:destination:includeMenu:), cancel(), isPublishing, onOutput,
 // onFinished.
 // Owner context: tools/ide — Publish.
 
@@ -37,7 +37,10 @@ final class PublishController: BuildRunnerDelegate {
     /// - Parameters:
     ///   - storyFile: the `.story` to publish.
     ///   - destination: where the zip is written.
-    func publish(storyFile: URL, to destination: URL) {
+    ///   - includeMenu: keep the client's in-page menu bar (ADR-290 D6, GH
+    ///     #196). Off means the published page has no Save / Restore /
+    ///     Restart / Quit — the Publish tab says so beside the checkbox.
+    func publish(storyFile: URL, to destination: URL, includeMenu: Bool = true) {
         guard !runner.isRunning else { return }
         guard let sharpee = ComposeRunner.resolveSharpee(near: storyFile) else {
             onOutput?("sharpee not found — install the Sharpee CLI (or open a story inside a "
@@ -45,7 +48,16 @@ final class PublishController: BuildRunnerDelegate {
             onFinished?(false, nil)
             return
         }
-        publish(executable: sharpee, storyFile: storyFile, to: destination)
+        publish(executable: sharpee, storyFile: storyFile, to: destination, includeMenu: includeMenu)
+    }
+
+    /// The `sharpee publish` invocation: the destination as `--out`, and
+    /// `--no-menu` only when the author unticked the menu (the CLI's default
+    /// is menu-on, so the IDE passes nothing for the default).
+    static func arguments(storyFile: URL, destination: URL, includeMenu: Bool) -> [String] {
+        var arguments = ["publish", storyFile.path, "--out", destination.path]
+        if !includeMenu { arguments.append("--no-menu") }
+        return arguments
     }
 
     /// Spawns a named executable. This is the production spawn path; the
@@ -53,11 +65,11 @@ final class PublishController: BuildRunnerDelegate {
     /// fixture script so the real process, pipe and exit handling is exercised
     /// without depending on a `sharpee` being installed — the same seam
     /// `BuildRunner` uses for the same reason.
-    func publish(executable: URL, storyFile: URL, to destination: URL) {
+    func publish(executable: URL, storyFile: URL, to destination: URL, includeMenu: Bool = true) {
         guard !runner.isRunning else { return }
         self.destination = destination
         runner.start(executable: executable,
-                     arguments: ["publish", storyFile.path, "--out", destination.path],
+                     arguments: Self.arguments(storyFile: storyFile, destination: destination, includeMenu: includeMenu),
                      workingDirectory: storyFile.deletingLastPathComponent(),
                      environment: ShellEnvironment.buildEnvironment())
     }

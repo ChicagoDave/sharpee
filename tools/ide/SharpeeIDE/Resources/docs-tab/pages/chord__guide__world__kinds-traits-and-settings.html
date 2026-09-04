@@ -6,7 +6,7 @@
 
   A scarred oak workbench.</code></pre>
 <p><code>with</code> attaches settings. The last token of each setting is its value and the words before it are the key (<code>capacity 3</code>); several settings join with <code>and</code>. When a keyed value is an entity name, the article marks where the name starts (<code>feedable with food the handful of feed</code>, where the keyword names an authored trait's data field). The built-in capability adjectives take their entity <em>directly</em> after <code>with</code> and use no keyword: <code>lockable with the staff keycard</code> (ratchet R3, 2026-07-18: the old <code>key</code>/<code>tool</code> keywords are load errors with fix-its).</p>
-<p>Two trait adjectives carry a contract along with their data: <code>cuttable</code> and <code>diggable</code>. Each takes an optional implement named directly after <code>with</code> (<code>cuttable with the rusty knife</code>) that the player must be holding; with no implement named, any attempt reaches the entity. What the cut or dig actually <em>does</em> is never platform policy: a cuttable entity must carry exactly one implementation, an <code>on cutting it</code> clause, its own or from a composed trait. The story fails to load with none, or with two. The same rule binds <code>diggable</code> to <code>on digging it</code>.</p>
+<p>Two trait adjectives carry a contract along with their data: <code>cuttable</code> and <code>diggable</code>. Each takes an optional implement named directly after <code>with</code> (<code>cuttable with the rusty knife</code>) that the player must be holding; with no implement named, any attempt reaches the entity. What the cut or dig actually <em>does</em> is never platform policy: a cuttable entity must carry exactly one implementation, an <code>on the player cutting</code> clause, its own or from a composed trait. The story fails to load with none, or with two. The same rule binds <code>diggable</code> to <code>on the player digging</code>.</p>
 <pre><code class="language-chord">create the straw bale
   aka bale, twine
   cuttable with the rusty knife
@@ -15,8 +15,8 @@
 
   A bale of straw, bound tight with orange twine.
 
-  on cutting it
-    change it to loose
+  on the player cutting
+    change the straw bale to loose
     phrase twine-cut
   end on</code></pre>
 <p>A trait can be conditional: <code>while</code> puts it under the control of a condition, live at play time.</p>

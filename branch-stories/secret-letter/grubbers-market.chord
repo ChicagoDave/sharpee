@@ -1,0 +1,1535 @@
+## ===========================================================================
+## GRUBBER'S MARKET — the chapter's one place, as one import
+##
+## The market is ATOMIC: its seventeen rooms, the stalls that furnish them, the
+## apple that ends the walk, and the stallkeepers who fill it all arrive
+## together, because none of them is meaningful without the others. The fruit
+## stall exists to be stolen from; the alley exists as the walk's exit; the
+## stallkeepers exist as the texture the walk moves through.
+##
+## What is NOT written here: major NPCs. Teisha stands in this market and keeps
+## her own file (`npc-teisha`), because her tree splits by occasion and carries
+## into the chase — she outlives the place. The market IMPORTS her, at the end
+## of this file (imports nest, ADR-251 D5 as amended 2026-08-22), so the place
+## owns its people in the import graph as the fiction says it does.
+##
+## ORDER IS SEMANTIC. An import is a paste at the import site (ADR-251 D4), and
+## within this file the sections paste in source order: the rooms first, then
+## what stands in them, then who does, then Teisha. Later declarations
+## arbitrate against earlier ones, so moving a section is a behavioural change,
+## not a tidy-up.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE MARKET
+##
+## Seventeen rooms here: the alley, fourteen market locations, and the two
+## stages of the centre post; the eighteenth, the storehouse roof above the
+## alley, is Book 1's own and lives with its scene in `eavesdrop.chord`.
+## Geometry and room text are the source's, converted from `story.ni:1474,
+## 2206-3005, 3623, 3666`. The market is a ring of stalls around a hub, and
+## almost every stall names its own exits in its description, so the exit
+## lists below are checkable against the prose beside them.
+##
+## The P-8 "seen from elsewhere" layer (the source's `distant description`,
+## `Adjacent Rooms`) lives in `peering.chord`, which records the spike's
+## answer — one phrase per target room, one dispatch line per (room,
+## direction) pair.
+## ---------------------------------------------------------------------------
+
+## The Alley carries Book 1's scene (`eavesdrop.chord`): the voices at its
+## mouth after the bite, the crates up to the roof, and the sweep's opening
+## on the first climb back down once the story is `hunted`. Southeast is
+## refused while the voices are there; up is refused while the pair is.
+
+create the Alley
+  a room
+  aka narrow alley
+  southeast to the Northwest Junction
+  up to the Outer Market Roof
+  southeast is blocked while the voices is here: alley-stay-hidden
+  up is blocked while the wandering mercenaries is here: alley-ankle-grab
+
+  This narrow alley is tucked away between a storehouse on one side and the
+  canvas wall of a stallkeeper's tent on the other. It serves primarily as
+  somewhere out-of-the-way for stallkeepers to sweep their garbage, so it's not
+  exactly the most pleasant-smelling place in all of Miradania, but at least no
+  one is likely to bother you here. You can leave to the southeast.
+
+  phrase detail while the voices is here:
+    A group of people have gathered just outside the alley. You can't quite
+    hear what they're saying from here, but there is a grim, ugly tone to them
+    that speaks of dangerous doings.
+
+  after the player entering while hunted, once
+    phrase roof-tumble
+    move the wandering mercenaries here
+    change the wandering mercenaries to approaching
+    start the wandering mercenaries' lunge
+    reset the player's waiting
+  end after
+
+## THE NORTH ROAD (change document, "The market gates", ruled 2026-08-24): the
+## gates stand open through the calm walk and Jack is deflected, not blocked —
+## the deflection line is David's (2026-08-24). Once the sweep starts the gates
+## are closed and locked as in the source (`story.ni:1749`), and the refusal is
+## Gentry's (`story.ni:2250`). All three arms are wired: blocked lines on one
+## direction compose in declaration order, first condition that holds wins
+## (GH #315, fixed 2026-08-24). The gates themselves (`story.ni:2236`) stand
+## below as scenery: their "certainly never closed" description grows its
+## "Until now." tail once the sweep has begun, the junction reports them
+## closed, and opening, entering, or pushing them then gets the locked line.
+
+create the Northwest Junction
+  a room
+  aka junction, northwest corner
+  northwest to the Alley
+  northeast to the Grocery Stall
+  south to the Herb Stall
+  east to the Candlemaker's Stall
+  southeast to the Rope Stall
+  north is blocked while calm: north-deflected
+  north is blocked while the player's market-escape has started: escape-north
+  north is blocked while hunted: gates-locked
+  north is blocked while chase: gates-locked
+  northwest is blocked while the player's market-escape has started: escape-alley
+
+  This is the northwest corner of Grubber's Market. You can skirt around the
+  edge of the market to the northeast or south, or head into the thick of it to
+  the east or southeast. A wide, paved road leads north. You can also duck back
+  into the alley to the northwest.
+
+  phrase detail while hunted or chase:
+    The north gates leading to Lord's Road are closed.
+
+create the market gates
+  aka north gates, north gate, gates, gate, ceremonial gates, wooden doors, doors
+  scenery, plural
+  in the Northwest Junction
+
+  The north gates are huge wooden doors, nearly ten feet wide each, that date
+  all the way back to when Toresal was a fortified town. They're kept around
+  for ceremony, mostly; they're certainly never closed.
+
+  phrase detail while hunted or chase:
+    Until now.
+
+  on the player opening while hunted or chase
+    refuse gates-locked
+  end on
+
+  on the player entering while hunted or chase
+    refuse gates-locked
+  end on
+
+  on the player pushing while hunted or chase
+    refuse gates-locked
+  end on
+
+create the Grocery Stall
+  a room
+  aka grocer, grocers stall
+  southwest to the Northwest Junction
+  southeast to the Fruit Stall
+  south to the Candlemaker's Stall
+  states: trading, blocked
+
+  This is a typical grocer's stall, with various kinds of food set out. There
+  are baskets bristling with loaves of bread, yellow pyramids of cheese, and
+  spiced jerky hanging in bundles overhead. You can continue along the market's
+  outer ring to the southwest or southeast, or head in towards the center of the
+  market to the south.
+
+  after the player entering while the Grocery Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+## `blocked` is the source's own stall state (`story.ni:1823`): a noisy theft
+## sets it and coming back bounces her (`wares.chord`, "THE THEFT RULE").
+## The source cleared every stall when Market Escape began (`story.ni:4136`);
+## here the bounce simply stands down while that spool runs — the same
+## observable behaviour, since the chapter ends at Commerce Street. Seven
+## stalls carry the state: the Fruit Stall has its own rule and is never
+## blocked, and nothing at the Hat and Gems stalls can be nicked.
+
+## The description's final sentence is David's (2026-08-24, change document
+## "The escape disguise" ruling): it restores the source's shadowy-recesses
+## shape and carries the tentpole-wire hint that seeds the slide's landing
+## geography during the calm walk. It replaced the earlier exit-listing
+## adaptation ("Aisles between the stalls lead northwest, west, southwest,
+## and south.").
+
+create the Fruit Stall
+  a room
+  aka fruit
+  northwest to the Grocery Stall
+  west to the Candlemaker's Stall
+  southwest to the Pottery Stall
+  south to the Eastern Junction
+  states: orderly, chaotic
+
+  Bins heaped high with brightly colored fruit lend a pleasant fragrance to this end
+  of the market (though by afternoon it will have become a cloying reek that
+  attracts more flies than customers). They have apples and pears from the city
+  orchards, and brambleberries from the northern counties. Oranges, limes, kello
+  fruit — even a bushel of bananas from the Kozar Delta. Aisles between the
+  bins wind their way back into shadowy recesses of the stall, with a tentpole
+  wire stretching overhead from market center.
+
+  phrase detail while calm:
+    The bushel of bananas is currently blocked by the stallkeeper.
+
+  after the player entering while Jack is dressed
+    start the player's exposure
+  end after
+
+## Behind Fruit Stall surfaces only from the let-go drop (change document,
+## "Where she changes", amended 2026-08-23): its `southwest to the Fruit
+## Stall` is written `, one-way` (ADR-234 D4, wired for GH #327), so no
+## northeast way in exists from here — `ne` is simply not an exit.
+
+create the Eastern Junction
+  a room
+  aka eastern edge
+  north to the Fruit Stall
+  south to the Hat Stall
+  west to the Pottery Stall
+  east to Commerce Street
+  east is blocked while calm: east-deflected
+  east is blocked while Jack is urchin: east-watched
+
+  You're near the eastern edge of Grubber's Market. Commerce Street lies to the east.
+  You can travel along the outer ring of stalls to the north or south, or
+  head towards the market's central hub to the west.
+
+create the Hat Stall
+  a room
+  aka hats, hatter
+  north to the Eastern Junction
+  northwest to the Pottery Stall
+  west to Outside the Silk Tent
+  southwest to the Leather Stall
+
+  Hats of all styles and sizes hang from scores of wooden pegs, a forest of
+  varied headgear. They have big, flop-brimmed traveling hats; small, leather
+  workman's caps; wide sappans of woven straw from the Kozar delta; fancy,
+  feathered hats for courtly balls; and even a few ordinary bonnets. More stalls
+  lie to the north, northwest, west, and southwest.
+
+create the Leather Stall
+  a room
+  aka leather, leather shop, leather goods
+  northeast to the Hat Stall
+  northwest to Outside the Silk Tent
+  west to the Weaponsmith's Stall
+  states: trading, blocked
+
+  This merchant mostly deals in riding equipment — reins, harnesses, stirrups,
+  and the like. A full riding saddle sits on proud display near the back. There
+  are a few scabbards and belts for sale, as well. More stalls lie to the west, northwest,
+  and northeast.
+
+  after the player entering while the Leather Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+create the Weaponsmith's Stall
+  a room
+  aka weapons stall, weapons, weaponsmith, smith
+  east to the Leather Stall
+  northeast to Outside the Silk Tent
+  northwest to the Exotic Gems Stall
+  states: trading, blocked
+
+  The weaponsmith's wares hang along the sides of his stall, a grim picket fence
+  of down-hanging blades. You can find less intimidating stalls to the east, northeast,
+  and northwest.
+
+  after the player entering while the Weapons Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+create the Exotic Gems Stall
+  a room
+  aka gems stall, gems, jewels, jeweler
+  north to the Herb Stall
+  northeast to the Rope Stall
+  east to Outside the Silk Tent
+  southeast to the Weaponsmith's Stall
+
+  Dozens of jewels in exotic colors and cuts are spread out on display here,
+  glittering in the dusty sunlight. Some of them are loose stones, others are set in
+  finely wrought rings and necklaces. Most of them were probably smuggled in
+  from over the western mountains, which is why they're cheap enough to be
+  affordable to anyone in Grubber's Market. Still, they're far, far out of your
+  price range. Other stalls lie to the north, northeast, east, and southeast.
+
+  on every turn while hunted and the monkey is hidden and the player is in the Exotic Gems Stall
+    change the monkey to loose
+    move the monkey to the Top of the Post
+    phrase monkey-commotion
+  end on
+
+create the Herb Stall
+  a room
+  aka herbs, herbalist
+  north to the Northwest Junction
+  east to the Rope Stall
+  south to the Exotic Gems Stall
+  states: trading, blocked
+
+  The herb stall is usually a quiet place. Customers here like to browse, poke
+  their noses into the various jars, and judge the potency of a potential
+  purchase at their leisure. Other stalls are to the south, and east, and the
+  market opens out a little to the north.
+
+  after the player entering while the Herb Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+create the Rope Stall
+  a room
+  aka rope, rope dealer, ropemaker
+  northwest to the Northwest Junction
+  northeast to the Candlemaker's Stall
+  west to the Herb Stall
+  southwest to the Exotic Gems Stall
+  southeast to Outside the Silk Tent
+  states: trading, blocked
+
+  One thing you can say about the rope stall: you'll never spend a moment
+  wondering what's for sale. It's all rope, and lots of it: thick and thin,
+  knotted and loose, in heaps and in coils, stacked on the ground and dangling in
+  loops. More stalls are to the northeast, southeast, west, and southwest, and
+  the market opens out a bit to the northwest.
+
+  after the player entering while the Rope Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+create the Candlemaker's Stall
+  a room
+  aka candle stall, candles, candlemaker, chandler
+  north to the Grocery Stall
+  east to the Fruit Stall
+  west to the Northwest Junction
+  southeast to the Pottery Stall
+  southwest to the Rope Stall
+  states: trading, blocked
+
+  The heat and fumes from the candlemaker's tallow pots make this stall an
+  unpleasant place to loiter. Still, people need candles, and customers seem to be
+  buying them as fast as the stallkeeper can dip them. Most of the candles are
+  tallow, fast-burning and cheap, but there are also a number of premade wax
+  candles in different colors. Other stalls are to the north, east, west, southeast,
+  and southwest.
+
+  after the player entering while the Candle Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+create the Pottery Stall
+  a room
+  aka pottery, potter, urns
+  northwest to the Candlemaker's Stall
+  northeast to the Fruit Stall
+  east to the Eastern Junction
+  southeast to the Hat Stall
+  southwest to Outside the Silk Tent
+  states: trading, blocked
+
+  The wares at the pottery stall are spread out on the ground, forcing browsers
+  and passers-by to step carefully around them. The urns, jars, and bowls are each
+  uniquely shaped, yet they all share a common, graceful curve. Most of them are
+  made of fired clay from the Westlands, decorated with colorful glazes. There are
+  more stalls to the northwest, northeast, southeast, and southwest, or you can
+  head out to the market's edge to the east.
+
+  after the player entering while the Pottery Stall is blocked and the player's market-escape has not started
+    phrase stall-blocked-bounce
+    move the player to a random adjacent room
+  end after
+
+create Outside the Silk Tent
+  a room
+  aka silk stall, outside the tent, teishas stall
+  north to Inside the Silk Tent
+  east to the Hat Stall
+  west to the Exotic Gems Stall
+  northeast to the Pottery Stall
+  northwest to the Rope Stall
+  southeast to the Leather Stall
+  southwest to the Weaponsmith's Stall
+  north is blocked while the player's market-escape has started: escape-tent-planted
+
+  Teisha has done well enough for herself that her 'stall' is actually a full-on
+  tent. You can enter the tent to the north, or move on to one of the many other
+  stalls to the east, west, northeast, northwest, southeast, or southwest.
+
+  after the player entering while the player's market-escape has started
+    phrase escape-tent-planted
+    move the player to a random adjacent room
+  end after
+
+create Inside the Silk Tent
+  a room
+  aka silk tent, tent, inside the tent
+  south to Outside the Silk Tent
+  south is blocked while chase: tent-no-way-back
+  north to the Base of the Center Post
+
+  The walls of the tent provide a bit of quiet and privacy from the crowds outside
+  (in addition to keeping dust off the merchandise). Beautiful silk garments hang on
+  either side. Gowns, robes, capes, cloaks, and shawls, the fabric rippling
+  with the slightest movement of air, shimmering with that soft, liquid glow that
+  only silk has. The main market lies to the south. A narrow gap to the north
+  leads behind the tent.
+
+create the Base of the Center Post
+  a room
+  aka center post, centre post, post, base of the post, behind the tent
+  south to Inside the Silk Tent
+  south is blocked while chase: base-no-way-back
+  up to the Top of the Post
+
+  This is a cramped little square formed by the backs of three stalls and Teisha's
+  tent. It's barely big enough to stretch your arms out in. Right in the middle is
+  the base of the huge central support post. You can duck back into Teisha's tent
+  to the south.
+
+create the Top of the Post
+  a room
+  aka top of the center post, top of the centre post, top
+  down to the Base of the Center Post
+  down is blocked while chase: top-no-way-down
+  northeast is blocked: slide-barehanded
+  northwest is blocked: slide-barehanded
+  southeast is blocked: slide-barehanded
+  southwest is blocked: slide-barehanded
+
+  Perched atop the high central post, you can look out over the whole market
+  square. To the north, Lord's Road heads out of the city towards Lord's Keep.
+  Commerce Street and the rest of the city beckon to the east. In every other
+  direction the city is surrounded by rolling meadows and farmlands.
+
+  Four anchor cables stretch away in four directions: northwest, northeast, southwest,
+  and southeast.
+
+  after the player entering while chase
+    phrase pole-scamper
+  end after
+
+  after the player entering while not chase
+    phrase pole-climbed
+  end after
+
+## ---------------------------------------------------------------------------
+## THE FRUIT STALL
+##
+## The stall the apple and the banana both come from — which is why the change
+## document's theft decision matters here ("Theft — calm theft is quiet, chase
+## theft is noisy"): a source-faithful apple theft would block this stall before
+## the monkey puzzle needs its banana.
+##
+## The displays are the source's `storage bin`s (`story.ni:2380-2390`), each
+## with a corresponding item. Descriptions are Gentry's, carried verbatim. The
+## apple and the banana are created without a location: nothing places them yet,
+## because the taking and stealing mechanism is the next increment.
+## ---------------------------------------------------------------------------
+
+create the display of apples
+  aka apples, apple display
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  These don't look half bad. If you hadn't stumbled into so much trouble, you'd
+  be eating one right now.
+
+create the display of pears
+  aka pears, pear display
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  These vary in color from yellowish-green to dusky orange-brown, with thick,
+  twisty stems.
+
+create the display of kello fruit
+  aka kello, kello fruit, kello display
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  Normally you'd kill for a slice of kello, but these look a bit too green. Not
+  quite in season.
+
+create the display of brambleberries
+  aka brambleberries, brambleberry clusters, clusters, berries
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  The thumb-sized clusters are shiny and bluish-black. Your mouth waters at the
+  thought of how tart they must be.
+
+create the display of oranges
+  aka oranges, orange display, pale oranges, small oranges
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  The oranges are pale and disappointingly small.
+
+create the display of limes
+  aka limes, lime display, dark green limes, green limes
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  The dark green limes look refreshing.
+
+create the display of bananas
+  aka bananas, banana display, bushel
+  scenery, a supporter, plural
+  in the Fruit Stall
+
+  You rarely see bananas this far north. These look just about perfect — plump,
+  bright yellow with just a sprinkling of brown freckles.
+
+create the apple
+  aka round, firm, green apple
+  edible
+  states: whole, bitten
+  on the display of apples
+
+  The apple is round, firm, green at the bottom shading up to red near the stem.
+
+  phrase detail while the apple is bitten:
+    There is a big bite taken out of one side.
+
+  after the player taking while calm, once
+    phrase apple-lifted-quietly
+  end after
+
+  on the player eating
+    refuse when the player is not in the Alley: apple-not-here
+    phrase apple-first-bite
+    change the apple to bitten
+    move the voices to the Alley
+    move the group of mercenaries to the Outer Market Roof
+    move the mercenary captain to the Outer Market Roof
+  end on
+
+create the banana
+  aka kozarian banana, yellow banana
+  edible
+  states: shelved, nicked
+  on the display of bananas
+
+  The banana is plump, bright yellow with just a sprinkling of brown freckles.
+
+  on the player taking while the banana is shelved
+    refuse when calm: banana-blocked
+    refuse when the player's market-escape has started: escape-no-time
+    phrase fruit-theft-chaos when the Fruit Stall is orderly and thefts is 0
+    phrase fruit-theft-chaos-thief when the Fruit Stall is orderly and thefts is at least 1
+    phrase fruit-theft-again when the Fruit Stall is chaotic
+  end on
+
+  after the player taking while the banana is shelved
+    change the banana to nicked
+    move the banana to the cloth satchel
+    raise thefts by 1
+    change the Fruit Stall to chaotic when the Fruit Stall is orderly
+    move the player to a random adjacent room
+  end after
+
+## The other fruit take the same rule through the `fruit-ware` trait below —
+## the banana keeps its own clause because its calm refusal is David's
+## ruling and a trait's clause cannot sit beside an entity's own (GH #332).
+## A fruit is `shelved` until taken and `nicked` after, so a dropped fruit
+## taken again is a plain take (the source's on-stage `try taking`).
+
+define trait fruit-ware
+  on the player taking while it is shelved
+    refuse when the player's market-escape has started: escape-no-time
+    phrase stall-lift-quietly when calm
+    phrase fruit-theft-chaos when (hunted or chase) and the Fruit Stall is orderly and thefts is 0
+    phrase fruit-theft-chaos-thief when (hunted or chase) and the Fruit Stall is orderly and thefts is at least 1
+    phrase fruit-theft-again when (hunted or chase) and the Fruit Stall is chaotic
+  end on
+
+  after the player taking while it is shelved
+    change it to nicked
+    move it to the cloth satchel when hunted or chase
+    raise thefts by 1 when hunted or chase
+    change the Fruit Stall to chaotic when (hunted or chase) and the Fruit Stall is orderly
+    move the player to a random adjacent room when hunted or chase
+  end after
+end trait
+
+## The calm-walk banana is unreachable — RULED (David, 2026-08-24): the
+## stallkeeper is blocking the banana bin during the calm walk, so there is no
+## quiet banana lift (that placeholder is retired). The theft happens under
+## the sweep, where the source's rule applies unchanged (change document,
+## "Theft"). The room's gated detail line carries David's "currently blocked
+## by the stallkeeper" wording while calm (GH #316 landed: it renders on
+## `look` as well as on examining).
+##
+## THE NOISY THEFT — the source's rule for THIS stall (`story.ni:2438-2445`,
+## "Fruit Theft"), not the generic one (`story.ni:1990-1998`). Stealing fruit
+## from the orderly Fruit Stall is seen and shouted, but a passing mercenary
+## trips over the monkey into the bins, and in the chaos Jack slips away with
+## the fruit in her satchel: the stall turns `chaotic` and is left UNBLOCKED
+## — "You shouldn't have any trouble coming back here if you need to" —
+## which is what the escape's landing at this stall later depends on. The
+## eject is ADR-326's `move the player to a random adjacent room` (the
+## blocked northeast is excluded by the draw). The clause is an on+after
+## pair, the trade trait's shape: the `on` phrase replaces stdlib's "You
+## take the banana" as the action's message, the `after` does the moving
+## once the take has really happened. Two readings flagged for
+## David: (1) the change document's gloss "(seen, kept, ejected, stall
+## blocked)" describes the generic rule; the source's own rule for this
+## stall leaves it unblocked, and "unchanged" is read as the source's rule.
+## (2) The source keys the opener on a mere-urchin/successful-thief flag the
+## apple's calm lift never set (the 2009 player starts holding the apple and
+## a mere urchin), so the banana gets the first-theft opener; the on-edge
+## opener the change document quotes (`story.ni:1997`) is kept aside below.
+## Since the wares increment (2026-08-30) every fruit sits on its display
+## and takes this rule, so the chaotic-stall second theft ("no one notices
+## you picking up another [noun]", `story.ni:2447`) has consumers and is
+## carried as `fruit-theft-again`; the openers split on the `thefts`
+## counter as the source's urchin/thief flag did (`wares.chord`). The
+## generic blocked-stall bounce (`story.ni:1825`) is carried on the seven
+## stalls that can be blocked.
+## Known seam (ADR-326 D5: the draw narrates nothing): the eject prints the
+## theft text and no destination description — `look` answers.
+##
+## The steal verbs (`story.ni:1954-1965`) are taking's synonyms, as the
+## source resolves them ("if the noun is on-stage: try taking").
+
+extend action taking
+  grammar
+    steal the item
+    filch the item
+    grab the item
+    loot the item
+    nick the item
+    pilfer the item
+    shoplift the item
+    snatch the item
+    swipe the item
+    thieve the item
+
+define phrase banana-blocked
+  Unfortunately, the bin holding the bananas is too close to the stallkeeper
+  to make a move.
+end phrase
+
+## The two openers are the source's own split (`story.ni:2440`): the first
+## theft of the game gets "Ah, this is something you know how to do"; a
+## Jack who has already been shouted at gets "With the stallkeepers all on
+## edge". The fruit named is the taking action's own `{the item}` slot.
+
+define phrase fruit-theft-chaos
+  Ah, *this* is something you know how to do, at least. You sidle up casually
+  to the stall, wait until the stallkeeper seems preoccupied, then reach out
+  and pluck {the item} from the shelf.
+
+  Suddenly the stallkeeper jabs his finger at you and screams, *'Stop,
+  thief!'*
+
+  One of the mercenaries happens to be wandering by at that moment. He hears
+  the stallkeeper's shouts and comes running straight for you!
+
+  Then there is a loud screech, and something gray and hairy scampers out
+  from under the mercenary's feet. He stumbles, trips, and pitches headlong
+  into the fruit stall. Fruit scatters everywhere. The stallkeeper is wailing
+  and berating the mercenary, who is covered with juice and slimy pulp.
+
+  In the general chaos, you slip away easily, stuffing {the item} into your
+  satchel. Fortunately, no one managed to get a very good look at you, and
+  the stallkeeper will be too busy cleaning up his wares to keep an eye out
+  for you. You shouldn't have any trouble coming back here if you need to.
+end phrase
+
+define phrase fruit-theft-chaos-thief
+  With the stallkeepers all on edge about the mercenaries, it's not likely
+  you'll be able to nick anything without someone noticing. Still, nothing
+  ventured...
+
+  *'Thief!'*
+
+  One of the mercenaries happens to be wandering by at that moment. He hears
+  the stallkeeper's shouts and comes running straight for you!
+
+  Then there is a loud screech, and something gray and hairy scampers out
+  from under the mercenary's feet. He stumbles, trips, and pitches headlong
+  into the fruit stall. Fruit scatters everywhere. The stallkeeper is wailing
+  and berating the mercenary, who is covered with juice and slimy pulp.
+
+  In the general chaos, you slip away easily, stuffing {the item} into your
+  satchel. Fortunately, no one managed to get a very good look at you, and
+  the stallkeeper will be too busy cleaning up his wares to keep an eye out
+  for you. You shouldn't have any trouble coming back here if you need to.
+end phrase
+
+## `story.ni:2447` — a second fruit from the chaotic stall. "another
+## [noun]" reads "another piece of fruit": a marker cannot render a bare
+## name (deviation 8 in the story header's list).
+
+define phrase fruit-theft-again
+  With the stallkeeper still sorting out his spilled fruit, and most of the
+  shoppers trying to avoid the mess, no one notices you picking up another
+  piece of fruit. You slip the fruit into your satchel and move quickly to
+  another part of the market.
+end phrase
+
+define phrase fruit-keeper-busy
+  The stallkeeper is far too busy trying to clean up all the spilled fruit to
+  deal with you.
+end phrase
+
+create the pear
+  aka yellowish pear, twisty pear
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of pears
+
+  The pear is yellowish green with a bit of light brown on the bottom.
+
+create the kello fruit
+  aka green fruit, unripe fruit
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of kello fruit
+
+  It's a little bit too green, but probably still tasty.
+
+create the cluster of brambleberries
+  aka brambleberry cluster, berry cluster, cluster
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of brambleberries
+
+  The thumb-sized cluster is shiny and bluish-black.
+
+create the orange
+  aka pale orange, small orange
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of oranges
+
+  The orange is pale and disappointingly small.
+
+create the lime
+  aka dark green lime, green lime
+  edible
+  fruit-ware
+  states: shelved, nicked
+  on the display of limes
+
+  The dark green lime looks refreshing.
+
+## ---------------------------------------------------------------------------
+## THE APPLE AND THE ALLEY
+##
+## The walk's exit condition (change document, "What ends the walk"). Jack
+## steals the apple, wants to eat it, and cannot eat it in the open; the refusal
+## points her northwest, where the Alley advertises itself through the peering
+## layer — `distant-alley` in `peering.chord` is Gentry's own line, carried
+## verbatim from `story.ni:1488`, and it is the only one of the fourteen with no
+## route-clause deviation, because he wrote the compass word into the sentence.
+##
+## Theft is situational, not universal (change document, "Theft"): quiet while
+## the market is calm — the apple's lift below — and the source's own noisy
+## rule for the fruit stall once the mercenaries are sweeping — the banana's
+## chaos beat, above with the banana.
+##
+## What the walk ends INTO — decided (change document, "The eavesdrop's
+## aftermath"): the bite opens the eavesdrop (`eavesdrop.chord`) — the voices
+## at the alley mouth, the briefing overheard from the roof — and the
+## briefing's end moves the story from `calm` to `hunted`, the third state
+## between the walk and the chase. Jack has heard the voices and knows she is
+## wanted; nobody has seen her yet. The chase itself begins later, on
+## Teisha's TE20 trade, not here. The gates lock at the same moment
+## (`story.ni:1749`): `north is blocked while hunted` on the junction.
+##
+## MECHANISM DEVIATION from the source, recorded here rather than in the story
+## header's list, which covers prose. The source keeps each fruit off-stage and
+## materialises it on theft (`storage bin` with a `corresponding item`,
+## `story.ni:2380-2390`, reached through `Before taking a stall display: try
+## stealing`). That shape does not survive the port: Sharpee's `taking` refuses
+## scenery inside `validate`, before any story hook is consulted
+## (`packages/stdlib/src/actions/standard/taking/taking.ts:112`), so an
+## `on taking` clause on a scenery display can never fire. The apple therefore
+## SITS on the display, which is a scenery supporter, and `take apple` is an
+## ordinary take that the apple's own `after` clause narrates. Same outcome,
+## one fewer indirection — but it means the display cannot gate the theft, so
+## the calm/noisy split rides the story state on the fruit itself.
+## ---------------------------------------------------------------------------
+
+create the wooden crates
+  aka crates, crate, box, boxes, stack, wood, shipping crates
+  a supporter, enterable, plural
+  in the Alley
+
+  Just ordinary wooden crates, used by merchants throughout Miradania to store
+  and ship goods. There are scores more just like these to be found all over the
+  market.
+
+  on the player opening
+    refuse crates-nailed-shut
+  end on
+
+  on the player searching
+    refuse crates-nailed-shut
+  end on
+
+  on the player taking
+    refuse crates-too-heavy
+  end on
+
+  on the player pushing
+    refuse crates-too-heavy
+  end on
+
+## The crates' own refusals (`story.ni:1509-1517`). `raising` and the
+## looking-under lift gag are not carried — no such clause verbs
+## (`market-scenery.chord` header).
+
+define phrase crates-nailed-shut
+  The crates are all nailed shut.
+end phrase
+
+define phrase crates-too-heavy
+  Oof! What's in these things, gold bricks? At any rate, the crates are far too
+  heavy for you to move.
+end phrase
+
+## The north-road deflection is David's line (2026-08-24); the locked-gates
+## refusal is Gentry's, `story.ni:2250` verbatim.
+
+define phrase north-deflected
+  The road leads outside of your normal wandering and besides, your stomach is
+  telling you to find a bite to eat.
+end phrase
+
+define phrase gates-locked
+  The mercenaries have locked the gates. You're not getting out this way.
+end phrase
+
+## The calm theft — David's line (2026-08-24). The source has only the noisy
+## message, written for a market already on edge (`story.ni:1990`); the calm
+## lift existed in Gentry's words only as third-person narration inside the
+## deleted opening block (`story.ni:1469`), so this line is the remake's own.
+
+define phrase apple-lifted-quietly
+  You casually raise your satchel as if looking inside and pull an apple from
+  the bin. No one sees your not so subtle theft before the apple is hidden
+  from view.
+end phrase
+
+## DAVID: the refusal, and the hardest of the three. The change document
+## requires it be directional — it has to leave the player knowing where would
+## work "without naming a waypoint". The source's only eat-refusal is the chase
+## one, "No time for breakfast right now!" (`story.ni:2417`), which is the wrong
+## occasion and says nothing about where. Gentry's own reason is in the opening
+## block: the alley is "where you can catch a breath from the crowds and enjoy
+## your apple in peace" (`story.ni:1469`).
+
+define phrase apple-not-here
+  (TODO during play-testing — Refused in the open; points northwest without
+  naming it.)
+end phrase
+
+## DAVID: the first bite. Two Gentry lines are candidates and either can be
+## carried verbatim if you want it: the generic "Crisp and delicious!"
+## (`story.ni:2419`), or the opening block's "You settle yourself on a crate and
+## take a bite of your apple. Suddenly, from the alley's entrance, you hear
+## voices." (`story.ni:1469`) — which is also where the eavesdrop begins.
+
+define phrase apple-first-bite
+  (TODO during play-testing — The first bite, taken in the Alley.)
+end phrase
+
+## The other eight stalls' wares and the source's generic theft rule — what
+## stands in the rooms above, imported here so the rooms are declared first
+## and the stallkeepers below arbitrate after it.
+
+import "wares"
+
+## The backdrops — the crowd, the wall, the stalls as a thing, the awnings,
+## the wires, the market as a noun, and the bare smell and sound of the
+## place — after the wares and before the stallkeepers, who arbitrate after
+## everything that stands in their rooms.
+
+import "backdrops"
+
+## The standing scenery — the far posts, the two tents' walls, the climbable
+## post at the base, the alley's walls and nails, and the view from the top.
+
+import "market-scenery"
+
+## Teisha's wares — the silks in the tent and the buy verb (Part 17 Ch 2).
+
+import "silk-wares"
+
+## ---------------------------------------------------------------------------
+## THE STALLKEEPERS — the market's ambient conversation (the `ST` tree)
+##
+## Nine quips (`ST1`-`ST9`, `story.ni:1881-1935`) that every stallkeeper in
+## Grubber's speaks. In the source they hang off `Rule for initiating
+## conversation with a stallkeeper`, so the tree belongs to the KIND, not to a
+## character — which is what makes it worth carrying whole (change document,
+## "The stallkeeper tree"): nine quips of texture that apply everywhere the walk
+## goes, at no per-character authoring cost.
+##
+## WHY THIS IS ITS OWN FILE. Chord binds a conversation to an entity —
+## `define topics for <entity>` needs a person and takes exactly one owner
+## (`packages/chord/src/analyzer.ts:1509, 1520`), and `define greetings` and
+## `define exchange` are owner-bound the same way. A tree shared by ten
+## characters therefore has no shared home: it is ten near-identical blocks
+## around one set of shared phrases. The PROSE cost is still zero, which is what
+## the change document promised — but the structural cost is real, and it is
+## recorded as watch-list item W-8 rather than hidden here.
+##
+## WHAT THE REWRITE CHANGED, and what it did not:
+##
+##   * Gentry's menu becomes topics. `ST2`/`ST3`/`ST4` are menu choices in 2009;
+##     here they are things Jack can ask about, because Chord is a parser game
+##     and a menu is not the idiom. The words spoken are unchanged.
+##   * `ST5`'s "You have any coin?" becomes a `define exchange` — the one place
+##     the source's shape survives literally, since `ST6`/`ST7`/`ST8` really are
+##     a yes/no/never-mind question.
+##   * The patience counter (`story.ni:1937-1949`) becomes the `asked again` and
+##     `asked many times` greeting arms — but it counts a different thing, and
+##     the difference is measured, not assumed (driven through `sharpee play`,
+##     2026-08-22). The source counts APPROACHES: every `talk to` bumps it, and
+##     moving to another stall resets it. Chord counts TOPIC ASKS, cumulatively
+##     and forever, and the arm is only consulted when a conversation scene
+##     REOPENS — a second `talk to` inside a live scene answers "doesn't
+##     respond", and the scene stays live for several turns after the player
+##     walks away. So a stallkeeper you pestered stays exasperated when you come
+##     back much later, where Gentry's cooled off the moment you moved on. The
+##     lines are his either way; only the trigger differs.
+##   * `ST9`'s good-bye is authored on the `on leaving` arm and is CURRENTLY
+##     UNREACHABLE (checked the same way, and then in the source): the arm means
+##     "when this character walks out on YOU" — both its consumers key on the
+##     NPC's own `leave` statement — and the parser has no `goodbye`/`bye` verb
+##     for the other direction. Filed as GH #300. The line stays here because
+##     the arm is the right home for it the day a farewell exists; nothing else
+##     depends on it.
+##   * `After populating ST1` removes already-fired options from the menu.
+##     That is menu bookkeeping with no parser analogue, so it is not carried;
+##     re-asking simply replays the answer.
+##
+## THE MERCENARIES ARE ALREADY IN THE MARKET during the calm walk — they are
+## just not hunting Jack yet. That is what makes `ST3` the quip the change
+## document says it is, the one that lets Jack learn about them BEFORE they are
+## looking for her, and it is why the stallkeeper's own description ("Armed
+## thugs stomping around...") reads correctly here without a calm variant. The
+## refusals that gate this tree once they start sweeping (`story.ni:1875-1879`)
+## are the `wary` trait each keeper carries, defined with the sweep in
+## `mercenaries.chord` — they fire only while the pair is on-stage in the room.
+##
+## Every line below is Gentry's, carried from `story.ni:1841-1949`.
+## ---------------------------------------------------------------------------
+
+create the grocer
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, grocer, greengrocer
+  pronouns he
+  mood nervous
+  in the Grocery Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the grocer
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the grocer
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-grocer
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-grocer
+end topics
+
+define exchange st-coin-grocer for the grocer
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the fruit stallkeeper
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, fruit seller, fruit vendor, fruiterer
+  pronouns he
+  mood nervous
+  in the Fruit Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+  phrase detail while the Fruit Stall is chaotic:
+    The stallkeeper is frantically trying to put his wares back into some
+    semblance of order.
+
+## After the banana theft the keeper is too busy to talk (`story.ni:2434`):
+## that refusal is the third line of the shared `wary` trait
+## (`mercenaries.chord`), guarded on the carrier standing in the chaotic
+## Fruit Stall — the platform consults one interceptor per (entity, action),
+## so neither a second trait nor a clause on this block could fire beside
+## `wary` (GH #332). The phrase is `fruit-keeper-busy`, below with the theft.
+
+define greetings for the fruit stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the fruit stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-fruit
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-fruit
+end topics
+
+define exchange st-coin-fruit for the fruit stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the hat stallkeeper
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, milliner, hatter, hat seller
+  pronouns he
+  mood nervous
+  in the Hat Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the hat stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the hat stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-hat
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-hat
+end topics
+
+define exchange st-coin-hat for the hat stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the leather stallkeeper
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, leatherworker, leather seller, tanner
+  pronouns he
+  mood nervous
+  in the Leather Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the leather stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the leather stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-leather
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-leather
+end topics
+
+define exchange st-coin-leather for the leather stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the weaponsmith
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, smith, armorer, armourer, weapon seller
+  pronouns he
+  mood nervous
+  in the Weaponsmith's Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the weaponsmith
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the weaponsmith
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-weaponsmith
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-weaponsmith
+end topics
+
+define exchange st-coin-weaponsmith for the weaponsmith
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the gems stallkeeper
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, jeweler, jeweller, gem merchant, gem seller
+  pronouns he
+  mood nervous
+  in the Exotic Gems Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the gems stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the gems stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-gems
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-gems
+end topics
+
+define exchange st-coin-gems for the gems stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the herbalist
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, herb seller, herbwife
+  pronouns he
+  mood nervous
+  in the Herb Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the herbalist
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the herbalist
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-herb
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-herb
+end topics
+
+define exchange st-coin-herb for the herbalist
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the rope dealer
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, ropemaker, rope seller
+  pronouns he
+  mood nervous
+  in the Rope Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the rope dealer
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the rope dealer
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-rope
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-rope
+end topics
+
+define exchange st-coin-rope for the rope dealer
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the candlemaker
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, chandler, candle seller
+  pronouns he
+  mood nervous
+  in the Candlemaker's Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the candlemaker
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the candlemaker
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-candle
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-candle
+end topics
+
+define exchange st-coin-candle for the candlemaker
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+create the pottery stallkeeper
+  a person
+  wary
+  aka stallkeeper, stall keeper, merchant, seller, vendor, potter, pot seller
+  pronouns he
+  mood nervous
+  in the Pottery Stall
+
+  The stallkeeper looks nervous and irritable. Armed thugs stomping around the
+  Grubber's Market is not good for business.
+
+define greetings for the pottery stallkeeper
+  first time:
+    phrase st-opener
+  on return:
+    phrase st-opener
+  asked again:
+    phrase st-patience-second
+  asked many times:
+    phrase st-patience-third
+  on leaving:
+    phrase st-goodbye
+end greetings
+
+define topics for the pottery stallkeeper
+  about "the wares", "the merchandise", "the goods", "what's for sale", "his stall":
+    phrase st-for-sale
+    then asks st-coin-pottery
+  about "the mercenaries", "the thugs", "the soldiers", "the bravos":
+    phrase st-mercenaries
+  about "buying", "buying something", "a purchase", "money", "coin":
+    phrase st-buy
+    then asks st-coin-pottery
+end topics
+
+define exchange st-coin-pottery for the pottery stallkeeper
+  answer "yes", "aye", "lots":
+    phrase st-coin-yes
+  answer "no", "nope", "none":
+    phrase st-coin-no
+  answer "never mind", "nevermind", "forget it":
+    phrase st-nevermind
+  on silence:
+    phrase st-nevermind
+end exchange
+
+## The nine quips, shared by all ten stallkeepers. `ST1`-`ST9` in file order.
+
+define phrase st-opener
+  'What do you want?' snaps the stallkeeper.
+end phrase
+
+define phrase st-for-sale
+  'So, what are you selling today?' you ask, trying to sound casual.
+
+  The merchant sneers at you. 'You have any coin?'
+end phrase
+
+define phrase st-mercenaries
+  'You know anything about these mercenaries running around Grubber's?' you ask.
+
+  'Only that they're bad for business,' mutters the stallkeeper. 'I don't know
+  who hired them, but the Lord's Guard ought to run them off.'
+end phrase
+
+define phrase st-buy
+  'I'd like one of those, please,' you say, pointing.
+
+  The merchant sneers at you. 'You have any coin?'
+end phrase
+
+define phrase st-coin-yes
+  'Yes,' you respond indignantly, 'and lots of it.'
+
+  The stallkeeper snorts derisively. 'If you've half a penny that isn't stolen
+  from somewhere, I'll sell my stall to the monkey. Now go bother someone else
+  before I call those mercenaries over here myself!'
+end phrase
+
+define phrase st-coin-no
+  'Um, no,' you say.
+
+  The stallkeeper rolls his eyes. 'Do I look like I have time to gab at you all
+  day? Beat it, kid.'
+end phrase
+
+define phrase st-nevermind
+  'Uh, never mind.'
+
+  'Whatever,' the stallkeeper mutters, and goes back to nervously scanning the
+  crowd.
+end phrase
+
+define phrase st-goodbye
+  'Yeah, fine, scram,' the stallkeeper mutters.
+end phrase
+
+## The patience counter. The third-approach line is Gentry's `[one of]beat it
+## [or]scram[or]get out of here[at random]`, expanded to three variants because
+## Chord randomises whole phrase arms rather than words inside one.
+
+define phrase st-patience-second
+  The stallkeeper suddenly looks exasperated. 'Didn't I tell you to take it
+  somewhere else?'
+end phrase
+
+define phrase st-patience-third, randomly
+  'I said, beat it!' the stallkeeper yells.
+or
+  'I said, scram!' the stallkeeper yells.
+or
+  'I said, get out of here!' the stallkeeper yells.
+end phrase
+
+## ---------------------------------------------------------------------------
+## TEISHA
+##
+## The silk seller, and the first perceiver the player meets. Her own file;
+## pasted here, after everything else in the market, so her declarations
+## arbitrate last.
+## ---------------------------------------------------------------------------
+
+import "npc-teisha"
+
+## ---------------------------------------------------------------------------
+## THE EAVESDROP
+##
+## Book 1's scene: the voices at the alley mouth, the group on the roof, the
+## five overheard lines, and the moment the story turns `hunted`. Pasted
+## after Teisha and before the mercenaries it hands over to.
+## ---------------------------------------------------------------------------
+
+import "eavesdrop"
+
+## ---------------------------------------------------------------------------
+## THE MERCENARIES
+##
+## The `hunted` state's pressure model — the pair that sweeps the market once
+## Jack has overheard them. Pasted after the eavesdrop as a reading order: the
+## mercenaries' clocks are their own and the player's, and the rooms carry
+## nothing for them.
+## ---------------------------------------------------------------------------
+
+import "mercenaries"
+
+## ---------------------------------------------------------------------------
+## The aerial runway — the cables at the Top of the Post and the two-turn
+## slide with its hidden landing (change document, escape-disguise amendments
+## 2026-08-23). Pasted after the mercenaries: the ride-out's caught
+## consequence will hook their machinery when the chase increment lands.
+## ---------------------------------------------------------------------------
+
+import "aerial-runway"
+
+## ---------------------------------------------------------------------------
+## The monkey and the necklace — the chain's first link, armed by `hunted`
+## and staged at the gems stall. Pasted after the runway: the monkey stands
+## on the cable the runway creates.
+## ---------------------------------------------------------------------------
+
+import "monkey"
+
+## The disguise (change document, "The escape disguise"): the dress and hat,
+## the change behind the stall, the boots, and the way out — after the
+## runway and the monkey, whose landing and necklace it builds on.
+
+import "disguise"

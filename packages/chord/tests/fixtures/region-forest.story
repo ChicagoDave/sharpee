@@ -13,11 +13,11 @@ create the Forest
     phrase forest-birdsong
   end on
 
-  after entering it
+  after the player entering
     phrase forest-gloom
   end after
 
-  after leaving it
+  after the player leaving
     phrase open-sky
   end after
 
@@ -47,7 +47,9 @@ create the White House
 
   A boarded colonial house in an open field.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the White House
 
   You.
@@ -65,3 +67,7 @@ end phrase
 define phrase open-sky
   The trees thin and the sky opens up.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

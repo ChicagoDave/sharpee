@@ -141,6 +141,41 @@ export function createBannerChannelRenderer(slot: HTMLElement): ChannelRenderer 
 }
 
 /**
+ * `story.chapter` channel — replace, json (ADR-330 D4). A chapter beginning
+ * as properties: `title`, `description` (empty when the row has none),
+ * `name`, `ordinal`. The platform default is a title card in the prose log —
+ * the title, then the description when there is one — each piece its own
+ * element and class so a page can style, reorder, or hide it (ADR-165: the
+ * wire is data; the card is the client's). The name and ordinal are carried
+ * as data attributes for a page that wants them; they are never printed.
+ */
+export function createChapterChannelRenderer(slot: HTMLElement): ChannelRenderer {
+  return {
+    onValue(value: unknown): void {
+      if (!value || typeof value !== 'object') return;
+      const chapter = value as Record<string, unknown>;
+      const doc = slot.ownerDocument;
+      const card = doc.createElement('div');
+      card.className = 'sharpee-chapter';
+      if (typeof chapter.name === 'string') card.setAttribute('data-chapter', chapter.name);
+      if (typeof chapter.ordinal === 'number') card.setAttribute('data-chapter-ordinal', String(chapter.ordinal));
+
+      const emit = (text: unknown, className: string): void => {
+        if (typeof text !== 'string' || text.length === 0) return;
+        const p = doc.createElement('p');
+        p.className = className;
+        p.textContent = text;
+        card.appendChild(p);
+      };
+      emit(chapter.title, 'sharpee-chapter-title');
+      emit(chapter.description, 'sharpee-chapter-description');
+      if (card.childElementCount === 0) return;
+      slot.appendChild(card);
+    },
+  };
+}
+
+/**
  * `prologue` channel — replace, text. Pre-banner prologue prose
  * (ADR-298 D3). Renders the resolved text into the slot as one
  * paragraph per blank-line-separated chunk. The slot is expected to

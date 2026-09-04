@@ -49,6 +49,27 @@ import { ActionLifecycleDescriptor } from './descriptor.js';
 const LIFECYCLE_KEY = '_lifecycle';
 
 /**
+ * Slot id of the implicit actor consultation (ADR-327 D1): every wired
+ * action consults the acting entity last. Not a descriptor slot —
+ * descriptors never declare it.
+ */
+export const ACTOR_SLOT_ID = 'actor';
+
+/**
+ * The registration key an interceptor uses to be consulted AS THE ACTOR
+ * (ADR-327 D1): `actor:<actionId>`. A separate key, not the action's own id,
+ * so a binding keyed on a trait the actor happens to carry (ACTOR on a
+ * give/show recipient, CONTAINER on the player) is never consulted twice —
+ * once as a target, once as the actor. Opting in is registering under this
+ * key: `world.registerActionInterceptor(trait, actorConsultationId(id), …)`.
+ * @param actionId the action's primary id (`if.action.taking`)
+ * @returns the actor-consultation registration key
+ */
+export function actorConsultationId(actionId: string): string {
+  return `actor:${actionId}`;
+}
+
+/**
  * One resolved (entity, actionId) interceptor consultation.
  *
  * A slot that consults two action ids (D6 both-ids) yields up to two
@@ -141,6 +162,28 @@ export function resolveLifecycle(
     }
   }
 
+  // ADR-327 D1 (ruled 2026-08-26): the ACTING entity is an implicit slot,
+  // consulted last under the actor-consultation key — a clause "when this
+  // character does X, to anything" has no target entity to hang on, so the
+  // actor itself carries the interceptor, registered for that purpose.
+  // ADR-328 D2 (flipped 2026-08-28): the command's actor, not the player —
+  // a non-player actor running through `executeAsActor` carries its own
+  // interceptor here, and every hook below is told the same actor.
+  const actor = context.actor;
+  if (actor) {
+    const actorActionId = actorConsultationId(descriptor.actionId);
+    const lookup = context.world.getInterceptorForAction(actor, actorActionId);
+    if (lookup) {
+      consultations.push({
+        slotId: ACTOR_SLOT_ID,
+        actionId: actorActionId,
+        entity: actor,
+        interceptor: lookup.interceptor,
+        data: {}
+      });
+    }
+  }
+
   const state: LifecycleState = { descriptor, consultations };
   if (!options?.slotOverride) {
     context.sharedData[LIFECYCLE_KEY] = state;
@@ -167,7 +210,7 @@ export function getLifecycleState(context: ActionContext): LifecycleState | unde
  * story-registered keys resolve as the author wrote them — and
  * `blockedMessageId` must never prefix it with the action id.
  */
-function vetoOf(result: { valid: boolean; error?: string; params?: Record<string, unknown> } | null): ValidationResult | null {
+export function vetoOf(result: { valid: boolean; error?: string; params?: Record<string, unknown> } | null): ValidationResult | null {
   if (result !== null && result.valid === false) {
     return { valid: false, error: result.error, errorQualified: true, params: result.params };
   }
@@ -211,7 +254,7 @@ export function runPreValidate(
   for (const c of state.consultations) {
     if (!c.interceptor.preValidate) continue;
     const veto = vetoOf(
-      c.interceptor.preValidate(c.entity, context.world, context.player.id, c.data, context.random)
+      c.interceptor.preValidate(c.entity, context.world, context.actor.id, c.data, context.random)
     );
     if (veto) return veto;
   }
@@ -234,7 +277,7 @@ export function runPostValidate(
   for (const c of state.consultations) {
     if (!c.interceptor.postValidate) continue;
     const veto = vetoOf(
-      c.interceptor.postValidate(c.entity, context.world, context.player.id, c.data, context.random)
+      c.interceptor.postValidate(c.entity, context.world, context.actor.id, c.data, context.random)
     );
     if (veto) return veto;
   }
@@ -254,7 +297,7 @@ export function runPostValidate(
  */
 export function runPostExecute(context: ActionContext, state: LifecycleState): void {
   for (const c of state.consultations) {
-    c.interceptor.postExecute?.(c.entity, context.world, context.player.id, c.data, context.random);
+    c.interceptor.postExecute?.(c.entity, context.world, context.actor.id, c.data, context.random);
   }
 }
 
@@ -262,9 +305,14 @@ export function runPostExecute(context: ActionContext, state: LifecycleState): v
  * Run every consultation's `postReport` hook and apply the results to the
  * action's events.
  *
- * At most ONE consultation may return an `override` — a second is a hard
- * error (throws), mirroring the `InterceptorReportResult` contract's
- * ADR-106 rule. `emit` effects append in consultation order.
+ * Override arbitration (GH #340): the FIRST consultation to return an
+ * `override` wins; a later consultation's override is dropped while its
+ * other effects still apply. Slots consult before the actor, so a target's
+ * own clause outranks an actor bare-head — the same first-wins rule the
+ * story-loader's per-owner clause merge already uses. (This replaces the
+ * former hard error, which the executor surfaced as `command.failed` —
+ * "I don't understand that." — for two legal declarations.) `emit`
+ * effects append in consultation order.
  *
  * @param context - The action context.
  * @param state - The resolved lifecycle state.
@@ -284,19 +332,14 @@ export function runPostReport(
   let overrideSeen = false;
   for (const c of state.consultations) {
     if (!c.interceptor.postReport) continue;
-    const result = c.interceptor.postReport(c.entity, context.world, context.player.id, c.data, context.random);
+    const result = c.interceptor.postReport(c.entity, context.world, context.actor.id, c.data, context.random);
     if (!result) continue;
-    if (result.override) {
-      if (overrideSeen) {
-        throw new Error(
-          `Interceptor lifecycle (${state.descriptor.actionId}): multiple consultations ` +
-          `returned a postReport override — at most one interceptor may override the ` +
-          `primary message (slot '${c.slotId}', action '${c.actionId}').`
-        );
-      }
-      overrideSeen = true;
-    }
-    applyInterceptorReportResult(events, primaryEventType, result, context, { searchFrom });
+    // First override wins (GH #340): drop a later consultation's override,
+    // keep its other effects. Consultation order puts slots before the
+    // actor, so this is target-first by construction.
+    const applied = result.override && overrideSeen ? { ...result, override: undefined } : result;
+    if (result.override) overrideSeen = true;
+    applyInterceptorReportResult(events, primaryEventType, applied, context, { searchFrom });
   }
 }
 
@@ -330,7 +373,7 @@ export function runOnBlocked(
   let overrideSeen = false;
   for (const c of state.consultations) {
     if (!c.interceptor.onBlocked) continue;
-    const result = c.interceptor.onBlocked(c.entity, context.world, context.player.id, error, c.data, context.random);
+    const result = c.interceptor.onBlocked(c.entity, context.world, context.actor.id, error, c.data, context.random);
     if (!result) continue;
     if (result.override) {
       if (overrideSeen) {

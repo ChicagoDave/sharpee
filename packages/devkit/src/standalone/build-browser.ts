@@ -25,6 +25,7 @@ import {
   resolveWiredThemes as resolveWiredThemesCore,
   copyWiredThemes,
   injectThemes,
+  stripClientMenu,
 } from './browser-core.js';
 
 // In source: standalone/ → ../../templates. In npm publish: standalone/ → ../templates.
@@ -130,6 +131,7 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
 
   const minify = !args.includes('--no-minify');
   const sourcemap = !args.includes('--no-sourcemap');
+  const menu = !args.includes('--no-menu'); // ADR-290 D6 (GH #196): the IDE's Play pane builds menu-less
 
   // Resolve the target: a bare `.story` file, or a project directory.
   let projectDir: string;
@@ -188,7 +190,7 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
       engineVersion: platformRanges().sharpeeRange.replace(/^[\^~]/, ''),
     };
     try {
-      const outDir = buildBrowser(storyFile, authorEnv, { minify, sourcemap });
+      const outDir = buildBrowser(storyFile, authorEnv, { minify, sourcemap, menu });
       console.log('');
       console.log('To test locally:');
       console.log(`  npx serve ${path.relative(projectDir, outDir)}`);
@@ -264,8 +266,9 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
   // wire the theme <link>s + menu items (ADR-188 Phase 4).
   let html = fs.readFileSync(path.join(TEMPLATES_DIR, 'index.html'), 'utf-8');
   html = injectThemes(processTemplate(html, info), wiredThemes);
+  if (!menu) html = stripClientMenu(html);
   fs.writeFileSync(path.join(outDir, 'index.html'), html);
-  console.log('  ✓ Copied index.html');
+  console.log(menu ? '  ✓ Copied index.html' : '  ✓ Copied index.html (menu-less: no in-page Save / Restore / Restart / Quit)');
 
   // The TESTING page (ADR-306 Phase 2): same bundle, testing skeleton — no
   // chrome, no theme links. IDE-only; `sharpee publish` excludes it by name.
@@ -348,6 +351,7 @@ Usage: sharpee build-browser [options]
 Options:
   --no-minify      Skip minification
   --no-sourcemap   Skip source map generation
+  --no-menu        Strip the in-page menu bar (no Save / Restore / Restart / Quit in the page — the IDE's Play pane builds this way)
 
 Output (dist/web/):
   game.js          Story + engine + browser client (one bundle)

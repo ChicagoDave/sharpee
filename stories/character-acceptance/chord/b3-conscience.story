@@ -32,7 +32,9 @@ create the Hall
 
   A bare hall with a single window. The parlor is south.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Parlor
 
   You.
@@ -48,7 +50,7 @@ create the Steward
   thinks the ledger is doctored, certain, witnessed
 
   goal confess-the-books, high
-    active when it is breaking
+    active when the Steward is breaking
     seek the player
     act steward-blurts-confession
   end goal
@@ -61,7 +63,7 @@ define topics for the Steward
   about "the ledger", "the books", "the accounts":
     phrase steward-denies
   about "the truth":
-    phrase steward-cracks when it is breaking
+    phrase steward-cracks when the Steward is breaking
     phrase steward-deflects
 end topics
 
@@ -96,3 +98,7 @@ define phrase steward-blurts-confession
   The steward hurries in, wild-eyed. "I cannot carry it any longer.
   The books are doctored — it was me, all of it."
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

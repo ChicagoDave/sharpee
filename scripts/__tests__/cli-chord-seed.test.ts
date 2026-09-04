@@ -46,10 +46,16 @@ create the metronome
     phrase tick-tock
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Den
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase tick-tock
   The metronome clacks.

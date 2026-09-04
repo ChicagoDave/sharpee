@@ -6,6 +6,7 @@
  * mutable pursuit state the conditions gate (D17).
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -53,6 +54,7 @@ function runPhase(registry: CharacterPhaseRegistry, world: WorldModel, npc: IFEn
     random: {} as unknown as RandomService,
     playerLocation: room.id,
     playerId: player.id,
+    act: unexpectedAct,
   });
 }
 

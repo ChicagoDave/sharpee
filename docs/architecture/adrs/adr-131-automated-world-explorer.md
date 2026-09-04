@@ -1,7 +1,24 @@
 # ADR-131: Automated World Explorer (Regression Test Generator)
 
-**Status:** Proposed — and **unbuilt** as of 2026-08-05: nothing in `packages/`
-or `repokit` implements it.
+**Status:** **SUPERSEDED IN PART** by
+[ADR-321](adr-321-world-index.md) (2026-08-19, session 317706) — and still **unbuilt**:
+nothing in `packages/` or `repokit` implements it.
+
+> **Do not build from the Decision below as written.** ADR-321 reframed this feature
+> around what an author actually opens a panel to learn — **map, reach, incomplete** — and
+> found that almost all of it is a *static join over the compiled Story IR*, not a walk.
+> The BFS-and-diff-prose bot specified here is demoted to an optional later stage
+> (ADR-321 D9) and is not what gets built first.
+>
+> **What survives:** the *reachability* mode added by ADR-303 D6, and Phase 3's
+> description-noun idea — which becomes ADR-321's **Incomplete** view, generalized from
+> "nouns with no entity" to a full vocabulary check against each object's name and
+> aliases. The **static half** living in `tools/vscode-ext/src/world-explorer.ts` is
+> subsumed by ADR-321's Map and Reach views; per this ADR's own consequence, the extension
+> copy is not deleted until that surface renders.
+>
+> This flip was made by the accepter of ADR-321, as that ADR's supersession ownership
+> requires.
 **Date:** 2026-02-18
 
 > **SCOPE WIDENED 2026-08-05 (session 51b5f4)**, replacing the scope question
@@ -30,6 +47,25 @@ or `repokit` implements it.
 > DRAFT. Landed early on David's instruction (session 51b5f4). The obligation D6
 > records is discharged here, and D6's own "ADR-131 stands unamended until that
 > lands" sentence is corrected in place to say so.
+>
+> ---
+>
+> **CLOSED 2026-08-20 (session 502b0b) — the widening above is moot, and its
+> trigger never fired.** ADR-303 was **SUPERSEDED** on 2026-08-20 without ever
+> being accepted, so the acceptance this amendment anticipated will not happen and
+> the ownership it names has no holder. Read everything above as history.
+>
+> **Do not re-point it at ADR-322.** ADR-303's own supersession record disposes of
+> D6 directly — *"D6's widening of ADR-131 is moot: ADR-321 subsumed ADR-131's
+> static half on 2026-08-19, and the proposal's §4A consumes ADR-321's Reach rather
+> than rebuilding it."* The second mode this block grants was overtaken twice: by
+> ADR-321 for the static half (see the SUPERSEDED IN PART header above, which is the
+> later and governing statement), and by ADR-322 D8 for the reachability half, which
+> **consumes ADR-321's `lifted` rather than widening any explorer**. Re-pointing the
+> citation would resurrect a widening that two later documents removed the need for.
+>
+> **Where the live work is**: ADR-322 (ACCEPTED 2026-08-20) and its working document
+> `docs/proposals/state-space-analysis.md`. Nothing is owed by this ADR to either.
 
 ## Context
 

@@ -145,9 +145,10 @@ Three groups, all shipped together by every Zifmia image.
 
 **Plugins (story-opt-in but always shipped):**
 
-- `@sharpee/plugin-npc`
 - `@sharpee/plugin-scheduler`
 - `@sharpee/plugin-state-machine`
+
+*(Amended 2026-08-28, session 1d6ae5 — ADR-328 Phase 5: `@sharpee/plugin-npc` is dissolved. The NPC turn phase is engine-owned and the decision layer lives in `@sharpee/stdlib`, both already in the baseline, so the manifest shrinks by one; `BASELINE_VERSION` is unchanged because no story import moves. The historical mentions of `plugin-npc` elsewhere in this ADR describe the 2026-05 state and stand as written.)*
 
 **Third-party (vendored at baseline because stories rely on it):**
 

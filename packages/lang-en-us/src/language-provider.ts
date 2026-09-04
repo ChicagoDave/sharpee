@@ -21,7 +21,9 @@ import {
   NarrativeContext,
   DEFAULT_NARRATIVE_CONTEXT,
   resolvePerspectivePlaceholders,
+  expandActorPlaceholders,
 } from './perspective/index.js';
+import { ACTOR_PARAM_KEY } from '@sharpee/if-domain';
 // Types are now imported from @sharpee/if-domain
 
 /**
@@ -72,6 +74,10 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'core.disambiguation_prompt': "Which do you mean: {options}?",
       'core.command_not_understood': "I don't understand that command.",
       'core.command_failed': "I don't understand that.",
+      // GH #345: a story rule's own diagnostic (the loader's LoadError from a
+      // condition or clause) — the reason follows this lead. The command
+      // parsed; a rule failed. Never the parser's refusal.
+      'core.story_rule_failed': "One of the story's rules failed here:",
       // Shared scope-refusal messages (ADR-231 D1): produced by stdlib's
       // requireScope/requireSlotScope as fully-qualified ids — every action
       // shares these; an action wanting different wording returns its own
@@ -82,10 +88,12 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'scope.not_carried': "{You} aren't holding {the item}.",
       'scope.out_of_scope': "{You} {can't} do that.",
       // Room description body (ADR-192/195): the room's prose realized through the
-      // phrase pipeline, carrying the `{slot:here}` room-occupant channel so present
-      // occupants append a presence clause at realize time (the room name is a
-      // separate structural block emitted by the room handler).
-      'if.room.description_body': '{verbatim:description}{slot:here}',
+      // phrase pipeline. `{slot:detail}` is the room's ADR-195 S2 state-derived
+      // detail channel (GH #316) — the same registry examining's `{slot:detail}`
+      // renders, filled by the room handler at the read point, so it precedes the
+      // `{slot:here}` occupant clauses as description prose. The room name is a
+      // separate structural block emitted by the room handler.
+      'if.room.description_body': '{verbatim:description}{slot:detail}{slot:here}',
       // Game lifecycle messages
       'game.started.banner': "{title}\nBy {author}\n\nType HELP for instructions.",
       // Platform prompt (ADR-137)
@@ -297,11 +305,16 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
    * @returns The realized text blocks
    */
   renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[] {
-    // Step 1: Resolve perspective placeholders (ADR-089) — a string pre-pass
-    // that runs BEFORE parsing. Passing params lets the resolver leave bound
-    // params for the phrase parser and conjugate every other bare {word} as a
-    // perspective verb (no central verb allowlist needed).
-    const resolved = resolvePerspectivePlaceholders(template, this.narrativeContext, params);
+    // Step 1: the perspective pre-pass, in the ACTOR's person (ADR-328 D4).
+    // When the engine bound a non-player actor under the reserved key, the
+    // `{You}` family and bare verbs become phrase forms anchored on that actor
+    // ("The thief takes …"); the Assembler agrees them (ADR-199). Otherwise —
+    // the player acting, or no actor bound — the ADR-089 string pre-pass runs
+    // against the story's narrative context exactly as before, so player-voice
+    // output (and 3rd-person narration's pronouns) is byte-identical.
+    const resolved = this.hasNonPlayerActor(params, ctx)
+      ? expandActorPlaceholders(template, params, ACTOR_PARAM_KEY)
+      : resolvePerspectivePlaceholders(template, this.narrativeContext, params);
 
     // Step 2: Parse to a phrase tree (binds params; throws PhraseParseError at
     // parse time on legacy ':' chains, unknown kinds, or unbound params).
@@ -310,6 +323,18 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
     // Step 3: Realize with the Assembler — the sole authority for article,
     // agreement, punctuation, whitespace, reference, and case.
     return this.assembler.realize(tree, ctx);
+  }
+
+  /**
+   * Whether the message's bound actor is an entity other than the player
+   * (ADR-328 D4): a `NounPhrase` under the reserved actor key whose
+   * `referableId` is set and differs from the narrative's player id.
+   */
+  private hasNonPlayerActor(params: Record<string, unknown>, ctx: RenderContext): boolean {
+    const actor = params[ACTOR_PARAM_KEY];
+    if (typeof actor !== 'object' || actor === null) return false;
+    const np = actor as { kind?: unknown; referableId?: unknown };
+    return np.kind === 'noun' && np.referableId !== undefined && np.referableId !== ctx.narrative.playerId;
   }
 
   /**

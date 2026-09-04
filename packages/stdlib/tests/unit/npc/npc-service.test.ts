@@ -1,5 +1,13 @@
 /**
- * Tests for NpcService (ADR-070)
+ * NpcService — the decision layer (ADR-070; ADR-328 D5).
+ *
+ * The service decides WHO acts and hands each behavior a context to act
+ * THROUGH; it executes nothing itself. These tests pin that seam: a
+ * behavior's `context.act` reaches the execution entry with the NPC as
+ * actor, the entry's events join the tick's stream in order, `narrate`
+ * emits a `game.message` sourced by the NPC, and eligibility (dead,
+ * unconscious, the protagonist) gates the hooks. The standard behaviors
+ * are checked for the acts they choose.
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
@@ -12,9 +20,13 @@ import {
   guardBehavior,
   passiveBehavior,
   createWandererBehavior,
+  createFollowerBehavior,
+  type ExecutionEntry,
+  type ActResult,
 } from '../../../src/npc';
+import { IFActions } from '../../../src/actions/constants';
 import { createFixtureRandomService } from '../../test-utils/fixture-random-service';
-import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, CombatantTrait, CombatBehavior, RoomTrait, Direction, EntityType } from '@sharpee/world-model';
+import { IFEntity, WorldModel, TraitType, NpcTrait, HealthTrait, CombatantTrait, CombatBehavior } from '@sharpee/world-model';
 
 // Helper to create mock entity
 function createMockEntity(
@@ -46,6 +58,45 @@ function createMockWorld(entities: IFEntity[] = []): WorldModel {
   } as unknown as WorldModel;
 }
 
+/** An execution entry that records every invocation and answers with canned events. */
+function recordingEntry(result: Partial<ActResult> = {}): ExecutionEntry & { calls: Parameters<ExecutionEntry>[] } {
+  const calls: Parameters<ExecutionEntry>[] = [];
+  const entry = ((actorId, actionId, slots) => {
+    calls.push([actorId, actionId, slots]);
+    return {
+      success: result.success ?? true,
+      events: result.events ?? [{ id: `act-${calls.length}`, type: 'if.event.acted', timestamp: 0, entities: { actor: actorId }, data: { actionId } }],
+    };
+  }) as ExecutionEntry & { calls: Parameters<ExecutionEntry>[] };
+  entry.calls = calls;
+  return entry;
+}
+
+/** A behavior context over mocks — for exercising the standard behaviors directly. */
+function behaviorContext(overrides: Partial<NpcContext> = {}): NpcContext & { entry: ReturnType<typeof recordingEntry>; narrated: unknown[] } {
+  const entry = recordingEntry();
+  const narrated: unknown[] = [];
+  const npc = overrides.npc ?? createMockEntity('npc', 'NPC', {});
+  const context = {
+    npc,
+    world: createMockWorld(),
+    random: createFixtureRandomService(12345),
+    turnCount: 1,
+    playerLocation: 'room-1',
+    npcLocation: 'room-1',
+    npcInventory: [],
+    playerVisible: true,
+    getEntitiesInRoom: () => [],
+    getAvailableExits: () => [],
+    act: (actionId: string, slots?: Parameters<ExecutionEntry>[2]) => entry(npc.id, actionId, slots),
+    narrate: (message: unknown, params?: unknown) => { narrated.push({ message, params }); },
+    ...overrides,
+  } as NpcContext & { entry: typeof entry; narrated: unknown[] };
+  context.entry = entry;
+  context.narrated = narrated;
+  return context;
+}
+
 describe('NpcService', () => {
   let service: NpcService;
   let random: ReturnType<typeof createFixtureRandomService>;
@@ -60,7 +111,7 @@ describe('NpcService', () => {
     it('should register a behavior', () => {
       const behavior: NpcBehavior = {
         id: 'test-behavior',
-        onTurn: () => [],
+        onTurn: () => undefined,
       };
 
       service.registerBehavior(behavior);
@@ -70,7 +121,7 @@ describe('NpcService', () => {
     it('should remove a behavior', () => {
       const behavior: NpcBehavior = {
         id: 'test-behavior',
-        onTurn: () => [],
+        onTurn: () => undefined,
       };
 
       service.registerBehavior(behavior);
@@ -84,479 +135,296 @@ describe('NpcService', () => {
   });
 
   describe('tick', () => {
-    it('should call onTurn for active NPCs', () => {
-      const onTurnFn = vi.fn().mockReturnValue([]);
+    const tickWith = (world: WorldModel, act: ExecutionEntry = recordingEntry()) =>
+      service.tick({ world, turn: 1, random, playerLocation: 'room-1', playerId: 'player', act });
 
-      service.registerBehavior({
-        id: 'test-behavior',
-        onTurn: onTurnFn,
-      });
+    it('should call onTurn for active NPCs', () => {
+      const onTurnFn = vi.fn();
+      service.registerBehavior({ id: 'test-behavior', onTurn: onTurnFn });
 
       const npc = createMockEntity('npc-1', 'Guard', {
         [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
       });
-
       const world = createMockWorld([npc]);
-      (world.getAllEntities as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
-      service.tick({
-        world,
-        turn: 1,
-        random,
-        playerLocation: 'room-1',
-        playerId: 'player',
-      });
+      tickWith(world);
 
       expect(onTurnFn).toHaveBeenCalled();
     });
 
     it('should not call onTurn for dead NPCs', () => {
-      const onTurnFn = vi.fn().mockReturnValue([]);
-
-      service.registerBehavior({
-        id: 'test-behavior',
-        onTurn: onTurnFn,
-      });
+      const onTurnFn = vi.fn();
+      service.registerBehavior({ id: 'test-behavior', onTurn: onTurnFn });
 
       const npc = createMockEntity('npc-1', 'Dead Guard', {
         [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
         [TraitType.HEALTH]: new HealthTrait({ dead: true, causeOfDeath: 'combat' }), // life-state (ADR-226)
       });
 
-      const world = createMockWorld([npc]);
-      (world.getAllEntities as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
-
-      service.tick({
-        world,
-        turn: 1,
-        random,
-        playerLocation: 'room-1',
-        playerId: 'player',
-      });
+      tickWith(createMockWorld([npc]));
 
       expect(onTurnFn).not.toHaveBeenCalled();
     });
 
     it('should not call onTurn for unconscious NPCs', () => {
-      const onTurnFn = vi.fn().mockReturnValue([]);
-
-      service.registerBehavior({
-        id: 'test-behavior',
-        onTurn: onTurnFn,
-      });
+      const onTurnFn = vi.fn();
+      service.registerBehavior({ id: 'test-behavior', onTurn: onTurnFn });
 
       const npc = createMockEntity('npc-1', 'Sleeping Guard', {
         [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
         [TraitType.HEALTH]: new HealthTrait({ health: 1, maxHealth: 10 }), // <=20% → unconscious (ADR-226)
       });
 
-      const world = createMockWorld([npc]);
-      (world.getAllEntities as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
-
-      service.tick({
-        world,
-        turn: 1,
-        random,
-        playerLocation: 'room-1',
-        playerId: 'player',
-      });
+      tickWith(createMockWorld([npc]));
 
       expect(onTurnFn).not.toHaveBeenCalled();
+    });
+
+    it('does not drive the character currently being played (ADR-327 D9)', () => {
+      const onTurnFn = vi.fn();
+      service.registerBehavior({ id: 'test-behavior', onTurn: onTurnFn });
+
+      const npc = createMockEntity('player', 'Protagonist', {
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
+      });
+
+      tickWith(createMockWorld([npc]));
+
+      expect(onTurnFn).not.toHaveBeenCalled();
+    });
+
+    it("a behavior's act reaches the execution entry with the NPC as actor, and its events join the stream", () => {
+      const lamp = createMockEntity('lamp', 'brass lamp');
+      service.registerBehavior({
+        id: 'taker',
+        onTurn: (context) => {
+          const result = context.act(IFActions.TAKING, { directObject: lamp });
+          expect(result.success).toBe(true);
+        },
+      });
+      const npc = createMockEntity('npc-1', 'Thief', {
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'taker' }),
+      });
+      const entry = recordingEntry();
+
+      const events = tickWith(createMockWorld([npc]), entry);
+
+      expect(entry.calls).toEqual([['npc-1', IFActions.TAKING, { directObject: lamp }]]);
+      expect(events.map(e => e.type)).toEqual(['if.event.acted']);
+      expect(events[0].entities.actor).toBe('npc-1');
+    });
+
+    it('a refused act comes back success: false and its refusal events still join the stream', () => {
+      let seen: ActResult | undefined;
+      service.registerBehavior({
+        id: 'taker',
+        onTurn: (context) => { seen = context.act(IFActions.TAKING); },
+      });
+      const npc = createMockEntity('npc-1', 'Thief', {
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'taker' }),
+      });
+      const refusal = { id: 'r', type: 'if.event.taken', timestamp: 0, entities: {}, data: { blocked: true } };
+
+      const events = tickWith(createMockWorld([npc]), recordingEntry({ success: false, events: [refusal] }));
+
+      expect(seen?.success).toBe(false);
+      expect(events).toEqual([refusal]);
+    });
+
+    it('narrate emits one game.message sourced by the NPC at its current location, in act order', () => {
+      service.registerBehavior({
+        id: 'talker',
+        onTurn: (context) => {
+          context.act(IFActions.GOING, { direction: 'NORTH' });
+          context.narrate(NpcMessages.NPC_NOTICES_PLAYER, { speaker: 'x' });
+          context.narrate({ text: 'BEEP.' });
+        },
+      });
+      const npc = createMockEntity('npc-1', 'Bot', {
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'talker' }),
+      });
+      const world = createMockWorld([npc]);
+      (world.getLocation as ReturnType<typeof vi.fn>).mockReturnValue('room-2');
+
+      const events = tickWith(world);
+
+      expect(events.map(e => e.type)).toEqual(['if.event.acted', 'game.message', 'game.message']);
+      expect(events[1].entities).toEqual({ actor: 'npc-1', location: 'room-2' });
+      expect(events[1].data).toEqual({ messageId: NpcMessages.NPC_NOTICES_PLAYER, params: { speaker: 'x' } });
+      expect(events[2].data).toEqual({ text: 'BEEP.' });
+    });
+
+    it('registered tick phases run after the behaviors and see the tick context', () => {
+      const order: string[] = [];
+      service.registerBehavior({ id: 'b', onTurn: () => { order.push('behavior'); } });
+      service.registerTickPhase('phase', (npcs, ctx) => {
+        order.push('phase');
+        expect(npcs.map(n => n.id)).toEqual(['npc-1']);
+        expect(typeof ctx.act).toBe('function');
+        return [];
+      });
+      const npc = createMockEntity('npc-1', 'Guard', {
+        [TraitType.NPC]: new NpcTrait({ behaviorId: 'b' }),
+      });
+
+      tickWith(createMockWorld([npc]));
+
+      expect(order).toEqual(['behavior', 'phase']);
     });
   });
 
   describe('onPlayerEnters', () => {
-    it('should call onPlayerEnters for NPCs in room', () => {
-      const onPlayerEntersFn = vi.fn().mockReturnValue([]);
-
+    it('should call onPlayerEnters for NPCs in room, with an acting context', () => {
+      const onPlayerEntersFn = vi.fn((context: NpcContext) => { context.narrate({ text: 'hi' }); });
       service.registerBehavior({
         id: 'test-behavior',
-        onTurn: () => [],
+        onTurn: () => undefined,
         onPlayerEnters: onPlayerEntersFn,
       });
 
       const npc = createMockEntity('npc-1', 'Guard', {
         [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
       });
-
       const world = createMockWorld([npc]);
       (world.getContents as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
-      service.onPlayerEnters(world, 'room-1', random, 1);
+      const events = service.onPlayerEnters(world, 'room-1', random, 1, recordingEntry());
 
       expect(onPlayerEntersFn).toHaveBeenCalled();
+      expect(events.map(e => e.type)).toEqual(['game.message']);
     });
   });
 
   describe('onPlayerLeaves', () => {
     it('should call onPlayerLeaves for NPCs in room', () => {
-      const onPlayerLeavesFn = vi.fn().mockReturnValue([]);
-
+      const onPlayerLeavesFn = vi.fn();
       service.registerBehavior({
         id: 'test-behavior',
-        onTurn: () => [],
+        onTurn: () => undefined,
         onPlayerLeaves: onPlayerLeavesFn,
       });
 
       const npc = createMockEntity('npc-1', 'Guard', {
         [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
       });
-
       const world = createMockWorld([npc]);
       (world.getContents as ReturnType<typeof vi.fn>).mockReturnValue([npc]);
 
-      service.onPlayerLeaves(world, 'room-1', random, 1);
+      service.onPlayerLeaves(world, 'room-1', random, 1, recordingEntry());
 
       expect(onPlayerLeavesFn).toHaveBeenCalled();
-    });
-  });
-
-  describe('onPlayerSpeaks', () => {
-    it('should call onSpokenTo when player speaks', () => {
-      const onSpokenToFn = vi.fn().mockReturnValue([{ type: 'speak', messageId: 'hello' }]);
-
-      service.registerBehavior({
-        id: 'test-behavior',
-        onTurn: () => [],
-        onSpokenTo: onSpokenToFn,
-      });
-
-      const npc = createMockEntity('npc-1', 'Guard', {
-        [TraitType.NPC]: new NpcTrait({ behaviorId: 'test-behavior' }),
-      });
-
-      const world = createMockWorld([npc]);
-
-      service.onPlayerSpeaks(world, 'npc-1', 'hello', random, 1);
-
-      expect(onSpokenToFn).toHaveBeenCalled();
-      expect(onSpokenToFn.mock.calls[0][1]).toBe('hello');
-    });
-
-    it('should return default response if no handler', () => {
-      service.registerBehavior({
-        id: 'silent-behavior',
-        onTurn: () => [],
-        // No onSpokenTo
-      });
-
-      const npc = createMockEntity('npc-1', 'Silent Guard', {
-        [TraitType.NPC]: new NpcTrait({ behaviorId: 'silent-behavior' }),
-      });
-
-      const world = createMockWorld([npc]);
-
-      const events = service.onPlayerSpeaks(world, 'npc-1', 'hello', random, 1);
-
-      expect(events).toHaveLength(1);
-      expect(events[0].type).toBe('npc.spoke');
-      expect((events[0].data as Record<string, unknown>).messageId).toBe(NpcMessages.NPC_NO_RESPONSE);
-    });
-  });
-
-  describe('onNpcAttacked', () => {
-    it('should call onAttacked when NPC is attacked', () => {
-      const onAttackedFn = vi.fn().mockReturnValue([{ type: 'attack', target: 'player' }]);
-
-      service.registerBehavior({
-        id: 'fighter-behavior',
-        onTurn: () => [],
-        onAttacked: onAttackedFn,
-      });
-
-      const npc = createMockEntity('npc-1', 'Fighter', {
-        [TraitType.NPC]: new NpcTrait({ behaviorId: 'fighter-behavior' }),
-      });
-
-      const attacker = createMockEntity('player', 'Player', {});
-
-      const world = createMockWorld([npc, attacker]);
-
-      service.onNpcAttacked(world, 'npc-1', 'player', random, 1);
-
-      expect(onAttackedFn).toHaveBeenCalled();
     });
   });
 });
 
 describe('standard behaviors', () => {
   describe('guardBehavior', () => {
-    it('should not move on turn', () => {
-      const context = {
-        npc: createMockEntity('guard', 'Guard', {}),
-        world: createMockWorld(),
-        random: createFixtureRandomService(12345),
-        turnCount: 1,
-        playerLocation: 'room-1',
-        npcLocation: 'room-1',
-        npcInventory: [],
-        playerVisible: true,
-        getEntitiesInRoom: () => [],
-        getAvailableExits: () => [],
-      } as NpcContext;
+    it('does nothing on its turn while not hostile', () => {
+      const context = behaviorContext({ npc: createMockEntity('guard', 'Guard', {}) });
 
-      const actions = guardBehavior.onTurn(context);
-      expect(actions).toHaveLength(0);
+      guardBehavior.onTurn(context);
+
+      expect(context.entry.calls).toHaveLength(0);
+      expect(context.narrated).toHaveLength(0);
     });
 
-    it('should emote when player enters', () => {
-      const context = {
-        npc: createMockEntity('guard', 'Guard', {}),
-        world: createMockWorld(),
-        random: createFixtureRandomService(12345),
-        turnCount: 1,
-        playerLocation: 'room-1',
-        npcLocation: 'room-1',
-        npcInventory: [],
-        playerVisible: true,
-        getEntitiesInRoom: () => [],
-        getAvailableExits: () => [],
-      } as NpcContext;
+    it('attacks the visible player each turn while hostile — a real attacking action as the guard', () => {
+      const context = behaviorContext({
+        npc: createMockEntity('guard', 'Guard', {
+          [TraitType.COMBATANT]: new CombatantTrait({ hostile: true }),
+        }),
+      });
 
-      const actions = guardBehavior.onPlayerEnters!(context);
-      expect(actions).toHaveLength(1);
-      expect(actions[0].type).toBe('emote');
-      expect((actions[0] as Record<string, unknown>).messageId).toBe(NpcMessages.GUARD_BLOCKS);
+      guardBehavior.onTurn(context);
+
+      expect(context.entry.calls).toEqual([['guard', IFActions.ATTACKING, { directObject: { id: 'player' } }]]);
     });
 
-    it('should counterattack when attacked', () => {
-      const attacker = createMockEntity('player', 'Player', {});
-      const context = {
-        npc: createMockEntity('guard', 'Guard', {}),
-        world: createMockWorld(),
-        random: createFixtureRandomService(12345),
-        turnCount: 1,
-        playerLocation: 'room-1',
-        npcLocation: 'room-1',
-        npcInventory: [],
-        playerVisible: true,
-        getEntitiesInRoom: () => [],
-        getAvailableExits: () => [],
-      } as NpcContext;
+    it('narrates its blocking line when the player enters', () => {
+      const context = behaviorContext({ npc: createMockEntity('guard', 'Guard', {}) });
 
-      const actions = guardBehavior.onAttacked!(context, attacker);
-      expect(actions).toHaveLength(1);
-      expect(actions[0].type).toBe('attack');
-      expect((actions[0] as Record<string, unknown>).target).toBe('player');
+      guardBehavior.onPlayerEnters!(context);
+
+      expect(context.narrated).toHaveLength(1);
+      expect((context.narrated[0] as { message: string }).message).toBe(NpcMessages.GUARD_BLOCKS);
+      expect(context.entry.calls).toHaveLength(0);
     });
   });
 
   describe('passiveBehavior', () => {
-    it('should do nothing on turn', () => {
-      const context = {
-        npc: createMockEntity('npc', 'NPC', {}),
-      } as NpcContext;
+    it('does nothing on turn', () => {
+      const context = behaviorContext();
 
-      const actions = passiveBehavior.onTurn(context);
-      expect(actions).toHaveLength(0);
+      passiveBehavior.onTurn(context);
+
+      expect(context.entry.calls).toHaveLength(0);
+      expect(context.narrated).toHaveLength(0);
     });
   });
 
   describe('wandererBehavior', () => {
-    it('should sometimes move', () => {
+    it('goes through an available exit — a real going action as the wanderer', () => {
       const wanderer = createWandererBehavior({ moveChance: 1.0 }); // Always move
-
-      const context = {
+      const context = behaviorContext({
         npc: createMockEntity('npc', 'Wanderer', {}),
-        world: createMockWorld(),
-        random: createFixtureRandomService(12345),
-        turnCount: 1,
         playerLocation: 'room-2',
-        npcLocation: 'room-1',
-        npcInventory: [],
         playerVisible: false,
-        getEntitiesInRoom: () => [],
         getAvailableExits: () => [{ direction: 'north' as const, destination: 'room-2' }],
-      } as NpcContext;
+      });
 
-      const actions = wanderer.onTurn(context);
-      expect(actions.some(a => a.type === 'move')).toBe(true);
+      wanderer.onTurn(context);
+
+      expect(context.entry.calls).toEqual([['npc', IFActions.GOING, { direction: 'north' }]]);
     });
 
-    it('should not move when no exits', () => {
+    it('does not act when there are no exits', () => {
       const wanderer = createWandererBehavior({ moveChance: 1.0 });
-
-      const context = {
+      const context = behaviorContext({
         npc: createMockEntity('npc', 'Wanderer', {}),
-        world: createMockWorld(),
-        random: createFixtureRandomService(12345),
-        turnCount: 1,
         playerLocation: 'room-2',
-        npcLocation: 'room-1',
-        npcInventory: [],
         playerVisible: false,
-        getEntitiesInRoom: () => [],
-        getAvailableExits: () => [], // No exits
-      } as NpcContext;
+        getAvailableExits: () => [],
+      });
 
-      const actions = wanderer.onTurn(context);
-      expect(actions.filter(a => a.type === 'move')).toHaveLength(0);
+      wanderer.onTurn(context);
+
+      expect(context.entry.calls).toHaveLength(0);
     });
   });
-});
 
-describe('NpcService - movement announcements (#159)', () => {
-  let service: NpcService;
-  let random: ReturnType<typeof createFixtureRandomService>;
+  describe('followerBehavior', () => {
+    it('follows the player through the exit they took and narrates only when the step succeeded', () => {
+      const follower = createFollowerBehavior();
+      const context = behaviorContext({
+        npc: createMockEntity('npc', 'Dog', {}),
+        playerLocation: 'room-2',
+        playerVisible: false,
+        getAvailableExits: () => [{ direction: 'east' as const, destination: 'room-2' }],
+      });
 
-  beforeEach(() => {
-    service = new NpcService();
-    random = createFixtureRandomService(12345);
-    vi.clearAllMocks();
-  });
+      follower.onPlayerLeaves!(context);
 
-  /**
-   * Build a real WorldModel with two connected rooms (A ⇄ B), a player, and an
-   * NPC. The NPC's behavior is supplied per-test via a 'mover' behavior so we can
-   * drive a specific move/moveTo through the public `tick` path.
-   */
-  function setupMoveWorld(npcData: Partial<ConstructorParameters<typeof NpcTrait>[0]> = {}) {
-    const world = new WorldModel();
-
-    const player = world.createEntity('yourself', EntityType.ACTOR);
-    player.add({ type: TraitType.ACTOR, isPlayer: true });
-    world.setPlayer(player.id);
-
-    const roomA = world.createEntity('Room A', EntityType.ROOM);
-    const roomB = world.createEntity('Room B', EntityType.ROOM);
-    roomA.add(new RoomTrait({ exits: { [Direction.EAST]: { destination: roomB.id } } }));
-    roomB.add(new RoomTrait({ exits: { [Direction.WEST]: { destination: roomA.id } } }));
-
-    const npc = world.createEntity('Sam', EntityType.ACTOR);
-    npc.add(new NpcTrait({ behaviorId: 'mover', canMove: true, ...npcData }));
-
-    return { world, player, roomA, roomB, npc };
-  }
-
-  /** Run one NPC turn where the NPC performs the given action. */
-  function tickWithAction(
-    world: WorldModel,
-    npcId: string,
-    playerLocation: string,
-    action: { type: 'move'; direction: string } | { type: 'moveTo'; roomId: string }
-  ): ISemanticEvent[] {
-    service.registerBehavior({ id: 'mover', onTurn: () => [action as never] });
-    return service.tick({
-      world,
-      turn: 1,
-      random,
-      playerLocation,
-      playerId: world.getPlayer()!.id,
+      expect(context.entry.calls).toEqual([['npc', IFActions.GOING, { direction: 'east' }]]);
+      expect(context.narrated).toHaveLength(1);
+      expect((context.narrated[0] as { message: string }).message).toBe(NpcMessages.NPC_FOLLOWS);
     });
-  }
 
-  function witnessed(events: ISemanticEvent[]): ISemanticEvent | undefined {
-    return events.find((e) => e.type === 'npc.moved.witnessed');
-  }
+    it('stays silent when the world refused the step', () => {
+      const follower = createFollowerBehavior();
+      const refused = recordingEntry({ success: false, events: [] });
+      const context = behaviorContext({
+        npc: createMockEntity('npc', 'Dog', {}),
+        playerLocation: 'room-2',
+        playerVisible: false,
+        getAvailableExits: () => [{ direction: 'east' as const, destination: 'room-2' }],
+        act: (actionId, slots) => refused('npc', actionId, slots),
+      });
 
-  function renderings(event: ISemanticEvent): {
-    sight?: { messageId: string; params: Record<string, unknown> };
-    hearing?: { messageId: string; params: Record<string, unknown> };
-  } {
-    return (event.data as { renderings: never }).renderings;
-  }
+      follower.onPlayerLeaves!(context);
 
-  // Test 0 — the critical world-state mutation.
-  it('relocates the NPC and emits npc.moved (state mutation is the contract)', () => {
-    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
-    world.moveEntity(npc.id, roomA.id);
-
-    // PRECONDITION
-    expect(world.getLocation(npc.id)).toBe(roomA.id);
-
-    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
-
-    // POSTCONDITION — the move actually happened
-    expect(world.getLocation(npc.id)).toBe(roomB.id);
-    expect(events.some((e) => e.type === 'npc.moved')).toBe(true);
-  });
-
-  // Test 1 — default departure.
-  it('announces a default departure from the player room (npc.leaves + heard_departs)', () => {
-    const { world, roomA, npc } = setupMoveWorld({ announcesMovement: true });
-    world.moveEntity(npc.id, roomA.id);
-
-    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
-
-    const w = witnessed(events);
-    expect(w).toBeDefined();
-    expect(renderings(w!).sight).toEqual({
-      messageId: 'npc.leaves',
-      // Lowercase surface form: the template renders {verbatim:direction},
-      // so the token must read as prose ("leaves to the east").
-      params: { speaker: expect.objectContaining({ name: 'Sam' }), direction: 'east' },
+      expect(refused.calls).toHaveLength(1);
+      expect(context.narrated).toHaveLength(0);
     });
-    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
-  });
-
-  // Test 2 — default arrival uses the opposite direction.
-  it('announces a default arrival into the player room with the opposite direction', () => {
-    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
-    world.moveEntity(npc.id, roomB.id); // NPC starts away from the player
-
-    // NPC moves WEST from B into A (the player's room); player sees it arrive from the EAST.
-    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.WEST });
-
-    const w = witnessed(events);
-    expect(w).toBeDefined();
-    expect(renderings(w!).sight).toEqual({
-      messageId: 'npc.enters',
-      params: { speaker: expect.objectContaining({ name: 'Sam' }), direction: 'east' },
-    });
-    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_arrives');
-  });
-
-  // Test 3 — directionless moveTo.
-  it('announces a directionless moveTo with npc.departs / npc.arrives and no direction param', () => {
-    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
-    world.moveEntity(npc.id, roomA.id);
-
-    const events = tickWithAction(world, npc.id, roomA.id, { type: 'moveTo', roomId: roomB.id });
-
-    const w = witnessed(events);
-    expect(w).toBeDefined();
-    expect(renderings(w!).sight).toEqual({ messageId: 'npc.departs', params: { speaker: expect.objectContaining({ name: 'Sam' }) } });
-    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
-  });
-
-  // Test 4 — silent when the flag is off.
-  it('stays silent (no witnessed fact) when announcesMovement is off', () => {
-    const { world, roomA, npc } = setupMoveWorld({ announcesMovement: false });
-    world.moveEntity(npc.id, roomA.id);
-
-    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
-
-    expect(events.some((e) => e.type === 'npc.moved')).toBe(true);
-    expect(witnessed(events)).toBeUndefined();
-  });
-
-  // Test 5 — silent when the move does not cross the player's room.
-  it('stays silent when the move touches neither the player room', () => {
-    const { world, roomA, roomB, npc } = setupMoveWorld({ announcesMovement: true });
-    const elsewhere = world.createEntity('Far Room', EntityType.ROOM);
-    world.moveEntity(npc.id, roomA.id);
-
-    // Player is in a third room; NPC moves A→B, witnessing neither end.
-    const events = tickWithAction(world, npc.id, elsewhere.id, { type: 'move', direction: Direction.EAST });
-
-    expect(world.getLocation(npc.id)).toBe(roomB.id);
-    expect(witnessed(events)).toBeUndefined();
-  });
-
-  // Test 6 — per-NPC override of the sight rendering.
-  it('uses a per-NPC movementMessages override for the sight rendering only', () => {
-    const { world, roomA, npc } = setupMoveWorld({
-      announcesMovement: true,
-      movementMessages: { leaves: 'zoo.sam.leaves' },
-    });
-    world.moveEntity(npc.id, roomA.id);
-
-    const events = tickWithAction(world, npc.id, roomA.id, { type: 'move', direction: Direction.EAST });
-
-    const w = witnessed(events);
-    expect(renderings(w!).sight!.messageId).toBe('zoo.sam.leaves');
-    expect(renderings(w!).sight!.params).toEqual({ speaker: expect.objectContaining({ name: 'Sam' }), direction: 'east' });
-    expect(renderings(w!).hearing!.messageId).toBe('npc.heard_departs');
   });
 });
 
@@ -573,7 +441,7 @@ describe('ADR-226 AC-2: a combat kill removes the NPC from the turn loop', () =>
   it('stops calling onTurn once the NPC is killed via combat (one health source, no sync bug)', () => {
     const service = new NpcService();
     const random = createFixtureRandomService(12345);
-    const onTurnFn = vi.fn().mockReturnValue([]);
+    const onTurnFn = vi.fn();
     service.registerBehavior({ id: 'fighter', onTurn: onTurnFn });
 
     // NPC carries the daemon (NpcTrait), combat stats (CombatantTrait), and
@@ -586,7 +454,7 @@ describe('ADR-226 AC-2: a combat kill removes the NPC from the turn loop', () =>
 
     const world = createMockWorld([npc]);
     const tickOnce = () =>
-      service.tick({ world, turn: 1, random, playerLocation: 'room-1', playerId: 'player' });
+      service.tick({ world, turn: 1, random, playerLocation: 'room-1', playerId: 'player', act: recordingEntry() });
 
     // Alive: the daemon runs this turn.
     tickOnce();

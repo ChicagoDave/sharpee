@@ -7,7 +7,7 @@
  *   - G2: `concealed` → IdentityTrait.concealed marker
  *   - G3: `hiding-spot` → ConcealmentTrait (bare = all positions; narrowed)
  *   - G4/D3: `openable with the <tool>` (keyless per R3) resolved to a WORLD id (was silently dropped)
- *   - turning: REAL-PATH — a Chord `on turning it` clause drives stdlib's
+ *   - turning: REAL-PATH — a Chord `on the player turning` clause drives stdlib's
  *     rewritten turningAction end-to-end (real compiler, real loader, real
  *     registered interceptor; the ADR-228 D5 registry row is what un-deads
  *     the gerund)
@@ -63,10 +63,17 @@ create the Bin
 
 ${body}
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Shed
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('D1: pushable/pullable loader cases', () => {
@@ -208,7 +215,7 @@ create the crowbar
   });
 });
 
-describe('turning: `on turning it` through stdlib turningAction (REAL-PATH)', () => {
+describe('turning: `on the player turning` through stdlib turningAction (REAL-PATH)', () => {
   it('loads the clause (dead-gerund gate passes) and the turn mutates the world', () => {
     const { story, world, player } = loadStory(storyWith(`create the crank
   in the Shed
@@ -216,7 +223,7 @@ describe('turning: `on turning it` through stdlib turningAction (REAL-PATH)', ()
 
   A crank.
 
-  on turning it
+  on the player turning
     phrase crank-groans
     move the prize to the Shed
   end on
@@ -238,6 +245,7 @@ end phrase`));
     const context: any = {
       world,
       player,
+      actor: player,
       action: turningAction,
       command: {
         directObject: { entity: crank }
@@ -273,6 +281,7 @@ end phrase`));
     const context: any = {
       world,
       player,
+      actor: player,
       action: turningAction,
       command: { directObject: { entity: statue } },
       sharedData: {},

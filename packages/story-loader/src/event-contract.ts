@@ -9,7 +9,7 @@
  * tests/event-selector.test.ts and the golden transcript gates.
  *
  * Public interface: EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS,
- * enteringDestination.
+ * enteringDestination, movedActorId.
  * Owner context: @sharpee/story-loader (type-only stdlib dep; erased at emit).
  */
 import type { ActorMovedEventData } from '@sharpee/stdlib';
@@ -71,4 +71,27 @@ export function crossingRegionId(data: unknown): string | undefined {
   if (typeof data !== 'object' || data === null) return undefined;
   const value = (data as Record<string, unknown>)['regionId'];
   return typeof value === 'string' ? value : undefined;
+}
+
+/**
+ * Type-guarded read of a movement event's mover (ADR-325 D3h `when <entity>
+ * moves`; ADR-327 D1 `after <actor> entering`): the envelope's
+ * `entities.actor` (stamped on every action event — the player, or the NPC
+ * the plugin minted the event for), else the payload's `actorId` (the
+ * region crossing events and the loader's own D5 move-arrival stamp it
+ * there), else the payload's actor snapshot id.
+ * @param event the actor-moved / region-crossing event
+ * @returns the mover's world entity id, or undefined
+ */
+export function movedActorId(event: { entities?: Record<string, unknown>; data?: unknown }): string | undefined {
+  const fromEnvelope = event.entities?.actor;
+  if (typeof fromEnvelope === 'string') return fromEnvelope;
+  const data = event.data;
+  if (typeof data !== 'object' || data === null) return undefined;
+  const actorId = (data as Record<string, unknown>).actorId;
+  if (typeof actorId === 'string') return actorId;
+  const actor = (data as Record<string, unknown>).actor;
+  if (typeof actor !== 'object' || actor === null) return undefined;
+  const id = (actor as Record<string, unknown>).id;
+  return typeof id === 'string' ? id : undefined;
 }

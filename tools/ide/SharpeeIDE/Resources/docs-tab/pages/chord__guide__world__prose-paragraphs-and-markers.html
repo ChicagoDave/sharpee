@@ -7,7 +7,7 @@
 
   Someone has left a folded blanket at one end of the bench.</code></pre>
 <p>Within a paragraph, line breaks are yours to place: lines join with single spaces when the text is rendered, so you can wrap prose at any width. A blank line is a real paragraph break.</p>
-<p>A marker like <code>{weather}</code> splices generated text into prose at that spot. Every bare lowercase marker must name something the story declares: a phrase or a text hatch. Here <code>weather</code> is a cycling phrase, so the sundial reads differently on different visits:</p>
+<p>A marker like <code>{weather}</code> splices generated text into prose at that spot. Every bare lowercase marker must name something the story declares: a phrase or a text hatch, or — inside a phrase spoken <code>with &lt;name&gt; = &lt;value&gt;</code> — one of the phrase's own parameters. A parameter that names an entity takes a leading article hint: <code>{the item}</code>, <code>{a item}</code> / <code>{an item}</code>, <code>{some item}</code>, and <code>{bare item}</code> for no article at all, when the prose supplies its own determiner (<code>another {bare item}</code> renders &quot;another pear&quot;). <code>{capitalize the item}</code> starts a sentence with it. Here <code>weather</code> is a cycling phrase, so the sundial reads differently on different visits:</p>
 <pre><code class="language-chord">define phrase weather, cycling
   whose shadow lies crisp in the afternoon sun
 or

@@ -95,14 +95,27 @@ describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {
     expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
   });
 
-  test('requirement + no tool refuses with no_tool — no state change', () => {
-    const { world, rope } = setup({ toolRequired: true });
+  test('GH #241: requirement + no tool named, the declared tool in hand — cuts by implicit instrument', () => {
+    const { world, rope, knife } = setup({ toolRequired: true });
+    implementViaInterceptor(world);
+
+    const { validation, context } = drive(world, rope);
+
+    expect(validation.valid).toBe(true);
+    expect((context.sharedData.resolvedTool as { id: string } | undefined)?.id).toBe(knife.id);
+    expect(world.getStateValue(CUT_FLAG)).toBe(true);
+  });
+
+  test('GH #241: requirement + no tool named, the declared tool not held — refuses with needs_tool naming it, no state change', () => {
+    const { world, room, rope, knife } = setup({ toolRequired: true });
+    world.moveEntity(knife.id, room.id);
     implementViaInterceptor(world);
 
     const { validation } = drive(world, rope);
 
     expect(validation.valid).toBe(false);
-    expect(validation.error).toBe('no_tool');
+    expect(validation.error).toBe('needs_tool');
+    expect((validation.params?.tool as { name?: string })?.name).toBe('sharp knife');
     expect(world.getStateValue(CUT_FLAG)).toBeUndefined();
   });
 

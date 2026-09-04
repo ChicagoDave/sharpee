@@ -41,7 +41,6 @@ function makeContext(overrides: Partial<PropagationContext>): PropagationContext
   return {
     speaker: overrides.speaker!,
     listeners: overrides.listeners ?? [],
-    playerPresent: overrides.playerPresent ?? false,
     turn: overrides.turn ?? 1,
     turnsColocated: overrides.turnsColocated,
   };

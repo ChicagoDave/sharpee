@@ -12,7 +12,7 @@ export const buildRemovedData: ActionDataBuilder<Record<string, unknown>> = (
 ): Record<string, unknown> => {
   const item = context.command.directObject?.entity;
   const source = context.command.indirectObject?.entity;
-  const actor = context.player;
+  const actor = context.actor;
   
   if (!item) {
     return { item: 'nothing' };

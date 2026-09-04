@@ -42,7 +42,7 @@ describe('the grammar header (ADR-269 D8)', () => {
 
   it('a story IR never carries the grammarFile marker', () => {
     const result = compile(
-      'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n',
+      'story\n  title: T\n  authors:\n    N\n\ncreate the Barn\n  a room\n\n  A barn.\n\ncreate Alex\n  a person\n  playable\n  starts in the Barn\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n',
     );
     expect(result.ir!.grammarFile).toBeUndefined();
   });

@@ -9,3 +9,11 @@ every 3 turns
   phrase hum
     A vending machine hums.
 end every
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

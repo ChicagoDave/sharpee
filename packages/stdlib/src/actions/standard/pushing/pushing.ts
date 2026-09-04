@@ -97,7 +97,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject?.entity;
 
     // Must have something to push

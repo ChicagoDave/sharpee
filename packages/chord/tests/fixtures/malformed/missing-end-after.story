@@ -7,7 +7,7 @@ story
 
 create the East Room
   a room
-  after entering it
+  after the player entering
     phrase stumble
 
 create the West Room
@@ -18,3 +18,11 @@ create the West Room
 define phrases en-US
   stumble:
     Careful!
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

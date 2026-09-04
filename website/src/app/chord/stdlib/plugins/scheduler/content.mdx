@@ -21,7 +21,8 @@ The author writes:
 ```chord
 story
   title: The Scullery
-  authors: ref
+  authors:
+    ref
   id: plugins-sequence
   story-version: 0.0.1
   states: quiet, boiling
@@ -37,7 +38,9 @@ create the kettle
 
   A copper kettle, beginning to warm.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Scullery
 
 define sequence kettle coming to the boil
@@ -55,6 +58,10 @@ define sequence steam
     phrase steam-note
       Steam fogs the little window over the sink.
 end sequence
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -97,7 +104,8 @@ The author writes:
 ```chord
 story
   title: The Lighthouse
-  authors: ref
+  authors:
+    ref
   id: plugins-daemons
   story-version: 0.0.1
 
@@ -138,12 +146,18 @@ create the brass clock
       The brass clock ticks once, heavily.
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Jetty
 
 define phrase tide-works
   Out past the bar, the tide keeps working at the rocks.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

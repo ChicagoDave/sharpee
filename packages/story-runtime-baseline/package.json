@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/story-runtime-baseline",
-  "version": "5.1.1",
+  "version": "5.3.0",
   "description": "Story Runtime Baseline manifest (ADR-178). Declares the canonical set of packages a .sharpee story bundle may import. Used by a host to install the baseline transitively and by the story build to validate bundles against the contract.",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
@@ -29,7 +29,6 @@
     "@sharpee/media": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/platform-browser": "workspace:*",
-    "@sharpee/plugin-npc": "workspace:*",
     "@sharpee/plugin-scheduler": "workspace:*",
     "@sharpee/plugin-state-machine": "workspace:*",
     "@sharpee/queries": "workspace:*",

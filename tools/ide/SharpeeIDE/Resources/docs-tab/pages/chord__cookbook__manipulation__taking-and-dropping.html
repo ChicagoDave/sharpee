@@ -1,4 +1,4 @@
-<p>Anything is takeable unless something says otherwise. The two classic &quot;otherwise&quot;s: the <code>scenery</code> trait, which refuses with the platform's <code>fixed_in_place</code>, and an <code>on taking it</code> guard, which refuses with the entity's own words.</p>
+<p>Anything is takeable unless something says otherwise. The two classic &quot;otherwise&quot;s: the <code>scenery</code> trait, which refuses with the platform's <code>fixed_in_place</code>, and an <code>on the player taking</code> guard, which refuses with the entity's own words.</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">create the Lamp Room
   a room
@@ -25,16 +25,22 @@ create the iron ring
 
   A ring set into the floor slab.
 
-  on taking it
+  on the player taking
     refuse ring-fused
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lamp Room
 
 define phrase ring-fused
   The ring is fused to the slab; your fingers just slip off it.
-end phrase</code></pre>
+end phrase
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-text">&gt; take the statue
 The marble statue is fixed in place.

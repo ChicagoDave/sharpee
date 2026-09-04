@@ -24,7 +24,7 @@ describe('cloak.story IR', () => {
   });
 
   it('stamps the IR format version', () => {
-    expect(ir.format).toBe('story language 2');
+    expect(ir.format).toBe('story language 4');
     expect(ir.format).toBe(IR_FORMAT);
   });
 
@@ -48,12 +48,12 @@ describe('cloak.story IR', () => {
       'foyer-of-the-opera-house',
       'cloakroom',
       'foyer-bar',
-      'player',
+      'alex',
       'velvet-cloak',
       'brass-hook',
       'message-in-the-sawdust',
     ]);
-    expect(ir.entities[3].isPlayer).toBe(true);
+    expect(ir.entities[3].isPlayable).toBe(true);
   });
 
   it('resolves exits and placement to entity IDs', () => {
@@ -115,7 +115,8 @@ describe('cloak.story IR', () => {
     expect(clause).toMatchObject({
       clauseKind: 'after',
       action: 'entering',
-      binding: 'it',
+      actor: { kind: 'player' },
+      binding: 'object',
       once: false,
       routing: 'interceptor',
     });
@@ -134,7 +135,7 @@ describe('cloak.story IR', () => {
     const select = message.onClauses[0].body[0];
     expect(select).toMatchObject({
       kind: 'select-on',
-      subject: { kind: 'field', base: { kind: 'it' }, field: 'state' },
+      subject: { kind: 'field', base: { kind: 'entity', id: 'message-in-the-sawdust' }, field: 'state' },
     });
   });
 
@@ -247,6 +248,19 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     expect(errors[0].code).toBe('analysis.unbound-marker');
     expect(errors[0].message).toContain('{gremlin}');
     expect(errors[0].message).toContain('spooky');
+  });
+
+  it('gate: a phrase-body marker naming another phrase is rejected, a room-description one is not (GH #286)', () => {
+    const result = compileFixture('gates/phrase-in-phrase.story');
+    const errors = result.diagnostics.filter((d) => d.severity === 'error');
+    // Exactly one: the `{again}` inside `tent-reply`. The `{again}` in the
+    // Field's description is the WORKING snippet path (Z2) and must not
+    // start erroring — the length-1 assertion pins both directions.
+    expect(errors).toHaveLength(1);
+    expect(errors[0].code).toBe('analysis.phrase-in-phrase');
+    expect(errors[0].message).toContain('{again}');
+    expect(errors[0].message).toContain('tent-reply');
+    expect(errors[0].message).toContain('print literally');
   });
 });
 

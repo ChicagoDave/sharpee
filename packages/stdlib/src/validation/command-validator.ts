@@ -56,6 +56,9 @@ export interface ActionMetadata {
  * query content word matches the entity's vocabulary).
  */
 const MATCH_TIER_EXACT = 3;
+
+/** The words that name the current player, whatever the player entity is called (ADR-327). */
+const SELF_WORDS = new Set(['me', 'myself', 'self', 'yourself']);
 const MATCH_TIER_WORDS = 2;
 
 /** Leading articles stripped from query text before matching (D3 defect fix). */
@@ -247,8 +250,10 @@ export class CommandValidator implements CommandValidator {
     // 4. Check scope constraints based on action metadata
     const metadata = this.getActionMetadata(actionHandler);
 
-    // Check direct object scope
-    if (directObject && metadata.directObjectScope) {
+    // Check direct object scope. An exact-name match resolved out of scope
+    // (GH #206) skips this gate on purpose: the action refuses it by scope
+    // itself, naming the entity and spending the turn.
+    if (directObject && metadata.directObjectScope && !(directObject as { exactOutOfScope?: boolean }).exactOutOfScope) {
       const scopeCheck = this.checkEntityScope(
         directObject.entity as IFEntity,
         metadata.directObjectScope,
@@ -760,6 +765,45 @@ export class CommandValidator implements CommandValidator {
     // Score only the entities that are in scope
     const scoredMatches = this.scoreEntities(entitiesInScope, ref);
 
+    // GH #206: the query names an entity EXACTLY (full name or alias) that
+    // is out of scope, and the only in-scope matches are word-tier — a
+    // knife whose alias carries the word "thief" while the thief is out of
+    // sight. The player meant the exact one; resolving the knife silently
+    // ("Your attack has no effect on the nasty stiletto") is the wrong
+    // outcome. The exact entity resolves instead, and the ACTION's own
+    // validate refuses it by scope ("You can't see the thief") — a blocked
+    // command, which still spends the turn exactly as the mis-resolved one
+    // did, so a walkthrough's turn count holds.
+    // The rule reaches only in-scope matches that carry the query's head
+    // word NOWHERE in their own name — the knife matched "thief" through an
+    // alias. An in-scope "rare stamp" asked for as "stamp" keeps resolving
+    // even when another stamp exists out of sight.
+    const inScopeIds = new Set(entitiesInScope.map(e => e.id));
+    const exactOutOfScope = candidates.find(
+      e => !inScopeIds.has(e.id) && this.matchEntityName(e, ref)?.tier === MATCH_TIER_EXACT
+    );
+    // GH #245 (4): the in-scope competitor keeps the word only when the
+    // query's head is ITS head noun (the last word of its name or of an
+    // alias) — "stamp" for "rare stamp", never "deed" for "deed box".
+    const head = (ref.head ?? '').toLowerCase();
+    const lastWord = (name: string): string => name.toLowerCase().trim().split(/\s+/).pop() ?? '';
+    const headInAnInScopeName = entitiesInScope.some(e =>
+      lastWord(this.getEntityName(e)) === head || this.getEntitySynonyms(e).some(a => lastWord(a) === head)
+    );
+    const bestInScopeTier = scoredMatches[0]?.tier ?? 0;
+    if (exactOutOfScope && scoredMatches.length > 0 && bestInScopeTier < MATCH_TIER_EXACT && !headInAnInScopeName) {
+      this.emitDebugEvent('entity_resolution', command, {
+        objectType,
+        resolved: true,
+        entity: exactOutOfScope.id,
+        reason: 'exact_match_out_of_scope',
+        searchText: ref.text
+      });
+      // Flagged so the post-resolution scope check (step 4) lets it through
+      // to the action, whose validate owns the refusal.
+      return { success: true, value: { entity: exactOutOfScope, parsed: ref, exactOutOfScope: true } as IValidatedObjectReference };
+    }
+
     // PIN 2 ranking: keep only the dominant (tier, wordsMatched) group.
     // Higher tier wins outright; within a tier, more matched words win
     // outright. Only true ties flow into the disambiguation path below;
@@ -989,6 +1033,14 @@ export class CommandValidator implements CommandValidator {
     const aliases = this.getEntitySynonyms(entity).map(s => s.toLowerCase());
     const wordsMatchedFor = (q: string) =>
       Math.max(1, deriveNameVocabulary(q).length);
+
+    // The self words name whoever holds the player role (ADR-327): "me",
+    // "myself", "yourself" resolve to the current player whatever that
+    // entity is called, so a story whose player is Alex still answers
+    // `examine yourself` (GH #231's cloak suite; ISSUE #154's intent).
+    if (SELF_WORDS.has(stripped) && entity.id === this.world.getPlayer()?.id) {
+      return { tier: MATCH_TIER_EXACT, wordsMatched: 1, reasons: ['self_word'] };
+    }
 
     // Tier EXACT — full text equals name, alias, or type
     for (const query of queries) {

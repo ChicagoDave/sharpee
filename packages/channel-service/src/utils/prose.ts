@@ -29,7 +29,9 @@
  * free to reorder or ignore `preferred-layout` — that is the point of
  * ADR-300 D9. This function is what "honour it" means.
  *
- * Public interface: `composeProse`, `joinProseEntries`, `packetProseText`.
+ * Public interface: `composeProse`, `joinProseEntries`, `packetProseText`,
+ * and the presence presentation rule (`ProsePresentationOptions`,
+ * `showsEntry`, `presenceLabel`) every client applies the same way.
  * The channel-id vocabulary itself (`PREFERRED_LAYOUT_CHANNEL`,
  * `PROSE_CHANNEL_IDS`) is wire protocol and lives in `@sharpee/if-domain`.
  *
@@ -101,29 +103,46 @@ export function composeProse(payload: unknown): unknown[] {
  * predecessor in the *composed* sequence, which may sit on a different
  * channel.
  *
+ * Presence-tagged entries (ADR-328 D3) are presented per `opts`: by
+ * default an `absent` entry is skipped; in omniscient mode every entry
+ * shows, labelled by location.
+ *
  * @param entries — prose entries in reading order.
+ * @param opts — presence presentation; absent = the platform default.
  * @returns the joined text, or `''` when nothing renderable is present.
  */
-export function joinProseEntries(entries: unknown): string {
+export function joinProseEntries(entries: unknown, opts: ProsePresentationOptions = {}): string {
   if (!Array.isArray(entries) || entries.length === 0) return '';
 
   let out = '';
   for (const raw of entries) {
     let content: ReadonlyArray<TextContent>;
     let tight = false;
+    let presence: ProsePresence | undefined;
+    let location: string | undefined;
 
     if (Array.isArray(raw)) {
       content = raw as ReadonlyArray<TextContent>;
     } else if (raw && typeof raw === 'object' && Array.isArray((raw as { content?: unknown }).content)) {
-      const entry = raw as { content: ReadonlyArray<TextContent>; tight?: unknown };
+      const entry = raw as {
+        content: ReadonlyArray<TextContent>;
+        tight?: unknown;
+        presence?: unknown;
+        location?: unknown;
+      };
       content = entry.content;
       tight = Boolean(entry.tight);
+      presence = readPresence(entry.presence);
+      location = typeof entry.location === 'string' ? entry.location : undefined;
     } else {
       continue;
     }
 
-    const text = flattenContent(content);
+    if (!showsEntry(presence, opts)) continue;
+    let text = flattenContent(content);
     if (!text.trim()) continue;
+    const label = presenceLabel(presence, location, opts);
+    if (label) text = `${label} ${text}`;
     if (out) out += tight ? '\n' : '\n\n';
     out += text;
   }
@@ -131,12 +150,69 @@ export function joinProseEntries(entries: unknown): string {
 }
 
 /**
+ * A prose entry's presence tag as it appears on the wire (ADR-328 D3).
+ * The same union as `ITextBlock.presence`.
+ */
+export type ProsePresence = 'present' | 'absent' | 'concealed';
+
+/**
+ * How a surface presents presence-tagged prose (ADR-328 D3).
+ *
+ * - `default` — the platform default: `present` and `concealed` entries
+ *   show, `absent` entries are hidden. What a player sees, and what a
+ *   transcript's goldens mean.
+ * - `omniscient` — every entry shows; tagged entries are prefixed with a
+ *   `[<location>]` label so off-stage narration reads as such. The IDE's
+ *   Play panel and the transcript-tester's `presence: omniscient` header
+ *   use it to watch actors off-stage.
+ */
+export interface ProsePresentationOptions {
+  /** Presentation mode. Absent = `default`. */
+  presence?: 'default' | 'omniscient';
+  /**
+   * Resolve a location id to the label the omniscient prefix shows.
+   * Absent = the id itself. Surfaces with a world hand in a name lookup.
+   */
+  locationLabel?: (locationId: string) => string;
+}
+
+/** Read a wire presence value defensively — anything else is "untagged". */
+function readPresence(value: unknown): ProsePresence | undefined {
+  return value === 'present' || value === 'absent' || value === 'concealed' ? value : undefined;
+}
+
+/**
+ * The default-mode rule, stated once: hide `absent`, show everything else.
+ * Omniscient shows all.
+ */
+export function showsEntry(presence: ProsePresence | undefined, opts: ProsePresentationOptions = {}): boolean {
+  if (opts.presence === 'omniscient') return true;
+  return presence !== 'absent';
+}
+
+/**
+ * The omniscient label for a tagged entry — `[<location>]`, or `[<presence>]`
+ * when the entry carries no location. Empty in default mode and for
+ * untagged entries.
+ */
+export function presenceLabel(
+  presence: ProsePresence | undefined,
+  location: string | undefined,
+  opts: ProsePresentationOptions = {},
+): string {
+  if (opts.presence !== 'omniscient' || presence === undefined) return '';
+  if (location === undefined) return `[${presence}]`;
+  return `[${opts.locationLabel ? opts.locationLabel(location) : location}]`;
+}
+
+/**
  * Compose and flatten in one step — one turn packet's prose as plain
  * text. The form every headless surface wants.
  *
  * @param payload — a `TurnPacket.payload`.
+ * @param opts — presence presentation (ADR-328 D3); absent = default.
  * @returns the turn's prose as text, or `''` when it produced none.
  */
-export function packetProseText(payload: unknown): string {
-  return joinProseEntries(composeProse(payload));
+export function packetProseText(payload: unknown, opts: ProsePresentationOptions = {}): string {
+  return joinProseEntries(composeProse(payload), opts);
 }

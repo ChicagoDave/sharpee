@@ -55,7 +55,7 @@ create the Lab
 
   Shelves line the walls{note}. A door leads north.
 
-  after entering it
+  after the player entering
     phrase note
   end after
 
@@ -69,10 +69,16 @@ create the cat
 
   A cat.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase note, cycling${gate}
   and a cat glares from the top shelf
@@ -171,10 +177,16 @@ create the Lab
 
   Shelves line the walls{note}. A door leads north.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase note, cycling
   and a kettle whistles somewhere
@@ -205,10 +217,16 @@ create the Lab
 
   Shelves line the walls{note}. A door leads north.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase note
   and a lone plant wilts on the sill

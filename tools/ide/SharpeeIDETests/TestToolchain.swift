@@ -155,10 +155,16 @@ enum TestToolchain {
 
       A small lab.
 
-    create the player
+    create Alex
+      a person
+      playable
       starts in the Lab
 
       You.
+
+    before the game starts
+      change the player to Alex
+    end before
 
     """
 
@@ -183,10 +189,16 @@ enum TestToolchain {
 
       A lab.
 
-    create the player
+    create Alex
+      a person
+      playable
       starts in the Lab
 
       You.
+
+    before the game starts
+      change the player to Alex
+    end before
 
     define text warning from "./mod.ts"
 

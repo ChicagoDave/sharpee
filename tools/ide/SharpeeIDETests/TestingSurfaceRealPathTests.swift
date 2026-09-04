@@ -781,10 +781,16 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
           It gleams dully.
 
-        create the player
+        create Alex
+          a person
+          playable
           starts in the Den
 
           You.
+
+        before the game starts
+          change the player to Alex
+        end before
 
         """
         try Data(story.utf8).write(to: project.appendingPathComponent("mini.story"))

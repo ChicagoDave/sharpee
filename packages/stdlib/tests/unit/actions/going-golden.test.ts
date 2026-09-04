@@ -78,8 +78,6 @@ describe('goingAction (Golden Pattern)', () => {
       expect(goingAction.requiredMessages).toContain('door_locked');
       expect(goingAction.requiredMessages).toContain('destination_not_found');
       expect(goingAction.requiredMessages).toContain('moved');
-      expect(goingAction.requiredMessages).toContain('moved_to');
-      expect(goingAction.requiredMessages).toContain('first_visit');
       expect(goingAction.requiredMessages).toContain('too_dark');
       expect(goingAction.requiredMessages).toContain('need_light');
     });
@@ -216,6 +214,39 @@ describe('goingAction (Golden Pattern)', () => {
           door: { name: 'wooden door' }
         }
       });
+    });
+
+    test('GH #245 (5): a closed door with an authored opening refusal speaks that refusal instead of door_closed', () => {
+      const { world, player } = setupBasicWorld();
+      const door = world.createEntity('warped door', 'object');
+      door.add({ type: TraitType.OPENABLE, isOpen: false });
+      door.add({ type: TEST_MARKER_TRAIT } as any);
+      world.registerActionInterceptor(TEST_MARKER_TRAIT, IFActions.OPENING, {
+        postValidate() {
+          return { valid: false, error: 'test.door.jammed', params: { hint: 'shoulder it' } };
+        }
+      });
+
+      const room1 = world.createEntity('First Room', 'object');
+      const room2 = world.createEntity('Second Room', 'object');
+      room2.add({ type: TraitType.ROOM });
+      room1.add({
+        type: TraitType.ROOM,
+        exits: { [Direction.NORTH]: { destination: room2.id, via: door.id } }
+      });
+      world.moveEntity(player.id, room1.id);
+
+      const command = createCommand(IFActions.GOING);
+      command.parsed.extras = { direction: Direction.NORTH };
+      const context = createRealTestContext(goingAction, world, command);
+
+      const validation = goingAction.validate(context);
+
+      expect(validation.valid).toBe(false);
+      expect(validation.error).toBe('test.door.jammed');
+      expect(validation.errorQualified).toBe(true);
+      expect(world.getLocation(player.id)).toBe(room1.id);
+      expect((door.get(TraitType.OPENABLE) as { isOpen: boolean }).isOpen).toBe(false);
     });
 
     test('should fail when door is locked', () => {
@@ -671,7 +702,10 @@ describe('goingAction (Golden Pattern)', () => {
       events.forEach(event => {
         if (event.entities) {
           expect(event.entities.actor).toBe(player.id);
-          expect(event.entities.location).toBe(room1.id);
+          // An arrival is located where it happened — the destination
+          // (ADR-328 D3); everything else sits at the origin.
+          const expectedLocation = event.type === 'if.event.actor_entered' ? room2.id : room1.id;
+          expect(event.entities.location, event.type).toBe(expectedLocation);
         }
       });
     });

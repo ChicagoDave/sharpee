@@ -1,10 +1,13 @@
 A `must` line states what has to be true for the action to proceed, and
 names the phrase spoken when it is not. The subject opens the line in
-lowercase (`the`, `it`, or `its`), which is how a requirement stays
-distinct from prose. One fixture exercises every form:
+lowercase, which is how a requirement stays distinct from prose — a
+name (`the player`, `the secateurs`) anywhere, or `it`/`its` for the
+carrier inside a `define trait` body, as here. One fixture exercises
+every form:
 
 ```chord
-  on stocking it
+define trait stockable
+  on the player stocking
     it must be a tool: not-a-tool
     it must be any loose-tool: already-racked
     the player must be in the Potting Bench: too-far-away
@@ -13,6 +16,7 @@ distinct from prose. One fixture exercises every form:
     the player must reach the tool rack: out-of-reach
     phrase racked
   end on
+end trait
 ```
 
 `must be a/an` tests kind, `must be in` tests place, `must be any`
@@ -27,10 +31,10 @@ prohibitions are refusals, and the two forms sit naturally side by
 side:
 
 ```chord
-  on sharpening it
-    it must be dull: already-sharp
+  on the player sharpening
+    the secateurs must be dull: already-sharp
     refuse when the player wears the gardening mittens: mittens-on
-    change it to sharp
+    change the secateurs to sharp
     phrase sharpened
   end on
 ```

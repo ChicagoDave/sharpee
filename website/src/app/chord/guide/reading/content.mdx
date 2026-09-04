@@ -14,7 +14,8 @@ The smallest complete story is a room and a player:
 ```chord
 story
   title: Harness Smoke Test
-  authors: Sharpee Docs
+  authors:
+    Sharpee Docs
   id: chord-ref-smoke
   story-version: 0.0.1
 
@@ -23,8 +24,14 @@ create the Reference Desk
 
   A quiet corner of the documentation stacks.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Reference Desk
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 ## Lines, blocks, and indentation

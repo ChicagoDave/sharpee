@@ -22,7 +22,7 @@ import {
   EntityType,
   RoomBehavior,
   RoomTrait,
-  Direction
+  Direction, NightVisionTrait
 } from '@sharpee/world-model';
 import { type ISemanticEvent } from '@sharpee/core';
 import { CyclopsMessages } from './cyclops-messages';
@@ -77,6 +77,7 @@ export function createCyclops(
   }));
 
   // NPC behavior - uses custom 'cyclops' behavior
+  cyclops.add(new NightVisionTrait()); // the underground is dark; its residents see (ADR-328 D5)
   cyclops.add(new NpcTrait({
     behaviorId: 'cyclops',
     isHostile: true,

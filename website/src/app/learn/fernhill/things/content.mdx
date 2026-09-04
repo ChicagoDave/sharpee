@@ -78,15 +78,15 @@ create the diary page
   readable
   states: folded, read
 
-  on reading it
-    change it to read
+  on the player reading
+    change the diary page to read
     phrase diary-text
       "K. says the greenhouse will take the worst of the frost…"
   end on
 ```
 
 Short texts fit on the config form; anything that should *do* something
-when read gets an `on reading it` clause: the diary flips its own state
+when read gets an `on the player reading` clause: the diary flips its own state
 (the gated-detail chapter builds on `read`) and speaks its text. The
 half-burned letter, incidentally, is a red herring: it points to the bank,
 and it is wrong.

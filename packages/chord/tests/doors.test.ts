@@ -24,9 +24,16 @@ const story = (body: string) => `story
   story-version: 0.0.1
 
 ${body}
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const TWO_ROOMS_AND_DOOR = `create the Kitchen
@@ -91,13 +98,16 @@ create the Hall
 `))).toContain('parse.exit-through');
   });
 
-  it('`, one-way` is a legible reservation error, on doored and plain exits alike (D4)', () => {
-    const doored = errorCodes(story(`${TWO_ROOMS_AND_DOOR}`.replace(
+  it('`, one-way` compiles on doored and plain exits alike, marking the IR exit (D4, GH #327)', () => {
+    const doored = compile(story(`${TWO_ROOMS_AND_DOOR}`.replace(
       'north to the Hall through the oak door',
       'north to the Hall through the oak door, one-way',
     )));
-    expect(doored).toContain('parse.exit-one-way-reserved');
-    const plain = errorCodes(story(`create the Kitchen
+    expect(doored.ok).toBe(true);
+    const kitchenDoored = doored.ir!.entities.find((e) => e.id === 'kitchen')!;
+    expect(kitchenDoored.exits[0]).toMatchObject({ direction: 'north', to: 'hall', via: 'oak-door', oneWay: true });
+
+    const plain = compile(story(`create the Kitchen
   a room
   north to the Hall, one-way
 
@@ -105,7 +115,16 @@ create the Hall
   a room
 
 `));
-    expect(plain).toContain('parse.exit-one-way-reserved');
+    expect(plain.ok).toBe(true);
+    const kitchenPlain = plain.ir!.entities.find((e) => e.id === 'kitchen')!;
+    expect(kitchenPlain.exits[0]).toMatchObject({ direction: 'north', to: 'hall', via: null, oneWay: true });
+  });
+
+  it('a plain exit without the modifier carries no `oneWay` field (IR byte-identical)', () => {
+    const result = compile(story(TWO_ROOMS_AND_DOOR));
+    expect(result.ok).toBe(true);
+    const kitchen = result.ir!.entities.find((e) => e.id === 'kitchen')!;
+    expect('oneWay' in kitchen.exits[0]).toBe(false);
   });
 
   it('rejects an unknown door name with the standard unresolved-entity error', () => {

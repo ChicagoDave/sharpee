@@ -15,7 +15,7 @@ So the test for a `packages/` change is not "did Chord ask for this." It is whet
 
 ## The Packages
 
-Thirty-two packages under `packages/`. Grouped by what they are for, not by dependency order.
+Thirty-one packages under `packages/`. Grouped by what they are for, not by dependency order.
 
 ### Contracts and types
 
@@ -43,9 +43,7 @@ Thirty-two packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/stdlib`** — The standard actions (taking, going, opening, and the rest) written in the four-phase pattern, plus scope resolution, command validation, capability schemas, and the `PerceptionService` implementation. Each action is a directory of six files rather than a single module.
 
-**`@sharpee/plugins`** — The contracts for turn-cycle extensibility: `TurnPlugin`, `TurnPluginContext`, `PluginRegistry`. It also carries the banded-scalar crossing engine (ADR-262) for narrating threshold crossings.
-
-**`@sharpee/plugin-npc`** — NPC behaviors and the NPC turn phase (ADR-070, ADR-120). It plugs into the turn cycle rather than being built into the engine.
+**`@sharpee/plugins`** — The contracts for turn-cycle extensibility: `TurnPlugin`, `TurnPluginContext`, `PluginRegistry`. It also carries the banded-scalar crossing engine (ADR-262) for narrating threshold crossings. The NPC turn phase is not a plugin package: the engine owns it (ADR-328 D5) — `GameEngine.getNpcService()` is where a story registers `NpcBehavior`s, and every act a behavior chooses runs the real standard action as that NPC through the same execution entry the player's commands take. The decision layer (`NpcBehavior`, `NpcContext.act`/`narrate`, the standard behaviors) lives in `@sharpee/stdlib`'s `npc/`.
 
 **`@sharpee/plugin-scheduler`** — Daemons and fuses (ADR-071, ADR-120), the recurring and delayed events a story schedules, plus its own seeded random source.
 
@@ -228,6 +226,7 @@ Located in `/packages/world-model/src/traits/`:
 - **Supporter** - Can have objects placed on top
 - **LightSource** - Provides illumination
 - **Scenery** - Fixed in place, can't be taken
+- **NightVision** - The observer sees in the dark (a marker; ADR-328 D5)
 - **Actor** - Represents player or NPCs
 - **Door** - Connects two rooms
 
@@ -642,7 +641,7 @@ interface PerceptionBlockedData {
 ```typescript
 // In story setup
 const bar = world.createEntity('Dark Bar', EntityType.ROOM);
-bar.add(new RoomTrait({ isDark: true }));  // Dark until lit
+bar.add(new RoomTrait({ requiresLight: true }));  // Dark until lit
 
 // When player enters while carrying cloak (absorbs light):
 // - Room description is filtered to perception.blocked
@@ -650,7 +649,7 @@ bar.add(new RoomTrait({ isDark: true }));  // Dark until lit
 // - Action failures still appear
 
 // When cloak is hung (bar becomes lit):
-roomTrait.isDark = false;
+roomTrait.requiresLight = false;
 // Now room description shows normally
 ```
 

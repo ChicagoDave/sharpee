@@ -57,6 +57,7 @@ export * from './talking.js';
 export * from './asking.js';
 export * from './telling.js';
 export * from './answering.js';
+export * from './saying-goodbye.js';
 
 // Interaction actions
 export * from './throwing.js';
@@ -122,6 +123,7 @@ import { talkingLanguage } from './talking.js';
 import { askingLanguage } from './asking.js';
 import { tellingLanguage } from './telling.js';
 import { answeringLanguage } from './answering.js';
+import { sayingGoodbyeLanguage } from './saying-goodbye.js';
 import { throwingLanguage } from './throwing.js';
 import { eatingLanguage } from './eating.js';
 import { drinkingLanguage } from './drinking.js';
@@ -200,6 +202,7 @@ export const standardActionLanguage = [
   askingLanguage,
   tellingLanguage,
   answeringLanguage,
+  sayingGoodbyeLanguage,
   
   // Interaction actions
   throwingLanguage,

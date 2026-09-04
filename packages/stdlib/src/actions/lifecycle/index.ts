@@ -19,6 +19,8 @@ export {
   LifecycleState,
   ResolvedConsultation,
   ResolveLifecycleOptions,
+  ACTOR_SLOT_ID,
+  actorConsultationId,
   resolveLifecycle,
   getLifecycleState,
   runPreValidate,
@@ -26,7 +28,8 @@ export {
   runPostExecute,
   runPostReport,
   runOnBlocked,
-  blockedMessageId
+  blockedMessageId,
+  vetoOf
 } from './lifecycle-engine.js';
 
 export {

@@ -168,7 +168,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
     // Check if room is currently dark BEFORE turning on the light
     // This is needed to determine if we should auto-LOOK after illuminating
-    const actorRoom = context.world.getContainingRoom(context.player.id);
+    const actorRoom = context.world.getContainingRoom(context.actor.id);
     const wasDarkBefore = actorRoom ? VisibilityBehavior.isDark(actorRoom, context.world) : false;
     sharedData.wasDarkBefore = wasDarkBefore;
 
@@ -216,11 +216,11 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
 
     // If we illuminated a dark room, capture room data for auto-LOOK description
     if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore) {
-      const room = context.world.getContainingRoom(context.player.id);
+      const room = context.world.getContainingRoom(context.actor.id);
       if (room) {
         sharedData.roomSnapshot = captureRoomSnapshot(room, context.world, false);
         const contents = context.world.getContents(room.id)
-          .filter(e => e.id !== context.player.id);
+          .filter(e => e.id !== context.actor.id);
         sharedData.visibleSnapshots = captureEntitySnapshots(contents, context.world);
       }
     }
@@ -300,7 +300,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         // Domain data (for event sourcing / handlers)
         target: sharedData.targetId,
         targetName: sharedData.targetName,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         isLightSource: sharedData.isLightSource,
         lightRadius: sharedData.lightRadius,
         lightIntensity: sharedData.lightIntensity,
@@ -319,7 +319,7 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.roomSnapshot) {
       const room = sharedData.roomSnapshot;
       const contents = context.world.getContents(room.id)
-        .filter(e => e.id !== context.player.id);
+        .filter(e => e.id !== context.actor.id);
 
       // Emit room description domain event exactly the way the looking action
       // does: NO messageId — the engine's specialized room handler renders the

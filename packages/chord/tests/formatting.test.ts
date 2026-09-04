@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { compile, parse } from '../src';
 
-const HEADER = 'story\n  title: Format\n  authors:\n    Nobody\n  id: format\n  story-version: 0.0.1\n\n';
+const HEADER = 'story\n  title: Format\n  authors:\n    Nobody\n  id: format\n  story-version: 0.0.1\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n';
 
 describe('prose block is the only phrase-text form', () => {
   it('rejects the quoted same-line form with a fix-it', () => {
@@ -14,7 +14,7 @@ describe('prose block is the only phrase-text form', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('parse.phrase-text-form');
-    expect(errors[0].span.line).toBe(9);
+    expect(errors[0].span.line).toBe(17);
     expect(errors[0].message).toContain('indented prose block');
   });
 

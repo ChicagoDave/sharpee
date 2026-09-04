@@ -4,22 +4,22 @@ precedence (`not` binds tightest, `or` loosest) with parentheses to
 override; `one chance in N` rolls dice.
 
 ```chord
-  on petting it
-    phrase cat-tolerates when it is dozing
-    phrase cat-glare when it is alert and not one chance in 4
-    phrase cat-purr when (it is alert and one chance in 4) or it wears the ribbon
-    change it to alert when it is dozing
+  on the player petting
+    phrase cat-tolerates when the cat is dozing
+    phrase cat-glare when the cat is alert and not one chance in 4
+    phrase cat-purr when (the cat is alert and one chance in 4) or the cat wears the ribbon
+    change the cat to alert when the cat is dozing
   end on
 ```
 
 The predicates test what an author would point at:
 
 ```chord
-  on examining it
-    phrase barrow-contents when it holds the apple
-    phrase barrow-visible when the player can see it
-    phrase barrow-in-gate when it is in the Orchard Gate
-    phrase barrow-is-thing when it is a container
+  on the player examining
+    phrase barrow-contents when the barrow holds the apple
+    phrase barrow-visible when the player can see the barrow
+    phrase barrow-in-gate when the barrow is in the Orchard Gate
+    phrase barrow-is-thing when the barrow is a container
   end on
 ```
 
@@ -34,7 +34,16 @@ player's location`. A multi-word name simply runs until the next
 structural word (`is`, `has`, `holds`, `wears`, `can`, `and`, `or`,
 `then`, `to`, `while`, `with`), so name your entities around those.
 
-State words resolve against their subject: `when it is dozing` works
+`is in` also takes a region: `the barrow is in the Grounds` is a
+membership test — true in any member room, through nested regions — and
+needs no `landing` line. A [timer](/chord/guide/flow/timers) reads two
+ways: `is` names its current turn (`while search is lingering`) and
+`has` reads its lifecycle (`has started`, `has not started`, `has
+expired`; `is expired` is rejected). Under `use chapters`,
+`during <name>`, `before <name>`, and `after <name>` test the current
+[chapter](/chord/guide/flow/chapters).
+
+State words resolve against their subject: `when the cat is dozing` works
 because the cat declares `dozing`. The closed catalog of platform state
 adjectives (`open`, `closed`, `locked`, `unlocked`, `on`, `off`,
 `worn`, `lit`) reads trait state the same way. An unknown word is a
@@ -51,7 +60,7 @@ define condition vine-tomato: it is a tomato and it is not in the harvest basket
 ```
 
 ```chord
-  on examining it
+  on the player examining
     phrase basket-empty when no gathered-tomato
     phrase basket-laden when any gathered-tomato
   end on

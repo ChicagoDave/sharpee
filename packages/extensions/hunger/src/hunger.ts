@@ -19,7 +19,7 @@
  */
 
 import { IFEvents } from '@sharpee/if-domain';
-import { createBandDataWatcher, type BandRung, type TurnPlugin } from '@sharpee/plugins';
+import { TURN_BANDS, createBandDataWatcher, type BandRung, type TurnPlugin } from '@sharpee/plugins';
 import type { IWorldModel, WorldModel } from '@sharpee/world-model';
 
 /** World-state key for the satiety severity counter (save-persisted). */
@@ -66,7 +66,8 @@ export function createHungerCrossingWatcher(rungs: BandRung[]): TurnPlugin {
   return createBandDataWatcher(
     {
       id: HUNGER_WATCHER_ID,
-      priority: 25,
+      // Watchers band (ADR-332): the crossing observes a turn others produced.
+      priority: TURN_BANDS.watchers.floor + 20,
       concept: 'hunger',
       value: (world: WorldModel) => getHungerSeverity(world),
       bands: () => rungs,

@@ -9,3 +9,8 @@ export {
   HONORIFICS,
 } from './actorTrait.js';
 export { ActorBehavior, type ITakeItemResult, type IDropItemResult } from './actorBehavior.js';
+export {
+  PLAYER_ROLE_ALIASES,
+  addPlayerRoleVocabulary,
+  movePlayerRoleVocabulary,
+} from './playerRole.js';

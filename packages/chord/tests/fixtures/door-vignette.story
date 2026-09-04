@@ -27,7 +27,13 @@ create the iron key
 
   Cold, old, and heavier than it looks.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Landing
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

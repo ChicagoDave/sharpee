@@ -36,10 +36,16 @@ create the Proving Room
 
   Someone has chalked a line across the floor and stopped.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Proving Room
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the lectern
   a supporter
@@ -55,7 +61,7 @@ create the notice
 
   A stiff card, printed on one side.
 
-  on reading it
+  on the player reading
     phrase notice-text
       [posted by order of the proving board]
 

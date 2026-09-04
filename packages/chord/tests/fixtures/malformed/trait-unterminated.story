@@ -13,3 +13,11 @@ create the Lab
   a room
 
   A lab.
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

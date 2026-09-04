@@ -1,7 +1,7 @@
 <p><code>each &lt;condition&gt;</code> runs its body once for every entity that satisfies a named <em>open</em> condition: a condition whose <code>it</code> is left free, so it describes a set rather than testing one thing. Inside the body, <code>the match</code> is the current entity; <code>it</code> keeps meaning the clause's owner.</p>
 <pre><code class="language-chord">define condition frame-seedling: it is a seedling and it is in the cold frame
 define condition labeled-pot: it is a pot and it is in the potting shed</code></pre>
-<pre><code class="language-chord">  on planting it
+<pre><code class="language-chord">  on the player planting
     each frame-seedling
       move the match to the Nursery Bed
       phrase planted-out with plant = the match
@@ -10,7 +10,7 @@ define condition labeled-pot: it is a pot and it is in the potting shed</code></
   end on</code></pre>
 <p>Each matching seedling is moved and announced; then, after the loop, <code>planting-done</code> speaks once. The body is ordinary statements, so <code>move</code>, <code>change</code>, <code>phrase</code>, and the rest all work, and <code>the match</code> is a value you can pass as a parameter (<code>with plant = the match</code>) or use as a <code>move</code>/<code>change</code> target. The iteration order is the order entities were created, and an empty match set simply runs the body zero times.</p>
 <p><code>each</code> blocks nest. The binder <code>the match</code> always refers to the <em>innermost</em> loop:</p>
-<pre><code class="language-chord">  on auditing it
+<pre><code class="language-chord">  on the player auditing
     each frame-seedling
       each labeled-pot
         phrase audit-pair with pot = the match

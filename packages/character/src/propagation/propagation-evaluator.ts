@@ -42,9 +42,6 @@ export interface PropagationContext {
   /** All other NPCs in the same room. */
   listeners: RoomOccupant[];
 
-  /** Whether the player is present in the room. */
-  playerPresent: boolean;
-
   /** Current turn number. */
   turn: number;
 

@@ -20,7 +20,7 @@ create the gilt mirror
 
   The landlord's prized gilt mirror, hung above the bar.
 
-  on throwing it
+  on the player throwing
     refuse mirror-luck
   end on
 
@@ -32,9 +32,15 @@ create the green bottle
 
   An empty green glass bottle.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Taproom
-  carries the green bottle</code></pre>
+  carries the green bottle
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees (one genuine run, where the second command rolls live dice):</p>
 <pre><code class="language-transcript">&gt; throw the bottle at the mirror
 Seven years' bad luck, and the landlord watching? You lower your arm.
@@ -43,4 +49,4 @@ Seven years' bad luck, and the landlord watching? You lower your arm.
 The green bottle smashes against the stone hearth!</code></pre>
 <p>The mirror's target-side guard is deterministic; the hearth throw is not: the same command can also miss, or hit without breaking. This run's &quot;bottle&quot; name made the item fragile, and the smash removed it from play.</p>
 <table><thead><tr><th></th><th>throw (<code>throwing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_item</code> · <code>not_holding</code> · <code>target_not_visible</code> · <code>target_not_here</code> · <code>no_exit</code> · <code>too_heavy</code> (over 10 kg) · <code>self</code></td></tr><tr><td>Outcomes</td><td><code>hits_target</code> · <code>misses_target</code> · <code>target_ducks</code> · <code>target_catches</code> · <code>target_angry</code> · <code>lands_on</code> · <code>lands_in</code> · <code>bounces_off</code> · <code>breaks_against</code> · <code>breaks_on_impact</code> · <code>fragile_breaks</code> · <code>thrown_down</code> · <code>thrown_gently</code> · <code>sails_through</code></td></tr><tr><td>Events</td><td><code>thrown</code> (<code>throwType</code>, <code>hit</code>, <code>willBreak</code>, <code>finalLocation</code> in the payload — enough for a story reaction to know exactly what happened) / <code>throw_blocked</code> · <code>item_destroyed</code> (<code>cause: 'thrown'</code>)</td></tr></tbody></table>
-<p>Interceptors: both the item and the target are consulted (<code>on throwing it</code> on either). A glacier can react to being hit in the same command as an explosive reacts to being thrown; a capability behavior registered for <code>throwing</code> on the target takes over the whole throw.</p>
+<p>Interceptors: both the item and the target are consulted (<code>on the player throwing</code> on either). A glacier can react to being hit in the same command as an explosive reacts to being thrown; a capability behavior registered for <code>throwing</code> on the target takes over the whole throw.</p>

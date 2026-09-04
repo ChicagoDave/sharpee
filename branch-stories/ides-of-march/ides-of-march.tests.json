@@ -292,7 +292,7 @@
                   "You hear: \"\"Then it is finished.\" He says it lightly, and the lightness is the armour. \"The Rose was asked, and the Rose was answered, and Kemp keeps his own counsel from here. We shall not speak of it again.\"\""
                 ]
               },
-              "command": "ask kemp about no",
+              "command": "no",
               "type": "turn"
             }
           ]
@@ -308,7 +308,7 @@
           "You hear: \"\"Done, then, and done plainly.\" He claps his hands once, the sound of a house letting go its breath. \"Tell Philip: the clown comes to the Rose, jigs and all, and the Globe may bury its Caesar with full honours. This talk is finished, friend — and finished WELL.\"\""
         ]
       },
-      "command": "ask kemp about yes",
+      "command": "yes",
       "type": "turn"
     },
     {
@@ -324,7 +324,8 @@
     {
       "assertions": {
         "contains": [
-          "Stage"
+          "Stage",
+          "You hear: \"Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. \"Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.\"\""
         ]
       },
       "command": "north",
@@ -353,7 +354,7 @@
       "assertions": {
         "contains": [
           "Stage",
-          "You hear: \"Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. \"Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.\"\""
+          "You hear: \"\"Your cue is 'Peace, ho! Caesar speaks.'\" He gives the line its full weight, and the boards give it back. \"Not before, on pain of my attention. Not after, on pain of the same. The house opens TODAY, and today every man in it is exactly where the play says he is.\"\""
         ]
       },
       "command": "east",

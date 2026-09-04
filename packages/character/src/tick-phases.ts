@@ -2,7 +2,8 @@
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * sub-steps: decay → observe → influence → propagation → goals → scenes →
+ * arrival reactions (GH #353)
  * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
  * arbiter.) Ordering between sub-steps is a contract, which is why this
  * is one registration rather than three (docs/work/archive/adr-310/
@@ -29,7 +30,9 @@ import {
   TraitType,
   CharacterModelTrait,
   RoomTrait,
+  Direction,
   type IExitInfo,
+  type DirectionType,
   type TemperamentDef,
   type SceneWireEvent,
   type ConversationSceneState,
@@ -37,7 +40,15 @@ import {
   type InitiativeSeizure,
 } from '@sharpee/world-model';
 import type { IRCondition } from '@sharpee/chord';
-import { nounPhraseFor, processLucidityDecay, observeEvent, CharacterMessages } from '@sharpee/stdlib';
+import {
+  nounPhraseFor,
+  processLucidityDecay,
+  observeEvent,
+  CharacterMessages,
+  IFActions,
+  type ActSlots,
+  type ExecutionEntry,
+} from '@sharpee/stdlib';
 import { detectActs, witnessActs, witnessStatement } from './act-detection/index.js';
 import { normalizeTopic } from '@sharpee/chord';
 import { CHARACTER_TURN_KEY, dialogueTurn } from './character-clock.js';
@@ -69,6 +80,7 @@ import {
   GoalManager,
   GoalStepContext,
   StepResult,
+  StepMutation,
   evaluateGoalStep,
   SimpleRoomGraph,
 } from './goals/index.js';
@@ -96,6 +108,13 @@ interface TickContext {
   random: RandomService;
   playerLocation: EntityId;
   playerId: EntityId;
+  /**
+   * The execution entry (ADR-328 D2; ADR-329 D6): how a goal step's chosen
+   * act — `taking`, `giving`, `dropping`, `going` — becomes a real action
+   * run as the NPC through the engine's four phases. The engine supplies
+   * it every tick; the goal sub-step is its only consumer here.
+   */
+  act: ExecutionEntry;
   /**
    * The player action's events this turn (ADR-310 Phase 5) — the observe
    * sub-step's input. Absent (older callers, unit harnesses) = nothing
@@ -143,6 +162,33 @@ export interface CharacterPhaseConfig {
   arrivalNarratedTopics?: ReadonlySet<string>;
 }
 
+/** A fact that just landed on a listener by propagation (GH #353). */
+export interface ArrivedFact {
+  /** The NPC who now knows the topic, as a world id. */
+  listenerId: string;
+  /** The NPC who passed it, as a world id. */
+  speakerId: string;
+  /** The topic that arrived. */
+  topic: string;
+  /** The room the transfer happened in. */
+  roomId: string;
+  /** The turn it landed on. */
+  turn: number;
+}
+
+/**
+ * The story's reaction to an arrival-narrated fact landing (GH #353) — the
+ * other half of `arrivalNarratedTopics`. The loader binds it at load, like
+ * the oracle: authored wiring, no runtime state. `recordTransfer` queues
+ * each newly landed arrival-narrated fact and the tick calls the reaction
+ * for each after its own sub-steps (last, after scenes), appending the
+ * events it returns — so the owner's `on every turn … while it knows
+ * <topic>` clause narrates the arrival on that tick, as the contract
+ * promises, whichever band the scheduler runs in (ADR-332), and the tick's
+ * goals and scenes saw the world as it stood when the fact arrived.
+ */
+export type ArrivalReaction = (arrival: ArrivedFact, world: WorldModel) => ISemanticEvent[];
+
 /**
  * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
  * story data at every load; holds NO mutable runtime state (ADR-310 D17 —
@@ -158,6 +204,8 @@ export class CharacterPhaseRegistry {
   private temperamentDefs?: Readonly<Record<string, TemperamentDef>>;
   /** Authored `witnessed as` aliases (ADR-318 D12a), actor as WORLD id — the loader resolves. */
   private witnessedAliases?: ReadonlyArray<{ actor: string; act: string; alias: string }>;
+  /** The story's arrival reaction (GH #353) — bound at load, like the oracle. */
+  private arrivalReaction?: ArrivalReaction;
 
   /**
    * Register character configuration for an NPC.
@@ -199,6 +247,21 @@ export class CharacterPhaseRegistry {
     return this.oracle;
   }
 
+  /**
+   * Bind the story's arrival reaction (loader, at load — last-wins, like the
+   * oracle). Called by `recordTransfer` for every arrival-narrated fact that
+   * newly lands.
+   * @param reaction the story's reaction
+   */
+  setArrivalReaction(reaction: ArrivalReaction): void {
+    this.arrivalReaction = reaction;
+  }
+
+  /** The bound arrival reaction, if any. */
+  getArrivalReaction(): ArrivalReaction | undefined {
+    return this.arrivalReaction;
+  }
+
   /** Set the story's authored temperament definitions (loader, at load). */
   setTemperamentDefs(defs: Readonly<Record<string, TemperamentDef>>): void {
     this.temperamentDefs = defs;
@@ -229,12 +292,16 @@ function createEvent(
   type: string,
   data: Record<string, unknown>,
   npcId?: string,
+  locationId?: string,
 ): ISemanticEvent {
   return {
     id: `${type}_${Date.now()}_${crypto.randomUUID().slice(0, 9)}`,
     type,
     timestamp: Date.now(),
-    entities: npcId ? { actor: npcId } : {},
+    entities: {
+      ...(npcId ? { actor: npcId } : {}),
+      ...(locationId ? { location: locationId } : {}),
+    },
     data,
   };
 }
@@ -263,6 +330,15 @@ interface SceneTickSurface {
     soundParams?: Record<string, unknown>;
   }>;
 
+  /**
+   * Arrival-narrated facts that newly landed this tick (propagation) — the
+   * story's reactions to them run LAST, after scenes (GH #353), so the
+   * goals and scenes sub-steps see the world as it was when the fact
+   * arrived, exactly as they did when the scheduler ran those clauses
+   * after the actor phase.
+   */
+  arrivals: ArrivedFact[];
+
   /** Completed goal `say` steps addressed to a co-located wrappable partner. */
   says: Array<{ npcId: string; targetId: string; messageId: string; roomId: string }>;
 
@@ -272,7 +348,7 @@ interface SceneTickSurface {
 
 /** A fresh, empty surface for one phase invocation. */
 function emptySceneTickSurface(): SceneTickSurface {
-  return { acts: [], transfers: [], says: [], movedNpcIds: new Set() };
+  return { acts: [], transfers: [], arrivals: [], says: [], movedNpcIds: new Set() };
 }
 
 /**
@@ -347,8 +423,40 @@ export function createCharacterModelPhase(
       ...runPropagationSubStep(npcs, ctx, registry, surface),
       ...runGoalSubStep(npcs, ctx, registry, surface),
       ...runSceneSubStep(npcs, ctx, registry, surface),
+      ...runArrivalReactions(ctx, registry, surface),
     ];
   };
+}
+
+// ---------------------------------------------------------------------------
+// Arrival reactions (GH #353) — last, after scenes
+// ---------------------------------------------------------------------------
+
+/**
+ * Run the story's reaction to every arrival-narrated fact that landed this
+ * tick, in arrival order. Last on purpose: the clauses these reactions run
+ * may move or re-mood their owner, and the goals and scenes sub-steps must
+ * see the world as it stood when the fact arrived — the order the scheduler
+ * gave those clauses before ADR-332 moved it ahead of the actor phase.
+ * Nothing bound, or nothing arrived: no events.
+ *
+ * @param ctx - The tick context
+ * @param registry - Character phase registry (carries the bound reaction)
+ * @param surface - This tick's surface, with the queued arrivals
+ * @returns The reactions' events, in arrival order
+ */
+function runArrivalReactions(
+  ctx: TickContext,
+  registry: CharacterPhaseRegistry,
+  surface: SceneTickSurface,
+): ISemanticEvent[] {
+  const react = registry.getArrivalReaction();
+  if (!react || surface.arrivals.length === 0) return [];
+  const events: ISemanticEvent[] = [];
+  for (const arrival of surface.arrivals) {
+    events.push(...react(arrival, ctx.world));
+  }
+  return events;
 }
 
 /**
@@ -524,7 +632,7 @@ function runPropagationSubStep(
   surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const { world, turn, playerLocation } = ctx;
+  const { world, turn } = ctx;
 
   // Group NPCs by room
   const roomNpcs = new Map<string, IFEntity[]>();
@@ -541,7 +649,7 @@ function runPropagationSubStep(
 
   for (const [roomId, roomNpcList] of roomNpcs) {
     if (roomNpcList.length < 2) continue;
-    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, playerLocation, events, surface);
+    handleRoomPropagation(roomId, roomNpcList, registry, world, turn, events, surface);
   }
 
   return events;
@@ -555,8 +663,7 @@ function runPropagationSubStep(
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
- * @param playerLocation - Player's current room ID
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function handleRoomPropagation(
   roomId: string,
@@ -564,7 +671,6 @@ function handleRoomPropagation(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   turn: number,
-  playerLocation: EntityId,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
 ): void {
@@ -584,14 +690,13 @@ function handleRoomPropagation(
     const propContext: PropagationContext = {
       speaker: { id: speaker.id, trait, profile: config.propagationProfile },
       listeners,
-      playerPresent: roomId === playerLocation,
       turn,
     };
 
     const transfers = evaluatePropagation(propContext);
 
     for (const transfer of transfers) {
-      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, playerLocation, events, surface);
+      recordTransfer(transfer, speaker, trait, roomId, registry, world, turn, events, surface);
     }
   }
 }
@@ -606,8 +711,7 @@ function handleRoomPropagation(
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
- * @param playerLocation - Player's current room ID
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function recordTransfer(
   transfer: ReturnType<typeof evaluatePropagation>[number],
@@ -617,7 +721,6 @@ function recordTransfer(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   turn: number,
-  playerLocation: EntityId,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
 ): void {
@@ -640,6 +743,23 @@ function recordTransfer(
   // narration of it stands down.
   const authorNarratesArrival =
     listenerConfig?.arrivalNarratedTopics?.has(transfer.topic) ?? false;
+
+  // GH #353: the story reacts to that arrival on THIS tick — the contract
+  // `arrivalNarratedTopics` names — but after the tick's own sub-steps, so
+  // the reaction is queued on the surface and run last (see
+  // runArrivalReactions). The scheduler's own pass of the clause (whatever
+  // band it runs in, ADR-332) then finds a `, once` clause already spent.
+  // Both paths below queue it: the reaction is about the fact landing, not
+  // about how the line travels.
+  if (!result.alreadyKnew && authorNarratesArrival) {
+    surface.arrivals.push({
+      listenerId: transfer.listenerId,
+      speakerId: speaker.id,
+      topic: transfer.topic,
+      roomId,
+      turn,
+    });
+  }
 
   // ADR-320 Phase 8 (D10 — "propagation made visible"): a wrappable
   // pair's transfer becomes a scene move; its observable surface is the
@@ -670,7 +790,10 @@ function recordTransfer(
     return;
   }
 
-  if (roomId === playerLocation && !result.alreadyKnew && !authorNarratesArrival) {
+  // ADR-328 D3: no room gate — the event fires wherever the player is,
+  // carrying the room it happened in so the engine funnel tags presence
+  // and the client decides what to show.
+  if (!result.alreadyKnew && !authorNarratesArrival) {
     const visibility = getVisibilityResult(transfer, 'present');
     if (visibility.messageId) {
       events.push(createEvent('character.propagation.witnessed', {
@@ -680,7 +803,7 @@ function recordTransfer(
         messageId: visibility.messageId,
         speakerName: speaker.name,
         listenerName: listenerEntity.name,
-      }, speaker.id));
+      }, speaker.id, roomId));
     }
   }
 }
@@ -696,10 +819,10 @@ function runGoalSubStep(
   surface: SceneTickSurface,
 ): ISemanticEvent[] {
   const events: ISemanticEvent[] = [];
-  const { world, playerLocation } = ctx;
+  const { world } = ctx;
 
   for (const npc of npcs) {
-    executeNpcGoals(npc, registry, world, playerLocation, ctx.turn, events, surface);
+    executeNpcGoals(npc, registry, world, ctx.turn, ctx.act, events, surface);
   }
 
   return events;
@@ -727,16 +850,16 @@ function boundCompiledEval(
  * @param npc - The NPC entity to evaluate
  * @param registry - Character phase registry for configs and goal managers
  * @param world - World model for location lookups and room graph
- * @param playerLocation - Player's current room ID
  * @param currentTurn - The turn being evaluated (D16 suppression window)
- * @param events - Accumulator for witnessed events
+ * @param act - The execution entry the step's action runs through, as this NPC
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function executeNpcGoals(
   npc: IFEntity,
   registry: CharacterPhaseRegistry,
   world: WorldModel,
-  playerLocation: EntityId,
   currentTurn: number,
+  act: ExecutionEntry,
   events: ISemanticEvent[],
   surface: SceneTickSurface,
 ): void {
@@ -766,7 +889,6 @@ function executeNpcGoals(
     trait,
     movement,
     roomGraph: buildRoomGraph(world),
-    playerPresent: npcLocation === playerLocation,
     isInRoom: (entityId, roomId) => world.getLocation(entityId) === roomId,
     getEntityRoom: (entityId) => world.getLocation(entityId) || undefined,
     ...(evalCompiled ? { evalCompiled } : {}),
@@ -783,19 +905,20 @@ function executeNpcGoals(
 
   const stepResult = evaluateGoalStep(activeGoal, stepContext);
 
-  // D6: the evaluator computes intent; the phase applies it to the world.
-  // A step whose mutation failed neither advances nor announces itself —
-  // it retries next tick.
-  const applied = applyStepMutation(stepResult, npc.id, npcLocation, world);
+  // ADR-310 D6 / ADR-329 D6: the evaluator computes intent; the phase
+  // performs it as the NPC through the execution entry. A step whose
+  // action was refused neither advances nor announces itself — it retries
+  // next tick, and each witnessed refusal narrates (ADR-329 D5).
+  const applied = performStep(stepResult, npc.id, npcLocation, world, act, events);
 
   // Phase 8 surfacing: applied moves feed exit-close detection; a
   // completed `say` at a co-located wrappable partner becomes a scene
   // opening move — its observable surface is the sound path, so the
   // legacy witnessed mint below is suppressed for exactly that firing.
+  const mutation = stepResult.status === 'completed' || stepResult.status === 'in-progress' ? stepResult.mutation : undefined;
   if (
     applied &&
-    (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
-    stepResult.mutation?.kind === 'move'
+    (mutation?.kind === 'move' || (mutation?.kind === 'perform' && mutation.actionId === IFActions.GOING))
   ) {
     surface.movedNpcIds.add(npc.id);
   }
@@ -817,16 +940,17 @@ function executeNpcGoals(
     !sceneWrappedSay &&
     applied &&
     (stepResult.status === 'completed' || stepResult.status === 'in-progress') &&
-    stepResult.witnessed &&
-    npcLocation === playerLocation
+    stepResult.witnessed
   ) {
+    // ADR-328 D3: no room gate — the step narrates wherever the player is,
+    // carrying the NPC's room so the engine tags presence.
     events.push(createEvent('character.goal.step', {
       npcId: npc.id,
       goalId: activeGoal.def.id,
       step: activeGoal.state.currentStep,
       messageId: stepResult.witnessed,
       speaker: nounPhraseFor(npc),
-    }, npc.id));
+    }, npc.id, npcLocation));
   }
 
   if (stepResult.status === 'completed' && applied) {
@@ -850,29 +974,99 @@ function executeNpcGoals(
 }
 
 /**
- * Apply a goal step's world mutation (NPC movement, item transfer).
+ * Perform a goal step's act as the NPC (ADR-329 D6): the step's intent
+ * becomes one standard action — `going` one exit, `taking`, `giving`,
+ * `dropping` — run through the execution entry, so it is validated,
+ * interceptable, and witnessed exactly as a typed command would be.
+ * The action's events join the tick's stream (already applied by the
+ * executor; the plugin path only enriches and tags them).
  *
  * @param result - The step evaluation result carrying the intent
  * @param npcId - The acting NPC
- * @param npcLocation - The NPC's current room (drop destination)
- * @param world - The world to mutate
- * @returns True when there was nothing to apply or the mutation succeeded
+ * @param npcLocation - The NPC's current room (where a `move` departs from)
+ * @param world - The world, read for the exit that leads to the step's room
+ * @param act - The execution entry
+ * @param events - The tick's event accumulator the act's events join
+ * @returns True when there was nothing to perform or the action ran; false when refused
  */
-function applyStepMutation(
+function performStep(
   result: StepResult,
   npcId: EntityId,
   npcLocation: EntityId,
   world: WorldModel,
+  act: ExecutionEntry,
+  events: ISemanticEvent[],
 ): boolean {
   if (result.status !== 'completed' && result.status !== 'in-progress') return true;
   if (!result.mutation) return true;
-  const m = result.mutation;
+  const resolved = stepAction(result.mutation, npcLocation, world);
+  if (!resolved) return false;
+  const outcome = act(npcId, resolved.actionId, resolved.slots);
+  events.push(...outcome.events);
+  return outcome.success;
+}
+
+/**
+ * The action and slots one step mutation lowers onto. A `move` whose room
+ * the NPC's current room has no exit toward resolves to nothing — the
+ * planner's graph is built from exits, so this only arises for a one-way
+ * passage walked backwards, and an NPC cannot go where no exit leads.
+ */
+function stepAction(
+  m: StepMutation,
+  npcLocation: EntityId,
+  world: WorldModel,
+): { actionId: string; slots: ActSlots } | undefined {
+  const entity = (id: EntityId) => world.getEntity(id);
   switch (m.kind) {
-    case 'move': return world.moveEntity(npcId, m.toRoom);
-    case 'take': return world.moveEntity(m.itemId, npcId);
-    case 'give': return world.moveEntity(m.itemId, m.toId);
-    case 'drop': return world.moveEntity(m.itemId, npcLocation);
+    case 'move': {
+      const direction = exitDirectionTo(world, npcLocation, m.toRoom);
+      return direction ? { actionId: IFActions.GOING, slots: { direction } } : undefined;
+    }
+    case 'take': {
+      const item = entity(m.itemId);
+      return item ? { actionId: IFActions.TAKING, slots: { directObject: item } } : undefined;
+    }
+    case 'give': {
+      const item = entity(m.itemId);
+      const recipient = entity(m.toId);
+      return item && recipient
+        ? { actionId: IFActions.GIVING, slots: { directObject: item, indirectObject: recipient } }
+        : undefined;
+    }
+    case 'drop': {
+      const item = entity(m.itemId);
+      return item ? { actionId: IFActions.DROPPING, slots: { directObject: item } } : undefined;
+    }
+    case 'perform': {
+      // ADR-329 D10: the roles were sorted at compile time; only the lookups
+      // are left. A slot naming nothing in the world is nothing to perform.
+      const slots: ActSlots = {};
+      for (const role of ['directObject', 'indirectObject', 'instrument'] as const) {
+        const id = m.slots[role];
+        if (id === undefined) continue;
+        const found = entity(id);
+        if (!found) return undefined;
+        slots[role] = found;
+      }
+      if (m.slots.direction !== undefined) {
+        const direction = (Direction as Record<string, DirectionType>)[m.slots.direction.toUpperCase()];
+        if (!direction) return undefined;
+        slots.direction = direction;
+      }
+      return { actionId: m.actionId, slots };
+    }
   }
+}
+
+/** The direction of the exit from `roomId` whose destination is `toRoom`, if one exists. */
+function exitDirectionTo(world: WorldModel, roomId: EntityId, toRoom: EntityId): DirectionType | undefined {
+  const exits = world.getEntity(roomId)?.get(RoomTrait)?.exits;
+  if (!exits) return undefined;
+  for (const [direction, exit] of Object.entries(exits)) {
+    if ((exit as IExitInfo).destination === toRoom) return direction as DirectionType;
+  }
+  return undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -908,7 +1102,9 @@ function runInfluenceSubStep(
       const targetId = effect.target ?? npc.id;
       const target = world.getEntity(targetId);
       const targetLoc = target ? world.getLocation(target.id) : undefined;
-      if (targetLoc === playerLocation) {
+      // ADR-328 D3: no room gate — the release line fires wherever the
+      // player is, carrying the target's room so the engine tags presence.
+      {
         // Opt-in release line (David's ruling 2026-08-16): the authored
         // `expired` phrase key rides as messageId; absent = silent, and
         // the payload stays byte-identical to the pre-ruling shape.
@@ -927,7 +1123,7 @@ function runInfluenceSubStep(
                 influencerName: influencer?.name ?? effect.influencerId,
               }
             : {}),
-        }));
+        }, effect.influencerId, targetLoc));
       }
     }
   }
@@ -965,7 +1161,7 @@ function runInfluenceSubStep(
   // Evaluate passive influences per room
   for (const [roomId, entities] of roomEntities) {
     const results = evaluatePassiveInfluences(entities);
-    handleInfluenceResults(results, roomId, registry, world, turn, playerLocation, events);
+    handleInfluenceResults(results, roomId, registry, world, turn, events);
   }
 
   return events;
@@ -984,8 +1180,7 @@ function runInfluenceSubStep(
  * @param registry - Character phase registry for configs
  * @param world - World model for entity lookups
  * @param turn - Current turn number
- * @param playerLocation - Player's current room ID
- * @param events - Accumulator for witnessed events
+ * @param events - Accumulator for narration events (ADR-328 D3: tagged, not dropped)
  */
 function handleInfluenceResults(
   exertions: PassiveInfluenceExertion[],
@@ -993,7 +1188,6 @@ function handleInfluenceResults(
   registry: CharacterPhaseRegistry,
   world: WorldModel,
   turn: number,
-  playerLocation: EntityId,
   events: ISemanticEvent[],
 ): void {
   for (const exertion of exertions) {
@@ -1028,17 +1222,19 @@ function handleInfluenceResults(
 
       if (outcome.status === 'applied') {
         newlyApplied.push(outcome.targetId);
-      } else if (exertion.resisted && roomId === playerLocation) {
+      } else if (exertion.resisted) {
+        // ADR-328 D3: no room gate — tagged by the room, not dropped.
         events.push(createEvent('character.influence.resisted', {
           influencerId: exertion.influencerId, targetId: outcome.targetId,
           influenceName: exertion.influenceName, messageId: exertion.resisted,
           influencerName: influencerEntity?.name ?? exertion.influencerId,
           targetName: targetEntity?.name ?? outcome.targetId,
-        }, exertion.influencerId));
+        }, exertion.influencerId, roomId));
       }
     }
 
-    if (newlyApplied.length > 0 && exertion.witnessed && roomId === playerLocation) {
+    if (newlyApplied.length > 0 && exertion.witnessed) {
+      // ADR-328 D3: no room gate — tagged by the room, not dropped.
       const firstTarget = world.getEntity(newlyApplied[0]);
       events.push(createEvent('character.influence.applied', {
         influencerId: exertion.influencerId,
@@ -1047,7 +1243,7 @@ function handleInfluenceResults(
         influenceName: exertion.influenceName, messageId: exertion.witnessed,
         influencerName: influencerEntity?.name ?? exertion.influencerId,
         targetName: firstTarget?.name ?? newlyApplied[0],
-      }, exertion.influencerId));
+      }, exertion.influencerId, roomId));
     }
   }
 }
@@ -1096,6 +1292,21 @@ function runSceneSubStep(
   const pushWire = (wire: SceneWireEvent[]): void => {
     for (const w of wire) {
       events.push(createEvent(`character.scene.${w.kind}`, { ...w }));
+      // ADR-320 D10a: a parked thread's `on parting` line is wire data
+      // like every scene move (never rendered as `character.scene.*`);
+      // the prose event is this one, the same the dispatch path emits.
+      if (w.kind === 'thread-parting') {
+        events.push(
+          createEvent('character.thread.parting', {
+            sceneId: w.sceneId,
+            ownerId: w.ownerId,
+            partnerId: w.partnerId,
+            threadKey: w.threadKey,
+            messageId: w.messageId,
+            params: w.params,
+          }),
+        );
+      }
     }
   };
 
@@ -1182,6 +1393,15 @@ function runSceneSubStep(
    * scenes, where the open is meaningful). Never a throw, never a wedge.
    */
   const applySeizedExchange = (scene: ConversationSceneState, seizure: InitiativeSeizure): void => {
+    // GH #349: a `leave` served on the speaker's own turn closes the scene
+    // — the floor-turn counterpart of the dispatch path's `leave`. The
+    // leaver is the participant who is not the player; in an NPC↔NPC
+    // scene, the first participant.
+    if (seizure.leaves) {
+      const leaverId = scene.participantIds.find((p) => p !== ctx.playerId) ?? scene.participantIds[0];
+      pushWire(applySceneDirectives(world, scene.id, [{ kind: 'close-scene', boundary: 'exit', leaverId }], memory));
+      return;
+    }
     if (!seizure.openExchange || !scene.participantIds.includes(ctx.playerId)) return;
     pushWire(
       applySceneDirectives(
@@ -1287,7 +1507,34 @@ function runSceneSubStep(
           world.getLocation(n.id) === world.getLocation(ctx.playerId),
       )
       .sort((a, b) => (a.id < b.id ? -1 : 1));
+    // Two passes (GH #354, ruled 2026-09-03): every challenge resolves
+    // before any floor turn is served, so which partner speaks on a
+    // hand-off turn follows the story's `opens when`, never entity-id
+    // order. A seated owner whose beat is ready is not served first and
+    // then parked by a later-sorted candidate's challenge.
+    //
+    // Pass one — ADR-320 D10a (2026-09-02): an authored `opens when` is an
+    // interjection. When the player is seated in a scene this NPC is not
+    // part of, that scene's grip answers — thread-aware, so a `blocking`
+    // thread holds (D14) — through the same call the world-act and
+    // player-address paths make. `yields`/`protests` close it (its
+    // threads park and their `on parting` renders); `blocks` skips this
+    // candidate for the turn — no throw, no wedge, tried again next turn.
+    const blockedThisTurn = new Set<string>();
     for (const npc of candidates) {
+      if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
+      const foreign = sceneWith(world, ctx.playerId);
+      if (!foreign || foreign.participantIds.includes(npc.id)) continue;
+      const challenge = runtime.resolveIntrusion(foreign.id, npc.id, false);
+      pushWire(challenge.wireEvents);
+      if (challenge.outcome === 'blocks') blockedThisTurn.add(npc.id);
+    }
+    // Pass two — floor turns for whoever still holds the floor. Readiness
+    // is re-probed: a partner parked in pass one reads not-ready here
+    // because a parked thread re-engages only when its `opens when` holds
+    // again (readyThreadMove), and the hand has already passed.
+    for (const npc of candidates) {
+      if (blockedThisTurn.has(npc.id)) continue;
       if (!runtime.threadTurnReady(npc.id, ctx.playerId)) continue;
       const scene = ensureScene(npc.id, ctx.playerId);
       if (!scene || scene.openExchange) continue;
@@ -1351,7 +1598,14 @@ function runSceneSubStep(
 
   // 8) Unattended scenes decay into a `silence` close (Phase 5's
   // machinery, wired to its runtime caller here).
-  pushWire(ageScenes(world, memory));
+  pushWire(
+    ageScenes(
+      world,
+      memory,
+      undefined,
+      runtime.partingLine ? (o, p, k) => runtime.partingLine!(o, p, k) : undefined,
+    ),
+  );
 
   return events;
 }

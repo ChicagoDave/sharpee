@@ -1,17 +1,20 @@
 title: Zoo Walkthrough 5 — After Hours and the Perfect Score
 story: friendly-zoo
 description: Chained full-playthrough, chapter 5 of 5. The nocturnal exhibit
-  by flashlight, the snake's and parrot's after-hours confessions, and the
-  85/85 finale — every point in the story, reachable only across the whole
-  chain.
+  by flashlight, the parrot's after-hours nod, and the 85/85 finale — every
+  point in the story, reachable only across the whole chain. Re-pinned
+  2026-08-28 (ADR-328 D3): the snake's and parrot's `, once` confessions fired
+  on the first after-hours turn while we were in the Petting Zoo — tagged
+  absent, hidden, and spent — so neither is heard on arrival; their awards
+  still landed.
 
 ---
 
-# Into the dark by flashlight. The snake has been waiting three years.
+# Into the dark by flashlight. The snake already confessed to an empty room.
 > south
 [OK: contains "Nocturnal Animals Exhibit"]
 [OK: contains "sugar gliders, bush babies, and a barn owl"]
-[OK: contains "Ssso... you're the one who stayed"]
+[OK: not contains "Ssso... you're the one who stayed"]
 
 > examine owl
 [OK: contains "heart-shaped white face"]
@@ -22,10 +25,11 @@ description: Chained full-playthrough, chapter 5 of 5. The nocturnal exhibit
 > north
 [OK: contains "Main Path"]
 
-# The parrot drops the act (confession + the after-hours nod).
+# The parrot's confession was spent off-stage too; the entering clause's
+# after-hours nod is the player's own arrival and still fires.
 > west
 [OK: contains "Aviary"]
-[OK: contains "that toucan? Complete fraud"]
+[OK: not contains "that toucan? Complete fraud"]
 [OK: contains "nods, as if recognizing a fellow after-hours regular"]
 
 # Every exhibit visited, both animals fed, souvenirs collected, a photo

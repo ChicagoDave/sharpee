@@ -31,9 +31,10 @@
  *   no-target path standing.
  *
  * Public interface: consultDialogueSelector, exchangeGrips, threadGrips,
- *   resolveImplicitThreadPartner, runConversationScene,
- *   resolveSceneIntrusion, isExchangeGripped, markExchangeGripped,
- *   isThreadGripped, markThreadGripped.
+ *   resolveImplicitThreadPartner, resolveOpenExchangeSpeaker,
+ *   runConversationScene, closeConversationScene, resolveSceneIntrusion,
+ *   isExchangeGripped, markExchangeGripped, isThreadGripped,
+ *   markThreadGripped.
  * Owner context: stdlib / actions / helpers
  */
 
@@ -49,7 +50,7 @@ import {
   type SceneWireEvent,
 } from '@sharpee/world-model';
 import { ActionContext } from '../enhanced-types.js';
-import { hasTraversableExit } from './exit-legality.js';
+import { canActorLeave } from './exit-legality.js';
 
 /** The sharedData slots marking a firing as gripped (D16/D14). */
 interface GripSharedData {
@@ -85,10 +86,10 @@ export function markThreadGripped(context: ActionContext): void {
  */
 function selectionContext(context: ActionContext, target: IFEntity): DialogueSelectionContext {
   const scene = sceneWith(context.world, target.id);
-  const shared = scene?.participantIds.includes(context.player.id) ? scene : undefined;
+  const shared = scene?.participantIds.includes(context.actor.id) ? scene : undefined;
   return {
     world: context.world,
-    speakerId: context.player.id,
+    speakerId: context.actor.id,
     ...(shared ? { scene: shared } : {}),
   };
 }
@@ -167,13 +168,51 @@ export function threadGrips(
  * @returns The implicit partner, or `undefined` when no thread claims one
  */
 export function resolveImplicitThreadPartner(context: ActionContext): IFEntity | undefined {
-  const location = context.world.getLocation(context.player.id);
+  const location = context.world.getLocation(context.actor.id);
   if (!location) return undefined;
   for (const entity of context.world.getContents(location)) {
-    if (entity.id === context.player.id || !entity.has(TraitType.ACTOR)) continue;
+    if (entity.id === context.actor.id || !entity.has(TraitType.ACTOR)) continue;
     if (threadGrips(context, entity, { type: 'talk-to' })) return entity;
   }
   return undefined;
+}
+
+/**
+ * The questioner of the open exchange in the actor's live scene (GH #346):
+ * an exchange targets the player, so the player holds at most one, and an
+ * `answer`/`say` with no addressee goes to its speaker.
+ *
+ * @param context - The action context (provides world and actor)
+ * @returns The exchange's speaker, or `undefined` when no exchange is open
+ */
+export function resolveOpenExchangeSpeaker(context: ActionContext): IFEntity | undefined {
+  const scene = sceneWith(context.world, context.actor.id);
+  const speakerId = scene?.openExchange?.speakerId;
+  return speakerId ? context.world.getEntity(speakerId) : undefined;
+}
+
+/**
+ * Close the actor's live scene on the actor's own initiative (GH #300):
+ * the `exit` boundary with the actor as leaver, through the registered
+ * runtime — parked threads render their `on parting` line exactly as on
+ * every other close path (ADR-320 D10a). No runtime, no scene: nothing.
+ *
+ * @param context - The action context
+ * @param sceneId - The scene to close
+ * @param leaverId - Who is leaving it
+ * @returns Semantic events for the close, parting lines included
+ */
+export function closeConversationScene(
+  context: ActionContext,
+  sceneId: string,
+  leaverId: string,
+): ISemanticEvent[] {
+  const runtime = context.world.getSceneRuntime();
+  if (!runtime) return [];
+  return toSceneEvents(
+    context,
+    runtime.applyDirectives(sceneId, [{ kind: 'close-scene', boundary: 'exit', leaverId }]),
+  );
 }
 
 /**
@@ -205,6 +244,32 @@ function toSceneEvent(context: ActionContext, wire: SceneWireEvent): ISemanticEv
 }
 
 /**
+ * Wire → semantic events for a batch (ADR-320 D12): every kind as data,
+ * plus the `character.thread.parting` prose event for a `thread-parting`
+ * (D10a, 2026-09-02) — the parked thread's `on parting` line renders
+ * on this path exactly as it does on the tick's and the dispatch path's.
+ */
+function toSceneEvents(context: ActionContext, wire: SceneWireEvent[]): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  for (const w of wire) {
+    events.push(toSceneEvent(context, w));
+    if (w.kind === 'thread-parting') {
+      events.push(
+        context.event('character.thread.parting', {
+          sceneId: w.sceneId,
+          ownerId: w.ownerId,
+          partnerId: w.partnerId,
+          threadKey: w.threadKey,
+          messageId: w.messageId,
+          params: w.params,
+        }),
+      );
+    }
+  }
+  return events;
+}
+
+/**
  * Resolve the PC's intrusion into a foreign scene (ADR-320 D10; Phase 8):
  * when the addressed NPC is seated in a scene the player is not part of,
  * the scene's grip answers through the registered runtime — `yields` and
@@ -226,16 +291,16 @@ export function resolveSceneIntrusion(
     return { blocks: false, events: [] };
   }
   const scene = sceneWith(context.world, target.id);
-  if (!scene || scene.participantIds.includes(context.player.id)) {
+  if (!scene || scene.participantIds.includes(context.actor.id)) {
     return { blocks: false, events: [] };
   }
 
-  const { outcome, wireEvents } = runtime.resolveIntrusion(scene.id, context.player.id, false);
-  const events = wireEvents.map((w) => toSceneEvent(context, w));
+  const { outcome, wireEvents } = runtime.resolveIntrusion(scene.id, context.actor.id, false);
+  const events = toSceneEvents(context, wireEvents);
   if (outcome === 'blocks') {
     events.push(context.event('character.scene.intrusion_blocked', {
       sceneId: scene.id,
-      interrupterId: context.player.id,
+      interrupterId: context.actor.id,
     }));
     return { blocks: true, events };
   }
@@ -274,16 +339,17 @@ export function runConversationScene(
     // side is already seated (a participant is in at most one live scene;
     // intruding on a foreign scene resolved via `resolveSceneIntrusion`
     // before this runs).
-    if (sceneWith(context.world, context.player.id)) return [];
+    if (sceneWith(context.world, context.actor.id)) return [];
     const opened = runtime.openScene(
-      [context.player.id, target.id],
-      { kind: 'address', openerId: context.player.id },
+      [context.actor.id, target.id],
+      { kind: 'address', openerId: context.actor.id },
     );
     scene = opened.scene;
-    events.push(...opened.wireEvents.map((w) => toSceneEvent(context, w)));
-  } else if (scene.participantIds.includes(context.player.id)) {
-    // The move clock stamps only for the player's own scene — a foreign
-    // scene's clock is not the player's to reset (Phase 8 fix).
+    events.push(...toSceneEvents(context, opened.wireEvents));
+  } else if (scene.participantIds.includes(context.actor.id)) {
+    // The move clock stamps only for the actor's own scene — a foreign
+    // scene's clock is not the actor's to reset (Phase 8 fix; the actor is
+    // whoever is speaking, player or NPC, per ADR-328 D2).
     runtime.recordMove(scene.id);
   } else {
     // Foreign scene still live (a `blocks` outcome upstream): no scene
@@ -300,12 +366,13 @@ export function runConversationScene(
     const kept: SceneDirective[] = [];
     for (const directive of directives) {
       if (directive.kind === 'close-scene' && directive.boundary === 'exit' && directive.leaverId) {
-        const room = context.world.getContainingRoom(directive.leaverId)?.id
-          ?? context.world.getLocation(directive.leaverId);
-        if (!room || !hasTraversableExit(context.world, room)) {
-          // D8: the world refuses the exit — the scene stays live; the
-          // selection's rendered response (typically a rendered silence)
-          // stands. Author-channel visibility only.
+        const leaver = context.world.getEntity(directive.leaverId);
+        if (!leaver || !canActorLeave(context.world, leaver, context.player, context.random)) {
+          // D8: the world refuses the exit — going's own validate, run for
+          // the leaver, found no direction it would accept (ADR-328 D5).
+          // The scene stays live; the selection's rendered response
+          // (typically a rendered silence) stands. Author-channel
+          // visibility only.
           events.push(context.event('character.scene.exit_refused', {
             sceneId: scene.id,
             leaverId: directive.leaverId,
@@ -315,7 +382,7 @@ export function runConversationScene(
       }
       kept.push(directive);
     }
-    events.push(...runtime.applyDirectives(scene.id, kept).map((w) => toSceneEvent(context, w)));
+    events.push(...toSceneEvents(context, runtime.applyDirectives(scene.id, kept)));
   }
 
   return events;

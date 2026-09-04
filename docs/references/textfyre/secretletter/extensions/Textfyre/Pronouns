@@ -1,0 +1,207 @@
+Version 3 of Pronouns by Textfyre begins here.
+
+"Phrases to say various pronouns and conjugations of the verb 'to be' for in-game objects."
+
+Use authorial modesty.
+
+Part 1 - Various pronouns and parts of speech
+
+[Ganked from ex.414 "Odins" ]
+
+The last mentioned thing is a thing that varies. 
+
+After printing the name of something (called the target) (this is the textfyre's pronoun setting rule): now the last mentioned thing is the target. 
+
+To say it-they: 
+    if the last mentioned thing is plural-named, say "they"; 
+    otherwise say "it";
+
+To say is-are: 
+    if the last mentioned thing is plural-named, say "are"; 
+    otherwise say "is";
+
+To say s-are: 
+    if the last mentioned thing is plural-named, say " are"; 
+    otherwise say "[']s";
+
+Part 2 - Various pronouns
+
+To decide whether (x - an object) takes a plural pronoun:
+	if x is plural-named, yes;
+	no;
+
+To decide whether (x - an object) takes a singular pronoun:
+	unless x takes a plural pronoun, yes;
+	no;
+
+To decide which indexed text is capitalised/capitalized (x - some text):
+	let z be indexed text;
+	let z be x;
+	replace character number 1 in z with character number 1 in z in upper case;
+	decide on z;
+
+To decide which indexed text is (x - some text) capitalised/capitalized:
+	decide on capitalised x;
+
+To say him or her for (x - a thing):
+	if x is the player:
+		say "yourself";
+	else if x is neuter:
+		say "them";
+	else if x takes a plural pronoun:
+		say "them";
+	else if x is a male person:
+		say "him";
+	else if x is a female person:
+		say "her";
+	else:
+		say "it";
+
+To say he or she for (x - a thing):
+	if x is the player:
+		say "you";
+	else if x takes a plural pronoun:
+		say "they";
+	else if x is neuter:
+		say "it";
+	else if x is a male person:
+		say "he";
+	else if x is a female person:
+		say "she";
+	else:
+		say "it";
+
+To say it or they for (x - a thing):
+	if x is the player:
+		say "you";
+	else if x takes a plural pronoun:
+		say "they";
+	else if x is neuter:
+		say "it";
+	else if x is a male person:
+		say "they";
+	else if x is a female person:
+		say "they";
+	else:
+		say "it";
+
+To say it or them for (x - a thing):
+	if x is the player:
+		say "yourself";
+	else if x takes a plural pronoun:
+		say "them";
+	else if x is neuter:
+		say "it";
+	else if x is a male person:
+		say "them";
+	else if x is a female person:
+		say "them";
+	else:
+		say "it";
+
+
+To say its or their for (x - a thing):
+	if x takes a plural pronoun:
+		say "their";
+	else:
+		say "its";
+
+To say that or those for (x - a thing):
+	if x is the player:
+		if x takes a plural pronoun:
+			say "yourselves";
+		else:
+			say "yourself";
+	else if x takes a plural pronoun:
+		say "those";
+	else:
+		say "that";
+
+To say that or those for (x - a room):
+	if x takes a plural pronoun:
+		say "those";
+	else:
+		say "that";
+
+Part 2 - The verb "to be"
+
+To say is or are for (n - a number):
+	if n is 1 begin;
+		say "is";
+	otherwise;
+		say "are";
+	end if.
+
+To say it's or they're for (x - a thing):
+	say "[it or they for x][apostrophized is or are for x]";
+
+To say he's or she's for (x - a thing):
+	say "[he or she for x][apostrophized is or are for x]";
+
+To say he is or she is for (x - a thing):
+	say "[he or she for x] [is or are for x]";
+
+To say is or are for (x - a thing):
+	if x is the player or x takes a plural pronoun:
+		say "are";
+	else:
+		say "is";
+
+To say apostrophized is or are for (x - a thing):
+	if x is the player or x takes a plural pronoun:
+		say "[']re";
+	else:
+		say "[']s";
+
+Part 3 - The verb "to do" 
+
+To say do or does for (x - an object):
+	if x is the player:
+		say "do";
+	else if x takes a singular pronoun:
+		say "does";
+	else if x takes a plural pronoun:
+		say "do";
+	else:
+		say "does";
+
+To say don't or doesn't for (x - an object):
+	if x is the player:
+		say "don't";
+	else if x takes a singular pronoun:
+		say "doesn't";
+	else if x takes a plural pronoun:
+		say "don't";
+	else:
+		say "doesn't";
+
+Part 4 - the player's pronouns
+
+section 1 - (for use with Quips by TextFyre)
+
+To decide which object is the/-- pronoun/-- you/your/yours: decide on the current conversationalist.
+To change 	the/-- pronoun/-- 	you/your/yours 	to (character - an object): now the current conversationalist is the character.
+
+section 2 - usual pronouns
+
+[To decide which person is the/-- pronoun/-- I/me/my: (- PronounValue('me') -).]
+To decide which man is the/-- pronoun/-- he/him/his: (- PronounValue('him') -).
+To decide which woman is the/-- pronoun/-- she/her/hers: (- PronounValue('her') -).
+To decide which object is the/-- pronoun/-- it/its: (- PronounValue('it') -).    [  It can refer to anything: things, rooms, directions, anything ]
+To decide which object is the/-- pronoun/-- they/them/their: (- PronounValue('them') -).  [ ditto for Them ]
+To change 	the/-- pronoun/-- 	he/him/his	to (character - a man): (- (SetPronoun('him',{character})); -).
+To change 	the/-- pronoun/-- 	she/her/hers	to (character - a woman): (- (SetPronoun('her',{character})); -).
+To change 	the/-- pronoun/-- 	it/its	to (character - an object): (- (SetPronoun('it',{character})); -).
+To change 	the/-- pronoun/-- 	they/them/their 	to (character - an object): (- (SetPronoun('them',{character})); -).
+
+To change the/-- personal pronouns to nothing: (- SetPronoun('him',0); SetPronoun('her',0); -). 
+
+
+
+Pronouns ends here.
+
+---- DOCUMENTATION ----
+
+This extension provides phrases to say various pronouns and conjugations of the verb "to be" for in-game objects.
+
+

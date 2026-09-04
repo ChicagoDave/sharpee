@@ -34,9 +34,9 @@ create the bare wire
 
   A stripped cable sags from the ceiling conduit.
 
-  on touching it
-    kill the player shock-death when it is live
-    phrase wire-cold when it is dead
+  on the player touching
+    kill the player shock-death when the bare wire is live
+    phrase wire-cold when the bare wire is dead
   end on
 
 create the breaker lever
@@ -47,12 +47,14 @@ create the breaker lever
 
   A heavy knife-switch bolted beside the door.
 
-  on pulling it
+  on the player pulling
     change the bare wire to dead
     phrase breaker-thrown
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Generator Room
 
 define phrases en-US
@@ -62,6 +64,10 @@ define phrases en-US
     Cold and inert. The breaker did its job.
   breaker-thrown:
     The breaker slams over and the hum dies with it.
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player who touches the wire straight away sees the death text and

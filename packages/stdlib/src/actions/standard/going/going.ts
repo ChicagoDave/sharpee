@@ -26,6 +26,8 @@ import {
   type DirectionType,
   canActorWalkInVehicle,
   type RegionCrossings,
+  getOppositeDirection,
+  NpcTrait,
 } from '@sharpee/world-model';
 import type { ExitResolution } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
@@ -35,6 +37,8 @@ import { captureEntitySnapshot, captureRoomSnapshot, captureEntitySnapshots } fr
 import { buildEventData } from '../../data-builder-types.js';
 import { GoingMessages } from './going-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { collectContainedListings } from '../looking/looking-data.js';
+import { containedListingEvents } from '../looking/looking.js';
 import {
   ActionLifecycleDescriptor,
   resolveLifecycle,
@@ -44,7 +48,8 @@ import {
   runPostExecute,
   runPostReport,
   runOnBlocked,
-  blockedMessageId
+  blockedMessageId,
+  vetoOf
 } from '../../lifecycle/index.js';
 
 // Import our data builders
@@ -101,10 +106,10 @@ function resolveDirection(context: ActionContext): DirectionType | undefined {
 
 /** The room movement starts from (the containing room when in a walkable vehicle). */
 function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
-  const walkCheck = canActorWalkInVehicle(context.world, context.player.id);
+  const walkCheck = canActorWalkInVehicle(context.world, context.actor.id);
   let currentRoom = context.currentLocation;
   if (walkCheck.vehicle && walkCheck.canWalk) {
-    const containingRoom = context.world.getContainingRoom(context.player.id);
+    const containingRoom = context.world.getContainingRoom(context.actor.id);
     if (containingRoom) {
       currentRoom = containingRoom;
     }
@@ -124,6 +129,26 @@ export function exitBlockedKey(roomId: string, direction: string): string {
 /** Key for the blocked exit's refusal message, resolved AT REFUSAL TIME. */
 export function exitMessageKey(roomId: string, direction: string): string {
   return `exit.message.${roomId}.${direction}`;
+}
+
+/**
+ * The door's authored opening refusal, if any (GH #245 defect 5): runs the
+ * door's `if.action.opening` interceptor's preValidate/postValidate hooks
+ * with the seed opening's lifecycle gives them and returns the first veto
+ * — so `north` at a jammed door reads the story's hint, not "is closed".
+ * No hook, no veto → null (the stock refusal stands). Nothing is opened.
+ */
+function doorOpeningVeto(context: ActionContext, door: IFEntity): ValidationResult | null {
+  const interceptor = context.world.getInterceptorForAction(door, IFActions.OPENING)?.interceptor;
+  if (!interceptor) return null;
+  const data: Record<string, unknown> = { targetId: door.id, targetName: door.name };
+  const pre = interceptor.preValidate
+    ? vetoOf(interceptor.preValidate(door, context.world, context.actor.id, data, context.random))
+    : null;
+  if (pre) return pre;
+  return interceptor.postValidate
+    ? vetoOf(interceptor.postValidate(door, context.world, context.actor.id, data, context.random))
+    : null;
 }
 
 /**
@@ -216,14 +241,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     'door_locked',
     'destination_not_found',
     'moved',
-    'moved_to',
-    'first_visit',
     'too_dark',
     'need_light'
   ],
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const sharedData = getGoingSharedData(context);
 
     // Get the direction from the parsed command (should already be a Direction constant)
@@ -340,6 +363,12 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         }
 
         if (isClosed) {
+          // GH #245 (5): the natural command surfaces the door's authored
+          // opening refusal — the story's `on the player opening … refuse`
+          // hint — instead of the stock line, by consulting the door's
+          // opening interceptor's validation vetoes (no implicit opening).
+          const doorVeto = doorOpeningVeto(context, door);
+          if (doorVeto) return doorVeto;
           return {
             valid: false,
             error: GoingMessages.DOOR_CLOSED,
@@ -381,7 +410,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   
   execute(context: ActionContext): void {
     // Only perform the movement mutation
-    const actor = context.player;
+    const actor = context.actor;
     const sharedData = getGoingSharedData(context);
 
     // Get the source room - if in a vehicle, use containing room
@@ -463,8 +492,14 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       context.world.moveEntity(actor.id, destination.id);
     }
 
-    // Mark the destination room as visited
-    if (isFirstVisit) {
+    // Mark the destination room as visited. `visited` is the reader's first
+    // look (Chord's `first time` prose lowers to RoomTrait.initialDescription),
+    // so only the player's own arrival marks it — an NPC walking through must
+    // not spend the player's first-visit description. NPC-visited semantics
+    // are open (ADR-328); `after <actor> entering` binds to actor_moved, not
+    // to the first_entered event this emits, so nothing on the Chord side
+    // depends on it firing for NPCs.
+    if (isFirstVisit && actor.id === context.player.id) {
       RoomBehavior.markVisited(destination, actor);
     }
 
@@ -490,7 +525,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         context.event('if.event.went', {
           messageId: resolution.messageId,
           params: resolution.params ?? {},
-          actorId: context.player.id,
+          actorId: context.actor.id,
           direction: sharedData.direction,
           blocked: true
         })
@@ -508,11 +543,30 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     const movedData = buildEventData(actorMovedDataConfig, context);
     const enteredData = buildEventData(actorEnteredDataConfig, context);
 
-    // Return movement events first (no messageId - these are for event sourcing/handlers)
+    // The protagonist's own move is narrated by what they see on arrival
+    // (below). Anyone else's move is narrated by what the PLAYER sees of it
+    // — but only when the mover announces its movement (`NpcTrait.
+    // announcesMovement`, opt-in; Chord's `announces-movement`): the thief
+    // slips in and out unremarked. When it does, the departure is located
+    // at the origin and the arrival at the destination — presence tagging
+    // (ADR-328 D3) renders whichever room the player is in, and actor voice
+    // (D4) names the mover. `context.player` survives here on purpose: this
+    // asks who holds the role this turn.
+    const isProtagonist = context.actor.id === context.player.id;
+    const announces = !isProtagonist && (context.actor.get(NpcTrait)?.announcesMovement ?? false);
+    const direction = sharedData.direction as DirectionType | undefined;
+    const witnessed = (messageId: string, dir: DirectionType | undefined) => announces
+      ? { messageId, params: { ...(dir ? { direction: dir.toLowerCase() } : {}) } }
+      : {};
+
+    // Return movement events first. actor_moved carries no messageId — it is
+    // for event sourcing/handlers; exited/entered narrate a witnessed mover.
     const events: ISemanticEvent[] = [
-      context.event('if.event.actor_exited', exitedData),
+      context.event('if.event.actor_exited', { ...exitedData, ...witnessed('if.action.going.departs', direction) }),
       context.event('if.event.actor_moved', movedData),
-      context.event('if.event.actor_entered', enteredData)
+      context.event('if.event.actor_entered',
+        { ...enteredData, ...witnessed('if.action.going.arrives', direction ? getOppositeDirection(direction) : undefined) },
+        { location: destinationRoom.id })
     ];
 
     // Emit region boundary crossing events (ADR-149)
@@ -521,7 +575,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Exit events — innermost first
       for (const regionId of crossings.exited) {
         events.push(context.event('if.event.region_exited', {
-          actorId: context.player.id,
+          actorId: context.actor.id,
           regionId,
           toRegionId: crossings.entered[0],
         }));
@@ -529,11 +583,20 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // Entry events — outermost first
       for (const regionId of crossings.entered) {
         events.push(context.event('if.event.region_entered', {
-          actorId: context.player.id,
+          actorId: context.actor.id,
           regionId,
           fromRegionId: crossings.exited[0],
         }));
       }
+    }
+
+    // What follows is the mover's own arrival perception — resolver prose,
+    // the darkness line, the room description. Only the protagonist reads
+    // it; a witnessed NPC's arrival was narrated above.
+    if (!isProtagonist) {
+      const state = getLifecycleState(context);
+      if (state) runPostReport(context, state, events, 'if.event.went');
+      return events;
     }
 
     // Resolver narration (ADR-295 D4/D5): forwarded verbatim, ahead of the
@@ -553,7 +616,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       events.push(context.event('if.event.went', {
         messageId: `${context.action.id}.too_dark`,
         params: {},
-        actorId: context.player.id,
+        actorId: context.actor.id,
         destinationId: destinationRoom.id,
         isDark: true
       }));
@@ -566,9 +629,27 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Room has light - build and emit room description
     const roomSnapshot = captureRoomSnapshot(destinationRoom, context.world, false);
 
+    // First arrival by going shows the room's `first time` prose in place of
+    // the standing description (GH #326), exactly as looking-data does for a
+    // first `look`: the initial description is mirrored onto the snapshot
+    // (the room handler reads `room.description` first) and the top-level
+    // field. execute() staged `isFirstVisit` before marking the visit, so
+    // this is the one render that sees it (ADR-107 dual-mode: the message id
+    // takes precedence over the literal).
+    const destinationTrait = destinationRoom.getTrait(RoomTrait);
+    const useInitial = sharedData.isFirstVisit === true && destinationTrait !== undefined
+      && (destinationTrait.initialDescriptionId !== undefined || destinationTrait.initialDescription !== undefined);
+    const arrivalDescription = useInitial
+      ? (destinationTrait.initialDescription ?? destinationRoom.description)
+      : destinationRoom.description;
+    if (useInitial) {
+      roomSnapshot.description = arrivalDescription;
+      roomSnapshot.descriptionId = destinationTrait.initialDescriptionId ?? roomSnapshot.descriptionId;
+    }
+
     // Get visible contents in the destination room (filter concealed items)
     const destinationContents = context.world.getContents(destinationRoom.id)
-      .filter(e => e.id !== context.player.id)
+      .filter(e => e.id !== context.actor.id)
       .filter(e => {
         const identity = e.getTrait(IdentityTrait);
         return !(identity && identity.concealed === true);
@@ -581,7 +662,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       visibleItems: visibleSnapshots,
       roomId: destinationRoom.id,
       roomName: destinationRoom.name,
-      roomDescription: destinationRoom.description,
+      roomDescription: arrivalDescription,
       // ADR-209: presence of the snippet map triggers the engine handler's
       // splice pass over the description text.
       ...(destinationSnippets ? { roomSnippets: destinationSnippets } : {}),
@@ -626,6 +707,21 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
+    // GH #338: the same "In/On <holder> you see …" lines the explicit look
+    // prints, holders grouped exactly as looking-data groups them — arriving
+    // and looking must never disagree about what is in the room.
+    const containers = destinationContents.filter(
+      e => e.hasTrait(TraitType.CONTAINER) && !e.hasTrait(TraitType.ACTOR)
+    );
+    const supporters = destinationContents.filter(
+      e => e.hasTrait(TraitType.SUPPORTER) && !e.hasTrait(TraitType.CONTAINER)
+    );
+    events.push(...containedListingEvents(
+      context,
+      collectContainedListings(context, containers, supporters),
+      'if.action.looking'
+    ));
+
     // Note: if.event.went is only emitted on dark/blocked; override is a no-op
     // on success non-dark transitions. Use emit for narration after success.
     const state = getLifecycleState(context);
@@ -645,7 +741,7 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error,
       messageId: blockedMessageId(context, result),
       params: result.params || {},
-      actorId: context.player.id
+      actorId: context.actor.id
     })];
 
     // All resolved consultations (source, destination, door) are notified;

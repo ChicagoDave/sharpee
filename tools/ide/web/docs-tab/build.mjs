@@ -148,13 +148,28 @@ function chordLanguageVersion() {
  * The website's `NAV`, loaded from its TypeScript source.
  *
  * `nav.ts` is website-owned and stays TypeScript; this is a plain-Node build,
- * so the type annotations are stripped with the esbuild already on hand and the
- * result imported as a data URL. No temp file, and nothing for a later build to
- * find stale. `nav.ts` imports nothing, so a bare transform is sufficient.
+ * so it is compiled with the esbuild already on hand and the result imported as
+ * a data URL. No temp file, and nothing for a later build to find stale.
+ *
+ * BUNDLED, not merely transformed. A data URL has no directory to resolve a
+ * relative specifier against, so the moment `nav.ts` gained
+ * `import versions from './versions.json'` a bare transform started failing with
+ * `ERR_UNSUPPORTED_RESOLVE_REQUEST` — and it failed inside an Xcode pre-build
+ * phase, which took the whole app build down with it. Bundling resolves the
+ * import against the real file's own directory and inlines it, so the data URL
+ * imports nothing no matter what the website adds next to it.
  */
 async function loadNav() {
-  const source = readFileSync(resolve(repoRoot, 'website/src/lib/nav.ts'), 'utf8');
-  const { code } = await esbuild.transform(source, { loader: 'ts', format: 'esm' });
+  const navPath = resolve(repoRoot, 'website/src/lib/nav.ts');
+  const { outputFiles } = await esbuild.build({
+    entryPoints: [navPath],
+    bundle: true,
+    write: false,
+    format: 'esm',
+    platform: 'node',
+    logLevel: 'silent',
+  });
+  const code = outputFiles[0].text;
   const module = await import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
   if (!Array.isArray(module.NAV)) {
     throw new Error('website/src/lib/nav.ts did not export a NAV array');
@@ -166,6 +181,14 @@ async function loadNav() {
 
 const grammarBlocks = parseGrammarBlocks(
   readFileSync(resolve(appDir, 'chord/stdlib/reference/grammar-blocks.ts'), 'utf8'),
+);
+
+// The version numbers <StatusBarExample> prints. The SAME file the website
+// component reads, so the tab's copy of a page cannot name a different release
+// than the page it was reduced from; `scripts/sync-versions.mjs` regenerates it
+// from the repository at prebuild.
+const versions = JSON.parse(
+  readFileSync(resolve(repoRoot, 'website/src/lib/versions.json'), 'utf8'),
 );
 
 const files = SECTIONS.flatMap((section) => findContentFiles(join(appDir, section)));
@@ -228,7 +251,7 @@ const unsupportedFound = new Map();
 for (const navPage of navPages) {
   const mdxPath = mdxByHref.get(navPage.href);
   const raw = readFileSync(mdxPath, 'utf8');
-  const { markdown, unsupported } = reduceMdx(raw, { grammarBlocks });
+  const { markdown, unsupported } = reduceMdx(raw, { grammarBlocks, versions });
   if (unsupported.length > 0) {
     unsupportedFound.set(navPage.href, unsupported);
   }

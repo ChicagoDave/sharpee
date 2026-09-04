@@ -23,10 +23,17 @@ create the Lawn
 
   A lawn.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lawn
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const errors = (source: string) =>

@@ -608,6 +608,14 @@ export interface StoryConfigValidationResult {
 ```typescript
 import { EntityId } from '../types/entity.js';
 /**
+ * The player's presence relative to where an event happened (ADR-328 D3,
+ * ADR-144's vocabulary): `present` — co-located and visible; `absent` —
+ * elsewhere; `concealed` — co-located but hidden. Stamped by the engine's
+ * enrichment funnel on actor-sourced events that carry a producer-set
+ * `entities.location`; the client decides what to show.
+ */
+export type Presence = 'present' | 'absent' | 'concealed';
+/**
  * Represents a semantic event in the system
  */
 export interface ISemanticEvent {
@@ -665,6 +673,13 @@ export interface ISemanticEvent {
      * Whether this event should be narrated
      */
     narrate?: boolean;
+    /**
+     * Whether the player witnessed this event (ADR-328 D3). Present only on
+     * actor-sourced events whose producer stamped `entities.location`; the
+     * enrichment funnel computes it against the player at emit time. Absent
+     * means "not tagged" — shown by default — not "absent from the room".
+     */
+    presence?: Presence;
     /**
      * Additional metadata for event processing
      */
@@ -2150,7 +2165,13 @@ export declare enum QuerySource {
     /** Game mechanic queries (passwords, combinations) */
     GAME_MECHANIC = "mechanic",
     /** Narrative-driven queries */
-    NARRATIVE = "narrative"
+    NARRATIVE = "narrative",
+    /**
+     * Parser clarification (ADR-225, GH #318): a command missing its object or
+     * indirect object is held by the engine for one input; the query carries
+     * the parser's question ("What do you want to drop?").
+     */
+    CLARIFICATION = "clarification"
 }
 /**
  * Types of queries that can be presented
@@ -2165,7 +2186,9 @@ export declare enum QueryType {
     /** Numeric input only */
     NUMERIC = "numeric",
     /** Special type for disambiguation */
-    DISAMBIGUATION = "disambiguation"
+    DISAMBIGUATION = "disambiguation",
+    /** A held incomplete command awaiting its missing object (GH #318) */
+    CLARIFICATION = "clarification"
 }
 /**
  * A query waiting for player response

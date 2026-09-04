@@ -3,6 +3,11 @@
 **Status**: ACCEPTED (2026-08-16 — ten open questions resolved by interview, review
 findings addressed, flipped with David's approval, session 02073f). No implementation
 authorized by acceptance; the implementation plan is a separate step.
+**D10a IMPLEMENTED** (2026-09-02, commits 30ff3673 and 07e1949d — the interruption facet
+of D10, `docs/work/archive/adr-320-d10-interruption/plan.md`, all phases DONE; GH #348 closed
+2026-09-03 with the evidence inline). **Step 4a ordering fixed** 2026-09-03 (GH #354, David's
+ruling; `docs/work/archive/hand-off-order-and-state-pins/plan.md`): challenges resolve before
+any floor turn is served, so a story needs no per-beat hold gates for a hand-off.
 **Date**: 2026-08-16 (session 02073f)
 **Related**: ADR-310/318 (the character interior this layer sits on — shipped, acceptance
 discharged 2026-08-16), ADR-239 (topic tables — the shipped conversation interface),
@@ -368,6 +373,16 @@ Packages that change (the ADR-310 idiom — named here, contracted at planning t
   gains the continuation-prompt forms ("tell me more" / "continue" / "go on" /
   "and?") as thread-advance input, the discussion D14 is; everything else about the
   carve-out stands, and `lang-en-us` remains untouched.
+  **Amended by GH #346 / #300 (2026-09-03, publish-readiness Phase 11)**: the
+  "SAY/YES/NO already exist" premise was stale — no `say`/`yes`/`no`/`answer`
+  grammar or stdlib action existed. `parser-en-us` now carries `answering`
+  (`answer`/`reply`/`respond`/`say` + a topic-slot response) and `saying_goodbye`
+  (`goodbye`/`bye`/`farewell`/`say goodbye [to X]`); stdlib's `answering` routes the
+  response to the open exchange as a `say` intent, the engine offers bare input the
+  exchange claims to it first, and `saying_goodbye` closes the player's scene on
+  `exit` (the thread's `on parting` renders; `on leaving` stays the NPC's departure).
+  `lang-en-us` carries only their refusals and a no-phrase fallback — the replies
+  themselves remain authored exchange rows (D12 holds).
 
 **D14 amendment scope (2026-08-17)**: `chord` (the `define conversation` block, rows,
 gates, `is concluded` predicate; version bump + pin), `world-model` (per-pair thread
@@ -485,3 +500,48 @@ design questions (block spelling, transition-row words, conclusion predicate,
 blocking-refusal shape, advance paths) resolved by David the same session; design
 record in `docs/work/adr-320-conversation/conversation-threads-design.md`.
 
+
+## Amendment — D10a: the interruption rule as it will be built (2026-09-02)
+
+**Context.** The W-10 dance prototype (`branch-stories/secret-letter/prototypes/w10-dance/`, session 6a3da1) showed that an NPC's `opens when` thread never opens while the player is in another NPC's scene: `ensureScene` (`packages/character/src/tick-phases.ts`) refuses when either party is seated elsewhere, and nothing outside dialogue dispatch closes a scene. D10's interruption is designed and unbuilt for that path (GH #348). The plan is `docs/work/archive/adr-320-d10-interruption/plan.md`; the three rulings below are David's, 2026-09-02, and Phase 1 builds against them.
+
+**D10a — three rulings.**
+
+1. **An authored `opens when` is an interjection.** When an NPC's thread is ready to open toward the co-located player and the player is in another scene, the thread challenges that scene through the existing `resolveIntrusion` call (`scene-binding.ts`), `worldAct: false`, exactly as the player-address path already does. `passive` yields, `assertive` protests then yields, `blocking` holds — no new scoring.
+2. **The grip is thread-aware.** The strength the challenge meets is the stronger of the scene's grip (`sceneGrip`: an open exchange's or the scene's authored strength) and the outgoing pair's ACTIVE thread strength — so a `blocking` thread holds, as D14's "single-topic completion" requires. Today `sceneGrip` ignores the thread; the same hole exists on the player-address path and closes with it. (Found by `plan-review`, 2026-09-02.)
+3. **`on parting` renders on every park.** Every path that parks an ACTIVE thread renders its authored `on parting` — the new interruption close, world-act intrusion, player-address intrusion, movement exit, silence decay — through one shared step on the park-on-close path; the dispatch path's inline render (`runtime.ts`, the same-pair topic switch) is refactored onto it. David: "if we need to fix on parting, then we fix it." Before this, `on parting` rendered only on the same-pair switch; every other close parked silently.
+
+**Ordering.** The thread floor turn reads the world after the story's own clocks under ADR-332 (ACCEPTED 2026-09-02): the scheduler runs before the actor phase, so a state an author changes in `when <timer> expires` is seen by the NPC's floor turn in the same turn.
+
+**Contract delta (as built).** No new state shape. The plan expected no new wire kind, but the parting line is a structured scene move like every other, so Phase 1 added one: `thread-parting` (`packages/world-model/src/capabilities/scene-wire.ts`, carrying `sceneId`, `ownerId`, `partnerId`, `threadKey`, `messageId`, `params`), and `thread-parked` now carries `partnerId`. The hosts emit the prose event `character.thread.parting` from it. `docs/work/archive/adr-320-conversation/contracts.md` §1.3 carries the one-line note.
+
+**Session.** 2026-09-02, session 6a3da1 — Phase 0 of the plan above; Phase 1 built the same session (character `scene-scoring.ts` `strongerStrength`, `scene-binding.ts` thread-aware grip and the step-4a challenge in `tick-phases.ts`, `scene-runtime.ts` `PartingLine` through every close path; story-loader `buildThreadStrength`/`buildPartingLine`, the inline dispatch-path park refactored onto the shared step). Phase 3 (session 69a114) put the real path under test: `packages/story-loader/tests/adr-320-d10-interruption.test.ts` drives `GameEngine.executeTurn` on a two-hand fixture with no stubs — interruption on the hand-off turn, `on parting` rendered, resume at the parked cursor. The W-10 dance prototype reaches the next partner on the hand-off turn (14 turns to the music's end, was 28). Two residuals filed for David: GH #354 (step 4a serves a seated owner's floor turn before a later candidate's challenge — entity-id order) and GH #355 (tree pins cannot read a Chord entity's state).
+
+**Addendum — step 4a in two passes (2026-09-03, session 89ce13, GH #354 ruled option A).** Step 4a now runs every ready candidate's challenge first (pass one: each ready NPC not seated with the player calls `resolveIntrusion` against the seated scene; a `blocks` outcome is remembered for the turn) and only then serves floor turns (pass two: readiness re-probed, so a partner parked in pass one reads not-ready because a parked thread re-engages only when its `opens when` holds again). Which partner speaks on a hand-off turn therefore follows the story's `opens when`, never entity-id order, and the outgoing partner's cursor does not advance on the turn he is parked. `blocking` (D14) remains the story's lever to let a seated owner finish. The W-10 prototype dropped all six `beat, when <partner> is dancing:` gates and its tree passed unchanged (15 cards / 46 assertions), then gained partner-state pins (69 assertions) under GH #355's Chord-spelled pin form. Tests: `packages/character/tests/tick-phases/thread-interruption.test.ts` (+2), `packages/story-loader/tests/adr-320-d10-interruption.test.ts` (+3, ungated fixture on the real engine path).
+
+## Amendment — D2a: entity topics are unscoped (2026-09-03)
+
+**Status**: DRAFT — awaiting David's acceptance (no open questions). Gates `docs/proposals/publish-readiness-defects.md` P-29 (GH #242). Lands in D2's topic-table section; ADR-239 (the shipped topic-table interface) is amended by reference.
+
+### Context
+
+- The parser resolves an ask's topic quietly against VISIBLE scope (`packages/stdlib/src/validation/command-validator.ts:903-930`, `resolveTopic` — ADR-231 D4) and sets `topicEntityId` only on a unique in-scope match. The loader's topic arm matches entity rows by that id and text rows by normalized spelling (`packages/story-loader/src/runtime.ts:1207-1222`, and `buildTopicArm`'s `rowIndexFor`); a typed topic never reaches an entity row through the text tier.
+- So `about the boiler:` serves only where the boiler is visible; anywhere else the owner's catch-all or the action's default speaks, in character, and nothing marks the difference (GH #242: Tobias on the Gravel Drive vs. the Boiler Shed; the silver locket, with no initial location, is unreachable until carried). A transcript written naively passes against the wrong text.
+- ADR-239 D1/AC-1 defined the entity tier ("quiet `topicEntityId` resolution") without saying where it fires. `about the boiler` and `about "the boiler"` read as spelling variants and behave completely differently.
+
+### Decision
+
+- **D2a-1 — A topic is a subject, not an object.** An entity topic row matches wherever the NPC is; the referenced entity's location, visibility, and on-stage existence are irrelevant to whether the row serves. `about the boiler:` and `about "the boiler":` differ only in what they key on — a world entity's whole naming surface (name, aliases, adjectives, ADR-231 D3) versus the quoted spellings — never in where they fire.
+- **D2a-2 — Mechanism: the quiet resolution widens to the world.** `resolveTopic` resolves the typed topic first against VISIBLE scope (an in-scope match wins over an off-stage namesake), then against every entity in the world; a unique match at either tier sets `topicEntityId`. Two off-stage namesakes and nothing visible is ambiguity: the text tier only, as today. The loader's matcher is unchanged (entity tier by id, then text tier), so the topic arm, exchange answer rows (`matchTopicFilters`), and conversation memory (`when <topic> was discussed`, keyed by entity id) all inherit the rule. The analyzer adds no diagnostic: there is no scoped form left to flag.
+- **D2a-3 — Rejected.** (a) Flagging the scoped form in the analyzer — leaves the trap in the language and makes the author spell it. (b) A loader-side name fallback for entity rows — a second naming resolver beside the validator's, which ADR-231 D3 made the one.
+
+### Consequences
+
+- `topicEntityId` may now name an entity the player cannot see. Interceptors and rows keyed on it (`asking.ts`, `telling`, the topic arm) must not assume scope; none does today.
+- Composes with P-8's *gone* semantics (ADR-325 Z6 amendment, plan Phase 4): a gone entity is still a subject of talk.
+- Fernhill: the boiler and locket topics serve on Tobias's rounds without carrying anything to him; the friction-log F12 case closes.
+- A story that *wants* a topic to depend on presence writes it as a row condition (`when the boiler is here`), which is the language's existing tool for that.
+
+### Session
+
+effb6f, 2026-09-03 — drafted in publish-readiness plan Phase 1 (`docs/work/publish-readiness/plan.md`).

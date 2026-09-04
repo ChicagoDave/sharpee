@@ -44,7 +44,6 @@ Beyond the contracts, the package ships one piece of runtime code: the banded-sc
 
 ## Related Packages
 
-- [@sharpee/plugin-npc](https://www.npmjs.com/package/@sharpee/plugin-npc) - NPC behaviours and turn processing
 - [@sharpee/plugin-scheduler](https://www.npmjs.com/package/@sharpee/plugin-scheduler) - Daemons and fuses
 - [@sharpee/plugin-state-machine](https://www.npmjs.com/package/@sharpee/plugin-state-machine) - Declarative puzzle/narrative orchestration
 - [@sharpee/sharpee](https://www.npmjs.com/package/@sharpee/sharpee) - Full platform bundle

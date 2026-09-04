@@ -294,7 +294,7 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
         // Domain data (for event sourcing / handlers)
         targetId: sharedData.targetId,
         targetName: sharedData.targetName,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         isContainer: sharedData.isContainer,
         isDoor: sharedData.isDoor,
         keyId: sharedData.keyId,

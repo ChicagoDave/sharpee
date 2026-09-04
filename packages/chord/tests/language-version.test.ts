@@ -55,8 +55,55 @@ const PINNED = {
   // (2.1.0 — owner ruling, 2026-07-27: the ADR-276 diagnostics arc.)
   // (2.0.0 — owner consolidation ruling, 2026-07-26: the ADR-266 landings
   //  ship publicly as ONE major over Chord 1.x.)
-  languageVersion: '3.3.0',
-  ebnfSha256: 'ad0219207b6ccff3870abdf6b080467e52ccc7f90043f7f4365dc81c170b3715',
+  // (3.4.0 — ADR-326, 2026-08-25: `a random adjacent room`, additive minor.)
+  // (4.0.0 — ADR-327, 2026-08-26: actor-explicit heads, `it`/`its` removed
+  //  outside `define trait`; `on <gerund> it` stops parsing — a MAJOR.
+  //  Re-recorded the same day for D9/D10 — `playable`, `before the game
+  //  starts`, `change the player to`, and the removal of `create the
+  //  player` — which ride the SAME major: one MAJOR for the whole ADR-327
+  //  cutover, per D6.)
+  // (4.1.0 — ADR-329, 2026-08-29 (session d04ae1): the acting statement
+  //  `<character> <verb> …` beside `move` in the statement production, with
+  //  the `verb-words` production — additive minor; every 4.0.0 story is
+  //  valid. Landed 9a–9c; pinned at 9d with the paper trail.)
+  // 3.5.0 — owner consolidation ruling, 2026-08-29 (session 9de27b): nothing
+  // since 3.3.0 / Sharpee 5.1.1 is published, so 3.4.0, 4.0.0, 4.1.0, and
+  // ADR-329 D10's `perform` goal step are ONE public minor, shipping with
+  // Sharpee 5.2.0. Bumps slow down: the number moves with a publish, not a
+  // landing. The EBNF hash was unchanged by the ruling itself; ADR-329
+  // D10 (GH #321, same session) then added the `goal-block` production —
+  // the goal block had never been in the grammar file — with its
+  // `verb-words` step row, and re-pinned the hash under this same version.
+  // Re-pinned again 2026-08-29 (session eec23b): the grammar file brought to
+  // parity with the parser's dispatch tables — ADR-310 (the character model
+  // lines and its define forms), ADR-318 (the normative layer), ADR-325
+  // (timers, places, landings, the two `when` clauses), ADR-227 `kill`,
+  // ADR-230 `carries`, the D13 feels/knows predicates, `set … when`, and
+  // the prose productions the file had always referenced without defining.
+  // Paper trail for grammar shipped since 3.x, no language change.
+  // 3.6.0 — 2026-09-03 (session 0135ed): minor bump alongside Sharpee 5.3.0
+  // at the owner's request; 3.5.0 / 5.2.0 were never published. The EBNF
+  // hash is unchanged by the bump — the surface pinned under 3.5.0 since
+  // 2026-08-29 (the re-pins below) is the 3.6.0 surface.
+  languageVersion: '3.6.0',
+  // Re-pinned 2026-08-29 (ADR-330 Phase 1): `define chapters` under `use
+  // chapters` — the first additive grammar of the chapters extension,
+  // folded into the unpublished 3.5.0 set per ADR-257 D2 as amended.
+  // Re-pinned again (ADR-330 Phase 3): the `during`/`before`/`after` chapter
+  // atoms and the `during` head suffix — still the unpublished 3.5.0 set.
+  // Re-pinned 2026-08-30 (session 262648, GH #339-#342): comment-only ebnf
+  // motion — the event-verbs note now states the #341 contract (`entering`
+  // on a THING rides the entering action's interceptor; rooms keep the
+  // movement event) — plus two changes with no ebnf text of their own:
+  // `proper` composes on ANY create block (#342; analysis.proper-person-only
+  // retired) and `is in <region>` is a membership test needing no landing
+  // (#339). All fold into the unpublished 3.5.0 set per ADR-257 D2 as
+  // amended (the number moves at publish).
+  // Re-pinned 2026-09-03 (session effb6f, GH #327, publish-readiness Phase
+  // 2): `, one-way` on exit lines — ADR-234 D4's reservation wired, the
+  // `[ "," "one-way" ]` tail added to the exit production. Additive; folds
+  // into the unpublished 3.5.0 set under the same ruling.
+  ebnfSha256: '37a95d1b4ea4501a1a34904451eb6f0b94dfe957ca06f2399e912e80c1a69599',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

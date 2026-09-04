@@ -417,9 +417,14 @@ export function applyCombatResult(
   // Update health on the life-state trait. Consciousness derives from health
   // (ADR-226 §1 F1) — there is no separate knockout step; `targetKnockedOut`
   // is carried only as a message signal by resolveAttack.
+  //
+  // The PLAYER's lethal flag is not set here: the attacking action's report
+  // routes a killed player through `killPlayer`, the canonical death sink
+  // (ADR-227), which sets the flag and emits `if.event.player.died`. Doing
+  // it here too would pre-empt the sink and silence that event.
   if (health) {
     health.health = result.targetNewHealth;
-    if (result.targetKilled) {
+    if (result.targetKilled && target.id !== world.getPlayer()?.id) {
       HealthBehavior.kill(health, 'combat');
     }
   }

@@ -654,6 +654,14 @@ export interface CompiledCharacterContext {
      * ref here is rogue IR, not a story state.
      */
     resolveEntityId?: (irId: string) => string;
+    /**
+     * Qualifies a `perform` step's bare action name (ADR-329 D10) to the id
+     * the execution entry runs — `chord.action.<name>` for the story's own
+     * actions, `if.action.<name>` for the standard ones. The LOADER owns the
+     * story's action list, so it supplies the rule; absent, every name is
+     * taken as standard.
+     */
+    resolveActionId?: (name: string) => string;
 }
 /**
  * Map compiled `define temperament` defs (plus the compiler's synthesized
@@ -1947,7 +1955,7 @@ export declare class CharacterModelDialogue implements DialogueExtension {
  * Every shape is platform-internal (contracts.md §7) — NOT author-facing
  * compatibility surface; revisable at refactor cost.
  *
- * Public interface: SceneOccasion, FloorBid, FloorDecision,
+ * Public interface: strongerStrength, SceneOccasion, FloorBid, FloorDecision,
  *   InterruptionChallenge, InterruptionOutcome, scoreFloor,
  *   resolveInterruption, sceneGrip, strengthFromIntent.
  * Owner context: @sharpee/character / conversation
@@ -1996,16 +2004,16 @@ export declare function scoreFloor(bids: FloorBid[]): FloorDecision;
  */
 export declare function sceneGrip(scene: ConversationSceneState, fallback?: SceneStrength): SceneStrength;
 /**
- * Resolve an interruption challenge (ADR-320 D10): a world event or act
- * breaks any grip — even `blocking` (D8's exemption); otherwise the
- * grip answers — `passive` yields, `assertive` protests then yields,
- * `blocking` blocks. The caller closes or re-floors the scene on
- * `yields`/`protests`; on `blocks` the scene holds.
+ * The stronger of two grips (ADR-320 D10a, 2026-09-02): a scene's
+ * effective grip against an intruder is the stronger of its own grip and
+ * every ACTIVE thread's declared strength between its participants, so a
+ * `blocking` thread holds as D14 requires.
  *
- * @param challenge - The challenge (interrupter, bid, world-act flag)
- * @param strength - The scene's effective grip (see `sceneGrip`)
- * @returns The outcome word
+ * @param a - One strength word
+ * @param b - The other
+ * @returns Whichever ranks higher
  */
+export declare function strongerStrength(a: SceneStrength, b: SceneStrength): SceneStrength;
 export declare function resolveInterruption(challenge: InterruptionChallenge, strength: SceneStrength): InterruptionOutcome;
 /**
  * Derive a scene's grip from its holder's continuation intent when no
@@ -2065,7 +2073,7 @@ export declare function writeSceneStore(world: WorldModel, state: SceneStoreStat
  * a `silence` close (the ADR-142 attention-decay machinery wired live).
  * All turn reads go through the character clock seam (D6).
  *
- * Public interface: OpenSceneOptions, openScene, closeScene,
+ * Public interface: OpenSceneOptions, PartingLine, openScene, closeScene,
  *   recordSceneMove, applySceneDirectives, stampThreadContinuability,
  *   ageScenes.
  * Owner context: @sharpee/character / conversation
@@ -2106,9 +2114,20 @@ export declare function openScene(world: WorldModel, options: OpenSceneOptions):
  * @param sceneId - The scene to close
  * @param boundary - Which boundary closed it (`exit` or `silence`)
  * @param memory - The per-pair memory home
- * @returns The scene-closed wire event, or none when the id is not live
+ * @param partingLine - The parting-line deliverer (D10a); absent = parks render nothing
+ * @returns The thread-parked, thread-parting and scene-closed wire events, or none when the id is not live
  */
-export declare function closeScene(world: WorldModel, sceneId: string, boundary: SceneBoundaryKind, memory: ConversationMemoryAccess): SceneWireEvent[];
+/**
+ * The parting-line deliverer (ADR-320 D10a, 2026-09-02): the registrar's
+ * runner executes a parked thread's authored `on parting` body and hands
+ * back the spoken line, or undefined when none is authored. Bound by the
+ * loader; absent in builder-authored stories.
+ */
+export type PartingLine = (ownerId: string, partnerId: string, threadKey: string) => {
+    messageId: string;
+    params: Record<string, unknown>;
+} | undefined;
+export declare function closeScene(world: WorldModel, sceneId: string, boundary: SceneBoundaryKind, memory: ConversationMemoryAccess, partingLine?: PartingLine): SceneWireEvent[];
 /**
  * Stamp an on-floor move (utterance, act, or event — one vocabulary):
  * resets the scene's silence clock.
@@ -2154,9 +2173,10 @@ export declare function stampThreadContinuability(world: WorldModel, sceneId: st
  * @param sceneId - The scene the directives target
  * @param directives - The selection's directives, in order
  * @param memory - The per-pair memory home (for `close-scene`)
+ * @param partingLine - The parting-line deliverer for a `close-scene` (D10a)
  * @returns Wire events the directives produced
  */
-export declare function applySceneDirectives(world: WorldModel, sceneId: string, directives: SceneDirective[], memory: ConversationMemoryAccess): SceneWireEvent[];
+export declare function applySceneDirectives(world: WorldModel, sceneId: string, directives: SceneDirective[], memory: ConversationMemoryAccess, partingLine?: PartingLine): SceneWireEvent[];
 /**
  * Decay unattended scenes (ADR-142's attention decay, wired live): a
  * scene with no on-floor move for `threshold` turns closes on the
@@ -2167,9 +2187,10 @@ export declare function applySceneDirectives(world: WorldModel, sceneId: string,
  * @param world - The live world
  * @param memory - The per-pair memory home
  * @param threshold - Silent turns before a scene closes
+ * @param partingLine - The parting-line deliverer (D10a)
  * @returns The scene-closed wire events, oldest scene first
  */
-export declare function ageScenes(world: WorldModel, memory: ConversationMemoryAccess, threshold?: number): SceneWireEvent[];
+export declare function ageScenes(world: WorldModel, memory: ConversationMemoryAccess, threshold?: number, partingLine?: PartingLine): SceneWireEvent[];
 ```
 
 ### conversation/conversation-memory
@@ -2639,7 +2660,8 @@ export declare function threadContinuabilityFor(world: WorldModel, sceneId: stri
  *   createSceneRuntimeBinding, registerCharacterScenes.
  * Owner context: @sharpee/character / conversation
  */
-import { WorldModel, type SceneRuntimeBinding, type SceneOccasion, type InitiativeSeizure } from '@sharpee/world-model';
+import { type SceneStrength, WorldModel, type SceneRuntimeBinding, type SceneOccasion, type InitiativeSeizure } from '@sharpee/world-model';
+import { type PartingLine } from './scene-runtime.js';
 import type { ConversationMemoryAccess } from './conversation-memory.js';
 /**
  * The production memory home (ADR-320 Phase 7; contracts §2): per-pair
@@ -2683,6 +2705,19 @@ export interface SceneBindingOptions {
      * for an `opens when` thread — must not mutate.
      */
     threadTurnReady?: (ownerId: string, partnerId: string) => boolean;
+    /**
+     * The declared strength of one thread (ADR-320 D10a, 2026-09-02): the
+     * loader reads `define conversation …, <strength>` here so an intrusion
+     * meets a thread-aware grip — a `blocking` thread holds (D14). Absent
+     * or undefined = `passive`, today's reading.
+     */
+    activeThreadStrength?: (ownerId: string, partnerId: string, threadKey: string) => SceneStrength | undefined;
+    /**
+     * The parting-line deliverer (ADR-320 D10a): consulted by every
+     * park-on-close path so a parked thread's `on parting` renders wherever
+     * the park happens. Absent = parks render nothing (builder stories).
+     */
+    partingLine?: PartingLine;
 }
 /**
  * Build the world's scene runtime over the Phase 5 machinery.
@@ -2925,8 +2960,6 @@ export interface PropagationContext {
     speaker: RoomOccupant;
     /** All other NPCs in the same room. */
     listeners: RoomOccupant[];
-    /** Whether the player is present in the room. */
-    playerPresent: boolean;
     /** Current turn number. */
     turn: number;
     /** Number of turns the speaker has been in this room with listeners. */
@@ -3025,9 +3058,14 @@ export declare function applyTransfers(transfers: PropagationTransfer[], getTrai
  * Owner context: @sharpee/character / propagation
  */
 import { PropagationTransfer, PropagationColoring } from './propagation-types.js';
+import type { Presence } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
-/** The player's presence state relative to the propagation event. */
-export type PlayerPresence = 'absent' | 'present' | 'concealed';
+/**
+ * The player's presence state relative to the propagation event. The union is
+ * `@sharpee/core`'s `Presence` (ADR-328 D3 moved the declaration down so
+ * `ISemanticEvent` can carry it); this name is kept for ADR-144 readers.
+ */
+export type PlayerPresence = Presence;
 /** The visibility output for a single propagation transfer. */
 export interface PropagationVisibilityResult {
     /** The transfer this result is for. */
@@ -3251,8 +3289,30 @@ export interface DropStep extends StepBase {
     item: string;
     location?: string;
 }
+/**
+ * The slots of a `perform` step, as the execution entry's roles: world
+ * entity ids for the objects, the direction word for a `going` action.
+ */
+export interface PerformSlots {
+    directObject?: string;
+    indirectObject?: string;
+    instrument?: string;
+    direction?: string;
+}
+/**
+ * Perform one action now, as the NPC (ADR-329 D10): a Chord goal line in
+ * an action's own words — `conjure the key into the Vault`, `go east`,
+ * `open the door`. No planning half: the action's own validate is the only
+ * gate, and a refusal retries next tick (D6's ruling).
+ */
+export interface PerformStep extends StepBase {
+    type: 'perform';
+    /** The qualified action id (`if.action.<name>` or `chord.action.<name>`). */
+    actionId: string;
+    slots: PerformSlots;
+}
 /** Union of all goal step types. */
-export type GoalStep = SeekStep | AcquireStep | WaitForStep | MoveToStep | ActStep | SayStep | GiveStep | DropStep;
+export type GoalStep = SeekStep | AcquireStep | WaitForStep | MoveToStep | ActStep | SayStep | GiveStep | DropStep | PerformStep;
 /** Author-defined goal with activation conditions and behavior sequence. */
 export interface GoalDef {
     /** Unique goal identifier. */
@@ -3334,6 +3394,10 @@ export type StepMutation = {
 } | {
     kind: 'drop';
     itemId: string;
+} | {
+    kind: 'perform';
+    actionId: string;
+    slots: PerformSlots;
 };
 /** Result of evaluating a single goal step. */
 export type StepResult = {
@@ -3489,8 +3553,6 @@ export interface GoalStepContext {
     movement: MovementProfile;
     /** The room connection graph. */
     roomGraph: RoomGraph;
-    /** Whether the player is in the same room as the NPC. */
-    playerPresent: boolean;
     /**
      * Function to check if an entity is in the same room as the NPC.
      * Used for acquire/give/drop steps.
@@ -4277,7 +4339,8 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
  * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
  *
  * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals → scenes
+ * sub-steps: decay → observe → influence → propagation → goals → scenes →
+ * arrival reactions (GH #353)
  * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
  * arbiter.) Ordering between sub-steps is a contract, which is why this
  * is one registration rather than three (docs/work/archive/adr-310/
@@ -4298,6 +4361,7 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel, type TemperamentDef } from '@sharpee/world-model';
+import { type ExecutionEntry } from '@sharpee/stdlib';
 import type { CompiledStoryOracle } from './story-oracle.js';
 import { PropagationProfile } from './propagation/index.js';
 import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';
@@ -4310,6 +4374,13 @@ interface TickContext {
     random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
+    /**
+     * The execution entry (ADR-328 D2; ADR-329 D6): how a goal step's chosen
+     * act — `taking`, `giving`, `dropping`, `going` — becomes a real action
+     * run as the NPC through the engine's four phases. The engine supplies
+     * it every tick; the goal sub-step is its only consumer here.
+     */
+    act: ExecutionEntry;
     /**
      * The player action's events this turn (ADR-310 Phase 5) — the observe
      * sub-step's input. Absent (older callers, unit harnesses) = nothing
@@ -4357,6 +4428,31 @@ export interface CharacterPhaseConfig {
      */
     arrivalNarratedTopics?: ReadonlySet<string>;
 }
+/** A fact that just landed on a listener by propagation (GH #353). */
+export interface ArrivedFact {
+    /** The NPC who now knows the topic, as a world id. */
+    listenerId: string;
+    /** The NPC who passed it, as a world id. */
+    speakerId: string;
+    /** The topic that arrived. */
+    topic: string;
+    /** The room the transfer happened in. */
+    roomId: string;
+    /** The turn it landed on. */
+    turn: number;
+}
+/**
+ * The story's reaction to an arrival-narrated fact landing (GH #353) — the
+ * other half of `arrivalNarratedTopics`. The loader binds it at load, like
+ * the oracle: authored wiring, no runtime state. `recordTransfer` queues
+ * each newly landed arrival-narrated fact and the tick calls the reaction
+ * for each after its own sub-steps (last, after scenes), appending the
+ * events it returns — so the owner's `on every turn … while it knows
+ * <topic>` clause narrates the arrival on that tick, as the contract
+ * promises, whichever band the scheduler runs in (ADR-332), and the tick's
+ * goals and scenes saw the world as it stood when the fact arrived.
+ */
+export type ArrivalReaction = (arrival: ArrivedFact, world: WorldModel) => ISemanticEvent[];
 /**
  * Holds per-NPC authored configs for the tick phase. Rebuilt from compiled
  * story data at every load; holds NO mutable runtime state (ADR-310 D17 —
@@ -4372,6 +4468,8 @@ export declare class CharacterPhaseRegistry {
     private temperamentDefs?;
     /** Authored `witnessed as` aliases (ADR-318 D12a), actor as WORLD id — the loader resolves. */
     private witnessedAliases?;
+    /** The story's arrival reaction (GH #353) — bound at load, like the oracle. */
+    private arrivalReaction?;
     /**
      * Register character configuration for an NPC.
      *
@@ -4389,6 +4487,15 @@ export declare class CharacterPhaseRegistry {
     setOracle(oracle: CompiledStoryOracle): void;
     /** The bound story oracle, if any. */
     getOracle(): CompiledStoryOracle | undefined;
+    /**
+     * Bind the story's arrival reaction (loader, at load — last-wins, like the
+     * oracle). Called by `recordTransfer` for every arrival-narrated fact that
+     * newly lands.
+     * @param reaction the story's reaction
+     */
+    setArrivalReaction(reaction: ArrivalReaction): void;
+    /** The bound arrival reaction, if any. */
+    getArrivalReaction(): ArrivalReaction | undefined;
     /** Set the story's authored temperament definitions (loader, at load). */
     setTemperamentDefs(defs: Readonly<Record<string, TemperamentDef>>): void;
     /** Authored temperament definitions by name (ArbiterContext.temperamentDefs source). */
@@ -4499,9 +4606,9 @@ export interface CompiledStoryOracle {
  * knowledge so reputation travels by propagation (D7).
  *
  * Sites (ADR-318 Implementation; statement site per ADR-320 D11):
- * - taking → steal-candidate: `if.event.taken` / `npc.took` where the item
+ * - taking → steal-candidate: `if.event.taken` where the item
  *   came out of another actor's possession
- * - combat → harm: `if.event.attacked` / `npc.attacked`
+ * - combat → harm: `if.event.attacked`
  * - reveal → topic delivery: `revealConfidedTopic` — called from the
  *   dialogue path, where delivery is knowable (prose is opaque; events are
  *   not tagged with what a line asserts)

@@ -17,10 +17,16 @@ const CLAUSE_ROOM = `create the Lab
 
   Shelves of glassware line the walls{frag}. A door leads north.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 `;
 
@@ -83,10 +89,16 @@ describe('Z2: description-marker diagnostics (ADR-211 never-guess)', () => {
 
   Shelves of glassware line the walls{frag}. A door leads north.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 `;
     const diags = diagnosticsOf(
@@ -110,10 +122,16 @@ create the player
 
   Shelves of glassware line the walls. {frag} A door leads north.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 `;
     const diags = diagnosticsOf(
@@ -152,10 +170,16 @@ create the player
 
   A lab.
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the jar
   in the Lab

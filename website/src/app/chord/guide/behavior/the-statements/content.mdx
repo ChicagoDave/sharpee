@@ -1,19 +1,19 @@
-Ten statements do the story's work. The pumpkin below uses most of
+Eleven statements do the story's work. The pumpkin below uses most of
 them:
 
 ```chord
-  on measuring it
-    set its tally to 3
-    phrase tape-reading with girth = its tally
+  on the player measuring
+    set the pumpkin's tally to 3
+    phrase tape-reading with girth = the pumpkin's tally
     emit pumpkin-measured
   end on
 
-  on picking it
-    change it to picked
+  on the player picking
+    change the pumpkin to picked
     award picked-the-champion, once
-    move it to the Compost Corner when it is picked
+    move the pumpkin to the Compost Corner when the pumpkin is picked
     phrase picked-note
-    win harvest-glory when its tally is 3
+    win harvest-glory when the pumpkin's tally is 3
   end on
 ```
 
@@ -29,7 +29,7 @@ them:
   sentences start capitalized, so the two do not collide.)
 
   ```chord
-  after entering it
+  after the player entering
     phrase apiary-hum
       The hum reaches you before the gate has even closed.
   end after
@@ -41,7 +41,56 @@ them:
 - **`change <name> to <state>`** moves an owner along its declared
   states; `change the story to <state>`
   moves the story.
-- **`move <name> to <name>`** relocates an entity.
+- **`move <name> to <place>`** relocates an entity. It *puts* — nothing
+  is seen to happen, nothing can refuse it, though the destination's
+  `entering` clauses and the mover's `when … moves` clauses do react to
+  the arrival. To make a character *do* something, name them and the
+  action instead. A place is a room, an enterable, or a
+  [region with a landing](/chord/guide/world/regions); it can also be
+  another entity's room — `move the guards to Jack's location`,
+  `move the hat to its location` — since a possessive `location` always
+  means the containing room. Two more destinations stand alone:
+  `move the guards here` (the player's location) and
+  `move the monkey offstage` (no location at all — the monkey keeps its
+  states and timers and comes back with a later `move`). And
+  `move the player to a random adjacent room` draws one room a
+  traversable exit away from the mover, at the moment it runs, on the
+  mover's own seeded stream: blocked exits and locked doors do not count,
+  and with no candidate nothing moves. The spelling is exact — no
+  `randomly`, and only as a `move` destination.
+- **`<character> <verb> [<object>] [<preposition> <object>]`** — the
+  acting statement — has that character perform one action now, through
+  the same pipeline as a typed command: `the guards take the sword`,
+  `Teisha gives the sword to the player`, `the monkey goes east`. The
+  action can refuse (an `on the guards taking` clause, a locked door),
+  the player sees it in third person when they are in the room, and
+  `after the guards taking` fires just as it would for a typed command.
+  `move the monkey offstage` *puts* the monkey somewhere; `the monkey
+  gives the necklace to the player` *does* something. The actor is a
+  character, never `the player`, and the statement is legal in `after`
+  and `when` bodies, `on every turn`, and topic rows — not inside an
+  `on` intercept, which is where an action is being decided, not done.
+
+  ```chord
+  create the guards
+    a person, plural
+    in the Yard
+
+    Guards.
+
+  create the sword
+    in the Yard
+
+    A sword.
+
+  create the Yard
+    a room
+    after the player entering
+      the guards take the sword
+    end after
+
+    A yard.
+  ```
 - **`remove <name>`** takes an entity out of play, permanently: there
   is no `to`, nothing to get back, and removing the player is a load
   error (`analysis.remove-player`).
@@ -54,7 +103,7 @@ them:
   machinery, not the same thing as `lose`.
 
 ```chord
-  on emptying it
+  on the player emptying
     remove the champion slug
     phrase trap-emptied
     lose when the champion pumpkin is picked

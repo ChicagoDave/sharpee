@@ -49,7 +49,9 @@ create the long sword
 
   A long sword, recently oiled.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gate Yard
 
   You.
@@ -89,3 +91,7 @@ end phrase
 define phrase bridge-thuds
   The great bridge thuds home across the moat.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

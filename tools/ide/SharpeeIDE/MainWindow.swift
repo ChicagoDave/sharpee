@@ -81,6 +81,11 @@ final class MainWindowController: NSWindowController {
         rootViewController?.saveActiveDocument()
     }
 
+    /// Whether File → New Import… / Edit → Extract Selection to Import… apply.
+    var importCommandsApply: Bool { rootViewController?.importCommandsApply ?? false }
+    func newImport() { rootViewController?.newImport() }
+    func extractSelectionToImport() { rootViewController?.extractSelectionToImport() }
+
     /// Saves every dirty document — Build's precondition (the build reads disk).
     /// Returns false when a save failed and the build should not proceed.
     @discardableResult
@@ -225,6 +230,17 @@ final class MainWindowController: NSWindowController {
     /// After a successful Browser build, loads the just-built story into Play (if the toggle is on).
     func reloadPlayAfterBuild(projectRoot: URL) {
         rootViewController?.reloadPlayAfterBuild(projectRoot: projectRoot)
+    }
+
+    /// Renders a World Index analysis — or the reason there isn't one — into the
+    /// World tab (ADR-321 D8).
+    func showWorldIndex(_ response: WorldIndexResponse) {
+        rootViewController?.showWorldIndex(response)
+    }
+
+    /// Says the World Index is being derived (the analysis runs off the main actor).
+    func showWorldIndexLoading() {
+        rootViewController?.showWorldIndexLoading()
     }
 
     /// Composes `storyURL` to populate the project tree + Problems (ADR-258 D6:
@@ -526,6 +542,10 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.saveActiveDocument()
     }
 
+    var importCommandsApply: Bool { mainSplitViewController.importCommandsApply }
+    func newImport() { mainSplitViewController.newImport() }
+    func extractSelectionToImport() { mainSplitViewController.extractSelectionToImport() }
+
     func saveAllDocuments() -> Bool {
         mainSplitViewController.saveAllDocuments()
     }
@@ -764,6 +784,14 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.reloadPlayAfterBuild(projectRoot: projectRoot)
     }
 
+    func showWorldIndex(_ response: WorldIndexResponse) {
+        mainSplitViewController.showWorldIndex(response)
+    }
+
+    func showWorldIndexLoading() {
+        mainSplitViewController.showWorldIndexLoading()
+    }
+
     func composeStory(at storyURL: URL) {
         mainSplitViewController.composeStory(at: storyURL)
     }
@@ -866,6 +894,17 @@ private final class MainSplitViewController: NSSplitViewController {
             // the row only exists on an on-disk run (ADR-309 D5).
             self?.composeScheduler.composeNow(storyURL: url, content: content)
         }
+        editorViewController.onFragmentNeedsCompose = { [weak self] fragmentURL in
+            // A fragment compiles only through its importing story (ADR-251):
+            // recompose the open story from DISK, which is where the compiler
+            // reads fragments from. Fragment records come back naming the
+            // fragment (`Span.file`), so they underline in its tab.
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            let storyDir = storyURL.deletingLastPathComponent().standardizedFileURL.path
+            guard fragmentURL.standardizedFileURL.path.hasPrefix(storyDir + "/"),
+                  let content = try? String(contentsOf: storyURL, encoding: .utf8) else { return }
+            self.composeScheduler.composeNow(storyURL: storyURL, content: content)
+        }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's
             // ruling): any edited document inside the open story's folder means
@@ -891,6 +930,21 @@ private final class MainSplitViewController: NSSplitViewController {
             // Index jump: first line + neutral gutter dot (red = errors only).
             self.editorViewController.openDocument(at: storyURL, navigateTo: span)
         }
+        // A World finding names a place in the same story source the Index does, so it
+        // jumps the same way (ADR-321: findings are navigable, not a report) — but at
+        // the PHRASE, not the passage. The analyzer publishes the passage's whole span
+        // and cannot know which line inside it the reader means; the text says, and
+        // this is the side holding the text (Amendment 2).
+        rightPanelViewController.world.onActivate = { [weak self] destination in
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            guard let span = self.resolve(destination, in: storyURL) else { return }
+            self.editorViewController.openDocument(at: storyURL, navigateTo: span)
+        }
+        // A card's offer becomes an ordinary typing edit: undoable with ⌘Z, visible in
+        // the buffer, saved when the author chooses. Nothing writes the file behind them.
+        rightPanelViewController.world.onEdit = { [weak self] action, row in
+            self?.applyWorldOffer(action, row)
+        }
         playViewController.onPlayAfterBuildChanged = { [weak self] in self?.persistSession() }
         playViewController.onConsoleError = { [weak self] message in self?.onPlayConsoleError?(message) }
         leftPaneHostViewController.host(editor: editorViewController)
@@ -899,6 +953,71 @@ private final class MainSplitViewController: NSSplitViewController {
         addSplitViewItem(makeProjectItem())
         addSplitViewItem(makeEditorItem())
         addSplitViewItem(makePlayItem())
+    }
+
+    /// Applies what a World card offered, through the editor's undoable path.
+    ///
+    /// Computed against the BUFFER, and anchored to text rather than to the analysis's
+    /// line numbers. The analysis describes the story as it was built; the buffer moves
+    /// the moment the author types or accepts another offer, and an edit measured
+    /// against the file while the buffer has moved lands that many characters wrong —
+    /// which is how a declaration ended up inside a phrase block.
+    ///
+    /// - Parameters:
+    ///   - action: the offer the author accepted
+    ///   - row: the candidate it came from
+    private func applyWorldOffer(_ action: WorldCandidateAction, _ row: WorldFindingRow) {
+        guard let storyURL = treeState.storyURL,
+              let source = editorViewController.currentText(of: storyURL) else { return }
+
+        let edit: WorldSourceEdit?
+        switch action {
+        case .addWord(let word):
+            edit = row.targetName.flatMap { WorldSourceEdit.addingWord(word, toThingNamed: $0, in: source) }
+        case .defineScenery:
+            edit = row.phrase.map { WorldSourceEdit.definingScenery($0, placedBy: row.room, in: source) }
+        case .writeDescription:
+            edit = row.targetName.flatMap { WorldSourceEdit.openingDescription(forThingNamed: $0, in: source) }
+        default:
+            edit = nil
+        }
+        guard let edit else { return }
+
+        editorViewController.replaceText(edit.text, in: edit.range, in: storyURL)
+        editorViewController.openDocument(at: storyURL,
+                                          navigateTo: DiagnosticSpan(line: edit.line, column: 1,
+                                                                     endLine: edit.line, endColumn: 1))
+        // Where it landed, so a card that becomes "and now describe it" can point there.
+        rightPanelViewController.world.reportEdited(line: edit.line)
+    }
+
+    /// Turn a World row's destination into a span to navigate to.
+    ///
+    /// Reads the story from disk rather than from the editor: the analysis describes
+    /// the story as it was BUILT, and an unsaved edit would move the phrase out from
+    /// under the finding that named it.
+    ///
+    /// - Parameters:
+    ///   - destination: where the activated row can take the reader
+    ///   - storyURL: the story source
+    /// - Returns: the phrase's own span when it can be found, else the passage's first
+    ///   line, else the bare line a Reach row named; nil when the row names nowhere
+    private func resolve(_ destination: WorldFindingDestination, in storyURL: URL) -> DiagnosticSpan? {
+        if destination.place == .declaration {
+            guard let declaration = destination.declaration else { return nil }
+            return DiagnosticSpan(line: declaration.line, column: declaration.column,
+                                  endLine: declaration.line, endColumn: declaration.column)
+        }
+        if let passage = destination.passage {
+            let source = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
+            if let phrase = destination.phrase,
+               let located = WorldPhraseLocator.locate(phrase: phrase, in: source, passage: passage) {
+                return located
+            }
+            return DiagnosticSpan(line: passage.line, column: 1, endLine: passage.line, endColumn: 1)
+        }
+        guard let line = destination.line else { return nil }
+        return DiagnosticSpan(line: line, column: 1, endLine: line, endColumn: 1)
     }
 
     /// Opens a file the author activated in the project sidebar.
@@ -1032,6 +1151,80 @@ private final class MainSplitViewController: NSSplitViewController {
     /// Applies a compose run's records as editor underlines for `url`.
     fileprivate func applyComposeDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         editorViewController.setDiagnostics(records, forFile: url)
+    }
+
+    // MARK: - Imports (GH #288)
+
+    /// Whether an import command applies right now: a Chord source file
+    /// (`.story` or `.chord`) is active inside the open story's folder.
+    var importCommandsApply: Bool {
+        activeChordSource() != nil
+    }
+
+    /// The active Chord source and the story folder it belongs to, or nil.
+    private func activeChordSource() -> (url: URL, storyDirectory: URL)? {
+        guard let doc = editorViewController.activeDocument, ChordSource.isChordSource(doc.url),
+              let storyURL = treeState.storyURL else { return nil }
+        let storyDirectory = storyURL.deletingLastPathComponent()
+        guard doc.url.standardizedFileURL.path.hasPrefix(storyDirectory.standardizedFileURL.path + "/") else { return nil }
+        return (doc.url, storyDirectory)
+    }
+
+    /// File → New Import…: prompts for a name, then `ImportCommands.newImport`.
+    func newImport() {
+        guard let (url, storyDirectory) = activeChordSource() else { return }
+        guard let name = promptForImportName(title: "New Import",
+                                             message: "Name the import. A folder path is fine — regions/harbor creates regions/harbor.chord.") else { return }
+        let commands = ImportCommands(editor: editorViewController, storyDirectory: storyDirectory)
+        if case .failure(let refusal) = commands.newImport(named: name, in: url) {
+            presentRefusal(refusal); return
+        }
+        refreshProjectTree()
+    }
+
+    /// Edit → Extract Selection to Import…: checks the selection, prompts for
+    /// a name, then `ImportCommands.extractSelection`.
+    func extractSelectionToImport() {
+        guard let (url, storyDirectory) = activeChordSource(),
+              let selection = editorViewController.activeSelection else { return }
+        let commands = ImportCommands(editor: editorViewController, storyDirectory: storyDirectory)
+        // Check the selection before asking for a name, so a refusal comes first.
+        if case .failure(let refusal) = commands.checkSelection(selection, in: url) {
+            presentRefusal(refusal); return
+        }
+        guard let name = promptForImportName(title: "Extract Selection to Import",
+                                             message: "Name the import the selected declarations move into.") else { return }
+        if case .failure(let refusal) = commands.extractSelection(selection, in: url, named: name) {
+            presentRefusal(refusal); return
+        }
+        refreshProjectTree()
+    }
+
+    /// Asks for an import name and validates it; nil when the author cancels.
+    private func promptForImportName(title: String, message: String) -> String? {
+        while true {
+            let alert = NSAlert()
+            alert.messageText = title
+            alert.informativeText = message
+            alert.addButton(withTitle: "Create")
+            alert.addButton(withTitle: "Cancel")
+            let field = NSTextField(frame: NSRect(x: 0, y: 0, width: 280, height: 24))
+            field.placeholderString = "regions/harbor"
+            alert.accessoryView = field
+            alert.window.initialFirstResponder = field
+            guard alert.runModal() == .alertFirstButtonReturn else { return nil }
+            switch ImportRefactor.validatedName(field.stringValue) {
+            case .success(let name): return name
+            case .failure(let refusal): presentRefusal(refusal)
+            }
+        }
+    }
+
+    private func presentRefusal(_ refusal: ImportRefactor.Refusal) {
+        let alert = NSAlert()
+        alert.messageText = refusal.message
+        alert.alertStyle = .warning
+        alert.runModal()
     }
 
     func switchToDocument(at index: Int) {
@@ -1323,14 +1516,37 @@ private final class MainSplitViewController: NSSplitViewController {
 
     /// Shows the empty story state with a one-line reason (D8) — rendered in
     /// the Index, the IR-sourced story view.
+    ///
+    /// The World tab clears with it: its analysis belongs to the story that just
+    /// went away, and leaving it on screen would attribute one story's findings
+    /// to another (ADR-321 D8).
     fileprivate func showEmptyStateExplanation(_ text: String) {
         rightPanelViewController.index.setState(.empty(reason: text))
+        rightPanelViewController.clearWorld(reason: text)
+    }
+
+    /// Renders a World Index analysis, or the explanation standing in for one.
+    ///
+    /// The story travels with it: the phrases an author has dismissed are kept beside
+    /// their `.story` file, so the World tab needs to know which story it is reading.
+    fileprivate func showWorldIndex(_ response: WorldIndexResponse) {
+        rightPanelViewController.showWorld(response, storyURL: treeState.storyURL)
+    }
+
+    /// Shows the World tab's loading state while the derivation runs.
+    fileprivate func showWorldIndexLoading() {
+        rightPanelViewController.showWorldLoading()
     }
 
     /// Composes `storyURL` from its on-disk content (project open — no editor
     /// buffer yet). The outcome populates the tree and Problems through the
     /// standard pipeline.
     fileprivate func composeStory(at storyURL: URL) {
+        // A World Index belongs to the story it was derived from; opening
+        // another one resets the tab rather than showing the last story's map
+        // under this story's name (ADR-321 D8).
+        rightPanelViewController.clearWorld(
+            reason: "Build \(storyURL.lastPathComponent) (\u{2318}B) to derive its world index.")
         let content = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
         composeScheduler.composeNow(storyURL: storyURL, content: content)
     }

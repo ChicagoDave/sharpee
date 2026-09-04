@@ -27,7 +27,6 @@ function makeStepContext(overrides?: Partial<GoalStepContext>): GoalStepContext 
     trait: makeTrait(),
     movement: { knows: 'all', access: 'all' },
     roomGraph: new SimpleRoomGraph(),
-    playerPresent: false,
     isInRoom: () => false,
     ...overrides,
   };
@@ -226,23 +225,12 @@ describe('evaluateGoalStep — sequential', () => {
       state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
-    const result = evaluateGoalStep(goal, makeStepContext({ playerPresent: true }));
+    // ADR-328 D3: the evaluator does not know where the player is — the
+    // step's narration always rides `witnessed`; the tick phase stamps the
+    // NPC's room and the engine tags presence.
+    const result = evaluateGoalStep(goal, makeStepContext());
     expect(result.status).toBe('completed');
     expect(result.witnessed).toBe('attack-player');
-  });
-
-  it('should return completed silently when player is absent', () => {
-    const goal: ActiveGoal = {
-      def: {
-        id: 'test', activatesWhen: [], priority: 'medium', mode: 'sequential',
-        steps: [{ type: 'act', messageId: 'attack-player' }],
-      },
-      state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
-    };
-
-    const result = evaluateGoalStep(goal, makeStepContext({ playerPresent: false }));
-    expect(result.status).toBe('completed');
-    expect(result.witnessed).toBeUndefined();
   });
 
   it('should return waiting for waitFor when conditions not met', () => {
@@ -283,7 +271,6 @@ describe('evaluateGoalStep — sequential', () => {
     };
 
     const result = evaluateGoalStep(goal, makeStepContext({
-      playerPresent: true,
       isInRoom: (id, room) => id === 'knife' && room === 'drawing-room',
     }));
 
@@ -339,7 +326,7 @@ describe('evaluateGoalStep — opportunistic', () => {
       state: { active: true, currentStep: 0, paused: false, interrupted: false, prepared: false },
     };
 
-    const result = evaluateGoalStep(goal, makeStepContext({ trait, playerPresent: true }));
+    const result = evaluateGoalStep(goal, makeStepContext({ trait }));
     expect(result.status).toBe('completed');
     expect(result.witnessed).toBe('attack');
   });
@@ -383,7 +370,7 @@ describe('evaluateGoalStep — prepared mode', () => {
 
     // Act conditions met
     trait.setThreat('cornered');
-    const r4 = evaluateGoalStep(goal, makeStepContext({ trait, playerPresent: true }));
+    const r4 = evaluateGoalStep(goal, makeStepContext({ trait }));
     expect(r4.status).toBe('completed');
     expect(r4.witnessed).toBe('attack');
   });

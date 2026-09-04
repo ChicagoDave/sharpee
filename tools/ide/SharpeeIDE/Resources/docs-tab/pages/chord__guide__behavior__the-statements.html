@@ -1,22 +1,29 @@
-<p>Ten statements do the story's work. The pumpkin below uses most of them:</p>
-<pre><code class="language-chord">  on measuring it
-    set its tally to 3
-    phrase tape-reading with girth = its tally
+<p>Eleven statements do the story's work. The pumpkin below uses most of them:</p>
+<pre><code class="language-chord">  on the player measuring
+    set the pumpkin's tally to 3
+    phrase tape-reading with girth = the pumpkin's tally
     emit pumpkin-measured
   end on
 
-  on picking it
-    change it to picked
+  on the player picking
+    change the pumpkin to picked
     award picked-the-champion, once
-    move it to the Compost Corner when it is picked
+    move the pumpkin to the Compost Corner when the pumpkin is picked
     phrase picked-note
-    win harvest-glory when its tally is 3
+    win harvest-glory when the pumpkin's tally is 3
   end on</code></pre>
 <ul><li><strong><code>phrase &lt;key&gt;</code></strong> speaks the named text. Dotted keys (<code>zoo.pa.closing-3</code>) are legal. <code>with &lt;name&gt; = &lt;value&gt;</code> passes a value the phrase can format.</li></ul>
 <p>A phrase used in only one place does not need a separate definition: indent prose directly under the <code>phrase</code> line and the text is declared and spoken in one gesture. (A deeper line is read as a statement, not prose, only when it opens with a lowercase statement keyword; prose sentences start capitalized, so the two do not collide.)</p>
-<p>``<code>chord after entering it phrase apiary-hum The hum reaches you before the gate has even closed. end after </code>``</p>
-<ul><li><strong><code>emit &lt;word&gt;</code></strong> raises a story event other clauses and the platform can observe.</li><li><strong><code>set &lt;thing&gt; to &lt;value&gt;</code></strong> writes a trait data field, like the pumpkin's <code>tally</code>.</li><li><strong><code>change &lt;name&gt; to &lt;state&gt;</code></strong> moves an owner along its declared states; <code>change the story to &lt;state&gt;</code> moves the story.</li><li><strong><code>move &lt;name&gt; to &lt;name&gt;</code></strong> relocates an entity.</li><li><strong><code>remove &lt;name&gt;</code></strong> takes an entity out of play, permanently: there is no <code>to</code>, nothing to get back, and removing the player is a load error (<code>analysis.remove-player</code>).</li><li><strong><code>award &lt;name&gt;</code></strong> grants an owner-scoped score; the explicit <code>, once</code> is available but dedupe already makes awards idempotent.</li><li><strong><code>win [&lt;phrase&gt;]</code></strong> and <strong><code>lose [&lt;phrase&gt;]</code></strong> end the story, optionally speaking a named phrase on the way out.</li><li><strong><code>kill the player [&lt;phrase-key&gt;]</code></strong> runs the platform's death machinery, not the same thing as <code>lose</code>.</li></ul>
-<pre><code class="language-chord">  on emptying it
+<p>``<code>chord after the player entering phrase apiary-hum The hum reaches you before the gate has even closed. end after </code>``</p>
+<ul><li><strong><code>emit &lt;word&gt;</code></strong> raises a story event other clauses and the platform can observe.</li><li><strong><code>set &lt;thing&gt; to &lt;value&gt;</code></strong> writes a trait data field, like the pumpkin's <code>tally</code>.</li><li><strong><code>change &lt;name&gt; to &lt;state&gt;</code></strong> moves an owner along its declared states; <code>change the story to &lt;state&gt;</code> moves the story.</li><li><strong><code>move &lt;name&gt; to &lt;place&gt;</code></strong> relocates an entity. It <em>puts</em> — nothing is seen to happen, nothing can refuse it, though the destination's <code>entering</code> clauses and the mover's <code>when … moves</code> clauses do react to the arrival. To make a character <em>do</em> something, name them and the action instead. A place is a room, an enterable, or a <a href="/chord/guide/world/regions">region with a landing</a>; it can also be another entity's room — <code>move the guards to Jack's location</code>, <code>move the hat to its location</code> — since a possessive <code>location</code> always means the containing room. Two more destinations stand alone: <code>move the guards here</code> (the player's location) and <code>move the monkey offstage</code> (no location at all — the monkey keeps its states and timers and comes back with a later <code>move</code>). And <code>move the player to a random adjacent room</code> draws one room a traversable exit away from the mover, at the moment it runs, on the mover's own seeded stream: blocked exits and locked doors do not count, and with no candidate nothing moves. The spelling is exact — no <code>randomly</code>, and only as a <code>move</code> destination.</li><li><strong><code>&lt;character&gt; &lt;verb&gt; [&lt;object&gt;] [&lt;preposition&gt; &lt;object&gt;]</code></strong> — the acting statement — has that character perform one action now, through the same pipeline as a typed command: <code>the guards take the sword</code>, <code>Teisha gives the sword to the player</code>, <code>the monkey goes east</code>. The action can refuse (an <code>on the guards taking</code> clause, a locked door), the player sees it in third person when they are in the room, and <code>after the guards taking</code> fires just as it would for a typed command. <code>move the monkey offstage</code> <em>puts</em> the monkey somewhere; <code>the monkey gives the necklace to the player</code> <em>does</em> something. The actor is a character, never <code>the player</code>, and the statement is legal in <code>after</code> and <code>when</code> bodies, <code>on every turn</code>, and topic rows — not inside an <code>on</code> intercept, which is where an action is being decided, not done.</li></ul>
+<p>```chord create the guards a person, plural in the Yard</p>
+<p>Guards.</p>
+<p>create the sword in the Yard</p>
+<p>A sword.</p>
+<p>create the Yard a room after the player entering the guards take the sword end after</p>
+<p>A yard. ```</p>
+<ul><li><strong><code>remove &lt;name&gt;</code></strong> takes an entity out of play, permanently: there is no <code>to</code>, nothing to get back, and removing the player is a load error (<code>analysis.remove-player</code>).</li><li><strong><code>award &lt;name&gt;</code></strong> grants an owner-scoped score; the explicit <code>, once</code> is available but dedupe already makes awards idempotent.</li><li><strong><code>win [&lt;phrase&gt;]</code></strong> and <strong><code>lose [&lt;phrase&gt;]</code></strong> end the story, optionally speaking a named phrase on the way out.</li><li><strong><code>kill the player [&lt;phrase-key&gt;]</code></strong> runs the platform's death machinery, not the same thing as <code>lose</code>.</li></ul>
+<pre><code class="language-chord">  on the player emptying
     remove the champion slug
     phrase trap-emptied
     lose when the champion pumpkin is picked

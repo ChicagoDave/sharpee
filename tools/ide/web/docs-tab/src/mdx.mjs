@@ -12,7 +12,8 @@
  *   added to the website later must fail this build loudly rather than vanish
  *   from the IDE's copy of the page.
  *
- * Public interface: reduceMdx(source, {grammarBlocks}), parseGrammarBlocks(ts).
+ * Public interface: reduceMdx(source, {grammarBlocks, versions}),
+ *   parseGrammarBlocks(ts).
  * Owner context: tools/ide — the Documentation tab's web bundle.
  */
 
@@ -42,11 +43,11 @@ export function parseGrammarBlocks(source) {
  * Reduce one MDX document to markdown.
  *
  * @param {string} source the `content.mdx` text
- * @param {{grammarBlocks: Record<string,string>}} context
+ * @param {{grammarBlocks: Record<string,string>, versions: Record<string,string>}} context
  * @returns {{markdown: string, unsupported: string[]}} `unsupported` lists any
  *   JSX left over; a caller that ignores it ships silently-missing content.
  */
-export function reduceMdx(source, { grammarBlocks }) {
+export function reduceMdx(source, { grammarBlocks, versions }) {
   let text = source.replace(/\r\n/g, '\n');
 
   // `import x from '…'` / `export const … = …` lines are module plumbing for
@@ -93,6 +94,23 @@ export function reduceMdx(source, { grammarBlocks }) {
     // and no new HTML path is introduced for one component.
     const img = `![](images/${name}.png)`;
     return caption ? `${img}\n\n*${caption}*` : img;
+  });
+
+  // <StatusBarExample [title="…"] /> — Chord Writer's own status-bar line, with
+  // the repository's real version numbers in it. The website component reads
+  // `website/src/lib/versions.json`; so does this build, so the two pages cannot
+  // disagree about what shipped. It renders through the website's CodeBlock,
+  // whose markdown equivalent is a plain fence.
+  text = text.replace(/<StatusBarExample\b([\s\S]*?)\/>/g, (all, attrs) => {
+    for (const field of ['chordWriter', 'sharpee', 'chord']) {
+      if (!versions?.[field]) {
+        throw new Error(`<StatusBarExample>: versions.json has no \`${field}\``);
+      }
+    }
+    const line = `Chord Writer ${versions.chordWriter} \u00B7 Sharpee ${versions.sharpee} / Chord ${versions.chord}`;
+    const fence = '```\n' + line + '\n```';
+    const title = attrs.match(/\btitle="([^"]*)"/)?.[1];
+    return title ? `**${title}**\n\n${fence}` : fence;
   });
 
   // Whatever is left that opens like a component.

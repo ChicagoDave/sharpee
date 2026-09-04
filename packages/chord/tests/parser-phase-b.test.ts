@@ -44,13 +44,13 @@ describe('zoo-actions.story (design.md §3.4 + ownership package)', () => {
     expect(petting.phrases?.entries.map((e) => e.key)).toEqual(['pet-what', 'cant-pet']);
   });
 
-  it('parses define trait with one-of data, phrases, and an it-bound clause', () => {
+  it('parses define trait with one-of data, phrases, and an actor-headed clause', () => {
     const pettable = decls.find((d): d is DefineTrait => d.kind === 'define-trait' && d.name === 'pettable')!;
     expect(pettable.data).toMatchObject([
       { name: ['kind'], type: 'one-of', oneOf: ['goats', 'rabbits', 'parrot', 'snake'], optional: false },
     ]);
     expect(pettable.phrases?.entries).toHaveLength(4);
-    expect(pettable.onClauses).toMatchObject([{ clauseKind: 'on', action: 'petting', binding: 'it', role: null }]);
+    expect(pettable.onClauses).toMatchObject([{ clauseKind: 'on', action: 'petting', binding: 'object', role: null }]);
   });
 
   it('parses entity data fields and trait states with reversible', () => {
@@ -82,7 +82,7 @@ describe('zoo-actions.story (design.md §3.4 + ownership package)', () => {
     expect(pettable.scores).toMatchObject([{ name: 'petted', worth: 5 }]);
     const goats = decls.find((d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'pygmy goats')!;
     expect(goats.scores).toMatchObject([{ name: 'fed', worth: 10 }]);
-    expect(goats.onClauses).toMatchObject([{ clauseKind: 'after', action: 'feeding', binding: 'it' }]);
+    expect(goats.onClauses).toMatchObject([{ clauseKind: 'after', action: 'feeding', binding: 'object' }]);
     expect(goats.onClauses[0].body).toMatchObject([{ kind: 'award', expression: ['fed'] }]);
   });
 

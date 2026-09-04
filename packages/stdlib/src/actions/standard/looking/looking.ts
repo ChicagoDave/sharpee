@@ -11,7 +11,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, RoomBehavior } from '@sharpee/world-model';
+import { TraitType, RoomBehavior, ConcealedStateTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { captureRoomSnapshot } from '../../base/snapshot-utils.js';
@@ -27,6 +27,59 @@ import {
 } from './looking-data.js';
 import { LookingMessages } from './looking-messages.js';
 
+/**
+ * The "In/On <holder> you see …" events for a room's contained listings
+ * (GH #338): one `if.event.list.contents` per open container or supporter
+ * with visible contents, under `<actionId>.container_contents` /
+ * `<actionId>.surface_contents`. Shared by the explicit look and going's
+ * arrival description so the two never disagree about a room.
+ *
+ * @param context action context (entity reads for the noun phrases)
+ * @param listings the holders and their visible contents
+ * @param actionId the message namespace (`if.action.looking`)
+ * @returns the list events, holders in listing order
+ */
+export function containedListingEvents(
+  context: ActionContext,
+  listings: ContainerContentsInfo[],
+  actionId: string
+): ISemanticEvent[] {
+  const events: ISemanticEvent[] = [];
+  for (const containerInfo of listings) {
+    const contentsMessageId = containerInfo.preposition === 'in'
+      ? 'container_contents'
+      : 'surface_contents';
+    const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
+
+    // params carry phrases (ADR-192): the container NounPhrase and a
+    // PhraseList of its contents; top-level event fields stay strings for
+    // handler consumption.
+    const containerEntity = context.world.getEntity(containerInfo.containerId);
+    events.push(context.event('if.event.list.contents', {
+      messageId: `${actionId}.${contentsMessageId}`,
+      params: {
+        [containerKey]: containerEntity
+          ? nounPhraseFor(containerEntity)
+          : { name: containerInfo.containerName },
+        items: {
+          kind: 'list' as const,
+          conj: 'and' as const,
+          items: containerInfo.itemIds
+            .map(id => context.world.getEntity(id))
+            .filter((e): e is NonNullable<typeof e> => Boolean(e))
+            .map(e => nounPhraseFor(e)),
+        }
+      },
+      containerId: containerInfo.containerId,
+      containerName: containerInfo.containerName,
+      preposition: containerInfo.preposition,
+      itemIds: containerInfo.itemIds,
+      itemNames: containerInfo.itemNames
+    }));
+  }
+  return events;
+}
+
 export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,
   requiredMessages: [
@@ -37,9 +90,8 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     'nothing_special',
     'in_container',
     'on_supporter',
-    'cant_see_in_dark',
-    'look_around',
-    'examine_surroundings'
+    'examine_surroundings',
+    'hidden_at'
   ],
   
   validate(context: ActionContext): ValidationResult {
@@ -51,13 +103,17 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // Only mutation: mark room as visited.
     // Capture first-visit state BEFORE marking, so report() can distinguish the
     // initial description from the standard one (mirrors going.ts:350–368).
-    const room = context.world.getContainingRoom(context.player.id);
+    const room = context.world.getContainingRoom(context.actor.id);
 
     if (room && room.hasTrait(TraitType.ROOM)) {
       const isFirstVisit = !RoomBehavior.hasBeenVisited(room);
       context.sharedData.isFirstVisit = isFirstVisit;
-      if (isFirstVisit) {
-        RoomBehavior.markVisited(room, context.player);
+      // `visited` is the reader's first look (Chord's `first time` prose
+      // lowers to RoomTrait.initialDescription), so only the player's own
+      // look marks it — an NPC looking here must not spend the player's
+      // first-visit description. NPC-visited semantics are open (ADR-328).
+      if (isFirstVisit && context.actor.id === context.player.id) {
+        RoomBehavior.markVisited(room, context.actor);
       }
     }
 
@@ -94,7 +150,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     events.push(context.event('if.event.room.description', roomDescData));
 
     // Emit illustration events for the room (ADR-124)
-    const room = context.world.getContainingRoom(context.player.id);
+    const room = context.world.getContainingRoom(context.actor.id);
     if (room) {
       events.push(...emitIllustrations(room, 'on-enter', lookedEvent.id, context));
     }
@@ -113,39 +169,20 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
 
     // Emit messages for container/supporter contents
     const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
-    if (openContainerContents && openContainerContents.length > 0) {
-      for (const containerInfo of openContainerContents) {
-        const contentsMessageId = containerInfo.preposition === 'in'
-          ? 'container_contents'
-          : 'surface_contents';
-        const containerKey = containerInfo.preposition === 'in' ? 'container' : 'surface';
+    events.push(...containedListingEvents(context, openContainerContents ?? [], context.action.id));
 
-        // params carry phrases (ADR-192): the container NounPhrase and a
-        // PhraseList of its contents; top-level event fields stay strings for
-        // handler consumption.
-        const containerEntity = context.world.getEntity(containerInfo.containerId);
-        events.push(context.event('if.event.list.contents', {
-          messageId: `${context.action.id}.${contentsMessageId}`,
-          params: {
-            [containerKey]: containerEntity
-              ? nounPhraseFor(containerEntity)
-              : { name: containerInfo.containerName },
-            items: {
-              kind: 'list' as const,
-              conj: 'and' as const,
-              items: containerInfo.itemIds
-                .map(id => context.world.getEntity(id))
-                .filter((e): e is NonNullable<typeof e> => Boolean(e))
-                .map(e => nounPhraseFor(e)),
-            }
-          },
-          containerId: containerInfo.containerId,
-          containerName: containerInfo.containerName,
-          preposition: containerInfo.preposition,
-          itemIds: containerInfo.itemIds,
-          itemNames: containerInfo.itemNames
-        }));
-      }
+    // GH #245 (6): a hidden player sees their own concealment — the one
+    // observable a hiding spot has when nothing is there to be hidden from.
+    const concealed = context.actor.get(ConcealedStateTrait.type) as ConcealedStateTrait | undefined;
+    if (concealed) {
+      const spot = context.world.getEntity(concealed.targetId);
+      events.push(context.event('if.event.hiding_noted', {
+        messageId: `${context.action.id}.${LookingMessages.HIDDEN_AT}`,
+        params: { position: concealed.position, spot: spot ? nounPhraseFor(spot) : { name: 'cover' } },
+        spotId: concealed.targetId,
+        position: concealed.position,
+        actorId: context.actor.id
+      }));
     }
 
     return events;
@@ -159,7 +196,7 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error,
       messageId: blockedMessageId(context, result),
       params: result.params,
-      actorId: context.player.id
+      actorId: context.actor.id
     })];
   },
 

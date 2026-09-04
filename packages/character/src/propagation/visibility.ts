@@ -10,14 +10,19 @@
  */
 
 import { PropagationTransfer, PropagationColoring } from './propagation-types.js';
+import type { Presence } from '@sharpee/core';
 import type { WorldModel, IFEntity } from '@sharpee/world-model';
 
 // ---------------------------------------------------------------------------
 // Player state
 // ---------------------------------------------------------------------------
 
-/** The player's presence state relative to the propagation event. */
-export type PlayerPresence = 'absent' | 'present' | 'concealed';
+/**
+ * The player's presence state relative to the propagation event. The union is
+ * `@sharpee/core`'s `Presence` (ADR-328 D3 moved the declaration down so
+ * `ISemanticEvent` can carry it); this name is kept for ADR-144 readers.
+ */
+export type PlayerPresence = Presence;
 
 // ---------------------------------------------------------------------------
 // Visibility result

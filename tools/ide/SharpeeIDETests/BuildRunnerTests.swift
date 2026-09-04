@@ -51,6 +51,12 @@ final class BuildRunnerTests: XCTestCase {
 
     // MARK: - Success / output
 
+    /// ADR-290 D6 (GH #196): the Play pane's bundle is always built menu-less.
+    func testThePlayBuildIsAlwaysMenuLess() {
+        let story = URL(fileURLWithPath: "/tmp/fernhill/fernhill.story")
+        XCTAssertEqual(BuildRunner.buildArguments(for: story), ["build", story.path, "--no-menu"])
+    }
+
     func testRunsScriptCapturesStdoutAndSucceeds() throws {
         let script = try makeScript("echo 'hello build'; exit 0")
         run(script)

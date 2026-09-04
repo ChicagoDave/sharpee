@@ -19,9 +19,12 @@
  * - Diagnostics gate the load (atomic): callers must check hasErrors().
  */
 import {
+  ActStmt,
+  ActionPattern,
   CompositionItem,
   ConditionNode,
   CreateDecl,
+  StartBlockDecl,
   CounterDecl,
   DefineCounter,
   DefineAction,
@@ -52,11 +55,20 @@ import {
   EmitField,
   EmitValue,
   ExtendAction,
+  GoalStepDecl,
   RemoveFromAction,
   MachineTransition,
   MediaStmt,
   NameRef,
+  PlaceExpr,
   OnClause,
+  DefineTimer,
+  DefineChapters,
+  ChapterTrigger,
+  TimerClause,
+  MoveClause,
+  KillStmt,
+  LandingDecl,
   PatternPart,
   StateName,
   Statement,
@@ -97,6 +109,12 @@ import {
   IRHungerDef,
   IRMeterRung,
   IRCounterDef,
+  IRTimerDef,
+  IRChapterDef,
+  IRChapterTrigger,
+  IRTimerClause,
+  IRMoveClause,
+  IRLanding,
   IRCounterDecl,
   IRGrammarExtension,
   IRGrammarRemoval,
@@ -106,6 +124,7 @@ import {
   IRFeelsEntry,
   IRGoalDef,
   IRGoalStep,
+  IRPerformSlots,
   IRInfluenceDef,
   IRKnowsEntry,
   IRPersonalityEntry,
@@ -133,7 +152,7 @@ import {
   IRStoryFields,
   StoryIR,
 } from './ir.js';
-import { Span, spanOf } from './span.js';
+import { mergeSpans, Span, spanOf } from './span.js';
 
 /**
  * The `story` block's opening keyword. Its length is how far a header-level
@@ -176,6 +195,21 @@ const OPPOSITE_DIRECTION: Record<string, string> = {
   northwest: 'southeast', southeast: 'northwest',
   up: 'down', down: 'up',
 };
+/**
+ * The phrase key an inline `kill the player` body registers under (ADR-325
+ * D3i): source-position keyed, so two inline deaths never collide and the
+ * key is derivable from the statement alone in both the collection and
+ * lowering passes.
+ */
+function inlineKillKey(stmt: KillStmt): string {
+  // GH #324: spans are fragment-relative after import splicing, so two
+  // imported files can kill at the same line:col — `Span.file` (ADR-251 D6)
+  // keeps the keys apart. The main file carries no file tag, so a story
+  // without imports keeps its old keys byte for byte.
+  const fileTag = stmt.span.file ? `${stmt.span.file.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-` : '';
+  return `death-at-${fileTag}${stmt.span.line}-${stmt.span.column}`;
+}
+
 const PLAYER_WORDS = new Set(['player', 'you', 'yourself']);
 
 /** Reserved-name gate text (David, 2026-07-12 — each package P3). */
@@ -235,6 +269,18 @@ function isNegationOf(candidate: string, base: string): boolean {
  * gate's per-condition event-clause key. Same shape → same string.
  */
 function conditionFingerprint(cond: ConditionNode): string {
+  const placeKey = (pl: PlaceExpr): string => {
+    switch (pl.kind) {
+      case 'name':
+        return pl.ref.words.join(' ').toLowerCase();
+      case 'location':
+        return `loc:${value(pl.owner)}`;
+      case 'here':
+      case 'offstage':
+      case 'adjacent-room':
+        return pl.kind;
+    }
+  };
   const value = (v: ValueExpr): string => {
     switch (v.kind) {
       case 'literal':
@@ -257,6 +303,8 @@ function conditionFingerprint(cond: ConditionNode): string {
       return `not(${conditionFingerprint(cond.operand)})`;
     case 'chance':
       return `chance:${cond.n}`;
+    case 'chapter':
+      return `chapter:${cond.relation}:${cond.name}`;
     case 'client-has':
       return `client-has:${cond.capability}`;
     case 'condition-ref':
@@ -278,9 +326,11 @@ function conditionFingerprint(cond: ConditionNode): string {
         case 'is-a':
           return `is-a${p.negated ? '!' : ''}(${value(cond.subject)},${p.classifier.join(' ').toLowerCase()})`;
         case 'is-in':
-          return `is-in${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
+          return `is-in${p.negated ? '!' : ''}(${value(cond.subject)},${placeKey(p.place)})`;
         case 'is-here':
           return `is-here${p.negated ? '!' : ''}(${value(cond.subject)})`;
+        case 'timer-has':
+          return `timer-has-${p.what}${p.negated ? '!' : ''}(${value(cond.subject)})`;
         case 'has':
         case 'holds':
         case 'wears':
@@ -323,6 +373,13 @@ interface Scope {
   slots: Set<string> | null;
   /** Trait-declared states visible on `it` in trait scope (ratchet D8). */
   ownStates: string[] | null;
+  /**
+   * ADR-327 D2/D8: `it`/`its` are a carrier word here — the block has no
+   * name for its subject. True inside a `define trait` body (the carrying
+   * entity) and a `define condition` (the quantified subject of an open
+   * condition). Everywhere else `it`/`its` are `analysis.it-removed`.
+   */
+  carrierIt?: boolean;
   /** Score-owner key for `award` resolution (entity id, `trait.<t>`, `action.<a>`; null = story). */
   scoreOwner: string | null;
   /** Inside an `each` block body — the `the match` binder is in scope (E3). */
@@ -340,6 +397,15 @@ interface Scope {
    * this set instead of the state/trait vocabulary.
    */
   semanticValues?: Map<string, string[]>;
+  /**
+   * GH #349: a dialogue-dispatch body — a row of `define topics`,
+   * `define greetings`, `define exchange`, `define initiative`, `define
+   * manner`, or `define conversation` — where the runtime frames a
+   * conversation partner. The partner-only predicates (`was discussed`,
+   * `asked`, `is concluded`, `subject changes`) hold here and nowhere else;
+   * elsewhere they are `analysis.dialogue-only`.
+   */
+  dialogue?: boolean;
 }
 
 const TOP_SCOPE: Scope = { owner: null, fields: null, slots: null, ownStates: null, scoreOwner: null, inEach: false };
@@ -354,6 +420,38 @@ function entityScope(owner: EntitySymbol | null): Scope {
 /** True when the scope binds `it` (entity clause or trait clause). */
 function scopeHasIt(scope: Scope): boolean {
   return scope.owner !== null || scope.fields !== null;
+}
+
+/**
+ * Can this entity act (ADR-327 D1)? A `a person` block — the block kind whose
+ * owner can be a clause head's subject.
+ */
+function isActorSymbol(sym: EntitySymbol): boolean {
+  // ADR-327 D10 removed the player block, so `a person` is the whole rule —
+  // the role-holder is one of these characters, chosen at run time.
+  return isPersonDecl(sym.decl);
+}
+
+/** The entity's name as the author wrote it (`the Grocery Stall`), for fix-its. */
+function entityDisplayName(sym: EntitySymbol): string {
+  const n = sym.decl.name;
+  return [n.article, ...n.words].filter((w): w is string => !!w).join(' ');
+}
+
+/** A value expression's words as written, for quoting heads in diagnostics. */
+function valueExprText(expr: ValueExpr): string {
+  switch (expr.kind) {
+    case 'ref':
+      return [expr.ref.article, ...expr.ref.words].filter((w): w is string => !!w).join(' ');
+    case 'bare':
+      return expr.words.join(' ');
+    case 'literal':
+      return expr.value;
+    case 'possessive':
+      return `${valueExprText(expr.base)}'s ${expr.field.join(' ')}`;
+    case 'match':
+      return 'the match';
+  }
 }
 
 // The when-header verb-derivation table (petting → pets) died with floating
@@ -394,6 +492,7 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
     case 'chance':
     case 'condition-ref':
     case 'client-has':
+    case 'chapter':
       return false;
     case 'any-of':
     case 'none-of':
@@ -413,7 +512,9 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'compare':
           return visitValue(p.value);
         case 'is-in':
-          return nameIsIt(p.place);
+          return p.place.kind === 'name' ? nameIsIt(p.place.ref)
+            : p.place.kind === 'location' ? visitValue(p.place.owner)
+            : false;
         case 'has':
         case 'holds':
         case 'wears':
@@ -427,6 +528,7 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         case 'is-a':
         // `is here` has no object node — the subject was already visited above.
         case 'is-here':
+        case 'timer-has':
         // The membership form's condition selects its own entities — the
         // subject was already visited above (E1/P3).
         case 'is-any':
@@ -449,6 +551,25 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
  */
 export function analyze(ast: StoryFile, diagnostics: DiagnosticBag): StoryIR {
   return new Analyzer(ast, diagnostics).run();
+}
+
+/**
+ * `a person` composed on a create block — the ADR-327 D10 eligibility floor
+ * for holding the player role.
+ */
+function isPersonDecl(decl: CreateDecl): boolean {
+  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+}
+
+/**
+ * `playable` composed on a create block (ADR-327 D10) — a bare, single-word
+ * composition matched ahead of profile/personality/trait routing, so the word
+ * never reaches parser vocabulary or the unknown-trait census gate.
+ */
+function isPlayableDecl(decl: CreateDecl): boolean {
+  return decl.compositions.some(
+    (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
+  );
 }
 
 interface EntitySymbol {
@@ -514,8 +635,109 @@ interface PhaseOrderState {
 }
 
 /** The source keyword a statement was written with, for phase-order messages. */
+/** Leading articles an acting statement's names may carry (ADR-329 D1). */
+const ACT_ARTICLES = new Set(['the', 'a', 'an']);
+
+/**
+ * The manifest's going shapes spell directions both long and short (`go
+ * north`, `go n`, `go inside`); the IR carries the canonical word the loader's
+ * direction lookup expects (`north`, `in`).
+ */
+const ACT_DIRECTION_CANONICAL: Record<string, string> = {
+  n: 'north', s: 'south', e: 'east', w: 'west',
+  ne: 'northeast', nw: 'northwest', se: 'southeast', sw: 'southwest',
+  u: 'up', d: 'down', inside: 'in', outside: 'out',
+};
+
+/** The words of an acting statement or a `perform` step, as the parser carried them. */
+type ActWords = ReadonlyArray<{ text: string; span: Span }>;
+
+/** The span covering `words[from..to)`. */
+function actWordsSpan(words: ActWords, from: number, to: number): Span {
+  let sp = words[from].span;
+  for (let i = from + 1; i < to; i++) sp = mergeSpans(sp, words[i].span);
+  return sp;
+}
+
+/** `words[from..to)` as a name reference, a leading article split off (ADR-329 D1). */
+function actWordsNameRef(words: ActWords, from: number, to: number): NameRef {
+  const hasArticle = to - from > 1 && ACT_ARTICLES.has(words[from].text.toLowerCase());
+  return {
+    kind: 'name',
+    article: hasArticle ? words[from].text.toLowerCase() : null,
+    words: words.slice(hasArticle ? from + 1 : from, to).map((w) => w.text),
+    span: actWordsSpan(words, from, to),
+  };
+}
+
+/** The inflections a written verb may stand for (ADR-329 D1/Q-1) — mirrors the parser's admission test. */
+function verbLemmas(word: string): Set<string> {
+  const w = word.toLowerCase();
+  const out = new Set([w]);
+  if (w.endsWith('ies') && w.length > 4) out.add(`${w.slice(0, -3)}y`);
+  if (w.endsWith('es') && w.length > 3) out.add(w.slice(0, -2));
+  if (w.endsWith('s') && w.length > 2) out.add(w.slice(0, -1));
+  return out;
+}
+
+/**
+ * Render a story action pattern as manifest-style shapes (`kick :target`),
+ * expanding optional parts to both readings and `a|b` alternatives to each.
+ */
+function expandPatternShapes(pattern: ActionPattern): string[] {
+  let shapes: string[][] = [[]];
+  for (const part of pattern.parts) {
+    const options: string[][] = part.kind === 'alt' ? part.words.map((w) => [w]) : part.kind === 'slot' ? [[`:${part.word}`]] : [[part.word]];
+    if (part.optional) options.push([]);
+    const next: string[][] = [];
+    for (const prefix of shapes) for (const opt of options) next.push([...prefix, ...opt]);
+    shapes = next;
+  }
+  return shapes.filter((sh) => sh.length > 0).map((sh) => sh.join(' '));
+}
+
+/**
+ * Match lowercased words against a shape's parts. The first literal matches
+ * by lemma, later literals exactly; a slot consumes at least one word, up to
+ * the next literal (or the end). Returns the slot bindings as word ranges, or
+ * null when the words do not fit the shape.
+ */
+function matchShapeWords(words: string[], parts: string[]): Array<{ slot: string; from: number; to: number }> | null {
+  const slots: Array<{ slot: string; from: number; to: number }> = [];
+  // GH #351: a literal part may be an alternation (`to|with`) — any of its
+  // spellings matches, as the grammar engine reads it.
+  const spellingsOf = (part: string): string[] => part.split('|');
+  let i = 0;
+  for (let j = 0; j < parts.length; j++) {
+    const part = parts[j];
+    if (part.startsWith(':')) {
+      const next = parts[j + 1];
+      let end: number;
+      if (next === undefined) {
+        end = words.length;
+      } else if (next.startsWith(':')) {
+        return null; // two adjacent slots cannot be split without a parser — no standard shape has them
+      } else {
+        const alts = spellingsOf(next);
+        end = words.findIndex((w, k) => k > i && alts.includes(w));
+        if (end === -1) return null;
+      }
+      if (end <= i) return null;
+      slots.push({ slot: part.slice(1), from: i, to: end });
+      i = end;
+    } else {
+      if (i >= words.length) return null;
+      const alts = spellingsOf(part);
+      const ok = j === 0 ? alts.some((a) => verbLemmas(words[i]).has(a)) : alts.includes(words[i]);
+      if (!ok) return null;
+      i++;
+    }
+  }
+  return i === words.length ? slots : null;
+}
+
 function statementWord(stmt: Statement): string {
-  return stmt.kind === 'media' ? stmt.form : stmt.kind;
+  return stmt.kind === 'media' ? stmt.form : stmt.kind === 'timer-verb' ? stmt.verb : stmt.kind;
 }
 
 class Analyzer {
@@ -532,6 +754,13 @@ class Analyzer {
   /** action name → declared grammar-slot names. */
   private actionSlots = new Map<string, Set<string>>();
   /**
+   * ADR-329 D2: the story's own grammar shapes by action name — every
+   * `define action` pattern and every `extend action` addition, rendered
+   * like the manifest's (`kick :target`). Built on first use from the AST,
+   * so a clause body that precedes its action's declaration still matches.
+   */
+  private actShapes: Map<string, string[]> | null = null;
+  /**
    * emit event id (dotless) → the top-level payload field names it carries
    * (ADR-253 D1). Collected across every `emit` during resolution so
    * `checkChannelReturns` can flag a channel returning a field the event never
@@ -543,12 +772,18 @@ class Analyzer {
   private scoreNames = new Map<string, number>();
   /** Story-global counter names (ADR-264) — for `raise`/`lower`/read resolution. */
   private storyCounterNames = new Set<string>();
+  /** ADR-325 D3: timers by `qualified` key (`<owner>.<name>` / `<name>`). */
+  private timers = new Map<string, { name: string; owner: string | null; states: string[]; decl: DefineTimer }>();
+  /** Lowered timer defs, in declaration order — the IR `timers` list. */
+  private timerDefs: IRTimerDef[] = [];
   /** Entity id → its per-entity counter names (ADR-264). */
   private entityCounterNames = new Map<string, Set<string>>();
   /** Owner-qualified score declarations, for ir.scores emission. */
   private scoreDecls: IRScoreDef[] = [];
   /** condition name → OPEN (references `it`/`its`; usable as a selection). */
   private openConditions = new Map<string, boolean>();
+  /** Spans already reported as `analysis.it-removed` (ADR-327 D2) — one per source position. */
+  private itRemovedSpans = new Set<string>();
   // Ownership package (Phase C):
   /** Story-declared phases (ratchet D2); bare names are condition refs. */
   private storyStates: string[] = [];
@@ -571,6 +806,9 @@ class Analyzer {
   private pronounSetDecls = new Map<string, DefinePronouns>();
   /** `define fact` declarations in order (ADR-310 D14), and their built defs by id. */
   private factDecls: DefineFact[] = [];
+  /** `define chapters` blocks (ADR-330) — at most one; built after timers. */
+  private chapterDecls: DefineChapters[] = [];
+  private chapterDefs: IRChapterDef[] = [];
   private factDefs: IRFactDef[] = [];
   private factById = new Map<string, IRFactDef>();
   /** `define temperament` defs plus per-entity synthesized inline/override defs (ADR-318 D3), in declaration order. */
@@ -646,6 +884,14 @@ class Analyzer {
    */
   private bookKeys = new Map<string, boolean>();
   private partialCoverageWarned = new Set<string>();
+  /**
+   * Phrase-table keys derived from entity DESCRIPTIONS (`<id>.description`,
+   * `<id>.initial-description`) rather than authored phrase bodies. The
+   * phrase-in-phrase gate (GH #286) exempts them: room descriptions resolve
+   * their markers through the Z2 snippet path, and non-room descriptions
+   * keep markers unrewritten by pinned contract (zoo surfaces phase 2).
+   */
+  private descriptionKeys = new Set<string>();
 
   run(): StoryIR {
     // ADR-269 D8: grammar-file mode — a `grammar` header confines the file
@@ -722,6 +968,10 @@ class Analyzer {
     this.resolveClaims();
     // ADR-318 D12a: witnessed-act aliases resolve against the entity table.
     this.buildWitnessedTopics();
+    // ADR-325 D3: timers resolve their owners against the entity table.
+    this.buildTimers();
+    // ADR-330: chapters resolve their triggers against entities, timers, and states.
+    this.buildChapters();
 
     const ir: StoryIR = {
       format: IR_FORMAT,
@@ -747,8 +997,14 @@ class Analyzer {
           ...this.buildOnClause(c, STORY_SCOPE, 'story', i),
           narration: 'broadcast' as const,
         })),
+        ...((this.ast.header?.timerClauses ?? []).length > 0
+          ? { timerClauses: (this.ast.header?.timerClauses ?? []).map((c, i) => this.buildTimerClause(c, STORY_SCOPE, 'story', i)) }
+          : {}),
       },
       entities: [],
+      // ADR-327 D10: resolved after the declaration loop, so its statements
+      // see every entity the story declares.
+      startBlock: null,
       conditions: [],
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },
@@ -760,6 +1016,7 @@ class Analyzer {
       ranks: this.buildRanks(),
       ...(hungerDef !== undefined ? { hunger: hungerDef } : {}),
       counters: [],
+      timers: this.timerDefs,
       sequences: [],
       machines: [],
       channels: [],
@@ -767,6 +1024,8 @@ class Analyzer {
       hasHatches: false,
       // Additive and optional — absent when the story declares no facts.
       ...(this.factDefs.length > 0 ? { facts: this.factDefs } : {}),
+      // ADR-330 chapters — additive and optional, present only under `use chapters`.
+      ...(this.chapterDefs.length > 0 ? { chapters: this.chapterDefs } : {}),
       // ADR-318 D12a witnessed-act aliases — additive and optional.
       ...(this.witnessedTopics.length > 0 ? { witnessedTopics: this.witnessedTopics } : {}),
       // ADR-310 D5 custom vocabulary — additive and optional.
@@ -794,7 +1053,9 @@ class Analyzer {
           ir.conditions.push({
             name: decl.name,
             open: this.openConditions.get(decl.name) ?? false,
-            condition: this.resolveCondition(decl.condition, TOP_SCOPE),
+            // `it` is the quantified subject here — a carrier word, the
+            // second of ADR-327 D8's two allowances (see Scope.carrierIt).
+            condition: this.resolveCondition(decl.condition, { ...TOP_SCOPE, carrierIt: true }),
             span: decl.span,
           });
           break;
@@ -904,6 +1165,7 @@ class Analyzer {
         case 'define-profile':
         case 'define-mood':
         case 'define-personality':
+        case 'define-chapters':
           break; // collected in pass 1; built before entities (buildFacts/buildProfiles/custom vocabulary)
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
@@ -917,6 +1179,10 @@ class Analyzer {
           break; // applied onto owners after all entities are built (applyConversations)
       }
     }
+
+    // ADR-327 D10: the start block resolves after every entity is built —
+    // `change the player to <name>` refers to characters declared anywhere.
+    ir.startBlock = this.buildStartBlock();
 
     // ADR-250 D3: books in arbitration order; predicates resolve here in
     // pass 2 (an entity declared after the book may appear in its `while`).
@@ -1072,7 +1338,7 @@ class Analyzer {
           if (!(comp.name === 'dark' && isRoom) && !npcShaped) {
             this.diagnostics.error(
               'analysis.conditional-composition-unsupported',
-              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on <action> it\` clauses can test it) or split the behavior.`,
+              `Conditional composition isn't supported for \`${comp.name}\` — move the condition inside the trait (\`on the player <action>\` clauses can test it) or split the behavior.`,
               comp.span,
             );
             continue;
@@ -1169,9 +1435,10 @@ class Analyzer {
         }
       }
 
-      // Census 12: items the player wears must be wearable. Only the player's
-      // `wears` list is applied at load — mirror that scope exactly.
-      if (entity.isPlayer) {
+      // Census 12: items a role-eligible character wears must be wearable.
+      // Under ADR-327 D10 there is no compile-time player, so the scope is
+      // every `playable` character — the set that can actually hold the role.
+      if (entity.isPlayable) {
         for (const wornId of entity.wears) {
           const worn = ir.entities.find((e) => e.id === wornId);
           if (worn && !worn.traits.some((t) => t.name === 'wearable')) {
@@ -1344,6 +1611,45 @@ class Analyzer {
             'analysis.region-member-kind',
             `\`${target.name}\` is a ${kind} — \`containing\` members must be rooms or regions.`,
             member.span,
+          );
+        }
+      }
+    }
+
+    // ADR-325 D5: every landing room is a room the region contains,
+    // directly or through a nested region.
+    const roomsWithin = (region: IREntity, seen = new Set<string>()): Set<string> => {
+      const out = new Set<string>();
+      if (seen.has(region.id)) return out;
+      seen.add(region.id);
+      for (const member of region.containing) {
+        const target = byId.get(member.id);
+        if (!target) continue;
+        if (isRegionEntity(target)) {
+          for (const id of roomsWithin(target, seen)) out.add(id);
+        } else {
+          out.add(target.id);
+        }
+      }
+      return out;
+    };
+    for (const region of regions) {
+      if (!region.landing) continue;
+      const within = roomsWithin(region);
+      for (const roomId of region.landing.rooms) {
+        const target = byId.get(roomId);
+        if (!target) continue;
+        if (!target.kinds.some((k) => k.name === 'room')) {
+          this.diagnostics.error(
+            'analysis.landing-kind',
+            `\`${target.name}\` is not a room — a landing is a room the region contains.`,
+            region.landing.span,
+          );
+        } else if (!within.has(roomId)) {
+          this.diagnostics.error(
+            'analysis.landing-not-contained',
+            `\`${target.name}\` is not contained by \`${region.name}\` — a landing must be one of the region's own rooms (directly or through a nested region).`,
+            region.landing.span,
           );
         }
       }
@@ -1539,7 +1845,7 @@ class Analyzer {
         for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRTopicRow[] = [];
       const seenEntities = new Map<string, Span>();
       const seenTexts = new Map<string, Span>();
@@ -1658,7 +1964,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRMannerRow[] = [];
       decl.rows.forEach((row, r) => {
         const beatKeys: string[] = [];
@@ -1729,7 +2035,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRGreetingRow[] = [];
       const seenHeads = new Map<string, Span>();
       for (const row of decl.rows) {
@@ -1834,7 +2140,7 @@ class Analyzer {
         for (const alias of rowSym.aka) entityTierNames.set(normalizeTopic(alias), rowSym.nameLower);
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRExchangeRow[] = [];
       const seenEntities = new Map<string, Span>();
       const seenTexts = new Map<string, Span>();
@@ -1978,7 +2284,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const rows: IRInitiativeRow[] = [];
       for (const row of decl.rows) {
         // A suppression cannot also speak: `hold their tongue` is the
@@ -2056,7 +2362,7 @@ class Analyzer {
         continue;
       }
 
-      const scope = entityScope(sym);
+      const scope: Scope = { ...entityScope(sym), dialogue: true };
       const keyOf = (part: string): string => `conversation.${ownerId}.${decl.name}.${part}`;
       const lowerBody = (body: Statement[], part: string): IRStatement[] =>
         body.map((s, j) => this.resolveStatement(s, scope, `${keyOf(part)}.${j}`));
@@ -2420,6 +2726,7 @@ class Analyzer {
       ownStates: visible.length ? visible : null,
       scoreOwner: `trait.${decl.name}`,
       inEach: false,
+      carrierIt: true,
     };
     return {
       name: decl.name,
@@ -2455,7 +2762,11 @@ class Analyzer {
     const seen = new Map<string, OnClause>();
     for (const clause of clauses) {
       if (clause.binding === 'every-turn') continue;
-      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}`;
+      // ADR-327 D1: the head's actor is part of the clause's identity —
+      // `on the player taking` and `on the guards taking` on one owner are
+      // two clauses, each firing for its own actor (Acceptance item 2).
+      const actor = clause.actor ? valueExprText(clause.actor).toLowerCase() : '';
+      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}|${actor}`;
       if (EVENT_VERBS.has(clause.action)) {
         key += `|${clause.condition ? conditionFingerprint(clause.condition) : ''}`;
       }
@@ -2817,6 +3128,7 @@ class Analyzer {
       // owned, so ownerless/bare-key scope — the same registration the five
       // pre-existing contexts use.
       for (const clause of this.ast.header.onClauses) this.collectInlineTexts(clause.body);
+      for (const clause of this.ast.header.timerClauses) this.collectInlineTexts(clause.body);
       // `use phrasebook` lines (ADR-250 D2/D3) — header position puts every
       // used book ahead of body-declared books in the arbitration order.
       for (const use of this.ast.header.usePhrasebooks) this.collectUsePhrasebook(use);
@@ -2960,6 +3272,14 @@ class Analyzer {
           } else {
             this.customMoods.set(decl.name, decl);
           }
+        }
+      }
+      else if (decl.kind === 'define-chapters') {
+        // ADR-330 D1: one block per story; built in buildChapters after timers.
+        if (this.chapterDecls.length > 0) {
+          this.diagnostics.error('analysis.duplicate-chapters', 'This story already has a `define chapters` block — one block declares every chapter.', decl.span);
+        } else {
+          this.chapterDecls.push(decl);
         }
       }
       else if (decl.kind === 'define-personality') {
@@ -3108,6 +3428,7 @@ class Analyzer {
     // Derived phrase keys: entity descriptions and per-entity overrides.
     for (const e of this.entities) {
       if (e.decl.description) {
+        this.descriptionKeys.add(`${e.id}.description`);
         this.registerPhrase(DEFAULT_LOCALE, `${e.id}.description`, {
           strategy: null,
           variants: [this.variantOf(e.decl.description)],
@@ -3116,6 +3437,7 @@ class Analyzer {
       }
       if (e.decl.initialDescription) {
         // Z1: the `first time` prose — first-visit description, its own key.
+        this.descriptionKeys.add(`${e.id}.initial-description`);
         this.registerPhrase(DEFAULT_LOCALE, `${e.id}.initial-description`, {
           strategy: null,
           variants: [this.variantOf(e.decl.initialDescription)],
@@ -3168,6 +3490,9 @@ class Analyzer {
       // owner-derived key (phrase-override mechanism) — four owners each
       // declaring `phrase confession` must not collide (Phase C P3).
       for (const clause of e.decl.onClauses) this.collectInlineTexts(clause.body, e.id);
+      // Event clause bodies (ADR-325 D3e/D3h) are owner-scoped the same way.
+      for (const clause of e.decl.timerClauses) this.collectInlineTexts(clause.body, e.id);
+      for (const clause of e.decl.moveClauses) this.collectInlineTexts(clause.body, e.id);
     }
 
     // Topic-table row bodies are entity-owned (ADR-239): their inline
@@ -3253,6 +3578,18 @@ class Analyzer {
         case 'phrase':
           if (stmt.inlineText) {
             this.registerPhrase(DEFAULT_LOCALE, ownerId ? `${ownerId}.${stmt.phraseKey}` : stmt.phraseKey, {
+              strategy: null,
+              variants: [this.variantOf(stmt.inlineText)],
+              span: stmt.inlineText.span,
+            });
+          }
+          break;
+        case 'kill':
+          // ADR-325 D3i: the inline death text registers under a
+          // synthesized key (bare — death text is one-shot, never
+          // overridden per owner) that the lowering step also derives.
+          if (stmt.inlineText) {
+            this.registerPhrase(DEFAULT_LOCALE, inlineKillKey(stmt), {
               strategy: null,
               variants: [this.variantOf(stmt.inlineText)],
               span: stmt.inlineText.span,
@@ -3839,7 +4176,6 @@ class Analyzer {
   private routeCharacterComposition(
     comp: CompositionItem,
     isPerson: boolean,
-    isPlayer: boolean,
     entityName: string,
     out: IRPersonalityEntry[],
   ): boolean {
@@ -3870,16 +4206,6 @@ class Analyzer {
       this.diagnostics.error(
         'analysis.personality-person-only',
         `\`${name}\` is a personality adjective — it composes only on a person (\`a person, ${name}\`); \`${entityName}\` is not a person.`,
-        comp.span,
-      );
-      return true;
-    }
-    // The player carries no character model — the model drives NPC turns
-    // (ADR-310; the direct parallel of the player-behavior gate below).
-    if (isPlayer) {
-      this.diagnostics.error(
-        'analysis.personality-player',
-        `The player carries no character model — personality adjectives shape how an NPC behaves, and the player's behavior is the player's.`,
         comp.span,
       );
       return true;
@@ -4386,16 +4712,13 @@ class Analyzer {
   private routeProfileComposition(
     comp: CompositionItem,
     isPerson: boolean,
-    isPlayer: boolean,
     entityName: string,
     isDuplicate: boolean,
   ): Record<string, string> | null {
-    if (!isPerson || isPlayer) {
+    if (!isPerson) {
       this.diagnostics.error(
-        isPlayer ? 'analysis.character-line-player' : 'analysis.character-line-person-only',
-        isPlayer
-          ? `The player carries no character model — \`cognitive-profile\` shapes how an NPC perceives and believes.`
-          : `\`cognitive-profile\` composes only on a person — \`${entityName}\` is not a person.`,
+        'analysis.character-line-person-only',
+        `\`cognitive-profile\` composes only on a person — \`${entityName}\` is not a person.`,
         comp.span,
       );
       return null;
@@ -4545,8 +4868,19 @@ class Analyzer {
   private buildEntity(decl: CreateDecl): IREntity {
     const sym = this.byId.get(decl.name.words.join('-').toLowerCase());
     const id = sym?.id ?? decl.name.words.join('-').toLowerCase();
-    const isPlayer = decl.name.words.length === 1 && decl.name.words[0].toLowerCase() === 'player';
-    const isPerson = decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
+    const isPerson = isPersonDecl(decl);
+    // ADR-327 D10: `playable` marks a character eligible for the player role.
+    const isPlayable = isPlayableDecl(decl);
+    if (isPlayable && !isPerson) {
+      const comp = decl.compositions.find(
+        (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
+      )!;
+      this.diagnostics.error(
+        'analysis.playable-non-person',
+        `\`playable\` marks a character who can hold the player role — \`${decl.name.words.join(' ')}\` is not \`a person\`.`,
+        comp.span,
+      );
+    }
 
     const kinds = [];
     const traits = [];
@@ -4554,10 +4888,16 @@ class Analyzer {
     let profile: Record<string, string> | undefined;
     let sawProfileLine = false;
     for (const comp of decl.compositions) {
+      // ADR-327 D10: `playable` is a reserved bare composition. Consumed here,
+      // ahead of profile/personality/trait routing, so the word never enters
+      // parser vocabulary and never reaches the unknown-trait census gate.
+      if (!comp.article && comp.words.length === 1 && comp.words[0].toLowerCase() === 'playable') {
+        continue;
+      }
       // ADR-310 D4: `cognitive-profile <name> [with …]` rides the
       // composition grammar and compiles into character data.
       if (!comp.article && comp.words[0]?.toLowerCase() === 'cognitive-profile') {
-        const built = this.routeProfileComposition(comp, isPerson, isPlayer, decl.name.words.join(' '), sawProfileLine);
+        const built = this.routeProfileComposition(comp, isPerson, decl.name.words.join(' '), sawProfileLine);
         sawProfileLine = true;
         if (built) profile = built;
         continue;
@@ -4567,7 +4907,7 @@ class Analyzer {
       // Consumed words never reach trait composition, so they never enter
       // parser vocabulary (the D2 no-parser-vocabulary rule) and never hit
       // the census-15 unknown-trait gate.
-      if (!comp.article && this.routeCharacterComposition(comp, isPerson, isPlayer, decl.name.words.join(' '), personality)) {
+      if (!comp.article && this.routeCharacterComposition(comp, isPerson, decl.name.words.join(' '), personality)) {
         continue;
       }
       const built = {
@@ -4658,19 +4998,14 @@ class Analyzer {
       startsStates.push(s.state);
     }
 
-    // ADR-242 D1: `proper` is the first kind-scoped trait adjective —
-    // person-only and unconditional (identity is not turn state). Both
-    // gates are analyzer diagnostics so the author reads the specific
+    // ADR-242 D1 as extended by GH #342 (David, 2026-08-30): `proper`
+    // composes on ANY create block — a place-as-scenery, a shop, an
+    // institution is a name as much as a person is. The person-only gate
+    // is retired; the unconditional gate stays (identity is not turn
+    // state), an analyzer diagnostic so the author reads the specific
     // reason, not the loader's generic conditional-composition error.
     for (const comp of decl.compositions) {
       if (comp.article || comp.words.join(' ').toLowerCase() !== 'proper') continue;
-      if (!isPerson) {
-        this.diagnostics.error(
-          'analysis.proper-person-only',
-          `\`proper\` composes only on a person (\`a person, proper\`) — \`${decl.name.words.join(' ')}\` is not a person.`,
-          comp.span,
-        );
-      }
       if (comp.condition) {
         this.diagnostics.error(
           'analysis.proper-conditional',
@@ -4741,12 +5076,10 @@ class Analyzer {
       decl.codes[0] ??
       decl.honors[0] ??
       decl.burdens[0];
-    if (firstCharacterLine && (!isPerson || isPlayer)) {
+    if (firstCharacterLine && !isPerson) {
       this.diagnostics.error(
-        isPlayer ? 'analysis.character-line-player' : 'analysis.character-line-person-only',
-        isPlayer
-          ? `The player carries no character model — character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) shape how an NPC behaves.`
-          : `Character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) compose only on a person — \`${decl.name.words.join(' ')}\` is not a person.`,
+        'analysis.character-line-person-only',
+        `Character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) compose only on a person — \`${decl.name.words.join(' ')}\` is not a person.`,
         firstCharacterLine.span,
       );
     } else if (firstCharacterLine) {
@@ -4941,6 +5274,11 @@ class Analyzer {
               const inId = step.in ? this.resolveEntityId(step.in) : null;
               if (step.in && inId === null) break;
               steps.push({ kind: 'drop', item, ...(inId !== null ? { in: inId } : {}), span: step.span });
+              break;
+            }
+            case 'perform': {
+              const lowered = this.lowerPerformStep(step);
+              if (lowered !== null) steps.push(lowered);
               break;
             }
           }
@@ -5230,31 +5568,11 @@ class Analyzer {
       }
     }
 
-    // Player-block composition (Gap-2 ruling, David 2026-07-18): the
-    // player composes like any entity — but only `a person` is a legal
-    // kind (a no-op; the player is already an actor), and NPC behavior
-    // adjectives would hand the player to the NPC service. Both gate.
-    if (isPlayer) {
-      for (const kind of kinds) {
-        if (kind.name !== 'person') {
-          this.diagnostics.error(
-            'analysis.player-kind',
-            `The player cannot be \`a ${kind.name}\` — only \`a person\` composes on the player block (as a no-op).`,
-            kind.span,
-          );
-        }
-      }
-      for (const trait of traits) {
-        const contributed = manifestForAdjective(trait.name);
-        if (contributed?.manifest.name === 'npc') {
-          this.diagnostics.error(
-            'analysis.player-behavior',
-            `\`${trait.name}\` is an NPC behavior — the player is not driven by the NPC service.`,
-            trait.span,
-          );
-        }
-      }
-    }
+    // ADR-327 D10: the player-block composition gates (`analysis.player-kind`,
+    // `analysis.player-behavior`) are gone with the player block itself. A
+    // `playable` character composes like any other person, and an NPC behavior
+    // adjective on one is legitimate — it drives them for as long as they are
+    // NOT the role-holder, which is exactly what D9's role gate makes possible.
 
     // ADR-234 D3: a door's location IS its room pair — the loader places
     // it in room1 per the platform convention; a placement line is a load
@@ -5276,6 +5594,15 @@ class Analyzer {
         'analysis.region-placement',
         `A region has no location — its place IS its member list. Remove this line; membership is \`containing <rooms>\`.`,
         decl.placement.span,
+      );
+    }
+    // ADR-325 D5: `landing` is a region's door — on any other block it
+    // names nothing.
+    if (!isRegion && decl.landing) {
+      this.diagnostics.error(
+        'analysis.landing-host',
+        `\`landing\` declares where things put in a region land — \`${decl.name.words.join(' ')}\` is not a region.`,
+        decl.landing.span,
       );
     }
     // ADR-236 D2: `containing` is region membership — on any other block it
@@ -5324,7 +5651,7 @@ class Analyzer {
       // Present only when declared and resolved (ruled Q-2: absent means
       // the platform's by-number fallback — and zero golden churn).
       ...(pronouns !== undefined ? { pronouns } : {}),
-      isPlayer,
+      isPlayable,
       kinds,
       traits,
       // ADR-310 D7: present exactly when the block declared at least one
@@ -5377,6 +5704,7 @@ class Analyzer {
       containing: decl.containing
         .map((m) => ({ id: this.resolveEntityId(m) ?? '', span: m.span }))
         .filter((m) => m.id !== ''),
+      ...(decl.landing && isRegion ? { landing: this.buildLanding(decl.landing) } : {}),
       exits: decl.exits.map((e) => ({
         direction: e.direction,
         to: this.resolveEntityId(e.to) ?? '',
@@ -5384,10 +5712,26 @@ class Analyzer {
         // reference — an unknown name is the standard unresolved-entity
         // error; '' marks it so checkDoors skips what is already reported.
         via: e.via ? (this.resolveEntityId(e.via) ?? '') : null,
+        ...(e.oneWay ? { oneWay: true as const } : {}),
         span: e.span,
       })),
-      blockedExits: decl.blockedExits.map((b) => {
+      blockedExits: decl.blockedExits.map((b, i) => {
         this.requirePhrase(b.phraseKey, b.span);
+        // GH #315: a direction's blocked lines compose in declaration order —
+        // the first line whose condition holds supplies the refusal, and a
+        // condition-less line always holds. Any later line on the same
+        // direction can therefore never be selected; say so at compile time
+        // instead of leaving the order rule as runtime folklore.
+        const shadowedBy = decl.blockedExits.findIndex(
+          (earlier, j) => j < i && earlier.direction === b.direction && !earlier.condition,
+        );
+        if (shadowedBy !== -1) {
+          this.diagnostics.warning(
+            'analysis.blocked-exit-unreachable',
+            `This \`${b.direction} is blocked\` line can never fire: the condition-less \`${b.direction} is blocked\` line above it always supplies the refusal first. Blocked lines compose in declaration order — put the condition-less fallback last.`,
+            b.span,
+          );
+        }
         return {
           direction: b.direction,
           phraseKey: b.phraseKey,
@@ -5430,10 +5774,86 @@ class Analyzer {
       onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
         this.buildOnClause(c, entityScope(sym ?? null), id, i),
       ),
+      ...(decl.timerClauses.length > 0
+        ? { timerClauses: decl.timerClauses.map((c, i) => this.buildTimerClause(c, entityScope(sym ?? null), id, i)) }
+        : {}),
+      ...(decl.moveClauses.length > 0
+        ? { moveClauses: decl.moveClauses.map((c, i) => this.buildMoveClause(c, entityScope(sym ?? null), id, i)) }
+        : {}),
       // Filled by applyTopics after every entity is built (ADR-239).
       topics: [],
       span: decl.span,
     };
+  }
+
+  /**
+   * ADR-327 D1: resolve a clause head's actor and gate the head against its
+   * block. An explicit head names the player (the role, fire-time) or a
+   * character; one naming the block's own owner is the bare form written
+   * long (`analysis.head-actor-is-owner`); anything else that is not an
+   * actor is `analysis.head-actor`. A bare head is the owner's own action
+   * and belongs only in the player's or a character's block — a trait body,
+   * a room, or a thing has no acting owner (`analysis.head-bare-outside-actor`).
+   * @returns the actor IRValue (`player` | `entity`), or null for a bare or
+   *   every-turn head — and for an unresolvable actor, already reported.
+   */
+  private resolveHeadActor(clause: OnClause, scope: Scope): IRValue | null {
+    if (clause.binding === 'every-turn') return null;
+    const owner = scope.owner;
+    const explicit = `${clause.clauseKind} the player ${clause.action}`;
+
+    if (clause.actor === null) {
+      // Bare head — or the parser's marker for an already-reported `… it`.
+      if (clause.binding !== 'self') return null;
+      if (!owner || !isActorSymbol(owner)) {
+        this.diagnostics.error(
+          'analysis.head-bare-outside-actor',
+          `\`${clause.clauseKind} ${clause.action}\` names no actor — a bare head is the block owner's own action and belongs only in the player's or a character's block. Name who acts: \`${explicit}\` (or the actor's name).`,
+          clause.span,
+        );
+      }
+      return null;
+    }
+
+    const actorText = valueExprText(clause.actor);
+    const head = `${clause.clauseKind} ${actorText} ${clause.action}`;
+    const ref = clause.actor.kind === 'ref' ? clause.actor.ref : null;
+    const words = ref ? ref.words.map((w) => w.toLowerCase()) : [];
+    if (ref && words.length === 1 && PLAYER_WORDS.has(words[0])) {
+      if (owner?.id === 'player') {
+        this.diagnostics.error(
+          'analysis.head-actor-is-owner',
+          `\`${head}\` in the player's own block — the subject of a block is its owner; write bare \`${clause.clauseKind} ${clause.action}\`.`,
+          clause.span,
+        );
+        return null;
+      }
+      return { kind: 'player' };
+    }
+    const sym = ref && !(words.length === 1 && words[0] === 'it') ? this.findEntitySilent(ref) : null;
+    if (sym && !isActorSymbol(sym)) {
+      this.diagnostics.error(
+        'analysis.head-actor',
+        `\`${head}\` — \`${actorText}\` cannot act; a head names the player or a character (\`a person\`): \`${explicit}\`.`,
+        clause.span,
+      );
+      return null;
+    }
+    if (sym && owner && sym.id === owner.id) {
+      this.diagnostics.error(
+        'analysis.head-actor-is-owner',
+        `\`${head}\` in ${entityDisplayName(owner)}'s own block — the subject of a block is its owner; write bare \`${clause.clauseKind} ${clause.action}\`.`,
+        clause.span,
+      );
+      return null;
+    }
+    if (sym) return { kind: 'entity', id: sym.id };
+    this.diagnostics.error(
+      'analysis.head-actor',
+      `\`${head}\` — \`${actorText}\` is not the player or a character. A head is \`${clause.clauseKind} <who acts> <action>\`: the actor first, then the action word (here \`${clause.action}\`) — e.g. \`${explicit}\`.`,
+      clause.span,
+    );
+    return null;
   }
 
   /**
@@ -5469,6 +5889,7 @@ class Analyzer {
     }
     const clauseScope: Scope = { ...scope, slots: extraSlots.size ? extraSlots : scope.slots };
 
+    const actor = this.resolveHeadActor(clause, scope);
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
     const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
     const body = clause.body.map((s, i) => this.resolveStatement(s, clauseScope, `${clausePath}.${i}`));
@@ -5477,6 +5898,7 @@ class Analyzer {
       clauseKind: clause.clauseKind,
       once: clause.once,
       action: clause.action,
+      actor,
       binding: clause.binding,
       role: clause.role,
       condition,
@@ -5520,15 +5942,19 @@ class Analyzer {
       switch (stmt.kind) {
         case 'set':
         case 'change':
+        case 'change-player':
         case 'change-mood':
         case 'change-feeling':
         case 'move':
+        case 'act':
         case 'remove':
         case 'award':
         case 'raise':
         case 'lower':
+        case 'timer-verb':
           // `raise`/`lower` are mutations (D3) — a counter change is world
           // state, and a refusal after one is as dead as after a `change`.
+          // A timer verb (ADR-325 D3c) is the same kind of change.
           state.ended ??= { kind: 'mutation', what: statementWord(stmt) };
           break;
         case 'refuse':
@@ -5609,6 +6035,71 @@ class Analyzer {
 
   // ----------------------------------------------------------- statements
 
+  /**
+   * Resolve the story's `before the game starts` block (ADR-327 D10).
+   *
+   * Runs after every entity is built, so the role assignment can name a
+   * character declared anywhere in the story. Three gates live here:
+   * exactly one block per story, effect statements only, and a role
+   * assignment on some path. The last is a compile-time *reachability*
+   * check, not a guarantee — the assignment may carry a `when` tail, so the
+   * loader keeps a matching runtime backstop for the path that skips it.
+   *
+   * @returns the lowered block, or null when the story declares none (which
+   *   is itself reported, except in a grammar file, which carries no story)
+   */
+  private buildStartBlock(): { body: IRStatement[]; span: Span } | null {
+    const blocks = this.ast.declarations.filter((d): d is StartBlockDecl => d.kind === 'start-block');
+    if (blocks.length === 0) {
+      // Only a story is missing a start block. A grammar file carries no story
+      // content, and a headerless fragment is not a story either — both are
+      // compiled all over the test suites and neither has a role to fill.
+      if (!this.ast.grammarHeader && this.ast.header) {
+        this.diagnostics.error(
+          'analysis.start-block-missing',
+          'This story never says who the player is. Add a `before the game starts` block assigning the role: `change the player to <character>`.',
+          this.ast.header?.span ?? this.ast.span,
+        );
+      }
+      return null;
+    }
+    for (const extra of blocks.slice(1)) {
+      this.diagnostics.error(
+        'analysis.duplicate-start-block',
+        'A story has one `before the game starts` block — merge these two.',
+        extra.span,
+      );
+    }
+
+    const decl = blocks[0];
+    const body: IRStatement[] = [];
+    let assignsRole = false;
+    decl.body.forEach((stmt, index) => {
+      // Q3 (ruled 2026-08-26): the block runs before any turn exists to carry
+      // prose, so narration here has no sink. The story header's `prologue:`
+      // is the seam that does.
+      if (stmt.kind === 'phrase' || stmt.kind === 'emit') {
+        this.diagnostics.error(
+          'analysis.start-block-narration',
+          `\`${stmt.kind}\` has no sink before the game starts — opening text belongs in the story header's \`prologue:\` field.`,
+          stmt.span,
+        );
+        return;
+      }
+      if (stmt.kind === 'change-player') assignsRole = true;
+      body.push(this.resolveStatement(stmt, STORY_SCOPE, `start-block.${index}`));
+    });
+
+    if (!assignsRole) {
+      this.diagnostics.error(
+        'analysis.start-block-no-role',
+        'This `before the game starts` block never assigns the player role — add `change the player to <character>`.',
+        decl.span,
+      );
+    }
+    return { body, span: decl.span };
+  }
+
   private resolveStatement(stmt: Statement, scope: Scope, path: string): IRStatement {
     switch (stmt.kind) {
       case 'refuse':
@@ -5658,13 +6149,52 @@ class Analyzer {
           span: stmt.span,
         };
       }
-      case 'set':
+      case 'set': {
+        // ADR-325 D3: a timer never takes a value.
+        if (this.timerKeyOf(stmt.target, scope) !== null) {
+          this.diagnostics.error(
+            'analysis.tally-verb-on-timer',
+            '`set` writes a value — a timer has none; it is `start`ed, `stop`ped, `restart`ed, `reset`, or `interrupt`ed.',
+            stmt.span,
+          );
+        }
+        // ADR-325 D4: `set <tally> to <n>` — the one absolute tally write,
+        // same target forms as raise/lower; clamped by the loader.
+        const tally = this.counterTargetOf(stmt.target, scope);
+        if (tally) {
+          const v = stmt.value;
+          const literal = v.kind === 'literal' && v.literalKind === 'number' ? Number(v.value) : null;
+          if (literal === null) {
+            this.diagnostics.error(
+              'analysis.set-counter-value',
+              `\`set ${tally.counter} to …\` takes a number — tally arithmetic is later scope.`,
+              stmt.span,
+            );
+          }
+          return { kind: 'set-counter', counter: tally.counter, owner: tally.owner, value: literal ?? 0, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        }
+        const target = this.resolveValue(stmt.target, scope);
+        // ADR-325 D5: `set <region>'s landing to <room>` — the base must be
+        // a region that declared a landing (a `set` replaces, never creates).
+        if (target.kind === 'field' && target.field === 'landing' && target.base.kind === 'entity') {
+          const sym = this.byId.get(target.base.id);
+          const isRegion = sym?.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region') ?? false;
+          if (sym && (!isRegion || !sym.decl.landing)) {
+            this.diagnostics.error(
+              'analysis.landing-set-target',
+              `\`${sym.decl.name.words.join(' ')}\` has no landing to set — only a region with a \`landing\` line has one.`,
+              stmt.span,
+            );
+          }
+        }
         return {
           kind: 'set',
-          target: this.resolveValue(stmt.target, scope),
+          target,
           value: this.resolveValue(stmt.value, scope),
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
+      }
       case 'change': {
         // `change the story to <state>` targets the story object (D2).
         const targetWords = stmt.entity.words.map((w) => w.toLowerCase());
@@ -5697,6 +6227,36 @@ class Analyzer {
           this.checkChangeLegality(this.stateSetOf(sym ?? null, stmt.state), stmt.state, stmt.span);
         }
         return { kind: 'change', entity, state: stmt.state, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
+      case 'change-player': {
+        // ADR-327 D9/D10: the role moves to a named character. Eligibility is
+        // compile-time so the engine's `switchPlayer` isPlayable throw can
+        // never reach a player. An unresolved name is left to the standard
+        // unknown-entity gate `resolveEntityValue` already fires — a second
+        // diagnostic for one miss reads as two problems.
+        const entity = this.resolveEntityValue(stmt.target, scope);
+        if (entity.kind === 'entity') {
+          const sym = this.byId.get(entity.id);
+          if (sym && !isPersonDecl(sym.decl)) {
+            this.diagnostics.error(
+              'analysis.player-target-not-person',
+              `\`${sym.nameLower}\` cannot hold the player role — only \`a person\` can.`,
+              stmt.span,
+            );
+          } else if (sym && !isPlayableDecl(sym.decl)) {
+            this.diagnostics.error(
+              'analysis.player-target-not-playable',
+              `\`${sym.nameLower}\` is not \`playable\` — add \`playable\` to its create block to let the player role move to it.`,
+              stmt.span,
+            );
+          }
+        }
+        return {
+          kind: 'change-player',
+          entity,
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
       }
       case 'change-mood': {
         // ADR-310 D3: the mood word resolves against the character
@@ -5757,10 +6317,12 @@ class Analyzer {
         return {
           kind: 'move',
           entity: this.resolveEntityValue(stmt.entity, scope),
-          place: this.resolveEntityValue(stmt.place, scope),
+          place: this.resolvePlace(stmt.place, scope),
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
+      case 'act':
+        return this.resolveActStatement(stmt, scope);
       case 'award': {
         // ADR-261 D4: `award` is gated with `score` and `ranks`.
         if (!this.usedExtensions.has('scoring')) {
@@ -5784,17 +6346,30 @@ class Analyzer {
         }
         return { kind: 'award', expression, once: stmt.once, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
+      case 'timer-verb': {
+        // ADR-325 D3c: the five timer verbs. A tally is not a timer.
+        const timer = this.resolveTimerRef(stmt.target, scope, stmt.span, stmt.verb);
+        return { kind: 'timer', verb: stmt.verb, timer: timer ?? '', stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
       case 'raise':
       case 'lower': {
         // ADR-264 D2: resolve the target — a bare name (story-global) or a
         // possessive (per-entity), validated against the counter registries.
         const target = stmt.target;
+        // ADR-325 D3: a timer never takes a number.
+        if (this.timerKeyOf(target, scope) !== null) {
+          this.diagnostics.error(
+            'analysis.tally-verb-on-timer',
+            `\`${stmt.kind}\` moves a tally, not a timer — a timer is \`start\`ed, \`stop\`ped, \`restart\`ed, \`reset\`, or \`interrupt\`ed, never counted.`,
+            stmt.span,
+          );
+        }
         let counter = '';
         let owner: IRValue | null = null;
         let ownerId: string | null = null;
         if (target.kind === 'possessive') {
           counter = target.field.join(' ');
-          owner = this.resolveValue(target.base, scope);
+          owner = this.possessiveBase(target, scope);
           if (owner.kind === 'entity') ownerId = owner.id;
           else if (owner.kind === 'it') ownerId = scope.owner?.id ?? null;
         } else if (target.kind === 'ref') {
@@ -5820,9 +6395,11 @@ class Analyzer {
       }
       case 'win':
       case 'lose':
-      case 'kill':
+      case 'kill': {
         if (stmt.phraseKey) this.requirePhrase(stmt.phraseKey, stmt.span, scope.owner);
-        return { kind: stmt.kind, phraseKey: stmt.phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        const phraseKey = stmt.kind === 'kill' && stmt.inlineText ? inlineKillKey(stmt) : stmt.phraseKey;
+        return { kind: stmt.kind, phraseKey, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+      }
       case 'must': {
         // `<subject> must <predicate>: <key>` (ratchet D6) — a positive
         // requirement; compiled as its predicate condition plus the key.
@@ -5949,6 +6526,297 @@ class Analyzer {
   }
 
   /** Resolve a statement `when` suffix (ratchet D7), or null. */
+  // ------------------------------------------------- acting statements (ADR-329)
+
+  /** Bodies where a character may act (ADR-329 D3): reactions and the turn's own clock. */
+  private static readonly ACT_BODIES = new Set(['after', 'when', 'every-turn', 'timer', 'topics', 'exchange', 'initiative', 'conversation']);
+
+  /**
+   * `<actor> <verb> …` (ADR-329 D1–D3). Split the actor from the verb by the
+   * longest name prefix that names an entity, match the rest against the
+   * story's and the manifest's grammar shapes on the verb's lemma, resolve
+   * each slot as a name, and gate the body. Every failure is a named
+   * diagnostic; nothing is guessed.
+   */
+  private resolveActStatement(stmt: ActStmt, scope: Scope): IRStatement {
+    const line = stmt.words.map((w) => w.text).join(' ');
+    const stmtWhen = this.resolveStmtWhen(stmt.stmtWhen, scope);
+    const dead: IRStatement = { kind: 'phrase', phraseKey: '', params: [], stmtWhen, span: stmt.span };
+
+    if (!Analyzer.ACT_BODIES.has(stmt.bodyKind)) {
+      const where = stmt.bodyKind === 'on'
+        ? 'an `on` clause is deciding whether the triggering action happens, and cannot perform another'
+        : stmt.bodyKind === 'before'
+          ? 'nothing acts before the game starts'
+          : `a \`${stmt.bodyKind}\` body is not a place where a character acts`;
+      this.diagnostics.error(
+        'analysis.act-in-intercept',
+        `\`${line}\` — ${where}. A character acts in a reaction: move this line to an \`after\` clause, a \`when\` clause, \`on every turn\`, or a conversation row.`,
+        stmt.span,
+      );
+      return dead;
+    }
+
+    const words = stmt.words;
+    const lowerOf = (w: { text: string }) => w.text.toLowerCase();
+    const spanOfRange = (from: number, to: number): Span => actWordsSpan(words, from, to);
+    const nameRefOf = (from: number, to: number): NameRef => actWordsNameRef(words, from, to);
+
+    // The actor: the longest prefix naming an entity wins; `the player` is
+    // remembered so the refusal can name the rule it hit.
+    let actor: EntitySymbol | null = null;
+    let actorEnd = 0;
+    let playerPrefix = false;
+    for (let k = words.length - 1; k >= 1; k--) {
+      const ref = nameRefOf(0, k);
+      const joined = ref.words.join(' ').toLowerCase();
+      if (ref.words.length === 1 && PLAYER_WORDS.has(joined)) { playerPrefix = true; continue; }
+      const sym = this.findEntitySilent(ref);
+      if (sym) { actor = sym; actorEnd = k; break; }
+    }
+    if (!actor) {
+      if (playerPrefix) {
+        // ADR-329 D1 (Q-3): the player is never made to act — a forced player
+        // action would be a second spelling for the `move` eject scene and
+        // breaks one-command-one-action.
+        this.diagnostics.error(
+          'analysis.act-player-actor',
+          `\`${line}\` — the player cannot be made to act; an acting statement names a character. Write the character's own name, or use \`move\` for an authorial change.`,
+          stmt.span,
+        );
+        return dead;
+      }
+      const people = this.entities.filter((e) => isActorSymbol(e)).map((e) => e.nameLower);
+      this.diagnostics.error(
+        'analysis.act-actor',
+        `\`${line}\` — no character named here acts; an acting statement begins with a character's name (\`a person\`)${this.suggestText(lowerOf(words[0]) === 'the' && words.length > 1 ? lowerOf(words[1]) : lowerOf(words[0]), people)}.`,
+        stmt.span,
+      );
+      return dead;
+    }
+    if (!isActorSymbol(actor)) {
+      this.diagnostics.error(
+        'analysis.act-actor',
+        `\`${line}\` — \`${entityDisplayName(actor)}\` cannot act; an acting statement names a character (\`a person\`).`,
+        spanOfRange(0, actorEnd),
+      );
+      return dead;
+    }
+
+    // The verb and its slots, against every shape the story and the manifest know.
+    const rest = words.slice(actorEnd);
+    const match = this.matchActShape(rest.map((w) => w.text));
+    if (!match) {
+      const verb = lowerOf(rest[0]);
+      const shapesOfVerb = this.shapesOpenedBy(verb);
+      if (shapesOfVerb.length === 0) {
+        const verbs = [...new Set([...this.allActShapes().values()].flat().map((sh) => sh.split(' ')[0]).filter((v) => !v.startsWith(':')))];
+        this.diagnostics.error(
+          'analysis.act-unknown-verb',
+          `\`${line}\` — \`${rest[0].text}\` is not an action's word; an acting statement uses an action's own grammar (\`take the sword\`, \`give the necklace to the player\`)${this.suggestText(verb, verbs)}.`,
+          spanOfRange(actorEnd, words.length),
+        );
+      } else {
+        this.diagnostics.error(
+          'analysis.act-slot-shape',
+          `\`${line}\` — \`${rest.map((w) => w.text).join(' ')}\` matches none of the shapes \`${rest[0].text}\` opens: ${shapesOfVerb.map((sh) => `\`${sh}\``).join(', ')}.`,
+          spanOfRange(actorEnd, words.length),
+        );
+      }
+      return dead;
+    }
+
+    const slots: Array<{ slot: string; value: IRValue }> = [];
+    for (const bound of match.slots) {
+      const ref = nameRefOf(actorEnd + bound.from, actorEnd + bound.to);
+      slots.push({ slot: bound.slot, value: this.resolveEntityValue(ref, scope) });
+    }
+    if (match.direction) {
+      slots.push({ slot: 'direction', value: { kind: 'literal', value: match.direction, valueType: 'string' } });
+    }
+    return {
+      kind: 'act',
+      actor: { kind: 'entity', id: actor.id },
+      action: match.action,
+      shape: match.shape,
+      slots,
+      stmtWhen,
+      span: stmt.span,
+    };
+  }
+
+  /**
+   * ADR-329 D10: a goal line in an action's own words, the block's owner
+   * implied as the actor. The words match the story's and the manifest's
+   * shapes exactly as an acting statement's do (D2); each slot resolves as a
+   * step ref (`the player` is the sentinel id, as `give … to the player`
+   * already resolves it). A manifest `taking`, `giving`, or `dropping` match
+   * folds onto the step kind that already carries its planning half —
+   * `acquire`, `give`, `drop` — so the tick behaves exactly as it did for
+   * those words; anything else is a `perform` step, its slots sorted into the
+   * execution entry's roles: a story action's `is an instrument` slot is the
+   * instrument, the rest fill direct then indirect object in shape order, and
+   * a `going` shape's literal is the direction.
+   *
+   * @returns the lowered step, or null after a reported diagnostic
+   */
+  private lowerPerformStep(step: Extract<GoalStepDecl, { kind: 'perform' }>): IRGoalStep | null {
+    const words = step.words;
+    const line = words.map((w) => w.text).join(' ');
+    const match = this.matchActShape(words.map((w) => w.text));
+    if (!match) {
+      const verb = words[0].text.toLowerCase();
+      const shapesOfVerb = this.shapesOpenedBy(verb);
+      if (shapesOfVerb.length === 0) {
+        // The parser admitted the first word by lemma against the same
+        // lexicon, so this branch is unreachable in practice; the named
+        // error stays so a drift between the two tests is loud, not silent.
+        this.diagnostics.error(
+          'analysis.act-unknown-verb',
+          `\`${line}\` — \`${words[0].text}\` is not an action's word; a goal step in an action's own words uses its grammar (\`open the door\`, \`go east\`).`,
+          step.span,
+        );
+      } else {
+        this.diagnostics.error(
+          'analysis.act-slot-shape',
+          `\`${line}\` matches none of the shapes \`${words[0].text}\` opens: ${shapesOfVerb.map((sh) => `\`${sh}\``).join(', ')}.`,
+          step.span,
+        );
+      }
+      return null;
+    }
+
+    const bound: Array<{ slot: string; id: string }> = [];
+    for (const b of match.slots) {
+      const id = this.resolveEntityId(actWordsNameRef(words, b.from, b.to));
+      if (id === null) return null;
+      bound.push({ slot: b.slot, id });
+    }
+
+    // The fold: the standard verbs keep their planning half. A story action
+    // of the same name shadows the standard one (matchActShape) and is
+    // performed as itself.
+    if (!this.storyActShapes().has(match.action)) {
+      if (match.action === 'taking' && bound.length === 1) {
+        return { kind: 'acquire', target: bound[0].id, span: step.span };
+      }
+      if (match.action === 'giving' && bound.length === 2) {
+        const item = bound.find((b) => b.slot === 'item');
+        const recipient = bound.find((b) => b.slot === 'recipient');
+        if (item && recipient) return { kind: 'give', item: item.id, target: recipient.id, span: step.span };
+      }
+      if (match.action === 'dropping' && bound.length === 1) {
+        return { kind: 'drop', item: bound[0].id, span: step.span };
+      }
+    }
+
+    const instrumentSlots = new Set<string>();
+    for (const decl of this.ast.declarations) {
+      if ((decl.kind === 'define-action' || decl.kind === 'extend-action') && decl.name === match.action) {
+        for (const st of decl.slotTypes) if (st.type === 'instrument') instrumentSlots.add(st.slot);
+      }
+    }
+    const slots: IRPerformSlots = {};
+    for (const b of bound) {
+      if (instrumentSlots.has(b.slot)) slots.instrument = b.id;
+      else if (slots.directObject === undefined) slots.directObject = b.id;
+      else slots.indirectObject = b.id;
+    }
+    if (match.direction !== null) slots.direction = match.direction;
+    return { kind: 'perform', action: match.action, shape: match.shape, slots, span: step.span };
+  }
+
+  /**
+   * The story's own shapes (`define action` patterns, `extend action`
+   * additions) by action name, rendered like the manifest's. Optional parts
+   * expand to both readings; `a|b` alternatives to each.
+   */
+  private storyActShapes(): Map<string, string[]> {
+    if (this.actShapes) return this.actShapes;
+    const out = new Map<string, string[]>();
+    const add = (name: string, patterns: ActionPattern[]) => {
+      const list = out.get(name) ?? [];
+      for (const pattern of patterns) list.push(...expandPatternShapes(pattern));
+      out.set(name, list);
+    };
+    for (const decl of this.ast.declarations) {
+      if (decl.kind === 'define-action') add(decl.name, decl.patterns);
+      else if (decl.kind === 'extend-action') add(decl.name, decl.patterns);
+    }
+    this.actShapes = out;
+    return out;
+  }
+
+  /** Story shapes first (a story action of a standard name shadows it), then the manifest's. */
+  private allActShapes(): Map<string, string[]> {
+    const out = new Map<string, string[]>(this.storyActShapes());
+    const manifest = STDLIB_MANIFEST.locales['en-US'].grammarShapes;
+    for (const [id, shapes] of Object.entries(manifest)) {
+      const name = id.slice('if.action.'.length);
+      out.set(name, [...(out.get(name) ?? []), ...shapes]);
+    }
+    return out;
+  }
+
+  private shapesOpenedBy(verb: string): string[] {
+    const lemmas = verbLemmas(verb);
+    const out: string[] = [];
+    for (const shapes of this.allActShapes().values()) {
+      for (const sh of shapes) {
+        const first = sh.split(' ')[0];
+        if (!first.startsWith(':') && lemmas.has(first)) out.push(sh);
+      }
+    }
+    return out;
+  }
+
+  /**
+   * Match the words after the actor against every known shape: the first
+   * literal by lemma, later literals exactly, each slot consuming at least one
+   * word up to the next literal. Story actions win over standard ones; among
+   * the rest the shape with the most literal words wins (`take the cap off`
+   * is `taking_off`, not `taking`). A `going` shape with no slot yields its
+   * direction word.
+   */
+  private matchActShape(rest: string[]): { action: string; shape: string; slots: Array<{ slot: string; from: number; to: number }>; direction: string | null } | null {
+    if (rest.length === 0) return null;
+    const lower = rest.map((w) => w.toLowerCase());
+    const story = this.storyActShapes();
+    let best: { action: string; shape: string; slots: Array<{ slot: string; from: number; to: number }>; literals: number; isStory: boolean } | null = null;
+    for (const [action, shapes] of this.allActShapes()) {
+      const isStory = story.has(action);
+      for (const shape of shapes) {
+        const slots = matchShapeWords(lower, shape.split(' '));
+        if (!slots) continue;
+        const literals = shape.split(' ').filter((pt) => !pt.startsWith(':')).length;
+        if (!best || (isStory && !best.isStory) || (isStory === best.isStory && literals > best.literals)) {
+          best = { action, shape, slots, literals, isStory };
+        }
+      }
+    }
+    if (!best) return null;
+    const parts = best.shape.split(' ');
+    const written = best.action === 'going' && best.slots.length === 0 && parts.length >= 1 ? parts[parts.length - 1] : null;
+    const direction = written === null ? null : (ACT_DIRECTION_CANONICAL[written] ?? written);
+    return { action: best.action, shape: best.shape, slots: best.slots, direction };
+  }
+
+  /**
+   * GH #349: the partner-only predicates hold only where the runtime frames a
+   * conversation partner — a dialogue-dispatch body. Anywhere else (an
+   * entity or trait clause, an every-turn clause, an action body, a story
+   * clause) they would throw at run time, so they are refused here, naming
+   * what does hold outside dialogue.
+   */
+  private requireDialogueScope(form: string, scope: Scope, span: Span): void {
+    if (scope.dialogue) return;
+    this.diagnostics.error(
+      'analysis.dialogue-only',
+      `\`${form}\` holds only inside dialogue — a row of \`define topics\`, \`define greetings\`, \`define exchange\`, \`define initiative\`, or \`define conversation\`, where a partner is in the frame. Outside it, record the fact where the row can see it (\`change\` a state or \`raise\` a counter in the row — a thread's \`conclusion:\` for \`is concluded\`) and test that.`,
+      span,
+    );
+  }
+
   private resolveStmtWhen(cond: ConditionNode | null, scope: Scope): IRCondition | null {
     return cond ? this.resolveCondition(cond, scope) : null;
   }
@@ -5984,15 +6852,26 @@ class Analyzer {
       case 'literal':
         return { kind: 'literal', value: expr.value, valueType: expr.literalKind };
       case 'possessive': {
+        // GH #336: a declared name may itself carry a possessive (`the
+        // Weaponsmith's Stall`, `Teisha's Tent`). The parser split it at the
+        // `'s`; when the whole phrase names an entity, that entity wins over
+        // a field read — resolved quietly, by exact name or alias only.
+        const whole = this.resolvePossessiveAsName(expr);
+        if (whole !== null) return { kind: 'entity', id: whole };
         // ADR-264 D3: `<owner>'s <counter>` / `its <counter>` reads a per-entity
         // counter when the field names one; otherwise it is a trait field.
-        const base = this.resolveValue(expr.base, scope);
+        // ADR-325 D3d: `<owner>'s <timer>` reads the timer's state word.
         const field = expr.field.join(' ');
+        const base = this.possessiveBase(expr, scope);
         let ownerId: string | null = null;
         if (base.kind === 'entity') ownerId = base.id;
+        else if (base.kind === 'player') ownerId = 'player';
         else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
         if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(field)) {
           return { kind: 'counter', name: field, owner: base };
+        }
+        if (ownerId !== null && this.timers.has(`${ownerId}.${field}`)) {
+          return { kind: 'timer', timer: `${ownerId}.${field}` };
         }
         return { kind: 'field', base, field };
       }
@@ -6001,6 +6880,9 @@ class Analyzer {
         if (expr.ref.kind === 'name' && expr.ref.words.length === 1 && this.storyCounterNames.has(expr.ref.words[0])) {
           return { kind: 'counter', name: expr.ref.words[0], owner: null };
         }
+        // ADR-325 D3d: a bare timer name, owner-first then story.
+        const timer = this.timerKeyOf(expr, scope);
+        if (timer !== null) return { kind: 'timer', timer };
         return this.resolveRefValue(expr.ref, scope);
       }
       case 'bare': {
@@ -6324,7 +7206,7 @@ class Analyzer {
     if (!scope.inEach) {
       this.diagnostics.error(
         'analysis.match-outside-each',
-        '`the match` is the `each`-block binder — outside an `each` body there is no match to reference. Use `it` for the clause owner, or name the entity.',
+        '`the match` is the `each`-block binder — outside an `each` body there is no match to reference. Name the entity (or, in a `define trait` body, use `it` for the carrier).',
         span,
       );
     }
@@ -6368,10 +7250,73 @@ class Analyzer {
     return null;
   }
 
+  /**
+   * ADR-327 D2: `it`/`its` outside a carrier scope (trait body, open
+   * condition — D8) is the removed spelling. The owner is known statically,
+   * so the fix-it names it: `it` → `the gate`, `its lunge` → `the gate's lunge`.
+   * Story-owned scope keeps its own unbound-referent gate.
+   */
+  private reportItRemoved(ref: NameRef, scope: Scope, field: string | null): void {
+    // Statement lowering probes some values twice (`counterTargetOf` before
+    // the verb resolves its target); one span reports once.
+    const key = `${ref.span.line}:${ref.span.column}`;
+    if (this.itRemovedSpans.has(key)) return;
+    this.itRemovedSpans.add(key);
+    const owner = scope.owner ? entityDisplayName(scope.owner) : null;
+    const spelled = field ? `its ${field}` : 'it';
+    const fix = owner ? `name the owner: \`${field ? `${owner}'s ${field}` : owner}\`` : 'name the entity you mean';
+    this.diagnostics.error(
+      'analysis.it-removed',
+      `\`${spelled}\` is no longer a form outside \`define trait\` — ${fix}.`,
+      ref.span,
+    );
+  }
+
+  /**
+   * The base of a possessive (`<owner>'s <field>` / `its <field>`), resolved.
+   * `its` is the parser's possessive over a base `it`: ADR-327 D2 reports the
+   * possessive spelling once, here (`its lunge` → `Jack's lunge`), and lowers
+   * the base to the carrier without re-reporting the bare `it` beneath it.
+   * Every site that reads a possessive's owner goes through here.
+   */
+  /**
+   * The entity a possessive expression names AS A WHOLE, when one does (GH
+   * #336): the parser stripped the `'s` (or a plural `'`) from the base's
+   * last word, so both spellings are re-joined with the field and matched
+   * exactly against declared names and aliases. No subset guessing — a miss
+   * returns null and the ordinary field read stands.
+   */
+  private resolvePossessiveAsName(expr: Extract<ValueExpr, { kind: 'possessive' }>): string | null {
+    if (expr.base.kind !== 'ref' || expr.base.ref.kind !== 'name' || nameIsIt(expr.base.ref)) return null;
+    const baseWords = expr.base.ref.words.map((w) => w.toLowerCase());
+    if (baseWords.length === 0 || expr.field.length === 0) return null;
+    const field = expr.field.map((w) => w.toLowerCase()).join(' ');
+    const head = baseWords.slice(0, -1).join(' ');
+    const last = baseWords[baseWords.length - 1];
+    for (const spelling of [`${last}'s`, `${last}'`]) {
+      const lower = `${head ? `${head} ` : ''}${spelling} ${field}`;
+      const exact = this.entities.filter((e) => e.nameLower === lower);
+      if (exact.length === 1) return exact[0].id;
+      const byAlias = this.entities.filter((e) => e.aka.includes(lower));
+      if (byAlias.length === 1) return byAlias[0].id;
+    }
+    return null;
+  }
+
+  private possessiveBase(expr: Extract<ValueExpr, { kind: 'possessive' }>, scope: Scope): IRValue {
+    if (expr.base.kind === 'ref' && nameIsIt(expr.base.ref)) {
+      if (scope.storyOwned) this.reportStoryClauseIt(expr.base.ref.span);
+      else if (!scope.carrierIt) this.reportItRemoved(expr.base.ref, scope, expr.field.join(' '));
+      return { kind: 'it' };
+    }
+    return this.resolveValue(expr.base, scope);
+  }
+
   private resolveRefValue(ref: NameRef, scope: Scope): IRValue {
     const words = ref.words.map((w) => w.toLowerCase());
     if (words.length === 1 && words[0] === 'it') {
       if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
+      else if (!scope.carrierIt) this.reportItRemoved(ref, scope, null);
       return { kind: 'it' };
     }
     // `the match` in NameRef positions (`change`/`move` targets, predicate
@@ -6386,6 +7331,7 @@ class Analyzer {
     // `its <field>` in name position (`the actor has its food`).
     if (words.length > 1 && words[0] === 'its') {
       if (scope.storyOwned) this.reportStoryClauseIt(ref.span);
+      else if (!scope.carrierIt) this.reportItRemoved(ref, scope, words.slice(1).join(' '));
       return { kind: 'field', base: { kind: 'it' }, field: words.slice(1).join(' ') };
     }
     const scoped = this.resolveScopedWords(ref.words, scope, ref.span);
@@ -6393,6 +7339,305 @@ class Analyzer {
     const id = this.resolveEntityId(ref);
     if (id !== null) return id === 'player' ? { kind: 'player' } : { kind: 'entity', id };
     return { kind: 'symbol', name: ref.words.join(' ') };
+  }
+
+  // ---------------------------------------------------------------- timers
+
+  /**
+   * ADR-325 D3a: resolve every `define timer` — owner to an entity id (or
+   * `player`, or null for the story), state names unique, state prose into
+   * the phrase table under `<qualified>.<state>`, and the `meanwhile` body
+   * lowered in the owner's scope (`it` = the owner).
+   */
+  private buildTimers(): void {
+    const decls = this.ast.declarations.filter((d): d is DefineTimer => d.kind === 'define-timer');
+    // Register names first so `meanwhile` bodies may name any timer.
+    for (const decl of decls) {
+      let owner: string | null = null;
+      if (decl.owner) {
+        const lower = decl.owner.words.join(' ').toLowerCase();
+        owner = PLAYER_WORDS.has(lower) ? 'player' : this.resolveEntityId(decl.owner);
+        if (owner === null) continue; // unknown owner already reported
+      }
+      const qualified = owner === null ? decl.name : `${owner}.${decl.name}`;
+      if (this.timers.has(qualified)) {
+        this.diagnostics.error('analysis.duplicate-timer', `A timer named \`${decl.name}\` is already declared${owner ? ` for \`${owner}\`` : ''}.`, decl.span);
+        continue;
+      }
+      const states: string[] = [];
+      for (const st of decl.states) {
+        if (states.includes(st.name)) {
+          this.diagnostics.error('analysis.duplicate-timer-state', `The timer \`${decl.name}\` already has a turn named \`${st.name}\`.`, st.span);
+          continue;
+        }
+        states.push(st.name);
+        if (st.text) {
+          this.registerPhrase(DEFAULT_LOCALE, `${qualified}.${st.name}`, { strategy: null, variants: [this.variantOf(st.text)], span: st.span });
+        }
+      }
+      this.timers.set(qualified, { name: decl.name, owner, states, decl });
+    }
+    for (const [qualified, t] of this.timers) {
+      const scope = t.owner === null ? STORY_SCOPE : t.owner === 'player' ? entityScope(this.byId.get('player') ?? null) : entityScope(this.byId.get(t.owner) ?? null);
+      const meanwhile = t.decl.meanwhile
+        ? { chance: t.decl.meanwhile.chance, body: t.decl.meanwhile.body.map((st, i) => this.resolveStatement(st, scope, `timer.${qualified}.meanwhile.${i}`)) }
+        : null;
+      this.timerDefs.push({ name: t.name, qualified, owner: t.owner, states: t.states, meanwhile, interrupted: t.decl.interrupted, span: t.decl.span });
+    }
+  }
+
+  /**
+   * Build the chapter table (ADR-330 D1–D3): the `use chapters` gate, name
+   * uniqueness, the opening row (exactly one on `the game starts`, and it is
+   * the first row), and each trigger resolved — a room for a first visit, a
+   * timer's qualified key, an entity or the story with a declared state.
+   */
+  private buildChapters(): void {
+    const decl = this.chapterDecls[0];
+    if (!decl) return;
+    if (!this.usedExtensions.has('chapters')) {
+      this.diagnostics.error(
+        'analysis.chapters-needs-use',
+        'A `define chapters` block needs `use chapters` in the story header — chapters are an extension, on precisely when the header says so.',
+        decl.span,
+      );
+      return;
+    }
+    const seen = new Set<string>();
+    const openers: number[] = [];
+    decl.rows.forEach((row, ordinal) => {
+      if (seen.has(row.name)) {
+        this.diagnostics.error('analysis.duplicate-chapter', `A chapter named \`${row.name}\` is already declared — names are what conditions say, one each.`, row.span);
+        return;
+      }
+      seen.add(row.name);
+      if (!row.trigger) return; // parse.chapter-no-trigger already reported
+      const trigger = this.resolveChapterTrigger(row.trigger);
+      if (!trigger) return;
+      if (trigger.kind === 'game-starts') openers.push(ordinal);
+      this.chapterDefs.push({ name: row.name, title: row.title, description: row.description ?? '', ordinal, trigger, span: row.span });
+    });
+    if (openers.length === 0) {
+      this.diagnostics.error(
+        'analysis.chapter-no-opening',
+        'A story with `use chapters` opens a chapter when the game starts — give the first row `begins when the game starts` (ADR-330 D2).',
+        decl.span,
+      );
+    } else if (openers.length > 1) {
+      this.diagnostics.error(
+        'analysis.chapter-two-openings',
+        'Only one chapter begins when the game starts — this is the second row on that moment.',
+        decl.rows[openers[1]].span,
+      );
+    } else if (openers[0] !== 0) {
+      this.diagnostics.error(
+        'analysis.chapter-opening-not-first',
+        'The chapter that begins when the game starts must be the first row — chapters are in declaration order, and nothing can begin before the opening (ADR-330 D1/D3).',
+        decl.rows[openers[0]].span,
+      );
+    }
+  }
+
+  /** Resolve one chapter trigger (ADR-330 D2), or null after reporting. */
+  private resolveChapterTrigger(t: ChapterTrigger): IRChapterTrigger | null {
+    switch (t.kind) {
+      case 'game-starts':
+        return { kind: 'game-starts' };
+      case 'first-visit': {
+        const id = this.resolveEntityId(t.room);
+        if (id === null) return null; // already reported
+        const sym = this.byId.get(id);
+        if (!sym || !sym.decl.compositions.some((k) => k.article !== null && k.words[0]?.toLowerCase() === 'room')) {
+          this.diagnostics.error('analysis.chapter-visit-not-room', `\`${t.room.words.join(' ')}\` is not a room — a chapter begins on the first visit to a ROOM.`, t.room.span);
+          return null;
+        }
+        return { kind: 'first-visit', room: id };
+      }
+      case 'timer-expires': {
+        const key = this.timerKeyOf(t.timer, STORY_SCOPE);
+        if (key === null) {
+          const candidates = [...this.timers.values()].map((x) => (x.owner === null ? x.name : `the ${x.owner}'s ${x.name}`));
+          const written = t.timer.kind === 'ref' ? t.timer.ref.words.join(' ') : t.timer.kind === 'bare' ? t.timer.words.join(' ') : t.timer.kind === 'possessive' ? t.timer.field.join(' ') : '<value>';
+          this.diagnostics.error('analysis.unknown-timer', `\`${written}\` is not a declared timer of the story${this.suggestText(written, candidates)} — from the chapter table, name an owner's timer by its possessive.`, t.span);
+          return null;
+        }
+        return { kind: 'timer-expires', timer: key };
+      }
+      case 'becomes': {
+        const anchor = this.resolveStepAnchor({ timing: 'becomes', owner: t.owner, state: t.state, span: t.span });
+        if (!anchor) return null;
+        return { kind: 'becomes', owner: anchor.owner, state: anchor.state };
+      }
+    }
+  }
+
+  /**
+   * The timer a value names, or null: a bare name resolves owner-first
+   * (the scope's owner, the player inside the player's block) then the
+   * story's; a possessive names its owner outright (ADR-325 D3c).
+   */
+  private timerKeyOf(expr: ValueExpr, scope: Scope): string | null {
+    if (expr.kind === 'ref' && expr.ref.words.length === 1) {
+      const name = expr.ref.words[0];
+      const ownerId = scope.owner?.id ?? null;
+      if (ownerId !== null && this.timers.has(`${ownerId}.${name}`)) return `${ownerId}.${name}`;
+      if (this.timers.has(name)) return name;
+      return null;
+    }
+    if (expr.kind === 'bare' && expr.words.length === 1) {
+      return this.timerKeyOf({ kind: 'ref', ref: { kind: 'name', article: null, words: expr.words, span: expr.span }, span: expr.span }, scope);
+    }
+    if (expr.kind === 'possessive' && expr.field.length === 1) {
+      const base = this.possessiveBase(expr, scope);
+      let ownerId: string | null = null;
+      if (base.kind === 'entity') ownerId = base.id;
+      else if (base.kind === 'player') ownerId = 'player';
+      else if (base.kind === 'it') ownerId = scope.owner?.id ?? null;
+      if (ownerId === null) return null;
+      const key = `${ownerId}.${expr.field[0]}`;
+      return this.timers.has(key) ? key : null;
+    }
+    return null;
+  }
+
+  /** Resolve a timer reference for a verb or clause head; errors name the verb. */
+  private resolveTimerRef(expr: ValueExpr, scope: Scope, span: Span, verb: string): string | null {
+    const key = this.timerKeyOf(expr, scope);
+    if (key !== null) return key;
+    const written =
+      expr.kind === 'ref' ? expr.ref.words.join(' ')
+      : expr.kind === 'bare' ? expr.words.join(' ')
+      : expr.kind === 'possessive' ? expr.field.join(' ')
+      : '<value>';
+    // A tally named where a timer is wanted is its own error (D3).
+    const ownerCounters = scope.owner ? this.entityCounterNames.get(scope.owner.id) : undefined;
+    const isTally =
+      ((expr.kind === 'ref' || expr.kind === 'bare') && (this.storyCounterNames.has(written) || ownerCounters?.has(written) === true)) ||
+      (expr.kind === 'possessive' && [...this.entityCounterNames.values()].some((set) => set.has(written)));
+    if (isTally) {
+      this.diagnostics.error(
+        'analysis.timer-verb-on-tally',
+        `\`${verb}\` acts on a timer, not a tally — \`${written}\` is a counter; it is \`raise\`d, \`lower\`ed, or \`set\`.`,
+        span,
+      );
+      return null;
+    }
+    // Suggest the reachable spellings: a same-named timer elsewhere is
+    // offered by its possessive, never by the bare name that just failed.
+    const candidates = [...this.timers.values()].map((t) => (t.owner === null ? t.name : `the ${t.owner}'s ${t.name}`));
+    this.diagnostics.error(
+      'analysis.unknown-timer',
+      `\`${written}\` is not a declared timer${scope.owner ? ` of \`${scope.owner.id}\` or the story` : ''}${this.suggestText(written, candidates)}.`,
+      span,
+    );
+    return null;
+  }
+
+  /** `when <timer> expires [, while <cond>]` (ADR-325 D3e) on an owner. */
+  private buildTimerClause(clause: TimerClause, scope: Scope, ownerKey: string, index: number): IRTimerClause {
+    const timer = this.resolveTimerRef(clause.timer, scope, clause.span, 'when … expires') ?? '';
+    const condition = clause.condition ? this.resolveCondition(clause.condition, scope) : null;
+    const body = clause.body.map((st, i) => this.resolveStatement(st, scope, `${ownerKey}.expires-${index}.${i}`));
+    this.checkPhaseOrder(clause.body, { ended: null });
+    return { timer, condition, body, span: clause.span };
+  }
+
+  /**
+   * `when <entity> moves [, while <cond>]` (ADR-325 D3h): the mover must be
+   * an entity or the player — a value of any other shape has no actor.
+   * @param ownerKey the owner's IR id (statement-path prefix, ADR-289 D2)
+   * @param index position among the owner's move clauses
+   */
+  private buildMoveClause(clause: MoveClause, scope: Scope, ownerKey: string, index: number): IRMoveClause {
+    const mover = this.resolveValue(clause.mover, scope);
+    if (mover.kind !== 'entity' && mover.kind !== 'player') {
+      this.diagnostics.error(
+        'analysis.move-clause-mover',
+        '`when <entity> moves` names who moves — an entity or the player.',
+        clause.mover.span,
+      );
+    }
+    const condition = clause.condition ? this.resolveCondition(clause.condition, scope) : null;
+    const body = clause.body.map((st, i) => this.resolveStatement(st, scope, `${ownerKey}.moves-${index}.${i}`));
+    this.checkPhaseOrder(clause.body, { ended: null });
+    return { mover, condition, body, span: clause.span };
+  }
+
+  /**
+   * Lower a place (ADR-325 D1–D2) onto the existing IR value shapes — no new
+   * IR kind: `<owner>'s location` is the `location` field read, `here` is
+   * that read on the player, `offstage` is the `offstage` symbol the loader
+   * treats as "no location".
+   */
+  /**
+   * Is this value a declared counter (ADR-264) — a bare name in the story
+   * registry, or `<entity>'s <name>` / `its <name>` in the owner's? Returns
+   * the counter name and owner value, or null when it names no counter.
+   * Diagnostics-free: a probe for verbs (`set`) that accept other targets.
+   */
+  private counterTargetOf(target: ValueExpr, scope: Scope): { counter: string; owner: IRValue | null } | null {
+    if (target.kind === 'possessive') {
+      const counter = target.field.join(' ');
+      const owner = this.possessiveBase(target, scope);
+      const ownerId = owner.kind === 'entity' ? owner.id : owner.kind === 'it' ? scope.owner?.id ?? null : null;
+      if (ownerId !== null && this.entityCounterNames.get(ownerId)?.has(counter)) return { counter, owner };
+      return null;
+    }
+    const counter = target.kind === 'ref' ? target.ref.words.join(' ') : target.kind === 'bare' ? target.words.join(' ') : null;
+    if (counter !== null && this.storyCounterNames.has(counter)) return { counter, owner: null };
+    return null;
+  }
+
+  /** Lower a `landing` line (ADR-325 D5); unresolved rooms are dropped (already reported). */
+  private buildLanding(landing: LandingDecl): IRLanding {
+    const rooms = landing.rooms.map((r) => this.resolveEntityId(r)).filter((id): id is string => id !== null);
+    return { rooms, strategy: landing.strategy, span: landing.span };
+  }
+
+  /**
+   * ADR-325 D5: a region is a place only once it names a landing. Fires on
+   * a region used as a destination or as the owner of `'s location`.
+   * A MEMBERSHIP test (`is in <region>`, GH #339) is exempt: asking where
+   * someone is needs no put-destination, so `resolvePlace` skips this gate
+   * for the bare-name arm in membership mode.
+   */
+  private checkRegionPlace(value: IRValue, span: Span): void {
+    if (value.kind !== 'entity') return;
+    const sym = this.byId.get(value.id);
+    if (!sym) return;
+    const isRegion = sym.decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'region');
+    if (isRegion && !sym.decl.landing) {
+      this.diagnostics.error(
+        'analysis.region-not-a-place',
+        `\`${sym.decl.name.words.join(' ')}\` is a region with no \`landing\` line — a region is a place only once it says where things put in it land.`,
+        span,
+      );
+    }
+  }
+
+  private resolvePlace(place: PlaceExpr, scope: Scope, purpose: 'destination' | 'membership' = 'destination'): IRValue {
+    switch (place.kind) {
+      case 'name': {
+        const value = this.resolveEntityValue(place.ref, scope);
+        // GH #339: a membership test may name a landing-less region — the
+        // landing gate is a destination concern (ADR-325 D5). `'s location`
+        // stays gated in both modes: a region's location IS its landing.
+        if (purpose === 'destination') this.checkRegionPlace(value, place.ref.span);
+        return value;
+      }
+      case 'location': {
+        const owner = this.resolveValue(place.owner, scope);
+        this.checkRegionPlace(owner, place.owner.span);
+        return { kind: 'field', base: owner, field: 'location' };
+      }
+      case 'here':
+        return { kind: 'field', base: { kind: 'player' }, field: 'location' };
+      case 'offstage':
+        return { kind: 'symbol', name: 'offstage' };
+      case 'adjacent-room':
+        // ADR-326 D1: a computed place — the loader draws it at effect time.
+        return { kind: 'symbol', name: 'adjacent-room' };
+    }
   }
 
   private resolveEntityValue(ref: NameRef, scope: Scope): IRValue {
@@ -6411,10 +7656,11 @@ class Analyzer {
    */
   private resolveEntityId(ref: NameRef): string | null {
     const lower = ref.words.join(' ').toLowerCase();
-    if (PLAYER_WORDS.has(lower)) {
-      const player = this.entities.find((e) => e.id === 'player');
-      if (player) return player.id;
-    }
+    // ADR-327 D10: `the player` names the ROLE, not an entity — there is no
+    // player block any more. `player` is the sentinel id the loader resolves
+    // against `world.getPlayer()` at run time, exactly as `define timer … for
+    // the player` already did.
+    if (PLAYER_WORDS.has(lower)) return 'player';
 
     const exact = this.entities.filter((e) => e.nameLower === lower);
     if (exact.length === 1) return exact[0].id;
@@ -6465,6 +7711,25 @@ class Analyzer {
         return { kind: 'not', operand: this.resolveCondition(cond.operand, scope) };
       case 'chance':
         return { kind: 'chance', n: cond.n };
+      case 'chapter': {
+        // ADR-330 D5: the row's name → its ordinal, under the `use` gate.
+        // Read off the AST, not the built tables: a `phrase detail` gate
+        // resolves in pass 1, before `use` lines and chapter rows are built.
+        const uses = (this.ast.header?.uses ?? []).some((u) => u.name === 'chapters');
+        if (!uses) {
+          this.diagnostics.error('analysis.chapters-needs-use', `\`${cond.relation} ${cond.name}\` reads a chapter — add \`use chapters\` and a \`define chapters\` block to the story.`, cond.span);
+          return { kind: 'chapter', relation: cond.relation, ordinal: -1 };
+        }
+        const block = this.ast.declarations.find((d): d is DefineChapters => d.kind === 'define-chapters');
+        const rows = block?.rows ?? [];
+        const ordinal = rows.findIndex((r) => r.name === cond.name);
+        if (ordinal < 0) {
+          const names = rows.map((r) => r.name);
+          this.diagnostics.error('analysis.unknown-chapter', `\`${cond.name}\` is not a declared chapter${this.suggestText(cond.name, names)} — the names are the \`define chapters\` rows: ${names.join(', ') || '(none)'}.`, cond.span);
+          return { kind: 'chapter', relation: cond.relation, ordinal: -1 };
+        }
+        return { kind: 'chapter', relation: cond.relation, ordinal };
+      }
       case 'client-has': {
         // ADR-216: capability words are the closed platform flag set —
         // validated here, lowered to the camelCase platform key.
@@ -6511,10 +7776,12 @@ class Analyzer {
       case 'subject-changes':
         // ADR-320 D9: the scene's thread-abandonment notice — no operands;
         // evaluation is the scene runtime's.
+        this.requireDialogueScope('subject changes', scope, cond.span);
         return { kind: 'subject-changes' };
       case 'asked':
         // ADR-320 D4: repetition word over the enclosing row's topic —
         // words are the parser's closed set; the runtime owns the counting.
+        this.requireDialogueScope(`asked ${cond.word}`, scope, cond.span);
         return { kind: 'asked', word: cond.word };
       case 'predicate': {
         // ADR-320 D6/D9: recency and discussed-ness take the SUBJECT as a
@@ -6538,6 +7805,7 @@ class Analyzer {
             const node: IRCondition = { kind: 'recency', topic, word: cond.predicate.word };
             return cond.predicate.negated ? { kind: 'not', operand: node } : node;
           }
+          this.requireDialogueScope('was discussed', scope, cond.predicate.span);
           return { kind: 'discussed', topic };
         }
         // ADR-320 D14: `<thread> is concluded` takes the SUBJECT as a
@@ -6545,6 +7813,7 @@ class Analyzer {
         // the key against the story's declared `define conversation`
         // blocks (a typo here would otherwise be silently false forever).
         if (cond.predicate.kind === 'concluded') {
+          this.requireDialogueScope('is concluded', scope, cond.predicate.span);
           const threadWords =
             cond.subject.kind === 'ref' ? cond.subject.ref.words
             : cond.subject.kind === 'bare' ? cond.subject.words
@@ -6602,8 +7871,17 @@ class Analyzer {
               pred: 'is-in',
               negated: cond.predicate.negated,
               subject,
-              object: this.resolveEntityValue(cond.predicate.place, scope),
+              object: this.resolvePlace(cond.predicate.place, scope, 'membership'),
             };
+          case 'timer-has': {
+            // ADR-325 D3d: `has started` / `has expired` read a timer's lifecycle.
+            if (subject.kind !== 'timer') {
+              this.diagnostics.error('analysis.unknown-timer', `\`has ${cond.predicate.what}\` reads a timer — the subject is not a declared timer.`, cond.predicate.span);
+              return { kind: 'condition', name: '' };
+            }
+            const node: IRCondition = { kind: 'timer-has', timer: subject.timer, what: cond.predicate.what };
+            return cond.predicate.negated ? { kind: 'not', operand: node } : node;
+          }
           case 'is-here': {
             // Z4 deictic: entity-valued subjects only — a literal can
             // never be "here", so reject at load rather than evaluating
@@ -6719,6 +7997,22 @@ class Analyzer {
       expr.kind === 'ref' ? expr.ref.words : expr.kind === 'bare' ? expr.words : null;
     if (words && words.length === 1) {
       const word = words[0];
+      // ADR-325 D3d: a timer subject reads its own named turns; `expired`
+      // is the lifecycle's word (`has expired`), never `is expired`.
+      if (subject.kind === 'timer') {
+        const timer = this.timers.get(subject.timer)!;
+        if (word === 'expired') {
+          this.diagnostics.error('analysis.timer-is-expired', '`is expired` is not a read — write `has expired` (the lifecycle), or name one of the timer\'s turns.', span);
+          return { kind: 'symbol', name: word };
+        }
+        if (timer.states.includes(word)) return { kind: 'symbol', name: word };
+        this.diagnostics.error(
+          'analysis.unknown-timer-state',
+          `\`${word}\` is not a turn of the timer \`${timer.name}\`${this.suggestText(word, timer.states)}.`,
+          span,
+        );
+        return { kind: 'symbol', name: word };
+      }
       // Trait-field subjects validate against the field's own value set
       // (`if kind is snake` — one-of members; flags — true/false).
       const fieldValues = this.fieldValueSet(subject, scope);
@@ -6865,7 +8159,24 @@ class Analyzer {
         if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
         if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
         if (this.hatchNames.has(marker)) continue;
-        if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) continue;
+        if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) {
+          // Description-derived entries are not phrase BODIES: room
+          // descriptions resolve markers via Z2 snippets, non-room ones
+          // keep them unrewritten by pinned contract. Silent, as before.
+          if (this.descriptionKeys.has(label)) continue;
+          // GH #286 floor: nothing resolves a phrase reference inside
+          // another phrase's body — snippet rewriting is room-description
+          // prose only (Z2, checkDescriptionMarkers) — so the marker would
+          // reach the player as literal braces. Reject it instead. Whether
+          // phrase-in-phrase should RESOLVE is held open (GH #303 item 2);
+          // if it lands, this gate relaxes into cycle detection.
+          this.diagnostics.error(
+            'analysis.phrase-in-phrase',
+            `\`{${marker}}\` in phrase \`${label}\` names another phrase, but a phrase body cannot invoke a phrase — the marker would print literally. Carry the text inline, or emit \`phrase ${marker}\` beside this one at the call site.`,
+            phrase.span,
+          );
+          continue;
+        }
         if (this.bookKeys.has(marker)) continue; // book coverage counts (ADR-250 D4.6)
         this.diagnostics.error(
           'analysis.unbound-marker',

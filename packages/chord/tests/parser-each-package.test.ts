@@ -116,7 +116,7 @@ describe('each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12)', ()
 
 describe('must be any <name> (membership, David 2026-07-12 — P3)', () => {
   const mustLine = (predicate: string) =>
-    ['create the shed', '  a room', '', '  on prodding it', `    it must ${predicate}: nope`, '  end on'].join('\n');
+    ['create the shed', '  a room', '', '  on the player prodding', `    it must ${predicate}: nope`, '  end on'].join('\n');
 
   it('parses standalone `be any <name>` as the is-any predicate', () => {
     const result = parse(mustLine('be any barn-occupant'));
@@ -156,7 +156,7 @@ describe('each host positions (parse-time, never top-level)', () => {
       'create the shed',
       '  a room',
       '',
-      '  on prodding it',
+      '  on the player prodding',
       '    each',
       '      phrase tidy',
       '    end each',

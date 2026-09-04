@@ -23,7 +23,7 @@ import {
   SceneryTrait,
 } from '@sharpee/world-model';
 import { createHelpers } from '@sharpee/helpers';
-import type { NpcBehavior, NpcContext, NpcAction } from '@sharpee/stdlib';
+import type { NpcBehavior, NpcContext } from '@sharpee/stdlib';
 import type { RoomIds } from './zoo-map.js';
 import { definePoint } from '@sharpee/core';
 
@@ -78,15 +78,14 @@ const PARROT_PHRASES = [
 export const parrotBehavior: NpcBehavior = {
   id: 'zoo-parrot',
   name: 'Parrot Behavior',
-  onTurn(context: NpcContext): NpcAction[] {
-    if (!context.playerVisible) return [];
+  onTurn(context: NpcContext): void {
+    if (!context.playerVisible) return;
     if (context.random.chance(PARROT_SQUAWK_POINT, 0.5)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASE_POINT, PARROT_PHRASES) } }];
+      context.narrate({ text: context.random.pick(PARROT_PHRASE_POINT, PARROT_PHRASES) });
     }
-    return [];
   },
-  onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot ruffles its feathers and eyes you with interest.' } }];
+  onPlayerEnters(context: NpcContext): void {
+    context.narrate({ text: 'The parrot ruffles its feathers and eyes you with interest.' });
   },
 };
 
@@ -111,15 +110,14 @@ const PARROT_AFTER_HOURS_PHRASES = [
 export const parrotAfterHoursBehavior: NpcBehavior = {
   id: 'zoo-parrot-after-hours',
   name: 'Parrot After-Hours Behavior',
-  onTurn(context: NpcContext): NpcAction[] {
-    if (!context.playerVisible) return [];
+  onTurn(context: NpcContext): void {
+    if (!context.playerVisible) return;
     if (context.random.chance(PARROT_SQUAWK_POINT, 0.6)) {
-      return [{ type: 'speak', messageId: 'npc.speech', data: { text: context.random.pick(PARROT_PHRASE_POINT, PARROT_AFTER_HOURS_PHRASES) } }];
+      context.narrate({ text: context.random.pick(PARROT_PHRASE_POINT, PARROT_AFTER_HOURS_PHRASES) });
     }
-    return [];
   },
-  onPlayerEnters(): NpcAction[] {
-    return [{ type: 'emote', messageId: 'npc.emote', data: { text: 'The parrot glances at you and nods, as if recognizing a fellow after-hours regular.' } }];
+  onPlayerEnters(context: NpcContext): void {
+    context.narrate({ text: 'The parrot glances at you and nods, as if recognizing a fellow after-hours regular.' });
   },
 };
 

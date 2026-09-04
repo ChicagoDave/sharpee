@@ -78,10 +78,18 @@ describe('kill-statement grammar', () => {
   id: t
   story-version: 1.0.0
 
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
+
 create the Crypt
   a room
 
-  after entering it
+  after the player entering
     ${stmt}
   end after
 
@@ -96,7 +104,9 @@ define phrases en-US
 
     const gated = parse(wrap('kill the player curse when the player has the Crypt'));
     expect(gated.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    const crypt = gated.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
+    const crypt = gated.ast.declarations.find(
+      (d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'Crypt',
+    )!;
     const kill = crypt.onClauses[0].body.find((s): s is KillStmt => s.kind === 'kill')!;
     expect(kill.phraseKey).toBe('curse');
     expect(kill.stmtWhen).not.toBeNull();
@@ -120,6 +130,14 @@ describe('deadly-exit and deadly-room grammar errors', () => {
     T
   id: t
   story-version: 1.0.0
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
 
 create the Ledge
   a room
@@ -153,7 +171,9 @@ define phrases en-US
   it('parses `is deadly while <cond>:` (condition carried on the AST)', () => {
     const result = parse(room('south is deadly while the player has the Ledge: doom'));
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    const ledge = result.ast.declarations.find((d): d is CreateDecl => d.kind === 'create')!;
+    const ledge = result.ast.declarations.find(
+      (d): d is CreateDecl => d.kind === 'create' && d.name.words.join(' ') === 'Ledge',
+    )!;
     expect(ledge.deadlyExits[0].condition).not.toBeNull();
   });
 });

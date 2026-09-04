@@ -16,6 +16,8 @@ export const TraitType = {
   WEARABLE: 'wearable',
   EDIBLE: 'edible',
   SCENERY: 'scenery',
+  /** Sees in the dark (ADR-328 D5) — presence is the fact */
+  NIGHT_VISION: 'if.trait.night_vision',
 
   // Interactive traits
   OPENABLE: 'openable',
@@ -115,6 +117,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.WEARABLE]: TraitCategory.STANDARD,
   [TraitType.EDIBLE]: TraitCategory.STANDARD,
   [TraitType.SCENERY]: TraitCategory.STANDARD,
+  [TraitType.NIGHT_VISION]: TraitCategory.STANDARD,
 
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,

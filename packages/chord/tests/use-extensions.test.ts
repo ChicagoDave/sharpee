@@ -28,10 +28,17 @@ create the Arena
 
   A pit.
 
-${body}create the player
+${body}create Alex
+  a person
+  playable
   starts in the Arena
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('`use <extension>` (ADR-215)', () => {
@@ -188,20 +195,17 @@ describe('CORE npc vocabulary (ADR-215 Q4)', () => {
   });
 });
 
-describe('player-block composition gates (Gap-2 ruling, 2026-07-18)', () => {
-  it('`a person` is legal on the player; other kind nouns are analysis.player-kind', () => {
-    expect(
-      errorCodes(
-        story('', '').replace('create the player', 'create the player\n  a region\n  containing the Arena'),
-      ),
-    ).toContain('analysis.player-kind');
-    const ok = compile(story('', '').replace('create the player', 'create the player\n  a person'));
-    expect(ok.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
+describe('role eligibility (ADR-327 D10)', () => {
+  const ROLE = 'create Alex\n  a person\n  playable';
+
+  it('`playable` on a non-person is analysis.playable-non-person', () => {
+    expect(errorCodes(story('', '').replace(ROLE, 'create Alex\n  a thing\n  playable'))).toContain(
+      'analysis.playable-non-person',
+    );
   });
 
-  it('an NPC behavior adjective on the player → analysis.player-behavior', () => {
-    expect(
-      errorCodes(story('', '').replace('create the player', 'create the player\n  a person, wanderer')),
-    ).toEqual(['analysis.player-behavior']);
+  it('an NPC behavior adjective composes on a playable character (D9 lets it drive them off-role)', () => {
+    const result = compile(story('', '').replace(ROLE, 'create Alex\n  a person, wanderer\n  playable'));
+    expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
   });
 });

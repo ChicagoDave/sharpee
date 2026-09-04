@@ -125,11 +125,13 @@ export { buildManifest } from './introspect.js';
  *   `assembleGame`; absent → the engine reads the clock once
  * @param opts.channels declared capture channels (ADR-294 D15), forwarded to
  *   `assembleGame`; absent → `[]` (prose still rides `lastOutput`)
+ * @param opts.presence presence presentation (ADR-328 D3), forwarded to
+ *   `assembleGame`; absent → the platform default (hide `absent`)
  * @throws if the module can't be resolved/required or exports no createStory()
  */
 export async function loadStory(
   location: string,
-  opts?: { entry?: string; seed?: number; channels?: string[] },
+  opts?: { entry?: string; seed?: number; channels?: string[]; presence?: 'default' | 'omniscient' },
 ): Promise<LoadedGame> {
   const modulePath = resolveStoryModulePath(location, opts?.entry);
   // ADR-248: the same provider serves the initial load and every
@@ -139,6 +141,7 @@ export async function loadStory(
     freshStory,
     ...(opts?.seed !== undefined ? { seed: opts.seed } : {}),
     ...(opts?.channels !== undefined ? { channels: opts.channels } : {}),
+    ...(opts?.presence !== undefined ? { presence: opts.presence } : {}),
   });
 }
 
@@ -195,6 +198,13 @@ export function assembleGame(
      * story emits it in test mode. Absent → no per-channel capture.
      */
     channels?: string[];
+    /**
+     * How presence-tagged prose is presented in `lastOutput` (ADR-328 D3).
+     * Absent = the platform default (an `absent` entry is hidden — what a
+     * player sees, what goldens mean). `'omniscient'` shows every actor
+     * emission labelled by location, for testing NPC behaviour off-stage.
+     */
+    presence?: 'default' | 'omniscient';
   }
 ): LoadedGame {
   let engine!: GameEngine;
@@ -318,8 +328,15 @@ export function assembleGame(
     // Composing before flattening is what makes `tight` mean the right
     // thing — it refers to the entry's predecessor in the turn's reading
     // order, which routinely sits on a different channel now.
+    // ADR-328 D3: the presence presentation is fixed at assembly, and the
+    // location label resolves against the live world (a restart reboot
+    // rebinds `world`, and this closure reads the binding, not a copy).
+    const presentation = {
+      ...(opts?.presence !== undefined ? { presence: opts.presence } : {}),
+      locationLabel: (id: string) => world.getEntity(id)?.name ?? id,
+    };
     engine.on('channel:packet', (packet: any) => {
-      const out = packetProseText(packet?.payload);
+      const out = packetProseText(packet?.payload, presentation);
       if (out) outputBuffer.push(out);
       // ADR-294 D15: capture each declared channel's payload as
       // deterministic lines. Absent payload = the channel emitted nothing

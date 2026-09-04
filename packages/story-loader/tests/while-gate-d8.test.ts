@@ -72,7 +72,7 @@ define action prodding
 define trait skittish
   states, reversible: tame, feral
 
-  on taking it while wild-day
+  on the player taking while wild-day
     refuse when it is tame: taboo
     change it to feral
     phrase taken-wild
@@ -80,7 +80,7 @@ define trait skittish
 end trait
 
 define trait shy
-  on taking it, once
+  on the player taking, once
     phrase taken-wild
   end on
 end trait
@@ -88,7 +88,7 @@ end trait
 define trait poddable
   states, reversible: tame, feral
 
-  on prodding it while wild-day
+  on the player prodding while wild-day
     refuse when it is tame: taboo
     change it to feral
     phrase taken-wild
@@ -98,7 +98,7 @@ end trait
 define trait prickly
   states, reversible: tame, feral
 
-  on prodding it, once
+  on the player prodding, once
     change it to feral
     phrase taken-wild
   end on
@@ -120,13 +120,13 @@ define action waving
       You wave it about.
 
 define trait wavable
-  on waving it while wild-day
+  on the player waving while wild-day
     phrase taken-wild
   end on
 end trait
 
 define trait perky
-  on prodding it
+  on the player prodding
     phrase perked-up
   end on
 end trait
@@ -146,9 +146,9 @@ create the badger
 
   A badger.
 
-  on taking it while wild-day
-    refuse when it is tame: taboo
-    change it to feral
+  on the player taking while wild-day
+    refuse when the badger is tame: taboo
+    change the badger to feral
     phrase taken-wild
   end on
 
@@ -157,7 +157,7 @@ create the vole
 
   A vole.
 
-  on taking it, once
+  on the player taking, once
     phrase taken-wild
   end on
 
@@ -198,10 +198,17 @@ create the flag
 
   A flag.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 type Loaded = ReturnType<typeof load>;

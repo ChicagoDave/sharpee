@@ -19,6 +19,11 @@ story
     phrase distant-bell
   end on
 
+  on every turn while Smoke is fed and Smoke is not here
+    move Smoke here
+    phrase smoke-follows
+  end on
+
 ## The estate exterior — the night begins here.
 
 create the Grounds
@@ -30,12 +35,12 @@ create the Grounds
     phrase night-wind
   end on
 
-  after entering it
+  after the player entering
     phrase cold-returns
     play ambient night-wind when client has sound
   end after
 
-  after leaving it
+  after the player leaving
     stop ambient when client has sound
     phrase out-of-the-wind
   end after
@@ -45,7 +50,7 @@ create the House
   containing the Entrance Hall, the Study, the Pantry
   containing the Kitchen, the Cellar Stairs and the Cellar
 
-  after entering it
+  after the player entering
     phrase house-hush
   end after
 
@@ -55,7 +60,7 @@ create the Iron Gates
   north to the Gravel Drive
   south is blocked: long-road
 
-  after entering it while the player has the deed
+  after the player entering while the player has the deed
     play music dawn-theme when client has music
     win fernhill-saved
   end after
@@ -129,7 +134,7 @@ create the Folly
   shows through a scorched hole in the dome, and a cache of ancient
   estate fireworks slumps against the far wall.
 
-  after entering it, once
+  after the player entering, once
     change the fuse to lit
     phrase fuse-catches
   end after
@@ -201,7 +206,7 @@ create the folly door
   A stone-framed door of oak, warped and silvered by the fire. It has
   not been opened in twenty years.
 
-  on opening it while tobias is not shaken
+  on the player opening while tobias is not shaken
     refuse folly-jammed
   end on
 
@@ -219,7 +224,7 @@ create the cellar door
   A heavy grey door, locked as long as anyone can remember. The
   keyhole is tarnished black.
 
-  after opening it, once
+  after the player opening, once
     award unsealed
   end after
 
@@ -233,14 +238,14 @@ create the doormat
   flat.
 
 create the tarnished key
-  aka key
+  aka key, small, crank
   concealed
   on the doormat
   score found worth 5
 
   A small key gone black with weather.
 
-  after taking it, once
+  after the player taking, once
     award found
   end after
 
@@ -252,7 +257,7 @@ create the oil lamp
   A hurricane lamp with a full reservoir and a clean chimney.
 
 create the boiler
-  aka furnace
+  aka furnace, cast-iron
   scenery, switchable
   in the Boiler Shed
   states: cold, filled, primed, running
@@ -263,9 +268,9 @@ create the boiler
   plunger stand ready on its flank, and a small brass plate reads:
   FILL. PRIME. LIGHT. IN THAT ORDER.
 
-  on switching_on it
-    refuse when it is cold: boiler-clank
-    refuse when it is filled: boiler-clank
+  on the player switching_on
+    refuse when the boiler is cold: boiler-clank
+    refuse when the boiler is filled: boiler-clank
     award lit, once
   end on
 
@@ -276,7 +281,7 @@ create the stopcock
 
   A quarter-turn stopcock on the feed pipe from the rain tank.
 
-  on turning it
+  on the player turning
     phrase stopcock-turns
   end on
 
@@ -287,7 +292,7 @@ create the primer plunger
 
   A long-handled primer plunger, worn smooth by fifty winters of use.
 
-  on pushing it while the boiler is cold
+  on the player pushing while the boiler is cold
     refuse primer-dry
   end on
 
@@ -330,7 +335,7 @@ create the solicitor's letter
   and whatever Great-Aunt Verity hid is lost with it unless someone
   finds the deed tonight.
 
-  on reading it
+  on the player reading
     phrase summons-text
       "…the property known as FERNHILL to be sold at public auction at
       first light. Any party asserting prior title must produce the
@@ -354,8 +359,8 @@ create the diary page
 
   A page torn from a diary, the hand young and furious.
 
-  on reading it
-    change it to read
+  on the player reading
+    change the diary page to read
     phrase diary-text
       "K. says the greenhouse will take the worst of the frost and the
       vine with it. Let it. What matters is safe where the fire went,
@@ -392,7 +397,7 @@ create the framed photograph
     behind her, and on her knee a small steel box with a bright slot
     in its lid.
 
-  after examining it
+  after the player examining
     show image folly-photograph when client has images
   end after
 
@@ -455,6 +460,7 @@ create the kipper
 
 create the garden shears
   aka shears
+  plural
   in the Kitchen
 
   Long-bladed garden shears, oiled and sharp — Tobias's pride, judging
@@ -478,20 +484,28 @@ create the vine
   pipes: barely more than a seedling now, twenty years after the
   frost that should have killed it.
 
-  after pruning it while it is fruiting, once
+  phrase detail while the vine is flowering:
+    Since the pipes warmed it has thrown a spray of hurried white
+    flowers along every cane.
+
+  phrase detail while the vine is fruiting:
+    Its one heavy fruit has come and gone; the pruned canes lie
+    quiet against the glass.
+
+  after the player pruning while the vine is fruiting, once
     award fruited
   end after
 
 create Smoke
   aka cat, grey cat
-  a person, follower
+  a person, proper
   feedable with food the kipper
   in the Pantry
 
   A smoke-grey cat with lantern eyes, appointed to the pantry mice
   and answerable to no one.
 
-  on every turn while it is fed and the player is in the Greenhouse, once
+  on every turn while Smoke is fed and the player is in the Greenhouse, once
     phrase smoke-nose
   end on
 
@@ -501,7 +515,7 @@ create the furnace poker
 
   A long iron poker for the furnace grate.
 
-  on taking it while the boiler is running
+  on the player taking while the boiler is running
     refuse poker-hot
   end on
 
@@ -519,7 +533,7 @@ define trait feedable
       The kipper vanishes with terrifying efficiency, and something is
       decided about you. From now on, you have a shadow.
 
-  on feeding it
+  on the player feeding
     the actor must have its food: no-morsel
     it must be peckish: already-fed-cat
     change it to fed
@@ -538,7 +552,7 @@ define action feeding
       That has no appetite you can help with.
 
 define trait prunable
-  on pruning it
+  on the player pruning
     the player must hold the garden shears: need-shears
     select on its state
       when seedling
@@ -554,7 +568,7 @@ define trait prunable
 end trait
 
 define trait windable
-  on winding it
+  on the player winding
     the player must hold the winding key: need-winding-key
     it must be stopped: clock-already-going
     change it to ticking
@@ -595,12 +609,12 @@ create the fuse
   A long waxed fuse snaking from the fireworks cache across the
   floor. Old, but not too old to burn.
 
-  on every turn while it is lit
+  on every turn while the fuse is lit
     phrase fuse-hiss
   end on
 
-  on cutting it
-    change it to cut
+  on the player cutting
+    change the fuse to cut
     award nerve, once
     phrase fuse-cut-through
   end on
@@ -641,11 +655,11 @@ create the deed
   Heavy paper, folded in oiled cloth, whole and legible after twenty
   years in the dark: the original deed of Fernhill.
 
-  after taking it, once
+  after the player taking, once
     award recovered
   end after
 
-  on reading it
+  on the player reading
     phrase deed-text
       "…the house and grounds known as FERNHILL, held in perpetuity by
       the family and heirs of the bearer of this instrument."
@@ -662,10 +676,10 @@ create Mrs Kettle
   The housekeeper, planted before the study door with her knitting and
   no intention of moving. Her eyes say the study is not for visitors.
 
-  on giving it
-    change it to softened when it has the sherry bottle
-    award softened, once when it is softened
-    phrase kettle-softened when it is softened
+  on the player giving
+    change Mrs Kettle to softened when Mrs Kettle has the sherry bottle
+    award softened, once when Mrs Kettle is softened
+    phrase kettle-softened when Mrs Kettle is softened
   end on
 
 create Tobias
@@ -680,7 +694,7 @@ create Tobias
   lantern swinging at his knee. Weathered, watchful, in no hurry to
   help.
 
-  on asking it
+  on the player asking
     phrase tobias-shrug
   end on
 
@@ -697,7 +711,7 @@ define topics for tobias
   about the silver locket:
     phrase tobias-locket-reply
   about "the folly", "the fire":
-    change it to shaken
+    change Tobias to shaken
     award truth, once
     phrase tobias-folly-reply
   about "the bank": phrase tobias-bank-reply
@@ -708,7 +722,9 @@ define topics for Mrs Kettle
   about "the study", "verity's study": phrase kettle-study-reply
 end topics
 
-create the player
+create Wren
+  a person
+  playable
   starts in the Iron Gates
   carries the solicitor's letter
 
@@ -723,7 +739,7 @@ create the auction notice
   Fresh print on old iron: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE
   ESTATE, AT DAWN.
 
-  on reading it
+  on the player reading
     phrase notice-text
       "Sale to be conducted at the property at first light. Viewing by
       arrangement with the solicitors, Messrs. Hobbes & Vane."
@@ -777,7 +793,7 @@ create the case clock
   A tall case clock, stopped at some hour years gone. The winding
   hole waits behind the little brass door in its face.
 
-  on every turn while it is ticking and one chance in 8
+  on every turn while the case clock is ticking and one chance in 8
     phrase clock-chime
     emit estate-clock with hour "evening" when evening
     emit estate-clock with hour "past midnight" when midnight
@@ -1055,6 +1071,10 @@ define phrase poker-hot
   skin off your palm.
 end phrase
 
+define phrase smoke-follows
+  Smoke pads after you, unhurried, as if it were her own idea.
+end phrase
+
 define phrase smoke-nose
   Smoke pads down the staging, ignores the vine entirely, and noses
   hard at the leaf mould at the warm end. Cats know where things are
@@ -1102,15 +1122,15 @@ create the iron weathervane
 
   An iron weathervane on the gatepost, older than the house behind it.
 
-  after examining it
+  after the player examining
     phrase vane-mood
   end after
 
-  after pushing it
+  after the player pushing
     phrase vane-story
   end after
 
-  after touching it
+  after the player touching
     phrase vane-quiet
   end after
 
@@ -1153,3 +1173,7 @@ define phrasebook evening-voice
   vane-quiet:
     The vane keeps its own counsel.
 end phrasebook
+
+before the game starts
+  change the player to Wren
+end before

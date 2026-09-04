@@ -8,14 +8,16 @@ story
 create the Barn
   a room
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Barn
 
 create the goat
   in the Barn
   states: hungry, content
 
-  on prodding it
+  on the player prodding
     change the match to content
     phrase prod-note with animal = the match
   end on
@@ -23,3 +25,7 @@ create the goat
 define phrases en-US
   prod-note:
     Prodded.
+
+before the game starts
+  change the player to Alex
+end before

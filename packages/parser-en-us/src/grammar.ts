@@ -186,6 +186,8 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("toss :item to :recipient").mapsTo("if.action.throwing").build();
   grammar.define("hurl :item at :target").mapsTo("if.action.throwing").build();
   grammar.define("hurl :item to :recipient").mapsTo("if.action.throwing").build();
+  grammar.define("take :item from :container").mapsTo("if.action.removing").build();
+  grammar.define("get :item from :container").mapsTo("if.action.removing").build();
   grammar.define("take :item from :container with|using :tool").mapsTo("if.action.removing").instrument("tool").build();
   grammar.define("remove :item from :container").mapsTo("if.action.removing").build();
   grammar.define("extract :item from :container").mapsTo("if.action.removing").build();
@@ -220,6 +222,18 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("ask :recipient about :topic").mapsTo("if.action.asking").topic("topic").build();
   grammar.define("question :recipient about :topic").mapsTo("if.action.asking").topic("topic").build();
   grammar.define("inquire of :recipient about :topic").mapsTo("if.action.asking").topic("topic").build();
+  grammar.define("goodbye").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("bye").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("farewell").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("say goodbye").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("say farewell").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("goodbye to :person").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("say goodbye to :person").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("say farewell to :person").mapsTo("if.action.saying_goodbye").build();
+  grammar.define("answer :response").mapsTo("if.action.answering").topic("response").build();
+  grammar.define("reply :response").mapsTo("if.action.answering").topic("response").build();
+  grammar.define("respond :response").mapsTo("if.action.answering").topic("response").build();
+  grammar.define("say :response").mapsTo("if.action.answering").topic("response").build();
   grammar.define("talk to|with :target").mapsTo("if.action.talking").build();
   grammar.define("speak to|with :target").mapsTo("if.action.talking").build();
   grammar.define("chat with :target").mapsTo("if.action.talking").build();

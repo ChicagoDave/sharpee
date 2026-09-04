@@ -43,10 +43,17 @@ create the Cave
 
   A cave.
 
-${mid}create the player
+${mid}create Alex
+  a person
+  playable
   starts in the Cave
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('ADR-249 lexer: `##` comment lines (AC group 1)', () => {
@@ -145,7 +152,7 @@ describe('ADR-249 parser: comment position (AC group 2)', () => {
   });
 
   it('an indented `##` line in a statement body raises parse.comment-inside-block', () => {
-    const mid = 'create the lamp\n  a thing, portable\n  starts in the Cave\n\n  A lamp.\n\n  on taking it\n    ## remember to gate this\n    phrase taken-note\n  end on\n\n';
+    const mid = 'create the lamp\n  a thing, portable\n  starts in the Cave\n\n  A lamp.\n\n  on the player taking\n    ## remember to gate this\n    phrase taken-note\n  end on\n\n';
     expect(errorCodes(story(mid))).toContain('parse.comment-inside-block');
   });
 

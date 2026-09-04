@@ -112,20 +112,3 @@ final class IntrospectionRunner {
         }
     }
 }
-
-/// A tiny thread-safe append-only byte buffer for collecting pipe output off the
-/// main actor before handing the bytes back at termination.
-private final class DataBuffer: @unchecked Sendable {
-    private let lock = NSLock()
-    private var storage = Data()
-
-    func append(_ chunk: Data) {
-        guard !chunk.isEmpty else { return }
-        lock.lock(); storage.append(chunk); lock.unlock()
-    }
-
-    var data: Data {
-        lock.lock(); defer { lock.unlock() }
-        return storage
-    }
-}

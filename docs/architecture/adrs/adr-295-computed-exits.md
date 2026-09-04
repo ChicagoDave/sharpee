@@ -96,6 +96,8 @@ Note: MDL-faithful *rendered* order (bearings before room name) additionally req
 
 NPC pathfinding, thrown-object trajectories, and exit enumeration stay on static topology. MDL scrambled only the player; nothing in dungeo needs more. Extending resolution to NPC movement is deferred, not precluded.
 
+> **Amended 2026-08-25 (ADR-326 D6, session 8ae644).** One extension landed: the Chord adjacent-room draw (`move … to a random adjacent room`) consults a computed direction's resolver through `RoomBehavior.resolveExit` — once per direction per draw, a distinct question from the traversal's own once-per-going consult, so the called-exactly-once invariant holds per question — and takes the answer as "where would going take the mover right now" (inactive → static destination, `exit` → its destination with narration dropped, `blocked` → nothing). Going's own resolution is unchanged; NPC pathfinding and thrown objects stay static.
+
 ### D7. Interceptor consultation on computed directions: source and door consult; destination does not
 
 The going lifecycle (`goingLifecycle`, going.ts:162-192) consults three slots pre-execute, first-veto-wins: source room (`if.action.going`), destination room (`if.action.entering_room`), door (`if.action.going`). The destination slot resolves through static `getExit` — but for a computed direction the true destination is unknown until the execute-phase draw, so pre-execute consultation would target a room the actor may never enter (a guard on the real destination bypassed; one on the static room fired spuriously).

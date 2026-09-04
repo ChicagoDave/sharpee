@@ -54,7 +54,7 @@ const HEADER = 'story\n  title: Docs\n  authors:\n    T\n  id: docs\n  story-ver
 // The scaffolding a fence legitimately omits: a room, the player, and a
 // generic creature for animal-referencing examples (the snake makes the
 // petting example's `refuse when the animal is a snake` resolvable).
-const WORLD = `create the Yard\n  a room\n\n  A yard.\n\ncreate the snake\n  in the Yard\n\n  A snake.\n\ncreate the peg\n  in the Yard\n\n  A peg.\n\ncreate the jacket\n  in the Yard\n\n  A jacket.\n\ncreate the player\n  starts in the Yard\n\n  You.\n`;
+const WORLD = `create the Yard\n  a room\n\n  A yard.\n\ncreate the snake\n  in the Yard\n\n  A snake.\n\ncreate the peg\n  in the Yard\n\n  A peg.\n\ncreate the jacket\n  in the Yard\n\n  A jacket.\n\ncreate Alex\n  a person\n  playable\n  starts in the Yard\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`;
 
 /** Every vocabulary page directory that carries a content.mdx. */
 function vocabularyPages(): string[] {

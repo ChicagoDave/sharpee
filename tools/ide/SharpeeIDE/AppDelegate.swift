@@ -342,6 +342,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         mainWindowController?.saveActiveDocument()
     }
 
+    /// File → New Import… (⇧⌘N): a new `.chord` fragment, imported at the caret.
+    @objc func newImport(_ sender: Any?) {
+        mainWindowController?.newImport()
+    }
+
+    /// Edit → Extract Selection to Import…: the selected declarations move into
+    /// a new fragment and an import line takes their place.
+    @objc func extractSelectionToImport(_ sender: Any?) {
+        mainWindowController?.extractSelectionToImport()
+    }
+
     // MARK: - Recent Projects
 
     /// Opens the project rooted at `url`. Centralized so that the Open Project panel,
@@ -448,7 +459,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
         panel.beginSheetModal(for: window) { [weak self] response in
             guard let self, response == .OK, let destination = panel.url else { return }
             view.begin()
-            self.publishController.publish(storyFile: storyURL, to: destination)
+            self.publishController.publish(storyFile: storyURL, to: destination, includeMenu: view.includeMenu)
         }
     }
 
@@ -545,6 +556,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate, NSMenu
             return currentStoryURL != nil
                 && mainWindowController?.composedStory?.isGrammar != true
                 && !(buildController?.isBuilding ?? false)
+        case #selector(newImport(_:)), #selector(extractSelectionToImport(_:)):
+            return mainWindowController?.importCommandsApply ?? false
         case #selector(cancelBuild(_:)):
             return buildController?.isBuilding ?? false
         case #selector(publishStory(_:)):

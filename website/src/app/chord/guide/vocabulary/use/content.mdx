@@ -1,10 +1,15 @@
 A `use <extension>` line in the story header admits one trusted platform
-extension's vocabulary (`combat`, `state-machines`) and triggers its
-runtime registration; a `use`-only story stays pure IR. (NPC vocabulary
-is core and always on.) Each extension brings manifest-typed trait
-adjectives (`combatant with health 20 and skill 40`, the NPC library's
-`guard`/`patrol`/…), and `use state-machines` adds the `define machine …
-end machine` block. Alongside these, the media surface (`define
+extension's vocabulary (`combat`, `state-machines`, `scoring`, `hunger`,
+`chapters`) and triggers its runtime registration; a `use`-only story
+stays pure IR. (NPC vocabulary is core and always on.) Each extension
+brings manifest-typed trait adjectives (`combatant with health 20 and
+skill 40`, the NPC library's `guard`/`patrol`/…), `use state-machines`
+adds the `define machine … end machine` block, `use scoring` the ranks
+and `award` ([Scoring](/chord/guide/flow/scoring)), `use hunger` the
+depleting meter ([Hunger](/chord/guide/flow/hunger)), and `use chapters`
+the `define chapters … end chapters` block with its `during`, `before`,
+and `after` conditions ([Chapters](/chord/guide/flow/chapters)).
+Alongside these, the media surface (`define
 sound/image/music … from "<file>"`, `play sound`, `play ambient`, `show
 image`, `define channel` data projections, and the `client has
 <capability>` condition) lets a story drive the browser client with no
@@ -14,7 +19,8 @@ forms lives in [the grammar reference](/chord/reference/grammar).
 ```chord
 story
   title: Extensions
-  authors: ref
+  authors:
+    ref
   id: ext-ref
   story-version: 0.0.1
   use combat

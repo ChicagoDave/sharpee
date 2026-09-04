@@ -94,7 +94,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
   group: 'movement',
 
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject?.entity;
 
     // Validate target
@@ -155,7 +155,7 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed
    */
   execute(context: ActionContext): void {
-    const actor = context.player;
+    const actor = context.actor;
     const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const currentLocation = context.world.getLocation(actor.id);
     const sharedData = getEnteringSharedData(context);

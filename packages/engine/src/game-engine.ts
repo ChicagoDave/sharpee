@@ -9,6 +9,7 @@ import {
   IFEntity,
   IdentityTrait,
   ActorTrait,
+  movePlayerRoleVocabulary,
   ContainerTrait,
   ListenerTrait,
   StandardCapabilities,
@@ -18,7 +19,8 @@ import {
   StoryInfoTrait,
   HealthTrait,
   HealthBehavior,
-  registerConcealedVisibilityBehavior
+  registerConcealedVisibilityBehavior,
+  sceneWith
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
 import {
@@ -39,16 +41,20 @@ import {
   channelRegistry,
   PLAYER_DIED_EVENT,
   createDeadlyRoomTransformer,
+  type INpcService,
+  type ActSlots,
+  type ActResult,
 } from '@sharpee/stdlib';
 import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type CmgtPacket, type TurnPacket, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, PlatformEventType, type ISaveContext, type IRestoreContext, type IQuitContext, type IRestartContext, type IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type Presence, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, PlatformEventType, type ISaveContext, type IRestoreContext, type IQuitContext, type IRestartContext, type IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry, type TurnPluginContext } from '@sharpee/plugins';
 import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
+import { ActorTurnPlugin } from './actor-turn-plugin.js';
 
 
 import {
@@ -143,6 +149,20 @@ export const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities = {
 /**
  * Main game engine
  */
+/**
+ * Whether an action that produced these events was refused: modern
+ * `blocked()` paths reuse the primary event type with `blocked: true` /
+ * `failed: true` instead of emitting `action.error`, so `TurnResult.success`
+ * alone would report a refused action as a success (platform-issue-sweep
+ * Phase 7).
+ */
+function wasRefused(events: ISemanticEvent[]): boolean {
+  return events.some(e => {
+    const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
+    return data?.blocked === true || data?.failed === true;
+  });
+}
+
 export class GameEngine {
   private world: WorldModel;
   private sessionStartTime?: number;
@@ -166,8 +186,16 @@ export class GameEngine {
   private eventSource = createSemanticEventSource();
   private systemEventSource: IGenericEventSource<ISystemEvent>;
   private pendingPlatformOps: IPlatformEvent[] = [];
+
+  /**
+   * The incomplete command a clarification question is holding open (GH
+   * #318, ADR-225 as amended): consumed by the very next input, answer or
+   * not. Never serialized — a restore starts with no question pending.
+   */
+  private heldCommand?: { input: string };
   private perceptionService?: IPerceptionService;
   private pluginRegistry: PluginRegistry;
+  private actorTurnPlugin!: ActorTurnPlugin;
 
   /**
    * Per-turn sound buffer (ADR-172 Phase 6). Cleared at the start of every
@@ -348,6 +376,12 @@ export class GameEngine {
       this.randomService
     );
 
+    // ADR-328 D5: the engine owns the actor turn phase. Its execution entry
+    // is this executor, curried over the live world and turn context, so a
+    // behavior's chosen act runs the same four phases a typed command does.
+    this.actorTurnPlugin = new ActorTurnPlugin((actorId, actionId, slots) => this.executeAsActor(actorId, actionId, slots));
+    this.pluginRegistry.register(this.actorTurnPlugin);
+
     // ADR-224: auto-register the deadly-room death transformer so every story
     // (TS or Chord) gets the deadly-room verb-allowlist / probabilistic hazard for
     // free — no story wiring needed. It early-returns when the player's room has no
@@ -383,7 +417,25 @@ export class GameEngine {
     // Build narrative settings from story config (ADR-089)
     this.narrativeSettings = buildNarrativeSettings(story.config.narrative);
 
-    // Create player first so initializeWorld() can place them
+
+    // ADR-148 concealment: register the standard concealed-visibility
+    // behavior on this world (NPCs can't see a concealed player — the
+    // hide-and-observe mechanic). Registered BEFORE initializeWorld so a
+    // story can override the binding with its own NPC-detection behavior
+    // (per-world registration is last-wins, ADR-207). It has to stay ahead of
+    // the world build for that precedence to hold, which is why it did NOT
+    // travel with createPlayer when the two were swapped below.
+    registerConcealedVisibilityBehavior(this.world);
+
+    // ADR-327 D10 (design C, ruled 2026-08-26): the WORLD is built first, and
+    // the player second. Under D10 the protagonist is a named character the
+    // story's `before the game starts` block picks out — an ordinary world
+    // entity — so it cannot exist before the world does. `createPlayer` is now
+    // a lookup of that character, not a build, and a story places it in
+    // `createPlayer` (where the world is finished) rather than in
+    // `initializeWorld` (where the player used to already exist).
+    story.initializeWorld(this.world);
+
     const newPlayer = story.createPlayer(this.world);
     this.context.player = newPlayer;
     this.world.setPlayer(newPlayer.id);
@@ -398,15 +450,6 @@ export class GameEngine {
       newPlayer.add(new ListenerTrait());
     }
 
-    // ADR-148 concealment: register the standard concealed-visibility
-    // behavior on this world (NPCs can't see a concealed player — the
-    // hide-and-observe mechanic). Registered BEFORE initializeWorld so a
-    // story can override the binding with its own NPC-detection behavior
-    // (per-world registration is last-wins, ADR-207).
-    registerConcealedVisibilityBehavior(this.world);
-
-    // Initialize story-specific world content (player must exist first)
-    story.initializeWorld(this.world);
 
     // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
     // snippet-bearing room's description carries an unbound {snippet:name}.
@@ -958,6 +1001,84 @@ export class GameEngine {
   /**
    * Execute a turn
    */
+  /**
+   * Register the first entity a failed turn's events name as the pronoun
+   * referent (GH #97). Refusal events carry their named entities as
+   * template params — `NounPhrase`s with a `referableId` (ADR-158) — so the
+   * door a `go west` stopped at, or the window a `look` mentioned, becomes
+   * what `it` means next. The first such phrase wins; a turn naming nothing
+   * leaves the context alone.
+   *
+   * @param events - The failed turn's events
+   * @param turn - The current turn number
+   */
+  private registerBlockedReferent(events: ISemanticEvent[], turn: number): void {
+    const parser = this.parser as unknown as { registerPronounEntity?: (id: string, text: string, turn: number) => void } | undefined;
+    if (!parser || typeof parser.registerPronounEntity !== 'function') return;
+    for (const event of events) {
+      const params = (event.data as { params?: Record<string, unknown> } | undefined)?.params;
+      if (!params) continue;
+      for (const value of Object.values(params)) {
+        const np = value as { kind?: unknown; referableId?: unknown; name?: unknown } | null;
+        if (np && typeof np === 'object' && np.kind === 'noun' && typeof np.referableId === 'string') {
+          parser.registerPronounEntity(np.referableId, typeof np.name === 'string' ? np.name : np.referableId, turn);
+          return;
+        }
+      }
+    }
+  }
+
+  /**
+   * Spend the held command (GH #318): when a clarification question is open
+   * and this input does not parse as a command of its own, splice it onto
+   * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
+   * box`) and run the spliced form if it parses. An input that parses on
+   * its own drops the hold and runs as written. The hold is cleared here
+   * whatever happens — exactly one input.
+   *
+   * @param input - The raw input for this turn
+   * @returns The input to run: spliced, or as given
+   */
+  private spliceHeldCommand(input: string): string {
+    const held = this.heldCommand;
+    this.heldCommand = undefined;
+    if (!held || !this.parser) return input;
+    const player = this.world.getPlayer();
+    if (player && hasWorldContext(this.parser)) {
+      this.parser.setWorldContext(this.world, player.id, this.world.getLocation(player.id) || '');
+    }
+    if (this.parser.parse(input).success) return input;
+    const spliced = `${held.input} ${input}`;
+    return this.parser.parse(spliced).success ? spliced : input;
+  }
+
+  /**
+   * GH #346: while the player's live conversation scene holds an open
+   * exchange, bare input the exchange claims (`yes`, `norwich`) is offered
+   * to it first and runs as an answer; input the exchange does not claim
+   * runs unchanged — the innermost open question gets the first offer.
+   *
+   * @param input - The raw input for this turn
+   * @returns `answer <input>` when the open exchange claims it, else the input
+   */
+  private offerToOpenExchange(input: string): string {
+    const player = this.world.getPlayer();
+    if (!player) return input;
+    const scene = sceneWith(this.world, player.id);
+    const exchange = scene?.openExchange;
+    const registration = this.world.getDialogueSelector();
+    if (!scene || !exchange || !registration?.exchangeClaims) return input;
+    const speaker = this.world.getEntity(exchange.speakerId);
+    if (!speaker) return input;
+    const text = input.trim();
+    const claimed = registration.exchangeClaims(
+      speaker,
+      { type: 'say', text },
+      { world: this.world, speakerId: player.id, scene },
+    );
+    return claimed ? `answer ${text}` : input;
+  }
+
   async executeTurn(input: string): Promise<TurnResult> {
     if (!this.running) {
       throw new Error('Engine is not running');
@@ -989,6 +1110,13 @@ export class GameEngine {
         return this.executeTurn(statements[0]);
       }
     }
+
+    // GH #318 (ADR-225 as amended): a command held after a missing-object
+    // question is completed by this input when the input is not a command
+    // of its own; either way the hold is spent here — exactly one input.
+    input = this.spliceHeldCommand(input);
+    // GH #346: an open exchange is offered the input before the parse.
+    input = this.offerToOpenExchange(input);
 
     // Create undo snapshot BEFORE processing the turn
     // Skip for meta/info commands that shouldn't create undo points
@@ -1102,6 +1230,10 @@ export class GameEngine {
         this.config,
         this.soundBuffer,
       );
+      // GH #318: remember a clarification for the next input (the hold).
+      if (result.error === 'CLARIFICATION_NEEDED') {
+        this.heldCommand = { input };
+      }
 
       // Get context for event enrichment
       const playerLocation = this.world.getLocation(this.context.player.id);
@@ -1112,7 +1244,8 @@ export class GameEngine {
         // ADR-296 D1: the player action is one transaction; every event in
         // this batch is stamped with the same id (when not already carrying
         // one inherited via executeChains — the funnel stamp is idempotent).
-        transactionId: `txn:${turn}:action`
+        transactionId: `txn:${turn}:action`,
+        presenceOf: this.presenceResolver()
       };
 
       // Store events for this turn (process through enrichment pipeline)
@@ -1152,6 +1285,16 @@ export class GameEngine {
           this.parser.updatePronounContext(result.validatedCommand, turn);
         }
       }
+      // GH #97: a refusal that names an entity ("The oak door is closed.")
+      // makes it the pronoun referent — the player expects to act on
+      // whatever was just mentioned. A blocked action counts as a successful
+      // turn (its `blocked()` events are ordinary events), so this reads the
+      // events, not `result.success`: only `blocked: true` events and the
+      // events of a failed turn are scanned.
+      this.registerBlockedReferent(
+        result.success ? result.events.filter((e) => (e.data as { blocked?: unknown } | undefined)?.blocked === true) : result.events,
+        turn,
+      );
 
       // Emit events if configured
       if (this.config.onEvent) {
@@ -1196,10 +1339,7 @@ export class GameEngine {
         // blocked() paths reuse the primary event type with blocked:true /
         // failed:true — a refused action would otherwise report success and
         // (e.g.) advance state-machine transitions it never earned.
-        const actionRefused = semanticEvents.some(e => {
-          const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
-          return data?.blocked === true || data?.failed === true;
-        });
+        const actionRefused = wasRefused(semanticEvents);
         const pluginContext: TurnPluginContext = {
           world: this.world,
           turn,
@@ -1267,6 +1407,13 @@ export class GameEngine {
       if (result.success) {
         this.sessionMoves++;
       }
+
+      // ADR-327 D9: drain the turn's player-switch request. The story loader
+      // holds no engine handle, so `change the player to X` mid-play reaches
+      // us as an event (the `triggerEnding` seam) and the switch itself
+      // happens here, at the turn boundary — never mid-action, where half the
+      // turn would have run as one character and half as another.
+      this.drainPlayerSwitch(turn);
 
       // Process pending platform operations before text service
       if (this.pendingPlatformOps.length > 0) {
@@ -1678,6 +1825,42 @@ export class GameEngine {
    * Story code must position the new PC (via world.moveEntity) BEFORE
    * calling switchPlayer, since parser context uses the entity's current location.
    */
+  /**
+   * Apply this turn's `if.event.player.switch_requested`, if any (ADR-327 D9).
+   *
+   * @param turn the turn just executed
+   * @returns nothing; on a request the role moves and `game.pc_switched` is
+   *   emitted. Two requests in one turn are a story bug, not a sequence: the
+   *   first wins and the rest are reported as `runtime.double-player-switch`,
+   *   because "who is the player at the end of this turn" has one answer and
+   *   silently taking the last one hides the contradiction.
+   */
+  private drainPlayerSwitch(turn: number): void {
+    const requests = (this.turnEvents.get(turn) ?? []).filter(
+      (e) => e.type === 'if.event.player.switch_requested',
+    );
+    if (requests.length === 0) return;
+
+    const first = requests[0].data as { entityId?: string };
+    if (requests.length > 1) {
+      const targets = requests.map((r) => (r.data as { entityId?: string }).entityId ?? '?');
+      this.emitGameEvent({
+        id: `runtime-double-player-switch-${turn}`,
+        type: 'runtime.double-player-switch',
+        timestamp: Date.now(),
+        entities: {},
+        data: {
+          message: `Two \`change the player to\` statements ran in one turn (${targets.join(', ')}). The first won.`,
+          targets,
+          turn,
+        },
+      });
+    }
+    if (first.entityId && first.entityId !== this.context.player.id) {
+      this.switchPlayer(first.entityId);
+    }
+  }
+
   switchPlayer(entityId: string): void {
     const newPlayer = this.world.getEntity(entityId);
     if (!newPlayer) {
@@ -1706,6 +1889,12 @@ export class GameEngine {
 
     // Set new PC's flag
     newActorTrait.isPlayer = true;
+
+    // ADR-327 Q2 (ruled 2026-08-26): `me`/`myself`/`self` name whoever is
+    // being played, not a character, so they move with the role. They live on
+    // the entity's IdentityTrait, which `syncPlayerState` does not touch —
+    // without this, `x me` keeps naming the old PC after every switch.
+    movePlayerRoleVocabulary(oldPlayer, newPlayer);
 
     // Update WorldModel canonical reference
     this.world.setPlayer(entityId);
@@ -1821,6 +2010,39 @@ export class GameEngine {
    */
   getPluginRegistry(): PluginRegistry {
     return this.pluginRegistry;
+  }
+
+  /**
+   * The NPC decision layer (ADR-328 D5): where a story registers the
+   * behaviors and tick phases the engine's actor turn phase drives.
+   */
+  getNpcService(): INpcService {
+    return this.actorTurnPlugin.getNpcService();
+  }
+
+  /**
+   * The execution entry (ADR-328 D2; ADR-329 D4): perform one standard or
+   * story action NOW as `actorId`, through the same four phases a typed
+   * command runs — validate, interceptors, capability dispatch, report —
+   * over the live world and turn context. The engine's own actor turn phase
+   * and a Chord acting statement both come through here; there is no other
+   * door. Runs synchronously; the world has changed (or the action was
+   * refused) by the time it returns.
+   *
+   * @param actorId - The entity performing the action
+   * @param actionId - A standard (`if.action.taking`) or story action id
+   * @param slots - The entities and direction the action operates on
+   * @returns Whether the action ran (false when refused) and every event it emitted
+   */
+  executeAsActor(actorId: string, actionId: string, slots?: ActSlots): ActResult {
+    const result = this.commandExecutor.executeAsActor(
+      { actionId, actorId, ...slots },
+      this.world,
+      this.context,
+      this.config,
+      this.soundBuffer,
+    );
+    return { success: result.success && !result.refused && !wasRefused(result.events), events: result.events };
   }
 
   /**
@@ -2167,6 +2389,18 @@ export class GameEngine {
   }
 
   /**
+   * The ADR-328 D3 presence resolver both enrichment funnels hand to
+   * `processEvent`: the current player's presence at a producer-stamped
+   * location, via the perception service. Undefined when no perception
+   * service is configured — events then stay untagged.
+   */
+  private presenceResolver(): ((locationId: string) => Presence) | undefined {
+    const service = this.perceptionService;
+    if (!service) return undefined;
+    return (locationId) => service.presenceOf(this.context.player, locationId, this.world);
+  }
+
+  /**
    * Process events from a plugin through the shared pipeline (ADR-120)
    * Enriches, filters, stores, and emits events.
    *
@@ -2187,7 +2421,8 @@ export class GameEngine {
       playerId: this.context.player.id,
       locationId: playerLocation ?? undefined,
       // ADR-296 D1: each plugin batch is its own transaction.
-      transactionId: `txn:${turn}:plugin:${pluginId}`
+      transactionId: `txn:${turn}:plugin:${pluginId}`,
+      presenceOf: this.presenceResolver()
     };
 
     let processed = events.map(e => processEvent(e, enrichmentContext));

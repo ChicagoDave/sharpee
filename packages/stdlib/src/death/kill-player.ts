@@ -45,8 +45,11 @@ export interface IKillPlayerOptions {
  * always give `killPlayer`'s lethal transition a target (ADR-223 AC-1 caveat), so the
  * `HealthTrait` opt-in rule does not apply to the player in such a game.
  *
- * Idempotent: if the player is already `dead`, this is a no-op that returns `null`, so
- * a second call in the same turn does not re-emit the event or double-route game-over.
+ * Idempotent: if the player is already flagged `dead`, this is a no-op that returns
+ * `null`, so a second call in the same turn does not re-emit the event or double-route
+ * game-over. The guard is the flag alone, never `health > 0`: combat that has already
+ * driven the player's health to zero this turn still owes the canonical event, and this
+ * is the one place the lethal flag is set for the player.
  *
  * @param world the world model (unused today; kept for signature stability and future scope resolution)
  * @param player the player entity to kill
@@ -62,8 +65,8 @@ export function killPlayer(
 
   let health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
 
-  // Already dead → no-op (idempotent; prevents double game-over routing).
-  if (health && !HealthBehavior.isAlive(health)) {
+  // Already flagged dead → no-op (idempotent; prevents double game-over routing).
+  if (health?.dead) {
     return null;
   }
 

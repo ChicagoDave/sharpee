@@ -38,7 +38,9 @@ create William Shakespeare
 
   The poet, whose pen keeps moving while he listens.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Tiring-House
 
   You.
@@ -226,3 +228,7 @@ define phrases en-US
     "You always come back to it."
   shakespeare-shuts-the-book:
     He shuts the book.
+
+before the game starts
+  change the player to Alex
+end before

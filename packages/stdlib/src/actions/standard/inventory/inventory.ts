@@ -22,6 +22,8 @@ import { type ISemanticEvent, definePoint } from '@sharpee/core';
 // outcome classes, no coverage row.
 const EMPTY_VARIANT_POINT = definePoint('stdlib.inventory.empty-variant');
 import { TraitType, IFEntity } from '@sharpee/world-model';
+import type { Sequence } from '@sharpee/if-domain';
+import { nounPhraseFor } from '../../../utils/index.js';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { InventoryEventMap } from './inventory-events.js';
@@ -57,28 +59,28 @@ interface InventoryAnalysis {
  * Shared logic between validate and execute phases
  */
 function analyzeInventory(context: ActionContext): InventoryAnalysis {
-  const player = context.player;
+  const actor = context.actor;
   const location = context.currentLocation;
   
   // ADR-247: getCarriedAndWorn is the partition — held items and worn items
   // in one call. (Replaces the old getContents({includeWorn:true}) + a
   // hand-rolled worn/held split.)
-  const { carried: holding, worn } = context.world.getCarriedAndWorn(player.id);
+  const { carried: holding, worn } = context.world.getCarriedAndWorn(actor.id);
   const totalItems = holding.length + worn.length;
   
-  // Calculate weight if player has inventory limits
+  // Calculate weight if actor has inventory limits
   let totalWeight = 0;
   let hasWeightLimit = false;
   let weightLimit = 0;
   
-  if (player.has(TraitType.ACTOR)) {
+  if (actor.has(TraitType.ACTOR)) {
     // TODO: Add inventoryLimit to ActorTrait when weight system is implemented
     // Weight-based inventory limits are not yet supported on ActorTrait
   }
   
   // Build event data for the observable action
   const eventData: InventoryEventMap['if.action.inventory'] = {
-    actorId: player.id,
+    actorId: actor.id,
     locationId: location.id,
     totalItems: totalItems,
     heldItems: holding.length,
@@ -160,6 +162,23 @@ function analyzeInventory(context: ActionContext): InventoryAnalysis {
   };
 }
 
+/**
+ * The inventory list-line phrase (GH #328): the first entity's own noun
+ * phrase (its article follows its number and kind), then the remaining
+ * names joined verbatim after commas — byte-identical to the standing
+ * "a cloth satchel, apple" shape for a singular first item.
+ *
+ * @param entities the group's entities, in listing order
+ * @returns a `Sequence` phrase for the `{items}` slot
+ */
+function listPhrase(entities: IFEntity[]): Sequence {
+  const rest = entities.slice(1).map((e) => e.name).join(', ');
+  return {
+    kind: 'seq',
+    parts: [nounPhraseFor(entities[0]), ...(rest ? [{ kind: 'literal' as const, text: `, ${rest}` }] : [])],
+  };
+}
+
 export const inventoryAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.INVENTORY,
   requiredMessages: [
@@ -169,8 +188,6 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     'carrying_and_wearing',
     'holding_list',
     'worn_list',
-    'checking_pockets',
-    'rifling_through_bag',
     'inventory_header',
     'nothing_at_all',
     'hands_empty',
@@ -218,11 +235,15 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
       ...analysis.eventData
     }));
 
-    // Add item lists if not empty
+    // Add item lists if not empty. The list-line `items` param is a phrase
+    // whose FIRST entry is the entity's own noun phrase — so its article
+    // honours the item's number and kind ("a cloth satchel", "boots", never
+    // "a boots" — GH #328) — followed by the remaining names verbatim, the
+    // list shape the standing output has always had.
     if (analysis.holdingList) {
       events.push(context.event('if.event.inventory', {
         messageId: `${context.action.id}.${InventoryMessages.HOLDING_LIST}`,
-        params: { items: analysis.holdingList },
+        params: { items: listPhrase(analysis.holding) },
         isHoldingList: true
       }));
     }
@@ -230,7 +251,7 @@ export const inventoryAction: Action & { metadata: ActionMetadata } = {
     if (analysis.wornList) {
       events.push(context.event('if.event.inventory', {
         messageId: `${context.action.id}.${InventoryMessages.WORN_LIST}`,
-        params: { items: analysis.wornList },
+        params: { items: listPhrase(analysis.worn) },
         isWornList: true
       }));
     }

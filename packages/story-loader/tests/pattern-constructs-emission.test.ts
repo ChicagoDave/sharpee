@@ -12,7 +12,7 @@ import { createStory } from '../src';
 import { captureGrammarRules } from './helpers/grammar-harness';
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
-const WORLD = `create the Barn\n  a room\n\n  A barn.\n\ncreate the player\n  starts in the Barn\n\n  You.\n`;
+const WORLD = `create the Barn\n  a room\n\n  A barn.\n\ncreate Alex\n  a person\n  playable\n  starts in the Barn\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`;
 
 function rulesFrom(source: string) {
   const result = compile(source);

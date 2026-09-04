@@ -42,7 +42,7 @@ const SOURCE =
   // authoring surface yet, so the contracts §2.1 symmetry is exercised
   // at the character-package level (trait-memory-access tests), and the
   // unmodeled-PC no-change leg (D7) is asserted here instead.
-  'create the player\n  in the Hall\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Hall\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create Kemp\n' +
   '  a person, proper\n' +
   '  in the Hall\n' +
@@ -99,7 +99,7 @@ const SOURCE =
   '    phrase kemp-leaving\n' +
   'end greetings\n\n' +
   'define manner for Kemp\n' +
-  '  when it is cheerful:\n' +
+  '  when Kemp is cheerful:\n' +
   '    beat "He sketches a jig step."\n' +
   '    beat "He winks at a stagehand."\n' +
   'end manner\n\n' +
@@ -171,6 +171,7 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,

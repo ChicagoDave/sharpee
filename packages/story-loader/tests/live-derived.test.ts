@@ -41,14 +41,20 @@ create the sundial
 
   A brass sundial.
 
-  on pushing it
+  on the player pushing
     change the story to night
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Terrace
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase gate-chained
   The garden gate is chained for the night.

@@ -69,6 +69,11 @@ export class ActionContextAdapter implements IActionContext {
     this.action = new ActionAdapter(action);
   }
   
+  /**
+   * The player, as if-domain's `IActionContext` declares it. That legacy
+   * contract has no `actor`; widening it is a separate change, so anything
+   * still on the `IAction` path cannot see a non-player actor.
+   */
   get player(): IFEntity {
     return this.context.player;
   }

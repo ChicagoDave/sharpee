@@ -1,5 +1,5 @@
 Three forms follow `on` or `after`. The common one binds a verb to the
-owner: `on opening it`, where `it` means this entity for the rest of the
+owner: `on the player opening`, where `it` means this entity for the rest of the
 clause. The verb is a single word in its -ing form, and it must be a
 verb the story's actions or the platform's standard actions understand.
 
@@ -26,7 +26,10 @@ create the scarecrow
   end on
 ```
 
-An entity-owned `every turn` clause fires only while the player is
-present with its owner; the scarecrow performs to an audience or not at
-all. Note `while dusk`: a story-level state is referenced as a
+An entity-owned `every turn` clause fires wherever its owner is, whether
+or not the player is there: the scarecrow performs either way, and what
+it says is tagged with the owner's location and the player's presence so
+the client decides what to show — by default it hides narration tagged
+absent. A `, once` or a dice roll is consumed off-stage all the same.
+Note `while dusk`: a story-level state is referenced as a
 bare word in conditions.

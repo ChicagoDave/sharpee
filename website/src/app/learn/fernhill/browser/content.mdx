@@ -38,13 +38,13 @@ Cues are one-line statements wherever a rule already narrates:
 
 ```chord
 create the framed photograph
-  after examining it
+  after the player examining
     show image folly-photograph when client has images
   end after
 ```
 
 ```chord
-  after entering it while the player has the deed
+  after the player entering while the player has the deed
     play music dawn-theme when client has music
     win fernhill-saved
   end after
@@ -60,12 +60,12 @@ An ambient is a looping bed of sound. The Grounds' crossing reactions
 (*The world*) start and stop the night wind:
 
 ```chord
-  after entering it
+  after the player entering
     phrase cold-returns
     play ambient night-wind when client has sound
   end after
 
-  after leaving it
+  after the player leaving
     stop ambient when client has sound
   end after
 ```
@@ -92,7 +92,7 @@ one. The chime daemon emits a payloaded event, and a channel declaration
 projects it:
 
 ```chord
-  on every turn while it is ticking and one chance in 8
+  on every turn while the case clock is ticking and one chance in 8
     phrase clock-chime
     emit estate-clock with hour "evening" when evening
     emit estate-clock with hour "past midnight" when midnight

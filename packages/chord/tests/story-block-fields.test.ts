@@ -123,7 +123,7 @@ describe('client-config keys (ADR-252 D3 × ADR-298 amendment, GH #221)', () => 
   });
 
   it('omitted client-config keys stay absent (themes empty)', () => {
-    const { ir } = compile('story\n  title: T\n  authors:\n    N\n');
+    const { ir } = compile('story\n  title: T\n  authors:\n    N\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n');
     expect(ir?.meta.fields.client).toBeUndefined();
     expect(ir?.meta.fields.themes).toEqual([]);
   });
@@ -151,7 +151,7 @@ describe('publish-source (ADR-284 — the first boolean header field)', () => {
   });
 
   it('stays absent when the field is omitted — the build owns the default', () => {
-    const { ir } = compile('story\n  title: T\n  authors:\n    N\n');
+    const { ir } = compile('story\n  title: T\n  authors:\n    N\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n');
     expect(ir?.meta.fields.publishSource).toBeUndefined();
   });
 
@@ -189,7 +189,7 @@ describe('auto-assertion (Phase 6e, #253 — the transcript auto-assertion polic
   });
 
   it('stays absent when the field is omitted — "let me decide" is the runner default', () => {
-    const { ir } = compile('story\n  title: T\n  authors:\n    N\n');
+    const { ir } = compile('story\n  title: T\n  authors:\n    N\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n');
     expect(ir?.meta.fields.autoAssertion).toBeUndefined();
   });
 
@@ -268,7 +268,7 @@ describe('bare phrase references (AC-4, compile-time half)', () => {
   });
 
   it('errors when the referenced phrase is not declared', () => {
-    const { diagnostics } = compile('story\n  title: T\n  prologue: opening-crawl\n');
+    const { diagnostics } = compile('story\n  title: T\n  prologue: opening-crawl\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n');
     const missing = diagnostics.find((d) => d.code === 'analysis.missing-phrase');
     expect(missing).toBeDefined();
     expect(missing?.message).toContain('opening-crawl');
@@ -285,6 +285,14 @@ describe('bare phrase references (AC-4, compile-time half)', () => {
       'define phrase opening-crawl',
       '  A cold night falls over Fernhill.',
       'end phrase',
+      '',
+      'create Alex',
+      '  a person',
+      '  playable',
+      '',
+      'before the game starts',
+      '  change the player to Alex',
+      'end before',
       '',
     ].join('\n');
     const { ir, diagnostics } = compile(source);
@@ -342,14 +350,14 @@ describe('an absent ifid: is not the compiler’s business (ADR-309)', () => {
   // build — so a story without the line is a state the tool repairs, not one
   // the compiler reports. What must hold is that it compiles CLEANLY.
   it('compiles with no diagnostic at all when ifid: is absent', () => {
-    const { diagnostics } = compile('story\n  title: T\n  authors:\n    N\n');
+    const { diagnostics } = compile('story\n  title: T\n  authors:\n    N\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n');
     expect(diagnostics.map((d) => d.code)).not.toContain('analysis.missing-ifid');
     expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
 
   it('still carries the value through to the IR when it is present', () => {
     const { ir, diagnostics } = compile(
-      'story\n  title: T\n  authors:\n    N\n  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC\n',
+      'story\n  title: T\n  authors:\n    N\n  ifid: 12345678-ABCD-ABCD-ABCD-123456789ABC\n\ncreate Alex\n  a person\n  playable\n\nbefore the game starts\n  change the player to Alex\nend before\n\n',
     );
     expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(ir.meta.fields.ifid).toBe('12345678-ABCD-ABCD-ABCD-123456789ABC');

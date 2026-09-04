@@ -35,7 +35,9 @@ struct ComposeDiagnosticRecord: Codable, Equatable, Sendable {
     /// Stable machine code — `parse.*`/`analysis.*`, or `hatch.*` for lint findings.
     let code: String
     let message: String
-    /// Site file: the `.story` file for compile diagnostics, the hatch module for hatch findings.
+    /// Site file: the `.story` file for compile diagnostics — or the imported `.chord`
+    /// fragment the span sits in (`Span.file`, ADR-251 D6 as amended) — and the hatch
+    /// module for hatch findings.
     let file: String
     /// 1-based line of the site.
     let line: Int

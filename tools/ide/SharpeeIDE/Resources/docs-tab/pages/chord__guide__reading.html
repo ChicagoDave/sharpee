@@ -3,7 +3,8 @@
 <p>The smallest complete story is a room and a player:</p>
 <pre><code class="language-chord">story
   title: Harness Smoke Test
-  authors: Sharpee Docs
+  authors:
+    Sharpee Docs
   id: chord-ref-smoke
   story-version: 0.0.1
 
@@ -12,8 +13,14 @@ create the Reference Desk
 
   A quiet corner of the documentation stacks.
 
-create the player
-  starts in the Reference Desk</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Reference Desk
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <h2 id="lines-blocks-and-indentation">Lines, blocks, and indentation</h2>
 <p>Chord is line-oriented: every rule is one source line, and structure comes from indentation. Indentation is spaces only; a tab is a <code>lex.tab-indent</code> error. A block opens with its header line and closes either at dedent or with an explicit <code>end</code> line, depending on the block:</p>
 <table><thead><tr><th>Block</th><th>Opens with</th><th>Closes with</th></tr></thead><tbody><tr><td>story header fields</td><td><code>story</code> line</td><td>dedent</td></tr><tr><td><code>create</code> block</td><td><code>create</code> line</td><td>dedent</td></tr><tr><td><code>define phrases &lt;locale&gt;</code></td><td>header line</td><td>dedent</td></tr><tr><td><code>override messages &lt;locale&gt;</code></td><td>header line</td><td>dedent</td></tr><tr><td><code>define trait</code></td><td>header line</td><td><code>end trait</code></td></tr><tr><td><code>define action</code></td><td>header line</td><td>dedent</td></tr><tr><td><code>define sequence</code></td><td>header line</td><td><code>end sequence</code></td></tr><tr><td><code>define phrase</code></td><td>header line</td><td><code>end phrase</code></td></tr><tr><td><code>override message</code></td><td>header line</td><td><code>end override</code></td></tr><tr><td><code>on</code> / <code>after</code> clause</td><td>header line</td><td><code>end on</code> / <code>end after</code></td></tr><tr><td><code>select</code></td><td><code>select …</code> line</td><td><code>end select</code></td></tr><tr><td><code>each</code> block</td><td><code>each &lt;name&gt;</code> line</td><td><code>end each</code></td></tr><tr><td>prose block</td><td>first bare line</td><td>dedent or blank line</td></tr></tbody></table>

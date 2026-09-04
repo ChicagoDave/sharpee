@@ -3,7 +3,7 @@ fight/slay/murder/break/smash/destroy X` (the last three landed with
 ADR-230 D4), plus `attack/hit/strike/kill X with/using Y` (the weapon
 form skips fight/slay/murder). An explicitly named weapon is implicitly
 taken if needed, and is a consulted command entity: a cursed sword's
-`on attacking it` clause fires; a weapon *inferred* from inventory is
+`on the player attacking` clause fires; a weapon *inferred* from inventory is
 not. What happens depends on the target:
 
 - **A combatant** (the `combatant` trait) refuses
@@ -32,7 +32,8 @@ The author writes:
 ```chord
 story
   title: Guard Post
-  authors: stdlib reference
+  authors:
+    stdlib reference
   id: ref-combat
   story-version: 0.0.1
   use combat
@@ -62,8 +63,14 @@ create the water barrel
 
   A barrel of stale drinking water.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Guard Post
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -92,7 +99,7 @@ ineffective path, verbatim.
 | Success | combat narration overridable via the `attacking-combat-*` alias family (the extension's, carried by the lang layer) · `target_broke` · `target_damaged` / `target_destroyed` |
 | Events | `attacked` · death/knockout and exit-revealed events after the blow text |
 
-Interceptors: `on attacking it` on the target (a story wanting scripted
+Interceptors: `on the player attacking` on the target (a story wanting scripted
 fights replaces the reply there instead of registering combat) and on
 an explicitly named weapon; a story can also register its own combat
 interceptor on the same trait seam.

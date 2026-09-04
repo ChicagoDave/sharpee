@@ -107,7 +107,9 @@ export function runComposeGates(file: string): ComposeGatesResult {
       severity: d.severity,
       code: d.code,
       message: d.message,
-      file,
+      // A span's `file` names an imported fragment relative to the story's
+      // directory; absent means the story file itself (ADR-251 D6).
+      file: d.span.file ? path.join(path.dirname(file), d.span.file) : file,
       line: d.span.line,
       span: d.span,
     })),

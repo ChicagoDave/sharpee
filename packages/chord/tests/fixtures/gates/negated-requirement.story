@@ -10,7 +10,7 @@ define trait tethered
     no-rope:
       It is tied down and you have no rope.
 
-  on taking it
+  on the player taking
     refuse when not the actor holds the rope: no-rope
   end on
 end trait
@@ -18,6 +18,12 @@ end trait
 create the rope
   scenery
 
-create the player
+create Alex
+  a person
+  playable
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

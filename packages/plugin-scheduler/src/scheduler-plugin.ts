@@ -1,18 +1,19 @@
 /**
  * SchedulerPlugin - Wraps SchedulerService as a TurnPlugin (ADR-120)
  *
- * Priority 50: Runs after NPCs (100) and state machines (75).
- * Daemons and fuses are background temporal events.
+ * Story-reactions band (ADR-332): runs FIRST after the player's action —
+ * every Chord timer, every-turn and sequence clause rides here, so what the
+ * author wrote happens before the platform's phases read the world.
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
-import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { ISchedulerService, createSchedulerService } from './scheduler-service.js';
 import { SchedulerState } from './types.js';
 
 export class SchedulerPlugin implements TurnPlugin {
   id = 'sharpee.plugin.scheduler';
-  priority = 50;
+  priority = TURN_BANDS.storyReactions.floor + 50;
   private service: ISchedulerService;
 
   constructor() {

@@ -59,6 +59,11 @@ const SILENT_ACTIONS = new Set<string>([
  */
 export function createConcealmentBreakListener(): (data: HookData, world: WorldModel) => void {
   return (data: HookData, world: WorldModel) => {
+    // Deliberately the player, not `data.actorId`: concealment is the
+    // hidden-*player* mechanic (NPCs regain sight of the player). Reading the
+    // acting entity here would invent NPC concealment, which Chord has no
+    // sentence for — its `concealed` marker is an item property. If a story
+    // ever wants a hidden NPC, the acting-surface ADR designs the word first.
     const player = world.getPlayer();
     if (!player || !isConcealed(player)) return;
 

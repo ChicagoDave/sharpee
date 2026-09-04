@@ -27,6 +27,10 @@ export const MeleeMessages = {
   UNARMED_ATTACK: 'dungeo.melee.unarmed_attack',
   BACKUP_WEAPON: 'dungeo.melee.backup_weapon',
   VILLAIN_DISARMED: 'dungeo.melee.villain_disarmed',
+  // Villain → hero (ADR-328 D5): a staggered villain recovers instead of swinging
+  VILLAIN_RECOVERS: 'dungeo.melee.villain_recovers',
+  // Backstop: a villain with no strength left cannot swing
+  VILLAIN_NO_STRENGTH: 'dungeo.melee.villain_no_strength',
 } as const;
 
 // ============= Type =============

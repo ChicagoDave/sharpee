@@ -13,3 +13,11 @@ define action waving
   phrases en-US
     no-thing:
       Wave what?
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before

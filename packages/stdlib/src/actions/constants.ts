@@ -85,6 +85,7 @@ export const IFActions = {
   ASKING: 'if.action.asking',
   TELLING: 'if.action.telling',
   ANSWERING: 'if.action.answering',
+  SAYING_GOODBYE: 'if.action.saying_goodbye',
   SHOWING: 'if.action.showing',
   GIVING: 'if.action.giving',
   

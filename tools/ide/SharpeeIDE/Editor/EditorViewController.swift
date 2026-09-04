@@ -57,6 +57,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// Read-only view of the active tab index. Used for session persistence.
     var activeDocumentIndex: Int? { activeIndex }
 
+    /// The active document's current UTF-16 selection (length 0 at a bare
+    /// caret), or nil with no document showing.
+    var activeSelection: NSRange? {
+        activeIndex == nil ? nil : textView.selectedRange()
+    }
+
     /// Fired whenever the open-document set or active index changes (open, close, switch).
     /// Not fired on dirty-flag toggles or content edits — those don't affect persistable state.
     var onStateChanged: (() -> Void)?
@@ -68,6 +74,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// Fired on every edit to the active `.story` document with its URL and buffer content —
     /// the compose pipeline runs after a debounce (ADR-258 D5, Q3 ruling).
     var onStoryEdited: ((URL, String) -> Void)?
+
+    /// Fired when an imported `.chord` fragment becomes active or is saved
+    /// (GH #287). A fragment has no header and compiles only through the
+    /// `.story` that imports it, so the receiver recomposes THAT story; the
+    /// fragment's buffer cannot feed a compose until `sharpee compose` accepts
+    /// an overlay, so this fires on activation and save, not on edit.
+    var onFragmentNeedsCompose: ((URL) -> Void)?
 
     /// Fired on every edit to ANY document (story, hatch module, browser page) —
     /// a source change invalidates the play surface (David's ruling).
@@ -215,6 +228,22 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         replaceText(text, in: NSRange(location: characterIndex, length: 0), in: url)
     }
 
+    /// The text a writer must compute against: the BUFFER when the file is open,
+    /// the file on disk when it is not.
+    ///
+    /// An outside writer that reads the file while the author has unsaved changes
+    /// computes offsets against text that is not the text it will edit — every
+    /// character the author typed shifts the result. The World tab landed a
+    /// declaration in the middle of a phrase block that way.
+    ///
+    /// - Parameter url: the file to read
+    /// - Returns: its current text, or nil when it can be neither read nor found
+    func currentText(of url: URL) -> String? {
+        if activeDocument?.url == url { return textView.string }
+        if let open = documents.first(where: { $0.url == url }) { return open.content }
+        return try? String(contentsOf: url, encoding: .utf8)
+    }
+
     /// Replaces `range` with `text` in `url`'s buffer, opening it if needed.
     ///
     /// The general form of `insertText` — an insertion is a zero-length range.
@@ -270,13 +299,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             queue: .main)
         source.setEventHandler { [weak self] in
             guard let self else { return }
-            self.handleExternalChange(at: url)
-            // Re-arm: the vnode may be gone (atomic replace); a fresh open
-            // binds the NEW file at the same path.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.05) { [weak self] in
-                guard let self, self.documents.contains(where: { $0.url == url }) else { return }
+            // Re-arm FIRST, synchronously: the vnode may be gone (atomic
+            // replace) and a fresh open binds the NEW file at the same path.
+            // Re-arming after a delay left a window in which a second write
+            // went unseen (GH #295 follow-up); binding before handling the
+            // change means the next write is always observed.
+            if self.documents.contains(where: { $0.url == url }) {
                 self.startWatching(url)
             }
+            self.handleExternalChange(at: url)
         }
         source.setCancelHandler { close(descriptor) }
         source.resume()
@@ -317,7 +348,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         let visibleRect = wasActive ? textView.visibleRect : .zero
         documents[index] = reloaded
         if wasActive {
-            switchTo(index: index)
+            // Not `switchTo(index:)`: it short-circuits on the already-active
+            // tab and never touches the text view, so the reload would stay
+            // invisible and the stale view would overwrite it on the next
+            // persist (GH #295). Load the new content into the view directly.
+            loadActiveDocumentIntoTextView()
+            refreshUI()
             let length = (textView.string as NSString).length
             let location = min(selection.location, length)
             textView.setSelectedRange(NSRange(location: location, length: 0))
@@ -396,8 +432,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// the Problems list still carries the full span.
     func setDiagnostics(_ records: [ComposeDiagnosticRecord], forFile url: URL) {
         clearDiagnosticUnderlines()
-        guard let doc = activeDocument, doc.url == url,
-              let storage = textView.textStorage else { return }
+        // Records name their own file (`Span.file`, ADR-251 D6 as amended): a
+        // fragment's records underline in the fragment's tab, the story's in
+        // the story's. `url` is the composed story; an active fragment is
+        // accepted when it sits in that story's folder tree (GH #287).
+        guard let doc = activeDocument, let storage = textView.textStorage,
+              doc.url == url || Self.isFragment(doc.url, of: url) else { return }
+        let url = doc.url
 
         var flaggedLines: Set<Int> = []
         for record in records {
@@ -412,6 +453,13 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             flaggedLines.insert(record.line)
         }
         lineNumberRuler?.errorLines = flaggedLines
+    }
+
+    /// True when `candidate` is a `.chord` fragment under `story`'s folder.
+    private static func isFragment(_ candidate: URL, of story: URL) -> Bool {
+        guard ChordSource.isFragment(candidate) else { return false }
+        let storyDir = story.deletingLastPathComponent().standardizedFileURL.path
+        return candidate.standardizedFileURL.path.hasPrefix(storyDir + "/")
     }
 
     private func clearDiagnosticUnderlines() {
@@ -549,10 +597,15 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         notifyStoryActivated()
     }
 
-    /// Reports a newly-active `.story` document to the compose pipeline.
+    /// Reports a newly-active `.story` document to the compose pipeline, or a
+    /// newly-active `.chord` fragment so its importing story recomposes.
     private func notifyStoryActivated() {
-        guard let doc = activeDocument, doc.url.pathExtension == "story" else { return }
-        onStoryActivated?(doc.url, doc.content)
+        guard let doc = activeDocument else { return }
+        if ChordSource.isStoryFile(doc.url) {
+            onStoryActivated?(doc.url, doc.content)
+        } else if ChordSource.isFragment(doc.url) {
+            onFragmentNeedsCompose?(doc.url)
+        }
     }
 
     /// Clears all open documents and returns to the placeholder state.
@@ -575,6 +628,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             let outcome = try doc.save()
             if outcome.contentChanged { loadActiveDocumentIntoTextView() }
             noteStoryReconciled(doc, outcome)
+            if ChordSource.isFragment(doc.url) { onFragmentNeedsCompose?(doc.url) }
             refreshUI()
         } catch {
             let alert = NSAlert(error: error)
@@ -587,7 +641,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// was reconciled, or its config is broken and only an on-disk compose can
     /// raise the row.
     private func noteStoryReconciled(_ doc: Document, _ outcome: Document.SaveOutcome) {
-        guard doc.url.pathExtension == "story",
+        // `.story` only: a fragment has no identity line to reconcile (ADR-251 D3).
+        guard ChordSource.isStoryFile(doc.url),
               outcome.contentChanged || outcome.brokenConfig != nil else { return }
         onStoryReconciled?(doc.url, doc.content)
     }
@@ -722,9 +777,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             doc.isDirty = true
             refreshUI()
         }
-        if doc.url.pathExtension == "story" {
+        if ChordSource.isStoryFile(doc.url) {
             onStoryEdited?(doc.url, doc.content)
         }
+        // A fragment edit does not compose (see `onFragmentNeedsCompose`); its
+        // underlines were cleared above and repaint on the next save.
         onDocumentEdited?(doc.url)
     }
 
@@ -812,12 +869,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
         applyWordWrap()
     }
 
-    /// Whether the ACTIVE document wraps: `.story` files always do (David's
+    /// Whether the ACTIVE document wraps: Chord source (`.story`, `.chord`) always does (David's
     /// ruling — the story pane wraps, whatever the toggle says; an old stored
     /// preference must not leave prose scrolling sideways); other files follow
     /// the View → Word Wrap preference.
     private var effectiveWrap: Bool {
-        if activeDocument?.url.pathExtension.lowercased() == "story" { return true }
+        if let url = activeDocument?.url, ChordSource.isChordSource(url) { return true }
         return WordWrapPreference.isEnabled
     }
 
@@ -881,18 +938,44 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// stale — the "autowrap not working" bug).
     private func syncWrapWidth(force: Bool = false) {
         guard effectiveWrap, let container = textView.textContainer else { return }
-        let clipWidth = scrollView.contentSize.width
         // Wrap INSIDE the visible area. Two width thieves must be subtracted:
         // the container inset (text draws offset by it), and — measured live,
         // because contentSize does NOT reliably exclude it — the line-number
         // ruler (46pt), which otherwise pushes every line's tail past the
         // divider by the gutter width.
         let rulerWidth = scrollView.verticalRulerView?.ruleThickness ?? 0
+        let clipWidth = scrollView.contentSize.width
         let rulerAlreadyExcluded = (scrollView.frame.width - clipWidth) >= rulerWidth - 1
         let visibleWidth = rulerAlreadyExcluded ? clipWidth : clipWidth - rulerWidth
         let wrapWidth = visibleWidth - textView.textContainerInset.width * 2
+        // Guard on BOTH things the body sets. A pre-layout pass can leave the
+        // frame one gutter too wide while the container already holds the
+        // width the settled layout computes (the ruler flips from "counted in
+        // the clip" to "excluded" and the two measurements cancel), so a
+        // container-only guard skipped the pass that would have fixed the
+        // frame — text hidden under the gutter until a resize (GH #290).
+        let containerStale = abs(container.containerSize.width - wrapWidth) > 0.5
+        let frameStale = abs(textView.frame.width - clipWidth) > 0.5
+        // Wrapped text never scrolls sideways. While the frame was stale (one
+        // gutter too wide) a trackpad swipe could still slide the clip right
+        // — the scroller is hidden, not the scrolling — and correcting the
+        // frame does not move the clip back. Clamp the origin every pass,
+        // outside the staleness guard: the slide can outlive the stale frame.
+        // The RESTING origin is NOT zero: with automaticallyAdjustsContentInsets
+        // AppKit reserves the ruler's gutter through the CLIP VIEW's computed
+        // contentInsets (the scroll view's own contentInsets property still
+        // reads 0), so an unscrolled clip rests at x = -clip.contentInsets.left
+        // (-46 with the gutter). The previous clamp pinned x to 0, which
+        // "un-scrolled" every view 46pt leftward and hid the first characters
+        // of every line under the gutter — the margin bug it was meant to fix.
+        let clip = scrollView.contentView
+        let restingX = -clip.contentInsets.left
+        if clip.bounds.origin.x != restingX {
+            clip.scroll(to: NSPoint(x: restingX, y: clip.bounds.origin.y))
+            scrollView.reflectScrolledClipView(clip)
+        }
         guard clipWidth > 0, wrapWidth > 50,
-              force || abs(container.containerSize.width - wrapWidth) > 0.5 else { return }
+              force || containerStale || frameStale else { return }
         container.containerSize = NSSize(width: wrapWidth,
                                          height: CGFloat.greatestFiniteMagnitude)
         textView.setFrameSize(NSSize(width: clipWidth, height: textView.frame.height))

@@ -271,7 +271,7 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
    * Assumes validation has already passed
    */
   execute(context: ActionContext): void {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject!.entity!;
     const sharedData = getDrinkingSharedData(context);
 

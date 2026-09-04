@@ -74,11 +74,18 @@ create the brass key
 
   A small brass key.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen
   carries the brass key
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const STORY_UNLOCKED = STORY.replace(
@@ -116,6 +123,7 @@ function makeContext(l: Loaded, action: { id: string }, command: Record<string, 
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,

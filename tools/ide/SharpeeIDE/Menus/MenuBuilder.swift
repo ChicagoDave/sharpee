@@ -13,7 +13,7 @@ enum MenuBuilder {
         let mainMenu = NSMenu()
         mainMenu.addItem(makeAppMenuItem(target: target))
         mainMenu.addItem(makeFileMenuItem(target: target))
-        mainMenu.addItem(makeEditMenuItem())
+        mainMenu.addItem(makeEditMenuItem(target: target))
         mainMenu.addItem(makeViewMenuItem(target: target))
         mainMenu.addItem(makeBuildMenuItem(target: target))
         mainMenu.addItem(makeTestMenuItem(target: target))
@@ -100,6 +100,14 @@ enum MenuBuilder {
                                   keyEquivalent: "n")
         newStory.target = target
         menu.addItem(newStory)
+
+        // A new `.chord` fragment, imported where the caret sits (GH #288).
+        let newImport = NSMenuItem(title: "New Import…",
+                                   action: #selector(AppDelegate.newImport(_:)),
+                                   keyEquivalent: "n")
+        newImport.keyEquivalentModifierMask = [.command, .shift]
+        newImport.target = target
+        menu.addItem(newImport)
 
         let open = NSMenuItem(title: "Open Project…",
                               action: #selector(AppDelegate.openProject(_:)),
@@ -331,7 +339,7 @@ enum MenuBuilder {
 
     // MARK: - Edit menu
 
-    private static func makeEditMenuItem() -> NSMenuItem {
+    private static func makeEditMenuItem(target: AnyObject) -> NSMenuItem {
         let menu = NSMenu(title: "Edit")
 
         menu.addItem(withTitle: "Undo",
@@ -350,6 +358,15 @@ enum MenuBuilder {
         menu.addItem(withTitle: "Select All",
                      action: #selector(NSText.selectAll(_:)),
                      keyEquivalent: "a")
+        menu.addItem(NSMenuItem.separator())
+
+        // The one refactor: selected whole declarations become a fragment and
+        // an import line takes their place (GH #288).
+        let extract = NSMenuItem(title: "Extract Selection to Import…",
+                                 action: #selector(AppDelegate.extractSelectionToImport(_:)),
+                                 keyEquivalent: "")
+        extract.target = target
+        menu.addItem(extract)
 
         let item = NSMenuItem()
         item.submenu = menu

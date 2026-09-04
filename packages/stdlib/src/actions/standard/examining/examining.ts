@@ -80,7 +80,7 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
   ],
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const noun = context.command.directObject?.entity;
 
     // Validate we have a target

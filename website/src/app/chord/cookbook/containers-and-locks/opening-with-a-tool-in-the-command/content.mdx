@@ -24,17 +24,23 @@ create the letter opener
 
   Your grandfather's silver letter opener.
 
-  on opening it
+  on the player opening
     refuse opener-precious
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Cellar
   carries the letter opener
 
 define phrase opener-precious
   You are not prying anything with your grandfather's letter opener.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

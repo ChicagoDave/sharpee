@@ -44,7 +44,7 @@ create the biscuit tin
 
   A dented tin with a warped lid.
 
-  on closing it
+  on the player closing
     refuse tin-warped
   end on
 
@@ -64,12 +64,18 @@ create the tin whistle
 
   A tin whistle on a loop of cord.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Galley
 
 override message closing-closed
   You swing it shut.
 end override
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -94,7 +100,7 @@ You swing it shut.
 ```
 
 Three seams and the chain in one scene: the anvil refuses with the
-platform's `not_openable`, the tin's `on closing it` guard speaks its own
+platform's `not_openable`, the tin's `on the player closing` guard speaks its own
 refusal, and the story-wide `override message` rewrites every plain close.
 The sea chest's contents line is the `opened-revealed` chain at work.
 
@@ -104,7 +110,7 @@ The sea chest's contents line is the `opened-revealed` chain at work.
 | Success | `opened` · `its_empty` (a container opens onto nothing) | `closed` |
 | Events | `opened`, then `revealed` via the chain | `closed` (rich payload: door/container flags, contents count) |
 
-The interceptor seams are `on opening it` and `on closing it` on the
+The interceptor seams are `on the player opening` and `on the player closing` on the
 target (the humming hive box in chord-language.md is exactly this
 seam), and opening consults an explicitly named tool after the target
 (target, then tool, the same ordering discipline as lock-and-key).

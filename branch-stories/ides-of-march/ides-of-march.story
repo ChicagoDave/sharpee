@@ -77,13 +77,13 @@ create Your Lodging
   loose board under which a man might keep what is not his. The
   tavern is west.
 
-  after entering it while third-day
-    change it to nothing-yet
-    change it to kemp-only when Will Kemp is sworn
-    change it to book-only when the player has the play-book or the play-book is in Your Lodging
-    change it to both when Will Kemp is sworn and the player has the play-book
-    change it to both when Will Kemp is sworn and the play-book is in Your Lodging
-    select on its state
+  after the player entering while third-day
+    change Your Lodging to nothing-yet
+    change Your Lodging to kemp-only when Will Kemp is sworn
+    change Your Lodging to book-only when the player has the play-book or the play-book is in Your Lodging
+    change Your Lodging to both when Will Kemp is sworn and the player has the play-book
+    change Your Lodging to both when Will Kemp is sworn and the play-book is in Your Lodging
+    select on Your Lodging's state
       when both
         win ides-won
       when kemp-only
@@ -95,7 +95,7 @@ create Your Lodging
     end select
   end after
 
-  after entering it while second-day
+  after the player entering while second-day
     phrase night-two
     change the story to third-day
     move Richard Burbage to the Stage
@@ -104,7 +104,7 @@ create Your Lodging
     move the player to the Yard
   end after
 
-  after entering it while first-day
+  after the player entering while first-day
     phrase night-one
     change the story to second-day
     move Richard Burbage to the Stage
@@ -117,7 +117,7 @@ create Your Lodging
 
 create the tiring-house door
   a door, openable, starts open, lockable with the tiring-house key, starts unlocked
-  aka door
+  aka door, oak, stout
 
   A stout oak door between stage and tiring-house, usually left
   standing open so the book-holder can follow the lines.
@@ -137,7 +137,7 @@ create the play-book
   cued and annotated in the book-holder's hand. The Rose would pay
   its roof-lead for an hour alone with it.
 
-  on taking it while William Shakespeare is in the Tiring-House
+  on the player taking while William Shakespeare is in the Tiring-House
     refuse book-guarded
   end on
 
@@ -174,13 +174,15 @@ create the property table
 
 create a pot of ale
   in the Tavern
-  aka ale, pot
+  aka ale, pot, leather, small
 
   Small ale in a leather pot, the tavern's one honest good.
 
 ## -------------------------------------------------------------------- player
 
-create the player
+create Nick Bray
+  a person
+  playable
   in the Yard
 
   A hired man, by your coat and your account of yourself. Under the
@@ -203,7 +205,7 @@ create Will Kemp
   Will Kemp, the most famous man in any house he stands in, and lately
   the least easy. He watches the galleries as if counting friends.
 
-  on every turn while second-day and it knows the-blow-up, once
+  on every turn while second-day and Will Kemp knows the-blow-up, once
     change mood to stung
     phrase kemp-storms-off
       Burbage plants himself in front of Kemp, courteous as a
@@ -235,7 +237,7 @@ define topics for Will Kemp
       no room in it for Kemp." He looks at the unfinished galleries.
       "Well. Rooms can be found elsewhere."
   about "norwich", "the norwich men":
-    phrase kemp-norwich-suspects when it knows norwich
+    phrase kemp-norwich-suspects when Will Kemp knows norwich
       "Norwich, is it." He does not laugh, which from Kemp is a
       thunderclap. "I know every man who ever jigged from here to
       Norwich, and I never once saw you among them. Whoever's coat
@@ -293,20 +295,20 @@ define greetings for Will Kemp
 end greetings
 
 define manner for Will Kemp
-  when it is cheerful:
+  when Will Kemp is cheerful:
     beat "He sketches half a jig step on the spot, done before it began."
     beat "He pitches it up and out, playing you like a full yard."
     beat "He snaps his fingers at a passing thought and grins."
-  when it is stung:
+  when Will Kemp is stung:
     voice flat
 end manner
 
 define initiative for Will Kemp
-  on an open floor, when it is cheerful:
+  on an open floor, when Will Kemp is cheerful:
     phrase kemp-interjects
       "And here is where the clown speaks anyway," Kemp says, to no
       cue at all, "custom being custom."
-  on an open floor, when it is stung:
+  on an open floor, when Will Kemp is stung:
     hold their tongue
 end initiative
 
@@ -336,7 +338,7 @@ end conversation
 
 define exchange the-offer for Will Kemp
   answer "yes", "aye", "sworn":
-    phrase kemp-sees-through when it knows norwich
+    phrase kemp-sees-through when Will Kemp knows norwich
       "Yes, he says. Plain as a bell." Kemp leans in, and the yard
       drops out of his voice entirely. "You are no more a Norwich man
       than I am a Roman, and only Henslowe's own would carry this
@@ -402,7 +404,7 @@ define topics for Richard Burbage
       heavens as a man looks at a harvest. "It must land like a
       verdict. Nothing in it may wobble."
   about "kemp", "will kemp", "the clown":
-    phrase burbage-on-kemp-conferred when it knows no-clown-part
+    phrase burbage-on-kemp-conferred when Richard Burbage knows no-clown-part
       "There is no part for him. Will and I have turned it every way;
       the play will not take a clown, and Kemp will not take a play
       that will not take him." He says it like a man closing a ledger.
@@ -471,10 +473,10 @@ define greetings for Richard Burbage
 end greetings
 
 define manner for Richard Burbage
-  when it is calm:
+  when Richard Burbage is calm:
     beat "He keeps half his attention on the stage even now, walking the play in his head."
     beat "He weighs the words before he spends them, like coin."
-  when it is angry:
+  when Richard Burbage is angry:
     voice iron
 end manner
 
@@ -538,6 +540,12 @@ create William Shakespeare
     seek Richard Burbage
     say shakespeare-confers to Richard Burbage
   end goal
+
+create the pen
+  scenery
+  in the Tiring-House
+  
+  Ink-tipped and well-used.
 
 define topics for William Shakespeare
   about "the play", "caesar", "julius caesar":
@@ -618,10 +626,10 @@ define greetings for William Shakespeare
 end greetings
 
 define manner for William Shakespeare
-  when it is calm:
+  when William Shakespeare is calm:
     beat "He listens the way other men aim."
     beat "The pen keeps moving; some of what it writes is you."
-  when it is anxious:
+  when William Shakespeare is anxious:
     voice low
 end manner
 
@@ -913,3 +921,7 @@ define phrase unmasked-lose
   Admiral's Men will hear of it by supper. Henslowe does not pay for
   a burned man.
 end phrase
+
+before the game starts
+  change the player to Nick Bray
+end before

@@ -61,14 +61,9 @@ describe('droppingAction (Golden Pattern)', () => {
       expect(droppingAction.requiredMessages).toContain('no_target');
       expect(droppingAction.requiredMessages).toContain('not_held');
       expect(droppingAction.requiredMessages).toContain('still_worn');
-      expect(droppingAction.requiredMessages).toContain('container_not_open');
-      expect(droppingAction.requiredMessages).toContain('container_full');
       expect(droppingAction.requiredMessages).toContain('dropped');
       expect(droppingAction.requiredMessages).toContain('dropped_in');
       expect(droppingAction.requiredMessages).toContain('dropped_on');
-      expect(droppingAction.requiredMessages).toContain('cant_drop_here');
-      expect(droppingAction.requiredMessages).toContain('dropped_quietly');
-      expect(droppingAction.requiredMessages).toContain('dropped_carelessly');
     });
 
     test('should belong to object_manipulation group', () => {

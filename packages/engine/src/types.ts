@@ -113,6 +113,22 @@ export interface TurnResult {
    * The action ID that was executed (if any)
    */
   actionId?: string;
+
+  /**
+   * The entity that performed the action (ADR-328 D1) — the player for a
+   * parser-driven turn, the named actor for `CommandExecutor.executeAsActor`.
+   * Absent only when the command failed before an actor was resolved.
+   */
+  actorId?: string;
+
+  /**
+   * True when the action's own `validate()` refused it and the `blocked`
+   * phase ran instead of execute/report. `success` stays as it was (no
+   * `action.error`), since a refusal is still a completed turn for the
+   * turn cycle; this is the fact a caller that acted on purpose — the
+   * actor turn phase (ADR-328 D5) — reads to learn the act did not happen.
+   */
+  refused?: true;
   
   /**
    * The parsed command (if successfully parsed)

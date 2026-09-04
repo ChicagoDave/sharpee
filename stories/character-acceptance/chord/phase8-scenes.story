@@ -24,7 +24,9 @@ create the Green Room
 
   Where the company waits between entrances.
 
-create the player
+create Alex
+  a person
+  playable
   in the Stage
 
   You, between entrances.
@@ -93,3 +95,7 @@ end phrase
 define phrase piers-blank
   "First I've heard of any such thing."
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

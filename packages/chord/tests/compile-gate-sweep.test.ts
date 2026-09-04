@@ -42,10 +42,17 @@ create the oak door
 
   An oak door.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Kitchen
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('rejects a plain exit whose reverse side is door-wired', () => {
@@ -110,10 +117,17 @@ create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     expect(errorCodes(source)).toEqual([]);
   });
@@ -138,10 +152,16 @@ create the rusty winch
 
   A winch.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gatehouse
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define machine drawbridge
   role winch is the rusty winch
@@ -187,10 +207,16 @@ create the goat
 
   A goat.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define action pet
   grammar
@@ -235,10 +261,16 @@ create the Ledge
 
   A ledge.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Ledge
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase fall-death
   You fall.

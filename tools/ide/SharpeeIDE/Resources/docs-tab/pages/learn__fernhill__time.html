@@ -15,7 +15,7 @@ end sequence</code></pre>
 <pre><code class="language-chord">create the Folly
   a room
 
-  after entering it, once
+  after the player entering, once
     change the fuse to lit
     phrase fuse-catches
   end after</code></pre>
@@ -35,7 +35,7 @@ end sequence</code></pre>
   on every turn while the oil lamp is lit, once
     phrase lamplight-startle
   end on</code></pre>
-<p>An entity's <code>on every turn</code> clause fires only while the player is there to hear it. The <code>, once</code> modifier makes a beat that never repeats; a <code>while</code> gate makes one that tracks live state. (The fuse hisses the same way: <code>on every turn while it is lit</code>.)</p>
+<p>An entity's <code>on every turn</code> clause fires only while the player is there to hear it. The <code>, once</code> modifier makes a beat that never repeats; a <code>while</code> gate makes one that tracks live state. (The fuse hisses the same way: <code>on every turn while the fuse is lit</code>.)</p>
 <h2 id="the-boiler-a-state-machine">The boiler: a state machine</h2>
 <p>The boiler is the estate's centerpiece. The brass plate says FILL. PRIME. LIGHT, and the machine enforces it. With <code>use state-machines</code> in the header:</p>
 <pre><code class="language-chord">define machine the boiler works
@@ -69,4 +69,4 @@ end sequence</code></pre>
     end on
 end machine</code></pre>
 <p>Transitions are <em>player actions on world entities</em> (<code>when turning the stopcock: filled</code>); <code>on enter</code> bodies mirror machine truth onto the boiler's visible states, narrate, and (note the last line) reach into the greenhouse: the <code>running</code> state flowers the vine. The machine is the causal spine of the estate: the boiler runs, the frost seal opens (*The world*'s live block), the vine flowers, and the silver locket appears in the next chapter.</p>
-<p>Out-of-order attempts get their own voices, authored as refusals on the entities themselves (<code>on pushing it while the boiler is cold → refuse primer-dry</code>; the cold boiler answers <code>switch on</code> with a hollow CLANK).</p>
+<p>Out-of-order attempts get their own voices, authored as refusals on the entities themselves (<code>on the player pushing while the boiler is cold → refuse primer-dry</code>; the cold boiler answers <code>switch on</code> with a hollow CLANK).</p>

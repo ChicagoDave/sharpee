@@ -16,6 +16,7 @@ import { IdentityTrait } from '../traits/identity/identityTrait.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
 import { LockableTrait } from '../traits/lockable/lockableTrait.js';
 import { WearableBehavior } from '../traits/wearable/wearableBehavior.js';
+import type { WearableTrait } from '../traits/wearable/wearableTrait.js';
 import { ExitTrait } from '../traits/exit/exitTrait.js';
 import { DirectionType, getOppositeDirection } from '../constants/directions.js';
 import { type ISemanticEvent, type ISemanticEventSource } from '@sharpee/core';
@@ -192,6 +193,18 @@ export { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 export type EntityRemovalObserver = (entity: IFEntity, lastRoomId: string | null) => void;
 
 // Interface and class with same name in same file - TypeScript standard pattern
+/**
+ * Options for `connectRooms` (ADR-234 D4 `, one-way`, GH #327).
+ */
+export interface ConnectRoomsOptions {
+  /**
+   * Stamp the written direction only: no reverse exit on room2, and a door
+   * on the connection gets `bidirectional = false`. Default: both
+   * directions, the platform's standing behaviour.
+   */
+  oneWay?: boolean;
+}
+
 export interface IWorldModel {
   // Get the data store for sharing with AuthorModel
   getDataStore(): IDataStore;
@@ -450,7 +463,7 @@ export interface IWorldModel {
   setPlayer(entityId: string): void;
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
   createDoor(displayName: string, opts: {
     room1Id: string;
     room2Id: string;
@@ -1139,6 +1152,20 @@ export class WorldModel implements IWorldModel {
     // Add to new location
     if (targetId) {
       this.spatialIndex.addChild(targetId, entityId);
+    }
+
+    // Worn is a fact about location (GH #334): an item is worn only while
+    // it sits directly in its wearer. Any move off that location — an
+    // authorial `move`, a put into a container, offstage — clears the flag
+    // here, at the one mutation point, so `wears` reads false and taking
+    // the item back leaves it carried. A move that keeps the location
+    // (re-adding to the wearer) leaves the flag alone.
+    if (currentLocation !== undefined && targetId !== currentLocation) {
+      const wearable = this.getEntity(entityId)?.get(TraitType.WEARABLE) as WearableTrait | undefined;
+      if (wearable?.worn) {
+        wearable.worn = false;
+        wearable.wornBy = undefined;
+      }
     }
 
     // Emit platform event
@@ -1851,7 +1878,7 @@ export class WorldModel implements IWorldModel {
    * trait's room pair disagrees with the rooms passed — the primitive owns
    * the invariant that DoorTrait and the exits never disagree.
    */
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void {
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void {
     const room1 = this.getEntity(room1Id);
     const room2 = this.getEntity(room2Id);
     if (!room1 || !room2) {
@@ -1859,10 +1886,12 @@ export class WorldModel implements IWorldModel {
     }
 
     const opposite = getOppositeDirection(direction);
+    // ADR-234 D4 `, one-way` (GH #327): the written direction only.
+    const oneWay = options?.oneWay === true;
 
     if (doorId === undefined) {
       RoomBehavior.setExit(room1, direction, room2Id);
-      RoomBehavior.setExit(room2, opposite, room1Id);
+      if (!oneWay) RoomBehavior.setExit(room2, opposite, room1Id);
       return;
     }
 
@@ -1883,7 +1912,11 @@ export class WorldModel implements IWorldModel {
     }
 
     RoomBehavior.setExit(room1, direction, room2Id, doorId);
-    RoomBehavior.setExit(room2, opposite, room1Id, doorId);
+    if (oneWay) {
+      doorTrait.bidirectional = false;
+    } else {
+      RoomBehavior.setExit(room2, opposite, room1Id, doorId);
+    }
 
     // Place door in room1 for scope resolution
     this.moveEntity(doorId, room1Id);

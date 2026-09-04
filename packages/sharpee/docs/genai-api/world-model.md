@@ -1080,6 +1080,12 @@ export declare class OpenableBehavior extends Behavior {
      */
     static requiresTool(entity: IFEntity): boolean;
     /**
+     * The declared tools that open this entity, in declaration order —
+     * empty when it needs none. The implicit-instrument resolution (GH
+     * #241) reads this to find a held tool the player did not name.
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
+    /**
      * Check if a tool can open this entity (mirrors LockableBehavior.canUnlockWith)
      */
     static canOpenWith(entity: IFEntity, toolId: EntityId): boolean;
@@ -2160,6 +2166,8 @@ export declare const TraitType: {
     readonly WEARABLE: "wearable";
     readonly EDIBLE: "edible";
     readonly SCENERY: "scenery";
+    /** Sees in the dark (ADR-328 D5) — presence is the fact */
+    readonly NIGHT_VISION: "if.trait.night_vision";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
     readonly CUTTABLE: "cuttable";
@@ -3204,6 +3212,12 @@ export declare class CuttableBehavior extends Behavior {
      */
     static requiresTool(entity: IFEntity): boolean;
     /**
+     * The declared tools that cut this entity, in declaration order —
+     * empty when it needs none. The implicit-instrument resolution (GH
+     * #241) reads this to find a held tool the player did not name.
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
+    /**
      * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
      */
     static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
@@ -3271,6 +3285,12 @@ export declare class DiggableBehavior extends Behavior {
      * LockableBehavior.requiresKey / OpenableBehavior.requiresTool)
      */
     static requiresTool(entity: IFEntity): boolean;
+    /**
+     * The declared tools that dig this entity, in declaration order —
+     * empty when it needs none. The implicit-instrument resolution (GH
+     * #241) reads this to find a held tool the player did not name.
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
     /**
      * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
      */
@@ -3473,6 +3493,29 @@ export declare class SceneryTrait implements ITrait {
      */
     visible: boolean;
     constructor(data?: Partial<SceneryTrait>);
+}
+```
+
+### traits/night-vision/nightVisionTrait
+
+```typescript
+import { ITrait } from '../trait.js';
+/**
+ * Night vision marks an observer that sees in the dark (ADR-328 D5).
+ *
+ * Darkness is a rule about the observer, not the room: a room with no
+ * light hides its contents from anyone who needs light to see. An entity
+ * carrying this trait does not — the underground thief who robs by feel,
+ * a cat, a creature of the deep. Its presence is the fact; there is no data.
+ *
+ * Checked by `VisibilityBehavior` at the two darkness gates (`canSee`,
+ * `getVisible`). It says nothing about light itself: a room stays dark for
+ * everyone else, and the observer's own arrival description still reads as
+ * a dark room's.
+ */
+export declare class NightVisionTrait implements ITrait {
+    static readonly type: "if.trait.night_vision";
+    readonly type: "if.trait.night_vision";
 }
 ```
 
@@ -4284,6 +4327,51 @@ export declare class ActorBehavior extends Behavior {
      */
     static dropItem(actor: IFEntity, item: IFEntity, world: IWorldQuery): IDropItemResult;
 }
+```
+
+### traits/actor/playerRole
+
+```typescript
+/**
+ * playerRole.ts — the player role's own vocabulary (ADR-327 D9/D10).
+ *
+ * Public interface: `PLAYER_ROLE_ALIASES`, `addPlayerRoleVocabulary`,
+ * `movePlayerRoleVocabulary`.
+ *
+ * Owner context: world-model. `me`, `myself` and `self` name whoever is
+ * currently playing, not a particular character — so they belong to the ROLE
+ * and travel with it when the role moves. Both the story loader (stamping the
+ * opening protagonist) and the engine (`switchPlayer`) need the same set and
+ * the same move, which is why it lives here rather than in either of them.
+ */
+import type { IFEntity } from '../../entities/if-entity.js';
+/**
+ * The words that name the current player character rather than any particular
+ * character. Deliberately small: a character's own names and `aka` aliases are
+ * theirs and never move.
+ */
+export declare const PLAYER_ROLE_ALIASES: readonly string[];
+/**
+ * Give an entity the role's vocabulary.
+ *
+ * @param entity the entity taking the player role
+ * @returns nothing; the entity's IdentityTrait gains any missing role alias.
+ *   An entity with no IdentityTrait is left alone — it has no alias list to
+ *   add to, and inventing one would fabricate a name for it.
+ */
+export declare function addPlayerRoleVocabulary(entity: IFEntity): void;
+/**
+ * Move the role's vocabulary from the outgoing player character to the incoming
+ * one (ADR-327 Q2, ruled 2026-08-26).
+ *
+ * Without this, `x me` keeps naming the character who used to be the PC after
+ * every switch — the aliases live on the entity's IdentityTrait, which
+ * `syncPlayerState` does not touch.
+ *
+ * @param from the outgoing PC, or null on the first assignment
+ * @param to the incoming PC
+ */
+export declare function movePlayerRoleVocabulary(from: IFEntity | null | undefined, to: IFEntity): void;
 ```
 
 ### traits/attached/attachedTrait
@@ -7667,6 +7755,17 @@ export { ScoreEntry, RankDefinition } from './ScoreLedger.js';
  * @param lastRoomId - Its containing room id at removal time, or `null`.
  */
 export type EntityRemovalObserver = (entity: IFEntity, lastRoomId: string | null) => void;
+/**
+ * Options for `connectRooms` (ADR-234 D4 `, one-way`, GH #327).
+ */
+export interface ConnectRoomsOptions {
+    /**
+     * Stamp the written direction only: no reverse exit on room2, and a door
+     * on the connection gets `bidirectional = false`. Default: both
+     * directions, the platform's standing behaviour.
+     */
+    oneWay?: boolean;
+}
 export interface IWorldModel {
     getDataStore(): IDataStore;
     /**
@@ -7887,7 +7986,7 @@ export interface IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -8222,7 +8321,7 @@ export declare class WorldModel implements IWorldModel {
      * trait's room pair disagrees with the rooms passed — the primitive owns
      * the invariant that DoorTrait and the exits never disagree.
      */
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     /**
      * Create a door entity and wire it into both rooms' exit data.
      * The door is placed in room1 spatially (for scope resolution).
@@ -8431,6 +8530,8 @@ export declare class VisibilityBehavior extends Behavior {
      * @param world - The world model
      * @returns true if the room is dark and has no accessible light sources
      */
+    /** Whether the observer sees without light — carries `NightVisionTrait`. */
+    private static seesInDark;
     static isDark(room: IFEntity, world: WorldModel): boolean;
     /**
      * Determines if a light source entity is currently providing light.
@@ -8635,7 +8736,7 @@ import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capab
 import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
 import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions } from './WorldModel.js';
+import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions, ConnectRoomsOptions } from './WorldModel.js';
 import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
@@ -8738,7 +8839,7 @@ export declare class AuthorModel implements IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void;
+    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
         room2Id: string;
@@ -9761,8 +9862,12 @@ export interface InterceptorReportResult {
      *    to a language template (mirrors the inline-text fallback in
      *    `event-processor.ts`'s entity-handler override path).
      *
-     *  Multiple interceptors returning `override` for the same action is a
-     *  hard error mirroring ADR-106's "multiple game.message reactions" rule. */
+     *  When multiple interceptors return `override` for one action, the
+     *  first in consultation order wins and later overrides are dropped
+     *  (GH #340) — slots consult before the actor, so a target's own clause
+     *  outranks an actor bare-head. The former hard error mirrored ADR-106's
+     *  "multiple game.message reactions" rule but punished two individually
+     *  legal declarations. */
     override?: {
         messageId: string;
         params?: Record<string, unknown>;
@@ -10475,6 +10580,14 @@ export interface InitiativeSeizure {
      * targets the player. An NPC↔NPC seizure drops it (no-op), never throws.
      */
     openExchange?: ExchangeState;
+    /**
+     * The body carried a `leave` whose condition held (GH #349): the speaker
+     * ends the conversation on their own turn. Built by the seize runner,
+     * applied by the tick caller as a `close-scene` (`exit`) directive against
+     * the scene the seizure ran in — the floor-turn counterpart of the
+     * dispatch path's `leave`.
+     */
+    leaves?: boolean;
     /** The opening word (`asks`/`invites`) for the author channel, when `openExchange` is set. */
     openWord?: string;
 }
@@ -10583,6 +10696,23 @@ export interface SceneRuntimeBinding {
      * @returns True when a thread move is ready
      */
     threadTurnReady?(ownerId: EntityId, partnerId: EntityId): boolean;
+    /**
+     * Deliver a parked thread's authored `on parting` line (ADR-320 D10a,
+     * 2026-09-02): the registrar's row runner executes the body for its
+     * effects and hands back the spoken line, or undefined when the thread
+     * authors none. Consulted by every park-on-close path — interruption,
+     * exit, silence — so parting renders wherever the park happens. Absent
+     * when the registrar bound no runner.
+     *
+     * @param ownerId - The thread owner (world id)
+     * @param partnerId - The conversation partner (world id)
+     * @param threadKey - The `define conversation` key
+     * @returns The line to render, or undefined
+     */
+    partingLine?(ownerId: EntityId, partnerId: EntityId, threadKey: string): {
+        messageId: string;
+        params: Record<string, unknown>;
+    } | undefined;
 }
 ```
 
@@ -10661,8 +10791,18 @@ export type SceneWireEvent = {
     kind: 'thread-parked';
     sceneId: string;
     ownerId: EntityId;
+    /** The pair's other side (ADR-320 D10a, 2026-09-02): tooling and the parting render need it. */
+    partnerId: EntityId;
     threadKey: string;
     beatCursor: number;
+} | {
+    kind: 'thread-parting';
+    sceneId: string;
+    ownerId: EntityId;
+    partnerId: EntityId;
+    threadKey: string;
+    messageId: string;
+    params: Record<string, unknown>;
 } | {
     kind: 'thread-resumed';
     sceneId: string;

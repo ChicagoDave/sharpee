@@ -41,6 +41,7 @@ import type {
   RegionCrossings,
   SceneOptions,
   SceneConditions,
+  ConnectRoomsOptions,
 } from './WorldModel.js';
 import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -304,8 +305,8 @@ export class AuthorModel implements IWorldModel {
   }
 
   // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string): void {
-    this.worldModel.connectRooms(room1Id, room2Id, direction, doorId);
+  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void {
+    this.worldModel.connectRooms(room1Id, room2Id, direction, doorId, options);
   }
 
   createDoor(displayName: string, opts: {

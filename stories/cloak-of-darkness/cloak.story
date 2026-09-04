@@ -34,7 +34,7 @@ create the Foyer Bar
   the foyer to the north, is completely empty. There seems to be some
   sort of message scrawled in the sawdust on the floor.
 
-  after entering it while in-darkness
+  after the player entering while in-darkness
     phrase stumble
     first time
       change the message to trampled
@@ -42,7 +42,9 @@ create the Foyer Bar
       change the message to obliterated
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Foyer of the Opera House
   wears the velvet cloak
 
@@ -69,8 +71,8 @@ create the message in the sawdust
   in the Foyer Bar
   states: intact, trampled, obliterated
 
-  on reading it
-    select on its state
+  on the player reading
+    select on the message in the sawdust's state
       when intact
         phrase message-intact
         win
@@ -100,3 +102,7 @@ define phrases en-US
     The message has been trampled beyond recognition. You have lost!
 
 define text garbled from "./src/extras.ts"
+
+before the game starts
+  change the player to Alex
+end before

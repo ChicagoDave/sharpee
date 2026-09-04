@@ -27,7 +27,7 @@ weather":`) match free text, with comma-separated aliases; a response is
 a one-line statement or an indented body (`it` binds the person).
 Matching is normalized whole-topic lookup: case-insensitive,
 article-stripped, and never fuzzy. On a hit the row fully owns the reply;
-the person's `on asking it` / `on telling it` clause is the catch-all,
+the person's `on the player asking` / `on the player telling` clause is the catch-all,
 firing only on a miss; with neither, the stdlib defaults speak.
 
 The author writes:
@@ -51,7 +51,7 @@ create the keeper
 
   The keeper polishes the lens without looking up.
 
-  on asking it
+  on the player asking
     phrase keeper-shrug
   end on
 
@@ -61,7 +61,9 @@ define topics for the keeper
     phrase keeper-storm
 end topics
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lantern Gallery
 
 define phrases en-US
@@ -73,6 +75,10 @@ define phrases en-US
     dark."
   keeper-shrug:
     The keeper shrugs. "Lamp and weather. That's all I know."
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -100,7 +106,7 @@ The keeper shrugs. "Lamp and weather. That's all I know."
 The whole dispatch order in one scene: `not_actor` for a non-person, the
 honest `no_response` on bare talk, the entity row riding scope
 resolution, the quoted row answering either alias for ask and tell
-alike, and the `on asking it` catch-all speaking only on a miss.
+alike, and the `on the player asking` catch-all speaking only on a miss.
 
 | | talk (`talking-*`) | ask / tell (`asking-*` / `telling-*`) |
 |---|---|---|
@@ -108,7 +114,7 @@ alike, and the `on asking it` catch-all speaking only on a miss.
 | Success | `no_response` · greeting flavor with `conversation` data (`first_meeting`, `greets_again`, `formal_`/`casual_greeting`, `remembers_you`, `has_topics` / `nothing_to_say`) | `unknown_topic` (ask) · `not_interested` (tell) — a topics row replaces both |
 | Events | `talked` | `asked` / `ask_blocked` · `told` / `tell_blocked` |
 
-Interceptors: `on talking it` on the person is talk's override seam.
+Interceptors: `on the player talking` on the person is talk's override seam.
 The canonical TypeScript rendition is Dungeo's troll, whose `preValidate`
 vetoes with its own message when he is out cold and whose `postReport`
 **overrides** the core reply with GROWLS when he isn't (swap the standard

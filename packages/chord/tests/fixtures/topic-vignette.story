@@ -17,7 +17,7 @@ create the gamekeeper
 
   Weathered, watchful, in no hurry to help.
 
-  on asking it
+  on the player asking
     phrase keeper-shrug
   end on
 
@@ -47,10 +47,16 @@ define topics for the gamekeeper
   about "the fire", "the old fire": phrase fire-reply
   about "her ladyship":
     phrase ladyship-reply
-    change it to unsettled
+    change the gamekeeper to unsettled
 end topics
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gate
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

@@ -146,6 +146,12 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
      */
     renderTemplate(template: string, params: Record<string, unknown>, ctx: RenderContext): ITextBlock[];
     /**
+     * Whether the message's bound actor is an entity other than the player
+     * (ADR-328 D4): a `NounPhrase` under the reserved actor key whose
+     * `referableId` is set and differs from the narrative's player id.
+     */
+    private hasNonPlayerActor;
+    /**
      * Set whether lists use the serial (Oxford) comma (ADR-190). Default true.
      * @param on true → "a, b, and c"; false → "a, b and c"
      */
@@ -285,6 +291,7 @@ export declare const IFActions: {
     readonly ASKING: "if.action.asking";
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
+    readonly SAYING_GOODBYE: "if.action.saying_goodbye";
     readonly WEARING: "if.action.wearing";
     readonly TAKING_OFF: "if.action.taking_off";
     readonly EATING: "if.action.eating";
@@ -560,6 +567,7 @@ export * from './talking.js';
 export * from './asking.js';
 export * from './telling.js';
 export * from './answering.js';
+export * from './saying-goodbye.js';
 export * from './throwing.js';
 export * from './eating.js';
 export * from './drinking.js';
@@ -582,6 +590,29 @@ export * from './again.js';
  * All standard action language definitions
  */
 export declare const standardActionLanguage: ({
+    actionId: string;
+    patterns: string[];
+    messages: {
+        room_description: string;
+        room_description_brief: string;
+        in_container: string;
+        on_supporter: string;
+        examine_surroundings: string;
+        hidden_at: string;
+        room_dark: string;
+        exits: string;
+        you_see: string;
+        contents_list: string;
+        nothing_special: string;
+        container_contents: string;
+        surface_contents: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
     actionId: string;
     patterns: string[];
     messages: {
@@ -615,24 +646,6 @@ export declare const standardActionLanguage: ({
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        room_description: string;
-        room_dark: string;
-        exits: string;
-        you_see: string;
-        contents_list: string;
-        nothing_special: string;
-        container_contents: string;
-        surface_contents: string;
     };
     help: {
         description: string;
@@ -724,6 +737,8 @@ export declare const standardActionLanguage: ({
         need_light: string;
         went: string;
         arrived: string;
+        departs: string;
+        arrives: string;
         cant_go: string;
     };
     help: {
@@ -744,6 +759,7 @@ export declare const standardActionLanguage: ({
         its_empty: string;
         cant_reach: string;
         no_tool: string;
+        needs_tool: string;
         tool_not_held: string;
         wrong_tool: string;
     };
@@ -895,6 +911,42 @@ export declare const standardActionLanguage: ({
         cant_reach: string;
         key_not_held: string;
         still_locked: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
     };
     help: {
         description: string;
@@ -1366,19 +1418,22 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_question: string;
-        no_one_asked: string;
-        too_late: string;
+        no_response: string;
+        not_an_answer: string;
         answered: string;
-        answered_yes: string;
-        answered_no: string;
-        gave_answer: string;
-        accepted: string;
-        rejected: string;
-        noted: string;
-        confused_by_answer: string;
-        invalid_response: string;
-        needs_yes_or_no: string;
-        unclear_answer: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_talking: string;
+        not_talking_to: string;
+        said_goodbye: string;
     };
     help: {
         description: string;
@@ -1562,38 +1617,6 @@ export declare const standardActionLanguage: ({
         peaceful_solution: string;
         no_fighting: string;
         unnecessary_violence: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        revealed: string;
-        not_hidden: string;
     };
     help: {
         description: string;
@@ -1866,13 +1889,16 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
     };
     help: {
         description: string;
@@ -1883,13 +1909,8 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
+        revealed: string;
+        not_hidden: string;
     };
     help: {
         description: string;
@@ -1903,7 +1924,12 @@ export declare const standardActionLanguage: ({
 
 ```typescript
 /**
- * Language content for NPC system (ADR-070)
+ * Language content for the standard NPC behaviors (ADR-070; ADR-328 D5)
+ *
+ * Only what a behavior NARRATES lives here — a guard's blocking line, a
+ * wanderer noticing the player, a follower following. What an NPC DOES
+ * (take, go, attack) renders through the action's own messages in the
+ * actor's voice (ADR-328 D4); no third-person "npc.takes" dialect exists.
  *
  * Attribution lines name the acting NPC via a `speaker` NounPhrase param (ADR-203)
  * and agree their verb with it via the ADR-199 Verb atom (`{verb:LEMMA speaker}`).
@@ -1913,45 +1939,9 @@ export declare const standardActionLanguage: ({
  */
 export declare const npcLanguage: {
     messages: {
-        'npc.enters': string;
-        'npc.leaves': string;
-        'npc.arrives': string;
-        'npc.departs': string;
-        'npc.heard_arrives': string;
-        'npc.heard_departs': string;
         'npc.notices_player': string;
-        'npc.ignores_player': string;
-        'npc.takes': string;
-        'npc.drops': string;
         'npc.follows': string;
         'npc.guard.blocks': string;
-        'npc.guard.attacks': string;
-        'npc.guard.defeated': string;
-        'npc.attacks': string;
-        'npc.misses': string;
-        'npc.hits': string;
-        'npc.killed': string;
-        'npc.unconscious': string;
-        'npc.combat.attack.missed': string;
-        'npc.combat.attack.hit': string;
-        'npc.combat.attack.hit_light': string;
-        'npc.combat.attack.hit_heavy': string;
-        'npc.combat.attack.knocked_out': string;
-        'npc.combat.attack.killed': string;
-        'npc.speech': string;
-        'npc.speaks': string;
-        'npc.shouts': string;
-        'npc.whispers': string;
-        'npc.mutters': string;
-        'npc.emote': string;
-        'npc.laughs': string;
-        'npc.growls': string;
-        'npc.cries': string;
-        'npc.sighs': string;
-        'npc.greets': string;
-        'npc.farewell': string;
-        'npc.no_response': string;
-        'npc.confused': string;
     };
 };
 ```
@@ -2125,6 +2115,12 @@ export interface NarrativeContext {
  */
 export declare const DEFAULT_NARRATIVE_CONTEXT: NarrativeContext;
 /**
+ * The context whose conjugation is the 3rd-person-singular surface — the form
+ * the phrase algebra's `Verb` atom takes as its lemma (ADR-199 §1). Used to
+ * rewrite a bare perspective verb into a subject-agreeing `{verb:…}` atom.
+ */
+export declare const THIRD_SINGULAR_CONTEXT: NarrativeContext;
+/**
  * Conjugate a verb based on perspective
  *
  * @param verb Base form of verb (e.g., "take", "open")
@@ -2148,6 +2144,29 @@ export declare function conjugateVerb(verb: string, context: NarrativeContext): 
  * @returns Message with resolved placeholders
  */
 export declare function resolvePerspectivePlaceholders(message: string, context?: NarrativeContext, params?: Record<string, unknown>): string;
+/**
+ * Rewrite the `{You}` placeholder family and every bare perspective verb into
+ * phrase-algebra forms anchored on the acting entity (ADR-328 D4), for a
+ * message whose actor is NOT the player. The caller decides that (it knows the
+ * narrative's player id); this function only rewrites. The rewritten template
+ * renders through the Assembler, which agrees each verb with the actor's
+ * number and person (ADR-199 §4 B) and applies the definite article — so
+ * `{You} {take} {the item}.` becomes "The thief takes the lamp." for a unique
+ * NPC, "Jack takes the lamp." for a proper-named one, and "The mercenaries take
+ * the lamp." for a plural one.
+ *
+ * Forms: `{You}`/`{you}` → the actor as subject/object; `{Your}`/`{your}` (and
+ * `{Yours}`/`{yours}`) → the actor's possessive (`'s`); `{You're}`/`{you're}` →
+ * the actor + an agreeing "is"; `{Yourself}`/`{yourself}` → a reflexive pronoun
+ * of the last-mentioned referent (ADR-197 — the actor, once named); a bare
+ * `{verb}` → `{verb:<3rd-singular lemma> <actor>}`.
+ *
+ * @param message the template text
+ * @param params the bound params (bare words that are params are left alone)
+ * @param actorKey the param key the actor's NounPhrase is bound under
+ * @returns the rewritten template, ready for `parsePhraseTemplate`
+ */
+export declare function expandActorPlaceholders(message: string, params: Record<string, unknown>, actorKey: string): string;
 ```
 
 ### assembler/english-assembler

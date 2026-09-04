@@ -13,7 +13,7 @@ create the brass telescope
 
   A long brass telescope aimed at the slot in the dome.
 
-  phrase detail while it is on:
+  phrase detail while the brass telescope is on:
     Its clockwork drive ticks as it tracks the sky.
 
 create the star chart
@@ -22,8 +22,14 @@ create the star chart
 
   A chart of the northern constellations.
 
-create the player
-  starts in the Observatory</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Observatory
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; look
 Observatory
@@ -41,5 +47,5 @@ The brass telescope hums to life.
 A long brass telescope aimed at the slot in the dome. Its clockwork drive ticks as it tracks the sky.</code></pre>
 <p>The scenery telescope stays out of the &quot;You can see …&quot; list but examines fine, and the <code>detail while</code> phrase appends its sentence to the description only while the condition holds.</p>
 <table><thead><tr><th></th><th>look (<code>looking-*</code>)</th><th>examine (<code>examining-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td>(<code>room_dark</code> in the dark)</td><td><code>no_target</code> · <code>not_visible</code></td></tr><tr><td>Success</td><td><code>contents_list</code> · <code>container_contents</code> · <code>surface_contents</code></td><td><code>examined</code> · <code>examined_self</code> · <code>examined_container</code> · <code>examined_supporter</code> · <code>examined_switchable</code> · <code>examined_readable</code> · <code>examined_wearable</code> · <code>examined_door</code> · <code>nothing_special</code></td></tr><tr><td>Events</td><td><code>looked</code> · <code>room-description</code> · <code>list-contents</code></td><td><code>examined</code></td></tr></tbody></table>
-<p>Interceptors: <code>on examining it</code> / <code>after examining it</code> on the target (the robin in chord-language.md rides this seam). Looking consults no interceptor clauses, since there is no entity to hang them on; use the room's <code>after entering it</code> or an <code>on every turn</code> daemon instead.</p>
+<p>Interceptors: <code>on the player examining</code> / <code>after the player examining</code> on the target (the robin in chord-language.md rides this seam). Looking consults no interceptor clauses, since there is no entity to hang them on; use the room's <code>after the player entering</code> or an <code>on every turn</code> daemon instead.</p>
 <p>Brief mode is not implemented: verbose is hardcoded on, so <code>room_description_brief</code> is unreachable.</p>

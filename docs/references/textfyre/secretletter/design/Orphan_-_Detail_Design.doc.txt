@@ -1,0 +1,405 @@
+Detail Design Westfield Chandler Publishing, Inc. Copyright © 2007 – All Rights Reserved
+World: 		Orphan
+Series:		Orphan, Princess, and Queen
+Episode:	Orphan
+
+Team:
+Original Design:		David Cornelson Writers:		Michael Gentry Programmers:		David Cornelson First Draft Testers: Alpha Testers: Beta Testers: Finalization Testers: Editors:			Fahmida Cater, Bob Feest, Bill Kolomyjec Graphic Artist: Flash Artist:
+
+Modification History
+Who
+When
+What
+David Cornelson
+30-Nov-2006
+Original Draft
+David Cornelson
+21-Dec-2006
+Cleaned up per Mike Gentry’s comments
+David Cornelson
+02-Jan-2007
+Detailed world elements
+David Cornelson
+04-Jan-2007
+Updated Synopsis
+
+Table of Contents
+ TOC \o "1-3" \h \z \u  HYPERLINK \l "_Toc155707179" Map of Miradan	 PAGEREF _Toc155707179 \h 5
+ HYPERLINK \l "_Toc155707180" The World of Orphan	 PAGEREF _Toc155707180 \h 6
+ HYPERLINK \l "_Toc155707181" The People	 PAGEREF _Toc155707181 \h 6
+ HYPERLINK \l "_Toc155707182" Ascension	 PAGEREF _Toc155707182 \h 6
+ HYPERLINK \l "_Toc155707183" Magic	 PAGEREF _Toc155707183 \h 6
+ HYPERLINK \l "_Toc155707184" In People	 PAGEREF _Toc155707184 \h 6
+ HYPERLINK \l "_Toc155707185" In Things	 PAGEREF _Toc155707185 \h 7
+ HYPERLINK \l "_Toc155707186" Physics	 PAGEREF _Toc155707186 \h 7
+ HYPERLINK \l "_Toc155707187" Astronomy	 PAGEREF _Toc155707187 \h 7
+ HYPERLINK \l "_Toc155707188" Recent History	 PAGEREF _Toc155707188 \h 7
+ HYPERLINK \l "_Toc155707189" Before The Story Begins…	 PAGEREF _Toc155707189 \h 9
+ HYPERLINK \l "_Toc155707190" Royalty Reference	 PAGEREF _Toc155707190 \h 10
+ HYPERLINK \l "_Toc155707191" The Players	 PAGEREF _Toc155707191 \h 11
+ HYPERLINK \l "_Toc155707192" The Player Character	 PAGEREF _Toc155707192 \h 11
+ HYPERLINK \l "_Toc155707193" Jacqueline Toresal (aka Jack)	 PAGEREF _Toc155707193 \h 11
+ HYPERLINK \l "_Toc155707194" Major Non-Playing Characters	 PAGEREF _Toc155707194 \h 11
+ HYPERLINK \l "_Toc155707195" Bobby	 PAGEREF _Toc155707195 \h 11
+ HYPERLINK \l "_Toc155707196" Baron Fossville (aka The Baron, Fossville, the Dark Hunter)	 PAGEREF _Toc155707196 \h 12
+ HYPERLINK \l "_Toc155707197" Mercenaries (group of men)	 PAGEREF _Toc155707197 \h 12
+ HYPERLINK \l "_Toc155707198" Hester Rodop (aka the Magistrate)	 PAGEREF _Toc155707198 \h 12
+ HYPERLINK \l "_Toc155707199" Jacobs	 PAGEREF _Toc155707199 \h 12
+ HYPERLINK \l "_Toc155707200" Olmer	 PAGEREF _Toc155707200 \h 12
+ HYPERLINK \l "_Toc155707201" Darens	 PAGEREF _Toc155707201 \h 12
+ HYPERLINK \l "_Toc155707202" Other Major Characters	 PAGEREF _Toc155707202 \h 12
+ HYPERLINK \l "_Toc155707203" Duke William Toresal (aka Lord of the Keep, the Old Lord, the Prince, the Queen’s Son)	 PAGEREF _Toc155707203 \h 12
+ HYPERLINK \l "_Toc155707204" Minor Non-Playing Characters	 PAGEREF _Toc155707204 \h 12
+ HYPERLINK \l "_Toc155707205" Angeline, Clara, Fiona, Theresa, Shannon (Maiden House)	 PAGEREF _Toc155707205 \h 12
+ HYPERLINK \l "_Toc155707206" Old man Holstenoffer (In Butchery)	 PAGEREF _Toc155707206 \h 12
+ HYPERLINK \l "_Toc155707207" Olgan Minor (Armory)	 PAGEREF _Toc155707207 \h 12
+ HYPERLINK \l "_Toc155707208" Mrs. Sandler (Jewelry)	 PAGEREF _Toc155707208 \h 12
+ HYPERLINK \l "_Toc155707209" Pieter (Jewelry)	 PAGEREF _Toc155707209 \h 12
+ HYPERLINK \l "_Toc155707210" Rudolph (Jewelry)	 PAGEREF _Toc155707210 \h 12
+ HYPERLINK \l "_Toc155707211" Chorus Brothers	 PAGEREF _Toc155707211 \h 13
+ HYPERLINK \l "_Toc155707212" The Screenplay	 PAGEREF _Toc155707212 \h 14
+ HYPERLINK \l "_Toc155707213" SYNOPSIS	 PAGEREF _Toc155707213 \h 14
+ HYPERLINK \l "_Toc155707214" SCENES	 PAGEREF _Toc155707214 \h 15
+ HYPERLINK \l "_Toc155707215" Scene I – The Chase	 PAGEREF _Toc155707215 \h 15
+ HYPERLINK \l "_Toc155707216" Scene II – Bobby	 PAGEREF _Toc155707216 \h 15
+ HYPERLINK \l "_Toc155707217" Scene III – Rooftops/Black Gate Estate	 PAGEREF _Toc155707217 \h 15
+ HYPERLINK \l "_Toc155707218" Scene IV - Sewers	 PAGEREF _Toc155707218 \h 15
+ HYPERLINK \l "_Toc155707219" Scene V - Small Woods	 PAGEREF _Toc155707219 \h 15
+ HYPERLINK \l "_Toc155707220" Scene VI - Lord's Keep	 PAGEREF _Toc155707220 \h 16
+ HYPERLINK \l "_Toc155707221" Scene VII - Fossville Estate	 PAGEREF _Toc155707221 \h 16
+ HYPERLINK \l "_Toc155707222" Scene VIII - Red Gate Estate	 PAGEREF _Toc155707222 \h 16
+ HYPERLINK \l "_Toc155707223" Scene IX - Lord's Keep	 PAGEREF _Toc155707223 \h 16
+ HYPERLINK \l "_Toc155707224" Scene X - Epilogue	 PAGEREF _Toc155707224 \h 16
+ HYPERLINK \l "_Toc155707225" Puzzles	 PAGEREF _Toc155707225 \h 17
+ HYPERLINK \l "_Toc155707226" The Chase	 PAGEREF _Toc155707226 \h 17
+ HYPERLINK \l "_Toc155707227" Escaping from Jail	 PAGEREF _Toc155707227 \h 17
+ HYPERLINK \l "_Toc155707228" The Red Gate Estate	 PAGEREF _Toc155707228 \h 17
+ HYPERLINK \l "_Toc155707229" The Rooftops and the Black Gate Estate	 PAGEREF _Toc155707229 \h 17
+ HYPERLINK \l "_Toc155707230" The Fountain	 PAGEREF _Toc155707230 \h 17
+ HYPERLINK \l "_Toc155707231" The Sewer	 PAGEREF _Toc155707231 \h 17
+ HYPERLINK \l "_Toc155707232" The Final Confrontation	 PAGEREF _Toc155707232 \h 17
+ HYPERLINK \l "_Toc155707233" Game Features	 PAGEREF _Toc155707233 \h 18
+ HYPERLINK \l "_Toc155707234" Time Keeping	 PAGEREF _Toc155707234 \h 18
+ HYPERLINK \l "_Toc155707235" Details	 PAGEREF _Toc155707235 \h 19
+
+Map of Miradan
+
+The World of Orphan
+In this world there exists a single planet where humans live and magic is extremely rare. The world has large bodies of water and at least one land mass as of this history. This continent is known as Miradan and is loosely ruled by the Kingdom of Jais Del Brin.
+The People
+The people of Jais Del Brin are generally farmers, fisherman, and townspeople. Commerce is rugged and local, and the Kingdom generally functions without much taxation. Royalty includes the King and Queen, Princes, Princesses, Dukes and Duchesses, Earls and Countess, Barons and Baronesses.
+Ascension
+The Kingdom generally selects new Kings based bloodlines, but this is married to the fact that the vast majority of Kings have sired strong, popular, and healthy sons to ascend to the throne. The key here is popularity. The Kingdom has rarely had to think about succession and when it has, it has generally been between two strong choices, not a complete lack of strong choices.
+In the absence of a strong and popular blood prince, the laws of the Kingdom state that the King or Queen must choose a successor. In the event of the death of the King and the Queen before a successor has been named, all of the primary royals will select a Regent to handle Kingdom affairs until a successor is selected by vote. Voting is weighted in that Princes and Princesses get ten votes, Dukes and Duchesses get five votes, Earls and Countesses get three votes, and Barons and Baronesses get a single vote. But again, the general public’s opinion is taken into consideration before a successor is selected. A special People’s Regent role has always been filled, but never used but for ceremony. The role in the case of an unclear successor is to poll the people and make known their wishes. Obviously, in certain circumstances, this could become a very dangerous and powerful role.
+Magic
+In People
+Magic is known to exist and is treated respectfully by the general population. They consider it either lucky or unlucky to have good or bad things happen due to magic respectively. Everyone always dreams of some minor magic to help their daily lives, but almost no one goes in search of it. Life is hard and there is no time for such endeavors. Those people that have discovered a talent for magic generally keep it to themselves and help or hurt those as they would with any other talent. There is no general commerce in magic, but if a magic user is available, some may intrude to ask for a favor and offer some token in return. Magic tends to develop in women more than men, although an analysis of those with “talent” would show that girls are encouraged to look within and boys are not, so never develop whatever ability they may have. Girls with talent are considered blessed or cursed, depending upon their nature (if a girl is a trouble-maker, she’s cursed…if a girl is kind, she is considered blessed).
+Most magic is minor. Very little “grand magic” is know about or has ever been seen. The common uses of magic are to mend clothes, cure minor ailments, fix broken tools, and the like. On occasion a magic user will have more interesting abilities.
+In Things
+There are artifacts that are imbued with magical ability, giving the owner of the artifact some magical ability, albeit focused and limited.
+Physics
+The general physics of this world are the same as Earth.
+Astronomy
+The night sky of this world is full of stars. One section of the sky that is seen in summer is a strip of very bright stars known commonly as “The River of Light”. It also has two moons, one noticeably large than the other. They are known commonly as Big Sister and Little Brother.
+Recent History
+The Realtic Kingdom has been seemingly healthy for hundreds of years, with successions going without any problem. But the last two kings have ruled poorly and the most recent king has left the land to an elderly queen, who only late in life realized she would need to rule and determine a successor.  Although her children and grandchildren may vie for the crown, their particular fates have produced a great deal of concern from the public and the Lord’s council as to their ability to rule.
+Succession rights are simple where blood is concerned, but with so many inline, the fate of the kingdom is not so simply decided. It’s almost a game or a sport. Whoever shows the Queen that they deserve it, and then garners public approval, will become the heir to the throne. Because the Kingdom has had such a peaceful history, the public would balk at a heavy-handed ruler.
+Orphan is the story of a young girl that is at the top of the blood lines, along with many other potential successors. Her father was the last son born of the current queen, with seven siblings in front of him. Unfortunately, his fate was decided by Baron Fossville. Having seen the coming turmoil, he wished to vie for the thrown himself, and turned to dark means to attain it.
+In the 756th year of the Kingdom, Baron Fossville managed to slowly poison Duke Toresal, making it look like a mysterious illness. What Fossville did not know until taking over the Duke’s keep and lands was that the former Lord had bore a child with a woman in secrecy. Since the Duke was already married, the secret remained buried for years. But before his death, Duke Toresal left written claim to all of his estates to his only daughter. He had loved the woman that bore her, but could not openly recognize her or their child…a mandate from the Queen herself, since the woman was not of royal blood.
+But his will left the door open for young Jacqueline, and this is her story….
+There will be two sequels:
+Princess
+Jacqueline travels to the Royal Court incognito, hoping to be recognized as the heir to her father’s estate. But she finds out that she’s much more important to the Kingdom than she could have ever imagined. Her mother was the daughter, and only child, to the King. Eventually, she will make it to the Royal Court and when the King dies, all eyes will be on her.
+
+Queen
+As the heir “apparent” to the throne, Jacqueline is thrown into a world of intrigue. Most of the royal court are decidedly against her ascension, some quietly and some not so quietly. The challenge will be to weave safely through all threats to her coronation.
+
+Before The Story Begins…
+Your name is Jacqueline, but everyone outside of the Maiden House knows you as Jack. A few people have come to know you well enough to know that you are a girl and some have figured it out on their own. A few suspect that you are special and some think it's because you are the daughter of a royal personage. No one knows for sure. There is proof of the matter within your father’s personal papers and some people in the royal government know. The fact that you exist and there is no other clear heir to the local lands (much less the Kingdom’s throne) is the intrigue into which you were born. If you were to be recognized a royal heir it would cause a great deal of upheaval and if you were not recognized, things would probably progress more smoothly, albeit in a fashion the crown is not comfortable with. It would elevate a family that is highly ambitious, placing their heirs in a position to marry into the throne.
+
+Your sponsor has in fact been your father by blood. He loved the woman that bore you to him, but as a mistress, there was no way to bring her or you to court. For the first ten years of your life, your father watched as you grew. He made sure that some of the women in Maiden House were well-educated and paid them to tutor you.
+
+In your tenth year, Lord Duke Toresal died of a mysterious illness. He left a legacy of goodwill among the people, but the succession to his lands was clearly going to Baron Fossville, a man who hired mercenaries for mysterious businesses and who had clear ambitions for the royal court. Fossville’s machinations were coming to fruition as a royal ball was planned at which he would be betrothed to one of the Queen’s daughters.
+
+You are a fourteen year old girl on the verge of becoming a woman. Your mother died when you were born and you do not know who your father was. You do know that someone sponsored your early upbringing at Maiden House. Even though they care for you and feed you, and even though you do appreciate everything they did, you always felt you were destined for something else. You learned to read and write; a great deal of history of the land, to speak and act properly, and how to be respectful. You even were given the gift of a solid self-esteem. You possess all of the things that most orphans never even know about.
+
+Eventually you decide that the stodgy lifestyle of the Maiden House was more than you can bear and you began taking to the streets at the age of nine. Wearing trousers and a boy’s shirt and continually cutting your hair off with a blade, you instinctively realized that certain doors were open to you pretending to be a boy.
+
+The maidens counted it a phase and although they worried if you were out all night, they never questioned where you'd been or what you'd done. It was as if they accepted your maturity and decision making almost entirely without question. But they did look out for you too. More than once you caught one of the younger maidens "accidentally" bumping into you.
+
+For the next three years you manage to befriend other orphans, although of less luck. They happily show you how to beg, steal, and sneak around town without ever getting caught by the magistrate or his soldiers. One of the beggars you befriend is a boy named Bobby, who appeared on the streets shortly after your tenth birthday. Never questioning the appearance or disappearance of any of the orphans, you don’t realize that he is in fact a spy for the royal court, and in some ways, your protector.
+Bobby’s mission is to find out of Fossville is a worthy heir to the thrown or if the rumors of murder and thievery are true. What he finds out eventually gets him into trouble and seemingly hung by Baron Fossville’s mercenaries.
+But Bobby’s friends save him before he can be hung and although Fossville knows he’s survived, he plays up the fact that your friend has been murdered.
+Eventually you discover that you have outgrown your boyishness and come to find out much of your heritage. The problem is that you have no proof. But Bobby hinted that the proof is in Lord’s Keep and you mean to expose it.
+With help from the women of Maiden House, you bath and dress for the Royal Ball and taking the secret passage, enter without notice. When the Queen begins her speech, you try to interrupt the proceedings, but Fossville quickly has you led off to the War Room.
+After a typical bad guy speech about how he has won, Bobby comes in and a sword fight ensues. This is where we should end it, but I can think of a million ways…so I’ll leave it open for now.
+Royalty Reference
+King, Queen 
+Prince, Princess 
+Duke, Duchess 
+Prince, Princess (if they have royal parentage)
+Earl, Countess 
+Baron, Baroness 
+
+
+The Players
+The Player Character
+Jacqueline Toresal (aka Jack)
+Jacqueline is a fourteen year old girl coming of age in a rugged town on the outskirts of the Kingdom.
+You need to purchase a discreet blade for the fight. Something that fits inside the dress you will be wearing to the ball.
+Major Non-Playing Characters
+Bobby
+Bobby is an orphan, fifteen years old, and seems to do things for various people for money, but you can never quite figure out what he does. You don't know where he sleeps, but he always seems "taken care of". Well, sometimes he looks a wreck, but that's rare.
+
+Bobby will show you how to get into the Lord's Keep, but in doing so will lose his life.
+
+You will meet Bobby in the Lord's Market after escaping the soldiers. If you ask him about stuff, he will tell you a lot. Eventually you need to ask him to help you get into Lord's Keep. He will tell you to meet him when the moon is at its height.
+
+When you meet him, he tells you he knows you're a girl. You can kiss him, but that's all.
+
+He leads you into a wooded area and then a clearing. In the clearing is a small fountain with a mermaid on top. He climbs on top of the fountain and inserts a penny into the mouth of the mermaid and jumps down. He then pushes the fountain and it swivels aside to reveal a staircase.
+
+Down the staircase is a passage that leads to a secret opening in the Lord's Keep. You can explore Lord's Keep at night when everyone is asleep. If you try to go in during the day, you will be captured and hung.
+
+On this first trip though you decide to return to the village and Bobby accompanies you. You did not know that Bobby took a valuable necklace from the Keep. When you get back to the village, the magistrate and mercenaries are hunting for Bobby. They capture him and reportedly hung for his crime. You will hear about it the following day. But Bobby will have left you a present. Olmer will give it to you the next time you see him in the sewer.
+
+The present will be a simple wooden box but inside will be a record of payments to the Maiden House, though no names are mentioned, the records clearly show payments starting fourteen years ago and ending two years ago. The current Lord of the Keep is an un-welcome cousin of the old Duke, who passed away two years before. Now that you think of it, the Maiden House did seem to suffer some event back then and the maidens began working much harder than they had in the past. This was obviously to compensate for losing the funds that had been coming from Lord's Keep. But why would the old Duke pay for your well-being?
+Baron Fossville (aka The Baron, Fossville, the Dark Hunter)
+Mercenaries (group of men)
+Hester Rodop (aka the Magistrate)
+The magistrate, Hester Rodop, is a very bad man. He will try very hard to catch you doing something wrong and if he does, it will not go well for you. You could wind up in a cell with bad men or you could wind up with a hand cut off. These are losing avenues of the game.
+
+Getting caught once is all you can afford though. When caught, you will be placed in a common cell with several men all going by one name: Jacobs, Olmer, and Darens. Jacobs is a very bad man and you can't let him escape, but helping Olmer and Darens is critical to your success.
+Jacobs
+Olmer
+Darens
+
+Other Major Characters
+Duke William Toresal (aka Lord of the Keep, the Old Lord, the Prince, the Queen’s Son)
+Minor Non-Playing Characters
+Angeline, Clara, Fiona, Theresa, Shannon (Maiden House)
+Angeline, Clara, Fiona, Theresa, and Shannon are the women in the Maiden House. They are all widows that look out for each other. They do various odd jobs for town folk and farmers who pay them in food and bare necessities. They know many things about the town and surrounding area, although they will very rarely offer details without some prior knowledge.
+
+These women are the help system. They will offer information on how to solve problems within the game as you learn about them. So when you find a door you can't unlock (unlikely), they will know how to help you.
+Old man Holstenoffer (In Butchery)
+The butcher will talk incessantly while you are in his shop. Some of the things he says will give you some clues to puzzles.
+Olgan Minor (Armory)
+Mrs. Sandler (Jewelry)
+As it turns out, Mrs. Sandler knows who your mother was and liked her. She also is in possession of something that belongs to you; a diamond and ruby necklace.
+Pieter (Jewelry)
+Rudolph (Jewelry)
+Chorus Brothers
+When rumors start floating about your possible inheritance, the Chorus brothers are more than willing to lend you money, considering it an excellent investment.
+
+
+
+The Screenplay
+SYNOPSIS
+
+A young orphan girl pretending to be a boy discovers people are trying to kill her, that she is royal born, and that she must save herself by finding out as much information as possible, as well as proving that she is worthy of being recognized as the heir to the local lands.
+
+Jack is chased by mercenaries and does not know why.
+Jack has opportunities to talk to people about the environment.
+Butcher
+Baker
+Armory
+Moneylender
+Jeweler
+Clothier
+Jack meets Bobby and is taken on a wild chase through town and into the woods, escaping into the secret tunnel of Lord’s Keep. They find about the Queen’s visit and the upcoming ball where the Baron will marry into the Royal Family.
+Jack goes back to town to sleep at Maiden House, where the women hide her in a secret room. Here she learns about her mother.
+Jack tries to get back through town to the woods and is captured. Bobby is beaten up badly in an adjacent cell. He whispers about secrets in Black Gate Estate. Jack meets crooks that help her escape and tell her where to hide in the sewer.
+Jack is chased into sewer system and hides.
+Jack comes out of hiding and gets into Black Gate Estate. She finds out about her father, including the letter that recognizes her as heir.
+Jack hears that Bobby has been hung and returns to Maiden House. The women open up about everything and tell her that the Red Gate Estate is her home now, but dangerous to go there.
+Jack gets into Red Gate Estate with key from maidens and one of the maidens coming with her. She finds artifacts about her father. She also finds fresh clothes and a bath. One of the maidens helps her bath and suggests she buy a new gown and to sneak into the ball to seek audience with the Queen.
+Jack visits the moneylender and with the letter is able to take money out.
+Jack visits the clothier and jeweler to get ready for ball. Pieter decides to accompany her.
+Jack visits the armory and buys a stiletto knife and hides it in her bodice.
+Jack and Pieter cannot enter Lord’s Keep directly as the mercenaries are all standing guard.
+Jack shows Pieter the secret entrance. On their way through the woods, an odd old woman approaches them. She cryptically offers Jack a potion. The potion makes Jack’s hair grow out. They enter the Keep and filter into the ball room, uninvited. The Queen has not arrived yet.
+The mercenaries start filtering into the Keep.
+They begin to recognize Jack and Pieter disappears.
+The Baron appears at Jack’s side and holds her arm tightly. He walks her to the War Room.
+Jack enters the War Room. Pieter is slumped on the floor, bound hand and foot. Several mercenaries glare at Jack menacingly. The Baron has the door guarded and sits down. He asks Jack what you’re doing. Jack shows him the letter. He seems nervous, but confident.
+The Baron burns the letter in the fireplace and picks up his sword. He approaches.
+Suddenly there is an argument outside. A fight is heard.
+The door is knocked down and Bobby comes charging in. He fights a dual with the Baron.
+Jack releases Pieter with your knife. He takes it and begins fighting mercenaries.
+The Baron knocks Bobby down and runs out of the room.
+The mercenaries follow, as do Pieter and Bobby.
+The Princess comes into the room from a secret passage. She has more mercenaries with her and they kidnap Jack.
+To Be Continued…
+
+SCENES
+
+Scene I – The Chase
+The scene begins when play begins.
+The scene ends when you reach Commerce Street.
+
+Every time Jack is captured, there are several escape routes available. If Jack hasn’t escaped by 3pm, the market starts clearing up and escape routes begin to disappear. Once all of the routes have disappeared, the escape is simply to go east and she gets away. Since we’re advancing the clock by 3 or 5 minute increments, there are several hundred moves before the puzzle is easily solved. Points will be rewarded based on the efficiency of solving the puzzle.
+
+Scene II – Bobby
+The scene begins when you reach Commerce Street for the first time.
+The scene ends when you reach the rooftops for the first time.
+
+You meet Bobby in Lord’s Market after talking to the Butcher. He tells you many things and that he plans to find out more information later than night. He also tells you how to get onto the rooftops to hide.
+
+Scene III – Rooftops/Black Gate Estate
+The scene begins when you reach the rooftops for the first time.
+The scene ends when you’ve finished in the Black Gate Estate and return to Commerce Street.
+
+Scene IV - Sewers
+
+You discover a convenient hiding place.
+
+Scene V - Small Woods
+
+You meet Bobby, who shows you how to secretly enter Lord's Keep.
+
+Scene VI - Lord's Keep
+
+You discover hints at your parentage. Bobby is seemingly captured and killed. You garner information that shows you how to enter the Red Gate Estate, which seemingly was your fathers house.
+
+Scene VII - Fossville Estate
+
+You discover the plot against your life. You get the keys to your father’s house.
+
+Scene VIII - Red Gate Estate
+
+You find out more about your mother and father and that they were deeply in love. You mother died at childbirth at Maiden House and your father was unable to acknowledge you since he had not married your mother, to his great regret. You find out about the family that will inherit Lord's Keep if you are not recognized by the crown. You also find clothing that was to be yours had your father lived. You enlist the help of one of the maidens to get you dressed.
+
+Scene IX - Lord's Keep
+
+At a ball, you enter and confront the Baron. He brings you quietly to his offices where he's about to kill you when Bobby barges in, fights Fossville, and then the Queen enters….
+
+Scene X - Epilogue
+
+You are given a letter by the Queen that says you must quietly travel to the Royal city and make every effort to gain the public's attention so that you can be recognized. Birth alone will not give you the right. Other elements are weighed before anyone is recognized by the crown.
+
+As you celebrate your good fortune, the betrothed daughter of the Queen has you kidnapped…
+
+
+
+
+
+Puzzles
+The Chase
+Escaping from Jail
+
+So the progression will be something like: pretend to sleep. wake Olmer. wake Darens. pick lock. open door. Tell Darens and Olmer to wait. get key from guard (sleeping). lock cell. out.
+
+If you let Jacobs out he will eventually kill you....just because he doesn't like you. If you don't help Olmer and Darens escape, they won't be able to help you in the sewer later.
+
+Jacobs does have information you need though. After the escape, you can talk to him through the window of the jail. You'll have to give him something from the bakery to get him to talk though.
+
+The Red Gate Estate
+The Rooftops and the Black Gate Estate
+The Fountain
+The Sewer
+After escaping, Olmer and Darens will immediately go into the sewer and go to their "hideout". You should follow them and remember how to get there.
+The Final Confrontation
+You will eventually discover a plot to murder you and destroy all evidence of your paperwork. Confronting Baron Fossville, you are threatened at sword point and all the details of the plot unfold. But in stalling for your life, you save it. Bobby, whom you thought hung, crashes through the door with crown soldiers who battle and defeat Fossville and his men (with your help of course). Bobby, you find out, is Robert Cailend, son of the Duke of Cail.
+
+
+
+
+Game Features
+Time Keeping
+The setting must have night and day characteristics.
+
+Room locations should note light regarding the sun and moon where appropriate.
+
+Room locations should note crowdedness based on the time of day. For instance, the markets are crowded during the day and empty at night.
+
+We should be able to easily enough implement "wait for darkness" or "wait until morning". This could potentially be an extension.
+
+Details
+Prologue – Alley
+When Play Begins:
+It’s been a long morning and after running around town doing nothing but mischief, you decide it’s time for a break. Little do you know that this will be the last break you’ll get for the rest of your life.
+
+Sitting back to a cool wall, you begin peeling an orange for a snack when you hear a group of men pounding up the alley.
+
+Prologue – Alley
+UP or HIDE 
+
+
+Prologue - Roof of Outer Market 
+Grubber’s Market
+Description
+
+Talk To
+Guard or Sergeant
+{In Beginning of Game}
+Kick
+Guard or Sergeant
+Anytime
+East
+[Commerce Street]
+Commerce Street
+Description
+
+Talk To
+Bobby
+Enter the Bakery
+Enter the Butchery
+Enter the Armory
+Enter the Clothier
+Enter the Lending House
+Enter the Jeweler
+Go in Between Bakery and Butchery
+[In Between Bakery and Butchery]
+Go In Between Butcher and Armory
+[In Between Butchery and Armory]
+Go in Between Clothier and Jeweler
+Go in Between Jeweler and Lender
+In Between Bakery and Butchery
+In Between Butcher and Armory
+In Between Clothier and Jeweler
+In Between Jeweler and Lender
+Bakery
+Butchery
+Armory
+Clothier
+Jeweler
+Talk To Guards
+{First Time}
+
+
+
+
+{Second Time}
+
+Moneylender
+Commerce Street East
+Roof of Bakery
+Roof of Butchery
+Roof of Armory
+Roof of the Black Gate Estate
+Patio  of the Black Gate Estate
+Garden of the Black Gate Estate
+Third Floor Landing (in Black Gate Estate)
+Second Floor Landing (in Black Gate Estate)
+Music Room (in Black Gate Estate)
+Audience Room (in Black Gate Estate)
+Balcony (in the Black Gate Estate)
+
+
+
+
+I’m confused.  I thought her mother was not of Royal Blood? If Jack’s mother is the only child of the King, does that not also make her the only child of the Queen? I thought that the Queen had eight children, of whom Duke Toresal (Jack’s father) was the youngest (from the last paragraph of the previous page). Some sort of family tree diagram would be very helpful here.
+This is drifting from “before the story begins” into “the story”. Try to keep things that happen during gameplay in their own section -- otherwise it becomes confusing.
+This paragraph describes a puzzle and should be moved elsewhere. The character section should focus only on describing who each character is and any distinguishing appearance or personality traits that you want the writer to incorporate.
+This, again, is a description of plot, not character.
+Save this for the description of the actual event/puzzle.
+This synopsis contains a number of details that aren’t mentioned or outright conflict with other plot summaries in the document (This is why you need to keep plot summary from creeping into other sections). You need to go through the document, eliminate all other description of plot, and consolidate the details here, so that there is one definitive synopsis.
+I’m confused about the difference between Lord’s Keep, Red Gate Estate, and Black Gate Estate. What are they, where are they in relation to each other and the town, and who lives in each? The game map will probably help with this. It would also be nice to have a separate section describing Major Places, just as there is a section describing Major NPCs.
+See comment on Black Gate Estate, above.
+In the absence of a definitive map and room/object tree, these scene descriptions are confusing. I’m thinking you should kill this section and describe events and action sequences either after or within the room/object tree itself.
+Again, I’m wondering if these shouldn’t be described alongside the rooms and/or objects to which they pertain.
+Let’s get rid of this and the other prose bits below. I’m assuming I’ll be replacing it anyway, so right now it’s just cluttering up the structure of the document.
+See accompanying notes for how the room/object list perhaps should be structured.
+I would stay away from organizing things in terms of game commands or as a sample transcript. That’s stuff the programmer needs to know, not necessarily the writer.
+
+

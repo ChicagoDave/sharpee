@@ -161,7 +161,7 @@ describe('zoo-actions dispatch (petting/feeding)', () => {
     expect(second.validation.valid).toBe(true);
 
     // State assertions: `change it to content` mutated world state; the
-    // goats' `after feeding it / award fed` reaction awarded the
+    // goats' `after the player feeding / award fed` reaction awarded the
     // owner-qualified `pygmy-goats.fed` (worth 10) in the report phase.
     expect(world.getStateValue(CHORD_STATE_PREFIX + 'pygmy-goats')).toBe('content');
     expect(world.getScore()).toBe(10);

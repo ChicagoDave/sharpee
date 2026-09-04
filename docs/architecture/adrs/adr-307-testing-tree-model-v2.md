@@ -109,6 +109,20 @@ exactly what the JSON says; a bare card is the tier-boundary failure.
 `noDefaults` left the schema (closed grammar — narrowing is plain removal).
 Serialization is deterministic (sorted keys, stable order).
 
+**Addendum — the `states` family's string grammar (2026-09-03, session 89ce13,
+GH #355 ruled by David).** A `states` entry is one string, parsed only by
+`evaluateStateExpression` in `packages/branch-tester/src/runner.ts` (no other
+document spells this grammar; this paragraph is its reference). Forms, tried
+in order: `story.state = <state>` / `!=` (the story's phase); `<entity>.<property>
+= <value>` / `!=` and `<entity>.<collection> contains <item>` / `not-contains`
+(single-word entity head; `location`, `contents`/`inventory`, or a plain
+property); and the Chord-spelled form `[the] <name> is <state>` / `is not
+<state>`, which reads a Chord entity's own `states:` value (`chord.state.<ir-id>`,
+reached through the IR-id attribute the loader stamps on every entity it
+creates) and accepts the story's own spelling of the name — spaces, aliases —
+with `the story is <state>` reading the phase. The family's shape in the
+schema is unchanged; the Testing tab's `states` field is free text.
+
 ### D3 — The Testing tab is always recording; the checkboxes go
 
 Playing in the Testing tab **is** writing the suite: every typed command

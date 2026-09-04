@@ -40,7 +40,7 @@ const CHARACTER_TURN_KEY = 'character.turn';
 const SOURCE =
   'story\n  title: T\n  authors:\n    N\n  id: phase9\n  story-version: 0.0.1\n\n' +
   'create the Hall\n  a room\n\n  A hall.\n\n' +
-  'create the player\n  in the Hall\n\n  Me.\n\n' +
+  'create Alex\n  a person\n  playable\n  in the Hall\n\n  Me.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create Aemilia\n' +
   '  a person, proper\n' +
   '  in the Hall\n' +
@@ -105,6 +105,7 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
   return {
     world: l.world,
     player: l.player,
+    actor: l.player,
     action,
     currentLocation,
     command,
@@ -232,6 +233,7 @@ describe('AC12 (D12 leg) — a restored world re-advertises identically', () => 
         ({
           currentTurn: 6,
           player: l.player,
+          actor: l.player,
           history: [],
           metadata: { started: new Date() },
         }) as unknown as GameContext,

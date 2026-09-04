@@ -40,19 +40,25 @@ create the iron ring
 
   A ring set into the floor slab.
 
-  on taking it
+  on the player taking
     refuse ring-fused
   end on
 
   phrase ring-fused:
     The ring is fused to the slab; your fingers just slip off it.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Lamp Room
 
 override message dropping-dropped
   You set it down with care.
 end override
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -72,7 +78,7 @@ You set it down with care.
 ```
 
 Three seams in one scene: `scenery` refuses with the platform's
-`fixed_in_place`, the ring's `on taking it` guard refuses with its own
+`fixed_in_place`, the ring's `on the player taking` guard refuses with its own
 phrase, and the story-wide `override message` rewrites
 every plain drop.
 
@@ -82,5 +88,5 @@ every plain drop.
 | Success | `taken` · `taken_from` (out of or off something) · `taken_multi` (`take all`) | `dropped` · `dropped_in` · `dropped_on` · `dropped_quietly` (glass, room drop) · `dropped_carelessly` (`discard`) · `dropped_multi` |
 | Events | `taken` / `take_blocked` | `dropped` / `drop_blocked` |
 
-Interceptors: `on taking it` / `after taking it` on the item, and
+Interceptors: `on the player taking` / `after the player taking` on the item, and
 REMOVE-FROM phrasing cannot dodge a taking guard.

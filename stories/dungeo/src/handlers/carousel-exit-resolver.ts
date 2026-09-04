@@ -66,6 +66,14 @@ function messageEvent(messageId: string): ISemanticEvent {
  * narration. While fixed, defers to static topology.
  */
 const carouselExitResolver: ExitResolver = (room, trait, _direction, staticExit, ctx) => {
+  // MDL fidelity: CAROUSEL-EXIT / MAGNET-ROOM-EXIT are the PLAYER's exit
+  // functions; ROBBER and the other residents never traverse room exits at
+  // all. Now that an NPC's step is the real going action (ADR-328 D5), a
+  // non-player mover crosses the static topology and draws nothing — the
+  // named points' streams stay the player's alone.
+  if (ctx.actorId !== ctx.world.getPlayer()?.id) {
+    return undefined;
+  }
   const data = trait as CarouselExitTrait;
 
   let spinning = false;

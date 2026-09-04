@@ -59,6 +59,28 @@ import { handleClientQuery } from './handlers/client-query.js';
 import type { IProsePipeline, SlotContributor, SlotEntry } from './types.js';
 
 /**
+ * ADR-328 D3, the client-facing half: copy an event's `presence` tag (and
+ * the `entities.location` it was computed from) onto every block the event
+ * rendered to. The one chokepoint between events and blocks — nothing is
+ * dropped here; an absent event renders like any other and the client
+ * decides. Events without a tag (the player's own actions, system
+ * messages) leave their blocks untouched.
+ *
+ * @param event the source event
+ * @param blocks the blocks its handler produced
+ * @returns the same blocks, tagged when the event was
+ */
+function tagPresence(event: ISemanticEvent, blocks: ITextBlock[]): ITextBlock[] {
+  if (event.presence === undefined || blocks.length === 0) return blocks;
+  const location = event.entities?.location;
+  return blocks.map((block) => ({
+    ...block,
+    presence: event.presence,
+    ...(location !== undefined ? { location } : {}),
+  }));
+}
+
+/**
  * Engine-internal prose pipeline.
  *
  * Stateless transformer: events in, blocks out. Constructed once per
@@ -257,7 +279,7 @@ export class ProsePipeline implements IProsePipeline {
 
     const blocks: ITextBlock[] = [];
     for (const event of sorted) {
-      blocks.push(...this.routeToHandler(event, context));
+      blocks.push(...tagPresence(event, this.routeToHandler(event, context)));
     }
 
     return blocks;

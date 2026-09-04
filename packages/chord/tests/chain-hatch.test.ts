@@ -20,8 +20,14 @@ create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
+
+before the game starts
+  change the player to Alex
+end before
 
 ${tail}`;
 

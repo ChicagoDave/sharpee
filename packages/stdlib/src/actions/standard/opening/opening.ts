@@ -20,7 +20,7 @@ import { OpenedEventData, ExitRevealedEventData } from './opening-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { OpeningMessages } from './opening-messages.js';
-import { validateToolRequirements } from '../tool-shared.js';
+import { resolveToolRequirements } from '../tool-shared.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
@@ -102,6 +102,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     'its_empty',
     'cant_reach',
     'no_tool',
+    'needs_tool',
     'tool_not_held',
     'wrong_tool'
   ],
@@ -151,17 +152,21 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Author-configured tool requirement (ADR-230 D3b): a no-requirement
     // openable ignores an offered tool; a requirement refuses on
     // no_tool/tool_not_held/wrong_tool. Explicit tools only.
-    const tool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
-    const toolValidation = validateToolRequirements(
+    const explicitTool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
+    const toolResolution = resolveToolRequirements(
       context,
       noun,
-      tool,
+      explicitTool,
       OpenableBehavior.requiresTool(noun),
-      (toolId) => OpenableBehavior.canOpenWith(noun, toolId)
+      (toolId) => OpenableBehavior.canOpenWith(noun, toolId),
+      OpenableBehavior.requiredTools(noun)
     );
-    if (toolValidation) {
-      return toolValidation;
+    if (toolResolution.failure) {
+      return toolResolution.failure;
     }
+    // GH #241: the tool in play — named, or implied from the hands — for
+    // the later phases (the lifecycle's tool slot consults named tools only).
+    context.sharedData.resolvedTool = toolResolution.tool;
 
     // Check lock status using behavior
     if (noun.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(noun)) {
@@ -232,7 +237,7 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       // Domain data (for event sourcing / handlers)
       targetId: noun.id,
       targetName: noun.name,
-      actorId: context.player.id
+      actorId: context.actor.id
     }));
 
     // 2. Domain event for backward compatibility (simplified)

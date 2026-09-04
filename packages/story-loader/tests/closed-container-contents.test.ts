@@ -35,10 +35,17 @@ create the letter
 
   The hidden letter.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Attic
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('load-time contents of a closed container', () => {

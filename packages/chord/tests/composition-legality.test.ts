@@ -23,10 +23,16 @@ create the Vault
 
   A vault.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 ${body}`;
 
@@ -76,11 +82,18 @@ create the cloak
 ${cloakTraits}
   A cloak.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
   wears the cloak
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
   it('reports a worn item without the wearable trait', () => {
@@ -110,13 +123,13 @@ describe('census 13 — tool-gated gerunds register exactly one implementation (
   });
 
   it('accepts exactly one entity-level implementation', () => {
-    expect(errorCodes(rope('cuttable', '\n  on cutting it\n    change it to cut\n  end on\n'))).toEqual([]);
+    expect(errorCodes(rope('cuttable', '\n  on the player cutting\n    change the rope to cut\n  end on\n'))).toEqual([]);
   });
 
   it('reports two implementations (entity clause + composed trait clause)', () => {
     const src =
-      rope('cuttable, sharp', '\n  on cutting it\n    change it to cut\n  end on\n') +
-      '\ndefine trait sharp\n  states, reversible: keen, dull\n\n  on cutting it\n    change it to dull\n  end on\nend trait\n';
+      rope('cuttable, sharp', '\n  on the player cutting\n    change the rope to cut\n  end on\n') +
+      '\ndefine trait sharp\n  states, reversible: keen, dull\n\n  on the player cutting\n    change it to dull\n  end on\nend trait\n';
     const found = errors(src);
     expect(found.map((d) => d.code)).toEqual(['analysis.gerund-implementation']);
     expect(found[0].message).toContain('has 2 cutting implementations');
@@ -152,10 +165,17 @@ create the Bar
 
   A bar.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Bar
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
     expect(errorCodes(src)).toEqual([]);
   });

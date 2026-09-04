@@ -1,5 +1,5 @@
 <p><code>refuse</code> stops the action and speaks a phrase. The conditional form <code>refuse when &lt;condition&gt;: &lt;key&gt;</code> refuses only when its condition holds, as the mittens line above shows. The bare form refuses always, for things that are simply never allowed:</p>
-<pre><code class="language-chord">  on taking it
+<pre><code class="language-chord">  on the player taking
     refuse all-thorns
   end on</code></pre>
 <p>The named key resolves entity-scoped first (ADR-231): a <code>phrase all-thorns:</code> override in the refusing entity's own <code>create</code> block wins over a story-wide <code>all-thorns</code>, and a bare key renders on standard actions just as it does on story-defined ones. The key is a single kebab-case word; dots are illegal (ADR-254).</p>

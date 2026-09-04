@@ -72,6 +72,16 @@ export const DEFAULT_NARRATIVE_CONTEXT: NarrativeContext = {
 };
 
 /**
+ * The context whose conjugation is the 3rd-person-singular surface — the form
+ * the phrase algebra's `Verb` atom takes as its lemma (ADR-199 §1). Used to
+ * rewrite a bare perspective verb into a subject-agreeing `{verb:…}` atom.
+ */
+export const THIRD_SINGULAR_CONTEXT: NarrativeContext = {
+  perspective: '3rd',
+  playerPronouns: { subject: 'she', object: 'her', possessive: 'hers', possessiveAdj: 'her', reflexive: 'herself', verbForm: 'singular' },
+};
+
+/**
  * Common irregular verbs and their conjugations
  * Format: { base: [1st/2nd person, 3rd singular, 3rd plural] }
  */
@@ -286,60 +296,109 @@ export function resolvePerspectivePlaceholders(
   ]);
 
   message = message.replace(/\{([a-z][a-z']*)\}/gi, (match, verb) => {
-    const lowerVerb = verb.toLowerCase();
-
-    // Skip non-verb placeholders
-    if (nonVerbPlaceholders.has(lowerVerb)) {
-      return match; // Leave unchanged for regular param substitution
+    if (!isBareVerb(verb, params)) {
+      return match; // a param or non-verb word — regular substitution / the parser
     }
-
-    // Params-aware discrimination (ADR-192 phrase path): a bare {word} that is a
-    // bound param is left for the parser; anything else bare is a perspective
-    // verb to conjugate. This replaces the fragile verb allowlist when params
-    // are known, so story/action verbs need no central registration.
-    if (params) {
-      if (verb in params || lowerVerb in params) {
-        return match; // a bound param — the parser realizes it
-      }
-      const conjugated = conjugateVerb(verb, context);
-      return verb[0] === verb[0].toUpperCase() ? capitalize(conjugated) : conjugated;
-    }
-
-    // Check if it looks like a verb (common patterns)
-    // Verbs we want to conjugate: take, open, close, lift, see, hear, etc.
-    const verbPatterns = [
-      /^(take|get|drop|put|open|close|lock|unlock|give|show|wear|remove)$/i,
-      /^(eat|drink|touch|smell|listen|look|examine|search|read|attack)$/i,
-      /^(push|pull|turn|switch|climb|enter|exit|go|wait|sleep|wake)$/i,
-      /^(lift|carry|hold|throw|catch|break|fix|use|try|need|want)$/i,
-      /^(see|hear|feel|find|know|think|say|tell|ask|answer)$/i,
-      /^(be|have|do|can|can't|will|won't|would|could|should|must|may|might)$/i,
-      /^[a-z]+'t$/i, // Contractions like "can't", "don't"
-      // Additional verbs for action templates
-      /^(respond|greet|introduce|swing|graze|land|punch|kick|smash|destroy|strike)$/i,
-      /^(quaff|gulp|sip|nibble|taste|devour|munch|doze|fall|enjoy)$/i,
-      /^(sniff|detect|discover|insert|adjust|lower|raise|tug|drag|press)$/i,
-      /^(inform|grow|toss|poke|prod|pat|stroke|crank|rotate|spin)$/i,
-      /^(toggle|apply|activate|greet|acknowledge)$/i,
-    ];
-
-    const isVerb = verbPatterns.some(pattern => pattern.test(lowerVerb));
-
-    if (isVerb) {
-      const conjugated = conjugateVerb(verb, context);
-      // Preserve original capitalization pattern
-      if (verb[0] === verb[0].toUpperCase()) {
-        return capitalize(conjugated);
-      }
-      return conjugated;
-    }
-
-    // Not recognized as a verb, leave for regular param substitution
-    return match;
+    const conjugated = conjugateVerb(verb, context);
+    // Preserve original capitalization pattern
+    return verb[0] === verb[0].toUpperCase() ? capitalize(conjugated) : conjugated;
   });
 
   return message;
 }
+
+/**
+ * Rewrite the `{You}` placeholder family and every bare perspective verb into
+ * phrase-algebra forms anchored on the acting entity (ADR-328 D4), for a
+ * message whose actor is NOT the player. The caller decides that (it knows the
+ * narrative's player id); this function only rewrites. The rewritten template
+ * renders through the Assembler, which agrees each verb with the actor's
+ * number and person (ADR-199 §4 B) and applies the definite article — so
+ * `{You} {take} {the item}.` becomes "The thief takes the lamp." for a unique
+ * NPC, "Jack takes the lamp." for a proper-named one, and "The mercenaries take
+ * the lamp." for a plural one.
+ *
+ * Forms: `{You}`/`{you}` → the actor as subject/object; `{Your}`/`{your}` (and
+ * `{Yours}`/`{yours}`) → the actor's possessive (`'s`); `{You're}`/`{you're}` →
+ * the actor + an agreeing "is"; `{Yourself}`/`{yourself}` → a reflexive pronoun
+ * of the last-mentioned referent (ADR-197 — the actor, once named); a bare
+ * `{verb}` → `{verb:<3rd-singular lemma> <actor>}`.
+ *
+ * @param message the template text
+ * @param params the bound params (bare words that are params are left alone)
+ * @param actorKey the param key the actor's NounPhrase is bound under
+ * @returns the rewritten template, ready for `parsePhraseTemplate`
+ */
+export function expandActorPlaceholders(
+  message: string,
+  params: Record<string, unknown>,
+  actorKey: string,
+): string {
+  const subject = `{the ${actorKey}}`;
+  const subjectCap = `{capitalize the ${actorKey}}`;
+  const is = `{verb:is ${actorKey}}`;
+
+  // Longer forms first so `{You}` never eats the head of `{You're}`/`{Yourself}`.
+  message = message
+    .replace(/\{You're\}/g, `${subjectCap} ${is}`)
+    .replace(/\{you're\}/g, `${subject} ${is}`)
+    .replace(/\{Yourself\}/g, '{capitalize pronoun:reflexive}')
+    .replace(/\{yourself\}/g, '{pronoun:reflexive}')
+    .replace(/\{Yours\}/g, `${subjectCap}'s`)
+    .replace(/\{yours\}/g, `${subject}'s`)
+    .replace(/\{Your\}/g, `${subjectCap}'s`)
+    .replace(/\{your\}/g, `${subject}'s`)
+    .replace(/\{You\}/g, subjectCap)
+    .replace(/\{you\}/g, subject);
+
+  // Bare perspective verbs become subject-agreeing Verb atoms. The lemma the
+  // atom wants is the 3rd-singular surface (ADR-199 §1), which the 3rd-person
+  // conjugation already produces — irregulars ("be" → "is") included.
+  return message.replace(/\{([a-z][a-z']*)\}/gi, (match, verb) => {
+    if (!isBareVerb(verb, params)) return match;
+    return `{verb:${conjugateVerb(verb, THIRD_SINGULAR_CONTEXT).toLowerCase()} ${actorKey}}`;
+  });
+}
+
+/**
+ * Whether a bare `{word}` is a perspective verb to conjugate rather than a param
+ * or a reserved non-verb name. With params known (the phrase path), any bare
+ * word that is not bound is a verb — story and action verbs need no central
+ * registration; without params, a fixed pattern list decides.
+ */
+function isBareVerb(verb: string, params?: Record<string, unknown>): boolean {
+  const lowerVerb = verb.toLowerCase();
+  if (nonVerbPlaceholders.has(lowerVerb)) return false;
+  if (params) {
+    return !(verb in params || lowerVerb in params);
+  }
+  return verbPatterns.some((pattern) => pattern.test(lowerVerb));
+}
+
+/** Placeholder names that are never verbs, even when no params are known. */
+const nonVerbPlaceholders = new Set([
+  'item', 'target', 'container', 'direction', 'destination',
+  'surface', 'key', 'door', 'actor', 'recipient', 'object',
+  'room', 'count', 'score', 'turns', 'reason', 'message',
+  'the', 'a', 'an', 'text', 'description', 'name'
+]);
+
+/** Verb shapes recognized when no params are known (the legacy string path). */
+const verbPatterns = [
+  /^(take|get|drop|put|open|close|lock|unlock|give|show|wear|remove)$/i,
+  /^(eat|drink|touch|smell|listen|look|examine|search|read|attack)$/i,
+  /^(push|pull|turn|switch|climb|enter|exit|go|wait|sleep|wake)$/i,
+  /^(lift|carry|hold|throw|catch|break|fix|use|try|need|want)$/i,
+  /^(see|hear|feel|find|know|think|say|tell|ask|answer)$/i,
+  /^(be|have|do|can|can't|will|won't|would|could|should|must|may|might)$/i,
+  /^[a-z]+'t$/i, // Contractions like "can't", "don't"
+  // Additional verbs for action templates
+  /^(respond|greet|introduce|swing|graze|land|punch|kick|smash|destroy|strike)$/i,
+  /^(quaff|gulp|sip|nibble|taste|devour|munch|doze|fall|enjoy)$/i,
+  /^(sniff|detect|discover|insert|adjust|lower|raise|tug|drag|press)$/i,
+  /^(inform|grow|toss|poke|prod|pat|stroke|crank|rotate|spin)$/i,
+  /^(toggle|apply|activate|greet|acknowledge)$/i,
+];
 
 /**
  * Capitalize first letter of a string

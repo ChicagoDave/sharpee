@@ -20,13 +20,13 @@ import { createStory, LoadError } from '../src';
 const STORY =
   'story\n  title: T\n  authors:\n    N\n  id: t\n\n' +
   'create the Cell\n  a room\n\n  A cell.\n\n' +
-  'create the player\n  starts in the Cell\n\n  You.\n\n' +
+  'create Alex\n  a person\n  playable\n  starts in the Cell\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n\n' +
   'create the Guard\n' +
   '  a person\n' +
   '  in the Cell\n' +
   '  knows the-routine, witnessed, certain\n' +
   '\n' +
-  '  on attacking it\n' +
+  '  on the player attacking\n' +
   '    change mood to panicked\n' +
   '    change feeling toward the player to wary of\n' +
   '  end on\n' +
@@ -40,10 +40,10 @@ function load(source: string) {
   expect(diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   const story = createStory(ir!);
   const world = new WorldModel();
+  // ADR-327 D10: world first, role second.
+  story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.initializeWorld(world);
-  story.finalizePlayer?.(world, player);
   const guard = world.getAllEntities().find((e: IFEntity) => e.name?.toLowerCase().includes('guard'))!;
   return { world, player, guard };
 }
@@ -52,6 +52,7 @@ function attack(world: WorldModel, player: IFEntity, target: IFEntity): ISemanti
   const context: any = {
     world,
     player,
+    actor: player,
     random: new EngineRandomService(7),
     action: attackingAction,
     currentLocation: world.getContainingRoom(player.id),

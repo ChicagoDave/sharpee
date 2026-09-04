@@ -91,7 +91,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
   group: 'wearable_manipulation',
 
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject?.entity;
 
     if (!item) {
@@ -137,7 +137,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
   },
 
   execute(context: ActionContext): void {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject!.entity!;
     const sharedData = getTakingOffSharedData(context);
 
@@ -246,7 +246,7 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
         // Domain data (for event sourcing / handlers)
         itemId: sharedData.itemId,
         itemName: sharedData.itemName,
-        actorId: context.player.id,
+        actorId: context.actor.id,
         bodyPart: sharedData.bodyPart,
         layer: sharedData.layer
       })

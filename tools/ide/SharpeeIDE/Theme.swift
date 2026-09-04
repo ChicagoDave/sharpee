@@ -30,6 +30,21 @@ enum Theme {
     static let tokenType          = dynamic(light: 0xDF8E1D, dark: 0xF9E2AF) // yellow
     static let tokenFunction      = dynamic(light: 0x1E66F5, dark: 0x89B4FA) // blue
 
+    // World tab tokens (ADR-321 D7/D8). Every one is a PAIR: ADR-297's
+    // consequence is that a single-appearance hex literal in a view is a defect,
+    // and these carry meaning (sealed, unreached, candidate) rather than chrome,
+    // so they are named for what they mean and not for the colour they are.
+    // Dark: Catppuccin Mocha. Light: Catppuccin Latte.
+    static let worldSealed            = dynamic(light: 0xD20F39, dark: 0xF38BA8) // red — an exit that never opens
+    static let worldUnreached         = dynamic(light: 0x7C7F93, dark: 0x7F849C) // grey — play never arrives
+    static let worldCandidate         = dynamic(light: 0xFE640B, dark: 0xFAB387) // peach — a phrase to look at
+    static let worldAmbiguous         = dynamic(light: 0xDF8E1D, dark: 0xF9E2AF) // yellow — a phrase reaching two things
+    static let worldConnection        = dynamic(light: 0x9CA0B0, dark: 0x585B70) // an open passage between rooms
+    static let worldDoor              = dynamic(light: 0x179299, dark: 0x94E2D5) // teal — a passage with a door in it
+    static let worldRoomFill          = dynamic(light: 0xEFF1F5, dark: 0x1E1F26) // a placed room's box
+    static let worldRoomFillUnreached = dynamic(light: 0xE6E9EF, dark: 0x181920) // one play cannot arrive at
+    static let worldDisplaced         = dynamic(light: 0x8839EF, dark: 0xCBA6F7) // mauve — moved off its compass cell
+
     /// Editor selection background — translucent accent.
     static let selectionBackground = NSColor(name: nil) { appearance in
         appearance.isDark

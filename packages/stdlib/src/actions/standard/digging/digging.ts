@@ -27,13 +27,14 @@ import {
   DiggableBehavior,
   findTraitWithCapability,
   type CapabilityEffect,
-  type CapabilitySharedData
+  type CapabilitySharedData,
+  IFEntity
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { DiggingMessages } from './digging-messages.js';
-import { validateToolRequirements } from '../tool-shared.js';
+import { resolveToolRequirements } from '../tool-shared.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
@@ -117,6 +118,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
     'not_diggable',
     'cant_dig',
     'no_tool',
+    'needs_tool',
     'tool_not_held',
     'wrong_tool',
     'dug'
@@ -154,17 +156,21 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Author-configured tool requirement (shared helper, PIN 2).
-    const tool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
-    const toolValidation = validateToolRequirements(
+    const explicitTool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
+    const toolResolution = resolveToolRequirements(
       context,
       noun,
-      tool,
+      explicitTool,
       DiggableBehavior.requiresTool(noun),
-      (toolId) => DiggableBehavior.canDigWith(noun, toolId)
+      (toolId) => DiggableBehavior.canDigWith(noun, toolId),
+      DiggableBehavior.requiredTools(noun)
     );
-    if (toolValidation) {
-      return toolValidation;
+    if (toolResolution.failure) {
+      return toolResolution.failure;
     }
+    // GH #241: the tool in play — named, or implied from the hands — for
+    // the later phases (the lifecycle's tool slot consults named tools only).
+    context.sharedData.resolvedTool = toolResolution.tool;
 
     // Implementation presence (dual-surface): a capability behavior on one
     // of the target's traits, or an interceptor consulting this action.
@@ -187,7 +193,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
     let data: DiggingDispatchData | undefined;
     if (behavior) {
       const sharedData: CapabilitySharedData = {};
-      const behaviorResult = behavior.validate(noun, context.world, context.player.id, sharedData);
+      const behaviorResult = behavior.validate(noun, context.world, context.actor.id, sharedData);
       if (!behaviorResult.valid) {
         return {
           valid: false,
@@ -219,7 +225,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
     const data = context.validationResult?.data as DiggingDispatchData | undefined;
 
     if (data?.behavior) {
-      data.behavior.execute(noun, context.world, context.player.id, data.sharedData);
+      data.behavior.execute(noun, context.world, context.actor.id, data.sharedData);
       context.sharedData.diggingDispatch = data;
     }
 
@@ -229,7 +235,8 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
 
   report(context: ActionContext): ISemanticEvent[] {
     const noun = context.command.directObject!.entity!;
-    const tool = context.command.instrument?.entity ?? context.command.indirectObject?.entity;
+    const tool = (context.sharedData.resolvedTool as IFEntity | undefined)
+      ?? context.command.instrument?.entity ?? context.command.indirectObject?.entity;
     const data = (context.sharedData.diggingDispatch ?? context.validationResult?.data) as
       | DiggingDispatchData
       | undefined;
@@ -238,7 +245,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
     if (data?.behavior) {
       // Capability surface: the implementation owns the narration.
       events = effectsToEvents(
-        data.behavior.report(noun, context.world, context.player.id, data.sharedData),
+        data.behavior.report(noun, context.world, context.actor.id, data.sharedData),
         context
       );
     } else {
@@ -252,7 +259,7 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
           targetName: noun.name,
           toolId: tool?.id,
           toolName: tool?.name,
-          actorId: context.player.id
+          actorId: context.actor.id
         })
       ];
     }

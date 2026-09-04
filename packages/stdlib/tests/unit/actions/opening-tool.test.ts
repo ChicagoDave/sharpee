@@ -69,8 +69,37 @@ describe('Opening tool requirement (ADR-230 D3b)', () => {
     expect(isOpen(crate)).toBe(true);
   });
 
-  test('requirement + no tool named refuses with no_tool — stays closed', () => {
+  test('GH #241: no tool named but the declared tool in hand opens by implicit instrument', () => {
     const { world, crate } = setup(true);
+
+    const { validation, context } = drive(world, crate);
+
+    expect(validation.valid).toBe(true);
+    expect(isOpen(crate)).toBe(true);
+    expect((context.sharedData.resolvedTool as { id: string } | undefined)?.id).toBe(world.getEntity(
+      (crate.get(TraitType.OPENABLE) as OpenableTrait).toolId!
+    )!.id);
+  });
+
+  test('GH #241: no tool named and the declared tool not held refuses with needs_tool, naming it — stays closed', () => {
+    const { world, room, crate, crowbar } = setup(true);
+    world.moveEntity(crowbar.id, room.id); // on the floor, not in hand
+
+    const { validation } = drive(world, crate);
+
+    expect(validation.valid).toBe(false);
+    expect(validation.error).toBe('needs_tool');
+    expect((validation.params?.tool as { name?: string })?.name).toBe('rusty crowbar');
+    expect(isOpen(crate)).toBe(false);
+  });
+
+  test('GH #241: two declared tools both in hand keep the generic no_tool — stays closed', () => {
+    const { world, player, crate, crowbar } = setup(true);
+    const jemmy = world.createEntity('iron jemmy', 'object');
+    world.moveEntity(jemmy.id, player.id);
+    const openable = crate.get(TraitType.OPENABLE) as OpenableTrait;
+    openable.toolId = undefined;
+    openable.toolIds = [crowbar.id, jemmy.id];
 
     const { validation } = drive(world, crate);
 

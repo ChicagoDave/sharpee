@@ -1,0 +1,104 @@
+A `define timer` counts turns by name. You never write a number: you
+name the turns, the timer steps through them one per turn once started,
+and it ends in the one state every timer shares, `expired`, which is
+never written. It is the second kind of counter beside a
+[tally](/chord/guide/world/scores-live-on-owners): a tally counts
+*things* and moves only when you `raise`, `lower`, or `set` it; a timer
+counts *turns* and takes only the timer verbs. The compiler rejects
+each kind's verbs on the other.
+
+```chord
+define timer waiting for the player
+  pausing
+  loitering
+  interrupted one chance in 2
+end timer
+
+define timer search for the wandering mercenaries
+  arriving
+  lingering
+    Those mercenaries are getting uncomfortably close. You'd better get going
+    before they notice you!
+  meanwhile, one chance in 5
+    phrase merc-idle
+end timer
+
+define timer lunge for the wandering mercenaries
+end timer
+```
+
+`for <owner>` hangs the timer on an entity or the player; with no `for`
+it belongs to the story. Each line before `end timer` is one of three
+things. A **state name** is one turn, and it may carry an indented text
+body spoken the turn that state is reached, exactly as a `phrase` line
+does. **`meanwhile`** — at most one — holds statements that run on every
+turn the timer is running, alongside the turn's state; with
+`, one chance in N` they run occasionally, on the story's seeded stream.
+**`interrupted one chance in N`** — at most one — gives each running turn
+that chance of expiring right then instead of stepping. A timer with no
+state lines is legal: one turn, then expired.
+
+A timer knows nothing but turns. It is not bound to a room, a state, or
+a condition; the conditions under which it runs are the ordinary
+conditions of the clauses that start and reset it.
+
+## The verbs
+
+```chord
+start search        ## begins; first named state next turn
+stop search         ## holds where it is
+restart search      ## back to the first state and running
+reset search        ## back to not-started
+interrupt search    ## expires now — `when … expires` fires as if it had run out
+```
+
+Inside the owner's block a timer is named bare (`start lunge`);
+elsewhere by possessive (`restart the player's waiting`,
+`reset the mercenaries' search`). `start` on a running timer is a
+no-op; `restart` is the explicit form. A stopped timer never expires on
+its own — `interrupt` is the one verb that acts from any started state,
+and on a not-started timer it is a no-op, like `reset`.
+
+## Reading a timer
+
+`is` reads the named turn and `has` reads the lifecycle; the two do not
+overlap:
+
+```chord
+while search is lingering        ## the named turn
+while search has started         ## running or expired
+while search has expired         ## over — the only spelling; `is expired` is rejected
+```
+
+A timer state and an entity state may share a word: the subject
+disambiguates, and the analyzer checks each against its own subject's
+list.
+
+## Expiry is an event
+
+Expiry gets a clause head on the owner, parallel to
+`define sequence`'s `when <owner> becomes <state>`:
+
+```chord
+create the wandering mercenaries
+  a person, plural
+  states, reversible: approaching, searching
+
+  when search expires
+    change the wandering mercenaries to approaching
+    start lunge
+    phrase merc-spotted
+  end when
+```
+
+From outside the owner the head is possessive — `when the player's
+waiting expires`, `when the mercenaries' search expires` — and a
+`, while <condition>` modifier is legal on it as on every clause head.
+
+A timer started during turn T is in its first named state on T+1 and
+expires the turn after its last named state; one with no states expires
+on T+1. `expires` fires exactly once per run, whether the timer ran out,
+was interrupted by chance, or by the verb. `meanwhile` never runs on the
+expiring turn. A timer's position is ordinary world state on its owner,
+so it rides save, restore, and undo like a counter does — and it is one
+of the moments a [chapter](/chord/guide/flow/chapters) can begin on.

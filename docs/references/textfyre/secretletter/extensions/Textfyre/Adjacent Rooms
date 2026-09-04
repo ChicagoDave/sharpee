@@ -1,0 +1,302 @@
+Adjacent Rooms by Textfyre begins here.
+
+"A misleading title: this extension deals with actions involving the current location as well as adjacent ones - and more distant ones."
+
+Include Pronouns by Textfyre.
+
+Use authorial modesty.
+
+Line-of-sight relates various rooms to various rooms. The verb to overlook (he overlooks, they overlook, he overlooked, it is overlooked, he is overlooking) implies the line-of-sight relation.
+
+Proximity relates a room (called yonder) to a room (called hither) when yonder is adjacent to hither or hither overlooks yonder. The verb to be proximate to implies the proximity relation.
+
+Definition: a room is playerful if it encloses the player.
+
+Definition: a room is proximate if it is proximate to the location.
+
+Does the player mean doing something with a room:
+	it is very unlikely;
+
+Understand "here" as a room when the item described is playerful.
+
+Chapter 1 - EXAMINE
+
+Section 1 - Grammar
+
+Understand "examine [any playerful room]" as pseudolooking.
+Understand "examine [any proximate room]" as inspecting.
+
+Understand "look at/inside/in/into/through [any playerful room]" as pseudolooking.
+Understand "look at/inside/in/into/through [any proximate room]" as inspecting.
+
+Understand "search [any playerful room]" as pseudolooking.
+Understand "search [any proximate room]" as a mistake ("You will have to go there, first.").
+
+Section 2 - Action on current location
+
+Pseudolooking is an action applying to one thing.
+
+Carry out pseudolooking:
+	try looking instead;
+
+Section 3 - Action on adjacent locations
+
+A room has a text called the distant description.
+The distant description of a room is usually "".
+
+Inspecting is an action applying to one visible thing.
+
+Report inspecting a room:
+	carry out the printing the distant description activity with the noun;
+
+Printing the distant description of something is an activity.
+
+The printing the distant description activity has a text called the impression.
+
+First before printing the distant description of a room (called yonder):
+	now the impression is the distant description of yonder;
+
+Before printing the distant description of a room:
+	if the impression is "",
+		now the impression is the dead-end description of the location;
+
+Last before printing the distant description of a room:
+	if the impression is "":
+		if we are going:
+			now the impression is "You can't go that way.";
+		otherwise:
+			now the impression is "You see nothing of interest in that direction.";
+
+For printing the distant description of a room:
+	say the impression, run paragraph on;
+
+Last after printing the distant description of a room:
+	say paragraph break;
+
+Chapter 2 - ENTER
+
+Section 1 - Grammar
+
+[ Understand "enter [any playerful room]" as a mistake ("But you are already here."). [Not generally useful; in fact more of a hindrance. Consider > ENTER TENT when the player is in "Outside Silk Tent". ] ]
+Understand "enter [any proximate room]" as Pseudogoing.
+
+[ Understand "get into/in/inside [any playerful room]" as a mistake ("But you are already here."). ]
+Understand "get into/in/inside [any proximate room]" as Pseudogoing.
+
+[ Understand "go [any playerful room]" as a mistake ("But you are already here."). ]
+Understand "go [any proximate room]" as Pseudogoing.
+
+[ Understand "go /into/in/inside/through [any playerful room]" as a mistake ("But you are already here."). ]
+Understand "go to [any proximate room]" as Pseudogoing.
+Understand "go to [something]" as going by name.
+
+Going by name to is an action applying to one visible thing.
+
+Check going by name to a direction (this is the convert going by direction name to going rule):
+	try going the noun instead;
+
+Check going by name to (this is the block going by name rule):
+	say capitalised "[he's or she's for the noun]", " right here, you don't have to go anywhere to do something with [him or her for the noun]." instead;
+
+Section 2 - Action on current location
+
+Pseudogoing is an action applying to one thing.
+The pseudogoing action has a direction called the chosen direction.
+
+Rule for setting action variables for pseudogoing:
+	now the chosen direction is nothing;
+	let the possible directions be {north, northeast, east, southeast, south, southwest, west, northwest, up, down, inside, outside};
+	let i be 1;
+	while the chosen direction is nothing and i <= 12:
+		let d be entry 1 of the possible directions;
+		if the room d from the location is the noun:
+			now the chosen direction is d;
+		rotate the possible directions backwards;
+		increment i by 1;
+
+Check pseudogoing:
+	if the chosen direction is nothing:
+		say "You can't see how to reach there from here." instead;
+
+Carry out pseudogoing:
+	try going the chosen direction instead;
+
+Chapter 3 - EXIT 
+
+Section 1 - Grammar
+
+Departing is an action applying to one thing.
+
+Understand "go from [any playerful room]" as departing.
+Understand "go from [any proximate room]" as a mistake ("But you aren't there!").
+
+Understand the command "exit" as something new.
+Understand "exit" as departing.
+Understand "exit [direction]" as going.
+Understand "exit to [direction]" as going.
+Understand "exit [any playerful room]" as departing.
+Understand "exit from [any playerful room]" as departing.
+Understand "exit [any proximate room]" as a mistake ("But you aren't there!").
+Understand "exit from [any proximate room]" as a mistake ("But you aren't there!").
+Understand "exit [thing]" as departing.
+Understand "exit through/via/by [thing]" as going.
+
+Understand the command "leave" as something new. [Instead of as a straight synonym for 'go'.]
+Understand "leave" as departing.
+Understand "leave [things preferably held]" as dropping.
+Understand "leave [things preferably held] behind/here" as dropping.
+Understand "leave [direction]" as going.
+Understand "leave to/due [direction]" as going.
+Understand "leave [any playerful room]" as departing.
+Understand "leave from [any playerful room]" as departing.
+Understand "leave [any proximate room]" as a mistake ("But you aren't there!").
+Understand "leave from [any proximate room]" as a mistake ("But you aren't there!").
+Understand "leave [thing]" as departing.
+Understand "leave through/via/by [thing]" as going.
+
+Understand "depart" as departing.
+Understand "depart [direction]" as going.
+Understand "depart to/due [direction]" as going.
+Understand "depart [any playerful room]" as departing.
+Understand "depart from [any playerful room]" as departing.
+Understand "depart [any proximate room]" as a mistake ("But you aren't there!").
+Understand "depart from [any proximate room]" as a mistake ("But you aren't there!").
+Understand "depart [thing]" as departing.
+Understand "depart through/via/by [thing]" as going.
+
+Understand "get out of [any playerful room]" as departing.
+Understand "get out of [any proximate room]" as a mistake ("But you aren't there!").
+
+Rule for supplying a missing noun while departing:
+	change the noun to the location;
+
+Section 2 - Action on current location
+
+Check departing:
+	if the noun is not a room:
+		if the noun supports the player or the noun contains the player:
+			try exiting instead;
+	continue the action;
+
+Check departing:
+	if the room outside from the location is not nothing:
+		try going outside instead;
+	continue the action;
+
+Carry out departing:
+	try listing exits instead; [converting to an action out of world - which is appropriate.]
+
+Chapter 3 - INSERT INTO
+
+Section 1 - Grammar
+
+Understand "put [things preferably held] in/inside/into [any playerful room]" as pseudodropping.
+Understand "insert [things preferably held] in/inside/into [any playerful room]" as pseudodropping.
+Understand "drop [things preferably held] in/inside/into [any playerful room]" as pseudodropping.
+
+Understand "put [things preferably held] in/inside/into [any proximate room]" as a mistake ("You will have to go there, first.").
+Understand "insert [things preferably held] in/inside/into [any playerful room]" as a mistake ("You will have to go there, first.").
+Understand "drop [things preferably held] in/inside/into [any playerful room]" as a mistake ("You will have to go there, first.").
+
+Section 2 - Action on current location
+
+Pseudodropping is an action applying to two things. 
+
+Carry out pseudodropping:
+	try dropping the noun instead;
+
+Chapter 4 - REMOVE FROM
+
+Section 1 - Grammar
+
+Understand "take [things] from [any playerful room]" as pseudotaking.
+Understand "get [things] from [any playerful room]" as pseudotaking.
+Understand "take [things] from [any proximate room]" as a mistake ("You will have to go there, first.").
+Understand "get [things] from [any proximate room]" as a mistake ("You will have to go there, first.").
+Understand "remove [things] from [any playerful room]" as pseudotaking.
+
+[Understand "take [something] from [text]" as a mistake ("You can't see any such thing.").]
+[Understand "get [something] from [text]" as a mistake ("You can't see any such thing.").]
+[Understand "remove [something] from [text]" as a mistake ("You can't see any such thing.").]
+
+Section 2 - Action on current location
+
+Pseudotaking is an action applying to two things. 
+
+Check pseudotaking:
+	abide by the can't remove what's not inside rule;
+
+Carry out pseudotaking:
+	try taking the noun instead;
+
+Chapter 5 - Remaining actions that are covered by the Standard Rules
+
+Understand "open [any playerful room]" as opening.
+
+Understand "close [any playerful room]" as closing.
+Understand "close up [any playerful room]" as closing.
+
+Chapter 6 - Remaining actions that aren't covered by the Standard Rules
+
+Understand "lock [any playerful room] with [something preferably held]" as locking it with.
+
+Check locking a room with:
+	let X be "[that or those for the noun] [don't or doesn't for the noun] seem to be something you can lock" in sentence case;
+	say "[X].";
+
+Understand "unlock [any playerful room] with [something preferably held]" as unlocking it with.
+Understand "open [any playerful room] with [something preferably held]" as unlocking it with.
+
+Check unlocking a room with:
+	let X be "[that or those for the noun] [don't or doesn't for the noun] seem to be something you can unlock" in sentence case;
+	say "[X].";
+
+Understand "smell [any playerful room]" as smelling.
+Understand "smell [any proximate room]" as smelling.
+
+Understand "listen to [any playerful room]" as listening.
+Understand "listen to [any proximate room]" as listening.
+
+Understand "touch [any playerful room]" as touching.
+
+Chapter 7 - Looking directions
+
+[Adapted from manual example #66, "A View of Green Hills".]
+
+Facing is an action applying to one visible thing. The facing action has an object called the viewed item (matched as "towards").
+
+A room has a text called the dead-end description. The dead-end description of a room is usually "".
+
+Understand "look [direction]" as facing. 
+Understand "examine [direction]" as facing. 
+
+Setting action variables for facing:
+	now the viewed item is the room noun from the location of the actor; 
+
+Check facing towards a room:
+	carry out the printing the distant description activity with the viewed item instead;
+
+Check facing towards an open door:
+	let the distant room be the other side of the viewed item;
+	if the distant room is a room,
+		carry out the printing the distant description activity with the distant room instead;
+
+Report facing:
+ 	if the viewed item is not a door and the viewed item is not a room begin;
+		if the dead-end description of the location is not "" begin;
+			say the dead-end description of the location, paragraph break instead;
+		otherwise;
+			say "You see nothing of interest in that direction." instead; 
+		end if;
+	end if;
+
+Adjacent Rooms ends here.
+
+---- DOCUMENTATION ----
+
+This extension allows a limited range of actions on the player's current location, as well as on adjacent ones, and on further locations as the game designer permits. It implements the 'Room Descriptions from Other Locations' spec from The Secret Letter.
+
+This extension involves more than the usual amount of hacking around limitations inherent in Inform 7 since 5J39, and for that reason many of the definitions supplied are of limited use. The definition 'playerful' is of this type; it is used to isolate the room occupied by the player. The 'pseudo-' actions, pseudolooking, pseudogoing, pseudotaking, and pseudodropping, are also hacks; they are means of ignoring a useless extra noun (the location) which the parser is able to assume, and in all cases they are converted to straightforward looking, taking and dropping actions (the pseudogoing action has a little more work to do: it tries to find a route to the specified destination.)
+
+The definition 'proximate' encompasses adjacency -- so all map-adjacent rooms are automatically proximate -- and supplements it with an additional relation, for locations which are related beyond simple map-adjacency. In the absence of more fitting terminology, this additional relation is called line-of-sight, and is expressed in the verb 'to overlook'. In TSL, for instance, the Rooftop in Grubber's overlooks the Eastern Junction, despite not being map-adjacent to it. It is unfortunate that 'overlooking' also carries connotations of additional height, as this may not always be accurate.
+

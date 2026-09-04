@@ -17,12 +17,16 @@
  * - Unknown constructs throw LoadError: the compiler gates should make
  *   these unreachable; reaching one is a loader bug, not author error.
  */
-import type { IRCondition, IREntity, IRValue, StoryIR } from '@sharpee/chord';
-import { createSeededRandom, type SeededRandom } from '@sharpee/core';
+import type { IRCondition, IREntity, IRTimerDef, IRValue, StoryIR } from '@sharpee/chord';
+import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
+import { exitBlockedKey } from '@sharpee/stdlib';
 import {
   CharacterModelTrait,
   LightSourceTrait,
+  LockableBehavior,
   LockableTrait,
+  RoomBehavior,
+  type DirectionType,
   MOOD_AXES,
   OpenableTrait,
   PRESSURE_BANDS,
@@ -38,8 +42,9 @@ import {
 } from '@sharpee/world-model';
 import { sceneWith } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
+import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, adjacentKey, counterKey, landingKey, timerKey, type AdjacentRecord, type LandingRecord, type TimerRecord } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;
@@ -93,6 +98,10 @@ export class Evaluator {
    */
   private readonly irEntities: IREntity[];
   private readonly irEntityById = new Map<string, IREntity>();
+  /** The resolved story seed — per-region landing streams derive from it (ADR-293). */
+  private readonly storySeed: number;
+  /** ADR-325 D3: timer definitions by `qualified` key, for state-word reads. */
+  private readonly timerDefs = new Map<string, IRTimerDef>();
 
   /**
    * Live client-capability source for `client has` (ADR-216) — set by the
@@ -105,6 +114,19 @@ export class Evaluator {
   /** Wire the live capability source (loader-only; ADR-216). */
   setCapabilitiesProvider(provider: () => Record<string, unknown> | undefined): void {
     this.capabilitiesProvider = provider;
+  }
+
+  /**
+   * The engine's session random service (ADR-293) — set by the loader at
+   * engine-ready. Needed only when an adjacent-room draw consults a
+   * computed-exit resolver (ADR-326 D6); the draw's own stream is the
+   * persisted per-mover seed, not this service. Null headless.
+   */
+  private randomService: RandomService | null = null;
+
+  /** Wire the engine's random service (loader-only; ADR-326 D6). */
+  setRandomService(service: RandomService): void {
+    this.randomService = service;
   }
 
   /**
@@ -124,6 +146,7 @@ export class Evaluator {
     for (const c of ir.conditions) this.conditions.set(c.name, c.condition);
     this.irEntities = ir.entities;
     for (const e of ir.entities) this.irEntityById.set(e.id, e);
+    for (const t of ir.timers ?? []) this.timerDefs.set(t.qualified, t);
     for (const trait of ir.traits) {
       this.entityFields.set(
         trait.name,
@@ -136,6 +159,7 @@ export class Evaluator {
       this.moodWordAxes[mood.name] = mood.but ? applyMoodModifier(anchor, mood.but as MoodModifier) : anchor;
     }
     this.rng = createSeededRandom(seed);
+    this.storySeed = this.rng.getSeed();
   }
 
   /**
@@ -162,6 +186,11 @@ export class Evaluator {
         return !this.evalCondition(cond.operand, ctx);
       case 'chance':
         return this.drawChance(cond.n, ctx.world);
+      case 'chapter': {
+        // ADR-330 D5: the current chapter's ordinal (absent = none begun yet, -1).
+        const current = (ctx.world.getStateValue(CHAPTER_CURRENT_KEY) as number | undefined) ?? -1;
+        return cond.relation === 'during' ? current === cond.ordinal : cond.relation === 'before' ? current < cond.ordinal : current > cond.ordinal;
+      }
       case 'condition': {
         const named = this.conditions.get(cond.name);
         if (!named) throw new LoadError(`Unknown condition \`${cond.name}\` at evaluation time.`);
@@ -170,6 +199,12 @@ export class Evaluator {
       case 'story-state':
         // The story object's phase (`while after-hours`, ratchet D2).
         return ctx.world.getStateValue(CHORD_STORY_STATE_KEY) === cond.state;
+      case 'timer-has': {
+        // ADR-325 D3d: `has started` = running, stopped, or expired; `has
+        // expired` = over. Idle (never started, or reset) answers no to both.
+        const record = this.timerRecord(cond.timer, ctx);
+        return cond.what === 'started' ? record.phase !== 'idle' : record.phase === 'expired';
+      }
       case 'client-has': {
         // ADR-216: the live negotiated client capability. Without a
         // provider (load time, headless tests) the engine's text-only
@@ -338,8 +373,18 @@ export class Evaluator {
         return raw(irEntity.kinds.some((k) => k.name === classifier));
       }
       case 'is-in': {
+        // ADR-325 D1: the place may be `<owner>'s location`; an offstage
+        // owner has none, and `is in` nothing is false, never an error.
         const subjectId = this.entityValue(cond.subject, ctx);
-        const placeId = this.entityValue(cond.object, ctx);
+        const placeId = this.evalValue(cond.object, ctx);
+        const place = typeof placeId === 'string' ? ctx.world.getEntity(placeId) : undefined;
+        if (typeof placeId !== 'string' || !place) return raw(false);
+        // A REGION place is a MEMBERSHIP test (GH #339, ADR-236): rooms are
+        // not contained by their region — membership is RoomTrait.regionId,
+        // transitive through nesting — so the containment walk below would
+        // always answer false. `isInRegion` resolves a non-room subject
+        // through its containing room.
+        if (place.has(TraitType.REGION)) return raw(ctx.world.isInRegion(subjectId, placeId));
         return raw(this.isWithin(ctx.world, subjectId, placeId));
       }
       case 'is-here': {
@@ -528,6 +573,15 @@ export class Evaluator {
         }
         return this.readField(base, value.field, ctx);
       }
+      case 'timer': {
+        // ADR-325 D3d: the timer's current named turn, `expired` once over,
+        // and no value (null) before it starts or after a reset.
+        const record = this.timerRecord(value.timer, ctx);
+        if (record.phase === 'idle') return null;
+        if (record.phase === 'expired') return 'expired';
+        const def = this.timerDefs.get(value.timer);
+        return record.index >= 1 && def ? def.states[record.index - 1] ?? null : null;
+      }
       case 'counter': {
         // ADR-264 D3: read a counter's current value from world state. The
         // owner (per-entity) resolves to an IR entity id, matching how the
@@ -574,6 +628,149 @@ export class Evaluator {
   }
 
   /**
+   * A region's landing draw (ADR-325 D5): the room something put in the
+   * region lands in. One room → that room; `randomly` → the region's own
+   * persisted seeded stream; `cycling` / `stopping` → a persisted cursor.
+   * Undefined when `worldId` is not a region with a landing.
+   * @param worldId the candidate region's world id
+   * @returns the landing room's world id, or undefined
+   */
+  drawLanding(worldId: string, world: WorldModel): string | undefined {
+    const irId = this.ids.irIdOf(worldId);
+    const region = irId !== undefined ? this.irEntityById.get(irId) : undefined;
+    if (!region?.landing || irId === undefined) return undefined;
+    const key = landingKey(irId);
+    const record = this.landingRecord(irId, region.landing.rooms, world);
+    const n = record.rooms.length;
+    if (n === 0) return undefined;
+    if (n === 1) return record.rooms[0];
+    switch (region.landing.strategy) {
+      case 'randomly': {
+        const stream = createSeededRandom(record.seed);
+        const pick = stream.int(1, n) - 1;
+        world.setStateValue(key, { ...record, seed: stream.getSeed() });
+        return record.rooms[pick];
+      }
+      case 'stopping': {
+        const at = Math.min(record.cursor, n - 1);
+        world.setStateValue(key, { ...record, cursor: Math.min(record.cursor + 1, n - 1) });
+        return record.rooms[at];
+      }
+      case 'cycling':
+      default: {
+        world.setStateValue(key, { ...record, cursor: record.cursor + 1 });
+        return record.rooms[record.cursor % n];
+      }
+    }
+  }
+
+  /**
+   * The rooms one traversable exit from `roomWorldId` for `actorId`, in
+   * direction order, deduplicated (ADR-326 D1/D6). The read order is
+   * going's own (`hasTraversableExit`, stdlib `exit-legality.ts`): every
+   * static direction plus computed-exit keys; a direction whose composed
+   * blocked evaluator (GH #315) or trait fallback says blocked contributes
+   * nothing; a computed direction answers through its resolver — inactive
+   * → the static destination, `exit` → its destination (narration dropped:
+   * this is a consult, not a traversal), `blocked` → nothing; a static exit
+   * whose door is locked contributes nothing.
+   * @throws LoadError when a computed direction is met with no random
+   *   service wired (headless) — never a silent skip
+   */
+  adjacentRooms(roomWorldId: string, actorId: string, world: WorldModel): string[] {
+    const room = world.getEntity(roomWorldId);
+    if (!room || !room.has(TraitType.ROOM)) return [];
+    const directions = new Set<string>(RoomBehavior.getAllExits(room).keys());
+    for (const trait of room.traits.values()) {
+      const computed = (trait as { computedExits?: Record<string, unknown> }).computedExits;
+      if (computed) for (const direction of Object.keys(computed)) directions.add(direction);
+    }
+    const out: string[] = [];
+    for (const dir of directions) {
+      const direction = dir as DirectionType;
+      const derived = world.evaluate(exitBlockedKey(room.id, direction));
+      const blocked = typeof derived === 'boolean' ? derived : RoomBehavior.isExitBlocked(room, direction);
+      if (blocked) continue;
+      const staticExit = RoomBehavior.getExit(room, direction);
+      let destination: string | undefined = staticExit?.destination;
+      if (RoomBehavior.getComputedExitDeclaration(room, direction)) {
+        if (!this.randomService) {
+          throw new LoadError(
+            `Cannot draw an adjacent room from ${room.name}: its ${direction} exit is computed and no random service is wired (headless run).`,
+          );
+        }
+        const resolution = RoomBehavior.resolveExit(room, direction, { world, actorId, random: this.randomService });
+        if (resolution?.kind === 'blocked') continue;
+        if (resolution?.kind === 'exit') destination = resolution.destination;
+      } else if (staticExit?.via) {
+        const door = world.getEntity(staticExit.via);
+        if (door && door.has(TraitType.LOCKABLE) && LockableBehavior.isLocked(door)) continue;
+      }
+      if (destination && world.getEntity(destination) && !out.includes(destination)) out.push(destination);
+    }
+    return out;
+  }
+
+  /**
+   * `move … to a random adjacent room` (ADR-326 D1/D2): draws one of the
+   * mover's traversable neighbours on the mover's own persisted seeded
+   * stream — saves round-trip, a pinned seed replays byte-identically.
+   * @returns the drawn room's world id, or undefined when no neighbour is
+   *   traversable (the caller raises the D3 diagnostic and performs no move)
+   */
+  drawAdjacentRoom(moverWorldId: string, world: WorldModel): string | undefined {
+    const roomId = world.getContainingRoom(moverWorldId)?.id ?? world.getLocation(moverWorldId);
+    if (!roomId) return undefined;
+    const candidates = this.adjacentRooms(roomId, moverWorldId, world);
+    if (candidates.length === 0) return undefined;
+    const irId = this.ids.irIdOf(moverWorldId) ?? moverWorldId;
+    const key = adjacentKey(irId);
+    const record = this.adjacentRecord(irId, world);
+    if (candidates.length === 1) return candidates[0];
+    const stream = createSeededRandom(record.seed);
+    const pick = stream.int(1, candidates.length) - 1;
+    world.setStateValue(key, { seed: stream.getSeed() });
+    return candidates[pick];
+  }
+
+  private adjacentRecord(irId: string, world: WorldModel): AdjacentRecord {
+    const stored = world.getStateValue(adjacentKey(irId)) as AdjacentRecord | undefined;
+    if (stored) return stored;
+    // Per-mover stream: the story seed folded with the mover's id (the
+    // landing-record idiom), so two movers never share a sequence.
+    let seed = this.storySeed;
+    for (const ch of irId) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    return { seed };
+  }
+
+  /**
+   * `set <region>'s landing to <room>` (ADR-325 D5): replaces the whole
+   * landing list with one room and rewinds the cursor.
+   * @throws LoadError when `regionWorldId` is not a region with a landing
+   */
+  setLanding(regionWorldId: string, roomWorldId: string, world: WorldModel): void {
+    const irId = this.ids.irIdOf(regionWorldId);
+    const region = irId !== undefined ? this.irEntityById.get(irId) : undefined;
+    if (!region?.landing || irId === undefined) {
+      throw new LoadError(`\`${world.getEntity(regionWorldId)?.name ?? regionWorldId}\` is not a region with a landing — only a landing can be set.`);
+    }
+    const record = this.landingRecord(irId, region.landing.rooms, world);
+    world.setStateValue(landingKey(irId), { ...record, rooms: [roomWorldId], cursor: 0 });
+  }
+
+  /** The persisted landing record, seeded from the IR on first touch. */
+  private landingRecord(irId: string, irRooms: readonly string[], world: WorldModel): LandingRecord {
+    const stored = world.getStateValue(landingKey(irId)) as LandingRecord | undefined;
+    if (stored) return stored;
+    const rooms = irRooms.map((id) => this.ids.entityId(id)).filter((id): id is string => id !== undefined);
+    // Per-region stream: the story seed folded with the region id, so two
+    // regions never share a sequence and a fixed seed pins each one.
+    let seed = this.storySeed;
+    for (const ch of irId) seed = (seed * 31 + ch.charCodeAt(0)) >>> 0;
+    return { rooms, cursor: 0, seed };
+  }
+
+  /**
    * The entities satisfying a named open condition, as IR ids in
    * declaration order — E3's pinned creation-order enumeration. Used by
    * the runtime's `each` execution and its pre-mutation snapshot.
@@ -583,6 +780,12 @@ export class Evaluator {
     return this.irEntities
       .filter((e) => this.ids.entityId(e.id) !== undefined && this.evalCondition(named, { ...ctx, it: e.id }))
       .map((e) => e.id);
+  }
+
+  /** A timer's persisted record (ADR-325 D3g); idle when never written. */
+  timerRecord(qualified: string, ctx: EvalContext): TimerRecord {
+    const stored = ctx.world.getStateValue(timerKey(qualified)) as TimerRecord | undefined;
+    return stored ?? { phase: 'idle', index: 0, startedTurn: -1 };
   }
 
   /** Evaluate a value that must be an entity (world id). */
@@ -596,8 +799,16 @@ export class Evaluator {
 
   private readField(worldId: string, field: string, ctx: EvalContext): unknown {
     switch (field) {
-      case 'location':
-        return ctx.world.getLocation(worldId);
+      case 'location': {
+        // ADR-325 D1: `location` is the containing room, always — a room is
+        // its own; a thing carried or on a supporter reads the room around
+        // it. Undefined when the entity is offstage. A region with a
+        // landing (D5) reads as its landing — one draw per read.
+        if (ctx.world.getEntity(worldId)?.has(TraitType.ROOM)) return worldId;
+        const landing = this.drawLanding(worldId, ctx.world);
+        if (landing !== undefined) return landing;
+        return ctx.world.getContainingRoom(worldId)?.id ?? ctx.world.getLocation(worldId);
+      }
       case 'state': {
         const irId = this.ids.irIdOf(worldId);
         if (irId === undefined) throw new LoadError('Cannot read `state` of a non-story entity.');

@@ -239,7 +239,7 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       ...eventData,
       targetId: noun.id,
       targetName: noun.name,
-      actorId: context.player.id,
+      actorId: context.actor.id,
       containerId: noun.id,
       containerName: noun.name,
       isContainer,

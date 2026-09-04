@@ -203,7 +203,7 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
   },
   
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject?.entity;
     const viewer = context.command.indirectObject?.entity;
 

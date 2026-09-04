@@ -13,7 +13,7 @@ create the pear tree
 
   Low branches all the way up, practically a ladder.
 
-  after climbing it
+  after the player climbing
     phrase over-the-wall
       From up here you can see clear over the wall into the lane.
   end after
@@ -25,8 +25,14 @@ create the garden wall
 
   Twelve feet of smooth brick, no handholds.
 
-create the player
-  starts in the Orchard Corner</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Orchard Corner
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; climb the wall
 You can't climb the garden wall.
@@ -43,4 +49,4 @@ You're already on the pear tree.
 You get out of the pear tree.</code></pre>
 <p>The supporter composed alongside <code>climbable</code> is what makes the perch real, somewhere to actually be, so the second climb can refuse and <code>climb out</code> has something to leave; with bare <code>climbable</code> alone the climb speaks success but the player never leaves the room floor (nothing can hold them).</p>
 <table><thead><tr><th></th><th>climb (<code>climbing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>not_climbable</code> · <code>already_there</code> · <code>cant_go_that_way</code> (directional, off-vertical) — <code>too_high</code>/<code>too_dangerous</code> reserved</td></tr><tr><td>Success</td><td><code>climbed_onto</code> (object) · <code>climbed_up</code> / <code>climbed_down</code> (directional)</td></tr><tr><td>Events</td><td><code>climbed</code>, plus <code>entered</code> (object) or <code>moved</code> (directional)</td></tr></tbody></table>
-<p>Interceptors: <code>after climbing it</code> on the target, the pear tree's comment above, and how a cliff would teleport (below). There are two honest footnotes. First, the action also implements directional climbing (<code>climb up</code> meaning &quot;take the up exit&quot;), but no core grammar reaches it today: bare <code>up</code>/<code>down</code> parse as going, which is usually what you want, and a story adding <code>climb up</code> as grammar gets room-exit climbing for free. Second, the trait's <code>destination</code>/<code>direction</code> fields are unread by the standard action, so climbing never teleports you to a destination room; put an <code>after climbing it</code> clause on the cliff if you want that (<code>blockedMessage</code>/<code>successMessage</code> are likewise story data).</p>
+<p>Interceptors: <code>after the player climbing</code> on the target, the pear tree's comment above, and how a cliff would teleport (below). There are two honest footnotes. First, the action also implements directional climbing (<code>climb up</code> meaning &quot;take the up exit&quot;), but no core grammar reaches it today: bare <code>up</code>/<code>down</code> parse as going, which is usually what you want, and a story adding <code>climb up</code> as grammar gets room-exit climbing for free. Second, the trait's <code>destination</code>/<code>direction</code> fields are unread by the standard action, so climbing never teleports you to a destination room; put an <code>after the player climbing</code> clause on the cliff if you want that (<code>blockedMessage</code>/<code>successMessage</code> are likewise story data).</p>

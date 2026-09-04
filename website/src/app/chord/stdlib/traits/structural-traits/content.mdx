@@ -36,8 +36,14 @@ create the iron gates
 
   Twin gates of black iron, shut fast.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gatehouse
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:
@@ -81,8 +87,8 @@ The rest of the trait in one-liners:
 areas: a room carries a region id, regions nest by containing each
 other, and going emits `region_exited` / `region_entered` per
 crossed boundary. Everything is authored region-side: `containing`
-lists members (additive across lines), `after entering it` / `after
-leaving it` react to boundary crossings (`leaving` exists only on region
+lists members (additive across lines), `after the player entering` / `after
+the player leaving` react to boundary crossings (`leaving` exists only on region
 blocks), and an `on every turn` clause on the region block is a region
 daemon, firing only while the player is in a member room (the daemon
 machinery is [the plugins layer's](/chord/stdlib/plugins)).
@@ -94,11 +100,11 @@ create the Grounds
   a region
   containing the Orchard, the Apiary
 
-  after entering it
+  after the player entering
     phrase under-the-boughs
   end after
 
-  after leaving it
+  after the player leaving
     phrase back-on-the-road
   end after
 

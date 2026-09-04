@@ -9,6 +9,7 @@
     "packages/text-blocks/tsconfig.json",
     "packages/chord/tsconfig.json",
     "packages/ide-protocol/tsconfig.json",
+    "packages/world-index/tsconfig.json",
     "packages/story-loader/tsconfig.json",
     "packages/channel-service/tsconfig.json",
     "packages/stdlib/tsconfig.json",
@@ -33,6 +34,7 @@
     "packages/extensions/basic-combat/tsconfig.json",
     "packages/extensions/scoring/tsconfig.json",
     "packages/extensions/hunger/tsconfig.json",
+    "packages/extensions/chapters/tsconfig.json",
     "stories/dungeo/tsconfig.json"
   ],
   "targets": {

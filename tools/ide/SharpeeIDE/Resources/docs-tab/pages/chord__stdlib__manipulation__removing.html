@@ -32,7 +32,7 @@ create the fingerbone
 
   A saint's fingerbone, brown with age.
 
-  on taking it
+  on the player taking
     refuse bone-sacred
   end on
 
@@ -45,8 +45,14 @@ create the linen shroud
 
   A folded linen shroud.
 
-create the player
-  starts in the Crypt Chapel</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Crypt Chapel
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; remove the comb from the reliquary
 You take the ivory comb from the reliquary.
@@ -58,4 +64,4 @@ You take the linen shroud from the stone bier.
 The relic is not for the living to carry off.</code></pre>
 <p>Each source kind renders its own success key, and the fingerbone's <em>taking</em> guard stops REMOVE-FROM cold: naming the source dodges nothing.</p>
 <table><thead><tr><th></th><th>remove (<code>removing-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>no_source</code> · <code>already_have</code> · <code>not_in_container</code> / <code>not_on_surface</code> · <code>container_closed</code> · <code>cannot_take</code> (carrying capacity) · <code>nothing_to_remove</code> (<code>remove all from X</code> with nothing eligible)</td></tr><tr><td>Success</td><td><code>removed_from</code> (a container) · <code>removed_from_surface</code> (a supporter)</td></tr><tr><td>Events</td><td><code>taken</code> (source in the payload)</td></tr></tbody></table>
-<p>Interceptors: the item slot consults <code>on removing it</code> and then <code>on taking it</code>, in that order; the source consults <code>on removing it</code> only, and so does an explicitly named tool, after item and source. As with putting/inserting, register per entity under one gerund. Bare <code>remove X</code> still means undressing.</p>
+<p>Interceptors: the item slot consults <code>on the player removing</code> and then <code>on the player taking</code>, in that order; the source consults <code>on the player removing</code> only, and so does an explicitly named tool, after item and source. As with putting/inserting, register per entity under one gerund. Bare <code>remove X</code> still means undressing.</p>

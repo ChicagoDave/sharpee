@@ -3,12 +3,14 @@
  *
  * Generic skill-based combat extension for Sharpee IF engine.
  *
- * Provides opt-in combat resolution for both attack directions:
- * - PC→NPC: BasicCombatInterceptor (registered on CombatantTrait + if.action.attacking)
- * - NPC→PC: basicNpcResolver (registered as NpcCombatResolver)
+ * Provides opt-in combat resolution for both attack directions through one
+ * interceptor: BasicCombatInterceptor, registered on CombatantTrait for
+ * if.action.attacking, resolves the player's blows at an NPC and an NPC's
+ * blows at the player — an NPC attacks by running the real attacking action
+ * through the engine's execution entry (ADR-328 D5).
  *
  * Stories with custom combat (e.g., Dungeo's melee system) register their
- * own interceptor and resolver instead of calling registerBasicCombat().
+ * own interceptor instead of calling registerBasicCombat().
  *
  * @example
  * ```typescript
@@ -23,20 +25,17 @@ import {
   TraitType,
   type IWorldModel,
 } from '@sharpee/world-model';
-import { registerNpcCombatResolver } from '@sharpee/stdlib';
 import { BasicCombatInterceptor } from './basic-combat-interceptor.js';
-import { basicNpcResolver } from './basic-npc-resolver.js';
 
 /**
- * Register the basic combat system for both attack directions.
+ * Register the basic combat system.
  *
  * Call this in your story's initializeWorld() to enable generic
  * skill-based combat. Do NOT call this if your story registers
- * its own combat interceptor/resolver.
+ * its own combat interceptor.
  *
- * Registers:
- * 1. BasicCombatInterceptor on CombatantTrait + if.action.attacking (PC→NPC)
- * 2. basicNpcResolver as the NPC combat resolver (NPC→PC)
+ * Registers BasicCombatInterceptor on CombatantTrait + if.action.attacking;
+ * whoever attacks a combatant — player or NPC — resolves through it.
  *
  * The interceptor binding is registered on the given world (ADR-208):
  * per-world, idempotent (last-wins), so calling this on every story load
@@ -50,7 +49,6 @@ export function registerBasicCombat(world: IWorldModel): void {
     'if.action.attacking',
     BasicCombatInterceptor
   );
-  registerNpcCombatResolver(basicNpcResolver);
 }
 
 // Combat service and types
@@ -73,6 +71,5 @@ export {
   type HealthStatus,
 } from './combat-messages.js';
 
-// Individual components (for stories that want to register only one direction)
+// The interceptor itself (for stories that register it on their own terms)
 export { BasicCombatInterceptor } from './basic-combat-interceptor.js';
-export { basicNpcResolver } from './basic-npc-resolver.js';

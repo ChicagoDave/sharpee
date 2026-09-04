@@ -1,0 +1,268 @@
+Design Document: Secret Letter 2.0
+This document details significant revisions to be made to Jack Toresal & the Secret Letter, advancing the state of the project to what for the time being we are calling "2.0."
+This document contains several sections, each devoted to a specific area of the game to be revised.
+The Jail - the scene in which Jack picks the lock and escapes from her jail cell is changed, so that Jack initiates the solution herself, rather than having Jacobs the Younger force her to do it.
+Black Gate Estate - the puzzle of finding the secret letter is revised.
+Red Gate Estate - the geography of  the rooms is slightly changed, descriptive text is revised, a puzzle is added to the process of taking a bath.
+The Map Room - the final scene, in which Jack confronts Baron Fossville, is revised so that the player can participate more meaningfully in the action. Dialogue is added to explain Bobby's role in the story more clearly.
+1. The Jail
+Overview: Jacobs no longer picks up Jack and forces her to pick the lock. Instead, he tosses the lockpick aside in frustration. Jack must now search the straw to find the lockpick, and then pick the lock herself (reaching her arm through the bars to do so). Jacobs neither helps nor hinders.
+ALL rules that restrict the player's actions as a result of being held by Jacob should be removed from the source. Also, any descriptions that refer to Jacobs holding or restraining Jack, or offering her the lockpick, should be excised.
+Jacob's Dialogue and Behavior
+The last sentence of quip JA7 should be revised as indicated:
+"He curses and strains to push his arm through, but the bars are too narrowly spaced — he can't reach out past his elbow. 'Damn,' he mutters, 'didn't expect this they must have changed the bars since last time...'"
+Quip JA8 should be revised as indicated:
+"'[i]Aaah![no line break][r] Goddesses curse it!' Jacobs jerks his hand back, rubbing his wrist.[paragraph break]'Well, you gonna help me, runt, or not?' he asks, and holds out a short, stiff piece of wire, pinched between his thumb and forefinger. 'Ah, forget it!' he snarls, and tosses something small across the room. It skitters across the floor and lands in a pile of straw. Jacobs goes back to his corner and sits down heavily. 'Guess I'm in here for the duration after all.'"
+[After JA8 fires, the player is "out of conversation" with Jacobs; no new conversation options should be queued. The wire should now be "part of" the straw object, but concealed so that the player cannot refer to it directly.]
+Quips JA9 through JA15 and all references to them should be deleted. They no longer exist.
+The following new quips should be added:
+JA24
+Trigger: if the player attempts to TALK TO JACOBS after JA8 has been fired but before the player has left the Holding Cell.
+Display: "Hey mister..." you start, nervously.[paragraph break]"What?" snaps Jacobs.
+Response: JA25; JA27; JA28; JA29 if the player has the wire; JA30
+JA25
+Menu: "How are you going to get out of here?"
+Display: "How are you going to get out of here?" you ask.[paragraph break]Jacobs chuckles, not very pleasantly. "I'm going to wait," he says, "until my father gets me out the old-fashioned way, by bribing the guards. Too bad for you — I doubt they'll throw you into the bargain."
+Response: JA26; JA27 if neither JA27, JA28, nor JA29 have already been triggered; JA28 if it is not already triggered; JA29 if neither JA27, JA28, nor JA29 have already been triggered AND the player has the wire; JA31
+JA26
+Menu: "Who is your father?"
+Display: "So who is your father anyway?" you ask.[paragraph break]The man cocks an eyebrow at you. "You've never heard of Jacobs the Elder? Big mansion on East Commerce Street? He only owns half the city." Jacobs sneers. "Not that it makes any difference for you, at this point."
+Response: JA27 if neither JA27, JA28, nor JA29 have already been triggered; JA28 if it is not already triggered; JA29 if neither JA27, JA28, nor JA29 have already been triggered AND the player has the wire; JA31
+JA27
+Menu: "What were you trying to do with the door?"
+Display: "What were you trying to do just now?" you ask. "With the door and everything?"[paragraph break]Jacobs sighs. "I was [i]trying[r] to pick the lock. But the lock's on the outside, and my arm's too big to fit through the bars. Which means now I'm just killing time."
+Response: JA25 if it is not already triggered; JA26 if it is not already triggered AND JA25 has been triggered; JA28 if it is not already triggered; JA31
+JA28
+Menu: "Do you mind if I try picking the lock?"
+Display: "You mind if I give it a try?" you ask, jerking your thumb towards the door.[paragraph break]Jacobs looks at you incredulously. "You ever picked a lock before, runt?"[paragraph break]You nod, thinking of the few times you've practiced with Bobby.[paragraph break]He shrugs, leans his head back against the wall, and closes his eyes. "Do whatever you want, runt. Just be quiet about it."
+Response: JA25 if it is not already triggered; JA26 if it is not already triggered AND JA25 has been triggered; JA31
+JA29
+Menu: "What's this wire?"
+Display: "What is this thing?" you ask, holding up the wire.[paragraph break]"What are you, dim?" snorts Jacobs. "It's a lockpick, what do you think? And it's worthless, because the lock's on the outside of that door, and I can't get my arm through the bars. So you can stick it up your nose, for all I care."
+Response: JA25 if it is not already triggered; JA26 if it is not already triggered AND JA25 has been triggered; JA28 if it is not already triggered; JA31
+JA30
+Menu: "Never mind."
+Display: "Uh, never mind," you say. Jacobs grunts and looks away at nothing in particular.
+[player is now out of conversation]
+JA31
+Menu: "Okay."
+Display: "Um, okay," you say. Jacobs doesn't even bother to respond.
+[player is now out of conversation]
+Instead of talking to Jacobs when JA30 has been triggered OR JA31 has been triggered, and the player is still in the Holding Cell: say "Jacobs grunts noncommittally."
+Initial description of Jacobs after JA8 has been triggered, but while the player is still in the Holding Cell: "Jacobs sits in the corner, apparently in a deep sulk."
+Finding the Lockpick
+Description of the straw while the lockpick is part of it: "From the smell and the look of it, this straw is all prisoners ever get in the way of a toilet. You can't see the thing that Jacobs threw from here: you'll have to poke around in the nasty stuff to find it."
+Instead of TAKING, SEARCHING, or LOOKING UNDER the straw while the lockpick is part of it: "Holding your breath, you gingerly poke around in the damp, filthy straw, and eventually you find the thing that Jacobs threw in there: it's a short piece of stiff wire." [now the player is carrying the wire]
+Instead of GIVING or SHOWING the lockpick to Jacobs while the player is still in the Holding Cell: say "Jacobs rolls his eyes. 'I don't want it, you dim. It's no use to me in here.'"
+The response to UNLOCKING or PICKING the cell door with the lockpick should be revised as indicated:
+"You slip your arm through the bars and reach down for the lock. It's a stretch — Jacobs has to lift you higher and press your shoulder painfully against the bars you have to get up on your tip-toes and strain your shoulder painfully against the little window — but soon you feel the metal of the lockplate, and your fingers find the tiny, sharp-edged hole in the middle.[paragraph break] You jam the end of the lockpick in and start wiggling it around. Almost immediately, you realize that this is not going to work. The angle is too awkward, and you can't see what you're doing, and you can't feel the tumblers the way Bobby showed you when you practiced on the front door of Maiden House...[paragraph break]Then you feel the wire bump against something inside the lock. You manage to lever the end of the wire under something and push... you feel it start to give... you push a little harder, and it starts to pivot... you push harder, and it starts to slip off the end of your pick...[paragraph break]And then there is a [i]snap[r], and the pick jumps out of your fingers and tumbles to the ground outside the cell door.[paragraph break]Jacobs puts you down suddenly stands up. He walks over, puts his hand on the door... and pushes it open.[paragraph break]'Well,' he says, looking you over with a sly expression, 'you are a valuable runt, after all.'"
+[All other code -- moving the player and Jacobs to the Jailhouse room, etc. -- still applies as normal.]
+2. Black Gate Estate
+Overview: The secret letter is no longer hidden in a random book in Baron Fossville's library. Originally, it was implied that Baron Fossville's library consists largely of books stolen from Red Gate Estate after the Duke of Toresal's death, and that the Baron himself was unaware that the letter was hidden in one of these books. We now posit that the Baron knew of the letter and took possession of it after the Duke's death, but had not yet destroyed it on the off-chance that it might come in useful someday. Instead, he hid it in the chandelier in his library. The player must figure out how to lower the chandelier in order to search it.
+The Supply Closet
+The glass-paneled doors and Third Floor Balcony room in Black Gate Estate should be removed and code referring to them excised.
+The description of the Audience Area should be revised as indicated:
+"Several rows of benches are set up on this end of the room, so that guests may sit and enjoy a recital. The room continues to the north, and glass-paneled doors to the south lead out to a balcony a narrow wooden door lies south."
+The following door and room should be added to the map:
+closet door [closed door]. South of the Audience Area, north of the Supply Closet. Printed name: "narrow wooden door". Description: "It's just a plain wooden door, leading [if in the Audience Area]into a[otherwise]out of the[end if] closet." Initial Appearance: "The door to [the direction of the door] is [open/closed]." Synonyms: "doorway", "narrow", "wood", "wooden", "plain". Inside from the Audience Area is the closet door. Outside from the Supply Closet is the closet door.
+Supply Closet [room]. Description: "A dusty nook used by the servants to store mops and cleaning supplies." Synonyms: "dusty", "nook". 
+mops [plural-named scenery, in the Supply Closet]. Description: "The mops and other supplies are stacked up in the back of the closet." Synonyms: "mop", "supplies", "stacks", "stacked". Instead of SEARCHING or LOOKING UNDER the mops: say "There is no secret letter hidden among the mops." Instead of TAKING the mops: "The last thing you need to be lugging around is a mop."
+The Winch
+winch [fixed in place, in the Supply Closet]. Initial Appearance: "Fixed to the floor in the center of the closet is a strange-looking winch." Description: "It's shaped like a very large spool, with a handle attached to one side for turning it. A sturdy rope is [if the chandelier is raised]tightly wound around it several times[otherwise]attached at one end to the winch[end if]. The other end disappears into a small hole in the floor." Synonyms: "spool", "drum", "large". Instead of TURNING the winch, try TURNING the handle.
+handle [part of the winch]. Description: "It's a crank, allowing you to turn the winch, which winds or unwinds the rope." Synonym: "crank". Instead of PUSHING or PULLING the handle, try TURNING the handle.
+rope [part of the winch]. Description: "The rope is [if the chandelier is raised]tightly wound around[otherwise]attached to[end if]the drum of the winch. The other end disappears into a small hole in the floor." Synonyms: "wound", "tight", "taut". Instead of PUSHING, PULLING, RAISING, or LOWERING the rope, say "The rope is extremely taut and won't budge. If you want to raise or lower it, you'll have to turn the winch."
+small hole [scenery, in the Supply Closet]. Description: "The hole is just slightly bigger around than the rope running through it." Instead of SEARCHING the small hole: say "Most of the hole is taken up by the diameter of the rope, and what little space there is around the edges is all dark." Instead of INSERTING something into the small hole: say "Most of the hole is taken up by the diameter of the rope. There's not enough room to fit anything else in there."
+Instead of TURNING the handle when the chandelier is raised: say "The handle is very stiff, but with some effort you manage to turn it several times, lowering the rope through the hole in the floor." [now the chandelier is lowered].
+Instead of TURNING the handle when the chandelier is lowered: say "The handle is very stiff, and whatever is on the other end of the rope is very heavy, but with a great deal of effort you manage to wind the winch several times, pulling the rope up through the hole in the floor." [now the chandelier is raised].
+Make "wind" and "unwind" synonyms for the verb "turn".
+The Library
+The room description of the Library in Black Gate Estate should be revised as indicated:
+"Tall bookshelves line all four walls, and a stately writing desk sits like an altar in the center of the dimly lit room a chandelier hangs from the high ceiling. A doorway leads north to the bedroom."
+Delete the writing desk, the newer books, and the book on Dynastic Lineages in Miradania from the source. Excise all rules referring to these objects.
+Add the following object:
+gaudy chandelier [fixed in place, open, unopenable container, in the Library]. Initial Appearance: "In fact, the chandelier dangles practically to the floor, at the end of a long rope that goes up through the ceiling. The servants must lower it like this when they need to clean it." Description: "It's a very gaudy chandelier, actually; lots of branching, curlicued arms and drooping, dangling crystals." Synonyms: "dangling", "crystal", "crystals", "fancy", "looping", "looped", "arm", "arms", "branching", "branches", "curling", "curled", "curlicue", "curlicues", "curlicued", "curly", "curlycue", "curlycues", "curlicued", "candle", "holder". 
+The chandelier can be raised or lowered. It starts the game raised.
+Understand "long" and "rope" as a synonym for the chandelier when it is lowered.
+When the chandelier is raised, set its locale priority to zero, so that it doesn't get a redundant paragraph in the room description.
+Instead of doing anything other than EXAMINING the chandelier when it is raised: say "The chandelier is high out of your reach."
+Instead of PUSHING or PULLING the chandelier when it is lowered: say "You give the chandelier a nudge, and it sways, tinkling faintly."
+Instead of RAISING the chandelier when it is lowered: say "The chandelier is too heavy to lift. You'll have to raise it with the winch in the closet upstairs."
+Instead of LOWERING the chandelier when it is lowered: say "The chandelier is already lowered as far as it will go."
+Instead of CLIMBING or ENTERING the chandelier when it is lowered: say "You wouldn't trust that thing to hold your weight, and you shudder to imagine the noise it would make if the rope broke."
+The Secret Letter
+The secret letter is in the chandelier. However, it is concealed when the chandelier is raised, so that the player cannot refer to it.
+After EXAMINING the chandelier when it is lowered and the secret letter is in it, try SEARCHING it.
+Instead of SEARCHING the chandelier when it is lowered and the secret letter is in it: say "Odd — rolled up and stuffed into one of the empty candle holders is a sheet of parchment."
+Instead of SEARCHING the chandelier when it is lowered and the secret letter is not in it: "Nothing else seems to be hidden in the gaudy chandelier."
+Understand "rolled up" or "rolled" as the secret letter when it is in the chandelier. Remove "folded" as a synonym. Understand "folded" as a synonym only if the player has examined the letter once already.
+Revise the first sentence of the text that is triggered after examining the secret letter as indicated:
+"Your hand is trembling as you refold the letter. [etc…]"
+3. Red Gate Estate
+Overview: Originally, hot running water was available from the taps at Red Gate Estate, even though the house had ostensibly been abandoned for many years. This strains the bounds of plausibility, to say the least, and was the source of many complaints from playtesters. The puzzle has been revised, so that the estate still has running water, but it is not heated. The player cannot take a refreshing bath in ice-cold water; instead, she must first make her way to the basement and start the furnace, using broken-up furniture for firewood.
+In addition, the descriptive text in several rooms has been revised, to "tighten up" the experience of exploring and emphasize the emotional resonance of the location.
+The Great Hall
+Remove the Dining Room and Red Gate Estate Kitchen (both rooms) from the source code. These rooms no longer exist. Remove the text blurb spoken by Shannon upon entering the Dining Room ("'Lord Toresal was known for his hospitality, [etc.]").
+Revise the room description of the Foyer as indicated:
+"The entrance hall is large, high-ceilinged, and empty. Your footsteps echo on the marble floor. A doorway leads north to further rooms into a large hall, and the street lies south."
+Add the following room and object:
+Great Hall [room]. North of the Foyer, below the Red Gate Estate Second Floor Landing. Description: "This room runs nearly the entire length of this floor, but its size only draws attention to its emptiness. The walls are bare plaster; what little furniture remains is stacked in the corners and covered with dusty sheets.[first time only][paragraph break]You can't help but imagine how this place once was, in its full vibrancy. The cream of the city once filled this room, entertained and served by the Duke of Toresal — your father. They respected him, honored him, even loved him. And now it's all gone.[paragraph break][/first time]A wide stairway sweeps up to the second floor, while a narrower stairway leads down to a cellar. The foyer lies south." Synonyms: "large"
+portrait of the Duke [fixed in place, in the Great Hall]. Initial Appearance: "[one of]Whoever took most of the furniture away for some reason decided to leave a large portrait of the Duke himself hanging on the far wall[or]The portrait of the Duke stares down at you from the far wall[stopping]." Description: "The Duke's features are strong and stern, yet softened by kindness, and although the canvas is faded with the years, his eyes are still a rich, vivid blue. In the painting he is smiling slightly, but as he stares out at the empty ruin of his home — at [i]you[r], his lost, beleaguered, and only heir — he seems weighed down by sadness." Synonyms: "painting", "picture", "canvas", "feature", "features", "strong", "stern", "kind", "kindness", "faded", "fading", "eye", "eyes", "rich", "vivid", "blue", "smile", "smiling", "sad", "sadness".
+After EXAMINING the portrait for the first time during Shannon's Company: say "'His eyes...' whispers Shannon, with a slight catch in her throat. 'Jack, dear, you have his eyes.'"
+Instead of doing anything other than EXAMINING the portrait: say "The portrait is hung too high for you to reach."
+The old furniture and dustsheets are no longer backdrops: they are instead normal scenery objects, located in the Great Hall. Change the description of the old furniture to: "The tables and chairs are old and show signs of neglect, but they are finely crafted, made of rich, dark wood." Add "wood", "wooden", "rich", "dark" as synonyms of the old furniture.
+Understand "wide" and "sweeping" as the Red Gate Estate Second Floor Landing when the location is the Great Hall.
+Office
+Change the room description of the Red Gate Estate Office as indicated:
+"Thise room looks like it was clearly ransacked some time ago. The shelves are empty, and a What few books still are left lie scattered about the floor. The desk is pushed against one wall, the dustsheet that once covered it ripped away. You can leave to the north."
+Change the dusty bookshelves to fixed in place, rather than scenery (so that they will get a room locale paragraph).
+Rule for writing a paragraph about the dusty bookshelves when the wooden box is unnoticed: say "The empty shelves are bowed slightly, permanently warped from spending so many years supporting the weight of as many books as they could hold. And beneath the dust, the wood is worn, scuffed — a sign that those books were not merely for show, but taken down and read, again and again. It occurs to you that the Duke must have loved his books. You're not sure why you are so certain of this, but certain you are. Of all the desecrations visited upon his home since his death, you think this room would have made him the saddest.[paragraph break]Up on the top shelf, missed by the looters, you spy a wooden box."; now the wooden box is noticed.
+Understand "bowed", "warped", "sagging", "worn", "scuffed" as the dusty bookshelves.
+Rule for writing a paragraph about the dusty bookshelves when the wooden box is noticed and on the dusty bookshelves: say "Nearly hidden on one of the top bookshelves is a wooden box."
+After the wooden box is taken, change the dusty bookshelves to scenery (so that they no longer get a locale paragraph).
+Alter the following rule as indicated: 
+Understand "crest", "engraving", "Duke", "Dukes", "Crest", "Toresal", "Toresals", "engraved" as the engraved crest of Duke Toresal when the wooden box is noticed not on the dusty bookshelves.
+Master Bedroom
+Make the bed fixed in place, rather than scenery, so that it can have a locale paragraph.
+Rule for writing a paragraph about the Red Gate bed:
+say "Even before the events of the last two days, you had heard of the Duke, of course. And although there are many theories about exactly what brought him low — illness; treachery; heartbreak when his wife, the Duchess, left him — all agree that he passed away in his sleep. This, then, is where he died. This very room, in this very bed. This mattress, cold, stripped, and covered with dust, is the closest in time you will ever come to the man who was your father, the Duke of Toresal.[paragraph break][i]And Bobby is dead now, too. And maybe Widow Fiona and Widow Shannon, if the Baron figures out that they helped me. And who else then? Teisha? Olmer and Darrens? All because of this stupid letter... I never asked for this.[r][paragraph break]You close your eyes for a moment, fighting off a dreadful sense of futility.";
+now the Red Gate bed is scenery.
+Cellar
+Add the following new room and item to the source:
+Red Gate Cellar [room]. Below the . Description: "It is cool and quiet down here, amidst the stone walls of the cellar. A narrow stairway leads back up." Synonyms: "basement".
+narrow stairway [scenery, open, unopenable door]. Located above the Red Gate Cellar, below the Great Hall. Description: "Narrow, stone steps leading [if the location is the Cellar]up[otherwise]down[end if]." Synonyms: "narrow", "stone", "stairs", "staircase", "step", "steps". Instead of climbing the narrow stairway, try entering the narrow stairway.
+The Furnace
+Add the following new item to the source:
+furnace [fixed in place, openable, closed container, in the Red Gate Cellar]. Initial Appearance: "Against the back wall stands a pot-bellied iron furnace, [if the furnace is running]cold and still[otherwise]giving off a bright orange glow[end if]." Synonyms: "boiler", "grate", "grating", "pipe", "pipes", "heater", "iron", "metal", "big", "pot ", "belly", "bellied", "pot-belly", "pot-bellied", "thick".
+Definition: the furnace is running rather than cold if the roaring fire is in it.
+Understand "hot" as the furnace when the furnace is running. Understand "cold" as the furnace when the furnace is not cold.
+Rule for describing the furnace:
+if the furnace is cold, say "The metal grating is [if the furnace is closed]closed[otherwise]open, and the interior is dark[end if].";
+otherwise say "The furnace is [if the furnace is closed]closed, but bright orange light flickers through the grating[otherwise]open, and bright orange light pours out from it[end if]. Thick, metal pipes leading away from the furnace carry the heat to other parts of the house."
+Instead of touching the furnace:
+if the furnace is running, say "You snatch your hand away. It's hot!";
+otherwise say "The metal is cold."
+After opening the furnace for the first time, say "The grating squeaks open. The inside of the furnace is empty and dark.[paragraph break]'We could break up some of the furniture upstairs,' suggests Shannon. 'It would be nice to have some warmth in here.'"
+The Pile of Wood
+Instead of attacking the old furniture:
+say "You pull a couple of chairs out from under the dust sheets and start whacking them against the hard floor, stomping on them, yanking the legs free.  It's tiring work... but also somehow exhilarating. After all the awful things that have happened to you, it's nice to be able to take your frustrations out on this old furniture. Soon you have a respectable pile of firewood.";
+now the player is carrying the pile of broken wood.
+Instead of attacking the old furniture when the pile of broken wood is on-stage or the furnace is running, say "You've probably smashed enough furniture for today."
+Add the following item to the source;
+pile of broken wood [starts game off-stage]. Description: "Just a bundle of sticks — that used to be a nice chair." Synonyms: "wooden", "bundle", "firewood", "stick", "sticks".
+Instead of putting the pile of broken wood in the open furnace:
+remove the pile of broken wood;
+now the roaring fire is in the furnace;
+now the orange light is in the Cellar;
+say "You pile the sticks into the furnace, and Shannon, always helpful, produces a match. Soon you have a roaring fire.[paragraph break]'There, that should warm things up a bit,' says Shannon."
+Add the following items to the source:
+roaring fire [scenery, starts off-stage]. Description: "The fire crackles cheerfully inside the belly of the furnace." Synonyms: "flames", "flame", "burning", "crackling", "cheerful", "smoke". Instead of listening to the roaring fire, say "The flames crackle cheerfully." Instead of smelling the roaring fire, say "It smells like good, clean wood-smoke." Instead of doing something other than examining, listening to, or smelling the roaring fire, say "Messing with fire is a good way to get burned."
+orange light [scenery, starts off-stage]. Description "The warm glow flickers out from the belly of the furnace." Synonyms: "flickering", "glow", "warm", "glowing", "bright". Instead of doing something other than examining the orange light, say "It's just insubstantial light."
+The Bath
+Instead of entering the bathtub when the furnace is cold, say "You turn on the faucets, thinking how nice it would be to take a bath — but the water is freezing! No matter how far you turn the 'hot' faucet, the water is as cold as if it had been drawn from a deep well.[paragraph break]'The furnace must be off,' muses Shannon. 'Perhaps we can get it started again.'"
+4. The Map Room
+Overview: Originally, during the final "gloating" scene, Jack is prevented from moving or taking action by a pair of mercenaries. For version 2.0, the two mercenaries are removed, and Jack is instead tied to a chair. Fossville's monologue is shortened, so that the player does not have to type "z" quite so often. After Bobby bursts into the room, the player can attempt to free herself from the chair. She also has the option to aid Bobby by wounding the Baron. Although this does not alter the very end of the game (Jack is still kidnapped by the Princess during the heat of the fight), it will hopefully provide the player with a greater sense of satisfaction at being able to participate in the final confrontation.
+Removing the Mercenaries
+When the scene Confronting the Baron begins, do not move the "several mercenaries" object to the War Room.
+Revise the text that occurs when the scene Confronting the Baron begins, as indicated:
+"The mercenaries march you out of the ballroom, through the foyer, and into the inner reaches of the keep. At every doorway you pass a pair of Lord's Guards standing at attention; some of them glare at the ill-kempt and ill-disciplined mercenaries, but no one makes a move to stop them or help you. You are keenly aware of the dagger strapped to your leg under your dress, but there seems to be no opportunity to use it. Not that you'd last very long against a half-dozen armed men anyway.[paragraph break]The last door is not guarded. The mercenaries push you through into Beyond it is a room filled with dim, flickering light. The mercenaries push you into a chair and bind you with rough ropes, and then the door clicks shut behind you."
+The following rules should replace the "Instead of doing something during Confronting the Baron" rule in the source:
+Instead of doing something while the player is tied up [since the player can still be tied up after Confronting the Baron ends; see below for the definition of tied up]:
+	if the action is physical:
+		say "The ropes bind you tightly to the chair; you can only move your hands the tiniest bit." instead;
+	continue the action.
+Instead of taking off the plain dagger while the player is tied up, say "You might [i]just[r] be able to reach your dagger if you stretched your fingers... but there's no way to do it without the Baron seeing you."
+Speaking of the plain dagger, there should be a rule that intercepts TAKE DAGGER while it is being worn. I don't see it in the source, so please add:
+Instead of taking the plain dagger while the plain dagger is worn by the player, try taking off the plain dagger.
+Please revise the scripted event FOSS2 as indicated:
+FOSS2 is a scripted event. The display text is "Fossville smiles. 'But all that's done with now. Once I realized that you were being manipulated into making your [i]own[r] play for the throne—' He stops and glances at you. 'You [i]do[r] realize you're being manipulated, don't you? No one [i]really[r] thinks gutter-trash like you has a legitimate claim to the throne, no matter who your father was. Your [']backers['] are just using you as a pawn to further their own political ends. Where was I?' He pauses, scratching his chin. 'Ah, yes. Once I realized what you were up to, I knew you would show up here. And now this tiresome little game is nearly over, but for a few loose ends.[paragraph break]He holds out his hand. 'The letter, please.' I hope you can forgive my forwardness...' Fossville searches you with rough, undignified efficiency, and quickly finds your father's letter in a fold of your gown. He yanks the parchment free with a short, triumphant laugh.[paragraph break][i]He didn't find the dagger[r], you think. [i]I still have that[r]."
+The scene Letter Request should no longer be necessary.
+After firing FOSS2, now Baron Fossville carries the secret letter.
+FOSS3 and FOSS4 should be deleted. FOSS2 should lead right into FOSS5.
+The Chair
+Add the following items to the source:
+chair [scenery enterable supporter, in the War Room]. Description: "It's made from the same blackwood as the table, and it's very sturdy." Synonyms: "furniture", "black", "wood", "blackwood", "wooden", "sturdy". 
+rough ropes [scenery, in the War Room]. Description: "The ropes binding you to the chair are tight enough to keep you from moving very much... but there's just enough wiggle room that you [i]might[r] be able to reach your dagger." Synonyms: "rope", "bonds", "bondage", "binding", "bond", "tight", "your", "my".
+Implement a "does the player mean" rule that favors the "rough ropes" over the "knotted ropes" (that is, the ones tying Pieter) so long as the player is still tied up. [Once the player cuts herself free, we will simply quietly remove the rough ropes from play, so that they don't clash with Pieter's ropes.]
+Definition: the player is tied up if the location is the War Room and the rough ropes are on-stage. 
+When the scene Confronting the Baron begins, move the player to the chair.
+It would be nice if, when the room name "War Room" is printed after a LOOK command, we could change "(on the chair)" to "(tied to the chair)". I'm sure I've done something like this before, but at the moment I can't remember what rule/activity to use.
+FREE SELF should divert to CUT ROUGH ROPES WITH DAGGER when the player is tied up.
+CUT/ATTACK ROUGH ROPES WITH DAGGER should implicitly TAKE DAGGER if the player is wearing it or not carrying it.
+CUT/ATTACK ROUGH ROPES should automatically supply the plain dagger as a second noun if the player does not specify.
+PULL/UNTIE ROUGH ROPES while the player is tied up should respond: "The ropes are too tight for you to just pull free, although you might be able to reach your dagger..."
+Cutting Free
+Once the scene Skirmish starts, attempting to TAKE the dagger will trigger several consecutive "states". First, the dagger will drop to the ground. Then, the chair (with the player) will tip over. Finally, Pieter will kick the dagger within reach. These states can be tracked by whatever internal flags work best; they should not affect anything other than the next response to "TAKE DAGGER."
+Just to clarify: the sequence of events goes like this:
+Skirmish scene begins.
+First time the player attempts to take the dagger, the first event triggers, and the dagger moves to the floor (i.e., in the room, no longer carried or worn).
+Second time the player attempts to take the dagger, the second event triggers, and the chair is knocked over.
+Third time the player attempts to take the dagger, the third event triggers, Pieter kicks the dagger over, and the dagger is now carried by the player.
+IF the player still does not have the dagger 2 turns after the chair is knocked over, Pieter kicks it over on his own initiative, and the dagger is now carried by the player.
+Make REACH and REACH FOR synonymous with TAKE.
+Remove the rule "Instead of taking or taking off the plain dagger when the plain dagger is worn by the player during the Skirmish" -- it is now superseded by the rules below.
+Attempt #1: Instead of TAKING or TAKING OFF the dagger while Skirmish is happening and the player is tied up and the player is wearing the dagger:
+say "With all the commotion, no one notices you inching your hand around, stretching your fingers... you just manage to nudge the dagger out of your sheath... you [i]almost have it...[r][paragraph break][i]Aagh![r] You [i]dropped[r] it! It's lying on the floor, right under your chair!";
+move the plain dagger to the War Room.
+Instead of KICKING the dagger while Skirmish is happening and the dagger is on the floor and the player is tied up:
+say "You would if you could, but your feet are tied, too!"
+We will probably have players trying to guess some nonstandard verbs at this point. Let's make ROCK [something], TILT [something], PUSH [something] OVER, and KNOCK [something] OVER all synonymous with PUSH [something]. Let's also make STRETCH [something] a synonym for PULL [something]. Then:
+Instead of PUSHING the chair while Skirmish is happening and the dagger is on the floor and the player is tied up, try taking the dagger.
+Instead of PULLING the rough ropes while the player is tied up, try taking the dagger.
+Attempt #2: Instead of TAKING the dagger while Skirmish is happening and the dagger is on the floor and the player is tied up:
+say "Grunting and swearing, you strain against the ropes, scrunching down, rocking the chair back and forth, trying to reach the dagger. Suddenly someone — Bobby or Fossville, you're not sure who — bumps into you. The chair tilts over, taking you with it, and you slam into the floor, knocking your breath out.[paragraph break]The dagger is even further away than before!"
+now the player is knocked over [or however you want to track it internally].
+Attempt #3: Instead of TAKING the dagger while Skirmish is happening and the player is knocked over:
+say "It's no use. Tied to the chair and lying on your side, there's no way you can reach the dagger, no matter how hard you struggle."
+Pieter Kicks It Over: This event occurs either immediately after the player attempts to take the dagger while knocked over (attempt #3, above), or on the second turn after becoming knocked over, whichever comes first.
+say "Suddenly, over the noise of the battle, you hear someone frantically grunting. It's Pieter! Though bound even more tightly than you, he manages to scoot across the floor and kick the dagger in your direction. You feel the cold steel of the blade thump against your fingers. The dagger is in your hand!";
+now the player carries the dagger.
+Instead of CUTTING or ATTACKING the rough ropes with the dagger while the player is carrying [not wearing] the dagger:
+say "You flip the dagger around and start working it back and forth across the ropes binding your wrist to the arm of the chair. It seems to take forever, and your fingers are almost numb from the constant tightness of the ropes... then, with a snap, the rope falls away. Feeling rushes back into your hand, and you make quick work of the rest of your bonds. You're free!";
+now the player is not tied up;
+move the player to the War Room [i.e., not on the chair] without printing a room description;
+remove the rough ropes from play.
+Instead of entering the chair when Skirmish is happening and the player is not on the chair, say "This is no time to sit down!"
+Banter
+Revise the display text of FOSS6 as indicated:
+FOSS6 is a scripted event. The display text is "Suddenly the door bursts open — a mercenary staggers backwards into the room, crashes into the table — men rush in, shouting, swords flashing —[paragraph break]Your breath catches in your throat.[paragraph break][i]It's Bobby![paragraph break][r]'Jack! Behind me!' 'Sit tight, Jack! Everything's going to be all right!' he shouts, slamming his fist into a mercenary's face. He flashes you that devil-may-care grin of his before slashing his way into the room, making a beeline for Baron Fossville."
+Revise the display text of FOSS7 as indicated:
+FOSS7 is a scripted event. The display text is "'Give it up, Fossville!' yells Bobby. 'You're are guilty of murdering Duke Toresal! Ten of my men heard you confess from outside the door. Your bid for the throne is over!'[paragraph break]Fossville brings his own sword up and parries Bobby's cut with a resounding [i]clang[r]. 'Goddesses curse it, I thought I was done with you, I knew it, you [i]are[r] a spy,' growls the Baron. 'Doesn't anyone stay dead anymore But how did you escape the noose?'[paragraph break]'I'm sure [i]you[r] won't have any trouble,' Bobby snaps. 'That's my own secret for now,' laughs Bobby."
+Revise the display text of FOSS8 as indicated:
+FOSS8 is a scripted event. The display text is "Fossville counterattacks, slashing brutally at Bobby's face. Bobby falls back, parrying each blow, until his back hits the edge of the table. The Baron roars and brings his sword up for a killing blow, but Bobby jumps up onto the table, rolls over it, and lands on the other side. He's breathing hard — perhaps the Baron is a better swordsman than Bobby had anticipated. 'This time you'll stay dead, spy,' snarls the Baron. 'But first I want to know who you're working for. Is it Inhyron? The old King? Some ally of the Duke's?'[paragraph break]Bobby, pushing back against Fossville's blade, grins. 'I don't answer to any royalty, Baron. I answer to the people of Miradania. And so will you!'"
+Add a new scripted event, FOSS8a, to be triggered on the turn after FOSS8:
+FOSS8a is a scripted event. The display text is "The Baron roars and brings his sword up for a killing blow, but Bobby jumps up onto the table, rolls over it, and lands on the other side. He's breathing hard — perhaps the Baron is a better swordsman than Bobby had anticipated."
+FOSS9 is triggered the turn after FOSS8a. Revise the display text as follows:
+FOSS9 is a scripted event. The display text is "The two swords clash and clash again. Fossville pushes Bobby back, back across the room, this time backing him towards the roaring fireplace. Bobby is a skilled fighter, but he's losing ground before the Baron's fury. Flames lick the edge of his cloak as he staggers back against the mantelpiece.[if the player is not tied up][paragraph break]You have to do something![end if]"
+Revise the display text of FOSS10 as indicated:
+FOSS10 is a scripted event. The display text is "The Baron feints, then strikes Bobby across the face with his pommel. Bobby's sword clatters to the floor and he falls to his knees. Pieter slumps helplessly against his bonds, groaning with dismay.[paragraph break]'It's over, spy,' snarls the Baron Fossville as he steps forward, sword raised."
+[The response to either freeing Pieter or stabbing the Baron should supersede FOSS10.]
+Attacking the Baron
+Replace the rule " Instead of doing something other than talking to or examining to Baron Fossville during the Skirmish" with the following:
+Instead of doing something other than TALKING TO or EXAMINING or ATTACKING Baron Fossville during the Skirmish when the player is not tied up, say "The Baron is fighting so ferociously, unless you're planning to attack him, he's likely to take [one of]out your eye[or]off your ear[or]off your hand[or]off your head[at random] with a random [one of]backswing[or]slash[or]thrust[or]jab[at random]."
+Instead of ATTACKING the Baron when Skirmish is happening and the player is not tied up and the player has the dagger:
+change the current script to { }; [ thus ending the scene ]
+remove Bobby from play;
+remove Baron Fossville from play;
+say "You dart into the fray, lashing out with the dagger. You've never been much of a fighter, but you put all your rage and fear and confusion behind the blow, and the blade is sharp enough to do the rest. Fossville howls as the dagger sinks deep into his arm.[paragraph break]'Well done, Jack! We've got him on the ropes now!' cries Bobby, renewing his attack. The Baron staggers back, blood dripping from his sword arm. He stumbles... and then turns and runs out the door, calling for his mercenaries to defend him.[paragraph break] Bobby turns to you, grinning. 'Great work, Jack,' he says. 'You stay and help Pieter. I'll catch that villain quick enough, and then I'll explain everything.' And then with a bound, he is out the door.";
+update the character list;
+Revise the text response when the player frees Pieter as indicated:
+say "Working quickly, you saw through the ropes holding Pieter. 'Thank you,' he gasps, rubbing feeling back into his wrists. Then he grabs up the sword of a fallen mercenary and rushes to Bobby's aid.[paragraph break]Bobby and Pieter fight side by side, attacking one after the other so that the Baron has no chance to counter. He falls back before their onslaught, stumbles... and then he turns and runs out the door, calling for his mercenaries to defend him.[paragraph break]With a shout, Pieter gives chase. Bobby turns to you, grinning. 'Wait for me here, Jack,' 'Great work, Jack!' he says. 'Now wait for us here. We'll catch that villain quick enough, and then I'll explain everything.' And then with a bound, he is gone.";
+Design Note: This scene should now be timed so that the player has exactly five turns between the start of the Skirmish and being kidnapped. This is enough time to GET DAGGER, GET DAGGER, GET DAGGER, CUT ROPES, and then either STAB BARON or FREE PIETER. In addition, the Baron's gloating speech at the beginning is cut by 1-2 turns. This should minimize "Z" time and give the player something obvious and productive to do throughout the final scene.
+Kidnapped
+Revise the text of the very final scene (when the player is kidnapped) as indicated:
+say "At that moment, there is a sudden [i]crack[r] and a rumbling, and a cold draft rushes into the room, tugging at the flames in the fireplace and throwing the room into wildly pitching shadow.[paragraph break]Behind you, the map wall has opened to reveal a dark, cavernous passageway, and [i]more[r] men are rushing out — men dressed all in black, with dark hoods and scarves hiding their faces.[paragraph break]'That's her! Get her!' cries a voice. A young woman's voice. A voice you've heard before.[paragraph break]It happens so fast. Hands are on you, [if the player is tied up]cutting you loose from the chair, [end if]lifting you off your feet, [if the player is not tied up and the player has the dagger]wresting the dagger from your grasp, [end if]pulling you back into that dark, dark tunnel. The firelight falls away, shrinks down to a flickering, orange rectangle. The rumbling starts again, and the rectangle grows narrower, narrower...[paragraph break]'Don't worry,' says the voice. 'We're not going to, like, [i]hurt[r] you.'[paragraph break]And then everything is black.";
+
+
+
+
+
+
+
+
+
+
+
+ DATE \@ "M/d/yyyy" 10/6/2009		Page  PAGE 16
+
+
+

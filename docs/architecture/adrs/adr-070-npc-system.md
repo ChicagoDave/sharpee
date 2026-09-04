@@ -525,3 +525,18 @@ Pure ECS with system that queries components.
 **Consequences.** New NPC behaviors and event types are added in stdlib `NpcService`, not the engine. The engine stays generic and never gains NPC-specific emission logic. The witnessable movement event `NpcService` emits is **sense-neutral** — it carries a per-sense renderings map and defers sense selection to `PerceptionService` (see the ADR-069 amendment), rather than emitting a visual line that other senses strip down. A known gap remains (tracked, not resolved here): because `processPluginEvents` does not call `eventProcessor.processEvents()`, `world.registerEventHandler` handlers do **not** fire for `npc.*` events — the "deeper half" of #159.
 
 **Session.** Branch `fix/platform-issues-book-qa`, issue #159.
+
+## Amendment — Superseded in part by ADR-328 (2026-08-27)
+
+**Context.** [ADR-328](adr-328-actors-are-a-platform-concept.md) (ACCEPTED 2026-08-25) makes the actor a platform concept: anyone who acts runs the same four-phase action with their own actor id. That retires two things this ADR decided.
+
+**Change.**
+
+| This ADR said | ADR-328 says |
+| ------------- | ------------ |
+| NPC action execution (move/take/drop/attack/speak/emote) and `npc.*` event emission live in stdlib `NpcService` (the 2026-06-23 amendment table). | Execution is the standard action pipeline, `(action, actorId)` — ADR-328 D1/D2/D5. `NpcService`'s executors and the `NpcAction` union are deleted; its decision surface (behaviors, `onTurn`, tick-phase registration) survives and emits pipeline invocations. The per-turn tick is engine-owned (D5 amendment, 2026-08-27); `plugin-npc` dissolves. The `npc.*` message set (`lang-en-us/src/npc/`) retires with its producers. |
+| §Visibility and Perception: "Player elsewhere → Nothing reported"; the engine routes NPC events through `processPluginEvents` as enrich → perception-filter → re-emit. | Perception tags, it never drops — every actor-sourced narration event carries `location` and `presence`, and the client decides what to show (ADR-328 D3, amended 2026-08-26/27). *(Corrected 2026-08-28, Phase 2b landing: `filterEvents` never dropped — it transforms; the plugin-side drops are `NpcService`'s and retire in Phase 5. The 2b change is ADR-069's amendment: `absent` events pass through `filterEvents` untouched.)* |
+
+The Behavior Strategy pattern (§Core Architecture, §Behavior System), `NpcTrait`, and the stdlib-vs-story authoring split stand.
+
+**Session.** 2026-08-27, session d6dc2b — Phase 0 of `docs/work/adr-328-actors-platform-concept/plan.md`.

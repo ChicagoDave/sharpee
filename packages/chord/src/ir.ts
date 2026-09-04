@@ -1,5 +1,5 @@
 /**
- * ir.ts — the Story IR wire types (`story language 2`).
+ * ir.ts — the Story IR wire types (`story language 3`).
  *
  * Purpose: the versioned, JSON-serializable product of Chord compilation
  * (ADR-210: the IR is the product). Everything is resolved — entity
@@ -16,8 +16,12 @@
 import type { ScopeRequirementWord } from './catalog.js';
 import type { Span } from './span.js';
 
-/** Format stamp of this IR schema. Consumers refuse unknown formats. */
-export const IR_FORMAT = 'story language 2';
+/**
+ * Format stamp of this IR schema. Consumers refuse unknown formats.
+ * `story language 3` (ADR-327, 2026-08-26): `IROnClause.actor` is a new
+ * required field and the owner-is-object binding is spelled `object`.
+ */
+export const IR_FORMAT = 'story language 4';
 
 /** Root of a compiled story. */
 export interface StoryIR {
@@ -58,7 +62,7 @@ export interface StoryIR {
    * NO presence gate; `it` is unbound (compile-gated), narration
    * broadcasts.
    */
-  story: { states: string[]; reversible: boolean; onClauses: IROnClause[] };
+  story: { states: string[]; reversible: boolean; onClauses: IROnClause[]; timerClauses?: IRTimerClause[] };
   /**
    * `use <extension>` names (ADR-215), validated against the manifest
    * registry — the loader registers each against its trusted runtime
@@ -74,6 +78,15 @@ export interface StoryIR {
    */
   announceModes: Record<string, string>;
   entities: IREntity[];
+  /**
+   * `before the game starts … end before` (ADR-327 D10) — the story's one
+   * pre-play block. The loader runs its body at the end of `initializeWorld`,
+   * against a fully built world; the role assignment it performs is what
+   * `createPlayer` then returns. Null only for a story the analyzer already
+   * rejected (`analysis.start-block-missing`), so the loader may treat a null
+   * here as a load error rather than a default.
+   */
+  startBlock: { body: IRStatement[]; span: Span } | null;
   conditions: IRNamedCondition[];
   phrases: IRPhrases;
   /**
@@ -109,6 +122,10 @@ export interface StoryIR {
   hunger?: IRHungerDef;
   /** Story-global numeric counters (ADR-264 D1). */
   counters: IRCounterDef[];
+  /** `define chapters` rows in order (ADR-330 D1), present only under `use chapters`. */
+  chapters?: IRChapterDef[];
+  /** Named-turn timers (ADR-325 D3), every owner — keyed by `qualified`. */
+  timers: IRTimerDef[];
   sequences: IRSequenceDef[];
   /** `define machine` blocks (ADR-215 `use state-machines` depth). */
   machines: IRMachineDef[];
@@ -237,8 +254,15 @@ export interface IREntity {
    * by-number fallback.
    */
   pronouns?: string;
-  /** True for the story's player entity (`create the player`). */
-  isPlayer: boolean;
+  /**
+   * `playable` (ADR-327 D10) — this character may hold the player role.
+   * Replaces the retired `isPlayer`, which named the block (`create the
+   * player`) rather than the character. Who actually *holds* the role is a
+   * runtime fact the start block decides, never an IR field: the loader
+   * gates `change the player to` on this flag, and gives a `playable`
+   * character the carrying capacity the role needs.
+   */
+  isPlayable: boolean;
   /** Kind-noun compositions (`a room`), in declaration order. */
   kinds: IRComposition[];
   /** Trait-adjective compositions (`scenery`, `dark while …`). */
@@ -265,6 +289,12 @@ export interface IREntity {
    * (analyzer-gated).
    */
   containing: IRContainedMember[];
+  /**
+   * The region's landing (ADR-325 D5): resolved room ids and how to choose
+   * among them (null = a single room). Present only on region-kind
+   * entities with a `landing` line; its presence makes the region a place.
+   */
+  landing?: IRLanding;
   exits: IRExit[];
   blockedExits: IRBlockedExit[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */
@@ -285,6 +315,10 @@ export interface IREntity {
   statesReversible: boolean;
   /** Per-entity numeric counters (ADR-264 D1) — one value per instance. */
   counters: IRCounterDecl[];
+  /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
+  timerClauses?: IRTimerClause[];
+  /** `when <entity> moves` clauses on this owner (ADR-325 D3h). */
+  moveClauses?: IRMoveClause[];
   /** Phrase key of the description in the phrase table, or null. */
   descriptionKey: string | null;
   /**
@@ -609,7 +643,13 @@ export interface IRGoalDef {
   span: Span;
 }
 
-/** One goal step (ADR-310 D8) — verbs per ADR-145's step types; entity refs resolved. */
+/**
+ * One goal step (ADR-310 D8) — verbs per ADR-145's step types; entity refs
+ * resolved. A `perform` step (ADR-329 D10) is one action the owner performs
+ * now, through the execution entry: the action's bare name (the loader
+ * qualifies it — a story action or a standard one), the shape that matched,
+ * and its slots already sorted into the entry's roles.
+ */
 export type IRGoalStep =
   | { kind: 'seek'; target: string; in?: string; span: Span }
   | { kind: 'acquire'; target: string; span: Span }
@@ -618,7 +658,20 @@ export type IRGoalStep =
   | { kind: 'act'; phraseKey: string; span: Span }
   | { kind: 'say'; phraseKey: string; target?: string; span: Span }
   | { kind: 'give'; item: string; target: string; span: Span }
-  | { kind: 'drop'; item: string; in?: string; span: Span };
+  | { kind: 'drop'; item: string; in?: string; span: Span }
+  | { kind: 'perform'; action: string; shape: string; slots: IRPerformSlots; span: Span };
+
+/**
+ * The roles of a `perform` step's slots (ADR-329 D10), as the execution entry
+ * takes them: entity ids (or the `player` sentinel) for the objects, the
+ * canonical direction word for a `going` shape.
+ */
+export interface IRPerformSlots {
+  directObject?: string;
+  indirectObject?: string;
+  instrument?: string;
+  direction?: string;
+}
 
 /**
  * An `influence` block (ADR-310 D9), defined on the exerter. Effect axes
@@ -768,6 +821,13 @@ export interface IRConfigSetting {
   values?: string[];
 }
 
+/** A region's landing (ADR-325 D5) — see IREntity.landing. */
+export interface IRLanding {
+  rooms: string[];
+  strategy: 'randomly' | 'cycling' | 'stopping' | null;
+  span: Span;
+}
+
 /** One resolved `containing` member (ADR-236 D2) — a room or nested region. */
 export interface IRContainedMember {
   /** Entity ID of the member. */
@@ -792,6 +852,13 @@ export interface IRExit {
    * both directions and places the door in the declaring room.
    */
   via: string | null;
+  /**
+   * `, one-way` (ADR-234 D4, GH #327): the loader stamps the written
+   * direction only — no reverse exit, and a door on the line has
+   * `bidirectional = false`. Present only when declared (absent keeps IR
+   * byte-identical).
+   */
+  oneWay?: true;
   span: Span;
 }
 
@@ -827,8 +894,21 @@ export interface IROnClause {
   once: boolean;
   /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
-  /** How the clause binds: target (`it`), role (`anything as the <role>`), or every turn. */
-  binding: 'it' | 'role' | 'every-turn';
+  /**
+   * Who acts (ADR-327 D1): `{kind:'player'}` for the player ROLE — the loader
+   * resolves it against `world.getPlayer()` at fire time, never a compile-time
+   * entity — or `{kind:'entity'}` for a named character. Null for `self`
+   * (the owner acts) and `every-turn`.
+   */
+  actor: IRValue | null;
+  /**
+   * How the clause binds: the owner is the action's object (`object`), the
+   * named role (`anything as the <role>`), every turn, or `self` — the
+   * owner's own action (ADR-327 D1's own-block bare head; before ADR-327 only
+   * the player's `going`, ADR-325 D3h), which fires on the action's
+   * source-room slot with the owner as the actor.
+   */
+  binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for role-bound clauses (validated against the action's roles). */
   role: string | null;
   /** `while` qualifier (every-turn clauses). */
@@ -1168,6 +1248,70 @@ export interface IRCounterDef {
   span: Span;
 }
 
+/**
+ * A named-turn timer (ADR-325 D3a). `qualified` is the runtime key:
+ * `<owner-ir-id>.<name>` for an entity's or the player's (`player.<name>`),
+ * bare `<name>` for the story's. A state's prose, when authored, lives in
+ * the phrase table under `<qualified>.<state>`.
+ */
+/** The moment a chapter begins (ADR-330 D2), resolved: ids are IR entity ids, timers their `qualified` key. */
+export type IRChapterTrigger =
+  | { kind: 'game-starts' }
+  | { kind: 'first-visit'; room: string }
+  | { kind: 'timer-expires'; timer: string }
+  | { kind: 'becomes'; owner: string; state: string };
+
+/**
+ * One chapter (ADR-330 D1/D4): `name` is what conditions say and never
+ * prints; `title` and `description` (empty string when the row has none)
+ * ride the `story.chapter` packet verbatim; `ordinal` is the row's 0-based
+ * position — the chapters' order is declaration order (D3).
+ */
+export interface IRChapterDef {
+  name: string;
+  title: string;
+  description: string;
+  ordinal: number;
+  trigger: IRChapterTrigger;
+  span: Span;
+}
+
+export interface IRTimerDef {
+  name: string;
+  qualified: string;
+  /** The owning entity's IR id (`player` for the player), or null for the story. */
+  owner: string | null;
+  /** Named turns in order; `expired` follows the last and is never listed. */
+  states: string[];
+  /** `meanwhile[, one chance in n]` body — each turn the timer is running. */
+  meanwhile: { chance: number | null; body: IRStatement[] } | null;
+  /** `interrupted one chance in n` — per-turn chance of expiring early. */
+  interrupted: number | null;
+  span: Span;
+}
+
+/** `when <timer> expires [, while <cond>]` (ADR-325 D3e) — on the clause owner. */
+export interface IRTimerClause {
+  /** The timer's `qualified` key. */
+  timer: string;
+  condition: IRCondition | null;
+  body: IRStatement[];
+  span: Span;
+}
+
+/**
+ * `when <entity> moves [, while <cond>]` (ADR-325 D3h) — on the clause owner.
+ * The loader chains the actor-moved event and fires when the event's actor
+ * is `mover`'s world entity; `it` in the body is the owner.
+ */
+export interface IRMoveClause {
+  /** The mover — an entity reference or the player. */
+  mover: IRValue;
+  condition: IRCondition | null;
+  body: IRStatement[];
+  span: Span;
+}
+
 /** A per-entity numeric counter (ADR-264 D1) — same shape, carried on IREntity. */
 export interface IRCounterDecl {
   name: string;
@@ -1329,19 +1473,40 @@ export type IRStatement =
   | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
   /** Payload present only when authored (`with …`, ADR-216) — additive field. */
   | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
-  | { kind: 'set'; target: IRValue; value: IRValue; span: Span }
+  | { kind: 'set'; target: IRValue; value: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `change the player to <entity>` (ADR-327 D9/D10). Read two ways by the
+   * loader, discriminated on `world.getPlayer()`: undefined (inside the
+   * start block, before the engine has set a player) assigns the role
+   * directly; defined (any turn after load) emits a switch request for the
+   * engine to drain at turn end.
+   */
+  | { kind: 'change-player'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
   /** `change mood to <word>` (ADR-310 D3) — the clause's `it` takes the mood. */
   | { kind: 'change-mood'; mood: string; stmtWhen?: IRCondition | null; span: Span }
   /** `change feeling toward <entity> to <disposition>` (ADR-310 D3) — `it` feels differently about the target. */
   | { kind: 'change-feeling'; target: IRValue; disposition: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `<actor> <verb> …` (ADR-329 D1): one standard or story action performed
+   * NOW as `actor` through the engine's execution entry. `action` is the bare
+   * name as clause heads carry it (`taking` — story-first at load, else
+   * `if.action.<name>`); `shape` is the matched grammar shape (`give :item to
+   * :recipient`); `slots` binds each shape slot in order. A `going` shape's
+   * literal direction arrives as a `direction` slot with a literal value.
+   */
+  | { kind: 'act'; actor: IRValue; action: string; shape: string; slots: Array<{ slot: string; value: IRValue }>; stmtWhen?: IRCondition | null; span: Span }
   /** `remove <entity>` (Z6, ADR-213 Q3) — out of play via `world.removeEntity`; observers fire. */
   | { kind: 'remove'; entity: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'award'; expression: string[]; once: boolean; stmtWhen?: IRCondition | null; span: Span }
   // ADR-264 D2: `raise`/`lower` a counter by an amount. `owner` is the entity
   // IRValue for a per-entity counter, or null for a story-global one.
   | { kind: 'raise' | 'lower'; counter: string; owner: IRValue | null; amount: number; stmtWhen?: IRCondition | null; span: Span }
+  /** `set <tally> to <n>` (ADR-325 D4) — absolute assignment, clamped to the counter's bounds. */
+  | { kind: 'set-counter'; counter: string; owner: IRValue | null; value: number; stmtWhen?: IRCondition | null; span: Span }
+  /** ADR-325 D3c: a timer verb. `timer` is the timer's `qualified` key. */
+  | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; timer: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -1442,6 +1607,9 @@ export type IRValue =
   /** A numeric counter read (ADR-264 D3) — `owner` is the entity IRValue for a
    *  per-entity counter, or null for a story-global one. */
   | { kind: 'counter'; name: string; owner: IRValue | null }
+  /** A timer's current named state (ADR-325 D3d) — `timer` is the `qualified` key. Reads
+   *  as the state word while running/stopped, `expired` after, nothing before start. */
+  | { kind: 'timer'; timer: string }
   /** A grammar-slot / role context value inside an action or role clause (`the animal`, `the taker`). */
   | { kind: 'slot'; name: string }
   /** The `each`-block binder `the match` (ratchet E3) — parallel to `it`. */
@@ -1450,9 +1618,13 @@ export type IRValue =
 
 export type IRCondition =
   | { kind: 'and'; operands: IRCondition[] }
+  /** ADR-330 D5: the current chapter is (`during`) / has not reached (`before`) / has passed (`after`) the row at `ordinal`. */
+  | { kind: 'chapter'; relation: 'during' | 'before' | 'after'; ordinal: number }
   | { kind: 'or'; operands: IRCondition[] }
   | { kind: 'not'; operand: IRCondition }
   | { kind: 'chance'; n: number }
+  /** `<timer> has started` / `has expired` (ADR-325 D3d). */
+  | { kind: 'timer-has'; timer: string; what: 'started' | 'expired' }
   | { kind: 'condition'; name: string }
   /** The story is in the named phase (`while after-hours`, ratchet D2). */
   | { kind: 'story-state'; state: string }

@@ -210,7 +210,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
   },
 
   validate(context: ActionContext): ValidationResult {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject?.entity;
     const target = context.command.indirectObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
@@ -286,7 +286,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
   },
 
   execute(context: ActionContext): void {
-    const actor = context.player;
+    const actor = context.actor;
     const item = context.command.directObject!.entity!;
     const target = context.command.indirectObject?.entity;
     const direction = context.command.parsed.extras?.direction as string;
@@ -339,7 +339,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         if (behavior) {
           sharedData.capabilityBehavior = behavior;
           sharedData.capabilityTrait = capTrait;
-          behavior.execute(target, context.world, context.player.id, context.sharedData);
+          behavior.execute(target, context.world, context.actor.id, context.sharedData);
           // ADR-228 D7.2: capability behavior first, then interceptor
           // hooks — this path previously returned before postExecute.
           const capState = getLifecycleState(context);
@@ -497,7 +497,7 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       const target = context.command.indirectObject?.entity;
       if (target) {
         const effects = sharedData.capabilityBehavior.report(
-          target, context.world, context.player.id, context.sharedData
+          target, context.world, context.actor.id, context.sharedData
         );
         events.push(...effectsToEvents(effects, context));
       }

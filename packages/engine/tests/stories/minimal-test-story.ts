@@ -72,9 +72,8 @@ export class MinimalTestStory implements Story {
     RoomBehavior.setExit(this._room, 'north', this._northRoom.id);
     RoomBehavior.setExit(this._northRoom, 'south', this._room.id);
 
-    if (this._player) {
-      world.moveEntity(this._player.id, this._room.id);
-    }
+    // ADR-327 D10: the player is placed in createPlayer, which now runs
+    // second, with the world already built.
   }
 
   createPlayer(world: WorldModel): IFEntity {
@@ -91,9 +90,11 @@ export class MinimalTestStory implements Story {
       capacity: { maxItems: 10 }
     }));
 
-    // Note: Player is NOT placed here because createPlayer() is called
-    // BEFORE initializeWorld() by the engine's setStory(). The room doesn't
-    // exist yet. Player placement happens in initializeWorld() instead.
+    // ADR-327 D10: setStory now runs initializeWorld FIRST, so the room
+    // exists by the time this is called and the player is placed here.
+    if (this._room) {
+      world.moveEntity(this._player.id, this._room.id);
+    }
 
     this._playerCreated = true;
 

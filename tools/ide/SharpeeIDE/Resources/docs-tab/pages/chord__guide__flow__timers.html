@@ -1,0 +1,46 @@
+<p>A <code>define timer</code> counts turns by name. You never write a number: you name the turns, the timer steps through them one per turn once started, and it ends in the one state every timer shares, <code>expired</code>, which is never written. It is the second kind of counter beside a <a href="/chord/guide/world/scores-live-on-owners">tally</a>: a tally counts <em>things</em> and moves only when you <code>raise</code>, <code>lower</code>, or <code>set</code> it; a timer counts <em>turns</em> and takes only the timer verbs. The compiler rejects each kind's verbs on the other.</p>
+<pre><code class="language-chord">define timer waiting for the player
+  pausing
+  loitering
+  interrupted one chance in 2
+end timer
+
+define timer search for the wandering mercenaries
+  arriving
+  lingering
+    Those mercenaries are getting uncomfortably close. You'd better get going
+    before they notice you!
+  meanwhile, one chance in 5
+    phrase merc-idle
+end timer
+
+define timer lunge for the wandering mercenaries
+end timer</code></pre>
+<p><code>for &lt;owner&gt;</code> hangs the timer on an entity or the player; with no <code>for</code> it belongs to the story. Each line before <code>end timer</code> is one of three things. A <strong>state name</strong> is one turn, and it may carry an indented text body spoken the turn that state is reached, exactly as a <code>phrase</code> line does. <strong><code>meanwhile</code></strong> — at most one — holds statements that run on every turn the timer is running, alongside the turn's state; with <code>, one chance in N</code> they run occasionally, on the story's seeded stream. <strong><code>interrupted one chance in N</code></strong> — at most one — gives each running turn that chance of expiring right then instead of stepping. A timer with no state lines is legal: one turn, then expired.</p>
+<p>A timer knows nothing but turns. It is not bound to a room, a state, or a condition; the conditions under which it runs are the ordinary conditions of the clauses that start and reset it.</p>
+<h2 id="the-verbs">The verbs</h2>
+<pre><code class="language-chord">start search        ## begins; first named state next turn
+stop search         ## holds where it is
+restart search      ## back to the first state and running
+reset search        ## back to not-started
+interrupt search    ## expires now — `when … expires` fires as if it had run out</code></pre>
+<p>Inside the owner's block a timer is named bare (<code>start lunge</code>); elsewhere by possessive (<code>restart the player's waiting</code>, <code>reset the mercenaries' search</code>). <code>start</code> on a running timer is a no-op; <code>restart</code> is the explicit form. A stopped timer never expires on its own — <code>interrupt</code> is the one verb that acts from any started state, and on a not-started timer it is a no-op, like <code>reset</code>.</p>
+<h2 id="reading-a-timer">Reading a timer</h2>
+<p><code>is</code> reads the named turn and <code>has</code> reads the lifecycle; the two do not overlap:</p>
+<pre><code class="language-chord">while search is lingering        ## the named turn
+while search has started         ## running or expired
+while search has expired         ## over — the only spelling; `is expired` is rejected</code></pre>
+<p>A timer state and an entity state may share a word: the subject disambiguates, and the analyzer checks each against its own subject's list.</p>
+<h2 id="expiry-is-an-event">Expiry is an event</h2>
+<p>Expiry gets a clause head on the owner, parallel to <code>define sequence</code>'s <code>when &lt;owner&gt; becomes &lt;state&gt;</code>:</p>
+<pre><code class="language-chord">create the wandering mercenaries
+  a person, plural
+  states, reversible: approaching, searching
+
+  when search expires
+    change the wandering mercenaries to approaching
+    start lunge
+    phrase merc-spotted
+  end when</code></pre>
+<p>From outside the owner the head is possessive — <code>when the player's waiting expires</code>, <code>when the mercenaries' search expires</code> — and a <code>, while &lt;condition&gt;</code> modifier is legal on it as on every clause head.</p>
+<p>A timer started during turn T is in its first named state on T+1 and expires the turn after its last named state; one with no states expires on T+1. <code>expires</code> fires exactly once per run, whether the timer ran out, was interrupted by chance, or by the verb. <code>meanwhile</code> never runs on the expiring turn. A timer's position is ordinary world state on its owner, so it rides save, restore, and undo like a counter does — and it is one of the moments a <a href="/chord/guide/flow/chapters">chapter</a> can begin on.</p>

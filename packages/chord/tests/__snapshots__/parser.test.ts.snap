@@ -76,7 +76,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -96,7 +98,29 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 15,
+                "line": 15,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 15,
+              "line": 15,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -133,7 +157,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 20,
+        "endColumn": 28,
         "endLine": 15,
         "line": 9,
       },
@@ -143,6 +167,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -218,7 +243,9 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -238,7 +265,29 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 25,
+                "line": 25,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 25,
+              "line": 25,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -269,7 +318,29 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         },
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 29,
+                "line": 29,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 29,
+              "line": 29,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -290,8 +361,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
             "kind": "chance",
             "n": 3,
             "span": {
-              "column": 27,
-              "endColumn": 42,
+              "column": 35,
+              "endColumn": 50,
               "endLine": 29,
               "line": 29,
             },
@@ -315,7 +386,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 42,
+        "endColumn": 50,
         "endLine": 29,
         "line": 19,
       },
@@ -325,6 +396,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -333,7 +405,38 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "burdens": [],
       "carries": [],
       "codes": [],
-      "compositions": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 34,
+            "line": 34,
+          },
+          "words": [
+            "person",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 35,
+            "line": 35,
+          },
+          "words": [
+            "playable",
+          ],
+        },
+      ],
       "containing": [],
       "counters": [],
       "deadly": null,
@@ -345,8 +448,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 22,
-          "endLine": 36,
-          "line": 36,
+          "endLine": 38,
+          "line": 38,
         },
         "text": "Determined-looking.",
       },
@@ -358,18 +461,20 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
-        "article": "the",
+        "article": null,
         "kind": "name",
         "span": {
           "column": 8,
-          "endColumn": 18,
+          "endColumn": 12,
           "endLine": 33,
           "line": 33,
         },
         "words": [
-          "player",
+          "Alex",
         ],
       },
       "nevers": [],
@@ -384,8 +489,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 13,
             "endColumn": 26,
-            "endLine": 34,
-            "line": 34,
+            "endLine": 36,
+            "line": 36,
           },
           "words": [
             "East",
@@ -396,8 +501,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         "span": {
           "column": 3,
           "endColumn": 26,
-          "endLine": 34,
-          "line": 34,
+          "endLine": 36,
+          "line": 36,
         },
       },
       "pronouns": [],
@@ -406,7 +511,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "span": {
         "column": 1,
         "endColumn": 22,
-        "endLine": 36,
+        "endLine": 38,
         "line": 33,
       },
       "spreads": [],
@@ -415,6 +520,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -425,8 +531,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 44,
-        "line": 38,
+        "endLine": 46,
+        "line": 40,
       },
       "strategy": "randomly",
       "variants": [
@@ -437,8 +543,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 32,
-            "endLine": 39,
-            "line": 39,
+            "endLine": 41,
+            "line": 41,
           },
           "text": "You mutter about the weather.",
         },
@@ -449,8 +555,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 27,
-            "endLine": 41,
-            "line": 41,
+            "endLine": 43,
+            "line": 43,
           },
           "text": "You hum a scrap of tune.",
         },
@@ -461,8 +567,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 29,
-            "endLine": 43,
-            "line": 43,
+            "endLine": 45,
+            "line": 45,
           },
           "text": "Your footsteps echo oddly.",
         },
@@ -476,8 +582,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
           "span": {
             "column": 3,
             "endColumn": 44,
-            "endLine": 48,
-            "line": 47,
+            "endLine": 50,
+            "line": 49,
           },
           "value": {
             "form": "prose",
@@ -486,8 +592,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
             "span": {
               "column": 5,
               "endColumn": 44,
-              "endLine": 48,
-              "line": 48,
+              "endLine": 50,
+              "line": 50,
             },
             "text": "A lucky draught of air sweeps past you.",
           },
@@ -498,8 +604,42 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "span": {
         "column": 1,
         "endColumn": 44,
-        "endLine": 48,
-        "line": 46,
+        "endLine": 50,
+        "line": 48,
+      },
+    },
+    {
+      "body": [
+        {
+          "kind": "change-player",
+          "span": {
+            "column": 3,
+            "endColumn": 28,
+            "endLine": 53,
+            "line": 53,
+          },
+          "stmtWhen": null,
+          "target": {
+            "article": null,
+            "kind": "name",
+            "span": {
+              "column": 24,
+              "endColumn": 28,
+              "endLine": 53,
+              "line": 53,
+            },
+            "words": [
+              "Alex",
+            ],
+          },
+        },
+      ],
+      "kind": "start-block",
+      "span": {
+        "column": 1,
+        "endColumn": 11,
+        "endLine": 54,
+        "line": 52,
       },
     },
   ],
@@ -536,6 +676,7 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
     },
     "states": [],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Determinism Fixture",
     "usePhrasebooks": [],
     "uses": [],
@@ -543,8 +684,8 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
   "kind": "story-file",
   "span": {
     "column": 1,
-    "endColumn": 44,
-    "endLine": 48,
+    "endColumn": 11,
+    "endLine": 54,
     "line": 1,
   },
 }
@@ -752,7 +893,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -790,6 +933,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -841,7 +985,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -875,6 +1021,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -994,7 +1141,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
@@ -1014,7 +1163,29 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [
         {
           "action": "entering",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 9,
+                "endColumn": 19,
+                "endLine": 37,
+                "line": 37,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 9,
+              "endColumn": 19,
+              "endLine": 37,
+              "line": 37,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "inlineText": null,
@@ -1109,8 +1280,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "kind": "condition-ref",
             "name": "in-darkness",
             "span": {
-              "column": 27,
-              "endColumn": 38,
+              "column": 35,
+              "endColumn": 46,
               "endLine": 37,
               "line": 37,
             },
@@ -1134,7 +1305,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 38,
+        "endColumn": 46,
         "endLine": 37,
         "line": 29,
       },
@@ -1144,6 +1315,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1152,7 +1324,38 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "burdens": [],
       "carries": [],
       "codes": [],
-      "compositions": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 46,
+            "line": 46,
+          },
+          "words": [
+            "person",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 11,
+            "endLine": 47,
+            "line": 47,
+          },
+          "words": [
+            "playable",
+          ],
+        },
+      ],
       "containing": [],
       "counters": [],
       "deadly": null,
@@ -1164,8 +1367,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "span": {
           "column": 3,
           "endColumn": 27,
-          "endLine": 49,
-          "line": 49,
+          "endLine": 51,
+          "line": 51,
         },
         "text": "As good-looking as ever.",
       },
@@ -1177,18 +1380,20 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
-        "article": "the",
+        "article": null,
         "kind": "name",
         "span": {
           "column": 8,
-          "endColumn": 18,
+          "endColumn": 12,
           "endLine": 45,
           "line": 45,
         },
         "words": [
-          "player",
+          "Alex",
         ],
       },
       "nevers": [],
@@ -1203,8 +1408,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 13,
             "endColumn": 41,
-            "endLine": 46,
-            "line": 46,
+            "endLine": 48,
+            "line": 48,
           },
           "words": [
             "Foyer",
@@ -1218,8 +1423,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 46,
-          "line": 46,
+          "endLine": 48,
+          "line": 48,
         },
       },
       "pronouns": [],
@@ -1228,7 +1433,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 27,
-        "endLine": 49,
+        "endLine": 51,
         "line": 45,
       },
       "spreads": [],
@@ -1237,6 +1442,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [
         {
           "article": "the",
@@ -1244,8 +1450,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 9,
             "endColumn": 25,
-            "endLine": 47,
-            "line": 47,
+            "endLine": 49,
+            "line": 49,
           },
           "words": [
             "velvet",
@@ -1271,8 +1477,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 53,
-            "line": 53,
+            "endLine": 55,
+            "line": 55,
           },
           "words": [
             "wearable",
@@ -1290,8 +1496,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "span": {
           "column": 3,
           "endColumn": 37,
-          "endLine": 57,
-          "line": 55,
+          "endLine": 59,
+          "line": 57,
         },
         "text": "A handsome cloak, of velvet trimmed with satin, and slightly splattered with raindrops. Its blackness is so deep that it almost seems to suck light from the room.",
       },
@@ -1303,15 +1509,17 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
         "span": {
           "column": 8,
           "endColumn": 24,
-          "endLine": 51,
-          "line": 51,
+          "endLine": 53,
+          "line": 53,
         },
         "words": [
           "velvet",
@@ -1329,8 +1537,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 63,
-        "endLine": 55,
-        "line": 51,
+        "endLine": 57,
+        "line": 53,
       },
       "spreads": [],
       "startsStates": [],
@@ -1338,6 +1546,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1358,8 +1567,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 61,
-            "line": 61,
+            "endLine": 63,
+            "line": 63,
           },
           "words": [
             "scenery",
@@ -1376,8 +1585,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "span": {
                 "column": 29,
                 "endColumn": 39,
-                "endLine": 61,
-                "line": 61,
+                "endLine": 63,
+                "line": 63,
               },
               "value": "1",
               "valueKind": "number",
@@ -1387,8 +1596,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 12,
             "endColumn": 39,
-            "endLine": 61,
-            "line": 61,
+            "endLine": 63,
+            "line": 63,
           },
           "words": [
             "supporter",
@@ -1406,8 +1615,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "span": {
           "column": 3,
           "endColumn": 53,
-          "endLine": 64,
-          "line": 64,
+          "endLine": 66,
+          "line": 66,
         },
         "text": "It's just a small brass hook, screwed to the wall.",
       },
@@ -1419,15 +1628,17 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
         "span": {
           "column": 8,
           "endColumn": 22,
-          "endLine": 59,
-          "line": 59,
+          "endLine": 61,
+          "line": 61,
         },
         "words": [
           "brass",
@@ -1446,8 +1657,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 6,
             "endColumn": 19,
-            "endLine": 62,
-            "line": 62,
+            "endLine": 64,
+            "line": 64,
           },
           "words": [
             "Cloakroom",
@@ -1457,8 +1668,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 62,
-          "line": 62,
+          "endLine": 64,
+          "line": 64,
         },
       },
       "pronouns": [],
@@ -1467,8 +1678,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 53,
-        "endLine": 64,
-        "line": 59,
+        "endLine": 66,
+        "line": 61,
       },
       "spreads": [],
       "startsStates": [],
@@ -1476,6 +1687,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1498,8 +1710,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 68,
-            "line": 68,
+            "endLine": 70,
+            "line": 70,
           },
           "words": [
             "scenery",
@@ -1519,15 +1731,17 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "initialDescription": null,
       "kind": "create",
       "knows": [],
+      "landing": null,
       "moods": [],
+      "moveClauses": [],
       "name": {
         "article": "the",
         "kind": "name",
         "span": {
           "column": 8,
           "endColumn": 34,
-          "endLine": 66,
-          "line": 66,
+          "endLine": 68,
+          "line": 68,
         },
         "words": [
           "message",
@@ -1541,7 +1755,29 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [
         {
           "action": "reading",
-          "binding": "it",
+          "actor": {
+            "kind": "ref",
+            "ref": {
+              "article": "the",
+              "kind": "name",
+              "span": {
+                "column": 6,
+                "endColumn": 16,
+                "endLine": 74,
+                "line": 74,
+              },
+              "words": [
+                "player",
+              ],
+            },
+            "span": {
+              "column": 6,
+              "endColumn": 16,
+              "endLine": 74,
+              "line": 74,
+            },
+          },
+          "binding": "object",
           "body": [
             {
               "arms": [
@@ -1555,8 +1791,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                       "span": {
                         "column": 9,
                         "endColumn": 30,
-                        "endLine": 75,
-                        "line": 75,
+                        "endLine": 77,
+                        "line": 77,
                       },
                       "stmtWhen": null,
                     },
@@ -1566,8 +1802,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                       "span": {
                         "column": 9,
                         "endColumn": 12,
-                        "endLine": 76,
-                        "line": 76,
+                        "endLine": 78,
+                        "line": 78,
                       },
                       "stmtWhen": null,
                     },
@@ -1575,8 +1811,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                   "span": {
                     "column": 7,
                     "endColumn": 18,
-                    "endLine": 74,
-                    "line": 74,
+                    "endLine": 76,
+                    "line": 76,
                   },
                   "value": "intact",
                 },
@@ -1590,8 +1826,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                       "span": {
                         "column": 9,
                         "endColumn": 32,
-                        "endLine": 78,
-                        "line": 78,
+                        "endLine": 80,
+                        "line": 80,
                       },
                       "stmtWhen": null,
                     },
@@ -1599,8 +1835,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                   "span": {
                     "column": 7,
                     "endColumn": 20,
-                    "endLine": 77,
-                    "line": 77,
+                    "endLine": 79,
+                    "line": 79,
                   },
                   "value": "trampled",
                 },
@@ -1614,8 +1850,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                       "span": {
                         "column": 9,
                         "endColumn": 35,
-                        "endLine": 80,
-                        "line": 80,
+                        "endLine": 82,
+                        "line": 82,
                       },
                       "stmtWhen": null,
                     },
@@ -1625,8 +1861,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                       "span": {
                         "column": 9,
                         "endColumn": 13,
-                        "endLine": 81,
-                        "line": 81,
+                        "endLine": 83,
+                        "line": 83,
                       },
                       "stmtWhen": null,
                     },
@@ -1634,8 +1870,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                   "span": {
                     "column": 7,
                     "endColumn": 23,
-                    "endLine": 79,
-                    "line": 79,
+                    "endLine": 81,
+                    "line": 81,
                   },
                   "value": "obliterated",
                 },
@@ -1644,30 +1880,30 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "span": {
                 "column": 5,
                 "endColumn": 15,
-                "endLine": 82,
-                "line": 73,
+                "endLine": 84,
+                "line": 75,
               },
               "subject": {
                 "base": {
                   "kind": "ref",
                   "ref": {
-                    "article": null,
+                    "article": "the",
                     "kind": "name",
                     "span": {
                       "column": 15,
-                      "endColumn": 18,
-                      "endLine": 73,
-                      "line": 73,
+                      "endColumn": 28,
+                      "endLine": 75,
+                      "line": 75,
                     },
                     "words": [
-                      "it",
+                      "message",
                     ],
                   },
                   "span": {
                     "column": 15,
-                    "endColumn": 18,
-                    "endLine": 73,
-                    "line": 73,
+                    "endColumn": 28,
+                    "endLine": 75,
+                    "line": 75,
                   },
                 },
                 "field": [
@@ -1676,9 +1912,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                 "kind": "possessive",
                 "span": {
                   "column": 15,
-                  "endColumn": 24,
-                  "endLine": 73,
-                  "line": 73,
+                  "endColumn": 34,
+                  "endLine": 75,
+                  "line": 75,
                 },
               },
             },
@@ -1692,8 +1928,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 83,
-            "line": 72,
+            "endLine": 85,
+            "line": 74,
           },
         },
       ],
@@ -1706,8 +1942,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 6,
             "endColumn": 19,
-            "endLine": 69,
-            "line": 69,
+            "endLine": 71,
+            "line": 71,
           },
           "words": [
             "Foyer",
@@ -1718,8 +1954,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
         "span": {
           "column": 3,
           "endColumn": 19,
-          "endLine": 69,
-          "line": 69,
+          "endLine": 71,
+          "line": 71,
         },
       },
       "pronouns": [],
@@ -1727,9 +1963,9 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "scores": [],
       "span": {
         "column": 1,
-        "endColumn": 16,
-        "endLine": 72,
-        "line": 66,
+        "endColumn": 24,
+        "endLine": 74,
+        "line": 68,
       },
       "spreads": [],
       "startsStates": [],
@@ -1739,8 +1975,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 11,
             "endColumn": 17,
-            "endLine": 70,
-            "line": 70,
+            "endLine": 72,
+            "line": 72,
           },
         },
         {
@@ -1748,8 +1984,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 19,
             "endColumn": 27,
-            "endLine": 70,
-            "line": 70,
+            "endLine": 72,
+            "line": 72,
           },
         },
         {
@@ -1757,14 +1993,15 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 29,
             "endColumn": 40,
-            "endLine": 70,
-            "line": 70,
+            "endLine": 72,
+            "line": 72,
           },
         },
       ],
       "statesReversible": false,
       "temperaments": [],
       "thinks": [],
+      "timerClauses": [],
       "wears": [],
     },
     {
@@ -1786,8 +2023,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "span": {
                 "column": 5,
                 "endColumn": 9,
-                "endLine": 87,
-                "line": 87,
+                "endLine": 89,
+                "line": 89,
               },
               "word": "hook",
             },
@@ -1796,8 +2033,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "span": {
                 "column": 10,
                 "endColumn": 18,
-                "endLine": 87,
-                "line": 87,
+                "endLine": 89,
+                "line": 89,
               },
               "word": "item",
             },
@@ -1806,8 +2043,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "span": {
                 "column": 19,
                 "endColumn": 21,
-                "endLine": 87,
-                "line": 87,
+                "endLine": 89,
+                "line": 89,
               },
               "word": "on",
             },
@@ -1816,8 +2053,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
               "span": {
                 "column": 22,
                 "endColumn": 30,
-                "endLine": 87,
-                "line": 87,
+                "endLine": 89,
+                "line": 89,
               },
               "word": "hook",
             },
@@ -1825,8 +2062,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 5,
             "endColumn": 30,
-            "endLine": 87,
-            "line": 87,
+            "endLine": 89,
+            "line": 89,
           },
         },
       ],
@@ -1837,8 +2074,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 10,
-        "endLine": 86,
-        "line": 85,
+        "endLine": 88,
+        "line": 87,
       },
     },
     {
@@ -1848,8 +2085,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 25,
-            "endLine": 92,
-            "line": 90,
+            "endLine": 94,
+            "line": 92,
           },
           "value": {
             "form": "prose",
@@ -1858,8 +2095,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "span": {
               "column": 5,
               "endColumn": 25,
-              "endLine": 92,
-              "line": 91,
+              "endLine": 94,
+              "line": 93,
             },
             "text": "You've only just arrived, and besides, the weather outside seems to be getting worse.",
           },
@@ -1869,27 +2106,6 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 53,
-            "endLine": 94,
-            "line": 93,
-          },
-          "value": {
-            "form": "prose",
-            "kind": "text",
-            "markers": [],
-            "span": {
-              "column": 5,
-              "endColumn": 53,
-              "endLine": 94,
-              "line": 94,
-            },
-            "text": "Blundering around in the dark isn't a good idea!",
-          },
-        },
-        {
-          "key": "message-intact",
-          "span": {
-            "column": 3,
-            "endColumn": 70,
             "endLine": 96,
             "line": 95,
           },
@@ -1899,9 +2115,30 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "markers": [],
             "span": {
               "column": 5,
-              "endColumn": 70,
+              "endColumn": 53,
               "endLine": 96,
               "line": 96,
+            },
+            "text": "Blundering around in the dark isn't a good idea!",
+          },
+        },
+        {
+          "key": "message-intact",
+          "span": {
+            "column": 3,
+            "endColumn": 70,
+            "endLine": 98,
+            "line": 97,
+          },
+          "value": {
+            "form": "prose",
+            "kind": "text",
+            "markers": [],
+            "span": {
+              "column": 5,
+              "endColumn": 70,
+              "endLine": 98,
+              "line": 98,
             },
             "text": "The message, neatly marked in the sawdust, reads... You have won!",
           },
@@ -1911,8 +2148,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 37,
-            "endLine": 98,
-            "line": 97,
+            "endLine": 100,
+            "line": 99,
           },
           "value": {
             "form": "prose",
@@ -1923,16 +2160,16 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                 "span": {
                   "column": 28,
                   "endColumn": 37,
-                  "endLine": 98,
-                  "line": 98,
+                  "endLine": 100,
+                  "line": 100,
                 },
               },
             ],
             "span": {
               "column": 5,
               "endColumn": 37,
-              "endLine": 98,
-              "line": 98,
+              "endLine": 100,
+              "line": 100,
             },
             "text": "You can just make out: {garbled}",
           },
@@ -1942,8 +2179,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "span": {
             "column": 3,
             "endColumn": 69,
-            "endLine": 100,
-            "line": 99,
+            "endLine": 102,
+            "line": 101,
           },
           "value": {
             "form": "prose",
@@ -1952,8 +2189,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "span": {
               "column": 5,
               "endColumn": 69,
-              "endLine": 100,
-              "line": 100,
+              "endLine": 102,
+              "line": 102,
             },
             "text": "The message has been trampled beyond recognition. You have lost!",
           },
@@ -1964,8 +2201,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 69,
-        "endLine": 100,
-        "line": 89,
+        "endLine": 102,
+        "line": 91,
       },
     },
     {
@@ -1975,8 +2212,42 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 39,
-        "endLine": 102,
-        "line": 102,
+        "endLine": 104,
+        "line": 104,
+      },
+    },
+    {
+      "body": [
+        {
+          "kind": "change-player",
+          "span": {
+            "column": 3,
+            "endColumn": 28,
+            "endLine": 107,
+            "line": 107,
+          },
+          "stmtWhen": null,
+          "target": {
+            "article": null,
+            "kind": "name",
+            "span": {
+              "column": 24,
+              "endColumn": 28,
+              "endLine": 107,
+              "line": 107,
+            },
+            "words": [
+              "Alex",
+            ],
+          },
+        },
+      ],
+      "kind": "start-block",
+      "span": {
+        "column": 1,
+        "endColumn": 11,
+        "endLine": 108,
+        "line": 106,
       },
     },
   ],
@@ -2013,6 +2284,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
     },
     "states": [],
     "statesReversible": false,
+    "timerClauses": [],
     "title": "Cloak of Darkness",
     "usePhrasebooks": [],
     "uses": [],
@@ -2020,8 +2292,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
   "kind": "story-file",
   "span": {
     "column": 1,
-    "endColumn": 39,
-    "endLine": 102,
+    "endColumn": 11,
+    "endLine": 108,
     "line": 1,
   },
 }

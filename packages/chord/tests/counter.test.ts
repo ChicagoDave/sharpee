@@ -20,10 +20,17 @@ create the Camp
 
   A cold camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 const compileStory = (body: string) => {
@@ -79,10 +86,17 @@ create the Camp
 
   A camp.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Camp
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
+
 `;
 
 describe('raise / lower mutation (ADR-264 D2)', () => {
@@ -136,5 +150,104 @@ describe('per-entity counter (ADR-264 D1)', () => {
     ]);
     // story-global counters are unaffected
     expect(ir.counters).toEqual([]);
+  });
+});
+
+describe('possessive counter reference — singular and plural owners (GH #305)', () => {
+  const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
+  const owner = (name: string, plural: boolean, counter: boolean) =>
+    `create the ${name}\n` +
+    `  a person${plural ? ', plural' : ''}\n` +
+    (counter ? '  counter suspicion starts 0 between 0 and 10\n' : '') +
+    '  on every turn\n' +
+    `    raise the ${name}${plural ? "'" : "'s"} suspicion by 1\n` +
+    '  end on\n\n' +
+    `  The ${name}.\n`;
+
+  it("accepts `the innkeeper's suspicion` on a singular owner", () => {
+    expect(errs(story(owner('innkeeper', false, true)))).toEqual([]);
+  });
+
+  it("accepts `the guards' suspicion` on a plural owner", () => {
+    expect(errs(story(owner('guards', true, true)))).toEqual([]);
+  });
+
+  it("still rejects `the guards' suspicion` when the guards declare no such counter", () => {
+    expect(errs(story(owner('guards', true, false)))).toContain('analysis.unknown-counter');
+  });
+});
+
+describe('set <tally> to <n> — the one absolute write (ADR-325 D4)', () => {
+  const errs = (src: string) => compile(src).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
+  const lowered = (src: string) => {
+    const r = compile(src);
+    const e = r.diagnostics.filter((d) => d.severity === 'error');
+    if (e.length) throw new Error(e.map((d) => `${d.code}: ${d.message}`).join('\n'));
+    return r.ir;
+  };
+
+  it('lowers a story-global tally to set-counter', () => {
+    const ir = lowered(withClause('  on every turn\n    set madness to 0\n  end on'));
+    expect(ir.story.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'madness', owner: null, value: 0 });
+  });
+
+  it("lowers a possessive tally — `the innkeeper's suspicion` from another block and from its own", () => {
+    const src = `story
+  title: S
+  authors:
+    T
+  id: s
+  story-version: 0.0.1
+
+create the Camp
+  a room
+
+  A camp.
+
+create the innkeeper
+  a person
+  in the Camp
+  counter suspicion starts 0 between 0 and 5
+
+  on every turn
+    set the innkeeper's suspicion to 2
+  end on
+
+  Inn.
+
+create Alex
+  a person
+  playable
+  starts in the Camp
+
+  after going
+    set the innkeeper's suspicion to 5
+  end after
+
+  You.
+
+before the game starts
+  change the player to Alex
+end before
+
+`;
+    const ir = lowered(src);
+    expect(ir.entities.find((e) => e.id === 'innkeeper')!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 2 });
+    expect(ir.entities.find((e) => e.isPlayable)!.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', counter: 'suspicion', owner: { kind: 'entity', id: 'innkeeper' }, value: 5 });
+  });
+
+  it('takes a number, not an expression', () => {
+    expect(errs(withClause('  on every turn\n    set madness to the player\n  end on'))).toContain('analysis.set-counter-value');
+  });
+
+  it('a timer is still refused', () => {
+    expect(errs(withClause('  on every turn\n    set curfew to 3\n  end on', 'define timer curfew\nend timer'))).toContain('analysis.tally-verb-on-timer');
+  });
+
+  it('takes the statement `when` suffix and rejects trailing words', () => {
+    const ir = lowered(withClause('  on every turn\n    set madness to 0 when madness is at least 8\n  end on'));
+    expect(ir.story.onClauses[0].body[0]).toMatchObject({ kind: 'set-counter', value: 0 });
+    expect((ir.story.onClauses[0].body[0] as { stmtWhen: unknown }).stmtWhen).not.toBeNull();
+    expect(errs(withClause('  on every turn\n    set madness to 0 madly\n  end on'))).toContain('parse.set-trailing');
   });
 });

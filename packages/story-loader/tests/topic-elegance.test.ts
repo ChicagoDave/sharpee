@@ -3,7 +3,7 @@
  * (topic-vignette.story): a conversation-driven NPC beat authored as ONE
  * `define topics` table — an entity-tier row, a comma-declared alias, a
  * rich body-form row that also mutates state, and the owner's unfiltered
- * `on asking it` as the miss voice. What previously took one blanket
+ * `on the player asking` as the miss voice. What previously took one blanket
  * answer (the audit's ⚠️ floor) is a branching interrogation in seven
  * lines of table. REAL-PATH: every ask drives the real askingAction
  * against the loaded world, asserting per-topic message ids and the row
@@ -40,6 +40,7 @@ describe('gamekeeper interrogation vignette (ADR-239 elegance parity)', () => {
       const context: any = {
         world,
         player,
+        actor: player,
         action: askingAction,
         currentLocation: world.getContainingRoom(player.id)!,
         command: { directObject: { entity: keeper }, topic },

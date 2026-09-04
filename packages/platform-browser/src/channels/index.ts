@@ -17,7 +17,7 @@
  * @see ADR-165 — Renderer Architecture — §7, §8
  */
 
-import type { IRenderer } from '@sharpee/channel-service';
+import type { IRenderer, ProsePresentationOptions } from '@sharpee/channel-service';
 import { PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
 import { createProseChannelRenderers } from './prose.js';
 import { createPromptChannelRenderer } from './prompt.js';
@@ -31,6 +31,7 @@ import {
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
   createBannerChannelRenderer,
+  createChapterChannelRenderer,
 } from './info.js';
 import {
   createDeathChannelRenderer,
@@ -71,6 +72,7 @@ export {
   createIfidChannelRenderer,
   createPrologueChannelRenderer,
   createBannerChannelRenderer,
+  createChapterChannelRenderer,
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
   createScoreNotifyChannelRenderer,
@@ -115,6 +117,12 @@ export interface RegisterDefaultBrowserRenderersOptions {
    * a turn for the IDE recording bridge (ADR-282 D2).
    */
   onProseEntriesText?(text: string): void;
+  /**
+   * How presence-tagged prose is presented (ADR-328 D3). Absent = the
+   * platform default (hide `absent`). The IDE's Play panel opts into
+   * `{ presence: 'omniscient' }` to watch actors off-stage.
+   */
+  prosePresentation?: ProsePresentationOptions;
   /**
    * Optional hotspot-click handler for image channels. When a
    * hotspot is clicked the renderer calls this with the hotspot's
@@ -171,6 +179,7 @@ export function registerDefaultBrowserRenderers(
   const prose = createProseChannelRenderers(layout.main, PROSE_CHANNEL_IDS, {
     onAfterAppend: opts.onProseAfterAppend,
     onEntriesText: opts.onProseEntriesText,
+    presentation: opts.prosePresentation,
   });
   for (const [channelId, channelRenderer] of prose.byChannelId) {
     renderer.registerRenderer(channelId, channelRenderer);
@@ -191,6 +200,9 @@ export function registerDefaultBrowserRenderers(
   renderer.registerSlot('prologue', layout.prologue);
   renderer.registerRenderer('prologue', createPrologueChannelRenderer(layout.prologue));
   renderer.registerRenderer('banner', createBannerChannelRenderer(layout.main));
+  // ADR-330 D4: a chapter beginning is a title card in the prose log; a
+  // story without `use chapters` never emits the channel and loses nothing.
+  renderer.registerRenderer('story.chapter', createChapterChannelRenderer(layout.main));
   renderer.registerRenderer('death', createDeathChannelRenderer(layout.notify));
   renderer.registerRenderer('endgame', createEndgameChannelRenderer(layout.notify));
   renderer.registerRenderer('score_notify', createScoreNotifyChannelRenderer(layout.notify));

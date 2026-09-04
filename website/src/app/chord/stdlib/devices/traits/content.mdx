@@ -5,7 +5,7 @@ carries a power model (`requiresPower`, `hasPower`, `powerConsumption`,
 which drives the `no_power` refusal), on/off/running sounds (fed into
 the sound message keys and event payloads), swap-in
 `onDescription`/`offDescription` text, and `detailWhenOn`, the appended
-examine sentence, which is exactly what Chord's `phrase detail while it
+examine sentence, which is exactly what Chord's `phrase detail while the radio
 is on:` lowers to (the zoo's radio and flashlight both use it). Two
 features are dormant today: the auto-off timer (`autoOffTime` is honored
 at switch-on but nothing ticks the countdown) and the per-trait message
@@ -15,7 +15,7 @@ flagged.
 **light-source** (`light-source`, adjective) makes a switchable shed
 light: `isLit` (managed by the switching actions), `brightness`,
 `litDescription`/`unlitDescription`, and `detailWhenLit`, which is
-Chord's `phrase detail while it is lit:`, the safelight's examine line. The fuel model (`fuelRemaining`, where empty refuses to light;
+Chord's `phrase detail while the safelight is lit:`, the safelight's examine line. The fuel model (`fuelRemaining`, where empty refuses to light;
 `maxFuel`, consumption rate) is dormant on the consumption side: nothing
 burns fuel per turn today, so a lantern only runs out if story logic
 decrements it. The zoo flashlight (`light-source, switchable`) is the
@@ -27,5 +27,5 @@ effect is in *pushing*: a pushable button that is also switchable
 toggles, and the BUTTON trait upgrades the message to `button_clicks`.
 Worth knowing: pushing's toggle flips the switch state but, unlike the
 switching actions, does not light or extinguish an attached light
-source, so wire light-buttons through `after pushing it` story logic
+source, so wire light-buttons through `after the player pushing` story logic
 (flagged as an inconsistency).

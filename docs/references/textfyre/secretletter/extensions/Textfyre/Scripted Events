@@ -1,0 +1,182 @@
+Version 2 of Scripted Events by Textfyre begins here.
+
+"An object-oriented approach to scripted cut-scenes that play over several turns."
+
+Use authorial modesty.
+Include Triggers by Textfyre.
+
+Part 1 - Definitions
+
+Chapter 1 - Scripted events
+
+A scripted event is a kind of trigger.
+
+The current script is a list of objects [scripted events] that varies.
+When play begins:
+	now the current script is {};
+
+A scripted event has a text called the display text.
+
+Chapter 2 - Firing activity
+
+[ Firing something is an activity. [defined in the Triggers extension] ]
+
+Rule for firing a scripted event (called x):
+	if the display text of x is not "",
+		say the display text of x, paragraph break;
+
+Chapter 3 - Script-running activity
+
+[I know it seems I go a bit overboard on making everything into an activity, but I usually find practical use in doing so: in this case, it allows us to do different things depending on whether the script mechanism is paused or not.]
+
+Script-running is an activity.
+
+Rule for script-running when the number of entries in the current script is not 0:
+	fire the next event;
+	
+Every turn:
+	carry out the script-running activity;
+
+Chapter 4 - Implementation
+
+To fire the next event in (the particular script - a list of objects):
+	let the imminent occurrence be entry 1 of the particular script;
+	fire the imminent occurrence;
+
+To fire the next event:
+	fire the next event in the current script;
+	if the number of entries in the current script is not 0 begin;
+		remove entry 1 from the current script;
+	end if;
+
+To clear the current script:
+	now the current script is {};
+
+Chapter 5 - Debugging - Not for release
+
+Section 0 - Introduction
+
+[ When play begins:
+	unless FyreVM is present:
+		say "[bracket]The Scripted Events extension, which manages certain cut-scenes, is loaded in debugging mode. You can issue these commands:[line break] [i]'scripts off'[r] and [i]'scripts on'[r] to pause and resume cut-scenes.[line break] [i]'scripts forward'[r] to allow a single scripted event to occur.[line break] [i]'scripts'[r] by itself shows a summary of scheduled events.[line break] [i]'scripts list'[r] gives a full list, (may not be useful except to programmers.) [close bracket]", paragraph break; ]
+
+Section 1 - Events list
+
+Script-listing is an action out of world.
+Understand "scripts list" as script-listing.
+
+Report script-listing:
+	let n be the number of entries in the current script;
+	if n is 0:
+		say "[bracket]The script is empty[close bracket]", paragraph break;
+	otherwise:
+		say "[bracket][n] event[s]: { [the current script] } [i][if the script mechanism state is paused]PAUSED[otherwise]RUNNING[end if][r][close bracket]", paragraph break;
+
+Script Progress is a kind of value. The Script Progresses are running and paused.
+The script mechanism state is a script progress that varies. The script mechanism state is running.
+
+Section 2 - Pause / Resume
+
+Pausing scripts is an action out of world applying to nothing.
+Resuming scripts is an action out of world applying to nothing.
+
+Understand "scripts off/halt/pause/stop" as pausing scripts.
+Understand "scripts on/resume/start/run/go" as resuming scripts.
+
+Check pausing scripts when the script mechanism state is paused:
+	say "[bracket]Scripts are already paused. Use [i]'scripts on'[r] to resume[close bracket]", paragraph break;
+
+Carry out pausing scripts:
+	now the script mechanism state is paused;
+
+Report pausing scripts:
+	say "[bracket]Paused. Use [i]'scripts on'[r] to resume[close bracket]", paragraph break;
+
+Check resuming scripts when the script mechanism state is running:
+	say "[bracket]Scripts are already running. Use [i]'scripts off'[r] to pause[close bracket]", paragraph break;
+
+Carry out resuming scripts:
+	now the script mechanism state is running;
+
+Report resuming scripts:
+	say "[bracket]Scripts resumed. Use [i]'scripts off'[r] to pause[close bracket]", paragraph break;
+
+First for script-running when the script mechanism state is paused:
+	do nothing;
+
+Section 3 - Nudge
+
+Nudging scripts is an action applying to nothing.
+Understand "scripts forward/forwards/nudge" as nudging scripts.
+
+Carry out nudging scripts:
+	say "[bracket]OK.[close bracket]", paragraph break;
+	now the script mechanism state is running;
+	carry out the script-running activity;
+	now the script mechanism state is paused;
+
+Report nudging scripts when the script mechanism state was running:
+	say "[bracket]Script is now PAUSED. Use [i]'scripts on'[r] to resume[close bracket]", paragraph break;
+
+Section 4 - Diagnostics
+
+Requesting script information is an action out of world, applying to nothing.
+Understand "scripts" as requesting script information.
+Understand "scripts info" as requesting script information.
+
+Report requesting script information:
+	let n be the number of entries in the current script;
+	if n is 0:
+		say "[bracket]No events are scripted to occur.[close bracket]", line break;
+	otherwise:
+		say "[bracket]The current event script contains [n in words] event[s].[close bracket]", line break;
+	say "[bracket]Scripted events are currently [if the script mechanism state is paused]PAUSED. Use [i]'scripts on'[r] to resume[otherwise]RUNNING. Use [i]'scripts off'[r] to pause[end if][close bracket]", paragraph break;
+
+Scripted Events ends here.
+
+---- DOCUMENTATION ---- 
+
+Scripted Events is a lightweight means by which brief cut-scenes taking place over several turns can be written. It defines a new kind of trigger, called a "scripted event", which represents a single turn's worth of action in the cut-scene.
+
+It provides no new actions, beyond some diagnostic / debugging commands.
+
+The global variable "the current script" is a list of scripted events which can be accessed freely by the programmer. Every turn, the first entry of this list is fired, then removed. All other things being equal, this means that the events in the current script will be executed one by one until the script is empty.
+
+Firing a scripted event means that the "display text" property of the event is displayed, followed by a paragraph break. If there is no display text, nothing happens; this can be useful for non-events which simply mark time, or for events which only make changes to the world model, behind the scenes:
+
+	SCRIPT_EG_1 is a scripted event. [No display text property set]
+
+	After firing SCRIPT_EG_1:
+		now the programmer is angry with the small dog;
+
+More usually, though, events will have something to say for themselves:
+
+	Instead of pulling the lever:
+		change the current script to { TEA1, TEA2, TEA3, TEA4 };
+	
+	TEA1 is a scripted event. The display text is "The gear train whirrs into life, swinging the kettle across inside the machine. Its base knocks open the gas-pipe tap. A jet of gas hisses out, blowing up a tiny sail attached by thread to the flint-iron. The burner is quickly alight."
+	
+	After firing TEA1:
+		now the tea-machine is switched on;
+		now the burner is lit;
+
+...And so on.
+
+Scripted events are fired as part of the script-running activity. There is unlikely to be much practical use to this activity; it exists primarily to simplify the implementation of the debugging commands. To be clear, though, the flow of rules, phrases and rulebooks is like this:
+
+	"every turn" rulebook...
+		...calls "script-running" activity...
+			...calls the "fire the next event" phrase...
+				...calls "firing" activity.
+
+"Carry out the script-running activity" is the way therefore to manually trigger the next scripted event in the list, but please note: if the mechanism has been paused (for testing / debugging purposes, see below) then the event will not run. This is a Good Thing, but if you really must insist that the event occur regardless of your testers' wishes, it is possible to call the "fire the next event" phrase directly. Please don't do this.
+
+One phrase which is available to programmers without any such caveats is "clear the current script", which merely sets the current script equal to the empty list. This may make program code slightly more readable than the alternative -- well, at a pinch, anyway.
+
+Chapter: Debugging commands
+
+The scripted event machinery can be paused and resumed by the player, when the game is compiled in debug mode. This is important for testers: it is impossible to fully test all the possibilities of a cut-scene when the turn sequence is advancing inexorably against them. There is also a "nudge" command, similar to the frame-by-frame advance function of a DVD player, which executes one single step of the script, and pauses immediately thereafter. These commands, and a couple of others which display rather terse diagnostic information, are summarised in a brief instruction text displayed before the game begins:
+
+	The Scripted Events extension, which manages certain cut-scenes, is loaded in debugging mode. You can issue the commands "scripts off" and "scripts on" to pause and resume cut-scenes. "scripts forward" allows a single event to occur: a short way of saying 'scripts on. wait. scripts off'.
+
+	'scripts' by itself shows a summary of scheduled events. 'scripts list' gives a full list, but this may not be useful except to programmers.

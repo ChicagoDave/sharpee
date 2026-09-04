@@ -1,0 +1,247 @@
+## ---------------------------------------------------------------------------
+## P-8 — "SEEN FROM ELSEWHERE"
+##
+## The peering action and the fourteen target-room phrases it emits. Prose is
+## Gentry's, minus the route-clause deviations the story file's header lists.
+##
+## The source's `distant description` (the `Adjacent Rooms` extension) carried a
+## short line about the room a direction leads to. There is no platform
+## equivalent, so P-8 authorises it as story content. The spike's answer, run
+## against these rooms 2026-08-22, is below; the three shapes P-8 offered were
+## a room-body field, a `define trait`, and a phrase key.
+##
+##   * A ROOM-BODY FIELD does not exist. `create` accepts no such property
+##     (`packages/chord/src/parser.ts:1190-1420`).
+##   * A `define trait` cannot hold the text. Trait data types are `entity`,
+##     `number`, `name`, and `flag` (`packages/chord/src/parser.ts:3360`) — there
+##     is no text-valued field.
+##   * A PHRASE KEY wins by elimination, and it has to be a story-level named
+##     phrase rather than a per-room `phrase distant:` override: an override
+##     does register `<room-id>.distant`, but `phrase` statements take a STATIC
+##     key (`packages/chord/src/parser.ts:6366`), so nothing can say "emit that
+##     room's distant phrase." The dispatch must name every pair.
+##
+## Hence: one phrase per target room, and one dispatch line per (room,
+## direction) pair. Flat and greppable, and the analyzer checks every name.
+##
+## The canonicals are the compass words: GH #285 (a compass canonical bound a
+## value that never compared equal) is fixed, so `when the direction is
+## northeast` fires and `{the direction}` would print "northeast". The
+## `northeast`-style canonicals that worked around it are gone (2026-09-03).
+##
+## OPEN — DAVID'S RULING. The source's line ended "…to the [quick best route]",
+## naming the way to walk. That clause is dropped here, because the player has
+## just supplied the direction. If the route should survive, it needs a
+## per-pair phrase instead of a per-room one — roughly sixty phrases rather
+## than fourteen.
+## ---------------------------------------------------------------------------
+
+define action peering
+  grammar
+    peer the direction
+    look toward the direction
+  directions
+    north or n
+    northeast or ne
+    east or e
+    southeast or se
+    south or s
+    southwest or sw
+    west or w
+    northwest or nw
+    up or u
+    down or d
+  refuse without direction: peer-where
+
+  phrase distant-northwest-junction when the direction is southeast and the player is in the Alley
+  phrase distant-outer-market-roof when the direction is up and the player is in the Alley
+
+  phrase distant-alley-from-roof when the direction is down and the player is in the Outer Market Roof
+  phrase distant-lords-road when the direction is north and the player is in the Outer Market Roof
+  phrase distant-northwest-junction when the direction is southeast and the player is in the Outer Market Roof
+
+  phrase distant-alley when the direction is northwest and the player is in the Northwest Junction
+  phrase distant-herb-stall when the direction is south and the player is in the Northwest Junction
+  phrase distant-candle-stall when the direction is east and the player is in the Northwest Junction
+  phrase distant-rope-stall when the direction is southeast and the player is in the Northwest Junction
+
+  phrase distant-northwest-junction when the direction is southwest and the player is in the Grocery Stall
+  phrase distant-fruit-stall when the direction is southeast and the player is in the Grocery Stall
+  phrase distant-candle-stall when the direction is south and the player is in the Grocery Stall
+
+  phrase distant-candle-stall when the direction is west and the player is in the Fruit Stall
+  phrase distant-pottery-stall when the direction is southwest and the player is in the Fruit Stall
+  phrase distant-eastern-junction when the direction is south and the player is in the Fruit Stall
+
+  phrase distant-fruit-stall when the direction is north and the player is in the Eastern Junction
+  phrase distant-hat-stall when the direction is south and the player is in the Eastern Junction
+  phrase distant-pottery-stall when the direction is west and the player is in the Eastern Junction
+
+  phrase distant-eastern-junction when the direction is north and the player is in the Hat Stall
+  phrase distant-pottery-stall when the direction is northwest and the player is in the Hat Stall
+  phrase distant-silk-tent-outside when the direction is west and the player is in the Hat Stall
+  phrase distant-leather-stall when the direction is southwest and the player is in the Hat Stall
+
+  phrase distant-hat-stall when the direction is northeast and the player is in the Leather Stall
+  phrase distant-silk-tent-outside when the direction is northwest and the player is in the Leather Stall
+  phrase distant-weapons-stall when the direction is west and the player is in the Leather Stall
+
+  phrase distant-leather-stall when the direction is east and the player is in the Weaponsmith's Stall
+  phrase distant-silk-tent-outside when the direction is northeast and the player is in the Weaponsmith's Stall
+  phrase distant-gems-stall when the direction is northwest and the player is in the Weaponsmith's Stall
+
+  phrase distant-herb-stall when the direction is north and the player is in the Exotic Gems Stall
+  phrase distant-rope-stall when the direction is northeast and the player is in the Exotic Gems Stall
+  phrase distant-silk-tent-outside when the direction is east and the player is in the Exotic Gems Stall
+  phrase distant-weapons-stall when the direction is southeast and the player is in the Exotic Gems Stall
+
+  phrase distant-northwest-junction when the direction is north and the player is in the Herb Stall
+  phrase distant-rope-stall when the direction is east and the player is in the Herb Stall
+  phrase distant-gems-stall when the direction is south and the player is in the Herb Stall
+
+  phrase distant-northwest-junction when the direction is northwest and the player is in the Rope Stall
+  phrase distant-candle-stall when the direction is northeast and the player is in the Rope Stall
+  phrase distant-herb-stall when the direction is west and the player is in the Rope Stall
+  phrase distant-gems-stall when the direction is southwest and the player is in the Rope Stall
+  phrase distant-silk-tent-outside when the direction is southeast and the player is in the Rope Stall
+
+  phrase distant-fruit-stall when the direction is east and the player is in the Candlemaker's Stall
+  phrase distant-northwest-junction when the direction is west and the player is in the Candlemaker's Stall
+  phrase distant-pottery-stall when the direction is southeast and the player is in the Candlemaker's Stall
+  phrase distant-rope-stall when the direction is southwest and the player is in the Candlemaker's Stall
+
+  phrase distant-candle-stall when the direction is northwest and the player is in the Pottery Stall
+  phrase distant-fruit-stall when the direction is northeast and the player is in the Pottery Stall
+  phrase distant-eastern-junction when the direction is east and the player is in the Pottery Stall
+  phrase distant-hat-stall when the direction is southeast and the player is in the Pottery Stall
+  phrase distant-silk-tent-outside when the direction is southwest and the player is in the Pottery Stall
+
+  phrase distant-silk-tent-inside when the direction is north and the player is in Outside the Silk Tent
+  phrase distant-hat-stall when the direction is east and the player is in Outside the Silk Tent
+  phrase distant-gems-stall when the direction is west and the player is in Outside the Silk Tent
+  phrase distant-pottery-stall when the direction is northeast and the player is in Outside the Silk Tent
+  phrase distant-rope-stall when the direction is northwest and the player is in Outside the Silk Tent
+  phrase distant-leather-stall when the direction is southeast and the player is in Outside the Silk Tent
+  phrase distant-weapons-stall when the direction is southwest and the player is in Outside the Silk Tent
+
+  phrase distant-silk-tent-outside when the direction is south and the player is in Inside the Silk Tent
+
+  phrase distant-silk-tent-inside when the direction is south and the player is in the Base of the Center Post
+  phrase distant-top-of-post when the direction is up and the player is in the Base of the Center Post
+
+  phrases en-US
+    peer-where:
+      Look which way?
+
+define phrase distant-fruit-stall, randomly
+  There's a fruit stall.
+or
+  There's fruit for sale.
+or
+  Looks like they're selling fruit.
+end phrase
+
+define phrase distant-hat-stall, randomly
+  There's a hat stall.
+or
+  There's hats for sale.
+or
+  Looks like they're selling hats.
+end phrase
+
+define phrase distant-leather-stall, randomly
+  There's a leather goods stall.
+or
+  There's leather goods for sale.
+or
+  Looks like they're selling leather goods.
+end phrase
+
+define phrase distant-weapons-stall, randomly
+  There's a weapon stall.
+or
+  There's weapons for sale.
+or
+  Looks like they're selling weapons.
+end phrase
+
+define phrase distant-gems-stall, randomly
+  There's a gem stall.
+or
+  There's gems for sale.
+or
+  Looks like they're selling gems.
+end phrase
+
+define phrase distant-herb-stall, randomly
+  There's a herb stall.
+or
+  There are herbs for sale.
+or
+  Looks like they're selling herbs.
+end phrase
+
+define phrase distant-rope-stall, randomly
+  There's a rope stall.
+or
+  There's rope for sale.
+or
+  Looks like they're selling rope.
+end phrase
+
+define phrase distant-candle-stall, randomly
+  There's a candle stall.
+or
+  There's candles for sale.
+or
+  Looks like they're selling candles.
+end phrase
+
+define phrase distant-pottery-stall, randomly
+  There's a pottery stall.
+or
+  There's pottery for sale.
+or
+  Looks like they're selling pottery.
+end phrase
+
+define phrase distant-northwest-junction
+  The junction is a relatively open space at the market's northwest corner.
+end phrase
+
+define phrase distant-eastern-junction
+  There is a relatively open space at the market's eastern edge.
+end phrase
+
+define phrase distant-alley
+  The entrance to a narrow alley lies northwest.
+end phrase
+
+## The roof and what it overlooks (`story.ni:1490, 1584, 1593-1597`): the
+## alley's line up, the roof's line down, Lord's Road to the north, and the
+## junction to the southeast (the source's `overlooks`, answered with the
+## junction's own distant line).
+
+define phrase distant-outer-market-roof
+  You cannot see up to the roof from down here.
+end phrase
+
+define phrase distant-alley-from-roof
+  You can climb back down the crates to the alley below.
+end phrase
+
+define phrase distant-lords-road
+  Off to the north you can see Lord's Road leading away from the market.
+end phrase
+
+define phrase distant-silk-tent-outside
+  Teisha's silk tent is that way.
+end phrase
+
+define phrase distant-silk-tent-inside
+  Teisha's tent is bright blue, though now it's somewhat faded and covered with market dust.
+end phrase
+
+define phrase distant-top-of-post
+  The top of the central post is high, high above you.
+end phrase

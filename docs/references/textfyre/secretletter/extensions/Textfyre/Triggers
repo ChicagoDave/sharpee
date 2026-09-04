@@ -1,0 +1,37 @@
+Version 1 of Triggers by Textfyre begins here.
+
+"A design pattern shared by several other Textfyre extensions including Quips, Scripted Events, Conversation Topics and Counters."
+
+Use authorial modesty.
+
+Part 1 - Definitions
+
+A trigger is a kind of thing. 
+
+A trigger can be fired or unfired. A trigger is usually unfired.
+
+Firing something is an activity.
+
+Last after firing something (called the certain trigger) (this is the default trigger firing rule):
+	now the certain trigger is fired;
+
+To fire (t - a trigger):
+	carry out the firing activity with t.
+
+To say fire (t - a trigger):
+	fire t;
+
+Triggers ends here.
+
+---- DOCUMENTATION ---- 
+
+A trigger begins life unfired, and then at some point it is fired.
+
+This simple idea lends itself well to a general class of events that behave differently the first time they occur, to subsequent times. Typically, the first firing will display a verbose description, while subsequent firings may display only an abbreviated one. Alternatively, a trigger may behave as a one-shot, guaranteed only to occur once.
+
+This extension defines the Trigger kind, intended to be subclassed.
+
+All triggers inherit the either/or property, unfired or fired.
+
+This extension also defines the firing activity, which is carried out whenever a trigger is fired. Only one rule is attached to this activity, and - in a change from standard procedure - it is placed in the 'after firing' rulebook to ensure it is not overlooked: all it does is set the fired property.
+

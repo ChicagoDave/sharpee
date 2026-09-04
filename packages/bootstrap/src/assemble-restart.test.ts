@@ -31,6 +31,8 @@ function makeStory(): TestStoryHandle {
   let inits = 0;
   const instanceId = ++instanceCounter;
   const story = {
+    _startRoomId: undefined as string | undefined,
+
     config: {
       id: 'restart-test',
       title: `Restart Test #${instanceId}`,
@@ -39,8 +41,10 @@ function makeStory(): TestStoryHandle {
       description: 'ADR-248 harness reboot test story',
     },
     createPlayer(world: any) {
+      // ADR-327 D10: initializeWorld runs first now, so the room exists.
       const player = world.createEntity('you', EntityType.ACTOR);
       player.add(new IdentityTrait({ name: 'you', description: 'An adventurer.' }));
+      if (this._startRoomId) world.moveEntity(player.id, this._startRoomId);
       return player;
     },
     initializeWorld(world: any) {
@@ -51,8 +55,7 @@ function makeStory(): TestStoryHandle {
         description: 'A bare chamber for restart testing.',
       }));
       room.add(new RoomTrait({ exits: {} }));
-      const player = world.getPlayer();
-      if (player) world.moveEntity(player.id, room.id);
+      this._startRoomId = room.id;
     },
   };
   return { story, initCount: () => inits };

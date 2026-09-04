@@ -144,7 +144,8 @@ describe('thread runtime (ADR-320 D14)', () => {
       const parked = parkThread(world, sceneId, kempId, pcId, 'the-defection');
       expect(stateOf('the-defection')).toMatchObject({ status: 'parked', beatCursor: 1 });
       expect(parked).toEqual([
-        { kind: 'thread-parked', sceneId, ownerId: kempId, threadKey: 'the-defection', beatCursor: 1 },
+        // ADR-320 D10a (2026-09-02): the park names its partner, for the parting render.
+        { kind: 'thread-parked', sceneId, ownerId: kempId, partnerId: pcId, threadKey: 'the-defection', beatCursor: 1 },
       ]);
 
       const resumed = resumeThread(world, sceneId, kempId, pcId, 'the-defection');

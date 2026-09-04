@@ -104,11 +104,24 @@ export interface ActionContext {
      */
     readonly world: WorldModel;
     /**
-     * The player entity
+     * The entity performing this action (ADR-328 D1).
+     *
+     * Every actor-relative helper on this context — `currentLocation`, the
+     * scope checks, `event()`'s `entities.actor`, `emitSound`'s source — is
+     * computed from this entity. For parser-driven commands it is the player;
+     * for the programmatic entry (`CommandExecutor.executeAsActor`, ADR-328
+     * D2) it is whichever actor the caller named.
+     */
+    readonly actor: IFEntity;
+    /**
+     * The player entity. Equal to `actor` for parser-driven commands; distinct
+     * when a non-player actor is acting. Read this only when the logic is
+     * genuinely about the player (scoring, second-person phrasing), never as a
+     * stand-in for "who is acting" — that is `actor`.
      */
     readonly player: IFEntity;
     /**
-     * The player's current location
+     * The actor's current location
      */
     readonly currentLocation: IFEntity;
     /**
@@ -300,7 +313,7 @@ export interface ActionContext {
      *
      * // In execute() or report() - access the data
      * const { behavior, entity } = context.validationResult!.data!;
-     * behavior.execute(entity, context.world, context.player.id);
+     * behavior.execute(entity, context.world, context.actor.id);
      */
     validationResult?: ValidationResult;
     /**
@@ -327,15 +340,21 @@ export interface ActionContext {
      * return [
      *   context.event('if.event.taken', eventData)
      * ]
+     *
+     * @param at - Where the fact happened, when that is not where the actor
+     *   stood as the action began (ADR-328 D3): an arrival is located at the
+     *   destination. Presence is tagged from this location.
      */
-    event(type: string, data: any): ISemanticEvent;
+    event(type: string, data: any, at?: {
+        location: string;
+    }): ISemanticEvent;
     /**
      * Emit a sound from the actor's current location for this turn (ADR-172
      * Phase 6).
      *
      * Buffers an `ISound` for the per-turn sound dispatcher to propagate to
      * every `ListenerTrait` entity. The context auto-fills `sourceEntity`
-     * (from `context.player.id`) and `sourceLocation` (from
+     * (from `context.actor.id`) and `sourceLocation` (from
      * `context.currentLocation.id`) so callers only supply the semantic
      * payload: kind, volumeTier, and optional content.
      *
@@ -767,9 +786,13 @@ import { ValidatedCommand } from '../validation/types.js';
 /**
  * Factory function to create unified action context
  *
- * Phase 2: Factory pattern implementation
+ * @param actor The entity performing the action (ADR-328 D1). Defaults to
+ *              `player`, so parser-driven and test contexts are unchanged;
+ *              pass a non-player actor to run the action as that entity.
+ *              `currentLocation` is the actor's immediate location.
+ * @throws when the actor has no location in the world
  */
-export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, random: RandomService, scopeResolver?: ScopeResolver): ActionContext;
+export declare function createActionContext(world: WorldModel, player: IFEntity, action: Action, command: ValidatedCommand, random: RandomService, scopeResolver?: ScopeResolver, actor?: IFEntity): ActionContext;
 /**
  * Helper to create a mock action context for testing
  */
@@ -1131,6 +1154,7 @@ export declare const IFActions: {
     readonly ASKING: "if.action.asking";
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
+    readonly SAYING_GOODBYE: "if.action.saying_goodbye";
     readonly SHOWING: "if.action.showing";
     readonly GIVING: "if.action.giving";
     readonly ATTACKING: "if.action.attacking";
@@ -1317,6 +1341,23 @@ import type { ActionInterceptor } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '../enhanced-types.js';
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
+ * Slot id of the implicit actor consultation (ADR-327 D1): every wired
+ * action consults the acting entity last. Not a descriptor slot —
+ * descriptors never declare it.
+ */
+export declare const ACTOR_SLOT_ID = "actor";
+/**
+ * The registration key an interceptor uses to be consulted AS THE ACTOR
+ * (ADR-327 D1): `actor:<actionId>`. A separate key, not the action's own id,
+ * so a binding keyed on a trait the actor happens to carry (ACTOR on a
+ * give/show recipient, CONTAINER on the player) is never consulted twice —
+ * once as a target, once as the actor. Opting in is registering under this
+ * key: `world.registerActionInterceptor(trait, actorConsultationId(id), …)`.
+ * @param actionId the action's primary id (`if.action.taking`)
+ * @returns the actor-consultation registration key
+ */
+export declare function actorConsultationId(actionId: string): string;
+/**
  * One resolved (entity, actionId) interceptor consultation.
  *
  * A slot that consults two action ids (D6 both-ids) yields up to two
@@ -1383,6 +1424,20 @@ export declare function resolveLifecycle(context: ActionContext, descriptor: Act
  */
 export declare function getLifecycleState(context: ActionContext): LifecycleState | undefined;
 /**
+ * D1 veto test: a hook result acts iff it is non-null AND `valid === false`.
+ * Everything else — null, `{valid: true}`, any truthy shape — falls through.
+ *
+ * Every veto is marked `errorQualified: true` (ADR-231 D1): an
+ * interceptor-originated error key is a fully-qualified message id —
+ * story-registered keys resolve as the author wrote them — and
+ * `blockedMessageId` must never prefix it with the action id.
+ */
+export declare function vetoOf(result: {
+    valid: boolean;
+    error?: string;
+    params?: Record<string, unknown>;
+} | null): ValidationResult | null;
+/**
  * Resolve the message id for a blocked action (ADR-231 D1) — the ONE
  * place the qualification convention lives.
  *
@@ -1435,9 +1490,14 @@ export declare function runPostExecute(context: ActionContext, state: LifecycleS
  * Run every consultation's `postReport` hook and apply the results to the
  * action's events.
  *
- * At most ONE consultation may return an `override` — a second is a hard
- * error (throws), mirroring the `InterceptorReportResult` contract's
- * ADR-106 rule. `emit` effects append in consultation order.
+ * Override arbitration (GH #340): the FIRST consultation to return an
+ * `override` wins; a later consultation's override is dropped while its
+ * other effects still apply. Slots consult before the actor, so a target's
+ * own clause outranks an actor bare-head — the same first-wins rule the
+ * story-loader's per-owner clause merge already uses. (This replaces the
+ * former hard error, which the executor surfaced as `command.failed` —
+ * "I don't understand that." — for two legal declarations.) `emit`
+ * effects append in consultation order.
  *
  * @param context - The action context.
  * @param state - The resolved lifecycle state.
@@ -1691,6 +1751,8 @@ export type { RemovedEventData as TakenOffEventData } from './taking_off/taking-
 export * from './eating/index.js';
 export * from './drinking/index.js';
 export * from './talking/index.js';
+export * from './answering/index.js';
+export * from './saying-goodbye/index.js';
 export * from './attacking/index.js';
 export * from './saving/index.js';
 export * from './restoring/index.js';
@@ -1737,19 +1799,36 @@ export declare class TraceAction extends MetaAction {
 
 ```typescript
 /**
- * Exit legality for conversational leaving (ADR-320 D8).
+ * Exit legality for conversational leaving (ADR-320 D8; ADR-328 D5).
  *
  * "Leaving is movement, obeys the world": a scene's `leave` outcome is
- * checked against the same read points the going action uses — the
- * ADR-240 `exit.blocked.*` evaluator first, the stamped
- * `RoomTrait.blockedExits` map as fallback, and door lock state — never a
- * private conversation-only physics. A restrained, cornered, or blocked
- * NPC cannot take the exit; silence remains the inalienable move.
+ * checked against the going action itself. `canActorLeave` runs the real
+ * `going` action's `validate()` for the would-be leaver in every direction
+ * the room offers — one truth, never a private conversation-only physics.
+ * A restrained, cornered, or blocked NPC cannot take the exit; silence
+ * remains the inalienable move.
  *
- * Public interface: hasTraversableExit.
+ * `hasTraversableExit` is the older read-side guess (going's read points,
+ * re-implemented by hand); the Chord runtime still calls it from two
+ * pre-checks the acting surface (ADR-328 D7) will replace.
+ *
+ * Public interface: canActorLeave, hasTraversableExit.
  * Owner context: stdlib / actions / helpers
  */
-import { WorldModel } from '@sharpee/world-model';
+import { type RandomService } from '@sharpee/core';
+import { IFEntity, WorldModel } from '@sharpee/world-model';
+/**
+ * Whether the actor could leave the room they stand in right now, by the
+ * going action's own judgement: true when `going.validate()` accepts at
+ * least one direction for them. Validate only — nothing moves.
+ *
+ * @param world - The live world
+ * @param actor - The would-be leaver
+ * @param player - The player entity (the action context's protagonist)
+ * @param random - The session random service the context requires
+ * @returns True when some direction validates for the actor
+ */
+export declare function canActorLeave(world: WorldModel, actor: IFEntity, player: IFEntity, random: RandomService): boolean;
 /**
  * Whether the room offers at least one exit an actor could take right
  * now: an exit (static or computed) whose direction is not blocked (live
@@ -2913,9 +2992,9 @@ export declare class StandardWitnessSystem implements WitnessSystem {
  *
  * @see ADR-069 Perception-Based Event Filtering
  */
-import { type ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent, type Presence } from '@sharpee/core';
 import { IFEntity, type IWorldModel } from '@sharpee/world-model';
-export type { Sense, Rendering, PerSenseRenderings, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, } from '@sharpee/if-services';
+export type { Sense, Rendering, PerSenseRenderings, PerceptionBlockReason, PerceptionBlockedData, IPerceptionService, Presence, } from '@sharpee/if-services';
 import type { Sense, IPerceptionService } from '@sharpee/if-services';
 /**
  * Default implementation of IPerceptionService
@@ -2937,6 +3016,18 @@ export declare class PerceptionService implements IPerceptionService {
      * Check if an actor can perceive using a specific sense.
      */
     canPerceive(actor: IFEntity, location: IFEntity, world: IWorldModel, sense: Sense): boolean;
+    /**
+     * The observer's presence relative to where an event happened (ADR-328 D3).
+     *
+     * Co-location rules (the loader's former `playerPresentAt`): a room means
+     * the observer is in that room; a region means the observer is in one of
+     * its member rooms (transitive through nesting, ADR-236 D4); anything else
+     * means the two share a containing room. Presence, not sight — the snake
+     * speaks in darkness. A co-located observer carrying a concealed state is
+     * `concealed` (ADR-144's eavesdropping case).
+     */
+    presenceOf(observer: IFEntity, locationId: string, world: IWorldModel): Presence;
+    private isCoLocated;
     /**
      * Check if actor can see in the given location.
      *
@@ -2989,14 +3080,58 @@ export declare class PerceptionService implements IPerceptionService {
 
 ```typescript
 /**
- * NPC System Types (ADR-070)
+ * NPC decision-layer types (ADR-070; ADR-328 D5).
  *
- * Types for NPC behaviors and actions.
+ * A behavior DECIDES what an NPC does each turn; the platform EXECUTES it.
+ * The seam between the two is `NpcContext.act`: the behavior names a
+ * standard action and its slots, and the engine runs that action's four
+ * phases for the NPC through the same execution entry the player's
+ * commands take (ADR-328 D1/D2). There is no second action universe — an
+ * NPC's take can be refused by a trait, intercepted, witnessed, and
+ * narrated exactly as the player's can, because it IS the same action.
+ *
+ * Public interface: NpcBehavior, NpcContext, ActSlots, ActResult,
+ * ExecutionEntry.
+ * Owner context: stdlib / npc (decision layer; the engine owns the tick).
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import { IFEntity, WorldModel, type DirectionType } from '@sharpee/world-model';
 /**
- * Context passed to NPC behavior hooks
+ * The resolved slots of an action an NPC performs. There is no parser
+ * step, so the behavior has already chosen the entities; the action's own
+ * `validate()` still applies every actor-relative check to them.
+ */
+export interface ActSlots {
+    /** Direct object, if the action takes one */
+    directObject?: IFEntity;
+    /** Indirect object, if the action takes one */
+    indirectObject?: IFEntity;
+    /** Instrument (ADR-080), if the action takes one */
+    instrument?: IFEntity;
+    /** Direction of travel, for `if.action.going` */
+    direction?: DirectionType;
+}
+/**
+ * What came back from running an action as an NPC: whether the action
+ * genuinely ran (false when `validate()` refused it) and the events it
+ * produced. The engine's `TurnResult` satisfies this shape; the decision
+ * layer sees only these two facts.
+ */
+export interface ActResult {
+    /** True when the action ran its execute/report phases; false when refused */
+    success: boolean;
+    /** Every semantic event the action emitted (refusals included) */
+    events: ISemanticEvent[];
+}
+/**
+ * The execution entry as the actor phase sees it — `(actor, action, slots)`
+ * to the four phases (ADR-328 D2). Supplied by the engine, which owns the
+ * `CommandExecutor`; the decision layer never constructs one.
+ */
+export type ExecutionEntry = (actorId: EntityId, actionId: string, slots?: ActSlots) => ActResult;
+/**
+ * Context passed to NPC behavior hooks: what the NPC can see of the world,
+ * plus the two things a behavior can DO — act, and narrate.
  */
 export interface NpcContext {
     /** The NPC entity */
@@ -3017,51 +3152,44 @@ export interface NpcContext {
     playerVisible: boolean;
     /** Get entities in the NPC's current room */
     getEntitiesInRoom(): IFEntity[];
-    /** Get exits from the NPC's current room */
+    /** Get exits from the NPC's current room the NPC is allowed to take */
     getAvailableExits(): {
         direction: DirectionType;
         destination: EntityId;
     }[];
+    /**
+     * Perform a standard action as this NPC, right now, through the real
+     * execution entry (ADR-328 D5). Runs synchronously: the world has
+     * changed (or the action was refused) by the time this returns, so a
+     * behavior can act on the outcome — a refused take is `success: false`.
+     * The action's events join this turn's stream in the order acted.
+     *
+     * @param actionId - A standard action id, e.g. `if.action.taking`
+     * @param slots - The entities (and direction) the action operates on
+     * @returns Whether the action ran, and the events it emitted
+     */
+    act(actionId: string, slots?: ActSlots): ActResult;
+    /**
+     * Say something to the player about this NPC that is not an action —
+     * a growl, a greeting, a blocking line. Emits one `game.message` fact
+     * with this NPC as its actor at the NPC's current location, so presence
+     * tagging (ADR-328 D3) decides whether the player witnesses it and actor
+     * voice (D4) renders it in the NPC's person.
+     *
+     * @param message - A message id resolved by the language layer, or
+     *   `{ text }` for a line the behavior has already written in full
+     * @param params - Template parameters for a message id
+     */
+    narrate(message: string | {
+        text: string;
+    }, params?: Record<string, unknown>): void;
 }
 /**
- * Actions an NPC can take
+ * NPC behavior interface — the decision layer.
  *
- * All actions use semantic data (message IDs, entity IDs) rather than raw text.
- */
-export type NpcAction = {
-    type: 'move';
-    direction: DirectionType;
-} | {
-    type: 'moveTo';
-    roomId: EntityId;
-} | {
-    type: 'take';
-    target: EntityId;
-} | {
-    type: 'drop';
-    target: EntityId;
-} | {
-    type: 'attack';
-    target: EntityId;
-} | {
-    type: 'speak';
-    messageId: string;
-    data?: Record<string, unknown>;
-} | {
-    type: 'emote';
-    messageId: string;
-    data?: Record<string, unknown>;
-} | {
-    type: 'wait';
-} | {
-    type: 'custom';
-    handler: () => ISemanticEvent[];
-};
-/**
- * NPC behavior interface
- *
- * Defines hooks that are called at various points during the game.
- * Each hook returns an array of NpcActions to be executed.
+ * Each hook is called with an {@link NpcContext} and does its work through
+ * `context.act` and `context.narrate`; hooks return nothing. A behavior
+ * that wants to wait simply does neither.
  */
 export interface NpcBehavior {
     /** Unique identifier for this behavior */
@@ -3069,30 +3197,18 @@ export interface NpcBehavior {
     /** Human-readable name for debugging */
     name?: string;
     /**
-     * Called each turn for this NPC
+     * Called each turn for this NPC.
      * This is the main hook for autonomous NPC behavior.
      */
-    onTurn(context: NpcContext): NpcAction[];
+    onTurn(context: NpcContext): void;
     /**
      * Called when the player enters the NPC's room
      */
-    onPlayerEnters?(context: NpcContext): NpcAction[];
+    onPlayerEnters?(context: NpcContext): void;
     /**
      * Called when the player leaves the NPC's room
      */
-    onPlayerLeaves?(context: NpcContext): NpcAction[];
-    /**
-     * Called when the player speaks to/at the NPC
-     */
-    onSpokenTo?(context: NpcContext, words: string): NpcAction[];
-    /**
-     * Called when the NPC is attacked
-     */
-    onAttacked?(context: NpcContext, attacker: IFEntity): NpcAction[];
-    /**
-     * Called when the NPC observes a player action
-     */
-    onObserve?(context: NpcContext, actionType: string, actionData: unknown): NpcAction[];
+    onPlayerLeaves?(context: NpcContext): void;
     /**
      * Optional: Get serializable state for save/load
      */
@@ -3102,100 +3218,31 @@ export interface NpcBehavior {
      */
     setState?(npc: IFEntity, state: Record<string, unknown>): void;
 }
-/**
- * Events emitted by NPC actions
- */
-export interface NpcEvent extends ISemanticEvent {
-    type: 'npc.moved' | 'npc.spoke' | 'npc.took' | 'npc.dropped' | 'npc.attacked' | 'npc.emoted' | 'npc.died' | 'npc.stateChanged';
-}
-/**
- * Data for NPC movement events
- */
-export interface NpcMovedData {
-    npc: EntityId;
-    from: EntityId;
-    to: EntityId;
-    direction?: DirectionType;
-}
-/**
- * Data for NPC speech events
- */
-export interface NpcSpokeData {
-    npc: EntityId;
-    messageId: string;
-    data?: Record<string, unknown>;
-}
-/**
- * Data for NPC item manipulation events
- */
-export interface NpcItemData {
-    npc: EntityId;
-    target: EntityId;
-}
-/**
- * Data for NPC emote events
- */
-export interface NpcEmoteData {
-    npc: EntityId;
-    messageId: string;
-    data?: Record<string, unknown>;
-}
-/**
- * Result of NPC combat
- */
-export interface NpcCombatData {
-    npc: EntityId;
-    target: EntityId;
-    hit: boolean;
-    damage: number;
-    targetKilled: boolean;
-}
 ```
 
 ### npc/npc-messages
 
 ```typescript
 /**
- * NPC Message IDs (ADR-070)
+ * NPC Message IDs (ADR-070; ADR-328 D5)
  *
- * Semantic message IDs for NPC-related events.
- * Actual text is provided by the language layer.
+ * The message ids the standard behaviors narrate through
+ * `NpcContext.narrate`. Actual text is provided by the language layer.
+ * An NPC's ACTIONS are no longer narrated from here: a take, a move, an
+ * attack renders through the action's own messages in the actor's voice
+ * (ADR-328 D4), so the old `npc.takes`/`npc.enters`/`npc.attacks` family
+ * has no producer and is gone.
+ *
+ * Public interface: NpcMessages const, NpcMessageId type.
+ * Owner context: stdlib / npc
  */
 /**
- * Message IDs for NPC events
+ * Message IDs the standard behaviors narrate
  */
 export declare const NpcMessages: {
-    readonly NPC_ENTERS: "npc.enters";
-    readonly NPC_LEAVES: "npc.leaves";
-    readonly NPC_ARRIVES: "npc.arrives";
-    readonly NPC_DEPARTS: "npc.departs";
-    readonly NPC_HEARD_ARRIVES: "npc.heard_arrives";
-    readonly NPC_HEARD_DEPARTS: "npc.heard_departs";
     readonly NPC_NOTICES_PLAYER: "npc.notices_player";
-    readonly NPC_IGNORES_PLAYER: "npc.ignores_player";
-    readonly NPC_TAKES: "npc.takes";
-    readonly NPC_DROPS: "npc.drops";
     readonly NPC_FOLLOWS: "npc.follows";
     readonly GUARD_BLOCKS: "npc.guard.blocks";
-    readonly GUARD_ATTACKS: "npc.guard.attacks";
-    readonly GUARD_DEFEATED: "npc.guard.defeated";
-    readonly NPC_ATTACKS: "npc.attacks";
-    readonly NPC_MISSES: "npc.misses";
-    readonly NPC_HITS: "npc.hits";
-    readonly NPC_KILLED: "npc.killed";
-    readonly NPC_UNCONSCIOUS: "npc.unconscious";
-    readonly NPC_SPEAKS: "npc.speaks";
-    readonly NPC_SHOUTS: "npc.shouts";
-    readonly NPC_WHISPERS: "npc.whispers";
-    readonly NPC_MUTTERS: "npc.mutters";
-    readonly NPC_LAUGHS: "npc.laughs";
-    readonly NPC_GROWLS: "npc.growls";
-    readonly NPC_CRIES: "npc.cries";
-    readonly NPC_SIGHS: "npc.sighs";
-    readonly NPC_GREETS: "npc.greets";
-    readonly NPC_FAREWELL: "npc.farewell";
-    readonly NPC_NO_RESPONSE: "npc.no_response";
-    readonly NPC_CONFUSED: "npc.confused";
 };
 /**
  * Type for NPC message IDs
@@ -3241,42 +3288,31 @@ export type CharacterMessageId = (typeof CharacterMessages)[keyof typeof Charact
 
 ```typescript
 /**
- * NPC Service (ADR-070)
+ * NPC Service (ADR-070; ADR-328 D5) — the decision layer.
  *
- * Manages NPC behaviors, executes NPC actions, and handles the NPC turn phase.
+ * Holds the registered behaviors and tick phases, decides which NPCs may
+ * act this turn, and gives each behavior a context to act through. It
+ * executes nothing itself: every act a behavior chooses runs through the
+ * execution entry the engine supplies on the tick context (`act`), which
+ * is the same four-phase path the player's commands take. The engine owns
+ * the per-turn tick (`CLAUDE.md` Logic Location: the NPC turn phase is the
+ * engine's); this service is what that phase calls.
+ *
+ * Public interface: NpcService / createNpcService, INpcService,
+ * NpcTickContext, NpcTickPhase.
+ * Owner context: stdlib / npc.
  */
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
 import type { ISound } from '@sharpee/if-domain';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
-import { NpcBehavior } from './types.js';
+import { type NpcBehavior, type ExecutionEntry } from './types.js';
 /**
  * A tick phase handler that runs during NPC turn processing.
  * Registered by higher-level packages (e.g., @sharpee/character).
  */
 export type NpcTickPhase = (npcs: IFEntity[], context: NpcTickContext) => ISemanticEvent[];
 /**
- * NPC Combat Resolver function type.
- *
- * Stories register a resolver to handle NPC→target combat resolution.
- * Without a resolver, NPC attack actions emit a bare `npc.attacked` event
- * with no combat resolution (no damage, no death).
- */
-export type NpcCombatResolver = (npc: IFEntity, target: IFEntity, world: WorldModel, random: RandomService) => ISemanticEvent[];
-/**
- * Register an NPC combat resolver.
- *
- * Call this in your story's initializeWorld() to provide combat resolution
- * for NPC attack actions. Without a resolver, NPC attacks produce bare events.
- *
- * @param resolver - Function that resolves NPC→target combat and returns events
- */
-export declare function registerNpcCombatResolver(resolver: NpcCombatResolver): void;
-/**
- * Clear the NPC combat resolver. Used for testing cleanup.
- */
-export declare function clearNpcCombatResolver(): void;
-/**
- * Context for NPC tick (simplified version of SchedulerContext)
+ * Context for one NPC tick — what the engine hands the service each turn.
  */
 export interface NpcTickContext {
     world: WorldModel;
@@ -3284,6 +3320,12 @@ export interface NpcTickContext {
     random: RandomService;
     playerLocation: EntityId;
     playerId: EntityId;
+    /**
+     * The execution entry (ADR-328 D2/D5): how a behavior's chosen act, and
+     * a tick phase's, becomes a real `(action, actorId)` invocation. The
+     * engine supplies it; the service curries it per NPC as `NpcContext.act`.
+     */
+    act: ExecutionEntry;
     /**
      * The player action's events this turn (ADR-310 Phase 5) — input for
      * observation-driven tick phases (the character model's observe
@@ -3315,16 +3357,12 @@ export interface INpcService {
     setBehaviorStates?(states: Record<string, Record<string, unknown>>): void;
     /** Register a tick phase handler (ADR-142/144/145/146) */
     registerTickPhase(name: string, handler: NpcTickPhase): void;
-    /** Execute the NPC turn phase */
+    /** Run the NPC turn: every eligible NPC's `onTurn`, then the tick phases */
     tick(context: NpcTickContext): ISemanticEvent[];
     /** Notify NPCs that player entered a room */
-    onPlayerEnters(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
+    onPlayerEnters(world: WorldModel, roomId: EntityId, random: RandomService, turn: number, act: ExecutionEntry): ISemanticEvent[];
     /** Notify NPCs that player left a room */
-    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
-    /** Handle player speaking to an NPC */
-    onPlayerSpeaks(world: WorldModel, npcId: EntityId, words: string, random: RandomService, turn: number): ISemanticEvent[];
-    /** Handle player attacking an NPC */
-    onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
+    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: RandomService, turn: number, act: ExecutionEntry): ISemanticEvent[];
 }
 /**
  * NPC Service implementation
@@ -3346,27 +3384,26 @@ export declare class NpcService implements INpcService {
      */
     registerTickPhase(name: string, handler: NpcTickPhase): void;
     /**
-     * Execute the NPC turn phase
+     * Run the NPC turn. Each eligible NPC's behavior decides through its
+     * context; the acts it chooses have already run, and their events sit
+     * in the returned stream in the order they were acted, followed by the
+     * registered tick phases' events.
+     *
+     * @param context - The engine's tick context for this turn
+     * @returns The turn's NPC-sourced events, in order
      */
     tick(context: NpcTickContext): ISemanticEvent[];
     /**
      * Notify NPCs that player entered a room
      */
-    onPlayerEnters(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
+    onPlayerEnters(world: WorldModel, roomId: EntityId, random: RandomService, turn: number, act: ExecutionEntry): ISemanticEvent[];
     /**
      * Notify NPCs that player left a room
      */
-    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
+    onPlayerLeaves(world: WorldModel, roomId: EntityId, random: RandomService, turn: number, act: ExecutionEntry): ISemanticEvent[];
     /**
-     * Handle player speaking to an NPC
-     */
-    onPlayerSpeaks(world: WorldModel, npcId: EntityId, words: string, random: RandomService, turn: number): ISemanticEvent[];
-    /**
-     * Handle player attacking an NPC
-     */
-    onNpcAttacked(world: WorldModel, npcId: EntityId, attackerId: EntityId, random: RandomService, turn: number): ISemanticEvent[];
-    /**
-     * Whether an NPC can take a turn: it is an NPC and — if it carries life-state —
+     * Whether an NPC can take a turn: it is an NPC, it is not the character
+     * currently being played (ADR-327 D9), and — if it carries life-state —
      * is alive and conscious. An NPC with no `HealthTrait` is active by default
      * (opt-in life-state, ADR-226 §3). Reads health data via `HealthBehavior`, never a
      * trait getter, so it survives `loadJSON()`. This is the single turn-eligibility
@@ -3390,26 +3427,15 @@ export declare class NpcService implements INpcService {
     setBehaviorStates(states: Record<string, Record<string, unknown>>): void;
     private getActiveNpcs;
     private getBehaviorForNpc;
+    /**
+     * Build one NPC's context. `act` curries the execution entry to this
+     * NPC and appends the act's events to `sink`; `narrate` appends one
+     * `game.message` sourced by the NPC at wherever it stands when it
+     * speaks — after a move, that is the new room. Both write to the same
+     * sink so the turn's stream keeps the order the behavior acted in.
+     */
     private createNpcContext;
     private getExitsFromRoom;
-    private executeActions;
-    private executeAction;
-    private executeMove;
-    private executeMoveTo;
-    /**
-     * Build the player-witnessable movement announcement for a crossing.
-     *
-     * Returns a single sense-neutral `npc.moved.witnessed` fact carrying a per-sense
-     * `renderings` map (sight + hearing). PerceptionService selects the rendering for
-     * the player's available sense; neither is derived from the other.
-     *
-     * @returns one `npc.moved.witnessed` event, or `[]` when the NPC does not announce
-     *   movement or the move touches neither the player's room.
-     */
-    private announceMovement;
-    private executeTake;
-    private executeDrop;
-    private executeAttack;
 }
 /**
  * Create a new NPC Service instance
@@ -3554,21 +3580,29 @@ export declare function enterLucidityWindow(trait: CharacterModelTrait, targetSt
 
 ```typescript
 /**
- * Standard NPC Behaviors (ADR-070)
+ * Standard NPC Behaviors (ADR-070; ADR-328 D5)
  *
  * Reusable behavior patterns for common NPC archetypes.
  * These are generic behaviors that can be used in any IF game.
  * Game-specific behaviors (thief, cyclops, etc.) should be defined in the story.
+ *
+ * Every act here is a real standard action run as the NPC through
+ * `context.act` — a guard's attack is `if.action.attacking`, a wanderer's
+ * step is `if.action.going` — so the world's rules apply to it exactly as
+ * they apply to the player.
+ *
+ * Public interface: guardBehavior, passiveBehavior, createWandererBehavior,
+ * createFollowerBehavior, createPatrolBehavior.
+ * Owner context: stdlib / npc
  */
-import { NpcBehavior } from './types.js';
+import { type NpcBehavior } from './types.js';
 /**
  * Guard behavior - stationary NPC that blocks passage and fights back
  *
  * Guards:
  * - Don't move on their own
- * - Emit a blocking message when player enters
- * - Attack player each turn if hostile and engaged
- * - Counterattack when attacked
+ * - Narrate a blocking line when the player enters
+ * - Attack the player each turn while hostile and engaged
  */
 export declare const guardBehavior: NpcBehavior;
 /**
@@ -3577,13 +3611,14 @@ export declare const guardBehavior: NpcBehavior;
  * Wanderers:
  * - Move randomly with configurable probability
  * - Respect room restrictions
- * - Announce presence when entering player's room
+ * - Acknowledge the player's arrival
+ *
+ * Arrival in the player's room is narrated by the going action itself
+ * (the player witnesses the NPC enter), not by the behavior.
  */
 export declare function createWandererBehavior(options?: {
     /** Probability of moving each turn (0-1) */
     moveChance?: number;
-    /** Whether to announce when entering player's room */
-    announceEntry?: boolean;
 }): NpcBehavior;
 /**
  * Follower behavior - NPC that follows the player
@@ -3676,8 +3711,11 @@ export interface IKillPlayerOptions {
  * always give `killPlayer`'s lethal transition a target (ADR-223 AC-1 caveat), so the
  * `HealthTrait` opt-in rule does not apply to the player in such a game.
  *
- * Idempotent: if the player is already `dead`, this is a no-op that returns `null`, so
- * a second call in the same turn does not re-emit the event or double-route game-over.
+ * Idempotent: if the player is already flagged `dead`, this is a no-op that returns
+ * `null`, so a second call in the same turn does not re-emit the event or double-route
+ * game-over. The guard is the flag alone, never `health > 0`: combat that has already
+ * driven the player's health to zero this turn still owes the canonical event, and this
+ * is the one place the lethal flag is set for the player.
  *
  * @param world the world model (unused today; kept for signature stability and future scope resolution)
  * @param player the player entity to kill

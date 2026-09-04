@@ -10,6 +10,7 @@
  * through the real scheduler daemon.
  */
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
@@ -35,10 +36,16 @@ create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define sound rain from "audio/rain.wav"
 define image map from "img/map.png"
@@ -60,7 +67,7 @@ const load = () => {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.onEngineReady({ getPluginRegistry: () => ({ register: () => {} }) });
+  story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => {} }) });
   const registry = new StdlibChannelRegistry();
   story.registerChannels(registry);
   const daemons: SchedulerDaemon[] = story.runtime.buildSchedulerDaemons();

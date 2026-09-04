@@ -8,6 +8,7 @@
  * wait-for step 0 → 1 on any UNsuppressed tick.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -85,6 +86,7 @@ describe('D16 — a conversation in progress suppresses goal pursuit', () => {
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: unexpectedAct,
     });
   }
 

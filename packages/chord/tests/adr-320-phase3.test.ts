@@ -18,10 +18,16 @@ const WORLD = `create the Hall
 
   A hall.
 
-create the player
+create Alex
+  a person
+  playable
   in the Hall
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create Will Kemp
   a person
@@ -48,10 +54,10 @@ function kemp(result: ReturnType<typeof compile>): IREntity {
 
 describe('define manner — rows, beats, voice, minted phrase keys', () => {
   const MANNER = `define manner for Will Kemp
-  when it is cheerful:
+  when Will Kemp is cheerful:
     beat "He sketches a little jig step."
     beat "He winks at the nearest stagehand."
-  when it is sad:
+  when Will Kemp is sad:
     voice flat
 end manner
 `;
@@ -84,7 +90,7 @@ end manner
 
   it('rejects a non-person host', () => {
     const errors = errorsOf(`define manner for the Hall
-  when it is sad:
+  when Will Kemp is sad:
     voice flat
 end manner
 `);
@@ -93,7 +99,7 @@ end manner
 
   it('rejects a second voice word in one row', () => {
     const errors = errorsOf(`define manner for Will Kemp
-  when it is sad:
+  when Will Kemp is sad:
     voice flat
     voice hollow
 end manner
@@ -104,9 +110,9 @@ end manner
   it('rejects malformed rows, beats, voices, and empty blocks by name', () => {
     expect(errorsOf('define manner for Will Kemp\n  about x: phrase y\nend manner\n')
       .some((d) => d.code === 'parse.manner-row')).toBe(true);
-    expect(errorsOf('define manner for Will Kemp\n  when it is sad:\n    beat flat\nend manner\n')
+    expect(errorsOf('define manner for Will Kemp\n  when Will Kemp is sad:\n    beat flat\nend manner\n')
       .some((d) => d.code === 'parse.manner-beat')).toBe(true);
-    expect(errorsOf('define manner for Will Kemp\n  when it is sad:\n    voice "flat"\nend manner\n')
+    expect(errorsOf('define manner for Will Kemp\n  when Will Kemp is sad:\n    voice "flat"\nend manner\n')
       .some((d) => d.code === 'parse.manner-voice')).toBe(true);
     expect(errorsOf('define manner for Will Kemp\nend manner\n')
       .some((d) => d.code === 'parse.manner-empty')).toBe(true);
@@ -234,7 +240,7 @@ end manner
 
   it('recency words compose in compound conditions', () => {
     const cond = mannerConditionOf(`define manner for Will Kemp
-  when the falling-out is fresh and it is sad:
+  when the falling-out is fresh and Will Kemp is sad:
     voice bitter
 end manner
 `);
@@ -248,7 +254,7 @@ end manner
     // `is fresh` triggers recency ONLY when the word stands alone at the
     // end of the condition — `is fresh paint` keeps the ordinary parse.
     const errors = errorsOf(`define manner for Will Kemp
-  when it is cheerful:
+  when Will Kemp is cheerful:
     voice bright
 end manner
 `);

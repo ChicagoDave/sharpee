@@ -103,6 +103,20 @@ export interface TurnResult {
      */
     actionId?: string;
     /**
+     * The entity that performed the action (ADR-328 D1) — the player for a
+     * parser-driven turn, the named actor for `CommandExecutor.executeAsActor`.
+     * Absent only when the command failed before an actor was resolved.
+     */
+    actorId?: string;
+    /**
+     * True when the action's own `validate()` refused it and the `blocked`
+     * phase ran instead of execute/report. `success` stays as it was (no
+     * `action.error`), since a refusal is still a completed turn for the
+     * turn cycle; this is the fact a caller that acted on purpose — the
+     * actor turn phase (ADR-328 D5) — reads to learn the act did not happen.
+     */
+    refused?: true;
+    /**
      * The parsed command (if successfully parsed)
      */
     parsedCommand?: IParsedCommand;
@@ -714,10 +728,17 @@ export declare function validateStoryConfig(config: StoryConfig): void;
  * - Pass results between phases
  * - Return the final TurnResult
  *
+ * Two entries, one path (ADR-328 D1/D2): `execute(input, …)` parses and
+ * validates typed input as the player; `executeAsActor(request, …)` takes an
+ * already-resolved command and a named actor. Both hand a `ValidatedCommand`
+ * and an actor to the same private `runPhases`, so capability dispatch, the
+ * pre-action hook, the four phases, and entity-handler reactions are
+ * identical whoever acts.
+ *
  * All event creation is owned by the action components themselves.
  */
 import { type ISystemEvent, type IGenericEventSource, Result, type RandomService } from '@sharpee/core';
-import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError } from '@sharpee/world-model';
+import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity, type DirectionType } from '@sharpee/world-model';
 import { type ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -754,6 +775,27 @@ export type BeforeActionHookListener = (data: BeforeActionHookData, world: World
  * @returns The (potentially modified) parsed command
  */
 export type ParsedCommandTransformer = (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
+/**
+ * A resolved command for the programmatic entry (ADR-328 D2): the action to
+ * run, who runs it, and the entities already chosen for each slot. There is
+ * no parser step, so there is nothing to disambiguate — the caller has
+ * decided. Scope and every other actor-relative check still run in the
+ * action's own `validate()`.
+ */
+export interface ActorCommand {
+    /** The action id to run, e.g. `if.action.taking` */
+    actionId: string;
+    /** The entity performing the action */
+    actorId: string;
+    /** Direct object, if the action takes one */
+    directObject?: IFEntity;
+    /** Indirect object, if the action takes one */
+    indirectObject?: IFEntity;
+    /** Instrument (ADR-080), if the action takes one */
+    instrument?: IFEntity;
+    /** Direction of travel, for `if.action.going` (read from `parsed.extras.direction`) */
+    direction?: DirectionType;
+}
 export declare class CommandExecutor {
     private parser;
     private validator;
@@ -804,7 +846,50 @@ export declare class CommandExecutor {
      * Emit the pre-action hook to all registered listeners.
      */
     private emitBeforeAction;
+    /**
+     * Execute typed input as the player: parse → transform → validate → the
+     * shared four-phase path (`runPhases`).
+     *
+     * @param input - The raw command text
+     * @param world - The world model
+     * @param context - Turn context (current turn, player, config)
+     * @param config - Engine config (timing collection)
+     * @param soundBuffer - The per-turn sound buffer (ADR-172)
+     * @returns The turn result; never throws — failures come back as a
+     *          `command.failed` event with `success: false`
+     */
     execute(input: string, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): Promise<TurnResult>;
+    /**
+     * Execute an already-resolved command as the named actor (ADR-328 D2).
+     *
+     * Skips parse, the parsed-command transformers, and the CommandValidator —
+     * the caller has chosen the entities — and runs everything after: the
+     * pre-action hook, capability dispatch, validate → execute → report |
+     * blocked, and entity-handler reactions. The action's own `validate()`
+     * still performs every actor-relative check (scope, capacity, traits,
+     * interceptors) against the named actor. Synchronous: nothing inside the
+     * four phases awaits.
+     *
+     * @param request - Action id, actor id, and resolved slot entities
+     * @param world - The world model
+     * @param context - Turn context (current turn, player, config)
+     * @param config - Engine config (timing collection)
+     * @param soundBuffer - The per-turn sound buffer (ADR-172)
+     * @returns The turn result with `actorId` set to the request's actor;
+     *          never throws — an unknown actor or action comes back as a
+     *          `command.failed` event with `success: false`
+     */
+    executeAsActor(request: ActorCommand, world: WorldModel, context: GameContext, config?: EngineConfig, soundBuffer?: ISound[]): TurnResult;
+    /**
+     * The one four-phase path (ADR-328 D1). Both entries land here with a
+     * validated command and the entity acting; nothing below reads the
+     * player except through `actor`.
+     */
+    private runPhases;
+    /**
+     * Build the failure result both entries return instead of throwing.
+     */
+    private failedResult;
 }
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService): CommandExecutor;
 ```
@@ -1183,7 +1268,7 @@ export interface EngineSharedData {
  */
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
-import { type Parser, type IPerceptionService } from '@sharpee/stdlib';
+import { type Parser, type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type TurnPacket } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ITextBlock } from '@sharpee/text-blocks';
@@ -1232,9 +1317,6 @@ type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K
  * capabilities through.
  */
 export declare const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities;
-/**
- * Main game engine
- */
 export declare class GameEngine {
     private world;
     private sessionStartTime?;
@@ -1258,8 +1340,15 @@ export declare class GameEngine {
     private eventSource;
     private systemEventSource;
     private pendingPlatformOps;
+    /**
+     * The incomplete command a clarification question is holding open (GH
+     * #318, ADR-225 as amended): consumed by the very next input, answer or
+     * not. Never serialized — a restore starts with no question pending.
+     */
+    private heldCommand?;
     private perceptionService?;
     private pluginRegistry;
+    private actorTurnPlugin;
     /**
      * Per-turn sound buffer (ADR-172 Phase 6). Cleared at the start of every
      * `executeTurn()`; populated as actions call `context.emitSound`;
@@ -1412,6 +1501,40 @@ export declare class GameEngine {
     /**
      * Execute a turn
      */
+    /**
+     * Register the first entity a failed turn's events name as the pronoun
+     * referent (GH #97). Refusal events carry their named entities as
+     * template params — `NounPhrase`s with a `referableId` (ADR-158) — so the
+     * door a `go west` stopped at, or the window a `look` mentioned, becomes
+     * what `it` means next. The first such phrase wins; a turn naming nothing
+     * leaves the context alone.
+     *
+     * @param events - The failed turn's events
+     * @param turn - The current turn number
+     */
+    private registerBlockedReferent;
+    /**
+     * Spend the held command (GH #318): when a clarification question is open
+     * and this input does not parse as a command of its own, splice it onto
+     * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
+     * box`) and run the spliced form if it parses. An input that parses on
+     * its own drops the hold and runs as written. The hold is cleared here
+     * whatever happens — exactly one input.
+     *
+     * @param input - The raw input for this turn
+     * @returns The input to run: spliced, or as given
+     */
+    private spliceHeldCommand;
+    /**
+     * GH #346: while the player's live conversation scene holds an open
+     * exchange, bare input the exchange claims (`yes`, `norwich`) is offered
+     * to it first and runs as an answer; input the exchange does not claim
+     * runs unchanged — the innermost open question gets the first offer.
+     *
+     * @param input - The raw input for this turn
+     * @returns `answer <input>` when the open exchange claims it, else the input
+     */
+    private offerToOpenExchange;
     executeTurn(input: string): Promise<TurnResult>;
     /**
      * Execute a meta-command (VERSION, SCORE, HELP, etc.)
@@ -1465,6 +1588,17 @@ export declare class GameEngine {
      * Story code must position the new PC (via world.moveEntity) BEFORE
      * calling switchPlayer, since parser context uses the entity's current location.
      */
+    /**
+     * Apply this turn's `if.event.player.switch_requested`, if any (ADR-327 D9).
+     *
+     * @param turn the turn just executed
+     * @returns nothing; on a request the role moves and `game.pc_switched` is
+     *   emitted. Two requests in one turn are a story bug, not a sequence: the
+     *   first wins and the rest are reported as `runtime.double-player-switch`,
+     *   because "who is the player at the end of this turn" has one answer and
+     *   silently taking the last one hides the contradiction.
+     */
+    private drainPlayerSwitch;
     switchPlayer(entityId: string): void;
     /**
      * Get world model
@@ -1504,6 +1638,26 @@ export declare class GameEngine {
      * Get plugin registry for registering turn-cycle plugins (ADR-120)
      */
     getPluginRegistry(): PluginRegistry;
+    /**
+     * The NPC decision layer (ADR-328 D5): where a story registers the
+     * behaviors and tick phases the engine's actor turn phase drives.
+     */
+    getNpcService(): INpcService;
+    /**
+     * The execution entry (ADR-328 D2; ADR-329 D4): perform one standard or
+     * story action NOW as `actorId`, through the same four phases a typed
+     * command runs — validate, interceptors, capability dispatch, report —
+     * over the live world and turn context. The engine's own actor turn phase
+     * and a Chord acting statement both come through here; there is no other
+     * door. Runs synchronously; the world has changed (or the action was
+     * refused) by the time it returns.
+     *
+     * @param actorId - The entity performing the action
+     * @param actionId - A standard (`if.action.taking`) or story action id
+     * @param slots - The entities and direction the action operates on
+     * @returns Whether the action ran (false when refused) and every event it emitted
+     */
+    executeAsActor(actorId: string, actionId: string, slots?: ActSlots): ActResult;
     /**
      * The negotiated client capabilities for this session (ADR-216): the
      * `client has <capability>` predicate reads these live, and channel
@@ -1679,6 +1833,13 @@ export declare class GameEngine {
      */
     getUndoLevels(): number;
     /**
+     * The ADR-328 D3 presence resolver both enrichment funnels hand to
+     * `processEvent`: the current player's presence at a producer-stamped
+     * location, via the perception service. Undefined when no perception
+     * service is configured — events then stay untagged.
+     */
+    private presenceResolver;
+    /**
      * Process events from a plugin through the shared pipeline (ADR-120)
      * Enriches, filters, stores, and emits events.
      *
@@ -1785,8 +1946,10 @@ export {};
 /**
  * Scene evaluation turn plugin (ADR-149, ADR-186).
  *
- * Evaluates scene begin/end conditions each turn. Runs after NPC turns
- * and state machines, before daemons/fuses (priority 60).
+ * Evaluates scene begin/end conditions each turn. Last of the platform
+ * phases (ADR-332): after the scheduler's story reactions, the actor phase
+ * and state machines — a scene whose condition is a timer state sees it
+ * the same turn.
  *
  * For each registered scene:
  * - If state='waiting' and begin() returns true → activate, emit scene_began,
@@ -1805,7 +1968,7 @@ export {};
  * Owner context: @sharpee/engine — turn cycle
  */
 import { type ISemanticEvent } from '@sharpee/core';
-import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 export declare class SceneEvaluationPlugin implements TurnPlugin {
     id: string;
     priority: number;
@@ -1813,6 +1976,82 @@ export declare class SceneEvaluationPlugin implements TurnPlugin {
      * Evaluates all registered scene conditions after a successful action.
      */
     onAfterAction(context: TurnPluginContext): ISemanticEvent[];
+}
+```
+
+### actor-turn-plugin
+
+```typescript
+/**
+ * Actor turn phase (ADR-070, ADR-120; ADR-328 D5).
+ *
+ * The engine-owned phase in which non-player actors act. It leads the
+ * platform-phases band (ADR-332: after the scheduler's story reactions,
+ * before state machines and scene evaluation), drives the NPC decision
+ * layer's tick, and
+ * fires the room-entry/exit hooks when the player's action moved them.
+ * Every act a behavior chooses runs through the engine's execution entry
+ * — the same four phases the player's commands take — so this phase
+ * executes nothing of its own; it sequences.
+ *
+ * Registered by `GameEngine` itself in its constructor (like the scene
+ * evaluation plugin); stories reach the decision layer through
+ * `GameEngine.getNpcService()`.
+ *
+ * Public interface: ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID,
+ * LEGACY_NPC_PLUGIN_ID.
+ * Owner context: @sharpee/engine — turn cycle
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
+import { type ExecutionEntry, type INpcService } from '@sharpee/stdlib';
+/** The plugin id this phase saves behavior state under. */
+export declare const ACTOR_TURN_PLUGIN_ID = "sharpee.engine.actors";
+/**
+ * The id `@sharpee/plugin-npc` saved behavior state under before the actor
+ * phase moved into the engine (ADR-328 D5). Read-side alias only: a save
+ * carrying it restores into this phase; nothing writes it.
+ */
+export declare const LEGACY_NPC_PLUGIN_ID = "sharpee.plugin.npc";
+export declare class ActorTurnPlugin implements TurnPlugin {
+    private readonly act;
+    /** Stable plugin id. */
+    id: string;
+    /** Run order within a turn: first of the platform phases (ADR-332). */
+    priority: number;
+    private readonly service;
+    /**
+     * @param act - The engine's execution entry, curried over its world and
+     *   turn context: how a behavior's chosen act becomes a real
+     *   `(action, actorId)` invocation.
+     */
+    constructor(act: ExecutionEntry);
+    /**
+     * Tick the decision layer for this turn and return the events actors
+     * produced.
+     *
+     * After the per-turn tick (which drives each NPC's `onTurn`), this also
+     * fires the room-entry/exit hooks when the player's own action moved them
+     * this turn: an `if.event.actor_moved` in `ctx.actionEvents` whose actor
+     * is the player (any other actor's move is an NPC acting through the
+     * entry, and is not the player arriving anywhere) makes the NPCs in the
+     * room left react via `onPlayerLeaves` and those in the room entered via
+     * `onPlayerEnters`.
+     */
+    onAfterAction(ctx: TurnPluginContext): ISemanticEvent[];
+    /**
+     * Per-NPC behavior state (#226) for the save. NPC world state itself
+     * rides the world snapshot; this is only what behaviors hold privately.
+     */
+    getState(): unknown;
+    /** Restore per-NPC behavior state from a save. */
+    setState(state: unknown): void;
+    /**
+     * The NPC decision layer — the author hook for registering behaviors
+     * and tick phases. The service type (`INpcService`) and behavior helpers
+     * live in `@sharpee/stdlib`.
+     */
+    getNpcService(): INpcService;
 }
 ```
 
@@ -2252,7 +2491,7 @@ export declare class EngineRandomService implements RandomService {
  * Extracted from GameEngine as part of Phase 4 remediation.
  * Handles event enrichment, perception filtering, and event emission.
  */
-import { type ISemanticEvent, type ISemanticEventSource, type IPlatformEvent } from '@sharpee/core';
+import { type ISemanticEvent, type ISemanticEventSource, type IPlatformEvent, type Presence } from '@sharpee/core';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { type IPerceptionService } from '@sharpee/stdlib';
 import { EngineConfig } from './types.js';
@@ -2273,6 +2512,15 @@ export interface EventProcessingContext {
      * platform-op completions) — safe under the sort's never-group rule.
      */
     transactionId?: string;
+    /**
+     * Presence resolver for the ADR-328 D3 tag. When set, enrichment stamps
+     * `presence` on every event that ARRIVES with a producer-set
+     * `entities.location` — the room the event happened in — evaluated
+     * before the player-location default below is applied, so a defaulted
+     * location never masquerades as a witnessed one. Events without a
+     * producer location (player actions today) are left untagged.
+     */
+    presenceOf?: (locationId: string) => Presence;
 }
 /**
  * Process an event through normalization and enrichment
@@ -3369,6 +3617,7 @@ export interface GenericEventData extends ChainableEventData {
  *
  * @see ADR-192 §6
  */
+import type { EntityId } from '@sharpee/core';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { HandlerContext } from './handlers/types.js';
 /**
@@ -3420,10 +3669,14 @@ export interface PhrasebookResolution {
  *   fill a `{slot:key}` in its own template without holding a render context at
  *   report time (ADR-195 S2). Plain phrase data — save/replay-safe.
  * @param blockKey the channel key to stamp on the realized blocks
+ * @param actorId the acting entity of the event being rendered (ADR-328 D4).
+ *   When given, its `NounPhrase` is bound under the reserved `ACTOR_PARAM_KEY`
+ *   — unless the emitter bound one already — so the provider renders the
+ *   `{You}` family in the actor's own person. Absent for actorless events.
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
  */
-export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string): ITextBlock[] | null;
+export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string, actorId?: EntityId): ITextBlock[] | null;
 /**
  * Flatten realized blocks to a single plain string (newlines between blocks).
  * Used when a rendered message must be embedded into another message as a
@@ -3709,6 +3962,10 @@ export declare function handleImplicitTake(event: ISemanticEvent, _context: Hand
  *
  * Maps parser / entity-resolution failure reasons to user-facing
  * error prose. Recognized reason fragments:
+ *   - `storyRule: true` (a story rule's own diagnostic — the loader's
+ *     LoadError thrown from a condition or clause, GH #345) →
+ *     `core.story_rule_failed` followed by the reason, never the parser's
+ *     refusal: the command parsed; a rule blew up.
  *   - `ENTITY_NOT_FOUND` / `modifiers_not_matched` →
  *     `core.entity_not_found` (default: "I don't see that here.")
  *   - `NO_MATCH` / `parse` →

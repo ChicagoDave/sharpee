@@ -8,7 +8,8 @@ using the same two line forms every other owner uses:
 ```chord
 story
   title: The Walled Garden
-  authors: Sharpee Docs
+  authors:
+    Sharpee Docs
   id: walled-garden
   story-version: 1.0.0
   description: A pocket world for the Chord language reference.
@@ -25,7 +26,7 @@ behavior body can move it forward with `change the story to dusk`.
 | Field | What it carries |
 | --- | --- |
 | `title:` | The story's name. The one required field. |
-| `authors:` | Who wrote it. One name inline, or one per indented line. |
+| `authors:` | Who wrote it. One name per indented line under the key; an inline name is `parse.header-inline-list`. |
 | `testers:` | Who tested it. Same shape as `authors:`. |
 | `id:` | The kebab-case identifier the build uses for its output folder. |
 | `ifid:` | The story's Treaty of Babel identifier. Written and maintained by the tool — see [The IFID](#the-ifid). |

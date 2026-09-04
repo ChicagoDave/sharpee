@@ -20,8 +20,14 @@ create Mairead
 
   The orchard warden, mid-round.
 
-create the player
-  starts in the Orchard</code></pre>
+create Alex
+  a person
+  playable
+  starts in the Orchard
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; look
 Orchard
@@ -49,7 +55,8 @@ You can see Mairead here.</code></pre>
 <p>The author writes:</p>
 <pre><code class="language-chord">story
   title: The Ferry
-  authors: ref
+  authors:
+    ref
   id: plugins-machine
   story-version: 0.0.1
   states: waiting, signaled
@@ -65,7 +72,7 @@ create the capstan
 
   A tarred capstan wound with ferry rope.
 
-  on turning it
+  on the player turning
     phrase capstan-turns
       You lean into the capstan and it comes round, pawls clacking.
   end on
@@ -77,13 +84,15 @@ create the signal cord
 
   A cord for ringing the bell on the far bank.
 
-  on pulling it
+  on the player pulling
     change the story to signaled
     phrase cord-rings
       Far across the water, a bell answers the cord.
   end on
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Slipway
 
 define machine ferry
@@ -111,7 +120,11 @@ end phrase
 
 define phrase ferry-underway
   The ferry is underway, beating slowly toward you.
-end phrase</code></pre>
+end phrase
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; turn the capstan
 You lean into the capstan and it comes round, pawls clacking.
@@ -122,5 +135,5 @@ The rope pays out and the ferry noses off the far bank.
 Far across the water, a bell answers the cord.
 
 The ferry is underway, beating slowly toward you.</code></pre>
-<p>Two trigger kinds in two turns: the action trigger fires the turn the capstan turns (the <code>on turning it</code> clause makes the turn succeed and the transition's <code>on enter</code> speaks in the same turn's output), and the condition trigger fires the turn the cord's clause moves the story to <code>signaled</code>.</p>
+<p>Two trigger kinds in two turns: the action trigger fires the turn the capstan turns (the <code>on the player turning</code> clause makes the turn succeed and the transition's <code>on enter</code> speaks in the same turn's output), and the condition trigger fires the turn the cord's clause moves the story to <code>signaled</code>.</p>
 <p>It is worth being precise that <strong>Chord's <code>states:</code>/<code>change</code>/<code>select on</code> still do not use it.</strong> Chord states are plain world-state values with a forward-march ratchet (<code>reversible</code> opts out); they give the <em>effect</em> of a simple state machine without the plugin's machinery (no enter/exit effects, no terminal states, no multi-machine registry). Dungeo's death-penalty policy (the veto window) is a real state machine; the cloak's states are Chord world-state.</p>

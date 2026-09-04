@@ -18,6 +18,8 @@
 import { registerBasicCombat } from '@sharpee/ext-basic-combat';
 import { registerScoring, registerScoringPlugin } from '@sharpee/ext-scoring';
 import { registerHunger } from '@sharpee/ext-hunger';
+import { registerChaptersChannels } from '@sharpee/ext-chapters';
+import type { IChannelRegistry } from '@sharpee/if-domain';
 import type { WorldModel } from '@sharpee/world-model';
 import { SETTING_SCHEMA } from './setting-schema';
 
@@ -133,4 +135,10 @@ export const EXTENSION_REGISTRY: ReadonlyMap<string, ExtensionRegistration> = ne
   // config-dependent (grows/fatal/rungs/phrases), so — like scoring's ladder —
   // they travel the loader's generic `ir.hunger` lowering path, not this map.
   ['hunger', { registerWorld: (world) => registerHunger(world) }],
+  // chapters (ADR-330): `registerChannels` installs the `story.chapter`
+  // channel — this slot's first live use (ADR-215's third contribution
+  // part). The plugin needs the story's rows, so — like state-machines and
+  // hunger's daemon — it is built from `ir.chapters` in the loader's
+  // onEngineReady, not here.
+  ['chapters', { registerChannels: (registry) => registerChaptersChannels(registry as IChannelRegistry) }],
 ]);

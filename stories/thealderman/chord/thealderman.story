@@ -228,7 +228,9 @@ create the theatre program
 
 ## -------------------------------------------------------------------- people
 
-create the player
+create Alex
+  a person
+  playable
   in the Foyer
 
   A house detective with a notebook.
@@ -273,13 +275,13 @@ create Ross Bielack
 
 define topics for Ross Bielack
   about "stephanie", "stephanie bordeau", "the murder", "the victim":
-    refuse when it is threatened: ross-stephanie-angry
+    refuse when Ross Bielack is threatened: ross-stephanie-angry
     phrase ross-stephanie-sad
   about "the relationship", "the lover", "the romance":
-    phrase ross-relationship-admits when it is not threatened
+    phrase ross-relationship-admits when Ross Bielack is not threatened
     phrase ross-relationship-deflect
   about "gambling", "the gambling debts", "gambling-debts", "the money":
-    phrase ross-gambling-truth when it feels trusts toward the player
+    phrase ross-gambling-truth when Ross Bielack feels trusts toward the player
     phrase ross-gambling-denies
   about "the alibi", "last night", "the evening":
     phrase ross-alibi-bar
@@ -322,10 +324,10 @@ define topics for Viola Wainright
   about "stephanie", "stephanie bordeau":
     phrase viola-stephanie-fond
   about "the family", "the half sister", "half-sister", "the sister":
-    phrase viola-family-owns when it is confessed
+    phrase viola-family-owns when Viola Wainright is confessed
     phrase viola-family-denies
   about "the alibi", "the theatre", "the rehearsal", "last night":
-    phrase viola-alibi-dropped when it is confessed
+    phrase viola-alibi-dropped when Viola Wainright is confessed
     phrase viola-alibi-rehearsal
   about "the inheritance", "the fortune":
     phrase viola-inheritance-cool
@@ -333,12 +335,12 @@ define topics for Viola Wainright
     change mood to fearful
     phrase viola-program-caught
   about "the killer", "the murder":
-    phrase viola-killer-confessed when it is confessed
+    phrase viola-killer-confessed when Viola Wainright is confessed
     phrase viola-killer-denies
   about "the truth":
-    change it to confessed when it is breaking
-    phrase viola-confesses when it is breaking
-    phrase viola-stands-by-it when it is confessed and it is not breaking
+    change Viola Wainright to confessed when Viola Wainright is breaking
+    phrase viola-confesses when Viola Wainright is breaking
+    phrase viola-stands-by-it when Viola Wainright is confessed and Viola Wainright is not breaking
     phrase viola-truth-deflect
 end topics
 
@@ -362,7 +364,7 @@ create John Barber
   temperament professional
 
   goal destroy-evidence, high
-    active when it is not calm
+    active when John Barber is not calm
     move to Room Three-Oh-Two
     act john-searches-room
   end goal
@@ -473,7 +475,7 @@ create Jack Margolin
 
 define topics for Jack Margolin
   about "the property", "the property debt", "property-debt", "the debt":
-    phrase jack-property-broke when it is cornered
+    phrase jack-property-broke when Jack Margolin is cornered
     phrase jack-property-denies
   about "stephanie", "stephanie bordeau":
     phrase jack-stephanie-bluster
@@ -515,7 +517,7 @@ create Chelsea Sumner
 
 define topics for Chelsea Sumner
   about "the locket", "the locket photo", "locket-photo":
-    phrase chelsea-locket-admits when it feels likes toward the player
+    phrase chelsea-locket-admits when Chelsea Sumner feels likes toward the player
     phrase chelsea-locket-clutch
   about "the mother", "the daughter":
     phrase chelsea-mother-evades
@@ -548,7 +550,7 @@ define trait accusable
   data
     verdict: one of guilty, wrong-ross, wrong-john, wrong-catherine, wrong-jack, wrong-chelsea
 
-  on accusing it
+  on the player accusing
     win viola-guilty when verdict is guilty
     select on verdict
       when wrong-ross
@@ -936,3 +938,7 @@ define phrase accuse-chelsea-wrong
   Chelsea drops her tray. In the ringing silence that follows, half the
   foyer saw her face — and no one who saw it believes she did it.
 end phrase
+
+before the game starts
+  change the player to Alex
+end before

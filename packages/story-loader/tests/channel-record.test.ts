@@ -14,6 +14,7 @@
  * something the engine does natively.
  */
 import { describe, expect, it } from 'vitest';
+import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
@@ -50,6 +51,14 @@ define channel clock
     chimes list of chime
   end record
 end channel
+
+create Alex
+  a person
+  playable
+
+before the game starts
+  change the player to Alex
+end before
 `;
 
 function compileSource(source: string): StoryIR {
@@ -69,7 +78,7 @@ function load(source: string) {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.onEngineReady({ getPluginRegistry: () => ({ register: () => {} }) });
+  story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => {} }) });
 
   const registry = new StdlibChannelRegistry();
   story.registerChannels(registry);

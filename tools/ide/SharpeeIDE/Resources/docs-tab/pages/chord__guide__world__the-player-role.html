@@ -1,0 +1,36 @@
+<p>The player is a <strong>role</strong>, not a block. No entity is the player by construction: an author writes characters, marks the ones eligible to be played <code>playable</code>, and hands the role to one of them in the story's start block.</p>
+<pre><code class="language-chord">create Alex
+  a person
+  playable
+  starts in the Greenhouse
+
+  Mud on your boots, dirt under your nails.
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
+<p><code>create the player</code> is removed (<code>parse.removed-create-player</code>). There is no header field for it either — assigning the role is an action, and a field would give the language two spellings for one thing.</p>
+<h2 id="playable"><code>playable</code></h2>
+<p>A bare composition word marking a character eligible for the role. It is person-only: <code>playable</code> on anything else is <code>analysis.playable-non-person</code>. It says nothing about who is playing now — a <code>playable</code> character the story never assigns is simply an NPC.</p>
+<p>Everything else about the character is written the way it always was. <code>starts in</code> stays on the character, because where someone begins is a fact about them, not about the role.</p>
+<h2 id="before-the-game-starts"><code>before the game starts</code></h2>
+<p>One block per story, at the top level, running once after the world is built and before turn one — ahead of the first room description, so what it changes is what the player first sees.</p>
+<pre><code class="language-chord">before the game starts
+  change the player to Alex
+  move the brass key to the Potting Bench
+end before</code></pre>
+<p>Its body takes effect statements only. <code>phrase</code> and <code>emit</code> there are <code>analysis.start-block-narration</code>, which points at the header's <code>prologue:</code> — the block runs before any turn exists to carry prose. Opening prose belongs in the header.</p>
+<p>The role must end up filled. A story with no start block is <code>analysis.start-block-missing</code>; one whose block never assigns the role is <code>analysis.start-block-no-role</code>; a second block is <code>analysis.duplicate-start-block</code>. The runtime never reaches turn one with nobody in the role.</p>
+<h2 id="change-the-player-to-character"><code>change the player to &lt;character&gt;</code></h2>
+<p>The same statement anywhere, not only in the start block — it is what moves the role during play.</p>
+<pre><code class="language-chord">create the standing mirror
+  in the Long Gallery
+
+  A tall mirror, silvered and slightly warped.
+
+  after the player touching
+    change the player to Viola
+    phrase the-swap
+  end after</code></pre>
+<p>The target must be a person and must be <code>playable</code> (<code>analysis.player-target-not-person</code>, <code>analysis.player-target-not-playable</code>), both checked at compile time.</p>
+<p>The character who held the role keeps their own clauses and goes on acting as an NPC. This is the distinction clause heads draw: <code>the player</code> in a head means whoever holds the role when the clause fires, while a head naming a character means that character whether or not they are being played. See <a href="/chord/guide/behavior/on-and-after"><code>on</code> and <code>after</code></a> for how a head chooses between the two.</p>

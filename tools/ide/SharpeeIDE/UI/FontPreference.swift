@@ -151,4 +151,18 @@ enum FontPreference {
     static var panelMonoFont: NSFont {
         .monospacedSystemFont(ofSize: scale.panelSize - 0.5, weight: .regular)
     }
+
+    /// The height one list row needs to hold `panelFont` without colliding with
+    /// its neighbours.
+    ///
+    /// A table's row height is fixed while the panel font is the author's
+    /// choice, so a height written as a constant is only ever correct at one
+    /// scale: AppKit's `.small` style is 17pt, and Georgia at XL draws a 20pt
+    /// line into it, which is why the World list rendered as overlapping text.
+    /// Derived from the chosen face's own line height so every scale fits, plus
+    /// the vertical air a row reads with. Tables using it must set
+    /// `rowSizeStyle = .custom` and re-read it when the preference changes.
+    static var panelRowHeight: CGFloat {
+        ceil(NSLayoutManager().defaultLineHeight(for: panelFont)) + 5
+    }
 }

@@ -34,10 +34,16 @@ create the winch
 
   A winch.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Gatehouse
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 ${machine}`;
 

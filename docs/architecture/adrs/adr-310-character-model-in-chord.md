@@ -336,6 +336,21 @@ Deactivation stays implicit: `active when` is re-evaluated each NPC turn, as
 ADR-145 specifies. A goal that stops being active stops running; the author
 declares the condition, not the lifecycle.
 
+> **Amendment (2026-08-29, session d04ae1 — ADR-329 D6 landed).** The step verbs
+> `acquire`, `give`, `drop`, and `move to` are ADR-329's acting verbs in plan form and
+> execute through the same door: the tick resolves a step to one standard action —
+> `taking` once in reach, `giving`, `dropping`, one `going` per turn along the path — and
+> performs it as the NPC through the engine's execution entry. The bare `world.moveEntity`
+> calls that used to apply a step (`character/src/tick-phases.ts`, `applyStepMutation`) are
+> retired outright. Two things this decision never said now hold: a step can be *refused*
+> — by validation, by an `on <npc> <verb>` intercept, by a capability behavior on the
+> target — in which case it neither advances nor announces itself and is retried next tick,
+> narrating each witnessed refusal; and a step is *witnessed* through the action's own report
+> (ADR-328 D4), which is the first time these four steps narrate at all from Chord. The
+> planning half — `seek`'s path under the movement profile, co-location for `acquire` and
+> `give`, the loud `blocked` for giving or dropping an unheld item — is unchanged. Trigger
+> was Acceptance item 3's real-path suite going green (ADR-329 D6's own instruction).
+
 ### D9. Influence is a named block; resistance is one line on the target.
 
 The asymmetry in ADR-146 is the good part and Chord should keep it — influence

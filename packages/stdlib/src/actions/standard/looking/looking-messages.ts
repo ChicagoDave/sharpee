@@ -16,6 +16,7 @@ export const LookingMessages = {
   CANT_SEE_IN_DARK: 'cant_see_in_dark',
   LOOK_AROUND: 'look_around',
   EXAMINE_SURROUNDINGS: 'examine_surroundings',
+  HIDDEN_AT: 'hidden_at',
 } as const;
 
 export type LookingMessageId = typeof LookingMessages[keyof typeof LookingMessages];

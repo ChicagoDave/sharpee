@@ -11,3 +11,4 @@ export {
   conjugateVerb,
   resolvePerspectivePlaceholders,
 } from './placeholder-resolver.js';
+export { expandActorPlaceholders, THIRD_SINGULAR_CONTEXT } from './placeholder-resolver.js';

@@ -50,6 +50,7 @@ export const IFActions = {
   ASKING: 'if.action.asking',
   TELLING: 'if.action.telling',
   ANSWERING: 'if.action.answering',
+  SAYING_GOODBYE: 'if.action.saying_goodbye',
   
   // Wearable actions
   WEARING: 'if.action.wearing',
@@ -300,8 +301,19 @@ export const englishVerbs: VerbDefinition[] = [
     requiresObject: true,
     allowsIndirectObject: true
   },
-  // ANSWERING entry removed (ADR-230 Phase 6 sketch ruling 3): no question
-  // system to answer into; revisit with the conversation system.
+  {
+    // GH #346: answers the open exchange of the player's conversation;
+    // `say` is shared with the farewell forms (literal specificity decides).
+    action: IFActions.ANSWERING,
+    verbs: ['answer', 'reply', 'respond', 'say'],
+    requiresObject: false
+  },
+  {
+    // GH #300: the player's farewell closes the live conversation.
+    action: IFActions.SAYING_GOODBYE,
+    verbs: ['goodbye', 'bye', 'farewell'],
+    requiresObject: false
+  },
   
   // Meta commands
   {

@@ -7,7 +7,7 @@
 
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
-import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait } from '@sharpee/world-model';
+import { WorldModel, TraitType, VisibilityBehavior, IdentityTrait, RoomTrait, IFEntity } from '@sharpee/world-model';
 import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 
@@ -16,7 +16,7 @@ import { nounPhraseFor } from '../../../utils/index.js';
  * Delegates to VisibilityBehavior.isDark() as the single source of truth.
  */
 function checkIfDark(context: ActionContext): boolean {
-  const room = context.world.getContainingRoom(context.player.id);
+  const room = context.world.getContainingRoom(context.actor.id);
   if (!room) return false;
   return VisibilityBehavior.isDark(room, context.world);
 }
@@ -29,16 +29,16 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   preState?: WorldModel,
   postState?: WorldModel
 ): Record<string, unknown> => {
-  const player = context.player;
+  const actor = context.actor;
   // Use visibility logic to determine what location to describe
   const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
-    player,
+    actor,
     context.world
   );
 
-  // Get visible items (excluding the room itself and the player)
+  // Get visible items (excluding the room itself and the actor)
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== player.id
+    e => e.id !== location.id && e.id !== actor.id
   );
 
   // Check if dark
@@ -52,7 +52,7 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
   const identity = location.getTrait(IdentityTrait);
 
   return {
-    actorId: player.id,
+    actorId: actor.id,
     // New atomic structure
     room: roomSnapshot,
     visibleItems: visibleSnapshots,
@@ -84,13 +84,13 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
 ): Record<string, unknown> => {
   // Use visibility logic to determine what location to describe
   const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
-    context.player,
+    context.actor,
     context.world
   );
 
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== context.player.id
+    e => e.id !== location.id && e.id !== context.actor.id
   );
 
   // Create snapshots
@@ -176,13 +176,13 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
 ): Record<string, unknown> => {
   // Use visibility logic to determine what location to describe
   const { location } = VisibilityBehavior.getDescribableLocation(
-    context.player,
+    context.actor,
     context.world
   );
 
   // Get visible items (excluding the room itself and the player)
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== context.player.id
+    e => e.id !== location.id && e.id !== context.actor.id
   );
 
   if (visible.length === 0) {
@@ -210,43 +210,7 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
   );
 
   // Build container/supporter contents info for separate rendering
-  const openContainerContents: ContainerContentsInfo[] = [];
-
-  // Check each container for visible contents
-  for (const container of containers) {
-    // Skip if container is closed
-    if (container.hasTrait(TraitType.OPENABLE)) {
-      const { OpenableBehavior } = require('@sharpee/world-model');
-      if (!OpenableBehavior.isOpen(container)) continue;
-    }
-
-    // Shared visibility read: a still-concealed item stays out of the listing
-    const contents = VisibilityBehavior.getVisibleContents(container, context.world);
-    if (contents.length > 0) {
-      openContainerContents.push({
-        containerId: container.id,
-        containerName: container.name,
-        preposition: 'in',
-        itemIds: contents.map(e => e.id),
-        itemNames: contents.map(e => e.name)
-      });
-    }
-  }
-
-  // Check each supporter for visible contents
-  for (const supporter of supporters) {
-    // Shared visibility read: a still-concealed item stays out of the listing
-    const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
-    if (contents.length > 0) {
-      openContainerContents.push({
-        containerId: supporter.id,
-        containerName: supporter.name,
-        preposition: 'on',
-        itemIds: contents.map(e => e.id),
-        itemNames: contents.map(e => e.name)
-      });
-    }
-  }
+  const openContainerContents = collectContainedListings(context, containers, supporters);
 
   return {
     // New atomic structure (full snapshots)
@@ -270,6 +234,62 @@ export const buildListContentsData: ActionDataBuilder<Record<string, unknown>> =
 };
 
 /**
+ * The open containers' and supporters' visible contents, one listing per
+ * holder, for the "In the box you see …" / "On the table you see …"
+ * lines. Shared by the explicit look and the arrival description (GH
+ * #338): both paths must enumerate the same holders, scenery supporters
+ * included, so the two descriptions of a room never disagree.
+ *
+ * @param context action context (world reads)
+ * @param containers the room's direct containers (actors excluded)
+ * @param supporters the room's direct supporters (containers excluded)
+ * @returns listings for every holder with at least one visible item
+ */
+export function collectContainedListings(
+  context: ActionContext,
+  containers: IFEntity[],
+  supporters: IFEntity[]
+): ContainerContentsInfo[] {
+  const listings: ContainerContentsInfo[] = [];
+
+  for (const container of containers) {
+    // Skip if container is closed
+    if (container.hasTrait(TraitType.OPENABLE)) {
+      const { OpenableBehavior } = require('@sharpee/world-model');
+      if (!OpenableBehavior.isOpen(container)) continue;
+    }
+
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(container, context.world);
+    if (contents.length > 0) {
+      listings.push({
+        containerId: container.id,
+        containerName: container.name,
+        preposition: 'in',
+        itemIds: contents.map(e => e.id),
+        itemNames: contents.map(e => e.name)
+      });
+    }
+  }
+
+  for (const supporter of supporters) {
+    // Shared visibility read: a still-concealed item stays out of the listing
+    const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
+    if (contents.length > 0) {
+      listings.push({
+        containerId: supporter.id,
+        containerName: supporter.name,
+        preposition: 'on',
+        itemIds: contents.map(e => e.id),
+        itemNames: contents.map(e => e.name)
+      });
+    }
+  }
+
+  return listings;
+}
+
+/**
  * Determine the appropriate message ID and parameters for looking
  */
 export function determineLookingMessage(
@@ -278,7 +298,7 @@ export function determineLookingMessage(
 ): { messageId: string; params: Record<string, any> } {
   // Use visibility logic to determine what location to describe
   const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
-    context.player,
+    context.actor,
     context.world
   );
   const params: Record<string, any> = {};
@@ -338,7 +358,7 @@ export function determineLookingMessage(
 
   // Check for visible items
   const visible = context.getVisible().filter(
-    e => e.id !== location.id && e.id !== context.player.id
+    e => e.id !== location.id && e.id !== context.actor.id
   );
 
   // Check command verb for variations

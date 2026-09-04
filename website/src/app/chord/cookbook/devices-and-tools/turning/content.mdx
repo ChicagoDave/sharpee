@@ -1,7 +1,7 @@
 `turn`/`rotate`/`twist X` parse out of the box, but the platform refuses
 to invent what turning *means* (`cant_turn_that`, ADR-090). An entity
 claims the verb through the dispatch-action pattern (a `define action`
-owns the verb, a trait's `on turning it` clause carries the behavior),
+owns the verb, a trait's `on the player turning` clause carries the behavior),
 and everything else falls through to the action's own refusals, which
 render from plain short keys on this path.
 
@@ -33,7 +33,7 @@ define trait stiff-valve
     valve-already-open:
       It's already open as far as it goes.
 
-  on turning it
+  on the player turning
     it must be shut: valve-already-open
     change it to wide-open
     phrase valve-opened
@@ -60,8 +60,14 @@ create the workbench
 
   A workbench bolted to the floor.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Pump Room
+
+before the game starts
+  change the player to Alex
+end before
 ```
 
 The player sees:

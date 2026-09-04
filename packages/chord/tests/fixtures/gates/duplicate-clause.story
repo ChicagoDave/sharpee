@@ -12,11 +12,11 @@ define trait guarded
     blocked-twice:
       Really, no.
 
-  on taking it
+  on the player taking
     refuse blocked-once
   end on
 
-  on taking it while the actor holds the rope
+  on the player taking while the actor holds the rope
     refuse blocked-twice
   end on
 end trait
@@ -29,17 +29,23 @@ create the Foyer
 
   A bare room.
 
-  after entering it
+  after the player entering
     phrase ping
       Ping.
   end after
 
-  after entering it
+  after the player entering
     phrase pong
       Pong.
   end after
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Foyer
 
   You.
+
+before the game starts
+  change the player to Alex
+end before

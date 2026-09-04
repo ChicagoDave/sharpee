@@ -6,6 +6,7 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
+import { unexpectedAct } from "./scaffold-entry";
 import {
   WorldModel,
   IFEntity,
@@ -50,6 +51,7 @@ describe('modeled PC in the character-model phase', () => {
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: player.id,
+      act: unexpectedAct,
     });
   }
 
@@ -96,6 +98,7 @@ describe('modeled PC in the character-model phase', () => {
       random: {} as unknown as RandomService,
       playerLocation: room.id,
       playerId: bare.id,
+      act: unexpectedAct,
     });
 
     expect(events).toEqual([]);

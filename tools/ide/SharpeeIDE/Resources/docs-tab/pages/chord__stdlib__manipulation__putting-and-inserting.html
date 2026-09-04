@@ -29,7 +29,7 @@ create the dead letters bin
 
   A wire bin for letters no one will ever claim.
 
-  on putting it
+  on the player putting
     refuse bin-sealed
   end on
 
@@ -46,12 +46,18 @@ create the stamp
 
   A commemorative stamp, unlicked.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Sorting Office
 
 override message putting-put-in
   It slides in with a papery whisper.
-end override</code></pre>
+end override
+
+before the game starts
+  change the player to Alex
+end before</code></pre>
 <p>The player sees:</p>
 <pre><code class="language-transcript">&gt; put the letter in the pigeonhole
 (first taking the letter)
@@ -76,6 +82,6 @@ The bin is sealed under a wire grille; only the postmaster may add to it.
 You take the letter from the outgoing pigeonhole.
 
 You put the letter on the oak counter.</code></pre>
-<p>The delegation in one scene: a single <code>override message</code> under putting's <code>put_in</code> re-voices both phrasings, and the bin's single <code>on putting it</code> guard catches the <code>insert</code> command too, while <code>put … on</code> renders <code>put_on</code> untouched.</p>
+<p>The delegation in one scene: a single <code>override message</code> under putting's <code>put_in</code> re-voices both phrasings, and the bin's single <code>on the player putting</code> guard catches the <code>insert</code> command too, while <code>put … on</code> renders <code>put_on</code> untouched.</p>
 <table><thead><tr><th></th><th>putting (<code>putting-*</code>)</th><th>inserting (<code>inserting-*</code>)</th></tr></thead><tbody><tr><td>Refusals</td><td><code>no_target</code> · <code>no_destination</code> · <code>cant_put_in_itself</code> / <code>cant_put_on_itself</code> · <code>already_there</code> · <code>not_container</code> / <code>not_surface</code> · <code>container_closed</code> · <code>no_room</code> (container) · <code>no_space</code> (supporter)</td><td>the same checks, rendered under <code>inserting-&lt;key&gt;</code> when the command was an INSERT</td></tr><tr><td>Success</td><td><code>put_in</code> · <code>put_on</code> (INSERT reports through <code>put_in</code>)</td><td>— (delegates to putting)</td></tr><tr><td>Events</td><td><code>put_in</code> / <code>put_on</code> / <code>put_blocked</code></td><td><code>insert_blocked</code></td></tr></tbody></table>
-<p>Interceptors: <code>on putting it</code> / <code>on inserting it</code> on the item or the container. An INSERT consults <code>on inserting it</code> first, then (through the delegation) <code>on putting it</code> on both entities, so register a given entity under <strong>one</strong> of the two gerunds, not both, or it will run twice; <code>on putting it</code> covers both phrasings, and in <code>put all in the case</code> a container-side clause runs once per deposited item.</p>
+<p>Interceptors: <code>on the player putting</code> / <code>on the player inserting</code> on the item or the container. An INSERT consults <code>on the player inserting</code> first, then (through the delegation) <code>on the player putting</code> on both entities, so register a given entity under <strong>one</strong> of the two gerunds, not both, or it will run twice; <code>on the player putting</code> covers both phrasings, and in <code>put all in the case</code> a container-side clause runs once per deposited item.</p>

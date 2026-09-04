@@ -1,21 +1,23 @@
 /**
- * Cyclops NPC Behavior (ADR-070)
+ * Cyclops NPC Behavior (ADR-070; ADR-328 D5)
  *
- * Simple guard behavior with speech response:
+ * Simple guard behavior:
  * - Blocks northern passage in Cyclops Room
- * - Responds to "Odysseus" or "Ulysses" by fleeing in terror
+ * - Growls at the player now and then; blocks the way when they enter
  * - Combat-enabled but very difficult to kill
+ *
+ * Saying "Odysseus" or "Ulysses" makes it flee — that is the `say`
+ * action's mechanic (`actions/say`), not the behavior's.
  *
  * The Cyclops is a reference to Greek mythology where Odysseus
  * blinded the cyclops Polyphemus and escaped by clinging to sheep.
  */
 
-import { type NpcBehavior, type NpcContext, type NpcAction } from '@sharpee/stdlib';
-import { IFEntity, NpcTrait, CombatantTrait } from '@sharpee/world-model';
-import { type ISemanticEvent } from '@sharpee/core';
+import { type NpcBehavior, type NpcContext } from '@sharpee/stdlib';
+import { IFEntity, NpcTrait } from '@sharpee/world-model';
 
 import { CyclopsMessages } from './cyclops-messages';
-import { CyclopsCustomProperties, makeCyclopsFlee } from './cyclops-entity';
+import { CyclopsCustomProperties } from './cyclops-entity';
 import { definePoint } from '@sharpee/core';
 
 // ADR-293 D2: the cyclops's ambient growl roll.
@@ -48,123 +50,28 @@ export const cyclopsBehavior: NpcBehavior = {
   /**
    * Main turn logic - cyclops is a stationary guard
    */
-  onTurn(context: NpcContext): NpcAction[] {
+  onTurn(context: NpcContext): void {
     // Cyclops doesn't move or act on its own
     // It just guards the passage
     if (hasFled(context.npc)) {
-      return [];
+      return;
     }
 
     // Occasionally growl if player is visible
     if (context.playerVisible && context.random.chance(CYCLOPS_GROWL_POINT, 0.15)) {
-      return [{
-        type: 'emote',
-        messageId: CyclopsMessages.GROWLS,
-        data: { npcName: context.npc.name }
-      }];
+      context.narrate(CyclopsMessages.GROWLS, { npcName: context.npc.name });
     }
-
-    return [];
   },
 
   /**
    * When player enters the cyclops's room
    */
-  onPlayerEnters(context: NpcContext): NpcAction[] {
+  onPlayerEnters(context: NpcContext): void {
     if (hasFled(context.npc)) {
-      return [];
+      return;
     }
 
-    return [{
-      type: 'emote',
-      messageId: CyclopsMessages.BLOCKS,
-      data: { npcName: context.npc.name }
-    }];
-  },
-
-  /**
-   * When player speaks to the cyclops
-   * This is the key mechanic - saying "Odysseus" or "Ulysses" makes it flee
-   */
-  onSpokenTo(context: NpcContext, words: string): NpcAction[] {
-    if (hasFled(context.npc)) {
-      return [];
-    }
-
-    const lowerWords = words.toLowerCase();
-
-    // Check for the magic words (Greek or Latin name of Odysseus)
-    if (lowerWords.includes('odysseus') || lowerWords.includes('ulysses')) {
-      const props = getCyclopsProps(context.npc);
-      const roomId = props?.roomId ?? context.npcLocation;
-
-      // Cyclops panics and flees!
-      return [
-        {
-          type: 'emote',
-          messageId: CyclopsMessages.PANICS,
-          data: { npcName: context.npc.name }
-        },
-        {
-          type: 'emote',
-          messageId: CyclopsMessages.FLEES,
-          data: { npcName: context.npc.name }
-        },
-        {
-          type: 'custom',
-          handler: (): ISemanticEvent[] => {
-            // Make the cyclops flee and open the passage
-            const events = makeCyclopsFlee(context.world, context.npc, roomId);
-
-            // Add passage opens message
-            events.push({
-              id: `cyclops-flee-${Date.now()}`,
-              type: 'game.message',
-              entities: {},
-              data: {
-                messageId: CyclopsMessages.PASSAGE_OPENS
-              },
-              timestamp: Date.now(),
-              narrate: true
-            });
-
-            return events;
-          }
-        }
-      ];
-    }
-
-    // No response to other words
-    return [{
-      type: 'emote',
-      messageId: CyclopsMessages.IGNORES,
-      data: { npcName: context.npc.name }
-    }];
-  },
-
-  /**
-   * When cyclops is attacked
-   */
-  onAttacked(context: NpcContext, attacker: IFEntity): NpcAction[] {
-    if (hasFled(context.npc)) {
-      return [];
-    }
-
-    // Make combatant hostile (if not already)
-    const combatant = context.npc.get(CombatantTrait);
-    if (combatant) {
-      combatant.hostile = true;
-    }
-
-    // Counter-attack
-    return [
-      {
-        type: 'emote',
-        messageId: CyclopsMessages.COUNTERATTACKS,
-        data: { npcName: context.npc.name }
-      },
-      { type: 'attack', target: attacker.id }
-    ];
+    context.narrate(CyclopsMessages.BLOCKS, { npcName: context.npc.name });
   },
 
   /**

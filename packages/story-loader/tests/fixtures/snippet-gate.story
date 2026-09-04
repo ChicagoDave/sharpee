@@ -33,16 +33,22 @@ create the machine
 
   A squat machine.
 
-  on examining it
-    change it to humming
+  on the player examining
+    change the machine to humming
     phrase machine-hums
       The machine shudders into a low hum.
   end on
 
-create the player
+create Alex
+  a person
+  playable
   in the Lab
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 define phrase note, cycling while the brass bell is here
   and a brass bell gleams on a shelf

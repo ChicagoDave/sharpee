@@ -2359,7 +2359,7 @@ export declare const PROMPT_STATE_KEY = "if.prompt";
  *
  * @see ADR-163 — Channel-Service Platform — §6, §7, §14
  */
-import type { ISemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent, Presence } from '@sharpee/core';
 import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
 /**
  * Channel content types (ADR-163 §3).
@@ -2412,6 +2412,18 @@ export interface ProseEntry {
      * renderer.
      */
     readonly className?: string;
+    /**
+     * The player's presence relative to where the narrated event happened
+     * (ADR-328 D3). Mirrors `ITextBlock.presence`; absent when the block
+     * carried no tag. The default client hides `absent` entries; an
+     * omniscient client shows them labelled by `location`.
+     */
+    readonly presence?: Presence;
+    /**
+     * The id of the place the narrated event happened in (ADR-328 D3).
+     * Mirrors `ITextBlock.location`; set only alongside `presence`.
+     */
+    readonly location?: string;
 }
 /**
  * Wire value of the `preferred-layout` channel (ADR-300 D9).
@@ -3313,6 +3325,15 @@ export interface RenderPosition {
     /** Terminal punctuation owed when the enclosing sentence closes. */
     pendingTerminal?: '.' | '?' | '!';
 }
+/**
+ * The reserved param key under which the engine binds the acting entity's
+ * `NounPhrase` for a rendered message (ADR-328 D4). Reserved like `__slots__`:
+ * never an author-facing placeholder name. The locale provider reads it to
+ * render the `{You}` placeholder family in the actor's own person — the player
+ * in the narrative person, anyone else in the third — and the Assembler agrees
+ * verbs against it through the ordinary `Verb` subject path (ADR-199 §4 B).
+ */
+export declare const ACTOR_PARAM_KEY = "__actor__";
 /**
  * The context a producer realizes against: a read-only world, the bound params,
  * locale settings, and the three declared seams. The seam METHODS are part of

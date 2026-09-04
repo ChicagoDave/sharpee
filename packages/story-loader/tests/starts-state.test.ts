@@ -75,11 +75,17 @@ create the generator
 
   A generator.
 
-create the player
+create Alex
+  a person
+  playable
   starts in the Vault
   carries the brass key
 
   You.
+
+before the game starts
+  change the player to Alex
+end before
 
 create the brass key
 
@@ -116,6 +122,7 @@ describe('starts <state> through the real loader (ADR-231 D5a)', () => {
     const context: any = {
       world,
       player,
+      actor: player,
       action: unlockingAction,
       command: {
         directObject: { entity: safe },
