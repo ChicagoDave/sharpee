@@ -280,20 +280,8 @@ define phrase armchairs-awkward
   and yelling across the room at the counter.
 end phrase
 
-## ---------------------------------------------------------------------------
-## THE BACK ALLEY (`story.ni:5607`) — where the chapter ends. Entering it for
-## the first time is Chapter 3's opening beat; Bobby, the coin trick and the
-## Maiden House street are Chapter 3's. The room stands so the square's
-## south exit is real.
-## ---------------------------------------------------------------------------
-
-create the Back Alley
-  a room
-  aka alley, back alley, shortcut, short cut
-
-  A little-known shortcut between Lord's Market and the less affluent
-  neighborhoods of the city's south end. A narrow street to the southwest
-  leads to Maiden House, or you can return to the market square to the north.
+## The Back Alley — where the chapter ends — is Chapter 3's room and lives in
+## `maiden-house.chord`; the square's south exit reaches it by name.
 
 ## ===========================================================================
 ## THE KEEPERS — the clothier, Dame Sandler and Pieter, the Chorus Brothers

@@ -1,0 +1,1097 @@
+## ===========================================================================
+## BOBBY AND MAIDEN HOUSE — Book 6 (`story.ni:5603-5803`) and Book 5
+## (`story.ni:5804-6549`), Chapter 3.
+##
+## The change document ("Chapter 3 — Bobby and Maiden House", 2026-09-01)
+## authorizes Books 6 and 5 in file order, ending as Jack climbs out through
+## the privy window: the coin trick and Bobby in the Back Alley, the
+## courtyard and the door, the curfew that turns the world to night and locks
+## her in, the widows in their rooms, sleep in the dormitory, and the window.
+## Every line is Gentry's; conversations are STUBS under the standing rule.
+##
+## NIGHT. The source's curfew "sets the scene for night" (`story.ni:5937`):
+## the port carries the hour as `Toresal`, an offstage entity whose state
+## every later clause can read (`while Toresal is night`). The market's night
+## remap and Bobby's move to the night market are Chapter 4's.
+##
+## THE NEW SCENE (change document, "Pressure", David 2026-09-01): a mercenary
+## comes to the Maiden House door in the night; Theresa holds the door; he
+## leaves saying "I'll be back!"; it is what wakes Jack, and she waits Theresa
+## out before slipping from her bunk. Built as the trigger at the source's
+## waking point (the bunk passage, `story.ni:5985`) with ONE placeholder — the
+## knock, both voices, the parting word, and the wait are David's lines. The
+## wait is narrated inside the placeholder, not spent as turns (the gap the
+## change document left to this build — reported, David's to redirect).
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## Bobby's alley tree — `talk to bobby` prints the BO11 TODO, and Bobby leaves
+## as `BO10` ("I'm in") would have him leave; before that, the alley's exits
+## refuse with the BO7/"in or out" TODO. Fiona's "concerned for our safety"
+## hold (`FI3`..`FI7`) never arms, because the quips that arm it are stubbed;
+## the kitchen door is open. Dame Sandler's DS14 precedent applies.
+##
+## Not carried, noted: kissing refusals (no action); `in`/`out` as door
+## directions; the wooden door as a Chord door — it is scenery on each side
+## and the Hallway's north exit is blocked at night, because the door must
+## LOCK at runtime and only the blocked exit says so; the source's
+## `[if location is the Privy]` in the window's `search` text reads inverted
+## in the source and is carried as written; the widows' words for Jack
+## outside the trees (the curfew passage, Theresa's sneer, Fiona's "young
+## lady", Shannon's goodbye) are carried as the source has them — David's to
+## convert under §3g (comments mark each).
+## ===========================================================================
+
+## The hour. Day until the curfew; every later chapter reads it.
+
+create Toresal
+  aka the city, the hour
+  proper
+  states: day, night
+
+  The city of Toresal.
+
+## ---------------------------------------------------------------------------
+## THE BACK ALLEY (`story.ni:5607-5629`) and BOBBY (`5631-5750`)
+## ---------------------------------------------------------------------------
+
+create the Back Alley
+  a room
+  aka alley, back alley, shortcut, short cut
+  southwest to the Entrance to Maiden House
+  north is blocked while Bobby is here and Bobby is proposing: bobby-in-or-out-stub
+  southwest is blocked while Bobby is here and Bobby is proposing: bobby-in-or-out-stub
+  states: quiet, met
+
+  A little-known shortcut between Lord's Market and the less affluent
+  neighborhoods of the city's south end. A narrow street to the southwest
+  leads to Maiden House, or you can return to the market square to the north.
+
+  after the player entering while the Back Alley is quiet
+    move Bobby here
+    phrase coin-trick
+    phrase bobby-bo1-stub
+    change the Back Alley to met
+  end after
+
+## `story.ni:5627`, verbatim, the first entry.
+
+define phrase coin-trick
+  At the end of the alley, a group of young urchins — none older than their
+  eighth year — are clustered around something. As you draw closer, you see
+  Bobby crouched in the midst of them. He's holding his arm out, his fist
+  loosely clenched in front of a dirty-cheeked child of six.
+
+  'Go on,' says Bobby. 'Go on, take a look.'
+
+  The little boy, his eyes wide and solemn, reaches out and pries Bobby's
+  fingers open. His hand is empty. The little boy looks dismayed.
+
+  'Ah, but what's this?' asks Bobby. And he reaches forward and draws a copper
+  coin from behind the boy's grimy ear. There is a collective gasp and squeals
+  of delight from the rest of the children. The little boy's eyes look ready
+  to fall out of his head.
+
+  Bobby presses the coin into the little boy's hand, then passes out more
+  coins to the others. 'Here,' he says, 'keep it safe in your pocket. Spend it
+  on bread, not candy.' The children take their prizes and scatter.
+end phrase
+
+## Bobby does not perceive Jack (change document, "Who sees her"; the source
+## says so in his description). `proposing` until the tree's "I'm in";
+## `agreed` after, when he has gone to wait for her.
+
+define trait kick-bobby
+  on the player kicking
+    refuse bobby-never-hurt
+  end on
+end trait
+
+create Bobby
+  aka bobby, lad, boy, handsome lad
+  a person, proper
+  pronouns he
+  kick-bobby
+  states: proposing, agreed
+
+  Bobby is a few years older than you, a tall, broad-shouldered lad with
+  tousled black hair and a rakish grin. He's an orphan, like you, and like you
+  he makes the streets of the city his home and lives by his wits. Unlike you,
+  he doesn't have the safety net of Maiden House to fall back on, but somehow
+  he always seems to do well for himself.
+
+  You also happen to think that he's devastatingly handsome, although you
+  would never admit that under the worst torture the King's interrogators
+  could devise. He doesn't even know that you're really a girl, and you're not
+  about to tell him, because if he knew he would certainly stop inviting you
+  along on his exploits.
+
+  phrase present:
+    Bobby leans carelessly against the alley wall, watching you with a slight,
+    wry smile.
+
+  on every turn while Bobby is here and one chance in 5
+    phrase bobby-idle
+  end on
+
+  on the player attacking
+    refuse bobby-never-hurt
+  end on
+
+  on the player talking
+    phrase bobby-bo11-stub
+    change Bobby to agreed
+    move Bobby offstage
+  end on
+
+## `ATMOS_Bobby` (`story.ni:5662`), plain every-turn texture (P-9).
+
+define phrase bobby-idle, randomly
+  Bobby whistles a few notes of some popular mummer's tune.
+or
+  Bobby smirks at you in that way he has, that makes you want to smile and
+  blush and run and hide, all at the same time.
+or
+  You realize you're staring, and quickly find something else to look at.
+  Goddesses, but he's handsome.
+or
+  Bobby rakes his fingers back through his tangled hair.
+end phrase
+
+define phrase bobby-never-hurt
+  You'd never dream of hurting Bobby!
+end phrase
+
+define phrase bobby-bo1-stub
+  (TODO during play-testing — conversation BO1: Bobby stands and stretches,
+  sees Jack — "'Lo, Jack. Been looking for you. What's happening?" — the alley
+  tree, BO1-BO15, 14 quips; Bobby does NOT see through the disguise.)
+end phrase
+
+define phrase bobby-bo11-stub
+  (TODO during play-testing — conversation BO11 through BO10: Bobby's
+  proposal for tonight and Jack's "I'm in"; the stub takes the source's path —
+  Bobby goes to wait for her, and the alley's exits open.)
+end phrase
+
+define phrase bobby-in-or-out-stub
+  (TODO during play-testing — conversation BO7 / "C'mon, Jack, tell me: are
+  you in or out?" — Bobby pulls Jack back before she can leave; talk to him.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## ENTRANCE TO MAIDEN HOUSE (`story.ni:5758-5803`)
+## ---------------------------------------------------------------------------
+
+create the Entrance to Maiden House
+  a room
+  aka courtyard, entrance, maiden house entrance, dead end, cul de sac
+  south to the Hallway
+  southwest to the Behind Maiden House
+
+  The alley dead-ends in a small courtyard surrounded by old, run-down
+  buildings. You can return to the main part of the city to the northeast.
+
+create the run-down buildings
+  aka buildings, run down buildings, tenements, old buildings
+  scenery, plural
+  in the Entrance to Maiden House
+
+  The buildings in this part of town have seen better days.
+
+create the wooden door
+  aka door, battered door, front door, southern building, maiden house door
+  scenery
+  in the Entrance to Maiden House
+
+  There's nothing on the outside to distinguish Maiden House from any of the
+  other run-down tenements in this neighborhood, but you recognize it well. You
+  grew up in this place, and it is filled with memories both good and bad.
+  Well, okay, mostly bad. But you make do with what you have.
+
+  phrase present:
+    A battered wooden door provides entrance into the southern building.
+    There's no sign, but you know it well nonetheless — this is the door to
+    Maiden House, your 'home'.
+
+## ---------------------------------------------------------------------------
+## THE HALLWAY (`story.ni:5808-5952`) — Theresa, the door, the curfew
+## ---------------------------------------------------------------------------
+
+create the Hallway
+  a room
+  aka main hallway, hall, corridor, passage, passageway
+  northwest to the Dormitory
+  northeast to the Kitchen
+  southwest to the Privy
+  southeast to the Laundry
+  north is blocked while Toresal is night: door-locked-curfew
+  southwest is blocked while Widow Theresa is here: theresa-blocks-privy
+
+  The main hallway runs through the center of Maiden House, with several
+  doorways leading to rooms on either side. To the southeast and southwest are
+  the laundry and privy, respectively; to the northeast lies the kitchen; and
+  to the northwest is the dormitory where you and the other orphans sleep.
+
+  after the player entering while Toresal is day
+    phrase curfew-arrival
+    change Toresal to night
+    move Widow Theresa here
+    phrase curfew-theresa
+    phrase theresa-th1-stub
+  end after
+
+  after the player entering while the orphans is asleep
+    first time
+      phrase tiptoe
+  end after
+
+## `story.ni:5925-5934`. DAVID: "Jacqueline" and "respectable young lady" are
+## Theresa's words for Jack — under §4/§3g they convert to the boy words;
+## carried as the source has them, yours to change.
+
+define phrase curfew-arrival
+  You slip quietly through the front door, into the familiar smells of cooking
+  grease and laundry soap; the familiar sight of shabby, warped floorboards lit
+  by dim, flickering tallow lamps. It's nothing fancy, but it's home, and
+  you're familiar enough with the plight of most of Toresal's orphans to know
+  that you're lucky to have it.
+end phrase
+
+define phrase curfew-theresa
+  Widow Theresa, who probably has been lurking here all day, just waiting for
+  you to return, springs out from her corner and slams the front door shut.
+  'The evening churchbells are ringing, Jacqueline,' she tells you, her mouth
+  set in a satisfied little line. 'Well past the time when any respectable
+  young lady should be out on the streets.' She locks the door with a long
+  brass key that she wears on a ribbon around her neck.
+end phrase
+
+define phrase theresa-th1-stub
+  (TODO during play-testing — conversation TH1: "You're filthy," Theresa
+  begins — the hallway tree, TH1-11; Theresa does NOT see through the
+  disguise, and dislikes her.)
+end phrase
+
+## `story.ni:5826` — after the waking, the hallway is clear.
+
+define phrase tiptoe
+  You tiptoe out into the hallway. Widow Theresa is nowhere in sight.
+end phrase
+
+## `story.ni:6263`, `stopping`.
+
+define phrase theresa-blocks-privy, stopping
+  'Not so fast,' snaps Widow Theresa, blocking your path. 'Don't think I don't
+  know what you're up to.'
+
+  'But I really have to go to the bathroom!' you protest, knowing that it
+  would do no good even if it were true.
+
+  Theresa smirks. 'Then you can do it with the door open, while I stand and
+  watch. No? Well then, I guess you can hold it until the morning. Until then,
+  you're not going anywhere but to bed.'
+or
+  It's no use; Widow Theresa is watching you like a hawk. You'll probably have
+  to wait until everyone goes to sleep before making your escape.
+end phrase
+
+## The inside of the door (`story.ni:5790`), and its refusals.
+
+define phrase door-locked-curfew
+  The front door is closed and locked — and it will stay locked until sunup.
+  The Widows give you a good bit of latitude generally, but curfew is one of
+  the few rules they never, ever bend.
+end phrase
+
+create the front door
+  aka door, wooden door, locked door
+  scenery
+  in the Hallway
+
+  The front door is closed and locked — and it will stay locked until sunup.
+  The Widows give you a good bit of latitude generally, but curfew is one of
+  the few rules they never, ever bend.
+
+  on the player opening
+    refuse when Widow Theresa is here: theresa-door-sneer
+    refuse door-locked-curfew
+  end on
+
+  on the player unlocking
+    refuse theresa-only-key
+  end on
+
+## DAVID: "Jacqueline" is Theresa's word — §3g; carried as the source has it.
+
+define phrase theresa-door-sneer
+  'Don't trouble yourself, Jacqueline,' sneers Widow Theresa. 'It's after
+  curfew, and the door will stay locked.'
+end phrase
+
+define phrase theresa-only-key
+  It's no use. Widow Theresa keeps the only key, and in fourteen years you've
+  never managed to steal it from her.
+end phrase
+
+## Theresa does not perceive Jack (vision.md §4). Offstage until the curfew.
+
+define trait kick-theresa
+  on the player kicking
+    refuse theresa-compound
+  end on
+end trait
+
+create Widow Theresa
+  aka theresa, widow, maiden, sour-faced woman, harsh woman
+  a person, proper
+  pronouns she
+  kick-theresa
+  carries the long brass key
+  carries the ribbon
+
+  Widow Theresa is a harsh, sour-faced woman, with suspicious eyes and a
+  mannish, angular jaw that she thrusts out when she is angry, which is nearly
+  always. You gather that she was very poor before coming to Maiden House, and
+  she harbors a bitter dislike for anyone whom she perceives as unjustly
+  privileged. For reasons that persistently escape you, that includes you.
+  Staying out of her way is generally the best tactic.
+
+  phrase present:
+    Widow Theresa stalks the hallway, her eye out for trouble.
+
+  on the player attacking
+    refuse theresa-compound
+  end on
+
+  on the player talking
+    refuse theresa-th1-stub
+  end on
+
+create the long brass key
+  aka brass key, key, front door key, door key
+
+  That's the key to the front door. Widow Theresa keeps it on a ribbon around
+  her neck constantly.
+
+  on the player taking
+    refuse theresa-eye-on-you
+  end on
+
+  on the player touching
+    refuse theresa-eye-on-you
+  end on
+
+create the ribbon
+  aka long ribbon, piece of ribbon
+
+  It's just a long piece of ribbon.
+
+  on the player taking
+    refuse theresa-eye-on-you
+  end on
+
+define phrase theresa-eye-on-you
+  Widow Theresa has her eye on you constantly, and she won't let you get near
+  it.
+end phrase
+
+define phrase theresa-compound
+  As much as you'd love to, that would only compound your problems.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE DORMITORY (`story.ni:5954-6023`) — the bunk, sleep, the orphans
+## ---------------------------------------------------------------------------
+
+create the Dormitory
+  a room
+  aka dorm, dormitories, dorms, long room
+
+  A long room lined with rough bunks, where the children sleep and, if they
+  are too young to run about the city on their own, play. The main hallway
+  lies southeast.
+
+## The bunk and `sleep` share one reaction: refused until Bobby's invitation
+## is taken (`story.ni:5993`); on the curfew night, the dozing passage, then
+## the new scene at the source's waking point, then the house goes quiet.
+
+define trait bunk-sleep
+  on the player entering
+    refuse when Bobby is proposing: not-tired
+    refuse when the orphans is asleep: not-tired
+    phrase bunk-dozing
+    phrase door-knock-stub
+    move Widow Theresa offstage
+    move Widow Fiona offstage
+    move Widow Shannon offstage
+    move the dishes offstage
+    change the orphans to asleep
+  end on
+end trait
+
+## Bare `sleep` (no target): no standard action consults sleeping, so it is a
+## story action whose body IS the bunk's reaction; anywhere but the dormitory
+## it gets the bunk's own refusal.
+
+define action sleeping
+  grammar
+    sleep
+    go to sleep
+    go to bed
+    lie down
+  refuse when Bobby is proposing: not-tired
+  refuse when the player is not in the Dormitory: not-tired
+  refuse when the orphans is asleep: not-tired
+  phrase bunk-dozing
+  phrase door-knock-stub
+  move Widow Theresa offstage
+  move Widow Fiona offstage
+  move Widow Shannon offstage
+  move the dishes offstage
+  change the orphans to asleep
+
+create the bunk
+  aka bunk bed, my bunk, your bunk, bed, mattress, straw mattress, wooden frame
+  scenery
+  bunk-sleep
+  in the Dormitory
+
+  The bunks are spare and functional, straw mattresses on wooden frames. It's
+  clean straw, but that's about all that can be said for them.
+
+create the other bunks
+  aka bunks, beds, bunk beds, other beds, mattresses, frames
+  scenery, plural
+  in the Dormitory
+
+  The bunks are spare and functional, straw mattresses on wooden frames. It's
+  clean straw, but that's about all that can be said for them.
+
+define phrase not-tired
+  You're not even close to being tired. You couldn't possibly go to sleep
+  until you've seen what Bobby wanted to show you.
+end phrase
+
+## `story.ni:5985`, up to where the new scene takes over ("You snap awake"
+## is replaced by the knock).
+
+define phrase bunk-dozing
+  Grumbling, you climb into your bunk and make yourself as comfortable as you
+  can on the lumpy mattress. The other children eventually lie down and fall
+  quiet, and Widow Fiona stops in to blow out the light. Soon all you can hear
+  are the soft snores of children and the occasional creaking of a floorboard.
+  You are determined to keep your eyes open until you are sure Theresa has
+  left the hallway, but soon your muscles, tense from the day's chase, are
+  unknotting... your breath is coming slower, heavier...
+end phrase
+
+define phrase door-knock-stub
+  (TODO during play-testing — THE NEW SCENE: a knock wakes Jack. From her
+  bunk, with the children asleep around her, she hears Widow Theresa hold the
+  front door closed against a mercenary; he leaves — "I'll be back!" — and
+  Jack quietly waits for Theresa's footsteps to return to her room before she
+  slips out of bed. The knock, both voices, the parting word, and the wait
+  are yours; the wait is narrated here, not spent.)
+end phrase
+
+## The children see her (§3c, the talent-in-children rule); nothing in the
+## source's text for them outs her, and nothing here does.
+
+create the orphans
+  aka orphan, children, child, kids, kid, urchins, urchin, boys, girls, boy, girl, other orphans, younger children
+  a person, plural
+  in the Dormitory
+  states, reversible: awake, asleep
+
+  The kids are mostly younger than you. Some of them you saw earlier with
+  Bobby. They sit up in their beds, whispering secrets to each other, showing
+  off the childish treasures they found during the day: pebbles, pennies, bits
+  of string. It almost makes you wish you could be that young again. Your life
+  was so much less complicated then.
+
+  phrase detail while the orphans is asleep:
+    The other children are all sound asleep in their bunks.
+
+  on the player talking
+    refuse when the orphans is asleep: dont-wake-them
+    refuse not-in-the-mood
+  end on
+
+define phrase not-in-the-mood
+  You're not really in the mood for a chat. As you've gotten older, and the
+  other kids your age have drifted away from the orphanage, you find you have
+  little in common with the younger children.
+end phrase
+
+define phrase dont-wake-them
+  You don't want to wake them. They'll just cause a commotion, and then you'll
+  never be able to sneak out.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE KITCHEN (`story.ni:6026-6160`) — Fiona and the washing-up
+## ---------------------------------------------------------------------------
+
+create the Kitchen
+  a room
+  aka kitchens
+
+  A low-ceilinged room with a fire pit at one end for cooking, a basin at the
+  other end for washing, and rows upon rows of pots and pans hanging from the
+  rafters. The long table at the side of the room is where the children take
+  their meals. You can leave to the southwest.
+
+  after the player entering
+    first time
+      phrase fiona-fi1-stub
+  end after
+
+  after the player going while Widow Fiona is in the Kitchen
+    phrase fiona-good-night
+  end after
+
+create the long table
+  aka table
+
+  scenery
+  in the Kitchen
+
+  The table seats about twenty hungry orphans, with room at the end for two or
+  three scowling widows to enforce discipline. You rarely eat here, yourself.
+  Older kids are encouraged to scrounge around the city for their meals rather
+  than rely on the kitchen, but the Widows make sure that no one goes hungry.
+
+create the pots and pans
+  aka pans, pots, pot, pan
+  scenery, plural
+  in the Kitchen
+
+  Dozens of them, and you are familiar with each and every one. Scullery duty
+  is not exactly your favorite day of the week.
+
+  on the player taking
+    refuse pans-leave-alone
+  end on
+
+create the fire pit
+  aka fireplace, fire, logs, log, embers, ember
+  scenery
+  in the Kitchen
+
+  The logs are down to glowing embers now.
+
+create the rafters
+  aka rafter, ceiling, low ceiling, beams
+  scenery, plural
+  in the Kitchen
+
+  The rafters are made of dark, rough wood.
+
+  on the player taking
+    refuse ceiling-too-high
+  end on
+
+  on the player touching
+    refuse ceiling-too-high
+  end on
+
+create the basin
+  aka sink, washing basin, dishwater, water, greasy water
+  scenery
+  in the Kitchen
+
+  The basin is filled with grayish, greasy water. It's not clear whether it's
+  making the dishes more or less dirty.
+
+  on the player drinking
+    refuse dishwater-nasty
+  end on
+
+  on the player touching
+    refuse dishwater-nasty
+  end on
+
+## The dishes: `wash`/`dry` them and Fiona thanks you (`story.ni:6110-6118`);
+## `washing` is a story action, so the reaction rides a trait. Taking them is
+## the source's redirect to washing, carried as the same reaction.
+
+define action washing
+  grammar
+    wash the target
+    wash up the target
+    clean the target
+    scrub the target
+    wipe the target
+    dry the target
+  otherwise refuse washing-chore
+
+define trait dish-washing
+  on the player washing
+    phrase dishes-dried when the dishes is dirty
+    phrase dishes-continue when the dishes is clean
+    change the dishes to clean
+  end on
+end trait
+
+create the dishes
+  aka plates, plate, stack, stack of dishes, stack of plates, dinner dishes
+  scenery, plural
+  dish-washing
+  in the Kitchen
+  states, reversible: dirty, clean
+
+  The kids did a number on them tonight. Fiona is about halfway through the
+  stack.
+
+  on the player taking
+    phrase dishes-dried when the dishes is dirty
+    phrase dishes-continue when the dishes is clean
+    change the dishes to clean
+  end on
+
+define phrase washing-chore
+  Washing is your least favorite chore. Now would be a great time to skip it.
+end phrase
+
+define phrase dishes-dried
+  You take one of the wet dishes from the basin, dry it, and place it on the
+  'clean' stack.
+
+  Fiona smiles at you. 'Thank you, dear.'
+end phrase
+
+define phrase dishes-continue
+  You continue helping with the dishes, drying and stacking.
+end phrase
+
+define phrase pans-leave-alone
+  You're not about to cook anything and they don't need cleaning, so you might
+  as well leave the pots and pans alone.
+end phrase
+
+define phrase ceiling-too-high
+  The ceiling is low, but it's still higher than you can reach.
+end phrase
+
+define phrase dishwater-nasty
+  No thanks; that stuff looks nasty.
+end phrase
+
+## Fiona knows everything but does not perceive (vision.md §3f). `FI1` opens
+## on the first entry; the "concerned for our safety" hold (`FI3`..`FI7`) is a
+## consequence of quips that are stubbed, so it never arms here — flagged.
+
+create Widow Fiona
+  aka fiona, widow, maiden, plump woman, genial woman
+  a person, proper
+  pronouns she
+  in the Kitchen
+
+  Fiona is a plump and genial woman, always quick with a smile or a bit of
+  advice. The strange thing is, her advice always seems to make good sense,
+  though sometimes you are loathe to admit it. She likes you and occasionally
+  does you a good turn when you're in trouble with Widow Theresa.
+
+  phrase present:
+    Widow Fiona is here, washing the last of the dinner dishes.
+
+  on every turn while Widow Fiona is here and one chance in 5
+    phrase fiona-idle
+  end on
+
+  on the player talking
+    refuse fiona-fi1-stub
+  end on
+
+define phrase fiona-idle, randomly
+  Widow Fiona grunts as she leans over the basin's edge to dunk another
+  gravy-encrusted plate into the soapy water.
+or
+  Widow Fiona wipes a plate dry on her apron and stacks it on the counter.
+or
+  Widow Fiona inspects a plate closely, and scrapes at a bit of stuck food
+  with her thumbnail.
+or
+  Widow Fiona inspects a plate closely, then stacks it on the counter.
+or
+  Widow Fiona inspects a plate closely, then dunks it back into the basin.
+or
+  Widow Fiona gives you a broad, rosy-cheeked smile.
+end phrase
+
+define phrase fiona-fi1-stub
+  (TODO during play-testing — conversation FI1: Fiona at the basin greets Jack
+  — the kitchen tree, FI1-20 tonight; Fiona knows the secret and does NOT see
+  through the disguise.)
+end phrase
+
+## DAVID: "Jacqueline" is Fiona's word — §3g; carried as the source has it.
+
+define phrase fiona-good-night
+  'Good night, Widow Fiona,' you say as you leave.
+
+  'Good night, Jacqueline,' she says.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE PRIVY (`story.ni:6257-6351`) — the hole, the bench, the window
+## ---------------------------------------------------------------------------
+
+create the Privy
+  a room
+  aka narrow closet, closet, bathroom, water closet, toilet, loo, restroom
+
+  Not much more than a narrow closet, with a hole in the floor and a bench
+  over it. At least it's more private than an alley.
+
+create the hole
+  aka privy hole, hole in the floor
+
+  scenery
+  in the Privy
+
+  The less said about that, the better.
+
+  on the player entering
+    refuse hole-too-small
+  end on
+
+  on the player smelling
+    refuse hole-less-said
+  end on
+
+## Standing on the bench moves nothing in Chord (no supporter to stand on),
+## so the wobble line is the answer to climbing or entering it — as a refusal,
+## because a climb with nowhere to go fails before a positive clause can speak.
+
+create the bench
+  aka privy bench, wooden bench, seat
+  scenery
+  in the Privy
+
+  The bench allows you to use the privy without a lot of ungainly squatting.
+
+  on the player entering
+    refuse bench-wobbles
+  end on
+
+  on the player climbing
+    refuse bench-wobbles
+  end on
+
+## The window: stuck halfway, the way out. `climbed` is the chapter's end and
+## Chapter IV's trigger. `climbable, enterable` are the mechanical traits the
+## center post uses (`market-scenery.chord`): they let the standard action
+## validate so the clause's `move` can ride through. Going through it moves Jack to the spur behind the
+## house with Gentry's escape text (`story.ni:6338`, the off-the-bench
+## variant).
+
+create the privy window
+  aka window, narrow window, stuck window, pane, sill, glass, dirty glass
+  scenery, climbable, enterable
+  in the Privy
+  states: shut-in, climbed
+
+  The window has been stuck halfway open for as long as you can remember. No
+  one's ever bothered to fix it, because no matter how cold it gets, no one
+  who's been in that privy would ever consider closing the window for even an
+  instant. There's a bit less than two hand-widths of clearance between the
+  pane and the sill — just enough for you to scrape through.
+
+  on the player opening
+    refuse window-stuck
+  end on
+
+  on the player closing
+    refuse window-stuck
+  end on
+
+  on the player searching
+    refuse window-search-inside
+  end on
+
+  on the player entering
+    phrase window-escape
+    change the privy window to climbed
+    move the player to the Behind Maiden House
+  end on
+
+  on the player climbing
+    phrase window-escape
+    change the privy window to climbed
+    move the player to the Behind Maiden House
+  end on
+
+define phrase hole-too-small
+  It's way too small for you to fit into. Thank the Goddesses.
+end phrase
+
+define phrase hole-less-said
+  The less said about that, the better.
+end phrase
+
+define phrase bench-wobbles
+  You get onto the bench. It wobbles under your feet, and you grab the window
+  sill to steady yourself.
+end phrase
+
+define phrase window-stuck
+  The window is adamantly stuck halfway; the pane won't budge an inch, up or
+  down.
+end phrase
+
+## Carried as the source has it (`story.ni:6322`): its `[if location is the
+## Privy]` branch says "the privy room inside Maiden House" from INSIDE.
+
+define phrase window-search-inside
+  Through the window's grime-smeared glass, you can see the privy room inside
+  Maiden House.
+end phrase
+
+define phrase window-escape
+  You sneak a furtive glance back at the hallway, then step up onto the bench.
+  It wobbles under your feet, and you grab the window sill to steady yourself.
+
+  Then, holding your breath to keep from making a sound, you pull yourself up
+  and through. The window is at ground level outside, and you wriggle out onto
+  the slick cobblestones.
+
+  You're free! Of course, the widows will find out you're gone soon enough —
+  Maiden House is not a very big place, after all. But you've snuck out
+  before, and they know you can take care of yourself. At worst, you'll pull
+  extra laundry duty for a few days.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE LAUNDRY (`story.ni:6354-6440`) — the tub and Shannon
+## ---------------------------------------------------------------------------
+
+create the Laundry
+  a room
+  aka laundry room, washing, wash room
+
+  The air in here is filled with steam and the sharp stink of lye soap.
+  Moisture trickles down the walls, and puddles of water splash underfoot. The
+  main hallway lies northwest.
+
+  after the player entering
+    first time
+      phrase shannon-sh1-stub
+  end after
+
+  after the player going while Widow Shannon is in the Laundry
+    phrase shannon-goodbye
+  end after
+
+create the washtub
+  aka tub, wooden tub, huge tub, huge wooden washtub
+  scenery
+  in the Laundry
+
+  The wooden tub is huge enough to bathe in (and it has been used for that
+  purpose on occasion). It's slopping over with soap-clouded water, pouring
+  steam into the humid air.
+
+  on the player entering
+    refuse tub-no-bath
+  end on
+
+create the washing water
+  aka water, gray water, suds, soapy water
+  scenery
+  in the Laundry
+
+  The water is gray and coated with greasy-looking suds.
+
+  on the player taking
+    refuse water-steeping
+  end on
+
+  on the player drinking
+    refuse water-steeping
+  end on
+
+create the dirty laundry
+  aka laundry, underpants, dirty underpants, wet clothes, clothes in the tub, nappies, gray clothes
+  scenery, plural
+  in the Laundry
+
+  The clothes look as gray as the water they're floating in. It's hard to see
+  how they ever actually get clean.
+
+  on the player taking
+    refuse laundry-leave-alone
+  end on
+
+  on the player touching
+    refuse laundry-leave-alone
+  end on
+
+create the moisture
+  aka steam, puddles, puddle, damp, humid air
+  scenery
+  in the Laundry
+
+  The constant steam makes everything in this room damp.
+
+create the clothesline
+  aka line, clothes line, rope
+  scenery
+  in the Laundry
+
+  Dripping clothes hang from a simple clothesline stretched across the room.
+
+create the hanging clothes
+  aka dripping clothes, grungy clothes, clean clothes, shirts, shirt, shifts, shift, trousers, socks, sock
+  scenery, plural
+  in the Laundry
+
+  The hanging clothes still look grungy, but at least they smell a bit nicer.
+
+  on the player taking
+    refuse clothes-someone-naked
+  end on
+
+define phrase tub-no-bath
+  You don't need a bath right now. And you definitely don't need a bath in
+  that.
+end phrase
+
+define phrase water-steeping
+  The grimy underpants of two dozen hygiene-challenged urchins have been
+  steeping in that water all day.
+end phrase
+
+define phrase laundry-leave-alone
+  Better leave the clothes alone. They're in that tub for a reason.
+end phrase
+
+define phrase clothes-someone-naked
+  If you took those clothes, someone in Maiden House would end up having to go
+  naked. You can't have that on your conscience.
+end phrase
+
+## Shannon SEES her (vision.md §4): "Jacqueline" is the tell and stays.
+
+create Widow Shannon
+  aka shannon, widow, maiden, young widow, plain woman
+  a person, proper
+  pronouns she
+  in the Laundry
+
+  Shannon is the youngest of the widows in Maiden House. She is plain-looking,
+  none too bright, and, to all appearances, utterly uninterested in ever
+  remarrying, which is perhaps just as well. She devotes herself to the
+  children, particularly the toddlers, and does most of the cleaning and
+  cooking for Maiden House.
+
+  phrase present:
+    Widow Shannon is bent over the big washtub in the corner, scrubbing out
+    the toddlers' nappies.
+
+  on every turn while Widow Shannon is here and one chance in 4
+    phrase shannon-idle
+  end on
+
+  on the player talking
+    refuse shannon-sh1-stub
+  end on
+
+## `ATMOS_Shannon_Laundry` (`story.ni:6437`), plain texture (P-9).
+
+define phrase shannon-idle, randomly
+  Widow Shannon picks up a thick wooden stick and jabs at the clothes soaking
+  in the tub, stirring them about.
+or
+  Widow Shannon steps back from the tub for a moment, wiping the sweat off her
+  brow.
+or
+  Widow Shannon pulls a shirt from the grayish water, wrings it out, and hangs
+  it up on the line behind her.
+or
+  Widow Shannon pulls a shift from the grayish water, wrings it out, and hangs
+  it up on the line behind her.
+or
+  Widow Shannon pulls a pair of trousers from the grayish water, wrings it
+  out, and hangs it up on the line behind her.
+or
+  Widow Shannon pulls a diaper from the grayish water, wrings it out, and
+  hangs it up on the line behind her.
+or
+  Widow Shannon pulls a sock from the grayish water, wrings it out, and hangs
+  it up on the line behind her.
+or
+  Widow Shannon gives you a friendly nod.
+end phrase
+
+define phrase shannon-sh1-stub
+  (TODO during play-testing — conversation SH1: Shannon at the tub, "Miss
+  Jacqueline" — the laundry tree, SH1-12 tonight; Shannon SEES her.)
+end phrase
+
+define phrase shannon-goodbye
+  'See you later, Widow Shannon,' you say as you leave.
+
+  Widow Shannon smiles at you over her shoulder. 'Take care, Jacqueline.'
+end phrase
+
+## ---------------------------------------------------------------------------
+## BEHIND MAIDEN HOUSE (`story.ni:6521-6549`)
+## ---------------------------------------------------------------------------
+
+create the Behind Maiden House
+  a room
+  aka spur, tiny spur, alley behind maiden house, back of maiden house
+  north is blocked: park-wall-too-high
+  up is blocked: park-wall-too-high
+  east is blocked: no-need-to-sneak-in
+
+  This tiny spur of an alleyway runs between the back of Maiden House and the
+  high stone wall surrounding the park. You can make your way around to the
+  Maiden House Entrance to the northeast.
+
+create the stone wall
+  aka wall, mortar wall, high wall, park wall, flagstones
+  scenery
+  in the Behind Maiden House
+
+  The stone wall is about ten feet high.
+
+  on the player climbing
+    refuse park-wall-too-high
+  end on
+
+create the back window
+  aka privy window, window, grimy window, dirty glass, ground-level window
+  scenery
+  in the Behind Maiden House
+
+  The privy window is at ground level on the outside. Through the dirty glass,
+  you can look down into the hole in the bathroom floor. Not that you'd want
+  to.
+
+  on the player entering
+    refuse no-need-to-sneak-in
+  end on
+
+  on the player climbing
+    refuse no-need-to-sneak-in
+  end on
+
+  on the player searching
+    refuse window-search-outside
+  end on
+
+define phrase park-wall-too-high
+  The wall is too high, and the stones are too smooth to get a fingerhold on.
+end phrase
+
+define phrase no-need-to-sneak-in
+  Although you've done so many times in the past, at the moment there's no
+  need to sneak into Maiden House.
+end phrase
+
+define phrase window-search-outside
+  Through the window's grime-smeared glass, you can see a tiny alleyway behind
+  Maiden House.
+end phrase

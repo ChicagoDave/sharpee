@@ -104,6 +104,8 @@ define chapters
     begins when the player visits Commerce Street for the first time
   bobby - Chapter III - Bobby and Maiden House
     begins when the player visits the Back Alley for the first time
+  keep - Chapter IV - The Night Journey to Lord's Keep
+    begins when the privy window becomes climbed
 end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
@@ -122,6 +124,11 @@ import "grubbers-market"
 
 import "commerce-street"
 import "lords-market"
+
+## Chapter 3 — Bobby in the Back Alley, then the night at Maiden House (Books
+## 6 and 5), ending at the privy window.
+
+import "maiden-house"
 
 ## ---------------------------------------------------------------------------
 ## THE PLAYER
