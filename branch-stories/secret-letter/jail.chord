@@ -1,0 +1,1931 @@
+## ===========================================================================
+## JAIL AND THE SEWERS — Book 6 (`story.ni:7597-8545`) and Book 7
+## (`story.ni:8546-8742`), Chapter 5.
+##
+## The change document ("Chapter 5 — Jail and the Sewers", 2026-09-01)
+## authorizes both books together, from the sack coming off in the cell to
+## daylight on Commerce Street: the waking and the confiscation, Bobby's
+## voice through the wall, Jacobs and the wire, the lock picked through the
+## window, the jailhouse and its three doors, Jacobs's offer, Olmer and
+## Darrens, the north door, the drain room and the grate, the drop, the
+## sewer and its painted glyphs, the ladder and the morning. Every line is
+## Gentry's; conversations are STUBS under the standing rule.
+##
+## THE RULINGS (change document, Chapter 5):
+##   * PRESSURE — "the guards come back", with teeth. A clock on the player
+##     (`guards-return`, forty turns) starts as Jacobs stirs (JA2, the turn
+##     after BO22) and stops when she drops into the sewer; if it runs out
+##     while she is anywhere in the jail — the drain room included — it is
+##     the capture ending (JA22's room: a dozen Lord's Guard and Rudup), as
+##     ONE placeholder death text. MEASURED AND REPORTED, not decided: the
+##     shortest path from JA2 to the drop is twelve turns (talk, three at
+##     the lock, the straw, the door, out, the wire, the north door, the
+##     alcove, the grate, the hole); forty is three times that. Probes that
+##     poked at everything on the way died at twenty and at thirty — the
+##     number is David's to tune. A one-in-six warning slot rides the clock
+##     (`meanwhile`) — a placeholder for whatever warns her, if anything.
+##   * WHO SEES HER — Bobby and Jacobs do not ("Jack", "kid", "runt"
+##     carry); Rudup and OLMER see — every "girl", "miss", "young lady" of
+##     Olmer's carries as a tell, verbatim.
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## Bobby's voice runs on a timer as the source's beats do (BO16, then BO18,
+## BO20, BO22 one per turn), each a TODO; Jacobs's JA2 fires a turn after
+## BO22; `talk to jacobs` then prints the JA3-JA7 TODO and starts his
+## attempt at the lock (three turns, the muttering on the second) which
+## ends with JA8's consequence — the wire in the straw; in the jailhouse
+## JA16 fires on both being there, JA19 two turns on (Olmer's interjection
+## inside it), OL1 a turn after that, JA21 two turns after JA19 or on `talk
+## to` (the stub takes JA20 "No, thanks" — JA22, going with him, is not
+## reachable through a stub; its death text is kept in a comment below for
+## the rewrite) or when she starts on the north door with him there; Olmer's
+## OL9/OL10 TODOs name the two of them (OL5's side effect) but do NOT unlock
+## the north door for her — OL4's side effect is the player's own `unlock`,
+## which the clock makes a real choice.
+##
+## THE SEWER PUZZLE. The source shuffles four colours and eight symbols over
+## four glyphs after every move and keeps one "magic" colour; Chord draws
+## nothing but chances and moves nobody but the player, so: the magic colour
+## is drawn once at the drop (four states on `the magic color`), and the
+## glyph layout is one of FOUR ROTATIONS of a fixed colour cycle (`the
+## glyphs`: layout-a puts red north, blue east, green south, yellow west;
+## each later layout turns it a quarter clockwise), redrawn on each correct
+## move. The marked tunnel is where the magic colour sits. Symbols ride the
+## colours (red square, blue diamond, green circle, yellow triangle). Exits
+## cannot change target at runtime and `is deadly while` is not wired, so
+## the two moves are geometry: the Sewer's four exits lead to four TUNNEL
+## rooms (the first move), whose four exits lead to four BEND rooms (the
+## second); each arrival checks its own direction against the marked one —
+## wrong is the source's death text, right redraws the glyphs (first move)
+## or reaches the Access Tunnel (second). The rooms all carry the sewer's
+## text; the titles name the tunnel taken. WITHOUT OLMER at the drop the
+## source draws nothing — the defaults leave every glyph red and the magic
+## glyph the north one, so north twice wins by accident. Carried as the
+## source has it: no draw without him, `layout-a` and `red` stand, north
+## twice. REPORTED (change document gap 3), not decided.
+##
+## WHAT SHE LOSES (gap 4, reported): the confiscation removes everything but
+## the baggy clothes — in the port that is the old gray cloak, the woolen
+## cap, the boots, the cloth satchel with whatever it holds (Teisha's dress
+## and hat, the day's takings), and the apple or the necklace if she still
+## has them in hand. Nothing returns; nothing later needs them.
+##
+## NAMES. Chord cannot rename an entity, so "hulking shape" is Jacobs from
+## the first turn (aliases carry the source's words), and the platform's
+## "You can see Jacobs here." names him before JA2 does; the bald-headed man
+## and the skinny man are Olmer and Darrens the same way. The source's
+## initial-appearance lines ride the rooms as gated markers (as Chapter 4).
+##
+## Not carried, noted: the cell doors' `tmpdirection` name games (three
+## named doors instead); `look through <door>` from the jailhouse lists the
+## occupants by state rather than by counting; `talk to bobby` through the
+## wall (Bobby is offstage — the beats are timed); JA22's death (no stub
+## reaches it; text kept below); `follow <glyph>` (a topic slot cannot name
+## a glyph); the exits report in the drain room; `xyzzy`; `kiss`; the
+## north door stays shut after the drunks leave it (nobody goes back in).
+## Glue text of mine is marked GLUE.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE CLOCKS
+## ---------------------------------------------------------------------------
+
+## Bobby wakes two turns after Jack (`story.ni:7614`); his three later beats
+## are the timer's own turns (`story.ni:7919-7922`); JA2 rides its expiry.
+
+define timer bobby-wakes for the player
+  stirring
+end timer
+
+define timer bobby-voice for the player
+  whispering
+    (TODO during play-testing — conversation BO17-BO18: "'Bobby? Is that
+    you?'" — "The voice chuckles, then coughs weakly. 'I'm in the cell next
+    to yours, Jack. I'm locked in, too. Sorry.'" — "'I'm going to get us out
+    of this mess, don't worry. But in case I'm not able to meet up with you
+    after, you need to listen carefully.'" Bobby does NOT see through the
+    disguise.)
+  warning
+    (TODO during play-testing — conversation BO19-BO20: "'Jack, listen to
+    me. Go to Fossville's estate in the city. Use the rooftops. There's an
+    alley behind the shops on Commerce Street where you can climb up.'" —
+    "'He has secrets that you need to know. Secrets about your father.'" —
+    "'Look for a letter-'" — a door slams open, guards move past, a cudgel
+    against the bars.)
+  dragged
+    (TODO during play-testing — conversation BO21-BO22: "'Bobby, what's
+    happening?'" — the rattling, the hinges, the thuds; the guards drag
+    Bobby past the window, bruised, bloody, smiling — "'Fossville, Jack!
+    The rooftops! Look for the letter!'" — a door slams one final time, and
+    silence.)
+end timer
+
+## Jacobs at the lock: three turns, the muttering on the second
+## (`story.ni:8097-8103`, `8238-8248`).
+
+define timer lockpicking for Jacobs
+  squinting
+  straining
+    Jacobs' face reddens with effort. 'C'mon... c'mon...' he mutters.
+end timer
+
+## Jacobs leaves the cell a turn after she opens it (`story.ni:8283`).
+
+define timer leaving for Jacobs
+end timer
+
+## The deception: JA19 two turns after JA16, JA21 two after that; Olmer a
+## turn after JA19 (`story.ni:8194-8215`).
+
+define timer offering for Jacobs
+  considering
+  weighing
+end timer
+
+define timer withdrawing for Jacobs
+  waiting
+  losing-patience
+end timer
+
+define timer pleading for Olmer
+end timer
+
+## THE GUARDS COME BACK (change document, "Pressure" — David: "B", with
+## teeth). Twenty turns from the beating.
+
+define timer guards-return for the player
+  mark-one
+  mark-two
+  mark-three
+  mark-four
+  mark-five
+  mark-six
+  mark-seven
+  mark-eight
+  mark-nine
+  mark-ten
+  mark-eleven
+  mark-twelve
+  mark-thirteen
+  mark-fourteen
+  mark-fifteen
+  mark-sixteen
+  mark-seventeen
+  mark-eighteen
+  mark-nineteen
+  mark-twenty
+  mark-twenty-one
+  mark-twenty-two
+  mark-twenty-three
+  mark-twenty-four
+  mark-twenty-five
+  mark-twenty-six
+  mark-twenty-seven
+  mark-twenty-eight
+  mark-twenty-nine
+  mark-thirty
+  mark-thirty-one
+  mark-thirty-two
+  mark-thirty-three
+  mark-thirty-four
+  mark-thirty-five
+  mark-thirty-six
+  mark-thirty-seven
+  mark-thirty-eight
+  mark-thirty-nine
+  mark-forty
+  meanwhile, one chance in 6
+    phrase guards-warning-stub
+end timer
+
+define phrase guards-warning-stub
+  (TODO during play-testing — a warning, if any: something of the guards
+  who took Bobby, heard from the jail — David's, or nothing at all.)
+end phrase
+
+define phrase guards-return-stub
+  (TODO during play-testing — the guards come back for her while she is
+  still in the jail: JA22's room — a dozen men of the Lord's Guard in a
+  semicircle, and in the middle the man in the red robes. "Little mouse...
+  always finding some new hole to crawl through." This time, you do not
+  escape. David's lines.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE REGIONS
+## ---------------------------------------------------------------------------
+
+create the Prison
+  a region
+  containing the Jail Cell, the Jailhouse, the North Cell, the West Cell, the Drain Room
+
+create the Sewers
+  a region
+  containing the Sewer, the North Tunnel, the East Tunnel, the South Tunnel, the West Tunnel, the North Bend, the East Bend, the South Bend, the West Bend, the Access Tunnel
+
+## ---------------------------------------------------------------------------
+## OUR CELL (`story.ni:7810-7862`) — the waking, the blankets, the straw
+## ---------------------------------------------------------------------------
+
+## The waking (`story.ni:7855`) is the room's first-time text; the
+## confiscation (`story.ni:7614-7617`) runs on the arrival.
+
+create the Jail Cell
+  a room
+  aka cell, holding cell, jail, prison, dank cell, cramped cell
+  north to the Jailhouse through the south cell door
+
+  first time
+    Slowly the world comes back to you. You feel something cold and hard
+    against your cheek; something gritty and scratchy under your hand. You
+    hear footsteps on stone, muttering voices that fade in and out. Someone
+    laughs, a raw, cruel sound. A loud squeak, and an echoing, metallic
+    crash. The footsteps fade away.
+
+    You open your eyes. It's still dark.
+
+    No, it's just dim. Dim light trickles in from somewhere above you.
+
+    You sit up, and a tender spot on the back of your head throbs. Red and
+    purple splotches bloom in front of your eyes, then fade away. After a
+    moment or two, your head clears, and you can see where you are.
+
+    A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets
+    and a few lumps of filthy straw litter the floor. The door is to the
+    north. {jacobs-squats}
+
+  A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets and
+  a few lumps of filthy straw litter the floor. The door is to the north.
+  {jacobs-squats}{jacobs-stands}{jacobs-sulks}
+
+  after the player entering
+    first time
+      remove the old gray cloak
+      remove the woolen cap
+      remove the boots
+      remove the cloth satchel
+      remove the apple when the player has the apple
+      remove the necklace when the player has the necklace
+      start the player's bobby-wakes
+  end after
+
+## Jacobs's initial appearance (`story.ni:8035-8042`), by his state.
+
+define phrase jacobs-squats, stopping while Jacobs is in the Jail Cell and Jacobs is lurking
+  A hulking shape squats in the corner, staring at you with bloodshot eyes.
+end phrase
+
+define phrase jacobs-stands, stopping while Jacobs is in the Jail Cell and (Jacobs is introduced or Jacobs is straining)
+  Jacobs stands nearby.
+end phrase
+
+define phrase jacobs-sulks, stopping while Jacobs is in the Jail Cell and Jacobs is sulking
+  Jacobs sits in the corner, apparently in a deep sulk.
+end phrase
+
+define phrase jacobs-stands-here, stopping while Jacobs is here
+  Jacobs stands nearby.
+end phrase
+
+create the burlap blankets
+  aka blankets, blanket, ragged blankets, threadbare blankets, holes, stains
+  scenery, plural
+  in the Jail Cell
+
+  The blankets are threadbare, filled with holes, and stained with
+  Goddesses-know-what. You can hardly believe that anyone would actually
+  cover themselves with something like this.
+
+  on the player smelling
+    refuse blankets-smell-from-here
+  end on
+
+  on the player taking
+    refuse leave-the-blankets
+  end on
+
+  on the player touching
+    refuse leave-the-blankets
+  end on
+
+  on the player searching
+    refuse leave-the-blankets
+  end on
+
+  on the player wearing
+    refuse leave-the-blankets
+  end on
+
+define phrase leave-the-blankets
+  You'd just as soon leave the blankets where they are.
+end phrase
+
+define phrase blankets-smell-from-here
+  You can smell the blankets just fine from where you're standing.
+end phrase
+
+define phrase cell-smells-terrible
+  It smells terrible in here.
+end phrase
+
+## The straw hides the wire once Jacobs throws it (`story.ni:8099-8103`,
+## `7837-7851`); `poke around in` is searching.
+
+extend action searching
+  grammar
+    poke around in the target
+    poke around the target
+    poke through the target
+    look through the target
+    peer through the target
+
+define trait straw-lift
+  on the player lifting
+    refuse when the straw is bare: straw-disgusting
+    move the piece of wire to the player
+    change the straw to bare
+    phrase wire-found
+  end on
+end trait
+
+create the straw
+  aka filthy straw, damp straw, pile of straw, piles of straw, lump of straw, lumps of straw, nasty stuff, filth
+  scenery
+  straw-lift
+  in the Jail Cell
+  states, reversible: bare, hiding
+
+  From the smell and the look of it, this straw is all prisoners ever get in
+  the way of a toilet.
+
+  phrase detail while the straw is hiding:
+    You can't see the thing that Jacobs threw from here: you'll have to poke
+    around in the nasty stuff to find it.
+
+  on the player smelling
+    refuse straw-smell-from-here
+  end on
+
+  on the player searching
+    refuse when the straw is bare: straw-disgusting
+    move the piece of wire to the player
+    change the straw to bare
+    phrase wire-found
+  end on
+
+  on the player taking
+    refuse when the straw is bare: straw-disgusting
+    move the piece of wire to the player
+    change the straw to bare
+    phrase wire-found
+  end on
+
+  on the player touching
+    refuse straw-disgusting
+  end on
+
+define phrase straw-smell-from-here
+  You can smell it just fine from where you're standing.
+end phrase
+
+define phrase straw-disgusting
+  The straw is disgusting; you'd rather not even get near it.
+end phrase
+
+define phrase wire-found
+  Holding your breath, you gingerly poke around in the damp, filthy straw,
+  and eventually you find the thing that Jacobs threw in there: it's a short
+  piece of stiff wire.
+end phrase
+
+## `story.ni:8254` — the wire, offstage until JA8.
+
+create the piece of wire
+  aka wire, lockpick, lock pick, pick, bit of wire, stiff wire, short wire
+
+  It's a short bit of stiff wire, like the ones you've sometimes seen Bobby
+  carrying around.
+
+## ---------------------------------------------------------------------------
+## THE THREE DOORS (`story.ni:7662-7808`)
+## ---------------------------------------------------------------------------
+
+## "reach" (`story.ni:7737-7757`) — the source's mistakes.
+
+define action reaching
+  grammar
+    reach
+    reach the target
+    reach in the target
+    reach into the target
+    reach through the target
+    reach between the target
+    reach for the target
+    put hand through the target
+    put arm through the target
+  the target is a topic
+  refuse when the player is in the Jail Cell: unlock-door-hint
+  otherwise refuse no-reaching
+
+define phrase no-reaching
+  You don't need to 'reach' anything in this game. If you want to see what's
+  inside something, just LOOK IN it.
+end phrase
+
+define phrase unlock-door-hint
+  If you want to try to unlock the door, just type UNLOCK DOOR.
+end phrase
+
+## Looking through a door (`story.ni:7690-7727`): from a cell, the
+## jailhouse; from the jailhouse, the cell and who is in it.
+
+create the south cell door
+  aka door, cell door, south door, viewing window, window, tiny window, bars, iron bars, stout door, wooden door
+  a door, lockable with the piece of wire
+
+  The south cell door is made of stout wood reinforced with bands of iron. A
+  tiny viewing window in the upper half of the door allows guards to look in
+  and prisoners to look out.
+
+  on the player searching
+    refuse when Jacobs is straining: jacobs-blocks-the-view
+    refuse when the player is in the Jail Cell: peer-out-at-jailhouse
+    refuse when Jacobs is in the Jail Cell: peer-in-at-jacobs
+    refuse peer-in-at-empty-cell
+  end on
+
+  after the player unlocking
+    phrase lock-picked-through-the-window
+    move the piece of wire to the Jailhouse
+    Jacobs opens the south cell door
+    start Jacobs's leaving
+  end after
+
+## The door carries Olmer's and Darrens's names while they are behind it,
+## so `talk to olmer` from the jailhouse reaches the cell tree's stub — the
+## source puts the two in scope by rule; Chord has no scope statement.
+
+create the north cell door
+  aka door, cell door, north door, north viewing window, north window, north bars, olmer, bald headed man, bald-headed man, darrens, skinny man, prisoners, men
+  a door, lockable with the piece of wire
+
+  The north cell door is made of stout wood reinforced with bands of iron. A
+  tiny viewing window in the upper half of the door allows guards to look in
+  and prisoners to look out.
+
+  on the player searching
+    refuse when Olmer is in the North Cell and Olmer is nameless: peer-in-at-two-men
+    refuse when Olmer is in the North Cell: peer-in-at-olmer-and-darrens
+    refuse peer-in-at-empty-cell
+  end on
+
+  on the player talking
+    refuse when Olmer is in the North Cell: olmer-ol9-stub
+    refuse no-one-in-that-cell
+  end on
+
+  on the player unlocking while Jacobs is here
+    phrase jacobs-ja21-stub
+    move Jacobs offstage
+    change Jacobs to gone
+  end on
+
+  after the player unlocking
+    phrase north-door-picked
+    phrase olmer-thanks-nameless when Olmer is nameless
+    phrase olmer-thanks-named when Olmer is named
+    phrase olmer-leads-southwest
+    change Olmer to named
+    move Olmer to the Drain Room
+    move Darrens to the Drain Room
+  end after
+
+create the west cell door
+  aka door, cell door, west door, west viewing window, west window, west bars
+  a door, lockable with the piece of wire
+
+  The west cell door is made of stout wood reinforced with bands of iron. A
+  tiny viewing window in the upper half of the door allows guards to look in
+  and prisoners to look out.
+
+  on the player searching
+    refuse peer-in-at-empty-cell
+  end on
+
+## GLUE — the door answering the drunks' names once they have gone.
+
+define phrase no-one-in-that-cell
+  There's no one in that cell now.
+end phrase
+
+define phrase peer-out-at-jailhouse
+  You peer through the closely spaced bars. You can see the jailhouse main
+  room on the other side.
+end phrase
+
+define phrase peer-in-at-jacobs
+  You peer through the closely spaced bars. You can see a cramped, filthy
+  cell on the other side. Jacobs is inside.
+end phrase
+
+define phrase peer-in-at-two-men
+  You peer through the closely spaced bars. You can see a cramped, filthy
+  cell on the other side. A bald-headed man and a skinny man are inside.
+end phrase
+
+define phrase peer-in-at-olmer-and-darrens
+  You peer through the closely spaced bars. You can see a cramped, filthy
+  cell on the other side. Olmer and Darrens are inside.
+end phrase
+
+define phrase peer-in-at-empty-cell
+  You peer through the closely spaced bars. You can see a cramped, filthy
+  cell on the other side.
+end phrase
+
+define phrase jacobs-blocks-the-view
+  You can't; Jacobs is blocking your view.
+end phrase
+
+## `story.ni:8276`, verbatim.
+
+define phrase lock-picked-through-the-window
+  You slip your arm through the bars and reach down for the lock. It's a
+  stretch — you have to get up on your tip-toes and strain your shoulder
+  painfully against the little window — but soon you feel the metal of the
+  lockplate, and your fingers find the tiny, sharp-edged hole in the middle.
+  You jam the end of the lockpick in and start wiggling it around. Almost
+  immediately, you realize that this is not going to work. The angle is too
+  awkward, and you can't see what you're doing, and you can't feel the
+  tumblers the way Bobby showed you when you practiced on the front door of
+  Maiden House...
+
+  Then you feel the wire bump against something inside the lock. You manage
+  to lever the end of the wire under something and push... you feel it start
+  to give... you push a little harder, and it starts to pivot... you push
+  harder, and it starts to slip off the end of your pick...
+
+  And then there is a snap, and the pick jumps out of your fingers and
+  tumbles to the ground outside the cell door.
+
+  Jacobs suddenly stands up. He walks over, puts his hand on the door... and
+  pushes it open.
+
+  'Well,' he says, looking you over with a sly expression, 'you are a
+  valuable runt, after all.'
+end phrase
+
+## `story.ni:8424`, verbatim, the named and unnamed halves.
+
+define phrase north-door-picked
+  Picking a lock is much easier when you're standing on the ground and can
+  see what you're doing. Twenty seconds, and you have the cell door open.
+end phrase
+
+define phrase olmer-thanks-nameless
+  'Oh, thank you, miss, thank you kindly. Goddesses' blessings upon you.
+  Allow me to make introductions,' the man wheezes. 'I am called Olmer, and
+  this is my associate, Darrens.' The skinny man standing behind him smiles
+  and nods enthusiastically.
+end phrase
+
+define phrase olmer-thanks-named
+  'Oh, thank you, miss, thank you kindly. Goddesses' blessings upon you.'
+end phrase
+
+define phrase olmer-leads-southwest
+  'Now,' says Olmer, 'if you will follow us, we will make our escape.'
+
+  Olmer and Darrens go southwest.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE JAILHOUSE (`story.ni:7603-7635`, `7797`)
+## ---------------------------------------------------------------------------
+
+create the Jailhouse
+  a room
+  aka main room, jailhouse main room, guard room, crude room
+  southwest to the Drain Room
+  east is blocked: no-way-out-alone
+  south is blocked: not-going-back-in
+  north is blocked: not-going-back-in
+  west is blocked: not-going-back-in
+  states: quiet, deceiving
+
+  The jailhouse is hardly more comfortable than the cells themselves, just a
+  crude, small room of unfinished stone, with a wooden bench and table for
+  the guards. Cells are south, west, and north. A foul smell comes from a
+  tiny alcove to the southwest, and a passageway to the east leads out.
+  {jacobs-stands-here}
+
+  on every turn while the player is in the Jailhouse and Jacobs is here and Jacobs is freed and the Jailhouse is quiet
+    phrase jacobs-ja16-stub
+    start Jacobs's offering
+    change the Jailhouse to deceiving
+  end on
+
+  after the player entering while Olmer is in the North Cell and the Drain Room is explored
+    phrase olmer-ol2-stub
+  end after
+
+define phrase no-way-out-alone
+  There are more guards out there, and you don't know the way. You'll never
+  escape from this jail all by yourself.
+end phrase
+
+define phrase not-going-back-in, stopping
+  It's such a huge relief just to be out of a jail cell; you definitely have
+  no desire to get back into one.
+or
+  No, you'd rather stay out of jail cells for a while.
+or
+  You're not going back in there.
+end phrase
+
+create the jailhouse table
+  aka table, wooden table, furniture, rough table, crude table
+  scenery
+  in the Jailhouse
+
+  The furniture is rough and crudely carved.
+
+create the jailhouse bench
+  aka bench, wooden bench, rough bench, crude bench
+  scenery, enterable
+  in the Jailhouse
+
+  The furniture is rough and crudely carved.
+
+  on the player entering
+    refuse no-time-to-rest
+  end on
+
+define phrase no-time-to-rest
+  You don't have time to rest — you need to get out of here!
+end phrase
+
+create the east passage
+  aka passage, passageway, way out, other areas, rest of the prison
+  scenery
+  in the Jailhouse
+
+  The east passage leads out to other areas of the prison... and hopefully
+  to a way out.
+
+  on the player entering
+    refuse no-way-out-alone
+  end on
+
+## The other two cells, seen only through their doors.
+
+create the North Cell
+  a room
+  south to the Jailhouse through the north cell door
+
+  A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets and
+  a few lumps of filthy straw litter the floor. The door is to the south.
+
+create the West Cell
+  a room
+  east to the Jailhouse through the west cell door
+
+  A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets and
+  a few lumps of filthy straw litter the floor. The door is to the east.
+
+## ---------------------------------------------------------------------------
+## JACOBS (`story.ni:8021-8452`)
+## ---------------------------------------------------------------------------
+
+## Jacobs's turns: `lurking` (the shape in the corner), `introduced` (JA2),
+## `straining` (at the lock), `sulking` (JA8), `freed` (out of the cell),
+## `gone` (JA21, or the drain room). He does not perceive Jack (change
+## document, "Who sees her").
+
+define trait kick-jacobs
+  on the player kicking
+    refuse too-scary-to-mess-with
+  end on
+end trait
+
+create Jacobs
+  aka hulking shape, shape, figure, man, prisoner, huge brute, brute, sneering man, bloodshot eyes, eyes
+  a person, proper
+  pronouns he
+  kick-jacobs
+  in the Jail Cell
+  states: lurking, introduced, straining, sulking, freed, gone
+
+  Jacobs is a huge brute, with a face that looks young, but already grizzled
+  and rough beyond his years. His wide, watery eyes jitter constantly. His
+  lip is curled in a constant half-sneer, as though his confinement in jail
+  is merely a passing diversion for him. His clothes, though stained and
+  rumpled, seem too rich to belong to a common thug.
+
+  when the player's bobby-wakes expires
+    phrase bobby-bo16-stub
+    start the player's bobby-voice
+  end when
+
+  when the player's bobby-voice expires
+    start the player's guards-return
+    phrase jacobs-ja2-stub
+    change Jacobs to introduced when Jacobs is lurking
+  end when
+
+  when lockpicking expires
+    phrase jacobs-ja8-stub
+    move the piece of wire offstage
+    change the straw to hiding
+    change Jacobs to sulking
+  end when
+
+  when leaving expires
+    Jacobs goes north
+    change Jacobs to freed
+  end when
+
+  when offering expires, while Jacobs is here
+    phrase jacobs-ja19-stub
+    start Olmer's pleading
+    start withdrawing
+  end when
+
+  when withdrawing expires, while Jacobs is here
+    phrase jacobs-ja21-stub
+    move Jacobs offstage
+    change Jacobs to gone
+  end when
+
+  when the player's guards-return expires, while the player is in the Prison
+    kill the player guards-return-stub
+  end when
+
+  on the player talking
+    refuse when Jacobs is straining: jacobs-ignores-you
+    phrase jacobs-ja20-stub when Jacobs is freed
+    phrase jacobs-ja21-stub when Jacobs is freed
+    move Jacobs offstage when Jacobs is freed
+    change Jacobs to gone when Jacobs is freed
+    phrase jacobs-idle-stub when Jacobs is sulking
+    phrase jacobs-ja3-stub when Jacobs is introduced
+    start lockpicking when Jacobs is introduced
+    change Jacobs to straining when Jacobs is introduced
+    phrase jacobs-ja1 when Jacobs is lurking
+  end on
+
+  on the player attacking
+    refuse too-scary-to-mess-with
+  end on
+
+  on the player touching
+    refuse too-scary-to-mess-with
+  end on
+
+  on the player taking
+    refuse too-scary-to-mess-with
+  end on
+
+  on the player pushing
+    refuse too-scary-to-mess-with
+  end on
+
+  on the player giving
+    refuse jacobs-rolls-his-eyes
+  end on
+
+  on the player showing
+    refuse jacobs-rolls-his-eyes
+  end on
+
+define phrase too-scary-to-mess-with
+  He looks way too scary to mess with.
+end phrase
+
+define phrase jacobs-ignores-you
+  Jacobs ignores you completely.
+end phrase
+
+define phrase jacobs-rolls-his-eyes
+  Jacobs rolls his eyes. 'I don't want it, you dim. It's no use to me in
+  here.'
+end phrase
+
+## JA1 (`story.ni:8056`), verbatim — the only Jacobs line spoken by the
+## player's own approach before JA2.
+
+define phrase jacobs-ja1
+  He doesn't answer you at all; he just keeps staring with those creepy,
+  bloodshot eyes.
+end phrase
+
+define phrase bobby-bo16-stub
+  (TODO during play-testing — conversation BO16: "Suddenly you hear a voice
+  whisper your name. 'Jack...' At first you think it's the creepy guy in the
+  corner, but he hasn't moved. You're still staring at him when the whisper
+  comes again, louder this time: 'Jack...' It's coming from somewhere
+  outside the cell." — the jail tree, BO16-BO22, one beat a turn; Bobby does
+  NOT see through the disguise.)
+end phrase
+
+define phrase jacobs-ja2-stub
+  (TODO during play-testing — conversation JA2: "Suddenly the shadowy man in
+  the corner puts his huge, thick-fingered hands on his knees and pushes
+  himself up. 'Well,' he grunts in a thick, rough voice, 'now that the
+  guards are busy takin' care of him...' the man stretches, glances at you,
+  and smiles. It is not a friendly smile. 'Hi, kid. Name's Jacobs.'" — talk
+  to him. Jacobs does NOT see through the disguise; "kid" and "runt" are his
+  words for her.)
+end phrase
+
+define phrase jacobs-ja3-stub
+  (TODO during play-testing — conversation JA3/JA4 → JA5 → JA6 → JA7: "'My
+  name's, uh... Jack.'" or "'Stay away from me!'"; "'Do you know some way we
+  could get out of this place?'" — "'Well now, little runt. I suppose I
+  do.'" — Jacobs at the door with something from his boot, his arm stuck at
+  the elbow: "'Damn, they must have changed the bars since last time...'" —
+  the stub takes the source's path: three turns at the lock.)
+end phrase
+
+define phrase jacobs-ja8-stub
+  (TODO during play-testing — conversation JA8: "'Aaah! Goddesses curse
+  it!' Jacobs jerks his hand back, rubbing his wrist. 'Ah, forget it!' he
+  snarls, and tosses something small across the room. It skitters across the
+  floor and lands in a pile of straw. Jacobs goes back to his corner and
+  sits down heavily. 'Guess I'm in here for the duration after all.'" — the
+  wire is in the straw.)
+end phrase
+
+define phrase jacobs-idle-stub, first-time
+  (TODO during play-testing — conversation JA24-JA31, Jacobs's idle set:
+  "'Hey mister...'" — his father's bribe, Jacobs the Elder's mansion, the
+  lock on the outside, "'Do whatever you want, runt. Just be quiet about
+  it.'", the wire — "'So you can stick it up your nose, for all I care.'")
+or
+  Jacobs grunts noncommittally.
+end phrase
+
+define phrase jacobs-ja16-stub
+  (TODO during play-testing — conversation JA16: "Jacobs turns to you. 'I
+  heard what your friend in the other cell said, before they dragged him
+  out,' he says. 'Sounds like Fossville's taken quite an interest in you.'"
+  — JA17/JA18, two turns to his offer. He knows the mercenaries' tier only:
+  the name Fossville and the fact of the interest.)
+end phrase
+
+define phrase jacobs-ja19-stub
+  (TODO during play-testing — conversation JA19: "'You can come with me if
+  you want,' he says. 'I'll take you somewhere safe.' A shaky, wheedling
+  voice from the north cell calls out: 'Don't you listen to him, girl!
+  That's Jacobs the Elder's son; he'd as soon sell you to slavers as help
+  you.' 'Shut up, you!' yells Jacobs, pounding on the cell door in a sudden
+  rage." — Olmer's "girl" is a tell: he SEES her. Two turns to answer, or
+  talk to Jacobs.)
+end phrase
+
+define phrase jacobs-ja20-stub
+  (TODO during play-testing — conversation JA20: "'No offense,' you say,
+  'but I'll find my own way out, thanks.'" — the stub takes the source's
+  progress path; JA22, going with him, is the death the guards' clock now
+  reaches by waiting.)
+end phrase
+
+define phrase jacobs-ja21-stub
+  (TODO during play-testing — conversation JA21: "'Fine, then,' Jacobs
+  snarls, 'good luck getting past the guards, runt.' He turns on his heel
+  and stalks out, leaving you alone with the other prisoners.")
+end phrase
+
+## JA22 (`story.ni:8017`), verbatim, for the rewrite — the death behind the
+## offer, unreachable through a stub:
+##   "'Smart kid,' Jacobs says, following you closely. You can hear the
+##   other prisoner shouting something behind you, but soon their voices
+##   fade as you hurry down the corridor, leaving the cells far behind you.
+##   Jacobs leads you down dim, torchlit halls until you reach a wooden
+##   door. Jacobs motions you to be silent, then puts his ear up to the
+##   wood. After a moment he nods, opens the door, and then shoves you
+##   through it into the next room.
+##   Bright lantern-light blinds you, and when your eyes clear you see a
+##   dozen men of the Lord's Guard standing in a semicircle around you...
+##   and in the middle, the man in the red robes.
+##   'Little mouse...' murmurs the man in the red robes, '...always finding
+##   some new hole to crawl through.'
+##   Behind you, Jacobs puts his heavy hand on your shoulder and grips it
+##   tight. 'Like I said, runt,' he laughs, 'Fossville has taken a special
+##   interest in you. And aiding the Baron in his interests can be very
+##   profitable.'
+##   The red-robed man and the guards close in on you. This time, you do
+##   not escape."
+
+## ---------------------------------------------------------------------------
+## OLMER AND DARRENS (`story.ni:8302-8452`)
+## ---------------------------------------------------------------------------
+
+## OLMER SEES HER (change document, "Who sees her" — David: "A"): every
+## "girl", "miss" and "young lady" below is a tell and carries verbatim.
+
+create Olmer
+  aka bald headed man, bald-headed man, bald man, red faced man, red-faced man, short man, drunkard, drunk, prisoner, prisoners, men
+  a person, proper
+  pronouns he
+  in the North Cell
+  states: nameless, named
+
+  A short, bald-headed man, with a week's worth of stubble on his neck and a
+  nose bright red from burst blood vessels. His breath reeks of cheap
+  spirits, and his watery eyes shift constantly, as though always looking
+  for a way out of his current predicament.
+
+  when pleading expires, while Olmer is in the North Cell
+    phrase olmer-ol1-stub
+  end when
+
+  on the player talking
+    phrase olmer-ol10-stub when Olmer is in the Drain Room
+    phrase olmer-ol9-stub when Olmer is in the North Cell
+    change Olmer to named
+  end on
+
+create Darrens
+  aka skinny man, tall man, scarecrow, wobbly man, mute, mute man, friend, associate
+  a person, proper
+  pronouns he
+  in the North Cell
+
+  He's a tall, wobbly scarecrow of a man, with a huge nose, ears like jug
+  handles jutting from the sides of his head, and a throat-apple the size of
+  a child's fist that bobs up and down constantly. He never speaks; just
+  smiles and nods whenever anyone says or does anything. You suspect he may
+  be a few coins short of a full purse.
+
+  on the player talking
+    phrase darrens-waggles when Olmer is named
+    phrase skinny-man-waggles when Olmer is nameless
+  end on
+
+define phrase darrens-waggles
+  Darrens just waggles his head and smiles at you.
+end phrase
+
+define phrase skinny-man-waggles
+  The skinny man just waggles his head and smiles at you.
+end phrase
+
+define phrase olmer-ol1-stub
+  (TODO during play-testing — conversation OL1: "'Do us a kindness, girl,
+  and free us as well,' whines the man in the north cell. 'We ain't done
+  nothin' terrible, and we can show you a way out, too, one that doesn't
+  include leaving you dead in an alley for your shoes.'" — OL3/OL4/OL5:
+  hang on, let them out, who are you. "Girl" is a tell: Olmer SEES her. The
+  north door is hers to unlock.)
+end phrase
+
+define phrase olmer-ol2-stub
+  (TODO during play-testing — conversation OL2: "'Miss?' wheezes the man in
+  the north cell. 'Are you there? Will you take pity on two poor drunkards
+  and use that fancy lock-picker of yours?'" — "miss" is a tell.)
+end phrase
+
+define phrase olmer-ol9-stub
+  (TODO during play-testing — conversation OL9 and the cell tree: "'We are
+  at your service, miss,'" — OL5 names them: "'Please forgive me, miss. I am
+  called Olmer, and this is my associate, Darrens.'"; OL6 Darrens's kick in
+  the head; OL7 "'A weakness for the drink is our curse.'"; OL8 Jacobs the
+  brute; OL11 the drain — "'Down to the sewers, it does miss.'" The stub
+  names them; the north door stays hers to unlock.)
+end phrase
+
+define phrase olmer-ol10-stub
+  (TODO during play-testing — conversation OL10 and the drain-room tree:
+  "'Let me ask you something,' you say. 'Of course,' wheezes Olmer." — OL6,
+  OL7, OL8, OL11.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE DRAIN ROOM (`story.ni:8453-8545`)
+## ---------------------------------------------------------------------------
+
+create the Drain Room
+  a room
+  aka alcove, tiny alcove, drain
+  down to the Sewer
+  down is blocked while the metal grate is seated: cant-squeeze-the-bars
+  states: fresh, explored
+
+  This tiny alcove reeks worse than the privy back at Maiden House, and
+  that's saying something. The main room is back to the northeast.
+  {grate-set}{grate-moved} {hole-uncovered}
+
+  after the player entering while Jacobs is freed
+    phrase jacobs-mutters-and-goes
+    move Jacobs offstage
+    change Jacobs to gone
+  end after
+
+  after the player entering while Olmer is here
+    first time
+      phrase olmer-explains-the-alcove when the metal grate is seated
+      phrase olmer-explains-the-alcove-moved when the metal grate is moved
+  end after
+
+  after the player entering
+    change the Drain Room to explored
+  end after
+
+define phrase grate-set, stopping while the metal grate is seated
+  Set into the stone floor is a metal grate.
+end phrase
+
+define phrase grate-moved, stopping while the metal grate is moved
+  The metal grate is lying off to one side.
+end phrase
+
+define phrase hole-uncovered, stopping while the metal grate is moved
+  A rectangular hole in the middle of the stone floor leads down into
+  foul-smelling darkness.
+end phrase
+
+define phrase alcove-overpowering
+  The smell in here is overpoweringly foul.
+end phrase
+
+## `story.ni:8538`, verbatim.
+
+define phrase jacobs-mutters-and-goes
+  You can hear Jacobs muttering angrily in the room behind you, then heavy
+  footsteps that quickly fade away.
+end phrase
+
+## `story.ni:8543`, verbatim, both halves.
+
+define phrase olmer-explains-the-alcove
+  'The guards use this place to relieve themselves,' Olmer explains, 'and
+  sometimes for beatin' prisoners when they don't feel like moppin' the
+  cells after. My back's not much for physical labor, but a spry one like
+  yourself should have little trouble.' He motions for you to lift up the
+  grate.
+end phrase
+
+define phrase olmer-explains-the-alcove-moved
+  'The guards use this place to relieve themselves,' Olmer explains, 'and
+  sometimes for beatin' prisoners when they don't feel like moppin' the
+  cells after. I see you've already made some progress,' Olmer adds, noting
+  the moved grate. 'All's left is to reap the fruits of your generous
+  labor.'
+
+  He smiles and gestures towards the foul-smelling hole. 'After you,' he
+  wheezes.
+end phrase
+
+## The grate (`story.ni:8497-8517`): lift it, and every other verb lifts it.
+
+## `raising` is a full-delegation capability action (ADR-118) that never
+## consults entity clauses, so the lift is a story action.
+
+define action lifting
+  grammar
+    lift the target
+    raise the target
+    lift up the target
+    pull up the target
+  otherwise refuse cant-lift-that
+
+## GLUE — the platform's own shape for a thing that will not lift.
+
+define phrase cant-lift-that
+  You can't lift that.
+end phrase
+
+define trait grate-lift
+  on the player lifting
+    refuse when the metal grate is moved: grate-too-heavy
+    change the metal grate to moved
+    phrase grate-lifted when Olmer is not here
+    phrase grate-lifted-after-you when Olmer is here
+  end on
+
+  on the player opening
+    refuse when the metal grate is moved: grate-too-heavy
+    change the metal grate to moved
+    phrase grate-lifted when Olmer is not here
+    phrase grate-lifted-after-you when Olmer is here
+  end on
+
+  on the player pushing
+    refuse when the metal grate is moved: grate-too-heavy
+    change the metal grate to moved
+    phrase grate-lifted when Olmer is not here
+    phrase grate-lifted-after-you when Olmer is here
+  end on
+
+  on the player pulling
+    refuse when the metal grate is moved: grate-too-heavy
+    change the metal grate to moved
+    phrase grate-lifted when Olmer is not here
+    phrase grate-lifted-after-you when Olmer is here
+  end on
+
+  on the player taking
+    refuse when the metal grate is moved: grate-too-heavy
+    change the metal grate to moved
+    phrase grate-lifted when Olmer is not here
+    phrase grate-lifted-after-you when Olmer is here
+  end on
+end trait
+
+create the metal grate
+  aka grate, bars, thick bars, metal bars, cover, heavy grate
+  scenery
+  grate-lift
+  in the Drain Room
+  states: seated, moved
+
+  {grate-description-set}{grate-description-moved}
+
+  on the player examining
+    phrase grate-description-set when the metal grate is seated
+    phrase grate-description-moved when the metal grate is moved
+  end on
+
+  on the player entering
+    refuse when the metal grate is seated: cant-squeeze-the-bars
+    move the player to the Sewer
+  end on
+
+  on the player searching
+    refuse hole-too-dark
+  end on
+
+  on the player listening
+    refuse running-water-below
+  end on
+
+define phrase grate-description-set
+  The thick bars of metal cover a rectangular hole that drops down into
+  darkness. Around the edges of the grate, the stonework is loose and
+  crumbling.
+end phrase
+
+define phrase grate-description-moved
+  The metal grate is lying off to one side.
+end phrase
+
+define phrase grate-lifted
+  It's a strain, but you're just barely able to lift the heavy grate and
+  drop it to the side with a dull clang.
+end phrase
+
+define phrase grate-lifted-after-you
+  It's a strain, but you're just barely able to lift the heavy grate and
+  drop it to the side with a dull clang. Olmer smiles and gestures towards
+  the foul-smelling hole. 'After you,' he wheezes.
+end phrase
+
+define phrase grate-too-heavy
+  That grate is too heavy to carry anywhere, and you don't feel like lifting
+  it again.
+end phrase
+
+create the loose stonework
+  aka stonework, crumbling stonework, stone, stones, crumbly stone, loose stone
+  scenery
+  in the Drain Room
+
+  The stonework around the metal grate is loose and crumbling.
+
+  phrase detail while the metal grate is seated:
+    You might be able to pull the grate free, if you really strained.
+
+create the drain hole
+  aka hole, rectangular hole, shaft, drain, darkness, foul-smelling darkness
+  scenery, enterable
+  in the Drain Room
+
+  The hole is too dark and too deep for you to see the bottom, although you
+  think you can hear the sound of running water coming from far below.
+
+  on the player searching
+    refuse hole-too-dark
+  end on
+
+  on the player listening
+    refuse running-water-below
+  end on
+
+  on the player entering
+    refuse when the metal grate is seated: cant-squeeze-the-bars
+    move the player to the Sewer
+  end on
+
+define phrase hole-too-dark
+  The hole is too dark and too deep for you to see the bottom, although you
+  think you can hear the sound of running water coming from far below.
+end phrase
+
+define phrase running-water-below
+  You can faintly hear the sound of running water coming from below.
+end phrase
+
+define phrase cant-squeeze-the-bars
+  You can't squeeze between the bars of the grate.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SEWERS (`story.ni:8546-8742`)
+## ---------------------------------------------------------------------------
+
+## The magic colour, drawn once at the drop if Olmer is there; the layout,
+## one of four rotations, redrawn after a correct move. See the header.
+
+create the magic color
+  aka magic colour
+  states, reversible: red, blue, green, yellow
+
+  The colour Olmer named.
+
+create the glyph layout
+  states, reversible: layout-a, layout-b, layout-c, layout-d
+
+  The glyphs, as they stand.
+
+define condition north-marked: (the glyph layout is layout-a and the magic color is red) or (the glyph layout is layout-b and the magic color is yellow) or (the glyph layout is layout-c and the magic color is green) or (the glyph layout is layout-d and the magic color is blue)
+define condition east-marked: (the glyph layout is layout-a and the magic color is blue) or (the glyph layout is layout-b and the magic color is red) or (the glyph layout is layout-c and the magic color is yellow) or (the glyph layout is layout-d and the magic color is green)
+define condition south-marked: (the glyph layout is layout-a and the magic color is green) or (the glyph layout is layout-b and the magic color is blue) or (the glyph layout is layout-c and the magic color is red) or (the glyph layout is layout-d and the magic color is yellow)
+define condition west-marked: (the glyph layout is layout-a and the magic color is yellow) or (the glyph layout is layout-b and the magic color is green) or (the glyph layout is layout-c and the magic color is blue) or (the glyph layout is layout-d and the magic color is red)
+
+## The drop (`story.ni:8526`) is the Sewer's first-time text; Olmer's
+## speech and the draws ride the first arrival with him left above.
+
+create the Sewer
+  a room
+  aka sewers, tunnel, tunnels, side tunnels
+  north to the North Tunnel, one-way
+  east to the East Tunnel, one-way
+  south to the South Tunnel, one-way
+  west to the West Tunnel, one-way
+
+  first time
+    Well, it can't be that much worse than rotting in prison, you think. You
+    sit down and dangle your feet over the edge of the hole. You can hear
+    the sound of running water, and smell the sharp stink of sewage. You
+    offer a quick prayer to Brigid — Please give me a chance to clean up
+    before seeing Bobby again — take a deep breath, and drop down into
+    darkness.
+
+    The tunnels down here are made of ancient, unmortared brick, slimy with
+    centuries of filth and mold. Dim light trickles down through narrow
+    vents in the ceiling. Side tunnels split off in numerous directions,
+    twisting away into darkness.
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    first time
+      stop the player's guards-return
+      change the magic color to blue when Olmer is in the Drain Room and one chance in 4
+      change the magic color to green when Olmer is in the Drain Room and the magic color is red and one chance in 3
+      change the magic color to yellow when Olmer is in the Drain Room and the magic color is red and one chance in 2
+      change the glyph layout to layout-b when Olmer is in the Drain Room and one chance in 4
+      change the glyph layout to layout-c when Olmer is in the Drain Room and the glyph layout is layout-a and one chance in 3
+      change the glyph layout to layout-d when Olmer is in the Drain Room and the glyph layout is layout-a and one chance in 2
+      phrase olmer-in-the-muck when Olmer is in the Drain Room
+      phrase olmer-points-north-red when Olmer is in the Drain Room and north-marked and the magic color is red
+      phrase olmer-points-north-blue when Olmer is in the Drain Room and north-marked and the magic color is blue
+      phrase olmer-points-north-green when Olmer is in the Drain Room and north-marked and the magic color is green
+      phrase olmer-points-north-yellow when Olmer is in the Drain Room and north-marked and the magic color is yellow
+      phrase olmer-points-east-red when Olmer is in the Drain Room and east-marked and the magic color is red
+      phrase olmer-points-east-blue when Olmer is in the Drain Room and east-marked and the magic color is blue
+      phrase olmer-points-east-green when Olmer is in the Drain Room and east-marked and the magic color is green
+      phrase olmer-points-east-yellow when Olmer is in the Drain Room and east-marked and the magic color is yellow
+      phrase olmer-points-south-red when Olmer is in the Drain Room and south-marked and the magic color is red
+      phrase olmer-points-south-blue when Olmer is in the Drain Room and south-marked and the magic color is blue
+      phrase olmer-points-south-green when Olmer is in the Drain Room and south-marked and the magic color is green
+      phrase olmer-points-south-yellow when Olmer is in the Drain Room and south-marked and the magic color is yellow
+      phrase olmer-points-west-red when Olmer is in the Drain Room and west-marked and the magic color is red
+      phrase olmer-points-west-blue when Olmer is in the Drain Room and west-marked and the magic color is blue
+      phrase olmer-points-west-green when Olmer is in the Drain Room and west-marked and the magic color is green
+      phrase olmer-points-west-yellow when Olmer is in the Drain Room and west-marked and the magic color is yellow
+      phrase olmer-takes-his-leave-red when Olmer is in the Drain Room and the magic color is red
+      phrase olmer-takes-his-leave-blue when Olmer is in the Drain Room and the magic color is blue
+      phrase olmer-takes-his-leave-green when Olmer is in the Drain Room and the magic color is green
+      phrase olmer-takes-his-leave-yellow when Olmer is in the Drain Room and the magic color is yellow
+      phrase olmer-shakes-your-hand when Olmer is in the Drain Room
+      move Olmer offstage when Olmer is in the Drain Room
+      move Darrens offstage when Olmer is in the Drain Room
+  end after
+
+## `story.ni:8650`, verbatim, in the pieces Chord can gate.
+
+define phrase olmer-in-the-muck
+  Olmer drops down into the muck next to you, followed by Darrens. 'Now
+  then, miss, cast your eye at these glyphs here,' whispers Olmer. His voice
+  echoes off into the blackness as he brushes the rough stone with his
+  fingertips. 'These are marked down by such poor blokes as have to take
+  refuge down here on a more regular basis. They tells you where the tunnels
+  lead, if you but know their language.' Darrens nods in solemn agreement.
+end phrase
+
+define phrase olmer-points-north-red
+  'To get back to your neighborhood, you'll want to follow the red, see?'
+  Olmer points off down the north tunnel.
+end phrase
+
+define phrase olmer-points-north-blue
+  'To get back to your neighborhood, you'll want to follow the blue, see?'
+  Olmer points off down the north tunnel.
+end phrase
+
+define phrase olmer-points-north-green
+  'To get back to your neighborhood, you'll want to follow the green, see?'
+  Olmer points off down the north tunnel.
+end phrase
+
+define phrase olmer-points-north-yellow
+  'To get back to your neighborhood, you'll want to follow the yellow, see?'
+  Olmer points off down the north tunnel.
+end phrase
+
+define phrase olmer-points-east-red
+  'To get back to your neighborhood, you'll want to follow the red, see?'
+  Olmer points off down the east tunnel.
+end phrase
+
+define phrase olmer-points-east-blue
+  'To get back to your neighborhood, you'll want to follow the blue, see?'
+  Olmer points off down the east tunnel.
+end phrase
+
+define phrase olmer-points-east-green
+  'To get back to your neighborhood, you'll want to follow the green, see?'
+  Olmer points off down the east tunnel.
+end phrase
+
+define phrase olmer-points-east-yellow
+  'To get back to your neighborhood, you'll want to follow the yellow, see?'
+  Olmer points off down the east tunnel.
+end phrase
+
+define phrase olmer-points-south-red
+  'To get back to your neighborhood, you'll want to follow the red, see?'
+  Olmer points off down the south tunnel.
+end phrase
+
+define phrase olmer-points-south-blue
+  'To get back to your neighborhood, you'll want to follow the blue, see?'
+  Olmer points off down the south tunnel.
+end phrase
+
+define phrase olmer-points-south-green
+  'To get back to your neighborhood, you'll want to follow the green, see?'
+  Olmer points off down the south tunnel.
+end phrase
+
+define phrase olmer-points-south-yellow
+  'To get back to your neighborhood, you'll want to follow the yellow, see?'
+  Olmer points off down the south tunnel.
+end phrase
+
+define phrase olmer-points-west-red
+  'To get back to your neighborhood, you'll want to follow the red, see?'
+  Olmer points off down the west tunnel.
+end phrase
+
+define phrase olmer-points-west-blue
+  'To get back to your neighborhood, you'll want to follow the blue, see?'
+  Olmer points off down the west tunnel.
+end phrase
+
+define phrase olmer-points-west-green
+  'To get back to your neighborhood, you'll want to follow the green, see?'
+  Olmer points off down the west tunnel.
+end phrase
+
+define phrase olmer-points-west-yellow
+  'To get back to your neighborhood, you'll want to follow the yellow, see?'
+  Olmer points off down the west tunnel.
+end phrase
+
+define phrase olmer-takes-his-leave-red
+  'Darrens and I, we must be off elsewhere, so we'll take our leave of you
+  now. But follow the red and you can't go wrong.'
+end phrase
+
+define phrase olmer-takes-his-leave-blue
+  'Darrens and I, we must be off elsewhere, so we'll take our leave of you
+  now. But follow the blue and you can't go wrong.'
+end phrase
+
+define phrase olmer-takes-his-leave-green
+  'Darrens and I, we must be off elsewhere, so we'll take our leave of you
+  now. But follow the green and you can't go wrong.'
+end phrase
+
+define phrase olmer-takes-his-leave-yellow
+  'Darrens and I, we must be off elsewhere, so we'll take our leave of you
+  now. But follow the yellow and you can't go wrong.'
+end phrase
+
+define phrase olmer-shakes-your-hand
+  'It was very kind of you to set us free, young lady.' He shakes your hand.
+  (His hands are slimy with filth, but then so are yours.) 'We've only our
+  meagre gratitude with which to repay you, but we won't forget your
+  generosity.' Darrens nods vigorously and shakes as well.
+
+  And then the two of them slosh off, leaving you alone.
+end phrase
+
+define phrase olmer-said-red
+  Olmer said to follow the red, and I don't want to get lost down here.
+end phrase
+
+define phrase olmer-said-blue
+  Olmer said to follow the blue, and I don't want to get lost down here.
+end phrase
+
+define phrase olmer-said-green
+  Olmer said to follow the green, and I don't want to get lost down here.
+end phrase
+
+define phrase olmer-said-yellow
+  Olmer said to follow the yellow, and I don't want to get lost down here.
+end phrase
+
+## The first move: four tunnels, each checking its own way.
+
+create the North Tunnel
+  a room
+  aka tunnel, sewer, sewers
+  north to the North Bend, one-way
+  east to the East Bend, one-way
+  south to the South Bend, one-way
+  west to the West Bend, one-way
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not north-marked
+    change the glyph layout to layout-a
+    change the glyph layout to layout-b when one chance in 4
+    change the glyph layout to layout-c when the glyph layout is layout-a and one chance in 3
+    change the glyph layout to layout-d when the glyph layout is layout-a and one chance in 2
+  end after
+
+create the East Tunnel
+  a room
+  aka tunnel, sewer, sewers
+  north to the North Bend, one-way
+  east to the East Bend, one-way
+  south to the South Bend, one-way
+  west to the West Bend, one-way
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not east-marked
+    change the glyph layout to layout-a
+    change the glyph layout to layout-b when one chance in 4
+    change the glyph layout to layout-c when the glyph layout is layout-a and one chance in 3
+    change the glyph layout to layout-d when the glyph layout is layout-a and one chance in 2
+  end after
+
+create the South Tunnel
+  a room
+  aka tunnel, sewer, sewers
+  north to the North Bend, one-way
+  east to the East Bend, one-way
+  south to the South Bend, one-way
+  west to the West Bend, one-way
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not south-marked
+    change the glyph layout to layout-a
+    change the glyph layout to layout-b when one chance in 4
+    change the glyph layout to layout-c when the glyph layout is layout-a and one chance in 3
+    change the glyph layout to layout-d when the glyph layout is layout-a and one chance in 2
+  end after
+
+create the West Tunnel
+  a room
+  aka tunnel, sewer, sewers
+  north to the North Bend, one-way
+  east to the East Bend, one-way
+  south to the South Bend, one-way
+  west to the West Bend, one-way
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not west-marked
+    change the glyph layout to layout-a
+    change the glyph layout to layout-b when one chance in 4
+    change the glyph layout to layout-c when the glyph layout is layout-a and one chance in 3
+    change the glyph layout to layout-d when the glyph layout is layout-a and one chance in 2
+  end after
+
+## The second move: four bends; the right one reaches the ladder.
+
+create the North Bend
+  a room
+  aka tunnel, sewer, sewers
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not north-marked
+    move the player to the Access Tunnel when north-marked
+  end after
+
+create the East Bend
+  a room
+  aka tunnel, sewer, sewers
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not east-marked
+    move the player to the Access Tunnel when east-marked
+  end after
+
+create the South Bend
+  a room
+  aka tunnel, sewer, sewers
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not south-marked
+    move the player to the Access Tunnel when south-marked
+  end after
+
+create the West Bend
+  a room
+  aka tunnel, sewer, sewers
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+  after the player entering
+    kill the player lost-in-the-sewers when not west-marked
+    move the player to the Access Tunnel when west-marked
+  end after
+
+## `story.ni:8739`, verbatim.
+
+define phrase lost-in-the-sewers
+  Suddenly you find yourself in a tunnel where there are no symbols painted
+  anywhere. You try to retrace your steps, but you must have taken a wrong
+  turn somewhere, because now you can't find any symbols anywhere. All of
+  the tunnels look alike; you are completely turned around and don't even
+  know which direction you are stumbling in.
+
+  The next tunnel you take leads you to an area with no vents — it is pitch
+  black. You slip as you turn around and fall into the water. Something
+  slick and wriggly brushes past your face, and you thrash to your feet.
+
+  You can't see any light, anywhere. You don't know what direction you just
+  came from. Cold, smelly water numbs your feet. Despair and paralyzing
+  panic close in on you as you realize that you have no means of finding
+  your way through this labyrinth.
+
+  You are stuck down here, blind in the stinking blackness, forever.
+end phrase
+
+## The sewer backdrops (`story.ni:8571-8596`): followers, as the market's.
+
+create the sewer water
+  aka water, sewage, ooze, garbage, rats, dead rats, rat, muck, filth water
+  scenery
+  in the Sewer
+
+  The water is sluggish and cold, knee-deep in most places. Things float
+  past you in the ooze — garbage, dead rats, and worse. You try to avoid the
+  worst of it, but it's already soaked through your shoes. You feel like
+  you'll never be clean of it.
+
+  when Jack moves, while the player is in the Sewers
+    move the sewer water here
+  end when
+
+  on the player searching
+    refuse makes-you-gag
+  end on
+
+  on the player drinking
+    refuse makes-you-gag
+  end on
+
+  on the player smelling
+    refuse makes-you-gag
+  end on
+
+  on the player touching
+    refuse soaked-through
+  end on
+
+define phrase makes-you-gag
+  The thought makes you gag.
+end phrase
+
+define phrase soaked-through
+  You can't help touching it — it's soaked through your clothes.
+end phrase
+
+create the ancient bricks
+  aka bricks, brick, walls, wall, tunnel walls, slimy bricks, slime, mold, unmortared brick
+  scenery, plural
+  in the Sewer
+
+  The tunnel walls are slimy with filth and mold.
+
+  when Jack moves, while the player is in the Sewers
+    move the ancient bricks here
+  end when
+
+  on the player climbing
+    refuse no-foothold
+  end on
+
+  on the player touching
+    refuse rather-not-touch-the-walls
+  end on
+
+  on the player smelling
+    refuse rather-not-touch-the-walls
+  end on
+
+  on the player eating
+    refuse rather-not-touch-the-walls
+  end on
+
+define phrase no-foothold
+  You can't get a foothold on the slimy bricks.
+end phrase
+
+define phrase rather-not-touch-the-walls
+  You'd rather not touch the walls at all.
+end phrase
+
+create the ceiling vents
+  aka vents, vent, grating, gratings, light, dim light, trickle of light, ceiling
+  scenery, plural
+  in the Sewer
+
+  The ceiling vents let in a tiny trickle of light, barely enough to see by.
+
+  when Jack moves, while the player is in the Sewers
+    move the ceiling vents here
+  end when
+
+  on the player taking
+    refuse vents-out-of-reach
+  end on
+
+  on the player touching
+    refuse vents-out-of-reach
+  end on
+
+  on the player climbing
+    refuse vents-out-of-reach
+  end on
+
+  on the player entering
+    refuse vents-out-of-reach
+  end on
+
+define phrase vents-out-of-reach
+  The vents are high out of reach.
+end phrase
+
+## The painted symbols (`story.ni:8621-8640`): the report reads the layout.
+## Symbols ride the colours (see the header).
+
+define condition in-the-glyph-tunnels: the player is in the Sewer or the player is in the North Tunnel or the player is in the East Tunnel or the player is in the South Tunnel or the player is in the West Tunnel or the player is in the North Bend or the player is in the East Bend or the player is in the South Bend or the player is in the West Bend
+
+create the painted symbols
+  aka symbols, symbol, glyph, glyphs, odd symbols, shapes, paint, red glyph, blue glyph, green glyph, yellow glyph, red square, blue diamond, green circle, yellow triangle, square, diamond, circle, triangle
+  scenery, plural
+  in the Sewer
+
+  The symbols are a number of crude shapes, no bigger than your hand. Each
+  one is painted on the wall next to one of the side tunnels, as if to mark
+  the way.
+
+  phrase present:
+    Painted on the walls are a number of odd symbols.
+
+  when Jack moves, while in-the-glyph-tunnels
+    move the painted symbols here
+  end when
+
+  on the player examining
+    first time
+      phrase symbols-crude-shapes
+    phrase glyph-north-red when the glyph layout is layout-a
+    phrase glyph-east-blue when the glyph layout is layout-a
+    phrase glyph-south-green when the glyph layout is layout-a
+    phrase glyph-west-yellow when the glyph layout is layout-a
+    phrase glyph-north-yellow when the glyph layout is layout-b
+    phrase glyph-east-red when the glyph layout is layout-b
+    phrase glyph-south-blue when the glyph layout is layout-b
+    phrase glyph-west-green when the glyph layout is layout-b
+    phrase glyph-north-green when the glyph layout is layout-c
+    phrase glyph-east-yellow when the glyph layout is layout-c
+    phrase glyph-south-red when the glyph layout is layout-c
+    phrase glyph-west-blue when the glyph layout is layout-c
+    phrase glyph-north-blue when the glyph layout is layout-d
+    phrase glyph-east-green when the glyph layout is layout-d
+    phrase glyph-south-yellow when the glyph layout is layout-d
+    phrase glyph-west-red when the glyph layout is layout-d
+  end on
+
+define phrase symbols-crude-shapes
+  The symbols are a number of crude shapes, no bigger than your hand. Each
+  one is painted on the wall next to one of the side tunnels, as if to mark
+  the way.
+end phrase
+
+define phrase glyph-north-red
+  A red square is painted on the wall next to the north tunnel.
+end phrase
+
+define phrase glyph-north-blue
+  A blue diamond is painted on the wall next to the north tunnel.
+end phrase
+
+define phrase glyph-north-green
+  A green circle is painted on the wall next to the north tunnel.
+end phrase
+
+define phrase glyph-north-yellow
+  A yellow triangle is painted on the wall next to the north tunnel.
+end phrase
+
+define phrase glyph-east-red
+  A red square is marked on the wall beside the east tunnel.
+end phrase
+
+define phrase glyph-east-blue
+  A blue diamond is marked on the wall beside the east tunnel.
+end phrase
+
+define phrase glyph-east-green
+  A green circle is marked on the wall beside the east tunnel.
+end phrase
+
+define phrase glyph-east-yellow
+  A yellow triangle is marked on the wall beside the east tunnel.
+end phrase
+
+define phrase glyph-south-red
+  A red square is painted on the wall by the south tunnel.
+end phrase
+
+define phrase glyph-south-blue
+  A blue diamond is painted on the wall by the south tunnel.
+end phrase
+
+define phrase glyph-south-green
+  A green circle is painted on the wall by the south tunnel.
+end phrase
+
+define phrase glyph-south-yellow
+  A yellow triangle is painted on the wall by the south tunnel.
+end phrase
+
+define phrase glyph-west-red
+  A red square is marked on the wall next to the west tunnel.
+end phrase
+
+define phrase glyph-west-blue
+  A blue diamond is marked on the wall next to the west tunnel.
+end phrase
+
+define phrase glyph-west-green
+  A green circle is marked on the wall next to the west tunnel.
+end phrase
+
+define phrase glyph-west-yellow
+  A yellow triangle is marked on the wall next to the west tunnel.
+end phrase
+
+define phrase sewer-lap-and-slosh
+  You hear the soft lap and slosh of sewer water through the tunnels.
+end phrase
+
+define phrase sewer-unbelievable-smell
+  The smell down here is simply unbelievable. You have to breathe through
+  your mouth just to keep from passing out.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE ACCESS TUNNEL and the morning (`story.ni:8676-8735`)
+## ---------------------------------------------------------------------------
+
+create the Access Tunnel
+  a room
+  aka tunnel, sewer, sewers
+  up to the Empty Alleyway, one-way
+  north is deadly: lost-in-the-sewers
+  east is deadly: lost-in-the-sewers
+  south is deadly: lost-in-the-sewers
+  west is deadly: lost-in-the-sewers
+
+  The tunnels down here are made of ancient, unmortared brick, slimy with
+  centuries of filth and mold. Dim light trickles down through narrow vents
+  in the ceiling. Side tunnels split off in numerous directions, twisting
+  away into darkness.
+
+create the hatch
+  aka trap, trapdoor, trap door, door, ceiling hatch
+  scenery
+  in the Access Tunnel
+  states: shut, opened
+
+  That hatch probably leads back to the streets above.
+
+  on the player opening
+    refuse cant-reach-the-hatch
+  end on
+
+  on the player pushing
+    refuse cant-reach-the-hatch
+  end on
+
+  on the player touching
+    refuse cant-reach-the-hatch
+  end on
+
+  on the player taking
+    refuse cant-reach-the-hatch
+  end on
+
+define phrase cant-reach-the-hatch
+  You can't reach the hatch from down here.
+end phrase
+
+create the ladder
+  aka rungs, bolted ladder
+  scenery, climbable
+  in the Access Tunnel
+
+  The ladder leads up to a hatch in the ceiling above you.
+
+  phrase present:
+    A ladder is bolted to the wall here.
+
+  on the player climbing
+    move the player to the Empty Alleyway
+  end on
+
+## The way up: the source moves her straight to Commerce Street after the
+## daylight text; the alley the text describes is a room here so the text
+## comes first. Chapter VI begins on it; the hour turns to day.
+
+create the Empty Alleyway
+  a room
+  aka alleyway, alley
+
+  first time
+    You eagerly pull yourself up the rungs and shove open the hatch.
+    Daylight! You've never been so glad to see it.
+
+    From the look of the sky, it's early morning. You're standing in an
+    empty alleyway, pretty close to Maiden House if you have your landmarks
+    right. After a couple of turns, you figure out where you are, and soon
+    find yourself back in familiar environs.
+
+  An empty alleyway, pretty close to Maiden House.
+
+  after the player entering
+    change the hatch to opened
+    change Toresal to day
+    move the player to the Commerce Street
+  end after

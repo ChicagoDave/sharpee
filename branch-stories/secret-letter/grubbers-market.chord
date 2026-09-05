@@ -195,7 +195,7 @@ create the Eastern Junction
   north to the Fruit Stall
   south to the Hat Stall
   west to the Pottery Stall
-  east to Commerce Street
+  east to Commerce Street, one-way
   east is blocked while calm: east-deflected
   east is blocked while Jack is urchin: east-watched
 

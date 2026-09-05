@@ -132,6 +132,11 @@ define condition market-air: the player is in the Northwest Junction or the play
 
 define condition market-din: open-air or the player is in the Base of the Center Post
 
+## Chapter 4's rooms with a bare-smell answer of their own (`story.ni:6763,
+## 7121`).
+
+define condition journey-air: the player is in the Pasture or the player is in the Stream Crossing or the player is in the Underneath the Fountain or the player is in the Jail Cell or the player is in the Drain Room or the player is in the Sewers
+
 ## ---------------------------------------------------------------------------
 ## THE SHOPPERS (`story.ni:3334-3388`)
 ##
@@ -676,6 +681,12 @@ define action sniffing
   grammar
     smell
     sniff
+    breathe
+    breathe in
+    breathe deeply
+    breathe in deeply
+    take a breath
+    take a deep breath
 
   phrase garbage-ripe-here when the player is in the Alley
   phrase leather-smell when the player is in the Leather Stall
@@ -684,7 +695,12 @@ define action sniffing
   phrase tent-smell when the player is in Inside the Silk Tent
   phrase top-of-post-smell when the player is in the Top of the Post
   phrase market-smell when market-air
-  phrase smell-nothing when not within-grubbers
+  phrase mostly-cow-pies when the player is in the Pasture or the player is in the Stream Crossing
+  phrase tunnel-smells-sour when the player is in the Underneath the Fountain
+  phrase cell-smells-terrible when the player is in the Jail Cell
+  phrase alcove-overpowering when the player is in the Drain Room
+  phrase sewer-unbelievable-smell when the player is in the Sewers
+  phrase smell-nothing when not within-grubbers and not journey-air
 
 define action hearkening
   grammar
@@ -698,7 +714,10 @@ define action hearkening
   phrase tent-sound when the player is in Inside the Silk Tent
   phrase top-of-post-sound when the player is in the Top of the Post
   phrase market-sound when market-din
-  phrase ears-pricked when not within-grubbers
+  phrase tunnel-drip when the player is in the Underneath the Fountain
+  phrase running-water-below when the player is in the Drain Room
+  phrase sewer-lap-and-slosh when the player is in the Sewers
+  phrase ears-pricked when not within-grubbers and not the player is in the Underneath the Fountain and not the player is in the Drain Room and not the player is in the Sewers
 
 define phrase garbage-ripe-here
   It smells pretty ripe back here.

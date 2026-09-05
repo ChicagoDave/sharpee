@@ -32,12 +32,15 @@
 create the Commerce Street
   a room
   aka commerce, the street, avenue
-  west to the Eastern Junction
+  west to the Market Square
   east to the East Commerce Street
   northwest to the Bakery, one-way
   north to the Butcher's Shop, one-way
   northeast to the Armory, one-way
-  west is blocked: commerce-lay-low
+  west is blocked while Toresal is day: commerce-lay-low
+  northwest is blocked while Toresal is night: shops-shuttered
+  north is blocked while Toresal is night: shops-shuttered
+  northeast is blocked while Toresal is night: shops-shuttered
   east is blocked while the woolen cap is not worn: commerce-hat-on
   northwest is blocked while the woolen cap is not worn: commerce-hat-on
   north is blocked while the woolen cap is not worn: commerce-hat-on
@@ -46,11 +49,12 @@ create the Commerce Street
     (TODO during play-testing — "You made it." — Gentry's arrival block is
     kept aside in this file's comments; it ends by removing the cloak.)
 
-  Commerce Street runs east to west, between Grubber's Market and Lord's
-  Market. Raised sidewalks allow pedestrians to avoid the mud, horse dung, and
-  occasional teamster's cart rumbling by. The shops here are actual buildings,
-  spaced evenly along the avenue. Storefronts for a bakery, a butcher's shop,
-  and an armory line the north side of the street from west to east.
+  {commerce-street-by-day}{commerce-street-by-night}
+
+  after the player entering while Toresal is night
+    first time
+      phrase street-push-stub
+  end after
 
   after the player entering while the player's market-escape has started
     reset the player's market-escape
@@ -66,6 +70,41 @@ create the Commerce Street
   on every turn while the player is in the Commerce Street and one chance in 5
     phrase jack-paranoia
   end on
+
+## The street by the hour (`story.ni:4204-4210`) — a room's prose splices
+## gated phrases; the night text arrives with Chapter 4.
+
+define phrase commerce-street-by-day, stopping while Toresal is day
+  Commerce Street runs east to west, between Grubber's Market and Lord's
+  Market. Raised sidewalks allow pedestrians to avoid the mud, horse dung, and
+  occasional teamster's cart rumbling by. The shops here are actual buildings,
+  spaced evenly along the avenue. Storefronts for a bakery, a butcher's shop,
+  and an armory line the north side of the street from west to east.
+end phrase
+
+define phrase commerce-street-by-night, stopping while Toresal is night
+  Commerce Street at night is eerily quiet and empty. Your footsteps seem to
+  echo on the cobbles as you walk past the shuttered shopfronts.
+end phrase
+
+## THE STREET PUSH (change document, Chapter 4, "Pressure on the way to
+## Bobby" — David: "B keeps the pressure on", and "we just want fear"): one
+## placeholder on the night walk, here, the last stretch before the market.
+## The beats — what of the mercenary Jack sees or hears, and what keeps him
+## off her — and their lines are David's, during play-testing.
+
+define phrase street-push-stub
+  (TODO during play-testing — the street push: something of the mercenary
+  from Maiden House's door is on the streets between the house and the night
+  market — seen, heard, or nearly met — and something else keeps him off
+  her. Fear, no teeth. The beats and the lines are David's.)
+end phrase
+
+## `story.ni:4245, 4260` — the shops at night.
+
+define phrase shops-shuttered
+  All of the shops are shuttered and locked up for the night.
+end phrase
 
 ## Gentry's arrival block (`story.ni:4266`), verbatim, for David to rework:
 ##   "You made it.
@@ -91,8 +130,8 @@ define phrase jack-paranoia
   catching her breath where she has been told she is safe.)
 end phrase
 
-## `story.ni:4280` — by day only in the source; the port has no night yet, so
-## the refusal stands until the chapter that walks back west at night.
+## `story.ni:4280` — by day only in the source; at night the way west is the
+## empty market (Chapter 4).
 
 define phrase commerce-lay-low
   It would be a good idea to lay low for a while before returning to Grubber's
@@ -140,6 +179,10 @@ create the bakery storefront
   A hanging sign above the door depicts a loaf of bread, and the warm smell of
   fried dough wafts out from the open door, making your stomach rumble.
 
+  on the player examining while Toresal is night
+    refuse shops-shuttered
+  end on
+
 create the butcher's storefront
   aka butchers storefront, butcher, butchers, butchery, pig, painted pig, pig sign
   scenery
@@ -147,6 +190,10 @@ create the butcher's storefront
 
   A brightly painted pig decorates the sign over this shop. The smell of burned
   sausage masks the darker odor of butchered animals.
+
+  on the player examining while Toresal is night
+    refuse shops-shuttered
+  end on
 
 create the armory storefront
   aka armory, armoury, armorers, armourers, armourer, armory sign, shield sign
@@ -156,6 +203,10 @@ create the armory storefront
   The walls of this shop are built of heavy, blackened bricks — a grim exterior
   to house grim business. The sign over the door is painted with an axe and
   shield.
+
+  on the player examining while Toresal is night
+    refuse shops-shuttered
+  end on
 
 create the shopfronts
   aka shops, stores, storefronts, shop fronts, store fronts, signs, shop signs, doors, shop doors, buildings
@@ -449,6 +500,7 @@ create the East Commerce Street
   northwest is blocked: black-gate-servants
   north is blocked: red-gate-locked
   northeast is blocked: jacobs-no-business
+  south is blocked while Toresal is night: park-unsafe-at-night
   south is blocked: park-kids
 
   The east end of Commerce Street winds through an upper-class residential
@@ -549,8 +601,15 @@ create the City Park
   side.
 
   on the player entering
+    refuse when Toresal is night: park-unsafe-at-night
     refuse park-kids
   end on
+
+## `story.ni:4923`
+
+define phrase park-unsafe-at-night
+  The park is not a safe place at night.
+end phrase
 
 create the iron fence
   aka fence, fences, spikes, spike, iron spikes, spiked fence

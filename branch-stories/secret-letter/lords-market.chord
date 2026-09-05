@@ -23,16 +23,12 @@ create the Lord's Market
   east to the Jeweler's Shop, one-way
   southeast to the Moneylender's Shop, one-way
   south to the Back Alley
+  northeast is blocked while Toresal is night: shops-shuttered
+  east is blocked while Toresal is night: shops-shuttered
+  southeast is blocked while Toresal is night: shops-shuttered
   states: bearings, seen
 
-  Lord's Market is the high-class mirror to Grubber's Market: a wide, cobbled
-  square, uncrowded and clean, shaded by tall buildings on either side. Here
-  Toresal's upper crust can hunt for bargains inaccessible to the ordinary
-  rabble. Antiques, custom jewelry, and similarly high-priced goods are
-  available behind the tasteful shopfronts. A fine clothier's, a jewelry
-  store, and a moneylender's shop lie northeast, east, and southeast,
-  respectively; you can return to Commerce Street to the west; an alley leads
-  south.
+  {lords-market-by-day}{lords-market-by-night}
 
   after the player entering while the Lord's Market is bearings
     phrase fossville-collision
@@ -83,6 +79,26 @@ end phrase
 
 ## The storefronts (`story.ni:4990-5002`).
 
+## The square by the hour (`story.ni:4958-4966`); the night text arrives
+## with Chapter 4, the hanging's with Chapter 7.
+
+define phrase lords-market-by-day, stopping while Toresal is day
+  Lord's Market is the high-class mirror to Grubber's Market: a wide, cobbled
+  square, uncrowded and clean, shaded by tall buildings on either side. Here
+  Toresal's upper crust can hunt for bargains inaccessible to the ordinary
+  rabble. Antiques, custom jewelry, and similarly high-priced goods are
+  available behind the tasteful shopfronts. A fine clothier's, a jewelry
+  store, and a moneylender's shop lie northeast, east, and southeast,
+  respectively; you can return to Commerce Street to the west; an alley leads
+  south.
+end phrase
+
+define phrase lords-market-by-night, stopping while Toresal is night
+  At night, lanterns hung from ornate posts light the empty square of Lord's
+  Market. Their warm yellow glow seems to make the shadows in the alleys that
+  much darker.
+end phrase
+
 create the clothier's storefront
   aka clothiers storefront, clothier, clothiers, tailor, royal tunic sign, shop window, window, display, velvet backdrop, backdrop, dummy, clothier's dummy, tunic
   scenery
@@ -91,6 +107,10 @@ create the clothier's storefront
   A large window, trimmed in fine, dark wood, lets light into the front of the
   shop. A clothier's dummy dressed in a smartly cut tunic stands in front of a
   velvet backdrop, advertising the latest fashion to be found inside.
+
+  on the player examining while Toresal is night
+    refuse shops-shuttered
+  end on
 
 create the jeweler's storefront
   aka jewelers storefront, jeweler, jewelers, jewelry store, plaque, brass plaque, iron bars, bars, barred windows, pearls sign, sandler and son
@@ -101,6 +121,10 @@ create the jeweler's storefront
   are blocked with thick (but decorative) iron bars, and the door sports a
   heavy lock. An engraved brass plaque reads 'Sandler and Son.'
 
+  on the player examining while Toresal is night
+    refuse shops-shuttered
+  end on
+
 create the moneylender's storefront
   aka moneylenders storefront, moneylender, moneylenders, placard, discreet placard, chorus brothers sign, blue storefront
   scenery
@@ -108,6 +132,10 @@ create the moneylender's storefront
 
   A discreet placard next to the door reads 'Chorus Brothers.' The remainder
   of the windowless storefront is painted blue.
+
+  on the player examining while Toresal is night
+    refuse shops-shuttered
+  end on
 
 create the tasteful shopfronts
   aka shopfronts, shops, stores, storefronts, shop fronts, store fronts, signs, shop signs, doors, shop doors, buildings
@@ -134,6 +162,18 @@ create the lanterns
   in the Lord's Market
 
   The lampposts are unlit during the day.
+
+  on the player examining while Toresal is night
+    refuse lanterns-lit
+  end on
+
+## `story.ni:5008` — the night half; a marker in an entity's description
+## prints literally (probed 2026-09-04), so the night text is the examine.
+
+define phrase lanterns-lit
+  The lampposts cast circles of warm yellow light around the perimeter of the
+  market square.
+end phrase
 
 ## ---------------------------------------------------------------------------
 ## ROYAL TUNIC — the clothier's (`story.ni:5186-5200`) — the room.

@@ -46,7 +46,7 @@
 create Toresal
   aka the city, the hour
   proper
-  states: day, night
+  states, reversible: day, night
 
   The city of Toresal.
 
@@ -65,6 +65,7 @@ create the Back Alley
   A little-known shortcut between Lord's Market and the less affluent
   neighborhoods of the city's south end. A narrow street to the southwest
   leads to Maiden House, or you can return to the market square to the north.
+  {bobby-leans}
 
   after the player entering while the Back Alley is quiet
     move Bobby here
@@ -72,6 +73,14 @@ create the Back Alley
     phrase bobby-bo1-stub
     change the Back Alley to met
   end after
+
+## Bobby's initial appearance here (`story.ni:5664`) — a room marker, since a
+## presence line cannot vary by where he stands (`night-journey.chord`).
+
+define phrase bobby-leans, stopping while Bobby is in the Back Alley
+  Bobby leans carelessly against the alley wall, watching you with a slight,
+  wry smile.
+end phrase
 
 ## `story.ni:5627`, verbatim, the first entry.
 
@@ -111,7 +120,7 @@ create Bobby
   a person, proper
   pronouns he
   kick-bobby
-  states: proposing, agreed
+  states: proposing, agreed, leading, returning, gone
 
   Bobby is a few years older than you, a tall, broad-shouldered lad with
   tousled black hair and a rakish grin. He's an orphan, like you, and like you
@@ -125,11 +134,7 @@ create Bobby
   about to tell him, because if he knew he would certainly stop inviting you
   along on his exploits.
 
-  phrase present:
-    Bobby leans carelessly against the alley wall, watching you with a slight,
-    wry smile.
-
-  on every turn while Bobby is here and one chance in 5
+  on every turn while Bobby is here and one chance in 5 and the player is not in the Secret Way
     phrase bobby-idle
   end on
 
@@ -137,10 +142,27 @@ create Bobby
     refuse bobby-never-hurt
   end on
 
+  when the player's dawdle expires
+    move Bobby here
+    phrase dawdle-hide-stub
+    move Bobby to the Pasture when the player is in the Lord's Road
+    move Bobby to the Stream Crossing when the player is in the Pasture
+    move Bobby to the Clearing when the player is in the Stream Crossing
+    move Bobby to the Lord's Road when Bobby is here
+  end when
+
   on the player talking
-    phrase bobby-bo11-stub
-    change Bobby to agreed
-    move Bobby offstage
+    phrase bobby-finger-to-lips when the player is in the Lord's Keep
+    phrase bobby-not-now when the player is in the Tunnels
+    phrase bobby-bo27-stub when Bobby is leading and the player is in the Clearing
+    move the player to the Underneath the Fountain when Bobby is leading and the player is in the Clearing
+    phrase bobby-bo26-stub when Bobby is agreed and the player is in the Market Square
+    move Bobby to the Lord's Road when Bobby is agreed and the player is in the Market Square
+    start the player's dawdle when Bobby is agreed and the player is in the Market Square
+    change Bobby to leading when Bobby is agreed and the player is in the Market Square
+    phrase bobby-bo11-stub when Bobby is proposing
+    move Bobby offstage when Bobby is proposing
+    change Bobby to agreed when Bobby is proposing
   end on
 
 ## `ATMOS_Bobby` (`story.ni:5662`), plain every-turn texture (P-9).
@@ -235,6 +257,7 @@ create the Hallway
   after the player entering while Toresal is day
     phrase curfew-arrival
     change Toresal to night
+    move Bobby to the Market Square
     move Widow Theresa here
     phrase curfew-theresa
     phrase theresa-th1-stub

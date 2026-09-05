@@ -1,0 +1,1881 @@
+## ===========================================================================
+## THE NIGHT JOURNEY TO LORD'S KEEP — Book 5B (`story.ni:6550-7596`),
+## Chapter 4.
+##
+## The change document ("Chapter 4 — The Night Journey to Lord's Keep",
+## 2026-09-01) authorizes Book 5B whole: the night walk from behind Maiden
+## House to the empty market, Bobby under the post, Lord's Road, the Pasture,
+## the Stream Crossing, the Woods and the split sapling, the Clearing and the
+## fountain, the tunnel, the loose brick and the wall, the Chapel, the two
+## baileys, the Guardhouse and the two listens at the arrow slit, then the
+## way back to the capture in the Clearing and the sack. Every line is
+## Gentry's; conversations are STUBS under the standing rule.
+##
+## THE RULINGS (change document, Chapter 4):
+##   * THE RAILS — "open outside the keep, with a chase for dawdling". The
+##     nerve refusals on the Market Square's east exit, Lord's Road's south,
+##     the Pasture's west and the Crossing's south are NOT carried; Jack can
+##     wander and Bobby waits at the next stage. The Southern Gate stays
+##     blocked ("guarded day and night", `story.ni:10982`); the Woods keep
+##     the sapling; inside the tunnels and the keep the rail is the source's,
+##     gestures and all.
+##   * THE DAWDLE CHASE — new content, a scripted beat not a fail state. A
+##     four-turn clock on the player (`dawdle`) starts when Bobby heads north
+##     and restarts on the first arrival at each stage outside the keep
+##     (Lord's Road, the Pasture, the Crossing); it stops in the Woods. When
+##     it expires, Bobby comes to wherever she is, the hide beat plays as ONE
+##     placeholder (the chase, Bobby catching up, the hiding as they pass —
+##     David's lines), and Bobby goes back to the stage ahead of her. It
+##     fires at most once: an expired clock is never restarted. MEASURED AND
+##     REPORTED, not decided: four free turns per stage, one clock, re-armed
+##     per stage — the gap the change document left to this build.
+##   * THE STREET PUSH — new content, fear without teeth. ONE placeholder on
+##     the walk, on Commerce Street's first entry at night (the last stretch
+##     before the market); the beats and their lines are David's.
+##   * WHO SEES HER — Bobby does not; the guards behind the slit are public
+##     tier ("yer urchin boy" carries); the gaunt man in red robes SEES — his
+##     "young...sir? Or is it 'miss'?" is a tell, carried as written for David
+##     to keep or sharpen (## DAVID: below).
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## `talk to bobby` in the Market Square prints the BO23-BO26 TODO and takes
+## the exit — Bobby heads north to Lord's Road and the clock starts; walking
+## north without talking does the same through the source's own walk-past
+## text. `talk to bobby` in the Clearing prints the BO27-BO31 TODO and takes
+## BO31's side effect — down the hole.
+##
+## HOW BOBBY IS AHEAD. Each stage's first arrival moves him to the next room
+## and speaks his entry text (the source's `After going` rules); the Woods
+## send him straight to the Clearing (the source removes him from play and
+## re-places him there — here he waits in the Clearing, so `follow` and
+## `Bobby's location` always resolve). `following` is a story action with a
+## topic slot: Bobby here refuses; Bobby ahead moves her to his room (an
+## action's refusals are gates checked before its body, whatever the
+## textual order — so the gates carry the exceptions). On the
+## way back a region daemon brings him along ("Bobby follows you"), guarded
+## on the player being in the region — a region daemon fires wherever the
+## player is (probed 2026-09-04; the guide says otherwise).
+##
+## PRESENCE LINES. A `phrase present:` cannot vary by condition (markers are
+## refused inside a phrase body, and a marker in an entity's description
+## prints literally — both probed 2026-09-04), so Bobby carries NO present
+## line: each room's description carries a gated marker instead
+## (`{bobby-waiting}` while he is here; the alley and the market have their
+## own lines). The fountain's initial appearance is the Clearing's marker
+## for the same reason.
+##
+## Not carried, noted: the facing texts (peering not extended, as Chapters 2
+## and 3); the source's plinth/base aliases moving between the statue and
+## the entrance (the entrance owns them); `rub`/`extinguish`/`burn` (no
+## actions); the bare `listen` in the Guardhouse as a listen at the slit
+## (the slit's two-row count lives on the slit); the hole, brick and lever
+## behind the wall (Pieter's chapter, offstage until then in the source);
+## the dried leaves as an entity (no description in the source); `taste`
+## (no standard action consults tasting); `pause the
+## game` before the chapter card; the night sky, moon and stars (no backdrop
+## in the port); the Southern Gate as a room (Chapter 10's). Glue text of
+## mine, not Gentry's, marked GLUE in comments.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE CLOCK — the dawdle (change document, "The rails")
+## ---------------------------------------------------------------------------
+
+define timer dawdle for the player
+  lingering
+  dawdling
+  loitering
+  lagging
+end timer
+
+## ---------------------------------------------------------------------------
+## THE REGIONS — the tunnels and the keep, and the way back
+## ---------------------------------------------------------------------------
+
+create the Tunnels
+  a region
+  containing the Underneath the Fountain, the Tunnel End
+
+create the Lord's Keep
+  a region
+  containing the Chapel, the Lower Bailey, the Upper Bailey, the Guardhouse
+
+## `story.ni:7586-7589` — Bobby brings up the rear on the way home.
+
+create the Secret Way
+  a region
+  containing the Tunnels, the Lord's Keep
+
+  on every turn while the player is in the Secret Way and Bobby is returning and Bobby is not here
+    move Bobby here
+    phrase bobby-follows
+  end on
+
+define phrase bobby-follows, randomly
+  Bobby follows you.
+or
+  Bobby comes along quietly.
+or
+  Bobby quickly brings up the rear.
+or
+  Bobby follows right behind you.
+end phrase
+
+## ---------------------------------------------------------------------------
+## BOBBY'S NIGHT — the stubs, the clock's expiry, the follow
+## ---------------------------------------------------------------------------
+
+## The hide beat when the clock runs out lives on Bobby's own block
+## (`maiden-house.chord`): a `when … expires` head cannot sit in a trait.
+
+define phrase dawdle-hide-stub
+  (TODO during play-testing — the dawdle chase: Jack has taken too long;
+  mercenaries give chase, Bobby catches up with her and hides the two of
+  them as the mercenaries pass; then the journey resumes on its rails. The
+  beat and its lines are David's.)
+end phrase
+
+define phrase bobby-bo23-stub
+  (TODO during play-testing — conversation BO23: "When you get closer, he
+  walks over and claps you on the shoulder. 'Had a spot of trouble getting
+  away from the Widows, eh, Jack?' he whispers." — the night tree, BO23-BO26;
+  talk to him. Bobby does NOT see through the disguise.)
+end phrase
+
+define phrase bobby-bo26-stub
+  (TODO during play-testing — conversation BO24/BO25 then BO26: "'Not
+  really.'" or "'I had to sneak out.'", then "'Okay then, we're ready to
+  go,' says Bobby. 'We're off to the wood outside Lord's Keep; that place I
+  wanted to show you is there. Now follow me, keep your hood up and your
+  head down, and land your feet soft.' Without waiting for you to answer,
+  Bobby heads north, out the city gates." — the stub takes the source's
+  path: Bobby goes north to Lord's Road.)
+end phrase
+
+define phrase bobby-bo27-stub
+  (TODO during play-testing — conversation BO27 through BO31: "'Wait, wait,'
+  you say, 'I have to ask you something first.'" — the tunnel, how he found
+  it, "'I don't know about this, Bobby...'", and "'Fine, I'm going down your
+  dark, creepy hole.' 'Thattaboy, Jack,' Bobby laughs, as you duck your head
+  and climb down into the darkness." — the stub takes BO31's path: down the
+  hole. Bobby does NOT see through the disguise.)
+end phrase
+
+## `story.ni:6584-6588`, verbatim — north before BO26.
+
+define phrase bobby-walk-past
+  You're too filled with nervous excitement to chit-chat; you want to get on
+  with the adventure! With a grin, you walk right past Bobby without
+  answering towards the gate out of town.
+
+  Bobby cocks an eyebrow at you. 'Well, okay then,' he mutters, and hurries
+  to catch up.
+end phrase
+
+## `story.ni:7124-7128` — no talking underground or in the keep.
+
+define phrase bobby-not-now
+  Bobby raises his hand wordlessly, as if to say, not now.
+end phrase
+
+define phrase bobby-finger-to-lips
+  Bobby shakes his head and puts his finger to his lips.
+end phrase
+
+## The follow (`story.ni:6647-6656`, `7591-7595`). A topic slot, so
+## "follow bobby" reaches the action when Bobby is not in sight.
+
+define action following
+  grammar
+    follow the target
+    follow
+  the target is a topic
+  refuse when Bobby is here and the player is in the Guardhouse and the arrow slit is chattering: bobby-go-first
+  refuse when Bobby is here and the player is in the Guardhouse and the arrow slit is half-heard: bobby-go-first
+  refuse when Bobby is here: bobby-right-here
+  refuse when Bobby is proposing: no-one-to-follow
+  refuse when Bobby is agreed: no-one-to-follow
+  refuse when the player is in the Jailhouse and Olmer is not in the Drain Room: no-way-out-alone
+  refuse when the player is in the Sewers and the magic color is red: olmer-said-red
+  refuse when the player is in the Sewers and the magic color is blue: olmer-said-blue
+  refuse when the player is in the Sewers and the magic color is green: olmer-said-green
+  refuse when the player is in the Sewers and the magic color is yellow: olmer-said-yellow
+  refuse when Bobby is gone and the player is not in the Underneath the Fountain and the player is not in the Jailhouse: no-one-to-follow
+  move the player to the Drain Room when the player is in the Jailhouse
+  move the player to the Clearing when Bobby is gone and the player is in the Underneath the Fountain
+  move the player to Bobby's location when Bobby is not gone
+
+define phrase bobby-right-here
+  But Bobby's right here!
+end phrase
+
+define phrase bobby-go-first
+  Bobby motions for you to go first, pointing.
+end phrase
+
+## GLUE — the source has no line for following nobody.
+
+define phrase no-one-to-follow
+  There's no one to follow.
+end phrase
+
+## Bobby is here — the night presence line (`story.ni:5673`), gated, for the
+## rooms below to splice.
+
+define phrase bobby-waiting, stopping while Bobby is here
+  Bobby is here, waiting for you.
+end phrase
+
+## ---------------------------------------------------------------------------
+## GRUBBER'S MARKET AT NIGHT (`story.ni:6554-6590`)
+## ---------------------------------------------------------------------------
+
+create the Market Square
+  a room
+  aka grubbers market, grubber's market, empty market, night market, maze, shadows, shadow
+  north to the Lord's Road
+  east to the Commerce Street, one-way
+  up is blocked while Bobby is here: bobby-grabs-belt
+  up is blocked: no-time-for-climbing
+
+  At night, the normally crowded marketplace is an empty maze of shadows,
+  abandoned stalls and rolled-up canvas. The Lord's Road lies north, and
+  Commerce Street lies back east. {bobby-under-post}
+
+  after the player entering
+    first time
+      phrase bobby-bo23-stub
+  end after
+
+define phrase bobby-under-post, stopping while Bobby is in the Market Square
+  Bobby is standing in the middle of Grubber's Market, under the shadow of
+  the center post.
+end phrase
+
+## `story.ni:6575` — the no-climbing line, Bobby nearby and not.
+
+define phrase bobby-grabs-belt
+  Bobby grabs your belt and pulls you back to the ground. 'We don't have time
+  for that,' he whispers.
+end phrase
+
+define phrase no-time-for-climbing
+  You don't have time for climbing around; Bobby is waiting for you.
+end phrase
+
+create the abandoned stalls
+  aka stalls, stall, closed stalls, empty stalls, canvas, rolled up canvas, rolled-up canvas
+  scenery, plural
+  in the Market Square
+
+  It's a little bit eerie, seeing the whole market empty and packed away like
+  this.
+
+  on the player entering
+    refuse stalls-closed-tonight
+  end on
+
+define phrase stalls-closed-tonight
+  The stalls are all closed for the night.
+end phrase
+
+## The center post's foot, moved into the night market (`story.ni:5941`).
+## The post's description is Chapter 1's (`market-scenery.chord`).
+
+create the foot of the center post
+  aka post, center post, central post, support post, wooden post, big post, tall post, pole, bottom of the center post
+  scenery
+  in the Market Square
+
+  It's huge, almost too big to put your arms around. Way up at the top, you
+  can see wires stretching out in each of the cardinal directions.
+
+  on the player climbing
+    refuse when Bobby is here: bobby-grabs-belt
+    refuse no-time-for-climbing
+  end on
+
+  on the player entering
+    refuse when Bobby is here: bobby-grabs-belt
+    refuse no-time-for-climbing
+  end on
+
+## ---------------------------------------------------------------------------
+## LORD'S ROAD (`story.ni:6673-6718`)
+## ---------------------------------------------------------------------------
+
+create the Lord's Road
+  a room
+  aka lords road, road, wide road, paved road
+  east to the Pasture
+  north is blocked: southern-gate-guarded
+  northeast is blocked: bobby-went-east
+
+  The wide and well-paved Lord's Road runs from Grubber's Market straight
+  north to Lord's Keep, a mile or so from the city. To the east are rolling
+  pastures; to the west, broken ground and scrub. {bobby-waiting}
+
+  after the player entering while Bobby is agreed
+    phrase bobby-walk-past
+    start the player's dawdle
+    change Bobby to leading
+  end after
+
+  after the player entering
+    first time
+      move Bobby to the Pasture
+      phrase bobby-thumb-down-the-road
+      restart the player's dawdle when the player's dawdle has not expired
+  end after
+
+define phrase bobby-thumb-down-the-road
+  Bobby jerks his thumb down the road, to the north. 'This road leads straight
+  to the front gate of Lord's Keep; we want to stay away from there. I know a
+  better way,' he says with a knowing smile, and strikes off towards the open
+  field to the east.
+end phrase
+
+## `story.ni:10982`
+
+define phrase southern-gate-guarded
+  That way would just take you to Lord's Keep, which is guarded day and night.
+end phrase
+
+define phrase bobby-went-east
+  Bobby went east, to the pasture. You should follow him, or you're likely to
+  get lost.
+end phrase
+
+## The backdrops (`story.ni:6706-6718`): one entity each, following Jack
+## where it belongs (the `backdrops.chord` shape).
+
+create the broken ground
+  aka land, rocks, rock, rocky ground, dry ground, scrub, bushes, bush, thorn, thorns, thornbush, thornbushes
+  scenery
+  in the Lord's Road
+
+  The land to the west of Lord's Road is rocky and dry, no good for growing
+  much of anything other than thornbushes.
+
+  on the player taking
+    refuse thorns-not-now
+  end on
+
+  on the player pulling
+    refuse thorns-not-now
+  end on
+
+  on the player pushing
+    refuse thorns-not-now
+  end on
+
+  on the player searching
+    refuse thorns-not-now
+  end on
+
+  on the player touching
+    refuse thorns-not-now
+  end on
+
+define phrase thorns-not-now
+  A hand full of painful thorns is not what you need right now.
+end phrase
+
+create the city wall
+  aka walls, outer wall, outer walls, white stone, heavy stone, stones, wall of toresal
+  scenery
+  in the Lord's Road
+
+  The outer walls of Toresal are built of heavy, white stone.
+
+  when Jack moves, while the player is in the Lord's Road or the player is in the Pasture
+    move the city wall here
+  end when
+
+  on the player climbing
+    refuse city-walls-too-high
+  end on
+
+define phrase city-walls-too-high
+  The city walls are far too high for you to climb.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE PASTURE (`story.ni:6720-6776`)
+## ---------------------------------------------------------------------------
+
+create the Pasture
+  a room
+  aka field, open field, pastures, farmland
+  north to the Stream Crossing
+  northwest is blocked: southern-gate-guarded
+  east is blocked: endless-farmland
+  northeast is blocked: endless-farmland
+  south is blocked: outer-wall-that-way
+  southeast is blocked: outer-wall-that-way
+  southwest is blocked: outer-wall-that-way
+
+  This wide, open field is used by the city for tourneys and other holiday
+  events, or by cattle-sellers driving their livestock to market. Tonight it
+  is empty except for the occasional cow pie. To the north you can see the
+  dark, rough edge of a forest. {bobby-waiting}
+
+  after the player entering
+    first time
+      move Bobby to the Stream Crossing
+      phrase bobby-fresh-air
+      restart the player's dawdle when the player's dawdle has not expired
+  end after
+
+define phrase bobby-fresh-air
+  You feel nervous and exposed out here in all this empty space; you're more
+  used to the narrow alleys and enclosing walls of the city. The urge to
+  hunch over and make yourself small is near-irresistible.
+
+  Bobby, meanwhile, strides out into the middle of the moonlit field,
+  standing straight and swinging his arms wide. 'Fresh air, Jack!' he calls
+  out, laughing. 'Enjoy it! Take a deep breath!' He heads north, still
+  laughing.
+end phrase
+
+define phrase endless-farmland
+  There's nothing out that way but endless farmland.
+end phrase
+
+define phrase outer-wall-that-way
+  That way lies the outer wall of the city.
+end phrase
+
+create the cow pies
+  aka cow pie, pie, pies, patty, patties, dung, manure
+  scenery, plural
+  in the Pasture
+
+  Last time you checked, cow pies pretty much all looked the same.
+
+  when Jack moves, while the player is in the Pasture or the player is in the Stream Crossing
+    move the cow pies here
+  end when
+
+  on the player smelling
+    refuse um-yuck
+  end on
+
+  on the player taking
+    refuse um-yuck
+  end on
+
+define phrase um-yuck
+  Um, yuck.
+end phrase
+
+define phrase mostly-cow-pies
+  Mostly you smell cow pies.
+end phrase
+
+## `story.ni:6768-6775` — breathing is a bare smell, which is the story's
+## `sniffing` action (`backdrops.chord`); its grammar carries the forms.
+
+## ---------------------------------------------------------------------------
+## THE STREAM CROSSING (`story.ni:6778-6870`)
+## ---------------------------------------------------------------------------
+
+create the Stream Crossing
+  a room
+  aka crossing, stream crossing, north end, northern pasture
+  north to the Woods
+  southwest to the Lord's Road, one-way
+  west is blocked: southern-gate-guarded
+  northwest is blocked: no-crossing-that-way
+  northeast is blocked: no-crossing-that-way
+  east is blocked: endless-farmland
+  southeast is blocked: endless-farmland
+
+  A small stream bubbles out of the woods and cuts through the pasture's
+  north end. The edge of the forest lies to the north, just across the
+  water. The city is far away to the south. {bobby-waiting}
+
+  after the player entering
+    first time
+      move Bobby to the Clearing
+      phrase bobby-hops-across
+      restart the player's dawdle when the player's dawdle has not expired
+  end after
+
+define phrase bobby-hops-across
+  Bobby hops nimbly across, bouncing from rock to rock as though he were
+  playing a game of Circles-and-Stones in the park. He doesn't get so much
+  as the hem of his cloak damp. When he gets to the opposite bank, he turns
+  and beckons you to follow before disappearing into the shadowy woods.
+end phrase
+
+define phrase no-crossing-that-way
+  There's no place to cross the stream in that direction.
+end phrase
+
+## `story.ni:6836-6862` — swimming and diving.
+
+define action swimming
+  grammar
+    swim in the target
+    swim across the target
+    swim the target
+    dive into the target
+    dive in the target
+    dive in to the target
+  otherwise refuse cant-swim-in-that
+
+define phrase cant-swim-in-that
+  You can't swim in that!
+end phrase
+
+define trait shin-deep
+  on the player swimming
+    refuse stream-shin-deep
+  end on
+end trait
+
+create the stream
+  aka water, brook, river, clear water, clean water, ripples
+  scenery, enterable
+  shin-deep
+  in the Stream Crossing
+
+  The water is clean and clear, rippling over a shallow bed of stones and
+  splashing over the larger rocks. It's only about ten feet wide here; you
+  could probably pick your way across.
+
+  on the player entering
+    move the player to the Woods
+  end on
+
+  on the player drinking
+    refuse water-shockingly-cold
+  end on
+
+
+define phrase stream-shin-deep
+  The water is only about shin-deep here; better for wading than for swimming.
+end phrase
+
+define phrase water-shockingly-cold
+  The water is fresh and shockingly cold.
+end phrase
+
+create the stepping stones
+  aka stones, stone, rocks, rock, bed of stones, larger rocks, large rocks, slippery rocks
+  scenery, plural, climbable, enterable
+  in the Stream Crossing
+
+  The stones just barely poke over the surface of the water, rounded and
+  slippery.
+
+  on the player entering
+    move the player to the Woods
+  end on
+
+  on the player climbing
+    move the player to the Woods
+  end on
+
+create the distant city
+  aka city, toresal, city walls, town, silhouette, walls of the city
+  scenery
+  in the Stream Crossing
+
+  You can just make out the silhouette of the city walls, far to the south.
+
+  on the player taking
+    refuse city-too-far
+  end on
+
+  on the player touching
+    refuse city-too-far
+  end on
+
+  on the player entering
+    refuse city-too-far
+  end on
+
+  on the player searching
+    refuse city-too-far
+  end on
+
+define phrase city-too-far
+  The city is too far away.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE WOODS and the split sapling (`story.ni:6872-6960`)
+## ---------------------------------------------------------------------------
+
+## The sapling's way is drawn once, on the first arrival, from the story's
+## seeded stream (deterministic at the pinned seed, as the sweep is): one
+## chance in three each of north, east and west. Bobby goes on to the
+## Clearing; the Woods' three forward exits lead there, and the two wrong
+## ones refuse with the source's lost line.
+
+create the Woods
+  a room
+  aka forest, woodlands, game trails, trails
+  north to the Clearing, one-way
+  east to the Clearing, one-way
+  west to the Clearing, one-way
+  north is blocked while the split sapling is not northward: lost-in-the-woods
+  east is blocked while the split sapling is not eastward: lost-in-the-woods
+  west is blocked while the split sapling is not westward: lost-in-the-woods
+  northeast is blocked: trees-too-thick
+  northwest is blocked: trees-too-thick
+  southeast is blocked: trees-too-thick
+  southwest is blocked: trees-too-thick
+  up is blocked: no-tree-climbing
+
+  You are in the woodlands just southeast of Lord's Keep, following the game
+  trails that wind their way through strands of pale birch and black spruce.
+  There is just enough moonlight trickling through the upper branches to see
+  your way by. {sapling-north}{sapling-east}{sapling-west}
+
+  after the player entering
+    first time
+      phrase stream-rocks-wobble
+      change the split sapling to eastward when one chance in 3
+      change the split sapling to westward when the split sapling is northward and one chance in 2
+      stop the player's dawdle
+      phrase bobby-shows-sapling-north when the split sapling is northward
+      phrase bobby-shows-sapling-east when the split sapling is eastward
+      phrase bobby-shows-sapling-west when the split sapling is westward
+  end after
+
+## `story.ni:6825`, verbatim — before going north from the Crossing, the
+## first time.
+
+define phrase stream-rocks-wobble
+  The first couple of rocks are easy enough, but the third one wobbles when
+  you put your weight on it. You end up pinwheeling your arms desperately,
+  contorting yourself in every direction to avoid a tumble and a thorough
+  soaking. Finally, with arms outstretched and lower lip clamped between your
+  teeth, you pick your way across the remainder of the stream with all the
+  grace of a drunkard on a greased tightrope.
+
+  At the edge of the woods, Bobby is nearly doubled over with silent
+  laughter. He claps you on the back. 'You're a good sport, Jack,' he says.
+  'C'mon, we're nearly there.'
+end phrase
+
+## `story.ni:6885`, three ways — a phrase cannot splice the sapling's way.
+
+define phrase bobby-shows-sapling-north
+  Bobby motions you over to where he's standing, pushing back the underbrush.
+  'Look here, Jack,' he says. 'These trails go every which way, and it's easy
+  to get lost. But if you keep an eye out for this one sapling,' — he points
+  to a small tree split halfway down its length — '...you'll find the right
+  trail.' He heads off through the trees to the north.
+end phrase
+
+define phrase bobby-shows-sapling-east
+  Bobby motions you over to where he's standing, pushing back the underbrush.
+  'Look here, Jack,' he says. 'These trails go every which way, and it's easy
+  to get lost. But if you keep an eye out for this one sapling,' — he points
+  to a small tree split halfway down its length — '...you'll find the right
+  trail.' He heads off through the trees to the east.
+end phrase
+
+define phrase bobby-shows-sapling-west
+  Bobby motions you over to where he's standing, pushing back the underbrush.
+  'Look here, Jack,' he says. 'These trails go every which way, and it's easy
+  to get lost. But if you keep an eye out for this one sapling,' — he points
+  to a small tree split halfway down its length — '...you'll find the right
+  trail.' He heads off through the trees to the west.
+end phrase
+
+define phrase lost-in-the-woods
+  If you go wandering off among these trails without Bobby's help, you'll
+  never find your way out of the woods.
+end phrase
+
+define phrase trees-too-thick
+  The trees are too thick in that direction.
+end phrase
+
+define phrase no-tree-climbing
+  This really isn't the time for tree-climbing.
+end phrase
+
+## The sapling's initial appearance (`story.ni:6936`), by its way.
+
+define phrase sapling-north, stopping while the split sapling is northward
+  A split sapling grows right next to a path leading north.
+end phrase
+
+define phrase sapling-east, stopping while the split sapling is eastward
+  A split sapling grows right next to a path leading east.
+end phrase
+
+define phrase sapling-west, stopping while the split sapling is westward
+  A split sapling grows right next to a path leading west.
+end phrase
+
+create the split sapling
+  aka sapling, small tree, y shaped tree, y-shaped tree, y shape, split tree
+  scenery
+  in the Woods
+  states: northward, eastward, westward
+
+  The sapling is split down half its length, forming a distinctive 'Y' shape.
+
+  phrase detail while the split sapling is northward:
+    It's right next to a path leading north.
+
+  phrase detail while the split sapling is eastward:
+    It's right next to a path leading east.
+
+  phrase detail while the split sapling is westward:
+    It's right next to a path leading west.
+
+create the trees
+  aka tree, birch, birches, spruce, spruces, branch, branches, upper branches, thick trees, dark trees
+  scenery, plural
+  in the Woods
+
+  The trees grow thick and close all around you.
+
+  when Jack moves, while the player is in the Woods or the player is in the Clearing
+    move the trees here
+  end when
+
+  on the player climbing
+    refuse no-tree-climbing
+  end on
+
+create the game trails
+  aka trail, path, paths, gap, gaps, narrow gaps, track, tracks
+  scenery, plural
+  in the Woods
+
+  The trails are little more than narrow gaps in the underbrush, leading in
+  every which direction.
+
+  phrase detail while the split sapling is northward:
+    One trail leads north, past a split sapling.
+
+  phrase detail while the split sapling is eastward:
+    One trail leads east, past a split sapling.
+
+  phrase detail while the split sapling is westward:
+    One trail leads west, past a split sapling.
+
+create the underbrush
+  aka brush, bush, bushes, undergrowth, tangled underbrush
+  scenery
+  in the Woods
+
+  The underbrush is thick and tangled.
+
+## ---------------------------------------------------------------------------
+## THE CLEARING and the fountain (`story.ni:6962-7089`)
+## ---------------------------------------------------------------------------
+
+## The fountain's initial appearance (`story.ni:6979`) is the room's
+## marker, in its two states; the capture is the arrival with Bobby gone.
+
+create the Clearing
+  a room
+  aka moonlit clearing, small clearing
+  down to the Underneath the Fountain
+  north is blocked: bobby-chickening-out
+  east is blocked: bobby-chickening-out
+  south is blocked: bobby-chickening-out
+  west is blocked: bobby-chickening-out
+  northeast is blocked: bobby-chickening-out
+  northwest is blocked: bobby-chickening-out
+  southeast is blocked: bobby-chickening-out
+  southwest is blocked: bobby-chickening-out
+
+  The woods open out here in a small, moonlit clearing. The ruins of an old
+  pavilion lie here, pale pavestones poking up like bones from the grass.
+  {fountain-closed}{fountain-open} {bobby-waiting}
+
+  after the player entering while Bobby is gone
+    phrase the-capture
+    move the secret entrance offstage
+    move the player to the Jail Cell
+  end after
+
+  after the player entering while Bobby is leading
+    first time
+      move the secret entrance here
+      phrase bobby-opens-the-fountain
+  end after
+
+define phrase fountain-closed, stopping while the secret entrance is not in the Clearing
+  In the center of the clearing stands a crumbling fountain, topped by a
+  cracked statue of the Goddess Brigid.
+end phrase
+
+define phrase fountain-open, stopping while the secret entrance is in the Clearing
+  In the center of the clearing stands a crumbling fountain, topped by a
+  cracked statue of the Goddess Brigid. One side of the stone plinth
+  supporting the statue has opened up, revealing a narrow opening into
+  darkness.
+end phrase
+
+## `story.ni:7051`, verbatim.
+
+define phrase bobby-opens-the-fountain
+  'Here we are.' Bobby jumps up into the bowl of the fountain, dried leaves
+  crackling beneath his boots. Then he reaches around the statue of Brigid as
+  though trying to embrace her. His hands fumble at something on the
+  underside of the urn.
+
+  Suddenly there is a deep, solid thunk and a scraping sound, and part of the
+  base of the statue moves.
+
+  Bobby hops down and pushes against the statue's base. A rectangle of stone
+  about two feet square swings inward. The space behind it is utterly black,
+  and a cold draft of damp-smelling air rises out of it.
+
+  'It runs all the way to Lord's Keep,' says Bobby as he brushes off his
+  hands. 'I don't think anyone knows about it. Maybe the old Duke did, but
+  now that he's dead it's basically unknown. It's not been used for decades,
+  I'd guess. Well anyway, until now.'
+
+  He holds out his hand. His lop-sided smile is absolutely charming. 'After
+  you, kind sir.'
+end phrase
+
+## `story.ni:7062`, verbatim — the way back. DAVID: the gaunt man SEES her
+## (change document, "Who sees her"); "young...sir? Or is it 'miss'?" is
+## his tell, carried as written, yours to keep or sharpen.
+
+define phrase the-capture
+  You crawl out of the hole in the base of the statue, into the dirt and
+  leaves littering the bottom of the fountain. Apart from your scrabbling,
+  it's quiet out here. Even the crickets have stopped. Finally, you get to
+  your feet and look around.
+
+  Bobby is lying face-down in the grass, just a few yards away. One of the
+  mercenaries from Grubber's Market is kneeling with his knee in the small
+  of Bobby's back, binding his wrists together with twine. Standing around
+  the outside of the fountain are several more mercenaries, looking relaxed
+  and smug. Some of them are chuckling to themselves.
+
+  A gaunt man wearing red robes walks up to you. His mouth is half-hidden by
+  long, drooping, black moustaches, but underneath them he is smiling like a
+  snake. 'Well now, young...sir? Or is it 'miss'? So much confusion, all to
+  catch one little mouse. You led us a merry chase this morning, little
+  mouse, but I think you will not scurry away from us again.'
+
+  Leaves crunch behind you. You jump for it, but too slow — rough hands haul
+  you back, and a sack of coarse, black cloth is pulled over your head.
+
+  'Good night, little mouse.'
+
+  Something hard and heavy strikes the back of your head, and the night
+  turns black as pitch.
+end phrase
+
+define phrase bobby-chickening-out
+  You can't leave now, Bobby will think you're chickening out!
+end phrase
+
+create the fountain
+  aka crumbling fountain, stone fountain, bowl, stone bowl, dry fountain, ruined fountain, cracked fountain
+  scenery, enterable
+  in the Clearing
+
+  The fountain is shaped like a large bowl, topped with a classical-style
+  statue of Brigid pouring water from an urn. Of course, the fountain is dry
+  now, its stone cracked, the bowl filled with bird droppings and dead
+  leaves. But at one time it must have been very beautiful.
+
+  phrase detail while the secret entrance is in the Clearing:
+    One side of the stone plinth supporting the statue has opened up,
+    revealing a narrow opening into darkness.
+
+  on the player searching
+    refuse when the secret entrance is in the Clearing: fountain-bowl-open
+    refuse fountain-bowl
+  end on
+
+  on the player entering
+    refuse when the secret entrance is not in the Clearing: nothing-but-droppings
+    move the player to the Underneath the Fountain
+  end on
+
+define phrase fountain-bowl
+  The bowl of the fountain is filled with bird droppings and dead leaves.
+end phrase
+
+define phrase fountain-bowl-open
+  The bowl of the fountain is filled with bird droppings and dead leaves. One
+  side of the stone plinth supporting the statue has opened up, revealing a
+  narrow opening into darkness.
+end phrase
+
+define phrase nothing-but-droppings
+  There's nothing in there but bird droppings and dead leaves.
+end phrase
+
+create the ruined pavilion
+  aka pavilion, ruins, ruin, pavestones, pavestone, pale pavestones, rubble, grass, bones
+  scenery
+  in the Clearing
+
+  Whatever once stood here was probably very beautiful. Now it's just rubble
+  in the grass.
+
+## The statue and its urn (`story.ni:6997-7027`). `washing` is Chapter 3's
+## story action (wash, scrub, wipe); the source's `rub` has no action.
+
+define trait moss-rub
+  on the player washing
+    refuse statue-moss
+  end on
+end trait
+
+create the statue
+  aka statue of brigid, brigid, goddess, goddess brigid, cracked statue, sculpture, worn statue, moss
+  scenery
+  moss-rub
+  in the Clearing
+
+  The statue's features are worn away and obscured by moss, but you've seen
+  enough statues of Brigid to know that she's almost always depicted carrying
+  water. She cradles her urn like a child, tipping it gently over the bowl of
+  the fountain.
+
+  phrase detail while the secret entrance is in the Clearing:
+    One side of the stone plinth supporting the statue is open, revealing a
+    narrow tunnel leading down into darkness.
+
+  on the player pushing
+    refuse statue-does-not-budge
+  end on
+
+  on the player pulling
+    refuse statue-does-not-budge
+  end on
+
+  on the player turning
+    refuse statue-does-not-budge
+  end on
+
+  on the player searching
+    refuse statue-search
+  end on
+
+define phrase statue-does-not-budge
+  The statue does not budge.
+end phrase
+
+define phrase statue-moss
+  You rub away a bit of the moss, but the statue looks just the same
+  underneath.
+end phrase
+
+define phrase statue-search
+  The statue's features are worn away and obscured by moss, but you've seen
+  enough statues of Brigid to know that she's almost always depicted carrying
+  water. She cradles her urn like a child, tipping it gently over the bowl of
+  the fountain.
+end phrase
+
+create the hollow urn
+  aka urn, hollow, empty urn, brigid's urn
+  a container
+  scenery
+  in the Clearing
+
+  The urn is hollow, and probably had water flowing out of it when the
+  fountain worked.
+
+  Looking closely, you notice a small metal bolt sticking out of the bottom
+  of the urn.
+
+  on the player inserting
+    refuse urn-tipped-over
+  end on
+
+  on the player searching
+    refuse urn-searched
+  end on
+
+define phrase urn-tipped-over
+  The urn is tipped over. Anything you put in there would just fall out.
+end phrase
+
+define phrase urn-searched
+  The urn is hollow, and probably had water flowing out of it when the
+  fountain worked.
+
+  Looking closely, you notice a small metal bolt sticking out of the bottom
+  of the urn.
+end phrase
+
+## The bolt does nothing until Pieter's chapter presses it with the
+## entrance closed; tonight the entrance is open before she can reach it.
+
+create the metal bolt
+  aka bolt, knob, metal knob, stud, button, little knob, bottom of the urn, underside of the urn
+  scenery
+  in the Clearing
+
+  Just a little knob of metal, sticking out of the bottom of the urn.
+
+  on the player pulling
+    refuse bolt-press-in
+  end on
+
+  on the player turning
+    refuse bolt-press-in
+  end on
+
+  on the player pushing
+    refuse when the secret entrance is in the Clearing: bolt-click-nothing
+  end on
+
+define phrase bolt-press-in
+  The knob doesn't move that way. It feels like you could press it in,
+  though.
+end phrase
+
+define phrase bolt-click-nothing
+  The metal knob pushes in, then pops out with a click. Nothing much happens.
+end phrase
+
+## The secret entrance: offstage until Bobby opens it, offstage again after
+## the capture (the source's Limbo).
+
+create the secret entrance
+  aka entrance, opening, narrow opening, hole, tunnel, dark tunnel, darkness, plinth, base, stone plinth, statue's base, rectangle of stone, secret door
+  scenery, enterable
+
+  The tunnel leads down into darkness.
+
+  on the player smelling
+    refuse entrance-smells-old
+  end on
+
+  on the player searching
+    refuse cant-see-down-there
+  end on
+
+  on the player entering
+    move the player to the Underneath the Fountain
+  end on
+
+define phrase entrance-smells-old
+  The air coming out of that tunnel smells damp and old, like something long
+  buried.
+end phrase
+
+define phrase cant-see-down-there
+  You can't see anything down there.
+end phrase
+
+## ---------------------------------------------------------------------------
+## UNDERNEATH THE FOUNTAIN (`story.ni:7091-7205`)
+## ---------------------------------------------------------------------------
+
+create the Underneath the Fountain
+  a room
+  aka tunnel, low tunnel, under the fountain, beneath the fountain
+  north to the Tunnel End
+  up is blocked while Bobby is leading: definitely-no-chickening-out
+
+  The walls and floor are old, damp, and spotted with some sort of whitish
+  fungus, and the air has a wet, sour smell to it. Steps lead up to the
+  fountain above you. To the north, a long, low-ceilinged tunnel leads into
+  the gloom. {bobby-waiting}
+
+  after the player entering while Bobby is returning
+    phrase bobby-goes-up-first
+    move the torch offstage
+    move Bobby offstage
+    change Bobby to gone
+  end after
+
+  after the player entering while Bobby is leading
+    first time
+      phrase grope-down-the-steps
+      move the torch to Bobby
+      move Bobby here
+  end after
+
+## `story.ni:7137`, verbatim.
+
+define phrase grope-down-the-steps
+  You grope your way down into the tunnel, carefully sliding your feet over
+  steps you cannot see. Echoes fill the darkness: the scrape of your shoes on
+  stone, the drip of water, your own loud breathing.
+
+  Behind you, you hear Bobby fumbling with something under his cloak; the
+  click of stone on metal; and then a sickly orange glow spreads across the
+  walls of the tunnel. Your own shadow wobbles hugely in front of you.
+
+  You turn around and see Bobby holding a torch. He grins at you. 'Tricky,
+  isn't it?'
+end phrase
+
+## `story.ni:7145`, verbatim — the way back.
+
+define phrase bobby-goes-up-first
+  Stealthily, you creep back up the long tunnel to the stone steps under the
+  fountain. 'I'll go up first,' whispers Bobby, 'to make sure the coast is
+  clear.' He dunks his torch in a puddle of mud and bounds lightly up the
+  steps. For a moment you can see him silhouetted against the starlight; then
+  he moves away from the opening and disappears from view.
+
+  You wait for ten heartbeats. Behind you, you hear the distant plip of
+  dripping moisture, far back in the dark tunnel. Above you, you can hear
+  crickets chirping in the nearby forest.
+
+  Ten more heartbeats. 'Bobby?' you call out in a hoarse whisper. Maybe he
+  can't hear you, but you're too nervous to raise your voice. 'Bobby? Are you
+  up there?'
+
+  There is no answer.
+end phrase
+
+define phrase definitely-no-chickening-out
+  You definitely can't chicken out now, not while Bobby is right here.
+end phrase
+
+define phrase tunnel-smells-sour
+  It smells damp and sour down here. You'll be glad to get back into the
+  fresh air.
+end phrase
+
+define phrase tunnel-drip
+  You hear the slow, faint dripping of water coming from somewhere.
+end phrase
+
+create the white fungus
+  aka fungus, mold, clusters, cluster, whitish fungus, sticky fungus, damp walls, walls, wall
+  scenery
+  in the Underneath the Fountain
+
+  The fungus grows in little clusters all over the damp walls.
+
+  on the player taking
+    refuse fungus-shudder
+  end on
+
+  on the player touching
+    refuse fungus-shudder
+  end on
+
+  on the player smelling
+    refuse fungus-shudder
+  end on
+
+  on the player eating
+    refuse fungus-shudder
+  end on
+
+
+define phrase fungus-shudder
+  Just the thought of touching the sticky fungus makes you shudder.
+end phrase
+
+create the stone steps
+  aka steps, stairs, staircase
+  scenery, climbable
+  in the Underneath the Fountain
+
+  The stairs lead back up to the clearing above.
+
+  on the player climbing
+    refuse when Bobby is leading: definitely-no-chickening-out
+    move the player to the Clearing
+  end on
+
+create the torch
+  aka bobby's torch, flame, torch flame
+
+  The torch's flame throws weird, shivering shadows across the walls.
+
+## ---------------------------------------------------------------------------
+## TUNNEL END — the secret passage and the wall (`story.ni:7207-7313`)
+## ---------------------------------------------------------------------------
+
+## The wall is scenery with a state, not a Chord door — it opens and shuts
+## by Bobby's hand, never by the player's, and only a blocked exit says so.
+
+create the Tunnel End
+  a room
+  aka secret passage, passage, end of the tunnel, dead end
+  north to the Chapel
+  north is blocked while Bobby is returning: ready-to-go-home
+  north is blocked while the blank stone wall is sealed: wall-just-blank
+  south is blocked while Bobby is leading: definitely-no-chickening-out
+
+  {tunnel-end-sealed}{tunnel-end-open} {bobby-waiting}
+
+  after the player entering while Bobby is returning
+    move Bobby here
+    move the torch to Bobby
+    change the blank stone wall to sealed
+    phrase we-are-out
+  end after
+
+  after the player entering while Bobby is leading
+    first time
+      phrase ducking-down-the-tunnel
+      move Bobby here
+      change the blank stone wall to opened
+      phrase bobby-finds-the-brick
+  end after
+
+define phrase tunnel-end-sealed, stopping while the blank stone wall is sealed
+  The tunnel ends here at a blank, stone wall.
+end phrase
+
+define phrase tunnel-end-open, stopping while the blank stone wall is opened
+  The wall at the north end of the tunnel has swung open, revealing a secret
+  entrance to the castle.
+end phrase
+
+## `story.ni:7203` — before going north from under the fountain.
+
+define phrase ducking-down-the-tunnel
+  Ducking your head to avoid the low ceiling, you follow the tunnel for some
+  distance.
+end phrase
+
+## `story.ni:7180`, verbatim.
+
+define phrase bobby-finds-the-brick
+  Bobby steps past you and brushes his fingertips across the stonework,
+  holding the torch close. Eventually he finds a loose brick and pulls it
+  free, revealing a rough, rectangular hole.
+
+  You wonder how many times Bobby has been down here. He exudes such easy
+  confidence as he reaches into the hole, as though he has done this many
+  times before.
+
+  There is a click. Bobby looks over his shoulder at you and winks. And then
+  the north wall swings away, revealing shadowed spaces beyond.
+end phrase
+
+## `story.ni:7198`, verbatim — the way back.
+
+define phrase we-are-out
+  Bobby reaches back and pulls the secret door shut, carefully easing it the
+  last few inches so that it doesn't slam. He puts the loose brick back in
+  its place, just as before, and tugs his torch free of the bracket where
+  he'd left it.
+
+  We're out, you realize with a sense of overwhelming relief. We made it.
+  It's like we were never here.
+
+  'Some adventure, eh, Jack?' laughs Bobby. His voice is disturbingly loud
+  after the long minutes of terrified silence in the keep. 'Eavesdropping on
+  the Lord's own guardsmen! That's a story that'll have the little ones
+  wide-eyed at the Maiden House, eh?' He claps you on the back, and you
+  manage a smile. It was fun, and you want Bobby to think you had fun, but it
+  will be a while before you feel up to something that dangerous again.
+end phrase
+
+define phrase ready-to-go-home
+  You're more than ready to go home now, and you're not sure you could find
+  the loose brick again in any case.
+end phrase
+
+define phrase wall-just-blank
+  It's just a blank, featureless, stone wall. You know that one of the bricks
+  must be loose, but they all look the same to you.
+end phrase
+
+create the metal bracket
+  aka bracket, rusted bracket, rusty bracket, torch bracket
+  a container
+  scenery
+  in the Tunnel End
+
+  It's a small metal bracket for holding a torch, bolted into the wall of the
+  tunnel.
+
+create the blank stone wall
+  aka wall, stone wall, blank wall, north wall, stonework, bricks, brickwork, secret door, door, featureless wall
+  scenery
+  in the Tunnel End
+  states, reversible: sealed, opened
+
+  {wall-description-sealed}{wall-description-open}
+
+  on the player examining
+    phrase wall-swung-open when the blank stone wall is opened
+    phrase wall-just-blank when the blank stone wall is sealed
+  end on
+
+  on the player searching
+    refuse when the blank stone wall is opened: wall-swung-open
+    refuse leave-that-for-now
+  end on
+
+  on the player touching
+    refuse when the blank stone wall is opened: wall-swung-open
+    refuse leave-that-for-now
+  end on
+
+  on the player opening
+    refuse when the blank stone wall is opened: wall-swung-open
+    refuse ready-to-go-home
+  end on
+
+  on the player closing
+    refuse when the blank stone wall is sealed: wall-just-blank
+    refuse let-bobby-handle-the-door
+  end on
+
+  on the player pushing
+    refuse when the blank stone wall is opened: wall-swung-open
+    refuse leave-that-for-now
+  end on
+
+  on the player pulling
+    refuse when the blank stone wall is opened: wall-swung-open
+    refuse leave-that-for-now
+  end on
+
+define phrase wall-description-sealed, stopping while the blank stone wall is sealed
+  It's just a blank, featureless, stone wall.
+end phrase
+
+define phrase wall-description-open, stopping while the blank stone wall is opened
+  The wall has swung open, revealing a secret entrance to the castle.
+end phrase
+
+define phrase wall-swung-open
+  The wall has swung open, revealing a secret entrance to the castle.
+end phrase
+
+define phrase leave-that-for-now
+  'Leave that for now,' whispers Bobby. 'We need to get going.'
+end phrase
+
+define phrase let-bobby-handle-the-door
+  Better let Bobby handle the secret door. If you close it, you'll never
+  figure out how to get it open again.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CHAPEL (`story.ni:7320-7370`)
+## ---------------------------------------------------------------------------
+
+create the Chapel
+  a room
+  aka chapel of the goddesses, temple, shrine, octagonal room
+  southwest to the Lower Bailey
+  south is blocked while Bobby is leading: bobby-not-yet
+  southwest is blocked while Bobby is returning: heard-all-you-need
+
+  The chapel of the Goddesses is a spacious, octagonal room, empty of
+  furniture. The wood-paneled walls glow warmly, reflecting the light from
+  dozens of devotional candles; the high ceiling disappears in the shadows
+  overhead. A corridor leads southwest, and a secret passage in the south
+  wall leads into subterranean gloom. {bobby-waiting}
+
+  after the player entering while Bobby is leading
+    first time
+      move the torch to the metal bracket
+      phrase bobby-jams-the-torch
+      move Bobby here
+  end after
+
+## `story.ni:7345`, verbatim.
+
+define phrase bobby-jams-the-torch
+  Bobby jams his torch into a rusted bracket on the tunnel wall and steps
+  through the secret door, gesturing you to follow. A prickle runs down your
+  back as you step through after him. Are you really sneaking into the Lord's
+  Keep? You're not even sure what the punishment for that is... something a
+  lot worse than a few days in jail, certainly.
+end phrase
+
+## `story.ni:7355` — the first time and thereafter.
+
+define phrase bobby-not-yet, first-time
+  'Come on,' Bobby whispers, pulling at your arm, 'You don't want to go yet,
+  we just got here. Let's explore some more.' His eyes twinkle, and he gives
+  you that smile that always says, trust me this will be fun, but usually
+  means, if running pell-mell for safety with your heart in your throat and
+  the Lord's Guard on your heels is your idea of 'fun'.
+or
+  Bobby shakes his head and urges you towards the southwest corridor.
+end phrase
+
+define phrase heard-all-you-need
+  You've heard all you need to hear; it's too dangerous to stick around any
+  longer.
+end phrase
+
+create the candle-shelves
+  aka shelves, shelf, little shelves, candle shelves
+  scenery, plural
+  in the Chapel
+
+  Little shelves built into the otherwise bare walls hold a number of
+  devotional candles.
+
+create the devotional candles
+  aka candles, candle, light, candlelight, flame, flames, points of light, wavering light
+  scenery, plural
+  in the Chapel
+
+  The candles sit on little shelves built into the otherwise bare walls. It
+  is traditional to light a candle when offering a prayer to one of the
+  Goddesses; each of these wavering points of light is someone's hope, a
+  wish, a dream.
+
+  on the player taking
+    refuse that-would-be-sacrilege
+  end on
+
+  on the player touching
+    refuse that-would-be-sacrilege
+  end on
+
+define phrase that-would-be-sacrilege
+  That would be sacrilege!
+end phrase
+
+## `story.ni:969-978` and `7338` — praying.
+
+define action praying
+  grammar
+    pray
+    pray to the target
+    pray for the target
+  the target is a topic
+  phrase chapel-prayer when the player is in the Chapel
+  phrase quick-prayer when the player is not in the Chapel
+
+define phrase chapel-prayer
+  Surely here in this Chapel, the Goddesses would hear your prayers. But you
+  can't tell if they're listening or not.
+end phrase
+
+define phrase quick-prayer
+  You mutter a quick prayer under your breath. As usual, there is no reply.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE LOWER BAILEY (`story.ni:7372-7440`)
+## ---------------------------------------------------------------------------
+
+create the Lower Bailey
+  a room
+  aka bailey, courtyard, yard, lower courtyard
+  up to the Upper Bailey
+  northeast is blocked while Bobby is leading: bobby-tugs-your-sleeve
+  north is blocked: guards-would-notice
+  up is blocked while Bobby is returning: heard-all-you-need
+
+  A thick wedge of shadow falls across the courtyard at the base of the
+  Keep's outer wall, providing a relatively safe place to hide. The rest of
+  the courtyard is flooded with moonlight, and bored-looking guards stroll
+  back and forth over the gravel. You can return to the Chapel to the
+  northeast. {steps-stand} {steps-dash} {bobby-waiting}
+
+  after the player entering while Bobby is leading
+    first time
+      phrase bobby-points-up-there
+      move Bobby here
+  end after
+
+define phrase steps-stand
+  Steep stone steps climb up to the top of the wall.
+end phrase
+
+define phrase steps-dash, stopping while Bobby is leading
+  You could make a dash up them, if you timed it right.
+end phrase
+
+define phrase bobby-points-up-there
+  Bobby moves up quietly behind you. He puts his mouth very, very close to
+  your ear and whispers, 'Up there,' pointing to the steps leading up to the
+  top of the wall.
+end phrase
+
+define phrase bobby-tugs-your-sleeve
+  Bobby tugs your sleeve and shakes his head. Again, he points up the stairs.
+end phrase
+
+define phrase guards-would-notice
+  You can't go that way without attracting the attention of the guards.
+end phrase
+
+## `story.ni:7421` — the sprint, spoken on the arrival above.
+
+define phrase sprint-up-the-steps
+  You wait, watching the nearest guard until he turns and begins walking
+  away, then sprint lightly up the steps.
+end phrase
+
+create the steep steps
+  aka steps, stone steps, stairs, staircase, steep stone steps
+  scenery, climbable
+  in the Lower Bailey
+
+  Steep stone steps climb up to the top of the wall.
+
+  on the player climbing
+    refuse when Bobby is returning: heard-all-you-need
+    move the player to the Upper Bailey
+  end on
+
+define trait kick-guards
+  on the player kicking
+    refuse quicker-ways-to-die
+  end on
+end trait
+
+create the patrolling guards
+  aka guards, guard, lord's guards, lords guards, patrolling lords guards, bored guards, guardsmen, guardsman
+  a person, plural
+  scenery
+  kick-guards
+  in the Lower Bailey
+
+  The Lord's Guards are dressed in polished mail and tabards emblazoned with
+  the Toresal coat of arms, and each one wears a hefty sword at his hip.
+  Fortunately, they haven't noticed you. Yet.
+
+  on the player talking
+    refuse quicker-ways-to-die
+  end on
+
+  on the player attacking
+    refuse quicker-ways-to-die
+  end on
+
+  on the player touching
+    refuse quicker-ways-to-die
+  end on
+
+  on the player taking
+    refuse quicker-ways-to-die
+  end on
+
+  on the player pushing
+    refuse quicker-ways-to-die
+  end on
+
+  on the player pulling
+    refuse quicker-ways-to-die
+  end on
+
+  on the player searching
+    refuse quicker-ways-to-die
+  end on
+
+  on the player listening
+    refuse quicker-ways-to-die
+  end on
+
+define phrase quicker-ways-to-die
+  There must be less painful, though probably few quicker, ways of getting
+  yourself killed.
+end phrase
+
+create the polished mail
+  aka mail, tabard, tabards, sword, swords, coat of arms, guards' things, hefty sword
+  scenery
+  in the Lower Bailey
+
+  You can't get near enough to do that without attracting the attention of
+  the guards.
+
+  on the player taking
+    refuse not-near-enough
+  end on
+
+  on the player touching
+    refuse not-near-enough
+  end on
+
+  on the player searching
+    refuse not-near-enough
+  end on
+
+define phrase not-near-enough
+  You can't get near enough to do that without attracting the attention of
+  the guards.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE UPPER BAILEY (`story.ni:7442-7496`)
+## ---------------------------------------------------------------------------
+
+create the Upper Bailey
+  a room
+  aka top of the wall, walkway, parapets, parapet, wall walk
+  north to the Guardhouse
+  down is blocked while Bobby is leading: bobby-points-north
+  north is blocked while Bobby is returning: heard-all-you-need
+
+  At the top of the wall you can lean out over the parapets and take in all
+  the lands surrounding Toresal. It's a nice view, but torches set every few
+  yards along the wall make this a dangerous spot to linger in. Stairs lead
+  down into the courtyard below, and a dark archway opens to the north.
+  {bobby-waiting}
+
+  after the player entering while Bobby is leading
+    phrase sprint-up-the-steps
+    first time
+      phrase bobby-crouches-against-the-wall
+      move Bobby here
+  end after
+
+define phrase bobby-crouches-against-the-wall
+  Bobby comes up the steps right behind you and crouches against the wall.
+  After a quick look around to make sure the coast is clear, he nods towards
+  the archway to the north.
+end phrase
+
+define phrase bobby-points-north
+  Bobby shakes his head, and again points north.
+end phrase
+
+create the stone stairs
+  aka stairs, steps, stone steps, staircase
+  scenery, climbable
+  in the Upper Bailey
+
+  Steep stone steps climb up to the top of the wall.
+
+  on the player climbing
+    refuse when Bobby is leading: bobby-points-north
+    move the player to the Lower Bailey
+  end on
+
+create the wall torches
+  aka torches, torch, fire, flames, flame, torchlight
+  scenery, plural
+  in the Upper Bailey
+
+  If you get anywhere near those torches, you'll be spotted in no time. Best
+  to stay low and in the shadows.
+
+  on the player taking
+    refuse torches-spotted
+  end on
+
+  on the player touching
+    refuse torches-spotted
+  end on
+
+define phrase torches-spotted
+  If you get anywhere near those torches, you'll be spotted in no time. Best
+  to stay low and in the shadows.
+end phrase
+
+create the view of Toresal
+  aka view, city, skyline, shadows in the distance, pinpricks of light, town, lands
+  scenery
+  in the Upper Bailey
+
+  It's an impressive view, no doubt, but you really don't have time to admire
+  it right now.
+
+  on the player examining
+    select first-time
+      phrase view-first-time
+        The city is a pile of shadows in the distance, lit here and there
+        with pinpricks of light: a guardsman carrying a torch, perhaps, or
+        some night-owl sitting by the window with a lantern. Seeing it makes
+        you realize just how absurd is your current predicament: you would be
+        safe back in the city, snug in your bunk in Maiden House, or even
+        skulking around the alleyways you know so well. Instead, you're
+        breaking into Lord's Keep, sneaking along its walls, one slip-up away
+        from getting yourself arrested or worse.
+    or
+      phrase view-afterwards
+        It's an impressive view, no doubt, but you really don't have time to
+        admire it right now.
+    end select
+  end on
+
+  on the player taking
+    refuse city-too-far-away
+  end on
+
+  on the player touching
+    refuse city-too-far-away
+  end on
+
+  on the player searching
+    refuse city-too-far-away
+  end on
+
+define phrase city-too-far-away
+  Unfortunately, the city is too far away.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE GUARDHOUSE and the arrow slit (`story.ni:7498-7566`)
+## ---------------------------------------------------------------------------
+
+create the Guardhouse
+  a room
+  aka antechamber, narrow antechamber, archway
+  north is blocked: are-you-nuts
+  south is blocked while the arrow slit is chattering: bobby-motions-you-back
+  south is blocked while the arrow slit is half-heard: bobby-motions-you-back
+
+  A narrow antechamber, with an open archway to the south and an
+  iron-reinforced door to the north. Arrow slits to either side lend the door
+  an important and dangerous air. {bobby-waiting}
+
+  after the player entering while Bobby is leading
+    first time
+      phrase bobby-taps-his-ear
+      move Bobby here
+      change Bobby to returning
+  end after
+
+## `story.ni:7516`, verbatim.
+
+define phrase bobby-taps-his-ear
+  Bobby creeps forward and presses himself against the wall next to one of
+  the arrow slits. He hunches closer, peering around the slit's edge. Then he
+  looks up at you and smiles. He points at you, points at the arrow slit,
+  then taps his ear. Listen, he's telling you.
+end phrase
+
+define phrase are-you-nuts
+  Bobby waves you off with an incredulous look. Are you NUTS? his eyes seem
+  to ask.
+end phrase
+
+define phrase bobby-motions-you-back
+  Bobby motions you back, pointing at the arrow slit again. There's something
+  he obviously wants you to hear.
+end phrase
+
+define trait knock-guardhouse
+  on the player knocking
+    refuse are-you-nuts
+  end on
+end trait
+
+create the guardhouse door
+  aka door, iron door, reinforced door, iron-reinforced door, big door, tough door, wooden door, planks, bands, rivets, lock
+  scenery
+  knock-guardhouse
+  in the Guardhouse
+
+  The door is big and tough-looking, with bands of riveted iron across its
+  thick wooden planks.
+
+  on the player opening
+    refuse are-you-nuts
+  end on
+
+  on the player entering
+    refuse are-you-nuts
+  end on
+
+## The two rows of overheard conversation (`story.ni:7544-7557`), verbatim,
+## then the guards move on. `listen at` is the source's own grammar.
+
+extend action listening
+  grammar
+    listen at the target
+
+create the arrow slit
+  aka slit, slits, arrow slits, holes, hole, rectangular holes, firelight, voices, voice
+  scenery
+  in the Guardhouse
+  states: chattering, half-heard, heard
+
+  The arrow slits are rectangular holes in the wall, about two inches high
+  and six inches wide. Someone on the inside could stick the end of a
+  crossbow in there and fire at anyone out here, all the while being totally
+  protected by the wall. Fortunately, no one is manning the slits right now.
+
+  From here, you can see flickering firelight through the arrow slit, and
+  hear voices on the other side.
+
+  on the player listening
+    select stopping
+      phrase guards-first-row
+        You can hear several voices coming from the room on the other side of
+        the arrow slit — guards relaxing on break, probably.
+
+        '...and I says, I don't care who hired you, people are tryin' to do
+        honest business here, and you're steppin' on toes. Take yer men and
+        hit the road, or else you can continue searchin' for yer urchin boy
+        in the city jail. And this tough fellow, him so hard with his sword
+        and his scars and all, he just starts to cry, blubberin' like a
+        frightened scullery maid!'
+
+        'Haw! Yer lyin', so you are!'
+
+        'Goddesses witness it, 'tis the truth! I could hardly credit it
+        meself, and I weren't that impressed with the man to begin with. Go
+        on, I says, and gave him a boot to the fundament to send him on his
+        way.'
+
+        There is general laughter. You glance at Bobby, but he motions you to
+        keep listening.
+    or
+      phrase guards-second-row
+        'You seen tomorrow's detail yet?'
+
+        'Yeah, dress-up duty. Polishing helmets so we can look all pretty for
+        the lords and ladies coming down to Baron Fussypants' ball.'
+
+        'Not just lords and ladies, I heard. Word has it the Queen herself is
+        on the guest list.'
+
+        'Oh, pull the other one.'
+
+        'Goddesses witness it. They say she's comin' down with her daughter
+        in tow, that's why Fossville's hostin' the ball in the first place.
+        He's tryin' to get in the Queen's good graces, so's he can marry the
+        girl.'
+
+        'What, the Queen?'
+
+        'No, you dim. He wants to marry the Princess. Our Lord Fussypants is
+        trying to position himself for the throne.'
+
+        'Well, he's welcome to it, long as I'm paid at week's end. Of course,
+        I'm not looking forward to spending a night standing at attention for
+        a horde of fancy, feathered fops to goggle and gaggle at, but I guess
+        it's better than latrine duty...'
+
+        Bobby pulls you away. He's grinning, his eyes wide and his eyebrows
+        cocked. Isn't it great?
+
+        But you're too nervous to care. There are who knows how many men of
+        the Lord's Guard right on the other side of that door. Someone could
+        walk out at any second. You grab Bobby's arm and give it a firm yank
+        — It's time to go.
+    or
+      phrase guards-moved-on
+        The guards' conversation has moved on to other things, and Bobby is
+        motioning that you should leave.
+    end select
+    change the arrow slit to heard when the arrow slit is half-heard
+    change the arrow slit to half-heard when the arrow slit is chattering
+  end on
+
+  on the player searching
+    refuse not-so-close
+  end on
+
+  on the player entering
+    refuse not-so-close
+  end on
+
+define phrase not-so-close
+  Bobby puts his hand on your chest, holding you back. He shakes his head.
+  Not so close. Too dangerous.
+end phrase
+
+## The capture moves Jack to the Jail Cell (`story.ni:7083`), Chapter 5's
+## first room (`jail.chord`).

@@ -106,6 +106,10 @@ define chapters
     begins when the player visits the Back Alley for the first time
   keep - Chapter IV - The Night Journey to Lord's Keep
     begins when the privy window becomes climbed
+  jail - Chapter V - Jail and the Sewers
+    begins when the player visits the Jail Cell for the first time
+  rooftops - Chapter VI - The Rooftops and Black Gate Estate
+    begins when the player visits the Empty Alleyway for the first time
 end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
@@ -129,6 +133,18 @@ import "lords-market"
 ## 6 and 5), ending at the privy window.
 
 import "maiden-house"
+
+## Chapter 4 — the night journey to Lord's Keep (Book 5B): the empty market,
+## the road, the pasture, the stream, the woods, the clearing and its
+## fountain, the tunnel, the keep, and the capture. Bobby's night stubs.
+
+import "night-journey"
+
+## Chapter 5 — jail and the sewers (Books 6 and 7): the cell, Bobby's voice,
+## Jacobs and the wire, Olmer and Darrens, the drain, the glyphs, the
+## ladder into the morning.
+
+import "jail"
 
 ## ---------------------------------------------------------------------------
 ## THE PLAYER
