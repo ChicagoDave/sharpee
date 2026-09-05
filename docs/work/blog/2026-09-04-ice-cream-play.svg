@@ -1,0 +1,106 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1080" height="560" viewBox="0 0 1080 560" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="13">
+  <style>
+    .win    { fill: #fbfaf7; stroke: #b9b2a6; stroke-width: 1.2; }
+    .bar    { fill: #ece8df; }
+    .dot    { fill: #c9c2b4; }
+    .cmd    { font-family: Menlo, Consolas, monospace; font-size: 13px; fill: #555; }
+    .room   { font-size: 14px; font-weight: 700; fill: #222; }
+    .prose  { font-size: 14px; fill: #222; }
+    .hl     { fill: #fff3c4; }
+    .gapfill{ fill: #efeae0; }
+    .co     { font-size: 12px; fill: #333; }
+    .comono { font-family: Menlo, Consolas, monospace; font-size: 11px; fill: #444; white-space: pre; }
+    .cohead { font-size: 12.5px; font-weight: 600; fill: #222; }
+    .num    { fill: #8a8378; }
+    .numtxt { font-size: 10px; font-weight: 700; fill: #fff; }
+  </style>
+
+  <!-- ===== play window ===== -->
+  <rect x="24" y="24" width="500" height="512" rx="8" class="win"/>
+  <rect x="24" y="24" width="500" height="28" rx="8" class="bar"/>
+  <rect x="24" y="40" width="500" height="12" class="bar"/>
+  <circle cx="42" cy="38" r="5" class="dot"/><circle cx="58" cy="38" r="5" class="dot"/><circle cx="74" cy="38" r="5" class="dot"/>
+  <text x="274" y="42" text-anchor="middle" font-size="12" fill="#777">The Lab</text>
+
+  <!-- turn 1 -->
+  <text x="44" y="82" class="cmd">&gt; look</text>
+  <rect x="40" y="94" width="40" height="20" class="hl"/>
+  <text x="44" y="109" class="room">Lab</text>
+  <circle cx="94" cy="104" r="8" class="num"/><text x="94" y="107.5" text-anchor="middle" class="numtxt">1</text>
+
+  <rect x="40" y="116" width="286" height="20" class="hl"/>
+  <text x="44" y="131" class="prose">A bowl of ice cream rests on the counter.</text>
+  <circle cx="340" cy="126" r="8" class="num"/><text x="340" y="129.5" text-anchor="middle" class="numtxt">2</text>
+
+  <rect x="40" y="138" width="218" height="20" class="hl"/>
+  <text x="44" y="153" class="prose">It looks like delicious vanilla.</text>
+  <circle cx="272" cy="148" r="8" class="num"/><text x="272" y="151.5" text-anchor="middle" class="numtxt">3</text>
+
+  <rect x="40" y="162" width="464" height="14" class="gapfill"/>
+  <circle cx="494" cy="169" r="8" class="num"/><text x="494" y="172.5" text-anchor="middle" class="numtxt">4</text>
+
+  <rect x="40" y="180" width="356" height="20" class="hl"/>
+  <text x="44" y="195" class="prose">You had better eat that ice cream before it melts!</text>
+  <circle cx="410" cy="190" r="8" class="num"/><text x="410" y="193.5" text-anchor="middle" class="numtxt">5</text>
+
+  <!-- turn 2 -->
+  <text x="44" y="238" class="cmd">&gt; wait</text>
+  <text x="44" y="262" class="prose">Time passes.</text>
+  <circle cx="142" cy="257" r="8" class="num"/><text x="142" y="260.5" text-anchor="middle" class="numtxt">6</text>
+  <text x="44" y="292" class="prose">You had better eat that ice cream before it melts!</text>
+
+  <!-- turn 3 -->
+  <text x="44" y="334" class="cmd">&gt; look</text>
+  <text x="44" y="358" class="room">Lab</text>
+  <text x="44" y="380" class="prose">A bowl of ice cream rests on the counter.</text>
+  <rect x="40" y="388" width="160" height="20" class="hl"/>
+  <text x="44" y="403" class="prose">Chocolate! My favorite.</text>
+  <circle cx="214" cy="398" r="8" class="num"/><text x="214" y="401.5" text-anchor="middle" class="numtxt">3</text>
+  <text x="44" y="432" class="prose">You had better eat that ice cream before it melts!</text>
+
+  <text x="44" y="476" class="cmd">&gt; </text>
+  <rect x="62" y="465" width="2" height="14" fill="#555"/>
+
+  <!-- ===== legend ===== -->
+  <g transform="translate(556 0)">
+    <circle cx="10" cy="80" r="8" class="num"/><text x="10" y="83.5" text-anchor="middle" class="numtxt">1</text>
+    <text x="26" y="76" class="cohead">Room name</text>
+    <text x="26" y="91" class="comono" xml:space="preserve">create the Lab</text>
+
+    <circle cx="10" cy="120" r="8" class="num"/><text x="10" y="123.5" text-anchor="middle" class="numtxt">2</text>
+    <text x="26" y="116" class="cohead">Description prose</text>
+    <text x="26" y="131" class="comono" xml:space="preserve">A bowl of ice cream rests on the counter.</text>
+    <text x="26" y="145" class="comono" xml:space="preserve">{ice-cream-look}</text>
+    <text x="26" y="160" class="co">One block. The marker splices item 3 into it.</text>
+
+    <circle cx="10" cy="192" r="8" class="num"/><text x="10" y="195.5" text-anchor="middle" class="numtxt">3</text>
+    <text x="26" y="188" class="cohead">Cycling phrase, spliced at the marker</text>
+    <text x="26" y="203" class="comono" xml:space="preserve">define phrase ice-cream-look, cycling</text>
+    <text x="26" y="217" class="comono" xml:space="preserve">  It looks like delicious vanilla.</text>
+    <text x="26" y="231" class="comono" xml:space="preserve">or</text>
+    <text x="26" y="245" class="comono" xml:space="preserve">  Chocolate! My favorite.</text>
+    <text x="26" y="259" class="comono" xml:space="preserve">or</text>
+    <text x="26" y="273" class="comono" xml:space="preserve">  Strawberry with real chunks of fruit in it.</text>
+    <text x="26" y="287" class="comono" xml:space="preserve">end phrase</text>
+    <text x="26" y="303" class="co">The first look shows the first arm, the next look the second.</text>
+
+    <circle cx="10" cy="334" r="8" class="num"/><text x="10" y="337.5" text-anchor="middle" class="numtxt">4</text>
+    <text x="26" y="330" class="cohead">Paragraph margin</text>
+    <text x="26" y="345" class="co">Two blocks, so the theme puts its margin between them.</text>
+    <text x="26" y="360" class="co">Nothing read the text to decide that.</text>
+
+    <circle cx="10" cy="392" r="8" class="num"/><text x="10" y="395.5" text-anchor="middle" class="numtxt">5</text>
+    <text x="26" y="388" class="cohead">Every-turn phrase, its own block</text>
+    <text x="26" y="403" class="comono" xml:space="preserve">on every turn while the ice cream is on the counter</text>
+    <text x="26" y="417" class="comono" xml:space="preserve">  phrase eat-it</text>
+    <text x="26" y="431" class="comono" xml:space="preserve">end on</text>
+    <text x="26" y="449" class="comono" xml:space="preserve">define phrase eat-it</text>
+    <text x="26" y="463" class="comono" xml:space="preserve">  You had better eat that ice cream before it melts!</text>
+    <text x="26" y="477" class="comono" xml:space="preserve">end phrase</text>
+
+    <circle cx="10" cy="510" r="8" class="num"/><text x="10" y="513.5" text-anchor="middle" class="numtxt">6</text>
+    <text x="26" y="506" class="cohead">Standard library text</text>
+    <text x="26" y="521" class="co">"Time passes." comes from the language layer, not the story.</text>
+    <text x="26" y="536" class="co">Also its own block, so item 5 gets its margin after it too.</text>
+  </g>
+</svg>
