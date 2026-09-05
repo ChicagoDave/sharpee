@@ -39,6 +39,10 @@ create the Lord's Market
     change the Lord's Market to seen
   end after
 
+  on every turn while the player is in the Lord's Market and one chance in 5
+    phrase jack-paranoia
+  end on
+
 ## `EVENT_Fossville` (`story.ni:5013`), once, on the first arrival — gated by
 ## the square's own forward-only state (a single-arm `first-time` phrase
 ## replayed on the second visit, 2026-09-04).

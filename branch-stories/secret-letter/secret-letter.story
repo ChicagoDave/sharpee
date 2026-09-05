@@ -102,6 +102,8 @@ define chapters
     begins when the game starts
   commerce - Chapter II - Commerce Street
     begins when the player visits Commerce Street for the first time
+  bobby - Chapter III - Bobby and Maiden House
+    begins when the player visits the Back Alley for the first time
 end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.

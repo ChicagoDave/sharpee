@@ -63,6 +63,10 @@ create the Commerce Street
     change Jack to urchin
   end after
 
+  on every turn while the player is in the Commerce Street and one chance in 5
+    phrase jack-paranoia
+  end on
+
 ## Gentry's arrival block (`story.ni:4266`), verbatim, for David to rework:
 ##   "You made it.
 ##   You let out a long, shaky breath. You're safe now. Commerce Street is
@@ -76,6 +80,16 @@ create the Commerce Street
 ##   Gratefully, you remove the cloak, which was beginning to stick to your
 ##   skin with all the sweat. Now it's time to pause, catch your breath, and
 ##   try to figure out why they were after you in the first place."
+
+## PARANOIA (change document, "Pressure"): no chase, no teeth — Jack's own
+## nerves as texture on the chapter's street rooms, in the source's idiom (the
+## 1-in-5 idle rolls the keepers run). The slot is built; the lines are
+## David's, during play-testing, and their form is his too.
+
+define phrase jack-paranoia
+  (TODO during play-testing — Jack's paranoia on the street: a hunted kid
+  catching her breath where she has been told she is safe.)
+end phrase
 
 ## `story.ni:4280` — by day only in the source; the port has no night yet, so
 ## the refusal stands until the chapter that walks back west at night.
@@ -446,6 +460,10 @@ create the East Commerce Street
   Black Gate Estate to the northwest; Red Gate Estate to the north; and the
   Jacobs family mansion to the northeast. The street itself continues east and
   west, and the City Park lies to the south.
+
+  on every turn while the player is in the East Commerce Street and one chance in 5
+    phrase jack-paranoia
+  end on
 
 create Black Gate Estate
   aka black gate, fossville's house, baron's house, somber building, estate
