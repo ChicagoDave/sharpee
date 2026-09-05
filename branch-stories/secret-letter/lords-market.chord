@@ -20,8 +20,8 @@ create the Lord's Market
   aka lords market, market square, square, the square
   west to the East Commerce Street
   northeast to the Royal Tunic, one-way
-  east to the Sandler and Sons, one-way
-  southeast to the Chorus Brothers, one-way
+  east to the Jeweler's Shop, one-way
+  southeast to the Moneylender's Shop, one-way
   south to the Back Alley
   states: bearings, seen
 
@@ -139,10 +139,20 @@ create the Royal Tunic
   a room
   aka clothiers shop, clothier's shop, clothiers, clothier's, tailor's
   west to the Lord's Market, one-way
+  states: new, familiar
 
   The walls are hung with tasteful curtains, and a deep, soft carpet covers
   the floor. Several clothier's dummies stand about the room, displaying
   gorgeous formal court apparel for both men and women. The street lies west.
+
+  after the player entering while the Royal Tunic is new
+    phrase clothier-bell
+    change the Royal Tunic to familiar
+  end after
+
+  after the player going
+    phrase clothier-come-back
+  end after
 
 create the clothier's curtains
   aka curtains, curtain, velvet curtains, purple curtains, thick curtains
@@ -152,27 +162,40 @@ create the clothier's curtains
   The curtains are made of thick, purple velvet.
 
 ## ---------------------------------------------------------------------------
-## SANDLER AND SONS — the jeweler's (`story.ni:5195-5232`) — the room.
+## THE JEWELER'S SHOP — Sandler & Sons (`story.ni:5195-5232`) — the room.
+## Named for the trade: `&` and `and` both break a name inside a condition
+## (`while the Sandler and Sons is greeted` reads `and` as a connective).
 ##
 ## The display case is scenery here, not a container: the source's case is
 ## closed and never opens ("The cases are locked, of course."), so the
 ## jewelry is described through the glass as part of it.
 ## ---------------------------------------------------------------------------
 
-create the Sandler and Sons
+create the Jeweler's Shop
   a room
   aka sandler and sons, jewelers shop, jeweler's shop, jewelers, jeweler's, sandler's
   west to the Lord's Market, one-way
+  states: new, greeted, parted
 
   The inside of this store is tasteful but austerely decorated, perhaps to
   better draw the eye towards the glass display case in the center of the room
   and the king's ransom in jewelry contained therein. You can leave to the
   west.
 
+  after the player entering while the Jeweler's Shop is new
+    phrase sandler-ds1-stub
+    change the Jeweler's Shop to greeted
+  end after
+
+  after the player going while the Jeweler's Shop is greeted
+    phrase sandler-ds14-stub
+    change the Jeweler's Shop to parted
+  end after
+
 create the display case
   aka case, cases, glass case, glass, pedestal, pedestals, display
   scenery
-  in the Sandler and Sons
+  in the Jeweler's Shop
 
   Light glitters across diamond-encrusted rings, bracelets, pendants,
   brooches, and necklaces spread out on black velvet.
@@ -188,7 +211,7 @@ create the display case
 create the valuable jewelry
   aka jewelry, jewels, jewel, rings, bracelets, pendants, brooches, necklaces, diamonds, diamond, ring, bracelet, pendant, brooch
   scenery
-  in the Sandler and Sons
+  in the Jeweler's Shop
 
   Any one piece is several times more valuable than everything you've ever
   nicked in your entire life put together. The thought of wearing something
@@ -203,12 +226,14 @@ define phrase case-locked
 end phrase
 
 ## ---------------------------------------------------------------------------
-## CHORUS BROTHERS — the moneylender's (`story.ni:5425-5450`) — the room.
+## THE MONEYLENDER'S SHOP — Chorus Brothers (`story.ni:5425-5450`) — the room.
+## Named for the trade, not the brothers: the room and the two men cannot
+## share the name `Chorus Brothers` (one declaration per name).
 ## ---------------------------------------------------------------------------
 
-create the Chorus Brothers
+create the Moneylender's Shop
   a room
-  aka moneylenders shop, moneylender's shop, moneylenders, moneylender's, chorus brothers shop
+  aka moneylenders shop, moneylenders, moneylender's, chorus brothers shop, chorus brothers' shop
   west to the Lord's Market, one-way
 
   The inside of this shop is dark — dark wood paneling on the walls; deep,
@@ -219,7 +244,7 @@ create the Chorus Brothers
 create the armchairs
   aka armchair, chair, chairs, leather armchairs, leather chairs
   scenery, plural
-  in the Chorus Brothers
+  in the Moneylender's Shop
 
   The armchairs are overstuffed, upholstered in rich, dark leather.
 
@@ -230,7 +255,7 @@ create the armchairs
 create the moneylender's carpet
   aka carpet, carpeting, wine-dark carpet
   scenery
-  in the Chorus Brothers
+  in the Moneylender's Shop
 
   (TODO during play-testing — the carpet has no description in the source; a
   line or none, David's call.)
@@ -238,7 +263,7 @@ create the moneylender's carpet
 create the teller's window
   aka window, tellers window, counter, grating, brass grating, grate, reinforced wall, wall
   scenery
-  in the Chorus Brothers
+  in the Moneylender's Shop
 
   The window forms a sort of counter, with an ornately scrolled, brass grating
   that opens to the inside, allowing customers to speak with the proprietors
@@ -265,3 +290,282 @@ create the Back Alley
   A little-known shortcut between Lord's Market and the less affluent
   neighborhoods of the city's south end. A narrow street to the southwest
   leads to Maiden House, or you can return to the market square to the north.
+
+## ===========================================================================
+## THE KEEPERS — the clothier, Dame Sandler and Pieter, the Chorus Brothers
+##
+## Gentry's descriptions and texture; conversations STUBBED under the standing
+## rule (the `start conversation` sites are the story events they already
+## are, each emitting one TODO naming the quip; every `talk to` answers).
+## Perception flags (change document, "Who sees her"): the clothier and the
+## Chorus Brothers do NOT perceive; Dame Sandler knows everything. Chapter 2
+## is dirty-Jack throughout: the clean-Jack layers (the ball gown, Pieter's
+## scene, the loan) belong to their chapters.
+## Not carried: kissing refusals (no action); the mirror's "try examining
+## yourself" hand-off and "reflection" as a name for the player (no redirect).
+## ===========================================================================
+
+## --- Royal Tunic: scenery (`story.ni:5047-5060`) and the clothier ----------
+
+create the clothier's carpet
+  aka carpet, rug, pink carpet, plush carpet, soft carpet, deep carpet
+  scenery
+  in the Royal Tunic
+
+  The carpet is deep, plush, and colored a rich, vibrant... pink.
+
+  after the player examining
+    first time
+      phrase carpet-not-every-day
+  end after
+
+define phrase carpet-not-every-day
+  Definitely not something you see every day.
+end phrase
+
+create the dummies
+  aka dummy, torsos, torso, tripods, tripod, clothier's dummies, wooden torsos
+  scenery, plural
+  in the Royal Tunic
+
+  Armless, headless torsos carved from wood, stuck atop iron tripods, and
+  dressed in fancy clothes. They're actually a bit ghoulish, now that you really
+  look at them.
+
+create the floor-length mirror
+  aka mirror, tall mirror, floor length mirror
+  scenery
+  in the Royal Tunic
+
+  In the clothier's tall, floor-length mirror, you can see yourself from head
+  to toe.
+
+## The lovely clothes (`story.ni:5062`): the dirty, purseless first look —
+## the daydream once, the men's-clothing flinch every time. Taking is buying
+## (the source's redirect), and buying meets the dirty-urchin refusal; `buying`
+## is a story dispatch action, so that refusal rides a trait.
+
+create the lovely clothes
+  aka clothes, dresses, dress, gowns, gown, ballgowns, ball gowns, velvets, silks, costumes, costume, formal wear, court apparel, apparel, ladies' formal wear
+  scenery, plural
+  buy-from-clothier
+  in the Royal Tunic
+
+  The clothes here are lovely — rich velvets and flowing silks, dyed with
+  brilliant colors and embroidered with lace and gems.
+
+  after the player examining
+    first time
+      phrase clothes-daydream
+    phrase clothes-flinch
+  end after
+
+  on the player taking
+    refuse clothier-wont-sell
+  end on
+
+define phrase clothes-daydream
+  These are the sorts of costumes that you imagine while lying on your straw
+  mattress back at Maiden House, dreaming about dazzling the Prince at the
+  Royal Ball. Stupid fantasies, you know, but oh — if you could only wear
+  something as beautiful as these, just for one evening...
+end phrase
+
+define phrase clothes-flinch
+  Suddenly, you remember that you're supposed to be looking at the men's
+  clothing. You glance nervously at the shopkeeper, but he doesn't seem to
+  find your intense interest in ladies' formal wear strange in the slightest.
+end phrase
+
+define trait buy-from-clothier
+  on the player buying
+    refuse clothier-wont-sell
+  end on
+end trait
+
+define phrase clothier-wont-sell
+  The clothier is not likely to sell anything to a dirty urchin such as
+  yourself. Besides, you're only interested in the dresses, and it would raise
+  awkward questions if you asked him to sell you one.
+end phrase
+
+create the clothier
+  aka tailor, proprietor, shopkeeper, shop keeper, merchant, man, thin man
+  a person
+  pronouns he
+  in the Royal Tunic
+
+  Tall, thin, and impeccably dressed, although his fashion sense seems a
+  bit...decorative, compared to the more austere look preferred by men of
+  Toresal's upper class. His hairline is receding, and what hair he has left is
+  plastered back onto his scalp with fragrant oil. He looks as though he'd
+  secretly prefer to wipe things down with a scented handkerchief before
+  touching them; somehow, through good breeding and intestinal fortitude, he
+  manages to soldier on despite not doing so.
+
+  phrase present:
+    The clothier stands nearby, eyeing you with some distaste.
+
+  on every turn while the clothier is here and one chance in 5
+    phrase clothier-idle
+  end on
+
+  on the player talking
+    refuse clothier-sniffs
+  end on
+
+define phrase clothier-idle, randomly
+  The clothier absentmindedly flicks a bit of lint off of his sleeve.
+or
+  The clothier wanders over to one of the dresses on display and fusses with
+  the sleeve.
+or
+  The clothier wanders over to one of the dresses on display and fusses with
+  the hem.
+or
+  The clothier wanders over to one of the dresses on display and fusses with
+  the neckline.
+or
+  The clothier inspects his fingernails.
+or
+  The clothier purses his lips and hums something indecipherable.
+or
+  The clothier slowly looks you up and down. You get the distinct and
+  not-exactly comfortable feeling that he's 'dressing' you with his eyes.
+end phrase
+
+## `story.ni:5107` — the dirty-Jack talk refusal; `CL1` is clean-Jack's, a
+## later chapter's. The clothier does not perceive Jack.
+
+define phrase clothier-sniffs
+  The clothier sniffs and pretends not to hear you.
+end phrase
+
+## `story.ni:5065`, the dirty-Jack bell paragraph, once; and `5078` on leaving.
+
+define phrase clothier-bell
+  A small bell above the door tinkles as you enter, and a man comes rushing
+  out of the store's back room with a measuring cord in his hands, held up as
+  though ready to begin fitting you immediately. When he sees that you're
+  merely a boy (and by all appearances, not one with much in the way of
+  discretionary income at that), he stops in his tracks and his expression
+  grows distinctly pouty. He manages to keep most of the disappointment out of
+  his voice as he asks, 'May I help you?'
+end phrase
+
+define phrase clothier-come-back
+  'Come back soon, sweetie,' calls the clothier as you leave.
+end phrase
+
+## --- Sandler and Sons: Dame Sandler and Pieter (`story.ni:5212-5290`) -------
+## Dame Sandler knows everything (change document; her tree is the §3e
+## lineage rewrite's). `DS1` opens on the first entry, `DS14` stops the first
+## exit, `DS19` answers `talk to` while Jack is dirty. The stub for DS14
+## follows the source's path — the conversation happens and she may then
+## leave — as one turn: the TODO prints and the walk proceeds (flagged: the
+## source holds her in the shop for the conversation's length).
+
+create Dame Sandler
+  aka sandler, dame, mrs sandler, mrs. sandler, woman, proprietor, shopkeeper, shop keeper, merchant
+  a person, proper
+  pronouns she
+  in the Jeweler's Shop
+
+  Though in her elder years, Dame Sandler is still a tall and striking woman.
+  Her long, silver hair is pulled back in a complicated bun, and she has a
+  habit of inspecting her merchandise through a monocle on the end of a long,
+  slender, gold-filigreed handle. Sometimes you wonder what she's doing running
+  a shop (even such a relatively high-class one as this); her demeanor is more
+  that of an aristocrat, if not full royalty.
+
+  after the player examining
+    first time
+      phrase sandler-liking
+  end after
+
+  phrase present:
+    Dame Sandler stands near the central display case. A small, dignified
+    smile plays on her lips.
+
+  on the player talking
+    refuse sandler-ds19-stub
+  end on
+
+create Pieter
+  aka guard, the guard, man, bodyguard
+  a person, proper
+  pronouns he
+  in the Jeweler's Shop
+
+  Pieter is loyal to Dame Sandler and tirelessly vigilant. You've traded
+  friendly words with him in the past, but most of the time he stays quiet to
+  preserve a sense of professionalism. He gives you a slight smile and nod when
+  you catch his eye.
+
+  phrase present:
+    Pieter, the guard, stands discreetly near the back of the room.
+
+  on the player talking
+    refuse pieter-on-duty
+  end on
+
+define phrase sandler-liking
+  Although you almost never come to her shop (everything in here is too
+  expensive to buy and too well-guarded to nick), for some reason Dame Sandler
+  has always taken a liking to you, and never runs you out when you visit, even
+  when she has important customers to tend to. It's more of a bemused curiosity
+  than real affection, but feels good to be on a friendly basis with such an
+  intriguing woman.
+end phrase
+
+define phrase pieter-on-duty
+  'I can't really talk while I'm on duty, Jack,' says Pieter. 'Maybe later.'
+end phrase
+
+define phrase sandler-ds1-stub
+  (TODO during play-testing — conversation DS1: Dame Sandler's eyebrows rise
+  as Jack walks in — "Well, hello there, Squire Jack" — the jeweler's tree,
+  DS1-23 first-visit; Dame Sandler KNOWS everything.)
+end phrase
+
+define phrase sandler-ds14-stub
+  (TODO during play-testing — conversation DS14: Dame Sandler stops Jack on
+  her way out the first time; the source holds her for the exchange, the stub
+  lets the step continue.)
+end phrase
+
+define phrase sandler-ds19-stub
+  (TODO during play-testing — conversation DS19: Jack opens with Dame Sandler
+  while still the urchin.)
+end phrase
+
+## --- Chorus Brothers (`story.ni:5468-5482`) ----------------------------------
+## The brothers do not perceive Jack; while she is dirty their whole tree is
+## this refusal, in Gentry's alternating voices. `CB1` is clean-Jack's.
+
+create the Chorus Brothers
+  aka brothers, brother, moneylenders, moneylender, proprietors, proprietor, shopkeepers, shopkeeper, merchants, merchant, men, two faces, faces
+  a person, plural, proper
+  pronouns they
+  in the Moneylender's Shop
+
+  It's in some ways fortunate that you're not on a first-name basis with these
+  fellows, because you'd never be able to tell them apart. Their faces are
+  utterly identical, from the tops of their bald, cadaverous heads down to the
+  black, dusty collars of their coats.
+
+  phrase present:
+    The Chorus Brothers hover behind their window, staring at you.
+
+  on the player talking
+    refuse brothers-busy
+  end on
+
+define phrase brothers-busy
+  Both brothers raise their eyebrows (one left, the other right)
+  simultaneously. After a moment, one of them says, 'Forgive us. We are...'
+
+  '...extremely busy,' the other continues. 'No time for...'
+
+  '...idle chit-chat with penniless ragamuffins,' finishes the first.
+end phrase

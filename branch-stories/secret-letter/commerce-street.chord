@@ -159,10 +159,20 @@ create the Bakery
   a room
   aka bakers shop, baker's shop, bakers, germaise's bakery, germaise's
   south to the Commerce Street, one-way
+  states: new, familiar
 
   The air is heavy with the warm and slightly damp smell of freshly baked
   bread, and the counters are piled high with golden loaves, baguettes, and
   rolls. You can leave the bakery to the south.
+
+  after the player entering while the Bakery is new
+    phrase germaise-nods
+    change the Bakery to familiar
+  end after
+
+  after the player going
+    phrase germaise-later
+  end after
 
 create the bread counter
   aka counter, counters, bakery counter
@@ -247,11 +257,21 @@ create the Butcher's Shop
   a room
   aka butchers shop, butcher shop, butchers, butchery, holstenoffer's
   south to the Commerce Street, one-way
+  states: new, familiar
 
   Chains of linked sausages and thick, red cuts of meat dangle from hooks in
   the ceiling, and trays of less identifiable bits sit out on the counters.
   It's better than some butcheries you've seen, but it's still not your
   favorite place in the city. You can leave to the south.
+
+  after the player entering while the Butcher's Shop is new
+    phrase holstenoffer-ho1-stub
+    change the Butcher's Shop to familiar
+  end after
+
+  after the player going
+    phrase holstenoffer-waves
+  end after
 
 create the trays of meat
   aka trays, tray, meat, sausage, sausages, carcass, carcasses, bits, bargain bits, bargains, gristle, cuts, chops, joints, raw meat, hanging meat, counter
@@ -337,9 +357,14 @@ create the Armory
   the high counter. However, there is a display of assorted knives and daggers
   sitting out where you can get a close look at them.
 
+  after the player going
+    phrase armory-relief
+  end after
+
 create the dagger display
-  aka daggers, knives, knife, display, blades, blade, stilettos, stiletto, stickers, sticker, cleavers, cleaver
+  aka dagger, daggers, knives, knife, display, blades, blade, stilettos, stiletto, stickers, sticker
   scenery
+  buy-from-minor
   in the Armory
 
   Over a dozen gleaming blades are set out in neat little rows: from long,
@@ -567,4 +592,256 @@ define action knocking
 
 define phrase knock-nothing
   Nothing happens.
+end phrase
+
+## ===========================================================================
+## THE KEEPERS — Germaise, Old Man Holstenoffer, Olgan Minor
+##
+## Descriptions, possessions and idle texture are Gentry's. Conversations are
+## STUBS under the standing rule: each `start conversation` site is the story
+## event it already is and emits one TODO naming the quip; each `talk to` gets
+## a one-line TODO so the command never falls to "I don't understand".
+## Perception flags (change document, "Who sees her"): Germaise and
+## Holstenoffer do NOT perceive; Olgan Minor has the talent — his description
+## carries the source's talent sentence verbatim on the first look.
+## Not carried: the source's kissing refusals (no kissing action), the
+## "player is not on the move" guard on idle rolls (the port rolls every turn
+## the keeper is here, as Teisha's tent does).
+## ===========================================================================
+
+## --- Germaise the Baker (`story.ni:4351-4383`) -----------------------------
+
+create Germaise
+  aka germaise the baker, baker, the baker, proprietor, shopkeeper, shop keeper, merchant, man behind the counter, tall thin man
+  a person, proper
+  pronouns he
+  in the Bakery
+  carries the mound of dough
+
+  Germaise the Baker is a tall, thin man from the south. He has a thick accent
+  and likes to stroke his sparse moustaches with his fingertips while he talks
+  — the lower half of his face is almost always covered with a grayish coating
+  of flour. He's a shameless flirt, always eyeballing the young ladies who
+  come into his store. It's moments like those that make you grateful for your
+  disguise.
+
+  on every turn while Germaise is here and one chance in 5
+    phrase germaise-idle
+  end on
+
+  on the player talking
+    refuse germaise-ge1-stub
+  end on
+
+create the moustache
+  aka moustaches, mustache, mustaches, germaise's moustache, caterpillar, tracks
+  scenery
+  in the Bakery
+
+  Germaise's moustache looks like a caterpillar with particularly dirty feet
+  walked across his upper lip and left tracks, but he sure is proud of it.
+
+  on the player touching
+    refuse moustache-leave-alone
+  end on
+
+  on the player taking
+    refuse moustache-leave-alone
+  end on
+
+create the mound of dough
+  aka dough, pastry dough, mound, strips
+
+  The mound of dough is twice the size of Germaise's head, and he keeps
+  punching it and squeezing it for all he's worth. It looks like a great way to
+  work out your frustration.
+
+  on the player taking
+    refuse dough-delicate
+  end on
+
+  on the player touching
+    refuse dough-delicate
+  end on
+
+define phrase germaise-idle, randomly
+  Germaise works the dough, pounding and pushing it into shape.
+or
+  Germaise tosses another handful of flour onto the dough.
+or
+  Germaise cuts the dough into strips, twists the strips into a complicated
+  shape, and slides the whole thing into the glowing mouth of the brick oven
+  behind him. Then he slaps another mound of dough onto the counter and starts
+  the process all over again.
+or
+  Germaise peers into the oven, checking on the status of his latest batch.
+end phrase
+
+define phrase moustache-leave-alone
+  Germaise would probably rather you leave his moustache alone.
+end phrase
+
+define phrase dough-delicate
+  'Eh, keep away from the pastry dough, Jack,' Germaise warns you. 'This is
+  delicate business.'
+end phrase
+
+## `GE1` opens the tree (`story.ni:4390`); the tree is Phase 8's. Germaise does
+## not perceive Jack.
+
+define phrase germaise-ge1-stub
+  (TODO during play-testing — conversation GE1: Germaise, leaning on the
+  counter, "You want something?" — the baker's tree, 15 first-visit quips;
+  Germaise does not see through the disguise.)
+end phrase
+
+## --- Old Man Holstenoffer (`story.ni:4538-4577`) ---------------------------
+
+create Old Man Holstenoffer
+  aka holstenoffer, old man, butcher, the butcher, proprietor, shopkeeper, shop keeper, merchant
+  a person, proper
+  pronouns he
+  in the Butcher's Shop
+  carries the cleaver
+
+  Holstenoffer is a squat brick of a man, with a scarred bulldog's face and
+  sailors' tattoos covering his arms from the wrists all the way up to his
+  rolled-up sleeves. He's friendly enough and loves to gossip, but he has a
+  tendency to gesticulate with his cleaver in hand, which sometimes makes
+  conversation with him a tense and athletic affair.
+
+  on every turn while Old Man Holstenoffer is here and one chance in 5
+    phrase holstenoffer-idle
+  end on
+
+  on the player talking
+    refuse holstenoffer-ho1-stub
+  end on
+
+create the cleaver
+  aka big molly, molly, knife, holstenoffer's cleaver, bloody cleaver
+
+  Holstenoffer calls his cleaver 'Big Molly,' and often talks to it as though
+  it were a pet. The side of the blade is tarnished and dull from years of use,
+  but the edge is sharp enough to hack through thick muscle and bone like they
+  were pudding.
+
+create the tattoos
+  aka tattoo, sailors' tattoos, blue tangle, swirling designs, designs, arms
+  scenery, plural
+  in the Butcher's Shop
+
+  Holstenoffer's tattoos are a solid blue tangle of swirling designs, covering
+  his arms from his wrists all the way up to his rolled-up sleeves.
+
+## `ATMOS_Holstenoffer` (`story.ni:4560`) — the source's one dramatic event
+## here, carried as plain every-turn texture (P-9: the port ships without
+## deferred narration).
+
+define phrase holstenoffer-idle, randomly
+  Holstenoffer's cleaver cuts through a particularly tough joint with a
+  gristly, crunching sound.
+or
+  Holstenoffer chops deftly at the raw meat on his block, cutting into narrow
+  strips.
+or
+  Holstenoffer stops to wipe his hands on his blood-smeared apron.
+or
+  Holstenoffer stops suddenly and holds up a slippery-looking chunk of red
+  gristle. 'Huh,' he mutters, 'never seen one of those before.' With a shrug,
+  he tosses it into a tray labeled 'Bargain Bits.'
+end phrase
+
+## `HO1` opens on the first entry (`story.ni:4565`) and on `talk to`;
+## Holstenoffer does not perceive Jack.
+
+define phrase holstenoffer-ho1-stub
+  (TODO during play-testing — conversation HO1: Holstenoffer looks up from
+  the block and greets Jack — the butcher's tree, 17 first-visit quips;
+  Holstenoffer does not see through the disguise.)
+end phrase
+
+## --- Olgan Minor (`story.ni:4736-4762`) ------------------------------------
+## The talent sentence prints on the first examine only (an ordinal block in
+## the examine reaction), as the source's `[first time]` does.
+
+create Olgan Minor
+  aka minor, olgan, proprietor, shopkeeper, shop keeper, merchant, man, armorer
+  a person, proper
+  pronouns he
+  in the Armory
+
+  Olgan Minor is short but muscular, with a lined face and graying,
+  military-cut hair. He says nothing as you browse his wares, but his eyes seem
+  to bore right into you.
+
+  after the player examining
+    first time
+      phrase minor-talent
+  end after
+
+  on every turn while Olgan Minor is here and one chance in 5
+    phrase minor-idle
+  end on
+
+  on the player talking
+    refuse minor-om1-stub
+  end on
+
+define phrase minor-talent
+  You are suddenly certain that he knows you're not really a boy — that he
+  knew it the instant you walked into his shop.
+end phrase
+
+define phrase minor-idle, randomly
+  Minor's eyes seem to drill right into you.
+or
+  Minor trims his nails with a small knife. The whole time, he never stops
+  staring at you. He never blinks.
+or
+  Olgan Minor's constant staring is really starting to creep you out. You
+  find yourself wishing you'd never entered his shop.
+end phrase
+
+## `OM1` opens on `talk to` (`story.ni:4763`). Olgan HAS the talent (change
+## document, "Who sees her"): the first perceiver in the game who is hostile.
+
+define phrase minor-om1-stub
+  (TODO during play-testing — conversation OM1: "'Um, mind if I ask you
+  something?'" — Olgan's tree, 8 first-visit quips; Olgan Minor SEES her, and
+  says so in his own way.)
+end phrase
+
+## `story.ni:4757`, the dirty-Jack buying refusal, on the dagger display;
+## `buying` is a story dispatch action, so it rides a trait.
+
+define trait buy-from-minor
+  on the player buying
+    refuse minor-run-along
+  end on
+end trait
+
+define phrase minor-run-along
+  Minor barks an unpleasant laugh. 'Run along, girl, before you cut yourself.'
+end phrase
+
+## --- Entry and leaving lines (`story.ni:4340-4349`, `4565-4577`, `4753`) ---
+
+define phrase germaise-nods
+  The man behind the counter nods at you amiably as you enter the shop.
+end phrase
+
+define phrase germaise-later
+  'Later, Germaise,' you call out as you leave.
+
+  'Eh,' grunts Germaise, flapping a flour-dusted hand at you.
+end phrase
+
+define phrase holstenoffer-waves
+  Holstenoffer waves his bloody cleaver at you as you leave. 'Take care of
+  yourself, Jack.'
+end phrase
+
+define phrase armory-relief
+  You leave the weapons shop with a sense of relief.
 end phrase
