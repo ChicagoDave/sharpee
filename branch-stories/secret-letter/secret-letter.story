@@ -114,6 +114,13 @@ import "peering"
 
 import "grubbers-market"
 
+## Chapter 2 — Commerce Street (Book 3) and Lord's Market (Book 4): the rooms,
+## scenery and refusals, the Fossville collision, the Back Alley the chapter
+## ends in. Keepers and their conversation stubs follow.
+
+import "commerce-street"
+import "lords-market"
+
 ## ---------------------------------------------------------------------------
 ## THE PLAYER
 ##
@@ -141,7 +148,7 @@ create Jack
   playable
   starts in the Northwest Junction
   kick-yourself
-  states: urchin, dressed, identified
+  states, reversible: urchin, dressed, identified
   wears the old gray cloak
   wears the woolen cap
   wears the boots

@@ -1,0 +1,570 @@
+## ===========================================================================
+## COMMERCE STREET — Book 3 (`story.ni:4197-4950`), Chapter 2's first half.
+##
+## The change document ("Chapter 2 — Commerce Street and Lord's Market",
+## 2026-09-01) authorizes the source's first-visit layer as written: the
+## street and its three shops, East Commerce Street's estates as locked
+## fronts, no pressure with teeth, Jack back in the urchin's look. Every line
+## below is Gentry's day text; the night variants belong to later chapters.
+## Conversations are stubs until Phases 10/11 finish (standing rule) — the
+## keepers arrive with the next increment, this file is the rooms.
+##
+## ARRIVAL — the change back (change document, "The clothes", the source's
+## own automatic change, `story.ni:4266-4276`): on the first arrival the
+## dress and the fashionable hat go into the satchel and the woolen cap comes
+## back to Jack; the gray cloak is wherever the slide left it. GAP, reported
+## not decided: Chord has no runtime statement that puts a garment ON — the
+## cap can be moved to Jack but not worn for her — so the cap arrives in her
+## hands and the source's own exit rule ("You'd better put your hat on") does
+## the rest. The arrival text is David's (TODO); Gentry's block is kept in the
+## comments below.
+##
+## Not carried, noted: `enter <storefront>` cannot redirect to the walk
+## (Chord has no "try going"), so the storefronts describe and the exits
+## walk; the bare `in` ("You'll have to say which shop") likewise; the shops'
+## smell lines; the `[if it is day]` tails are carried as the day text.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE STREET
+## ---------------------------------------------------------------------------
+
+create the Commerce Street
+  a room
+  aka commerce, the street, avenue
+  west to the Eastern Junction
+  east to the East Commerce Street
+  northwest to the Bakery, one-way
+  north to the Butcher's Shop, one-way
+  northeast to the Armory, one-way
+  west is blocked: commerce-lay-low
+  east is blocked while the woolen cap is not worn: commerce-hat-on
+  northwest is blocked while the woolen cap is not worn: commerce-hat-on
+  north is blocked while the woolen cap is not worn: commerce-hat-on
+  northeast is blocked while the woolen cap is not worn: commerce-hat-on
+  first time
+    (TODO during play-testing — "You made it." — Gentry's arrival block is
+    kept aside in this file's comments; it ends by removing the cloak.)
+
+  Commerce Street runs east to west, between Grubber's Market and Lord's
+  Market. Raised sidewalks allow pedestrians to avoid the mud, horse dung, and
+  occasional teamster's cart rumbling by. The shops here are actual buildings,
+  spaced evenly along the avenue. Storefronts for a bakery, a butcher's shop,
+  and an armory line the north side of the street from west to east.
+
+  after the player entering while the player's market-escape has started
+    reset the player's market-escape
+  end after
+
+  after the player entering while Jack is dressed
+    move the dress to the cloth satchel
+    move the fashionable hat to the cloth satchel
+    move the woolen cap to the player
+    change Jack to urchin
+  end after
+
+## Gentry's arrival block (`story.ni:4266`), verbatim, for David to rework:
+##   "You made it.
+##   You let out a long, shaky breath. You're safe now. Commerce Street is
+##   home to a slightly more upscale class of merchant, and business here is
+##   not quite as frantic as in Grubber's Market. Transactions tend to be
+##   calmer and more deliberate, and involve significantly more money. The
+##   Lord's Guard will be far less tolerant of a pack of armed bullies
+##   menacing the citizens of the upper class, so it's unlikely that the
+##   mercenaries will follow you here. And even if they did, there are too
+##   many streets and side alleys for them to block off your escape.
+##   Gratefully, you remove the cloak, which was beginning to stick to your
+##   skin with all the sweat. Now it's time to pause, catch your breath, and
+##   try to figure out why they were after you in the first place."
+
+## `story.ni:4280` — by day only in the source; the port has no night yet, so
+## the refusal stands until the chapter that walks back west at night.
+
+define phrase commerce-lay-low
+  It would be a good idea to lay low for a while before returning to Grubber's
+  Market.
+end phrase
+
+## `story.ni:4284-4289`, the merchants' variant; the Bobby variant is
+## Chapter 3's.
+
+define phrase commerce-hat-on
+  You'd better put your hat on — most of the merchants on this street know you
+  as Jack. Keeping your hair stuffed up and hidden helps the disguise.
+end phrase
+
+create the sidewalk
+  aka sidewalks, flagstone, flagstones, raised sidewalks
+  scenery
+  in the Commerce Street
+
+  The sidewalks are made of flagstones laid over the cobbles of the street.
+
+create the cobbles
+  aka cobblestones, cobblestone, cobble, street stones, stone, stones
+  scenery, plural
+  in the Commerce Street
+
+  The cobblestones are slick with mud.
+
+create the mud
+  aka dung, filth, horse dung
+  scenery
+  in the Commerce Street
+
+  This sort of filth accumulates in most of the streets in Toresal, except for
+  the richer districts.
+
+## The storefronts (`story.ni:4231-4248`). Each describes; the walk is the
+## exit it names.
+
+create the bakery storefront
+  aka bakery, baker, bakers, bakery sign, bakery door, loaf sign
+  scenery
+  in the Commerce Street
+
+  A hanging sign above the door depicts a loaf of bread, and the warm smell of
+  fried dough wafts out from the open door, making your stomach rumble.
+
+create the butcher's storefront
+  aka butchers storefront, butcher, butchers, butchery, pig, painted pig, pig sign
+  scenery
+  in the Commerce Street
+
+  A brightly painted pig decorates the sign over this shop. The smell of burned
+  sausage masks the darker odor of butchered animals.
+
+create the armory storefront
+  aka armory, armoury, armorers, armourers, armourer, armory sign, shield sign
+  scenery
+  in the Commerce Street
+
+  The walls of this shop are built of heavy, blackened bricks — a grim exterior
+  to house grim business. The sign over the door is painted with an axe and
+  shield.
+
+create the shopfronts
+  aka shops, stores, storefronts, shop fronts, store fronts, signs, shop signs, doors, shop doors, buildings
+  scenery, plural
+  in the Commerce Street
+
+  Storefronts for a bakery, a butcher's shop, and an armory line the north side
+  of the street from west to east.
+
+## ---------------------------------------------------------------------------
+## GERMAISE'S BAKERY (`story.ni:4295-4383`) — the room; Germaise follows.
+## ---------------------------------------------------------------------------
+
+create the Bakery
+  a room
+  aka bakers shop, baker's shop, bakers, germaise's bakery, germaise's
+  south to the Commerce Street, one-way
+
+  The air is heavy with the warm and slightly damp smell of freshly baked
+  bread, and the counters are piled high with golden loaves, baguettes, and
+  rolls. You can leave the bakery to the south.
+
+create the bread counter
+  aka counter, counters, bakery counter
+  scenery
+  in the Bakery
+
+  (TODO during play-testing — the counter has no description in the source;
+  a line or none, David's call.)
+
+create the bread
+  aka baked goods, loaves, baguettes, rolls, loaf, baguette, roll, golden loaves
+  scenery
+  in the Bakery
+
+  The bread looks and smells delicious, but right now you need answers more
+  than you need a snack.
+
+  on the player taking
+    refuse bread-just-look
+  end on
+
+  on the player eating
+    refuse bread-just-look
+  end on
+
+create the flour
+  aka white powder, powder, powdery stuff, film of flour, thin film, dust, floury stuff
+  scenery
+  in the Bakery
+
+  Germaise likes to throw around great handfuls of flour whenever he's making
+  something, and he and everything else in the bakery is covered with the
+  white, powdery stuff.
+
+  on the player taking
+    refuse flour-nothing-to-do
+  end on
+
+create the oven
+  aka brick oven, huge oven, kiln, furnace, back wall, orange glow, glow
+  scenery
+  in the Bakery
+
+  Most of the shop's back wall is actually the front of Germaise's huge brick
+  oven. A warm, orange glow and the delicious smells of baking bread drift from
+  its wide opening.
+
+  on the player taking
+    refuse oven-behind-counter
+  end on
+
+  on the player touching
+    refuse oven-behind-counter
+  end on
+
+  on the player opening
+    refuse oven-behind-counter
+  end on
+
+## The source's "doing something other than examining" catch-alls, as the
+## refusals a player is likely to reach for.
+
+define phrase bread-just-look
+  The bread looks and smells delicious, but right now you need answers more
+  than you need a snack.
+end phrase
+
+define phrase flour-nothing-to-do
+  It's just a thin film of flour — you can't really do anything with it.
+end phrase
+
+define phrase oven-behind-counter
+  It's behind the counter, and Germaise wouldn't want you messing with it in
+  any case.
+end phrase
+
+## ---------------------------------------------------------------------------
+## OLD MAN HOLSTENOFFER'S BUTCHER'S SHOP (`story.ni:4495-4537`) — the room.
+## ---------------------------------------------------------------------------
+
+create the Butcher's Shop
+  a room
+  aka butchers shop, butcher shop, butchers, butchery, holstenoffer's
+  south to the Commerce Street, one-way
+
+  Chains of linked sausages and thick, red cuts of meat dangle from hooks in
+  the ceiling, and trays of less identifiable bits sit out on the counters.
+  It's better than some butcheries you've seen, but it's still not your
+  favorite place in the city. You can leave to the south.
+
+create the trays of meat
+  aka trays, tray, meat, sausage, sausages, carcass, carcasses, bits, bargain bits, bargains, gristle, cuts, chops, joints, raw meat, hanging meat, counter
+  scenery, plural
+  in the Butcher's Shop
+
+  The sausage looks tasty enough, and the hanging meat cuts would probably
+  look good once they're cooked. The rest of it just makes you sort of ill.
+
+  on the player eating
+    refuse meat-kills-appetite
+  end on
+
+  on the player smelling
+    refuse meat-kills-appetite
+  end on
+
+  on the player taking
+    refuse meat-handful
+  end on
+
+create the hooks
+  aka hook, brutal hooks, thick hooks, ceiling hooks
+  scenery, plural
+  in the Butcher's Shop
+
+  Dozens of thick, brutal hooks hang from the ceiling.
+
+  on the player taking
+    refuse hooks-out-of-reach
+  end on
+
+  on the player touching
+    refuse hooks-out-of-reach
+  end on
+
+create the chopping block
+  aka block, butcher block, butcher's block, cutting board, board, oak block, stains, stain
+  scenery
+  in the Butcher's Shop
+
+  Holstenoffer's chopping block is cut from a single, gigantic piece of
+  unstained oak. Its surface is stained black with blood, soaked three inches
+  down into the wood's grain.
+
+  on the player taking
+    refuse block-behind-counter
+  end on
+
+  on the player touching
+    refuse block-behind-counter
+  end on
+
+define phrase meat-kills-appetite
+  For some reason, this place just kills your appetite.
+end phrase
+
+define phrase meat-handful
+  What are you going to do with a handful of raw meat?
+end phrase
+
+define phrase hooks-out-of-reach
+  The hooks are out of your reach.
+end phrase
+
+define phrase block-behind-counter
+  The chopping block is behind the counter, out of your reach — and honestly,
+  you prefer it that way.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE ARMORY (`story.ni:4703-4735`) — the room; Olgan Minor follows.
+## ---------------------------------------------------------------------------
+
+create the Armory
+  a room
+  aka armory shop, armoury, olgan's shop, minor's shop
+  south to the Commerce Street, one-way
+
+  The tangy smell of oiled steel is nearly overpowering in this small,
+  windowless shop. All of the really interesting weapons — axes, flails, spiked
+  gauntlets and the like — are high up on racks on the back wall, well behind
+  the high counter. However, there is a display of assorted knives and daggers
+  sitting out where you can get a close look at them.
+
+create the dagger display
+  aka daggers, knives, knife, display, blades, blade, stilettos, stiletto, stickers, sticker, cleavers, cleaver
+  scenery
+  in the Armory
+
+  Over a dozen gleaming blades are set out in neat little rows: from long,
+  wicked stilettos, to demure little stickers you could hide inside an opera
+  glove, to gigantic cleavers that would make Holstenoffer next door jealous.
+
+  on the player taking
+    refuse minor-finger-off
+  end on
+
+  on the player touching
+    refuse minor-finger-off
+  end on
+
+create the big weapons
+  aka weapons, axes, flails, flail, racks, rack, gauntlets, gauntlet, spiked gauntlets, interesting weapons
+  scenery, plural
+  in the Armory
+
+  The sheer variety of ways to grievously injure someone with a sharp, metal
+  instrument leaves you both impressed and vaguely disturbed.
+
+## `story.ni:4730` — the dirty-Jack variant; Pieter's is a later chapter's.
+
+define phrase minor-finger-off
+  'Touch one of those and I'll use it to have your finger off, little thief,'
+  growls Minor.
+end phrase
+
+## ---------------------------------------------------------------------------
+## EAST COMMERCE STREET (`story.ni:4822-4950`) — the estates as locked fronts.
+##
+## The Red Gate `unlock` machinery (the large brass key) is built with its
+## chapter; here the gates are locked. The Jacobs refusal is the pre-jail
+## variant; the City Park refusal is the pre-sewer one, `stopping` as the
+## source has it. `knock` is a story action: the estates answer, anything
+## else gets the source's "Nothing happens."; the source's "I don't suppose
+## <person> would care for that" is not carried (no kind test in a story
+## action).
+## ---------------------------------------------------------------------------
+
+## `knock` is a story dispatch action, so each estate's answer rides a trait
+## (an entity `on` clause never fires on the dispatch path).
+
+define trait knock-black-gate
+  on the player knocking
+    refuse black-gate-servants
+  end on
+end trait
+
+define trait knock-red-gate
+  on the player knocking
+    refuse red-gate-no-answer
+  end on
+end trait
+
+define trait knock-jacobs
+  on the player knocking
+    refuse jacobs-no-business
+  end on
+end trait
+
+create the East Commerce Street
+  a room
+  aka east end, residential neighborhood, east commerce
+  west to the Commerce Street
+  east to the Lord's Market
+  northwest is blocked: black-gate-servants
+  north is blocked: red-gate-locked
+  northeast is blocked: jacobs-no-business
+  south is blocked: park-kids
+
+  The east end of Commerce Street winds through an upper-class residential
+  neighborhood before ending up at Lord's Market. Behind spiked, iron fences
+  stand the 'city cottages' of Toresal's wealthy merchants and nobility, built
+  tall and narrow to make the best use of limited real estate.
+
+  Three stately houses are built close together on the north side of the road:
+  Black Gate Estate to the northwest; Red Gate Estate to the north; and the
+  Jacobs family mansion to the northeast. The street itself continues east and
+  west, and the City Park lies to the south.
+
+create Black Gate Estate
+  aka black gate, fossville's house, baron's house, somber building, estate
+  scenery, proper
+  knock-black-gate
+  in the East Commerce Street
+
+  Black Gate Estate is the home of Baron Fossville, the current Lord of Toresal
+  since the old Duke's death (though he has yet to be fully confirmed). It is a
+  somber building of dark flagstone and slate, although you've heard the Baron
+  keeps a beautiful rooftop garden.
+
+  on the player entering
+    refuse black-gate-servants
+  end on
+
+  on the player opening
+    refuse black-gate-servants
+  end on
+
+create Red Gate Estate
+  aka red gate, front gates, gates, gate, duke's house, empty house, crumbling house
+  scenery, proper
+  knock-red-gate
+  in the East Commerce Street
+
+  This is where the Duke and former Lord of Toresal lived, until his death
+  several years ago. Now it stands empty, slowly crumbling. No one has ever
+  made an attempt to claim the property, and the Baron seems content to let it
+  remain vacant. The front gates are securely locked.
+
+  on the player entering
+    refuse red-gate-locked
+  end on
+
+  on the player opening
+    refuse red-gate-locked
+  end on
+
+  on the player unlocking
+    refuse red-gate-locked
+  end on
+
+  on the player climbing
+    refuse fence-too-high
+  end on
+
+create the Jacobs Mansion
+  aka jacobs family mansion, jacobs mansion, mansion, castle, miniature castle, jacobs house
+  scenery
+  knock-jacobs
+  in the East Commerce Street
+
+  Jacobs the Elder is rumored to be the richest merchant in Toresal. His lavish
+  city residence is built to resemble a miniature castle, complete with
+  turrets, crenellations, and a heavy portcullis over the front door.
+
+  on the player entering
+    refuse jacobs-no-business
+  end on
+
+  on the player opening
+    refuse jacobs-no-business
+  end on
+
+create the crenellations
+  aka turrets, turret, crenellation, portcullis, castle architecture
+  scenery, plural
+  in the East Commerce Street
+
+  All the castle-style architecture on Jacobs' mansion is a bit ostentatious.
+
+create the City Park
+  aka park, meadow, woods, wood, open meadow, park wall, park gate
+  scenery, proper
+  in the East Commerce Street
+
+  The park is a couple of acres of open meadow and sparse woods in the middle
+  of the city, set aside by the previous Lord to promote health and relaxation
+  among Toresal's citizens. It still sees strollers and the occasional
+  picnicker by day, although it's become infamous as a haunt for cutpurses by
+  night. The park is surrounded by a high stone wall, with a gate on the north
+  side.
+
+  on the player entering
+    refuse park-kids
+  end on
+
+create the iron fence
+  aka fence, fences, spikes, spike, iron spikes, spiked fence
+  scenery
+  in the East Commerce Street
+
+  The fence is too high to climb, and topped with sharp iron spikes to boot.
+
+  on the player climbing
+    refuse fence-too-high
+  end on
+
+define phrase black-gate-servants
+  The servants would never let someone like you enter unless you had urgent
+  business with the Baron, which they'd never believe you had anyway.
+end phrase
+
+define phrase red-gate-locked
+  The front gates are securely locked.
+end phrase
+
+define phrase red-gate-no-answer
+  No one answers.
+end phrase
+
+define phrase jacobs-no-business
+  You don't have any business with Jacobs, and even if you did, you might
+  think twice before knocking on his door. Rumor has it that many of his
+  dealings are decidedly less than legal.
+end phrase
+
+## `story.ni:4917`, the pre-sewer variant, and the talent-in-children ruling
+## (change document, "The talent in children"): the orphans see her.
+
+define phrase park-kids, stopping
+  You hesitate. Several street kids have congregated in the middle of the park,
+  chasing each other and playing at knights and villains in the late afternoon
+  warmth. Some of them know you from Maiden House, and know that you're really
+  a girl. That could lead to an awkward situation if one of them called you
+  out in front of someone who only knows you as a boy. Especially if that
+  someone was Bobby.
+or
+  No, too risky. Better visit the park another day.
+end phrase
+
+define phrase fence-too-high
+  The fence is too high to climb, and topped with sharp iron spikes to boot.
+end phrase
+
+## `story.ni:4940-4950`
+
+define action knocking
+  grammar
+    knock the target
+    knock on the target
+  otherwise refuse knock-nothing
+
+define phrase knock-nothing
+  Nothing happens.
+end phrase

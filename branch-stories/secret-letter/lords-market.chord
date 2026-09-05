@@ -1,0 +1,267 @@
+## ===========================================================================
+## LORD'S MARKET — Book 4 (`story.ni:4951-5602`), Chapter 2's second half,
+## and the Back Alley that ends the chapter (`story.ni:5607`).
+##
+## The square, its three shops as rooms, the servants and lanterns, and the
+## one scripted event of the chapter: Baron Fossville storming out of the
+## moneylender's on Jack's first arrival (`EVENT_Fossville`,
+## `story.ni:5010-5030`), Gentry's text verbatim — the player's first sight of
+## the antagonist. The change document carries it unchanged. The keepers
+## (the clothier, Dame Sandler and Pieter, the Chorus Brothers) and their
+## stubs arrive with the next increment; the later-visit layers (the sewer,
+## Pieter's scene, the clean-Jack shopping) belong to their chapters.
+##
+## Not carried, noted: the `follow` refusal after the collision (no follow
+## action), `enter <storefront>` and the bare `in` (as on Commerce Street).
+## ===========================================================================
+
+create the Lord's Market
+  a room
+  aka lords market, market square, square, the square
+  west to the East Commerce Street
+  northeast to the Royal Tunic, one-way
+  east to the Sandler and Sons, one-way
+  southeast to the Chorus Brothers, one-way
+  south to the Back Alley
+  states: bearings, seen
+
+  Lord's Market is the high-class mirror to Grubber's Market: a wide, cobbled
+  square, uncrowded and clean, shaded by tall buildings on either side. Here
+  Toresal's upper crust can hunt for bargains inaccessible to the ordinary
+  rabble. Antiques, custom jewelry, and similarly high-priced goods are
+  available behind the tasteful shopfronts. A fine clothier's, a jewelry
+  store, and a moneylender's shop lie northeast, east, and southeast,
+  respectively; you can return to Commerce Street to the west; an alley leads
+  south.
+
+  after the player entering while the Lord's Market is bearings
+    phrase fossville-collision
+    change the Lord's Market to seen
+  end after
+
+## `EVENT_Fossville` (`story.ni:5013`), once, on the first arrival — gated by
+## the square's own forward-only state (a single-arm `first-time` phrase
+## replayed on the second visit, 2026-09-04).
+
+define phrase fossville-collision
+  As you are standing there getting your bearings, the door to the
+  moneylender's shop suddenly slams open. A tall, dark-cloaked figure storms
+  out, shouting over his shoulder, '...regret refusing my business! I know
+  import— OOF!' —and before you have a chance to react, he crashes into you.
+  You both hit the cobbles in a tangle of limbs.
+
+  Muttering apologies, you try to disentangle yourself, but the man is on his
+  feet in an instant, dragging you up by your elbow. 'Why you insolent little
+  cutpurse—'
+
+  A woman standing next to him places her hand on his shoulder. 'Calm
+  yourself, Fossville,' she says. Only her chin is visible beneath the shadow
+  of her hood, but the woman's voice is cool and commanding. 'It's only a
+  foolish street boy. You've already terrified him.'
+
+  The man — you realize now that he must be Baron Fossville, Lord of the city
+  since the old Duke died, and one of the most powerful nobles in Toresal —
+  eyes you suspiciously. Even flustered, his sharp features are intense,
+  handsome, and dangerously intelligent. His lips twitch slightly beneath his
+  trim moustache. Finally, he releases you.
+
+  'Off with you then, urchin,' he growls, flicking his fingers as though he
+  had just touched something filthy. 'Take your begging elsewhere, and learn to
+  stay out from under the feet of your betters.'
+
+  Fossville strides off towards Commerce Street, followed closely by his
+  hooded companion. As she brushes past you, you can hear her talking in a low
+  voice, '...have the money you need, but we must be subtle about it. The
+  Queen can not appear to play favorites...'
+
+  And then they are gone.
+end phrase
+
+## The storefronts (`story.ni:4990-5002`).
+
+create the clothier's storefront
+  aka clothiers storefront, clothier, clothiers, tailor, royal tunic sign, shop window, window, display, velvet backdrop, backdrop, dummy, clothier's dummy, tunic
+  scenery
+  in the Lord's Market
+
+  A large window, trimmed in fine, dark wood, lets light into the front of the
+  shop. A clothier's dummy dressed in a smartly cut tunic stands in front of a
+  velvet backdrop, advertising the latest fashion to be found inside.
+
+create the jeweler's storefront
+  aka jewelers storefront, jeweler, jewelers, jewelry store, plaque, brass plaque, iron bars, bars, barred windows, pearls sign, sandler and son
+  scenery
+  in the Lord's Market
+
+  The sign above this store is painted with a necklace of pearls. The windows
+  are blocked with thick (but decorative) iron bars, and the door sports a
+  heavy lock. An engraved brass plaque reads 'Sandler and Son.'
+
+create the moneylender's storefront
+  aka moneylenders storefront, moneylender, moneylenders, placard, discreet placard, chorus brothers sign, blue storefront
+  scenery
+  in the Lord's Market
+
+  A discreet placard next to the door reads 'Chorus Brothers.' The remainder
+  of the windowless storefront is painted blue.
+
+create the tasteful shopfronts
+  aka shopfronts, shops, stores, storefronts, shop fronts, store fronts, signs, shop signs, doors, shop doors, buildings
+  scenery, plural
+  in the Lord's Market
+
+  A fine clothier's, a jewelry store, and a moneylender's shop lie northeast,
+  east, and southeast, respectively.
+
+create the servants
+  aka people, crowd, crowds, shopper, shoppers, servant, well dressed servants
+  scenery, plural
+  in the Lord's Market
+
+  Most of the people wandering about Lord's Market are well dressed servants
+  of the upper class (even for merchandise as nice as this, rich people rarely
+  do their own shopping). Everyone looks to be in a dreadful hurry, with
+  dreadfully important business to attend to, and no one affords you so much
+  as a second glance.
+
+create the lanterns
+  aka lantern, lamp, lamps, lamppost, lampposts, post, posts, ornate posts
+  scenery, plural
+  in the Lord's Market
+
+  The lampposts are unlit during the day.
+
+## ---------------------------------------------------------------------------
+## ROYAL TUNIC — the clothier's (`story.ni:5186-5200`) — the room.
+## ---------------------------------------------------------------------------
+
+create the Royal Tunic
+  a room
+  aka clothiers shop, clothier's shop, clothiers, clothier's, tailor's
+  west to the Lord's Market, one-way
+
+  The walls are hung with tasteful curtains, and a deep, soft carpet covers
+  the floor. Several clothier's dummies stand about the room, displaying
+  gorgeous formal court apparel for both men and women. The street lies west.
+
+create the clothier's curtains
+  aka curtains, curtain, velvet curtains, purple curtains, thick curtains
+  scenery, plural
+  in the Royal Tunic
+
+  The curtains are made of thick, purple velvet.
+
+## ---------------------------------------------------------------------------
+## SANDLER AND SONS — the jeweler's (`story.ni:5195-5232`) — the room.
+##
+## The display case is scenery here, not a container: the source's case is
+## closed and never opens ("The cases are locked, of course."), so the
+## jewelry is described through the glass as part of it.
+## ---------------------------------------------------------------------------
+
+create the Sandler and Sons
+  a room
+  aka sandler and sons, jewelers shop, jeweler's shop, jewelers, jeweler's, sandler's
+  west to the Lord's Market, one-way
+
+  The inside of this store is tasteful but austerely decorated, perhaps to
+  better draw the eye towards the glass display case in the center of the room
+  and the king's ransom in jewelry contained therein. You can leave to the
+  west.
+
+create the display case
+  aka case, cases, glass case, glass, pedestal, pedestals, display
+  scenery
+  in the Sandler and Sons
+
+  Light glitters across diamond-encrusted rings, bracelets, pendants,
+  brooches, and necklaces spread out on black velvet.
+
+  on the player opening
+    refuse case-locked
+  end on
+
+  on the player taking
+    refuse case-locked
+  end on
+
+create the valuable jewelry
+  aka jewelry, jewels, jewel, rings, bracelets, pendants, brooches, necklaces, diamonds, diamond, ring, bracelet, pendant, brooch
+  scenery
+  in the Sandler and Sons
+
+  Any one piece is several times more valuable than everything you've ever
+  nicked in your entire life put together. The thought of wearing something
+  that extravagant on your wrist makes your skin tingle.
+
+  on the player taking
+    refuse case-locked
+  end on
+
+define phrase case-locked
+  The cases are locked, of course. And Pieter has his eyes on you constantly.
+end phrase
+
+## ---------------------------------------------------------------------------
+## CHORUS BROTHERS — the moneylender's (`story.ni:5425-5450`) — the room.
+## ---------------------------------------------------------------------------
+
+create the Chorus Brothers
+  a room
+  aka moneylenders shop, moneylender's shop, moneylenders, moneylender's, chorus brothers shop
+  west to the Lord's Market, one-way
+
+  The inside of this shop is dark — dark wood paneling on the walls; deep,
+  wine-dark carpeting on the floor; even a pair of huge, leather armchairs
+  over in one corner. The back half of the room is hidden behind a wall of
+  reinforced wood, with a wide window cut through the center.
+
+create the armchairs
+  aka armchair, chair, chairs, leather armchairs, leather chairs
+  scenery, plural
+  in the Chorus Brothers
+
+  The armchairs are overstuffed, upholstered in rich, dark leather.
+
+  on the player entering
+    refuse armchairs-awkward
+  end on
+
+create the moneylender's carpet
+  aka carpet, carpeting, wine-dark carpet
+  scenery
+  in the Chorus Brothers
+
+  (TODO during play-testing — the carpet has no description in the source; a
+  line or none, David's call.)
+
+create the teller's window
+  aka window, tellers window, counter, grating, brass grating, grate, reinforced wall, wall
+  scenery
+  in the Chorus Brothers
+
+  The window forms a sort of counter, with an ornately scrolled, brass grating
+  that opens to the inside, allowing customers to speak with the proprietors
+  on the other side. In fact, it appears that the only way to get service here
+  is by standing up at the counter, so it's not exactly clear what the fancy
+  chairs are for.
+
+define phrase armchairs-awkward
+  They look very comfortable, but it would feel awkward sitting in the chair
+  and yelling across the room at the counter.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE BACK ALLEY (`story.ni:5607`) — where the chapter ends. Entering it for
+## the first time is Chapter 3's opening beat; Bobby, the coin trick and the
+## Maiden House street are Chapter 3's. The room stands so the square's
+## south exit is real.
+## ---------------------------------------------------------------------------
+
+create the Back Alley
+  a room
+  aka alley, back alley, shortcut, short cut
+
+  A little-known shortcut between Lord's Market and the less affluent
+  neighborhoods of the city's south end. A narrow street to the southwest
+  leads to Maiden House, or you can return to the market square to the north.
