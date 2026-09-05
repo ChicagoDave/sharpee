@@ -109,7 +109,13 @@ define chapters
   jail - Chapter V - Jail and the Sewers
     begins when the player visits the Jail Cell for the first time
   rooftops - Chapter VI - The Rooftops and Black Gate Estate
-    begins when the player visits the Empty Alleyway for the first time
+    begins when the hatch becomes opened
+  gallows - Chapter VII - The Gallows and the Raid on Maiden House
+    begins when the butler becomes gone
+  red-gate - Chapter VIII - Red Gate Estate
+    begins when the raid becomes escaped
+  preparations - Chapter IX - Dame Sandler and the Preparations
+    begins when the company becomes done
 end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
@@ -146,6 +152,25 @@ import "night-journey"
 
 import "jail"
 
+## Chapter 6 — the rooftops and Black Gate Estate (Book 8): the closed alley
+## and the gutter, the jump, the estate's roof and three floors, the winch
+## and the chandelier, the letter, the butler. The shops' second visits and
+## the morning's refusals sit in Chapter 2's files, gated on the chapter.
+
+import "black-gate"
+
+## Chapter 7 — the gallows and the raid on Maiden House (Books 9 and 10):
+## the crowd, the square, Fossville's three beats, the blackout, the bedside,
+## the pounding, the closet and its six rows, the expulsion, the key.
+
+import "gallows"
+
+## Chapter 8 — Red Gate Estate (Book 11): Shannon's company, the park wall,
+## the gates and the brass key, the empty house, the furnace, the box of
+## letters, the bath, the dress and the mirror, the goodbye in the square.
+
+import "red-gate"
+
 ## ---------------------------------------------------------------------------
 ## THE PLAYER
 ##
@@ -173,7 +198,7 @@ create Jack
   playable
   starts in the Northwest Junction
   kick-yourself
-  states, reversible: urchin, dressed, identified
+  states, reversible: urchin, dressed, identified, clean
   wears the old gray cloak
   wears the woolen cap
   wears the boots
@@ -185,6 +210,14 @@ create Jack
   phrase detail while Jack is dressed:
     (TODO during play-testing — Jack in the dress and the fashionable hat,
     boots underneath.)
+
+  phrase detail while after jail and Jack is not clean:
+    You are utterly filthy.
+
+  phrase detail while Jack is clean:
+    With all the dirt and grime scrubbed away, you hardly look anything like
+    the urchin you once were. You're not Jack anymore; you are Jacqueline
+    Toresal, daughter of the Duke.
 
   on going while the wandering mercenaries is aggressive
     refuse merc-held

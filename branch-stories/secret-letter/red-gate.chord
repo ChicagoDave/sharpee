@@ -1,0 +1,1377 @@
+## ===========================================================================
+## RED GATE ESTATE — Book 11 (`story.ni:10008-10587`), Chapter 8, with the
+## estate front's unlock (`story.ni:4858-4901`) and Book 4's Chapter 9
+## trigger (`story.ni:5262`).
+##
+## The change document ("Chapter 8 — Red Gate Estate", 2026-09-02)
+## authorizes Book 11 whole, from Shannon coming through the privy window
+## after her to her goodbye in Lord's Market and Jack's step into Sandler &
+## Sons: the park wall, the street, the gates and the brass key, the empty
+## house, the furnace and the fire, the box of letters, the bed, the bath,
+## the dress and the mirror. Every line is Gentry's; conversations are STUBS
+## under the standing rule. Shannon's company on the streets and in Maiden
+## House's back alley is layered onto `maiden-house.chord`,
+## `commerce-street.chord` and `lords-market.chord`, gated on `the company`.
+##
+## THE RULINGS (change document, Chapter 8):
+##   * EXTENT — the window to Shannon's goodbye in the square and the step
+##     into Sandler & Sons; Chapter IX's row begins as the company ends
+##     (`the company becomes done`).
+##   * THE STREET — new content, fear without teeth: men visible on East
+##     Commerce Street when the two drop from the park wall, and Shannon
+##     hurries her to the gates. ONE placeholder on that arrival; the house
+##     stays silent, empty, unclocked, as the source has it.
+##   * THE BATH AND THE DRESS — the presentation flips, as the source has it:
+##     from the mirror on the public reads her as a young lady. `Jack is
+##     clean` is that state (`secret-letter.story`); the mirror text and the
+##     faucet monologue carry as written.
+##   * THE WALK OUT — new content: the men are still on the street when the
+##     gates open again and she walks past them in the dress with Shannon at
+##     her elbow. ONE placeholder on the clean arrival on East Commerce
+##     Street, before Shannon's "I suppose we should go see Mrs. Sandler
+##     now"; the walk east and the goodbye carry as written.
+##   * WHO SEES HER — Shannon sees: every "Jacqueline" of hers carries. ONE
+##     line converts, per §3g: at the portrait, the source's "Jack, dear, you
+##     have his eyes" is "Jacqueline, dear" (gap 4 notes the alternative).
+##     From the mirror on, the words no longer tell.
+##
+## STUBS TAKING THE SOURCE'S PATH: `talk to shannon` outside the house
+## prints the SH13-SH16 TODO; inside, the source's own refusal.
+##
+## GAPS (change document): the street beats (two placeholders); the two dead
+## rooms — the Dining Hall and Kitchen are commented out in the source and
+## are not built (the Great Hall is north of the Entrance Hall, as the source
+## compiles); "Estelle" in the third letter carries as written; Shannon's
+## converted line.
+##
+## NOT CARRIED, with reasons:
+##   * The source's room names "Second Floor Landing", "Third Floor Landing"
+##     and "Master Bedroom" — a room's name is story-wide and Black Gate
+##     Estate holds those three, so this house's are `the Red Gate …`.
+##   * `rub`/`wipe` on the dust, the sheets and the desk — no rubbing action;
+##     `clean`/`wipe the target` reach the kitchen's `washing` story action
+##     and the desk answers through a trait.
+##   * The "Shannon follows silently / close by" line — the source prints it
+##     on a walked move while the tension is still unimportant, which in
+##     practice is only the walk into the square at the end, where the
+##     goodbye speaks instead; the follower clause moves her and says nothing.
+##   * `wear dress` reaches Chapter 1's escape dress, which has no location
+##     (GH #374); the day dress answers to `wear day dress`.
+##   * The furnace's contents listing and the box's contents listing ride
+##     the platform's container reports.
+##   * The love letters' `[first time]` tail sits with the documents' first
+##     look, where the source first reveals them; `x letters` afterward is
+##     their text alone.
+##   * `unlock gates with wire` ("too sturdy") — a clause cannot read the
+##     instrument; without the key the gates are simply locked. The bare
+##     `unlock gates` asks for the key (the source supplies it).
+##   * `enter tub` and `switch on faucets` — the platform refuses to enter
+##     or switch scenery before a clause can act; `bathe`, `take a bath` and
+##     `turn faucets` are the ways in.
+##   * Standing on the desk puts her on it, as the platform's entering does;
+##     the source steps off by itself, the port needs `get off`.
+##   * The source's `select theme` changes, the image rules, the
+##     `pause`-free heading.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## SHANNON'S COMPANY (`story.ni:10014-10071`) — the state the streets and
+## the widow read. `pending` until the window; `escorting` from the alley to
+## the square; `done` at her goodbye.
+## ---------------------------------------------------------------------------
+
+create the company
+  aka shannon's company
+  proper
+  states: pending, escorting, done
+
+  Widow Shannon's company.
+
+## `story.ni:10023`, the window (Chapter VIII's opening; the raid's file
+## speaks it as she climbs out).
+
+define phrase shannon-through-the-window
+  You pull yourself through the window and once again clamber up into the
+  alley. You can hear a commotion from the direction of Lord's Market; it
+  looks as though the Baron's mercenaries are still out searching the streets
+  for you, but they'll double back and put a watch on Maiden House soon
+  enough.
+
+  There is a scrabbling, grunting sound behind you, and you turn to see
+  Shannon trying to push her way through the window. Confused but not
+  wanting to just stand there and watch her struggle, you give her a hand
+  up.
+
+  'Fiona thought I should maybe come with you,' she says, after she's
+  finished smoothing her skirts and catching her breath. 'In case you needed
+  any help.'
+end phrase
+
+## `story.ni:10046-10053`
+
+define phrase shannon-cut-through-the-park
+  Shannon lays a hand on your elbow. 'Wait, Jacqueline,' she whispers. 'The
+  mercenaries will be watching the entrance. We'd best cut through the park.
+  I'll help you climb the wall.'
+end phrase
+
+define phrase shannon-boosts-you-over
+  Shannon laces her fingers together and gives you a boost up to the top of
+  the wall; then you reach down and help pull her up. You both drop down
+  onto the grass on the other side, and then it's a quick sprint across the
+  open space of the park. Fortunately, no one is about after the awful
+  spectacle in Lord's Market, and you make it to the relative safety of East
+  Commerce Street without anyone spotting you.
+end phrase
+
+## `story.ni:10057-10061`
+
+define phrase shannon-stay-away-from-market
+  'We should stay away from Lord's Market for a while, I think,' says
+  Shannon. 'Fossville's men will still be looking for you.'
+end phrase
+
+define phrase shannon-dont-wander
+  'We shouldn't wander the streets any more than we have to,' Shannon says.
+  'Fossville's men will still be looking for you.'
+end phrase
+
+## THE STREET BEATS (change document, Chapter 8, "The street" and "The walk
+## out" — David: "B" and "A", fear without teeth both times): men visible on
+## East Commerce Street when the two drop from the wall, and the same men
+## looking at a lady and a widow on the way out and seeing nobody they want.
+## Two placeholders; the beats and their lines are David's (gap 1).
+
+define phrase street-arrival-men-stub
+  (TODO during play-testing — the drop from the park wall: Fossville's men
+  somewhere on East Commerce Street, and Shannon hurrying her the few steps
+  to the Red Gate front gates. Fear, no teeth. The beats and the lines are
+  David's.)
+end phrase
+
+define phrase street-walk-out-stub
+  (TODO during play-testing — the walk out: the same men on East Commerce
+  Street as the gates open again, and Jack in the Duchess's dress with
+  Shannon at her elbow walking past them; they look and see nobody they
+  want. Fear, no teeth. The beat and the lines are David's.)
+end phrase
+
+## `story.ni:4837`
+
+define phrase shannon-see-mrs-sandler
+  'I suppose we should go see Mrs. Sandler now,' Shannon says.
+end phrase
+
+## `story.ni:10069`, the goodbye; then the step into Sandler & Sons.
+
+define phrase shannon-goodbye-hug
+  'Well,' says Shannon, 'I've seen you safely to Dame Sandler. I'd better get
+  back to Maiden House; the Baron's men might get suspicious if I'm gone too
+  long. Take care, Jacqueline.' She hugs you tightly, sniffling a little, and
+  then hurries off to the south.
+end phrase
+
+## `story.ni:10111`
+
+define phrase reluctant-to-break-silence
+  Something about this place — the stillness, the solemn expectancy — makes
+  you reluctant to break the silence with idle chatter.
+end phrase
+
+## `SH13-SH16` (`story.ni:6502-6508`): Shannon SEES her — "Miss Jacqueline",
+## and SH14 is the source's own account of the talent.
+
+define phrase shannon-sh13-stub
+  (TODO during play-testing — conversation SH13-SH16: "Can I ask you
+  something?" — "Of course, Miss Jacqueline"; "Did you know about Fiona?" —
+  "I always thought you were special, Jacqueline. But that was just my own
+  feelings telling me things, the way they do sometimes"; "Why is Dame
+  Sandler so important?" — Fiona has known her a long time; "What if you get
+  caught?" — "I'll run straight to Holstenoffer's shop." Shannon SEES her.)
+end phrase
+
+## `story.ni:4894-4900`, the gates.
+
+define phrase gates-grinding-clunk
+  The lock is rusty and stiff from long disuse, but the key turns... and the
+  door unlocks with a grinding clunk.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE HOUSE AS A REGION (`story.ni:10075-10084`): the silence and the dust
+## follow her through it; Shannon will not chat inside.
+## ---------------------------------------------------------------------------
+
+create the Duke's House
+  a region
+  containing the Entrance Hall, the Great Hall, the Cellar, the Red Gate Second Floor Landing, the Office, the Red Gate Third Floor Landing, the Red Gate Master Bedroom, the Bathroom
+
+create the silence
+  aka stillness, quiet, eerie silence, expectant silence, echo, echoes
+  scenery
+
+  It's just insubstantial silence.
+
+  when Jack moves, while the player is in the Duke's House
+    move the silence here
+  end when
+
+  on the player listening
+    refuse silence-expectant
+  end on
+
+  on the player touching
+    refuse insubstantial-silence
+  end on
+
+  on the player taking
+    refuse insubstantial-silence
+  end on
+
+define phrase silence-expectant
+  The silence is eerie, almost expectant, as though the house were holding
+  its breath, waiting.
+end phrase
+
+define phrase insubstantial-silence
+  It's just insubstantial silence.
+end phrase
+
+create the dust
+  aka film of dust, gray film, grey film, gray dust, grime
+  scenery
+
+  The dust covers everything, muting all colors under a film of gray.
+
+  when Jack moves, while the player is in the Duke's House
+    move the dust here
+  end when
+
+  on the player touching
+    refuse dust-smudge
+  end on
+
+  on the player taking
+    refuse dust-smudge
+  end on
+
+define phrase dust-smudge
+  The dust leaves a little gray smudge on the tip of your finger.
+end phrase
+
+define phrase months-to-clean
+  It would take you months to get this place clean.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE ENTRANCE HALL (`story.ni:10090-10129`) — the source's Foyer. The
+## threshold text, the description and "The house is eerie in its
+## stillness" are its first-visit description together.
+## ---------------------------------------------------------------------------
+
+create the Entrance Hall
+  a room
+  aka foyer, entrance, hall, entrance hall, marble hall
+  north to the Great Hall
+  south to the East Commerce Street through Red Gate Estate
+  south is blocked while Jack is not clean: shannon-found-everything
+  first time
+    You pause for one last glance over your shoulder at the streets of
+    Toresal, so familiar from your years of skulking, scrounging, and
+    sometimes even sleeping on them. Then you pass over the threshold, into
+    Red Gate Estate.
+
+    The entrance hall is large, high-ceilinged, and empty. A doorway leads
+    north into a large hall, and the street lies south.
+
+    The house is eerie in its stillness. The walls are bare; your footsteps
+    echo on the marble floors.
+
+  The entrance hall is large, high-ceilinged, and empty. A doorway leads
+  north into a large hall, and the street lies south.
+
+## `story.ni:10125`
+
+define phrase shannon-found-everything
+  'Wait,' says Shannon. 'Are you sure you've found everything you were meant
+  to find here?'
+end phrase
+
+create the marble floor
+  aka floor, marble, marble floors, floors
+  scenery
+  in the Entrance Hall
+
+  The walls are bare; your footsteps echo on the marble floors.
+
+## ---------------------------------------------------------------------------
+## THE GREAT HALL (`story.ni:10163-10218`): the portrait, the furniture, the
+## sheets. The `[first time]` paragraph is the first-visit description.
+## ---------------------------------------------------------------------------
+
+create the Great Hall
+  a room
+  aka hall, great hall, large hall, long room
+  south to the Entrance Hall
+  up to the Red Gate Second Floor Landing
+  down to the Cellar
+  first time
+    This room runs nearly the entire length of this floor, but its size only
+    draws attention to its emptiness. The walls are bare plaster; what little
+    furniture remains is stacked in the corners and covered with dusty
+    sheets.
+
+    You can't help but imagine how this place once was, in its full
+    vibrancy. The cream of the city once filled this room, entertained and
+    served by the Duke of Toresal — your father. They respected him, honored
+    him, even loved him. And now it's all gone.
+
+    A wide stairway sweeps up to the second floor, while a narrower stairway
+    leads down to a cellar. The foyer lies south. {portrait-on-the-wall}
+
+  This room runs nearly the entire length of this floor, but its size only
+  draws attention to its emptiness. The walls are bare plaster; what little
+  furniture remains is stacked in the corners and covered with dusty sheets.
+  A wide stairway sweeps up to the second floor, while a narrower stairway
+  leads down to a cellar. The foyer lies south. {portrait-on-the-wall}
+
+## The portrait's paragraph (`story.ni:10171`), once each way.
+
+define phrase portrait-on-the-wall, stopping
+  Whoever took most of the furniture away for some reason decided to leave a
+  large portrait of the Duke himself hanging on the far wall.
+or
+  The portrait of the Duke stares down at you from the far wall.
+end phrase
+
+## The portrait (`story.ni:10171-10186`): Shannon's line after the first
+## look — CONVERTED, the ruling: "Jacqueline, dear" for the source's "Jack,
+## dear" (Shannon sees; §3g).
+
+create the portrait of the Duke
+  aka portrait, painting, picture, canvas, portrait of the old duke, duke, old duke, father, my father, your father, duke's eyes, eyes
+  scenery
+  in the Great Hall
+
+  The Duke's features are strong and stern, yet softened by kindness, and
+  although the canvas is faded with the years, his eyes are still a rich,
+  vivid blue. In the painting he is smiling slightly, but as he stares out at
+  the empty ruin of his home — at you, his lost, beleaguered, and only heir —
+  he seems weighed down by sadness.
+
+  after the player examining
+    first time
+      phrase shannon-his-eyes
+  end after
+
+  on the player taking
+    refuse portrait-too-high
+  end on
+
+  on the player touching
+    refuse portrait-too-high
+  end on
+
+  on the player pushing
+    refuse portrait-too-high
+  end on
+
+  on the player pulling
+    refuse portrait-too-high
+  end on
+
+  on the player climbing
+    refuse portrait-too-high
+  end on
+
+define phrase shannon-his-eyes
+  'His eyes...' whispers Shannon, with a slight catch in her throat.
+  'Jacqueline, dear, you have his eyes.'
+end phrase
+
+define phrase portrait-too-high
+  The portrait is hung too high for you to reach.
+end phrase
+
+## The furniture (`story.ni:10190-10218`, `10261-10269`): smashed once for
+## the firewood.
+
+create the old furniture
+  aka furniture, tables, table, chairs, chair, fine furniture, stacked furniture, shrouded furniture, dark wood, wood
+  scenery, plural
+  in the Great Hall
+  states: intact, smashed
+
+  The tables and chairs are old and show signs of neglect, but they are
+  finely crafted, made of rich, dark wood.
+
+  on the player entering
+    refuse remove-the-dustsheets-first
+  end on
+
+  on the player climbing
+    refuse standing-on-furniture
+  end on
+
+  on the player attacking
+    refuse when the old furniture is smashed: smashed-enough
+    phrase smash-the-furniture
+    move the pile of broken wood to the player
+    change the old furniture to smashed
+  end on
+
+define phrase remove-the-dustsheets-first
+  You'd have to remove the dustsheets first, and there will be time for that
+  later.
+end phrase
+
+define phrase standing-on-furniture
+  Standing on the old furniture is probably not a good idea.
+end phrase
+
+define phrase smash-the-furniture
+  You pull a couple of chairs out from under the dust sheets and start
+  whacking them against the hard floor, stomping on them, yanking the legs
+  free. It's tiring work... but also somehow exhilarating. After all the
+  awful things that have happened to you, it's nice to be able to take your
+  frustrations out on this old furniture. Soon you have a respectable pile of
+  firewood.
+end phrase
+
+define phrase smashed-enough
+  You've probably smashed enough furniture for today.
+end phrase
+
+create the dustsheets
+  aka sheets, sheet, dust sheets, dust sheet, dustsheet, linen, linens, shrouds, shroud, white sheets, dusty sheets
+  scenery, plural
+  in the Great Hall
+
+  The sheets are fine linen, smudged gray with dust.
+
+  on the player taking
+    refuse little-point-dust
+  end on
+
+  on the player pulling
+    refuse little-point-dust
+  end on
+
+  on the player pushing
+    refuse little-point-dust
+  end on
+
+  on the player searching
+    refuse little-point-dust
+  end on
+
+define phrase little-point-dust
+  There's little point; it would just fill the air with dust. There will be
+  time to clean this place later, when this craziness is over.
+end phrase
+
+create the pile of broken wood
+  aka wood, broken wood, firewood, fire wood, bundle, bundle of sticks, sticks, pile, kindling
+
+  Just a bundle of sticks — that used to be a nice chair.
+
+  on the player inserting
+    the player must be in the Cellar: nowhere-for-the-wood-stub
+    refuse when the furnace is hot: smashed-enough
+    phrase light-the-furnace
+    move the roaring fire to the furnace
+    move the orange light to the Cellar
+    change the furnace to hot
+    move the pile of broken wood offstage
+  end on
+
+## DAVID: the source has no line for the wood anywhere but the furnace (its
+## rule is on that one insertion); one line, yours.
+
+define phrase nowhere-for-the-wood-stub
+  (TODO during play-testing — the firewood put anywhere but the furnace: no
+  source line exists; David's.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CELLAR and the furnace (`story.ni:10222-10304`)
+## ---------------------------------------------------------------------------
+
+create the Cellar
+  a room
+  aka basement, red gate cellar, stone cellar
+  up to the Great Hall
+
+  It is cool and quiet down here, amidst the stone walls of the cellar. A
+  narrow stairway leads back up. {furnace-cold}{furnace-hot}
+
+## The narrow stairway (`story.ni:10226-10233`) stands in both rooms.
+
+create the narrow stairway
+  aka stairway, stairs, staircase, narrow stairs, stone steps, steps, step
+  scenery, climbable, enterable
+
+  Narrow, stone steps leading down.
+
+  when Jack moves, while the player is in the Great Hall or the player is in the Cellar
+    move the narrow stairway here
+  end when
+
+  on the player examining
+    refuse when the player is in the Cellar: stairway-leading-up
+  end on
+
+  on the player climbing
+    move the player to the Cellar when the player is in the Great Hall
+    move the player to the Great Hall when the player is in the Cellar
+  end on
+
+  on the player entering
+    move the player to the Cellar when the player is in the Great Hall
+    move the player to the Great Hall when the player is in the Cellar
+  end on
+
+define phrase stairway-leading-up
+  Narrow, stone steps leading up.
+end phrase
+
+## The furnace: a closed container, cold until the wood goes in; its
+## description reads by open/closed and cold/hot as four refusals (a marker
+## in an entity description prints literally, GH #364).
+
+create the furnace
+  aka boiler, iron furnace, pot-bellied furnace, grate, grating, metal grating, pipes, pipe, heater, iron stove
+  a container, openable
+  in the Cellar
+  states, reversible: cold, hot
+
+  The metal grating is closed.
+
+  on the player examining
+    refuse when the furnace is hot and the furnace is closed: furnace-hot-closed
+    refuse when the furnace is hot: furnace-hot-open
+    refuse when the furnace is open: furnace-cold-open
+  end on
+
+  after the player opening
+    first time
+      phrase grating-squeaks-open
+      phrase shannon-use-the-broken-wood when the player has the pile of broken wood
+      phrase shannon-break-up-furniture when not the player has the pile of broken wood
+  end after
+
+  on the player touching
+    refuse when the furnace is hot: furnace-snatch-hand
+    refuse furnace-metal-cold
+  end on
+
+define phrase furnace-cold, stopping while the furnace is cold
+  Against the back wall stands a pot-bellied iron furnace, cold and still.
+end phrase
+
+define phrase furnace-hot, stopping while the furnace is hot
+  Against the back wall stands a pot-bellied iron furnace, giving off a
+  bright orange glow.
+end phrase
+
+define phrase furnace-cold-open
+  The metal grating is open, and the interior is dark.
+end phrase
+
+define phrase furnace-hot-closed
+  The furnace is closed, but bright orange light flickers through the
+  grating. Thick, metal pipes leading away from the furnace carry the heat
+  to other parts of the house.
+end phrase
+
+define phrase furnace-hot-open
+  The furnace is open, and bright orange light pours out from it. Thick,
+  metal pipes leading away from the furnace carry the heat to other parts of
+  the house.
+end phrase
+
+define phrase grating-squeaks-open
+  The grating squeaks open. The inside of the furnace is empty and dark.
+end phrase
+
+define phrase shannon-use-the-broken-wood
+  'Maybe we should use the broken furniture wood', suggests Shannon.
+end phrase
+
+define phrase shannon-break-up-furniture
+  'We could break up some of the furniture upstairs,' suggests Shannon. 'It
+  would be nice to have some warmth in here.'
+end phrase
+
+define phrase furnace-snatch-hand
+  You snatch your hand away. It's hot!
+end phrase
+
+define phrase furnace-metal-cold
+  The metal is cold.
+end phrase
+
+define phrase light-the-furnace
+  You pile the sticks into the furnace, and Shannon, always helpful, produces
+  a match. Soon you have a roaring fire.
+
+  'There, that should warm things up a bit,' says Shannon.
+end phrase
+
+create the roaring fire
+  aka fire, flames, flame, crackling fire, cheerful fire, smoke
+  scenery
+
+  The fire crackles cheerfully inside the belly of the furnace.
+
+  on the player listening
+    refuse flames-crackle
+  end on
+
+  on the player smelling
+    refuse wood-smoke-smell
+  end on
+
+  on the player touching
+    refuse messing-with-fire
+  end on
+
+  on the player taking
+    refuse messing-with-fire
+  end on
+
+define phrase flames-crackle
+  The flames crackle cheerfully.
+end phrase
+
+define phrase wood-smoke-smell
+  It smells like good, clean wood-smoke.
+end phrase
+
+define phrase messing-with-fire
+  Messing with fire is a good way to get burned.
+end phrase
+
+create the orange light
+  aka light, glow, warm glow, orange glow, flickering light, bright light
+  scenery
+
+  The warm glow flickers out from the belly of the furnace.
+
+  on the player touching
+    refuse insubstantial-light
+  end on
+
+  on the player taking
+    refuse insubstantial-light
+  end on
+
+define phrase insubstantial-light
+  It's just insubstantial light.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SECOND FLOOR (`story.ni:10310-10433`): the landing and the Office.
+## ---------------------------------------------------------------------------
+
+create the Red Gate Second Floor Landing
+  a room
+  aka landing, second floor landing, shadowed stairway, stairway
+  down to the Great Hall
+  up to the Red Gate Third Floor Landing
+  south to the Office
+
+  The shadowed stairway leads up and down. A doorway leads south.
+
+create the Office
+  a room
+  aka office, ransacked office, study
+  north to the Red Gate Second Floor Landing
+
+  The room was clearly ransacked some time ago. What few books are left lie
+  scattered about the floor. The desk is pushed against one wall, the
+  dustsheet that once covered it ripped away. You can leave to the north.
+  {shelves-and-the-box}
+
+  after the player going
+    change the Duke's desk to dusty
+  end after
+
+## The bookshelves' paragraph (`story.ni:10344-10349`): the long one on the
+## first look, the short one after, none once the box is down.
+
+define phrase shelves-and-the-box, stopping while the wooden box is shelved
+  The empty shelves are bowed slightly, permanently warped from spending so
+  many years supporting the weight of as many books as they could hold. And
+  beneath the dust, the wood is worn, scuffed — a sign that those books were
+  not merely for show, but taken down and read, again and again. It occurs
+  to you that the Duke must have loved his books. You're not sure why you are
+  so certain of this, but certain you are. Of all the desecrations visited
+  upon his home since his death, you think this room would have made him the
+  saddest.
+
+  Up on the top shelf, missed by the looters, you spy a wooden box.
+or
+  Nearly hidden on one of the top bookshelves is a wooden box.
+end phrase
+
+create the dusty bookshelves
+  aka bookshelves, shelves, shelf, bookshelf, top shelf, topmost shelf, empty shelves, looted shelves, warped shelves
+  scenery, plural
+  in the Office
+
+  The bookshelves have been completely looted.
+
+  on the player examining
+    refuse when the wooden box is shelved: shelves-except-the-box
+  end on
+
+  on the player climbing
+    refuse box-out-of-reach
+  end on
+
+define phrase shelves-except-the-box
+  The bookshelves have been completely looted, except for a wooden box
+  almost hidden up on the topmost shelf.
+end phrase
+
+## The desk (`story.ni:10405-10422`): standing on it brings the box within
+## reach — a state, reset when she leaves the room. `clean`/`wipe` reach the
+## kitchen's `washing` story action, so the answer rides a trait.
+
+define trait desk-restore
+  on the player washing
+    refuse desk-more-time
+  end on
+end trait
+
+create the Duke's desk
+  aka desk, old desk, writing desk, dusty desk, handsome desk, mahogany desk, kielwood desk
+  scenery, enterable, climbable
+  desk-restore
+  in the Office
+  states, reversible: dusty, climbed
+
+  It was a handsome thing once, carved from mahogany and kielwood. Now it is
+  covered with years' worth of dust.
+
+  on the player pushing
+    refuse desk-too-heavy
+  end on
+
+  on the player pulling
+    refuse desk-too-heavy
+  end on
+
+  on the player entering
+    phrase climb-onto-the-desk
+    change the Duke's desk to climbed
+  end on
+
+  on the player climbing
+    phrase climb-onto-the-desk
+    change the Duke's desk to climbed
+  end on
+
+define phrase desk-too-heavy
+  It's too heavy to move.
+end phrase
+
+define phrase desk-more-time
+  It would take more time than you have right now to restore the old desk.
+end phrase
+
+define phrase climb-onto-the-desk
+  You climb up onto the desk. You can now see the wooden box clearly, within
+  easy reach.
+end phrase
+
+## The box (`story.ni:10355-10399`): out of reach on the shelf until she
+## stands on the desk; the documents in it, and beneath them her mother's
+## letters, revealed by the first reading.
+
+create the wooden box
+  aka box, honey-colored box, honey-coloured box, wooden box, polished box, lid, crest, engraved crest, duke's crest, engraving
+  a container, openable
+  in the Office
+  states: shelved, taken
+
+  The box is about twelve inches by ten inches by six, carved of some
+  beautiful, honey-colored wood and polished smooth. On the lid is engraved
+  the crest of Duke Toresal.
+
+  on the player examining
+    refuse when the wooden box is shelved and the Duke's desk is dusty: box-out-of-reach
+  end on
+
+  on the player opening
+    refuse when the wooden box is shelved and the Duke's desk is dusty: box-out-of-reach
+  end on
+
+  on the player taking
+    refuse when the wooden box is shelved and the Duke's desk is dusty: box-out-of-reach
+  end on
+
+  on the player touching
+    refuse when the wooden box is shelved and the Duke's desk is dusty: box-out-of-reach
+  end on
+
+  after the player taking
+    change the wooden box to taken
+  end after
+
+  after the player opening
+    select stopping
+      phrase box-nestled-papers-first
+    or
+      phrase box-nestled-papers
+    end select
+  end after
+
+  on the player showing
+    refuse when the wooden box is closed: box-out-of-reach
+    refuse shannon-what-a-treasure
+  end on
+
+  on the player giving
+    refuse shannon-keep-those
+  end on
+
+define phrase box-out-of-reach
+  You can't reach the wooden box from where you're standing.
+end phrase
+
+define phrase box-nestled-papers-first
+  Nestled in the box's velvet-lined interior are bundles of papers — letters
+  and documents of the old Duke.
+end phrase
+
+define phrase box-nestled-papers
+  Nestled in the box's velvet-lined interior are bundles of papers, letters
+  and documents of the old Duke.
+end phrase
+
+define phrase shannon-what-a-treasure
+  'The Duke's old correspondences,' breathes Shannon. 'What a treasure,
+  Jacqueline!'
+end phrase
+
+define phrase shannon-keep-those
+  'No, you should keep those, Jacqueline,' says Shannon firmly.
+end phrase
+
+create the collected documents
+  aka documents, papers, legal documents, financial records, records, bundles of papers, bundles, correspondence, correspondences, stack
+  plural
+  in the wooden box
+
+  Some of them are legal documents indicating the disposition of the old
+  Lord's estate. There are also financial records of the city's Treasury,
+  details of various funds and improvements he planned to implement before
+  he died. There are letters from noblemen and noblewomen from every corner
+  of Miradania, addressing the Duke in terms of the utmost deference and
+  respect.
+
+  At the bottom of the stack are several letters written on small, worn
+  parchment.
+
+  after the player examining
+    first time
+      phrase your-mothers-letters
+      move the old love letters to the wooden box
+  end after
+
+  on the player taking
+    refuse leave-them-in-the-box
+  end on
+
+  on the player showing
+    refuse shannon-close-to-tears
+  end on
+
+## The three letters (`story.ni:10386-10390`) and the realization — on the
+## documents' first reading, where the source first reveals them.
+
+define phrase your-mothers-letters
+  The penmanship is clumsy, like the way yours looked when Fiona was first
+  teaching you your letters. Each is short, no more than a few scribbled
+  sentences:
+
+  My Lord. I had some time to myself in the garden and thought of you. I
+  hope to see you again soon if your duties will let you get away. You can
+  see I've not put my name to this like you asked but you know who it is.
+  Your Love.
+
+  Dear Love. When will I see you again? Your duties keep you too long from
+  me. But that is why I love you so, you are a good man who never forsakes
+  his duty. Come see me soon. Your Love.
+
+  My precious Duke. I pressed Estelle with subtle questions but I am certain
+  she knows nothing. I am discreet and would never give you cause to worry.
+  Our secret is safe. Your Love.
+
+  Your mother's words, you realize. Secret letters that she sent to your
+  father, before you were born. He would have had no pictures of her, of
+  course, nor any documents containing clues to her identity. These pieces
+  of paper are all you will ever have of her.
+end phrase
+
+create the old love letters
+  aka letters, love letters, old letters, mother's letters, small letters, worn parchment, scribbled letters, unsigned letters
+  plural
+
+  The penmanship is clumsy, like the way yours looked when Fiona was first
+  teaching you your letters. Each is short, no more than a few scribbled
+  sentences:
+
+  My Lord. I had some time to myself in the garden and thought of you. I
+  hope to see you again soon if your duties will let you get away. You can
+  see I've not put my name to this like you asked but you know who it is.
+  Your Love.
+
+  Dear Love. When will I see you again? Your duties keep you too long from
+  me. But that is why I love you so, you are a good man who never forsakes
+  his duty. Come see me soon. Your Love.
+
+  My precious Duke. I pressed Estelle with subtle questions but I am certain
+  she knows nothing. I am discreet and would never give you cause to worry.
+  Our secret is safe. Your Love.
+
+  on the player taking
+    refuse leave-them-in-the-box
+  end on
+
+  on the player showing
+    refuse shannon-close-to-tears
+  end on
+
+define phrase leave-them-in-the-box
+  Better to leave them in the box for now. If you take them out, they could
+  get scattered and lost.
+end phrase
+
+define phrase shannon-close-to-tears, stopping
+  Shannon looks close to tears as you show her the letters. 'Your father was
+  such a compassionate man,' she whispers. 'I just think it's terrible that
+  he was forced to hide away everything that he truly loved.'
+or
+  Shannon looks close to tears as you show her the letters.
+end phrase
+
+create the scattered books
+  aka books, book, pages, page, covers, cover, torn books, damaged books, old tomes, tomes, tome, piles of books, piles, pile
+  scenery, plural
+  in the Office
+
+  Most of the books are damaged — pages missing, covers torn off. A few have
+  been nibbled at by mice.
+
+  on the player taking
+    refuse books-worthless
+  end on
+
+  on the player searching
+    refuse books-nothing-of-interest
+  end on
+
+  on the player reading
+    refuse books-nothing-of-interest
+  end on
+
+  on the player pushing
+    refuse books-nudged
+  end on
+
+  on the player pulling
+    refuse books-nudged
+  end on
+
+define phrase books-worthless
+  None of these books is worth anything now.
+end phrase
+
+define phrase books-nothing-of-interest
+  You flip through a few of the old tomes, but find nothing of interest.
+end phrase
+
+define phrase books-nudged
+  You nudge the piles of books around, but find nothing of interest.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE THIRD FLOOR (`story.ni:10437-10468`): the landing and the Duke's
+## bedroom, whose bed paragraph is the first-visit description.
+## ---------------------------------------------------------------------------
+
+create the Red Gate Third Floor Landing
+  a room
+  aka landing, third floor landing, top of the stairs
+  down to the Red Gate Second Floor Landing
+  south to the Red Gate Master Bedroom
+
+  The stairs end here at the third floor. A doorway leads south.
+
+create the Red Gate Master Bedroom
+  a room
+  aka bedroom, master bedroom, duke's bedroom, duke's room
+  north to the Red Gate Third Floor Landing
+  south to the Bathroom
+  first time
+    Most of the furniture from this room has been carted off. Only the bed
+    remains, just a bare mattress covered with yet another plain, dusty
+    sheet. Doorways lead north and south.
+
+    Even before the events of the last two days, you had heard of the Duke,
+    of course. And although there are many theories about exactly what
+    brought him low — illness; treachery; heartbreak when his wife, the
+    Duchess, left him — all agree that he passed away in his sleep. This,
+    then, is where he died. This very room, in this very bed. This mattress,
+    cold, stripped, and covered with dust, is the closest in time you will
+    ever come to the man who was your father, the Duke of Toresal.
+
+    And Bobby is dead now, too. And maybe Widow Fiona and Widow Shannon, if
+    the Baron figures out that they helped me. And who else then? Teisha?
+    Olmer and Darrens? All because of this stupid letter... I never asked for
+    this.
+
+    You close your eyes for a moment, fighting off a dreadful sense of
+    futility.
+
+  Most of the furniture from this room has been carted off. Only the bed
+  remains, just a bare mattress covered with yet another plain, dusty sheet.
+  Doorways lead north and south.
+
+create the bare bed
+  aka bed, mattress, bare mattress, duke's bed, dusty sheet, plain sheet
+  scenery
+  in the Red Gate Master Bedroom
+
+  No one has slept in it since the Duke died, years ago.
+
+  on the player searching
+    refuse more-dust-under-the-bed
+  end on
+
+  on the player entering
+    refuse bare-mattress-no-comfort
+  end on
+
+  on the player climbing
+    refuse bare-mattress-no-comfort
+  end on
+
+define phrase more-dust-under-the-bed
+  Nothing under there but more dust.
+end phrase
+
+define phrase bare-mattress-no-comfort
+  It would hardly be comfortable, lying on a bare mattress in this forlorn,
+  empty house.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE BATHROOM (`story.ni:10474-10586`): the faucets, the bath, the dress.
+## ---------------------------------------------------------------------------
+
+create the Bathroom
+  a room
+  aka bath room, marble room, small room
+  north to the Red Gate Master Bedroom
+  north is blocked while Jack is clean and the daydress is not worn: cant-leave-naked
+
+  The walls of this small room are cold, bare marble. The only exit is to
+  the north.
+
+define phrase cant-leave-naked
+  You can't leave here naked!
+end phrase
+
+## THE BATH (`story.ni:10540-10551`, the ruling: the presentation flips):
+## the faucets' turn carries it (a trait), and the bare forms — `bathe`,
+## `take a bath`, `wash myself` — are a story action with the same body.
+## `enter tub` cannot be the way in: the platform refuses to enter scenery
+## before a clause can act, an enterable tub would keep her in it, and a
+## literal `enter tub` shape would shadow the laundry's washtub; the tub's
+## own clause carries the cold and once-only refusals. Bare `wash` belongs to
+## the kitchen's `wash the target`. Jack wears nothing by now (the jail took it all),
+## so the source's garment sweep has nothing to do; the old clothes appear on
+## the floor and the day dress in her hands, and she is `clean`.
+
+create the bathtub
+  aka tub, bath, basin, granite basin, stone basin, huge basin, granite tub, block of granite, lip
+  scenery
+  in the Bathroom
+
+  The basin is carved from a single block of granite, polished smooth as
+  glass. It looks almost big enough to swim in.
+
+  on the player entering
+    refuse when the furnace is cold: water-freezing
+    refuse when Jack is clean: once-is-enough
+  end on
+
+  on the player taking
+    refuse when the furnace is cold: water-freezing
+    refuse when Jack is clean: once-is-enough
+  end on
+
+define action bathing
+  grammar
+    bathe
+    bathe myself
+    wash myself
+    take a bath
+    take bath
+    have a bath
+    have a wash
+    get washed
+    get bathed
+  the player must be in the Bathroom: nowhere-to-bathe-stub
+  refuse when the furnace is cold: water-freezing
+  refuse when Jack is clean: once-is-enough
+  phrase the-bath
+  move the old clothes to the Bathroom
+  move the daydress to the player
+  change Jack to clean
+
+
+## DAVID: the source's bathing anywhere but the bathroom falls to Inform's
+## own washing default; one line, yours.
+
+define phrase nowhere-to-bathe-stub
+  (TODO during play-testing — bathing anywhere but the Duke's bathroom: no
+  source line exists; David's.)
+end phrase
+
+define phrase water-freezing
+  You turn on the faucets, thinking how nice it would be to take a bath — but
+  the water is freezing! No matter how far you turn the 'hot' faucet, the
+  water is as cold as if it had been drawn from a deep well.
+
+  'The furnace must be off,' muses Shannon. 'Perhaps we can get it started
+  again.'
+end phrase
+
+define phrase once-is-enough
+  Once is enough for today.
+end phrase
+
+define phrase the-bath
+  You plug the drain and begin filling the enormous tub with water.
+
+  Shannon nods with approval but says nothing; somehow she seems to know what
+  you were thinking. By the time you've gotten out of your sodden clothes and
+  into the water, she's managed to scare up a cake of soap from somewhere.
+  She smiles as she hands it to you.
+
+  The water is scalding hot and exquisite. You rub the soap into your
+  reddening skin, feeling everything wash clean away. Not just the dirt and
+  the sweat, but everything: the fear and confusion of being hunted for two
+  days straight; the moldy tunnel under Lord's Keep; the prison; the sewers.
+  Even your grief and guilt over Bobby's death — it doesn't go away
+  completely, not all of it, but it's not so raw any more, not so sharp.
+
+  You dry off with a sheet pulled from the furniture. As you reach for your
+  old clothes, Shannon stops you and holds out a dress.
+
+  'Where in the world—?' you ask.
+
+  'The Duke's wife was a little lady, just about your size, really,' Shannon
+  says. 'Not beautiful, but handsome in her way. And good taste in clothes.'
+  She puts the dress into your hands.
+end phrase
+
+## The faucets (`story.ni:10480-10530`): the first look while she is still
+## dirty is the monologue (the ruling: it carries as written); turning them
+## while dirty is the bath.
+
+define trait faucet-bath
+  on the player turning
+    refuse when Jack is clean: water-gushes
+    refuse when the furnace is cold: water-freezing
+    phrase the-bath
+    move the old clothes to the Bathroom
+    move the daydress to the player
+    change Jack to clean
+  end on
+end trait
+
+create the faucets
+  aka faucet, taps, tap, wheels, wheel, spout, curved spout, pipes, pipe, plumbing, water pipes, running water, water, devices, device, strange devices, brass fittings, fittings, hot faucet, cold faucet
+  scenery, plural
+  faucet-bath
+  in the Bathroom
+  states: strange, understood
+
+  The faucets are made of brass and ivory and protrude from carved fittings
+  in the wall, at about waist height. The curved spout is flanked by two
+  wheels: one for cold water, the other (though you can scarcely imagine it)
+  for hot.
+
+  on the player examining
+    phrase faucets-first-look when the faucets is strange and Jack is not clean
+    change the faucets to understood when the faucets is strange
+  end on
+
+  on the player drinking
+    refuse faucet-water-metallic
+  end on
+
+  on the player switching_on
+    refuse when Jack is clean: water-gushes
+    refuse when the furnace is cold: water-freezing
+    refuse turn-the-wheels
+  end on
+
+  on the player switching_off
+    refuse faucets-already-off
+  end on
+
+define phrase faucets-first-look
+  The devices are made of brass and ivory and protrude from carved fittings
+  in the wall, at about waist height. They consist of a curved spout flanked
+  by two hand-sized, spoked wheels...
+
+  Suddenly you figure it out — these are faucets! Running-water pipes, or
+  'plumbing' as some call them, are a very recent invention, incredibly rare
+  in Toresal. You've never actually seen faucets up close before.
+
+  'Oh, a bath with water-pipes! What a luxury,' exclaims Shannon. 'I've
+  never had a bath that I didn't have to fill myself from a kettle. Back and
+  forth and back and forth — it's either that or take it cold. Kind of takes
+  the relaxation out of it, if you ask me,' she sighs ruefully. 'The Lord
+  Duke was a man of taste and distinction on top of everything else. True
+  nobility, he was.'
+
+  And it occurs to you, as you look at your distorted reflection in the
+  golden, curving pipes, you've never had a bath with running water, either.
+  In fact, you can't remember the last time you had any sort of bath, not
+  even the quick spit-baths in a wooden tub full of tepid, cloudy water that
+  are the norm in Maiden House. You've spent your life coated with the grime
+  of the streets more often than not, reeking of sweat and alleyways, hardly
+  noticing it because the smell is around you constantly, and around
+  everyone you know.
+
+  But, you realize for the first time, that's not really who you are. You
+  are the Duke's daughter, a child of nobility. By all rights, you should
+  have been sleeping on feather mattresses, smelling of rosewater. This
+  luxury is your heritage... and you've never known a single day of it in
+  your life.
+end phrase
+
+define phrase water-gushes
+  A groaning sound reverberates behind the walls, and then a spout of clean,
+  clear water gushes out of the spout and splashes into the tub.
+end phrase
+
+define phrase faucet-water-metallic
+  You turn the faucet on and cup your hand under the water to drink. It
+  tastes cold and metallic.
+end phrase
+
+## DAVID: the source routes `switch on faucets` to turning; the platform
+## refuses to switch scenery before a clause can act, so this is the one line
+## the port needs to send her to `turn`.
+
+define phrase turn-the-wheels
+  (TODO during play-testing — `switch on the faucets` with the furnace lit:
+  the source turns them; here the wheels want turning. One line, David's.)
+end phrase
+
+define phrase faucets-already-off
+  The faucets are already turned off.
+end phrase
+
+## The old clothes (`story.ni:10553-10563`): on the bathroom floor after the
+## bath, and never touched again. `wash` reaches the kitchen's story action,
+## so that answer rides a trait.
+
+define trait rags-fall-apart
+  on the player washing
+    refuse rags-would-fall-apart
+  end on
+end trait
+
+create the old clothes
+  aka clothes, my clothes, your clothes, rags, filthy rags, threadbare clothes, filthy clothes, urchin's clothes
+  plural
+  rags-fall-apart
+
+  Your old clothes are threadbare and crusted with filth.
+
+  on the player wearing
+    refuse rags-never-again
+  end on
+
+  on the player taking
+    refuse dont-touch-the-rags
+  end on
+
+  on the player touching
+    refuse dont-touch-the-rags
+  end on
+
+  on the player smelling
+    refuse dont-touch-the-rags
+  end on
+
+define phrase rags-never-again
+  Now that you're finally clean, you don't think you could bear to put those
+  filthy rags on again.
+end phrase
+
+define phrase dont-touch-the-rags
+  Now that you're finally clean, you don't want anything to do with those
+  filthy rags. You don't even want to touch them.
+end phrase
+
+define phrase rags-would-fall-apart
+  If you washed those clothes now, they'd probably just fall apart.
+end phrase
+
+## The day dress (`story.ni:10565-10580`) and the mirror: the long text on
+## the first wearing, the short one after.
+
+create the daydress
+  aka dress, day dress, simple dress, linen dress, skirt, blouse, bodice, embroidered bodice, duchess's dress, fine dress
+  wearable
+
+  It's nothing fancy — a simple skirt and blouse of finespun linen, with an
+  embroidered bodice. The sort of day dress you might see a somewhat
+  well-to-do lady wearing to the market. It is finer than anything you've
+  ever worn in your life.
+
+  after the player wearing
+    select stopping
+      phrase dress-and-the-mirror
+    or
+      phrase dress-fits-fine
+    end select
+  end after
+
+  on the player taking_off
+    refuse not-the-time-to-undress
+  end on
+
+define phrase dress-and-the-mirror
+  You slip the dress over your head, and Shannon helps you with the laces.
+  The linen feels soft and light on your skin. She was right about the size,
+  too; it fits fine.
+
+  Finally, you look in the mirror. A complete stranger looks back at you:
+  fair of skin, with dark eyes and high cheekbones. She wears fine clothes,
+  and the tangles have been brushed out of her hair. She looks, you realize,
+  quite pretty.
+
+  This isn't Jack anymore, you think to yourself. This is Jacqueline.
+end phrase
+
+define phrase dress-fits-fine
+  You slip the dress over your head, and Shannon helps you with the laces.
+  The linen feels soft and light on your skin. She was right about the size,
+  too; it fits fine.
+end phrase
+
+define phrase not-the-time-to-undress
+  This isn't really the proper time or place to get undressed.
+end phrase

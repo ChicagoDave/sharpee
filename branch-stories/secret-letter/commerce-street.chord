@@ -23,6 +23,17 @@
 ## (Chord has no "try going"), so the storefronts describe and the exits
 ## walk; the bare `in` ("You'll have to say which shop") likewise; the shops'
 ## smell lines; the `[if it is day]` tails are carried as the day text.
+##
+## THE MORNING AFTER THE SEWER (Chapter 6, `story.ni:8757-8770` and the
+## shops' second visits, `4330-4350`, `4540-4580`, `4690-4705`, `4905-4918`)
+## is layered on below, gated on the chapter (`after jail`): the west refusal
+## changes, the Jacobs and Black Gate refusals change, the keepers' idle and
+## leaving lines fall silent or change, and each shop's second-visit
+## conversation fires as a stub. The street push placeholder (Chapter 6,
+## "The morning on Commerce Street" — David: "C", fear without teeth) sits on
+## the first entry after the sewer; it is gated on the hatch rather than the
+## chapter because the arrival and the chapter's start share a turn and the
+## chapter is read after the action (`black-gate.chord` header).
 ## ===========================================================================
 
 ## ---------------------------------------------------------------------------
@@ -37,14 +48,15 @@ create the Commerce Street
   northwest to the Bakery, one-way
   north to the Butcher's Shop, one-way
   northeast to the Armory, one-way
+  west is blocked while after jail: commerce-avoid-grubbers
   west is blocked while Toresal is day: commerce-lay-low
   northwest is blocked while Toresal is night: shops-shuttered
   north is blocked while Toresal is night: shops-shuttered
   northeast is blocked while Toresal is night: shops-shuttered
-  east is blocked while the woolen cap is not worn: commerce-hat-on
-  northwest is blocked while the woolen cap is not worn: commerce-hat-on
-  north is blocked while the woolen cap is not worn: commerce-hat-on
-  northeast is blocked while the woolen cap is not worn: commerce-hat-on
+  east is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
+  northwest is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
+  north is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
+  northeast is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
   first time
     (TODO during play-testing — "You made it." — Gentry's arrival block is
     kept aside in this file's comments; it ends by removing the cloak.)
@@ -54,6 +66,11 @@ create the Commerce Street
   after the player entering while Toresal is night
     first time
       phrase street-push-stub
+  end after
+
+  after the player entering while the hatch is opened
+    first time
+      phrase street-mercenaries-stub
   end after
 
   after the player entering while the player's market-escape has started
@@ -100,6 +117,27 @@ define phrase street-push-stub
   her. Fear, no teeth. The beats and the lines are David's.)
 end phrase
 
+## THE STREET BEATS (change document, Chapter 6, "The morning on Commerce
+## Street" — David: "C"): mercenaries on Commerce Street that morning, seen
+## or heard, and she ducks them — into a shop, a doorway, the alley — and
+## they never take her. ONE placeholder, on the first entry after the sewer;
+## where on the street they are and what she ducks into are David's, during
+## play-testing (gap 1).
+
+define phrase street-mercenaries-stub
+  (TODO during play-testing — the morning's mercenaries: something of them
+  on Commerce Street, seen or heard, and something she ducks into — a shop,
+  a doorway, the alley. Fear, no teeth. The beats and the lines are David's.)
+end phrase
+
+## `story.ni:8760` — the morning's west refusal, after the sewer.
+
+define phrase commerce-avoid-grubbers
+  It might be a good idea to avoid Grubber's Market for a while. Once they
+  figure out you escaped from your cell, they'll be searching for you
+  everywhere; they looked in Grubber's once, they'll look there again.
+end phrase
+
 ## `story.ni:4245, 4260` — the shops at night.
 
 define phrase shops-shuttered
@@ -139,7 +177,8 @@ define phrase commerce-lay-low
 end phrase
 
 ## `story.ni:4284-4289`, the merchants' variant; the Bobby variant is
-## Chapter 3's.
+## Chapter 3's. The source gates the rule on the sewer not having happened —
+## after the jail's confiscation she is hatless for good.
 
 define phrase commerce-hat-on
   You'd better put your hat on — most of the merchants on this street know you
@@ -224,18 +263,23 @@ create the Bakery
   a room
   aka bakers shop, baker's shop, bakers, germaise's bakery, germaise's
   south to the Commerce Street, one-way
-  states: new, familiar
+  states: new, familiar, scowled
 
   The air is heavy with the warm and slightly damp smell of freshly baked
   bread, and the counters are piled high with golden loaves, baguettes, and
   rolls. You can leave the bakery to the south.
+
+  after the player entering while after jail and the Bakery is not scowled
+    phrase germaise-ge16-stub
+    change the Bakery to scowled
+  end after
 
   after the player entering while the Bakery is new
     phrase germaise-nods
     change the Bakery to familiar
   end after
 
-  after the player going
+  after the player going while before rooftops
     phrase germaise-later
   end after
 
@@ -329,7 +373,11 @@ create the Butcher's Shop
   It's better than some butcheries you've seen, but it's still not your
   favorite place in the city. You can leave to the south.
 
-  after the player entering while the Butcher's Shop is new
+  after the player entering while after jail
+    phrase holstenoffer-ho18-stub
+  end after
+
+  after the player entering while the Butcher's Shop is new and before rooftops
     phrase holstenoffer-ho1-stub
     change the Butcher's Shop to familiar
   end after
@@ -488,6 +536,7 @@ end trait
 
 define trait knock-jacobs
   on the player knocking
+    refuse when after jail: jacobs-after-the-jail
     refuse jacobs-no-business
   end on
 end trait
@@ -497,8 +546,15 @@ create the East Commerce Street
   aka east end, residential neighborhood, east commerce
   west to the Commerce Street
   east to the Lord's Market
+  north to the Entrance Hall through Red Gate Estate
+  north is blocked while Red Gate Estate is locked: red-gate-locked
+  west is blocked while the hanging is gathering: crowd-too-thick
+  east is blocked while the company is escorting and Jack is not clean: shannon-stay-away-from-market
+  west is blocked while the company is escorting: shannon-dont-wander
+  northwest is blocked while after jail and the player has the letter: black-gate-dont-press-luck
+  northwest is blocked while after jail: black-gate-use-the-rooftops
   northwest is blocked: black-gate-servants
-  north is blocked: red-gate-locked
+  northeast is blocked while after jail: jacobs-after-the-jail
   northeast is blocked: jacobs-no-business
   south is blocked while Toresal is night: park-unsafe-at-night
   south is blocked: park-kids
@@ -516,6 +572,26 @@ create the East Commerce Street
   on every turn while the player is in the East Commerce Street and one chance in 5
     phrase jack-paranoia
   end on
+
+  on every turn while the player is in the East Commerce Street and the hanging is gathering and one chance in 4
+    phrase more-people-wander-past
+  end on
+
+  after the player entering while the hanging is gathering
+    first time
+      phrase street-crowd-mercenaries-stub
+  end after
+
+  after the player entering while the company is escorting and Jack is not clean
+    first time
+      phrase street-arrival-men-stub
+  end after
+
+  after the player entering while the company is escorting and Jack is clean
+    first time
+      phrase street-walk-out-stub
+      phrase shannon-see-mrs-sandler
+  end after
 
 create Black Gate Estate
   aka black gate, fossville's house, baron's house, somber building, estate
@@ -536,28 +612,49 @@ create Black Gate Estate
     refuse black-gate-servants
   end on
 
+## Red Gate Estate is a real door onto its Entrance Hall (Chapter 8,
+## `red-gate.chord`), locked until the large brass key: the going action
+## surfaces the opening refusal (GH #245), so `n` reads "securely locked" as
+## before; unlocking with the key is the grinding clunk and the step inside
+## (`story.ni:4894-4898`).
+
 create Red Gate Estate
-  aka red gate, front gates, gates, gate, duke's house, empty house, crumbling house
-  scenery, proper
+  aka red gate, front gates, gates, gate, front gate, duke's house, empty house, crumbling house, red gate manor, manor
+  a door, proper, lockable with the large brass key
   knock-red-gate
-  in the East Commerce Street
 
   This is where the Duke and former Lord of Toresal lived, until his death
   several years ago. Now it stands empty, slowly crumbling. No one has ever
   made an attempt to claim the property, and the Baron seems content to let it
-  remain vacant. The front gates are securely locked.
+  remain vacant.
+
+  phrase detail while Red Gate Estate is locked:
+    The front gates are securely locked.
+
+  phrase detail while Red Gate Estate is unlocked and Red Gate Estate is closed:
+    The front gates are closed.
+
+  phrase detail while Red Gate Estate is open:
+    The front gates are open.
 
   on the player entering
-    refuse red-gate-locked
+    refuse when Red Gate Estate is locked: red-gate-locked
+    move the player to the Entrance Hall
   end on
 
   on the player opening
-    refuse red-gate-locked
+    refuse when Red Gate Estate is locked: red-gate-locked
   end on
 
   on the player unlocking
-    refuse red-gate-locked
+    the player must have the large brass key: red-gate-locked
   end on
+
+  after the player unlocking
+    phrase gates-grinding-clunk
+    Widow Shannon opens Red Gate Estate
+    move the player to the Entrance Hall
+  end after
 
   on the player climbing
     refuse fence-too-high
@@ -574,10 +671,12 @@ create the Jacobs Mansion
   turrets, crenellations, and a heavy portcullis over the front door.
 
   on the player entering
+    refuse when after jail: jacobs-after-the-jail
     refuse jacobs-no-business
   end on
 
   on the player opening
+    refuse when after jail: jacobs-after-the-jail
     refuse jacobs-no-business
   end on
 
@@ -639,6 +738,26 @@ define phrase jacobs-no-business
   You don't have any business with Jacobs, and even if you did, you might
   think twice before knocking on his door. Rumor has it that many of his
   dealings are decidedly less than legal.
+end phrase
+
+## `story.ni:4912`, the after-jail variant.
+
+define phrase jacobs-after-the-jail
+  After your encounter with the younger Jacobs in jail, you're not too keen
+  on meeting him or his father anytime soon.
+end phrase
+
+## `story.ni:8768-8770` — the front gate, after the sewer: the rooftops
+## before the letter, luck not pressed after it.
+
+define phrase black-gate-use-the-rooftops
+  No, you'll never get in through the front gate. Use the rooftops, Bobby
+  said.
+end phrase
+
+define phrase black-gate-dont-press-luck
+  You've already gotten what you need from Fossville's house. Better not
+  press your luck.
 end phrase
 
 ## `story.ni:4917`, the pre-sewer variant, and the talent-in-children ruling
@@ -707,6 +826,7 @@ create Germaise
   end on
 
   on the player talking
+    refuse when after jail: germaise-ge16-stub
     refuse germaise-ge1-stub
   end on
 
@@ -772,6 +892,18 @@ define phrase germaise-ge1-stub
   Germaise does not see through the disguise.)
 end phrase
 
+## `GE16-GE19` (`story.ni:4476-4492`), the morning after the sewer: the
+## scowl at the filth, no Bobby, no back door, "Go away, Jack." Germaise
+## does not see her.
+
+define phrase germaise-ge16-stub
+  (TODO during play-testing — conversation GE16-GE19: Germaise looks up and
+  scowls at the filth on her; "Have you seen Bobby?" — "No, and I'd like to
+  keep it that way"; "Is there a back door here?" — "No, there isn't, and
+  no, you can't use it… Go away, Jack. I am very, very busy." Germaise does
+  not see through the disguise.)
+end phrase
+
 ## --- Old Man Holstenoffer (`story.ni:4538-4577`) ---------------------------
 
 create Old Man Holstenoffer
@@ -787,12 +919,14 @@ create Old Man Holstenoffer
   tendency to gesticulate with his cleaver in hand, which sometimes makes
   conversation with him a tense and athletic affair.
 
-  on every turn while Old Man Holstenoffer is here and one chance in 5
+  on every turn while Old Man Holstenoffer is here and before rooftops and one chance in 5
     phrase holstenoffer-idle
   end on
 
   on the player talking
-    refuse holstenoffer-ho1-stub
+    refuse when before rooftops: holstenoffer-ho1-stub
+    phrase holstenoffer-ho22-stub
+    move the player to the Closed Alleyway
   end on
 
 create the cleaver
@@ -838,6 +972,29 @@ define phrase holstenoffer-ho1-stub
   Holstenoffer does not see through the disguise.)
 end phrase
 
+## `HO18-HO24` (`story.ni:4665-4700`), the morning after the sewer. HO18
+## opens on every entry, as the source has it; the rest of the tree —
+## "Have you seen Bobby?", the back door refused until "It's to help Bobby"
+## — is one stub on `talk to`, which takes HO24's path: Holstenoffer unlocks
+## the little metal door and she steps through into the Closed Alleyway.
+## Holstenoffer does not see her ("Yer a good lad", HO23).
+
+define phrase holstenoffer-ho18-stub
+  (TODO during play-testing — conversation HO18: Holstenoffer looks up as
+  she enters, and his eyes widen. "Goddesses, Jack, you look like you've had
+  the worse of it. Widow Fiona was just in this morning, lookin' for yeh. Is
+  everything all right?" Holstenoffer does not see through the disguise.)
+end phrase
+
+define phrase holstenoffer-ho22-stub
+  (TODO during play-testing — conversation HO19-HO24: "Have you seen
+  Bobby?"; "Is there a back door here?" — "Don't lead to nothin' but a
+  closed-off alley"; "Just let me back there" — "Yer a good lad and I like
+  yeh, but…"; "It's to help Bobby" — he nods, leads her around the counter,
+  unlocks and opens a small metal door: "Be safe now, Jack. Do what yeh have
+  to do." She steps through. Holstenoffer does not see through the disguise.)
+end phrase
+
 ## --- Olgan Minor (`story.ni:4736-4762`) ------------------------------------
 ## The talent sentence prints on the first examine only (an ordinal block in
 ## the examine reaction), as the source's `[first time]` does.
@@ -862,6 +1019,7 @@ create Olgan Minor
   end on
 
   on the player talking
+    refuse when after jail: minor-om9-stub
     refuse minor-om1-stub
   end on
 
@@ -887,6 +1045,16 @@ define phrase minor-om1-stub
   (TODO during play-testing — conversation OM1: "'Um, mind if I ask you
   something?'" — Olgan's tree, 8 first-visit quips; Olgan Minor SEES her, and
   says so in his own way.)
+end phrase
+
+## `OM9` (`story.ni:4777`) joins Olgan's tree after the sewer: "Is there a
+## back door here?" — "Looking for an easy way in, little thief?"
+
+define phrase minor-om9-stub
+  (TODO during play-testing — conversation OM1 with OM9: Olgan's tree as
+  before, plus "Is there a back door in your store?" — Olgan narrows his eyes:
+  "Looking for an easy way in, little thief?" — "Er, no… I mean, sorry.
+  Never mind." Olgan Minor SEES her.)
 end phrase
 
 ## `story.ni:4757`, the dirty-Jack buying refusal, on the dagger display;

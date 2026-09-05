@@ -137,6 +137,10 @@ define condition market-din: open-air or the player is in the Base of the Center
 
 define condition journey-air: the player is in the Pasture or the player is in the Stream Crossing or the player is in the Underneath the Fountain or the player is in the Jail Cell or the player is in the Drain Room or the player is in the Sewers
 
+## Chapter 6's rooms with a smell or a sound of their own (`black-gate.chord`).
+
+define condition estate-air: the player is in the Rooftop or the player is in the Rooftop Edge or the player is in the Balcony or the player is in the Patio or the player is in the Rooftop Garden or the player is in the Second Floor Landing
+
 ## ---------------------------------------------------------------------------
 ## THE SHOPPERS (`story.ni:3334-3388`)
 ##
@@ -700,7 +704,10 @@ define action sniffing
   phrase cell-smells-terrible when the player is in the Jail Cell
   phrase alcove-overpowering when the player is in the Drain Room
   phrase sewer-unbelievable-smell when the player is in the Sewers
-  phrase smell-nothing when not within-grubbers and not journey-air
+  phrase coal-smoke-smell when the player is in the Rooftop or the player is in the Rooftop Edge
+  phrase roses-from-here when the player is in the Balcony or the player is in the Patio
+  phrase no-time-to-smell-flowers when the player is in the Rooftop Garden
+  phrase smell-nothing when not within-grubbers and not journey-air and not estate-air
 
 define action hearkening
   grammar
@@ -717,7 +724,12 @@ define action hearkening
   phrase tunnel-drip when the player is in the Underneath the Fountain
   phrase running-water-below when the player is in the Drain Room
   phrase sewer-lap-and-slosh when the player is in the Sewers
-  phrase ears-pricked when not within-grubbers and not the player is in the Underneath the Fountain and not the player is in the Drain Room and not the player is in the Sewers
+  phrase fountain-trickle-from-here when the player is in the Balcony or the player is in the Rooftop Garden
+  phrase fountain-no-time-to-listen when the player is in the Patio
+  phrase muttering-voices when the player is in the Second Floor Landing
+  phrase harsh-breathing when the player is in the Secret Closet
+  phrase silence-expectant when the player is in the Duke's House
+  phrase ears-pricked when not within-grubbers and not the player is in the Underneath the Fountain and not the player is in the Drain Room and not the player is in the Sewers and not the player is in the Balcony and not the player is in the Rooftop Garden and not the player is in the Patio and not the player is in the Second Floor Landing and not the player is in the Secret Closet and not the player is in the Duke's House
 
 define phrase garbage-ripe-here
   It smells pretty ripe back here.

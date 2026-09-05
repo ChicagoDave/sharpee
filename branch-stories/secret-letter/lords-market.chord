@@ -23,16 +23,30 @@ create the Lord's Market
   east to the Jeweler's Shop, one-way
   southeast to the Moneylender's Shop, one-way
   south to the Back Alley
+  south is blocked while after jail and not the player has the letter: stay-away-from-maiden-house
   northeast is blocked while Toresal is night: shops-shuttered
   east is blocked while Toresal is night: shops-shuttered
   southeast is blocked while Toresal is night: shops-shuttered
   states: bearings, seen
 
-  {lords-market-by-day}{lords-market-by-night}
+  {lords-market-by-day}{lords-market-by-night} {gallows-erected}{gallows-erected-seen}
 
   after the player entering while the Lord's Market is bearings
     phrase fossville-collision
     change the Lord's Market to seen
+  end after
+
+  after the player entering while the hanging is gathering
+    first time
+      phrase square-mercenaries-stub
+      start the player's execution
+  end after
+
+  after the player entering while the company is escorting and Jack is clean
+    phrase shannon-goodbye-hug
+    move Widow Shannon offstage
+    change the company to done
+    move the player to the Jeweler's Shop
   end after
 
   on every turn while the player is in the Lord's Market and one chance in 5
@@ -97,6 +111,17 @@ define phrase lords-market-by-night, stopping while Toresal is night
   At night, lanterns hung from ornate posts light the empty square of Lord's
   Market. Their warm yellow glow seems to make the shadows in the alleys that
   much darker.
+end phrase
+
+## `story.ni:8763` — the morning after the sewer, until she has the letter
+## (Chapter 6).
+
+define phrase stay-away-from-maiden-house
+  It's probably best to stay away from Maiden House at the moment. The Widows
+  will be on the lookout for you, and it's not like they'd do anything bad
+  to you or anything, but if they catch you they won't let you out of the
+  orphanage until you're an old crone. And you have important work to do.
+  First, Fossville's house; then you can go back to Maiden House.
 end phrase
 
 create the clothier's storefront
@@ -219,21 +244,28 @@ create the Jeweler's Shop
   a room
   aka sandler and sons, jewelers shop, jeweler's shop, jewelers, jeweler's, sandler's
   west to the Lord's Market, one-way
-  states: new, greeted, parted
+  states: new, greeted, parted, frightful, dismissed
 
   The inside of this store is tasteful but austerely decorated, perhaps to
   better draw the eye towards the glass display case in the center of the room
   and the king's ransom in jewelry contained therein. You can leave to the
   west.
 
-  after the player entering while the Jeweler's Shop is new
+  after the player entering while after jail and the Jeweler's Shop is not frightful and the Jeweler's Shop is not dismissed
+    phrase sandler-ds24-stub
+    change the Jeweler's Shop to frightful
+  end after
+
+  after the player entering while the Jeweler's Shop is new and before rooftops
     phrase sandler-ds1-stub
     change the Jeweler's Shop to greeted
   end after
 
-  after the player going while the Jeweler's Shop is greeted
-    phrase sandler-ds14-stub
-    change the Jeweler's Shop to parted
+  after the player going
+    phrase sandler-ds14-stub when the Jeweler's Shop is greeted and before rooftops
+    change the Jeweler's Shop to parted when the Jeweler's Shop is greeted and before rooftops
+    phrase sandler-ds30-stub when the Jeweler's Shop is frightful
+    change the Jeweler's Shop to dismissed when the Jeweler's Shop is frightful
   end after
 
 create the display case
@@ -569,6 +601,31 @@ end phrase
 define phrase sandler-ds19-stub
   (TODO during play-testing — conversation DS19: Jack opens with Dame Sandler
   while still the urchin.)
+end phrase
+
+## `DS24-DS30` (`story.ni:5394-5409`), the morning after the sewer (Chapter
+## 6): "you look an absolute fright"; "Did Bobby give you any…
+## instructions?"; the back-door hint; and she locks the door behind her.
+## Dame Sandler SEES her and is inside the arrangement — "Squire Jack", "my
+## dear boy" are her public words with Pieter listening. DS24 opens once on
+## entry; DS30 fires on the first leaving after it (the source halts the
+## going and the quip moves her out; the stub lets the going proceed).
+
+define phrase sandler-ds24-stub
+  (TODO during play-testing — conversation DS24-DS29: Dame Sandler looks up
+  as Jack bursts in, her face carefully expressionless — "Why Jack, you look
+  an absolute fright. Whatever is the matter?"; "Have you seen Bobby?" — "I
+  only know that he was taken up by Fossville's men… Did Bobby give you
+  any… instructions?"; the shops on Commerce Street most likely have back
+  doors to the alley. Dame Sandler SEES her; her words are public.)
+end phrase
+
+define phrase sandler-ds30-stub
+  (TODO during play-testing — conversation DS30: as Jack is about to leave,
+  Dame Sandler lays her fingertips on her arm — "I'm afraid I must ask you
+  to not come back, at least not for a little while… good-bye and good luck.
+  Take care, Jack." — and gently pushes her out the door, and locks it
+  behind her.)
 end phrase
 
 ## --- Chorus Brothers (`story.ni:5468-5482`) ----------------------------------

@@ -1,0 +1,1820 @@
+## ===========================================================================
+## THE ROOFTOPS AND BLACK GATE ESTATE — Book 8 (`story.ni:8743-9580`),
+## Chapter 6. The post-sewer layer of Books 3 and 4 (the shops' second
+## visits, the morning's refusals) lives in `commerce-street.chord` and
+## `lords-market.chord`, gated on the chapter (`after jail`).
+##
+## The change document ("Chapter 6 — The Rooftops and Black Gate Estate",
+## 2026-09-01) authorizes Book 8 whole, from daylight on Commerce Street to
+## the butler's side door with the letter: the morning's refusals, the shops'
+## second visits (stubs), Holstenoffer's back door, the closed alley and the
+## gutter, the rooftops and the jump, the roof of the estate, the house's
+## three floors, the winch and the chandelier, the letter, the butler's
+## catch, the stairwell, the side door. Every line is Gentry's; conversations
+## are STUBS under the standing rule.
+##
+## THE RULINGS (change document, Chapter 6):
+##   * EXTENT — the chapter ends at the butler's side door; Bobby's hanging
+##     is Chapter 7's, whose row begins when the butler is done with her
+##     (`the butler becomes gone`, `secret-letter.story`). That closes the
+##     fourth gap the way Chapter 7's ruling did: the hanging starts at the
+##     side door, not in the library where the source starts it.
+##   * THE STREET — new content, fear without teeth: mercenaries on Commerce
+##     Street that morning, seen or heard and ducked, never taking her. ONE
+##     placeholder, on Commerce Street's first entry after the sewer
+##     (`commerce-street.chord`); the beats and their lines are David's
+##     (gap 1).
+##   * THE HOUSE — new content, fear without teeth: servants on the stairs,
+##     near misses in the hallway. ONE placeholder, on the Second Floor
+##     Landing, on her second arrival there while she is still free (the
+##     first arrival is the source's own event, Fossville's voice); the beats
+##     and their lines are David's (gap 2). The Baron's "within an hour"
+##     stays a line, not a clock.
+##   * THE LETTER — carries as written: "Jacqueline Toresal", "her".
+##   * WHO SEES HER — the butler SEES: "child" and "little thief" while he
+##     holds her, then "A bit of advice, girl" at the door — a tell, carried
+##     verbatim. Fossville does NOT see: his "fourteen-year-old girl"
+##     through the floor is knowledge from the letter, carried verbatim.
+##     Germaise and Holstenoffer do not see, Olgan Minor and Dame Sandler do,
+##     as Chapter 2 has them; their second-visit lines are stubs.
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## `talk to holstenoffer` after the sewer prints the HO22-HO24 TODO and moves
+## her to the Closed Alleyway, as HO24's side effect does — the chapter's one
+## way up. GE16 and HO18 fire on entering their shops; DS24 on entering
+## Sandler's, DS30 on leaving it (the source halts the going and the quip
+## moves her out; the stub lets the going proceed). OM9 is one more option in
+## Olgan's tree and is named in his after-sewer TODO.
+##
+## GAP 3 (the post-jail self-description, `story.ni:1322`) is Chapter 5's
+## window and is reported there; this chapter's "You are utterly filthy."
+## (`story.ni:1325`) is a `detail` line on Jack (`secret-letter.story`) that
+## APPENDS to her description where the source replaces it.
+##
+## THE CHAPTER TRIGGER, fixed here: Chapter VI's row began "when the player
+## visits the Empty Alleyway for the first time", but the alleyway moves her
+## on to Commerce Street in the same turn and the chapter plugin reads her
+## location after the action (`chapters-plugin.ts:88`), so the row could
+## never fire (GH #368). It now begins when the hatch becomes opened — the
+## same clause's own first statement. The tree cannot pin the chapter
+## packet either (GH #369); the after-jail gates below are its evidence.
+##
+## NOT CARRIED, with reasons:
+##   * `jump east` / `jump to <room>` — no direction slot on a story action;
+##     `jump`, `jump over`, `jump across` and `jump to the balcony` are built.
+##   * The harp placed in scope from the Audience Area ("You cannot reach the
+##     harp from here") — no scope statement.
+##   * The butler's catch-all ("Be still, child, or I'll forget my charity")
+##     for every other action — no catch-all clause; going, attacking, talk,
+##     show and give carry.
+##   * "without printing a room description" on the drag to the landing — an
+##     authored move narrates its destination (GH #367 notes the order).
+##   * The letter's printed name changing from "folded sheet of parchment"
+##     to "letter" once read — a name is fixed; it is `the letter` throughout.
+##   * The source's second search wording ("Rolled up…" after "Odd — rolled
+##     up…") — the letter leaves the chandelier on the first search, so the
+##     second form is unreachable.
+##   * The chandelier's `raise`/`lower` verbs — capability actions that never
+##     reach an entity clause; `lift` (the jail's story action) carries the
+##     too-heavy line through a trait.
+##   * Going through the closed sliding doors auto-opens them in the source;
+##     the platform refuses a closed door, so `open doors` is the player's.
+##     The narrow wooden door between the audience area and the closet starts
+##     OPEN for the same reason (the source auto-opens it).
+##   * "It is fixed in place" for pushing the winch — the winch and its crank
+##     share one trait, so `push winch` turns it.
+##   * The distant descriptions' "to the [quick best route]" tails (the
+##     patio's trickle, the garden's roses, the balcony) — dropped, as the
+##     market's were (`secret-letter.story` header, item 1).
+##   * The winch's and rope's state-dependent descriptions are examine
+##     refusals keyed on the chandelier (a marker in an entity description
+##     prints literally, GH #364), as the lanterns' night text is.
+##   * The bed's two `[first time]` sentences follow the description on the
+##     first look (an ordinal block) instead of sitting inside it.
+##   * `pick <flowers>`, bare `shimmy`, `descend the walls`, the facing
+##     texts, the sky from the alley, `taste`, `kiss`, the sun, `turn harp`,
+##     `sleep` in the bedroom (the story's `sleeping` is Maiden House's).
+##   * `push crank`/`pull crank` fall to the platform's scenery refusal.
+##   * `give letter to butler` refuses with his line and never marks him as
+##     having seen it — a giving clause that speaks still hands the letter
+##     over unless it refuses, and a refusal cannot also change his state;
+##     `show` is the path that flips him to "pointedly does not look".
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE CLOSED ALLEYWAY behind Commerce Street (`story.ni:8772-8830`)
+## ---------------------------------------------------------------------------
+
+create the Closed Alleyway
+  a room
+  aka thin alley, alley, alleyway, closed alley
+  up to the Rooftop, one-way
+  south is blocked: no-point-going-back
+  north is blocked: alley-nowhere-else
+  east is blocked: alley-nowhere-else
+  west is blocked: alley-nowhere-else
+  down is blocked: alley-nowhere-else
+
+  The walls of the alley are so close together you can barely squeeze your
+  shoulders through; the rough brick and mortar catches at your clothes. The
+  ends of the alley are walled off. There's no way out except back through
+  the little door you came in.
+
+## `story.ni:8782-8790`
+
+create the little metal door
+  aka metal door, little door, door, butchers, butcher, butcher's, holstenoffer, holstenoffers, holstenoffer's, shop, store, lock
+  scenery
+  in the Closed Alleyway
+
+  Holstenoffer's shop is behind that little metal door.
+
+  on the player opening
+    refuse no-point-going-back
+  end on
+
+  on the player entering
+    refuse no-point-going-back
+  end on
+
+define phrase no-point-going-back
+  Bobby told you to find the alley, get onto the rooftops. Now that you're
+  here, there's not much point in going back.
+end phrase
+
+## The dead-end description (`story.ni:8804`).
+
+define phrase alley-nowhere-else
+  There's nowhere else to go in this little place. Just back the way you
+  came... or up.
+end phrase
+
+create the rough walls
+  aka walls, wall, mortar, brick, bricks, rough brick
+  scenery, plural
+  in the Closed Alleyway
+
+  The walls are rough brick and mortar, towering up a full three stories over
+  your head.
+
+  on the player climbing
+    refuse walls-too-steep
+  end on
+
+define phrase walls-too-steep
+  Rough as they are, the walls are too steep to climb.
+end phrase
+
+## The gutter (`story.ni:8814-8826`): the climb text opens the Rooftop's
+## first-visit description, so `up` and `climb gutter` print it alike, once —
+## the rooftops are forward-only, so the room is never entered twice.
+
+create the rain gutter
+  aka gutter, rusted gutter, rusty gutter, pipe, rusted pipe, rusty pipe, rain pipe
+  scenery, climbable, enterable
+  in the Closed Alleyway
+
+  The pipe is old and rusty, and only barely still attached to the brick wall
+  in some places... still, it might hold your weight.
+
+  phrase present:
+    A rusted rain gutter clings to the wall.
+
+  on the player climbing
+    move the player to the Rooftop
+  end on
+
+## `Understand the command "shimmy" as "climb"` (`story.ni:8828`).
+
+extend action climbing
+  grammar
+    shimmy up the target
+    shimmy the target
+
+## ---------------------------------------------------------------------------
+## THE ROOFTOPS (`story.ni:8832-8961`) — forward-only, east to the estate.
+## ---------------------------------------------------------------------------
+
+## A room's `first time` block is its whole first-visit description, so the
+## climb text, the description and the source's `[first time]` tail (Bobby's
+## virtues) sit in it together; later looks get the description alone.
+
+create the Rooftop
+  a room
+  aka rooftops, main rooftop, roof, roofs, peaks, peak, valleys, valley, mountain range, landscape
+  east to the Rooftop Edge
+  down is blocked: rooftop-no-climbing-down
+  up is blocked: rooftop-as-high-as-it-goes
+  north is blocked: rooftop-focus-east
+  south is blocked: rooftop-focus-east
+  west is blocked: rooftop-focus-east
+  northeast is blocked: rooftop-focus-east
+  northwest is blocked: rooftop-focus-east
+  southeast is blocked: rooftop-focus-east
+  southwest is blocked: rooftop-focus-east
+  first time
+    You give the pipe a few experimental tugs, then take a deep breath and
+    start shimmying up. The rain gutter squeaks and groans in protest. Your
+    fingers cramp and your toes scrabble to find purchase on the rough
+    bricks. Finally, three stories up, you grab the edge of the rooftop and
+    haul yourself over.
+
+    The rooftops are like a miniature mountain range up here, with peaks and
+    valleys sloping away into the distance. Chimneys and stovepipes stand
+    sentry like the keeps and towers of castles. Bobby has exclaimed the
+    virtues of rooftop travel before, and finally you see what he was going
+    on about. It feels like you could explore forever up here.
+
+  The rooftops are like a miniature mountain range up here, with peaks and
+  valleys sloping away into the distance. Chimneys and stovepipes stand
+  sentry like the keeps and towers of castles.
+
+define phrase rooftop-no-climbing-down
+  It took quite an effort to get up here. You're not climbing back down until
+  you find what Bobby told you to find... the letter in Fossville's mansion.
+end phrase
+
+define phrase rooftop-as-high-as-it-goes
+  You're on the rooftops already; this is as high as you can go.
+end phrase
+
+define phrase rooftop-focus-east
+  You need to focus on getting to Fossville's mansion, and if memory serves,
+  that's east of here.
+end phrase
+
+## `story.ni:8871-8959`. Every planar direction but east refuses; the
+## northeast and southeast are the drop (the source's facing lines).
+
+create the Rooftop Edge
+  a room
+  aka edge, rooftops, roof, roofs, landscape, end, peaks, valleys, mountain range
+  east to the Balcony
+  up is blocked: rooftop-as-high-as-it-goes
+  down is blocked: edge-deadly-fall
+  northeast is blocked: edge-three-story-drop
+  southeast is blocked: edge-three-story-drop
+  north is blocked: edge-tantalizing
+  south is blocked: edge-tantalizing
+  west is blocked: edge-tantalizing
+  northwest is blocked: edge-tantalizing
+  southwest is blocked: edge-tantalizing
+
+  The rooftop landscape ends here at a wide street dividing Commerce Street
+  from the more affluent residential district that borders it. Far, far
+  below, you can see all the little people going about their business.
+
+define phrase edge-deadly-fall
+  The only way down from here is a long, deadly fall.
+end phrase
+
+define phrase edge-three-story-drop
+  The rooftops end that way in a three-story drop.
+end phrase
+
+define phrase edge-tantalizing
+  The thought of exploring the roofs is tantalizing, but you need to focus on
+  Bobby's mission first.
+end phrase
+
+## The distant balcony (`story.ni:8902-8925`): `enter`/`climb`/`jump to` it
+## are the jump; anything else is beyond reach.
+
+create the distant balcony
+  aka balcony, ornate balcony, decorated balcony, fossville's balcony
+  scenery, enterable, climbable
+  in the Rooftop Edge
+
+  It's an ornately decorated balcony, jutting out from what looks like a
+  rooftop garden. Judging from the layout of the streets below you, that must
+  be Baron Fossville's house.
+
+  phrase present:
+    To the east, across the gap, you spy a balcony.
+
+  on the player entering
+    move the player to the Balcony
+  end on
+
+  on the player climbing
+    move the player to the Balcony
+  end on
+
+  on the player taking
+    refuse balcony-beyond-reach
+  end on
+
+  on the player touching
+    refuse balcony-beyond-reach
+  end on
+
+  on the player pushing
+    refuse balcony-beyond-reach
+  end on
+
+  on the player pulling
+    refuse balcony-beyond-reach
+  end on
+
+  on the player searching
+    refuse balcony-beyond-reach
+  end on
+
+define phrase balcony-beyond-reach
+  Unless you manage a very lucky jump, the balcony is beyond your reach.
+end phrase
+
+## `jump [direction]` / `jump to the balcony` (`story.ni:8919-8925`): the bare
+## forms are a story action, the targeted forms ride the entering action so
+## the balcony's own clause answers them.
+
+define action jumping
+  grammar
+    jump
+    jump over
+    jump across
+    jump east
+    jump the gap
+    leap
+    leap over
+    leap across
+  refuse when the player is in the Balcony: balcony-no-jumping-back
+  the player must be in the Rooftop Edge: jump-nowhere
+  move the player to the Balcony
+
+extend action entering
+  grammar
+    jump to the target
+    jump over to the target
+    jump across to the target
+    jump on the target
+    jump onto the target
+    sit on the target
+    sit down on the target
+    sit the target
+
+## DAVID: the source has no jump refusal away from the gap (there is no
+## jumping action outside it); this is the one line the port needs.
+
+define phrase jump-nowhere
+  (TODO during play-testing — a jump anywhere but the rooftop's edge: no
+  source line exists; David's.)
+end phrase
+
+## The chimneys and the smoke (`story.ni:8927-8951`) belong to both rooftop
+## rooms — followers, as the sewer's water and bricks are.
+
+create the chimneys
+  aka chimney, stovepipes, stovepipe, pipes, sentries, sentry, keeps, keep, towers
+  scenery, plural
+  in the Rooftop
+
+  Cheery smoke billows up from several of the chimneys.
+
+  when Jack moves, while the player is in the Rooftop or the player is in the Rooftop Edge
+    move the chimneys here
+  end when
+
+  on the player climbing
+    refuse chimneys-too-narrow
+  end on
+
+  on the player entering
+    refuse chimneys-too-narrow
+  end on
+
+  on the player smelling
+    refuse coal-smoke-smell
+  end on
+
+  on the player searching
+    refuse chimneys-soot
+  end on
+
+  on the player inserting
+    refuse chimneys-lose-it
+  end on
+
+define phrase chimneys-too-narrow
+  The chimneys are all too narrow for you to climb down.
+end phrase
+
+define phrase coal-smoke-smell
+  Smells like coal-smoke: grimy and bitter.
+end phrase
+
+define phrase chimneys-soot
+  You can't see anything in there, and get a faceful of soot for your
+  trouble.
+end phrase
+
+## "You'd just lose your [noun]" — a container's clause cannot name the item
+## (`secret-letter.story` header, item 7); "that" is the substitution.
+
+define phrase chimneys-lose-it
+  You'd just lose that, and rouse the suspicions of whomever lives below to
+  boot.
+end phrase
+
+create the smoke
+  aka coal smoke, coal-smoke, black smoke, cheery smoke, grimy smoke
+  scenery
+  in the Rooftop
+
+  It's the black coal-smoke that hangs over most districts in Toresal.
+
+  when Jack moves, while the player is in the Rooftop or the player is in the Rooftop Edge
+    move the smoke here
+  end when
+
+  on the player smelling
+    refuse coal-smoke-smell
+  end on
+
+  on the player taking
+    refuse smoke-insubstantial
+  end on
+
+  on the player touching
+    refuse smoke-insubstantial
+  end on
+
+define phrase smoke-insubstantial
+  It's just insubstantial smoke.
+end phrase
+
+## Commerce Street seen from above (`story.ni:8887-8889`, `8988-8990`): the
+## source's `overlooks`; here the people are a follower over the two rooms
+## that look down on the street.
+
+create the people far below
+  aka people, crowd, crowds, pedestrians, pedestrian, ants, ant, little people, street, wide street, residential district, district, business, drop, gap
+  scenery, plural
+  in the Rooftop Edge
+
+  All the people way down there on Commerce Street look like ants from up
+  here.
+
+  when Jack moves, while the player is in the Rooftop Edge or the player is in the Balcony
+    move the people far below here
+  end when
+
+## ---------------------------------------------------------------------------
+## THE ROOF OF BLACK GATE ESTATE (`story.ni:8963-9068`): the balcony, the
+## patio, the garden, and the steps down into the house.
+## ---------------------------------------------------------------------------
+
+## The jump (`story.ni:8905-8909`) is the Balcony's first-time prose: going
+## east from the Rooftop Edge, `jump`, `enter balcony` all land here, once.
+
+create the Balcony
+  a room
+  aka roof of black gate estate, roof, ornate balcony, western edge
+  northeast to the Rooftop Garden
+  southeast to the Patio
+  west is blocked: balcony-no-jumping-back
+  northwest is blocked: balcony-no-jumping-back
+  southwest is blocked: balcony-no-jumping-back
+  first time
+    You peer across the gap at the balcony, judging the distance. About ten
+    feet. Maybe a little bit more than ten feet. And it's slightly below you,
+    which is a plus.
+
+    Still, it's a really far jump.
+
+    This is where Bobby told you to go. A letter... secrets about your
+    father, he said. The thought of facing Bobby when he gets out, after they
+    beat him up so bad, and telling him you were too scared to do what he
+    asked you to do...
+
+    You take a few steps back, run... and jump.
+
+    The railing slams into your chest, knocking the breath out of you. Your
+    feet pedal madly in empty air. You wrap your arms around the railing,
+    trying to grab on, but you're slipping...
+
+    Then your foot finds the edge of the balcony, and you push yourself up
+    and over.
+
+    You're standing on a balcony, complete with ornate railing, that runs
+    along the roof's western edge. To the northeast is a garden; to the
+    southeast, a patio.
+
+  You're standing on a balcony, complete with ornate railing, that runs along
+  the roof's western edge. To the northeast is a garden; to the southeast, a
+  patio.
+
+define phrase balcony-no-jumping-back
+  If at all possible, you'd much rather find an escape route that doesn't
+  involve death-defying leaps over fifty-foot drops. Besides, you can't leave
+  until you find the letter Bobby was talking about.
+end phrase
+
+create the railing
+  aka rail, railings, curved railing, elegant railing, ornate railing, marble, gilt iron, gilt, iron, white marble
+  scenery
+  in the Balcony
+
+  The curved, elegant railing is made of white marble and gilt iron.
+
+## The rooftops seen from the balcony (`story.ni:8983`).
+
+create the rooftops to the west
+  aka rooftops, roofs, distant rooftops, big drop
+  scenery, plural
+  in the Balcony
+
+  You can see the rooftops stretching away to the west, beyond the big drop.
+
+## THE PATIO (`story.ni:9006-9032`)
+
+create the Patio
+  a room
+  aka rooftop patio, paving stones, pavestones, elegant paving
+  north to the Rooftop Garden
+  northwest to the Balcony
+
+  The patio is an area of elegant paving stones surrounding a small fountain.
+  Cushioned divans and low marble tables allow guests to enjoy refreshment
+  while reclining under the open air. The garden is north of here, and the
+  balcony is northwest.
+
+create the patio furniture
+  aka furniture, divan, divans, table, tables, cushioned divans, cushions, cushion, marble tables, low tables
+  scenery, plural
+  in the Patio
+
+  The furniture is certainly luxurious, but it's not what you're here for.
+
+  on the player taking
+    refuse furniture-not-what-youre-here-for
+  end on
+
+  on the player entering
+    refuse furniture-not-what-youre-here-for
+  end on
+
+  on the player pushing
+    refuse furniture-not-what-youre-here-for
+  end on
+
+  on the player searching
+    refuse furniture-not-what-youre-here-for
+  end on
+
+define phrase furniture-not-what-youre-here-for
+  The furniture is certainly luxurious, but it's not what you're here for.
+end phrase
+
+create the ornamental fountain
+  aka fountain, small fountain, water, pool, shallow pool, smooth stones, stones, jumble, trickle
+  scenery
+  in the Patio
+
+  Water trickles over a jumble of smooth stones into a shallow pool. The
+  sound of it is soothing.
+
+  on the player listening
+    refuse fountain-no-time-to-listen
+  end on
+
+  on the player drinking
+    refuse fountain-not-for-drinking
+  end on
+
+  on the player eating
+    refuse fountain-not-for-drinking
+  end on
+
+define phrase fountain-no-time-to-listen
+  It's nice, but you don't have time to sit here and listen to the water.
+end phrase
+
+define phrase fountain-not-for-drinking
+  It's not for drinking, and besides, you don't have time to linger here.
+end phrase
+
+## The patio and the garden from the rooms beside them (`story.ni:9018`,
+## `9048`) — the source's distant descriptions, on the bare `listen` and
+## `smell` (`backdrops.chord`) and here as the rooms' answers, minus the
+## route tail.
+
+define phrase fountain-trickle-from-here
+  The faint trickle of a fountain comes from the patio.
+end phrase
+
+define phrase roses-from-here
+  A faint scent of roses wafts over from the garden.
+end phrase
+
+## THE ROOFTOP GARDEN (`story.ni:9036-9068`)
+
+create the Rooftop Garden
+  a room
+  aka garden, roof garden, greenery
+  south to the Patio
+  southwest to the Balcony
+  down to the Third Floor Landing
+
+  The garden is an impressive piece of greenery in a city otherwise dominated
+  by stone. Most of the flowers are not in bloom this late in the season, but
+  there are autumn roses, and some nice hanging lilies climbing up a lattice.
+  The patio is south, and the balcony lies to the southwest. Nearby, a flight
+  of steps leads down into the lower floors of the house.
+
+create the flowers
+  aka flower, autumn roses, roses, rose, lilies, lily, hanging lilies, greenery, blooms
+  scenery, plural
+  in the Rooftop Garden
+
+  The flowers are beautiful, but you don't have time to admire them right
+  now.
+
+  on the player smelling
+    refuse no-time-to-smell-flowers
+  end on
+
+  on the player taking
+    refuse flowers-no-time-to-admire
+  end on
+
+define phrase no-time-to-smell-flowers
+  Sadly, there is no time to stop and smell the flowers right now.
+end phrase
+
+define phrase flowers-no-time-to-admire
+  The flowers are beautiful, but you don't have time to admire them right
+  now.
+end phrase
+
+create the lattice
+  aka wooden lattice, decorative lattice, trellis
+  scenery
+  in the Rooftop Garden
+
+  It's a decorative wooden lattice, for the flowers to climb up.
+
+  on the player climbing
+    refuse lattice-leads-nowhere
+  end on
+
+define phrase lattice-leads-nowhere
+  The lattice doesn't lead anywhere, and isn't strong enough to hold your
+  weight anyway.
+end phrase
+
+## The flight of steps (`story.ni:9054-9061`) is the source's one staircase
+## in three rooms — a follower; its description differs at the head.
+
+create the flight of steps
+  aka steps, step, stairs, stair, staircase, stairway, stair case, stair way, main stairway, main stairs
+  scenery, climbable, enterable, plural
+  in the Rooftop Garden
+
+  The stairs go up and down from here.
+
+  when Jack moves, while the player is in the Rooftop Garden or the player is in the Third Floor Landing or the player is in the Second Floor Landing
+    move the flight of steps here
+  end when
+
+  on the player examining
+    refuse when the player is in the Rooftop Garden: steps-lead-down
+  end on
+
+  on the player climbing
+    refuse when the player is in the Third Floor Landing: steps-up-and-down
+    refuse when the player is in the Second Floor Landing: steps-up-and-down
+    move the player to the Third Floor Landing
+  end on
+
+define phrase steps-lead-down
+  The stairs lead down to the lower floors of the house.
+end phrase
+
+define phrase steps-up-and-down
+  The stairs go up and down from here.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE THIRD FLOOR (`story.ni:9074-9258`): the landing, the music room, the
+## audience area, the supply closet and the winch.
+## ---------------------------------------------------------------------------
+
+## The intruder text (`story.ni:9065`) is the landing's first-time prose —
+## the first descent, once.
+
+create the Third Floor Landing
+  a room
+  aka landing, third floor, stairway, main stairway
+  up to the Rooftop Garden
+  down to the Second Floor Landing
+  south to the Music Room
+  first time
+    Holding your breath, you tiptoe quietly down the stairs. A prickle runs
+    up your spine; you are now an intruder. If the Baron catches you here,
+    he'll have you tossed back into a jail cell — and that's the best case
+    scenario. If what Bobby told you is true, and Fossville knows secrets
+    about you that he's trying to hide, it's more likely he'll just slit your
+    throat.
+
+    Have to move quickly, then — search the house, find this letter, and get
+    out.
+
+    This is the main stairway that winds up and down the back of Black Gate
+    Estate. A hallway leads south.
+
+  This is the main stairway that winds up and down the back of Black Gate
+  Estate. A hallway leads south.
+
+## THE MUSIC ROOM (`story.ni:9089-9184`)
+
+create the Music Room
+  a room
+  aka music room, hall, hallway
+  north to the Third Floor Landing
+  south to the Audience Area
+
+  The walls of this room are painted with the Fossville coat of arms,
+  intertwined in a pattern of gilded vines. Your footsteps are muffled by a
+  deep blue carpet. The room continues south, and stairs lie to the north.
+
+## `play`/`pluck`/`strum`/`twang` (`story.ni:9099-9115`) — a story action;
+## its miss is the source's "And how do you propose to do that?". The harp's
+## answer rides a trait: a story action never reaches an entity clause.
+
+define action playing
+  grammar
+    play the target
+    pluck the target
+    strum the target
+    twang the target
+    play on the target
+  otherwise refuse cant-play-that
+
+define phrase cant-play-that
+  And how do you propose to do that?
+end phrase
+
+define trait harp-strings
+  on the player playing
+    select stopping
+      phrase harp-cant-bring-yourself
+    or
+      phrase harp-cascade
+    or
+      phrase harp-no-way
+    end select
+  end on
+end trait
+
+create the harp
+  aka instrument, musical instrument, strings, string, frame, soundboard, kielwood, copper strings
+  scenery
+  harp-strings
+  in the Music Room
+
+  It's a beautiful instrument, and huge, taller than you are. The frame and
+  soundboard are carved of rich, dark kielwood; the strings shine copper in
+  the dim light.
+
+  phrase present:
+    A harp stands on a raised wooden platform.
+
+  on the player taking
+    refuse harp-too-heavy-to-drag
+  end on
+
+  on the player pushing
+    refuse harp-too-heavy-to-move
+  end on
+
+  on the player pulling
+    refuse harp-too-heavy-to-move
+  end on
+
+  on the player listening
+    refuse harp-strings-still
+  end on
+
+  on the player attacking
+    refuse harp-too-much-noise
+  end on
+
+define phrase harp-cant-bring-yourself
+  Though you long to hear it play a note, you can't quite bring yourself to
+  pluck the strings. What if someone hears you?
+end phrase
+
+define phrase harp-cascade
+  Well, maybe if you do it very softly... you swallow the lump in your throat
+  and brush the strings lightly with your fingers. A cascade of crystal-clear
+  notes wafts through the room. The sound lasts for only a few moments before
+  fading away, and you could barely hear it over the thudding of your heart,
+  but it was very beautiful.
+end phrase
+
+define phrase harp-no-way
+  No way. You've pushed your luck enough already.
+end phrase
+
+define phrase harp-too-heavy-to-drag
+  The harp is much too heavy for you to drag around.
+end phrase
+
+define phrase harp-too-heavy-to-move
+  The harp is too heavy to move.
+end phrase
+
+define phrase harp-strings-still
+  The harp's strings are still.
+end phrase
+
+define phrase harp-too-much-noise
+  That would make too much noise.
+end phrase
+
+create the wooden platform
+  aka platform, small platform, small wooden platform, raised platform, wood platform
+  scenery
+  in the Music Room
+
+  It's a small wooden platform, holding up the harp.
+
+create the coat of arms
+  aka crest, fossville's crest, arms, walls, wall, paint, painted walls, pattern, gilded vines, vines, vine, stoat, ferret, animal, rodent, milkweed, milkweed flower, field of yellow, symbol, symbols
+  scenery
+  in the Music Room
+
+  Fossville's crest depicts a slender, rodent-like animal, maybe a stoat or a
+  ferret, standing on its hind legs against a field of yellow. It carries a
+  milkweed flower clamped in its jaws. You're not sure what it's supposed to
+  symbolize, but it looks a bit ostentatious, painted on the walls of his own
+  house.
+
+create the blue carpet
+  aka carpet, deep carpet, soft carpet, deep blue carpet
+  scenery
+  in the Music Room
+
+  The deep, soft carpet muffles your footsteps.
+
+## THE AUDIENCE AREA (`story.ni:9155-9180`)
+
+create the Audience Area
+  a room
+  aka audience area, recital area, benches area
+  north to the Music Room
+  south to the Supply Closet through the narrow wooden door
+
+  Several rows of benches are set up on this end of the room, so that guests
+  may sit and enjoy a recital. The room continues to the north, and a narrow
+  wooden door lies south.
+
+create the auditorium benches
+  aka benches, bench, rows, row, rows of benches, furniture, chairs, chair, seats, seat
+  scenery, plural
+  in the Audience Area
+
+  The benches are for audience members to sit and appreciate the music during
+  recitals.
+
+  on the player entering
+    refuse benches-no-time-to-rest
+  end on
+
+  on the player climbing
+    refuse benches-no-time-to-rest
+  end on
+
+define phrase benches-no-time-to-rest
+  You don't have time to rest now.
+end phrase
+
+## The closet door (`story.ni:9203-9205`) starts open — the source auto-opens
+## it on the way through and the platform will not. Its description reads
+## from whichever side she stands.
+
+create the narrow wooden door
+  aka narrow door, wooden door, plain door, plain wooden door, closet door, door
+  a door, openable, starts open
+
+  It's just a plain wooden door, leading into a closet.
+
+  on the player examining
+    refuse when the player is in the Supply Closet: door-out-of-closet
+  end on
+
+define phrase door-out-of-closet
+  It's just a plain wooden door, leading out of the closet.
+end phrase
+
+## THE SUPPLY CLOSET (`story.ni:9196-9258`): the winch that lowers the
+## library's chandelier two floors down.
+
+create the Supply Closet
+  a room
+  aka closet, supply closet, dusty nook, nook
+  north to the Audience Area through the narrow wooden door
+
+  A dusty nook used by the servants to store mops and cleaning supplies.
+
+create the mops
+  aka mop, supplies, cleaning supplies, stack, stacks, stack of mops, brooms, buckets
+  scenery, plural
+  in the Supply Closet
+
+  The mops and other supplies are stacked up in the back of the closet.
+
+  on the player searching
+    refuse no-letter-among-the-mops
+  end on
+
+  on the player taking
+    refuse mops-not-needed
+  end on
+
+  on the player pushing
+    refuse no-letter-among-the-mops
+  end on
+
+define phrase no-letter-among-the-mops
+  There is no secret letter hidden among the mops.
+end phrase
+
+define phrase mops-not-needed
+  The last thing you need to be lugging around is a mop.
+end phrase
+
+## `turn winch`/`turn crank` (`story.ni:9220-9236`): the platform's turning
+## consults the entity's own clause, so the turn rides one trait on both
+## the winch and its crank. The source's push/pull on the crank is not
+## carried: the platform refuses pushing scenery before any clause runs.
+
+## The flip reads the state it just changed (statements run in sequence),
+## so it pivots through `turning`: raised → turning → lowered, lowered →
+## raised, each arm's line spoken on the state it lands in. (`select on the
+## gaudy chandelier` / `when raised` ran no arm at all — GH #370.)
+
+define trait winch-crank
+  on the player turning
+    change the gaudy chandelier to turning when the gaudy chandelier is raised
+    change the gaudy chandelier to raised when the gaudy chandelier is lowered
+    phrase winch-winds-the-rope when the gaudy chandelier is raised
+    change the gaudy chandelier to lowered when the gaudy chandelier is turning
+    phrase winch-lowers-the-rope when the gaudy chandelier is lowered
+  end on
+
+end trait
+
+create the winch
+  aka strange winch, strange-looking winch, spool, large spool, drum
+  scenery
+  winch-crank
+  in the Supply Closet
+
+  It's shaped like a very large spool, with a handle attached to one side for
+  turning it. A sturdy rope is tightly wound around it several times. The
+  other end disappears into a small hole in the floor.
+
+  phrase present:
+    Fixed to the floor in the center of the closet is a strange-looking
+    winch.
+
+  on the player examining
+    refuse when the gaudy chandelier is lowered: winch-unwound
+  end on
+
+## The winch with the rope let out (`story.ni:9214`).
+
+define phrase winch-unwound
+  It's shaped like a very large spool, with a handle attached to one side for
+  turning it. A sturdy rope is attached at one end to the winch. The
+  other end disappears into a small hole in the floor.
+end phrase
+
+create the crank handle
+  aka handle, crank, winch handle, winch crank
+  scenery
+  winch-crank
+  in the Supply Closet
+
+  It's a crank, allowing you to turn the winch, which winds or unwinds the
+  rope.
+
+define phrase winch-lowers-the-rope
+  The handle is very stiff, but with some effort you manage to turn it
+  several times, lowering the rope through the hole in the floor.
+end phrase
+
+define phrase winch-winds-the-rope
+  The handle is very stiff, and whatever is on the other end of the rope is
+  very heavy, but with a great deal of effort you manage to wind the winch
+  several times, pulling the rope up through the hole in the floor.
+end phrase
+
+create the chandelier rope
+  aka rope, sturdy rope, cord, taut rope, wound rope
+  scenery
+  in the Supply Closet
+
+  The rope is tightly wound around the drum of the winch. The other end
+  disappears into a small hole in the floor.
+
+  on the player examining
+    refuse when the gaudy chandelier is lowered: rope-attached
+  end on
+
+  on the player pulling
+    refuse rope-wont-budge
+  end on
+
+  on the player pushing
+    refuse rope-wont-budge
+  end on
+
+  on the player taking
+    refuse rope-wont-budge
+  end on
+
+define phrase rope-attached
+  The rope is attached to the drum of the winch. The other end
+  disappears into a small hole in the floor.
+end phrase
+
+define phrase rope-wont-budge
+  The rope is extremely taut and won't budge. If you want to raise or lower
+  it, you'll have to turn the winch.
+end phrase
+
+create the small hole
+  aka hole, hole in the floor, floor hole
+  scenery
+  in the Supply Closet
+
+  The hole is just slightly bigger around than the rope running through it.
+
+  on the player searching
+    refuse hole-all-dark
+  end on
+
+  on the player inserting
+    refuse hole-no-room
+  end on
+
+define phrase hole-all-dark
+  Most of the hole is taken up by the diameter of the rope, and what little
+  space there is around the edges is all dark.
+end phrase
+
+define phrase hole-no-room
+  Most of the hole is taken up by the diameter of the rope. There's not
+  enough room to fit anything else in there.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SECOND FLOOR (`story.ni:9264-9361`): the landing and Fossville's
+## voice, the living room, the bedroom.
+## ---------------------------------------------------------------------------
+
+## The event (`story.ni:9275`) on the first arrival, after the description;
+## the house-beat placeholder (change document, gap 2) on the second arrival
+## while she is still free — the butler's drag lands here too, and must not
+## spend it.
+
+create the Second Floor Landing
+  a room
+  aka landing, second floor, stairway, main stairway, stairwell
+  up to the Third Floor Landing
+  south to the Living Room
+  down is blocked: fossville-is-down-there
+  up is blocked while the butler is here: butler-grip-firm
+  south is blocked while the butler is here: butler-grip-firm
+
+  This is the main stairway that winds up and down the back of Black Gate
+  Estate. A hallway leads south.
+
+  You can hear people moving around below.
+
+  after the player entering while the butler is absent
+    first time
+      phrase fossville-shouts-for-wine
+    second time
+      phrase house-beat-stub
+  end after
+
+define phrase fossville-shouts-for-wine
+  You hear a door slam open somewhere on the floor below.
+
+  'Blast it all!' someone yells. You recognize Baron Fossville's voice from
+  running into him yesterday. 'Servants! Bring me spiced wine — hot — and
+  something to eat. No, you dim fool, down here — I'll be leaving again
+  within an hour. Bring it now, unless you'd rather be whipped!'
+
+  The sounds of sudden, frantic activity drift up the stairs: footsteps,
+  chairs scraping on wooden floors, glasses and dishes clinking.
+end phrase
+
+## THE HOUSE BEATS (change document, Chapter 6, "Inside Fossville's house" —
+## David: "C", fear without teeth): servants on the stairs, near misses in
+## the hallway, beats that keep her moving and cannot take her. ONE
+## placeholder; the beats and their lines are David's, during play-testing.
+
+define phrase house-beat-stub
+  (TODO during play-testing — the house beats: a servant on the stairs, a
+  door below, a near miss in the hallway — something that keeps her moving
+  through the house and cannot take her. Fear, no teeth. The beats and the
+  lines are David's.)
+end phrase
+
+define phrase fossville-is-down-there
+  You can't go down to the first floor — Fossville is down there!
+end phrase
+
+create Fossville's voice
+  aka voice, voices, baron's voice, fossville, baron, baron fossville, activity, footsteps, footstep, muttering, mutters
+  scenery
+  in the Second Floor Landing
+
+  You'd have to go downstairs to see what's going on.
+
+  on the player listening
+    refuse muttering-voices
+  end on
+
+  on the player touching
+    refuse go-downstairs-to-see
+  end on
+
+  on the player taking
+    refuse go-downstairs-to-see
+  end on
+
+define phrase muttering-voices
+  You can still hear muttering voices down there, but you can't quite make
+  out the words.
+end phrase
+
+define phrase go-downstairs-to-see
+  You'd have to go downstairs to see what's going on.
+end phrase
+
+## THE LIVING ROOM (`story.ni:9300-9337`)
+
+create the Living Room
+  a room
+  aka parlor, parlour, bachelor's parlor, hall, hallway
+  north to the Second Floor Landing
+  south to the Master Bedroom through the sliding doors
+
+  This is a wealthy bachelor's parlor, furnished with comfortable chairs and
+  portraits of Fossville's illustrious ancestors hanging from the walls. A
+  hallway leads north, and sliding doors lead south.
+
+## `look behind`/`look under` (`story.ni:9318-9323`) are searching here.
+
+extend action searching
+  grammar
+    look behind the target
+    look under the target
+
+create the chairs
+  aka chair, comfortable chairs, cushions, cushion, furniture, furnishings, furnishing
+  scenery, plural
+  in the Living Room
+
+  A quick search reveals that the letter isn't hidden under the cushions.
+
+  on the player searching
+    refuse chairs-searched
+  end on
+
+  on the player entering
+    refuse chairs-searched
+  end on
+
+define phrase chairs-searched
+  A quick search reveals that the letter isn't hidden under the cushions.
+end phrase
+
+create the portraits
+  aka portrait, paintings, painting, pictures, picture, ancestors, ancestor, relatives, relative, frames, frame, faces, face, forefathers, forefather, fossvilles
+  scenery, plural
+  in the Living Room
+
+  You can spot the family resemblance, certain features that repeat
+  themselves in the faces of Fossville's relatives. The sharp nose, the
+  aristocratic jaw. Perhaps you are only imagining it, but there seems to be
+  a certain cruel gleam in their eyes, as well. You wonder how closely the
+  current Baron resembles his forefathers.
+
+  on the player searching
+    the player must have the letter: no-letters-behind-frames
+    refuse nothing-of-interest
+  end on
+
+  on the player taking
+    refuse nothing-of-interest
+  end on
+
+define phrase no-letters-behind-frames
+  You check behind each of the paintings in turn, but find no letters glued
+  to the backs of frames.
+end phrase
+
+define phrase nothing-of-interest
+  You find nothing of interest.
+end phrase
+
+## The sliding doors (`story.ni:9327-9337`): a closed door; the rattle rides
+## opening and closing. The player opens them — the source's silent auto-open
+## is not carried.
+
+create the sliding doors
+  aka doors, sliding door, door, track, tracks
+  a door, plural
+
+  The sliding doors are closed.
+
+  on the player examining
+    refuse when the sliding doors is open: sliding-doors-open
+  end on
+
+  after the player opening
+    phrase doors-rattle
+  end after
+
+  after the player closing
+    phrase doors-rattle
+  end after
+
+define phrase sliding-doors-open
+  The sliding doors are open.
+end phrase
+
+define phrase doors-rattle
+  The doors rattle slightly in their tracks — not very loud, but enough to
+  make you cringe.
+end phrase
+
+## THE MASTER BEDROOM (`story.ni:9343-9361`) — and the butler's catch on the
+## way back out of the library with the letter (`story.ni:9506`).
+
+create the Master Bedroom
+  a room
+  aka bedroom, master bedroom
+  north to the Living Room through the sliding doors
+  south to the Library
+  north is blocked while the butler is here: butler-grip-firm
+  south is blocked while the butler is here: butler-grip-firm
+
+  The bedroom, as you might have expected, is dominated by an enormous bed
+  and not much else. Sliding doors lead north, back to the parlor, and
+  another doorway leads south.
+
+  after the player entering while the player has the letter and the butler is absent
+    phrase butler-catches-you
+    move the butler here
+    change the butler to gripping
+    start the butler's hauling
+  end after
+
+create the four-poster bed
+  aka bed, four poster bed, enormous bed, canopy, silken canopy, coverlet, sheets, sheet, pillows, pillow, headboard, mattress, pillars, pillar, mahogany pillars, furniture
+  scenery
+  in the Master Bedroom
+
+  The bed is the most impressive piece of furniture you've seen in the house
+  yet. Four carved mahogany pillars hold up a silken canopy; the coverlet is
+  delicately embroidered with the Fossville coat of arms; the pillows are
+  like bulging, feather-stuffed clouds, piled nearly higher than your head.
+
+  after the player examining
+    first time
+      phrase bed-fancier-than-imagined
+  end after
+
+  on the player searching
+    refuse bed-searched
+  end on
+
+  on the player entering
+    refuse bed-no-rest
+  end on
+
+  on the player climbing
+    refuse bed-no-rest
+  end on
+
+## The source's two `[first time]` sentences, after the description on the
+## first look.
+
+define phrase bed-fancier-than-imagined
+  In addition to being simply gigantic, it's... fancier... than what you
+  would have imagined a man like Fossville might own. Whatever else might be
+  said about Baron Fossville, he certainly likes to sleep in comfort.
+end phrase
+
+define phrase bed-searched
+  You check under the bed, behind the headboard, even under the thick,
+  overstuffed mattress. No letter.
+end phrase
+
+define phrase bed-no-rest
+  You're tired, but it's neither the time nor the place to take a rest.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE LIBRARY (`story.ni:9367-9496`): the chandelier, and the letter in it.
+## ---------------------------------------------------------------------------
+
+create the Library
+  a room
+  aka library
+  north to the Master Bedroom
+  north is blocked while the letter is revealed: dont-forget-the-letter
+
+  Tall bookshelves line all four walls, and a chandelier hangs from the high
+  ceiling. A doorway leads north to the bedroom. {chandelier-dangles}
+
+define phrase dont-forget-the-letter
+  Don't forget the letter!
+end phrase
+
+## The locale paragraph for the lowered chandelier (`story.ni:9428`).
+
+define phrase chandelier-dangles, stopping while the gaudy chandelier is lowered
+  In fact, the chandelier dangles practically to the floor, at the end of a
+  long rope that goes up through the ceiling. The servants must lower it like
+  this when they need to clean it.
+end phrase
+
+create the bookshelves
+  aka bookshelf, shelves, shelf, book shelves, book shelf, rows, row, heavy books, dozens of books
+  scenery, plural
+  in the Library
+
+  The shelves reach almost to the ceiling, each row sagging beneath the
+  weight of dozens of heavy books.
+
+  on the player searching
+    refuse shelves-sagging
+  end on
+
+  on the player climbing
+    refuse shelves-sagging
+  end on
+
+define phrase shelves-sagging
+  The shelves reach almost to the ceiling, each row sagging beneath the
+  weight of dozens of heavy books.
+end phrase
+
+create the old books
+  aka books, book, old book, older books, worn books, tomes, tome, government books, politics books, well-read books, dusty books
+  scenery, plural
+  in the Library
+
+  The books are all on government and politics, dry stuff like that. They
+  look worn and well-read.
+
+## The chandelier (`story.ni:9401-9468`): raised, everything is out of reach;
+## lowered, it can be nudged and searched. `lift` carries the winch hint
+## through a trait (the jail's story action never reaches an entity clause).
+## The find (`story.ni:9445-9447`), on examine or search alike: the letter
+## comes out of the chandelier into the room, revealed, and the description
+## ("Nothing else…") follows the line, as the straw's wire does in the jail.
+
+define trait chandelier-lift
+  on the player lifting
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-too-heavy-to-lift
+  end on
+end trait
+
+create the gaudy chandelier
+  aka chandelier, crystal chandelier, crystals, crystal, candle holders, candle holder, holders, arms, branches, curlicues, long rope, rope
+  scenery
+  chandelier-lift
+  in the Library
+  states, reversible: raised, lowered, turning
+
+  Nothing else seems to be hidden in the gaudy chandelier.
+
+  on the player examining
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    phrase odd-rolled-up-parchment when the letter is hidden
+    move the letter to the Library when the letter is hidden
+    change the letter to revealed when the letter is hidden
+  end on
+
+  on the player searching
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse when the letter is not hidden: nothing-else-in-the-chandelier
+    phrase odd-rolled-up-parchment
+    move the letter to the Library
+    change the letter to revealed
+  end on
+
+  on the player pushing
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-sways
+  end on
+
+  on the player pulling
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-sways
+  end on
+
+  on the player taking
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-too-heavy-to-lift
+  end on
+
+  on the player touching
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-sways
+  end on
+
+  on the player climbing
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-wouldnt-hold-you
+  end on
+
+  on the player entering
+    refuse when the gaudy chandelier is raised: chandelier-out-of-reach
+    refuse chandelier-wouldnt-hold-you
+  end on
+
+define phrase chandelier-out-of-reach
+  The chandelier is high out of your reach.
+end phrase
+
+define phrase odd-rolled-up-parchment
+  Odd — rolled up and stuffed into one of the empty candle holders is a
+  sheet of parchment.
+end phrase
+
+define phrase nothing-else-in-the-chandelier
+  Nothing else seems to be hidden in the gaudy chandelier.
+end phrase
+
+define phrase chandelier-sways
+  You give the chandelier a nudge, and it sways, tinkling faintly.
+end phrase
+
+define phrase chandelier-too-heavy-to-lift
+  The chandelier is too heavy to lift. You'll have to raise it with the
+  winch in the closet upstairs.
+end phrase
+
+define phrase chandelier-wouldnt-hold-you
+  You wouldn't trust that thing to hold your weight, and you shudder to
+  imagine the noise it would make if the rope broke.
+end phrase
+
+## THE LETTER (`story.ni:9471-9496`) — the ruling: as written, "Jacqueline
+## Toresal", "her". Offstage until the chandelier gives it up; `hidden` →
+## `revealed` on the find, `read` on the first reading. Examining it from
+## the floor picks it up first, as the source does; taking it unread reads
+## it, as the source does.
+
+create the letter
+  aka secret letter, parchment, sheet, sheet of parchment, folded sheet, folded parchment, folded sheet of parchment, rolled parchment, roll, page, paper, writing, script, duke's letter
+  states: hidden, revealed, read
+
+  The parchment is thin and the ink faded, but the writing is still quite
+  legible, a strong, graceful script that flows down the page.
+
+  Your Royal Highness, it begins,
+
+  It is with a sad but hopeful heart that I write to you, for I must reveal
+  deeds that I am not proud of, and yet perhaps I may thereby put an end to
+  an injustice that has gone on far too long.
+
+  My lawful marriage was determined by political expediency rather than by
+  the urgings of my own heart, as you well know. My wife was ever a dutiful
+  companion, but never truly happy. I do not blame her. For my part, I did
+  my best to ensure that she lived a lifestyle fitting for a Duchess, and
+  that she wanted for nothing save my love.
+
+  Were this the full extent of my shame, I would have no need to write to
+  you, for a loveless marriage is hardly a rare thing in our kingdom.
+  However, it is to confess yet a further disgrace that I must pen this
+  letter. I was not merely cool in my affections, but an unfaithful husband
+  as well. I took a mistress, a woman on whom I bestowed all the tenderness
+  I was unable to give my wife. And with this mistress, I had a child.
+
+  I kept the child's existence a secret, as much to spare my wife the
+  ignominy as to avoid the political complications that would otherwise
+  have ensued. From my private finances I established an orphanage here in
+  the city, and paid a tutor from the Royal College to pose as one of the
+  headmistresses, to raise and educate the child properly. In secret I have
+  sponsored this child for ten years.
+
+  I feel it is past time for this secrecy to end. I have grown ill with a
+  mysterious sickness these past months, and I fear that my life will soon
+  come to a close. My wife was never able to provide me with a lawful heir,
+  and yet I would not see my family name extinguished merely because I had
+  not the courage to face up to my failings as a husband.
+
+  Therefore it is my wish that the crown recognize this child, who bears no
+  fault for the circumstances of her birth, as my sole and lawful
+  beneficiary, to inherit my title and estate in full upon my death, or upon
+  her sixteenth birthday should I die before she reaches the age of
+  majority. I hereby, by my will and by royal law, and in full possession of
+  my faculties, declare my heir:
+
+  Jacqueline Toresal
+
+  Signed and witnessed therewith,
+
+  Lord William, Duke of Toresal
+
+  on the player examining
+    phrase you-pick-up-the-letter when not the player has the letter
+    phrase letter-text when not the player has the letter
+    move the letter to the player when not the player has the letter
+  end on
+
+  after the player examining while the letter is revealed
+    phrase letter-trembling-hand
+    change the letter to read
+  end after
+
+  after the player taking while the letter is revealed
+    phrase letter-text
+    phrase letter-trembling-hand
+    change the letter to read
+  end after
+
+define phrase you-pick-up-the-letter
+  You pick up the letter.
+end phrase
+
+## `story.ni:9484`, the reaction — "the same first name as you", the first
+## time she reads her own name in another's hand.
+
+define phrase letter-trembling-hand
+  Your hand is trembling as you fold the letter. You tell yourself that it's
+  a coincidence, just someone who happens to have the same first name as you
+  — but in your heart you know it must be true.
+
+  And yet... it poses so many more questions than it answers. The letter is
+  addressed to the queen, and dated three years ago, just a few months before
+  the Duke's death. Why was it never posted? And what is it doing in Baron
+  Fossville's library?
+
+  A noise from the bedroom startles you out of your puzzling. Now that you
+  have what you came for, you need to get out of here — fast.
+end phrase
+
+## The letter's text again as a phrase, for "Taken." then the reading
+## (`story.ni:9490`) and for the pick-up on examine (`story.ni:9494`) — a
+## phrase spoken in an `on` clause replaces the action's own report, so the
+## intercept must carry the text itself; a clause cannot run an examine.
+
+define phrase letter-text
+  The parchment is thin and the ink faded, but the writing is still quite
+  legible, a strong, graceful script that flows down the page.
+
+  Your Royal Highness, it begins,
+
+  It is with a sad but hopeful heart that I write to you, for I must reveal
+  deeds that I am not proud of, and yet perhaps I may thereby put an end to
+  an injustice that has gone on far too long.
+
+  My lawful marriage was determined by political expediency rather than by
+  the urgings of my own heart, as you well know. My wife was ever a dutiful
+  companion, but never truly happy. I do not blame her. For my part, I did
+  my best to ensure that she lived a lifestyle fitting for a Duchess, and
+  that she wanted for nothing save my love.
+
+  Were this the full extent of my shame, I would have no need to write to
+  you, for a loveless marriage is hardly a rare thing in our kingdom.
+  However, it is to confess yet a further disgrace that I must pen this
+  letter. I was not merely cool in my affections, but an unfaithful husband
+  as well. I took a mistress, a woman on whom I bestowed all the tenderness
+  I was unable to give my wife. And with this mistress, I had a child.
+
+  I kept the child's existence a secret, as much to spare my wife the
+  ignominy as to avoid the political complications that would otherwise
+  have ensued. From my private finances I established an orphanage here in
+  the city, and paid a tutor from the Royal College to pose as one of the
+  headmistresses, to raise and educate the child properly. In secret I have
+  sponsored this child for ten years.
+
+  I feel it is past time for this secrecy to end. I have grown ill with a
+  mysterious sickness these past months, and I fear that my life will soon
+  come to a close. My wife was never able to provide me with a lawful heir,
+  and yet I would not see my family name extinguished merely because I had
+  not the courage to face up to my failings as a husband.
+
+  Therefore it is my wish that the crown recognize this child, who bears no
+  fault for the circumstances of her birth, as my sole and lawful
+  beneficiary, to inherit my title and estate in full upon my death, or upon
+  her sixteenth birthday should I die before she reaches the age of
+  majority. I hereby, by my will and by royal law, and in full possession of
+  my faculties, declare my heir:
+
+  Jacqueline Toresal
+
+  Signed and witnessed therewith,
+
+  Lord William, Duke of Toresal
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE BUTLER (`story.ni:9502-9571`): the catch, the grip, the stairwell,
+## the side door. He SEES her (the ruling): "child", "little thief", and at
+## the door, "girl".
+## ---------------------------------------------------------------------------
+
+## Three one-turn clocks, one per row of the source's dialogue table: the
+## drag into the stairwell (row one), the wait (row two), the side door
+## (row three, and the move out). Chapter VII's row watches for `gone`, and
+## the hanging (`gallows.chord`) is set in place here, before her first
+## street prints — the change document's trigger ruling (a move offstage
+## fires no `moves` clause, so the hanging cannot watch the butler itself).
+
+define timer hauling for the butler
+end timer
+
+define timer overhearing for the butler
+end timer
+
+define timer releasing for the butler
+end timer
+
+create the butler
+  aka man, servant, tall man, gaunt man, sour man, old man, older man, fossville's butler, uniform, servant's uniform
+  a person
+  pronouns he
+  states: absent, gripping, shown, gone
+
+  The butler is tall and somewhat gaunt, with a heavy brow and a sour,
+  twisted cast to his mouth. He looks like he doesn't like kids very much,
+  especially when they're somewhere they shouldn't be.
+
+  phrase present:
+    The butler grips your arm firmly.
+
+  on the player talking
+    select stopping
+      phrase butler-hush
+    or
+      phrase butler-stern-look
+    end select
+  end on
+
+  on the player showing
+    phrase butler-wont-look when the butler is shown
+    phrase butler-stares-at-the-letter when the butler is gripping
+    change the butler to shown when the butler is gripping
+  end on
+
+  on the player giving
+    refuse when the butler is shown: butler-wont-look
+    refuse butler-stares-at-the-letter
+  end on
+
+  on the player attacking
+    refuse butler-death-pinch
+  end on
+
+  on the player touching
+    refuse butler-death-pinch
+  end on
+
+  on the player pushing
+    refuse butler-death-pinch
+  end on
+
+  when hauling expires
+    move the butler to the Second Floor Landing
+    move the player to the Second Floor Landing
+    phrase stairwell-row-one
+    start overhearing
+  end when
+
+  when overhearing expires
+    phrase stairwell-row-two
+    start releasing
+  end when
+
+  when releasing expires
+    phrase stairwell-row-three
+    change the butler to gone
+    move the butler offstage
+    move the gallows to the Lord's Market
+    move the crowd of spectators to the East Commerce Street
+    move the servants offstage
+    change the hanging to gathering
+    move the player to the East Commerce Street
+  end when
+
+## `story.ni:9506`
+
+define phrase butler-catches-you
+  You leave the library in a rush — and run smack into someone coming the
+  other way.
+
+  It's all you can do to bite back a scream. You try to duck around the
+  person and run, but he grabs your arm and pulls you back. 'Little thief!' a
+  voice hisses, 'What are you doing here? What do you have?'
+
+  He turns you around to face him. He's an older man, wearing a servant's
+  uniform — Fossville's butler.
+end phrase
+
+define phrase butler-grip-firm
+  The butler is stronger than he looks, and his grip on your arm is firm.
+end phrase
+
+define phrase butler-death-pinch
+  He may look old, but this butler has your arm in some kind of death pinch.
+  Every time you struggle, he gives it a painful twist.
+end phrase
+
+define phrase butler-hush
+  'Hush,' the butler snaps, cutting you off. 'I've no great desire to see
+  the master inflict his cruelties upon a child, but I'll not lose my
+  position over it. Keep your lips sealed if you want to leave this place
+  unscathed.'
+end phrase
+
+define phrase butler-stern-look
+  The butler silences you with a stern look.
+end phrase
+
+## Showing him the letter (`story.ni:9535-9541`), once, then he will not
+## look — on a state rather than a `stopping` phrase, because a phrase's
+## stopping count is kept per call site and show and give are two sites
+## (GH #371).
+
+define phrase butler-stares-at-the-letter
+  The butler stares intently at the letter in your hand for a long moment.
+  His eyes flicker towards the library, then settle back on you. 'They say
+  no dark deed goes unpunished,' he mutters. 'I'll not stand between a man
+  and the just fruits of his ill-gotten gains. Put that away, child; I never
+  saw it, and I don't want to know what's in it.'
+end phrase
+
+define phrase butler-wont-look
+  The butler pointedly does not look at it.
+end phrase
+
+## The table of the butler's dialogue (`story.ni:9563-9571`), one row a turn.
+## Fossville does NOT see her: "fourteen-year-old girl" is what the letter
+## told him. The butler DOES: "A bit of advice, girl".
+
+define phrase stairwell-row-one
+  The butler drags you into the stairwell, then stops, his thin, bald head
+  cocked, listening. From downstairs you hear more voices.
+
+  '...difficult is it to keep one half-witted street urchin locked in a cage
+  for a single night?' That's the Baron again, you realize. 'Because it is
+  evidently far more difficult than I imagined. Perhaps I am not paying you
+  enough for your heroic efforts so far?'
+
+  You hear a low, mumbled response.
+
+  'No, I daresay you don't,' snaps the Baron, his voice acid with sarcasm.
+  'I cannot express how galling it is that I still require your services;
+  were it otherwise, I would sooner turn you all over to the Lord's Guards
+  and let them deal with you like the useless curs you are.'
+
+  The butler glances at you, one bushy eyebrow raised. You're beginning to
+  suspect that Baron Fossville is not particularly well liked by his
+  servants.
+end phrase
+
+define phrase stairwell-row-two
+  'Gather your men at Lord's Market,' says Fossville. 'We'll deal with the
+  spy first. Once that business is finished, we pay a visit to the Widows.
+  Though I suppose I should warn you — you may encounter several unarmed,
+  elderly women there. Let us hope they pose no greater challenge to your
+  mercenaries than a fourteen-year-old girl.'
+
+  The second voice mumbles another response.
+
+  'See that you do. I will be there shortly.'
+
+  You hear footsteps, and then a heavy door slamming.
+
+  The butler holds his hand up, palm out. Wait.
+end phrase
+
+define phrase stairwell-row-three
+  Several agonizing minutes later, you hear the door slam a second time. The
+  butler waits a few minutes more, then drags you downstairs. He takes you
+  through the kitchens to a side door, and shoves you unceremoniously out
+  onto the street.
+
+  'Go now, and don't come back,' he says. 'Next time, it won't be me that
+  catches you. And if it is me, it'll go that much worse for you. A bit of
+  advice, girl,' he adds, just before turning away. 'Keep yourself out of
+  the Baron's way. He's not one to let a trifling of blood get in between
+  him and his ambitions.'
+
+  He slams the door.
+end phrase

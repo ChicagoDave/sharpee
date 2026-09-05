@@ -30,6 +30,13 @@
 ## hold (`FI3`..`FI7`) never arms, because the quips that arm it are stubbed;
 ## the kitchen door is open. Dame Sandler's DS14 precedent applies.
 ##
+## THE RAID (Chapter 7, `gallows.chord`) is layered on below, gated on
+## `the raid`'s states: the Dormitory held at the bedside, the Hallway's
+## exits during the pounding and after the expulsion, the front door's
+## refusals, the Laundry's gap north, the widows' talk and the letter, the
+## window's second climb (Chapter VIII's row). Bobby's and Shannon's idles
+## and the widows' presence lines end with the hanging (`before gallows`).
+##
 ## Not carried, noted: kissing refusals (no action); `in`/`out` as door
 ## directions; the wooden door as a Chord door — it is scenery on each side
 ## and the Hallway's north exit is blocked at night, because the door must
@@ -134,7 +141,7 @@ create Bobby
   about to tell him, because if he knew he would certainly stop inviting you
   along on his exploits.
 
-  on every turn while Bobby is here and one chance in 5 and the player is not in the Secret Way
+  on every turn while Bobby is here and one chance in 5 and the player is not in the Secret Way and before gallows
     phrase bobby-idle
   end on
 
@@ -152,6 +159,7 @@ create Bobby
   end when
 
   on the player talking
+    refuse when the hanging is speaking: cant-reach-him
     phrase bobby-finger-to-lips when the player is in the Lord's Keep
     phrase bobby-not-now when the player is in the Tunnels
     phrase bobby-bo27-stub when Bobby is leading and the player is in the Clearing
@@ -247,6 +255,16 @@ create the Hallway
   southwest to the Privy
   southeast to the Laundry
   north is blocked while Toresal is night: door-locked-curfew
+  north is blocked while the raid is pounding: are-you-insane
+  north is blocked while the raid is aftermath: fiona-things-to-know
+  north is blocked while the raid is keyed: not-the-front-door
+  northwest is blocked while the raid is pounding: fiona-get-into-the-laundry
+  northeast is blocked while the raid is pounding: fiona-get-into-the-laundry
+  southwest is blocked while the raid is pounding: fiona-get-into-the-laundry
+  northwest is blocked while the raid is aftermath: fiona-things-to-know
+  northeast is blocked while the raid is aftermath: fiona-things-to-know
+  southwest is blocked while the raid is aftermath: fiona-things-to-know
+  southeast is blocked while the raid is aftermath: fiona-things-to-know
   southwest is blocked while Widow Theresa is here: theresa-blocks-privy
 
   The main hallway runs through the center of Maiden House, with several
@@ -254,7 +272,7 @@ create the Hallway
   the laundry and privy, respectively; to the northeast lies the kitchen; and
   to the northwest is the dormitory where you and the other orphans sleep.
 
-  after the player entering while Toresal is day
+  after the player entering while Toresal is day and before keep
     phrase curfew-arrival
     change Toresal to night
     move Bobby to the Market Square
@@ -267,6 +285,20 @@ create the Hallway
     first time
       phrase tiptoe
   end after
+
+  after the player entering while the raid is pounding and Widow Fiona is in the Dormitory
+    Widow Fiona goes southeast
+  end after
+
+  after the player entering while the raid is aftermath
+    first time
+      phrase theresa-expelled
+      phrase fiona-fi26-open-stub
+      move Widow Fiona here
+  end after
+
+## The curfew fires once, on Chapter 3's arrival (`before keep`): every
+## later daytime entry to the hallway — the raid's — must not re-run it.
 
 ## `story.ni:5925-5934`. DAVID: "Jacqueline" and "respectable young lady" are
 ## Theresa's words for Jack — under §4/§3g they convert to the boy words;
@@ -336,11 +368,17 @@ create the front door
   the few rules they never, ever bend.
 
   on the player opening
+    refuse when the raid is pounding: are-you-insane
+    refuse when the raid is aftermath: not-the-front-door
+    refuse when the raid is keyed: not-the-front-door
     refuse when Widow Theresa is here: theresa-door-sneer
     refuse door-locked-curfew
   end on
 
   on the player unlocking
+    refuse when the raid is pounding: are-you-insane
+    refuse when the raid is aftermath: not-the-front-door
+    refuse when the raid is keyed: not-the-front-door
     refuse theresa-only-key
   end on
 
@@ -429,6 +467,7 @@ end phrase
 create the Dormitory
   a room
   aka dorm, dormitories, dorms, long room
+  southeast is blocked while the raid is waking: still-in-shock
 
   A long room lined with rough bunks, where the children sleep and, if they
   are too young to run about the city on their own, play. The main hallway
@@ -462,6 +501,7 @@ define action sleeping
     go to sleep
     go to bed
     lie down
+  refuse when the player is in the Red Gate Master Bedroom: bare-mattress-no-comfort
   refuse when Bobby is proposing: not-tired
   refuse when the player is not in the Dormitory: not-tired
   refuse when the orphans is asleep: not-tired
@@ -562,7 +602,7 @@ create the Kitchen
   A low-ceilinged room with a fire pit at one end for cooking, a basin at the
   other end for washing, and rows upon rows of pots and pans hanging from the
   rafters. The long table at the side of the room is where the children take
-  their meals. You can leave to the southwest.
+  their meals. You can leave to the southwest. {fiona-at-the-basin}
 
   after the player entering
     first time
@@ -715,16 +755,40 @@ create Widow Fiona
   though sometimes you are loathe to admit it. She likes you and occasionally
   does you a good turn when you're in trouble with Widow Theresa.
 
-  phrase present:
-    Widow Fiona is here, washing the last of the dinner dishes.
-
-  on every turn while Widow Fiona is here and one chance in 5
+  on every turn while Widow Fiona is here and one chance in 5 and before gallows
     phrase fiona-idle
   end on
 
   on the player talking
-    refuse fiona-fi1-stub
+    refuse when the raid is pending: fiona-fi1-stub
+    refuse when the raid is pounding: fiona-just-go
+    refuse when the raid is keyed: fiona-no-time
+    phrase fiona-fi22-stub when the raid is waking
+    phrase raid-begins when the raid is waking
+    start the player's banging when the raid is waking
+    change the raid to pounding when the raid is waking
+    phrase fiona-fi26-stub when the raid is aftermath
+    move the large brass key to the player when the raid is aftermath
+    change the raid to keyed when the raid is aftermath
   end on
+
+  on the player showing
+    refuse when the raid is waking: fiona-knows-all-about-it
+    refuse when the raid is pounding: fiona-just-go
+  end on
+
+  on the player giving
+    refuse when the raid is waking: fiona-knows-all-about-it
+    refuse when the raid is pounding: fiona-just-go
+  end on
+
+## Fiona's initial appearance in the kitchen (`story.ni:6080`) — a room
+## marker, since a presence line cannot vary by where she stands (GH #364);
+## only before the hanging, as the source's line was written for.
+
+define phrase fiona-at-the-basin, stopping while Widow Fiona is in the Kitchen and before gallows
+  Widow Fiona is here, washing the last of the dinner dishes.
+end phrase
 
 define phrase fiona-idle, randomly
   Widow Fiona grunts as she leans over the basin's edge to dunk another
@@ -834,16 +898,28 @@ create the privy window
   end on
 
   on the player entering
-    phrase window-escape
+    phrase window-escape when before gallows
+    phrase shannon-through-the-window when the raid is keyed
+    move Widow Shannon to the Behind Maiden House when the raid is keyed
+    change the company to escorting when the raid is keyed
     change the privy window to climbed
+    change the raid to escaped when the raid is keyed
     move the player to the Behind Maiden House
   end on
 
   on the player climbing
-    phrase window-escape
+    phrase window-escape when before gallows
+    phrase shannon-through-the-window when the raid is keyed
+    move Widow Shannon to the Behind Maiden House when the raid is keyed
+    change the company to escorting when the raid is keyed
     change the privy window to climbed
+    change the raid to escaped when the raid is keyed
     move the player to the Behind Maiden House
   end on
+
+## The second climb, after the raid (`story.ni:10010-10025`), is Chapter 8's
+## opening beat — Shannon comes out after her (`red-gate.chord` carries the
+## text) — and Chapter VIII's row begins on `escaped`.
 
 define phrase hole-too-small
   It's way too small for you to fit into. Thank the Goddesses.
@@ -892,19 +968,38 @@ end phrase
 create the Laundry
   a room
   aka laundry room, washing, wash room
+  north to the Secret Closet
+  north is blocked while the gap in the wall is not in the Laundry: no-way-north
+  north is blocked while the raid is aftermath: not-in-there-again
+  north is blocked while the raid is keyed: not-in-there-again
+  northwest is blocked while the raid is pounding: shannon-get-into-the-closet
 
   The air in here is filled with steam and the sharp stink of lye soap.
   Moisture trickles down the walls, and puddles of water splash underfoot. The
-  main hallway lies northwest.
+  main hallway lies northwest. {shannon-at-the-tub}
 
-  after the player entering
+  after the player entering while before gallows
     first time
       phrase shannon-sh1-stub
   end after
 
-  after the player going while Widow Shannon is in the Laundry
+  after the player entering while the raid is pounding
+    first time
+      phrase shannon-opens-the-board
+      move the gap in the wall here
+      change the gap in the wall to opened
+  end after
+
+  after the player going while Widow Shannon is in the Laundry and before gallows
     phrase shannon-goodbye
   end after
+
+## The closet's way north does not exist until Shannon opens the board: the
+## platform's own line stands in for the exit (`story.ni:9932`).
+
+define phrase no-way-north
+  You can't go that way.
+end phrase
 
 create the washtub
   aka tub, wooden tub, huge tub, huge wooden washtub
@@ -1008,17 +1103,30 @@ create Widow Shannon
   children, particularly the toddlers, and does most of the cleaning and
   cooking for Maiden House.
 
-  phrase present:
-    Widow Shannon is bent over the big washtub in the corner, scrubbing out
-    the toddlers' nappies.
-
-  on every turn while Widow Shannon is here and one chance in 4
+  on every turn while Widow Shannon is here and one chance in 4 and before gallows
     phrase shannon-idle
   end on
 
   on the player talking
+    refuse when the raid is pounding: shannon-get-inside
+    refuse when the raid is aftermath: shannon-talk-later
+    refuse when the raid is keyed: shannon-talk-later
+    refuse when the player is in the Duke's House: reluctant-to-break-silence
+    refuse when the company is escorting: shannon-sh13-stub
     refuse shannon-sh1-stub
   end on
+
+  when Jack moves, while the company is escorting
+    move Widow Shannon here
+  end when
+
+## Shannon's initial appearance (`story.ni:6420`) — a room marker (GH #364),
+## before the hanging only; the source finishes her laundry that morning.
+
+define phrase shannon-at-the-tub, stopping while Widow Shannon is in the Laundry and before gallows
+  Widow Shannon is bent over the big washtub in the corner, scrubbing out
+  the toddlers' nappies.
+end phrase
 
 ## `ATMOS_Shannon_Laundry` (`story.ni:6437`), plain texture (P-9).
 
@@ -1068,6 +1176,7 @@ create the Behind Maiden House
   north is blocked: park-wall-too-high
   up is blocked: park-wall-too-high
   east is blocked: no-need-to-sneak-in
+  northeast is blocked while the company is escorting: shannon-cut-through-the-park
 
   This tiny spur of an alleyway runs between the back of Maiden House and the
   high stone wall surrounding the park. You can make your way around to the
@@ -1075,13 +1184,16 @@ create the Behind Maiden House
 
 create the stone wall
   aka wall, mortar wall, high wall, park wall, flagstones
-  scenery
+  scenery, climbable, enterable
   in the Behind Maiden House
 
   The stone wall is about ten feet high.
 
   on the player climbing
-    refuse park-wall-too-high
+    refuse when the company is not escorting: park-wall-too-high
+    phrase shannon-boosts-you-over
+    move Widow Shannon to the East Commerce Street
+    move the player to the East Commerce Street
   end on
 
 create the back window

@@ -1,0 +1,908 @@
+## ===========================================================================
+## THE GALLOWS AND THE RAID ON MAIDEN HOUSE — Book 9 (`story.ni:9581-9691`)
+## and Book 10 (`story.ni:9692-10007`), Chapter 7.
+##
+## The change document ("Chapter 7 — The Gallows and the Raid on Maiden
+## House", 2026-09-01/02) authorizes both books whole, from the butler's side
+## door to the privy window: the crowd on East Commerce Street, the gallows
+## in the square, Fossville's three beats and the blackout, the waking in her
+## bunk with Fiona, the pounding on the door, the closet and the six rows
+## heard through the wall, Theresa's expulsion, the key, the window. Every
+## line is Gentry's; conversations are STUBS under the standing rule. The
+## raid's layer on Maiden House's rooms and widows lives in
+## `maiden-house.chord`, the hanging's layer on the two streets in
+## `commerce-street.chord` and `lords-market.chord`; this file carries what is
+## new — the square's people, the closet, and the two clocks the chapter
+## runs on.
+##
+## THE RULINGS (change document, Chapter 7):
+##   * EXTENT — the hanging and the raid together; Shannon climbing out after
+##     her (`story.ni:10020`) is Chapter 8's first beat, so the window prints
+##     nothing of its own here and Chapter VIII's row begins as she goes
+##     through it (`the raid becomes escaped`).
+##   * THE SQUARE — new content, fear without teeth: mercenaries ringing the
+##     platform and in the crowd on the way, and she keeps her head down.
+##     TWO placeholders: East Commerce Street's first entry with the crowd,
+##     and the square's first entry before the execution fires (gap 1). The
+##     set piece plays untouched.
+##   * THE TRIGGER — the hanging begins when the butler shoves her out
+##     (Chapter 6's fourth gap): the crowd and the gallows are placed by the
+##     butler's release clause (`black-gate.chord`), before her first room
+##     prints. (A `when the butler moves` clause here did not fire on his
+##     move offstage — an offstage move raises no move event, GH #373.)
+##   * WHAT THE MERCENARIES KNOW — they still hunt the boy Jack: the captain's
+##     "she"/"the girl" through the wall convert to "he"/"the boy", his
+##     capture-line "boy" carries. Theresa's raid words are the boy words
+##     ("There he is!"; "he has done something unconscionable").
+##   * SHANNON'S RUSE — she screams "Jacqueline" anyway; the captain does not
+##     connect it. Carried verbatim.
+##   * FIONA AND THE NAME — knowledge from the Duke; `FI28`/`FI30` carry as
+##     written, "like a daughter" included (stubs name them). Her bedside and
+##     raid "Jacqueline"s before that are the source's and carry with
+##     `## DAVID:` marks, as Chapter 3's do.
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## `talk to fiona` at the bedside prints the FI22-FI25 TODO and ENDS the
+## scene — the raid begins on that turn, as FI25's firing begins it in the
+## source. `talk to fiona` in the hallway after the expulsion prints the
+## FI26-FI30 TODO and gives the brass key, as FI30 does.
+##
+## THE TWO CLOCKS: the execution is one turn after her first entry to the
+## square (the designers' own note: waiting on `x gallows` "is stupid"), then
+## one beat a turn — B_H1 on the expiry, B_H2 and B_H3 on two more one-turn
+## clocks — and the blackout on the third. THE BANGING starts with the raid
+## text: nine named turns with the pounding line each turn (`meanwhile`), and
+## the expiry is the capture if she is anywhere but the closet — with teeth,
+## §5's standing consequence; entering the closet stops it. The six rows are
+## a five-turn clock's bodies and its expiry.
+##
+## GAPS (change document): the square's beats (two placeholders); how she
+## leaves a square full of mercenaries (the source's blackout and FI22's
+## "Shannon found you, after the crowd dispersed" are built as written);
+## FI25's weight (carried as written, in the stub); the loose thread (nothing
+## built).
+##
+## NOT CARRIED, with reasons:
+##   * "without printing a room description" on the move to her bunk and the
+##     source's `pause the game` — an authored move narrates its destination.
+##   * The crowd's `[if the location is Lords Market]` tails — examine and
+##     talk answer by room through refusals.
+##   * `kiss fossville`, the source's `Chapter 7 - Mercenaries Again`
+##     heading, the gallows as a supporter (Bobby and the Baron stand in the
+##     square; "You can't reach him" is Bobby's talk refusal).
+##   * The closet door "invisible before it has ever been opened" — the gap
+##     is offstage until Shannon opens it, which is the same thing.
+##   * `hide in the gap` rides the platform's hiding on the gap; bare `hide`
+##     is a story action; both go in only from the Laundry with the gap open.
+##   * Fiona's and Shannon's presence lines are now room markers (a presence
+##     line cannot vary, GH #364): the kitchen's "washing the last of the
+##     dinner dishes" and the laundry's "bent over the big washtub" print only
+##     before the hanging, where the source's initial appearances stood.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE HANGING (`story.ni:9585-9690`) — the state the streets read, and the
+## clocks. `pending` until the butler is done with her; `gathering` while the
+## crowd flows east; `speaking` once the Baron is on the platform; `over`
+## after the blackout.
+## ---------------------------------------------------------------------------
+
+define timer execution for the player
+end timer
+
+define timer speech for the hanging
+end timer
+
+define timer verdict for the hanging
+end timer
+
+create the hanging
+  aka bobby's hanging, the execution
+  proper
+  states: pending, gathering, speaking, over
+
+  Bobby's hanging.
+
+  when the player's execution expires
+    move Bobby here
+    move Baron Fossville here
+    change the hanging to speaking
+    phrase execution-b-h1
+    start speech
+  end when
+
+  when speech expires
+    move Hester Rudup here
+    phrase execution-b-h2
+    start verdict
+  end when
+
+  when verdict expires
+    phrase execution-b-h3
+    move Bobby offstage
+    move Baron Fossville offstage
+    move Hester Rudup offstage
+    move the crowd of spectators offstage
+    move the gallows offstage
+    move the servants to the Lord's Market
+    move Widow Fiona to the Dormitory
+    move Widow Shannon to the Laundry
+    change the hanging to over
+    change the raid to waking
+    move the player to the Dormitory
+    phrase bedside-waking
+    phrase fiona-fi21-stub
+  end when
+
+## `B_H1-3` (`story.ni:9662-9669`), verbatim.
+
+define phrase execution-b-h1
+  A man steps up onto the wooden platform. By squeezing between two
+  spectators and craning your neck, you can just make out that it is Baron
+  Fossville addressing the crowd.
+
+  'Citizens of Toresal,' he shouts, 'as Lord of this City, it is my duty to
+  administer justice within its gates, and punish those who transgress
+  against the Queen's Law. More often than not, this duty is a heavy burden.
+  Though I may wish to be lenient, consideration for the sanctity of the law
+  and the safety of the Queen's subjects must always outweigh my softer
+  instincts. Today, this burden weighs particularly upon me, for today I must
+  administer the most stringent punishment allowed by the law.'
+
+  Soldiers prod a second man up onto the platform. The black bag covers his
+  face, but you recognize him by the clothes he's wearing — it's Bobby!
+end phrase
+
+define phrase execution-b-h2
+  'This man before you stands accused of plotting high treason against the
+  city of Toresal,' shouts the Baron. 'The evidence against him has been
+  weighed, and he has been found guilty by the Honorable Magistrate Hester
+  Rudup.'
+
+  Fossville gestures to a third man standing on his other side, a gaunt man
+  wearing crimson robes — the man who captured you last night at the
+  fountain.
+end phrase
+
+define phrase execution-b-h3
+  'Despite the grief it causes me, the penalty for this most heinous crime is
+  clear.' Fossville pauses; the crowd is hanging on his every word. 'By the
+  power vested in me and in accordance with the Queen's Law... I hereby
+  sentence this man to hang by the neck until dead.'
+
+  The Baron turns to one of his soldiers at the platform's base and nods his
+  head.
+
+  Later, you cannot remember whether you really heard the clunk of the
+  trapdoor falling open, the rope snapping taut, or whether you only imagined
+  it. You remember screaming, clawing at the spectators in front of you, and
+  being pushed back by rough, angry hands. You stumbled and fell onto the
+  cobblestones. You never saw his body drop.
+
+  Everything goes black.
+end phrase
+
+## THE SQUARE'S BEATS (change document, Chapter 7, "The square" — David: "B",
+## fear without teeth): mercenaries in the crowd on the way and ringing the
+## platform, and she keeps her head down while the crowd keeps her hidden.
+## Two placeholders; the beats and their lines are David's (gap 1).
+
+define phrase street-crowd-mercenaries-stub
+  (TODO during play-testing — the way to the square: Chapter 6's mercenaries
+  somewhere in the crowd flowing east, seen or heard, and what keeps her head
+  down. Fear, no teeth. The beats and the lines are David's.)
+end phrase
+
+define phrase square-mercenaries-stub
+  (TODO during play-testing — the square: mercenaries ringing the platform,
+  and the crowd that keeps her hidden while she watches. Fear, no teeth. The
+  beats and the lines are David's.)
+end phrase
+
+## `story.ni:9600-9603`
+
+define phrase crowd-too-thick
+  The crowd is too thick in that direction; everyone is heading east, towards
+  Lord's Market.
+end phrase
+
+define phrase more-people-wander-past
+  More people wander past, heading east towards Lord's Market.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE GALLOWS and the crowd (`story.ni:9612-9645`)
+## ---------------------------------------------------------------------------
+
+## "Some sort of wooden structure" until she looks, then a gallows: the first
+## look is the reveal (its text replaces the description), and the square's
+## marker follows the state.
+
+create the gallows
+  aka wooden structure, structure, platform, wooden platform, scaffold, scaffolding, raised platform, rope, trapdoor
+  scenery
+  states: vague, recognized
+
+  The gallows stands stark against the late morning sky.
+
+  on the player examining
+    phrase gallows-first-look when the gallows is vague
+    change the gallows to recognized when the gallows is vague
+  end on
+
+  on the player touching
+    refuse too-many-people-in-your-way
+  end on
+
+  on the player climbing
+    refuse too-many-people-in-your-way
+  end on
+
+  on the player entering
+    refuse too-many-people-in-your-way
+  end on
+
+  on the player taking
+    refuse too-many-people-in-your-way
+  end on
+
+  on the player pushing
+    refuse too-many-people-in-your-way
+  end on
+
+  on the player attacking
+    refuse too-many-people-in-your-way
+  end on
+
+define phrase gallows-first-look
+  It's a raised platform, with some sort of scaffolding built over it, and a
+  rope dangling from...
+
+  Suddenly your mouth goes dry. It's a gallows.
+end phrase
+
+define phrase too-many-people-in-your-way
+  There are too many people in your way, and you can't push through.
+end phrase
+
+## The square's paragraph about it (`story.ni:9631`), by state.
+
+define phrase gallows-erected, stopping while the gallows is in the Lord's Market and the gallows is vague
+  There is some sort of wooden structure erected in the center of the square.
+end phrase
+
+define phrase gallows-erected-seen, stopping while the gallows is in the Lord's Market and the gallows is recognized
+  A gallows has been erected in the center of the square.
+end phrase
+
+define phrase cant-reach-him
+  You can't reach him. There are too many people in the way.
+end phrase
+
+## The crowd (`story.ni:9635-9645`): a follower over the two rooms of the
+## source's `occasionally crowded place`, offstage before and after.
+
+create the crowd of spectators
+  aka crowd, spectators, spectator, people, person, pedestrians, pedestrian, man, men, woman, women, aristocrats, aristocrat, servants, servant, merchants, merchant, beggars, beggar
+  scenery, plural
+
+  The crowd is made up of people from every part of the city. Men and women,
+  aristocrats and servants, merchants and beggars, all rubbing shoulders.
+
+  when Jack moves, while the hanging is gathering and (the player is in the East Commerce Street or the player is in the Lord's Market)
+    move the crowd of spectators here
+  end when
+
+  when Jack moves, while the hanging is speaking and (the player is in the East Commerce Street or the player is in the Lord's Market)
+    move the crowd of spectators here
+  end when
+
+  on the player examining
+    refuse when the player is in the Lord's Market: crowd-craning
+  end on
+
+  on the player talking
+    refuse when the player is in the Lord's Market: crowd-intent-on-the-square
+    refuse crowd-intent-on-the-market
+  end on
+
+  on the player touching
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    refuse crowd-dont-attract-attention
+  end on
+
+  on the player pushing
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    refuse crowd-dont-attract-attention
+  end on
+
+  on the player attacking
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    refuse crowd-dont-attract-attention
+  end on
+
+  on the player taking
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    refuse crowd-dont-attract-attention
+  end on
+
+define phrase crowd-craning
+  The crowd is made up of people from every part of the city. Men and women,
+  aristocrats and servants, merchants and beggars, all rubbing shoulders and
+  craning to see.
+end phrase
+
+define phrase crowd-intent-on-the-market
+  No one pays any attention to you. Everyone is too intent on getting to
+  Lord's Market.
+end phrase
+
+define phrase crowd-intent-on-the-square
+  No one pays any attention to you. Everyone is too intent on watching the
+  scene unfold in the middle of the square.
+end phrase
+
+define phrase crowd-dont-attract-attention
+  You probably shouldn't attract attention to yourself, at least until you
+  see where everyone is going.
+end phrase
+
+define phrase crowd-can-barely-move
+  You can't. There are too many people pressing in on you; you can barely
+  move.
+end phrase
+
+## ---------------------------------------------------------------------------
+## BARON FOSSVILLE and HESTER RUDUP on the platform (`story.ni:9651-9675`).
+## Fossville does NOT see her (Chapter 6); Rudup does (Chapter 4) and has no
+## line to her here. Both offstage until the execution, and after it.
+## ---------------------------------------------------------------------------
+
+create Baron Fossville
+  aka fossville, baron, the baron, lord of the city, tall man, dark-cloaked figure
+  a person, proper
+  pronouns he
+
+  The Baron looks a bit haggard, but he projects an energy into the crowd
+  that makes him seem bigger than he is. This is a performance to him, you
+  realize; and he is playing it for all it is worth.
+
+  phrase present:
+    Baron Fossville stands on the platform, addressing the crowd.
+
+  on the player listening
+    refuse no-choice-but-to-listen
+  end on
+
+  on the player talking
+    refuse crowd-can-barely-move
+  end on
+
+  on the player attacking
+    refuse crowd-can-barely-move
+  end on
+
+  on the player touching
+    refuse crowd-can-barely-move
+  end on
+
+define phrase no-choice-but-to-listen
+  You don't have much choice.
+end phrase
+
+create Hester Rudup
+  aka rudup, magistrate, honorable magistrate, gaunt man, man in crimson robes, man in red robes, chain of office
+  a person, proper
+  pronouns he
+
+  He looks much the same as he did when you encountered him last night,
+  although now he is wearing his magistrate's chain of office over the red
+  robes. He stares coolly out over the crowd.
+
+  phrase present:
+    Hester Rudup stands at the Baron's side in his crimson robes.
+
+  on the player talking
+    refuse crowd-can-barely-move
+  end on
+
+  on the player attacking
+    refuse crowd-can-barely-move
+  end on
+
+  on the player touching
+    refuse crowd-can-barely-move
+  end on
+
+## ---------------------------------------------------------------------------
+## THE RAID (`story.ni:9698-10006`) — the state Maiden House reads, and its
+## two clocks. `pending` until the blackout; `waking` at the bedside;
+## `pounding` from the raid text; `hidden` in the closet; `aftermath` from the
+## closet to the expulsion and the key; `keyed` once she has it; `escaped`
+## through the window, which is Chapter VIII's row.
+## ---------------------------------------------------------------------------
+
+## The pounding (`story.ni:9819-9821`): nine turns, the line each turn, the
+## capture on the expiry unless she is in the closet.
+
+define timer banging for the player
+  pound-one
+  pound-two
+  pound-three
+  pound-four
+  pound-five
+  pound-six
+  pound-seven
+  pound-eight
+  pound-nine
+  meanwhile
+    phrase pounding-continues
+end timer
+
+## The six rows heard through the wall (`story.ni:9968-9982`), one a turn
+## once she is inside: five as this clock's turns, the sixth on its expiry.
+## The clock is the player's: a timer owned by an offstage entity speaks no
+## turn bodies (the raid's own `overheard` printed nothing — GH #372).
+## The captain's "she"/"the girl" are "he"/"the boy" (the ruling: they still
+## hunt the boy Jack); Theresa's words are the boy words; Shannon's ruse is
+## carried as written, "Jacqueline" and all.
+
+define timer overheard for the player
+  row-one
+    The pounding suddenly stops. Heavy footsteps tromp into the building,
+    making the floorboards shudder beneath your feet.
+
+    'Where is he?' growls a rough voice. It's hard to tell from two rooms
+    away, but it sounds very similar to the mercenary captain you heard
+    yesterday morning, at the Grubber's Market.
+  row-two
+    'Where is who, sir?' That must be Fiona.
+
+    'Don't play games with me, woman,' snaps the first voice. 'I've had my
+    fill of it. The old Duke isn't here to protect you anymore, and if one of
+    my men were to be careless and injure someone, it would rest but lightly
+    on the Baron's conscience. Now, we know he came here after the hanging.
+    Where is he?'
+
+    'I can tell you, good sir,' says a third voice.
+
+    Bitter anger wells up in your throat, even as fear turns your stomach
+    cold. That was Theresa!
+  row-three
+    'Widow Theresa-' Fiona begins, in a strangled voice, but Theresa
+    interrupts her.
+
+    'Oh, do spare us your indignation, Fiona,' she snaps. 'I've stood by for
+    years while you protected and coddled that child, and I tell you I've had
+    my fill of it. Now he has done something unconscionable — obviously, or
+    else the good Baron would not be looking for him — and I for one will not
+    stand in the way of the law merely so that you can continue to bestow
+    favoritism on one ungrateful little brat.'
+
+    There is a long silence. You can feel your cheeks burning. Theresa has
+    always disliked you, but you never thought she would be so treacherous as
+    to turn you over to the Baron's men.
+  row-four
+    Finally, Theresa speaks: 'If you look in the laundry room, you will find
+    a hidden closet in the north wall. The child is hiding there.'
+
+    'My thanks, madam,' grunts the mercenary captain. 'I'll make sure the
+    Baron hears of your cooperation when we-'
+
+    Suddenly Shannon is screaming, 'Jacqueline! Jacqueline, wait!' Shouts.
+    Running footsteps. What is going on? You hear footsteps coming down the
+    hall, towards the laundry room... closer, closer... but then they
+    suddenly turn away from the laundry room, towards... the privy?
+
+    'Jacqueline... oh, Goddesses.' That's Shannon's voice.
+
+    'What is it?' yells the mercenary captain. 'Where did the boy go?'
+
+    'She... she got away from me, Miss Fiona,' wails Shannon. 'I was trying
+    to get her into the hiding place, just like you said, but she slipped
+    past me and wriggled out the privy window. You know how fast she can get
+    through that window, Miss Fiona. She could be anywhere in the city by
+    now. I'm so sorry, Miss Fiona, so sorry.'
+
+    You can't help but grin. You've always thought of Shannon as being a
+    trifle dim-witted, and now you'll have to revise your opinion.
+  row-five
+    The mercenary captain utters a curse so foul that you actually wince.
+    'Don't just stand there, you bleeding dims,' he yells, 'get out there and
+    find her! You two, keep an eye on the alley in case she comes back. Go!
+    Go! Find her or I'll have your hides!' The footsteps run back up the
+    hall, growing fainter this time, then vanishing altogether as they cross
+    the threshold and exit Maiden House.
+
+    You let out a long, shaky breath.
+end timer
+
+create the raid
+  aka raid on maiden house, the baron's men
+  proper
+  states: pending, waking, pounding, hidden, aftermath, keyed, escaped
+
+  The raid on Maiden House.
+
+  when the player's banging expires, while the player is not in the Secret Closet
+    kill the player raid-capture
+  end when
+
+  when the player's overheard expires
+    phrase closet-door-opens
+    change the raid to aftermath
+    move the player to the Laundry
+  end when
+
+## The capture (`story.ni:9842`): "There he is!" (Theresa's boy words); the
+## captain's "boy" as written.
+
+define phrase raid-capture
+  Suddenly the knocking pauses. Everyone seems to hold their breath for one
+  silent moment.
+
+  Then the front door crashes open and the mercenaries rush in. Children
+  scream. Fiona stands in their way, shouting something you cannot hear.
+  Scarred arms shove her brutally aside. Theresa points at you, crowing,
+  'There he is!' but the men don't even look in her direction.
+
+  The mercenary captain looms over you. His lip pulls back from chipped,
+  yellow teeth.
+
+  'You're beginning to damage my credibility, boy,' he growls.
+
+  And then his fist crashes into the side of your head, and everything goes
+  black.
+end phrase
+
+define phrase pounding-continues, randomly
+  The pounding continues, rattling the door in its frame.
+or
+  The pounding continues. 'Open this door, widow, before we break it down!'
+or
+  The pounding continues. 'Open up!'
+or
+  The pounding continues.
+end phrase
+
+## `story.ni:9702`, the waking — Bedside Consolation begins.
+
+define phrase bedside-waking
+  You are lying on something soft. Blankets, a thin mattress — you're back in
+  Maiden House, lying in your own bunk. Fiona is sitting on the edge of the
+  bed, watching you with a tender expression. Her eyes are red and raw,
+  though, like she's been crying. For a moment, you feel strange,
+  disconnected. You wonder what's wrong.
+
+  And then it comes back to you. It's Bobby. Bobby is dead.
+end phrase
+
+define phrase fiona-fi21-stub
+  (TODO during play-testing — conversation FI21: "You feel like there's
+  something important you should say to Fiona, but you can't think of what
+  it is." Fiona knows everything and does NOT see; talk to her.)
+end phrase
+
+## `FI22-FI25` (`story.ni:9720-9727`): the croak, the apology, "Bobby is
+## dead", the sobs — and FI25's "I never told him my name!… what if he did
+## know you?" carried as written, its weight David's (gap 3). FI25 ends the
+## scene into the raid.
+
+define phrase fiona-fi22-stub
+  (TODO during play-testing — conversation FI22-FI25: "How did I get here?"
+  — "Shannon found you, after the crowd dispersed. She brought you back
+  here."; "I'm sorry I snuck out" — "Shh. It's all right."; "Bobby is dead.
+  They killed Bobby." — the sobs, "Oh child... oh my dear child...", "I never
+  told him my name!… what if he did know you? What if he knew you even
+  better than you knew yourself?" Fiona does not see.)
+end phrase
+
+## `story.ni:9800`, the raid begins. DAVID: "Jacqueline" is Fiona's word —
+## §3g; carried as the source has it.
+
+define phrase raid-begins
+  Suddenly, someone pounds on the front door. The sobs freeze in your throat
+  as a voice outside shouts, 'Open in the name of Baron Fossville!'
+
+  Fiona looks horrified. 'It's the Baron!' she whispers. 'I didn't think he'd
+  come here so soon... quick, Jacqueline! Go to the laundry room!'
+end phrase
+
+## `story.ni:9705-9713`
+
+define phrase still-in-shock, stopping
+  You try to leave, but you're still disoriented, light-headed, and the floor
+  seems to tilt beneath your feet. 'Wait,' Fiona says gently, putting her
+  hand on your shoulder and guiding you back to the bed. 'Just wait. Rest.
+  You're still in shock.'
+or
+  You try to leave, but you're still disoriented, light-headed, and the floor
+  seems to tilt beneath your feet.
+end phrase
+
+define phrase fiona-knows-all-about-it
+  Widow Fiona nods and presses the letter back into your hand. 'I know,
+  child,' she says, 'I know all about it. But there'll be time to speak more
+  of that later.'
+end phrase
+
+## The Banging's refusals (`story.ni:9823-9838`). DAVID: "Jacqueline" is
+## Fiona's and Shannon's word — Shannon's is the tell and stays; Fiona's is
+## §3g's, carried as the source has it.
+
+define phrase are-you-insane
+  Are you insane? Fossville's men are right outside!
+end phrase
+
+define phrase fiona-get-into-the-laundry
+  'Jacqueline, where are you going?' hisses Fiona. 'Get into the laundry
+  room, quickly!'
+end phrase
+
+define phrase fiona-just-go
+  'There's no time for that now,' she cries, 'just go!'
+end phrase
+
+define phrase shannon-get-inside
+  'No time, no time!' whispers Shannon. She beckons you towards the secret
+  door. 'Get inside!'
+end phrase
+
+define phrase shannon-get-into-the-closet
+  'Where are you going, Jacqueline?' cries Shannon. 'Get inside the closet!'
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SECRET CLOSET (`story.ni:9848-9946`)
+## ---------------------------------------------------------------------------
+
+## The gap in the wall: offstage until Shannon pushes the board aside, then
+## the Laundry's way north; a scenery thing rather than a Chord door, so it
+## can be absent before the raid and shut behind her without a lock.
+
+create the gap in the wall
+  aka gap, boards, board, opening, narrow opening, dark opening, secret door, secret closet door, closet door, hidden closet, hiding place
+  scenery, enterable
+  states, reversible: opened, shut
+
+  A dark gap in the wall leads to a secret closet.
+
+  phrase present:
+    A gap between boards in the northern wall leads into a tiny, dark
+    closet.
+
+  on the player examining
+    refuse when the player is in the Secret Closet: board-replaced
+  end on
+
+  on the player opening
+    refuse when the raid is hidden: barons-men-would-catch-you
+    refuse when the raid is aftermath: not-in-there-again
+    refuse when the raid is keyed: not-in-there-again
+  end on
+
+  on the player entering
+    refuse when the raid is aftermath: not-in-there-again
+    refuse when the raid is keyed: not-in-there-again
+    move the player to the Secret Closet
+  end on
+
+  on the player hiding
+    refuse when the raid is aftermath: not-in-there-again
+    refuse when the raid is keyed: not-in-there-again
+    move the player to the Secret Closet
+  end on
+
+## Bare `hide` (`story.ni:9861`): the platform's hiding wants a target.
+
+define action taking-cover
+  grammar
+    hide
+    hide myself
+    take cover
+  the player must be in the Laundry: nowhere-to-hide-stub
+  refuse when the gap in the wall is not in the Laundry: nowhere-to-hide-stub
+  refuse when the raid is aftermath: not-in-there-again
+  refuse when the raid is keyed: not-in-there-again
+  move the player to the Secret Closet
+
+## DAVID: the source has no line for hiding anywhere but the open closet
+## (its hiding action needs a target); this is the one line the port needs.
+
+define phrase nowhere-to-hide-stub
+  (TODO during play-testing — a bare `hide` anywhere but the laundry with
+  the board open: no source line exists; David's.)
+end phrase
+
+define phrase board-replaced
+  Shannon has replaced the board, sealing you in.
+end phrase
+
+define phrase barons-men-would-catch-you
+  The Baron's men would catch you the instant you left this hiding place.
+end phrase
+
+define phrase not-in-there-again
+  Ugh. You're not going in there again; that was almost as bad as the jail
+  cell.
+end phrase
+
+## `story.ni:9852`. DAVID: "Jacqueline" — Shannon's tell; stays.
+
+define phrase shannon-opens-the-board
+  As you enter the room, Widow Shannon rushes over and pushes against one of
+  the boards in the northern wall. It moves aside, revealing a narrow, dark
+  opening.
+
+  'Quick, Jacqueline,' she whispers, 'in here!'
+end phrase
+
+create the Secret Closet
+  a room
+  aka closet, secret closet, dark closet, tiny closet, alcove, hiding place, darkness
+  south is blocked while the raid is hidden: barons-men-would-catch-you
+  north is blocked: darkness-presses-in
+  east is blocked: darkness-presses-in
+  west is blocked: darkness-presses-in
+  up is blocked: darkness-presses-in
+  down is blocked: darkness-presses-in
+
+  It is pitch black. The walls press close to either side; you can barely
+  breathe.
+
+  after the player entering while the raid is pounding
+    phrase squeeze-in
+    stop the player's banging
+    change the raid to hidden
+    change the gap in the wall to shut
+    start the player's overheard
+  end after
+
+define phrase squeeze-in
+  You squeeze in, and Shannon pulls the board back into place, shutting you
+  into darkness.
+end phrase
+
+define phrase darkness-presses-in
+  Darkness presses in on you from every direction.
+end phrase
+
+## The sixth row (`story.ni:9982`), on the clock's expiry.
+
+define phrase closet-door-opens
+  The door opens, and Shannon takes your hand as you stumble out of the
+  stifling darkness.
+
+  'That was too close,' she says.
+end phrase
+
+create the closet walls
+  aka walls, wall, close walls
+  scenery, plural
+  in the Secret Closet
+
+  It's pitch black in here!
+
+  on the player touching
+    refuse walls-like-a-coffin
+  end on
+
+define phrase walls-like-a-coffin
+  The walls are so close, it feels like a coffin in here.
+end phrase
+
+## Listening in the closet (`story.ni:9917`) — the bare `listen` answers on
+## `backdrops.chord`'s story action; the first-time tail is a `stopping`
+## phrase there.
+
+define phrase harsh-breathing, stopping
+  The sound of your own harsh breathing fills the tiny alcove. If they
+  weren't shouting so much, you're sure the mercenaries outside would be
+  able to hear you.
+or
+  The sound of your own harsh breathing fills the tiny alcove.
+end phrase
+
+## `sing` (`story.ni:9920`) — no standard action; a story action whose one
+## answer is the closet's.
+
+define action singing
+  grammar
+    sing
+    hum
+    whistle
+  refuse when the player is in the Secret Closet: dare-not-make-a-sound
+  refuse sing-elsewhere-stub
+
+define phrase dare-not-make-a-sound
+  You dare not make a sound.
+end phrase
+
+## DAVID: the source's singing answer outside the closet is Inform's own
+## default, not Gentry's; one line, yours.
+
+define phrase sing-elsewhere-stub
+  (TODO during play-testing — singing anywhere but the closet: no source
+  line exists; David's.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## LEAVING MAIDEN HOUSE (`story.ni:9984-10006`)
+## ---------------------------------------------------------------------------
+
+## The expulsion (`story.ni:9998`), verbatim, on entering the Hallway from
+## the closet.
+
+define phrase theresa-expelled
+  Widow Fiona and Widow Theresa are standing in the middle of the hallway,
+  staring each other down. Theresa looks sullen but defiant; Fiona is livid
+  with rage.
+
+  They are silent for a long, tense moment. Then Widow Theresa looks away.
+
+  'Get out,' chokes Fiona. Her arm is extended, one pale finger pointing at
+  the front door. 'Get out and never set foot in this orphanage again.
+  Perhaps when the nights grow cold you may rely on the charity of your
+  precious Baron.'
+
+  Theresa looks at you once — a bitter, helpless glare — and then turns on
+  her heel and walks out, slamming the door behind her.
+end phrase
+
+define phrase fiona-fi26-open-stub
+  (TODO during play-testing — conversation FI26: Fiona takes a deep breath
+  and turns to Jack with a weak smile — "Now, then. We don't have much time
+  before the Baron's men come back, and I'm sure you have questions." Talk to
+  her.)
+end phrase
+
+## `FI27-FI30` (`story.ni:9731-9737`), the ruling: knowledge from the Duke —
+## "I'm sorry I could not tell you sooner, Jacqueline", "Please, Jacqueline",
+## "It's time you learned something of your past, Jacqueline", "I have loved
+## you like a daughter for so long" carry as written. FI30 gives the key.
+
+define phrase fiona-fi26-stub
+  (TODO during play-testing — conversation FI27-FI30: "You're the tutor,
+  aren't you?" — the Duke brought her from Aubrimere fourteen years ago;
+  "Tell me about my father" — "I'm sorry I could not tell you sooner,
+  Jacqueline… Please, Jacqueline, there's so much you need to know now";
+  "What will happen to Widow Theresa?" — "I'll not waste precious time
+  worrying about the fate of a woman who'd turn a child over to armed
+  mercenaries"; "What do I do now?" — out the privy window; the large brass
+  key: "It's time you learned something of your past, Jacqueline. This is
+  yours by right. It is the key to Red Gate Manor"; then Dame Sandler in
+  Lord's Market; "Oh child, I have loved you like a daughter for so long. Go
+  now, and quickly. Be safe." Fiona knows the name from the Duke and does
+  not see.)
+end phrase
+
+## `story.ni:9786-9790`. DAVID: "Jacqueline" — Fiona's, §3g; carried as the
+## source has it.
+
+define phrase fiona-no-time
+  Fiona holds up her hand. 'There is no time, Jacqueline,' she says gently.
+  'You need to get going.'
+end phrase
+
+define phrase fiona-things-to-know
+  Fiona puts a hand on your arm. 'Wait, Jacqueline. There are things you need
+  to know before you leave.'
+end phrase
+
+define phrase not-the-front-door
+  'Not that way,' says Fiona. 'They'll be watching the front door for sure.
+  Sneak out the back, through the privy window.'
+end phrase
+
+define phrase shannon-talk-later
+  'We can talk later,' Shannon says, gently pushing you towards the door.
+  'Right now you should go talk to Widow Fiona.'
+end phrase
+
+## The key (`story.ni:9793`) — Chapter 8's object, given by FI30; the source
+## gives it no description, so its line is FI30's own sentence about it.
+
+create the large brass key
+  aka brass key, key, red gate key, key to red gate manor, manor key
+
+  It is the key to Red Gate Manor, and it opens the way to your history.
