@@ -58,13 +58,12 @@
 ## instrument that is not the cloak is ignored and the slide runs on the
 ## cloak. Gentry's "You can't loop [that] around the cable" waits on a slot
 ## test in a must-line, which Chord does not have (noted seam).
-## AUTHORED BUT UNREACHABLE (GH #333): the instrument-FIRST shapes
-## (`hang/loop/wrap the item … the target`, `put the item over the target`)
-## never reach the cable — the parser seats slots by position, so the
-## target at position 1 lands in the indirect-object seat and the direct
-## object stays empty ("You can't do that."); `hang … on` is also stdlib's
-## own `putting` shape. The `with`/`using` shapes, target first, work. No
-## story change needed when the seat is fixed.
+## The instrument-FIRST shapes (`hang/loop/wrap the item … the target`,
+## `put the item over the target`) reach the cable since Sharpee 5.3.0 (GH
+## #333, fixed 2026-09-03): the parser used to seat slots by position, so the
+## target at position 1 landed in the indirect-object seat and the direct
+## object stayed empty. No story change was needed; `hang cloak on northeast
+## cable` is pinned in the tree beside the `slide down` phrasings.
 ##
 ## Sliding while held refuses with the grab line (`merc-held`), mirroring
 ## the player's `on going` refusal — found 2026-08-30 when a held Jack slid

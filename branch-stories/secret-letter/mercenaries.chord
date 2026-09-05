@@ -210,6 +210,7 @@ create the wandering mercenaries
   when the player's tent-escape expires, while the player is in the Top of the Post
     phrase pole-escape-begins
     move the wandering mercenaries to the Base of the Center Post
+    move the chasing mercenaries to the Top of the Post
     phrase pole-safe
     start the player's pole-problem
   end when
@@ -223,12 +224,15 @@ create the wandering mercenaries
 
   when the player's pole-escape expires, while the player is in the Top of the Post
     move the wandering mercenaries to the Base of the Center Post
+    move the chasing mercenaries to the Top of the Post
     phrase pole-safe
     start the player's pole-problem
   end when
 
   when the player's pole-problem expires
     start the player's pole-destruction
+    move the axe to the Top of the Post
+    change the chasing mercenaries to chopping
   end when
 
   when the player's pole-destruction expires
@@ -374,10 +378,14 @@ end trait
 ## Gentry's except the three exit refusals, which the source enforced
 ## silently ("stop the action") and which are David's to write.
 ##
-## Not carried: the axe as an examinable thing and the "You can't do
-## anything to the mercenaries while you're way up here" refusals — an
-## NPC-carried thing is out of the player's scope (GH #313), and the pair is
-## a room below, out of scope anyway.
+## Carried since 5.3.0 (GH #313 fixed 2026-09-03; this block 2026-09-04):
+## the source's Sections 2-3 of the chase (`story.ni:4068-4124`) — the pair
+## seen from the Top as scenery in its own right, and the axe. The pair
+## itself still stands a room below, out of scope by distance, so the device
+## is the source's own: a second, scenery-only entity at the Top that the
+## `pole-safe` clauses above put there, and the axe moved up when the pole
+## clock starts (its first named turn is POLE1, "carrying an axe"). See THE
+## VIEW FROM THE TOP below.
 ## ---------------------------------------------------------------------------
 
 define timer tent-escape for the player
@@ -407,6 +415,108 @@ define timer pole-destruction for the player
     There is a solid chock! from below as the axe bites into wood, and the
     entire post shivers.
 end timer
+
+## ---------------------------------------------------------------------------
+## THE VIEW FROM THE TOP (`story.ni:4068-4124`)
+##
+## From the Top of the Post the mercenaries are Gentry's "chasing
+## mercenaries" scenery: examine and listen answer, with the pole-destruction
+## variants once the axe is at work; anything else is "way up here". The axe
+## arrives with POLE1 and is examinable and audible from above. Every line is
+## Gentry's. The source's catch-all ("doing something other than examining or
+## listening") has no Chord spelling, so the actions a player is likely to try
+## are refused one by one; an unlisted verb falls to the platform's own line.
+##
+## Both start offstage. Nothing moves them back: the player never returns to
+## the Top after the slide, and `down` is blocked for the rest of the chase.
+## ---------------------------------------------------------------------------
+
+## `huddled` → `chopping` when the pole clock starts (the source's "if Pole
+## Destruction is happening"); a `phrase detail while` cannot read a timer by
+## possessive, so the scenery carries the phase as its own state.
+
+## `kicking` is a story dispatch action, so its refusal rides a trait (an
+## entity `on` clause never fires on the dispatch path), as `kick-escape` does.
+
+define trait kick-way-up-here
+  on the player kicking
+    refuse merc-way-up-here
+  end on
+end trait
+
+create the chasing mercenaries
+  aka mercenaries, mercenary, merc, mercs, soldiers, soldier, men, man, bravos, bravo, guards, guard, people, person
+  scenery, plural
+  kick-way-up-here
+  states, reversible: huddled, chopping
+
+  phrase detail while the chasing mercenaries is huddled:
+    The mercenaries are huddled around the base of the pole, discussing how to
+    get you down.
+
+  phrase detail while the chasing mercenaries is chopping:
+    The mercenaries are chopping the pole down!
+
+  on the player listening
+    phrase merc-below-muffled when the chasing mercenaries is huddled
+    phrase merc-below-chopping when the chasing mercenaries is chopping
+  end on
+
+  on the player attacking
+    refuse merc-way-up-here
+  end on
+
+  on the player talking
+    refuse merc-way-up-here
+  end on
+
+  on the player taking
+    refuse merc-way-up-here
+  end on
+
+create the axe
+  aka big axe, chopping axe
+  scenery
+
+  It looks like a pretty big axe. It probably won't take them long to chop
+  down this pole.
+
+  on the player listening
+    phrase axe-chocking
+  end on
+
+  on the player taking
+    refuse axe-way-up-here
+  end on
+
+  on the player attacking
+    refuse axe-way-up-here
+  end on
+
+  on the player pushing
+    refuse axe-way-up-here
+  end on
+
+define phrase merc-below-muffled
+  You can't quite make out what they're saying from up here.
+end phrase
+
+define phrase merc-below-chopping
+  The mercenaries have stopped talking. All you can hear now is the constant
+  chock! of the axe.
+end phrase
+
+define phrase merc-way-up-here
+  You can't do anything to the mercenaries while you're way up here.
+end phrase
+
+define phrase axe-chocking
+  The axe's steady chocking noise is very loud, even from up here.
+end phrase
+
+define phrase axe-way-up-here
+  You can't do anything to the axe while you're way up here.
+end phrase
 
 ## ---------------------------------------------------------------------------
 ## MARKET ESCAPE — after a seen landing (`story.ni:4132-4200`)
