@@ -250,8 +250,9 @@
     - [x] Chord Writer 1.3.1 → 1.4.0 (`project.yml`, CFBundleVersion 7); website `versions.json` re-derived; docs-tab regenerated
     - [x] `xcodebuild test` (SharpeeIDE scheme) green — 592 passing, 0 failures (08:41 CDT, after fixing the ADR-327 decoder drift and four stale test expectations found by the first run: 13 failures in 9 tests)
     - [x] `tools/ide/release-all.sh` — both slices built, notarized, stapled; `release/1.4.0/UPLOAD.md` written (16:12 CDT; every notarization upload after 15:24 went through the new `tools/ide/notary-submit.py` because notarytool crashed on upload — see the session file)
-    - [ ] David uploads (scp + `deploy.sh`); install page verified live
-- **Status**: CURRENT
+    - [x] David uploads (scp + `deploy.sh`); install page verified live — David ran both ~20:00 CDT 2026-09-04; verified 22:35 CDT: both DMGs, both Sparkle zips and both appcasts return 200 at sharpee.net, each appcast's top entry is 1.4.0 (1.3.1 and 1.3.0 below it), `/playground/current.json` pins 5.3.0 (GH #358's deploy fix took), and `/chord-writer/download` reads "Chord Writer 1.4.0 · Sharpee 5.3.0 / Chord 3.6.0" with both 1.4.0 DMG links.
+- **Outcome (2026-09-04, sessions 0135ed and 15cfa3)**: P-44's Done-when items (1)–(4) hold: (1) the language freeze — no `packages/chord` grammar/IR change since Phase 2 began outside this proposal's own Phases 3 and 6, and the 3.6.0 bump changed no grammar (EBNF pin hash unchanged, ADR-257 D2 note); (2) `@sharpee/*@5.3.0` on npm via `publish-npm.yml` (runs 33869141138 + 33870106653, `git diff --exit-code` clean; registry reads 5.3.0 for `@sharpee/sharpee` and `@sharpee/devkit`); (3) Chord Writer 1.4.0 signed, notarized and stapled for arm64 and x86_64, status bar "Chord Writer 1.4.0 · Sharpee 5.3.0 / Chord 3.6.0"; (4) the install page names the published versions. Item (5) — P-43's proof against the published artifacts — is Phase 17's deliverable and is still PENDING, so P-44 is not closed and this phase stays open on that one item.
+- **Status**: CURRENT — blocked on Phase 17 (P-43) for its last item
 
 ## Item-to-phase trace
 - Phase 1 (decisions only): gates P-11, P-21, P-29 acceptance; rules P-16, P-18, P-19 design
