@@ -127,7 +127,7 @@ create Bobby
   a person, proper
   pronouns he
   kick-bobby
-  states: proposing, agreed, leading, returning, gone
+  states: proposing, agreed, leading, returning, gone, court, spoken
 
   Bobby is a few years older than you, a tall, broad-shouldered lad with
   tousled black hair and a rakish grin. He's an orphan, like you, and like you
@@ -149,6 +149,10 @@ create Bobby
     refuse bobby-never-hurt
   end on
 
+  on the player examining
+    phrase bobby-none-the-worse when the player is in the Ballroom
+  end on
+
   when the player's dawdle expires
     move Bobby here
     phrase dawdle-hide-stub
@@ -160,6 +164,10 @@ create Bobby
 
   on the player talking
     refuse when the hanging is speaking: cant-reach-him
+    refuse when Bobby is spoken: bobby-court-again-stub
+    phrase bobby-court-stub when Bobby is court
+    raise the Queen's evidence by 1 when Bobby is court
+    change Bobby to spoken when Bobby is court
     phrase bobby-finger-to-lips when the player is in the Lord's Keep
     phrase bobby-not-now when the player is in the Tunnels
     phrase bobby-bo27-stub when Bobby is leading and the player is in the Clearing

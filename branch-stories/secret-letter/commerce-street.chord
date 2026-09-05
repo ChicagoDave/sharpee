@@ -48,7 +48,12 @@ create the Commerce Street
   northwest to the Bakery, one-way
   north to the Butcher's Shop, one-way
   northeast to the Armory, one-way
-  west is blocked while after jail: commerce-avoid-grubbers
+  west is blocked while bodyguarded and not the player has the plain dagger: pieter-need-a-weapon
+  east is blocked while bodyguarded: pieter-no-traipsing
+  northwest is blocked while bodyguarded: pieter-not-here-for-food
+  north is blocked while bodyguarded: pieter-not-here-for-food
+  northeast is blocked while bodyguarded and the player has the plain dagger: pieter-got-your-weapon
+  west is blocked while after jail and before preparations: commerce-avoid-grubbers
   west is blocked while Toresal is day: commerce-lay-low
   northwest is blocked while Toresal is night: shops-shuttered
   north is blocked while Toresal is night: shops-shuttered
@@ -61,7 +66,14 @@ create the Commerce Street
     (TODO during play-testing — "You made it." — Gentry's arrival block is
     kept aside in this file's comments; it ends by removing the cloak.)
 
-  {commerce-street-by-day}{commerce-street-by-night}
+  {commerce-street-by-day}{commerce-street-by-night} {pieter-bodyguard}
+
+  after the player entering while the preparations is escorted and the player has the ball gown and the player has the plain dagger and jeweled
+    phrase evening-falls
+    change Toresal to night
+    remove the purse
+    change the preparations to journey
+  end after
 
   after the player entering while Toresal is night
     first time
@@ -468,7 +480,12 @@ create the Armory
   windowless shop. All of the really interesting weapons — axes, flails, spiked
   gauntlets and the like — are high up on racks on the back wall, well behind
   the high counter. However, there is a display of assorted knives and daggers
-  sitting out where you can get a close look at them.
+  sitting out where you can get a close look at them. {pieter-bodyguard}
+
+  after the player entering while bodyguarded
+    first time
+      phrase minor-finds-something-else
+  end after
 
   after the player going
     phrase armory-relief
@@ -485,16 +502,19 @@ create the dagger display
   glove, to gigantic cleavers that would make Holstenoffer next door jealous.
 
   on the player taking
+    refuse when bodyguarded: minor-shut-your-trap
     refuse minor-finger-off
   end on
 
   on the player touching
+    refuse when bodyguarded: minor-shut-your-trap
     refuse minor-finger-off
   end on
 
 create the big weapons
   aka weapons, axes, flails, flail, racks, rack, gauntlets, gauntlet, spiked gauntlets, interesting weapons
   scenery, plural
+  too-big-to-wear
   in the Armory
 
   The sheer variety of ways to grievously injure someone with a sharp, metal
@@ -567,7 +587,7 @@ create the East Commerce Street
   Three stately houses are built close together on the north side of the road:
   Black Gate Estate to the northwest; Red Gate Estate to the north; and the
   Jacobs family mansion to the northeast. The street itself continues east and
-  west, and the City Park lies to the south.
+  west, and the City Park lies to the south. {pieter-bodyguard}
 
   on every turn while the player is in the East Commerce Street and one chance in 5
     phrase jack-paranoia
@@ -1019,6 +1039,7 @@ create Olgan Minor
   end on
 
   on the player talking
+    refuse when bodyguarded: minor-dont-waste-your-breath
     refuse when after jail: minor-om9-stub
     refuse minor-om1-stub
   end on
@@ -1062,7 +1083,19 @@ end phrase
 
 define trait buy-from-minor
   on the player buying
-    refuse minor-run-along
+    the player must have the purse: minor-run-along
+    phrase dagger-bought
+    move the plain dagger to the player
+  end on
+end trait
+
+## `story.ni:10919` — with the purse and Pieter, the racks are too big to
+## wear; without the purse, Minor's bark as before.
+
+define trait too-big-to-wear
+  on the player buying
+    the player must have the purse: minor-run-along
+    refuse pieter-too-big-to-wear
   end on
 end trait
 

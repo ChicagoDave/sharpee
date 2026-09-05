@@ -46,6 +46,28 @@
 ##      [noun]" — a marker cannot render a bare name (`{item}` is rejected
 ##      as unbound; the binder's hints are all articles), so "piece of
 ##      fruit" is the substitution.
+##   9. `pieter-follows` in `preparations.chord` expands Gentry's two
+##      `[at random]` draws (follows / hurries after you / hurries to catch
+##      up / sticks close to you; looking around warily / his hand on his
+##      sword hilt / doggedly keeping you in sight) into twelve whole-sentence
+##      arms, for the reason given in 5 and 6. Every word is his.
+##  10. `pieter-mutters` in `journey.chord` plays Gentry's ten road lines
+##      `cycling` — the source's order, once each — where the source draws
+##      them `[in random order]`; Chord has no draw-without-replacement
+##      strategy. The words are his; only the order is fixed.
+##  11. `trails-wind-around-grumble` in `journey.chord` fixes one of
+##      Gentry's four verbs (says / grumbles / mutters / pants) to each of
+##      his seven lines instead of drawing the verb separately, for the
+##      reason given in 5. Same words, fewer combinations.
+##  12. "You can't see Pieter anywhere; he must have gotten separated from
+##      you in the press of guests…" (`ball.chord`) closes the ballroom's
+##      first description, where the source prints it on her first
+##      reference to Pieter — Chord cannot intercept a reference to an
+##      absent thing. The words are Gentry's; only the moment moved.
+##  13. `bobby-none-the-worse` in `ball.chord` carries Bobby's Skirmish
+##      description without its last clause, "even as he parries the
+##      Baron's savage blows" — the clause names the cut scene (the change
+##      document's Chapter 11 ruling names the sentence it keeps).
 ##
 ## Everything else is carried verbatim from the 2009 source or is a marked
 ## `(TODO during play-testing — …)`.
@@ -116,6 +138,12 @@ define chapters
     begins when the raid becomes escaped
   preparations - Chapter IX - Dame Sandler and the Preparations
     begins when the company becomes done
+  journey - Chapter X - The Night Journey to the Ball
+    begins when the preparations becomes journey
+  ball - Chapter XI - The Ball
+    begins when the player visits the Ballroom for the first time
+  vella - Chapter XII - Vella
+    begins when the player visits Vella for the first time
 end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
@@ -170,6 +198,28 @@ import "gallows"
 ## letters, the bath, the dress and the mirror, the goodbye in the square.
 
 import "red-gate"
+
+## Chapter 9 — Dame Sandler and the Preparations (Book 12 Parts 1-2 with
+## the clean-Jack layers of Books 3 and 4): the reveal, the jewel, Pieter
+## from guard to bodyguard, the loan, the gown, the dagger. No new rooms:
+## the chapter's own things and phrases live here, its clauses on Chapter
+## 2's files, gated on `the preparations`.
+
+import "preparations"
+
+## Chapter 10 — the night journey to the ball (Book 12 Parts 3-4 with the
+## Pieter layers of Book 5B): evening, the Southern Gate, Chapter 4's road
+## and woods and tunnel walked again with Pieter, the bailey cleaned for
+## the ball, the Foyer. The ballroom is a placeholder for Chapter 11.
+
+import "journey"
+
+## Chapter 11 — the ball (Book 12 Parts 5-7 under the redesigned ending):
+## the world of light, the Baron's confrontation and dismissal, the throne
+## with Bobby and Pieter beside it, the seven players, the Queen's
+## judgment, the Priestess. Vella is a placeholder for Chapter 12.
+
+import "ball"
 
 ## ---------------------------------------------------------------------------
 ## THE PLAYER

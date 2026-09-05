@@ -1,0 +1,1127 @@
+## ===========================================================================
+## THE BALL — Book 12 Parts 5-7 (`story.ni:11048-11893`) under the redesigned
+## ending, Chapter 11.
+##
+## The change document ("Chapter 11 — The Ball (the redesigned ending)",
+## 2026-09-03) supersedes the dance and cuts Book 13: the ending is the
+## Ballroom, then Vella. Chapter 11 runs from the step into the ballroom
+## to the Priestess leading Jacqueline out. What the source supplies —
+## the room, its scenery, the guests, the quartet, the servants, the six
+## trees and their speakers, the Queen's look, Bobby's and the Baron's
+## descriptions — carries as written; what David's design adds — the
+## Baron's confrontation and dismissal, the mercenaries barred, the throne
+## with Bobby and Pieter beside it, Bobby's conversation, the Queen's
+## greeting, the judgment, the Priestess and her asking, the losing ending —
+## is built as TRIGGERS WITH PLACEHOLDERS, the world consequence of each
+## live and the lines David's. Conversations are STUBS under the standing
+## rule.
+##
+## THE RULINGS (change document, Chapter 11):
+##   * THE SHAPE — ballroom only, no war room, no dance; free conversation
+##     with every major player while the Queen watches. The Baron confronts
+##     her early, is dismissed, and his men are barred — then the room opens
+##     (gap 1's reading, stated and not corrected).
+##   * EXTENT — the world of light to the Priestess leading her out; Vella is
+##     Chapter 12 (Phase 11's). Chapter XII's row begins on her first visit
+##     to Vella, a PLACEHOLDER room here.
+##   * THE BARON BEFORE THE COURT — the letter produced, the Queen's threat
+##     quiet, the Baron let go; nothing burned, nothing confessed aloud.
+##   * BOBBY — revealed beside the throne, the Queen's man; the War Room's
+##     reveals move to his conversation (a stub).
+##   * THE JUDGMENT — the claim, the conversations her evidence, teeth: fail
+##     and she rises and leaves with Bobby, the room turns its back, the
+##     game ends; the verdict is never spoken; won, she nods the Priestess
+##     toward Jacqueline. THE MEASURE (gap 2, Phase 10's to set and report):
+##     seven players count — Jacobs, the Princess, the Duke, Amhyron, Bresa,
+##     the Prince, Bobby — one point each for the first conversation; FIVE
+##     of the seven is a winning showing.
+##   * THE PRIESTESS — on her own time, blocked on the Queen's decision;
+##     she asks, and Jacqueline's spirit is drawn to follow. THE CLOCK (gap
+##     8, Phase 10's to set and report): she arrives on the twenty-fourth
+##     turn after the room opens; the Queen's patience runs out on the
+##     thirty-sixth. Evidence in hand when the Priestess is present decides
+##     it — arrive first and she waits.
+##   * THE CRESCENDO — no fail state after the nod.
+##   * WHO IS IN THE ROOM — Pieter beside the Queen (lost on entry, found
+##     there); the Prince stays and is there from the start; the Queen has a
+##     greeting; the Baron early then gone; the Princess a ballgoer.
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## `show letter to baron`, `give letter to baron` and `talk to baron` are
+## the confrontation's one move — the dismissal placeholder, the Baron gone,
+## the room opened. `talk to <player>` prints the tree's TODO once and its
+## return TODO after; the Princess leaves after hers as PR15 has her.
+##
+## GAPS (change document): the opening's order (built as the reading); the
+## judgment's measure and the Priestess's clock (set above, reported); how
+## Pieter came to the throne and whether he speaks (his tree answers, as in
+## Chapter 9); the dagger drawn nowhere; the letter's holder (she keeps it);
+## the mercenaries barred offstage and heard; the Queen's Guard as a line in
+## the placeholder, not an entity; the losing ending's, the greeting's and
+## the asking's lines — David's.
+##
+## NOT CARRIED, with reasons:
+##   * "You can't see Pieter anywhere" — the source prints it on her first
+##     reference to him; Chord cannot intercept a reference to an absent
+##     thing, so the line closes the arrival text instead. The words are
+##     Gentry's; the moment moved (deviation 12 in `secret-letter.story`).
+##   * Bobby's Skirmish description carries without "even as he parries the
+##     Baron's savage blows" — the clause names the cut scene (deviation
+##     13).
+##   * The distant descriptions are the presence lines; the Queen's, which
+##     is her only description, is her examine with its first-time tail.
+##   * The Baron's "stands between you and the fireplace" (the War Room).
+##   * `kiss`, `throw`, `exit`/`out` (no actions; south is the exit).
+##   * The source's `[if JE1 is fired]` roster in `talk to guests` gates on
+##     the room being open, which is when Jacobs has spoken.
+##   * The Prince's GR1 opened unasked in Brief Encounter with the men at
+##     the doors; under the ruling he is a player she approaches, and GR7
+##     loses the hand on her shoulder.
+##   * The source's themes and the `pause`.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE BALL — the state the room and the court read. `pending` on entry;
+## `confrontation` from the Baron's approach; `dismissed` the turn the
+## letter is produced (a pivot — the room's own clause does the opening);
+## `open` from then; `decided` from the Queen's nod; `taken` when the
+## Priestess leads her out; `abandoned` is the losing ending.
+## ---------------------------------------------------------------------------
+
+create the ball
+  aka the court, fossville's ball
+  proper
+  states: pending, confrontation, dismissed, open, decided, taken, abandoned
+  counter turns starts 0 between 0 and 40
+
+  Fossville's ball.
+
+  when the player's stepping-in expires
+    move Baron Fossville to the Ballroom
+    move the Queen to the Ballroom
+    phrase confrontation-stub
+    change the ball to confrontation
+  end when
+
+  when the player's drawn expires
+    phrase priestess-asks-stub
+    change the ball to taken
+    move the player to Vella
+  end when
+
+define timer stepping-in for the player
+  crossing
+end timer
+
+## The turn between the nod and the asking. A room's every-turn phrase is
+## dropped when she has left the room by the turn's end, so the asking and
+## the leaving ride a clock on the court, as the raid's capture did.
+
+define timer drawn for the player
+  following
+end timer
+
+## ---------------------------------------------------------------------------
+## THE BALLROOM (`story.ni:11052-11073`). The first description is the
+## world of light, the room, the breathtaking tail and Pieter lost.
+## ---------------------------------------------------------------------------
+
+create the Ballroom
+  a room
+  aka ball room, hall, ball, party, lights, glittering lights
+  south is blocked: ballroom-press-of-people
+  north is blocked: ballroom-cant-see-the-edges
+  east is blocked: ballroom-cant-see-the-edges
+  west is blocked: ballroom-cant-see-the-edges
+  northeast is blocked: ballroom-cant-see-the-edges
+  northwest is blocked: ballroom-cant-see-the-edges
+  southeast is blocked: ballroom-cant-see-the-edges
+  southwest is blocked: ballroom-cant-see-the-edges
+  first time
+    You step into a world of light...
+
+    Hundreds of candles spread an unearthly golden glow throughout the hall.
+    From massive chandeliers dripping with crystal, from golden candelabras
+    ensconced in the walls, the multitude of flames flicker like stars. The
+    ballroom is packed with people; all of Toresal's high society seems to
+    be here tonight, and still the enormous hall does not seem full.
+    Servants navigate through the crowds, carrying silver platters loaded
+    with pastries and canapés. Somewhere, a string quartet is playing a
+    lively concerto.
+
+    It's breathtaking. It's every fantasy of beauty and riches that you ever
+    dreamed of, brought to life.
+
+    You can't see Pieter anywhere; he must have gotten separated from you in
+    the press of guests. For the time being at least, you're on your own.
+
+  Hundreds of candles spread an unearthly golden glow throughout the hall.
+  From massive chandeliers dripping with crystal, from golden candelabras
+  ensconced in the walls, the multitude of flames flicker like stars. The
+  ballroom is packed with people; all of Toresal's high society seems to be
+  here tonight, and still the enormous hall does not seem full. Servants
+  navigate through the crowds, carrying silver platters loaded with pastries
+  and canapés. Somewhere, a string quartet is playing a lively concerto.
+  {throne-stub}
+
+  after the player entering
+    first time
+      move Pieter offstage
+      change Pieter to lost
+      change the preparations to ball
+      start the player's stepping-in
+  end after
+
+  on every turn while the ball is dismissed
+    move Baron Fossville offstage
+    move Bobby here
+    change Bobby to court
+    move Pieter here
+    change Pieter to throne
+    move Jacobs the Elder here
+    move the Princess here
+    move the Duke of Inhyron here
+    move the Duchess of Inhyron here
+    move the Baron of Amhyron here
+    move the Earl of Bresa here
+    move the Prince of Gravesal here
+    phrase jacobs-je1-stub
+    change the ball to open
+  end on
+
+  on every turn while the ball is open
+    raise the ball's turns by 1
+  end on
+
+  on every turn while the ball is open and the ball's turns is 24
+    move the Vedd Priestess here
+    phrase priestess-arrives-stub
+  end on
+
+  on every turn while the ball is open and the Vedd Priestess is here and the Queen's evidence is at least 5
+    phrase queen-rises-and-nods-stub
+    move the Queen offstage
+    move Bobby offstage
+    move Pieter offstage
+    start the player's drawn
+    change the ball to decided
+  end on
+
+  on every turn while the ball is open and the ball's turns is at least 36 and the Queen's evidence is less than 5
+    change the ball to abandoned
+    lose queen-leaves-stub
+  end on
+
+## `story.ni:11065`, with the source's `[first time]` aside.
+
+define phrase ballroom-press-of-people, first-time
+  The press of people is so close, you can't make your way back to the Foyer
+  without rudely pushing your way through at least a dozen conversations.
+  Besides, you can't leave without Pieter. Where did he get off to...?
+or
+  The press of people is so close, you can't make your way back to the Foyer
+  without rudely pushing your way through at least a dozen conversations.
+  Besides, you can't leave without Pieter.
+end phrase
+
+## `story.ni:11067`, the facings as blocked exits.
+
+define phrase ballroom-cant-see-the-edges
+  The guests are crowded so close together, you can't even see to the edges
+  of the room.
+end phrase
+
+## `story.ni:11076`
+
+define phrase ballroom-overwhelming
+  The constant wave of voices, conversations, laughter, and music is
+  overwhelming.
+end phrase
+
+## THE THRONE (David: "Bobby is revealed standing next to the Queen's
+## throne"; "he also stands next to the Queen") — the room's marker once the
+## court is open; its sentence is David's.
+
+define phrase throne-stub, stopping while the ball is open or the ball is decided
+  (TODO during play-testing — the Queen's throne and the two beside it: Bobby,
+  alive, standing at her side, and Pieter with him. What Jacqueline sees, and
+  what it does to her, are David's.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CONFRONTATION AND THE DISMISSAL (David: "There is a confrontation
+## with the Baron, but he's dismissed by the Queen, tries to bring his
+## mercenaries in, but they are barred by the Queen's Guard"; "The letter
+## is produced, the Queen already knows of The Baron's guilt and quietly
+## threatens him, but allows him to leave instead"). Two placeholders: the
+## Baron's approach one turn after her entry, and the dismissal when she
+## produces the letter or speaks to him. The mercenaries are barred
+## offstage and heard (gap 6); the Queen's Guard is a line (gap 7); she
+## keeps the letter (gap 5).
+## ---------------------------------------------------------------------------
+
+define phrase confrontation-stub
+  (TODO during play-testing — the confrontation: Baron Fossville comes
+  through the crowd to her, early, before anyone else has spoken; the court
+  turns to watch; the Queen is in the room. What he says to her, and what
+  he demands, are David's. Fossville does NOT see her — he knows from the
+  letter.)
+end phrase
+
+define phrase dismissal-stub
+  (TODO during play-testing — the dismissal: the letter produced before the
+  court, the Duke's own hand naming Jacqueline; the Queen, who already knows
+  what Fossville did, threatens him quietly and lets him go; he tries to
+  bring his mercenaries in and the Queen's Guard bars them at the doors,
+  heard, not seen; and the room opens to her — the Queen on her throne, and
+  beside it Bobby, alive, and Pieter. Nothing is burned and nothing is
+  confessed aloud. The lines are David's.)
+end phrase
+
+## The Baron at the ball (`story.ni:9653`, the `otherwise` branch), with
+## its first-time tail; his block is in `gallows.chord`.
+
+define phrase baron-at-the-ball, first-time
+  Now that you're up close, the cracks in Fossville's façade show themselves
+  clearly. His thick, black hair is disheveled. His face is haggard. He's
+  tried to hide the lines and the dark circles under his eyes with extra
+  make-up, but it just makes him look more ghoulish. With some
+  satisfaction, you realize that you must have been really running the
+  Baron ragged the last couple of days. No wonder he hasn't made an
+  appearance at his own party.
+or
+  Now that you're up close, the cracks in Fossville's façade show themselves
+  clearly. His thick, black hair is disheveled. His face is haggard. He's
+  tried to hide the lines and the dark circles under his eyes with extra
+  make-up, but it just makes him look more ghoulish.
+end phrase
+
+## His platform line (`story.ni:9660`) is the square's marker now, since a
+## presence line cannot vary (GH #364) and he stands here too.
+
+define phrase fossville-on-the-platform, stopping while Baron Fossville is in the Lord's Market
+  Baron Fossville stands on the platform, addressing the crowd.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE OPENING OF THE ROOM: the players placed, Jacobs at her elbow with
+## `JE1` unasked (`story.ni:11259-11261`). The Prince is there from the
+## start (the ruling).
+## ---------------------------------------------------------------------------
+
+## `JE1` (`story.ni:11266`), unasked, once.
+
+define phrase jacobs-je1-stub
+  (TODO during play-testing — conversation JE1 → JE2/JE3/JE4 → JE5 → JE6 →
+  JE7 → JE9/JE10 → JE11, Jacobs the Elder's opening: "'Well now, look who we
+  have here,' says a gruff voice behind you. 'You must be the girl my son
+  helped out of prison recently.'" — the jailhouse face, then not him: the
+  father, the wealthy and notorious merchant; "I have informants
+  everywhere… I've no plans to reveal your presence to Fossville" (JE5);
+  "I'm a businessman… with many diversified interests" (JE6); the tour of
+  the room — the Queen, the Princess "working the room", the Duke and
+  Duchess of Inhyron, the Baron of Amhyron, the Earl of Bresa: "Those are
+  the players of the game in this room, and you will have to spar with all
+  of them if you want to win" (JE7); "you're a long shot" (JE9); "It's all
+  about how many allies you have" (JE10); "Well, that should be enough to
+  get you started. Good luck, my girl" (JE11). Jacobs the Elder is not
+  ruled to see her.)
+end phrase
+
+## `JE12-JE20` (`story.ni:11293-11311`), on `talk to` after.
+
+define phrase jacobs-je12-stub
+  (TODO during play-testing — conversation JE12 → JE13-JE20, Jacobs the
+  Elder again: "Back for more, hmm?"; Fossville "sending a message" — "maybe
+  he planned this whole thing just to trap you" (JE13); the old Duke "left
+  himself open" (JE14); the Queen "merely watches the field" (JE15); the
+  Princess "an opportunist" (JE16); the Duke of Inhyron "a stuffed shirt and
+  a hypocrite" (JE17); the Baron of Amhyron "honest, good-hearted, and an
+  effective ruler" but bound to the Inhyrons (JE18); the Earl of Bresa "a
+  fat idiot… Ignore him" (JE19); "Good-bye" — "Always a pleasure, my dear
+  girl" (JE20).)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE JUDGMENT AND THE PRIESTESS (David's design; the lines his).
+## ---------------------------------------------------------------------------
+
+define phrase priestess-arrives-stub
+  (TODO during play-testing — the Vedd Priestess appears, on her own time,
+  and goes to the Queen; what the room sees of that is the Queen's ear
+  inclined and nothing said. If the Queen has not yet decided, the
+  Priestess waits. David's lines.)
+end phrase
+
+define phrase queen-rises-and-nods-stub
+  (TODO during play-testing — the verdict, silent: the Queen rises and
+  leaves, Bobby and Pieter with her, and on her way out she nods the
+  Priestess toward Jacqueline. David's lines.)
+end phrase
+
+define phrase priestess-asks-stub
+  (TODO during play-testing — the asking: the Priestess asks Jacqueline to
+  come with her, and Jacqueline's spirit is drawn uncontrollably to follow
+  — not a choice, and good. She goes alone. David's lines; Vella is
+  Chapter 12's.)
+end phrase
+
+define phrase queen-leaves-stub
+  (TODO during play-testing — the losing ending: the Queen rises and leaves,
+  Bobby goes with her, and the room turns its back — no one will speak to
+  Jacqueline. The game ends. David's lines.)
+end phrase
+
+## `story.ni:11190` — the source's `dance` refusal, true again.
+
+define action dancing
+  grammar
+    dance
+    dance with the target
+  the target is a topic
+  phrase never-danced-before
+
+define phrase never-danced-before
+  You may be nimble on your feet in a tight spot, but you've never danced
+  before and you're far too self-conscious to start now.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SCENERY (`story.ni:11079-11149`).
+## ---------------------------------------------------------------------------
+
+define phrase afraid-to-touch-anything
+  Everything here is so opulent, you're kind of afraid to touch anything.
+end phrase
+
+create the decorative candles
+  aka candles, candle, light, lights, glow, golden glow, flames, flame, flickering flames, stars, multitude, multitude of flames
+  scenery, plural
+  in the Ballroom
+
+  The candles are literally everywhere; their light suffuses the entire
+  ballroom.
+
+  on the player taking
+    refuse afraid-to-touch-anything
+  end on
+
+  on the player touching
+    refuse afraid-to-touch-anything
+  end on
+
+  on the player smelling
+    refuse afraid-to-touch-anything
+  end on
+
+create the enormous chandeliers
+  aka chandeliers, chandelier, crystal, crystals, dangling crystal, sculptures, massive chandeliers
+  scenery, plural
+  in the Ballroom
+
+  The chandeliers are enormous sculptures of dangling crystal, glittering
+  with candlelight.
+
+  on the player taking
+    refuse chandeliers-out-of-reach
+  end on
+
+  on the player touching
+    refuse chandeliers-out-of-reach
+  end on
+
+  on the player climbing
+    refuse chandeliers-out-of-reach
+  end on
+
+  on the player pushing
+    refuse chandeliers-out-of-reach
+  end on
+
+define phrase chandeliers-out-of-reach
+  The chandeliers are hanging high above your reach.
+end phrase
+
+create the candelabras
+  aka candelabra, golden candelabras, gold candelabras, gold
+  scenery, plural
+  in the Ballroom
+
+  The candelabras are elgantly sculpted from solid gold.
+
+  on the player taking
+    refuse afraid-to-touch-anything
+  end on
+
+  on the player touching
+    refuse afraid-to-touch-anything
+  end on
+
+## The guests (`story.ni:11100-11112`), a backdrop over the ballroom, the
+## Foyer and the bailey on ball night.
+
+create the guests
+  aka guest, crowd, crowds, people, partygoer, partygoers, party goers, party goer, high society, extravagant costumes, costumes
+  scenery, plural
+
+  The guests are all the brightest, richest, and most beautiful in Toresal.
+  They laugh and chatter and compliment each other on their extravagant
+  costumes and jewelry. Amidst all the gaeity and ostentatious wealth, you
+  can't help but feel a little bit self-conscious and plain.
+
+  when Jack moves, while the player is in the Ballroom or (bodyguarded and (the player is in the Foyer or the player is in the Lower Bailey))
+    move the guests here
+  end when
+
+  on the player talking
+    refuse when the ball is open or the ball is decided: guests-small-talk-and-the-players
+    refuse guests-small-talk
+  end on
+
+  on the player listening
+    refuse guests-small-talk
+  end on
+
+  on the player attacking
+    refuse avoid-making-a-scene
+  end on
+
+  on the player touching
+    refuse guests-too-absorbed
+  end on
+
+  on the player pushing
+    refuse guests-too-absorbed
+  end on
+
+  on the player taking
+    refuse guests-too-absorbed
+  end on
+
+  on the player searching
+    refuse guests-too-absorbed
+  end on
+
+  on the player showing
+    refuse guests-too-absorbed
+  end on
+
+  on the player giving
+    refuse guests-too-absorbed
+  end on
+
+define phrase guests-small-talk
+  Most of the people here are making small-talk on subjects you know
+  nothing about.
+end phrase
+
+define phrase guests-small-talk-and-the-players
+  Most of the people here are making small-talk on subjects you know
+  nothing about. According to Jacobs, though, the people you really should
+  be talking to are Duke Inhyron, Baron Amhyron, Earl Bresa, the Queen, and
+  the Princess.
+end phrase
+
+define phrase guests-too-absorbed
+  The guests are all far too absorbed in the party to pay attention to you.
+end phrase
+
+define phrase avoid-making-a-scene
+  You should probably avoid making a scene.
+end phrase
+
+## The string quartet (`story.ni:11114-11120`); a bare `listen` here is its
+## description (`backdrops.chord`).
+
+create the string quartet
+  aka quartet, strings, musicians, musician, orchestra, chamber orchestra, band, group, music, chamber music, far corner
+  a person, plural
+  scenery
+  in the Ballroom
+
+  Somewhere over in the far corner of the ballroom, a string quartet is
+  playing stately chamber music.
+
+  on the player listening
+    refuse quartet-far-corner
+  end on
+
+  on the player talking
+    refuse too-many-around-the-musicians
+  end on
+
+  on the player touching
+    refuse too-many-around-the-musicians
+  end on
+
+  on the player taking
+    refuse too-many-around-the-musicians
+  end on
+
+  on the player pushing
+    refuse too-many-around-the-musicians
+  end on
+
+  on the player giving
+    refuse too-many-around-the-musicians
+  end on
+
+  on the player showing
+    refuse too-many-around-the-musicians
+  end on
+
+define phrase quartet-far-corner
+  Somewhere over in the far corner of the ballroom, a string quartet is
+  playing stately chamber music.
+end phrase
+
+define phrase too-many-around-the-musicians
+  There are too many other guests crowded around the musicians for you to
+  get close enough to them.
+end phrase
+
+## The servants, the platters and the food (`story.ni:11130-11149`) — the
+## source's `waiters`, printed "servants"; Lord's Market holds the name.
+
+create the waiters
+  aka servants, servant, waiter, dozens of servants, ballroom servants
+  a person, plural
+  scenery
+  in the Ballroom
+  carries the silver platters
+
+  The servants weave deftly through the crowd, intent on making sure that
+  no guest goes without a drink or a canape for more than ten seconds.
+
+  on the player talking
+    refuse servants-ignore-you
+  end on
+
+  on the player showing
+    refuse servants-ignore-you
+  end on
+
+  on the player giving
+    refuse servants-ignore-you
+  end on
+
+define phrase servants-ignore-you
+  The servants seem to be doing their best to ignore you.
+end phrase
+
+create the silver platters
+  aka platters, platter, silver, polished platters, mirror shine
+  scenery, a supporter, plural
+
+  The silver platters are polished to a mirror shine, piled high with food
+  and wine.
+
+  on the player taking
+    refuse servants-never-stop
+  end on
+
+  on the player touching
+    refuse servants-never-stop
+  end on
+
+create the party food
+  aka food, food and drink, drink, drinks, wine, glasses, glass, wine glasses, sandwiches, sandwich, tiny sandwiches, pastries, pastry, delicate pastries, canapes, canape
+  scenery, plural
+  on the silver platters
+
+  Tiny sandwiches, delicate pastries (still fresh from Germaise's oven, you
+  imagine), and neatly ordered ranks of wine glasses are balanced on the
+  platters being carried around by dozens of servants.
+
+  on the player smelling
+    refuse food-smells-delicious
+  end on
+
+  on the player drinking
+    refuse keep-your-wits
+  end on
+
+  on the player taking
+    refuse servants-never-stop
+  end on
+
+  on the player eating
+    refuse servants-never-stop
+  end on
+
+  on the player touching
+    refuse servants-never-stop
+  end on
+
+define phrase food-smells-delicious
+  It all smells delicious.
+end phrase
+
+define phrase servants-never-stop
+  For some reason, you can't get any of the servants to stop long enough to
+  sample anything on the platters. It's actually very annoying.
+end phrase
+
+define phrase keep-your-wits
+  There is no shortage of drink to be had here, but you need to keep your
+  wits about you.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE PLAYERS (`story.ni:11247-11843`). Each carries the source's
+## description and its distant description as a presence line; each first
+## `talk to` prints the tree's TODO and raises the Queen's evidence by one;
+## the return TODO after. `mingling` / `spoken` is the memory.
+## ---------------------------------------------------------------------------
+
+## The Queen (`story.ni:11371-11376`): her look is her only description,
+## with the source's first-time tail; a greeting (the ruling) and then the
+## source's line; the evidence counter is hers.
+
+create the Queen
+  aka her majesty, her royal majesty, royal majesty, majesty, queen, woman, lady, pale woman, entourage
+  a person, proper
+  pronouns she
+  states: unmet, greeted
+  counter evidence starts 0 between 0 and 7
+
+  Her Royal Majesty is not a tall lady, and most of the time all you can see
+  of her is a flash of golden crown or silver hair glimpsed between the
+  shoulders of her entourage. But every now and then the shoulders part, and
+  you get a good look at her: a pale, angry-looking woman with sharp,
+  shrewish features. Her tiny face is almost lost within the explosion of
+  jewel-encrusted brocade and lace that geysers up from the collar of her
+  gown.
+
+  after the player examining
+    first time
+      phrase queen-eyes-flash
+  end after
+
+  on the player talking
+    refuse when the Queen is greeted: cant-get-near-the-queen
+    phrase queen-greeting-stub
+    change the Queen to greeted
+  end on
+
+  on the player showing
+    refuse cant-get-near-the-queen
+  end on
+
+  on the player giving
+    refuse cant-get-near-the-queen
+  end on
+
+  on the player touching
+    refuse cant-get-near-the-queen
+  end on
+
+  on the player attacking
+    refuse cant-get-near-the-queen
+  end on
+
+define phrase queen-eyes-flash
+  Then, for just a moment, her gaze meets yours. Her stern expression never
+  changes, but her eyes seem to flash a warning. I'm watching you, she seems
+  to say. Do not cross me.
+end phrase
+
+define phrase cant-get-near-the-queen
+  With so many people crowding around trying to get the Queen's attention,
+  you can't even get near her.
+end phrase
+
+define phrase queen-greeting-stub
+  (TODO during play-testing — the Queen's greeting, and nothing more: one
+  exchange across the throne, the only words she gives Jacqueline all night.
+  The Queen is not ruled to see her; she judges the claim. David's lines.)
+end phrase
+
+## The Vedd Priestess (new): offstage until her hour.
+
+create the Vedd Priestess
+  aka priestess, vedd, the vedd, priestess of the vedd, robed woman
+  a person, proper
+  pronouns she
+
+  (TODO during play-testing — the Vedd Priestess, as Jacqueline sees her:
+  the first of the order the whole city speaks of in fossils of speech and
+  believes lost. David's.)
+
+  on the player talking
+    refuse priestess-talk-stub
+  end on
+
+define phrase priestess-talk-stub
+  (TODO during play-testing — speaking to the Priestess before she asks:
+  what she says, if anything, is David's. The Priestess SEES her; that is
+  the premise.)
+end phrase
+
+## Jacobs the Elder (`story.ni:11247-11257`).
+
+create Jacobs the Elder
+  aka jacobs, elder, master jacobs, father, merchant, large man, old jacobs
+  a person, proper
+  pronouns he
+  states: mingling, spoken
+  wears the velvet cloak
+  carries the goblet of spiced wine
+
+  Jacobs is a large man like his son, though age and indulgence have made
+  him less imposing. He wears an ostentatious velvet cloak with a thick,
+  furred collar, far too heavy for the season, and beads of sweat glitter
+  on his balding scalp. His eyes are bloodshot, heavy-lidded, and cynical.
+
+  phrase present:
+    Jacobs stands slightly apart, a goblet of spiced wine in one hand,
+    watching the other guests with gruff contempt.
+
+  on the player talking
+    refuse when Jacobs the Elder is spoken: jacobs-je12-stub
+    phrase jacobs-je12-stub
+    raise the Queen's evidence by 1
+    change Jacobs the Elder to spoken
+  end on
+
+create the velvet cloak
+  aka ostentatious cloak, jacobs's cloak, furred collar, collar, fur, thick collar
+  wearable
+
+  It looks far too hot to be wearing in a crowded room like this.
+
+create the goblet of spiced wine
+  aka goblet, spiced wine, wine goblet, jacobs's wine, jacobs' wine
+
+  Jacobs isn't the only person here drinking more than is good for him, but
+  he's certainly putting in a good effort.
+
+## The Princess (`story.ni:11382-11438`); she leaves after her conversation,
+## as PR15 has her.
+
+create the Princess
+  aka her highness, highness, princess, young woman, haughty woman, tall woman
+  a person, proper
+  pronouns she
+  states: mingling, spoken
+  wears the wine-colored gown
+
+  The Princess is tall, shapely, and wisp-thin, wearing a long gown of
+  wine-colored silk embroidered with amethysts. She's beautiful, but she's
+  also haughty, and the way she looks down her nose at you with those cold,
+  blue eyes irritates you to no end. After all, she's only a few years older
+  than you are — what (besides her title and her piles of riches) makes her
+  so special?
+
+  phrase present:
+    Even from across the room, the Princess commands attention; wherever she
+    mingles, conversations stop, and men's eyes follow her. Strangely, she
+    still seems to be avoiding your gaze, although why she would be
+    discomfited by one person when everyone else is openly staring at her is
+    beyond you.
+
+  on the player talking
+    phrase princess-pr1-stub
+    raise the Queen's evidence by 1
+    change the Princess to spoken
+    move the Princess offstage
+  end on
+
+create the wine-colored gown
+  aka gown, silk gown, wine-colored silk gown, wine-coloured gown, princess's gown, princess's dress, amethysts, amethyst, wine silk
+  wearable
+
+  You hate to admit it, but her dress is quite simply stunning.
+
+define phrase princess-pr1-stub
+  (TODO during play-testing — conversation PR1 → PR2/PR3/PR4 → PR5 →
+  PR6/PR7/PR8 → PR9 → PR10-PR14 → PR15, the Princess: "Oh, you must be that
+  ambitious little street urchin Mother told me about. How charming" (PR1);
+  "I am the daughter of a Duke" (PR2) / "You should be afraid of me" (PR3) /
+  "Do you, uh, like, uh… balls?" (PR4); "Are you trying to have a
+  conversation with me?" (PR5); "how does it feel to be courting a murderer?"
+  (PR7); "Oh, Goddesses, this is so embarrassing" (PR9); "Enough… You're
+  father was loved. Is loved even in death. As long you remain alive and have
+  access to royalty, you're going to be a thorn in my plans" — and she
+  shoulders past into the crowd (PR15; PR16 the curtsey). The Princess is
+  not ruled to see her; her "That's her! Get her!" is gone with the capture.)
+end phrase
+
+## The Duke and Duchess of Inhyron (`story.ni:11442-11475`).
+
+create the Duke of Inhyron
+  aka duke, duke inhyron, inhyron, your grace, elderly man, handsome man, duchess's husband, husband, duke and duchess
+  a person, proper
+  pronouns he
+  states: mingling, spoken
+  wears the aristocratic tunic
+
+  The Duke is a handsome, elderly man, with snow-white hair swept back from
+  a widow's peak and a neatly trimmed beard. His tunic is of an
+  old-fashioned, aristocratic cut, deep purple with golden buttons at the
+  shoulder and braided epaulets to hold his formal cloak in place.
+
+  phrase present:
+    The Duke of Inhyron seems content to stand quietly at one end of the
+    ballroom, occasionally nodding to guests as they pass by. His eyes are
+    everywhere, however, flickering constantly around the room. The Duchess
+    never moves from his side.
+
+  on the player talking
+    refuse when the Duke of Inhyron is spoken: duke-in15-stub
+    phrase duke-in1-stub
+    raise the Queen's evidence by 1
+    change the Duke of Inhyron to spoken
+  end on
+
+create the aristocratic tunic
+  aka tunic, duke's clothes, duke's tunic, duke's uniform, uniform, buttons, button, golden buttons, epaulets, epaulet, braided epaulets, formal cloak
+  wearable
+
+  The Duke's uniform makes him look every inch the genteel statesman.
+
+create the Duchess of Inhyron
+  aka duchess, duchess inhyron, duke's wife, wife, thin woman, nervous woman
+  a person, proper
+  pronouns she
+
+  The Duke's wife is thin and nervous and never speaks. She does, however,
+  occasionally peek out from behind her husband's arm, and stare at you
+  with wide eyes and quivering nostrils.
+
+  phrase present:
+    The Duchess of Inhyron hovers, frail and mouselike, at her husband's
+    side.
+
+  on the player talking
+    refuse when the Duke of Inhyron is spoken: duchess-shrinks-back
+    refuse duke-steps-between
+  end on
+
+## `story.ni:11469-11475`: the Duchess approached — the Duke steps between
+## (the first time, which the source routes to his tree) or she shrinks
+## back.
+
+define phrase duke-steps-between
+  The Duchess shrinks back as you approach, and the Duke quickly moves to
+  stand between you and her, greeting you smoothly as though you had
+  intended to talk to him all along.
+end phrase
+
+define phrase duchess-shrinks-back
+  The Duchess shrinks back, as though startled that you would deign to
+  speak to her at all.
+end phrase
+
+define phrase duke-in1-stub
+  (TODO during play-testing — conversation IN1 → IN2-IN12 → IN13/IN14, the
+  Duke of Inhyron: "No need for introductions… I am aware of who you are,
+  and I see no reason to incriminate either of us by announcing it" — "What
+  would you ask of me, girl?" (IN1); "the… circumstances surrounding your
+  birth" (IN2); "I counted your father as a friend and an equal" (IN3);
+  Jacobs "a common gangster" (IN4); Fossville "good breeding" (IN5) — "no
+  evidence that he did any such thing" (IN6); the Queen's judgment (IN7);
+  the Princess and his nine-year-old son (IN8, IN12); Amhyron the vassal
+  (IN9, IN10 — "Without loyalty, we are all weakened"); Bresa "unworthy"
+  (IN11); then the fork — "I might be willing to marry him" (IN13, "I will
+  remember that") or "Well, keep him away from me" (IN14, "I will remember
+  this" — his back turned after). IN12 opens only after IN8 or JE17. The
+  Duke is not ruled to see her.)
+end phrase
+
+define phrase duke-in15-stub
+  (TODO during play-testing — conversation IN15 → IN2-IN12, the Duke of
+  Inhyron again: "Yes, girl? What is it now?"; or, after IN14, "The Duke
+  coldly and deliberately turns his back to you. Not much chance he'll talk
+  to you now." — the fork's memory is Phase 8's.)
+end phrase
+
+## The Baron of Amhyron (`story.ni:11607-11652`).
+
+create the Baron of Amhyron
+  aka amhyron, baron amhyron, lord falton, falton, milord, stout man, red-faced man, kind man
+  a person, proper
+  pronouns he
+  states: mingling, spoken
+
+  Baron Amhyron is middle-aged, somewhat stout, with a red face and kind
+  crinkles around his deep, brown eyes. His clothes are not quite as rich or
+  as formal as those of some of the other guests, but he still cuts a
+  respectable figure.
+
+  phrase present:
+    The Baron of Amhyron is mingling near the banquet table. He looks a
+    little overwhelmed, although he appears to be enjoying himself.
+
+  on the player talking
+    refuse when the Baron of Amhyron is spoken: amhyron-am17-stub
+    phrase amhyron-am1-stub
+    raise the Queen's evidence by 1
+    change the Baron of Amhyron to spoken
+  end on
+
+define phrase amhyron-am1-stub
+  (TODO during play-testing — conversation AM1 → AM2-AM16 → AM18, the Baron
+  of Amhyron: "Good evening, milady… I am Lord Falton, Baron of Amhyron.
+  And you are?" — "Lady Jacqueline, of, er… of Toresal" (AM1); "a stick in
+  Fossville's spokes. Aren't you worried he'll come after you?" (AM2 →
+  AM3/AM4); "I'm something of an outsider here… Just like you" (AM5); "would
+  you be willing to support me in the Ascension?" — "I'd support just about
+  anyone against Fossville… He's the one you need to convince, not me" (AM6
+  → AM7 → AM8/AM9, "And so it goes"); Fossville, her father, Jacobs, the
+  Queen, the Princess, the Duke, Bresa (AM10-AM16); "Good-bye" — "The
+  pleasure has been all mine, Lady Jacqueline" (AM18). The Baron of Amhyron
+  is not ruled to see her.)
+end phrase
+
+define phrase amhyron-am17-stub
+  (TODO during play-testing — conversation AM17 → AM2-AM16, the Baron of
+  Amhyron again: "'Hello again, milady,' says the Baron with a slight bow.
+  'You are finding the festivities enjoyable, I hope?'")
+end phrase
+
+## The Earl of Bresa (`story.ni:11725-11766`).
+
+create the Earl of Bresa
+  aka earl, bresa, earl bresa, bald man, bearded man, red beard, loud man
+  a person, proper
+  pronouns he
+  states: mingling, spoken
+
+  The Earl of Bresa has a bald head and a huge, curly, red beard. His
+  lavish, colorful clothes are stained with wine and food. He laughs too
+  loudly and has a habit of putting his greasy fingers on other guests —
+  usually a friendly slap on the back for the men, elsewhere for the women.
+  Despite Jacobs' warning, you find yourself liking him immediately.
+
+  phrase present:
+    The Earl is easy to spot from anywhere in the room: he's the one roaring
+    with laughter and throwing fistfuls of money at the chamber orchestra,
+    much to the guests' amusement and the musicians' embarassment.
+
+  on the player talking
+    refuse when the Earl of Bresa is spoken: bresa-br11-stub
+    phrase bresa-br1-stub
+    raise the Queen's evidence by 1
+    change the Earl of Bresa to spoken
+  end on
+
+define phrase bresa-br1-stub
+  (TODO during play-testing — conversation BR1 → BR2-BR10 → BR12, the Earl
+  of Bresa: "Ah-HA! The young up-and-comer! The stick in the spokes! The
+  crumb in everyone's eye!… You need anything, backing, whatever, you just
+  let me know" (BR1); "an insufferable aggravation to nearly every
+  influential person at this Goddess-forsaken party. And that makes you all
+  right by me" (BR2); "What I want is good food and strong wine" (BR3);
+  Fossville "a conniving weasel" (BR4); "There was no finer man in the
+  kingdom than your father" (BR5); Jacobs "that self-inflated stallkeeper"
+  (BR6); the Queen "all but useless" (BR7); the Princess and the belch
+  (BR8); the Duke — "Balderdash!… something in his own [bloodline] that he'd
+  rather people not know about" (BR9); Amhyron "no backbone" (BR10);
+  "Good-bye" — "Spread the love around, my girl!" (BR12). The Earl is not
+  ruled to see her.)
+end phrase
+
+define phrase bresa-br11-stub
+  (TODO during play-testing — conversation BR11 → BR2-BR10, the Earl of
+  Bresa again: "'Hello again!' yells the Earl, swaying slightly as he waves
+  you over.")
+end phrase
+
+## The Prince of Gravesal (`story.ni:11819-11843`): there from the start
+## (the ruling); he SEES her — his aura lines carry.
+
+create the Prince of Gravesal
+  aka prince, gravesal, prince gravesal, tall man, dark-skinned man, stranger, striking man, slim man
+  a person, proper
+  pronouns he
+  states: mingling, spoken
+  wears the hawk brooch
+  wears the black cloak
+
+  The Prince cuts such a striking figure, you can't imagine how you failed
+  to notice him until now. Tall and slim, with smooth skin the color of
+  strong tea and long, ink-black hair tied back at the nape of his neck. His
+  clothes, though finely cut, are black as well, devoid of decoration except
+  for a single garnet brooch pinning his cloak at the shoulder. He looks
+  young, perhaps only a few years older than you. And something about his
+  deep, brown eyes makes it difficult for you to concentrate...
+
+  on the player talking
+    refuse when the Prince of Gravesal is spoken: prince-gr2-stub
+    phrase prince-gr1-stub
+    raise the Queen's evidence by 1
+    change the Prince of Gravesal to spoken
+  end on
+
+create the hawk brooch
+  aka brooch, garnet brooch, hawk, garnets, garnet, red garnets, decoration
+  wearable
+
+  The brooch is shaped like a hawk, and decorated with bright red garnets.
+
+create the black cloak
+  aka prince's cloak, prince's clothes, black clothes, coal
+  wearable
+
+  The Prince's cloak and clothes are plain but handsome, and black as coal.
+
+define phrase prince-gr1-stub
+  (TODO during play-testing — conversation GR1 → GR2-GR6 → GR4 → GR7, the
+  Prince of Gravesal: "'Pardon me,' someone says in a low, strangely
+  accented voice, and a hand touches your elbow… 'Allow me to introduce
+  myself. I am Prince Gravesal.'" (GR1, without the mercenaries at the
+  doors); "Merely an interested observer… I am intrigued" (GR2); "There's
+  something… special about you. I could see it from the moment I laid eyes
+  on you" (GR3); "People in my family have always been able to see these
+  things. It's like an aura… You have… a highly visible fate" (GR4); "mainly
+  I am interested in you" (GR5); "What is my fate?" — "I see a long journey
+  ahead of you. And many trials… And I see death" — the bow, his lips cool
+  against the back of her hand, and lost in the crowd (GR7, without the
+  hand on her shoulder). GR6 ("I have to get out of here") is cut with the
+  capture. The Prince SEES her — GR3-GR4 are the source's own naming of the
+  talent.)
+end phrase
+
+define phrase prince-gr2-stub
+  (TODO during play-testing — the Prince of Gravesal again: the source's
+  tree opens once; whether he speaks a second time is David's, or he is lost
+  in the crowd.)
+end phrase
+
+## Bobby beside the throne (the ruling) — his description and his new
+## conversation live on his block in `maiden-house.chord`; the phrases are
+## here.
+
+define phrase bobby-none-the-worse
+  Bobby looks none the worse for wear after his hanging. He's still smiling
+  that wild, lopsided smile.
+end phrase
+
+define phrase bobby-court-stub
+  (TODO during play-testing — Bobby's conversation, new, carrying the War
+  Room's reveals: that he is a spy; how he escaped the noose — "That's my
+  own secret for now"; whom he answers to — "I don't answer to any royalty…
+  I answer to the people of Miradania", now in tension with the Queen's man,
+  which is the layering David named; and his 2010 note's list — the
+  hanging, dying, spying, the maidens, her father, her mother. Bobby does
+  NOT see her. David's lines; Phase 8's tree.)
+end phrase
+
+define phrase bobby-court-again-stub
+  (TODO during play-testing — Bobby again, beside the throne: what he will
+  and will not say twice is David's.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## VELLA — Chapter 12's room (Phase 11's), here only so the Priestess has
+## somewhere to lead her and Chapter XII's row has a room to begin on.
+## ---------------------------------------------------------------------------
+
+create Vella
+  a room
+  aka vella
+
+  (Vella — the Vedd prayer circle, Chapter 12's, built with Phase 11: what
+  Vella is as a place, the circle, and the transformation are David's
+  outright.)

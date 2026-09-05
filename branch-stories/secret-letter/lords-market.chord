@@ -23,13 +23,18 @@ create the Lord's Market
   east to the Jeweler's Shop, one-way
   southeast to the Moneylender's Shop, one-way
   south to the Back Alley
+  south is blocked while bodyguarded: pieter-not-maiden-house
+  west is blocked while bodyguarded and not the player has the ball gown: pieter-need-a-gown
+  east is blocked while bodyguarded: pieter-dont-bother-sandler
+  southeast is blocked while bodyguarded and the player has the purse: pieter-done-with-moneylenders
+  northeast is blocked while bodyguarded and the player has the ball gown: pieter-already-have-gown
   south is blocked while after jail and not the player has the letter: stay-away-from-maiden-house
   northeast is blocked while Toresal is night: shops-shuttered
   east is blocked while Toresal is night: shops-shuttered
   southeast is blocked while Toresal is night: shops-shuttered
   states: bearings, seen
 
-  {lords-market-by-day}{lords-market-by-night} {gallows-erected}{gallows-erected-seen}
+  {lords-market-by-day}{lords-market-by-night} {gallows-erected}{gallows-erected-seen} {fossville-on-the-platform} {pieter-bodyguard}
 
   after the player entering while the Lord's Market is bearings
     phrase fossville-collision
@@ -208,19 +213,28 @@ create the Royal Tunic
   a room
   aka clothiers shop, clothier's shop, clothiers, clothier's, tailor's
   west to the Lord's Market, one-way
-  states: new, familiar
+  states: new, familiar, squealed
 
   The walls are hung with tasteful curtains, and a deep, soft carpet covers
   the floor. Several clothier's dummies stand about the room, displaying
   gorgeous formal court apparel for both men and women. The street lies west.
+  {clothier-distaste}{clothier-waiting-to-serve} {pieter-bodyguard}
 
-  after the player entering while the Royal Tunic is new
+  after the player entering while the Royal Tunic is new and Jack is not clean
     phrase clothier-bell
     change the Royal Tunic to familiar
   end after
 
+  after the player entering while Jack is clean and the Royal Tunic is not squealed
+    phrase clothier-squeals
+    change the Royal Tunic to squealed
+  end after
+
   after the player going
     phrase clothier-come-back
+    phrase pieter-wow when Pieter is outside
+    move Pieter here when Pieter is outside
+    change Pieter to guarding when Pieter is outside
   end after
 
 create the clothier's curtains
@@ -244,14 +258,21 @@ create the Jeweler's Shop
   a room
   aka sandler and sons, jewelers shop, jeweler's shop, jewelers, jeweler's, sandler's
   west to the Lord's Market, one-way
+  west is blocked while the preparations is reveal: sandler-dont-go-yet
+  west is blocked while the preparations is told: sandler-forgetting-something
   states: new, greeted, parted, frightful, dismissed
 
   The inside of this store is tasteful but austerely decorated, perhaps to
   better draw the eye towards the glass display case in the center of the room
   and the king's ransom in jewelry contained therein. You can leave to the
-  west.
+  west. {pieter-at-his-post}{pieter-bodyguard}
 
-  after the player entering while after jail and the Jeweler's Shop is not frightful and the Jeweler's Shop is not dismissed
+  after the player entering while Jack is clean and the preparations is pending
+    phrase sandler-ds31-stub
+    change the preparations to reveal
+  end after
+
+  after the player entering while after jail and Jack is not clean and the Jeweler's Shop is not frightful and the Jeweler's Shop is not dismissed
     phrase sandler-ds24-stub
     change the Jeweler's Shop to frightful
   end after
@@ -266,22 +287,24 @@ create the Jeweler's Shop
     change the Jeweler's Shop to parted when the Jeweler's Shop is greeted and before rooftops
     phrase sandler-ds30-stub when the Jeweler's Shop is frightful
     change the Jeweler's Shop to dismissed when the Jeweler's Shop is frightful
+    phrase sandler-good-luck when the preparations is escorted
   end after
 
 create the display case
   aka case, cases, glass case, glass, pedestal, pedestals, display
   scenery
   in the Jeweler's Shop
+  states, reversible: locked, opened
 
   Light glitters across diamond-encrusted rings, bracelets, pendants,
   brooches, and necklaces spread out on black velvet.
 
   on the player opening
-    refuse case-locked
+    refuse when the display case is locked: case-locked
   end on
 
   on the player taking
-    refuse case-locked
+    refuse when the display case is locked: case-locked
   end on
 
 create the valuable jewelry
@@ -311,11 +334,22 @@ create the Moneylender's Shop
   a room
   aka moneylenders shop, moneylenders, moneylender's, chorus brothers shop, chorus brothers' shop
   west to the Lord's Market, one-way
+  states: new, greeted
 
   The inside of this shop is dark — dark wood paneling on the walls; deep,
   wine-dark carpeting on the floor; even a pair of huge, leather armchairs
   over in one corner. The back half of the room is hidden behind a wall of
   reinforced wood, with a wide window cut through the center.
+  {pieter-bodyguard}
+
+  after the player entering while Jack is clean and the Moneylender's Shop is new
+    phrase brothers-cb1-stub
+    change the Moneylender's Shop to greeted
+  end after
+
+  after the player going while the Chorus Brothers is respectful
+    phrase brothers-come-back-soon
+  end after
 
 create the armchairs
   aka armchair, chair, chairs, leather armchairs, leather chairs
@@ -425,7 +459,9 @@ create the lovely clothes
   end after
 
   on the player taking
-    refuse clothier-wont-sell
+    refuse when Jack is not clean: clothier-wont-sell
+    refuse when the player has the ball gown: already-a-lovely-gown
+    the player must have the purse: clothier-price-queasy
   end on
 
 define phrase clothes-daydream
@@ -443,7 +479,14 @@ end phrase
 
 define trait buy-from-clothier
   on the player buying
-    refuse clothier-wont-sell
+    refuse when Jack is not clean: clothier-wont-sell
+    refuse when the player has the ball gown: already-a-lovely-gown
+    the player must have the purse: clothier-price-queasy
+    phrase gown-bought
+    move the ball gown to the player
+    move the daydress offstage
+    move Pieter offstage
+    change Pieter to outside
   end on
 end trait
 
@@ -467,15 +510,13 @@ create the clothier
   touching them; somehow, through good breeding and intestinal fortitude, he
   manages to soldier on despite not doing so.
 
-  phrase present:
-    The clothier stands nearby, eyeing you with some distaste.
-
   on every turn while the clothier is here and one chance in 5
     phrase clothier-idle
   end on
 
   on the player talking
-    refuse clothier-sniffs
+    refuse when Jack is not clean: clothier-sniffs
+    refuse clothier-cl1-stub
   end on
 
 define phrase clothier-idle, randomly
@@ -552,7 +593,25 @@ create Dame Sandler
     smile plays on her lips.
 
   on the player talking
-    refuse sandler-ds19-stub
+    refuse when the preparations is told: sandler-no-time
+    refuse when the preparations is escorted: sandler-no-time
+    refuse when Jack is not clean: sandler-ds19-stub
+    phrase sandler-ds32-ds49-stub
+    move the valuable jewelry offstage
+    move the silver ring to the Jeweler's Shop
+    move the silver pendant to the Jeweler's Shop
+    move the silver bracelet to the Jeweler's Shop
+    move the silver brooch to the Jeweler's Shop
+    change the display case to opened
+    change the preparations to told
+  end on
+
+  on the player showing
+    refuse sandler-proof-of-heritage
+  end on
+
+  on the player giving
+    refuse sandler-proof-of-heritage
   end on
 
 create Pieter
@@ -560,17 +619,37 @@ create Pieter
   a person, proper
   pronouns he
   in the Jeweler's Shop
+  states, reversible: duty, guarding, outside, lost, throne
+  counter mutters starts 0 between 0 and 10
 
   Pieter is loyal to Dame Sandler and tirelessly vigilant. You've traded
   friendly words with him in the past, but most of the time he stays quiet to
   preserve a sense of professionalism. He gives you a slight smile and nod when
   you catch his eye.
 
-  phrase present:
-    Pieter, the guard, stands discreetly near the back of the room.
+  when Jack moves, while Pieter is guarding and Pieter is not here
+    move Pieter here
+    phrase pieter-follows
+  end when
+
+  on every turn while the preparations is journey and Pieter is here and the player is not in the Commerce Street and Pieter's mutters is less than 10 and one chance in 3
+    phrase pieter-mutters
+    raise Pieter's mutters by 1
+  end on
 
   on the player talking
-    refuse pieter-on-duty
+    refuse when Pieter is duty: pieter-on-duty
+    refuse pieter-pi1-stub
+  end on
+
+  on the player showing
+    the player must have the purse: pieter-dont-lose-that-credentials
+    refuse pieter-dont-lose-that
+  end on
+
+  on the player giving
+    the player must have the purse: pieter-dont-lose-that-credentials
+    refuse pieter-dont-lose-that
   end on
 
 define phrase sandler-liking
@@ -637,6 +716,7 @@ create the Chorus Brothers
   a person, plural, proper
   pronouns they
   in the Moneylender's Shop
+  states: contemptuous, respectful
 
   It's in some ways fortunate that you're not on a first-name basis with these
   fellows, because you'd never be able to tell them apart. Their faces are
@@ -647,8 +727,28 @@ create the Chorus Brothers
     The Chorus Brothers hover behind their window, staring at you.
 
   on the player talking
-    refuse brothers-busy
+    refuse when Jack is not clean: brothers-busy
+    refuse when the player has the purse: brothers-after-loan-stub
+    refuse when the Chorus Brothers is contemptuous: brothers-credentials-stub
+    phrase brothers-cb6-stub
+    move the purse to the player
   end on
+
+  on the player showing
+    refuse when the Chorus Brothers is respectful: brothers-never-forget
+    phrase brothers-read-the-letter
+    change the Chorus Brothers to respectful
+  end on
+
+  on the player giving
+    refuse when the Chorus Brothers is respectful: brothers-never-forget
+    phrase brothers-read-the-letter
+    change the Chorus Brothers to respectful
+  end on
+
+  after the player giving
+    move the letter to the player when the Chorus Brothers has the letter
+  end after
 
 define phrase brothers-busy
   Both brothers raise their eyebrows (one left, the other right)

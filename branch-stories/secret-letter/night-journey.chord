@@ -235,12 +235,13 @@ create the Market Square
   aka grubbers market, grubber's market, empty market, night market, maze, shadows, shadow
   north to the Lord's Road
   east to the Commerce Street, one-way
+  up is blocked while bodyguarded: not-the-time-for-climbing
   up is blocked while Bobby is here: bobby-grabs-belt
   up is blocked: no-time-for-climbing
 
   At night, the normally crowded marketplace is an empty maze of shadows,
   abandoned stalls and rolled-up canvas. The Lord's Road lies north, and
-  Commerce Street lies back east. {bobby-under-post}
+  Commerce Street lies back east. {bobby-under-post} {pieter-bodyguard}
 
   after the player entering
     first time
@@ -291,11 +292,13 @@ create the foot of the center post
   can see wires stretching out in each of the cardinal directions.
 
   on the player climbing
+    refuse when bodyguarded: not-the-time-for-climbing
     refuse when Bobby is here: bobby-grabs-belt
     refuse no-time-for-climbing
   end on
 
   on the player entering
+    refuse when bodyguarded: not-the-time-for-climbing
     refuse when Bobby is here: bobby-grabs-belt
     refuse no-time-for-climbing
   end on
@@ -308,12 +311,15 @@ create the Lord's Road
   a room
   aka lords road, road, wide road, paved road
   east to the Pasture
-  north is blocked: southern-gate-guarded
+  north to the Southern Gate
+  north is blocked while not bodyguarded: southern-gate-guarded
+  south is blocked while bodyguarded: pieter-cant-go-back
   northeast is blocked: bobby-went-east
 
   The wide and well-paved Lord's Road runs from Grubber's Market straight
   north to Lord's Keep, a mile or so from the city. To the east are rolling
   pastures; to the west, broken ground and scrub. {bobby-waiting}
+  {pieter-bodyguard}
 
   after the player entering while Bobby is agreed
     phrase bobby-walk-past
@@ -408,7 +414,8 @@ create the Pasture
   a room
   aka field, open field, pastures, farmland
   north to the Stream Crossing
-  northwest is blocked: southern-gate-guarded
+  northwest to the Southern Gate
+  northwest is blocked while not bodyguarded: southern-gate-guarded
   east is blocked: endless-farmland
   northeast is blocked: endless-farmland
   south is blocked: outer-wall-that-way
@@ -418,7 +425,7 @@ create the Pasture
   This wide, open field is used by the city for tourneys and other holiday
   events, or by cattle-sellers driving their livestock to market. Tonight it
   is empty except for the occasional cow pie. To the north you can see the
-  dark, rough edge of a forest. {bobby-waiting}
+  dark, rough edge of a forest. {bobby-waiting} {pieter-bodyguard}
 
   after the player entering
     first time
@@ -485,7 +492,8 @@ create the Stream Crossing
   aka crossing, stream crossing, north end, northern pasture
   north to the Woods
   southwest to the Lord's Road, one-way
-  west is blocked: southern-gate-guarded
+  west to the Southern Gate
+  west is blocked while not bodyguarded: southern-gate-guarded
   northwest is blocked: no-crossing-that-way
   northeast is blocked: no-crossing-that-way
   east is blocked: endless-farmland
@@ -493,7 +501,7 @@ create the Stream Crossing
 
   A small stream bubbles out of the woods and cuts through the pasture's
   north end. The edge of the forest lies to the north, just across the
-  water. The city is far away to the south. {bobby-waiting}
+  water. The city is far away to the south. {bobby-waiting} {pieter-bodyguard}
 
   after the player entering
     first time
@@ -621,6 +629,18 @@ create the Woods
   north to the Clearing, one-way
   east to the Clearing, one-way
   west to the Clearing, one-way
+  north is blocked while bodyguarded and the split sapling is not in the Woods and one chance in 2: trails-wind-around-grumble
+  north is blocked while bodyguarded and the split sapling is not in the Woods: trails-wind-around
+  north is blocked while bodyguarded and the split sapling is eastward: stick-to-the-east-path
+  north is blocked while bodyguarded and the split sapling is westward: stick-to-the-west-path
+  east is blocked while bodyguarded and the split sapling is not in the Woods and one chance in 2: trails-wind-around-grumble
+  east is blocked while bodyguarded and the split sapling is not in the Woods: trails-wind-around
+  east is blocked while bodyguarded and the split sapling is northward: stick-to-the-north-path
+  east is blocked while bodyguarded and the split sapling is westward: stick-to-the-west-path
+  west is blocked while bodyguarded and the split sapling is not in the Woods and one chance in 2: trails-wind-around-grumble
+  west is blocked while bodyguarded and the split sapling is not in the Woods: trails-wind-around
+  west is blocked while bodyguarded and the split sapling is northward: stick-to-the-north-path
+  west is blocked while bodyguarded and the split sapling is eastward: stick-to-the-east-path
   north is blocked while the split sapling is not northward: lost-in-the-woods
   east is blocked while the split sapling is not eastward: lost-in-the-woods
   west is blocked while the split sapling is not westward: lost-in-the-woods
@@ -633,7 +653,14 @@ create the Woods
   You are in the woodlands just southeast of Lord's Keep, following the game
   trails that wind their way through strands of pale birch and black spruce.
   There is just enough moonlight trickling through the upper branches to see
-  your way by. {sapling-north}{sapling-east}{sapling-west}
+  your way by. {sapling-north}{sapling-east}{sapling-west} {pieter-bodyguard}
+
+  after the player entering while bodyguarded
+    first time
+      phrase skirts-over-the-stream
+      move the split sapling offstage
+      phrase where-was-the-sapling
+  end after
 
   after the player entering
     first time
@@ -703,15 +730,15 @@ end phrase
 
 ## The sapling's initial appearance (`story.ni:6936`), by its way.
 
-define phrase sapling-north, stopping while the split sapling is northward
+define phrase sapling-north, stopping while the split sapling is northward and the split sapling is in the Woods
   A split sapling grows right next to a path leading north.
 end phrase
 
-define phrase sapling-east, stopping while the split sapling is eastward
+define phrase sapling-east, stopping while the split sapling is eastward and the split sapling is in the Woods
   A split sapling grows right next to a path leading east.
 end phrase
 
-define phrase sapling-west, stopping while the split sapling is westward
+define phrase sapling-west, stopping while the split sapling is westward and the split sapling is in the Woods
   A split sapling grows right next to a path leading west.
 end phrase
 
@@ -747,6 +774,20 @@ create the trees
     refuse no-tree-climbing
   end on
 
+  on the player searching
+    phrase sapling-found-north when bodyguarded and the player is in the Woods and the split sapling is not in the Woods and the split sapling is northward
+    phrase sapling-found-east when bodyguarded and the player is in the Woods and the split sapling is not in the Woods and the split sapling is eastward
+    phrase sapling-found-west when bodyguarded and the player is in the Woods and the split sapling is not in the Woods and the split sapling is westward
+    move the split sapling to the Woods when bodyguarded and the player is in the Woods and the split sapling is not in the Woods
+  end on
+
+  on the player examining
+    phrase sapling-found-north when bodyguarded and the player is in the Woods and the split sapling is not in the Woods and the split sapling is northward
+    phrase sapling-found-east when bodyguarded and the player is in the Woods and the split sapling is not in the Woods and the split sapling is eastward
+    phrase sapling-found-west when bodyguarded and the player is in the Woods and the split sapling is not in the Woods and the split sapling is westward
+    move the split sapling to the Woods when bodyguarded and the player is in the Woods and the split sapling is not in the Woods
+  end on
+
 create the game trails
   aka trail, path, paths, gap, gaps, narrow gaps, track, tracks
   scenery, plural
@@ -755,14 +796,31 @@ create the game trails
   The trails are little more than narrow gaps in the underbrush, leading in
   every which direction.
 
-  phrase detail while the split sapling is northward:
+  phrase detail while the split sapling is northward and the split sapling is in the Woods:
     One trail leads north, past a split sapling.
 
-  phrase detail while the split sapling is eastward:
+  phrase detail while the split sapling is eastward and the split sapling is in the Woods:
     One trail leads east, past a split sapling.
 
-  phrase detail while the split sapling is westward:
+  phrase detail while the split sapling is westward and the split sapling is in the Woods:
     One trail leads west, past a split sapling.
+
+  on the player searching
+    phrase sapling-found-north when bodyguarded and the split sapling is not in the Woods and the split sapling is northward
+    phrase sapling-found-east when bodyguarded and the split sapling is not in the Woods and the split sapling is eastward
+    phrase sapling-found-west when bodyguarded and the split sapling is not in the Woods and the split sapling is westward
+    move the split sapling to the Woods when bodyguarded and the split sapling is not in the Woods
+  end on
+
+  on the player examining
+    phrase sapling-found-north when bodyguarded and the split sapling is not in the Woods and the split sapling is northward
+    phrase sapling-found-east when bodyguarded and the split sapling is not in the Woods and the split sapling is eastward
+    phrase sapling-found-west when bodyguarded and the split sapling is not in the Woods and the split sapling is westward
+    move the split sapling to the Woods when bodyguarded and the split sapling is not in the Woods
+  end on
+
+## With Pieter, the underbrush is where the sapling is found again
+## (`story.ni:6925-6929`); the trees and the trails route here.
 
 create the underbrush
   aka brush, bush, bushes, undergrowth, tangled underbrush
@@ -770,6 +828,20 @@ create the underbrush
   in the Woods
 
   The underbrush is thick and tangled.
+
+  on the player searching
+    phrase sapling-found-north when bodyguarded and the split sapling is not in the Woods and the split sapling is northward
+    phrase sapling-found-east when bodyguarded and the split sapling is not in the Woods and the split sapling is eastward
+    phrase sapling-found-west when bodyguarded and the split sapling is not in the Woods and the split sapling is westward
+    move the split sapling to the Woods when bodyguarded and the split sapling is not in the Woods
+  end on
+
+  on the player examining
+    phrase sapling-found-north when bodyguarded and the split sapling is not in the Woods and the split sapling is northward
+    phrase sapling-found-east when bodyguarded and the split sapling is not in the Woods and the split sapling is eastward
+    phrase sapling-found-west when bodyguarded and the split sapling is not in the Woods and the split sapling is westward
+    move the split sapling to the Woods when bodyguarded and the split sapling is not in the Woods
+  end on
 
 ## ---------------------------------------------------------------------------
 ## THE CLEARING and the fountain (`story.ni:6962-7089`)
@@ -782,6 +854,15 @@ create the Clearing
   a room
   aka moonlit clearing, small clearing
   down to the Underneath the Fountain
+  down is blocked while the secret entrance is not in the Clearing: nothing-but-droppings
+  north is blocked while bodyguarded: cant-turn-back-now
+  east is blocked while bodyguarded: cant-turn-back-now
+  south is blocked while bodyguarded: cant-turn-back-now
+  west is blocked while bodyguarded: cant-turn-back-now
+  northeast is blocked while bodyguarded: cant-turn-back-now
+  northwest is blocked while bodyguarded: cant-turn-back-now
+  southeast is blocked while bodyguarded: cant-turn-back-now
+  southwest is blocked while bodyguarded: cant-turn-back-now
   north is blocked: bobby-chickening-out
   east is blocked: bobby-chickening-out
   south is blocked: bobby-chickening-out
@@ -793,9 +874,14 @@ create the Clearing
 
   The woods open out here in a small, moonlit clearing. The ruins of an old
   pavilion lie here, pale pavestones poking up like bones from the grass.
-  {fountain-closed}{fountain-open} {bobby-waiting}
+  {fountain-closed}{fountain-open} {bobby-waiting} {pieter-bodyguard}
 
-  after the player entering while Bobby is gone
+  after the player entering while bodyguarded
+    first time
+      phrase night-journey-watch-stub
+  end after
+
+  after the player entering while Bobby is gone and during keep
     phrase the-capture
     move the secret entrance offstage
     move the player to the Jail Cell
@@ -1017,7 +1103,7 @@ end phrase
 
 create the metal bolt
   aka bolt, knob, metal knob, stud, button, little knob, bottom of the urn, underside of the urn
-  scenery
+  scenery, pushable
   in the Clearing
 
   Just a little knob of metal, sticking out of the bottom of the urn.
@@ -1032,6 +1118,8 @@ create the metal bolt
 
   on the player pushing
     refuse when the secret entrance is in the Clearing: bolt-click-nothing
+    phrase bolt-opens-the-entrance when bodyguarded
+    move the secret entrance to the Clearing when bodyguarded
   end on
 
 define phrase bolt-press-in
@@ -1086,7 +1174,7 @@ create the Underneath the Fountain
   The walls and floor are old, damp, and spotted with some sort of whitish
   fungus, and the air has a wet, sour smell to it. Steps lead up to the
   fountain above you. To the north, a long, low-ceilinged tunnel leads into
-  the gloom. {bobby-waiting}
+  the gloom. {bobby-waiting} {pieter-bodyguard}
 
   after the player entering while Bobby is returning
     phrase bobby-goes-up-first
@@ -1210,7 +1298,7 @@ create the Tunnel End
   north is blocked while the blank stone wall is sealed: wall-just-blank
   south is blocked while Bobby is leading: definitely-no-chickening-out
 
-  {tunnel-end-sealed}{tunnel-end-open} {bobby-waiting}
+  {tunnel-end-sealed}{tunnel-end-open} {bobby-waiting} {pieter-bodyguard}
 
   after the player entering while Bobby is returning
     move Bobby here
@@ -1306,26 +1394,38 @@ create the blank stone wall
 
   on the player examining
     phrase wall-swung-open when the blank stone wall is opened
-    phrase wall-just-blank when the blank stone wall is sealed
+    phrase wall-with-the-hole when bodyguarded and the blank stone wall is sealed and the rectangular hole is in the Tunnel End
+    phrase fingertips-find-the-hole when bodyguarded and the blank stone wall is sealed and the rectangular hole is not in the Tunnel End
+    move the rectangular hole to the Tunnel End when bodyguarded and the blank stone wall is sealed and the rectangular hole is not in the Tunnel End
+    phrase wall-just-blank when the blank stone wall is sealed and not bodyguarded
   end on
 
   on the player searching
     refuse when the blank stone wall is opened: wall-swung-open
-    refuse leave-that-for-now
+    refuse when Bobby is leading or Bobby is returning: leave-that-for-now
+    phrase wall-with-the-hole when bodyguarded and the rectangular hole is in the Tunnel End
+    phrase fingertips-find-the-hole when bodyguarded and the rectangular hole is not in the Tunnel End
+    move the rectangular hole to the Tunnel End when bodyguarded and the rectangular hole is not in the Tunnel End
   end on
 
   on the player touching
     refuse when the blank stone wall is opened: wall-swung-open
-    refuse leave-that-for-now
+    refuse when Bobby is leading or Bobby is returning: leave-that-for-now
+    phrase fingertips-find-the-hole when bodyguarded and the rectangular hole is not in the Tunnel End
+    move the rectangular hole to the Tunnel End when bodyguarded and the rectangular hole is not in the Tunnel End
   end on
 
   on the player opening
     refuse when the blank stone wall is opened: wall-swung-open
-    refuse ready-to-go-home
+    refuse when Bobby is leading or Bobby is returning: ready-to-go-home
+    refuse when bodyguarded and the short lever is not in the Tunnel End: wall-no-obvious-means
+    phrase lever-opens-the-wall when bodyguarded
+    change the blank stone wall to opened when bodyguarded
   end on
 
   on the player closing
     refuse when the blank stone wall is sealed: wall-just-blank
+    refuse when bodyguarded: leave-the-wall-open
     refuse let-bobby-handle-the-door
   end on
 
@@ -1375,7 +1475,7 @@ create the Chapel
   furniture. The wood-paneled walls glow warmly, reflecting the light from
   dozens of devotional candles; the high ceiling disappears in the shadows
   overhead. A corridor leads southwest, and a secret passage in the south
-  wall leads into subterranean gloom. {bobby-waiting}
+  wall leads into subterranean gloom. {bobby-waiting} {pieter-bodyguard}
 
   after the player entering while Bobby is leading
     first time
@@ -1469,15 +1569,14 @@ create the Lower Bailey
   a room
   aka bailey, courtyard, yard, lower courtyard
   up to the Upper Bailey
+  north to the Foyer
   northeast is blocked while Bobby is leading: bobby-tugs-your-sleeve
-  north is blocked: guards-would-notice
+  north is blocked while not bodyguarded: guards-would-notice
+  up is blocked while bodyguarded: bailey-up-attention
+  south is blocked while bodyguarded: guards-would-notice
   up is blocked while Bobby is returning: heard-all-you-need
 
-  A thick wedge of shadow falls across the courtyard at the base of the
-  Keep's outer wall, providing a relatively safe place to hide. The rest of
-  the courtyard is flooded with moonlight, and bored-looking guards stroll
-  back and forth over the gravel. You can return to the Chapel to the
-  northeast. {steps-stand} {steps-dash} {bobby-waiting}
+  {bailey-in-shadow}{bailey-for-the-ball} {steps-stand} {steps-dash} {bobby-waiting} {pieter-bodyguard}
 
   after the player entering while Bobby is leading
     first time
@@ -1523,6 +1622,7 @@ create the steep steps
 
   on the player climbing
     refuse when Bobby is returning: heard-all-you-need
+    refuse when bodyguarded: bailey-up-attention
     move the player to the Upper Bailey
   end on
 

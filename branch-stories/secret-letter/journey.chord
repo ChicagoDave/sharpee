@@ -1,0 +1,686 @@
+## ===========================================================================
+## THE NIGHT JOURNEY TO THE BALL — Book 12 Parts 3-4 (`story.ni:10960-11046`)
+## with the Pieter-keyed layers of Book 5B (`story.ni:6578, 6829, 6880-6958,
+## 6978, 7032-7035, 7216-7307, 7372, 7424-7428`), Chapter 10.
+##
+## The change document ("Chapter 10 — The Night Journey to the Ball",
+## 2026-09-02) authorizes the chapter from Journey to the Ball beginning on
+## Commerce Street to the first step into the keep's Foyer: evening, the
+## night market, Lord's Road, the Southern Gate (new), the Pasture, the
+## Crossing, the Woods without the sapling, the Clearing and the bolt, the
+## tunnel, the wall and the loose brick, the Chapel, the Lower Bailey
+## cleaned for the ball, and the Foyer (new). Chapter 4's rooms play again
+## in their ball-night state; that layer sits on `night-journey.chord`,
+## gated on `bodyguarded`, beside Bobby's-night clauses. Every line is
+## Gentry's; Pieter's tree is Chapter 9's stub.
+##
+## THE RULINGS (change document, Chapter 10):
+##   * EXTENT — Commerce Street to the Foyer (David: "A"); the step north
+##     into the ballroom is Chapter 11's opening (`ball.chord`), and Chapter
+##     XI's row begins on her first visit to it.
+##   * PRESSURE — fear without teeth (David: "B"): something of the men or
+##     the watch on the night journey, seen or nearly met, no fail state.
+##     ONE placeholder, on the first arrival in the Clearing with Pieter —
+##     the fountain where they took her the night before; where it lands and
+##     what it is are David's (gap 1).
+##   * THE RAILS — as the source has them (David: "A"): east from the night
+##     market still open; no going back once on Lord's Road; the Woods' wrong
+##     trails loop with Pieter grumbling; the Clearing's "You can't turn back
+##     now"; up and south from the Lower Bailey refused; south from the
+##     Foyer refused. The Southern Gate is the one spur.
+##   * WHO SEES HER — nobody new. Pieter's "Jack" slips are habit.
+##
+## GAPS (change document): the pressure beat's place and lines; the tunnel
+## lit and unremarked with nobody carrying a light; no dawdle clock on ball
+## night (Chapter 4's was Bobby's); the sapling's way kept from Bobby's
+## night — it is a state on the sapling, so moving it offstage keeps it.
+##
+## NOT CARRIED, with reasons:
+##   * Pieter's road mutters "in random order" — Chord has no
+##     draw-without-replacement strategy, so the ten play in the source's
+##     order, once each (deviation 10 in `secret-letter.story`); the one
+##     chance in three per turn is the source's.
+##   * The Woods' grumble draws its verb separately (says / grumbles /
+##     mutters / pants); the seven lines carry one verb each (deviation 11).
+##   * "split" and "sapling" as words for the underbrush while the sapling
+##     is gone; "brick" as a word for the wall before the hole is found —
+##     conditional vocabulary has no Chord spelling.
+##   * "You can't quite fit [the noun] into the hole" — a container's clause
+##     cannot name the item; and the hole cannot tell the brick from
+##     anything else put into it, so the refusal fires while the brick is
+##     already in place and the "slides easily back" line on any insertion
+##     while it is out.
+##   * `follow trails` with Pieter (the sapling's way or a random one) — the
+##     following action is Bobby's; the exits do the same work.
+##   * The distant descriptions and the facings (peering is not extended
+##     outside the market, as Chapter 4 ruled); the source's themes.
+##   * The Journey's tension ratchets (no tension in the port).
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE OPENING (`story.ni:10967-10974`), spoken on Commerce Street as the
+## preparations become `journey`; the hour turns to night there and the
+## purse goes out of play (`commerce-street.chord`).
+## ---------------------------------------------------------------------------
+
+define phrase evening-falls
+  Evening is falling over the city, and the streets are clearing of people.
+
+  'The ball at Lord's Keep will be starting soon,' mutters Pieter. 'We'd
+  better hurry!'
+end phrase
+
+## PIETER'S ROAD MUTTERS (`story.ni:10786-10796`): one chance in three a
+## turn, anywhere but Commerce Street, ten at most. His block in
+## `lords-market.chord` counts them.
+
+define phrase pieter-mutters, cycling
+  'Remember, keep that dagger hidden until you absolutely need it,' says
+  Pieter. 'It's no good in a sword fight, so your only advantage is
+  surprise.'
+or
+  'I don't know why I let Dame Sandler talk me into this,' Pieter mutters.
+or
+  'I'm not sure what Dame Sandler expects you to do at this ball,' says
+  Pieter. 'Introduce yourself to a lot of people, I guess?'
+or
+  'When we get there, try to stay in a well-lit, crowded place, okay, Jack?'
+  says Pieter. 'Don't go wandering off.'
+or
+  'Don't worry,' says Pieter, 'I'll have your back. But you're going to have
+  to do all the talking.'
+or
+  'If the Baron tries anything, we are leaving. Immediately,' growls Pieter.
+or
+  'Try not to get into any fights,' Pieter warns. 'I got you that dagger for
+  protection, not so you could wreak your vengeance.'
+or
+  'Try to do whatever it is you need to do quickly,' says Pieter. 'I don't
+  want to stay any longer than we have to.'
+or
+  'If we manage to survive tonight, it'll be a miracle,' mutters Pieter.
+or
+  'I have a bad feeling about this,' says Pieter under his breath.
+end phrase
+
+## `story.ni:6578` — the night market's pole with Pieter.
+
+define phrase not-the-time-for-climbing
+  Now is not the time for climbing around!
+end phrase
+
+## `story.ni:10962`
+
+define phrase pieter-cant-go-back
+  'We can't go back now,' says Pieter. 'The ball will be starting any minute
+  — and Dame Sandler will have my head on a platter if I don't get you to it
+  on time!'
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE SOUTHERN GATE (`story.ni:10978-11017`) — the rail's one spur, off
+## Lord's Road, the Pasture and the Crossing; north refused, the rest
+## facings.
+## ---------------------------------------------------------------------------
+
+create the Southern Gate
+  a room
+  aka southern gate, gate, end of the road, end of lord's road, lord's keep gate, keep gate
+  north is blocked: guards-want-an-invitation
+  southwest is blocked: rocks-and-thornbush
+  west is blocked: rocks-and-thornbush
+  northwest is blocked: no-way-around-the-keep
+  northeast is blocked: no-way-around-the-keep
+
+  The Lord's Road ends here at the keep's southern gate. Tonight, for the
+  ball, the portcullis is raised; however, the guards are on high alert
+  tonight, checking invitations as each guest arrives. {pieter-bodyguard}
+
+define phrase guards-want-an-invitation
+  The guards won't let you in unless you have an official invitation. The
+  way things are going lately, they might well be looking out for you
+  specifically.
+end phrase
+
+define phrase rocks-and-thornbush
+  There's nothing in that direction but rocks and the occasional thornbush.
+end phrase
+
+define phrase no-way-around-the-keep
+  There's no way around the keep in that direction.
+end phrase
+
+create the gatehouse
+  aka portcullis, archway, gate house, iron bars, bars, massive gate, iron gate
+  scenery
+  in the Southern Gate
+
+  The portcullis — a massive gate of thick, iron bars — is raised in its
+  archway under the gatehouse.
+
+  on the player touching
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player climbing
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player entering
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player pushing
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player pulling
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player searching
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player opening
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player closing
+    refuse cant-get-near-the-portcullis
+  end on
+
+  on the player taking
+    refuse cant-get-near-the-portcullis
+  end on
+
+define phrase cant-get-near-the-portcullis
+  You can't get near the portcullis without attracting the attention of the
+  guards.
+end phrase
+
+## `story.ni:11012-11017`: the guards checking invites, and Pieter holding
+## her back from them.
+
+define trait held-back-by-pieter
+  on the player kicking
+    refuse pieter-holds-you-back
+  end on
+end trait
+
+create the guards checking invites
+  aka guards, guard, lord's guards, lords guards, men, man, alert guards
+  a person, plural
+  scenery
+  held-back-by-pieter
+  in the Southern Gate
+
+  The guards are wearing polished mail underneath tabards decorated with the
+  Toresal coat of arms, and carrying long spears. They look alert and ready
+  for trouble.
+
+  on the player talking
+    refuse pieter-holds-you-back
+  end on
+
+  on the player attacking
+    refuse pieter-holds-you-back
+  end on
+
+  on the player touching
+    refuse pieter-holds-you-back
+  end on
+
+  on the player pushing
+    refuse pieter-holds-you-back
+  end on
+
+  on the player pulling
+    refuse pieter-holds-you-back
+  end on
+
+  on the player taking
+    refuse pieter-holds-you-back
+  end on
+
+  on the player searching
+    refuse pieter-holds-you-back
+  end on
+
+  on the player listening
+    refuse pieter-holds-you-back
+  end on
+
+  on the player showing
+    refuse pieter-holds-you-back
+  end on
+
+  on the player giving
+    refuse pieter-holds-you-back
+  end on
+
+define phrase pieter-holds-you-back
+  Pieter holds you back. 'Don't, Jack,' he whispers. 'You can't beat them,
+  and you won't gain anything by making a scene.'
+end phrase
+
+create the tabards
+  aka tabard, polished mail, mail, armor, spear, spears, long spears, coat of arms, arms, weapon, weapons, guards' things
+  scenery, plural
+  in the Southern Gate
+
+  You can't get close enough to do that without attracting the guards'
+  attention.
+
+  on the player taking
+    refuse cant-get-close-to-the-guards
+  end on
+
+  on the player touching
+    refuse cant-get-close-to-the-guards
+  end on
+
+  on the player searching
+    refuse cant-get-close-to-the-guards
+  end on
+
+define phrase cant-get-close-to-the-guards
+  You can't get close enough to do that without attracting the guards'
+  attention.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CROSSING AND THE WOODS WITH PIETER (`story.ni:6829`, `6880-6958`).
+## ---------------------------------------------------------------------------
+
+## `story.ni:6829`, once — before going north from the Crossing with Pieter;
+## spoken on the Woods' arrival as Chapter 4 spoke the wobble.
+
+define phrase skirts-over-the-stream
+  Now that you've had a bit of practice, you're a bit more confident on the
+  rocks this time. Carefully lifting your skirts (you're still getting used
+  to moving around in a dress), you pick your way over the stream with
+  little difficulty.
+
+  Pieter, on the other hand, stumbles halfway across and lurches into the
+  water, soaking his trousers up to the knee. You do your best to stifle
+  your laughter as he sloshes his way to shore, cursing and grumbling
+  something about 'gratitude' and 'youth today.'
+end phrase
+
+## `story.ni:6885`
+
+define phrase where-was-the-sapling
+  The game trails criss-cross through the woods in every direction, and they
+  all look the same. When you were here the night before, Bobby quickly
+  found a shortcut to the clearing. Where was it?
+end phrase
+
+## `story.ni:6929`, by the sapling's way.
+
+define phrase sapling-found-north
+  You search the underbrush carefully. At first it all looks the same, but
+  after several tense minutes... you find it! The split sapling that Bobby
+  showed you last night, right next to a trail leading north.
+end phrase
+
+define phrase sapling-found-east
+  You search the underbrush carefully. At first it all looks the same, but
+  after several tense minutes... you find it! The split sapling that Bobby
+  showed you last night, right next to a trail leading east.
+end phrase
+
+define phrase sapling-found-west
+  You search the underbrush carefully. At first it all looks the same, but
+  after several tense minutes... you find it! The split sapling that Bobby
+  showed you last night, right next to a trail leading west.
+end phrase
+
+## `story.ni:6952`, by the sapling's way — the wrong trail with it found.
+
+define phrase stick-to-the-north-path
+  If you go wandering off on those trails again, you'll only get lost.
+  Better stick to the north path that Bobby took last night.
+end phrase
+
+define phrase stick-to-the-east-path
+  If you go wandering off on those trails again, you'll only get lost.
+  Better stick to the east path that Bobby took last night.
+end phrase
+
+define phrase stick-to-the-west-path
+  If you go wandering off on those trails again, you'll only get lost.
+  Better stick to the west path that Bobby took last night.
+end phrase
+
+## `story.ni:6954-6958` — any trail with the sapling gone: the loop, and
+## one time in two Pieter's grumble (seven lines; deviation 11).
+
+define phrase trails-wind-around
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+end phrase
+
+define phrase trails-wind-around-grumble, randomly
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'It looks like we're back where we started,' says Pieter.
+or
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'Didn't we pass this tree before?' grumbles Pieter.
+or
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'These trails all lead in circles,' mutters Pieter.
+or
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'Are you there yet?' pants Pieter.
+or
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'These woods seem to go on forever,' says Pieter.
+or
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'Where did you say this fountain was?' grumbles Pieter.
+or
+  You try following one of the game trails, but it just seems to wind
+  around without really getting anywhere.
+
+  'I'm completely turned around,' mutters Pieter.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CLEARING WITH PIETER (`story.ni:6978`, `7032-7035`).
+## ---------------------------------------------------------------------------
+
+define phrase cant-turn-back-now
+  You can't turn back now — and besides, it would take you all night to find
+  your way back out of those woods.
+end phrase
+
+define phrase bolt-opens-the-entrance
+  The metal knob pushes in, then pops out again with a click. Suddenly there
+  is a deep, solid thunk, and a scraping sound coming from the stone beneath
+  you. Just as it did before, part of the statue's base swings inward.
+
+  Pieter raises his eyebrows. 'Huh,' he says, 'I never knew about that.'
+end phrase
+
+## THE PRESSURE BEAT (change document, Chapter 10, "Pressure" — David: "B",
+## fear without teeth): something of the men or the watch on the night
+## journey, seen or nearly met, with no fail state. ONE placeholder, on the
+## first arrival in the Clearing with Pieter — the fountain where Rudup and
+## the mercenaries took her and Bobby the night before. Where the beat lands
+## (road, woods, fountain) and its lines are David's, during play-testing
+## (gap 1).
+
+define phrase night-journey-watch-stub
+  (TODO during play-testing — the night journey's pressure: something of
+  Fossville's men or the watch at the fountain where they took her and Bobby
+  last night — seen, heard, or nearly met, with Pieter's hand on his sword —
+  and nothing comes of it. Fear, no teeth. Whether it lands here, on the
+  road, or in the woods, and its lines, are David's.)
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE WALL, THE HOLE, THE BRICK AND THE LEVER (`story.ni:7216-7307`) — the
+## way in alone. The hole is offstage until her fingers find it; the brick
+## rests in it; the lever is offstage until the brick comes out.
+## ---------------------------------------------------------------------------
+
+## `story.ni:7250`
+
+define phrase fingertips-find-the-hole
+  Carefully, you run your fingertips across the wall, trying to remember
+  where Bobby found the loose brick the last time you were here.
+
+  Ah-ha! You find it — the faint outline of a rectangular hole, with a brick
+  resting loosely in the gap.
+end phrase
+
+## `story.ni:7235`, the sealed wall once the hole is found.
+
+define phrase wall-with-the-hole
+  It's just a blank, featureless, stone wall... except for the rough,
+  rectangular hole where one of the bricks is missing.
+end phrase
+
+## `story.ni:7256`
+
+define phrase wall-no-obvious-means
+  The wall has no obvious means of opening. You seem to remember Bobby doing
+  something with a loose brick...
+end phrase
+
+## `story.ni:7245`
+
+define phrase leave-the-wall-open
+  Better leave it open. You might need a quick getaway later on, and you
+  can't be sure that the wall won't lock behind you if you close it.
+end phrase
+
+create the rectangular hole
+  aka hole, rough hole, rectangle, gap, rough rectangular hole
+  a container
+  scenery
+
+  In the back of the hole you see a short lever.
+
+  on the player examining
+    phrase brick-is-loose-here when the brick is in the rectangular hole
+    phrase lever-in-the-hole when the brick is not in the rectangular hole
+  end on
+
+  on the player searching
+    phrase brick-is-loose-here when the brick is in the rectangular hole
+    phrase lever-in-the-hole when the brick is not in the rectangular hole
+  end on
+
+  on the player inserting
+    refuse when the brick is in the rectangular hole: cant-fit-in-the-hole
+  end on
+
+  after the player inserting
+    phrase brick-slides-back when the brick is in the rectangular hole
+    move the short lever offstage when the brick is in the rectangular hole
+  end after
+
+## `story.ni:7266` — the hole's look and search: the brick while it is
+## there, the lever once it is out. The container report lists the brick
+## by itself; the lever's sentence is the description.
+
+define phrase cant-fit-in-the-hole
+  You can't quite fit that into the hole; it keeps bumping into something
+  back in there.
+end phrase
+
+define phrase brick-slides-back
+  The brick slides easily back into the hole.
+end phrase
+
+define phrase brick-is-loose-here
+  The brick is loose here.
+end phrase
+
+define phrase lever-in-the-hole
+  In the back of the hole you see a short lever.
+end phrase
+
+## `pull brick` is taking it (`story.ni:7278`): the brick is pullable so
+## the pull reaches its clause, which does the take's work.
+
+create the brick
+  aka loose brick, stone
+  pullable
+  in the rectangular hole
+
+  You see nothing special about the brick.
+
+  phrase detail while the brick is in the rectangular hole:
+    The brick is loose here.
+
+  on the player pulling
+    phrase brick-pulled-out when the brick is in the rectangular hole
+    move the short lever to the Tunnel End when the brick is in the rectangular hole
+    move the brick to the player when the brick is in the rectangular hole
+  end on
+
+  on the player pushing
+    refuse when the brick is in the rectangular hole: brick-does-not-push
+  end on
+
+  on the player turning
+    refuse when the brick is in the rectangular hole: brick-does-not-turn
+  end on
+
+  after the player taking
+    phrase brick-pulled-out when the short lever is not in the Tunnel End
+    move the short lever to the Tunnel End
+  end after
+
+define phrase brick-does-not-push
+  The brick does not push in. You might be able to pull it out, though.
+end phrase
+
+define phrase brick-does-not-turn
+  The brick does not turn. You might be able to pull it out, though.
+end phrase
+
+## `story.ni:7282`
+
+define phrase brick-pulled-out
+  You manage to get your fingers in around the edge of the brick and pull it
+  out.
+end phrase
+
+create the short lever
+  aka lever, metal lever, short metal lever
+  scenery, pullable, pushable
+
+  It's just a short, metal lever.
+
+  on the player pulling
+    refuse when the blank stone wall is opened: lever-nothing-happens
+    phrase lever-opens-the-wall
+    change the blank stone wall to opened
+  end on
+
+  on the player pushing
+    refuse when the blank stone wall is opened: lever-nothing-happens
+    phrase lever-opens-the-wall
+    change the blank stone wall to opened
+  end on
+
+define phrase lever-nothing-happens
+  Nothing happens.
+end phrase
+
+## `story.ni:7307`
+
+define phrase lever-opens-the-wall
+  The lever moves slightly, then snaps back with a click. The wall swings
+  away, revealing shadows beyond.
+
+  Pieter looks impressed. 'You're full of secrets and surprises, aren't
+  you?' You can't bring yourself to tell him that you learned all your
+  secrets from Bobby.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE LOWER BAILEY ON BALL NIGHT (`story.ni:7372`, `7424-7428`).
+## ---------------------------------------------------------------------------
+
+define phrase bailey-for-the-ball, stopping while bodyguarded
+  The lower bailey has been cleaned, with gravel spread over the larger mud
+  puddles. Guests to the ball are still trickling in from the south. The
+  doors to the inner keep stand open to the north, and music and laughter
+  drift out into the evening air.
+end phrase
+
+define phrase bailey-in-shadow, stopping while not bodyguarded
+  A thick wedge of shadow falls across the courtyard at the base of the
+  Keep's outer wall, providing a relatively safe place to hide. The rest of
+  the courtyard is flooded with moonlight, and bored-looking guards stroll
+  back and forth over the gravel. You can return to the Chapel to the
+  northeast.
+end phrase
+
+define phrase bailey-up-attention
+  Climbing up to the upper bailey would only attract unwanted attention. The
+  ball is where you need to be.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE FOYER (`story.ni:11021-11046`) — the source's Entrance Hall, printed
+## "Foyer"; Red Gate Estate holds the source's name, so this is the Foyer.
+## Chapter 11's ballroom lies north as a placeholder.
+## ---------------------------------------------------------------------------
+
+create the Foyer
+  a room
+  aka entrance hall, hall, inner keep, castle, keep
+  north to the Ballroom
+  south is blocked while the preparations is journey: dont-lose-your-nerve
+
+  The entrance hall has been decorated for the occasion, its stark, stone
+  walls hidden behind festive tapestries and garlands. A few guests stand
+  around in groups, chatting, but the main event seems to be in the
+  ballroom, north of here. {pieter-bodyguard}
+
+  after the player entering
+    first time
+      phrase foyer-arrival
+  end after
+
+## `story.ni:11040-11043`, once — the port's Chapter 10 ends here; the
+## source's "Chapter 10 - The Ball" heading is the port's Chapter XI row,
+## one step north.
+
+define phrase foyer-arrival
+  A servant in formal livery bows, then takes your and Pieter's cloaks and
+  deftly spirits them away.
+
+  Pieter takes a deep breath. 'Well, we made it,' he whispers. 'Although
+  frankly, I'd rather we were still sneaking through dark, dirty tunnels. I
+  guess you'd better head into the ballroom and start mingling.'
+end phrase
+
+define phrase dont-lose-your-nerve
+  Pieter puts his hand on your back, gently but firmly. 'Don't lose your
+  nerve now,' he says. 'You'll be fine; I'll be right behind you the whole
+  time.'
+end phrase
+
+define phrase foyer-music-and-laughter
+  You can hear the sounds of laughter and music coming from the ballroom to
+  the north.
+end phrase
+
+create the tapestries
+  aka tapestry, hangings, hanging, battle, battles, battle scenes, scenes, scene, noblemen, nobleman, nobles, soldiers, soldier, coats of arms, coat of arms, western clans, clans, clan, war
+  scenery, plural
+  in the Foyer
+
+  The tapestries depict important battles in the history of Miradania,
+  noblemen leading their soldiers into war against the western clans. You
+  see a number of coats-of-arms represented in the battle scenes.
+  Interestingly, Fossville's is not among them.
+
+create the garlands
+  aka garland, greenery, festive greenery
+  scenery, plural
+  in the Foyer
+
+  The garlands add a touch of festive greenery to the room.
+
+## THE BALLROOM is Chapter 11's (`ball.chord`); the Foyer's north reaches
+## it by name.

@@ -367,23 +367,42 @@ create Baron Fossville
   that makes him seem bigger than he is. This is a performance to him, you
   realize; and he is playing it for all it is worth.
 
-  phrase present:
-    Baron Fossville stands on the platform, addressing the crowd.
+  on the player examining
+    phrase baron-at-the-ball when the player is in the Ballroom
+  end on
 
   on the player listening
     refuse no-choice-but-to-listen
   end on
 
   on the player talking
-    refuse crowd-can-barely-move
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    phrase dismissal-stub when the ball is confrontation
+    change the ball to dismissed when the ball is confrontation
   end on
 
+  on the player showing
+    phrase dismissal-stub when the ball is confrontation
+    change the ball to dismissed when the ball is confrontation
+  end on
+
+  on the player giving
+    phrase dismissal-stub when the ball is confrontation
+    change the ball to dismissed when the ball is confrontation
+  end on
+
+  after the player giving
+    move the letter to the player when Baron Fossville has the letter
+  end after
+
   on the player attacking
-    refuse crowd-can-barely-move
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    refuse avoid-making-a-scene
   end on
 
   on the player touching
-    refuse crowd-can-barely-move
+    refuse when the player is in the Lord's Market: crowd-can-barely-move
+    refuse avoid-making-a-scene
   end on
 
 define phrase no-choice-but-to-listen

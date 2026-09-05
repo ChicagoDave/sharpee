@@ -1,0 +1,779 @@
+## ===========================================================================
+## DAME SANDLER AND THE PREPARATIONS — Book 12 Parts 1-2 (`story.ni:10588-
+## 10966`) with the clean-Jack layers of Books 3 and 4 (`story.ni:5065-5194`
+## the clothier, `5244-5267` Sandler's door, `5440-5602` the Chorus Brothers,
+## `4703-4820` and `10905-10958` the armory), Chapter 9.
+##
+## The change document ("Chapter 9 — Dame Sandler and the Preparations",
+## 2026-09-02) authorizes the chapter from Sandler's door to the moment
+## Journey to the Ball begins: the reveal, the jewel, Pieter from guard to
+## bodyguard, the loan, the gown, the dagger, and the step onto Commerce
+## Street with all three. No new rooms — Chapter 2's shops in their clean-Jack
+## state — so this file carries the chapter's OWN things (the bookkeeping
+## entity, the four jewels, the purse and its coins, the ball gown, the plain
+## dagger) and every phrase the chapter speaks; the clauses that must sit on
+## Chapter 2's rooms and people are layered onto `lords-market.chord` and
+## `commerce-street.chord`, gated on `the preparations`. Every line is
+## Gentry's; conversations are STUBS under the standing rule.
+##
+## THE RULINGS (change document, Chapter 9):
+##   * EXTENT — Sandler's door to evening on Commerce Street (David: "C");
+##     the night journey is Chapter 10's, and the port's numbering runs one
+##     past the source's from here. Chapter X's row begins when `the
+##     preparations becomes journey`, set on Commerce Street with gown, jewel
+##     and dagger in hand; the evening text, the hour turned to night and the
+##     purse removed are Chapter 10's opening, not built here.
+##   * SANDLER'S REVEAL — true words throughout, the public name unsaid
+##     (David: "A"). DS31-49 carry as written for address and lineage; DS38
+##     and DS39 CONVERT from the source's will-of-the-people law to §3e's
+##     succession claim, in David's words (gap 1) — the stub marks them.
+##   * WHO SEES HER — Pieter does NOT see (David: "A"); his lines carry as
+##     written, "Jack" slips and the stammer included. Sandler sees. The
+##     Brothers and the clothier do not; Olgan Minor does, and Pieter refuses
+##     his conversation, so OM1-9 are never reached here.
+##   * PRESSURE — quiet, as the source has it (David: "A"). Pieter's steering
+##     refusals are the only pressure and they are about time.
+##
+## STUBS TAKING THE SOURCE'S PATH (flagged, per the standing rule's item 4):
+## `talk to sandler` after DS31 prints the DS32-DS49 TODO in one turn and
+## fires DS48's and DS49's consequences (the case unlocked and the four
+## pieces laid out; she may leave once a jewel is taken), where the source
+## walks the tree one quip at a time and fires DS49 by itself once the
+## DS45-48 cluster is spent (the designers' note, `story.ni:10715`, carried
+## below). `talk to brothers` clean prints the credentials TODO while they
+## are contemptuous and the CB6 loan — the purse changing hands — once
+## the letter has been shown; the letter shown restarts nothing (the source
+## restarts on CB2/CB3). `talk to clothier` clean prints the CL1-6 TODO;
+## CL6 (buying by conversation) is `buy clothes`. `talk to pieter` prints
+## PI1-PI11; PI12 is the Woods' and Chapter 10's.
+##
+## GAPS (change document): the DS38-39 conversion (David's words); the
+## dagger "under your gown" when bought before the gown (carries); CB7's
+## "yesterday" (carries — the port's clock agrees); Pieter's ten road
+## mutters, authorized here, heard in Chapter 10.
+##
+## NOT CARRIED, with reasons:
+##   * "now the noun is worn" (the jewel, the gown, the dagger) — no
+##     runtime statement puts a garment on (GH #360): each arrives in her
+##     hands and `wear` is the player's; every gate reads `has`, as the
+##     source's Journey trigger does. The dagger's "(being worn under your
+##     ball gown)" inventory tail goes with it.
+##   * Pieter's presence line as bodyguard — a presence line cannot vary
+##     (GH #364), so his on-duty line and his five bodyguard lines are room
+##     markers, and the platform lists him besides.
+##   * `show dagger to X` / `give dagger to X` ("Best to keep it hidden") —
+##     a showing clause's owner is the recipient, not the thing shown.
+##   * `ask brothers for loan` (the persuasion rules) — no asking-for
+##     action; `talk to brothers` is the way.
+##   * `pull drawstring` opening the purse — a pulling clause cannot redirect
+##     to opening; `open purse` and `close purse` speak the drawstring lines.
+##   * The purse's conditional aliases ("coins", "gold" only while closed).
+##   * `take clothes` as buying — an intercept with statements would run
+##     under the platform's scenery refusal; `buy`, `pick` and `choose` are
+##     the ways.
+##   * The clothier's clean bell paragraph replaces nothing: the source
+##     prints it on a `[first time]` of its own rule, so a clean first entry
+##     squeals once whether or not the dirty bell rang before.
+##   * `give letter to brothers` — a speaking give still hands the item
+##     over (the Chapter 6 finding), so the brothers' `after` hands the
+##     letter back; "They hand the letter back to you" is the source's own
+##     line for it.
+##   * `open purse` / `close purse` print the platform's report and then the
+##     drawstring line; the source's line replaces the report.
+##   * `kiss` refusals (no action); the source's image and theme changes.
+## ===========================================================================
+
+## ---------------------------------------------------------------------------
+## THE PREPARATIONS — the state the shops, the streets and Pieter read.
+## `pending` until she enters Sandler's clean; `reveal` from DS31, held in
+## the shop; `told` from DS49, the case open; `escorted` from DS49B, Pieter
+## the bodyguard; `journey` on Commerce Street with all three, which is
+## Chapter X's row; `ball` from the step into the ballroom, which ends the
+## Bodyguard scene (Chapter 11).
+## ---------------------------------------------------------------------------
+
+create the preparations
+  aka dame sandler's errands, the errands
+  proper
+  states: pending, reveal, told, escorted, journey, ball
+
+  Dame Sandler's preparations.
+
+## "the player has dress jewelry" — any one of the four.
+
+define condition jeweled: the player has the silver ring or the player has the silver pendant or the player has the silver bracelet or the player has the silver brooch
+
+## The source's Bodyguard scene runs from DS49B to the ballroom
+## (`story.ni:10758`): Pieter's steering and his shop manners hold through
+## Chapter 10's journey, so the streets read this rather than `escorted`.
+
+define condition bodyguarded: the preparations is escorted or the preparations is journey
+
+## ---------------------------------------------------------------------------
+## DAME SANDLER — Book 12 Part 1 (`story.ni:10594-10731`).
+## ---------------------------------------------------------------------------
+
+## `DS31` (`story.ni:10615`), on entering clean; the port's Chapter IX row
+## is the source's "Chapter 9 - Preparations" heading (`5262`).
+
+define phrase sandler-ds31-stub
+  (TODO during play-testing — conversation DS31: Dame Sandler looks Jack
+  over and smiles, not at all surprised by the change in dress if DS1 was
+  fired — "'Lady Jacqueline,' she says, inclining her head, 'how nice to see
+  you finally looking yourself, after all these years. Come, child, let me
+  get a look at you.'" — the chin between finger and thumb, "You've simply
+  destroyed your hair, of course." Dame Sandler SEES her, and speaks the
+  true words in private — the ruling.)
+end phrase
+
+## `DS32-DS49` (`story.ni:10617-10668`) as one stub: the reveal, the claim,
+## the murder, the task, the three errands, the jewel, and "Thank you".
+## DS38 and DS39 are marked for conversion (the ruling: the succession
+## claim, David's words). The designers' note on DS49 (`story.ni:10715`):
+## the "Thank you" quip fires by itself once the DS45-48 cluster is spent,
+## because stopping her at the door only to be thanked "comes off as weird
+## and passive aggressive" — the stub fires it in the same turn.
+
+define phrase sandler-ds32-ds49-stub
+  (TODO during play-testing — conversation DS32-DS49, Dame Sandler's tree:
+  "did you really think I hadn't guessed?" (DS32) or "Widow Fiona sent me"
+  (DS34), exclusive; who has had their eye on her (DS33); Fiona and the plans
+  made when the Duke died (DS35); "Fossville may have murdered your father"
+  (DS36/DS40 → DS41, "Poison seems most obvious"); the claim (DS38 and DS39 —
+  CONVERTED per the ruling: the King's brother's child, the King dead
+  without a named heir; the source's "will of the people" law and "even as
+  his illegitimate heir" do not carry; David's words); how to press it —
+  the people who would see her succeed (DS42); "I can't do this" (DS43);
+  "You must announce yourself" — Fossville's ball tonight, a dress, some
+  jewelry, and a weapon (DS44); the clothier next door (DS45); the weapons
+  dealer on Commerce Street (DS46); the Chorus Brothers and proof of her
+  heritage (DS47); the jewelry — she unlocks the display case with a tiny
+  silver key: "Take any one you like, child. I'm one of those who would see
+  you succeed; this is my gift to you" (DS48); and, once the cluster is
+  spent, "Thank you" (DS49): "See the moneylenders first, then get a
+  suitable dress and a discreet blade. Pieter will go with you—" "What, to
+  the ball?" "Yes, Pieter, to the ball. Just do what you always do — keep
+  your mouth shut and make sure no one harms the valuables." Dame Sandler
+  SEES her; Pieter does NOT, and hears the politics here.)
+end phrase
+
+## `story.ni:10594`
+
+define phrase sandler-no-time
+  Dame Sandler interrupts you with an upheld finger. 'There's no time,
+  child. You must hurry.'
+end phrase
+
+## `story.ni:10600` — the source's line lacks its opening quotation mark;
+## the port supplies it.
+
+define phrase sandler-proof-of-heritage
+  'That is proof of your heritage, Jacqueline,' Dame Sandler says. 'Guard it
+  well; it is the most valuable thing you possess.'
+end phrase
+
+## `story.ni:10603`: held in the shop from DS31 to DS49. The source varies
+## the line on DS44 — "'Wait, Jacqueline. There are a few things yet you
+## should know.'" once the errands have been named — which the one-turn stub
+## never reaches; the first variant is the one that can print.
+
+define phrase sandler-dont-go-yet
+  Dame Sandler takes your elbow, gently but firmly. 'Please don't go yet,
+  dear; what I have to tell you is dreadfully important.'
+end phrase
+
+## `story.ni:10606`
+
+define phrase sandler-forgetting-something
+  'Jacqueline,' Dame Sandler scolds, 'aren't you forgetting something?' She
+  nods her head pointedly towards the jewelry.
+end phrase
+
+## `story.ni:10609`
+
+define phrase sandler-good-luck
+  As you leave, Dame Sandler calls out, 'Good luck, Lady Jacqueline.'
+end phrase
+
+## `DS49B` (`story.ni:10670`), on the jewel taken.
+
+define phrase sandler-ds49b
+  'A fine choice,' says Dame Sandler, closing and locking the case once
+  again.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE JEWELRY (`story.ni:10735-10752`): four pieces, one chosen. They are
+## laid out in the shop when the case is unlocked (DS48) and the three not
+## taken go back under glass with the valuable jewelry (DS49B). Taking one
+## is the source's "now the noun is worn" — here it arrives in her hands
+## and `wear` is hers (GH #360).
+## ---------------------------------------------------------------------------
+
+define trait dress-jewelry
+  after the player taking
+    phrase sandler-ds49b
+    move the silver ring offstage when not the player has the silver ring
+    move the silver pendant offstage when not the player has the silver pendant
+    move the silver bracelet offstage when not the player has the silver bracelet
+    move the silver brooch offstage when not the player has the silver brooch
+    move the valuable jewelry to the Jeweler's Shop
+    change the display case to locked
+    change Pieter to guarding
+    change the preparations to escorted
+  end after
+end trait
+
+create the silver ring
+  aka ring, diamond ring, silver diamond ring, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
+  wearable
+  dress-jewelry
+
+  The ring is silver and inlaid all over with tiny, expertly cut diamonds,
+  set in an intricate pattern of looping swirls around the circumference of
+  the ring, like curls of glittering thread.
+
+create the silver pendant
+  aka pendant, necklace, teardrop, link, links, silver links, sapphire, sapphires, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
+  wearable
+  dress-jewelry
+
+  The pendant is a teardrop the size of your thumb, encrusted with diamonds
+  and sapphires, hanging from a necklace of delicate, silver links.
+
+create the silver bracelet
+  aka bracelet, band, silver band, sapphire, sapphires, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
+  wearable
+  dress-jewelry
+
+  The bracelet is a band of silver, just big enough to squeeze over the
+  bones of your hand. A circle of diamonds surrounds a larger sapphire set in
+  the center.
+
+create the silver brooch
+  aka brooch, pin, cup, stem, rim, silver cup, sapphire, sapphires, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
+  wearable
+  dress-jewelry
+
+  The brooch is wrought of silver in the shape of a cup, symbol of the
+  Goddess Magdalena. The stem is decorated with diamonds, and a line of
+  sapphires adorns the cup's rim.
+
+## ---------------------------------------------------------------------------
+## PIETER AS BODYGUARD — Book 12 Part 2 (`story.ni:10758-10848`). From
+## DS49B to the ballroom he follows her everywhere; his follow line prints
+## on each move. The source draws the verb and the manner separately
+## (`story.ni:10775`); Chord randomises whole arms, so the twelve
+## combinations are twelve arms (deviation 9 in `secret-letter.story`).
+## ---------------------------------------------------------------------------
+
+define phrase pieter-follows, randomly
+  Pieter follows, looking around warily.
+or
+  Pieter follows, his hand on his sword hilt.
+or
+  Pieter follows, doggedly keeping you in sight.
+or
+  Pieter hurries after you, looking around warily.
+or
+  Pieter hurries after you, his hand on his sword hilt.
+or
+  Pieter hurries after you, doggedly keeping you in sight.
+or
+  Pieter hurries to catch up, looking around warily.
+or
+  Pieter hurries to catch up, his hand on his sword hilt.
+or
+  Pieter hurries to catch up, doggedly keeping you in sight.
+or
+  Pieter sticks close to you, looking around warily.
+or
+  Pieter sticks close to you, his hand on his sword hilt.
+or
+  Pieter sticks close to you, doggedly keeping you in sight.
+end phrase
+
+## His initial appearance (`story.ni:5222`), by state: on duty in the shop,
+## then the five bodyguard lines at random. Room markers (GH #364); the
+## shop carries both, the streets and the other shops the second.
+
+define phrase pieter-at-his-post, stopping while Pieter is here and Pieter is duty
+  Pieter, the guard, stands discreetly near the back of the room.
+end phrase
+
+define phrase pieter-bodyguard, randomly while Pieter is here and Pieter is guarding
+  Pieter is here, looking around warily.
+or
+  Pieter is here, fingering his sword hilt.
+or
+  Pieter is here, muttering to himself.
+or
+  Pieter is here, shifting his feet impatiently.
+or
+  Pieter is here, keeping a close eye on you.
+end phrase
+
+## `PI1-PI11` (`story.ni:10826-10859`) as a stub; `PI1`'s opener draws its
+## address at random from Jack / Jacqueline / "Jac— er, Jacqueline"
+## (`story.ni:5231`). Pieter does NOT see her.
+
+define phrase pieter-pi1-stub
+  (TODO during play-testing — conversation PI1-PI11, Pieter's tree: "'Hey
+  Pieter,' you say, 'mind if I ask you something?'" — "I don't know if we
+  have much time to chat / We really should be getting to the ball / I don't
+  know if I have any answers for you, Jack / Jacqueline / Jac— er,
+  Jacqueline, but okay" (PI1, the stammer at random); "Did you know I was a
+  girl, too?" — "Oh, I was in the dark, all right" (PI2); "Do you really
+  think I could be Queen?" — "Goddesses, but it's weird calling you that"
+  (PI3); Dame Sandler took him in after some bad business back east (PI4);
+  "That bastard's going to get what's coming to him. For Bobby and for your
+  father" (PI5); "I suppose he could have done worse for a daughter" (PI6);
+  fancy balls — "Make yourself visible" (PI7); the Chorus Brothers (PI8,
+  until the purse); the clothier — "a lifelong bachelor" (PI9, until the
+  gown); Olgan Minor — "a dim thug… he'll try to intimidate you because
+  you're young and a girl" (PI10, until the dagger); "Never mind" (PI11).
+  PI12, the Woods, is Chapter 10's. Pieter does NOT see her — the shock,
+  the stumble and the "Jack" slips carry as written.)
+end phrase
+
+## `story.ni:10801-10802`, the letter shown to him.
+
+define phrase pieter-dont-lose-that
+  'Don't lose that,' Pieter says.
+end phrase
+
+define phrase pieter-dont-lose-that-credentials
+  'Don't lose that,' Pieter says. 'You'll need that to prove your
+  credentials to the Chorus Brothers.'
+end phrase
+
+## `story.ni:5190`, stepping out of the clothier's in the gown.
+
+define phrase pieter-wow
+  Pieter blinks and does a double take as you step out onto the sidewalk in
+  your new finery. 'Wow,' he stammers. 'You look... different. I mean, you
+  looked good before, er, with the other dress, I mean, but this is...
+  wow.' He blushes, then grins, then shakes his head. 'Come on, Lady Toresal.
+  We still have much to do.'
+end phrase
+
+## THE STEERING (`story.ni:10804-10819`, `10891-10903`, `8760-8763`): no
+## Maiden House, no leaving the square without a gown, no going back to
+## Sandler's, no Brothers once the purse is had, no clothier once the gown
+## is had, no bakery or butcher, no armory once the dagger is had, no east
+## from Commerce Street, no west without a weapon.
+
+define phrase pieter-not-maiden-house
+  'No,' says Pieter, pulling you back. 'You'll not be going back to Maiden
+  House any time soon. That's exactly where Fossville will expect you to
+  go.'
+end phrase
+
+define phrase pieter-need-a-gown
+  'Wait a minute,' Pieter says. 'Dame Sandler said you needed a gown, right?
+  We shouldn't leave until you have one.'
+end phrase
+
+define phrase pieter-dont-bother-sandler
+  'There's no need to go back and bother Dame Sandler,' Pieter says. 'We've
+  more important things to do.'
+end phrase
+
+define phrase pieter-done-with-moneylenders
+  'We've got what we need from those moneylenders,' Pieter said, 'I'd just as
+  soon stay out of their clutches for now.'
+end phrase
+
+define phrase pieter-already-have-gown
+  'You already have your gown,' says Pieter. 'We need to move on.'
+end phrase
+
+define phrase pieter-not-here-for-food
+  'We're not here for food,' Pieter says. 'We have more important things to
+  worry about.'
+end phrase
+
+define phrase pieter-got-your-weapon
+  'You've got your weapon already,' Pieter says. 'It's time to move on.'
+end phrase
+
+define phrase pieter-no-traipsing
+  'We don't have time to go traipsing around the city,' says Pieter. 'We
+  need to get to Fossville's ball.'
+end phrase
+
+define phrase pieter-need-a-weapon
+  'Wait a minute,' says Pieter. 'We need to get you a weapon first. We can't
+  leave for the ball until you have one.'
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CHORUS BROTHERS, CLEAN (`story.ni:5449-5602`): contemptuous until
+## the letter is shown, then the loan.
+## ---------------------------------------------------------------------------
+
+## `CB1` (`story.ni:5484`), on entering clean, once.
+
+define phrase brothers-cb1-stub
+  (TODO during play-testing — conversation CB1: a moment after she enters,
+  two faces slide in at the window from either side, curiosity and a sort
+  of mild, almost professional contempt — "'Good afternoon,' says one.
+  'May we help you?' asks the other." The Chorus Brothers do NOT see her.)
+end phrase
+
+## `CB2-CB5`, `CB7`, `CB8` (`story.ni:5486-5498`) while they are
+## contemptuous (the source's `disrespectful` — a state names what a thing
+## IS): "you certainly look respectable, but without some form of
+## credentials our hands are tied"; a letter would be most ideal.
+
+define phrase brothers-credentials-stub
+  (TODO during play-testing — conversation CB2 → CB3 → CB4, CB5, CB7, CB8,
+  the Chorus Brothers contemptuous: "I have a question" — "Allow us to
+  answer… to the best of our ability" (CB2); "I need a loan" (CB3) — "My
+  dear, you certainly look respectable, but without… some form of
+  credentials… our hands are tied" (CB4); "What kind of credentials?" —
+  collateral, surety, "even a letter, establishing your social standing"
+  (CB5); "What was Fossville doing here yesterday?" — "he presents certain…
+  liabilities" (CB7); "Will this letter work?" — the letter held out (CB8,
+  which is `show letter to brothers`). The Chorus Brothers do NOT see her;
+  "My dear" and "Miss" are the girl words under the dress premise.)
+end phrase
+
+## `CB6` (`story.ni:5494`), the loan — the purse changes hands.
+
+define phrase brothers-cb6-stub
+  (TODO during play-testing — conversation CB3 → CB6, the Chorus Brothers
+  respectful: "I need a loan" — the two lean forward eagerly, "We would be
+  delighted to extend to you… our most prestigious line of credit!"; dozens
+  of sheets of dense, tiny script — amortization, dividends, compound
+  interest, escrow; Pieter's "Just sign all of them"; the slim leather
+  folder and the small purse of coins on the counter; "That's it?"
+  complains Pieter, and the sunlight gleam of gold; "remember us… not merely
+  as your creditors… but as your friends" — two sets of wide, white teeth.
+  The Chorus Brothers do NOT see her.)
+end phrase
+
+## `CB2` and `CB7` remain once the loan is made (`story.ni:5502-5520`).
+
+define phrase brothers-after-loan-stub
+  (TODO during play-testing — conversation CB2, CB7 after the loan: "I have
+  a question" and Fossville's visit yesterday — "We're afraid it would not
+  be proper for us to discuss our other clients' financial matters" on the
+  second asking; the loan is not offered twice. The Chorus Brothers do NOT
+  see her.)
+end phrase
+
+## `story.ni:5551-5558`, the letter shown while contemptuous. The source
+## then restarts the conversation on CB2 or CB3; here the next `talk to`
+## is the loan.
+
+define phrase brothers-read-the-letter
+  The brothers both reach out, one with his right hand, the other with his
+  left, and delicately take the letter from you. Their eyes flicker back and
+  forth in unison as they scan the words. When they reach the end, four
+  identical eyebrows shoot up.
+
+  'How very...'
+
+  '...interesting. It would seem you are a personage of more...'
+
+  '...importance than first we assumed.'
+
+  They hand the letter back to you, smiling, and ask in chorus, 'How may we
+  help you?'
+end phrase
+
+## `story.ni:5563`, shown again.
+
+define phrase brothers-never-forget
+  'No need to show us...' begins one brother.
+
+  '...again, Miss,' continues the other. 'We never forget...'
+
+  '...a customer.'
+end phrase
+
+## `story.ni:5455`, leaving once they are respectful.
+
+define phrase brothers-come-back-soon
+  'Come back soon,' intones one of the brothers as you leave. 'Your business
+  is...'
+
+  '...always welcome,' finishes the other.
+end phrase
+
+## THE PURSE (`story.ni:5571-5602`) and the gold. It begins nowhere and
+## arrives in her hands with the loan; Chapter 10's opening removes it.
+
+create the purse
+  aka coin purse, bag, sack, loan, money, gold, small purse, purse of coins, drawstring, drawstrings, string, strings
+  a container, openable, starts closed
+
+  The sack is about the size of your fist. It's very heavy. Even a little
+  bit of gold goes a long way in Toresal, and there's more than just a
+  little bit of gold in here.
+
+  phrase detail while the purse is closed:
+    The drawstring is closed.
+
+  phrase detail while the purse is open:
+    The drawstring is open.
+
+  after the player opening
+    phrase drawstring-pulled-open
+  end after
+
+  after the player closing
+    phrase drawstring-pulled-closed
+  end after
+
+  on the player giving
+    refuse purse-very-generous
+  end on
+
+  on the player dropping
+    refuse purse-unguarded
+  end on
+
+  on the player inserting
+    refuse purse-unguarded
+  end on
+
+define phrase drawstring-pulled-open
+  You pull the drawstring open.
+end phrase
+
+define phrase drawstring-pulled-closed
+  You pull the drawstring closed.
+end phrase
+
+define phrase purse-very-generous
+  Very generous of you, but you're going to need the money for yourself.
+end phrase
+
+define phrase purse-unguarded
+  It wouldn't be very wise to leave a bag full of gold coins sitting
+  unguarded. Better keep them on your person for now.
+end phrase
+
+create the gold coins
+  aka coins, coin, gold coin, great seal, seal, seal of the kingdom, kingdom of miradania, miradania, old king, dead king, face
+  plural
+  in the purse
+
+  Each coin has the Great Seal of the Kingdom of Miradania on one side; the
+  face of some old, dead king that you've never heard of on the other.
+  You've never seen real gold before, and nothing you've ever seen is quite
+  like it. The coins seem to shine with an inner light.
+
+  on the player taking
+    refuse coins-stay-in-the-bag
+  end on
+
+define phrase coins-stay-in-the-bag
+  The bag is the safest place for them, for now. There's no need to take
+  them out unless you're planning to purchase something.
+end phrase
+
+## ---------------------------------------------------------------------------
+## THE CLOTHIER, CLEAN (`story.ni:5069-5194`): the squeal, the price, the
+## gown, the fitting, Getting Changed.
+## ---------------------------------------------------------------------------
+
+## `story.ni:5069`, the clean bell paragraph, once.
+
+define phrase clothier-squeals
+  A small bell above the door tinkles as you enter, and a man comes rushing
+  out of the store's back room with a measuring cord in his hands, held up
+  as though ready to begin fitting you immediately. When he sees that you
+  are a clean, respectable, and evidently well-to-do young lady, he
+  practically squeals with delight, clapping his hands and plucking at the
+  fabric of your clothes with soft, nimble fingers.
+end phrase
+
+## His initial appearance by Jack's state (`story.ni:5083`) — room markers
+## in the Royal Tunic (GH #364).
+
+define phrase clothier-distaste, stopping while the clothier is here and Jack is not clean
+  The clothier stands nearby, eyeing you with some distaste.
+end phrase
+
+define phrase clothier-waiting-to-serve, stopping while the clothier is here and Jack is clean
+  The clothier hovers nearby, waiting to serve.
+end phrase
+
+## `CL1-CL6` (`story.ni:5127-5137`), gated as the source gates them: CL3
+## and CL4 on DS49, CL4 on the gown, CL6 on the purse.
+
+define phrase clothier-cl1-stub
+  (TODO during play-testing — conversation CL1-CL6, the clothier's tree:
+  "'I have a question…' you start to say." — "'And I have answers,' says the
+  clothier, bowing deeply. 'Please, dear, ask away.'" (CL1); "What's your
+  cheapest dress?" — "that hussy who runs the silk tent in Grubber's"; "how
+  much is it worth to you to look fabulous" (CL2); what to wear to the ball
+  — "Sister, there's no point in even choosing. They're all good" (CL3,
+  until the gown); "What do you think?" — "It's fabulous. It's you. Trust
+  me" (CL4, once the gown is on); Fossville and the Ascension — "don't mix
+  dresses with politics" (CL5); "Okay, how about… that one?" (CL6, with the
+  purse — which is `buy clothes`). The clothier does NOT see her; "Sister",
+  "honey", "darling" are the girl words under the dress premise.)
+end phrase
+
+## `story.ni:5108`, the price without the purse.
+
+define phrase clothier-price-queasy
+  You point to one of the dresses, and the clothier quotes you a price that
+  leaves you feeling distinctly queasy. Of course, your old wardrobe consists
+  entirely of cast-offs from the older orphans and whatever interesting bits
+  you were able to scrounge from back-alley trash bins. Who knew real
+  clothes cost so much?
+
+  'Remember what Dame Sandler said, Jacqueline,' remarks Pieter. 'Get
+  yourself some money first.'
+end phrase
+
+## `pick`/`choose` are buying in a store (`story.ni:4733-4734`, `5094`).
+
+extend action buying
+  grammar
+    pick the target
+    choose the target
+
+## `story.ni:5111`
+
+define phrase already-a-lovely-gown
+  You are already wearing a perfectly lovely ball gown.
+end phrase
+
+## `story.ni:5114-5121`, the purchase and the fitting; Pieter waits outside
+## and the day dress is gone from play (`5116`).
+
+define phrase gown-bought
+  After several agonizing minutes of indecision, you point to the dress you
+  want, and hand over several coins.
+
+  The clothier flutters his hands and practically giggles, 'Oh, a splendid
+  choice! You'll look like a princess!' He dances around you, taking
+  measurements with his cord and muttering numbers to himself as he goes.
+  Then he takes the dress off its dummy and retreats with it into the back
+  of his shop. 'This will be just a moment,' he calls over his shoulder.
+
+  You look at Pieter and shrug.
+
+  'Er, I'll wait outside,' he says.
+
+  And afterwards, as you look at yourself in the full-length mirror while
+  the clothier kneels at your feet, tugging, plucking, pinning, making
+  adjustments, you realize that he was right — you do look like a princess.
+end phrase
+
+## `story.ni:5171-5173`
+
+create the ball gown
+  aka gown, dress, ball dress, pale blue dress, blue dress, pale blue gown, new dress, new gown, finery, new finery, pearls, tiny pearls, bodice, dagged sleeves, sleeves
+  wearable
+
+  The dress is pale blue with tiny pearls embroidered into the bodice and
+  dagged sleeves.
+
+  on the player taking_off
+    refuse gown-not-the-time
+  end on
+
+define phrase gown-not-the-time
+  This isn't the time or place to get undressed.
+end phrase
+
+## ---------------------------------------------------------------------------
+## OLGAN MINOR, WITH PIETER (`story.ni:10905-10958`): the proprietor finds
+## something else to look at; the dagger under Pieter's glare.
+## ---------------------------------------------------------------------------
+
+## `story.ni:10913`, once.
+
+define phrase minor-finds-something-else
+  The proprietor makes a face as you walk into his shop, but when he sees
+  Pieter behind you he quickly finds something else to look at.
+end phrase
+
+## `story.ni:10916`; the tail once.
+
+define phrase minor-dont-waste-your-breath, stopping
+  'Don't waste your breath making conversation, Jacqueline,' Pieter says.
+  'Just pick something and buy it and let's move on.' You get the impression
+  that Pieter really doesn't like Olgan Minor, and that maybe there's a
+  history between the two.
+or
+  'Don't waste your breath making conversation, Jacqueline,' Pieter says.
+  'Just pick something and buy it and let's move on.'
+end phrase
+
+## `story.ni:4730`, the dagger display touched with Pieter behind her.
+
+define phrase minor-shut-your-trap
+  'Touch one of those and-'
+
+  'Shut your trap, Minor,' snaps Pieter, and Minor falls silent and even
+  takes a step or two back. 'Hurry up and buy something, Jacqueline,' Pieter
+  says.
+end phrase
+
+## `story.ni:10919`
+
+define phrase pieter-too-big-to-wear
+  Pieter shakes his head. 'Those sorts of weapons are too big to wear
+  discreetly,' he tells you, 'and most are too heavy for you to lift in any
+  case.'
+end phrase
+
+## `story.ni:10925-10927`, the purchase. "under your gown" carries whether
+## or not the gown is bought yet (gap 2).
+
+define phrase dagger-bought
+  Pieter leans over your shoulder as you inspect the daggers. 'Having the
+  right weapon is as important as knowing what to do with it,' he tells
+  you. 'You don't want big or fancy; you want something sharp, long enough
+  to do damage to a man when you stick him with it, but small enough to
+  hide under your, er...' he suddenly blushes and clears his throat.
+  'Anyway. That one,' he says, pointing to a plain-handled blade about six
+  inches long. 'That's the one you want.'
+
+  Olgan Minor grumbles, but Pieter glares at him again and suggests that if
+  your gold is no good here, then perhaps some other metal might suit the
+  shopkeeper better. Grudgingly, Minor hands over the knife, and makes a
+  show of biting your gold coin to make sure of its worth.
+
+  You slip the knife under your gown. Already you feel more confident.
+end phrase
+
+## THE PLAIN DAGGER (`story.ni:10931-10958`): worn under the gown, never
+## drawn before the ball (Chapter 11's), never dropped.
+
+create the plain dagger
+  aka dagger, knife, blade, plain blade, plain-looking blade, plain-handled blade, weapon
+  wearable
+
+  It's a plain-looking blade about six inches long, easily concealed beneath
+  your gown.
+
+  on the player dropping
+    refuse dagger-keep-it-close
+  end on
+
+  on the player taking_off
+    refuse dagger-keep-it-hidden
+  end on
+
+## `draw [plain dagger]` is taking off (`story.ni:10945`).
+
+extend action taking_off
+  grammar
+    draw the target
+
+define phrase dagger-keep-it-close
+  You may need that dagger — keep it close!
+end phrase
+
+define phrase dagger-keep-it-hidden
+  Best to keep it hidden for now.
+end phrase

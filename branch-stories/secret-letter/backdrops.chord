@@ -729,7 +729,9 @@ define action hearkening
   phrase muttering-voices when the player is in the Second Floor Landing
   phrase harsh-breathing when the player is in the Secret Closet
   phrase silence-expectant when the player is in the Duke's House
-  phrase ears-pricked when not within-grubbers and not the player is in the Underneath the Fountain and not the player is in the Drain Room and not the player is in the Sewers and not the player is in the Balcony and not the player is in the Rooftop Garden and not the player is in the Patio and not the player is in the Second Floor Landing and not the player is in the Secret Closet and not the player is in the Duke's House
+  phrase foyer-music-and-laughter when the player is in the Foyer
+  phrase quartet-far-corner when the player is in the Ballroom
+  phrase ears-pricked when not within-grubbers and not the player is in the Underneath the Fountain and not the player is in the Drain Room and not the player is in the Sewers and not the player is in the Balcony and not the player is in the Rooftop Garden and not the player is in the Patio and not the player is in the Second Floor Landing and not the player is in the Secret Closet and not the player is in the Duke's House and not the player is in the Foyer and not the player is in the Ballroom
 
 define phrase garbage-ripe-here
   It smells pretty ripe back here.
