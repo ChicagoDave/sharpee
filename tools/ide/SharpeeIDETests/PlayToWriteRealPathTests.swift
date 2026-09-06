@@ -61,6 +61,15 @@ final class PlayToWriteRealPathTests: XCTestCase {
 
       A boy in this market.
 
+    define action humming
+      grammar
+        hum
+      phrase hum-line
+
+    define phrase hum-line
+      A tune, half remembered.
+    end phrase
+
     before the game starts
       change the player to Jack
     end before
@@ -270,6 +279,114 @@ final class PlayToWriteRealPathTests: XCTestCase {
         XCTAssertEqual(after.first?.turn, before.first?.turn, "the same turn, the seed and history unchanged")
         let replayed = try await echoes()
         XCTAssertEqual(replayed, ["> north"])
+    }
+
+    // MARK: D4c — the inline field, end to end
+
+    private var inlineEdits: [PlayInlineEdit] = []
+    private var commits: [PlayInlineCommit] = []
+
+    /// The real coordinator over the real editor, wired the way the window wires it.
+    private func coordinator(storyURL: URL) -> (PlayToWriteCoordinator, EditorViewController) {
+        let editor = EditorViewController()
+        _ = editor.view
+        let coordinator = PlayToWriteCoordinator(editor: editor)
+        coordinator.onInlineEditRequested = { [weak self] edit in self?.inlineEdits.append(edit) }
+        editor.onDocumentSaved = { url in coordinator.documentSaved(url, storyURL: storyURL) }
+        play.onInlineCommit = { [weak self] commit in self?.commits.append(commit) }
+        return (coordinator, editor)
+    }
+
+    /// Types into the open inline field and presses Enter, as the author would.
+    private func typeIntoFieldAndCommit(_ text: String) async throws -> PlayInlineCommit {
+        _ = try await play.evaluateInPlaySurface("""
+        (function () {
+          var f = document.querySelector('.sharpee-play-inline-edit');
+          f.value = \(String(data: try JSONEncoder().encode(text), encoding: .utf8)!);
+          f.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }));
+          return true;
+        })()
+        """)
+        for _ in 0..<100 {
+            if let commit = commits.last { return commit }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTFail("the inline commit never reached the bridge")
+        throw XCTSkip("no commit")
+    }
+
+    func testCommandClickOnASingleTemplateOpensTheInlineFieldAndEnterRebuildsAndReplaysTheNewText() async throws {
+        try build()
+        play.load(bundleDirectory: bundleDir)
+        try await replay(PlayToWriteSession(messageId: "", history: ["north"]))
+        let before = try await paragraphs(withId: "market.initial-description")
+        XCTAssertEqual(before.map(\.text), ["Stalls crowd the square, for the first time."])
+
+        let ir = try await compose()
+        let (coordinator, editor) = coordinator(storyURL: storyFile)
+        var builds = 0
+        coordinator.onBuildRequested = { builds += 1 }
+
+        // The ⌘-click resolves to a single template: Play is asked for the
+        // field, no editor tab opens, nothing is armed yet.
+        try await commandClick("market.initial-description")
+        coordinator.handle(try XCTUnwrap(received.last), storyURL: storyFile, ir: ir)
+        let edit = try XCTUnwrap(inlineEdits.last)
+        XCTAssertEqual(edit.template, "Stalls crowd the square, for the first time.")
+        XCTAssertEqual(edit.messageId, "market.initial-description")
+        XCTAssertTrue(editor.openDocumentURLs.isEmpty, "the author is typing in Play")
+        XCTAssertNil(coordinator.session)
+
+        // The field opens in the real page with the template; the author types and presses Enter.
+        let opened = try await play.beginInlineEditInPlaySurface(edit)
+        XCTAssertTrue(opened, "the field opened on the paragraph")
+        let commit = try await typeIntoFieldAndCommit("Stalls crowd the square, and the kettle sings.")
+        XCTAssertEqual(commit.history, ["north"])
+
+        // The commit writes the source at the span (indent kept), saves, arms, asks for the build.
+        coordinator.commit(commit, storyURL: storyFile, ir: ir)
+        let onDisk = try String(contentsOf: storyFile, encoding: .utf8)
+        XCTAssertTrue(onDisk.contains("  first time\n    Stalls crowd the square, and the kettle sings.\n"), "was:\n\(onDisk)")
+        XCTAssertEqual(builds, 1)
+        XCTAssertEqual(coordinator.session, PlayToWriteSession(messageId: "market.initial-description", history: ["north"]))
+
+        // The real rebuild; the reload replays the session; the same turn shows the new text.
+        try build()
+        try await markPage()
+        play.reloadAfterBuild(bundleDirectory: bundleDir, replaying: coordinator.takeSession())
+        try await awaitReplay(turns: 1)
+        let after = try await paragraphs(withId: "market.initial-description")
+        XCTAssertEqual(after.map(\.text), ["Stalls crowd the square, and the kettle sings."])
+        XCTAssertEqual(after.first?.turn, before.first?.turn, "the same turn, the seed and history unchanged")
+    }
+
+    func testAnInlineEditOfADefinePhraseBodyRewritesOnlyTheBodyAndReplays() async throws {
+        try build()
+        play.load(bundleDirectory: bundleDir)
+        try await replay(PlayToWriteSession(messageId: "", history: ["hum"]))
+        let before = try await paragraphs(withId: "hum-line")
+        XCTAssertEqual(before.map(\.text), ["A tune, half remembered."])
+
+        let ir = try await compose()
+        let (coordinator, _) = coordinator(storyURL: storyFile)
+        try await commandClick("hum-line")
+        coordinator.handle(try XCTUnwrap(received.last), storyURL: storyFile, ir: ir)
+        let edit = try XCTUnwrap(inlineEdits.last)
+        XCTAssertEqual(edit.template, "A tune, half remembered.", "the block's body, not its header")
+
+        let opened = try await play.beginInlineEditInPlaySurface(edit)
+        XCTAssertTrue(opened, "the field opened on the paragraph")
+        let commit = try await typeIntoFieldAndCommit("A tune, whole now.")
+        coordinator.commit(commit, storyURL: storyFile, ir: ir)
+        let onDisk = try String(contentsOf: storyFile, encoding: .utf8)
+        XCTAssertTrue(onDisk.contains("define phrase hum-line\n  A tune, whole now.\nend phrase"), "was:\n\(onDisk)")
+
+        try build()
+        try await markPage()
+        play.reloadAfterBuild(bundleDirectory: bundleDir, replaying: coordinator.takeSession())
+        try await awaitReplay(turns: 1)
+        let after = try await paragraphs(withId: "hum-line")
+        XCTAssertEqual(after.map(\.text), ["A tune, whole now."])
     }
 
     // MARK: AC-2b — a platform line, overridden through ADR-255

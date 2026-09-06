@@ -147,9 +147,12 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         let span: DiagnosticSpan?
     }
 
-    /// The phrasebook: locales → phrase NAMES (keys + spans). Phrase bodies
-    /// (strategies, variants) are deliberately not decoded — the Index lists
-    /// names; prose stays in the editor.
+    /// The phrasebook: locales → phrase NAMES (keys + spans), plus the two
+    /// shape facts inline play editing needs — the strategy and how many
+    /// variants there are (ADR-333 D4c: a single template edits in place; a
+    /// cycling or multi-arm phrase opens the editor). Variant TEXT is still
+    /// not decoded — the Index lists names; prose stays in the editor, and
+    /// the inline field reads the source at the span.
     struct PhraseBook: Codable, Equatable, Sendable {
         let defaultLocale: String
         let locales: [String: PhraseSet]
@@ -175,7 +178,12 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
                 let entry = try container.nestedContainer(keyedBy: DynamicKey.self, forKey: key)
                 let span = try entry.decodeIfPresent(DiagnosticSpan.self,
                                                      forKey: DynamicKey(stringValue: "span")!)
-                return PhraseName(key: key.stringValue, span: span)
+                // `strategy` is `null` for a single text; `variants` is always an array.
+                let strategy = try entry.decodeIfPresent(String.self,
+                                                         forKey: DynamicKey(stringValue: "strategy")!)
+                let variants = try entry.decodeIfPresent([OpaqueVariant].self,
+                                                         forKey: DynamicKey(stringValue: "variants")!) ?? []
+                return PhraseName(key: key.stringValue, span: span, strategy: strategy, variantCount: variants.count)
             }.sorted { $0.key < $1.key }
         }
 
@@ -184,9 +192,23 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         }
     }
 
+    /// One `variants[]` entry, counted and otherwise ignored.
+    private struct OpaqueVariant: Decodable {}
+
     struct PhraseName: Codable, Equatable, Sendable {
         let key: String
         let span: DiagnosticSpan?
+        /// `randomly` / `cycling` / `stopping` / `sticky` / `first-time`, or nil for a single text.
+        let strategy: String?
+        /// How many arms the phrase has — 1 for a single template.
+        let variantCount: Int
+
+        init(key: String, span: DiagnosticSpan?, strategy: String? = nil, variantCount: Int = 0) {
+            self.key = key
+            self.span = span
+            self.strategy = strategy
+            self.variantCount = variantCount
+        }
     }
 
     private struct DynamicKey: CodingKey {

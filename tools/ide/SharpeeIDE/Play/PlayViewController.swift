@@ -39,6 +39,24 @@ struct PlayEditRequest: Equatable {
     let history: [String]
 }
 
+/// An inline edit Play is asked to open (ADR-333 D4c): the paragraph, by id
+/// and turn, and the template text the field starts with — the source as the
+/// author wrote it, braces and all, never the rendered text.
+struct PlayInlineEdit: Equatable {
+    let messageId: String
+    let turn: Int?
+    let template: String
+}
+
+/// What the inline field reports when the author commits (Enter): the
+/// paragraph, the new template text, and the command history at that moment.
+struct PlayInlineCommit: Equatable {
+    let messageId: String
+    let turn: Int?
+    let text: String
+    let history: [String]
+}
+
 /// A stub the current path printed (ADR-333 D6): the paragraph's message id,
 /// its turn, and its text. The marker's spelling is an IDE convenience, never
 /// a platform contract.
@@ -58,6 +76,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
 
     private static let consoleHandlerName = "playConsole"
     private static let editHandlerName = "playEdit"
+    private static let commitHandlerName = "playEditCommit"
 
     /// Play-to-write chrome (ADR-333 D4), injected at document start:
     /// - a capture-phase ⌘-click on any `[data-message-id]` element posts the
@@ -69,11 +88,19 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
     ///   and resolves when every turn has rendered (the echo gains its
     ///   `data-turn` stamp when the client closes the turn — ADR-305 D4);
     /// - `focus(messageId)` scrolls the last paragraph carrying the id into
-    ///   view and marks it briefly.
+    ///   view and marks it briefly;
+    /// - `beginInlineEdit(messageId, turn, template)` (ADR-333 D4c) swaps the
+    ///   paragraph's content for a text field holding the TEMPLATE (the
+    ///   source, braces and all); Enter posts the new text and the history
+    ///   over the `playEditCommit` bridge and restores the paragraph, Shift-
+    ///   Enter inserts a line break, Escape restores without posting.
     private static let playToWriteScript = """
     (function () {
       var style = document.createElement('style');
-      style.textContent = '.sharpee-play-to-write-focus { outline: 2px solid rgba(255, 170, 0, 0.9); outline-offset: 3px; }';
+      style.textContent = '.sharpee-play-to-write-focus { outline: 2px solid rgba(255, 170, 0, 0.9); outline-offset: 3px; }'
+        + ' .sharpee-play-inline-edit { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 2px 4px;'
+        + ' font: inherit; color: inherit; line-height: inherit; background: rgba(255, 170, 0, 0.08);'
+        + ' border: 1px solid rgba(255, 170, 0, 0.9); border-radius: 3px; outline: none; resize: none; overflow: hidden; }';
       document.documentElement.appendChild(style);
       function history() {
         return Array.prototype.map.call(document.querySelectorAll('.command-echo'), function (el) {
@@ -148,6 +175,59 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
           last.scrollIntoView({ block: 'center' });
           last.classList.add('sharpee-play-to-write-focus');
           setTimeout(function () { last.classList.remove('sharpee-play-to-write-focus'); }, 2500);
+          return true;
+        },
+        beginInlineEdit: function (messageId, turn, template) {
+          var selector = '[data-message-id="' + messageId + '"]';
+          if (turn !== null && turn !== undefined) selector += '[data-turn="' + turn + '"]';
+          var all = document.querySelectorAll(selector);
+          var p = all[all.length - 1];
+          if (!p) return false;
+          if (p.__sharpeeInlineField) { p.__sharpeeInlineField.focus(); return true; }
+          var original = Array.prototype.slice.call(p.childNodes);
+          var field = document.createElement('textarea');
+          field.className = 'sharpee-play-inline-edit';
+          field.setAttribute('aria-label', 'Edit this text');
+          field.value = template;
+          function grow() {
+            field.style.height = 'auto';
+            field.style.height = Math.max(field.scrollHeight, 20) + 'px';
+          }
+          function restore() {
+            if (!p.__sharpeeInlineField) return;
+            delete p.__sharpeeInlineField;
+            field.remove();
+            original.forEach(function (node) { p.appendChild(node); });
+            var input = document.getElementById('command-input');
+            if (input) input.focus();
+          }
+          field.addEventListener('input', grow);
+          field.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); restore(); return; }
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault(); e.stopPropagation();
+              var text = field.value;
+              restore();
+              try {
+                window.webkit.messageHandlers.\(commitHandlerName).postMessage(JSON.stringify({
+                  messageId: messageId,
+                  turn: turn === null || turn === undefined ? null : Number(turn),
+                  text: text,
+                  history: history()
+                }));
+              } catch (err) {}
+            }
+          });
+          // Keystrokes belong to the field, not the client's command input.
+          field.addEventListener('keyup', function (e) { e.stopPropagation(); });
+          field.addEventListener('keypress', function (e) { e.stopPropagation(); });
+          while (p.firstChild) p.removeChild(p.firstChild);
+          p.appendChild(field);
+          p.__sharpeeInlineField = field;
+          p.scrollIntoView({ block: 'center' });
+          grow();
+          field.focus();
+          field.setSelectionRange(field.value.length, field.value.length);
           return true;
         }
       };
@@ -298,8 +378,31 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
     /// Fired when the author ⌘-clicks a rendered paragraph (ADR-333 D4) — the
-    /// window resolves the id and opens the editor.
+    /// window resolves the id and opens the editor, or asks for the inline field.
     var onEditRequest: ((PlayEditRequest) -> Void)?
+
+    /// Fired when the inline field commits (ADR-333 D4c) — the window writes
+    /// the text into the source and finishes the round.
+    var onInlineCommit: ((PlayInlineCommit) -> Void)?
+
+    /// Opens the inline field on the paragraph the edit names, prefilled with
+    /// its template. Nothing happens when the paragraph is not on the page.
+    func beginInlineEdit(_ edit: PlayInlineEdit) {
+        Task { [weak self] in
+            guard let self else { return }
+            _ = try? await self.beginInlineEditInPlaySurface(edit)
+        }
+    }
+
+    /// The awaitable form: true when the field opened. Tests drive it directly.
+    @discardableResult
+    func beginInlineEditInPlaySurface(_ edit: PlayInlineEdit) async throws -> Bool {
+        try await waitForPlaySurfaceChrome()
+        let turn = edit.turn.map(String.init) ?? "null"
+        let result = try await evaluateInPlaySurface(
+            "window.__sharpeePlayToWrite.beginInlineEdit(\(Self.javascriptString(edit.messageId)), \(turn), \(Self.javascriptString(edit.template)))")
+        return result as? Bool ?? false
+    }
 
     /// The replay the next finished load performs (ADR-333 D4): set by
     /// `reloadAfterBuild(bundleDirectory:replaying:)`, consumed once.
@@ -328,6 +431,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
         let contentController = configuration.userContentController
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
         contentController.add(WeakScriptMessageHandler(self), name: Self.editHandlerName)
+        contentController.add(WeakScriptMessageHandler(self), name: Self.commitHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
         webView.navigationDelegate = self
         // right-click → Inspect Element to debug the running story. Guarded
@@ -650,6 +754,16 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
                 text: object["text"] as? String ?? "",
                 history: (object["history"] as? [Any])?.compactMap { $0 as? String } ?? [])
             onEditRequest?(request)
+        case Self.commitHandlerName:
+            guard let json = message.body as? String,
+                  let data = json.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let messageId = object["messageId"] as? String, !messageId.isEmpty else { return }
+            onInlineCommit?(PlayInlineCommit(
+                messageId: messageId,
+                turn: object["turn"] as? Int,
+                text: object["text"] as? String ?? "",
+                history: (object["history"] as? [Any])?.compactMap { $0 as? String } ?? []))
         default:
             break
         }

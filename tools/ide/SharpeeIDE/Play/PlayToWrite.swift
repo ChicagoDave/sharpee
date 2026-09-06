@@ -8,11 +8,18 @@
 // the main story file, pre-filled with the pack's template (D4a) — the one
 // ADR-255 artifact, nothing invented.
 //
+// A single-template phrase (one arm, no strategy — D4c) can instead be edited
+// IN Play: `inlineTemplate` reads the template out of the source at the
+// span and says what range a new text replaces, re-indented.
+//
 // Pure and view-free: the window applies the target (opens the editor,
-// inserts the block) and owns the save → build → reload → replay loop.
+// inserts the block, or hands Play the inline template) and owns the save →
+// build → reload → replay loop.
 // Public interface: PlayToWriteTarget, PlayToWriteError,
 // PlayToWrite.resolve(messageId:ir:catalog:), overrideBlock(alias:template:),
-// appendingOverride(alias:template:to:), PlayToWriteSession.
+// appendingOverride(alias:template:to:), isInlineEligible(_:),
+// phraseName(for:target:ir:), inlineTemplate(source:span:), InlineTemplate,
+// PlayToWriteSession.
 // Owner context: tools/ide — Play.
 
 import Foundation
@@ -38,6 +45,9 @@ enum PlayToWriteError: Error, Equatable {
     case unknownMessage(id: String)
     /// A platform id with no catalog loaded to name its alias and template.
     case catalogUnavailable(id: String)
+    /// An inline commit whose paragraph no longer resolves to an in-place
+    /// template (the source moved under it, or it was never eligible).
+    case inlineTargetMissing(id: String)
 }
 
 enum PlayToWrite {
@@ -100,6 +110,100 @@ enum PlayToWrite {
         return AppendEdit(text: prefix + overrideBlock(alias: alias, template: template),
                           offset: (source as NSString).length,
                           line: headerLine + 1)
+    }
+
+    // MARK: Inline editing (ADR-333 D4c)
+
+    /// Whether a phrase can be edited in place: one arm, no strategy. A
+    /// cycling / random / multi-arm phrase opens the editor instead — the arms
+    /// and their strategy are the author's to see whole.
+    static func isInlineEligible(_ name: ComposeStoryIR.PhraseName) -> Bool {
+        name.strategy == nil && name.variantCount == 1
+    }
+
+    /// The phrase name the resolver's target came from, when it is a story
+    /// phrase or an existing override — nil for a new override (nothing to
+    /// edit in place yet) or an id the IR does not name.
+    static func phraseName(for messageId: String, target: PlayToWriteTarget, ir: ComposeStoryIR) -> ComposeStoryIR.PhraseName? {
+        switch target {
+        case .phrase:
+            return ir.phrases?.defaultLocaleNames.first { $0.key == messageId }
+        case .existingOverride(let alias, _, _):
+            return ir.messageOverrides?.defaultLocaleNames.first { $0.key == alias }
+        case .newOverride:
+            return nil
+        }
+    }
+
+    /// What the inline field edits: the template text as the author wrote it
+    /// (indentation stripped), the UTF-16 range in the source it replaces,
+    /// the indentation to restore on write-back, and which shape the span
+    /// has. A prose span (a description) covers exactly the prose, so the
+    /// range starts mid-line at the prose's column; a block span (`define
+    /// phrase` / `override message`) covers the whole block, so the range is
+    /// its body lines only, header and `end` untouched.
+    struct InlineTemplate: Equatable {
+        enum Kind: Equatable { case prose, block }
+        let text: String
+        let range: NSRange
+        let indent: String
+        let kind: Kind
+
+        /// The source text that replaces `range` for a new template `text`:
+        /// continuation lines get the indent back (a blank line stays blank),
+        /// and a block body's first line too, since the range starts at its
+        /// line start.
+        func replacement(for newText: String) -> String {
+            let lines = newText.components(separatedBy: "\n")
+            return lines.enumerated().map { index, line in
+                if line.isEmpty { return "" }
+                if index == 0 && kind == .prose { return line }
+                return indent + line
+            }.joined(separator: "\n")
+        }
+    }
+
+    /// Read the template at `span` out of `source`.
+    ///
+    /// - Returns: nil when the span does not fit the source, or a block has no
+    ///   body lines — nothing to edit in place; the caller opens the editor.
+    static func inlineTemplate(source: String, span: DiagnosticSpan) -> InlineTemplate? {
+        let ns = source as NSString
+        let lines = source.components(separatedBy: "\n")
+        guard span.line >= 1, span.endLine >= span.line, span.endLine <= lines.count else { return nil }
+        // UTF-16 offset of the start of each 1-based line.
+        var starts: [Int] = [0]
+        var offset = 0
+        for line in lines.dropLast() {
+            offset += (line as NSString).length + 1
+            starts.append(offset)
+        }
+        func indentation(of line: String) -> String {
+            String(line.prefix { $0 == " " || $0 == "\t" })
+        }
+        let first = lines[span.line - 1]
+        let fromColumn = String(first.dropFirst(max(0, span.column - 1)))
+        let isBlock = fromColumn.hasPrefix("define phrase") || fromColumn.hasPrefix("override message")
+        if isBlock {
+            let bodyFirst = span.line + 1, bodyLast = span.endLine - 1
+            guard bodyLast >= bodyFirst else { return nil }
+            let body = Array(lines[(bodyFirst - 1)...(bodyLast - 1)])
+            let indent = indentation(of: body.first { !$0.isEmpty } ?? "")
+            let text = body.map { $0.hasPrefix(indent) ? String($0.dropFirst(indent.count)) : $0 }.joined(separator: "\n")
+            let start = starts[bodyFirst - 1]
+            let end = starts[bodyLast - 1] + (lines[bodyLast - 1] as NSString).length
+            return InlineTemplate(text: text, range: NSRange(location: start, length: end - start), indent: indent, kind: .block)
+        }
+        let start = starts[span.line - 1] + (span.column - 1)
+        let end = starts[span.endLine - 1] + (span.endColumn - 1)
+        guard start <= end, end <= ns.length else { return nil }
+        let slice = ns.substring(with: NSRange(location: start, length: end - start))
+        let indent = indentation(of: first)
+        let sliceLines = slice.components(separatedBy: "\n")
+        let text = sliceLines.enumerated().map { index, line in
+            index == 0 ? line : (line.hasPrefix(indent) ? String(line.dropFirst(indent.count)) : line)
+        }.joined(separator: "\n")
+        return InlineTemplate(text: text, range: NSRange(location: start, length: end - start), indent: indent, kind: .prose)
     }
 }
 

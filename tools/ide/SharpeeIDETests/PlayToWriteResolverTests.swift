@@ -116,6 +116,82 @@ final class PlayToWriteResolverTests: XCTestCase {
         XCTAssertEqual(result.components(separatedBy: "\n")[edit.line - 1], "  Taken.")
     }
 
+    // MARK: Inline editing (D4c)
+
+    private static let source = """
+    story
+      title: Probe
+
+    create the Market
+      a room
+
+      A market with {greet}.
+      Second paragraph here.
+
+    define phrase greet
+      Hello there.
+    end phrase
+
+    define phrase moods, cycling
+      Calm.
+
+      Tense.
+    end phrase
+
+    override message taking-taken
+      Got it.
+    end override
+    """
+
+    func testASingleTemplateIsInlineEligibleAndACyclingOrMultiArmPhraseIsNot() {
+        XCTAssertTrue(PlayToWrite.isInlineEligible(.init(key: "a", span: nil, strategy: nil, variantCount: 1)))
+        XCTAssertFalse(PlayToWrite.isInlineEligible(.init(key: "b", span: nil, strategy: "cycling", variantCount: 1)))
+        XCTAssertFalse(PlayToWrite.isInlineEligible(.init(key: "c", span: nil, strategy: nil, variantCount: 2)))
+        XCTAssertFalse(PlayToWrite.isInlineEligible(.init(key: "d", span: nil, strategy: nil, variantCount: 0)))
+    }
+
+    func testAProseSpanYieldsTheProseWithContinuationIndentStrippedAndTheExactRange() throws {
+        let span = DiagnosticSpan(line: 7, column: 3, endLine: 8, endColumn: 25)
+        let template = try XCTUnwrap(PlayToWrite.inlineTemplate(source: Self.source, span: span))
+        XCTAssertEqual(template.text, "A market with {greet}.\nSecond paragraph here.")
+        XCTAssertEqual(template.kind, .prose)
+        XCTAssertEqual(template.indent, "  ")
+        XCTAssertEqual((Self.source as NSString).substring(with: template.range),
+                       "A market with {greet}.\n  Second paragraph here.")
+    }
+
+    func testAProseReplacementReindentsContinuationLinesAndKeepsBlankLinesBlank() throws {
+        let span = DiagnosticSpan(line: 7, column: 3, endLine: 8, endColumn: 25)
+        let template = try XCTUnwrap(PlayToWrite.inlineTemplate(source: Self.source, span: span))
+        XCTAssertEqual(template.replacement(for: "New line.\n\nAnother {greet}."), "New line.\n\n  Another {greet}.")
+        let edited = (Self.source as NSString).replacingCharacters(in: template.range, with: template.replacement(for: "One line."))
+        XCTAssertTrue(edited.contains("  a room\n\n  One line.\n\ndefine phrase greet"), "edited was:\n\(edited)")
+    }
+
+    func testABlockSpanYieldsOnlyTheBodyAndTheReplacementIndentsEveryLine() throws {
+        let span = DiagnosticSpan(line: 10, column: 1, endLine: 12, endColumn: 11)
+        let template = try XCTUnwrap(PlayToWrite.inlineTemplate(source: Self.source, span: span))
+        XCTAssertEqual(template.text, "Hello there.")
+        XCTAssertEqual(template.kind, .block)
+        XCTAssertEqual((Self.source as NSString).substring(with: template.range), "  Hello there.")
+        XCTAssertEqual(template.replacement(for: "Hi.\nTwice."), "  Hi.\n  Twice.")
+        let edited = (Self.source as NSString).replacingCharacters(in: template.range, with: template.replacement(for: "Hi."))
+        XCTAssertTrue(edited.contains("define phrase greet\n  Hi.\nend phrase"), "edited was:\n\(edited)")
+    }
+
+    func testAnOverrideBlockSpanIsABlockToo() throws {
+        let span = DiagnosticSpan(line: 20, column: 1, endLine: 22, endColumn: 13)
+        let template = try XCTUnwrap(PlayToWrite.inlineTemplate(source: Self.source, span: span))
+        XCTAssertEqual(template.text, "Got it.")
+        XCTAssertEqual(template.kind, .block)
+    }
+
+    func testASpanOutsideTheSourceOrABlockWithNoBodyYieldsNothing() {
+        XCTAssertNil(PlayToWrite.inlineTemplate(source: Self.source, span: DiagnosticSpan(line: 40, column: 1, endLine: 41, endColumn: 1)))
+        XCTAssertNil(PlayToWrite.inlineTemplate(source: "define phrase empty\nend phrase",
+                                                span: DiagnosticSpan(line: 1, column: 1, endLine: 2, endColumn: 11)))
+    }
+
     func testAppendingToAnEmptySourceStartsAtTheTop() {
         let edit = PlayToWrite.appendingOverride(alias: "taking-taken", template: "Taken.", to: "")
         XCTAssertEqual(edit.offset, 0)

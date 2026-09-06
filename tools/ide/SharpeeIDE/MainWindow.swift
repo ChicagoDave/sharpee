@@ -916,6 +916,16 @@ private final class MainSplitViewController: NSSplitViewController {
                   case .populated(let ir, _) = self.treeState.display else { return }
             self.playToWrite.handle(request, storyURL: storyURL, ir: ir)
         }
+        // ADR-333 D4c: a single-template paragraph edits IN Play; the commit
+        // writes the source and rides the same save → build → replay round.
+        playToWrite.onInlineEditRequested = { [weak self] edit in
+            self?.playViewController.beginInlineEdit(edit)
+        }
+        playViewController.onInlineCommit = { [weak self] commit in
+            guard let self, let storyURL = self.treeState.storyURL,
+                  case .populated(let ir, _) = self.treeState.display else { return }
+            self.playToWrite.commit(commit, storyURL: storyURL, ir: ir)
+        }
         playToWrite.onBuildRequested = {
             // Deferred: a build's own save-all lands here too, and its build
             // call must start first so this one is the no-op, not the other way round.

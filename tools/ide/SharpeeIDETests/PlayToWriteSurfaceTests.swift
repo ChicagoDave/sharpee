@@ -145,6 +145,96 @@ final class PlayToWriteSurfaceTests: XCTestCase {
         XCTAssertEqual(focused as? String, "if.action.taking.taken", "the session's paragraph is brought into view")
     }
 
+    // MARK: Inline editing (D4c)
+
+    private var commits: [PlayInlineCommit] = []
+
+    private func fieldState() async throws -> [String: Any] {
+        let raw = try await play.evaluateInPlaySurface("""
+        (function () {
+          var f = document.querySelector('.sharpee-play-inline-edit');
+          var p = document.querySelector('[data-message-id="market.initial-description"]');
+          return JSON.stringify({ open: !!f, value: f ? f.value : null, focused: f ? document.activeElement === f : false,
+                                  paragraph: p ? p.textContent : null });
+        })()
+        """) as? String ?? "{}"
+        return (try? JSONSerialization.jsonObject(with: Data(raw.utf8)) as? [String: Any]) ?? [:]
+    }
+
+    private func key(_ key: String, shift: Bool = false) async throws {
+        _ = try await play.evaluateInPlaySurface("""
+        (function () {
+          var f = document.querySelector('.sharpee-play-inline-edit');
+          f.dispatchEvent(new KeyboardEvent('keydown', { key: '\(key)', shiftKey: \(shift), bubbles: true, cancelable: true }));
+          return true;
+        })()
+        """)
+    }
+
+    private func awaitCommit(timeout: TimeInterval = 5) async throws -> PlayInlineCommit? {
+        for _ in 0..<Int(timeout * 20) {
+            if let commit = commits.last { return commit }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        return nil
+    }
+
+    func testBeginInlineEditSwapsTheParagraphForAFieldHoldingTheTemplate() async throws {
+        try await boot()
+        try await play.replay(PlayToWriteSession(messageId: "", history: ["north"]))
+
+        let opened = try await play.beginInlineEditInPlaySurface(
+            PlayInlineEdit(messageId: "market.initial-description", turn: 1, template: "Stalls crowd the {square}, for the first time."))
+        XCTAssertTrue(opened)
+        let state = try await fieldState()
+        XCTAssertEqual(state["open"] as? Bool, true)
+        XCTAssertEqual(state["value"] as? String, "Stalls crowd the {square}, for the first time.", "the TEMPLATE, not the rendered text")
+        XCTAssertEqual(state["focused"] as? Bool, true)
+
+        let missing = try await play.beginInlineEditInPlaySurface(PlayInlineEdit(messageId: "nowhere", turn: nil, template: "x"))
+        XCTAssertFalse(missing, "no paragraph, no field")
+    }
+
+    func testEnterPostsTheNewTextWithTheHistoryAndRestoresTheParagraph() async throws {
+        try await boot()
+        play.onInlineCommit = { [weak self] commit in self?.commits.append(commit) }
+        try await play.replay(PlayToWriteSession(messageId: "", history: ["north"]))
+        _ = try await play.beginInlineEditInPlaySurface(
+            PlayInlineEdit(messageId: "market.initial-description", turn: 1, template: "Stalls crowd the square, for the first time."))
+
+        _ = try await play.evaluateInPlaySurface("document.querySelector('.sharpee-play-inline-edit').value = 'Stalls, and rain.\\nA second line.'; true")
+        try await key("Enter", shift: true)
+        let afterShiftEnter = try await fieldState()
+        XCTAssertEqual(afterShiftEnter["open"] as? Bool, true, "Shift-Enter is a line break, not a commit")
+        try await key("Enter")
+
+        let awaited = try await awaitCommit()
+        let commit = try XCTUnwrap(awaited)
+        XCTAssertEqual(commit, PlayInlineCommit(messageId: "market.initial-description", turn: 1,
+                                                text: "Stalls, and rain.\nA second line.", history: ["north"]))
+        let state = try await fieldState()
+        XCTAssertEqual(state["open"] as? Bool, false, "the field is gone")
+        XCTAssertEqual(state["paragraph"] as? String, "Stalls crowd the square, for the first time.",
+                       "the rendered text comes back until the replay rewrites it")
+    }
+
+    func testEscapeRestoresTheParagraphAndPostsNothing() async throws {
+        try await boot()
+        play.onInlineCommit = { [weak self] commit in self?.commits.append(commit) }
+        try await play.replay(PlayToWriteSession(messageId: "", history: ["north"]))
+        _ = try await play.beginInlineEditInPlaySurface(
+            PlayInlineEdit(messageId: "market.initial-description", turn: 1, template: "Stalls crowd the square, for the first time."))
+
+        _ = try await play.evaluateInPlaySurface("document.querySelector('.sharpee-play-inline-edit').value = 'Abandoned.'; true")
+        try await key("Escape")
+        try await Task.sleep(nanoseconds: 300_000_000)
+
+        let state = try await fieldState()
+        XCTAssertEqual(state["open"] as? Bool, false)
+        XCTAssertEqual(state["paragraph"] as? String, "Stalls crowd the square, for the first time.")
+        XCTAssertTrue(commits.isEmpty, "an Escape never reaches the bridge")
+    }
+
     func testAReloadWithASessionReplaysItOnceThePageHasLoaded() async throws {
         try await boot()
 

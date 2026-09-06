@@ -27,15 +27,31 @@ final class PlayToWriteCoordinatorTests: XCTestCase {
       a room
 
       Stalls crowd the square.
+
+    define phrase moods, cycling
+      Calm.
+
+      Tense.
+    end phrase
+
+    define phrase greet
+      Hello there.
+    end phrase
     """
 
+    /// `market.description` and `greet` are single templates (inline-eligible);
+    /// `moods` cycles two arms (editor). Spans match `story` above.
     private static let ir = """
     {"format":"story language 4","languageVersion":"5.3.0",
      "meta":{"title":"Probe","fields":{"id":"probe","authors":[]}},
      "entities":[],
      "phrases":{"defaultLocale":"en-US","locales":{"en-US":{
-        "market.description":{"strategy":null,"variants":[],
-                              "span":{"line":8,"column":3,"endLine":8,"endColumn":27}}}}}}
+        "market.description":{"strategy":null,"variants":[{"text":"Stalls crowd the square.","markers":[]}],
+                              "span":{"line":8,"column":3,"endLine":8,"endColumn":27}},
+        "moods":{"strategy":"cycling","variants":[{"text":"Calm.","markers":[]},{"text":"Tense.","markers":[]}],
+                 "span":{"line":10,"column":1,"endLine":14,"endColumn":11}},
+        "greet":{"strategy":null,"variants":[{"text":"Hello there.","markers":[]}],
+                 "span":{"line":16,"column":1,"endLine":18,"endColumn":11}}}}}}
     """
 
     private static let catalog = MessageCatalog(
@@ -82,14 +98,72 @@ final class PlayToWriteCoordinatorTests: XCTestCase {
 
     // MARK: A story phrase
 
-    func testAPhraseClickOpensTheStoryAtThePhrasesLineAndArmsTheRound() throws {
+    func testACyclingPhraseClickOpensTheStoryAtThePhrasesLineAndArmsTheRound() throws {
         let coordinator = PlayToWriteCoordinator(editor: editor)
-        coordinator.handle(request("market.description", history: ["look"]), storyURL: storyURL, ir: try decodedIR())
+        var inline: [PlayInlineEdit] = []
+        coordinator.onInlineEditRequested = { inline.append($0) }
+        coordinator.handle(request("moods", history: ["look"]), storyURL: storyURL, ir: try decodedIR())
 
         XCTAssertEqual(editor.openDocumentURLs, [storyURL])
         let text = try XCTUnwrap(editor.currentText(of: storyURL))
-        XCTAssertEqual(editor.activeSelection?.location, offset(ofLine: 8, in: text), "the caret sits on the prose's line")
-        XCTAssertEqual(coordinator.session, PlayToWriteSession(messageId: "market.description", history: ["look"]))
+        XCTAssertEqual(editor.activeSelection?.location, offset(ofLine: 10, in: text), "the caret sits on the block's line")
+        XCTAssertEqual(coordinator.session, PlayToWriteSession(messageId: "moods", history: ["look"]))
+        XCTAssertTrue(inline.isEmpty, "two arms and a strategy are the editor's, never the inline field's")
+    }
+
+    // MARK: Inline editing (D4c)
+
+    func testASingleTemplateClickAsksPlayForTheInlineFieldAndOpensNoTabAndArmsNothing() throws {
+        let coordinator = PlayToWriteCoordinator(editor: editor)
+        var inline: [PlayInlineEdit] = []
+        coordinator.onInlineEditRequested = { inline.append($0) }
+        coordinator.handle(PlayEditRequest(messageId: "market.description", turn: 3, text: "Stalls crowd the square.", history: ["look"]),
+                           storyURL: storyURL, ir: try decodedIR())
+
+        XCTAssertEqual(inline, [PlayInlineEdit(messageId: "market.description", turn: 3, template: "Stalls crowd the square.")])
+        XCTAssertTrue(editor.openDocumentURLs.isEmpty, "the author is typing in Play, not the editor")
+        XCTAssertNil(coordinator.session, "an Escape must leave nothing armed")
+    }
+
+    func testAnInlineCommitRewritesTheProseSavesTheFileArmsAndAsksForTheBuild() throws {
+        let coordinator = PlayToWriteCoordinator(editor: editor)
+        var builds = 0
+        coordinator.onBuildRequested = { builds += 1 }
+        editor.onDocumentSaved = { url in coordinator.documentSaved(url, storyURL: self.storyURL) }
+
+        coordinator.commit(PlayInlineCommit(messageId: "market.description", turn: 3,
+                                            text: "Stalls crowd the {square}.\nRain on the awnings.", history: ["look", "wait"]),
+                           storyURL: storyURL, ir: try decodedIR())
+
+        let onDisk = try String(contentsOf: storyURL, encoding: .utf8)
+        XCTAssertTrue(onDisk.contains("  a room\n\n  Stalls crowd the {square}.\n  Rain on the awnings.\n\ndefine phrase moods"),
+                      "the file carries the new prose, continuation line re-indented; was:\n\(onDisk)")
+        XCTAssertFalse(editor.hasUnsavedChanges(at: storyURL), "the commit saved")
+        XCTAssertEqual(coordinator.session, PlayToWriteSession(messageId: "market.description", history: ["look", "wait"]))
+        XCTAssertEqual(builds, 1, "the save asked for the build, as ⌘S would")
+    }
+
+    func testAnInlineCommitOnADefinePhraseRewritesOnlyTheBody() throws {
+        let coordinator = PlayToWriteCoordinator(editor: editor)
+        coordinator.commit(PlayInlineCommit(messageId: "greet", turn: nil, text: "Hi.\nTwice.", history: []),
+                           storyURL: storyURL, ir: try decodedIR())
+
+        let onDisk = try String(contentsOf: storyURL, encoding: .utf8)
+        XCTAssertTrue(onDisk.contains("define phrase greet\n  Hi.\n  Twice.\nend phrase"), "was:\n\(onDisk)")
+        XCTAssertTrue(onDisk.contains("define phrase moods, cycling\n  Calm.\n\n  Tense.\nend phrase"), "the neighbour is untouched")
+        XCTAssertNotNil(coordinator.session)
+    }
+
+    func testAnInlineCommitOnAnIneligibleParagraphReportsAndWritesNothing() throws {
+        let coordinator = PlayToWriteCoordinator(editor: editor)
+        var reported: [String] = []
+        coordinator.onUnresolved = { request, _ in reported.append(request.messageId) }
+        coordinator.commit(PlayInlineCommit(messageId: "moods", turn: nil, text: "Only one.", history: []),
+                           storyURL: storyURL, ir: try decodedIR())
+
+        XCTAssertEqual(reported, ["moods"])
+        XCTAssertEqual(try String(contentsOf: storyURL, encoding: .utf8), Self.story, "nothing wrote the file")
+        XCTAssertNil(coordinator.session)
     }
 
     // MARK: A platform line (D4a)
@@ -143,7 +217,9 @@ final class PlayToWriteCoordinatorTests: XCTestCase {
         coordinator.documentSaved(storyURL, storyURL: storyURL)
         XCTAssertEqual(builds, 0, "not armed: a save is just a save")
 
-        coordinator.handle(request("market.description", history: ["look"]), storyURL: storyURL, ir: try decodedIR())
+        // `moods` cycles, so the click takes the editor path and arms at once
+        // (a single template arms only when its inline field commits — D4c).
+        coordinator.handle(request("moods", history: ["look"]), storyURL: storyURL, ir: try decodedIR())
         coordinator.documentSaved(tmp.appendingPathComponent("../elsewhere.story"), storyURL: storyURL)
         XCTAssertEqual(builds, 0, "a save outside the story never builds")
         coordinator.documentSaved(storyURL, storyURL: nil)
@@ -152,7 +228,7 @@ final class PlayToWriteCoordinatorTests: XCTestCase {
         coordinator.documentSaved(storyURL, storyURL: storyURL)
         XCTAssertEqual(builds, 1)
 
-        XCTAssertEqual(coordinator.takeSession(), PlayToWriteSession(messageId: "market.description", history: ["look"]))
+        XCTAssertEqual(coordinator.takeSession(), PlayToWriteSession(messageId: "moods", history: ["look"]))
         XCTAssertNil(coordinator.takeSession(), "the reload takes the session once")
         coordinator.documentSaved(storyURL, storyURL: storyURL)
         XCTAssertEqual(builds, 1, "disarmed after the reload took it")
@@ -161,7 +237,8 @@ final class PlayToWriteCoordinatorTests: XCTestCase {
     func testResetDisarmsAndForgetsTheCatalog() throws {
         let coordinator = PlayToWriteCoordinator(editor: editor)
         coordinator.catalog = Self.catalog
-        coordinator.handle(request("market.description", history: []), storyURL: storyURL, ir: try decodedIR())
+        coordinator.handle(request("moods", history: []), storyURL: storyURL, ir: try decodedIR())
+        XCTAssertNotNil(coordinator.session, "the editor path arms at the click")
         coordinator.reset()
         XCTAssertNil(coordinator.session)
         XCTAssertNil(coordinator.catalog)
