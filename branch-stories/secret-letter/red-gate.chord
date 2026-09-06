@@ -143,17 +143,19 @@ end phrase
 ## Two placeholders; the beats and their lines are David's (gap 1).
 
 define phrase street-arrival-men-stub
-  (TODO during play-testing — the drop from the park wall: Fossville's men
-  somewhere on East Commerce Street, and Shannon hurrying her the few steps
-  to the Red Gate front gates. Fear, no teeth. The beats and the lines are
-  David's.)
+  (TODO during play-testing — You drop from the park wall onto East Commerce
+  Street, and Shannon is already pulling you by the wrist. Down the street,
+  two of Fossville's men are questioning a carter. 'Don't look,' Shannon
+  breathes, and you don't, and the few steps to the front gates of Red Gate
+  Manor are the longest walk of your life.)
 end phrase
 
 define phrase street-walk-out-stub
-  (TODO during play-testing — the walk out: the same men on East Commerce
-  Street as the gates open again, and Jack in the Duchess's dress with
-  Shannon at her elbow walking past them; they look and see nobody they
-  want. Fear, no teeth. The beat and the lines are David's.)
+  (TODO during play-testing — The gates open again on East Commerce Street,
+  and the same two men are still there, leaning on a wall now, bored. They
+  look at a lady in the Duchess's dress with her widow at her elbow, and they
+  see nobody they want, and they look away. You keep walking. Shannon does not
+  let you hurry.)
 end phrase
 
 ## `story.ni:4837`
@@ -182,12 +184,12 @@ end phrase
 ## and SH14 is the source's own account of the talent.
 
 define phrase shannon-sh13-stub
-  (TODO during play-testing — conversation SH13-SH16: "Can I ask you
-  something?" — "Of course, Miss Jacqueline"; "Did you know about Fiona?" —
-  "I always thought you were special, Jacqueline. But that was just my own
-  feelings telling me things, the way they do sometimes"; "Why is Dame
-  Sandler so important?" — Fiona has known her a long time; "What if you get
-  caught?" — "I'll run straight to Holstenoffer's shop." Shannon SEES her.)
+  (TODO during play-testing — 'Can I ask you something?' 'Of course, Miss
+  Jacqueline.' 'Did you know? About Fiona, about me?' Shannon considers. 'I
+  always thought you were special, Jacqueline. But that was just my own
+  feelings telling me things, the way they do sometimes.' Dame Sandler, she
+  says, Fiona has known a long time; and if she herself is caught, 'I'll run
+  straight to Holstenoffer's shop.')
 end phrase
 
 ## `story.ni:4894-4900`, the gates.
@@ -489,8 +491,7 @@ create the pile of broken wood
 ## rule is on that one insertion); one line, yours.
 
 define phrase nowhere-for-the-wood-stub
-  (TODO during play-testing — the firewood put anywhere but the furnace: no
-  source line exists; David's.)
+  (TODO during play-testing — The wood belongs in the furnace, not there.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -1139,8 +1140,8 @@ define action bathing
 ## own washing default; one line, yours.
 
 define phrase nowhere-to-bathe-stub
-  (TODO during play-testing — bathing anywhere but the Duke's bathroom: no
-  source line exists; David's.)
+  (TODO during play-testing — Not here. The Duke's bathroom has a tub, and hot
+  water, if you can get the furnace going.)
 end phrase
 
 define phrase water-freezing
@@ -1274,8 +1275,8 @@ end phrase
 ## the port needs to send her to `turn`.
 
 define phrase turn-the-wheels
-  (TODO during play-testing — `switch on the faucets` with the furnace lit:
-  the source turns them; here the wheels want turning. One line, David's.)
+  (TODO during play-testing — The faucets don't switch; they turn. There's a
+  wheel on each.)
 end phrase
 
 define phrase faucets-already-off

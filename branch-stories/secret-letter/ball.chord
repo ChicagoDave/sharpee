@@ -243,9 +243,11 @@ end phrase
 ## court is open; its sentence is David's.
 
 define phrase throne-stub, stopping while the ball is open or the ball is decided
-  (TODO during play-testing — the Queen's throne and the two beside it: Bobby,
-  alive, standing at her side, and Pieter with him. What Jacqueline sees, and
-  what it does to her, are David's.)
+  (TODO during play-testing — The throne stands at the head of the room, and
+  the Queen in it, and beside the throne, alive, with his hands folded behind
+  his back like any courtier, stands Bobby. Pieter is with him. Bobby's eyes
+  find you across the crowd, and the corner of his mouth goes up, and the
+  floor is not quite where it was.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -261,21 +263,22 @@ end phrase
 ## ---------------------------------------------------------------------------
 
 define phrase confrontation-stub
-  (TODO during play-testing — the confrontation: Baron Fossville comes
-  through the crowd to her, early, before anyone else has spoken; the court
-  turns to watch; the Queen is in the room. What he says to her, and what
-  he demands, are David's. Fossville does NOT see her — he knows from the
-  letter.)
+  (TODO during play-testing — The crowd parts and Baron Fossville comes
+  through it straight to you, before anyone else has spoken a word. The court
+  turns to watch. 'Lady Jacqueline,' he says, loud enough for the room. 'A
+  word. I believe you have something of mine.' He holds out his hand for the
+  letter, and behind him, on her throne, the Queen watches and says nothing.)
 end phrase
 
 define phrase dismissal-stub
-  (TODO during play-testing — the dismissal: the letter produced before the
-  court, the Duke's own hand naming Jacqueline; the Queen, who already knows
-  what Fossville did, threatens him quietly and lets him go; he tries to
-  bring his mercenaries in and the Queen's Guard bars them at the doors,
-  heard, not seen; and the room opens to her — the Queen on her throne, and
-  beside it Bobby, alive, and Pieter. Nothing is burned and nothing is
-  confessed aloud. The lines are David's.)
+  (TODO during play-testing — You hold the letter up where the court can see
+  it: the Duke's own hand, and your own name in it. The Queen does not raise
+  her voice. 'Baron,' she says, 'I know what you did. Go, while I am still
+  content to let you.' Fossville's face goes white, then red; he turns and
+  shouts for his men, and beyond the doors there is a scuffle and the flat
+  voices of the Queen's Guard, and the doors do not open. He goes. The room
+  lets out its breath, and opens to you: the Queen on her throne, and beside
+  it Bobby, alive, and Pieter.)
 end phrase
 
 ## The Baron at the ball (`story.ni:9653`, the `otherwise` branch), with
@@ -312,34 +315,29 @@ end phrase
 ## `JE1` (`story.ni:11266`), unasked, once.
 
 define phrase jacobs-je1-stub
-  (TODO during play-testing — conversation JE1 → JE2/JE3/JE4 → JE5 → JE6 →
-  JE7 → JE9/JE10 → JE11, Jacobs the Elder's opening: "'Well now, look who we
-  have here,' says a gruff voice behind you. 'You must be the girl my son
-  helped out of prison recently.'" — the jailhouse face, then not him: the
-  father, the wealthy and notorious merchant; "I have informants
-  everywhere… I've no plans to reveal your presence to Fossville" (JE5);
-  "I'm a businessman… with many diversified interests" (JE6); the tour of
-  the room — the Queen, the Princess "working the room", the Duke and
-  Duchess of Inhyron, the Baron of Amhyron, the Earl of Bresa: "Those are
-  the players of the game in this room, and you will have to spar with all
-  of them if you want to win" (JE7); "you're a long shot" (JE9); "It's all
-  about how many allies you have" (JE10); "Well, that should be enough to
-  get you started. Good luck, my girl" (JE11). Jacobs the Elder is not
-  ruled to see her.)
+  (TODO during play-testing — 'Well now, look who we have here,' says a gruff
+  voice behind you. 'You must be the girl my son helped out of prison
+  recently.' It is the jailhouse face, and then it isn't: older, richer, the
+  father. Jacobs the Elder has informants everywhere and no plans to reveal
+  you to Fossville; he is a businessman, with many diversified interests. He
+  walks you through the room with his eyes — the Queen, the Princess working
+  the crowd, the Duke and Duchess of Inhyron, the Baron of Amhyron, the Earl
+  of Bresa. 'Those are the players of the game in this room, and you will have
+  to spar with all of them if you want to win. You're a long shot. It's all
+  about how many allies you have.' He pats your arm. 'Well, that should be
+  enough to get you started. Good luck, my girl.')
 end phrase
 
 ## `JE12-JE20` (`story.ni:11293-11311`), on `talk to` after.
 
 define phrase jacobs-je12-stub
-  (TODO during play-testing — conversation JE12 → JE13-JE20, Jacobs the
-  Elder again: "Back for more, hmm?"; Fossville "sending a message" — "maybe
-  he planned this whole thing just to trap you" (JE13); the old Duke "left
-  himself open" (JE14); the Queen "merely watches the field" (JE15); the
-  Princess "an opportunist" (JE16); the Duke of Inhyron "a stuffed shirt and
-  a hypocrite" (JE17); the Baron of Amhyron "honest, good-hearted, and an
-  effective ruler" but bound to the Inhyrons (JE18); the Earl of Bresa "a
-  fat idiot… Ignore him" (JE19); "Good-bye" — "Always a pleasure, my dear
-  girl" (JE20).)
+  (TODO during play-testing — 'Back for more, hmm?' says Jacobs the Elder.
+  Fossville is sending a message, he thinks; maybe he planned this whole thing
+  just to trap you. The old Duke left himself open. The Queen merely watches
+  the field; the Princess is an opportunist; the Duke of Inhyron a stuffed
+  shirt and a hypocrite; Amhyron honest and good-hearted but bound to the
+  Inhyrons; and Bresa a fat idiot — ignore him. 'Always a pleasure, my dear
+  girl.')
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -347,29 +345,32 @@ end phrase
 ## ---------------------------------------------------------------------------
 
 define phrase priestess-arrives-stub
-  (TODO during play-testing — the Vedd Priestess appears, on her own time,
-  and goes to the Queen; what the room sees of that is the Queen's ear
-  inclined and nothing said. If the Queen has not yet decided, the
-  Priestess waits. David's lines.)
+  (TODO during play-testing — There is a stir at the far door, and then not a
+  stir but a quiet, spreading outward. A woman in plain grey robes walks the
+  length of the room as if it were empty, and goes to the Queen, and bends to
+  her ear. The Queen inclines her head. Nothing is said that anyone can hear.)
 end phrase
 
 define phrase queen-rises-and-nods-stub
-  (TODO during play-testing — the verdict, silent: the Queen rises and
-  leaves, Bobby and Pieter with her, and on her way out she nods the
-  Priestess toward Jacqueline. David's lines.)
+  (TODO during play-testing — The Queen rises. The room rises with her. She
+  goes without a word, Bobby and Pieter falling in behind her, and at the door
+  she pauses and looks back, once, at the woman in grey, and tips her head
+  toward you.)
 end phrase
 
 define phrase priestess-asks-stub
-  (TODO during play-testing — the asking: the Priestess asks Jacqueline to
-  come with her, and Jacqueline's spirit is drawn uncontrollably to follow
-  — not a choice, and good. She goes alone. David's lines; Vella is
-  Chapter 12's.)
+  (TODO during play-testing — The Priestess comes to you through the crowd,
+  and the crowd does not seem to see her come. 'Jacqueline,' she says. 'Come
+  with me.' It is not a question, and you find that it was never going to be.
+  Something in you has already stood up and started walking. You go, alone.)
 end phrase
 
 define phrase queen-leaves-stub
-  (TODO during play-testing — the losing ending: the Queen rises and leaves,
-  Bobby goes with her, and the room turns its back — no one will speak to
-  Jacqueline. The game ends. David's lines.)
+  (TODO during play-testing — The Queen rises and leaves without a word, and
+  Bobby goes with her, and does not look back. One by one the faces in the
+  room turn away from you. Nobody will meet your eye; nobody will speak. You
+  stand alone in the middle of the Baron's ballroom with the Duke's letter in
+  your hand, and it is over.)
 end phrase
 
 ## `story.ni:11190` — the source's `dance` refusal, true again.
@@ -732,9 +733,9 @@ define phrase cant-get-near-the-queen
 end phrase
 
 define phrase queen-greeting-stub
-  (TODO during play-testing — the Queen's greeting, and nothing more: one
-  exchange across the throne, the only words she gives Jacqueline all night.
-  The Queen is not ruled to see her; she judges the claim. David's lines.)
+  (TODO during play-testing — The Queen looks at you for a long moment across
+  the arm of her throne. 'Lady Jacqueline,' she says at last. 'We have heard a
+  great deal about you tonight. We shall see.' That is all; her eyes move on.)
 end phrase
 
 ## The Vedd Priestess (new): offstage until her hour.
@@ -744,18 +745,19 @@ create the Vedd Priestess
   a person, proper
   pronouns she
 
-  (TODO during play-testing — the Vedd Priestess, as Jacqueline sees her:
-  the first of the order the whole city speaks of in fossils of speech and
-  believes lost. David's.)
+  (TODO during play-testing — A woman in plain grey robes, neither young nor
+  old, with the stillness of someone who has been waiting a long time and does
+  not mind. The city speaks of the Vedd the way it speaks of the old Kings: in
+  figures of speech, believing them gone. She is looking at you.)
 
   on the player talking
     refuse priestess-talk-stub
   end on
 
 define phrase priestess-talk-stub
-  (TODO during play-testing — speaking to the Priestess before she asks:
-  what she says, if anything, is David's. The Priestess SEES her; that is
-  the premise.)
+  (TODO during play-testing — The Priestess looks at you, and you have the
+  strong sense that she has already heard everything you were about to say.
+  'Not yet,' she says gently.)
 end phrase
 
 ## Jacobs the Elder (`story.ni:11247-11257`).
@@ -834,17 +836,14 @@ create the wine-colored gown
   You hate to admit it, but her dress is quite simply stunning.
 
 define phrase princess-pr1-stub
-  (TODO during play-testing — conversation PR1 → PR2/PR3/PR4 → PR5 →
-  PR6/PR7/PR8 → PR9 → PR10-PR14 → PR15, the Princess: "Oh, you must be that
-  ambitious little street urchin Mother told me about. How charming" (PR1);
-  "I am the daughter of a Duke" (PR2) / "You should be afraid of me" (PR3) /
-  "Do you, uh, like, uh… balls?" (PR4); "Are you trying to have a
-  conversation with me?" (PR5); "how does it feel to be courting a murderer?"
-  (PR7); "Oh, Goddesses, this is so embarrassing" (PR9); "Enough… You're
-  father was loved. Is loved even in death. As long you remain alive and have
-  access to royalty, you're going to be a thorn in my plans" — and she
-  shoulders past into the crowd (PR15; PR16 the curtsey). The Princess is
-  not ruled to see her; her "That's her! Get her!" is gone with the capture.)
+  (TODO during play-testing — 'Oh, you must be that ambitious little street
+  urchin Mother told me about,' says the Princess. 'How charming.' Whatever
+  you say next — that you are a Duke's daughter, that she should be afraid of
+  you — only widens her smile. 'Are you trying to have a conversation with
+  me?' You ask how it feels to be courting a murderer, and she goes still.
+  'Enough. Your father was loved. Is loved, even in death. As long as you
+  remain alive and have access to royalty, you're going to be a thorn in my
+  plans.' She shoulders past you into the crowd.)
 end phrase
 
 ## The Duke and Duchess of Inhyron (`story.ni:11442-11475`).
@@ -914,26 +913,19 @@ define phrase duchess-shrinks-back
 end phrase
 
 define phrase duke-in1-stub
-  (TODO during play-testing — conversation IN1 → IN2-IN12 → IN13/IN14, the
-  Duke of Inhyron: "No need for introductions… I am aware of who you are,
-  and I see no reason to incriminate either of us by announcing it" — "What
-  would you ask of me, girl?" (IN1); "the… circumstances surrounding your
-  birth" (IN2); "I counted your father as a friend and an equal" (IN3);
-  Jacobs "a common gangster" (IN4); Fossville "good breeding" (IN5) — "no
-  evidence that he did any such thing" (IN6); the Queen's judgment (IN7);
-  the Princess and his nine-year-old son (IN8, IN12); Amhyron the vassal
-  (IN9, IN10 — "Without loyalty, we are all weakened"); Bresa "unworthy"
-  (IN11); then the fork — "I might be willing to marry him" (IN13, "I will
-  remember that") or "Well, keep him away from me" (IN14, "I will remember
-  this" — his back turned after). IN12 opens only after IN8 or JE17. The
-  Duke is not ruled to see her.)
+  (TODO during play-testing — 'No need for introductions,' says the Duke of
+  Inhyron. 'I am aware of who you are, and I see no reason to incriminate
+  either of us by announcing it. What would you ask of me, girl?' He counted
+  your father as a friend and an equal; Jacobs is a common gangster; Fossville
+  has good breeding, and there is no evidence he did any such thing; the Queen
+  will judge. He has a son, nine years old. 'Without loyalty,' he says of
+  Amhyron, 'we are all weakened.' Bresa is unworthy. And of the boy: you tell
+  him you might be willing, one day, and he nods. 'I will remember that.')
 end phrase
 
 define phrase duke-in15-stub
-  (TODO during play-testing — conversation IN15 → IN2-IN12, the Duke of
-  Inhyron again: "Yes, girl? What is it now?"; or, after IN14, "The Duke
-  coldly and deliberately turns his back to you. Not much chance he'll talk
-  to you now." — the fork's memory is Phase 8's.)
+  (TODO during play-testing — 'Yes, girl?' says the Duke of Inhyron. 'What is
+  it now?')
 end phrase
 
 ## The Baron of Amhyron (`story.ni:11607-11652`).
@@ -961,23 +953,19 @@ create the Baron of Amhyron
   end on
 
 define phrase amhyron-am1-stub
-  (TODO during play-testing — conversation AM1 → AM2-AM16 → AM18, the Baron
-  of Amhyron: "Good evening, milady… I am Lord Falton, Baron of Amhyron.
-  And you are?" — "Lady Jacqueline, of, er… of Toresal" (AM1); "a stick in
-  Fossville's spokes. Aren't you worried he'll come after you?" (AM2 →
-  AM3/AM4); "I'm something of an outsider here… Just like you" (AM5); "would
-  you be willing to support me in the Ascension?" — "I'd support just about
-  anyone against Fossville… He's the one you need to convince, not me" (AM6
-  → AM7 → AM8/AM9, "And so it goes"); Fossville, her father, Jacobs, the
-  Queen, the Princess, the Duke, Bresa (AM10-AM16); "Good-bye" — "The
-  pleasure has been all mine, Lady Jacqueline" (AM18). The Baron of Amhyron
-  is not ruled to see her.)
+  (TODO during play-testing — 'Good evening, milady,' says a pleasant man with
+  a plain sash. 'I am Lord Falton, Baron of Amhyron. And you are?' 'Lady
+  Jacqueline, of, er… of Toresal.' He laughs. 'A stick in Fossville's spokes.
+  Aren't you worried he'll come after you? I'm something of an outsider here
+  myself. Just like you.' Would he support you in the Ascension? 'I'd support
+  just about anyone against Fossville. He's the one you need to convince, not
+  me. And so it goes.' He bows. 'The pleasure has been all mine, Lady
+  Jacqueline.')
 end phrase
 
 define phrase amhyron-am17-stub
-  (TODO during play-testing — conversation AM17 → AM2-AM16, the Baron of
-  Amhyron again: "'Hello again, milady,' says the Baron with a slight bow.
-  'You are finding the festivities enjoyable, I hope?'")
+  (TODO during play-testing — 'Hello again, milady,' says the Baron with a
+  slight bow. 'You are finding the festivities enjoyable, I hope?')
 end phrase
 
 ## The Earl of Bresa (`story.ni:11725-11766`).
@@ -1007,25 +995,21 @@ create the Earl of Bresa
   end on
 
 define phrase bresa-br1-stub
-  (TODO during play-testing — conversation BR1 → BR2-BR10 → BR12, the Earl
-  of Bresa: "Ah-HA! The young up-and-comer! The stick in the spokes! The
-  crumb in everyone's eye!… You need anything, backing, whatever, you just
-  let me know" (BR1); "an insufferable aggravation to nearly every
-  influential person at this Goddess-forsaken party. And that makes you all
-  right by me" (BR2); "What I want is good food and strong wine" (BR3);
-  Fossville "a conniving weasel" (BR4); "There was no finer man in the
-  kingdom than your father" (BR5); Jacobs "that self-inflated stallkeeper"
-  (BR6); the Queen "all but useless" (BR7); the Princess and the belch
-  (BR8); the Duke — "Balderdash!… something in his own [bloodline] that he'd
-  rather people not know about" (BR9); Amhyron "no backbone" (BR10);
-  "Good-bye" — "Spread the love around, my girl!" (BR12). The Earl is not
-  ruled to see her.)
+  (TODO during play-testing — 'Ah-HA! The young up-and-comer! The stick in the
+  spokes! The crumb in everyone's eye!' The Earl of Bresa seizes your hand and
+  pumps it. 'You need anything, backing, whatever, you just let me know.
+  You're an insufferable aggravation to nearly every influential person at
+  this Goddess-forsaken party, and that makes you all right by me.' What he
+  wants is good food and strong wine. Fossville is a conniving weasel; there
+  was no finer man in the kingdom than your father; Jacobs is a self-inflated
+  stallkeeper, the Queen all but useless, and the Duke — 'Balderdash!' — has
+  something in his own bloodline he'd rather people not know about. Amhyron
+  has no backbone. 'Spread the love around, my girl!')
 end phrase
 
 define phrase bresa-br11-stub
-  (TODO during play-testing — conversation BR11 → BR2-BR10, the Earl of
-  Bresa again: "'Hello again!' yells the Earl, swaying slightly as he waves
-  you over.")
+  (TODO during play-testing — 'Hello again!' yells the Earl, swaying slightly
+  as he waves you over.)
 end phrase
 
 ## The Prince of Gravesal (`story.ni:11819-11843`): there from the start
@@ -1067,26 +1051,20 @@ create the black cloak
   The Prince's cloak and clothes are plain but handsome, and black as coal.
 
 define phrase prince-gr1-stub
-  (TODO during play-testing — conversation GR1 → GR2-GR6 → GR4 → GR7, the
-  Prince of Gravesal: "'Pardon me,' someone says in a low, strangely
-  accented voice, and a hand touches your elbow… 'Allow me to introduce
-  myself. I am Prince Gravesal.'" (GR1, without the mercenaries at the
-  doors); "Merely an interested observer… I am intrigued" (GR2); "There's
-  something… special about you. I could see it from the moment I laid eyes
-  on you" (GR3); "People in my family have always been able to see these
-  things. It's like an aura… You have… a highly visible fate" (GR4); "mainly
-  I am interested in you" (GR5); "What is my fate?" — "I see a long journey
-  ahead of you. And many trials… And I see death" — the bow, his lips cool
-  against the back of her hand, and lost in the crowd (GR7, without the
-  hand on her shoulder). GR6 ("I have to get out of here") is cut with the
-  capture. The Prince SEES her — GR3-GR4 are the source's own naming of the
-  talent.)
+  (TODO during play-testing — 'Pardon me,' someone says in a low, strangely
+  accented voice, and a hand touches your elbow. 'Allow me to introduce
+  myself. I am Prince Gravesal.' Merely an interested observer, he says; he is
+  intrigued. 'There's something… special about you. I could see it from the
+  moment I laid eyes on you. People in my family have always been able to see
+  these things. It's like an aura. You have… a highly visible fate.' What is
+  it? 'I see a long journey ahead of you. And many trials.' He bows over your
+  hand, and his lips are cool against the back of it. 'And I see death.' Then
+  he is lost in the crowd.)
 end phrase
 
 define phrase prince-gr2-stub
-  (TODO during play-testing — the Prince of Gravesal again: the source's
-  tree opens once; whether he speaks a second time is David's, or he is lost
-  in the crowd.)
+  (TODO during play-testing — You look for the Prince, but he is lost in the
+  crowd, and nobody you ask seems to have seen him at all.)
 end phrase
 
 ## Bobby beside the throne (the ruling) — his description and his new
@@ -1099,18 +1077,17 @@ define phrase bobby-none-the-worse
 end phrase
 
 define phrase bobby-court-stub
-  (TODO during play-testing — Bobby's conversation, new, carrying the War
-  Room's reveals: that he is a spy; how he escaped the noose — "That's my
-  own secret for now"; whom he answers to — "I don't answer to any royalty…
-  I answer to the people of Miradania", now in tension with the Queen's man,
-  which is the layering David named; and his 2010 note's list — the
-  hanging, dying, spying, the maidens, her father, her mother. Bobby does
-  NOT see her. David's lines; Phase 8's tree.)
+  (TODO during play-testing — 'You're a spy,' you say. Bobby grins. 'Among
+  other things.' How he got out of the noose is his own secret, for now. Whom
+  does he answer to? 'I don't answer to any royalty, Jack. I answer to the
+  people of Miradania.' He glances at the Queen, and back. 'Mostly.' The
+  hanging, the dying, the spying, the maidens, your father, your mother: he
+  has something to say about each, and none of it is what you expected.)
 end phrase
 
 define phrase bobby-court-again-stub
-  (TODO during play-testing — Bobby again, beside the throne: what he will
-  and will not say twice is David's.)
+  (TODO during play-testing — Bobby shakes his head, still smiling. 'Not here,
+  Jack. Later. Ask me later.')
 end phrase
 
 ## ---------------------------------------------------------------------------

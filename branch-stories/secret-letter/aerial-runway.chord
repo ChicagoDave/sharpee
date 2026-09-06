@@ -286,8 +286,10 @@ end trait
 ## #324).
 
 define phrase ride-out-caught
-  (TODO during play-testing — Caught on the ride-out landing and killed — a
-  hard ending.)
+  (TODO during play-testing — You land in a heap in front of the fruit stall,
+  and when you look up there are boots all around you. There is no crate to
+  hide behind and no crowd to lose yourself in; there is a hand in your collar
+  and a blade, and then there is nothing at all.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -399,8 +401,9 @@ create Behind Fruit Stall
   end after
 
 define phrase stepped-out-caught
-  (TODO during play-testing — She steps out into the mercenaries waiting at
-  the Fruit Stall: caught and killed, no free turn.)
+  (TODO during play-testing — You step out from behind the stall straight into
+  the two mercenaries waiting there. They do not shout and they do not chase.
+  One of them takes your arm, almost gently, and the other does the rest.)
 end phrase
 
 ## ---------------------------------------------------------------------------

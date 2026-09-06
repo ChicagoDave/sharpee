@@ -258,8 +258,9 @@ create Jack
   bothered to look.
 
   phrase detail while Jack is dressed:
-    (TODO during play-testing — Jack in the dress and the fashionable hat,
-    boots underneath.)
+    (TODO during play-testing — Jack Toresal, in a green dress and a lady's
+    hat, with a boy's boots underneath and a boy's walk she is trying to
+    remember to forget.)
 
   phrase detail while after jail and Jack is not clean:
     You are utterly filthy.

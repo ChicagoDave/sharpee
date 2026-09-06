@@ -200,20 +200,25 @@ define phrase bobby-never-hurt
 end phrase
 
 define phrase bobby-bo1-stub
-  (TODO during play-testing — conversation BO1: Bobby stands and stretches,
-  sees Jack — "'Lo, Jack. Been looking for you. What's happening?" — the alley
-  tree, BO1-BO15, 14 quips; Bobby does NOT see through the disguise.)
+  (TODO during play-testing — Bobby stands and stretches, then sees you. The
+  corner of his mouth goes up in that lop-sided grin you know so well. 'Lo,
+  Jack,' he says. 'Been looking for you. What's happening?')
 end phrase
 
 define phrase bobby-bo11-stub
-  (TODO during play-testing — conversation BO11 through BO10: Bobby's
-  proposal for tonight and Jack's "I'm in"; the stub takes the source's path —
-  Bobby goes to wait for her, and the alley's exits open.)
+  (TODO during play-testing — 'Hey, Bobby, you mind if I ask you a question?'
+  'Sure,' says Bobby, and then tells you his idea for tonight instead. Could
+  you even consider saying no? 'Okay, let's do it,' you say, your heart
+  thumping hard. 'I'm in.' 'You're a good bloke, Jack,' says Bobby. 'Now, you
+  don't want the Widows worrying about you, so head on home for now. Once it
+  gets dark, sneak back out and meet me in the Grubber's Market. Right? Good.
+  See you later, Jack.' He claps his hand on your shoulder, then turns and
+  strides, all grace and overconfidence, out of the alley.)
 end phrase
 
 define phrase bobby-in-or-out-stub
-  (TODO during play-testing — conversation BO7 / "C'mon, Jack, tell me: are
-  you in or out?" — Bobby pulls Jack back before she can leave; talk to him.)
+  (TODO during play-testing — Bobby catches your sleeve before you can go.
+  'C'mon, Jack, tell me: are you in or out?')
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -330,9 +335,11 @@ define phrase curfew-theresa
 end phrase
 
 define phrase theresa-th1-stub
-  (TODO during play-testing — conversation TH1: "You're filthy," Theresa
-  begins — the hallway tree, TH1-11; Theresa does NOT see through the
-  disguise, and dislikes her.)
+  (TODO during play-testing — Widow Theresa turns to you. 'You're filthy,' she
+  says, 'though no more than usual. I realize it's too much to ask you to
+  actually do any of your chores, but you might at least like to wash
+  yourself, if only in consideration for the next poor girl who has to wash
+  your sheets.')
 end phrase
 
 ## `story.ni:5826` — after the waking, the hallway is clear.
@@ -557,12 +564,14 @@ define phrase bunk-dozing
 end phrase
 
 define phrase door-knock-stub
-  (TODO during play-testing — THE NEW SCENE: a knock wakes Jack. From her
-  bunk, with the children asleep around her, she hears Widow Theresa hold the
-  front door closed against a mercenary; he leaves — "I'll be back!" — and
-  Jack quietly waits for Theresa's footsteps to return to her room before she
-  slips out of bed. The knock, both voices, the parting word, and the wait
-  are yours; the wait is narrated here, not spent.)
+  (TODO during play-testing — A knock wakes you. Not a polite one. You lie
+  still in the dark with the children breathing around you and listen to Widow
+  Theresa's slippers cross the hall, and the bar of the front door lift, and a
+  man's voice, low and unhurried, asking after a boy. Theresa's answer is
+  short. The door does not open any wider. 'I'll be back,' the man says,
+  pleasantly, and his boots go away down the street. You count her steps back
+  along the hall to her room, and the click of her door, and only then do you
+  put your feet on the floor.)
 end phrase
 
 ## The children see her (§3c, the talent-in-children rule); nothing in the
@@ -815,9 +824,10 @@ or
 end phrase
 
 define phrase fiona-fi1-stub
-  (TODO during play-testing — conversation FI1: Fiona at the basin greets Jack
-  — the kitchen tree, FI1-20 tonight; Fiona knows the secret and does NOT see
-  through the disguise.)
+  (TODO during play-testing — Fiona looks over her shoulder as you enter the
+  kitchen. 'Good evening, Jacqueline. And how has the day treated you?' She
+  has the whole evening for you, if you want it: the house, the widows, the
+  children, and the things she will not say in front of them.)
 end phrase
 
 ## DAVID: "Jacqueline" is Fiona's word — §3g; carried as the source has it.
@@ -1164,8 +1174,9 @@ or
 end phrase
 
 define phrase shannon-sh1-stub
-  (TODO during play-testing — conversation SH1: Shannon at the tub, "Miss
-  Jacqueline" — the laundry tree, SH1-12 tonight; Shannon SEES her.)
+  (TODO during play-testing — Widow Shannon looks over her shoulder and gives
+  you a friendly nod. 'Hello, Miss Jacqueline,' she says, as she always has,
+  as if there were nothing in it.)
 end phrase
 
 define phrase shannon-goodbye

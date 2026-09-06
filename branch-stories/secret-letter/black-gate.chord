@@ -357,8 +357,8 @@ extend action entering
 ## jumping action outside it); this is the one line the port needs.
 
 define phrase jump-nowhere
-  (TODO during play-testing — a jump anywhere but the rooftop's edge: no
-  source line exists; David's.)
+  (TODO during play-testing — There's nothing here worth jumping at, and a
+  good deal worth not landing on.)
 end phrase
 
 ## The chimneys and the smoke (`story.ni:8927-8951`) belong to both rooftop
@@ -1120,10 +1120,10 @@ end phrase
 ## placeholder; the beats and their lines are David's, during play-testing.
 
 define phrase house-beat-stub
-  (TODO during play-testing — the house beats: a servant on the stairs, a
-  door below, a near miss in the hallway — something that keeps her moving
-  through the house and cannot take her. Fear, no teeth. The beats and the
-  lines are David's.)
+  (TODO during play-testing — A door opens somewhere below and a servant's
+  voice calls up the stairs. You flatten yourself into the angle of the
+  hallway, and a girl with an armful of linen goes past the foot of the steps
+  without looking up. When her footsteps fade you move again, faster.)
 end phrase
 
 define phrase fossville-is-down-there

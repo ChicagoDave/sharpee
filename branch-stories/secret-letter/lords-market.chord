@@ -367,8 +367,8 @@ create the moneylender's carpet
   scenery
   in the Moneylender's Shop
 
-  (TODO during play-testing — the carpet has no description in the source; a
-  line or none, David's call.)
+  (TODO during play-testing — A wine-dark carpet, thick enough to swallow a
+  footstep, which is presumably the point.)
 
 create the teller's window
   aka window, tellers window, counter, grating, brass grating, grate, reinforced wall, wall
@@ -666,20 +666,23 @@ define phrase pieter-on-duty
 end phrase
 
 define phrase sandler-ds1-stub
-  (TODO during play-testing — conversation DS1: Dame Sandler's eyebrows rise
-  as Jack walks in — "Well, hello there, Squire Jack" — the jeweler's tree,
-  DS1-23 first-visit; Dame Sandler KNOWS everything.)
+  (TODO during play-testing — Dame Sandler's eyebrows raise slightly as you
+  walk into her store. 'Well, hello there, Squire Jack,' she says, in her
+  typically smooth and the slightest bit mocking tone. 'We haven't had the
+  pleasure of your company in a while. You look a bit out of breath — nothing
+  ails you, I hope?')
 end phrase
 
 define phrase sandler-ds14-stub
-  (TODO during play-testing — conversation DS14: Dame Sandler stops Jack on
-  her way out the first time; the source holds her for the exchange, the stub
-  lets the step continue.)
+  (TODO during play-testing — Just as you're about to leave, Dame Sandler
+  calls out, 'Oh, Jack, I almost forgot to ask you… what are your thoughts on
+  the coming Ascension?' You mumble something about not following politics,
+  and she smiles as if that were an answer.)
 end phrase
 
 define phrase sandler-ds19-stub
-  (TODO during play-testing — conversation DS19: Jack opens with Dame Sandler
-  while still the urchin.)
+  (TODO during play-testing — 'Can I ask you a question, Dame Sandler?' you
+  ask. 'But of course, my dear Jack,' she says.)
 end phrase
 
 ## `DS24-DS30` (`story.ni:5394-5409`), the morning after the sewer (Chapter
@@ -691,20 +694,19 @@ end phrase
 ## going and the quip moves her out; the stub lets the going proceed).
 
 define phrase sandler-ds24-stub
-  (TODO during play-testing — conversation DS24-DS29: Dame Sandler looks up
-  as Jack bursts in, her face carefully expressionless — "Why Jack, you look
-  an absolute fright. Whatever is the matter?"; "Have you seen Bobby?" — "I
-  only know that he was taken up by Fossville's men… Did Bobby give you
-  any… instructions?"; the shops on Commerce Street most likely have back
-  doors to the alley. Dame Sandler SEES her; her words are public.)
+  (TODO during play-testing — Dame Sandler looks up as you burst in, her face
+  carefully expressionless. 'Why Jack, you look an absolute fright. Whatever
+  is the matter?' 'Have you seen Bobby?' 'I only know that he was taken up by
+  Fossville's men,' she says. 'Did Bobby give you any… instructions?' When you
+  tell her, she nods once. 'The shops on Commerce Street most likely have back
+  doors to the alley.')
 end phrase
 
 define phrase sandler-ds30-stub
-  (TODO during play-testing — conversation DS30: as Jack is about to leave,
-  Dame Sandler lays her fingertips on her arm — "I'm afraid I must ask you
-  to not come back, at least not for a little while… good-bye and good luck.
-  Take care, Jack." — and gently pushes her out the door, and locks it
-  behind her.)
+  (TODO during play-testing — As you are about to leave, Dame Sandler lays her
+  fingertips on your arm. 'I'm afraid I must ask you to not come back, at
+  least not for a little while. Good-bye and good luck. Take care, Jack.' She
+  pushes you gently out the door, and you hear the lock turn behind you.)
 end phrase
 
 ## --- Chorus Brothers (`story.ni:5468-5482`) ----------------------------------

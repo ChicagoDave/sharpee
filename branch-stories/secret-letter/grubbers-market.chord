@@ -844,8 +844,9 @@ end phrase
 ## your apple in peace" (`story.ni:1469`).
 
 define phrase apple-not-here
-  (TODO during play-testing — Refused in the open; points northwest without
-  naming it.)
+  (TODO during play-testing — Not here, with half of Grubber's treading on
+  your feet. There's a quiet spot off the northwest corner of the market where
+  a person can eat in peace.)
 end phrase
 
 ## DAVID: the first bite. Two Gentry lines are candidates and either can be
@@ -855,7 +856,8 @@ end phrase
 ## voices." (`story.ni:1469`) — which is also where the eavesdrop begins.
 
 define phrase apple-first-bite
-  (TODO during play-testing — The first bite, taken in the Alley.)
+  (TODO during play-testing — You settle yourself on a crate and take a bite
+  of your apple. Crisp and delicious.)
 end phrase
 
 ## The other eight stalls' wares and the source's generic theft rule — what

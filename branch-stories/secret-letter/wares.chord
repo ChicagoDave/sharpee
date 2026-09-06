@@ -119,8 +119,8 @@ end phrase
 ## which keeps your own.
 
 define phrase stall-lift-quietly
-  (TODO during play-testing — A quiet lift of {the item} from its display
-  while the market is calm; the stallkeeper never looks up.)
+  (TODO during play-testing — You palm {the item} off its display while the
+  stallkeeper is busy haggling with someone else. Nobody looks up.)
 end phrase
 
 ## `story.ni:1990` — the first noisy theft.

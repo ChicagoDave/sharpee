@@ -117,13 +117,12 @@ define condition bodyguarded: the preparations is escorted or the preparations i
 ## is the source's "Chapter 9 - Preparations" heading (`5262`).
 
 define phrase sandler-ds31-stub
-  (TODO during play-testing — conversation DS31: Dame Sandler looks Jack
-  over and smiles, not at all surprised by the change in dress if DS1 was
-  fired — "'Lady Jacqueline,' she says, inclining her head, 'how nice to see
-  you finally looking yourself, after all these years. Come, child, let me
-  get a look at you.'" — the chin between finger and thumb, "You've simply
-  destroyed your hair, of course." Dame Sandler SEES her, and speaks the
-  true words in private — the ruling.)
+  (TODO during play-testing — Dame Sandler looks you over and smiles, not in
+  the least surprised. 'Lady Jacqueline,' she says, inclining her head, 'how
+  nice to see you finally looking yourself, after all these years. Come,
+  child, let me get a look at you.' She takes your chin between finger and
+  thumb and turns your face to the light. 'You've simply destroyed your hair,
+  of course.')
 end phrase
 
 ## `DS32-DS49` (`story.ni:10617-10668`) as one stub: the reveal, the claim,
@@ -135,26 +134,21 @@ end phrase
 ## and passive aggressive" — the stub fires it in the same turn.
 
 define phrase sandler-ds32-ds49-stub
-  (TODO during play-testing — conversation DS32-DS49, Dame Sandler's tree:
-  "did you really think I hadn't guessed?" (DS32) or "Widow Fiona sent me"
-  (DS34), exclusive; who has had their eye on her (DS33); Fiona and the plans
-  made when the Duke died (DS35); "Fossville may have murdered your father"
-  (DS36/DS40 → DS41, "Poison seems most obvious"); the claim (DS38 and DS39 —
-  CONVERTED per the ruling: the King's brother's child, the King dead
-  without a named heir; the source's "will of the people" law and "even as
-  his illegitimate heir" do not carry; David's words); how to press it —
-  the people who would see her succeed (DS42); "I can't do this" (DS43);
-  "You must announce yourself" — Fossville's ball tonight, a dress, some
-  jewelry, and a weapon (DS44); the clothier next door (DS45); the weapons
-  dealer on Commerce Street (DS46); the Chorus Brothers and proof of her
-  heritage (DS47); the jewelry — she unlocks the display case with a tiny
-  silver key: "Take any one you like, child. I'm one of those who would see
-  you succeed; this is my gift to you" (DS48); and, once the cluster is
-  spent, "Thank you" (DS49): "See the moneylenders first, then get a
-  suitable dress and a discreet blade. Pieter will go with you—" "What, to
-  the ball?" "Yes, Pieter, to the ball. Just do what you always do — keep
-  your mouth shut and make sure no one harms the valuables." Dame Sandler
-  SEES her; Pieter does NOT, and hears the politics here.)
+  (TODO during play-testing — 'Did you really think I hadn't guessed?' says
+  Dame Sandler. She has had her eye on you for years, she says, as have
+  others; she and Fiona made their plans the week the Duke died. Fossville may
+  well have murdered your father — poison seems most obvious — and the claim
+  is yours by blood: the King's brother's child, and the King dead without a
+  named heir. 'You must announce yourself. Fossville's ball is tonight. You
+  will need a dress, some jewelry, and a weapon.' The clothier is next door;
+  the weapons dealer is on Commerce Street; the Chorus Brothers will want
+  proof of your heritage. She unlocks the display case with a tiny silver key.
+  'Take any one you like, child. I'm one of those who would see you succeed;
+  this is my gift to you.' When you thank her she is already moving you to the
+  door. 'See the moneylenders first, then get a suitable dress and a discreet
+  blade. Pieter will go with you—' 'What, to the ball?' 'Yes, Pieter, to the
+  ball. Just do what you always do — keep your mouth shut and make sure no one
+  harms the valuables.')
 end phrase
 
 ## `story.ni:10594`
@@ -318,22 +312,13 @@ end phrase
 ## (`story.ni:5231`). Pieter does NOT see her.
 
 define phrase pieter-pi1-stub
-  (TODO during play-testing — conversation PI1-PI11, Pieter's tree: "'Hey
-  Pieter,' you say, 'mind if I ask you something?'" — "I don't know if we
-  have much time to chat / We really should be getting to the ball / I don't
-  know if I have any answers for you, Jack / Jacqueline / Jac— er,
-  Jacqueline, but okay" (PI1, the stammer at random); "Did you know I was a
-  girl, too?" — "Oh, I was in the dark, all right" (PI2); "Do you really
-  think I could be Queen?" — "Goddesses, but it's weird calling you that"
-  (PI3); Dame Sandler took him in after some bad business back east (PI4);
-  "That bastard's going to get what's coming to him. For Bobby and for your
-  father" (PI5); "I suppose he could have done worse for a daughter" (PI6);
-  fancy balls — "Make yourself visible" (PI7); the Chorus Brothers (PI8,
-  until the purse); the clothier — "a lifelong bachelor" (PI9, until the
-  gown); Olgan Minor — "a dim thug… he'll try to intimidate you because
-  you're young and a girl" (PI10, until the dagger); "Never mind" (PI11).
-  PI12, the Woods, is Chapter 10's. Pieter does NOT see her — the shock,
-  the stumble and the "Jack" slips carry as written.)
+  (TODO during play-testing — 'Hey Pieter,' you say, 'mind if I ask you
+  something?' 'I don't know if we have much time to chat, Jac— er,
+  Jacqueline,' says Pieter gruffly, 'but okay.' He was in the dark about you,
+  all right; it's weird calling you that; Dame Sandler took him in after some
+  bad business back east; and that bastard is going to get what's coming to
+  him, for Bobby and for your father. 'Make yourself visible,' he says of the
+  ball, as if it were simple.)
 end phrase
 
 ## `story.ni:10801-10802`, the letter shown to him.
@@ -415,10 +400,11 @@ end phrase
 ## `CB1` (`story.ni:5484`), on entering clean, once.
 
 define phrase brothers-cb1-stub
-  (TODO during play-testing — conversation CB1: a moment after she enters,
-  two faces slide in at the window from either side, curiosity and a sort
-  of mild, almost professional contempt — "'Good afternoon,' says one.
-  'May we help you?' asks the other." The Chorus Brothers do NOT see her.)
+  (TODO during play-testing — A moment after you enter, two faces suddenly
+  appear at the window, each seeming to slide smoothly in from either side.
+  They look at you with identical expressions of curiosity and a sort of mild,
+  almost professional contempt. 'Good afternoon,' says one. 'May we help you?'
+  asks the other.)
 end phrase
 
 ## `CB2-CB5`, `CB7`, `CB8` (`story.ni:5486-5498`) while they are
@@ -427,40 +413,34 @@ end phrase
 ## credentials our hands are tied"; a letter would be most ideal.
 
 define phrase brothers-credentials-stub
-  (TODO during play-testing — conversation CB2 → CB3 → CB4, CB5, CB7, CB8,
-  the Chorus Brothers contemptuous: "I have a question" — "Allow us to
-  answer… to the best of our ability" (CB2); "I need a loan" (CB3) — "My
-  dear, you certainly look respectable, but without… some form of
-  credentials… our hands are tied" (CB4); "What kind of credentials?" —
-  collateral, surety, "even a letter, establishing your social standing"
-  (CB5); "What was Fossville doing here yesterday?" — "he presents certain…
-  liabilities" (CB7); "Will this letter work?" — the letter held out (CB8,
-  which is `show letter to brothers`). The Chorus Brothers do NOT see her;
-  "My dear" and "Miss" are the girl words under the dress premise.)
+  (TODO during play-testing — 'I need a loan,' you say. 'My dear,' says one,
+  'you certainly look respectable, but without some form of credentials—'
+  '—collateral, surety, even a letter, establishing your social standing—'
+  says the other, '—our hands are tied.' As for what Fossville was doing here
+  yesterday, they will only say that he presents certain… liabilities.)
 end phrase
 
 ## `CB6` (`story.ni:5494`), the loan — the purse changes hands.
 
 define phrase brothers-cb6-stub
-  (TODO during play-testing — conversation CB3 → CB6, the Chorus Brothers
-  respectful: "I need a loan" — the two lean forward eagerly, "We would be
-  delighted to extend to you… our most prestigious line of credit!"; dozens
-  of sheets of dense, tiny script — amortization, dividends, compound
-  interest, escrow; Pieter's "Just sign all of them"; the slim leather
-  folder and the small purse of coins on the counter; "That's it?"
-  complains Pieter, and the sunlight gleam of gold; "remember us… not merely
-  as your creditors… but as your friends" — two sets of wide, white teeth.
-  The Chorus Brothers do NOT see her.)
+  (TODO during play-testing — 'I need a loan,' you say, and the two lean
+  forward eagerly. 'We would be delighted to extend to you our most
+  prestigious line of credit!' Dozens of sheets of dense, tiny script appear
+  on the counter — amortization, dividends, compound interest, escrow. 'Just
+  sign all of them,' says Pieter. A slim leather folder and a small purse of
+  coins are laid before you. 'That's it?' complains Pieter, and gold gleams in
+  the sunlight. 'Remember us,' says one brother, 'not merely as your
+  creditors—' '—but as your friends,' says the other, and both of them show
+  you two sets of wide, white teeth.)
 end phrase
 
 ## `CB2` and `CB7` remain once the loan is made (`story.ni:5502-5520`).
 
 define phrase brothers-after-loan-stub
-  (TODO during play-testing — conversation CB2, CB7 after the loan: "I have
-  a question" and Fossville's visit yesterday — "We're afraid it would not
-  be proper for us to discuss our other clients' financial matters" on the
-  second asking; the loan is not offered twice. The Chorus Brothers do NOT
-  see her.)
+  (TODO during play-testing — 'I have a question.' 'Allow us to answer, to the
+  best of our ability.' But when you ask about Fossville's visit yesterday,
+  they only exchange a look. 'We're afraid it would not be proper for us to
+  discuss our other clients' financial matters.')
 end phrase
 
 ## `story.ni:5551-5558`, the letter shown while contemptuous. The source
@@ -606,17 +586,13 @@ end phrase
 ## and CL4 on DS49, CL4 on the gown, CL6 on the purse.
 
 define phrase clothier-cl1-stub
-  (TODO during play-testing — conversation CL1-CL6, the clothier's tree:
-  "'I have a question…' you start to say." — "'And I have answers,' says the
-  clothier, bowing deeply. 'Please, dear, ask away.'" (CL1); "What's your
-  cheapest dress?" — "that hussy who runs the silk tent in Grubber's"; "how
-  much is it worth to you to look fabulous" (CL2); what to wear to the ball
-  — "Sister, there's no point in even choosing. They're all good" (CL3,
-  until the gown); "What do you think?" — "It's fabulous. It's you. Trust
-  me" (CL4, once the gown is on); Fossville and the Ascension — "don't mix
-  dresses with politics" (CL5); "Okay, how about… that one?" (CL6, with the
-  purse — which is `buy clothes`). The clothier does NOT see her; "Sister",
-  "honey", "darling" are the girl words under the dress premise.)
+  (TODO during play-testing — 'I have a question…' you start to say. 'And I
+  have answers,' says the clothier, bowing deeply. 'Please, dear, ask away.'
+  His cheapest dress? He would not dignify that with a price; try that hussy
+  who runs the silk tent in Grubber's. What to wear to the ball? 'Sister,
+  there's no point in even choosing. They're all good.' Politics? 'Honey,
+  don't mix dresses with politics.' And when you point: 'It's fabulous. It's
+  you. Trust me.')
 end phrase
 
 ## `story.ni:5108`, the price without the purse.

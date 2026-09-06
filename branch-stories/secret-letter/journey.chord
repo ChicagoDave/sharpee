@@ -424,11 +424,11 @@ end phrase
 ## (gap 1).
 
 define phrase night-journey-watch-stub
-  (TODO during play-testing — the night journey's pressure: something of
-  Fossville's men or the watch at the fountain where they took her and Bobby
-  last night — seen, heard, or nearly met, with Pieter's hand on his sword —
-  and nothing comes of it. Fear, no teeth. Whether it lands here, on the
-  road, or in the woods, and its lines, are David's.)
+  (TODO during play-testing — At the fountain, where they took you and Bobby
+  last night, there is a lantern that was not there before, and two men under
+  it. Pieter's hand goes to his sword and stays there. He walks you past on
+  the far side of the road at an easy pace, talking of nothing, and the men
+  look at a lady and her man and go back to their lantern.)
 end phrase
 
 ## ---------------------------------------------------------------------------

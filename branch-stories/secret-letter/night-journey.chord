@@ -129,36 +129,35 @@ end phrase
 ## (`maiden-house.chord`): a `when … expires` head cannot sit in a trait.
 
 define phrase dawdle-hide-stub
-  (TODO during play-testing — the dawdle chase: Jack has taken too long;
-  mercenaries give chase, Bobby catches up with her and hides the two of
-  them as the mercenaries pass; then the journey resumes on its rails. The
-  beat and its lines are David's.)
+  (TODO during play-testing — A shout behind you, and boots — too many boots.
+  You run, and a hand grabs your collar and yanks you sideways into the black
+  of a doorway, and Bobby's breath is at your ear: 'Quiet.' The mercenaries
+  pound past a yard from your face and on down the street. Bobby waits until
+  their noise is gone, then lets you go. 'You dawdle like that again,' he
+  whispers, 'and I'll leave you for them. Come on.')
 end phrase
 
 define phrase bobby-bo23-stub
-  (TODO during play-testing — conversation BO23: "When you get closer, he
-  walks over and claps you on the shoulder. 'Had a spot of trouble getting
-  away from the Widows, eh, Jack?' he whispers." — the night tree, BO23-BO26;
-  talk to him. Bobby does NOT see through the disguise.)
+  (TODO during play-testing — When you get closer, he walks over and claps you
+  on the shoulder. 'Had a spot of trouble getting away from the Widows, eh,
+  Jack?' he whispers.)
 end phrase
 
 define phrase bobby-bo26-stub
-  (TODO during play-testing — conversation BO24/BO25 then BO26: "'Not
-  really.'" or "'I had to sneak out.'", then "'Okay then, we're ready to
-  go,' says Bobby. 'We're off to the wood outside Lord's Keep; that place I
-  wanted to show you is there. Now follow me, keep your hood up and your
-  head down, and land your feet soft.' Without waiting for you to answer,
-  Bobby heads north, out the city gates." — the stub takes the source's
-  path: Bobby goes north to Lord's Road.)
+  (TODO during play-testing — 'Not really,' you say, which is a lie, and Bobby
+  grins as if he knows it. 'Okay then, we're ready to go,' he says. 'We're off
+  to the wood outside Lord's Keep; that place I wanted to show you is there.
+  Now follow me, keep your hood up and your head down, and land your feet
+  soft.' Without waiting for you to answer, Bobby heads north, out the city
+  gates.)
 end phrase
 
 define phrase bobby-bo27-stub
-  (TODO during play-testing — conversation BO27 through BO31: "'Wait, wait,'
-  you say, 'I have to ask you something first.'" — the tunnel, how he found
-  it, "'I don't know about this, Bobby...'", and "'Fine, I'm going down your
-  dark, creepy hole.' 'Thattaboy, Jack,' Bobby laughs, as you duck your head
-  and climb down into the darkness." — the stub takes BO31's path: down the
-  hole. Bobby does NOT see through the disguise.)
+  (TODO during play-testing — 'Wait, wait,' you say, 'I have to ask you
+  something first.' Bobby tells you about the tunnel, and how he found it, and
+  grins at every question. 'I don't know about this, Bobby…' 'Fine,' you say
+  at last. 'I'm going down your dark, creepy hole.' 'Thattaboy, Jack,' Bobby
+  laughs, as you duck your head and climb down into the darkness.)
 end phrase
 
 ## `story.ni:6584-6588`, verbatim — north before BO26.

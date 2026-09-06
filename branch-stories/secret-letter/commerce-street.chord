@@ -63,8 +63,10 @@ create the Commerce Street
   north is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
   northeast is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
   first time
-    (TODO during play-testing — "You made it." — Gentry's arrival block is
-    kept aside in this file's comments; it ends by removing the cloak.)
+    (TODO during play-testing — You made it. Commerce Street opens out ahead
+    of you, wide and bright and full of people who have never heard of you,
+    and for the first time since the alley your heart slows to something like
+    normal.)
 
   {commerce-street-by-day}{commerce-street-by-night} {pieter-bodyguard}
 
@@ -123,10 +125,11 @@ end phrase
 ## off her — and their lines are David's, during play-testing.
 
 define phrase street-push-stub
-  (TODO during play-testing — the street push: something of the mercenary
-  from Maiden House's door is on the streets between the house and the night
-  market — seen, heard, or nearly met — and something else keeps him off
-  her. Fear, no teeth. The beats and the lines are David's.)
+  (TODO during play-testing — Halfway along the dark street a man in a
+  mercenary's coat comes out of a doorway ahead of you, and you stop dead in a
+  shadow. He is looking the wrong way. Somewhere behind him a bottle breaks
+  and a woman laughs, and he turns toward the sound and walks off after it,
+  and you count ten before you move again.)
 end phrase
 
 ## THE STREET BEATS (change document, Chapter 6, "The morning on Commerce
@@ -137,9 +140,10 @@ end phrase
 ## play-testing (gap 1).
 
 define phrase street-mercenaries-stub
-  (TODO during play-testing — the morning's mercenaries: something of them
-  on Commerce Street, seen or heard, and something she ducks into — a shop,
-  a doorway, the alley. Fear, no teeth. The beats and the lines are David's.)
+  (TODO during play-testing — Two of them are on Commerce Street this morning,
+  walking the shopfronts with their hands on their belts and their eyes on
+  every face. You step into the nearest doorway and study a display of buttons
+  with great interest until their boots have gone past and around the corner.)
 end phrase
 
 ## `story.ni:8760` — the morning's west refusal, after the sewer.
@@ -176,8 +180,9 @@ end phrase
 ## David's, during play-testing, and their form is his too.
 
 define phrase jack-paranoia
-  (TODO during play-testing — Jack's paranoia on the street: a hunted kid
-  catching her breath where she has been told she is safe.)
+  (TODO during play-testing — A cart rattles behind you and you have turned
+  before you know it, hand at your cap. Only a cart. Nobody here is looking
+  for you. You tell yourself that twice.)
 end phrase
 
 ## `story.ni:4280` — by day only in the source; at night the way west is the
@@ -300,8 +305,8 @@ create the bread counter
   scenery
   in the Bakery
 
-  (TODO during play-testing — the counter has no description in the source;
-  a line or none, David's call.)
+  (TODO during play-testing — A long wooden counter, scrubbed pale, with a
+  dusting of flour that no amount of scrubbing ever quite gets rid of.)
 
 create the bread
   aka baked goods, loaves, baguettes, rolls, loaf, baguette, roll, golden loaves
@@ -907,9 +912,10 @@ end phrase
 ## not perceive Jack.
 
 define phrase germaise-ge1-stub
-  (TODO during play-testing — conversation GE1: Germaise, leaning on the
-  counter, "You want something?" — the baker's tree, 15 first-visit quips;
-  Germaise does not see through the disguise.)
+  (TODO during play-testing — You lean casually on the counter, and the baker
+  raises one flour-dusted eyebrow. 'You want something?' he asks. Germaise has
+  never had much patience for you, and less for talk; whatever you ask, the
+  answers come short.)
 end phrase
 
 ## `GE16-GE19` (`story.ni:4476-4492`), the morning after the sewer: the
@@ -917,11 +923,11 @@ end phrase
 ## does not see her.
 
 define phrase germaise-ge16-stub
-  (TODO during play-testing — conversation GE16-GE19: Germaise looks up and
-  scowls at the filth on her; "Have you seen Bobby?" — "No, and I'd like to
-  keep it that way"; "Is there a back door here?" — "No, there isn't, and
-  no, you can't use it… Go away, Jack. I am very, very busy." Germaise does
-  not see through the disguise.)
+  (TODO during play-testing — Germaise looks up from his dough and scowls at
+  the filth on you. 'Have you seen Bobby?' you ask. 'No,' says Germaise, 'and
+  I'd like to keep it that way.' 'Is there a back door here?' 'No, there
+  isn't, and no, you can't use it.' He turns back to his work. 'Go away, Jack.
+  I am very, very busy.')
 end phrase
 
 ## --- Old Man Holstenoffer (`story.ni:4538-4577`) ---------------------------
@@ -987,9 +993,11 @@ end phrase
 ## Holstenoffer does not perceive Jack.
 
 define phrase holstenoffer-ho1-stub
-  (TODO during play-testing — conversation HO1: Holstenoffer looks up from
-  the block and greets Jack — the butcher's tree, 17 first-visit quips;
-  Holstenoffer does not see through the disguise.)
+  (TODO during play-testing — Holstenoffer glances over his shoulder as you
+  come in. 'Ey, Jack!' he calls. 'Long time, no see. Bobby was around this
+  morning, looking for yeh. Up to something again, eh?' he laughs. He'd talk
+  all morning if you let him. Bobby, he says, is waiting for you over by
+  Lord's Market.)
 end phrase
 
 ## `HO18-HO24` (`story.ni:4665-4700`), the morning after the sewer. HO18
@@ -1000,19 +1008,18 @@ end phrase
 ## Holstenoffer does not see her ("Yer a good lad", HO23).
 
 define phrase holstenoffer-ho18-stub
-  (TODO during play-testing — conversation HO18: Holstenoffer looks up as
-  she enters, and his eyes widen. "Goddesses, Jack, you look like you've had
-  the worse of it. Widow Fiona was just in this morning, lookin' for yeh. Is
-  everything all right?" Holstenoffer does not see through the disguise.)
+  (TODO during play-testing — Holstenoffer looks up as you enter, and his eyes
+  widen. 'Goddesses, Jack, you look like you've had the worse of it. Widow
+  Fiona was just in this morning, lookin' for yeh. Is everything all right?')
 end phrase
 
 define phrase holstenoffer-ho22-stub
-  (TODO during play-testing — conversation HO19-HO24: "Have you seen
-  Bobby?"; "Is there a back door here?" — "Don't lead to nothin' but a
-  closed-off alley"; "Just let me back there" — "Yer a good lad and I like
-  yeh, but…"; "It's to help Bobby" — he nods, leads her around the counter,
-  unlocks and opens a small metal door: "Be safe now, Jack. Do what yeh have
-  to do." She steps through. Holstenoffer does not see through the disguise.)
+  (TODO during play-testing — 'Have you seen Bobby?' you ask. Holstenoffer
+  shakes his head. 'Is there a back door here?' 'Don't lead to nothin' but a
+  closed-off alley.' 'Just let me back there.' 'Yer a good lad and I like yeh,
+  but…' 'It's to help Bobby.' He looks at you a long moment, then nods, leads
+  you around the counter, and unlocks a small metal door in the back wall. 'Be
+  safe now, Jack. Do what yeh have to do.' You step through.)
 end phrase
 
 ## --- Olgan Minor (`story.ni:4736-4762`) ------------------------------------
@@ -1063,19 +1070,20 @@ end phrase
 ## document, "Who sees her"): the first perceiver in the game who is hostile.
 
 define phrase minor-om1-stub
-  (TODO during play-testing — conversation OM1: "'Um, mind if I ask you
-  something?'" — Olgan's tree, 8 first-visit quips; Olgan Minor SEES her, and
-  says so in his own way.)
+  (TODO during play-testing — 'Um, mind if I ask you something?' you stammer.
+  The man's lip twitches slightly, but he says nothing. You decide, foolishly
+  perhaps, to interpret this as a yes. Whatever you ask, Olgan Minor answers
+  with the same flat stare, and once, quietly, with a word that is not 'boy'.)
 end phrase
 
 ## `OM9` (`story.ni:4777`) joins Olgan's tree after the sewer: "Is there a
 ## back door here?" — "Looking for an easy way in, little thief?"
 
 define phrase minor-om9-stub
-  (TODO during play-testing — conversation OM1 with OM9: Olgan's tree as
-  before, plus "Is there a back door in your store?" — Olgan narrows his eyes:
-  "Looking for an easy way in, little thief?" — "Er, no… I mean, sorry.
-  Never mind." Olgan Minor SEES her.)
+  (TODO during play-testing — 'Um, mind if I ask you something?' you stammer,
+  and Olgan Minor says nothing, which you take for a yes. 'Is there a back
+  door in your store?' His eyes narrow. 'Looking for an easy way in, little
+  thief?' 'Er, no… I mean, sorry. Never mind.')
 end phrase
 
 ## `story.ni:4757`, the dirty-Jack buying refusal, on the dagger display;

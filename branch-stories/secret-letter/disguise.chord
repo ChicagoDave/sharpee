@@ -55,7 +55,10 @@
 create the dress
   aka gown, green dress, new dress
 
-  (TODO during play-testing — The dress Teisha trades for the necklace.)
+  (TODO during play-testing — A simple dress of dusky green, cut for a lady of
+  no great means but some taste, with a little silver stitching at the collar.
+  Teisha said it would suit you. Standing here in your rags, you can't imagine
+  how.)
 
   on the player wearing
     refuse change-outfit-instead
@@ -67,7 +70,9 @@ create the dress
 create the fashionable hat
   aka fashionable hat, new hat, lady's hat, bonnet
 
-  (TODO during play-testing — The fashionable hat that comes with the dress.)
+  (TODO during play-testing — A lady's hat with a brim wide enough to hide a
+  face under, trimmed to match the dress. It would look ridiculous over a
+  woolen cap.)
 
   on the player wearing
     refuse change-outfit-instead
@@ -77,7 +82,9 @@ create the fashionable hat
 ## clothing-is-the-look ruling). Line is David's.
 
 define phrase change-outfit-instead
-  (TODO during play-testing — Not piece by piece — CHANGE OUTFIT.)
+  (TODO during play-testing — You can't just pull a dress on over an urchin's
+  rags. If you're going to do this, do it properly: somewhere out of sight,
+  the whole outfit at once.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -116,20 +123,26 @@ define action changing-outfit
 ## to run!" — kept aside; the dress and hat need their own.
 
 define phrase change-outfit
-  (TODO during play-testing — Jack changes into the dress and the fashionable
-  hat behind the stall; the cap goes into the satchel.)
+  (TODO during play-testing — Behind the stall, with the crates for a screen,
+  you strip off the cap and the rags and wriggle into the dress. The hat goes
+  on over your cropped hair; the cap goes into the satchel. You smooth the
+  skirt with both hands, and for a moment you don't know what to do with your
+  feet. Then you remember. You're a lady. Ladies walk.)
 end phrase
 
 define phrase change-no-dress
-  (TODO during play-testing — Nothing to change into yet.)
+  (TODO during play-testing — You have nothing to change into. Rags and a
+  woolen cap are the whole of your wardrobe.)
 end phrase
 
 define phrase change-not-here
-  (TODO during play-testing — Not out here, in the open.)
+  (TODO during play-testing — Not here, in front of half the market. You need
+  somewhere out of sight.)
 end phrase
 
 define phrase change-already
-  (TODO during play-testing — Already changed.)
+  (TODO during play-testing — You're already wearing the dress. Once is
+  plenty.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -165,7 +178,10 @@ end timer
 ## wearing. No source text (the 2009 game has no footwear).
 
 define phrase boots-spotted
-  (TODO during play-testing — A mercenary notices the boots under the dress.)
+  (TODO during play-testing — 'Oi.' One of the mercenaries has stopped. He
+  isn't looking at your face; he's looking at your feet. Boots — a boy's
+  boots, scuffed and split, under a lady's hem. His head comes up, and this
+  time he knows what he's looking for.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -188,10 +204,13 @@ end phrase
 ##   to have any chance of sneaking past him."
 
 define phrase east-deflected
-  (TODO during play-testing — The calm walk does not leave the market east.)
+  (TODO during play-testing — The crowd is thickest toward Commerce Street,
+  and you've no reason to fight through it this morning. The market is where
+  the pickings are.)
 end phrase
 
 define phrase east-watched
-  (TODO during play-testing — The captain watches the Commerce Street
-  entrance; not as Jack looks now.)
+  (TODO during play-testing — The mercenary captain is standing watch at the
+  mouth of Commerce Street, and he's looking at every face that passes. Not
+  yours. Not the way you look now.)
 end phrase

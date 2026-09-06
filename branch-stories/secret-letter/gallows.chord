@@ -188,15 +188,16 @@ end phrase
 ## Two placeholders; the beats and their lines are David's (gap 1).
 
 define phrase street-crowd-mercenaries-stub
-  (TODO during play-testing — the way to the square: Chapter 6's mercenaries
-  somewhere in the crowd flowing east, seen or heard, and what keeps her head
-  down. Fear, no teeth. The beats and the lines are David's.)
+  (TODO during play-testing — The crowd flows east toward the square and you
+  go with it, head down, cap pulled low. Twice you see the mercenaries' coats
+  above the heads around you, moving against the current, looking. Twice the
+  crowd closes between you and them and carries you on.)
 end phrase
 
 define phrase square-mercenaries-stub
-  (TODO during play-testing — the square: mercenaries ringing the platform,
-  and the crowd that keeps her hidden while she watches. Fear, no teeth. The
-  beats and the lines are David's.)
+  (TODO during play-testing — Mercenaries ring the platform, a dozen of them,
+  facing outward into the crowd. You keep a farmer's broad back between you
+  and the nearest of them, and watch through the gap under his arm.)
 end phrase
 
 ## `story.ni:9600-9603`
@@ -597,9 +598,8 @@ define phrase bedside-waking
 end phrase
 
 define phrase fiona-fi21-stub
-  (TODO during play-testing — conversation FI21: "You feel like there's
-  something important you should say to Fiona, but you can't think of what
-  it is." Fiona knows everything and does NOT see; talk to her.)
+  (TODO during play-testing — You feel like there's something important you
+  should say to Fiona, but you can't think of what it is.)
 end phrase
 
 ## `FI22-FI25` (`story.ni:9720-9727`): the croak, the apology, "Bobby is
@@ -608,12 +608,13 @@ end phrase
 ## scene into the raid.
 
 define phrase fiona-fi22-stub
-  (TODO during play-testing — conversation FI22-FI25: "How did I get here?"
-  — "Shannon found you, after the crowd dispersed. She brought you back
-  here."; "I'm sorry I snuck out" — "Shh. It's all right."; "Bobby is dead.
-  They killed Bobby." — the sobs, "Oh child... oh my dear child...", "I never
-  told him my name!… what if he did know you? What if he knew you even
-  better than you knew yourself?" Fiona does not see.)
+  (TODO during play-testing — 'How did I get here?' you croak. 'Shannon found
+  you, after the crowd dispersed,' says Fiona. 'She brought you back here.'
+  'I'm sorry I snuck out.' 'Shh. It's all right.' 'Bobby is dead,' you say.
+  'They killed Bobby.' And then you are sobbing, and Fiona holds you. 'Oh
+  child… oh my dear child…' Somewhere in it you hear yourself say, 'I never
+  told him my name,' and Fiona goes still. 'What if he did know you?' she says
+  softly. 'What if he knew you even better than you knew yourself?')
 end phrase
 
 ## `story.ni:9800`, the raid begins. DAVID: "Jacqueline" is Fiona's word —
@@ -729,8 +730,8 @@ define action taking-cover
 ## (its hiding action needs a target); this is the one line the port needs.
 
 define phrase nowhere-to-hide-stub
-  (TODO during play-testing — a bare `hide` anywhere but the laundry with
-  the board open: no source line exists; David's.)
+  (TODO during play-testing — There's nowhere here to hide, not from anyone
+  who is really looking.)
 end phrase
 
 define phrase board-replaced
@@ -841,8 +842,8 @@ end phrase
 ## default, not Gentry's; one line, yours.
 
 define phrase sing-elsewhere-stub
-  (TODO during play-testing — singing anywhere but the closet: no source
-  line exists; David's.)
+  (TODO during play-testing — You hum a few bars, and stop. This is not the
+  place, and you are not in the mood.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -869,10 +870,9 @@ define phrase theresa-expelled
 end phrase
 
 define phrase fiona-fi26-open-stub
-  (TODO during play-testing — conversation FI26: Fiona takes a deep breath
-  and turns to Jack with a weak smile — "Now, then. We don't have much time
-  before the Baron's men come back, and I'm sure you have questions." Talk to
-  her.)
+  (TODO during play-testing — Widow Fiona takes a deep breath, then turns to
+  you and smiles weakly. 'Now, then. We don't have much time before the
+  Baron's men come back, and I'm sure you have questions.')
 end phrase
 
 ## `FI27-FI30` (`story.ni:9731-9737`), the ruling: knowledge from the Duke —
@@ -881,18 +881,17 @@ end phrase
 ## you like a daughter for so long" carry as written. FI30 gives the key.
 
 define phrase fiona-fi26-stub
-  (TODO during play-testing — conversation FI27-FI30: "You're the tutor,
-  aren't you?" — the Duke brought her from Aubrimere fourteen years ago;
-  "Tell me about my father" — "I'm sorry I could not tell you sooner,
-  Jacqueline… Please, Jacqueline, there's so much you need to know now";
-  "What will happen to Widow Theresa?" — "I'll not waste precious time
-  worrying about the fate of a woman who'd turn a child over to armed
-  mercenaries"; "What do I do now?" — out the privy window; the large brass
-  key: "It's time you learned something of your past, Jacqueline. This is
-  yours by right. It is the key to Red Gate Manor"; then Dame Sandler in
-  Lord's Market; "Oh child, I have loved you like a daughter for so long. Go
-  now, and quickly. Be safe." Fiona knows the name from the Duke and does
-  not see.)
+  (TODO during play-testing — 'You're the tutor, aren't you?' 'The Duke
+  brought me from Aubrimere fourteen years ago,' says Fiona. 'I'm sorry I
+  could not tell you sooner, Jacqueline. Please, Jacqueline, there's so much
+  you need to know now.' You ask about Theresa, and her mouth hardens. 'I'll
+  not waste precious time worrying about the fate of a woman who'd turn a
+  child over to armed mercenaries.' 'What do I do now?' She presses a large
+  brass key into your hand. 'It's time you learned something of your past,
+  Jacqueline. This is yours by right. It is the key to Red Gate Manor. Go out
+  by the privy window, and find Dame Sandler in Lord's Market.' She holds your
+  face a moment. 'Oh child, I have loved you like a daughter for so long. Go
+  now, and quickly. Be safe.')
 end phrase
 
 ## `story.ni:9786-9790`. DAVID: "Jacqueline" — Fiona's, §3g; carried as the

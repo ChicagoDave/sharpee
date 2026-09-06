@@ -99,25 +99,24 @@ end timer
 
 define timer bobby-voice for the player
   whispering
-    (TODO during play-testing — conversation BO17-BO18: "'Bobby? Is that
-    you?'" — "The voice chuckles, then coughs weakly. 'I'm in the cell next
-    to yours, Jack. I'm locked in, too. Sorry.'" — "'I'm going to get us out
-    of this mess, don't worry. But in case I'm not able to meet up with you
-    after, you need to listen carefully.'" Bobby does NOT see through the
-    disguise.)
+    (TODO during play-testing — 'Bobby? Is that you?' The voice chuckles, then
+    coughs weakly. 'I'm in the cell next to yours, Jack. I'm locked in, too.
+    Sorry.' A pause. 'I'm going to get us out of this mess, don't worry. But
+    in case I'm not able to meet up with you after, you need to listen
+    carefully.')
   warning
-    (TODO during play-testing — conversation BO19-BO20: "'Jack, listen to
-    me. Go to Fossville's estate in the city. Use the rooftops. There's an
-    alley behind the shops on Commerce Street where you can climb up.'" —
-    "'He has secrets that you need to know. Secrets about your father.'" —
-    "'Look for a letter-'" — a door slams open, guards move past, a cudgel
-    against the bars.)
+    (TODO during play-testing — 'Jack, listen to me. Go to Fossville's estate
+    in the city. Use the rooftops. There's an alley behind the shops on
+    Commerce Street where you can climb up. He has secrets that you need to
+    know. Secrets about your father. Look for a letter—' A door slams open
+    somewhere down the corridor. Boots, several pairs, and a cudgel run along
+    the bars.)
   dragged
-    (TODO during play-testing — conversation BO21-BO22: "'Bobby, what's
-    happening?'" — the rattling, the hinges, the thuds; the guards drag
-    Bobby past the window, bruised, bloody, smiling — "'Fossville, Jack!
-    The rooftops! Look for the letter!'" — a door slams one final time, and
-    silence.)
+    (TODO during play-testing — 'Bobby, what's happening?' A rattle of keys,
+    the shriek of hinges, thuds. Then they drag him past your window, bruised
+    and bloody and, Goddesses help him, smiling. 'Fossville, Jack! The
+    rooftops! Look for the letter!' A door slams one final time, and then
+    there is only silence.)
 end timer
 
 ## Jacobs at the lock: three turns, the muttering on the second
@@ -199,16 +198,16 @@ define timer guards-return for the player
 end timer
 
 define phrase guards-warning-stub
-  (TODO during play-testing — a warning, if any: something of the guards
-  who took Bobby, heard from the jail — David's, or nothing at all.)
+  (TODO during play-testing — Somewhere down the corridor a door opens, and
+  boots, and a man's laugh. Then the door again, and quiet.)
 end phrase
 
 define phrase guards-return-stub
-  (TODO during play-testing — the guards come back for her while she is
-  still in the jail: JA22's room — a dozen men of the Lord's Guard in a
-  semicircle, and in the middle the man in the red robes. "Little mouse...
-  always finding some new hole to crawl through." This time, you do not
-  escape. David's lines.)
+  (TODO during play-testing — The door at the end of the corridor opens, and
+  this time it does not close again. A dozen men of the Lord's Guard file in
+  and make a semicircle before your cell, and in the middle of them stands the
+  man in the red robes. 'Little mouse,' he says. 'Always finding some new hole
+  to crawl through.' This time, you do not escape.)
 end phrase
 
 ## ---------------------------------------------------------------------------
@@ -820,80 +819,69 @@ define phrase jacobs-ja1
 end phrase
 
 define phrase bobby-bo16-stub
-  (TODO during play-testing — conversation BO16: "Suddenly you hear a voice
-  whisper your name. 'Jack...' At first you think it's the creepy guy in the
-  corner, but he hasn't moved. You're still staring at him when the whisper
-  comes again, louder this time: 'Jack...' It's coming from somewhere
-  outside the cell." — the jail tree, BO16-BO22, one beat a turn; Bobby does
-  NOT see through the disguise.)
+  (TODO during play-testing — Suddenly you hear a voice whisper your name.
+  'Jack…' At first you think it's the creepy guy in the corner, but he hasn't
+  moved. You're still staring at him when the whisper comes again, louder this
+  time: 'Jack…' It's coming from somewhere outside the cell.)
 end phrase
 
 define phrase jacobs-ja2-stub
-  (TODO during play-testing — conversation JA2: "Suddenly the shadowy man in
-  the corner puts his huge, thick-fingered hands on his knees and pushes
-  himself up. 'Well,' he grunts in a thick, rough voice, 'now that the
-  guards are busy takin' care of him...' the man stretches, glances at you,
-  and smiles. It is not a friendly smile. 'Hi, kid. Name's Jacobs.'" — talk
-  to him. Jacobs does NOT see through the disguise; "kid" and "runt" are his
-  words for her.)
+  (TODO during play-testing — Suddenly the shadowy man in the corner puts his
+  huge, thick-fingered hands on his knees and pushes himself up. 'Well,' he
+  grunts in a thick, rough voice, 'now that the guards are busy takin' care of
+  him…' The man stretches, glances at you, and smiles. It is not a friendly
+  smile. 'Hi, kid. Name's Jacobs.')
 end phrase
 
 define phrase jacobs-ja3-stub
-  (TODO during play-testing — conversation JA3/JA4 → JA5 → JA6 → JA7: "'My
-  name's, uh... Jack.'" or "'Stay away from me!'"; "'Do you know some way we
-  could get out of this place?'" — "'Well now, little runt. I suppose I
-  do.'" — Jacobs at the door with something from his boot, his arm stuck at
-  the elbow: "'Damn, they must have changed the bars since last time...'" —
-  the stub takes the source's path: three turns at the lock.)
+  (TODO during play-testing — 'My name's, uh… Jack.' 'Well now, little runt,'
+  says Jacobs. 'You want to know some way out of this place? I suppose I do.'
+  He goes to the door, fishes something from his boot, and works his arm
+  through the bars up to the elbow. 'Damn,' he mutters, 'they must have
+  changed the bars since last time…')
 end phrase
 
 define phrase jacobs-ja8-stub
-  (TODO during play-testing — conversation JA8: "'Aaah! Goddesses curse
-  it!' Jacobs jerks his hand back, rubbing his wrist. 'Ah, forget it!' he
-  snarls, and tosses something small across the room. It skitters across the
-  floor and lands in a pile of straw. Jacobs goes back to his corner and
-  sits down heavily. 'Guess I'm in here for the duration after all.'" — the
-  wire is in the straw.)
+  (TODO during play-testing — 'Aaah! Goddesses curse it!' Jacobs jerks his
+  hand back, rubbing his wrist. 'Ah, forget it!' he snarls, and tosses
+  something small across the room. It skitters across the floor and lands in a
+  pile of straw. Jacobs goes back to his corner and sits down heavily. 'Guess
+  I'm in here for the duration after all.')
 end phrase
 
 define phrase jacobs-idle-stub, first-time
-  (TODO during play-testing — conversation JA24-JA31, Jacobs's idle set:
-  "'Hey mister...'" — his father's bribe, Jacobs the Elder's mansion, the
-  lock on the outside, "'Do whatever you want, runt. Just be quiet about
-  it.'", the wire — "'So you can stick it up your nose, for all I care.'")
+  (TODO during play-testing — 'Hey mister…' you start, nervously. 'What?'
+  snaps Jacobs. It goes like that: his father's money couldn't buy him out,
+  the lock is on the outside, and if you want the wire, 'So you can stick it
+  up your nose, for all I care. Do whatever you want, runt. Just be quiet
+  about it.')
 or
   Jacobs grunts noncommittally.
 end phrase
 
 define phrase jacobs-ja16-stub
-  (TODO during play-testing — conversation JA16: "Jacobs turns to you. 'I
-  heard what your friend in the other cell said, before they dragged him
-  out,' he says. 'Sounds like Fossville's taken quite an interest in you.'"
-  — JA17/JA18, two turns to his offer. He knows the mercenaries' tier only:
-  the name Fossville and the fact of the interest.)
+  (TODO during play-testing — Jacobs turns to you. 'I heard what your friend
+  in the other cell said, before they dragged him out,' he says. 'Sounds like
+  Fossville's taken quite an interest in you.')
 end phrase
 
 define phrase jacobs-ja19-stub
-  (TODO during play-testing — conversation JA19: "'You can come with me if
-  you want,' he says. 'I'll take you somewhere safe.' A shaky, wheedling
-  voice from the north cell calls out: 'Don't you listen to him, girl!
-  That's Jacobs the Elder's son; he'd as soon sell you to slavers as help
-  you.' 'Shut up, you!' yells Jacobs, pounding on the cell door in a sudden
-  rage." — Olmer's "girl" is a tell: he SEES her. Two turns to answer, or
-  talk to Jacobs.)
+  (TODO during play-testing — 'You can come with me if you want,' he says.
+  'I'll take you somewhere safe.' A shaky, wheedling voice from the north cell
+  calls out: 'Don't you listen to him, girl! That's Jacobs the Elder's son;
+  he'd as soon sell you to slavers as help you.' 'Shut up, you!' yells Jacobs,
+  pounding on the cell door in a sudden rage.)
 end phrase
 
 define phrase jacobs-ja20-stub
-  (TODO during play-testing — conversation JA20: "'No offense,' you say,
-  'but I'll find my own way out, thanks.'" — the stub takes the source's
-  progress path; JA22, going with him, is the death the guards' clock now
-  reaches by waiting.)
+  (TODO during play-testing — 'No offense,' you say, 'but I'll find my own way
+  out, thanks.')
 end phrase
 
 define phrase jacobs-ja21-stub
-  (TODO during play-testing — conversation JA21: "'Fine, then,' Jacobs
-  snarls, 'good luck getting past the guards, runt.' He turns on his heel
-  and stalks out, leaving you alone with the other prisoners.")
+  (TODO during play-testing — 'Fine, then,' Jacobs snarls, 'good luck getting
+  past the guards, runt.' He turns on his heel and stalks out, leaving you
+  alone with the other prisoners.)
 end phrase
 
 ## JA22 (`story.ni:8017`), verbatim, for the rewrite — the death behind the
@@ -972,33 +960,31 @@ define phrase skinny-man-waggles
 end phrase
 
 define phrase olmer-ol1-stub
-  (TODO during play-testing — conversation OL1: "'Do us a kindness, girl,
-  and free us as well,' whines the man in the north cell. 'We ain't done
-  nothin' terrible, and we can show you a way out, too, one that doesn't
-  include leaving you dead in an alley for your shoes.'" — OL3/OL4/OL5:
-  hang on, let them out, who are you. "Girl" is a tell: Olmer SEES her. The
-  north door is hers to unlock.)
+  (TODO during play-testing — 'Do us a kindness, girl, and free us as well,'
+  whines the man in the north cell. 'We ain't done nothin' terrible, and we
+  can show you a way out, too, one that doesn't include leaving you dead in an
+  alley for your shoes.')
 end phrase
 
 define phrase olmer-ol2-stub
-  (TODO during play-testing — conversation OL2: "'Miss?' wheezes the man in
-  the north cell. 'Are you there? Will you take pity on two poor drunkards
-  and use that fancy lock-picker of yours?'" — "miss" is a tell.)
+  (TODO during play-testing — 'Miss?' wheezes the man in the north cell. 'Are
+  you there? Will you take pity on two poor drunkards and use that fancy
+  lock-picker of yours?')
 end phrase
 
 define phrase olmer-ol9-stub
-  (TODO during play-testing — conversation OL9 and the cell tree: "'We are
-  at your service, miss,'" — OL5 names them: "'Please forgive me, miss. I am
-  called Olmer, and this is my associate, Darrens.'"; OL6 Darrens's kick in
-  the head; OL7 "'A weakness for the drink is our curse.'"; OL8 Jacobs the
-  brute; OL11 the drain — "'Down to the sewers, it does miss.'" The stub
-  names them; the north door stays hers to unlock.)
+  (TODO during play-testing — 'We are at your service, miss,' wheezes the man.
+  'Please forgive me. I am called Olmer, and this is my associate, Darrens.'
+  Darrens waggles his head; he took a kick to it, Olmer explains, and has not
+  been quite right since. 'A weakness for the drink is our curse.' Jacobs, he
+  says, is a brute. And the drain in the floor? 'Down to the sewers, it does,
+  miss.')
 end phrase
 
 define phrase olmer-ol10-stub
-  (TODO during play-testing — conversation OL10 and the drain-room tree:
-  "'Let me ask you something,' you say. 'Of course,' wheezes Olmer." — OL6,
-  OL7, OL8, OL11.)
+  (TODO during play-testing — 'Let me ask you something,' you say. 'Of
+  course,' wheezes Olmer, and tells you again about Darrens's head, and the
+  drink, and Jacobs, and the drain that goes down to the sewers.)
 end phrase
 
 ## ---------------------------------------------------------------------------

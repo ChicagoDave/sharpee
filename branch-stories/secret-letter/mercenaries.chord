@@ -683,15 +683,18 @@ end phrase
 ## down. David's lines.
 
 define phrase tent-no-way-back
-  (TODO during play-testing — Not back into the market — out the back way.)
+  (TODO during play-testing — Not back into the market — that's where they
+  are. Teisha pointed you out the back way, and the back way it is.)
 end phrase
 
 define phrase base-no-way-back
-  (TODO during play-testing — Not back into the tent; up.)
+  (TODO during play-testing — The tent is behind you and the mercenaries are
+  behind the tent. The only way left is up.)
 end phrase
 
 define phrase top-no-way-down
-  (TODO during play-testing — The mercenaries are at the base of the post.)
+  (TODO during play-testing — You look down. The mercenaries are at the base
+  of the post, and one of them is looking up.)
 end phrase
 
 ## ---------------------------------------------------------------------------
