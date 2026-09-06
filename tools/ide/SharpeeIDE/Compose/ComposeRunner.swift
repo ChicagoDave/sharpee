@@ -36,10 +36,21 @@ final class ComposeRunner {
 
     typealias Completion = (Result<ComposeJsonPayload, Failure>) -> Void
 
+    /// What a finished child left behind, before any decoding.
+    struct ProcessOutput: Sendable {
+        let exited: Bool
+        let code: Int32
+        let stdout: Data
+        let stderr: String
+    }
+
+    /// Completion for `runProcess`: the raw output, or a launch failure.
+    typealias RawCompletion = (Result<ProcessOutput, Failure>) -> Void
+
     private var process: Process?
     /// Held for the duration of a run so the @Sendable terminationHandler invokes it
     /// through `self` on the main actor. Dropped when a newer run supersedes it.
-    private var pending: Completion?
+    private var pending: RawCompletion?
 
     /// Production entry point: compose `storyFile` with the resolved `sharpee`
     /// executable (workspace shim, else login-shell PATH, else the bundled
@@ -113,6 +124,20 @@ final class ComposeRunner {
     /// production Process/pipe/decode path is exercised.
     func run(executable: URL, arguments: [String], workingDirectory: URL,
              environment: [String: String]? = nil, completion: @escaping Completion) {
+        runProcess(executable: executable, arguments: arguments, workingDirectory: workingDirectory,
+                   environment: environment) { result in
+            completion(result.flatMap { Self.outcome(exited: $0.exited, code: $0.code,
+                                                     stdout: $0.stdout, stderr: $0.stderr) })
+        }
+    }
+
+    /// The process machinery behind `run`, undecoded: the same supersede rule,
+    /// the same EOF-safe pipe reads, the raw stdout/stderr/exit handed to the
+    /// caller. Other toolchain queries with their own payloads (`sharpee
+    /// messages`, ADR-333 D4a) run through here so the IDE has one child-process
+    /// path, not a scattering of Process setups.
+    func runProcess(executable: URL, arguments: [String], workingDirectory: URL,
+                    environment: [String: String]? = nil, completion: @escaping RawCompletion) {
         if let stale = process {
             // Supersede: the stale handler's identity guard (`finished === self.process`)
             // fails once `process` is replaced below, so its completion never fires.
@@ -169,7 +194,7 @@ final class ComposeRunner {
             self.process = nil
             let completion = self.pending
             self.pending = nil
-            completion?(Self.outcome(exited: exited, code: code, stdout: stdout, stderr: stderr))
+            completion?(.success(ProcessOutput(exited: exited, code: code, stdout: stdout, stderr: stderr)))
         }
 
         process = proc

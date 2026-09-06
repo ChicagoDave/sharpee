@@ -25,6 +25,10 @@ struct DiagnosticSpan: Codable, Equatable, Sendable {
     let column: Int
     let endLine: Int
     let endColumn: Int
+    /// The imported fragment the span sits in, relative to the main file's
+    /// directory (`Span.file`, ADR-251 D6 as amended); absent = the main file.
+    /// Carried so a phrase's span can open the right tab (ADR-333 D2).
+    var file: String? = nil
 }
 
 /// One record in the payload's unified diagnostics stream (ADR-276 D4).
@@ -63,6 +67,10 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     let actions: [ActionDef]?
     /// The story's phrasebook — the Index lists the KEYS only; bodies stay opaque.
     let phrases: PhraseBook?
+    /// The story's ADR-255 `override message` blocks — alias → span, so a
+    /// platform-rendered paragraph can open its existing override (ADR-333 D4a).
+    /// Defaulted so the wire's absence and the tests' memberwise builds both read nil.
+    var messageOverrides: PhraseBook? = nil
     /// Declared hatch modules (name, module path, kind, span).
     let hatches: [Hatch]?
 

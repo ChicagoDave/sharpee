@@ -34,6 +34,16 @@ const DEFAULT_FADE_OUT_AMBIENT = 800;
 const DEFAULT_FADE_IN_MUSIC = 2000;
 const DEFAULT_FADE_OUT_MUSIC = 1500;
 
+/**
+ * How long the FIRST unlock waits for a suspended context to resume. Without
+ * a user gesture WebKit leaves `AudioContext.resume()` pending forever, and
+ * the unlock runs on every command before its echo — a programmatic driver
+ * (the IDE's play-to-write replay, ADR-333 D4) must not hang the turn on it.
+ * Later calls never wait: audio stays locked until a real gesture's resume
+ * settles, which unlocks it then.
+ */
+const UNLOCK_RESUME_GRACE_MS = 250;
+
 const DEFAULT_AMBIENT_VOLUME = 0.3;
 const DEFAULT_MUSIC_VOLUME = 0.5;
 const DEFAULT_SFX_VOLUME = 1.0;
@@ -47,6 +57,8 @@ export class AudioManager {
   private instantGainMode: boolean = false;
   private unlocked: boolean = false;
   private pendingEvents: Array<{ type: string; data: any }> = [];
+  /** True once an unlock has paid the resume grace — never paid twice. */
+  private resumeGraceSpent: boolean = false;
 
   /**
    * Unlock audio playback. Must be called from a user gesture handler
@@ -68,7 +80,20 @@ export class AudioManager {
         }
       }
       if (this.audioContext && this.audioContext.state === 'suspended') {
-        await this.audioContext.resume();
+        // The unlock rides the resume's settlement, whenever that is; the
+        // caller's turn waits for it once, briefly, and never again.
+        const resumed = this.audioContext.resume().then(
+          () => { this.finishUnlock(); return true; },
+          () => false,
+        );
+        if (this.resumeGraceSpent) return;
+        this.resumeGraceSpent = true;
+        const settled = await Promise.race([
+          resumed,
+          new Promise<boolean>((resolve) => setTimeout(() => resolve(false), UNLOCK_RESUME_GRACE_MS)),
+        ]);
+        if (!settled) return; // still suspended: locked until a real gesture resumes it
+        return;
       }
     } catch (err) {
       console.debug('[audio] AudioContext unavailable, instant-gain fallback:', err);
@@ -76,8 +101,13 @@ export class AudioManager {
       this.instantGainMode = true;
     }
 
-    this.unlocked = true;
+    this.finishUnlock();
+  }
 
+  /** Mark audio unlocked and play whatever queued while it was not. Idempotent. */
+  private finishUnlock(): void {
+    if (this.unlocked) return;
+    this.unlocked = true;
     const pending = this.pendingEvents.splice(0);
     for (const event of pending) {
       this.handleAudioEvent(event);

@@ -1030,6 +1030,7 @@ export declare function executeCapabilityBlocked(context: ActionContext, result:
  * (`GameEngine.setStory`). Render-time degradation for maps mutated after
  * load lives in the room-description handler path, not here.
  */
+import type { LanguageProvider } from '@sharpee/if-domain';
 import type { WorldModel } from '@sharpee/world-model';
 /**
  * Story-load failure for room snippets: unbound `{snippet:name}` markers
@@ -1060,9 +1061,11 @@ export declare class SnippetValidationError extends Error {
  * Validate every snippet-bearing room's descriptions against its snippet map.
  *
  * @param world the initialized world model (after `initializeWorld`)
+ * @param languageProvider resolves id-mode descriptions; without it only
+ *   literal texts are scanned
  * @throws SnippetValidationError naming every unbound `(room, marker)` pair
  */
-export declare function validateRoomSnippets(world: WorldModel): void;
+export declare function validateRoomSnippets(world: WorldModel, languageProvider?: LanguageProvider): void;
 /**
  * Lint for snippet entries whose marker appears in NEITHER description text
  * (ADR-209 AC-6, resolution Q4): usually mid-edit author drift. A warning,
@@ -1070,9 +1073,11 @@ export declare function validateRoomSnippets(world: WorldModel): void;
  * which puts broken text on screen. The devkit build prints these.
  *
  * @param world the initialized world model
+ * @param languageProvider resolves id-mode descriptions; without it only
+ *   literal texts are scanned
  * @returns `(room, entry)` pairs with no matching marker, in discovery order
  */
-export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
+export declare function lintUnusedSnippetEntries(world: WorldModel, languageProvider?: LanguageProvider): Array<{
     room: string;
     entry: string;
 }>;
@@ -3928,6 +3933,85 @@ import type { HandlerContext } from './types.js';
  *   when the messageId fails to resolve.
  */
 export declare function tryProcessDomainEventMessage(event: ISemanticEvent, context: HandlerContext): ITextBlock[] | null;
+```
+
+### prose-pipeline/handlers/examined
+
+```typescript
+/**
+ * Examined event handler — the id-mode description path (ADR-107, ADR-333 D1a).
+ *
+ * `if.event.examined` carries a message id and normally renders through the
+ * domain-message path. When the examining action bound the entity's
+ * `descriptionId` instead of (or beside) literal text, this handler resolves
+ * the id to the author's text, realizes the action's own template with it,
+ * and stamps the blocks with the entity's id — mirroring what the room
+ * handler does for room descriptions.
+ *
+ * Public interface: `tryProcessExamined`. The pipeline consults it for
+ * `if.event.examined` before the domain-message path; on null the event
+ * falls through unchanged.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { ISemanticEvent } from '@sharpee/core';
+import type { HandlerContext } from './types.js';
+/**
+ * Render an examined event whose params carry a `descriptionId`.
+ *
+ * @param event the `if.event.examined` event
+ * @param context the handler context
+ * @returns the realized blocks stamped with the description id, or null when
+ *   the event carries no id, the id is unregistered, or the phrase path is
+ *   unavailable — the caller falls through to the domain-message path
+ */
+export declare function tryProcessExamined(event: ISemanticEvent, context: HandlerContext): ITextBlock[] | null;
+```
+
+### prose-pipeline/handlers/description-id
+
+```typescript
+/**
+ * Description id resolution (ADR-107 id mode, ADR-333 D1a).
+ *
+ * An entity may carry a message id in place of literal description text
+ * (`IdentityTrait.descriptionId`, `RoomTrait.initialDescriptionId`). The
+ * description handlers resolve that id here, and the stamp helper marks
+ * the blocks they realize with the id so a consumer can open the author's
+ * phrase (ADR-333 D1a: the entity's key overrides the platform template id
+ * `renderViaPhrase` would otherwise stamp).
+ *
+ * Resolution reads the RAW template, never the substituted message: a
+ * description is author prose bound verbatim, and the substituted path
+ * conjugates any single braced word it does not recognise, which would
+ * mangle a hatch marker such as `{trapdoor}`. The raw template is byte for
+ * byte the text the literal path binds, so id mode is lossless.
+ *
+ * Public interface: `resolveDescriptionId`, `stampDescriptionSource`.
+ *
+ * Owner context: `@sharpee/engine` — internal prose pipeline.
+ */
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { LanguageProvider } from '@sharpee/if-domain';
+/**
+ * Resolve a description id to its registered text.
+ *
+ * @param languageProvider the provider the id was registered with
+ * @param descriptionId the id, or undefined when the entity carries none
+ * @returns the raw registered template; on a provider without `getTemplate`
+ *   the substituted message; undefined when the id is absent or unregistered
+ */
+export declare function resolveDescriptionId(languageProvider: LanguageProvider | undefined, descriptionId: string | undefined): string | undefined;
+/**
+ * Stamp realized description blocks with the entity's description id
+ * (ADR-333 D1a), replacing the template id `renderViaPhrase` stamped.
+ *
+ * @param blocks the blocks a description handler realized
+ * @param descriptionId the id the text was resolved from; no-op when absent
+ * @returns the same blocks, each carrying `source.messageId === descriptionId`
+ */
+export declare function stampDescriptionSource(blocks: ITextBlock[], descriptionId: string | undefined): ITextBlock[];
 ```
 
 ### prose-pipeline/handlers/implicit-take

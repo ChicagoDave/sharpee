@@ -29,7 +29,7 @@ Generated for Sharpee 5.3.0
 | [core.md](core.md) | @sharpee/core | Base types, query system, platform events, entity interfaces, debug utilities. (30 files, ~2748 lines) |
 | [if-domain.md](if-domain.md) | @sharpee/if-domain | Domain events, contracts, grammar system, language/parser provider interfaces. (23 files, ~3556 lines) |
 | [world-model.md](world-model.md) | @sharpee/world-model | Entity system (IFEntity), WorldModel, all traits, capability dispatch, scope, annotations. (128 files, ~11000 lines) |
-| [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (40 files, ~4014 lines) |
+| [engine.md](engine.md) | @sharpee/engine | GameEngine, Story interface, turn cycle, command executor, save/restore, vocabulary. (42 files, ~4098 lines) |
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders, NPC support, combat, action chains. (50 files, ~4819 lines) |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension API. (4 files, ~438 lines) |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language provider, message resolution, formatters. (17 files, ~2696 lines) |
@@ -40,5 +40,5 @@ Generated for Sharpee 5.3.0
 | [combat.md](combat.md) | @sharpee/ext-basic-combat | Basic combat extension — attack/defend mechanics. (4 files, ~268 lines) |
 | [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (53 files, ~5114 lines) |
 | [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~792 lines) |
-| [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (26 files, ~2797 lines) |
+| [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (26 files, ~2801 lines) |
 | [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (18 files, ~1840 lines) |

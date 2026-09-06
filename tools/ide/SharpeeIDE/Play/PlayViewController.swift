@@ -11,20 +11,148 @@
 // own `turnEvents` bridge. This pane registers none, so the client's
 // `turnEventsBridgeActive()` is false here and published-player behavior
 // (no per-turn world digest) is exactly what regular Play exercises.
-// Public interface: load(bundleDirectory:), reloadAfterBuild(projectRoot:),
+// Play-to-write (ADR-333 D4): ⌘-clicking a rendered paragraph posts its
+// `data-message-id` (D3) and the session's command history over the
+// `playEdit` bridge; after the build a save triggers, the reload replays that
+// history through the client's own input and brings the paragraph back into
+// view. The history lives here and nowhere else (D4b).
+// Public interface: load(bundleDirectory:), reloadAfterBuild(bundleDirectory:replaying:),
 // restart(), invalidateForSourceChange(), showUnplayable(reason:), isLoaded,
-// playAfterBuild, onPlayAfterBuildChanged, onConsoleError,
-// evaluateInPlaySurface(_:), themeChoice, applyThemeChoice(_:) (Phase 6b —
-// the play-surface theme picker, IDE chrome persisted in UserDefaults),
-// idePlaySeed (ADR-305 D1).
+// playAfterBuild, onPlayAfterBuildChanged, onConsoleError, onEditRequest,
+// replay(_:), evaluateInPlaySurface(_:), themeChoice, applyThemeChoice(_:)
+// (Phase 6b — the play-surface theme picker, IDE chrome persisted in
+// UserDefaults), idePlaySeed (ADR-305 D1).
 // Owner context: tools/ide — Play.
 
 import AppKit
 import WebKit
 
-final class PlayViewController: NSViewController, WKScriptMessageHandler {
+/// What a ⌘-click on a rendered paragraph reports (ADR-333 D4).
+struct PlayEditRequest: Equatable {
+    /// The paragraph's `data-message-id` — the phrase or platform message that wrote it.
+    let messageId: String
+    /// The turn the paragraph was rendered in, when the client stamped one.
+    let turn: Int?
+    /// The paragraph's rendered text.
+    let text: String
+    /// Every command typed since boot, in order — read off the page at the click.
+    let history: [String]
+}
+
+/// A stub the current path printed (ADR-333 D6): the paragraph's message id,
+/// its turn, and its text. The marker's spelling is an IDE convenience, never
+/// a platform contract.
+struct PlayStub: Equatable {
+    let messageId: String
+    let turn: Int?
+    let text: String
+}
+
+/// Why a replay could not start.
+enum PlayToWriteReplayError: Error, Equatable {
+    /// The page never exposed the play-to-write chrome — nothing loaded.
+    case surfaceNeverLoaded
+}
+
+final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavigationDelegate {
 
     private static let consoleHandlerName = "playConsole"
+    private static let editHandlerName = "playEdit"
+
+    /// Play-to-write chrome (ADR-333 D4), injected at document start:
+    /// - a capture-phase ⌘-click on any `[data-message-id]` element posts the
+    ///   id, its turn, its text, and the command history (the `.command-echo`
+    ///   lines, `> ` stripped) over the `playEdit` bridge; a plain click stays
+    ///   the client's (reading, selecting, refocusing the input);
+    /// - `window.__sharpeePlayToWrite.replay(commands)` types each command
+    ///   into the client's `#command-input` the way the testing surface does
+    ///   and resolves when every turn has rendered (the echo gains its
+    ///   `data-turn` stamp when the client closes the turn — ADR-305 D4);
+    /// - `focus(messageId)` scrolls the last paragraph carrying the id into
+    ///   view and marks it briefly.
+    private static let playToWriteScript = """
+    (function () {
+      var style = document.createElement('style');
+      style.textContent = '.sharpee-play-to-write-focus { outline: 2px solid rgba(255, 170, 0, 0.9); outline-offset: 3px; }';
+      document.documentElement.appendChild(style);
+      function history() {
+        return Array.prototype.map.call(document.querySelectorAll('.command-echo'), function (el) {
+          return (el.textContent || '').replace(/^>\\s?/, '');
+        });
+      }
+      document.addEventListener('click', function (e) {
+        if (!e.metaKey) return;
+        var target = e.target && e.target.closest ? e.target.closest('[data-message-id]') : null;
+        if (!target) return;
+        e.preventDefault();
+        e.stopPropagation();
+        var turn = target.getAttribute('data-turn');
+        try {
+          window.webkit.messageHandlers.\(editHandlerName).postMessage(JSON.stringify({
+            messageId: target.getAttribute('data-message-id'),
+            turn: turn === null ? null : Number(turn),
+            text: target.textContent || '',
+            history: history()
+          }));
+        } catch (err) {}
+      }, true);
+      function wait(predicate, timeoutMs) {
+        return new Promise(function (resolve, reject) {
+          var start = Date.now();
+          (function tick() {
+            if (predicate()) return resolve();
+            if (Date.now() - start > timeoutMs) return reject(new Error('play-to-write: timed out waiting for the story'));
+            setTimeout(tick, 25);
+          })();
+        });
+      }
+      function input() { return document.getElementById('command-input'); }
+      function closedTurns() { return document.querySelectorAll('.command-echo[data-turn]').length; }
+      function settled() {
+        var slot = document.getElementById('text-content');
+        var count = slot ? slot.children.length : 0;
+        return new Promise(function (resolve) {
+          setTimeout(function () {
+            var now = slot ? slot.children.length : 0;
+            resolve(now === count && now > 0);
+          }, 150);
+        });
+      }
+      function bootReady() {
+        return wait(function () { return !!input() && !!document.querySelector('.main-entry'); }, 20000)
+          .then(function settle() { return settled().then(function (ok) { return ok ? undefined : settle(); }); });
+      }
+      window.__sharpeePlayToWrite = {
+        replay: function (commands) {
+          // The replay's own account of itself, for a test's failure message.
+          window.__sharpeePlayToWriteLast = { commands: Array.prototype.slice.call(commands || []), state: 'waiting' };
+          return bootReady().then(function () {
+            window.__sharpeePlayToWriteLast.state = 'ready';
+            var chain = Promise.resolve();
+            commands.forEach(function (command) {
+              chain = chain.then(function () {
+                var before = closedTurns();
+                var el = input();
+                el.value = command;
+                el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+                return wait(function () { return closedTurns() > before; }, 30000);
+              });
+            });
+            return chain;
+          });
+        },
+        focus: function (messageId) {
+          var all = document.querySelectorAll('[data-message-id="' + messageId + '"]');
+          var last = all[all.length - 1];
+          if (!last) return false;
+          last.scrollIntoView({ block: 'center' });
+          last.classList.add('sharpee-play-to-write-focus');
+          setTimeout(function () { last.classList.remove('sharpee-play-to-write-focus'); }, 2500);
+          return true;
+        }
+      };
+    })();
+    """
 
     /// The fixed IDE play seed (ADR-305 D1): every play boot is deterministic
     /// and every session is promotable. 42 is the corpus's canonical example
@@ -169,6 +297,25 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// against the bundle's source map into a navigable error.
     var onConsoleError: ((PlayConsoleError) -> Void)?
 
+    /// Fired when the author ⌘-clicks a rendered paragraph (ADR-333 D4) — the
+    /// window resolves the id and opens the editor.
+    var onEditRequest: ((PlayEditRequest) -> Void)?
+
+    /// The replay the next finished load performs (ADR-333 D4): set by
+    /// `reloadAfterBuild(bundleDirectory:replaying:)`, consumed once.
+    private var pendingReplay: PlayToWriteSession?
+
+    /// Fired after every replay with the stubs the path printed (ADR-333 D6),
+    /// in play order — the header lists them too.
+    var onStubsListed: (([PlayStub]) -> Void)?
+
+    /// The commands the last replay typed — a stub picked from the header
+    /// reports them as its history, so the round replays the same path.
+    private(set) var lastReplayHistory: [String] = []
+
+    /// The text a stub paragraph starts with. IDE convenience (D6).
+    static let stubMarker = "(TODO during play-testing"
+
     override func loadView() {
         let pane = ThemedPane(color: Theme.playBackground)
 
@@ -180,7 +327,9 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         configuration.setURLSchemeHandler(schemeHandler, forURLScheme: PlayURLSchemeHandler.scheme)
         let contentController = configuration.userContentController
         contentController.add(WeakScriptMessageHandler(self), name: Self.consoleHandlerName)
+        contentController.add(WeakScriptMessageHandler(self), name: Self.editHandlerName)
         webView = WKWebView(frame: .zero, configuration: configuration)
+        webView.navigationDelegate = self
         // right-click → Inspect Element to debug the running story. Guarded
         // rather than gating the app: it runs on every Apple silicon Mac.
         if #available(macOS 13.3, *) { webView.isInspectable = true }
@@ -197,6 +346,11 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         header.setThemes(PlayThemeCatalog.themes(inResources: resourcesURL),
                          selectedThemeId: themeChoice)
         header.onThemeSelect = { [weak self] themeId in self?.applyThemeChoice(themeId) }
+        header.onStubSelected = { [weak self] stub in
+            guard let self else { return }
+            self.onEditRequest?(PlayEditRequest(messageId: stub.messageId, turn: stub.turn,
+                                                text: stub.text, history: self.lastReplayHistory))
+        }
 
         placeholder.font = NSFont.systemFont(ofSize: 11)
         placeholder.textColor = Theme.foregroundFaint
@@ -240,6 +394,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         }
         installUserScripts()
         loaded = bundleDirectory
+        header.setStubs([])
         PlayErrorSymbolicator.clearCache() // the bundle (and its source map) may have just rebuilt
         schemeHandler.rootDirectory = bundleDirectory
         placeholder.isHidden = true
@@ -258,7 +413,7 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
         let surfaceScript = Self.playSurfaceScript(
             themeChoice: themeChoice,
             themeStylesheets: PlayThemeCatalog.stylesheetPaths(inResources: resourcesURL))
-        for source in [Self.consoleHookScript, surfaceScript] {
+        for source in [Self.consoleHookScript, surfaceScript, Self.playToWriteScript] {
             contentController.addUserScript(WKUserScript(source: source,
                                                          injectionTime: .atDocumentStart,
                                                          forMainFrameOnly: true))
@@ -328,10 +483,112 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     /// Loads the just-built bundle after a successful build, honouring the
     /// "Play after build" toggle. Always clears the awaiting-rebuild latch —
     /// the new bundle matches the source again.
-    func reloadAfterBuild(bundleDirectory: URL) {
+    ///
+    /// - Parameter session: a play-to-write round to finish (ADR-333 D4): once
+    ///   the fresh page has booted at the fixed seed, its history is typed back
+    ///   in and the edited paragraph brought into view. Dropped when the toggle
+    ///   keeps the pane from loading.
+    func reloadAfterBuild(bundleDirectory: URL, replaying session: PlayToWriteSession? = nil) {
         isAwaitingRebuild = false
+        pendingReplay = nil
         guard playAfterBuild else { return }
         load(bundleDirectory: bundleDirectory)
+        pendingReplay = isLoaded ? session : nil
+    }
+
+    /// Types `session.history` into the running story through the client's own
+    /// input, one turn at a time, then scrolls the session's paragraph into
+    /// view and lists the stubs the path printed (D6). The same door a
+    /// finished reload uses; tests drive it directly.
+    ///
+    /// - Throws: whatever the page reports — a dead page, or the story never
+    ///   rendering a turn within the script's timeout.
+    func replay(_ session: PlayToWriteSession) async throws {
+        try await waitForPlaySurfaceChrome()
+        try await callAsyncInPlaySurface(
+            "return window.__sharpeePlayToWrite.replay(commands).then(function () { return true; });",
+            arguments: ["commands": session.history])
+        lastReplayHistory = session.history
+        if !session.messageId.isEmpty {
+            _ = try await evaluateInPlaySurface(
+                "window.__sharpeePlayToWrite.focus(\(Self.javascriptString(session.messageId)))")
+        }
+        let stubs = try await listStubs()
+        header.setStubs(stubs)
+        onStubsListed?(stubs)
+    }
+
+    /// Steps the story through a root-to-leaf path from a fresh boot (ADR-333
+    /// D5): a loaded story restarts at the pinned seed and types the commands;
+    /// an unloaded pane loads the bundle first. Nothing happens without one.
+    func play(path commands: [String], bundleDirectory: URL?) {
+        let session = PlayToWriteSession(messageId: "", history: commands)
+        if isLoaded {
+            pendingReplay = session
+            webView.reloadFromOrigin()
+        } else if let bundleDirectory {
+            load(bundleDirectory: bundleDirectory)
+            pendingReplay = isLoaded ? session : nil
+        }
+    }
+
+    /// The stubs the page has printed so far, in document order: every
+    /// `[data-message-id]` paragraph whose text starts with the marker.
+    func listStubs() async throws -> [PlayStub] {
+        let raw = try await evaluateInPlaySurface("""
+        Array.prototype.map.call(document.querySelectorAll('[data-message-id]'), function (p) {
+          return [p.getAttribute('data-message-id'), p.getAttribute('data-turn'), (p.textContent || '').trim()];
+        }).filter(function (row) { return row[2].indexOf(\(Self.javascriptString(Self.stubMarker))) === 0; })
+        """)
+        return ((raw as? [[Any?]]) ?? []).compactMap { row in
+            guard let id = row[0] as? String else { return nil }
+            let turn = (row[1] as? String).flatMap(Int.init)
+            return PlayStub(messageId: id, turn: turn, text: row[2] as? String ?? "")
+        }
+    }
+
+    /// Runs a function body in the page and settles on the promise it RETURNS.
+    /// A promise never crosses `evaluateJavaScript`, and WebKit's Swift async
+    /// overlay of `callAsyncJavaScript` was observed (2026-09-05) to return
+    /// before the promise settled — so this is the completion-handler form
+    /// under a continuation, which does wait.
+    private func callAsyncInPlaySurface(_ body: String, arguments: [String: Any]) async throws {
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            webView.callAsyncJavaScript(body, arguments: arguments, in: nil, in: .page) { result in
+                switch result {
+                case .success: continuation.resume(returning: ())
+                case .failure(let error): continuation.resume(throwing: error)
+                }
+            }
+        }
+    }
+
+    /// Waits for the document-start chrome to be present on the CURRENT page —
+    /// a replay asked for right after `load` would otherwise run against the
+    /// page being left.
+    private func waitForPlaySurfaceChrome() async throws {
+        for _ in 0..<400 {
+            if let present = try? await evaluateInPlaySurface("typeof window.__sharpeePlayToWrite === 'object'"),
+               present as? Bool == true { return }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        throw PlayToWriteReplayError.surfaceNeverLoaded
+    }
+
+    // MARK: - WKNavigationDelegate
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        guard let session = pendingReplay else { return }
+        pendingReplay = nil
+        Task { [weak self] in
+            do {
+                try await self?.replay(session)
+            } catch {
+                let text = "play-to-write replay failed: \(error.localizedDescription)"
+                self?.onConsoleError?(PlayConsoleError(message: text, frames: [],
+                                                       translation: SharpeeErrorTranslator.translate(message: text)))
+            }
+        }
     }
 
     /// Restarts the running story by reloading from origin — a fresh boot, since
@@ -382,6 +639,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
                 return
             }
             onConsoleError?(PlayErrorSymbolicator.symbolicate(text, bundleDir: loaded))
+        case Self.editHandlerName:
+            guard let json = message.body as? String,
+                  let data = json.data(using: .utf8),
+                  let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                  let messageId = object["messageId"] as? String, !messageId.isEmpty else { return }
+            let request = PlayEditRequest(
+                messageId: messageId,
+                turn: object["turn"] as? Int,
+                text: object["text"] as? String ?? "",
+                history: (object["history"] as? [Any])?.compactMap { $0 as? String } ?? [])
+            onEditRequest?(request)
         default:
             break
         }

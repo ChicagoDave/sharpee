@@ -1013,8 +1013,20 @@ export class ChordStory implements Story {
       throw new LoadError('The language provider does not support message registration (addMessage).');
     }
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    // ADR-333 D1a: a room's description texts live only here (the trait
+    // carries the key), so the Z2 `{marker}` → `{snippet:marker}` rewrite is
+    // applied to the registered template — computed from the IR alone, so
+    // it holds whichever order extendLanguage and initializeWorld run in.
+    const roomDescriptionKeys = new Set<string>();
+    for (const e of this.ir.entities) {
+      if (e.kinds[0]?.name !== 'room') continue;
+      if (e.descriptionKey) roomDescriptionKeys.add(e.descriptionKey);
+      if (e.initialDescriptionKey) roomDescriptionKeys.add(e.initialDescriptionKey);
+    }
+    const isMarker = this.snippetMarkerTest();
     for (const [key, phrase] of Object.entries(table)) {
-      registry.addMessage(key, templateFor(phrase));
+      const template = templateFor(phrase);
+      registry.addMessage(key, roomDescriptionKeys.has(key) ? rewriteSnippetMarkers(template, isMarker) : template);
     }
     // ADR-242 D7: declared pronoun sets ride the same seam — the same
     // structural probe, throwing a legible error only when a story
@@ -1789,7 +1801,11 @@ export class ChordStory implements Story {
       throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
     }
     const kind = irEntity.kinds[0]?.name ?? null;
-    const description = irEntity.descriptionKey ? this.phraseText(irEntity.descriptionKey) : undefined;
+    // ADR-333 D1a: the entity carries its registered description KEY
+    // (ADR-107 id mode), never a copy of the text — the language provider
+    // holds the one text (registered by extendLanguage), and every block
+    // rendered from it names the key.
+    const descriptionId = irEntity.descriptionKey ?? undefined;
     // ADR-237 D3: direct trait composition — the loader builds on the
     // world-model surface itself; `@sharpee/helpers` is author-facing only.
     const aliases = irEntity.aka.length ? irEntity.aka : undefined;
@@ -1797,18 +1813,15 @@ export class ChordStory implements Story {
 
     switch (kind) {
       case 'room': {
-        // Z1: `first time` prose → RoomTrait.initialDescription (first look
+        // Z1: `first time` prose → RoomTrait.initialDescriptionId (first look
         // shows it, later looks show the standard description — stdlib's
-        // looking-data reads the field; no stdlib change).
-        const initialDescription = irEntity.initialDescriptionKey
-          ? this.phraseText(irEntity.initialDescriptionKey)
-          : undefined;
+        // looking-data and going read the id field).
         entity = world.createEntity(irEntity.name, 'room');
         entity.add(new RoomTrait({
           requiresLight: irEntity.traits.some((t) => t.name === 'dark' && t.condition === null),
-          initialDescription,
+          initialDescriptionId: irEntity.initialDescriptionKey ?? undefined,
         }));
-        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;
       }
       case 'container': {
@@ -1820,7 +1833,7 @@ export class ChordStory implements Story {
         // D5b removed it so OpenableTrait's default (closed) is authoritative
         // everywhere — `starts open` is the author's escape hatch.
         entity = world.createEntity(irEntity.name, 'object');
-        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         entity.add(new ContainerTrait());
         this.applyContainerConfig(entity, irEntity.kinds[0]);
         break;
@@ -1845,7 +1858,7 @@ export class ChordStory implements Story {
         entity.add(
           new IdentityTrait({
             name: irEntity.name,
-            description,
+            descriptionId,
             aliases,
             ...(proper ? { properName: true, article: '' } : {}),
             ...(irEntity.pronouns !== undefined ? { pronounSet: irEntity.pronouns } : {}),
@@ -1855,7 +1868,7 @@ export class ChordStory implements Story {
       }
       case 'supporter': {
         entity = world.createEntity(irEntity.name, 'object');
-        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         entity.add(new SupporterTrait({ capacity: supporterCapacity(irEntity.kinds[0]) }));
         break;
       }
@@ -1876,7 +1889,7 @@ export class ChordStory implements Story {
         entity.add(
           new IdentityTrait({
             name: irEntity.name,
-            ...(description ? { description } : {}),
+            ...(descriptionId ? { descriptionId } : {}),
             aliases: irEntity.aka,
             article: irEntity.article ?? 'the',
           }),
@@ -1890,14 +1903,14 @@ export class ChordStory implements Story {
         // wiring — its room pair comes from the `through` exit line, and
         // the trait's constructor requires both rooms.
         entity = world.createEntity(irEntity.name, 'door');
-        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         entity.add(new SceneryTrait());
         entity.add(new OpenableTrait({ isOpen: false }));
         break;
       }
       case null: {
         entity = world.createEntity(irEntity.name, 'object');
-        entity.add(new IdentityTrait({ name: irEntity.name, description, aliases }));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;
       }
       default:
@@ -2599,28 +2612,24 @@ export class ChordStory implements Story {
    */
   private compileRoomSnippets(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-    const hatchNames = new Set(this.ir.hatches.map((h) => h.name));
-    const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
     const roomTrait = entity.get(TraitType.ROOM) as RoomTrait | undefined;
     if (!roomTrait) return;
 
-    const texts: Array<{ value: string; apply: (t: string) => void }> = [];
-    if (identity && typeof identity.description === 'string') {
-      texts.push({ value: identity.description, apply: (t) => void (identity.description = t) });
-    }
-    if (typeof roomTrait.initialDescription === 'string') {
-      texts.push({ value: roomTrait.initialDescription, apply: (t) => void (roomTrait.initialDescription = t) });
-    }
+    // ADR-333 D1a: the texts are read from the IR — the trait carries only
+    // the keys, and the marker rewrite lives on the registered template
+    // (extendLanguage). This pass owns the map entries and the gates.
+    const texts: string[] = [irEntity.descriptionKey, irEntity.initialDescriptionKey]
+      .filter((k): k is string => typeof k === 'string')
+      .map((k) => this.phraseText(k));
+    const isMarker = this.snippetMarkerTest();
 
     // Compute phase — nothing is applied until every marker compiled.
     const entries = new Map<string, SnippetEntry>();
     const gates: Array<() => void> = [];
-    for (const slot of texts) {
-      for (const match of slot.value.matchAll(/\{([a-z][a-z0-9-]*)\}/g)) {
-        const marker = match[1];
-        if (marker === 'br' || hatchNames.has(marker) || entries.has(marker)) continue;
+    for (const text of texts) {
+      for (const marker of snippetMarkersIn(text, isMarker)) {
+        if (entries.has(marker)) continue;
         const phrase = table[marker];
-        if (!phrase) continue; // not a declared phrase — stays literal prose
         if (phrase.verbatim) {
           // The analyzer already errors here (analysis.verbatim-marker);
           // this is the loader's defensive half of the same contract.
@@ -2663,16 +2672,22 @@ export class ChordStory implements Story {
     }
     if (entries.size === 0) return;
 
-    // Apply phase — rewrite texts, populate the map, register the gates.
-    for (const slot of texts) {
-      let rewritten = slot.value;
-      for (const marker of entries.keys()) {
-        rewritten = rewritten.split(`{${marker}}`).join(`{snippet:${marker}}`);
-      }
-      if (rewritten !== slot.value) slot.apply(rewritten);
-    }
+    // Apply phase — populate the map, register the gates.
     roomTrait.snippets = { ...(roomTrait.snippets ?? {}), ...Object.fromEntries(entries) };
     for (const register of gates) register();
+  }
+
+  /**
+   * The Z2 marker predicate: `{name}` in a room description splices a
+   * snippet when `name` is a declared phrase that is neither the `{br}` line
+   * break nor a hatch. One definition, shared by the template rewrite
+   * (extendLanguage) and the map compile (compileRoomSnippets); a verbatim
+   * phrase passes here and is refused by the compile with its LoadError.
+   */
+  private snippetMarkerTest(): (marker: string) => boolean {
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+    const hatchNames = new Set(this.ir.hatches.map((h) => h.name));
+    return (marker) => marker !== 'br' && !hatchNames.has(marker) && table[marker] !== undefined;
   }
 
   /**
@@ -2935,6 +2950,35 @@ function templateFor(phrase: IRPhrase): string {
   if (phrase.verbatim) return '{verbatim:text}';
   if (phrase.strategy === null && phrase.variants.length === 1) return withLineBreaks(phrase.variants[0].text);
   return '{variants}';
+}
+
+/** Candidate `{name}` markers in a room description text. */
+const DESCRIPTION_MARKER = /\{([a-z][a-z0-9-]*)\}/g;
+
+/**
+ * The snippet markers a room description text carries (Z2, ADR-211):
+ * every `{name}` the predicate accepts, deduplicated, in first-appearance order.
+ */
+function snippetMarkersIn(text: string, isMarker: (marker: string) => boolean): string[] {
+  const seen: string[] = [];
+  for (const match of text.matchAll(DESCRIPTION_MARKER)) {
+    const marker = match[1];
+    if (isMarker(marker) && !seen.includes(marker)) seen.push(marker);
+  }
+  return seen;
+}
+
+/**
+ * Rewrite each accepted `{name}` marker in a room description template to the
+ * platform's `{snippet:name}` form (ADR-209) — the registered text the room
+ * handler splices at render.
+ */
+function rewriteSnippetMarkers(template: string, isMarker: (marker: string) => boolean): string {
+  let rewritten = template;
+  for (const marker of snippetMarkersIn(template, isMarker)) {
+    rewritten = rewritten.split(`{${marker}}`).join(`{snippet:${marker}}`);
+  }
+  return rewritten;
 }
 
 /**

@@ -52,6 +52,7 @@ import { handleGameStarted } from './handlers/game.js';
 import { handlePlatformEvent } from './handlers/platform.js';
 import { handleAudibilityHeard } from './handlers/audibility.js';
 import { tryProcessDomainEventMessage } from './handlers/domain-message.js';
+import { tryProcessExamined } from './handlers/examined.js';
 import { handleImplicitTake } from './handlers/implicit-take.js';
 import { handleCommandFailed } from './handlers/command-failed.js';
 import { handleClientQuery } from './handlers/client-query.js';
@@ -308,6 +309,15 @@ export class ProsePipeline implements IProsePipeline {
       event.type.startsWith('character.exchange.')
     ) {
       return [];
+    }
+
+    // ADR-333 D1a: an examined entity in id mode resolves its description
+    // through the language provider before the messageId path binds params.
+    if (event.type === 'if.event.examined') {
+      const examined = tryProcessExamined(event, context);
+      if (examined) {
+        return examined;
+      }
     }
 
     const messageIdResult = tryProcessDomainEventMessage(event, context);

@@ -48,6 +48,9 @@ export interface CardsDelegate {
   onSelectLine(lineId: number): void;
   /** The Run button: run the story's tree document at the pinned seed. */
   onRun(): void;
+  /** The Play-this-path button (ADR-333 D5): step the Play pane through the
+   *  viewed line's root-to-leaf path — every card, examines included. */
+  onPlayPath(): void;
   /** The run column's current state — main.ts owns the fold. */
   runColumn(): RunColumnState;
   /** The card's assertion lines (authored claims or live defaults). */
@@ -179,12 +182,16 @@ export class CardsView {
         <div class="ts-col-head"><span>test run</span>
           <button class="ts-run-btn" id="ts-run-btn"
                   title="Run the story's test tree at the pinned seed">Run</button>
+          <button class="ts-run-btn" id="ts-play-path-btn"
+                  title="Step the Play pane through this line's path from the start — every card, examines included">Play this path</button>
         </div>
         <div id="ts-run-results"><span class="ts-pending-note">not run yet</span></div>
       </div>`;
     document.body.appendChild(root);
     document.getElementById('ts-run-btn')!
       .addEventListener('click', () => this.delegate.onRun());
+    document.getElementById('ts-play-path-btn')!
+      .addEventListener('click', () => this.delegate.onPlayPath());
 
     const inputBar = document.getElementById('input-area');
     if (inputBar) root.querySelector('.ts-input-row')!.appendChild(inputBar);

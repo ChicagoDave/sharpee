@@ -21,9 +21,25 @@
  */
 
 import { extractSnippetMarkers } from '@sharpee/if-domain';
-import type { SnippetEntry, SnippetText } from '@sharpee/if-domain';
+import type { LanguageProvider, SnippetEntry, SnippetText } from '@sharpee/if-domain';
 import type { WorldModel } from '@sharpee/world-model';
 import { TraitType, RoomTrait, IdentityTrait } from '@sharpee/world-model';
+import type { IFEntity } from '@sharpee/world-model';
+import { resolveDescriptionId } from './prose-pipeline/handlers/description-id.js';
+
+/**
+ * The two description texts a room's snippet markers live in. ADR-107 id
+ * mode (ADR-333 D1a): an id resolves through the language provider and
+ * wins over the literal, exactly as the room handler reads it at render.
+ */
+function roomDescriptionTexts(room: IFEntity, languageProvider?: LanguageProvider): string[] {
+  const roomTrait = room.get<RoomTrait>(TraitType.ROOM);
+  const identity = room.get<IdentityTrait>(TraitType.IDENTITY);
+  return [
+    resolveDescriptionId(languageProvider, identity?.descriptionId) ?? identity?.description,
+    resolveDescriptionId(languageProvider, roomTrait?.initialDescriptionId) ?? roomTrait?.initialDescription,
+  ].filter((t): t is string => Boolean(t));
+}
 
 /** Separator-shaped leading characters a bare fragment must not carry (ADR-211). */
 const SEPARATOR_LED = /^[\s,.;:?!]/;
@@ -73,9 +89,11 @@ export class SnippetValidationError extends Error {
  * Validate every snippet-bearing room's descriptions against its snippet map.
  *
  * @param world the initialized world model (after `initializeWorld`)
+ * @param languageProvider resolves id-mode descriptions; without it only
+ *   literal texts are scanned
  * @throws SnippetValidationError naming every unbound `(room, marker)` pair
  */
-export function validateRoomSnippets(world: WorldModel): void {
+export function validateRoomSnippets(world: WorldModel, languageProvider?: LanguageProvider): void {
   const unbound: Array<{ room: string; marker: string }> = [];
   const notBare: Array<{ room: string; marker: string; text: string }> = [];
 
@@ -84,10 +102,7 @@ export function validateRoomSnippets(world: WorldModel): void {
     const snippets = roomTrait?.snippets;
     if (!snippets) continue; // opt-in: no map, no scan
 
-    const identity = room.get<IdentityTrait>(TraitType.IDENTITY);
-    const texts = [identity?.description, roomTrait?.initialDescription];
-    for (const text of texts) {
-      if (!text) continue;
+    for (const text of roomDescriptionTexts(room, languageProvider)) {
       for (const marker of extractSnippetMarkers(text)) {
         if (!(marker in snippets)) {
           unbound.push({ room: room.name, marker });
@@ -118,10 +133,13 @@ export function validateRoomSnippets(world: WorldModel): void {
  * which puts broken text on screen. The devkit build prints these.
  *
  * @param world the initialized world model
+ * @param languageProvider resolves id-mode descriptions; without it only
+ *   literal texts are scanned
  * @returns `(room, entry)` pairs with no matching marker, in discovery order
  */
 export function lintUnusedSnippetEntries(
   world: WorldModel,
+  languageProvider?: LanguageProvider,
 ): Array<{ room: string; entry: string }> {
   const unused: Array<{ room: string; entry: string }> = [];
 
@@ -130,11 +148,8 @@ export function lintUnusedSnippetEntries(
     const snippets = roomTrait?.snippets;
     if (!snippets) continue;
 
-    const identity = room.get<IdentityTrait>(TraitType.IDENTITY);
     const used = new Set<string>(
-      [identity?.description, roomTrait?.initialDescription]
-        .filter((t): t is string => Boolean(t))
-        .flatMap((t) => extractSnippetMarkers(t)),
+      roomDescriptionTexts(room, languageProvider).flatMap((t) => extractSnippetMarkers(t)),
     );
     for (const entry of Object.keys(snippets)) {
       if (!used.has(entry)) {

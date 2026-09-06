@@ -315,11 +315,14 @@
         <div class="ts-col-head"><span>test run</span>
           <button class="ts-run-btn" id="ts-run-btn"
                   title="Run the story's test tree at the pinned seed">Run</button>
+          <button class="ts-run-btn" id="ts-play-path-btn"
+                  title="Step the Play pane through this line's path from the start \u2014 every card, examines included">Play this path</button>
         </div>
         <div id="ts-run-results"><span class="ts-pending-note">not run yet</span></div>
       </div>`;
       document.body.appendChild(root);
       document.getElementById("ts-run-btn").addEventListener("click", () => this.delegate.onRun());
+      document.getElementById("ts-play-path-btn").addEventListener("click", () => this.delegate.onPlayPath());
       const inputBar = document.getElementById("input-area");
       if (inputBar) root.querySelector(".ts-input-row").appendChild(inputBar);
       this.host = document.getElementById("ts-cards");
@@ -2524,6 +2527,11 @@
       beginRun(runState);
       cards.render();
       postToBridge({ run: true });
+    },
+    onPlayPath() {
+      if (driverBusy || replayActive) return;
+      const line = model.activeLine;
+      postToBridge({ playPath: { line, commands: pathSteps(line).map((step) => step.command) } });
     },
     runColumn: () => runState,
     assertionLines: assertionLinesFor,

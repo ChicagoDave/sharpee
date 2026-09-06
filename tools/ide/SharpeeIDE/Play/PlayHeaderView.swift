@@ -1,13 +1,15 @@
 // PlayHeaderView.swift
 // The Play pane's header bar: a status dot (green when a story is loaded), a
 // Restart button, a theme picker (IDE chrome over the play surface — Phase 6b),
-// and a "Play after build" toggle. That is the whole header. (The 6f Create
-// Transcript button is retired — ADR-306 D1, David's shred ruling 2026-08-09;
-// test authoring lives in the testing play surface window.)
+// a "Play after build" toggle, and — after a replay — a Stubs pull-down
+// listing the `(TODO …)` paragraphs the path printed (ADR-333 D6), each
+// opening its phrase like a ⌘-click would. (The 6f Create Transcript button
+// is retired — ADR-306 D1, David's shred ruling 2026-08-09; test authoring
+// lives in the testing play surface window.)
 // Pure view — the controller owns behaviour.
-// Public interface: onRestart / onPlayAfterBuildToggle / onThemeSelect
-// callbacks; setLoaded(_:), setPlayAfterBuild(_:),
-// setThemes(_:selectedThemeId:).
+// Public interface: onRestart / onPlayAfterBuildToggle / onThemeSelect /
+// onStubSelected callbacks; setLoaded(_:), setPlayAfterBuild(_:),
+// setThemes(_:selectedThemeId:), setStubs(_:), stubs.
 // Owner context: tools/ide — Play.
 
 import AppKit
@@ -24,9 +26,14 @@ final class PlayHeaderView: NSView {
     var onPlayAfterBuildToggle: ((Bool) -> Void)?
     /// A theme id from the catalog, or nil for Story Default.
     var onThemeSelect: ((String?) -> Void)?
+    /// A stub picked from the pull-down — open its phrase (ADR-333 D6).
+    var onStubSelected: ((PlayStub) -> Void)?
     private let dot = NSView()
     private let restartButton = NSButton()
     private let themePicker = NSPopUpButton(frame: .zero, pullsDown: false)
+    private let stubsMenu = NSPopUpButton(frame: .zero, pullsDown: true)
+    /// The stubs the pull-down lists, in play order; empty hides it.
+    private(set) var stubs: [PlayStub] = []
     private let playAfterBuildCheckbox = NSButton(checkboxWithTitle: "Play after build", target: nil, action: nil)
 
     override func layout() {
@@ -35,6 +42,7 @@ final class PlayHeaderView: NSView {
         // they clip before they resist.
         restartButton.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         themePicker.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        stubsMenu.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         playAfterBuildCheckbox.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
     }
 
@@ -70,9 +78,18 @@ final class PlayHeaderView: NSView {
         playAfterBuildCheckbox.contentTintColor = Theme.foregroundDim
         playAfterBuildCheckbox.translatesAutoresizingMaskIntoConstraints = false
 
+        stubsMenu.controlSize = .small
+        stubsMenu.font = NSFont.systemFont(ofSize: 11)
+        stubsMenu.target = self
+        stubsMenu.action = #selector(stubPicked)
+        stubsMenu.toolTip = "The stub paragraphs this path printed — pick one to open its phrase"
+        stubsMenu.isHidden = true
+        stubsMenu.translatesAutoresizingMaskIntoConstraints = false
+
         addSubview(dot)
         addSubview(restartButton)
         addSubview(themePicker)
+        addSubview(stubsMenu)
         addSubview(playAfterBuildCheckbox)
 
         NSLayoutConstraint.activate([
@@ -86,6 +103,9 @@ final class PlayHeaderView: NSView {
 
             themePicker.leadingAnchor.constraint(equalTo: restartButton.trailingAnchor, constant: 10),
             themePicker.centerYAnchor.constraint(equalTo: centerYAnchor),
+
+            stubsMenu.leadingAnchor.constraint(equalTo: themePicker.trailingAnchor, constant: 10),
+            stubsMenu.centerYAnchor.constraint(equalTo: centerYAnchor),
 
             playAfterBuildCheckbox.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -12),
             playAfterBuildCheckbox.centerYAnchor.constraint(equalTo: centerYAnchor),
@@ -120,6 +140,28 @@ final class PlayHeaderView: NSView {
         }
         let match = themePicker.itemArray.first { ($0.representedObject as? String) == selectedThemeId }
         themePicker.select(match ?? themePicker.itemArray.first)
+    }
+
+    /// Lists the path's stubs in the pull-down (hidden when there are none).
+    /// The first item is the pull-down's own title.
+    func setStubs(_ stubs: [PlayStub]) {
+        self.stubs = stubs
+        stubsMenu.removeAllItems()
+        stubsMenu.isHidden = stubs.isEmpty
+        guard !stubs.isEmpty else { return }
+        stubsMenu.addItem(withTitle: "Stubs (\(stubs.count))")
+        for stub in stubs {
+            let body = stub.text.count > 60 ? String(stub.text.prefix(60)) + "…" : stub.text
+            let turn = stub.turn.map { "turn \($0) · " } ?? ""
+            stubsMenu.addItem(withTitle: turn + body)
+        }
+    }
+
+    @objc private func stubPicked() {
+        // Pull-down items sit after the title item.
+        let index = stubsMenu.indexOfSelectedItem - 1
+        guard stubs.indices.contains(index) else { return }
+        onStubSelected?(stubs[index])
     }
 
     @objc private func restartClicked() {

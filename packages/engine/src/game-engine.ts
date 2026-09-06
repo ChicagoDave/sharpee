@@ -453,7 +453,7 @@ export class GameEngine {
 
     // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
     // snippet-bearing room's description carries an unbound {snippet:name}.
-    validateRoomSnippets(this.world);
+    validateRoomSnippets(this.world, this.languageProvider);
     // ADR-226 AC-7: every combatant must carry the HealthTrait combat operates on.
     validateCombatantHealth(this.world);
 
