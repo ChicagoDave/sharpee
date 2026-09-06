@@ -1,6 +1,6 @@
 # Session Summary: 2026-09-06 - feat/secret-letter-port
 
-## Status: In Progress
+## Status: COMPLETE — the interrupted `unlisted` adjective work verified, committed (6998cd5a1) and pushed on feat/secret-letter-port; finalized 2026-09-06 ~05:40 CDT
 
 ## Goals
 - Pick up the interrupted `unlisted` adjective work (platform + Secret Letter stall displays) from the raw transcript `docs/context/20260906-context.txt`; verify, then decide commit.
@@ -29,10 +29,10 @@
 ## Open Items
 - I-c8a56c-1 (carried): David's lines for the Chapter 6-9 placeholder beats and the DS38-39 conversion.
 - I-c8a56c-2 (carried): GH #356, the stallkeeper patience counter — David's ruling pending.
-- The `unlisted` work is uncommitted; Dungeo chain pending a bundle rebuild.
+- Play-test the stall displays in Chord Writer from this checkout (the 2009 rendering is restored).
 
 ## Files Modified
-- (this file)
+- Committed in 6998cd5a1: `packages/world-model/src/traits/identity/identityTrait.ts`, `packages/chord/src/catalog.ts`, `packages/story-loader/src/loader.ts`, `packages/stdlib/src/actions/standard/{looking,examining}/*-data.ts`, `packages/story-loader/tests/{unlisted-holder,quickwin-adjectives}.test.ts`, `branch-stories/secret-letter/{wares.chord,secret-letter.tests.json}`, `docs/architecture/chord-grammar-changes.md`, `packages/sharpee/docs/genai-api/{index,world-model}.md`, `website/src/app/chord/stdlib/traits/structural-traits/content.mdx`, `docs/context/20260906-context.txt`, this file
 
 ## Notes
 - Session started: 2026-09-06 05:20 CDT (session eb31fb)
