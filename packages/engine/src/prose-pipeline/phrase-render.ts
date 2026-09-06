@@ -147,7 +147,11 @@ export function renderViaPhrase(
     console.warn(`[phrase] renderMessage("${messageId}") failed: ${(e as Error).message}`);
     return null;
   }
-  return blocks.map((b) => (b.key === blockKey ? b : { ...b, key: blockKey }));
+  // ADR-333 D1: every realized block names the message it was rendered
+  // from — the id the caller asked for, whether the registry or a
+  // phrasebook supplied the template. This is the one point where the id
+  // is in hand; the inline-fallback path (`createBlocks`) never stamps.
+  return blocks.map((b) => ({ ...b, key: blockKey, source: { messageId } }));
 }
 
 /** Flatten one content node to its plain text (recursing through decorations). */

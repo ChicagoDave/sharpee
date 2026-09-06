@@ -187,6 +187,18 @@ describe('prose channels', () => {
     ]);
   });
 
+  it('threads `source` from blocks to entries and drops an empty id (ADR-333 D1)', () => {
+    const stamped = {
+      ...makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'It is dark.'),
+      source: { messageId: 'cave.description' },
+    };
+    const blank = { ...makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'Still dark.'), source: { messageId: '' } };
+    expect(roomDescriptionChannel.produce(makeCtx({ blocks: [stamped, blank] }))).toEqual([
+      { content: ['It is dark.'], source: { messageId: 'cave.description' } },
+      { content: ['Still dark.'] },
+    ]);
+  });
+
   it('returns an empty array when no blocks match', () => {
     for (const channel of PROSE_CHANNELS) {
       expect(channel.produce(makeCtx({ blocks: [] }))).toEqual([]);
