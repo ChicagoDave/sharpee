@@ -38,12 +38,22 @@ export const chapterChannel: IOChannel<ChapterBeganData> = {
 };
 
 /**
+ * The first prose channel's id (`PROSE_CHANNEL_IDS.ROOM_NAME` in
+ * `@sharpee/stdlib`, which this package does not depend on). The chapter
+ * card registers before it so a client that dispatches a turn in manifest
+ * order shows the title after the banner and before the turn's prose.
+ */
+const FIRST_PROSE_CHANNEL_ID = 'room-name';
+
+/**
  * Register the `story.chapter` channel — the `registerChannels` slot of the
  * trusted-extension contract (ADR-215's third contribution part; this is
- * that slot's first live use).
+ * that slot's first live use). The channel lands before the prose channels
+ * (ADR-330 D4 as amended 2026-09-05: the chapter title is announced before
+ * the room, for every trigger kind).
  *
  * @param registry - the channel registry the engine hands the story at start
  */
 export function registerChaptersChannels(registry: IChannelRegistry): void {
-  registry.add(chapterChannel);
+  registry.add(chapterChannel, { before: FIRST_PROSE_CHANNEL_ID });
 }

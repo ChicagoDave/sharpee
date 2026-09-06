@@ -364,6 +364,17 @@ export declare function makeFsImportResolver(storyDir: string): (fragmentName: s
  */
 export declare function findStoryFile(dir: string): string | null;
 /**
+ * Compile a Chord project's story file to its IR, imports resolved against
+ * the story's directory. The one compile path for an author project: the
+ * game boot (`loadChordStory`) and the derived rule-test suite (ADR-356)
+ * both read this, so the IR under test is always the IR that runs.
+ *
+ * @param storyFile absolute or cwd-relative path to the `.story` file
+ * @returns the compiled Story IR
+ * @throws when the load-time gates report any error, each named with its site
+ */
+export declare function compileChordStory(storyFile: string): import('@sharpee/chord').StoryIR;
+/**
  * Compile a Chord `.story` file and construct its story via
  * @sharpee/story-loader (hatches bound). Load-time-gate diagnostics abort
  * with `.story` line numbers (ADR-210 AC-3).
@@ -625,9 +636,18 @@ export interface GoldenRecording {
  * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains' | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'ending-assert' | 'channel-contains' | 'channel-not-contains' | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
     value?: string;
     reason?: string;
+    /**
+     * The ending id an `ending-assert` claim expects the world's Ending to
+     * carry (ADR-356 D4): the id the story's `win`/`lose` statement named
+     * (its `messageId`) or its `kill` statement named (its `cause`). The
+     * claim holds when the story has ended and the Ending carries this id;
+     * it is the END STATE card's own claim, synthesized by the tree walker,
+     * and has no `.transcript` spelling.
+     */
+    endingId?: string;
     /**
      * Channel this assertion reads, for the `channel-*` forms.
      *
@@ -881,6 +901,19 @@ export interface StoryStateKeys {
     entityStatePrefix: string;
     /** Entity attribute carrying the runtime id the prefix is joined with. */
     entityIdAttribute: string;
+    /**
+     * Prefix joined with an entity's runtime id → `true` while a story
+     * `remove` has taken it out of play (the `is gone` claim, ADR-356 D3).
+     * Absent → the claim is not recognized.
+     */
+    entityGonePrefix?: string;
+    /**
+     * Prefix joined with a timer's qualified key → its record, whose `phase`
+     * the `<timer> has started|expired` claim reads (ADR-356 D2 as amended
+     * 2026-09-27). An absent record is idle. Absent prefix → the claim is not
+     * recognized.
+     */
+    timerPrefix?: string;
 }
 /**
  * Result of a single assertion check
@@ -1244,12 +1277,15 @@ export declare function runTranscript(transcript: Transcript, engine: GameEngine
  * other half of "what a claim means".
  *
  * Browser-safe by construction: no Node import, no package barrel — the
- * IDE's testing surface bundles this file from source. Per-command execution,
+ * IDE's testing surface bundles this file from source. Its one cross-package
+ * import is `@sharpee/story-loader/pin-grammar`, a pure subpath the surface
+ * aliases to source beside this file. Per-command execution,
  * directives, and session instruments are Node-bound and live in
  * `command-core.ts`.
  *
  * Public interface: `checkAssertion`, `checkEventAssertion`,
- * `checkStateAssertion`, `evaluateStateExpression`, `findEntity`,
+ * `checkStateAssertion`, `checkEmittedAssertion`, `evaluateStateExpression`,
+ * `evaluateEmittedClaim`, `findEntity`,
  * `getEntityProperty`, `resolveValue`, `collectStrings`,
  * `captureEntityTraits`, `normalizeOutput`, `synthesizePolicyAssertions`,
  * `proseTextLinesOf`; the `WorldModel` seam; every shared type, re-exported.
@@ -1258,7 +1294,8 @@ export declare function runTranscript(transcript: Transcript, engine: GameEngine
  *
  * References: ADR-340 D1/D3 (one owner, drift is a test), ADR-300 D13
  * (channel claims), ADR-294 D2 (the auto-assertion boundary), GH #355 (the
- * Chord-spelled state claim).
+ * Chord-spelled state claim), ADR-356 D2 (the pin grammar is parsed once,
+ * in the loader, for the read and the write direction alike).
  */
 import type { Assertion, AssertionResult, AutoAssertionPolicy, EntityTraitSnapshot, StoryStateKeys, TestEventInfo } from './types.js';
 export type * from './types.js';
@@ -1276,6 +1313,12 @@ export interface WorldModel {
     getPlayer?(): any;
     /** World-state lookup — carries the Chord story phase (`story.state` claims). */
     getStateValue?(key: string): unknown;
+    /** The Ending the world carries once the story has ended (ADR-347 D2a). */
+    getEnding?(): {
+        kind: string;
+        messageId?: string;
+        cause?: string;
+    } | undefined;
 }
 /**
  * Check one assertion against the turn: its output, its events, the world,
@@ -1303,6 +1346,44 @@ export declare function checkAssertion(assertion: Assertion, actualOutput: strin
  */
 export declare function checkEventAssertion(assertion: Assertion, events: TestEventInfo[]): AssertionResult;
 /**
+ * Check an `emitted <message-id>` claim (ADR-356 D3) against the turn's
+ * captured events.
+ *
+ * @param assertion the `state-assert` claim whose expression is the emitted form
+ * @param events the turn's captured events
+ * @returns the verdict, naming what was emitted instead on a miss
+ */
+export declare function checkEmittedAssertion(assertion: Assertion, events: TestEventInfo[]): AssertionResult;
+/**
+ * Check an END STATE card's claim (ADR-356 D4): the story has ended, and the
+ * Ending the world carries names the id the card declares. The id is read
+ * off the Ending record, never off prose: a `win`/`lose` stamps it as
+ * `messageId`, a `kill` as `cause`, and either spelling satisfies the claim.
+ * A miss names the ending that was not reached and what the story did
+ * instead, so a truncated line fails by name.
+ *
+ * @param assertion the `ending-assert` claim, carrying `endingId`
+ * @param world the live world, read after the card's command ran
+ * @returns the verdict, naming the declared ending on a miss
+ */
+export declare function checkEndingAssertion(assertion: Assertion, world?: WorldModel): AssertionResult;
+/**
+ * Whether the turn emitted a message id: a phrase or refusal rides an event
+ * whose data carries `messageId` (a story action's `chord.phrase`, a standard
+ * action's own event), and an author `emit` is an event of that type. A
+ * phrase an entity defines for itself is emitted owner-qualified
+ * (`solicitor's-letter.summons-text`) while the story names it bare
+ * (`summons-text`), so a bare id matches the last segment of a qualified one.
+ *
+ * @param messageId the phrase key or event id a claim wrote
+ * @param events the turn's captured events
+ * @returns whether it was emitted, with what was emitted instead on a miss
+ */
+export declare function evaluateEmittedClaim(messageId: string, events: TestEventInfo[]): {
+    matches: boolean;
+    details?: string;
+};
+/**
  * Check a state assertion against the world model.
  *
  * @param assertion the `state-assert` claim
@@ -1314,18 +1395,33 @@ export declare function checkStateAssertion(assertion: Assertion, world?: WorldM
 /**
  * Evaluate a state expression against the world model.
  *
- * Supports, tried in this order:
+ * Recognition is the loader's `parsePin` (ADR-356 D2 — one grammar, one
+ * parser, read here and written by `arrange()`); this function owns only
+ * what each recognized form MEANS as a claim. The forms:
  *   story.state = value / story.state != value        (the story's phase)
- *   entity.property = value / entity.property != value
+ *   entity.location = value, entity.property = value (and != for both)
  *   entity.collection contains item / not-contains item
  *   [the] name is state / [the] name is not state     (a Chord entity's own
  *     `states:`, spelled the way Chord spells the condition — GH #355;
  *     `the story is state` reads the story's phase the same way)
+ *   [the] name is gone / is not gone                   (a Chord `remove` took
+ *     the entity out of play — ADR-356 D3; needs `entityGonePrefix`)
+ *   timer has started / timer has expired              (the timer's phase —
+ *     ADR-356 D2 as amended 2026-09-27; needs `timerPrefix`)
+ *
+ * With keys, an entity name in any form may also be the runtime id the
+ * loader stamps (`silver-locket`), so a claim derived from the story's own
+ * IR resolves without a display-name round trip.
  *
  * The `story.state` and `[the] name is state` forms read the story runtime's
  * declared states, keyed as `storyStateKeys` says; with no keys supplied
  * (a session without a story runtime that declares states) neither form is
- * recognized and the expression falls through to the entity forms.
+ * recognized: `story.state` is then read as the entity form (an entity
+ * named `story`, its `state` property) and the Chord-spelled form is not a
+ * claim at all. The three shapes the grammar names but the floor does not
+ * write (occurrence, topic history, timer position) are not claims either:
+ * no read of them is defined here. `emitted` is read by
+ * `checkEmittedAssertion`, which has the events this function does not.
  *
  * @param expression - The pin text from a tree-document card or a `[STATE:]` line
  * @param world - The live world after the command ran
@@ -1340,15 +1436,18 @@ export declare function evaluateStateExpression(expression: string, world: World
  * Find an entity by name in the world model.
  *
  * `player` is a reserved word that always resolves to the player entity via
- * `world.getPlayer()`, regardless of what the story named it. Otherwise
- * entities match by name, by id, by their IdentityTrait name, or by any of
- * their IdentityTrait aliases.
+ * `world.getPlayer()`, regardless of what the story named it. With an
+ * `idAttribute`, the token is next tried as the story runtime's own id for
+ * an entity (the attribute the loader stamps). Otherwise entities match by
+ * name, by id, by their IdentityTrait name, or by any of their IdentityTrait
+ * aliases.
  *
  * @param name the token a claim wrote
  * @param world the live world
+ * @param idAttribute the entity attribute carrying the story runtime's id, when the session has one
  * @returns the entity, or null when nothing matches
  */
-export declare function findEntity(name: string, world: WorldModel): any;
+export declare function findEntity(name: string, world: WorldModel, idAttribute?: string): any;
 /**
  * Read a property off an entity. `location`, `contents`, and `inventory` are
  * spatial and go through the world; anything else reads the entity, then its
@@ -1367,9 +1466,10 @@ export declare function getEntityProperty(entity: any, property: string, world?:
  *
  * @param value the text a claim wrote
  * @param world the live world, for entity names
+ * @param idAttribute the story runtime's id attribute, when the session has one
  * @returns the comparable value
  */
-export declare function resolveValue(value: string, world: WorldModel): any;
+export declare function resolveValue(value: string, world: WorldModel, idAttribute?: string): any;
 /**
  * Recursively collect every string value in a data structure into `out`.
  *
@@ -1930,9 +2030,12 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   `elapsedMs` clock — in one place so no producer can get them wrong.
  *   Emission is immediate: every method writes as it is called, which is what
  *   lets the IDE's Testing tab fill while the run is still going.
- * Public interface: `RunEventStream`, `ndjsonEventLine`, and the three
+ * Public interface: `RunEventStream`, `ndjsonEventLine`, and the five
  * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
  * they are the parameter types of public methods; the barrel exports them.
+ * The two derived shapes (ADR-356) are the wire's own payloads minus the
+ * envelope: `branch-tester` maps its outcomes onto them, this module
+ * sequences them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *
@@ -1940,7 +2043,21 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   stream, because records built from a completed result cannot announce a
  *   transcript before it runs.
  */
-import type { RunEvent, RunMode, BudgetUse, ProgressEvent } from '@sharpee/ide-protocol';
+import type { RunEvent, RunMode, BudgetUse, ProgressEvent, DerivedBranchEvent, DerivedRunSummaryEvent, RunEventEnvelope } from '@sharpee/ide-protocol';
+/**
+ * One derived branch's outcome as the wire carries it (ADR-356 D1 to D3):
+ * the `derived-branch` payload without its envelope. `branch-tester`'s
+ * `streamableDerivedOutcome` produces it; the failure line is rendered there,
+ * where the claim shapes live, so the wire only moves it.
+ */
+export type StreamableDerivedOutcome = Omit<DerivedBranchEvent, keyof RunEventEnvelope | 'type'>;
+/**
+ * The derived tier's report as the wire carries it (ADR-356 D5): the
+ * `derived-summary` payload without its envelope, produced by
+ * `branch-tester`'s `streamableDerivedSummary` from the same coverage values
+ * the CLI report prints.
+ */
+export type StreamableDerivedSummary = Omit<DerivedRunSummaryEvent, keyof RunEventEnvelope | 'type'>;
 /**
  * What the stream needs from ONE command's outcome — structurally, not by name.
  *
@@ -2123,6 +2240,14 @@ export declare class RunEventStream {
     }): void;
     /** The run's coverage report (ADR-293 D15) — once per run, opt-in. */
     coverage(report: CoverageReport): void;
+    /**
+     * One derived rule test finished (ADR-356) — emitted as the branch
+     * completes, after the tree's own events. `status` is the four-valued
+     * verdict; SKIPPED and error never masquerade as failures here.
+     */
+    derivedBranch(outcome: StreamableDerivedOutcome): void;
+    /** The derived tier's three ratios and gap lists (ADR-356 D5) — once per run. */
+    derivedSummary(summary: StreamableDerivedSummary): void;
     /**
      * Close the stream.
      *

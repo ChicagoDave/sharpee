@@ -4095,15 +4095,24 @@ export declare function nounPhraseFor(entity: IFEntity, _ctx?: RenderContext, op
  *
  * @see ADR-163 — Channel-Service Platform — §6, §7, §13, §14
  */
-import type { IChannelRegistry, IOChannel } from '@sharpee/if-domain';
+import type { ChannelRegistrationPosition, IChannelRegistry, IOChannel } from '@sharpee/if-domain';
 /**
  * In-memory `IChannelRegistry` implementation. Last-write-wins on
  * `add(channel)` by `channel.id` — which is how stories override
- * platform standards (ADR-163 §6).
+ * platform standards (ADR-163 §6). Insertion order is registration
+ * order; `position.before` places a NEW id ahead of an existing one.
  */
 export declare class StdlibChannelRegistry implements IChannelRegistry {
-    private readonly channels;
-    add(channel: IOChannel): void;
+    private channels;
+    /**
+     * Register a channel. An existing id is replaced in place and keeps its
+     * position, whatever `position` says. A new id lands at the end, or
+     * immediately before `position.before` when given.
+     *
+     * @throws Error when `position.before` names no registered channel —
+     *   a typo must not silently become an append at the end.
+     */
+    add(channel: IOChannel, position?: ChannelRegistrationPosition): void;
     get(id: string): IOChannel | undefined;
     all(): readonly IOChannel[];
     /**

@@ -27,7 +27,7 @@
  * @see ADR-163 — Channel-Service Platform — §6, §7, §13, §14
  */
 
-import type { IChannelRegistry, IOChannel } from '@sharpee/if-domain';
+import type { ChannelRegistrationPosition, IChannelRegistry, IOChannel } from '@sharpee/if-domain';
 import { STANDARD_CHANNELS } from './standard.js';
 import { MEDIA_CHANNELS } from './media.js';
 import { SOUND_CHANNELS } from './sound-events.js';
@@ -35,13 +35,36 @@ import { SOUND_CHANNELS } from './sound-events.js';
 /**
  * In-memory `IChannelRegistry` implementation. Last-write-wins on
  * `add(channel)` by `channel.id` — which is how stories override
- * platform standards (ADR-163 §6).
+ * platform standards (ADR-163 §6). Insertion order is registration
+ * order; `position.before` places a NEW id ahead of an existing one.
  */
 export class StdlibChannelRegistry implements IChannelRegistry {
-  private readonly channels = new Map<string, IOChannel>();
+  private channels = new Map<string, IOChannel>();
 
-  add(channel: IOChannel): void {
-    this.channels.set(channel.id, channel);
+  /**
+   * Register a channel. An existing id is replaced in place and keeps its
+   * position, whatever `position` says. A new id lands at the end, or
+   * immediately before `position.before` when given.
+   *
+   * @throws Error when `position.before` names no registered channel —
+   *   a typo must not silently become an append at the end.
+   */
+  add(channel: IOChannel, position?: ChannelRegistrationPosition): void {
+    if (position === undefined || this.channels.has(channel.id)) {
+      this.channels.set(channel.id, channel);
+      return;
+    }
+    if (!this.channels.has(position.before)) {
+      throw new Error(
+        `Channel '${channel.id}' asked to register before '${position.before}', which is not a registered channel.`,
+      );
+    }
+    const reordered = new Map<string, IOChannel>();
+    for (const [id, existing] of this.channels) {
+      if (id === position.before) reordered.set(channel.id, channel);
+      reordered.set(id, existing);
+    }
+    this.channels = reordered;
   }
 
   get(id: string): IOChannel | undefined {

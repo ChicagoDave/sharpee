@@ -28,6 +28,7 @@ export type {
   ChannelProduceContext,
   IOChannel,
   IChannelRegistry,
+  ChannelRegistrationPosition,
   ProseEntry,
   PreferredLayout,
   ProseChannelId,

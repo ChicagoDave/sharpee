@@ -15,6 +15,7 @@ import {
   CHAPTER_STALE_EVENT,
   chapterChannel,
   createChaptersPlugin,
+  registerChaptersChannels,
   type ChapterRow,
 } from '../src';
 
@@ -113,5 +114,20 @@ describe('chapterChannel', () => {
     const packet = chapterChannel.produce({ world, events, blocks: [], turn: 1, prevValue: undefined });
     expect(packet).toEqual({ name: 'market', title: 'Chapter I', description: 'An apple.', ordinal: 0 });
     expect(chapterChannel.produce({ world, events: [], blocks: [], turn: 2, prevValue: packet })).toBeUndefined();
+  });
+});
+
+describe('registerChaptersChannels', () => {
+  it('registers story.chapter before the first prose channel (room-name), so the title precedes the room', () => {
+    // Scaffolding over a recording registry; the real registry and the real
+    // manifest order are pinned in story-loader's adr-330-chapters.test.ts.
+    const calls: Array<{ id: string; position: unknown }> = [];
+    const registry = {
+      add: (channel: { id: string }, position?: unknown) => void calls.push({ id: channel.id, position }),
+      get: () => undefined,
+      all: () => [],
+    };
+    registerChaptersChannels(registry as never);
+    expect(calls).toEqual([{ id: 'story.chapter', position: { before: 'room-name' } }]);
   });
 });
