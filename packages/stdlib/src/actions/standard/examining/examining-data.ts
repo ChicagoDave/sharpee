@@ -96,11 +96,16 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     }
   }
   
+  // A holder whose own prose describes its contents (IdentityTrait
+  // .contentsUnlisted, Chord `unlisted`) shows no contents line on examine
+  // either — the same rule as the room listing; the contents stay in scope.
+  const contentsUnlisted = (noun.get(TraitType.IDENTITY) as { contentsUnlisted?: boolean } | undefined)?.contentsUnlisted === true;
+
   // Container trait
   if (noun.has(TraitType.CONTAINER)) {
     // Shared visibility read (one definition with LOOK/scope): a
     // still-concealed item stays out of EXAMINE's contents until revealed
-    const contents = VisibilityBehavior.getVisibleContents(noun, context.world);
+    const contents = contentsUnlisted ? [] : VisibilityBehavior.getVisibleContents(noun, context.world);
     const contentsSnapshots = captureEntitySnapshots(contents, context.world);
 
     eventData.isContainer = true;
@@ -126,7 +131,7 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   // Supporter trait
   if (noun.has(TraitType.SUPPORTER)) {
     // Shared visibility read: same rule as the container branch above
-    const contents = VisibilityBehavior.getVisibleContents(noun, context.world);
+    const contents = contentsUnlisted ? [] : VisibilityBehavior.getVisibleContents(noun, context.world);
     const contentsSnapshots = captureEntitySnapshots(contents, context.world);
 
     eventData.isSupporter = true;

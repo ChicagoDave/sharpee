@@ -139,6 +139,19 @@ describe('G2: concealed marker', () => {
   });
 });
 
+describe('unlisted marker (2026-09-06)', () => {
+  it('sets IdentityTrait.contentsUnlisted so the room never lists what the holder carries', () => {
+    const { story, world } = loadStory(storyWith(`create the rope wares
+  in the Shed
+  scenery, a supporter, plural, unlisted
+
+  All rope.`));
+    const wares = world.getEntity(story.entityId('rope-wares')!)!;
+    const identity = wares.get(TraitType.IDENTITY) as IdentityTrait;
+    expect(identity.contentsUnlisted).toBe(true);
+  });
+});
+
 describe('G3: hiding-spot adjective', () => {
   it('bare form supports every hiding position', () => {
     const { story, world } = loadStory(storyWith(`create the curtain

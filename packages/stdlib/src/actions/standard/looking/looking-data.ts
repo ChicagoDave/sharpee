@@ -252,7 +252,14 @@ export function collectContainedListings(
 ): ContainerContentsInfo[] {
   const listings: ContainerContentsInfo[] = [];
 
+  // A holder whose own prose describes its contents opts out of the
+  // listing (IdentityTrait.contentsUnlisted, Chord `unlisted`); the
+  // contents stay in scope — only the "In/On the X you see …" line goes.
+  const unlisted = (holder: IFEntity): boolean =>
+    (holder.get(TraitType.IDENTITY) as { contentsUnlisted?: boolean } | undefined)?.contentsUnlisted === true;
+
   for (const container of containers) {
+    if (unlisted(container)) continue;
     // Skip if container is closed
     if (container.hasTrait(TraitType.OPENABLE)) {
       const { OpenableBehavior } = require('@sharpee/world-model');
@@ -273,6 +280,7 @@ export function collectContainedListings(
   }
 
   for (const supporter of supporters) {
+    if (unlisted(supporter)) continue;
     // Shared visibility read: a still-concealed item stays out of the listing
     const contents = VisibilityBehavior.getVisibleContents(supporter, context.world);
     if (contents.length > 0) {

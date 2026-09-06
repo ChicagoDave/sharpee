@@ -77,6 +77,10 @@ The rest of the trait in one-liners:
   set; absent means the by-number fallback ("it"/"they"). Nothing is
   inferred from a name.
 - `concealed` marks a hidden item that searching reveals and announces.
+- `unlisted` on a container or supporter keeps the room from listing
+  what it holds ("On the rope wares you see a length of rope." is never
+  printed) — for a holder whose own prose describes its contents. The
+  contents stay in scope: examinable, takeable, reachable by clauses.
 - `points` awards score on the first take, deduped per entity.
   It is TypeScript-only today; Chord's `score … worth N` lines are the
   separate named-award system.

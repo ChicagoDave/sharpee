@@ -2192,6 +2192,14 @@ export class ChordStory implements Story {
           if (identity) identity.concealed = true;
           break;
         }
+        case 'unlisted': {
+          // 2026-09-06: marker adjective — the holder's contents are described
+          // by its own prose and never listed by the room; they stay in scope
+          // (IdentityTrait.contentsUnlisted). The Secret Letter stall displays.
+          const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+          if (identity) identity.contentsUnlisted = true;
+          break;
+        }
         case 'hiding-spot': {
           // Ratchet G3 (2026-07-17): bare = the actor may hide at any
           // position; `with position <word>` narrows to exactly one. The

@@ -246,7 +246,7 @@ create the baskets
 
 create the display of loaves
   aka loaves, loaves of bread, dark loaves, grainy loaves, rock-hard loaves, bread display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Grocery Stall
 
@@ -262,7 +262,7 @@ create the display of loaves
 
 create the pyramid display
   aka pyramids, pyramids of cheese, cheese pyramids, yellow pyramids, cheese display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Grocery Stall
 
@@ -278,7 +278,7 @@ create the pyramid display
 
 create the strips display
   aka strips, strips of jerky, bundles, bundles of jerky, spiced jerky, jerky display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Grocery Stall
 
@@ -518,7 +518,7 @@ create the riding saddle
 
 create the collective reins
   aka reins display, ordinary reins, riding reins display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -526,7 +526,7 @@ create the collective reins
 
 create the harnesses
   aka harness display, harnesses display, complicated harnesses, contraptions
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -535,7 +535,7 @@ create the harnesses
 
 create the stirrups
   aka stirrup display, stirrups display, ordinary stirrups, riding stirrups
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -543,7 +543,7 @@ create the stirrups
 
 create the scabbards
   aka scabbard display, scabbards display, sheaths, plain scabbards, unadorned scabbards
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -552,7 +552,7 @@ create the scabbards
 
 create the rack of belts
   aka rack, belt rack, belts, belts display, sturdy belts, well-crafted belts
-  scenery, a supporter
+  scenery, a supporter, unlisted
   stall-display
   in the Leather Stall
 
@@ -674,7 +674,7 @@ create the longswords
 
 create the knives
   aka knife display, knives display, daggers, short knives, wicked knives, sharp knives
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Weaponsmith's Stall
 
@@ -779,9 +779,9 @@ create the jars of herbs
     phrase herbs-strong-stuff
   end on
 
-create the collective herbs
-  aka herbs, herb stuff, stuff, crushed bits, leaves, roots, berries, petals, moss, bark, shriveled pieces
-  scenery, a supporter, plural
+create the herbs
+  aka herb stuff, stuff, crushed bits, leaves, roots, berries, petals, moss, bark, shriveled pieces
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Herb Stall
 
@@ -796,7 +796,7 @@ create the herb jar
   a container
   herb-ware
   states: shelved, nicked
-  on the collective herbs
+  on the herbs
 
   It's a little glass jar containing a few crumbling, dried weeds.
 
@@ -890,7 +890,7 @@ create the rope pegs
 
 create the rope wares
   aka ropes, coils, coils of rope, heaps of rope, knotted rope, loose rope, thick rope, thin rope, display, displays, wares, merchandise, goods
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Rope Stall
 
@@ -941,7 +941,7 @@ create the stock of candles
 
 create the tallow candles
   aka tallow display, yellow candles, lumpy candles, cheap candles
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -957,7 +957,7 @@ create the wax candles
 
 create the red wax candles
   aka red candles, red wax display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -966,7 +966,7 @@ create the red wax candles
 
 create the blue wax candles
   aka blue candles, blue wax display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -975,7 +975,7 @@ create the blue wax candles
 
 create the green wax candles
   aka green candles, green wax display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -984,7 +984,7 @@ create the green wax candles
 
 create the white wax candles
   aka white candles, white wax display
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -1145,7 +1145,7 @@ create the assorted pottery
 
 create the clay pots
   aka pots, pot display, simple pots, functional pots
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Pottery Stall
 
@@ -1153,7 +1153,7 @@ create the clay pots
 
 create the urns
   aka urn display, tall urns, narrow urns, decorative urns, precarious urns
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Pottery Stall
 
@@ -1161,7 +1161,7 @@ create the urns
 
 create the clay jars
   aka jars, jar display, round jars, gourd-like jars, gourds
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Pottery Stall
 
@@ -1169,7 +1169,7 @@ create the clay jars
 
 create the bowls
   aka bowl display, shallow bowls, dishes, dish
-  scenery, a supporter, plural
+  scenery, a supporter, plural, unlisted
   stall-display
   in the Pottery Stall
 

@@ -63,6 +63,16 @@ export class IdentityTrait implements ITrait {
   
   /** Whether this entity is concealed from normal view */
   concealed = false;
+
+  /**
+   * Whether this holder's contents are described in its own prose and
+   * never listed by the room ("On the rope wares you see a length of
+   * rope." is not printed). The contents stay in scope — examinable,
+   * takeable — only the listing is withheld. Chord's `unlisted` adjective
+   * sets it (2026-09-06, the Secret Letter stall displays: the 2009 game
+   * never listed a display's wares; the display's prose IS the listing).
+   */
+  contentsUnlisted = false;
   
   /** Weight of the object (undefined = negligible/not tracked) */
   weight?: number;
