@@ -118,9 +118,89 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         /// the Testing tab can group cards by region (David 2026-08-10).
         let containing: [ContainedMember]?
         let span: DiagnosticSpan
+        /// The entity's `define topics for` rows (ADR-239), each reduced to
+        /// what play-to-write (ADR-333 D4d) decides on: the topic words the
+        /// row answers and the phrase keys its body fires. Row bodies are
+        /// otherwise not decoded.
+        let topicRows: [TopicRow]
+        /// How many rows the entity declares — whether a new row merges into
+        /// an existing block or opens one.
+        var topicCount: Int { topicRows.count }
+
+        init(id: String, name: String, isPlayable: Bool, kinds: [Kind], containing: [ContainedMember]?,
+             span: DiagnosticSpan, topicRows: [TopicRow] = []) {
+            self.id = id
+            self.name = name
+            self.isPlayable = isPlayable
+            self.kinds = kinds
+            self.containing = containing
+            self.span = span
+            self.topicRows = topicRows
+        }
+
+        private enum CodingKeys: String, CodingKey { case id, name, isPlayable, kinds, containing, span, topics }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(String.self, forKey: .id)
+            name = try c.decode(String.self, forKey: .name)
+            isPlayable = try c.decode(Bool.self, forKey: .isPlayable)
+            kinds = try c.decode([Kind].self, forKey: .kinds)
+            containing = try c.decodeIfPresent([ContainedMember].self, forKey: .containing)
+            span = try c.decode(DiagnosticSpan.self, forKey: .span)
+            topicRows = try c.decodeIfPresent([TopicRow].self, forKey: .topics) ?? []
+        }
+
+        /// The rows that answer `topic` (a quoted topic's primary or alias,
+        /// case-insensitive; an entity row never matches free text).
+        func topicRows(answering topic: String) -> [TopicRow] {
+            let wanted = topic.lowercased()
+            return topicRows.filter { $0.topics.contains(wanted) }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(id, forKey: .id)
+            try c.encode(name, forKey: .name)
+            try c.encode(isPlayable, forKey: .isPlayable)
+            try c.encode(kinds, forKey: .kinds)
+            try c.encodeIfPresent(containing, forKey: .containing)
+            try c.encode(span, forKey: .span)
+        }
 
         /// True when the entity declares membership in `kind` (`room`/`region`/`person`).
         func hasKind(_ kind: String) -> Bool { kinds.contains { $0.name == kind } }
+    }
+
+    /// One `about …:` row, reduced: the words it answers (a quoted topic's
+    /// primary and aliases, lowercased; empty for an entity row) and the
+    /// phrase keys its body fires, in order.
+    struct TopicRow: Codable, Equatable, Sendable {
+        let topics: [String]
+        let phraseKeys: [String]
+
+        init(topics: [String], phraseKeys: [String]) {
+            self.topics = topics
+            self.phraseKeys = phraseKeys
+        }
+
+        private enum CodingKeys: String, CodingKey { case filter, body }
+        private struct Filter: Decodable { let kind: String; let primary: String?; let aliases: [String]? }
+        private struct Statement: Decodable { let kind: String; let phraseKey: String? }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let filter = try c.decode(Filter.self, forKey: .filter)
+            topics = filter.kind == "text"
+                ? ([filter.primary].compactMap { $0 } + (filter.aliases ?? [])).map { $0.lowercased() }
+                : []
+            let body = try c.decodeIfPresent([Statement].self, forKey: .body) ?? []
+            phraseKeys = body.compactMap { $0.kind == "phrase" ? $0.phraseKey : nil }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            // The IDE never re-emits IR.
+        }
     }
 
     /// A kind membership (`a room`, `a person`, ...). Extra wire fields ignored.

@@ -68,7 +68,8 @@ describe('ADR-333 D1 — the stamp on the real path', () => {
 
     const bite = blocks.find((b) => textOf(b).includes('Crisp and delicious!'));
     expect(bite).toBeDefined();
-    expect(bite!.source).toEqual({ messageId: eventId });
+    // The id, and the eating event's facts beside it (D1 as amended 2026-09-06).
+    expect(bite!.source).toMatchObject({ messageId: eventId, facts: { itemName: 'apple' } });
 
     // AC-2's wire half: the stdlib prose channels project the block to an
     // entry that still carries the stamp — the channel never drops it.
@@ -86,6 +87,6 @@ describe('ADR-333 D1 — the stamp on the real path', () => {
     }
     const entry = entries.find((e) => e.content.join('').includes('Crisp and delicious!'));
     expect(entry).toBeDefined();
-    expect(entry!.source).toEqual({ messageId: eventId });
+    expect(entry!.source).toMatchObject({ messageId: eventId, facts: { itemName: 'apple' } });
   });
 });

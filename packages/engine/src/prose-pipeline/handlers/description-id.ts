@@ -52,5 +52,6 @@ export function resolveDescriptionId(
  */
 export function stampDescriptionSource(blocks: ITextBlock[], descriptionId: string | undefined): ITextBlock[] {
   if (!descriptionId) return blocks;
-  return blocks.map((b) => ({ ...b, source: { messageId: descriptionId } }));
+  // The entity's key replaces the template's id; the facts, if any, stay.
+  return blocks.map((b) => ({ ...b, source: { ...(b.source ?? {}), messageId: descriptionId } }));
 }

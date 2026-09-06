@@ -58,7 +58,10 @@ describe('tryProcessExamined (ADR-333 D1a)', () => {
 
     expect(blocks).toHaveLength(1);
     expect(blockText(blocks)).toBe('A silk dress the colour of {midnight}.');
-    expect(blocks[0].source).toEqual({ messageId: 'dress.description' });
+    expect(blocks[0].source).toEqual({
+      messageId: 'dress.description',
+      facts: { targetId: 'dress', targetName: 'silk dress', hasDescription: true },
+    });
   });
 
   it('a literal description keeps the action template\'s stamp (D1)', () => {
@@ -67,7 +70,11 @@ describe('tryProcessExamined (ADR-333 D1a)', () => {
     const blocks = pipeline.processTurn([examinedEvent({ description: 'A plain dress.' })]);
 
     expect(blockText(blocks)).toBe('A plain dress.');
-    expect(blocks[0].source).toEqual({ messageId: 'if.action.examining.examined' });
+    // The action template's id, and the event's facts beside it (D1 as amended 2026-09-06).
+    expect(blocks[0].source).toEqual({
+      messageId: 'if.action.examining.examined',
+      facts: { targetId: 'dress', targetName: 'silk dress', hasDescription: true },
+    });
   });
 
   it('an unregistered id falls through to the literal the params also carry', () => {
@@ -78,6 +85,10 @@ describe('tryProcessExamined (ADR-333 D1a)', () => {
     ]);
 
     expect(blockText(blocks)).toBe('A plain dress.');
-    expect(blocks[0].source).toEqual({ messageId: 'if.action.examining.examined' });
+    // The action template's id, and the event's facts beside it (D1 as amended 2026-09-06).
+    expect(blocks[0].source).toEqual({
+      messageId: 'if.action.examining.examined',
+      facts: { targetId: 'dress', targetName: 'silk dress', hasDescription: true },
+    });
   });
 });

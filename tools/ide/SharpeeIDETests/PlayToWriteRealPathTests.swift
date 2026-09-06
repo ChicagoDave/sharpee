@@ -55,6 +55,12 @@ final class PlayToWriteRealPathTests: XCTestCase {
 
       A red apple.
 
+    create the gems stallkeeper
+      a person
+      in the Market
+
+      A stallkeeper behind a tray of glass.
+
     create Jack
       a person, playable
       in the Alley
@@ -387,6 +393,79 @@ final class PlayToWriteRealPathTests: XCTestCase {
         try await awaitReplay(turns: 1)
         let after = try await paragraphs(withId: "hum-line")
         XCTAssertEqual(after.map(\.text), ["A tune, whole now."])
+    }
+
+    // MARK: D4d — an ask reply becomes the character's own topic row, end to end
+
+    func testCommandClickOnAnUnknownTopicReplyWritesTheCharactersTopicRowAndReplaysTheNewAnswerThenMergesASecond() async throws {
+        try build()
+        play.load(bundleDirectory: bundleDir)
+        try await replay(PlayToWriteSession(messageId: "", history: ["north", "ask stallkeeper about gems"]))
+        let before = try await paragraphs(withId: "if.action.asking.unknown_topic")
+        XCTAssertEqual(before.map(\.text), ["The gems stallkeeper says, \"I don't know anything about that.\""])
+
+        let ir = try await compose()
+        let (coordinator, editor) = coordinator(storyURL: storyFile)
+        coordinator.catalog = try await catalog()
+        var builds = 0
+        coordinator.onBuildRequested = { builds += 1 }
+
+        // The ⌘-click carries the reply's facts across the real bridge, and
+        // the coordinator asks for the inline field — no override block.
+        try await commandClick("if.action.asking.unknown_topic")
+        let request = try XCTUnwrap(received.last)
+        XCTAssertEqual(request.facts["targetName"], "gems stallkeeper")
+        XCTAssertEqual(request.facts["topic"], "gems")
+        coordinator.handle(request, storyURL: storyFile, ir: ir)
+        let edit = try XCTUnwrap(inlineEdits.last)
+        XCTAssertEqual(edit.template, before[0].text, "the field starts from the reply being replaced")
+        XCTAssertTrue(editor.openDocumentURLs.isEmpty)
+
+        let opened = try await play.beginInlineEditInPlaySurface(edit)
+        XCTAssertTrue(opened)
+        let commit = try await typeIntoFieldAndCommit("'Gems?' He does not look up. 'Not for the likes of you.'")
+        coordinator.commit(commit, storyURL: storyFile, ir: ir)
+        var onDisk = try String(contentsOf: storyFile, encoding: .utf8)
+        XCTAssertTrue(onDisk.contains("define topics for the gems stallkeeper\n  about \"gems\":\n    phrase gems-stallkeeper-on-gems\nend topics\n"), "was:\n\(onDisk)")
+        XCTAssertTrue(onDisk.contains("define phrase gems-stallkeeper-on-gems\n  'Gems?' He does not look up. 'Not for the likes of you.'\nend phrase\n"))
+        XCTAssertFalse(onDisk.contains("override message"), "the everywhere override was not the edit")
+        // Beside the character: the block follows the stallkeeper's create block and precedes Jack's.
+        let stallkeeperAt = try XCTUnwrap(onDisk.range(of: "create the gems stallkeeper")?.lowerBound)
+        let blockAt = try XCTUnwrap(onDisk.range(of: "define topics for the gems stallkeeper")?.lowerBound)
+        let phraseAt = try XCTUnwrap(onDisk.range(of: "define phrase gems-stallkeeper-on-gems")?.lowerBound)
+        let jackAt = try XCTUnwrap(onDisk.range(of: "create Jack")?.lowerBound)
+        XCTAssertTrue(stallkeeperAt < blockAt && blockAt < phraseAt && phraseAt < jackAt, "the code lands near its owner; file was:\n\(onDisk)")
+        XCTAssertEqual(builds, 1)
+
+        try build()
+        try await markPage()
+        play.reloadAfterBuild(bundleDirectory: bundleDir, replaying: coordinator.takeSession())
+        try await awaitReplay(turns: 2)
+        let answer = try await paragraphs(withId: "gems-stallkeeper-on-gems")
+        XCTAssertEqual(answer.map(\.text), ["'Gems?' He does not look up. 'Not for the likes of you.'"])
+        XCTAssertEqual(answer.first?.turn, before.first?.turn, "the same turn")
+        let defaultLeft = try await paragraphs(withId: "if.action.asking.unknown_topic")
+        XCTAssertTrue(defaultLeft.isEmpty, "the platform default no longer answers this character about gems; got \(defaultLeft.map(\.text))")
+
+        // A second topic merges into the block the first one opened.
+        received.removeAll(); inlineEdits.removeAll(); commits.removeAll()
+        let ir2 = try await compose()
+        XCTAssertEqual(ir2.allEntities.first { $0.id == "gems-stallkeeper" }?.topicCount, 1, "the real IR counts the row")
+        try await play.replay(PlayToWriteSession(messageId: "", history: ["ask stallkeeper about prices"]))
+        try await commandClick("if.action.asking.unknown_topic")
+        coordinator.handle(try XCTUnwrap(received.last), storyURL: storyFile, ir: ir2)
+        let opened2 = try await play.beginInlineEditInPlaySurface(try XCTUnwrap(inlineEdits.last))
+        XCTAssertTrue(opened2)
+        let commit2 = try await typeIntoFieldAndCommit("'Prices are for buyers.'")
+        coordinator.commit(commit2, storyURL: storyFile, ir: ir2)
+        onDisk = try String(contentsOf: storyFile, encoding: .utf8)
+        XCTAssertTrue(onDisk.contains("  about \"gems\":\n    phrase gems-stallkeeper-on-gems\n  about \"prices\":\n    phrase gems-stallkeeper-on-prices\nend topics\n"), "was:\n\(onDisk)")
+        XCTAssertEqual(onDisk.components(separatedBy: "define topics for the gems stallkeeper").count, 2, "one block, not two")
+        let endTopicsAt = try XCTUnwrap(onDisk.range(of: "end topics")?.lowerBound)
+        let pricesAt = try XCTUnwrap(onDisk.range(of: "define phrase gems-stallkeeper-on-prices")?.lowerBound)
+        let jackAgainAt = try XCTUnwrap(onDisk.range(of: "create Jack")?.lowerBound)
+        XCTAssertTrue(endTopicsAt < pricesAt && pricesAt < jackAgainAt, "the second phrase lands right after the block; file was:\n\(onDisk)")
+        try build()
     }
 
     // MARK: AC-2b — a platform line, overridden through ADR-255

@@ -37,6 +37,27 @@ struct PlayEditRequest: Equatable {
     let text: String
     /// Every command typed since boot, in order — read off the page at the click.
     let history: [String]
+    /// The facts the paragraph's source carried (`data-source-facts`, ADR-333
+    /// D1 as amended): who a reply was about and what it concerned, as
+    /// strings. Empty when the paragraph carried none.
+    let facts: [String: String]
+    /// ⌥ was held: the author wants the platform line changed EVERYWHERE
+    /// (D4a's override), not the character's own answer (D4d).
+    let overrideEverywhere: Bool
+    /// ⇧ was held: "go to this code" — open the editor at the source and
+    /// show no field (David, 2026-09-06).
+    let goToSource: Bool
+
+    init(messageId: String, turn: Int?, text: String, history: [String],
+         facts: [String: String] = [:], overrideEverywhere: Bool = false, goToSource: Bool = false) {
+        self.messageId = messageId
+        self.turn = turn
+        self.text = text
+        self.history = history
+        self.facts = facts
+        self.overrideEverywhere = overrideEverywhere
+        self.goToSource = goToSource
+    }
 }
 
 /// An inline edit Play is asked to open (ADR-333 D4c): the paragraph, by id
@@ -80,9 +101,11 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
 
     /// Play-to-write chrome (ADR-333 D4), injected at document start:
     /// - a capture-phase ⌘-click on any `[data-message-id]` element posts the
-    ///   id, its turn, its text, and the command history (the `.command-echo`
-    ///   lines, `> ` stripped) over the `playEdit` bridge; a plain click stays
-    ///   the client's (reading, selecting, refocusing the input);
+    ///   id, its turn, its text, the command history (the `.command-echo`
+    ///   lines, `> ` stripped), the paragraph's facts, and which modifiers
+    ///   rode along (⌥ = override everywhere, ⇧ = go to this code) over the
+    ///   `playEdit` bridge; a plain click stays the client's (reading,
+    ///   selecting, refocusing the input);
     /// - `window.__sharpeePlayToWrite.replay(commands)` types each command
     ///   into the client's `#command-input` the way the testing surface does
     ///   and resolves when every turn has rendered (the echo gains its
@@ -100,7 +123,10 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
       style.textContent = '.sharpee-play-to-write-focus { outline: 2px solid rgba(255, 170, 0, 0.9); outline-offset: 3px; }'
         + ' .sharpee-play-inline-edit { display: block; box-sizing: border-box; width: 100%; margin: 0; padding: 2px 4px;'
         + ' font: inherit; color: inherit; line-height: inherit; background: rgba(255, 170, 0, 0.08);'
-        + ' border: 1px solid rgba(255, 170, 0, 0.9); border-radius: 3px; outline: none; resize: none; overflow: hidden; }';
+        + ' border: 1px solid rgba(255, 170, 0, 0.9); border-radius: 3px; outline: none; resize: none; overflow: hidden; }'
+        + ' .sharpee-play-notice { position: fixed; top: 8px; left: 50%; transform: translateX(-50%); max-width: 80%; z-index: 1000;'
+        + ' padding: 6px 12px; font: inherit; font-size: 12px; color: #fff; background: rgba(170, 40, 40, 0.95);'
+        + ' border-radius: 4px; box-shadow: 0 2px 8px rgba(0,0,0,0.4); }';
       document.documentElement.appendChild(style);
       function history() {
         return Array.prototype.map.call(document.querySelectorAll('.command-echo'), function (el) {
@@ -114,12 +140,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
         e.preventDefault();
         e.stopPropagation();
         var turn = target.getAttribute('data-turn');
+        var facts = {};
+        try { facts = JSON.parse(target.getAttribute('data-source-facts') || '{}') || {}; } catch (e2) { facts = {}; }
         try {
           window.webkit.messageHandlers.\(editHandlerName).postMessage(JSON.stringify({
             messageId: target.getAttribute('data-message-id'),
             turn: turn === null ? null : Number(turn),
             text: target.textContent || '',
-            history: history()
+            history: history(),
+            facts: facts,
+            overrideEverywhere: !!e.altKey,
+            goToSource: !!e.shiftKey
           }));
         } catch (err) {}
       }, true);
@@ -177,6 +208,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
           setTimeout(function () { last.classList.remove('sharpee-play-to-write-focus'); }, 2500);
           return true;
         },
+        notice: function (text) {
+          var old = document.querySelector('.sharpee-play-notice');
+          if (old) old.remove();
+          var el = document.createElement('div');
+          el.className = 'sharpee-play-notice';
+          el.setAttribute('role', 'alert');
+          el.textContent = text;
+          document.body.appendChild(el);
+          setTimeout(function () { el.remove(); }, 8000);
+          return true;
+        },
         beginInlineEdit: function (messageId, turn, template) {
           var selector = '[data-message-id="' + messageId + '"]';
           if (turn !== null && turn !== undefined) selector += '[data-turn="' + turn + '"]';
@@ -218,9 +260,14 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
               } catch (err) {}
             }
           });
-          // Keystrokes belong to the field, not the client's command input.
+          // Keystrokes and clicks belong to the field, not the client: its
+          // document-level click handler refocuses the command input, which
+          // would make the field impossible to click back into.
           field.addEventListener('keyup', function (e) { e.stopPropagation(); });
           field.addEventListener('keypress', function (e) { e.stopPropagation(); });
+          ['mousedown', 'mouseup', 'click', 'pointerdown', 'pointerup'].forEach(function (type) {
+            field.addEventListener(type, function (e) { e.stopPropagation(); });
+          });
           while (p.firstChild) p.removeChild(p.firstChild);
           p.appendChild(field);
           p.__sharpeeInlineField = field;
@@ -391,6 +438,17 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
         Task { [weak self] in
             guard let self else { return }
             _ = try? await self.beginInlineEditInPlaySurface(edit)
+        }
+    }
+
+    /// Shows a short notice at the top of the play log — the reason an edit
+    /// did not happen, where the author is looking. Fades on its own.
+    func showNotice(_ text: String) {
+        NSLog("play: %@", text)
+        Task { [weak self] in
+            guard let self else { return }
+            _ = try? await self.evaluateInPlaySurface(
+                "window.__sharpeePlayToWrite && window.__sharpeePlayToWrite.notice(\(Self.javascriptString(text)))")
         }
     }
 
@@ -748,11 +806,18 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler, WKNavi
                   let data = json.data(using: .utf8),
                   let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                   let messageId = object["messageId"] as? String, !messageId.isEmpty else { return }
+            var facts: [String: String] = [:]
+            for (key, value) in (object["facts"] as? [String: Any]) ?? [:] {
+                if let s = value as? String { facts[key] = s } else if let n = value as? NSNumber { facts[key] = n.stringValue }
+            }
             let request = PlayEditRequest(
                 messageId: messageId,
                 turn: object["turn"] as? Int,
                 text: object["text"] as? String ?? "",
-                history: (object["history"] as? [Any])?.compactMap { $0 as? String } ?? [])
+                history: (object["history"] as? [Any])?.compactMap { $0 as? String } ?? [],
+                facts: facts,
+                overrideEverywhere: object["overrideEverywhere"] as? Bool ?? false,
+                goToSource: object["goToSource"] as? Bool ?? false)
             onEditRequest?(request)
         case Self.commitHandlerName:
             guard let json = message.body as? String,

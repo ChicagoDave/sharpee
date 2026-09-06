@@ -912,8 +912,12 @@ private final class MainSplitViewController: NSSplitViewController {
             self.playToWrite.documentSaved(url, storyURL: self.treeState.storyURL)
         }
         playViewController.onEditRequest = { [weak self] request in
-            guard let self, let storyURL = self.treeState.storyURL,
-                  case .populated(let ir, _) = self.treeState.display else { return }
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            guard case .populated(let ir, _) = self.treeState.display else {
+                // Never silent (David, 2026-09-06: an edit vanished without a word).
+                self.playViewController.showNotice("Can't edit yet — the story hasn't composed cleanly. Fix the Problems and try again.")
+                return
+            }
             self.playToWrite.handle(request, storyURL: storyURL, ir: ir)
         }
         // ADR-333 D4c: a single-template paragraph edits IN Play; the commit
@@ -922,8 +926,10 @@ private final class MainSplitViewController: NSSplitViewController {
             self?.playViewController.beginInlineEdit(edit)
         }
         playViewController.onInlineCommit = { [weak self] commit in
-            guard let self, let storyURL = self.treeState.storyURL,
-                  case .populated(let ir, _) = self.treeState.display else { return }
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            // The round was armed at the click with what it needs; a compose
+            // that moved on since is not a reason to drop the author's text.
+            let ir: ComposeStoryIR? = { if case .populated(let ir, _) = self.treeState.display { return ir }; return nil }()
             self.playToWrite.commit(commit, storyURL: storyURL, ir: ir)
         }
         playToWrite.onBuildRequested = {
@@ -933,9 +939,11 @@ private final class MainSplitViewController: NSSplitViewController {
                 NSApp.sendAction(#selector(AppDelegate.buildProject(_:)), to: nil, from: nil)
             }
         }
-        playToWrite.onUnresolved = { request, error in
+        playToWrite.onUnresolved = { [weak self] request, error in
             NSLog("play-to-write: \(request.messageId): \(error)")
-            NSSound.beep()
+            // Say what happened where the author is looking (David, 2026-09-06:
+            // a beep is not a reason; an edit must never vanish silently).
+            self?.playViewController.showNotice(PlayToWrite.describe(error, messageId: request.messageId))
         }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's

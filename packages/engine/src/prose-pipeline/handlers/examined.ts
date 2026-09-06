@@ -19,7 +19,7 @@ import type { ITextBlock } from '@sharpee/text-blocks';
 import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types.js';
-import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
+import { phraseAvailable, primitiveFacts, renderViaPhrase } from '../phrase-render.js';
 import { resolveDescriptionId, stampDescriptionSource } from './description-id.js';
 
 interface ExaminedData {
@@ -46,6 +46,6 @@ export function tryProcessExamined(event: ISemanticEvent, context: HandlerContex
   if (text === undefined) return null;
 
   const params = { ...data.params, description: text };
-  const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor);
+  const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor, primitiveFacts(data));
   return blocks ? stampDescriptionSource(blocks, descriptionId) : null;
 }

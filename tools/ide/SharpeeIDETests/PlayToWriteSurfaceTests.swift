@@ -41,6 +41,7 @@ final class PlayToWriteSurfaceTests: XCTestCase {
         p.className = 'main-entry';
         p.setAttribute('data-message-id', command === 'north' ? 'market.initial-description' : 'if.action.taking.taken');
         p.textContent = command === 'north' ? 'Stalls crowd the square, for the first time.' : 'Taken.';
+        if (command === 'take apple') p.setAttribute('data-source-facts', JSON.stringify({ itemName: 'apple', item: 'o01' }));
         slot.appendChild(p);
         setTimeout(function () {
           n += 1;
@@ -48,6 +49,8 @@ final class PlayToWriteSurfaceTests: XCTestCase {
           p.setAttribute('data-turn', String(n));
         }, 30);
       });
+      // The client's own convenience: any click in the page refocuses the command input.
+      document.addEventListener('click', function () { input.focus(); });
       window.bootProbeReady = true;
     })();
     </script>
@@ -119,6 +122,45 @@ final class PlayToWriteSurfaceTests: XCTestCase {
         XCTAssertEqual(request.turn, 1)
         XCTAssertEqual(request.text, "Stalls crowd the square, for the first time.")
         XCTAssertEqual(request.history, ["north"], "the history is the page's echoes, `> ` stripped")
+    }
+
+    func testACommandClickCarriesTheParagraphsFactsAndWhetherOptionWasHeld() async throws {
+        try await boot()
+        play.onEditRequest = { [weak self] request in self?.received.append(request) }
+        try await play.replay(PlayToWriteSession(messageId: "", history: ["north", "take apple"]))
+
+        try await click("[data-message-id=\"if.action.taking.taken\"]", meta: true)
+        let plainAwaited = try await awaitRequest()
+        let plain = try XCTUnwrap(plainAwaited)
+        XCTAssertEqual(plain.facts, ["itemName": "apple", "item": "o01"])
+        XCTAssertFalse(plain.overrideEverywhere)
+
+        received.removeAll()
+        _ = try await play.evaluateInPlaySurface("""
+        (function () {
+          var all = document.querySelectorAll('[data-message-id="market.initial-description"]');
+          all[all.length - 1].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true, altKey: true }));
+          return true;
+        })()
+        """)
+        let optionAwaited = try await awaitRequest()
+        let withOption = try XCTUnwrap(optionAwaited)
+        XCTAssertEqual(withOption.facts, [:], "no facts on that paragraph")
+        XCTAssertTrue(withOption.overrideEverywhere)
+        XCTAssertFalse(withOption.goToSource)
+
+        received.removeAll()
+        _ = try await play.evaluateInPlaySurface("""
+        (function () {
+          var all = document.querySelectorAll('[data-message-id="market.initial-description"]');
+          all[all.length - 1].dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, metaKey: true, shiftKey: true }));
+          return true;
+        })()
+        """)
+        let shiftAwaited = try await awaitRequest()
+        let withShift = try XCTUnwrap(shiftAwaited)
+        XCTAssertTrue(withShift.goToSource, "⇧⌘-click asks to go to the code")
+        XCTAssertFalse(withShift.overrideEverywhere)
     }
 
     func testAPlainClickStaysTheClients() async throws {
@@ -216,6 +258,44 @@ final class PlayToWriteSurfaceTests: XCTestCase {
         XCTAssertEqual(state["open"] as? Bool, false, "the field is gone")
         XCTAssertEqual(state["paragraph"] as? String, "Stalls crowd the square, for the first time.",
                        "the rendered text comes back until the replay rewrites it")
+    }
+
+    func testClickingOutOfTheFieldAndBackIntoItRefocusesTheField() async throws {
+        try await boot()
+        try await play.replay(PlayToWriteSession(messageId: "", history: ["north"]))
+        _ = try await play.beginInlineEditInPlaySurface(
+            PlayInlineEdit(messageId: "market.initial-description", turn: 1, template: "Stalls crowd the square, for the first time."))
+
+        // Click away: the client's refocus wins, as it should.
+        _ = try await play.evaluateInPlaySurface("document.body.click(); true")
+        let away = try await play.evaluateInPlaySurface("document.activeElement === document.getElementById('command-input')")
+        XCTAssertEqual(away as? Bool, true, "a click in the log refocuses the command input")
+
+        // Click back into the field: the field keeps the click, the client never sees it.
+        _ = try await play.evaluateInPlaySurface("""
+        (function () {
+          var f = document.querySelector('.sharpee-play-inline-edit');
+          f.focus();
+          f.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+          f.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }));
+          return true;
+        })()
+        """)
+        let back = try await play.evaluateInPlaySurface("document.activeElement === document.querySelector('.sharpee-play-inline-edit')")
+        XCTAssertEqual(back as? Bool, true, "the field is focusable again after clicking out")
+        let state = try await fieldState()
+        XCTAssertEqual(state["open"] as? Bool, true, "clicking out did not close the field")
+    }
+
+    func testANoticeShowsInThePageAndNamesTheReason() async throws {
+        try await boot()
+        play.showNotice("Couldn't write the edit for x: the source under it changed.")
+        var text: String?
+        for _ in 0..<40 {
+            if let t = try? await play.evaluateInPlaySurface("(document.querySelector('.sharpee-play-notice') || {}).textContent || null") as? String { text = t; break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(text, "Couldn't write the edit for x: the source under it changed.")
     }
 
     func testEscapeRestoresTheParagraphAndPostsNothing() async throws {

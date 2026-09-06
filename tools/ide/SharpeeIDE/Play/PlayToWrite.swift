@@ -33,7 +33,21 @@ enum PlayToWriteTarget: Equatable {
     case existingOverride(alias: String, file: String?, span: DiagnosticSpan)
     /// A platform message the story does not override yet: the block to add.
     case newOverride(alias: String, template: String)
+    /// An ask/tell reply about a known character (ADR-333 D4d): the answer
+    /// belongs to THAT character and THAT topic — a `define topics for`
+    /// row with its own phrase — never to a line other characters share.
+    /// `hasTopics` says whether the character already has a block to merge
+    /// the row into; `replacing` names the shared phrase the character's
+    /// existing row for this topic fires, to be repointed at the new one.
+    case topicRow(entityId: String, entityName: String, file: String?, topic: String, hasTopics: Bool,
+                  span: DiagnosticSpan, replacing: String?)
 }
+
+/// The platform replies whose "who and what" make a topic row the right
+/// edit: the asked-about-nothing and told-about-nothing defaults.
+private let topicReplyIds: Set<String> = ["if.action.asking.unknown_topic", "if.action.telling.not_interested"]
+/// The actions whose replies are about a character and a topic.
+private let topicActionIds: Set<String> = ["if.action.asking", "if.action.telling"]
 
 /// Why a paragraph could not be resolved. Each names what was missing so a
 /// drift in the IR (a phrase without its `span`) fails loudly, never as a
@@ -60,10 +74,43 @@ enum PlayToWrite {
     ///   - catalog: the platform message catalog, when fetched.
     /// - Returns: the edit target.
     /// - Throws: `PlayToWriteError` naming what was missing.
-    static func resolve(messageId: String, ir: ComposeStoryIR, catalog: MessageCatalog?) throws -> PlayToWriteTarget {
+    static func resolve(messageId: String, ir: ComposeStoryIR, catalog: MessageCatalog?,
+                        facts: [String: String] = [:], overrideEverywhere: Bool = false) throws -> PlayToWriteTarget {
+        // D4d: the paragraph answered an ask or tell ABOUT something, to a
+        // character the story declares — the platform default, or a story
+        // phrase the action rendered (a greeting, a catch-all, a row).
+        let topicContext: (entity: ComposeStoryIR.Entity, topic: String)? = {
+            guard !overrideEverywhere,
+                  topicReplyIds.contains(messageId) || facts["actionId"].map(topicActionIds.contains) == true,
+                  let targetName = facts["targetName"], let topic = facts["topic"], !topic.isEmpty,
+                  let entity = ir.allEntities.first(where: { $0.name.caseInsensitiveCompare(targetName) == .orderedSame })
+            else { return nil }
+            return (entity, topic)
+        }()
         if let phrase = ir.phrases?.defaultLocaleNames.first(where: { $0.key == messageId }) {
             guard let span = phrase.span else { throw PlayToWriteError.phraseSpanMissing(key: messageId) }
+            if let (entity, topic) = topicContext {
+                // The character's own row for this topic fires this phrase, and
+                // nobody else's does: edit the phrase in place. Otherwise the
+                // answer becomes THIS character's own (David, 2026-09-06:
+                // "editing that response should create a new custom response
+                // for that specific stallkeeper") — a new row, or the existing
+                // row repointed away from the shared phrase.
+                let ownRow = entity.topicRows(answering: topic).contains { $0.phraseKeys.contains(messageId) }
+                let sharedElsewhere = ir.allEntities.contains { other in
+                    other.id != entity.id && other.topicRows.contains { $0.phraseKeys.contains(messageId) }
+                }
+                if ownRow && !sharedElsewhere {
+                    return .phrase(key: messageId, file: span.file, span: span)
+                }
+                return .topicRow(entityId: entity.id, entityName: entity.name, file: entity.span.file, topic: topic,
+                                 hasTopics: entity.topicCount > 0, span: entity.span, replacing: ownRow ? messageId : nil)
+            }
             return .phrase(key: messageId, file: span.file, span: span)
+        }
+        if let (entity, topic) = topicContext, topicReplyIds.contains(messageId) {
+            return .topicRow(entityId: entity.id, entityName: entity.name, file: entity.span.file,
+                             topic: topic, hasTopics: entity.topicCount > 0, span: entity.span, replacing: nil)
         }
         guard let catalog else { throw PlayToWriteError.catalogUnavailable(id: messageId) }
         guard let entry = catalog.entry(forId: messageId) else {
@@ -95,6 +142,8 @@ enum PlayToWrite {
         let text: String
         let offset: Int
         let line: Int
+        /// UTF-16 length of the text `text` replaces at `offset`; 0 inserts.
+        var length: Int = 0
     }
 
     /// Compute the append edit against the text that will be edited (the open
@@ -110,6 +159,162 @@ enum PlayToWrite {
         return AppendEdit(text: prefix + overrideBlock(alias: alias, template: template),
                           offset: (source as NSString).length,
                           line: headerLine + 1)
+    }
+
+    /// A one-line, author-facing account of why an edit did not happen.
+    static func describe(_ error: Error, messageId: String) -> String {
+        switch error as? PlayToWriteError {
+        case .phraseSpanMissing(let key):
+            return "Couldn't edit \(key): the compose carries no source position for it."
+        case .unknownMessage(let id):
+            return "Couldn't edit this paragraph: \(id) is neither a story phrase nor a platform message."
+        case .catalogUnavailable:
+            return "Couldn't edit this paragraph: the platform message catalog isn't available (`sharpee messages` failed)."
+        case .inlineTargetMissing(let id):
+            return "Couldn't write the edit for \(id): the source under it changed or can't be found — open the character's file and check its `define topics` block."
+        case .none:
+            return "Couldn't edit \(messageId): \(error.localizedDescription)"
+        }
+    }
+
+    // MARK: Topic rows (ADR-333 D4d)
+
+    /// The phrase key a topic row's answer is registered under:
+    /// `<entity-id>-on-<topic-slug>`.
+    static func topicPhraseKey(entityId: String, topic: String) -> String {
+        let slug = topic.lowercased()
+            .map { $0.isLetter || $0.isNumber ? String($0) : "-" }
+            .joined()
+            .split(separator: "-", omittingEmptySubsequences: true)
+            .joined(separator: "-")
+        return "\(entityId)-on-\(slug.isEmpty ? "topic" : slug)"
+    }
+
+    /// The 1-based last line of the character's `create` block in `lines`:
+    /// the header `create [the|a|an] <name>` (case-insensitive), then every
+    /// line up to the next top-level line (one that starts in column 1 and is
+    /// not a `##` comment), trailing blank lines excluded. Nil when there is
+    /// no such header.
+    static func createBlockEndLine(lines: [String], entityName: String) -> Int? {
+        let header = try? NSRegularExpression(
+            pattern: "^create (the |a |an )?" + NSRegularExpression.escapedPattern(for: entityName) + "\\s*$",
+            options: [.caseInsensitive])
+        guard let header,
+              let start = lines.firstIndex(where: { header.firstMatch(in: $0, range: NSRange(location: 0, length: ($0 as NSString).length)) != nil })
+        else { return nil }
+        var last = start
+        for index in lines.indices.dropFirst(start + 1) {
+            let line = lines[index]
+            let topLevel = !line.isEmpty && !line.hasPrefix(" ") && !line.hasPrefix("\t") && !line.hasPrefix("##")
+            if topLevel { break }
+            if !line.trimmingCharacters(in: .whitespaces).isEmpty && !line.hasPrefix("##") { last = index }
+        }
+        return last + 1
+    }
+
+    /// The `about "<topic>":` row, pointing at the phrase.
+    static func topicRowText(topic: String, phraseKey: String) -> String {
+        let quoted = topic.replacingOccurrences(of: "\"", with: "'")
+        return "  about \"\(quoted)\":\n    phrase \(phraseKey)\n"
+    }
+
+    /// The edits that land a topic row and its phrase in `source`, the
+    /// character's file, BESIDE the character (David, 2026-09-06: the code
+    /// must land near its owner, not at the end of the file). When the
+    /// character already has a `define topics for` block, the row goes in
+    /// before its `end topics` and the phrase lands right after that block;
+    /// otherwise a new block and the phrase land right after the character's
+    /// `create` block, or at the end of the file when the block cannot be
+    /// found. Every position is read from `source` ITSELF — the text being
+    /// edited — never from a compose span: a span describes the file as it
+    /// was composed, and the buffer may have moved on (the author deleted an
+    /// earlier addition and rebuilt; 2026-09-06, the insertion landed inside
+    /// a phrase). Edits come LAST-FIRST so applying them in order never
+    /// shifts an earlier offset. `line` on each edit is the 1-based line its
+    /// text starts on.
+    ///
+    /// - Returns: nil when the block is found but has no `end topics`
+    ///   (the source is mid-edit; the click falls back to the editor).
+    static func topicRowEdits(source: String, entityName: String, entityId: String, topic: String, text: String,
+                              replacing oldPhraseKey: String? = nil) -> [AppendEdit]? {
+        let phraseKey = topicPhraseKey(entityId: entityId, topic: topic)
+        let ns = source as NSString
+        let lines = source.components(separatedBy: "\n")
+        let createEndLine = createBlockEndLine(lines: lines, entityName: entityName)
+        /// UTF-16 offset of the END of a 1-based line (before its newline).
+        func endOfLine(_ line: Int) -> Int {
+            let clamped = max(1, min(line, lines.count))
+            return (lines.prefix(clamped).joined(separator: "\n") as NSString).length
+        }
+        /// UTF-16 offset of the START of a 1-based line.
+        func startOfLine(_ line: Int) -> Int {
+            line <= 1 ? 0 : (lines.prefix(line - 1).joined(separator: "\n") as NSString).length + 1
+        }
+        // The block header, article optional, case-insensitive.
+        let pattern = "^define topics for (the |a |an )?" + NSRegularExpression.escapedPattern(for: entityName) + "\\s*$"
+        let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive, .anchorsMatchLines])
+        var headerLine: Int? = nil
+        if let regex, let m = regex.firstMatch(in: source, range: NSRange(location: 0, length: ns.length)) {
+            headerLine = ns.substring(to: m.range.location).components(separatedBy: "\n").count
+        }
+        let phraseBlock = "define phrase \(phraseKey)\n" + text.components(separatedBy: "\n").map { $0.isEmpty ? "" : "  " + $0 }.joined(separator: "\n") + "\nend phrase\n"
+        if let headerLine {
+            guard let endIndex = lines.indices.dropFirst(headerLine).first(where: { lines[$0].trimmingCharacters(in: .whitespaces) == "end topics" }) else { return nil }
+            let endTopicsLine = endIndex + 1
+            let phraseAfterBlock = AppendEdit(text: "\n\n" + phraseBlock.dropLast(), offset: endOfLine(endTopicsLine), line: endTopicsLine + 2)
+            if let oldPhraseKey {
+                // The character's own row for this topic fires a phrase others
+                // share: repoint that one `phrase <old>` line at the new phrase.
+                // The row is the `about` line naming the topic; its body runs to
+                // the next `about` or `end topics`.
+                let quoted = "\"" + topic.lowercased().replacingOccurrences(of: "\"", with: "'") + "\""
+                var index = headerLine // 0-based index of the line AFTER the header
+                while index < endIndex {
+                    let line = lines[index]
+                    let trimmed = line.trimmingCharacters(in: .whitespaces)
+                    if trimmed.hasPrefix("about ") && trimmed.lowercased().contains(quoted) {
+                        var bodyIndex = index + 1
+                        while bodyIndex < endIndex, !lines[bodyIndex].trimmingCharacters(in: .whitespaces).hasPrefix("about ") {
+                            let body = lines[bodyIndex]
+                            if let range = body.range(of: "phrase " + oldPhraseKey),
+                               body[range.upperBound...].trimmingCharacters(in: .whitespaces).isEmpty
+                                || body[range.upperBound...].hasPrefix(" ") {
+                                let keyStart = startOfLine(bodyIndex + 1)
+                                    + (String(body[..<range.lowerBound]) as NSString).length + ("phrase " as NSString).length
+                                return [
+                                    phraseAfterBlock,
+                                    AppendEdit(text: phraseKey, offset: keyStart, line: bodyIndex + 1, length: (oldPhraseKey as NSString).length),
+                                ]
+                            }
+                            bodyIndex += 1
+                        }
+                    }
+                    index += 1
+                }
+                // The row the compose described is not in this text: fall
+                // through and add a row of its own.
+            }
+            let row = topicRowText(topic: topic, phraseKey: phraseKey)
+            // The phrase right after the block (a blank line between); the
+            // row before `end topics`. Phrase first: its offset is the later one.
+            return [
+                phraseAfterBlock,
+                AppendEdit(text: row, offset: startOfLine(endTopicsLine), line: endTopicsLine),
+            ]
+        }
+        let block = "define topics for the \(entityName)\n" + topicRowText(topic: topic, phraseKey: phraseKey) + "end topics\n"
+        if let createEndLine, createEndLine >= 1, createEndLine <= lines.count {
+            // Right after the character: a blank line, the block, a blank
+            // line, the phrase — the line's own newline stays behind the phrase.
+            let text = "\n\n" + block + "\n" + phraseBlock.dropLast()
+            return [AppendEdit(text: text, offset: endOfLine(createEndLine), line: createEndLine + 2)]
+        }
+        var prefix = ""
+        if !source.isEmpty {
+            if !source.hasSuffix("\n") { prefix = "\n\n" } else if !source.hasSuffix("\n\n") { prefix = "\n" }
+        }
+        let blockLine = (source + prefix).filter { $0 == "\n" }.count + 1
+        return [AppendEdit(text: prefix + block + "\n" + phraseBlock, offset: ns.length, line: blockLine)]
     }
 
     // MARK: Inline editing (ADR-333 D4c)
@@ -130,7 +335,7 @@ enum PlayToWrite {
             return ir.phrases?.defaultLocaleNames.first { $0.key == messageId }
         case .existingOverride(let alias, _, _):
             return ir.messageOverrides?.defaultLocaleNames.first { $0.key == alias }
-        case .newOverride:
+        case .newOverride, .topicRow:
             return nil
         }
     }

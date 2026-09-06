@@ -360,6 +360,29 @@ enum MenuBuilder {
                      keyEquivalent: "a")
         menu.addItem(NSMenuItem.separator())
 
+        // Find (David, 2026-09-06: "CMD-F should allow search"). The editor's
+        // text view already uses the find bar; these items reach it through
+        // the responder chain — the standard `performTextFinderAction:`
+        // with the NSTextFinder action as the item's tag.
+        let find = NSMenu(title: "Find")
+        for (title, key, modifiers, action) in [
+            ("Find…", "f", NSEvent.ModifierFlags.command, NSTextFinder.Action.showFindInterface),
+            ("Find and Replace…", "f", [.command, .option], .showReplaceInterface),
+            ("Find Next", "g", .command, .nextMatch),
+            ("Find Previous", "g", [.command, .shift], .previousMatch),
+            ("Use Selection for Find", "e", .command, .setSearchString),
+            ("Hide Find Bar", "", [], .hideFindInterface),
+        ] as [(String, String, NSEvent.ModifierFlags, NSTextFinder.Action)] {
+            let item = NSMenuItem(title: title, action: #selector(NSResponder.performTextFinderAction(_:)), keyEquivalent: key)
+            item.keyEquivalentModifierMask = modifiers
+            item.tag = action.rawValue
+            find.addItem(item)
+        }
+        let findItem = NSMenuItem(title: "Find", action: nil, keyEquivalent: "")
+        findItem.submenu = find
+        menu.addItem(findItem)
+        menu.addItem(NSMenuItem.separator())
+
         // The one refactor: selected whole declarations become a fragment and
         // an import line takes their place (GH #288).
         let extract = NSMenuItem(title: "Extract Selection to Import…",

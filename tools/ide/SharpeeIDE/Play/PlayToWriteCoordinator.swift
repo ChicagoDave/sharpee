@@ -29,6 +29,10 @@ final class PlayToWriteCoordinator {
 
     /// The armed round, if any.
     private(set) var session: PlayToWriteSession?
+    /// The target an open inline field will commit to, by message id — a
+    /// topic row's who-and-what came from the click's facts, which the
+    /// field's commit does not carry again.
+    private var pendingInline: [String: PlayToWriteTarget] = [:]
     /// The platform catalog once fetched (or injected), per project.
     var catalog: MessageCatalog?
 
@@ -56,7 +60,8 @@ final class PlayToWriteCoordinator {
     /// resolves again.
     func handle(_ request: PlayEditRequest, storyURL: URL, ir: ComposeStoryIR) {
         do {
-            let target = try PlayToWrite.resolve(messageId: request.messageId, ir: ir, catalog: catalog)
+            let target = try PlayToWrite.resolve(messageId: request.messageId, ir: ir, catalog: catalog,
+                                                 facts: request.facts, overrideEverywhere: request.overrideEverywhere)
             apply(target, storyURL: storyURL, request: request, ir: ir)
         } catch PlayToWriteError.catalogUnavailable {
             catalogSource(storyURL) { [weak self] result in
@@ -65,7 +70,8 @@ final class PlayToWriteCoordinator {
                 case .success(let catalog):
                     self.catalog = catalog
                     do {
-                        let target = try PlayToWrite.resolve(messageId: request.messageId, ir: ir, catalog: catalog)
+                        let target = try PlayToWrite.resolve(messageId: request.messageId, ir: ir, catalog: catalog,
+                                                             facts: request.facts, overrideEverywhere: request.overrideEverywhere)
                         self.apply(target, storyURL: storyURL, request: request, ir: ir)
                     } catch {
                         self.onUnresolved?(request, error)
@@ -85,7 +91,7 @@ final class PlayToWriteCoordinator {
         case .phrase(_, let file, let span), .existingOverride(_, let file, let span):
             let url = file.map { storyURL.deletingLastPathComponent().appendingPathComponent($0) } ?? storyURL
             return (url, span)
-        case .newOverride:
+        case .newOverride, .topicRow:
             return nil
         }
     }
@@ -106,9 +112,19 @@ final class PlayToWriteCoordinator {
     /// single-template phrase, hand Play the inline field and arm nothing yet.
     private func apply(_ target: PlayToWriteTarget, storyURL: URL, request: PlayEditRequest, ir: ComposeStoryIR) {
         let storyDir = storyURL.deletingLastPathComponent()
-        if let inline = inlineTemplate(for: target, messageId: request.messageId, storyURL: storyURL, ir: ir) {
-            onInlineEditRequested?(PlayInlineEdit(messageId: request.messageId, turn: request.turn, template: inline.template.text))
-            return
+        if !request.goToSource {
+            if let inline = inlineTemplate(for: target, messageId: request.messageId, storyURL: storyURL, ir: ir) {
+                pendingInline[request.messageId] = target
+                onInlineEditRequested?(PlayInlineEdit(messageId: request.messageId, turn: request.turn, template: inline.template.text))
+                return
+            }
+            if case .topicRow = target {
+                // D4d: a new answer has no template; the field starts from the
+                // reply the author is replacing, and the commit writes the row.
+                pendingInline[request.messageId] = target
+                onInlineEditRequested?(PlayInlineEdit(messageId: request.messageId, turn: request.turn, template: request.text))
+                return
+            }
         }
         switch target {
         case .phrase(_, let file, let span), .existingOverride(_, let file, let span):
@@ -122,8 +138,28 @@ final class PlayToWriteCoordinator {
             editor.insertText(edit.text, at: edit.offset, in: storyURL)
             editor.openDocument(at: storyURL,
                                 navigateTo: DiagnosticSpan(line: edit.line, column: 1, endLine: edit.line, endColumn: 1))
+        case .topicRow(_, _, let file, _, _, let span, _):
+            // "Go to this code" on a reply the character has no answer for
+            // yet: the character's own block is where the answer will go.
+            let url = file.map { storyDir.appendingPathComponent($0) } ?? storyURL
+            editor.openDocument(at: url, navigateTo: span)
         }
         session = PlayToWriteSession(messageId: request.messageId, history: request.history)
+    }
+
+    /// Land a topic row and its phrase (D4d) in the character's file, as
+    /// typing edits, last-first so no offset shifts under the next one.
+    private func writeTopicRow(_ target: PlayToWriteTarget, text: String, storyURL: URL) -> Bool {
+        guard case .topicRow(let entityId, let entityName, let file, let topic, _, _, let replacing) = target else { return false }
+        let url = file.map { storyURL.deletingLastPathComponent().appendingPathComponent($0) } ?? storyURL
+        // Positions come from the text being edited, never from the compose
+        // span (which may describe an older buffer).
+        guard let source = editor.currentText(of: url),
+              let edits = PlayToWrite.topicRowEdits(source: source, entityName: entityName, entityId: entityId, topic: topic,
+                                                    text: text, replacing: replacing)
+        else { return false }
+        for edit in edits where !editor.replaceText(edit.text, in: NSRange(location: edit.offset, length: edit.length), in: url) { return false }
+        return true
     }
 
     /// The inline field committed (ADR-333 D4c): write the new template into
@@ -134,13 +170,26 @@ final class PlayToWriteCoordinator {
     ///
     /// The template is re-read against the CURRENT buffer at commit time, so
     /// a range computed when the field opened never goes stale.
-    func commit(_ commit: PlayInlineCommit, storyURL: URL, ir: ComposeStoryIR) {
+    func commit(_ commit: PlayInlineCommit, storyURL: URL, ir: ComposeStoryIR?) {
         let request = PlayEditRequest(messageId: commit.messageId, turn: commit.turn, text: commit.text, history: commit.history)
         do {
-            let target = try PlayToWrite.resolve(messageId: commit.messageId, ir: ir, catalog: catalog)
-            guard let inline = inlineTemplate(for: target, messageId: commit.messageId, storyURL: storyURL, ir: ir),
-                  editor.replaceText(inline.template.replacement(for: commit.text), in: inline.template.range, in: inline.url)
-            else { throw PlayToWriteError.inlineTargetMissing(id: commit.messageId) }
+            let target: PlayToWriteTarget
+            if let pending = pendingInline.removeValue(forKey: commit.messageId) {
+                target = pending
+            } else if let ir {
+                target = try PlayToWrite.resolve(messageId: commit.messageId, ir: ir, catalog: catalog)
+            } else {
+                throw PlayToWriteError.inlineTargetMissing(id: commit.messageId)
+            }
+            if case .topicRow = target {
+                guard writeTopicRow(target, text: commit.text, storyURL: storyURL)
+                else { throw PlayToWriteError.inlineTargetMissing(id: commit.messageId) }
+            } else {
+                guard let ir,
+                      let inline = inlineTemplate(for: target, messageId: commit.messageId, storyURL: storyURL, ir: ir),
+                      editor.replaceText(inline.template.replacement(for: commit.text), in: inline.template.range, in: inline.url)
+                else { throw PlayToWriteError.inlineTargetMissing(id: commit.messageId) }
+            }
             session = PlayToWriteSession(messageId: commit.messageId, history: commit.history)
             editor.saveActiveDocument()
         } catch {
@@ -169,5 +218,6 @@ final class PlayToWriteCoordinator {
     func reset() {
         session = nil
         catalog = nil
+        pendingInline = [:]
     }
 }

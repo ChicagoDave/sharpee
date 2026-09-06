@@ -126,6 +126,16 @@ export interface IDecoration {
 export interface IBlockSource {
   /** The message id the block was rendered from. Never empty. */
   readonly messageId: string;
+  /**
+   * The primitive facts the source event carried beside its message —
+   * its top-level string, number, and boolean fields (`targetId`,
+   * `targetName`, `topic`, …), never the rendering `params`, the inline
+   * `message`/`text`, or the id itself. A consumer that wants to know WHO
+   * a reply was about and WHAT it concerned reads these (ADR-333 D1 as
+   * amended 2026-09-06: the id names the message; the facts name the
+   * occasion). Absent when the event carried none.
+   */
+  readonly facts?: Readonly<Record<string, string | number | boolean>>;
 }
 
 export interface ITextBlock {

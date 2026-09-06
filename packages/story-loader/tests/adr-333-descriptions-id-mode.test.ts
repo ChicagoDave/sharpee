@@ -84,7 +84,7 @@ describe('ADR-333 D1a — descriptions through the id mode, real path', () => {
 
     // First arrival: the first-time key.
     await b.turn('north');
-    expect(sourcesOf('for the first time')).toEqual([{ messageId: marketRoom.initialDescriptionId }]);
+    expect(sourcesOf('for the first time').map((s) => s?.messageId)).toEqual([marketRoom.initialDescriptionId]);
 
     // A later look: the description key, the snippet spliced.
     blocks.length = 0;
@@ -100,7 +100,8 @@ describe('ADR-333 D1a — descriptions through the id mode, real path', () => {
     await b.turn('x dress');
     const examined = blocks.filter((x) => textOf(x).includes('silk dress'));
     expect(examined).toHaveLength(1);
-    expect(examined[0].source).toEqual({ messageId: dress.descriptionId });
+    // The entity's key, with the examined event's facts beside it (D1 as amended 2026-09-06).
+    expect(examined[0].source).toMatchObject({ messageId: dress.descriptionId, facts: { targetName: 'dress' } });
     expect(textOf(examined[0])).toBe('A silk dress the colour of midnight.');
 
     // Examining yourself rides the same rule.
@@ -108,6 +109,6 @@ describe('ADR-333 D1a — descriptions through the id mode, real path', () => {
     await b.turn('x me');
     const jack = b.player.get(TraitType.IDENTITY) as IdentityTrait;
     expect(jack.descriptionId).toBe('jack.description');
-    expect(sourcesOf('A boy in this market.')).toEqual([{ messageId: 'jack.description' }]);
+    expect(sourcesOf('A boy in this market.').map((s) => s?.messageId)).toEqual(['jack.description']);
   });
 });

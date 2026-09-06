@@ -3681,7 +3681,18 @@ export interface PhrasebookResolution {
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
  */
-export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string, actorId?: EntityId): ITextBlock[] | null;
+/**
+ * The event data fields a block's `source.facts` carries (ADR-333 D1 as
+ * amended): every top-level string, number, or boolean EXCEPT the message
+ * id, the rendering params, and the inline fallback text. Nested objects
+ * (a `NounPhrase`, an entity snapshot) never ride — a client that needs
+ * them resolves the ids the facts name.
+ *
+ * @param data - the event's data, or anything else (→ undefined)
+ * @returns the facts, or undefined when there are none
+ */
+export declare function primitiveFacts(data: unknown): Record<string, string | number | boolean> | undefined;
+export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string, actorId?: EntityId, facts?: Record<string, string | number | boolean>): ITextBlock[] | null;
 /**
  * Flatten realized blocks to a single plain string (newlines between blocks).
  * Used when a rendered message must be embedded into another message as a

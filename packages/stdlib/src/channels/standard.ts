@@ -144,8 +144,16 @@ function toProseEntry(block: {
     ...(block.presence ? { presence: block.presence } : {}),
     ...(block.location ? { location: block.location } : {}),
     // ADR-333 D1: provenance rides the wire with the entry; the client
-    // resolves the id, the channel never drops it.
-    ...(block.source?.messageId ? { source: { messageId: block.source.messageId } } : {}),
+    // resolves the id, the channel never drops it. The facts (who, about
+    // what) ride with it when the block has them.
+    ...(block.source?.messageId
+      ? {
+          source: {
+            messageId: block.source.messageId,
+            ...(block.source.facts && Object.keys(block.source.facts).length > 0 ? { facts: block.source.facts } : {}),
+          },
+        }
+      : {}),
   };
 }
 

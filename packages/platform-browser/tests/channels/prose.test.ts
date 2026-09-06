@@ -146,6 +146,31 @@ describe('createProseChannelRenderers', () => {
     expect(ps[3].hasAttribute('data-message-id')).toBe(false);
   });
 
+  it('exposes the source facts as data-source-facts JSON, primitives only, and nothing without them (ADR-333 D1 as amended)', () => {
+    const prose = build();
+    turn(
+      prose,
+      {
+        'action-result': [
+          {
+            content: ['The gems stallkeeper says, "I don\'t know anything about that."'],
+            source: { messageId: 'if.action.asking.unknown_topic', facts: { targetName: 'gems stallkeeper', topic: 'gems', nested: { no: 1 } } },
+          },
+          { content: ['Taken.'], source: { messageId: 'if.action.taking.taken' } },
+          { content: ['Odd.'], source: { messageId: 'x', facts: 'not-an-object' } },
+        ],
+      },
+      ['action-result', 'action-result', 'action-result'],
+    );
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(3);
+    expect(JSON.parse(ps[0].dataset.sourceFacts!)).toEqual({ targetName: 'gems stallkeeper', topic: 'gems' });
+    expect(ps[0].dataset.messageId).toBe('if.action.asking.unknown_topic');
+    expect(ps[1].hasAttribute('data-source-facts')).toBe(false);
+    expect(ps[2].hasAttribute('data-source-facts')).toBe(false);
+    expect(ps[2].dataset.messageId).toBe('x');
+  });
+
   it('hides an absent entry by default and shows present/concealed ones (ADR-328 D3)', () => {
     const prose = build();
     turn(

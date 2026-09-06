@@ -88,12 +88,37 @@ export interface PhrasebookResolution {
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
  */
+/**
+ * The event data fields a block's `source.facts` carries (ADR-333 D1 as
+ * amended): every top-level string, number, or boolean EXCEPT the message
+ * id, the rendering params, and the inline fallback text. Nested objects
+ * (a `NounPhrase`, an entity snapshot) never ride — a client that needs
+ * them resolves the ids the facts name.
+ *
+ * @param data - the event's data, or anything else (→ undefined)
+ * @returns the facts, or undefined when there are none
+ */
+export function primitiveFacts(data: unknown): Record<string, string | number | boolean> | undefined {
+  if (!data || typeof data !== 'object') return undefined;
+  const out: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(data as Record<string, unknown>)) {
+    // The id, the bindings, the inline text, the engine's own bookkeeping
+    // (`_transactionId` and its kin) and the turn (the block's paragraph
+    // already carries it) are not facts about the occasion.
+    if (key === 'messageId' || key === 'params' || key === 'message' || key === 'text' || key === 'turn') continue;
+    if (key.startsWith('_')) continue;
+    if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') out[key] = value;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
 export function renderViaPhrase(
   context: HandlerContext,
   messageId: string,
   params: Record<string, unknown>,
   blockKey: string,
   actorId?: EntityId,
+  facts?: Record<string, string | number | boolean>,
 ): ITextBlock[] | null {
   const lp = context.languageProvider!;
   // ADR-250 D4: the phrasebook read point. Ask the world for a book-resolved
@@ -151,7 +176,10 @@ export function renderViaPhrase(
   // from — the id the caller asked for, whether the registry or a
   // phrasebook supplied the template. This is the one point where the id
   // is in hand; the inline-fallback path (`createBlocks`) never stamps.
-  return blocks.map((b) => ({ ...b, key: blockKey, source: { messageId } }));
+  // The facts (who, about what) ride beside the id when the caller had an
+  // event to take them from.
+  const source = facts ? { messageId, facts } : { messageId };
+  return blocks.map((b) => ({ ...b, key: blockKey, source }));
 }
 
 /** Flatten one content node to its plain text (recursing through decorations). */
