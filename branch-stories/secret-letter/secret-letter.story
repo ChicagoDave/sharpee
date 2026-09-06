@@ -379,3 +379,4 @@ create the cloth satchel
 before the game starts
   change the player to Jack
 end before
+

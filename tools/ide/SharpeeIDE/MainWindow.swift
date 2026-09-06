@@ -839,6 +839,8 @@ private final class MainSplitViewController: NSSplitViewController {
     private let composeScheduler = ComposeScheduler()
     /// Last-ok-IR retention behind the project tree (ADR-258 D6).
     private var treeState = IRTreeState()
+    /// Play-to-write (ADR-333 D4/D4a): the round between Play and the editor.
+    private lazy var playToWrite = PlayToWriteCoordinator(editor: editorViewController)
     private let editorViewController = EditorViewController()
     /// The left split item's real occupant: hosts the editor always, and the
     /// borrowed Play surface while the testing workspace is open (ADR-304).
@@ -904,6 +906,44 @@ private final class MainSplitViewController: NSSplitViewController {
             guard fragmentURL.standardizedFileURL.path.hasPrefix(storyDir + "/"),
                   let content = try? String(contentsOf: storyURL, encoding: .utf8) else { return }
             self.composeScheduler.composeNow(storyURL: storyURL, content: content)
+        }
+        editorViewController.onDocumentSaved = { [weak self] url in
+            guard let self else { return }
+            self.playToWrite.documentSaved(url, storyURL: self.treeState.storyURL)
+        }
+        playViewController.onEditRequest = { [weak self] request in
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            guard case .populated(let ir, _) = self.treeState.display else {
+                // Never silent (David, 2026-09-06: an edit vanished without a word).
+                self.playViewController.showNotice("Can't edit yet — the story hasn't composed cleanly. Fix the Problems and try again.")
+                return
+            }
+            self.playToWrite.handle(request, storyURL: storyURL, ir: ir)
+        }
+        // ADR-333 D4c: a single-template paragraph edits IN Play; the commit
+        // writes the source and rides the same save → build → replay round.
+        playToWrite.onInlineEditRequested = { [weak self] edit in
+            self?.playViewController.beginInlineEdit(edit)
+        }
+        playViewController.onInlineCommit = { [weak self] commit in
+            guard let self, let storyURL = self.treeState.storyURL else { return }
+            // The round was armed at the click with what it needs; a compose
+            // that moved on since is not a reason to drop the author's text.
+            let ir: ComposeStoryIR? = { if case .populated(let ir, _) = self.treeState.display { return ir }; return nil }()
+            self.playToWrite.commit(commit, storyURL: storyURL, ir: ir)
+        }
+        playToWrite.onBuildRequested = {
+            // Deferred: a build's own save-all lands here too, and its build
+            // call must start first so this one is the no-op, not the other way round.
+            DispatchQueue.main.async {
+                NSApp.sendAction(#selector(AppDelegate.buildProject(_:)), to: nil, from: nil)
+            }
+        }
+        playToWrite.onUnresolved = { [weak self] request, error in
+            NSLog("play-to-write: \(request.messageId): \(error)")
+            // Say what happened where the author is looking (David, 2026-09-06:
+            // a beep is not a reason; an edit must never vanish silently).
+            self?.playViewController.showNotice(PlayToWrite.describe(error, messageId: request.messageId))
         }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's
@@ -1073,7 +1113,9 @@ private final class MainSplitViewController: NSSplitViewController {
     /// ever loads via reloadPlayAfterBuild — the user builds to see an update.
     fileprivate func refreshPlay(projectRoot: URL?) {
         playViewController.load(bundleDirectory: nil)
+        playToWrite.reset()
     }
+
 
     func loadProject(_ project: Project, expandedFolderURLs: [URL] = []) {
         currentProject = project
@@ -1323,7 +1365,9 @@ private final class MainSplitViewController: NSSplitViewController {
     /// its cards then show the CURRENT story's real output (ADR-306 D8).
     fileprivate func reloadPlayAfterBuild(projectRoot: URL) {
         guard let bundleDir = bundleDirectory() else { return }
-        playViewController.reloadAfterBuild(bundleDirectory: bundleDir)
+        // An armed play-to-write round rides this reload (ADR-333 D4): the
+        // fresh page replays the captured history and returns to the paragraph.
+        playViewController.reloadAfterBuild(bundleDirectory: bundleDir, replaying: playToWrite.takeSession())
         if playViewController.isLoaded {
             rightPanelViewController.showPlayTab()
         }
@@ -1374,6 +1418,13 @@ private final class MainSplitViewController: NSSplitViewController {
             storyURL.deletingPathExtension().lastPathComponent + ".tests.json")
         surface.storyFile = storyURL
         surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
+        // ADR-333 D5: the viewed line's path, played in the Play pane from a
+        // fresh boot — the pane lists the stubs it printed (D6).
+        surface.onPlayPathRequested = { [weak self] commands in
+            guard let self else { return }
+            self.rightPanelViewController.showPlayTab()
+            self.playViewController.play(path: commands, bundleDirectory: self.bundleDirectory())
+        }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
         // Declared policy only. No header line → the page applies the
         // platform default (branch-tester's constant; David 2026-08-10,

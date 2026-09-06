@@ -40,6 +40,11 @@ export {
   isComposeJsonPayload,
 } from './compose-diagnostics.js';
 
+// `sharpee messages` wire contract (ADR-333 D4a): the overridable platform
+// messages with their ADR-255 aliases and the pack's templates.
+export type { MessageCatalog, MessageCatalogEntry } from './messages.js';
+export { MESSAGE_CATALOG_SCHEMA_VERSION, isMessageCatalog } from './messages.js';
+
 // The run-event stream: events emitted AS a run happens, so the IDE's Testing
 // tab fills live. Supersedes the `test-results.js` records below.
 export type {

@@ -15,7 +15,7 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext, GenericEventData } from './types.js';
 import { createBlocks } from '../assemble.js';
-import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
+import { phraseAvailable, primitiveFacts, renderViaPhrase } from '../phrase-render.js';
 
 interface GameMessageData {
   text?: string;
@@ -39,7 +39,7 @@ export function handleGameMessage(
     // handleGenericEvent accepts). Fall back to `data` so those bind.
     const params = (data.params ?? data) as Record<string, unknown>;
     if (phraseAvailable(context)) {
-      const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.GAME_MESSAGE, event.entities?.actor);
+      const blocks = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.GAME_MESSAGE, event.entities?.actor, primitiveFacts(data));
       if (blocks) return blocks;
     } else {
       const message = context.languageProvider.getMessage(data.messageId, params);
@@ -86,10 +86,11 @@ export function handleGenericEvent(
 
     // Phrase path: try the event type as a template key, then the messageId.
     if (phraseAvailable(context)) {
-      const byType = renderViaPhrase(context, event.type, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor);
+      const facts = primitiveFacts(data);
+      const byType = renderViaPhrase(context, event.type, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor, facts);
       if (byType) return byType;
       if (data.messageId) {
-        const byId = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor);
+        const byId = renderViaPhrase(context, data.messageId, params, BLOCK_KEYS.ACTION_RESULT, event.entities?.actor, facts);
         if (byId) return byId;
       }
       return [];

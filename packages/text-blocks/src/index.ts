@@ -13,7 +13,7 @@
  */
 
 // Core types
-export type { TextContent, IDecoration, ITextBlock } from './types.js';
+export type { TextContent, IDecoration, ITextBlock, IBlockSource } from './types.js';
 
 // Constants — `CORE_DECORATION_TYPES` removed per ADR-174 (vocabulary
 // now lives in `@sharpee/engine/src/prose-pipeline/decorations/platform-vocabulary.ts`).

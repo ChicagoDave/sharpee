@@ -25,6 +25,10 @@ struct DiagnosticSpan: Codable, Equatable, Sendable {
     let column: Int
     let endLine: Int
     let endColumn: Int
+    /// The imported fragment the span sits in, relative to the main file's
+    /// directory (`Span.file`, ADR-251 D6 as amended); absent = the main file.
+    /// Carried so a phrase's span can open the right tab (ADR-333 D2).
+    var file: String? = nil
 }
 
 /// One record in the payload's unified diagnostics stream (ADR-276 D4).
@@ -63,6 +67,10 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     let actions: [ActionDef]?
     /// The story's phrasebook — the Index lists the KEYS only; bodies stay opaque.
     let phrases: PhraseBook?
+    /// The story's ADR-255 `override message` blocks — alias → span, so a
+    /// platform-rendered paragraph can open its existing override (ADR-333 D4a).
+    /// Defaulted so the wire's absence and the tests' memberwise builds both read nil.
+    var messageOverrides: PhraseBook? = nil
     /// Declared hatch modules (name, module path, kind, span).
     let hatches: [Hatch]?
 
@@ -110,9 +118,89 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         /// the Testing tab can group cards by region (David 2026-08-10).
         let containing: [ContainedMember]?
         let span: DiagnosticSpan
+        /// The entity's `define topics for` rows (ADR-239), each reduced to
+        /// what play-to-write (ADR-333 D4d) decides on: the topic words the
+        /// row answers and the phrase keys its body fires. Row bodies are
+        /// otherwise not decoded.
+        let topicRows: [TopicRow]
+        /// How many rows the entity declares — whether a new row merges into
+        /// an existing block or opens one.
+        var topicCount: Int { topicRows.count }
+
+        init(id: String, name: String, isPlayable: Bool, kinds: [Kind], containing: [ContainedMember]?,
+             span: DiagnosticSpan, topicRows: [TopicRow] = []) {
+            self.id = id
+            self.name = name
+            self.isPlayable = isPlayable
+            self.kinds = kinds
+            self.containing = containing
+            self.span = span
+            self.topicRows = topicRows
+        }
+
+        private enum CodingKeys: String, CodingKey { case id, name, isPlayable, kinds, containing, span, topics }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            id = try c.decode(String.self, forKey: .id)
+            name = try c.decode(String.self, forKey: .name)
+            isPlayable = try c.decode(Bool.self, forKey: .isPlayable)
+            kinds = try c.decode([Kind].self, forKey: .kinds)
+            containing = try c.decodeIfPresent([ContainedMember].self, forKey: .containing)
+            span = try c.decode(DiagnosticSpan.self, forKey: .span)
+            topicRows = try c.decodeIfPresent([TopicRow].self, forKey: .topics) ?? []
+        }
+
+        /// The rows that answer `topic` (a quoted topic's primary or alias,
+        /// case-insensitive; an entity row never matches free text).
+        func topicRows(answering topic: String) -> [TopicRow] {
+            let wanted = topic.lowercased()
+            return topicRows.filter { $0.topics.contains(wanted) }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            var c = encoder.container(keyedBy: CodingKeys.self)
+            try c.encode(id, forKey: .id)
+            try c.encode(name, forKey: .name)
+            try c.encode(isPlayable, forKey: .isPlayable)
+            try c.encode(kinds, forKey: .kinds)
+            try c.encodeIfPresent(containing, forKey: .containing)
+            try c.encode(span, forKey: .span)
+        }
 
         /// True when the entity declares membership in `kind` (`room`/`region`/`person`).
         func hasKind(_ kind: String) -> Bool { kinds.contains { $0.name == kind } }
+    }
+
+    /// One `about …:` row, reduced: the words it answers (a quoted topic's
+    /// primary and aliases, lowercased; empty for an entity row) and the
+    /// phrase keys its body fires, in order.
+    struct TopicRow: Codable, Equatable, Sendable {
+        let topics: [String]
+        let phraseKeys: [String]
+
+        init(topics: [String], phraseKeys: [String]) {
+            self.topics = topics
+            self.phraseKeys = phraseKeys
+        }
+
+        private enum CodingKeys: String, CodingKey { case filter, body }
+        private struct Filter: Decodable { let kind: String; let primary: String?; let aliases: [String]? }
+        private struct Statement: Decodable { let kind: String; let phraseKey: String? }
+
+        init(from decoder: Decoder) throws {
+            let c = try decoder.container(keyedBy: CodingKeys.self)
+            let filter = try c.decode(Filter.self, forKey: .filter)
+            topics = filter.kind == "text"
+                ? ([filter.primary].compactMap { $0 } + (filter.aliases ?? [])).map { $0.lowercased() }
+                : []
+            let body = try c.decodeIfPresent([Statement].self, forKey: .body) ?? []
+            phraseKeys = body.compactMap { $0.kind == "phrase" ? $0.phraseKey : nil }
+        }
+
+        func encode(to encoder: Encoder) throws {
+            // The IDE never re-emits IR.
+        }
     }
 
     /// A kind membership (`a room`, `a person`, ...). Extra wire fields ignored.
@@ -139,9 +227,12 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         let span: DiagnosticSpan?
     }
 
-    /// The phrasebook: locales → phrase NAMES (keys + spans). Phrase bodies
-    /// (strategies, variants) are deliberately not decoded — the Index lists
-    /// names; prose stays in the editor.
+    /// The phrasebook: locales → phrase NAMES (keys + spans), plus the two
+    /// shape facts inline play editing needs — the strategy and how many
+    /// variants there are (ADR-333 D4c: a single template edits in place; a
+    /// cycling or multi-arm phrase opens the editor). Variant TEXT is still
+    /// not decoded — the Index lists names; prose stays in the editor, and
+    /// the inline field reads the source at the span.
     struct PhraseBook: Codable, Equatable, Sendable {
         let defaultLocale: String
         let locales: [String: PhraseSet]
@@ -167,7 +258,12 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
                 let entry = try container.nestedContainer(keyedBy: DynamicKey.self, forKey: key)
                 let span = try entry.decodeIfPresent(DiagnosticSpan.self,
                                                      forKey: DynamicKey(stringValue: "span")!)
-                return PhraseName(key: key.stringValue, span: span)
+                // `strategy` is `null` for a single text; `variants` is always an array.
+                let strategy = try entry.decodeIfPresent(String.self,
+                                                         forKey: DynamicKey(stringValue: "strategy")!)
+                let variants = try entry.decodeIfPresent([OpaqueVariant].self,
+                                                         forKey: DynamicKey(stringValue: "variants")!) ?? []
+                return PhraseName(key: key.stringValue, span: span, strategy: strategy, variantCount: variants.count)
             }.sorted { $0.key < $1.key }
         }
 
@@ -176,9 +272,23 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         }
     }
 
+    /// One `variants[]` entry, counted and otherwise ignored.
+    private struct OpaqueVariant: Decodable {}
+
     struct PhraseName: Codable, Equatable, Sendable {
         let key: String
         let span: DiagnosticSpan?
+        /// `randomly` / `cycling` / `stopping` / `sticky` / `first-time`, or nil for a single text.
+        let strategy: String?
+        /// How many arms the phrase has — 1 for a single template.
+        let variantCount: Int
+
+        init(key: String, span: DiagnosticSpan?, strategy: String? = nil, variantCount: Int = 0) {
+            self.key = key
+            self.span = span
+            self.strategy = strategy
+            self.variantCount = variantCount
+        }
     }
 
     private struct DynamicKey: CodingKey {

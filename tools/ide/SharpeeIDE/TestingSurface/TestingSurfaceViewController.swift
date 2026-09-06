@@ -133,6 +133,10 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// True while a run column run is in flight — drives the Test menu.
     var isRunningTests: Bool { testRunner.isRunning }
 
+    /// The page asked for the viewed line's path to be played in the Play
+    /// pane (ADR-333 D5): every typed command from the root, in play order.
+    var onPlayPathRequested: (([String]) -> Void)?
+
     /// Test → Cancel Test Run: SIGTERM then SIGKILL; rows already filled stay.
     func cancelTestRun() {
         testRunner.cancel()
@@ -421,6 +425,10 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             }
             if object["run"] as? Bool == true {
                 startTestRun()
+            }
+            if let playPath = object["playPath"] as? [String: Any],
+               let commands = playPath["commands"] as? [String] {
+                onPlayPathRequested?(commands)
             }
             // `forkBoot` pre-announcements ride this handler too; with no
             // command log left there is nothing to mark — ignored by design.

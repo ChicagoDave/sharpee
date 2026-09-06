@@ -25,7 +25,7 @@
  */
 
 import type { ISemanticEvent, Presence } from '@sharpee/core';
-import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
+import type { IBlockSource, ITextBlock, TextContent } from '@sharpee/text-blocks';
 
 // ────────────────────────────────────────────────────────────────────
 //  Channel content / mode / emit policy
@@ -95,6 +95,13 @@ export interface ProseEntry {
    * Mirrors `ITextBlock.location`; set only alongside `presence`.
    */
   readonly location?: string;
+  /**
+   * The message the entry's text was rendered from (ADR-333 D1). Mirrors
+   * `ITextBlock.source` — the same `IBlockSource` type, imported, never
+   * redeclared — so a client can address the paragraph's source by id.
+   * Absent on entries not rendered from a message.
+   */
+  readonly source?: IBlockSource;
 }
 
 /**
@@ -334,6 +341,14 @@ export interface IOChannel<T = unknown> {
 }
 
 /**
+ * Where a NEW channel lands in registration order: immediately before
+ * the channel with the named id. See `IChannelRegistry.add`.
+ */
+export interface ChannelRegistrationPosition {
+  readonly before: string;
+}
+
+/**
  * Channel registry contract (ADR-163 §7, §14).
  *
  * The registry is a simple keyed collection of `IOChannel` instances.
@@ -344,6 +359,16 @@ export interface IOChannel<T = unknown> {
  * id replaces the prior definition. This is how stories override
  * standard channels (per §6).
  *
+ * Registration order is the order `all()` returns, which is the order
+ * the manifest lists channels and the order a client dispatches a turn's
+ * payload (ADR-165). A channel that must reach the client before another
+ * — a chapter title card ahead of the prose flush, say — passes
+ * `position: { before: <id> }` and lands immediately before that id.
+ * The position is consulted only when the id is NEW: re-registering an
+ * existing id replaces it in place and keeps the place it already has,
+ * so last-write-wins and ordering never contradict each other. An
+ * unknown `before` id is an error, never a silent append.
+ *
  * Implementations live elsewhere:
  *
  * - `@sharpee/stdlib` exports a populated `channelRegistry` instance
@@ -352,7 +377,7 @@ export interface IOChannel<T = unknown> {
  *   stories add or override channels.
  */
 export interface IChannelRegistry {
-  add(channel: IOChannel): void;
+  add(channel: IOChannel, position?: ChannelRegistrationPosition): void;
   get(id: string): IOChannel | undefined;
   all(): readonly IOChannel[];
 }

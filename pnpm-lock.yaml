@@ -338,6 +338,9 @@ importers:
       '@sharpee/ide-protocol':
         specifier: workspace:*
         version: link:../ide-protocol
+      '@sharpee/lang-en-us':
+        specifier: workspace:*
+        version: link:../lang-en-us
       '@sharpee/story-loader':
         specifier: workspace:*
         version: link:../story-loader

@@ -56,11 +56,14 @@ row, a diagnostic rather than a crash.
 
 A chapter beginning is a packet on the `story.chapter` channel — name,
 title, description, ordinal — emitted on the turn the trigger fires,
-after that turn's prose, so an arrival's own text reads as the last
-words of the chapter it closes. The browser client renders a title
-card; how it looks is the client's. The current chapter is ordinary
-world state, so save, restore, and undo carry it with no special
-handling.
+before that turn's prose, so the title reads as a heading over what
+follows: the opening chapter sits between the banner and the first room,
+and a chapter that begins on an arrival sits above that arrival's room
+description. The same holds for a timer or a state change — the card
+opens the turn's output, whatever began the chapter. The browser client
+renders a title card; how it looks is the client's. The current chapter
+is ordinary world state, so save, restore, and undo carry it with no
+special handling.
 
 ## Reading the chapter
 

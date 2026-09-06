@@ -353,6 +353,14 @@ const cards = new CardsView(model, {
     cards.render();
     postToBridge({ run: true });
   },
+  onPlayPath() {
+    // ADR-333 D5: the walkthrough IS the tree — the viewed line's path from
+    // the root, in play order, handed to the Play pane to type from a fresh
+    // boot. No second walkthrough format; the same steps the driver replays.
+    if (driverBusy || replayActive) return;
+    const line = model.activeLine;
+    postToBridge({ playPath: { line, commands: pathSteps(line).map(step => step.command) } });
+  },
   runColumn: () => runState,
   assertionLines: assertionLinesFor,
   characterExplain: characterExplainFor,

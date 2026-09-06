@@ -1417,7 +1417,7 @@ end exchange
 ## The nine quips, shared by all ten stallkeepers. `ST1`-`ST9` in file order.
 
 define phrase st-opener
-  'What do you want?' snaps the stallkeeper.
+  The stallkeeper looks you up and down, grunts, and turns his back on you.
 end phrase
 
 define phrase st-for-sale
@@ -1535,3 +1535,4 @@ import "monkey"
 ## runway and the monkey, whose landing and necklace it builds on.
 
 import "disguise"
+

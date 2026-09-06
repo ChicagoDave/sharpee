@@ -187,6 +187,33 @@ describe('prose channels', () => {
     ]);
   });
 
+  it('threads `source` from blocks to entries and drops an empty id (ADR-333 D1)', () => {
+    const stamped = {
+      ...makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'It is dark.'),
+      source: { messageId: 'cave.description' },
+    };
+    const blank = { ...makeBlock(CORE_BLOCK_KEYS.ROOM_DESCRIPTION, 'Still dark.'), source: { messageId: '' } };
+    expect(roomDescriptionChannel.produce(makeCtx({ blocks: [stamped, blank] }))).toEqual([
+      { content: ['It is dark.'], source: { messageId: 'cave.description' } },
+      { content: ['Still dark.'] },
+    ]);
+  });
+
+  it('threads the source facts with the id and drops an empty facts object (ADR-333 D1 as amended)', () => {
+    const asked = {
+      ...makeBlock(CORE_BLOCK_KEYS.ACTION_RESULT, 'The gems stallkeeper says, "I don\'t know anything about that."'),
+      source: { messageId: 'if.action.asking.unknown_topic', facts: { targetId: 'a_12', targetName: 'gems stallkeeper', topic: 'gems' } },
+    };
+    const bare = { ...makeBlock(CORE_BLOCK_KEYS.ACTION_RESULT, 'Taken.'), source: { messageId: 'if.action.taking.taken', facts: {} } };
+    expect(actionResultChannel.produce(makeCtx({ blocks: [asked, bare] }))).toEqual([
+      {
+        content: ['The gems stallkeeper says, "I don\'t know anything about that."'],
+        source: { messageId: 'if.action.asking.unknown_topic', facts: { targetId: 'a_12', targetName: 'gems stallkeeper', topic: 'gems' } },
+      },
+      { content: ['Taken.'], source: { messageId: 'if.action.taking.taken' } },
+    ]);
+  });
+
   it('returns an empty array when no blocks match', () => {
     for (const channel of PROSE_CHANNELS) {
       expect(channel.produce(makeCtx({ blocks: [] }))).toEqual([]);

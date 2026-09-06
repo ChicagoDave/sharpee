@@ -43,6 +43,29 @@ function makePhraseContext(opts: {
   return { context, renderMessage, renderTemplate, evaluate };
 }
 
+describe('the provenance stamp (ADR-333 D1)', () => {
+  it('stamps every registry-rendered block with the message id it was asked for', () => {
+    const { context } = makePhraseContext({ templates: { 'apple-first-bite': 'Crisp.' } });
+    const blocks = renderViaPhrase(context, 'apple-first-bite', {}, 'story');
+    expect(blocks).toEqual([{ key: 'story', content: ['msg:apple-first-bite'], source: { messageId: 'apple-first-bite' } }]);
+  });
+
+  it('stamps a phrasebook hit with the id the event named, not the book', () => {
+    const { context } = makePhraseContext({
+      resolutions: {
+        [phrasebookTemplateKey('cold-returns')]: { book: 'winter', key: 'cold-returns', template: 'The cold finds you.' },
+      },
+    });
+    const blocks = renderViaPhrase(context, 'cold-returns', {}, 'story');
+    expect(blocks![0].source).toEqual({ messageId: 'cold-returns' });
+  });
+
+  it('an unregistered id still returns null — the caller\'s fallback carries no source', () => {
+    const { context } = makePhraseContext({});
+    expect(renderViaPhrase(context, 'nobody-registered-this', {}, 'story')).toBeNull();
+  });
+});
+
 describe('phrasebookTemplateKey (ADR-240 D6 — pinned string)', () => {
   it('builds phrasebook.template.<messageId>', () => {
     expect(phrasebookTemplateKey('cold-returns')).toBe('phrasebook.template.cold-returns');
@@ -67,7 +90,7 @@ describe('the phrasebook read point (ADR-250 D4.3)', () => {
     expect(renderTemplate.mock.calls[0][0]).toBe('The cold finds you.');
     expect(renderTemplate.mock.calls[0][1]).toMatchObject({ actor: 'you', variants: { kind: 'choice' } });
     expect(renderMessage).not.toHaveBeenCalled();
-    expect(blocks![0]).toEqual({ key: 'story', content: ['tpl:The cold finds you.'] });
+    expect(blocks![0]).toEqual({ key: 'story', content: ['tpl:The cold finds you.'], source: { messageId: 'cold-returns' } });
   });
 
   it('no hit + registered id falls through to renderMessage exactly as before', () => {

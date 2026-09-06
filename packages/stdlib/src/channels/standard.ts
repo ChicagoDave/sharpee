@@ -26,7 +26,7 @@
 
 import type { IOChannel, ProseEntry, ProseChannelId } from '@sharpee/if-domain';
 import { PREFERRED_LAYOUT_CHANNEL } from '@sharpee/if-domain';
-import type { TextContent } from '@sharpee/text-blocks';
+import type { IBlockSource, TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { PLAYER_DIED_EVENT } from '../death/index.js';
 import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
@@ -133,6 +133,7 @@ function toProseEntry(block: {
   className?: string;
   presence?: ProseEntry['presence'];
   location?: string;
+  source?: IBlockSource;
 }): ProseEntry {
   return {
     content: [...block.content],
@@ -142,6 +143,17 @@ function toProseEntry(block: {
     // client decides what to show, so the channel never drops on it.
     ...(block.presence ? { presence: block.presence } : {}),
     ...(block.location ? { location: block.location } : {}),
+    // ADR-333 D1: provenance rides the wire with the entry; the client
+    // resolves the id, the channel never drops it. The facts (who, about
+    // what) ride with it when the block has them.
+    ...(block.source?.messageId
+      ? {
+          source: {
+            messageId: block.source.messageId,
+            ...(block.source.facts && Object.keys(block.source.facts).length > 0 ? { facts: block.source.facts } : {}),
+          },
+        }
+      : {}),
   };
 }
 

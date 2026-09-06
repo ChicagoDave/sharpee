@@ -118,6 +118,29 @@ export interface IDecoration {
  *   content: ['42']
  * }
  */
+/**
+ * Where a block's text came from (ADR-333 D1): the message id the prose
+ * pipeline rendered to produce it — a Chord phrase key, a platform
+ * message id, or a story override's id. The id is the whole stamp; a
+ * consumer that holds the story's IR or a language pack resolves it to a
+ * source span or a template (ADR-333 D2). Absent on blocks that were not
+ * rendered from a message (inline fallback text, banner pieces) — absence
+ * means "not a message", never "unknown".
+ */
+export interface IBlockSource {
+    /** The message id the block was rendered from. Never empty. */
+    readonly messageId: string;
+    /**
+     * The primitive facts the source event carried beside its message —
+     * its top-level string, number, and boolean fields (`targetId`,
+     * `targetName`, `topic`, …), never the rendering `params`, the inline
+     * `message`/`text`, or the id itself. A consumer that wants to know WHO
+     * a reply was about and WHAT it concerned reads these (ADR-333 D1 as
+     * amended 2026-09-06: the id names the message; the facts name the
+     * occasion). Absent when the event carried none.
+     */
+    readonly facts?: Readonly<Record<string, string | number | boolean>>;
+}
 export interface ITextBlock {
     /**
      * Semantic key identifying the block type/channel.
@@ -169,6 +192,13 @@ export interface ITextBlock {
      * shows off-stage narration labels it by this location.
      */
     readonly location?: string;
+    /**
+     * The message the block was rendered from (ADR-333 D1). Stamped by the
+     * engine's phrase path on every block it realizes; carried unchanged
+     * through the channel wire so a client can address the paragraph's
+     * source. See {@link IBlockSource}.
+     */
+    readonly source?: IBlockSource;
 }
 /**
  * Core block keys defined by the platform.
@@ -281,7 +311,7 @@ export declare function extractPlainText(content: ReadonlyArray<TextContent>): s
  * @see ADR-096: Text Service Architecture
  * @see ADR-091: Text Decorations
  */
-export type { TextContent, IDecoration, ITextBlock } from './types.js';
+export type { TextContent, IDecoration, ITextBlock, IBlockSource } from './types.js';
 export { CORE_BLOCK_KEYS } from './types.js';
 export { CORE_BLOCK_KEYS as BLOCK_KEYS } from './types.js';
 export { isDecoration, isTextBlock, hasKeyPrefix, isStatusBlock, isRoomBlock, isActionBlock, extractPlainText, } from './guards.js';

@@ -1158,12 +1158,16 @@ export declare class AudioManager {
     private instantGainMode;
     private unlocked;
     private pendingEvents;
+    /** True once an unlock has paid the resume grace — never paid twice. */
+    private resumeGraceSpent;
     /**
      * Unlock audio playback. Must be called from a user gesture handler
      * (keydown, click) so the browser allows AudioContext.resume() and
      * Audio.play(). Constructs the AudioContext lazily on first call.
      */
     unlock(): Promise<void>;
+    /** Mark audio unlocked and play whatever queued while it was not. Idempotent. */
+    private finishUnlock;
     /**
      * Handle an audio event from the engine's event pipeline.
      * Queues events until audio is unlocked by a user gesture.

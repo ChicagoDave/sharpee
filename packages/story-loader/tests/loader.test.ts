@@ -115,7 +115,12 @@ describe('cloak.story loads into a playable world', () => {
     const identity = player.get(TraitType.IDENTITY) as IdentityTrait;
     expect(identity.name).toBe('Alex');
     expect(identity.aliases).toEqual(expect.arrayContaining(['self', 'me', 'myself']));
-    expect(identity.description).toBe('As good-looking as ever.');
+    // ADR-333 D1a: the description rides as a key (ADR-107 id mode); the
+    // text is what the story registers under it.
+    const registered = new Map<string, string>();
+    story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);
+    expect(identity.descriptionId).toBeDefined();
+    expect(registered.get(identity.descriptionId!)).toBe('As good-looking as ever.');
     const container = player.get(TraitType.CONTAINER) as ContainerTrait;
     expect(container.capacity).toMatchObject({ maxItems: 10 });
     expect(world.getLocation(player.id)).toBe(story.entityId('foyer-of-the-opera-house'));

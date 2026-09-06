@@ -20,6 +20,7 @@
     "@sharpee/core": "workspace:*",
     "@sharpee/engine": "workspace:*",
     "@sharpee/ide-protocol": "workspace:*",
+    "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/story-loader": "workspace:*",
     "@sharpee/transcript-tester": "workspace:*",
     "@sharpee/world-index": "workspace:*",

@@ -15,6 +15,7 @@ import { join } from 'node:path';
 import { CHORD_LANGUAGE_VERSION } from '@sharpee/chord';
 import { runCompose } from './commands/compose.js';
 import { runIntrospect } from './commands/introspect.js';
+import { runMessages } from './commands/messages.js';
 import { findStoryFile } from './standalone/author-game.js';
 import { platformVersion } from './standalone/init.js';
 import { resolveStory, findMonorepoRoot } from './repo.js';
@@ -43,6 +44,7 @@ Usage:
   sharpee publish [<file>.story | dir]   Build + zip a distributable browser app (ADR-284)
   sharpee compose <file.story> [opts]    Compile a Chord story to Story IR (ADR-210)
   sharpee introspect [dir]               Emit the IDE project manifest (ADR-184/185) as JSON
+  sharpee messages                       Emit the overridable platform messages (alias + template) as JSON
   sharpee world-index <file>.ir.json     Derive the story's map, reach, and vocabulary gaps as JSON (ADR-321)
   sharpee ifid                           IFID utilities (generate, validate)
   sharpee register <location> [--name]   Register a name→path mapping in ~/.sharpee/devkit
@@ -166,6 +168,10 @@ async function main(argv: string[]): Promise<number> {
       await runIntrospect({ dir });
       return 0;
     }
+    case 'messages':
+      // Catalog → stdout, status → stderr (ADR-333 D4a).
+      await runMessages();
+      return 0;
     case 'init-browser':
       await runInitBrowserCommand(rest);
       return 0;

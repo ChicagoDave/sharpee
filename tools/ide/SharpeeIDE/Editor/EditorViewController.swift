@@ -98,6 +98,11 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// place (devkit's compose gates); this only re-triggers it.
     var onStoryReconciled: ((URL, String) -> Void)?
 
+    /// Fired after a document is written to disk (⌘S or a build's save-all),
+    /// with its URL. Play-to-write (ADR-333 D4) listens: a save while an edit
+    /// is armed is what triggers the rebuild and the replay.
+    var onDocumentSaved: ((URL) -> Void)?
+
     /// The ranges currently carrying a diagnostic underline, so they can be cleared
     /// before the next compose result (or on edit, when they go stale).
     private var diagnosticUnderlineRanges: [NSRange] = []
@@ -630,6 +635,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
             noteStoryReconciled(doc, outcome)
             if ChordSource.isFragment(doc.url) { onFragmentNeedsCompose?(doc.url) }
             refreshUI()
+            onDocumentSaved?(doc.url)
         } catch {
             let alert = NSAlert(error: error)
             alert.alertStyle = .warning
@@ -662,6 +668,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
                 // active document's text; the buffer must follow it.
                 if outcome.contentChanged, doc === activeDocument { activeRewritten = true }
                 noteStoryReconciled(doc, outcome)
+                onDocumentSaved?(doc.url)
             } catch {
                 allSaved = false
                 let alert = NSAlert(error: error)
