@@ -341,6 +341,14 @@ export interface IOChannel<T = unknown> {
 }
 
 /**
+ * Where a NEW channel lands in registration order: immediately before
+ * the channel with the named id. See `IChannelRegistry.add`.
+ */
+export interface ChannelRegistrationPosition {
+  readonly before: string;
+}
+
+/**
  * Channel registry contract (ADR-163 §7, §14).
  *
  * The registry is a simple keyed collection of `IOChannel` instances.
@@ -351,6 +359,16 @@ export interface IOChannel<T = unknown> {
  * id replaces the prior definition. This is how stories override
  * standard channels (per §6).
  *
+ * Registration order is the order `all()` returns, which is the order
+ * the manifest lists channels and the order a client dispatches a turn's
+ * payload (ADR-165). A channel that must reach the client before another
+ * — a chapter title card ahead of the prose flush, say — passes
+ * `position: { before: <id> }` and lands immediately before that id.
+ * The position is consulted only when the id is NEW: re-registering an
+ * existing id replaces it in place and keeps the place it already has,
+ * so last-write-wins and ordering never contradict each other. An
+ * unknown `before` id is an error, never a silent append.
+ *
  * Implementations live elsewhere:
  *
  * - `@sharpee/stdlib` exports a populated `channelRegistry` instance
@@ -359,7 +377,7 @@ export interface IOChannel<T = unknown> {
  *   stories add or override channels.
  */
 export interface IChannelRegistry {
-  add(channel: IOChannel): void;
+  add(channel: IOChannel, position?: ChannelRegistrationPosition): void;
   get(id: string): IOChannel | undefined;
   all(): readonly IOChannel[];
 }

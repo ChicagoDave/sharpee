@@ -324,6 +324,22 @@ populated with standard channels at module init. Stories add their
 own channels to the same registry through `Story.registerChannels?(registry)`
 during engine bootstrap.
 
+**Amended 2026-09-05 — registration position.** Registration order is
+manifest order, and manifest order is the order a client dispatches a
+turn's payload (ADR-165 §"Order within a turn packet"); ADR-298 D3 and
+ADR-300 D9 already depend on it. A channel registered by a story lands
+after every standard channel, which no story channel that must precede
+the prose flush can live with, so `add` takes an optional position:
+`add(channel, { before: '<id>' })` places a NEW id immediately before the
+named channel, every other entry keeping its relative order. The position
+is consulted only for a new id — re-registering an existing id replaces
+it in place and keeps the place it has, so last-write-wins (§6) and
+ordering never contradict. An unknown `before` id throws; a typo must
+not become a silent append. First use: `story.chapter` registers before
+`room-name` (ADR-330 D4 as amended the same day). This is not the
+z-ordering §11 keeps off `ChannelDefinition`: nothing is added to the
+wire, only to where a channel sits in the order the wire already carries.
+
 ```ts
 // @sharpee/stdlib/src/channels/registry.ts
 import type { IOChannel, IChannelRegistry } from '@sharpee/if-domain';

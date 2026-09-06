@@ -91,6 +91,52 @@ describe('StdlibChannelRegistry — last-write-wins', () => {
   });
 });
 
+describe('StdlibChannelRegistry — registration position (ADR-330 D4 amended)', () => {
+  it('add(channel, { before }) places a new id immediately before the named one, others keeping their order', () => {
+    const reg = new StdlibChannelRegistry();
+    reg.add(makeStubChannel('banner'));
+    reg.add(makeStubChannel('room-name'));
+    reg.add(makeStubChannel('preferred-layout'));
+    const chapter = makeStubChannel('story.chapter');
+    reg.add(chapter, { before: 'room-name' });
+    expect(reg.ids()).toEqual(['banner', 'story.chapter', 'room-name', 'preferred-layout']);
+    expect(reg.all().map((c) => c.id)).toEqual(['banner', 'story.chapter', 'room-name', 'preferred-layout']);
+    expect(reg.get('story.chapter')).toBe(chapter);
+  });
+
+  it('an unknown before-id throws, naming both ids, and registers nothing', () => {
+    const reg = new StdlibChannelRegistry();
+    reg.add(makeStubChannel('banner'));
+    expect(() => reg.add(makeStubChannel('story.chapter'), { before: 'room-nmae' })).toThrow(
+      /'story\.chapter'.*'room-nmae'/,
+    );
+    expect(reg.get('story.chapter')).toBeUndefined();
+    expect(reg.ids()).toEqual(['banner']);
+  });
+
+  it('re-adding an existing id with a position replaces it in place and does not move it', () => {
+    const reg = new StdlibChannelRegistry();
+    reg.add(makeStubChannel('banner'));
+    reg.add(makeStubChannel('story.chapter'));
+    reg.add(makeStubChannel('room-name'));
+    const replacement = makeStubChannel('room-name', 'append');
+    reg.add(replacement, { before: 'banner' });
+    expect(reg.ids()).toEqual(['banner', 'story.chapter', 'room-name']);
+    expect(reg.get('room-name')).toBe(replacement);
+  });
+
+  it('the canonical registry places a channel registered before room-name after banner and ahead of every prose channel', () => {
+    const reg = new StdlibChannelRegistry();
+    for (const channel of STANDARD_CHANNELS) reg.add(channel);
+    reg.add(makeStubChannel('story.chapter'), { before: 'room-name' });
+    const ids = reg.ids();
+    const at = (id: string) => ids.indexOf(id);
+    expect(at('story.chapter')).toBe(at('banner') + 1);
+    expect(at('story.chapter')).toBe(at('room-name') - 1);
+    expect(at('story.chapter')).toBeLessThan(at('preferred-layout'));
+  });
+});
+
 function makeStubChannel(id: string, mode: 'replace' | 'append' | 'event' = 'replace') {
   return {
     id,

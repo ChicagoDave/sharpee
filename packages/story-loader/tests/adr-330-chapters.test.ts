@@ -17,7 +17,8 @@ import { GameEngine, SaveRestoreService, type ISaveRestoreStateProvider, type St
 import { CHAPTER_BEGAN_EVENT, CHAPTER_CURRENT_KEY, CHAPTER_STALE_EVENT, chapterChannel } from '@sharpee/ext-chapters';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import { PerceptionService, StdlibChannelRegistry, createNpcService } from '@sharpee/stdlib';
+import { PREFERRED_LAYOUT_CHANNEL, PROSE_CHANNEL_IDS } from '@sharpee/if-domain';
+import { PerceptionService, STANDARD_CHANNELS, StdlibChannelRegistry, createNpcService } from '@sharpee/stdlib';
 import { EntityType, WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, LoadError, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
@@ -138,6 +139,8 @@ interface Booted {
   world: WorldModel;
   player: IFEntity;
   stream: ISemanticEvent[];
+  /** The channel manifest the real engine emitted at start — channel ids in dispatch order. */
+  manifestIds: string[];
   /** Run one command and return only the events of that turn, in stream order. */
   turn: (input: string) => Promise<ISemanticEvent[]>;
 }
@@ -156,13 +159,15 @@ async function boot(seed = 7): Promise<Booted> {
   // step, which the engine's setStory does not take.
   story.extendParser(parser);
   world.removeEntity(placeholder.id);
+  const manifestIds: string[] = [];
+  engine.on('channel:manifest', (cmgt) => manifestIds.push(...cmgt.channels.map((c) => c.id)));
   await engine.start();
   const turn = async (input: string) => {
     const from = stream.length;
     await engine.executeTurn(input);
     return stream.slice(from);
   };
-  return { engine, story, world, player: world.getPlayer()!, stream, turn };
+  return { engine, story, world, player: world.getPlayer()!, stream, manifestIds, turn };
 }
 
 const began = (events: ISemanticEvent[]) => events.filter((e) => e.type === CHAPTER_BEGAN_EVENT).map((e) => (e.data as { name: string }).name);
@@ -263,6 +268,7 @@ describe('ADR-330 chapters on the real path', () => {
   it('D4: the story\'s registerChannels hook installs `story.chapter` in the real channel registry, through the registry entry\'s registerChannels slot', async () => {
     const b = await boot();
     const registry = new StdlibChannelRegistry();
+    for (const channel of STANDARD_CHANNELS) registry.add(channel);
     b.story.registerChannels(registry);
     const channel = registry.get('story.chapter');
     expect(channel).toBeDefined();
@@ -271,6 +277,22 @@ describe('ADR-330 chapters on the real path', () => {
     expect(channel!.emit).toBe('sparse');
     const events = await b.turn('look');
     expect(channel!.produce({ world: b.world, events, blocks: [], turn: 1, prevValue: undefined })).toMatchObject({ name: 'market', ordinal: 0 });
+  });
+
+  it('D4 (amended 2026-09-05): the real engine\'s manifest lists `story.chapter` after `banner` and before every prose channel, so a client dispatching in manifest order announces the title before the room', async () => {
+    const b = await boot();
+    const ids = b.manifestIds;
+    const at = (id: string) => ids.indexOf(id);
+    expect(at('story.chapter')).toBeGreaterThan(-1);
+    expect(at('story.chapter')).toBe(at('banner') + 1);
+    expect(at('story.chapter')).toBe(at('room-name') - 1);
+    for (const prose of PROSE_CHANNEL_IDS) expect(at('story.chapter')).toBeLessThan(at(prose));
+    expect(at('story.chapter')).toBeLessThan(at(PREFERRED_LAYOUT_CHANNEL));
+  });
+
+  it('registering the chapters channel on a registry with no prose channels is a loud error, not a silent append', async () => {
+    const b = await boot();
+    expect(() => b.story.registerChannels(new StdlibChannelRegistry())).toThrow(/'story\.chapter'.*'room-name'/);
   });
 
   it('rogue IR with chapters but no `use chapters` → LoadError at engine-ready (the loader backstop behind the compiler\'s gate)', () => {

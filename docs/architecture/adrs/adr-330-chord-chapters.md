@@ -9,6 +9,7 @@ Q-6 description on the wire, Q-7 IDE deferred, Q-8 prologue → a row); `adr-rev
 eight clerical fixes (three link targets, the ADR-214 anchor attribution, the `while`/`during`
 head pair, the save-format bump, the `story.chapter` key, one claim's inline evidence).
 **IMPLEMENTED 2026-08-29** (plan `docs/work/archive/adr-330-chapters/plan.md`, five phases, one session): `@sharpee/ext-chapters` + the grammar in `packages/chord`, the loader lowering, the `story.chapter` channel and its browser title card, `during`/`before`/`after`; real path `packages/story-loader/tests/adr-330-chapters.test.ts` (10 on `GameEngine.executeTurn`); chord 1122, story-loader 1002, platform-browser 148 green; corpus baselines byte-identical; Secret Letter carries the block. Two amendments at implementation: D4 (no save-format bump — chapter state is world state; the opener is current before turn 1) and D5 (`during` at every `while` site).
+**Amended 2026-09-05** (session bc2998, David's ruling "the chapter title should be announced before the room"): D4's card now lands **before** the turn's prose, after the banner, for every trigger kind — via a registration position on the channel registry (ADR-163 §7 amendment), no renderer change. Plan `docs/work/archive/chapter-before-room/plan.md`.
 
 **A trusted extension (ADR-215), `use`-gated — the shape `use scoring` (ADR-261) and `use
 hunger` (ADR-263 D4) took.** Expected surfaces: `packages/chord/src/parser.ts` (one new
@@ -181,9 +182,21 @@ Per ADR-163 every story→UI signal is a channel; a chapter beginning is a packe
 `story.chapter` channel (the dotted key convention `info.title` / `info.description`
 follow) — name,
 title, description (empty when the row has none), ordinal — emitted on the turn the trigger
-fires, after that turn's prose (the arrival text is `market`'s last words, not `commerce`'s
-first). That is the whole packet (resolved 2026-08-29, Q-6, by D1's shape: the description
-IS the epigraph slot). The wire is data (ADR-165, and the
+fires, **before that turn's prose and after the banner** (amended 2026-09-05, David: "the
+chapter title should be announced before the room"; uniformly for every trigger kind —
+game-starts, first-visit, timer-expires, becomes — so the card reads as a heading over the
+turn's output, and the opening card sits between the banner and the opening room). The
+original text read "after that turn's prose (the arrival text is `market`'s last words, not
+`commerce`'s first)"; that is reversed. The mechanism is registration order, not a renderer
+rule: `IChannelRegistry.add(channel, { before: 'room-name' })` (ADR-163 §7, amended the same
+day) places `story.chapter` ahead of the prose channels in the manifest, and a client that
+dispatches a turn in manifest order — the browser client, which buffers prose until
+`preferred-layout` — shows the card before the room with no special case. The event itself
+still follows the action's events in the stream (the plugin runs in the watchers band);
+only where the card lands changes. Real path: `packages/story-loader/tests/adr-330-chapters.test.ts`
+(manifest order on the real engine) and `packages/platform-browser/tests/chapter-before-room.test.ts`
+(DOM order through a real `BrowserClient`, turn 1 and a first-visit arrival). That is the
+whole packet (resolved 2026-08-29, Q-6, by D1's shape: the description IS the epigraph slot). The wire is data (ADR-165, and the
 standing rule that the web client is author-customizable with a data-only wire); how a title
 card looks is the client's. The current chapter and each row's fired flag are ordinary world state under `chord.chapter.*`
 keys (the home of the story's own state, ADR-264's counters and ADR-325's timers), so
@@ -211,8 +224,11 @@ change what any other construct means. It is **readable** (resolved 2026-08-29, 
   example needs; the plan-review tension on D5's scope resolved to the superset.)
   The opening chapter is current **before the first turn** (the loader seeds it at the
   ADR-327 D10 start moment; the plugin announces it on turn 1), so `during <opener>` holds
-  while turn 1 renders. A chapter that begins on an arrival begins after that turn's prose
-  (D4), so the arrival text itself still reads as the previous chapter.
+  while turn 1 renders. A chapter that begins on an arrival is announced before that turn's
+  prose (D4 as amended 2026-09-05), so the arrival text reads under the new chapter's
+  heading; the `during`/`before`/`after` reads at that arrival are unchanged (the chapter
+  begins after the action, in the watchers band, so the arrival's own clauses still see the
+  previous chapter — Acceptance 7's `not-yet` at the boundary holds as before).
   A head takes **one** of `while <condition>` or `during <name>`; both on one head is a parse
   error (`parse.head-while-during`) naming the composed form — `while during commerce and
   hunted` — so the pair is never ambiguous and `during` on a head is exactly sugar for
