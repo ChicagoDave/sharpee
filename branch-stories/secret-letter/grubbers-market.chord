@@ -944,7 +944,7 @@ import "silk-wares"
 ## ---------------------------------------------------------------------------
 
 create the grocer
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, grocer, greengrocer
   pronouns he
@@ -990,7 +990,7 @@ define exchange st-coin-grocer for the grocer
 end exchange
 
 create the fruit stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, fruit seller, fruit vendor, fruiterer
   pronouns he
@@ -1047,7 +1047,7 @@ define exchange st-coin-fruit for the fruit stallkeeper
 end exchange
 
 create the hat stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, milliner, hatter, hat seller
   pronouns he
@@ -1093,7 +1093,7 @@ define exchange st-coin-hat for the hat stallkeeper
 end exchange
 
 create the leather stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, leatherworker, leather seller, tanner
   pronouns he
@@ -1139,7 +1139,7 @@ define exchange st-coin-leather for the leather stallkeeper
 end exchange
 
 create the weaponsmith
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, smith, armorer, armourer, weapon seller
   pronouns he
@@ -1185,7 +1185,7 @@ define exchange st-coin-weaponsmith for the weaponsmith
 end exchange
 
 create the gems stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, jeweler, jeweller, gem merchant, gem seller
   pronouns he
@@ -1231,7 +1231,7 @@ define exchange st-coin-gems for the gems stallkeeper
 end exchange
 
 create the herbalist
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, herb seller, herbwife
   pronouns he
@@ -1277,7 +1277,7 @@ define exchange st-coin-herb for the herbalist
 end exchange
 
 create the rope dealer
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, ropemaker, rope seller
   pronouns he
@@ -1323,7 +1323,7 @@ define exchange st-coin-rope for the rope dealer
 end exchange
 
 create the candlemaker
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, chandler, candle seller
   pronouns he
@@ -1369,7 +1369,7 @@ define exchange st-coin-candle for the candlemaker
 end exchange
 
 create the pottery stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, potter, pot seller
   pronouns he
