@@ -306,7 +306,14 @@ hung on rooms only because `going`'s `it` is the source room. They get homes:
   ```
 
 - **Reacting to someone else moving.** `when <entity> moves` is an event clause head, like
-  `when <timer> expires`, riding the actor-moved event `going` already emits:
+  `when <timer> expires`, firing on the *completed move of the named entity* — walked
+  (the actor-moved event `going` emits), authored (`move <entity> to <place>`, ADR-327 D5),
+  or offstage (`move <entity> offstage`, and `remove`, which is the same lifecycle under
+  Z6). (Amended 2026-09-06, GH #373: the original wording, "riding the actor-moved event
+  `going` already emits", described the first path only; the loader fires the other two
+  itself, and a move offstage — a room to nowhere — completes as much as any. An offstage
+  mover has no location, so `its location` in the body refuses as D1 says.) The full order
+  of what an authored move fires is `docs/architecture/authored-move-narration-and-event-order.md`.
 
   ```
   when the player moves, while the wandering mercenaries is approaching

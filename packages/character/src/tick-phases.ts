@@ -402,8 +402,6 @@ export function createCharacterModelPhase(
   registry: CharacterPhaseRegistry,
 ): (npcs: IFEntity[], ctx: TickContext) => ISemanticEvent[] {
   return (npcs: IFEntity[], ctx: TickContext): ISemanticEvent[] => {
-    // Mirror the turn for the player-action dialogue surfaces (see key doc).
-    ctx.world.setStateValue(CHARACTER_TURN_KEY, ctx.turn);
     // A modeled PC gets interior upkeep — mood/lucidity decay — without
     // joining NPC turn scheduling (adr-320 contracts.md §2.1): the
     // observe/influence/propagation/goal sub-steps stay NPC-only.
@@ -416,7 +414,7 @@ export function createCharacterModelPhase(
     // sub-step's applied transfers and the goal sub-step's completions
     // from the same turn, accumulated on the surface below.
     const surface = emptySceneTickSurface();
-    return [
+    const events = [
       ...runDecaySubStep(decayTargets, ctx, registry),
       ...runObserveSubStep(npcs, ctx, registry, surface),
       ...runInfluenceSubStep(npcs, ctx, registry),
@@ -425,6 +423,14 @@ export function createCharacterModelPhase(
       ...runSceneSubStep(npcs, ctx, registry, surface),
       ...runArrivalReactions(ctx, registry, surface),
     ];
+    // Mirror the turn AFTER the sub-steps (GH #275): the mirror records the
+    // last COMPLETED tick, so `dialogueTurn()` reads the same number during
+    // this turn's player action and during this turn's tick — one scale for
+    // every scene stamp, whichever side wrote it. Advanced at entry, the
+    // tick read T+1 against an action-side stamp of T and the subject-change
+    // occasion could never fire for a player-made topic change.
+    ctx.world.setStateValue(CHARACTER_TURN_KEY, ctx.turn);
+    return events;
   };
 }
 

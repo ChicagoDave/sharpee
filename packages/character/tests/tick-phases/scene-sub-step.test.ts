@@ -28,7 +28,7 @@ import {
   createTraitMemoryAccess,
 } from '../../src/conversation/scene-binding';
 import { readSceneStore } from '../../src/conversation/scene-store';
-import { openScene } from '../../src/conversation/scene-runtime';
+import { noteTopicMove, openScene } from '../../src/conversation/scene-runtime';
 
 function room(world: WorldModel, name: string): IFEntity {
   const r = world.createEntity(name, 'room');
@@ -139,8 +139,9 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       expect(scene.openedBy).toEqual({ kind: 'initiative', openerId: alice.id });
       expect(scene.floorHolderId).toBe(alice.id);
       expect(scene.currentTopic).toBe('the-fire');
-      // Scene stamps ride the dialogue-turn scale (mirror + 1).
-      expect(scene.lastMoveTurn).toBe(2);
+      // Scene stamps ride the dialogue-turn scale — the current turn, the
+      // same number the player's action in this turn would stamp (GH #275).
+      expect(scene.lastMoveTurn).toBe(1);
 
       // The fact actually moved (effects land) and both sides discussed it.
       expect(traitOf(bert).knows('the-fire')).toBe(true);
@@ -148,8 +149,8 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       expect(traitOf(bert).conversationMemory?.[alice.id]?.discussedTopics).toContain('the-fire');
 
       // D16: the scene move stamps both participants' markers (dialogue-turn scale).
-      expect(traitOf(alice).activeConversation).toMatchObject({ lastTurn: 2 });
-      expect(traitOf(bert).activeConversation).toMatchObject({ lastTurn: 2 });
+      expect(traitOf(alice).activeConversation).toMatchObject({ lastTurn: 1 });
+      expect(traitOf(bert).activeConversation).toMatchObject({ lastTurn: 1 });
 
       // One surface: no legacy witnessed event, scene wire instead.
       expect(events.find((e) => e.type === 'character.propagation.witnessed')).toBeUndefined();
@@ -325,22 +326,23 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
       // moves AND the transfer computed at co-location wraps; the scenes
       // sub-step then closes the just-opened scene on exit. To hold her,
       // seat the scene first so turn 1's goal check sees the marker.
-      tick(1); // transfer opens scene + stamps markers (clock turn 2)
+      tick(1); // transfer opens scene + stamps markers (clock turn 1)
       // Alice moved turn 1 (marker not yet stamped when goals ran), so
       // the scene closed on exit the same turn — the emergent same-turn
       // race. Reset her for the suppression window proper.
       world.moveEntity(alice.id, parlor.id);
       (traitOf(alice).goalState['errand'] as { currentStep: number }).currentStep = 0;
 
-      // Markers stamped at clock turn 2: suppression holds while
-      // turnsSince(t, 2) < 4 — ticks 2 through 5.
-      for (const t of [2, 3, 4, 5]) {
+      // Markers stamped at clock turn 1 — the turn the tick ran in, on the
+      // one scale a player-side stamp uses too (GH #275): suppression holds
+      // while turnsSince(t, 1) < 4 — ticks 2 through 4.
+      for (const t of [2, 3, 4]) {
         tick(t);
         expect(world.getLocation(alice.id)).toBe(parlor.id);
       }
 
-      // Tick 6: the window lapsed — pursuit resumes.
-      tick(6);
+      // Tick 5: the window lapsed — pursuit resumes.
+      tick(5);
       expect(world.getLocation(alice.id)).toBe(hall.id);
     });
 
@@ -438,6 +440,33 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
         .toBe('the-fire');
     });
 
+    it('a subject change stamped on the ACTION side (the player asking a new topic) is seen by the same turn’s tick (GH #275)', () => {
+      const occasions: SceneOccasion[] = [];
+      registerCharacterScenes(world, createTraitMemoryAccess(world), {
+        seizeInitiative: (pid, occasion) => {
+          occasions.push(occasion);
+          return undefined;
+        },
+      });
+      tick(1);
+      tick(2); // two completed ticks: the mirror reads 2, the player acts in turn 3
+
+      // The player's action of turn 3: a scene with Alice, one topic, then another.
+      const { scene } = openScene(world, {
+        participantIds: [alice.id, player.id],
+        openedBy: { kind: 'initiative', openerId: player.id },
+      });
+      noteTopicMove(world, scene.id, 'the-fire');
+      noteTopicMove(world, scene.id, 'the-will');
+      expect(readSceneStore(world).scenes[scene.id].subjectChangedTurn).toBe(3);
+
+      tick(3); // the same turn's tick reads clock 3 — not 4
+
+      const change = occasions.find((o) => o.kind === 'subject-change');
+      expect(change).toBeDefined();
+      expect((change as Extract<SceneOccasion, { kind: 'subject-change' }>).abandonedTopicId).toBe('the-fire');
+    });
+
     it('a silence occasion one turn before decay can keep the scene alive', () => {
       traitOf(alice).addFact('the-fire', 'witnessed', 'knows', 0);
       registry.register(alice.id, { propagationProfile: chattyProfile() });
@@ -450,15 +479,15 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
             : undefined,
       });
 
-      tick(1); // opens, lastMoveTurn 2 (dialogue-turn scale)
+      tick(1); // opens, lastMoveTurn 1 (dialogue-turn scale: the current turn)
       tick(2);
       tick(3);
-      tick(4); // clock 5 - 2 === 3 → silence occasion fires, seizure is a move
+      tick(4); // clock 4 - 1 === 3 → silence occasion fires, seizure is a move
       let scene = Object.values(readSceneStore(world).scenes)[0];
       expect(scene).toBeDefined();
-      expect(scene.lastMoveTurn).toBe(5);
+      expect(scene.lastMoveTurn).toBe(4);
 
-      tick(5); // clock 6 - 5 = 1 — alive
+      tick(5); // clock 5 - 4 = 1 — alive
       scene = Object.values(readSceneStore(world).scenes)[0];
       expect(scene).toBeDefined();
       expect(sounds.some((s) => s.content?.messageId === 'alice-fills-the-silence')).toBe(true);
@@ -559,9 +588,10 @@ describe('Phase 8 — the scenes sub-step (D10: propagation made visible)', () =
             : undefined,
       });
 
-      tick(1);
+      tick(1); // opened before any tick: lastMoveTurn 1
       tick(2);
-      const events = tick(3); // silence occasion fires one turn before decay
+      tick(3);
+      const events = tick(4); // clock 4 - 1 === 3: the silence occasion, one turn before decay
 
       const scene = Object.values(readSceneStore(world).scenes)[0];
       expect(scene).toBeDefined();

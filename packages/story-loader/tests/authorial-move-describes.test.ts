@@ -115,6 +115,10 @@ describe('GH #331: an authorial move of the player describes the destination', (
     expect(phrase).toBeGreaterThanOrEqual(0);
     expect(events.findIndex((e) => (e.data as { messageId?: string })?.messageId?.endsWith('slip-away'))).toBeLessThan(room);
     expect(glare).toBeGreaterThanOrEqual(0);
+    // GH #367: the room BEFORE the arrival clause — the assertion this test
+    // lacked, which is how the inverted order shipped. (Compared in EVENT
+    // index space, as `room` is; `glare` above indexes the message-id list.)
+    expect(events.findIndex((e) => (e.data as { messageId?: string })?.messageId?.endsWith('grocer-glares'))).toBeGreaterThan(room);
     expect(text).toContain('Cabbages, for the first time.');
   });
 

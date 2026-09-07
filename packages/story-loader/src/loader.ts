@@ -159,7 +159,7 @@ import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, CHORD_VISITED_PREFIX, counterKey, timerKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -1224,7 +1224,7 @@ export class ChordStory implements Story {
           case 'game-starts':
             return { kind: 'game-starts' };
           case 'first-visit':
-            return { kind: 'first-visit', roomId: this.requireWorldId(t.room) };
+            return { kind: 'first-visit', stateKey: CHORD_VISITED_PREFIX + this.requireWorldId(t.room) };
           case 'timer-expires':
             return { kind: 'timer-expires', stateKey: timerKey(t.timer) };
           case 'becomes':

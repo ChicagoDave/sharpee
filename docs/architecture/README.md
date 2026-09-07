@@ -8,6 +8,7 @@
 - **[Diagrams](./diagrams/)** — Architecture diagrams (Drawio, Mermaid)
 - **[Naming Conventions](./naming-conventions.md)** — Entity, trait, and action naming standards
 - **[Architecture Diagram](./diagram-20260203.md)** — Current system diagram
+- **[Authored-Move Narration and Event Order](./authored-move-narration-and-event-order.md)** — What a Chord `move`/`remove` narrates and fires, in order, against the walked path
 
 ## Platform Layers
 
