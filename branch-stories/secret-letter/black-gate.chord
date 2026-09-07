@@ -1651,7 +1651,7 @@ create the butler
   aka man, servant, tall man, gaunt man, sour man, old man, older man, fossville's butler, uniform, servant's uniform
   a person
   pronouns he
-  states: absent, gripping, shown, gone
+  states: absent, gripping, gone
 
   The butler is tall and somewhat gaunt, with a heavy brow and a sour,
   twisted cast to his mouth. He looks like he doesn't like kids very much,
@@ -1669,14 +1669,11 @@ create the butler
   end on
 
   on the player showing
-    phrase butler-wont-look when the butler is shown
-    phrase butler-stares-at-the-letter when the butler is gripping
-    change the butler to shown when the butler is gripping
+    phrase butler-sees-the-letter
   end on
 
   on the player giving
-    refuse when the butler is shown: butler-wont-look
-    refuse butler-stares-at-the-letter
+    refuse butler-sees-the-letter
   end on
 
   on the player attacking
@@ -1749,19 +1746,16 @@ define phrase butler-stern-look
 end phrase
 
 ## Showing him the letter (`story.ni:9535-9541`), once, then he will not
-## look — on a state rather than a `stopping` phrase, because a phrase's
-## stopping count is kept per call site and show and give are two sites
-## (GH #371).
+## look. One `stopping` phrase shared by show and give: its progress belongs
+## to the phrase, whichever clause speaks it (ADR-245).
 
-define phrase butler-stares-at-the-letter
+define phrase butler-sees-the-letter, stopping
   The butler stares intently at the letter in your hand for a long moment.
   His eyes flicker towards the library, then settle back on you. 'They say
   no dark deed goes unpunished,' he mutters. 'I'll not stand between a man
   and the just fruits of his ill-gotten gains. Put that away, child; I never
   saw it, and I don't want to know what's in it.'
-end phrase
-
-define phrase butler-wont-look
+or
   The butler pointedly does not look at it.
 end phrase
 

@@ -47,6 +47,8 @@ import {
   darkKey,
   type TemperamentDef,
   TraitType,
+  WearableBehavior,
+  type WearableTrait,
   WorldModel,
   type ConversationIntent,
   type ConversationSceneState,
@@ -4261,6 +4263,37 @@ export class ChordRuntime {
           if (phase !== 'reports' && holds) {
             const thing = this.evaluator.entityValue(stmt.entity, ctx);
             this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx, thing), ctx);
+          }
+          break;
+        }
+        case 'wear':
+        case 'take-off': {
+          // ADR-325 Amendment W1: a put in the `move` family — no narration
+          // of its own. `wear` (W1b): off another wearer first, into the
+          // actor's hands through the move lifecycle if not already held
+          // (witness rows fire as `move … to <actor>` fires them), then the
+          // trait flips; already worn by this actor is a no-op. `take-off`
+          // (W1c): the trait flips back and the item stays held; not worn
+          // by this actor is a no-op.
+          if (phase !== 'reports' && holds) {
+            const actorId = this.evaluator.entityValue(stmt.actor, ctx);
+            const itemId = this.evaluator.entityValue(stmt.item, ctx);
+            const actor = ctx.world.getEntity(actorId);
+            const item = ctx.world.getEntity(itemId);
+            if (!actor || !item) throw new LoadError('`make … wear` names an actor and a garment.', stmt.span);
+            const wearable = item.get(TraitType.WEARABLE) as WearableTrait | undefined;
+            if (!wearable) throw new LoadError(`\`${item.name}\` is not wearable.`, stmt.span);
+            if (stmt.kind === 'wear') {
+              if (wearable.worn && wearable.wornBy === actor.id) break;
+              if (wearable.worn && wearable.wornBy) {
+                const other = ctx.world.getEntity(wearable.wornBy);
+                if (other) WearableBehavior.remove(item, other);
+              }
+              if (ctx.world.getLocation(item.id) !== actor.id) this.moveWithLifecycle(item.id, actor.id, ctx);
+              WearableBehavior.wear(item, actor);
+            } else if (wearable.worn && wearable.wornBy === actor.id) {
+              WearableBehavior.remove(item, actor);
+            }
           }
           break;
         }

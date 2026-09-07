@@ -488,6 +488,18 @@ create the Dormitory
   are too young to run about the city on their own, play. The main hallway
   lies southeast.
 
+  on the player sleeping
+    refuse when Bobby is proposing: not-tired
+    refuse when the orphans is asleep: not-tired
+    phrase bunk-dozing
+    phrase door-knock-stub
+    move Widow Theresa offstage
+    move Widow Fiona offstage
+    move Widow Shannon offstage
+    move the dishes offstage
+    change the orphans to asleep
+  end on
+
 ## The bunk and `sleep` share one reaction: refused until Bobby's invitation
 ## is taken (`story.ni:5993`); on the curfew night, the dozing passage, then
 ## the new scene at the source's waking point, then the house goes quiet.
@@ -506,27 +518,10 @@ define trait bunk-sleep
   end on
 end trait
 
-## Bare `sleep` (no target): no standard action consults sleeping, so it is a
-## story action whose body IS the bunk's reaction; anywhere but the dormitory
-## it gets the bunk's own refusal.
-
-define action sleeping
-  grammar
-    sleep
-    go to sleep
-    go to bed
-    lie down
-  refuse when the player is in the Red Gate Master Bedroom: bare-mattress-no-comfort
-  refuse when Bobby is proposing: not-tired
-  refuse when the player is not in the Dormitory: not-tired
-  refuse when the orphans is asleep: not-tired
-  phrase bunk-dozing
-  phrase door-knock-stub
-  move Widow Theresa offstage
-  move Widow Fiona offstage
-  move Widow Shannon offstage
-  move the dishes offstage
-  change the orphans to asleep
+## Bare `sleep` (no target) is the standard sleeping action (GH #362): the
+## Dormitory reacts to it below with the bunk's reaction; anywhere else the
+## stock "You aren't tired." stands (the bare bed in Red Gate's master bedroom
+## has its own refusal, `red-gate.chord`).
 
 create the bunk
   aka bunk bed, my bunk, your bunk, bed, mattress, straw mattress, wooden frame

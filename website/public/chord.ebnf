@@ -1388,6 +1388,21 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               here/offstage ends the
                                                               name; elsewhere it is
                                                               part of it *)
+             | "make" name ( "wear" | "take" "off" ) name
+               [ stmt-when ] NL                            (* ADR-325 Amendment W1: a
+                                                              put in the `move` family —
+                                                              the garment goes on (moved
+                                                              to the actor first if not
+                                                              held; off another wearer
+                                                              first) or comes off and
+                                                              stays held. Nothing is
+                                                              narrated. `the player` is
+                                                              a legal actor; the garment
+                                                              must be wearable and the
+                                                              actor a person
+                                                              (analysis.wear-not-wearable,
+                                                              analysis.wear-actor-not-
+                                                              person) *)
              | timer-verb value-expr [ stmt-when ] NL      (* ADR-325 D3c: bare name in
                                                               the owner's block,
                                                               possessive elsewhere;

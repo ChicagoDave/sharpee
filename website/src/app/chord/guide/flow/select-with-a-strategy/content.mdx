@@ -29,6 +29,16 @@ The five strategies:
 | `sticky` | one seeded random arm, then that same arm forever |
 | `first-time` | the first arm once, the second arm ever after |
 
+A strategy's progress belongs to the phrase, not to the place that
+speaks it. Two clauses that share one `stopping` phrase — say `on the
+player showing` speaks it and `on the player giving` refuses with it —
+advance the same counter, so the first arm is heard once, whichever
+clause fired first, and the second arm follows from either. The same
+holds for `cycling` and `first-time`. Reach for one shared phrase when
+the story needs "say this once, then that" across several ways of
+provoking it; a per-clause count is what you get only by declaring two
+phrases.
+
 `randomly` and `sticky` draw from the same seeded, save-persistent
 stream as every other random effect in Chord, so a replay or a restored
 save reproduces the same choices (never `Math.random`). `first-time` is

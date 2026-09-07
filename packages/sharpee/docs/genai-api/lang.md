@@ -306,6 +306,7 @@ export declare const IFActions: {
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
+    readonly WAKING: "if.action.waking";
     readonly SAVING: "if.action.saving";
     readonly RESTORING: "if.action.restoring";
     readonly RESTARTING: "if.action.restarting";
@@ -575,6 +576,7 @@ export * from './attacking.js';
 export * from './hiding.js';
 export * from './waiting.js';
 export * from './sleeping.js';
+export * from './waking.js';
 export * from './scoring.js';
 export * from './hunger.js';
 export * from './help.js';
@@ -590,29 +592,6 @@ export * from './again.js';
  * All standard action language definitions
  */
 export declare const standardActionLanguage: ({
-    actionId: string;
-    patterns: string[];
-    messages: {
-        room_description: string;
-        room_description_brief: string;
-        in_container: string;
-        on_supporter: string;
-        examine_surroundings: string;
-        hidden_at: string;
-        room_dark: string;
-        exits: string;
-        you_see: string;
-        contents_list: string;
-        nothing_special: string;
-        container_contents: string;
-        surface_contents: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
     actionId: string;
     patterns: string[];
     messages: {
@@ -646,6 +625,29 @@ export declare const standardActionLanguage: ({
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        room_description: string;
+        room_description_brief: string;
+        in_container: string;
+        on_supporter: string;
+        examine_surroundings: string;
+        hidden_at: string;
+        room_dark: string;
+        exits: string;
+        you_see: string;
+        contents_list: string;
+        nothing_special: string;
+        container_contents: string;
+        surface_contents: string;
     };
     help: {
         description: string;
@@ -1649,6 +1651,7 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        not_tired: string;
         slept: string;
         dozed_off: string;
         fell_asleep: string;
@@ -1662,6 +1665,17 @@ export declare const standardActionLanguage: ({
         disturbed_sleep: string;
         nightmares: string;
         peaceful_sleep: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        already_awake: string;
     };
     help: {
         description: string;

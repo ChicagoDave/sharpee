@@ -715,7 +715,7 @@ create the Commerce Street
   after the player entering while Jack is dressed
     move the dress to the cloth satchel
     move the fashionable hat to the cloth satchel
-    make the player wear the woolen cap        ## NEW — W1a, unshipped
+    make the player wear the woolen cap        ## W1a — landed 2026-09-07, session 0e7d6f
     change Jack to urchin
   end after
 ```
@@ -736,7 +736,7 @@ The exit gate stays: it is the source's own rule for a cap the player later take
 
 ### Consequences
 
-- GH #360 closes with the landing. `commerce-street.chord`'s arrival block takes the statement; its `## GAP, reported not decided` comment goes.
+- GH #360 closes with the landing. `commerce-street.chord`'s arrival block takes the statement; its `## GAP, reported not decided` comment goes. *(Landed 2026-09-07, session 0e7d6f — plan `secret-letter-port-platform-defects` Phase 6: parser `make` head, analyzer `resolveWearStatement` with both W1e gates, runtime `wear`/`take-off` in the mutation pass over `moveWithLifecycle` + `WearableBehavior`; pins `packages/chord/tests/adr-325-w1-make-wear.test.ts` and `packages/story-loader/tests/adr-325-w1-make-wear.test.ts`.)*
 - The grammar changelog (`docs/architecture/chord-grammar-changes.md`), the Chord guide's statements page, and `genai-api` record the two statements in the same landing.
 - Slots and layers stay as they are (`WearableBehavior`'s two `TODO`s); W1 neither adds nor promises slot conflict handling.
 - ADR-329 D7's sentence gains a second example: `move` puts an entity somewhere; `make … wear` puts a garment on someone; acting still *does*.

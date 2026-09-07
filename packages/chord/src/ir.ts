@@ -1489,6 +1489,15 @@ export type IRStatement =
   | { kind: 'change-feeling'; target: IRValue; disposition: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'move'; entity: IRValue; place: IRValue; stmtWhen?: IRCondition | null; span: Span }
   /**
+   * `make <actor> wear <item>` / `make <actor> take off <item>` (ADR-325
+   * Amendment W1, additive): a put in the `move` family. `wear` moves the
+   * item to the actor through the move lifecycle if not already held, takes
+   * it off another wearer first, then `WearableBehavior.wear`; `take-off`
+   * runs `WearableBehavior.remove` and leaves the item held. Neither
+   * narrates. `actor` is `player` or an entity value.
+   */
+  | { kind: 'wear' | 'take-off'; actor: IRValue; item: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  /**
    * `<actor> <verb> …` (ADR-329 D1): one standard or story action performed
    * NOW as `actor` through the engine's execution entry. `action` is the bare
    * name as clause heads carry it (`taking` — story-first at load, else

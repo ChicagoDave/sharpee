@@ -1711,6 +1711,7 @@ export * from './looking/index.js';
 export * from './inventory/index.js';
 export * from './waiting/index.js';
 export * from './sleeping/index.js';
+export * from './waking/index.js';
 export * from './scoring/index.js';
 export * from './help/index.js';
 export * from './about/index.js';

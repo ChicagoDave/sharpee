@@ -58,7 +58,7 @@ function arrivalNarratedTopicsOf(onClauses: readonly IROnClause[]): ReadonlySet<
   }
   return topics;
 }
-import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry } from '@sharpee/if-domain';
+import type { Choice, GrammarBuilder, IChannelRegistry, IOChannel, Literal, Phrase, ScopeBuilder, SemanticProperties, SnippetEntry, SnippetMap } from '@sharpee/if-domain';
 import {
   registerSnippetGate,
   IFActions,
@@ -630,11 +630,10 @@ export class ChordStory implements Story {
         world.setStateValue(counterKey(counter.name, irEntity.id), counter.starts);
       }
       // Z2 (ADR-211): compile `{key}` description markers onto ADR-209
-      // snippet storage — atomically per room, before the engine's
-      // load-time `validateRoomSnippets` gate ever sees the texts.
-      if (entity.has(TraitType.ROOM)) {
-        this.compileRoomSnippets(world, irEntity, entity);
-      }
+      // snippet storage — atomically per entity, before the engine's
+      // load-time `validateRoomSnippets` gate ever sees the texts. Rooms
+      // and every other described entity alike (GH #364).
+      this.compileDescriptionSnippets(world, irEntity, entity);
     }
 
     // ADR-234 D3 backstop (rogue IR — the compiler's `door-unconnected`
@@ -1013,20 +1012,21 @@ export class ChordStory implements Story {
       throw new LoadError('The language provider does not support message registration (addMessage).');
     }
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-    // ADR-333 D1a: a room's description texts live only here (the trait
+    // ADR-333 D1a: an entity's description texts live only here (the trait
     // carries the key), so the Z2 `{marker}` → `{snippet:marker}` rewrite is
     // applied to the registered template — computed from the IR alone, so
     // it holds whichever order extendLanguage and initializeWorld run in.
-    const roomDescriptionKeys = new Set<string>();
+    // Every described entity, room or not (GH #364): the same rewrite the
+    // room path always had, matched by `compileDescriptionSnippets`.
+    const descriptionKeys = new Set<string>();
     for (const e of this.ir.entities) {
-      if (e.kinds[0]?.name !== 'room') continue;
-      if (e.descriptionKey) roomDescriptionKeys.add(e.descriptionKey);
-      if (e.initialDescriptionKey) roomDescriptionKeys.add(e.initialDescriptionKey);
+      if (e.descriptionKey) descriptionKeys.add(e.descriptionKey);
+      if (e.initialDescriptionKey) descriptionKeys.add(e.initialDescriptionKey);
     }
     const isMarker = this.snippetMarkerTest();
     for (const [key, phrase] of Object.entries(table)) {
       const template = templateFor(phrase);
-      registry.addMessage(key, roomDescriptionKeys.has(key) ? rewriteSnippetMarkers(template, isMarker) : template);
+      registry.addMessage(key, descriptionKeys.has(key) ? rewriteSnippetMarkers(template, isMarker) : template);
     }
     // ADR-242 D7: declared pronoun sets ride the same seam — the same
     // structural probe, throwing a legible error only when a story
@@ -2600,28 +2600,37 @@ export class ChordStory implements Story {
 
   /** Resolved default-locale text for a phrase key (single-variant read). */
   /**
-   * Z2 (ADR-211): compile `{key}` strategy-phrase markers in this room's
-   * description prose onto ADR-209 storage. ATOMIC per room: every
+   * Z2 (ADR-211): compile `{key}` strategy-phrase markers in this entity's
+   * description prose onto ADR-209 storage. ATOMIC per entity: every
    * rewrite/entry/gate is computed first and applied only when the whole
-   * room compiled clean — a LoadError leaves the room untouched, never
-   * partial. Markers rewrite to `{snippet:key}`; variants populate
-   * `RoomTrait.snippets[key]` (`nothing` → `''`, strategy → selector via the
-   * Z5 table; a single-variant plain phrase compiles to a plain string
-   * entry); the phrase's `while` gate compiles — a presence condition on the
-   * marker's own room (`is here` / `is in <this room>`, non-negated) becomes
-   * `mentions`, anything else registers on the ADR-211 gate seam keyed
-   * `(roomId, marker)` (stdlib `registerSnippetGate` — in-memory, nothing
-   * serialized, re-registered every story load). Both description texts
-   * share one entry per marker (Z1/ADR-211 Q6: shared entries + counters).
+   * entity compiled clean — a LoadError leaves it untouched, never
+   * partial. Markers rewrite to `{snippet:key}`; variants populate the
+   * host's snippet map — `RoomTrait.snippets` for a room, and
+   * `IdentityTrait.snippets` for every other described entity (GH #364:
+   * the examined handler splices exactly as the room handler does) —
+   * (`nothing` → `''`, strategy → selector via the Z5 table; a
+   * single-variant plain phrase compiles to a plain string entry); the
+   * phrase's `while` gate compiles — on a ROOM host a presence condition
+   * on the marker's own room (`is here` / `is in <this room>`, non-negated)
+   * becomes `mentions`; anything else, and every gate on a non-room host,
+   * registers on the ADR-211 gate seam keyed `(hostId, marker)` (stdlib
+   * `registerSnippetGate` — in-memory, nothing serialized, re-registered
+   * every story load). The resolver's `mentions` check is containment in
+   * the host room, which only a room host can answer, so a non-room host
+   * evaluates `is here` live through the gate instead. Both description
+   * texts share one entry per marker (Z1/ADR-211 Q6: shared entries +
+   * counters).
    *
    * @param world the world being built (gate thunks close over it)
-   * @param irEntity the room's IR entity (presence-gate room identity)
-   * @param entity the built room entity
+   * @param irEntity the entity's IR entity (presence-gate room identity)
+   * @param entity the built entity
    */
-  private compileRoomSnippets(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+  private compileDescriptionSnippets(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     const roomTrait = entity.get(TraitType.ROOM) as RoomTrait | undefined;
-    if (!roomTrait) return;
+    const identityTrait = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+    const host: { snippets?: SnippetMap } | undefined = roomTrait ?? identityTrait;
+    if (!host) return;
 
     // ADR-333 D1a: the texts are read from the IR — the trait carries only
     // the keys, and the marker rewrite lives on the registered template
@@ -2650,7 +2659,7 @@ export class ChordStory implements Story {
         const variantTexts = phrase.variants.map((v) => (v.text === 'nothing' ? '' : withLineBreaks(v.text)));
         let mentions: string | undefined;
         if (phrase.condition) {
-          const subject = presenceSubject(phrase.condition, irEntity.id);
+          const subject = roomTrait ? presenceSubject(phrase.condition, irEntity.id) : null;
           if (subject) {
             mentions = this.requireWorldId(subject, irEntity);
           } else {
@@ -2680,17 +2689,18 @@ export class ChordStory implements Story {
     }
     if (entries.size === 0) return;
 
-    // Apply phase — populate the map, register the gates.
-    roomTrait.snippets = { ...(roomTrait.snippets ?? {}), ...Object.fromEntries(entries) };
+    // Apply phase — populate the host's map, register the gates.
+    host.snippets = { ...(host.snippets ?? {}), ...Object.fromEntries(entries) };
     for (const register of gates) register();
   }
 
   /**
-   * The Z2 marker predicate: `{name}` in a room description splices a
-   * snippet when `name` is a declared phrase that is neither the `{br}` line
-   * break nor a hatch. One definition, shared by the template rewrite
-   * (extendLanguage) and the map compile (compileRoomSnippets); a verbatim
-   * phrase passes here and is refused by the compile with its LoadError.
+   * The Z2 marker predicate: `{name}` in a description splices a snippet
+   * when `name` is a declared phrase that is neither the `{br}` line break
+   * nor a hatch. One definition, shared by the template rewrite
+   * (extendLanguage) and the map compile (compileDescriptionSnippets); a
+   * verbatim phrase passes here and is refused by the compile with its
+   * LoadError.
    */
   private snippetMarkerTest(): (marker: string) => boolean {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};

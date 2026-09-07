@@ -93,6 +93,9 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     if (identityTrait) {
       eventData.hasBrief = !!identityTrait.brief;
       if (identityTrait.descriptionId) eventData.hasDescription = true;
+      // GH #364: a snippet-bearing description travels with its map so the
+      // engine's examined handler splices it, as looking carries roomSnippets.
+      if (identityTrait.snippets) eventData.snippets = identityTrait.snippets;
     }
   }
   

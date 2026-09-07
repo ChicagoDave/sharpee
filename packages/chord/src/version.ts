@@ -274,5 +274,14 @@
  * `, one-way` exits (ADR-234 D4, GH #327), `proper` on any create block
  * (GH #342), and the publish-readiness fixes (session effb6f). All additive
  * over 3.5.0 — a minor by D2's ordinary rule, cut at the owner's request.
+ *
+ * Landings folded into the unpublished 3.6.0 (2026-09-07, session 0e7d6f,
+ * the secret-letter-port-platform-defects plan): `make <actor> wear <item>`
+ * and `make <actor> take off <item>` (ADR-325 Amendment W1 — two puts in
+ * the `move` family; `the player` is a legal actor; gates
+ * `analysis.wear-not-wearable` / `analysis.wear-actor-not-person`), and
+ * `on the player sleeping` / `on the player waking` loading against the
+ * standard `sleeping` and `waking` actions (GH #362 — no grammar motion).
+ * Additive — every valid 3.6.0 story is unchanged; only the EBNF hash moves.
  */
 export const CHORD_LANGUAGE_VERSION = '3.6.0';

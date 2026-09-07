@@ -1,13 +1,14 @@
 /**
- * Load-time room-snippet validation (ADR-209 AC-5; ADR-211 AC-3 bare-fragment
- * gate).
+ * Load-time description-snippet validation (ADR-209 AC-5; ADR-211 AC-3
+ * bare-fragment gate).
  *
  * After a story's `initializeWorld` returns, every snippet-bearing room's
- * `description` and `initialDescription` are scanned with the shared
- * marker-extraction helper; a `{snippet:name}` marker with no entry in the
- * room's map fails story load synchronously, naming room and marker — the
- * same posture as `PhraseParseError`. Rooms without a snippet map are never
- * scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
+ * `description` and `initialDescription` — and every other snippet-bearing
+ * entity's description (`IdentityTrait.snippets`, GH #364) — are scanned
+ * with the shared marker-extraction helper; a `{snippet:name}` marker with
+ * no entry in the host's map fails story load synchronously, naming host
+ * and marker — the same posture as `PhraseParseError`. Hosts without a
+ * snippet map are never scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
  * snippet text must be a bare fragment: a non-empty text leading with
  * punctuation or whitespace fails load with the fix-it — the separator is
  * platform-owned. `{ messageId }` texts resolve at render and stay
@@ -21,7 +22,7 @@
  */
 
 import { extractSnippetMarkers } from '@sharpee/if-domain';
-import type { LanguageProvider, SnippetEntry, SnippetText } from '@sharpee/if-domain';
+import type { LanguageProvider, SnippetEntry, SnippetMap, SnippetText } from '@sharpee/if-domain';
 import type { WorldModel } from '@sharpee/world-model';
 import { TraitType, RoomTrait, IdentityTrait } from '@sharpee/world-model';
 import type { IFEntity } from '@sharpee/world-model';
@@ -97,12 +98,24 @@ export function validateRoomSnippets(world: WorldModel, languageProvider?: Langu
   const unbound: Array<{ room: string; marker: string }> = [];
   const notBare: Array<{ room: string; marker: string; text: string }> = [];
 
-  for (const room of world.findByTrait(TraitType.ROOM)) {
-    const roomTrait = room.get<RoomTrait>(TraitType.ROOM);
-    const snippets = roomTrait?.snippets;
+  // Every snippet-bearing host: a room's map lives on its RoomTrait, any
+  // other entity's on its IdentityTrait (GH #364). Same scan, same posture.
+  const hosts: Array<{ entity: IFEntity; snippets: SnippetMap; texts: string[] }> = [];
+  for (const entity of world.getAllEntities()) {
+    const roomTrait = entity.get<RoomTrait>(TraitType.ROOM);
+    const identity = entity.get<IdentityTrait>(TraitType.IDENTITY);
+    const snippets = roomTrait?.snippets ?? identity?.snippets;
     if (!snippets) continue; // opt-in: no map, no scan
+    const texts = roomTrait
+      ? roomDescriptionTexts(entity, languageProvider)
+      : [resolveDescriptionId(languageProvider, identity?.descriptionId) ?? identity?.description].filter(
+          (t): t is string => Boolean(t),
+        );
+    hosts.push({ entity, snippets, texts });
+  }
 
-    for (const text of roomDescriptionTexts(room, languageProvider)) {
+  for (const { entity: room, snippets, texts } of hosts) {
+    for (const text of texts) {
       for (const marker of extractSnippetMarkers(text)) {
         if (!(marker in snippets)) {
           unbound.push({ room: room.name, marker });

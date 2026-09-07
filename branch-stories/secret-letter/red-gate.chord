@@ -1017,6 +1017,11 @@ create the Red Gate Master Bedroom
   aka bedroom, master bedroom, duke's bedroom, duke's room
   north to the Red Gate Third Floor Landing
   south to the Bathroom
+
+  on the player sleeping
+    refuse bare-mattress-no-comfort
+  end on
+
   first time
     Most of the furniture from this room has been carted off. Only the bed
     remains, just a bare mattress covered with yet another plain, dusty

@@ -98,6 +98,7 @@ import {
   ExitDecl,
   GreedySlotDecl,
   MoveStmt,
+  WearStmt,
   SlotTypeDecl,
   RemoveStmt,
   MustRequirement,
@@ -331,7 +332,7 @@ function looksLikeComment(line: Line): boolean {
 
 /** Words that open a statement or block boundary inside behavior bodies. */
 const STATEMENT_OPENERS = new Set([
-  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'remove', 'award', 'win', 'lose', 'kill',
+  'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'make', 'remove', 'award', 'win', 'lose', 'kill',
   'raise', 'lower',
   'start', 'restart', 'reset', 'interrupt',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
@@ -7221,6 +7222,40 @@ class Parser {
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'move', entity, place, stmtWhen, span: lineSpan(line) } as MoveStmt;
+      }
+      case 'make': {
+        // ADR-325 Amendment W1: `make <actor> wear <item>` |
+        // `make <actor> take off <item>`, each with the ordinary `when` tail.
+        // The actor's name runs up to the verb (`wear`, or `take` followed by
+        // `off`); the item's name runs to `when` or the end of the line.
+        this.pos++;
+        c.next();
+        const actor = this.parseNameRef(
+          c,
+          (t) => t.kind === 'word' && (t.text === 'wear' || (t.text === 'take' && c.isWord('off', 1))),
+        );
+        if (actor.words.length === 0) {
+          this.diagnostics.error('parse.make-actor', 'Expected an actor after `make` — `make <actor> wear <item>` or `make <actor> take off <item>`.', c.restSpan());
+          return null;
+        }
+        let verb: 'wear' | 'take-off';
+        if (c.matchWord('wear')) {
+          verb = 'wear';
+        } else if (c.isWord('take') && c.isWord('off', 1)) {
+          c.next();
+          c.next();
+          verb = 'take-off';
+        } else {
+          this.diagnostics.error('parse.make-verb', `Expected \`wear\` or \`take off\` after the actor in the \`make\` statement.${this.misparseHint(line)}`, c.restSpan());
+          return null;
+        }
+        const item = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+        if (item.words.length === 0) {
+          this.diagnostics.error('parse.make-item', `Expected the garment after \`${verb === 'wear' ? 'wear' : 'take off'}\`.`, c.restSpan());
+          return null;
+        }
+        const stmtWhen = this.parseStatementWhen(c, line);
+        return { kind: verb, actor, item, stmtWhen, span: lineSpan(line) } as WearStmt;
       }
       case 'remove': {
         // Z6 (ADR-213 Q3): `remove <entity> [when <cond>]` — out of play

@@ -1010,15 +1010,16 @@ export declare function executeCapabilityBlocked(context: ActionContext, result:
 
 ```typescript
 /**
- * Load-time room-snippet validation (ADR-209 AC-5; ADR-211 AC-3 bare-fragment
- * gate).
+ * Load-time description-snippet validation (ADR-209 AC-5; ADR-211 AC-3
+ * bare-fragment gate).
  *
  * After a story's `initializeWorld` returns, every snippet-bearing room's
- * `description` and `initialDescription` are scanned with the shared
- * marker-extraction helper; a `{snippet:name}` marker with no entry in the
- * room's map fails story load synchronously, naming room and marker — the
- * same posture as `PhraseParseError`. Rooms without a snippet map are never
- * scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
+ * `description` and `initialDescription` — and every other snippet-bearing
+ * entity's description (`IdentityTrait.snippets`, GH #364) — are scanned
+ * with the shared marker-extraction helper; a `{snippet:name}` marker with
+ * no entry in the host's map fails story load synchronously, naming host
+ * and marker — the same posture as `PhraseParseError`. Hosts without a
+ * snippet map are never scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
  * snippet text must be a bare fragment: a non-empty text leading with
  * punctuation or whitespace fails load with the fix-it — the separator is
  * platform-owned. `{ messageId }` texts resolve at render and stay
@@ -3957,7 +3958,11 @@ export declare function tryProcessDomainEventMessage(event: ISemanticEvent, cont
  * `descriptionId` instead of (or beside) literal text, this handler resolves
  * the id to the author's text, realizes the action's own template with it,
  * and stamps the blocks with the entity's id — mirroring what the room
- * handler does for room descriptions.
+ * handler does for room descriptions. When the event also carries the
+ * entity's `snippets` map (GH #364), the resolved text is spliced through
+ * stdlib's snippet resolver first, exactly as a room's `roomSnippets` are,
+ * so `{snippet:name}` markers in an entity description resolve instead of
+ * printing literally.
  *
  * Public interface: `tryProcessExamined`. The pipeline consults it for
  * `if.event.examined` before the domain-message path; on null the event

@@ -5,7 +5,7 @@
 import { type EntityId } from '@sharpee/core';
 
 /**
- * Event data for when an actor sleeps
+ * Event data for when an actor sleeps (a signal, like `if.event.waited`).
  */
 export interface SleptEventData {
   /** Number of turns that passed while sleeping */
@@ -16,29 +16,6 @@ export interface SleptEventData {
   
   /** Name of the location */
   locationName?: string;
-  
-  /** Whether sleeping in a comfortable location */
-  comfortable?: boolean;
-  
-  /** Whether the actor was exhausted */
-  exhausted?: boolean;
-  
-  /** Whether the actor had nightmares */
-  hadNightmares?: boolean;
-  
-  /** Whether sleep was restless */
-  restless?: boolean;
-  
-  /** Whether sleep was peaceful */
-  peaceful?: boolean;
-}
-
-/**
- * Error data for when sleeping fails
- */
-export interface SleepingErrorData {
-  reason: 'cant_sleep_here' | 'too_dangerous_to_sleep' | 'already_well_rested';
-  location?: string;
 }
 
 /**

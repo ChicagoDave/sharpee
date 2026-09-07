@@ -71,6 +71,7 @@ export * from './hiding.js';
 // Meta actions
 export * from './waiting.js';
 export * from './sleeping.js';
+export * from './waking.js';
 export * from './scoring.js';
 export * from './hunger.js';
 export * from './help.js';
@@ -131,6 +132,7 @@ import { attackingLanguage } from './attacking.js';
 import { hidingLanguage, revealingLanguage } from './hiding.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
+import { wakingLanguage } from './waking.js';
 import { scoringLanguage } from './scoring.js';
 import { hungerLanguage } from './hunger.js';
 import { helpLanguage } from './help.js';
@@ -213,6 +215,7 @@ export const standardActionLanguage = [
   // Meta actions
   waitingLanguage,
   sleepingLanguage,
+  wakingLanguage,
   scoringLanguage,
   hungerLanguage,
   helpLanguage,

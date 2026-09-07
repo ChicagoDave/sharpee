@@ -58,6 +58,8 @@ import { talkingLifecycle } from '../standard/talking/talking.js';
 import { tellingLifecycle } from '../standard/telling/telling.js';
 import { throwingLifecycle } from '../standard/throwing/throwing.js';
 import { touchingLifecycle } from '../standard/touching/touching.js';
+import { sleepingLifecycle } from '../standard/sleeping/sleeping.js';
+import { wakingLifecycle } from '../standard/waking/waking.js';
 import { turningLifecycle } from '../standard/turning/turning.js';
 import { unlockingLifecycle } from '../standard/unlocking/unlocking.js';
 import { wearingLifecycle } from '../standard/wearing/wearing.js';
@@ -109,6 +111,8 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   tellingLifecycle,
   throwingLifecycle,
   touchingLifecycle,
+  sleepingLifecycle,
+  wakingLifecycle,
   turningLifecycle,
   unlockingLifecycle,
   wearingLifecycle

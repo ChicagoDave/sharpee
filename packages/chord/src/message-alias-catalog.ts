@@ -609,6 +609,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'sleeping-dozed-off',
   'sleeping-fell-asleep',
   'sleeping-nightmares',
+  'sleeping-not-tired',
   'sleeping-peaceful-sleep',
   'sleeping-slept',
   'sleeping-slept-fitfully',
@@ -816,6 +817,8 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'waiting-waited-for-event',
   'waiting-waited-in-vehicle',
   'waiting-waited-patiently',
+  // if.action.waking
+  'waking-already-awake',
   // if.action.wearing
   'wearing-already-wearing',
   'wearing-cant-wear-that',

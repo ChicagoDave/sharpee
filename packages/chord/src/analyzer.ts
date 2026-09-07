@@ -72,6 +72,7 @@ import {
   PatternPart,
   StateName,
   Statement,
+  WearStmt,
   StoryFile,
   TextValue,
   TraitField,
@@ -887,11 +888,18 @@ class Analyzer {
   /**
    * Phrase-table keys derived from entity DESCRIPTIONS (`<id>.description`,
    * `<id>.initial-description`) rather than authored phrase bodies. The
-   * phrase-in-phrase gate (GH #286) exempts them: room descriptions resolve
-   * their markers through the Z2 snippet path, and non-room descriptions
-   * keep markers unrewritten by pinned contract (zoo surfaces phase 2).
+   * phrase-in-phrase gate (GH #286) exempts them: every description — room
+   * or not (GH #364) — resolves its phrase markers through the loader's Z2
+   * snippet path, and a hatch marker in a description stays a template
+   * marker by pinned contract (zoo surfaces phase 2).
    */
   private descriptionKeys = new Set<string>();
+  /**
+   * Entity phrase-override gates (`phrase detail while …:`, `phrase present
+   * while …:`) collected in pass 1 and resolved in pass 2 (GH #359), so a
+   * gate may read a timer or any symbol pass 1 has not registered yet.
+   */
+  private deferredOverrideGates: Array<{ key: string; condition: ConditionNode; owner: EntitySymbol }> = [];
 
   run(): StoryIR {
     // ADR-269 D8: grammar-file mode — a `grammar` header confines the file
@@ -970,6 +978,9 @@ class Analyzer {
     this.buildWitnessedTopics();
     // ADR-325 D3: timers resolve their owners against the entity table.
     this.buildTimers();
+    // GH #359: entity `phrase detail while` / `phrase present while` gates
+    // resolve once timers are known.
+    this.resolveOverrideGates();
     // ADR-330: chapters resolve their triggers against entities, timers, and states.
     this.buildChapters();
 
@@ -3481,10 +3492,17 @@ class Analyzer {
 
         this.registerPhrase(DEFAULT_LOCALE, key, {
           strategy: (override.strategy as IRPhrase['strategy']) ?? null,
-          ...(override.condition ? { condition: this.resolveCondition(override.condition, entityScope(e)) } : {}),
           variants: override.variants.map((v) => this.variantOf(v)),
           span: override.span,
         });
+        // GH #359: the `while` gate resolves in pass 2 (`resolveOverrideGates`),
+        // after `buildTimers` — a timer possessive (`the player's
+        // pole-destruction has started`) is unknown in pass 1, exactly as a
+        // `define phrase … while` gate already defers for late-declared
+        // entities.
+        if (override.condition) {
+          this.deferredOverrideGates.push({ key, condition: override.condition, owner: e });
+        }
       }
       // Entity-owned clauses register their inline phrases under the
       // owner-derived key (phrase-override mechanism) — four owners each
@@ -4130,6 +4148,20 @@ class Analyzer {
       this.recordBookKey(entry.key, decl.condition === null);
     }
     this.phrasebookDecls.push({ name: decl.name, source: 'define', condition: decl.condition, entries, span: decl.span });
+  }
+
+  /**
+   * Pass 2 (GH #359): resolve every deferred entity override gate in its
+   * owner's scope and attach it to the registered phrase entry. Runs after
+   * `buildTimers`, so `<owner>'s <timer> has started` resolves as a timer
+   * read here exactly as it does on a clause head.
+   */
+  private resolveOverrideGates(): void {
+    const table = this.phrases.get(DEFAULT_LOCALE);
+    for (const gate of this.deferredOverrideGates) {
+      const entry = table?.get(gate.key);
+      if (entry) entry.condition = this.resolveCondition(gate.condition, entityScope(gate.owner));
+    }
   }
 
   private registerPhrase(locale: string, key: string, phrase: IRPhrase): void {
@@ -5946,6 +5978,8 @@ class Analyzer {
         case 'change-mood':
         case 'change-feeling':
         case 'move':
+        case 'wear':
+        case 'take-off':
         case 'act':
         case 'remove':
         case 'award':
@@ -6098,6 +6132,55 @@ class Analyzer {
       );
     }
     return { body, span: decl.span };
+  }
+
+  /**
+   * ADR-325 Amendment W1: `make <actor> wear <item>` / `make <actor> take off
+   * <item>` — a put in the `move` family. Two compile-time gates (W1e): the
+   * item composes `wearable` (`analysis.wear-not-wearable`, the check the
+   * `wears` declaration runs) and the actor is `the player` or `a person`
+   * (`analysis.wear-actor-not-person`). Both name the line. An unresolved
+   * name is the ordinary entity miss.
+   */
+  private resolveWearStatement(stmt: WearStmt, scope: Scope): IRStatement {
+    const spelled = stmt.kind === 'wear' ? 'wear' : 'take off';
+    const line = `make ${[stmt.actor.article, ...stmt.actor.words].filter(Boolean).join(' ')} ${spelled} ${[stmt.item.article, ...stmt.item.words].filter(Boolean).join(' ')}`;
+    const dead: IRStatement = { kind: stmt.kind, actor: { kind: 'symbol', name: '' }, item: { kind: 'symbol', name: '' }, stmtWhen: null, span: stmt.span };
+    const actor = this.resolveEntityValue(stmt.actor, scope);
+    const item = this.resolveEntityValue(stmt.item, scope);
+    if (actor.kind === 'entity') {
+      const sym = this.byId.get(actor.id);
+      if (!sym || !isActorSymbol(sym)) {
+        this.diagnostics.error(
+          'analysis.wear-actor-not-person',
+          `\`${line}\` — \`${sym ? entityDisplayName(sym) : actor.id}\` is not a person; a garment is worn by \`the player\` or an \`a person\` block.`,
+          stmt.actor.span,
+        );
+        return dead;
+      }
+    } else if (actor.kind !== 'player') {
+      this.diagnostics.error(
+        'analysis.wear-actor-not-person',
+        `\`${line}\` — the actor must be \`the player\` or a declared person.`,
+        stmt.actor.span,
+      );
+      return dead;
+    }
+    if (item.kind !== 'entity') {
+      this.diagnostics.error('analysis.wear-not-wearable', `\`${line}\` — the garment must name a declared entity.`, stmt.item.span);
+      return dead;
+    }
+    const itemSym = this.byId.get(item.id);
+    const wearable = itemSym?.decl.compositions.some((c) => !c.article && c.words.join(' ').toLowerCase() === 'wearable') ?? false;
+    if (!wearable) {
+      this.diagnostics.error(
+        'analysis.wear-not-wearable',
+        `\`${line}\` — \`${itemSym ? entityDisplayName(itemSym) : item.id}\` is not wearable; add \`wearable\` to its create block.`,
+        stmt.item.span,
+      );
+      return dead;
+    }
+    return { kind: stmt.kind, actor, item, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
   }
 
   private resolveStatement(stmt: Statement, scope: Scope, path: string): IRStatement {
@@ -6321,6 +6404,9 @@ class Analyzer {
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
+      case 'wear':
+      case 'take-off':
+        return this.resolveWearStatement(stmt, scope);
       case 'act':
         return this.resolveActStatement(stmt, scope);
       case 'award': {

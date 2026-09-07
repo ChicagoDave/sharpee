@@ -75,6 +75,7 @@ export const IFActions = {
   INVENTORY: 'if.action.inventory',
   WAITING: 'if.action.waiting',
   SLEEPING: 'if.action.sleeping',
+  WAKING: 'if.action.waking',
   SAVING: 'if.action.saving',
   RESTORING: 'if.action.restoring',
   RESTARTING: 'if.action.restarting',
@@ -328,7 +329,12 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.SLEEPING,
-    verbs: ['sleep', 'nap', 'doze', 'rest', 'slumber'],
+    verbs: ['sleep', 'go to sleep', 'go to bed', 'lie down', 'nap', 'doze', 'rest', 'slumber'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.WAKING,
+    verbs: ['wake', 'wake up'],
     requiresObject: false
   },
   {

@@ -1,163 +1,125 @@
 /**
- * Sleeping action - passes time without doing anything
+ * Sleeping action — a signal action, like waiting (P-15, GH #362).
  *
- * This is a meta action that advances time like waiting but represents
- * the player character sleeping or dozing off. NPCs and daemons can
- * still act during this time.
+ * `sleep` always validates, mutates nothing, and reports one `if.event.slept`
+ * carrying the stock line ("You aren't tired."). The line is the success
+ * message, not a validation refusal, so a story's reaction — a Chord
+ * `on the player sleeping` on the room the actor is in — rides the ordinary
+ * lifecycle hooks and speaks in its place.
  *
  * Uses four-phase pattern:
- * 1. validate: Check if sleeping is allowed
- * 2. execute: Compute sleep state (no world mutations)
- * 3. blocked: Handle validation failures
- * 4. report: Emit slept event and success message
+ * 1. validate: lifecycle pre/post hooks; otherwise always succeeds
+ * 2. execute: no world mutations (stores the location in sharedData)
+ * 3. blocked: a hook veto
+ * 4. report: emits if.event.slept with the stock message id
+ *
+ * Interceptor consultation (ADR-118) runs through the shared lifecycle
+ * engine (ADR-228) via `sleepingLifecycle`: an intransitive verb has no
+ * object, so the one consultable entity is the actor's current room —
+ * the same implicit-room idea as going's `entering_room`.
  */
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
-import { blockedMessageId } from '../../lifecycle/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { SleptEventData } from './sleeping-events.js';
+import {
+  ActionLifecycleDescriptor,
+  resolveLifecycle,
+  runPreValidate,
+  runPostValidate,
+  runPostExecute,
+  runPostReport,
+  runOnBlocked,
+  blockedMessageId
+} from '../../lifecycle/index.js';
 
 /**
- * Shared data passed between execute and report phases
+ * Interceptor surface (ADR-228): the room the actor sleeps in is the only
+ * consultable entity of a SLEEP command.
  */
+export const sleepingLifecycle: ActionLifecycleDescriptor = {
+  actionId: IFActions.SLEEPING,
+  slots: [
+    {
+      id: 'location',
+      actionIds: [IFActions.SLEEPING],
+      resolve: (ctx) => ctx.currentLocation ?? undefined
+    }
+  ]
+};
+
+/** Shared data passed between execute and report phases. */
 interface SleepingSharedData {
-  messageId?: string;
-  eventData?: SleptEventData;
-  params?: Record<string, any>;
-  wakeRefreshed?: boolean;
+  locationId?: string;
+  locationName?: string;
 }
 
 function getSleepingSharedData(context: ActionContext): SleepingSharedData {
   return context.sharedData as SleepingSharedData;
 }
 
-interface SleepAnalysis {
-  canSleep: boolean;
-  messageId: string;
-  eventData: SleptEventData;
-  params: Record<string, any>;
-  wakeRefreshed: boolean;
-}
-
-function analyzeSleepAction(context: ActionContext): SleepAnalysis {
-  const actor = context.actor;
-  const eventData: SleptEventData = {
-    turnsPassed: 1  // Sleeping advances one turn by default
-  };
-  const params: Record<string, any> = {};
-  let messageId = 'slept';
-  let canSleep = true;
-  
-  // Check if we're in a suitable sleeping location
-  const currentLocation = context.world.getLocation?.(actor.id);
-  if (currentLocation) {
-    const location = context.world.getEntity(currentLocation);
-    if (location) {
-      eventData.location = location.id;
-      eventData.locationName = location.name;
-      
-      // Note: These traits don't exist in the current trait system
-      // Games can implement custom sleep restrictions via event handlers
-      // For now, sleep is always allowed
-    }
-  }
-  
-  // Basic sleep implementation - always succeeds
-  // Games can implement fatigue systems via event handlers
-  const wakeRefreshed = false; // Can be enhanced via event handlers
-  
-  return {
-    canSleep,
-    messageId,
-    eventData,
-    params,
-    wakeRefreshed
-  };
-}
-
 export const sleepingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.SLEEPING,
+
   requiredMessages: [
-    'slept',
-    'dozed_off',
-    'fell_asleep',
-    'brief_nap',
-    'deep_sleep',
-    'slept_fitfully',
-    'cant_sleep_here',
-    'too_dangerous_to_sleep',
-    'already_well_rested',
-    'woke_refreshed',
-    'disturbed_sleep',
-    'nightmares',
-    'peaceful_sleep'
+    'not_tired'
   ],
-  
-  validate(context: ActionContext): ValidationResult {
-    const analysis = analyzeSleepAction(context);
-    
-    if (!analysis.canSleep) {
-      return {
-        valid: false,
-        error: analysis.messageId,
-        params: analysis.params
-      };
-    }
-    
-    return {
-      valid: true
-    };
-  },
-  
-  execute(context: ActionContext): void {
-    // Sleeping has NO world mutations
-    // Analyze sleep state and store in sharedData for report phase
-    const analysis = analyzeSleepAction(context);
-    const sharedData = getSleepingSharedData(context);
-
-    sharedData.messageId = analysis.messageId;
-    sharedData.eventData = analysis.eventData;
-    sharedData.params = analysis.params;
-    sharedData.wakeRefreshed = analysis.wakeRefreshed;
-  },
-
-  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
-    return [context.event('if.event.sleep_blocked', {
-      blocked: true,
-      messageId: blockedMessageId(context, result),
-      params: result.params,
-      reason: result.error
-    })];
-  },
-
-  report(context: ActionContext): ISemanticEvent[] {
-    const events: ISemanticEvent[] = [];
-    const sharedData = getSleepingSharedData(context);
-
-    // Emit slept event with messageId for text rendering
-    events.push(context.event('if.event.slept', {
-      messageId: `${context.action.id}.${sharedData.messageId || 'slept'}`,
-      params: sharedData.params,
-      ...sharedData.eventData
-    }));
-
-    // Add wake refreshed event if applicable
-    if (sharedData.wakeRefreshed) {
-      events.push(context.event('if.event.slept', {
-        messageId: `${context.action.id}.woke_refreshed`,
-        wakeRefreshed: true
-      }));
-    }
-
-    return events;
-  },
 
   group: "meta",
 
   metadata: {
     requiresDirectObject: false,
     requiresIndirectObject: false
+  },
+
+  validate(context: ActionContext): ValidationResult {
+    const state = resolveLifecycle(context, sleepingLifecycle);
+    const preVeto = runPreValidate(context, state);
+    if (preVeto) return preVeto;
+    // Sleeping has no preconditions of its own.
+    const postVeto = runPostValidate(context, state);
+    if (postVeto) return postVeto;
+    return { valid: true };
+  },
+
+  execute(context: ActionContext): void {
+    // Sleeping has NO world mutations — the location rides to the report.
+    const location = context.currentLocation;
+    const sharedData = getSleepingSharedData(context);
+    sharedData.locationId = location?.id;
+    sharedData.locationName = location?.name;
+    const state = resolveLifecycle(context, sleepingLifecycle);
+    runPostExecute(context, state);
+  },
+
+  blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [context.event('if.event.sleep_blocked', {
+      blocked: true,
+      messageId: blockedMessageId(context, result),
+      params: result.params,
+      reason: result.error
+    })];
+    const state = resolveLifecycle(context, sleepingLifecycle);
+    runOnBlocked(context, state, events, 'if.event.sleep_blocked', result.error ?? 'blocked');
+    return events;
+  },
+
+  report(context: ActionContext): ISemanticEvent[] {
+    const events: ISemanticEvent[] = [];
+    const sharedData = getSleepingSharedData(context);
+
+    // The stock line — a story's room reaction replaces it (ADR-118/ADR-228).
+    events.push(context.event('if.event.slept', {
+      messageId: `${context.action.id}.not_tired`,
+      turnsPassed: 1,
+      location: sharedData.locationId,
+      locationName: sharedData.locationName
+    } as SleptEventData & { messageId: string }));
+
+    const state = resolveLifecycle(context, sleepingLifecycle);
+    runPostReport(context, state, events, 'if.event.slept');
+    return events;
   }
 };

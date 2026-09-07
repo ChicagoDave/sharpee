@@ -5,6 +5,7 @@
  */
 
 import { type EntityId } from '@sharpee/core';
+import type { SnippetMap } from '@sharpee/if-domain';
 
 /**
  * Data for the 'if.event.examined' event
@@ -31,6 +32,13 @@ export interface ExaminedEventData {
   /** Identity trait information */
   hasDescription?: boolean;
   hasBrief?: boolean;
+
+  /**
+   * The entity's description snippet map (`IdentityTrait.snippets`, GH #364):
+   * present only when the description carries `{snippet:name}` markers the
+   * engine's examined handler must splice, as a room's `roomSnippets` are.
+   */
+  snippets?: SnippetMap;
   
   /** Container trait information */
   isContainer?: boolean;

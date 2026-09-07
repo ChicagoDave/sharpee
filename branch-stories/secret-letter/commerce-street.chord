@@ -11,13 +11,12 @@
 ##
 ## ARRIVAL — the change back (change document, "The clothes", the source's
 ## own automatic change, `story.ni:4266-4276`): on the first arrival the
-## dress and the fashionable hat go into the satchel and the woolen cap comes
-## back to Jack; the gray cloak is wherever the slide left it. GAP, reported
-## not decided: Chord has no runtime statement that puts a garment ON — the
-## cap can be moved to Jack but not worn for her — so the cap arrives in her
-## hands and the source's own exit rule ("You'd better put your hat on") does
-## the rest. The arrival text is David's (TODO); Gentry's block is kept in the
-## comments below.
+## dress and the fashionable hat go into the satchel and the woolen cap goes
+## back ON Jack (`make the player wear`, ADR-325 Amendment W1 — the gap
+## reported 2026-08-30 closed with GH #360); the gray cloak is wherever the
+## slide left it. The source's own exit rule ("You'd better put your hat on")
+## stays: it guards a cap the player later takes off. The arrival text is
+## David's (TODO); Gentry's block is kept in the comments below.
 ##
 ## Not carried, noted: `enter <storefront>` cannot redirect to the walk
 ## (Chord has no "try going"), so the storefronts describe and the exits
@@ -94,7 +93,7 @@ create the Commerce Street
   after the player entering while Jack is dressed
     move the dress to the cloth satchel
     move the fashionable hat to the cloth satchel
-    move the woolen cap to the player
+    make the player wear the woolen cap
     change Jack to urchin
   end after
 

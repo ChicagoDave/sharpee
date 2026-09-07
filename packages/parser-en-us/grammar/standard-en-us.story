@@ -224,10 +224,18 @@ define action restarting
 define action sleeping
   grammar
     sleep
+    go to sleep
+    go to bed
+    lie down
     nap
     doze
     rest
     slumber
+
+define action waking
+  grammar
+    wake
+    wake up
 
 define action quitting
   grammar

@@ -33,6 +33,13 @@ import {
 } from '@sharpee/world-model';
 import type { SnippetMap } from '@sharpee/world-model';
 
+/** A non-room host: `IdentityTrait.snippets` only, no RoomTrait (GH #364). */
+function makeItem(world: WorldModel, name: string, description: string, snippets?: SnippetMap) {
+  const item = world.createEntity(name, EntityType.SCENERY);
+  item.add(new IdentityTrait({ name, description, snippets }));
+  return item;
+}
+
 function makeRoom(
   world: WorldModel,
   name: string,
@@ -106,6 +113,32 @@ describe('validateRoomSnippets (ADR-209 AC-5)', () => {
       unused: 'never spliced',
     });
     expect(() => validateRoomSnippets(world)).not.toThrow();
+  });
+
+  describe('non-room hosts — IdentityTrait.snippets (GH #364)', () => {
+    it('passes a snippet-bearing entity whose markers are all bound', () => {
+      makeItem(world, 'lanterns', '{snippet:night}The lampposts stand along the street.', { night: '' });
+      expect(() => validateRoomSnippets(world)).not.toThrow();
+    });
+
+    it('never scans an entity without a map (opt-in, AC-7)', () => {
+      makeItem(world, 'sign', 'A sign reads {snippet:not-scanned}.');
+      expect(() => validateRoomSnippets(world)).not.toThrow();
+    });
+
+    it('fails load naming the entity and marker for an unbound marker, and the entity for a non-bare text', () => {
+      makeItem(world, 'lanterns', '{snippet:missing}The lampposts stand along the street.', {
+        night: ', lamps burn',
+      });
+      try {
+        validateRoomSnippets(world);
+        throw new Error('expected SnippetValidationError');
+      } catch (e) {
+        const err = e as SnippetValidationError;
+        expect(err.unbound).toEqual([{ room: 'lanterns', marker: 'missing' }]);
+        expect(err.notBare).toEqual([{ room: 'lanterns', marker: 'night', text: ', lamps burn' }]);
+      }
+    });
   });
 
   describe('bare-fragment gate (ADR-211 AC-3)', () => {

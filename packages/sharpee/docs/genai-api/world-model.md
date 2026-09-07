@@ -2432,6 +2432,7 @@ export declare function getStateClauses(entity: IFEntity): string[];
 ### traits/identity/identityTrait
 
 ```typescript
+import { type SnippetMap } from '@sharpee/if-domain';
 import { ITrait } from '../trait.js';
 /**
  * Identity trait provides basic naming and description for entities.
@@ -2459,6 +2460,15 @@ export declare class IdentityTrait implements ITrait {
      * Takes precedence over literal `description` if both are set.
      */
     descriptionId?: string;
+    /**
+     * Marker→snippet table for this entity's description (ADR-209 machinery;
+     * GH #364). When present, `{snippet:name}` markers in the description are
+     * spliced at examine time exactly as `RoomTrait.snippets` markers are in
+     * a room's prose: a fixed text, a variant list with a selector, or a
+     * gated entry. Absent means no splice pass — the description renders as
+     * it is. The Chord loader compiles an entity's `{marker}` phrases here.
+     */
+    snippets?: SnippetMap;
     /** Alternative names/aliases the entity can be referred to by */
     aliases: string[];
     /** Brief description shown in room listings */

@@ -103,7 +103,12 @@ const PINNED = {
   // 2): `, one-way` on exit lines — ADR-234 D4's reservation wired, the
   // `[ "," "one-way" ]` tail added to the exit production. Additive; folds
   // into the unpublished 3.5.0 set under the same ruling.
-  ebnfSha256: '37a95d1b4ea4501a1a34904451eb6f0b94dfe957ca06f2399e912e80c1a69599',
+  // Re-pinned 2026-09-07 (session 0e7d6f, ADR-325 Amendment W1, plan
+  // secret-letter-port-platform-defects Phase 6): `make <actor> wear <item>`
+  // / `make <actor> take off <item>` join the statement production — two
+  // puts in the `move` family. Additive; folds into the unpublished 3.6.0
+  // set under ADR-257 D2 as amended (the number moves at publish).
+  ebnfSha256: '854997e6c9a76a1f8a07766a912bc9ab1a3a285a82f6a443826a519c54b4c46f',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

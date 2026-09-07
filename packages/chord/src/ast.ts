@@ -1892,6 +1892,7 @@ export type Statement =
   | ChangeMoodStmt
   | ChangeFeelingStmt
   | MoveStmt
+  | WearStmt
   | ActStmt
   | RemoveStmt
   | AwardStmt
@@ -2166,6 +2167,22 @@ export interface MoveStmt {
   kind: 'move';
   entity: NameRef;
   place: PlaceExpr;
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/**
+ * `make <actor> wear <item>` / `make <actor> take off <item>` `[when <cond>]`
+ * (ADR-325 Amendment W1) — two statements in the `move` family: a garment is
+ * PUT on (or taken off) an actor, narrating nothing of its own. `make` is the
+ * head so the line is never read as an acting statement (`Jack wears the
+ * cap` is an act). `the player` is a legal actor here — this is a put, not
+ * an act, so ADR-329 D1's exclusion does not apply.
+ */
+export interface WearStmt {
+  kind: 'wear' | 'take-off';
+  actor: NameRef;
+  item: NameRef;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
