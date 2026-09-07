@@ -28,8 +28,8 @@
  * Public interface: the TreeDocument/TreeCard/TreeBranch/TreeAssertions/
  * TreeChannelAssertion types, TREE_DOCUMENT_VERSION,
  * treeDocumentFileNameFor, emptyTreeDocument, serializeTreeDocument,
- * deserializeTreeDocument, channelIdsReferencedBy, roomSlugOf,
- * mainLineLabelOf, branchLineLabelOf.
+ * deserializeTreeDocument, channelIdsReferencedBy, splitChannelClaimId,
+ * roomSlugOf, mainLineLabelOf, branchLineLabelOf.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is a different format and is
  * untouched by this module).
@@ -212,16 +212,20 @@ export function deserializeTreeDocument(text: string): TreeDocumentReadResult {
 
 /**
  * Every channel id the document's claims read, deduplicated, in first-use
- * order. A game must be assembled with these declared or there is nothing
- * captured for the claims to read (ADR-294 D15) — both consumers derive
- * their capture set from the document through this one function.
+ * order, AS WRITTEN. A game must be assembled with these declared or there
+ * is nothing captured for the claims to read (ADR-294 D15) — both consumers
+ * derive their capture set from the document through this one function.
  *
- * A dotted claim id (`banner.title`, `info.description`) reads one property
- * of a STRUCTURED capture (ADR-300 D13), so what must be captured is its
- * base channel — the id before the first dot.
+ * A claim id may be a channel id (`prologue`) or a dotted path into a
+ * STRUCTURED capture (`info.title`, ADR-300 D13). Which segments are the
+ * channel and which are the path is the registry's to say — a channel's own
+ * id may carry a dot (`story.chapter`, GH #369) — so the ids go out whole
+ * and the assembler resolves each to the registered channel it names
+ * (bootstrap's `resolveDeclaredChannelId`). Splitting on the first dot here
+ * named a channel that does not exist.
  *
  * @param document the tree document.
- * @returns the referenced base channel ids, each once.
+ * @returns the referenced claim ids, each once.
  */
 export function channelIdsReferencedBy(document: TreeDocument): string[] {
   const ids: string[] = [];
@@ -229,10 +233,10 @@ export function channelIdsReferencedBy(document: TreeDocument): string[] {
   const walkCards = (cards: TreeCard[]): void => {
     for (const card of cards) {
       for (const channel of card.assertions?.channels ?? []) {
-        const base = channel.id.split('.')[0];
-        if (base.length > 0 && !seen.has(base)) {
-          seen.add(base);
-          ids.push(base);
+        const id = channel.id.trim();
+        if (id.length > 0 && !seen.has(id)) {
+          seen.add(id);
+          ids.push(id);
         }
       }
       for (const branch of card.branches ?? []) walkCards(branch.cards);
@@ -240,6 +244,37 @@ export function channelIdsReferencedBy(document: TreeDocument): string[] {
   };
   walkCards(document.cards);
   return ids;
+}
+
+/**
+ * Split a claim id into the channel it reads and the path into that
+ * channel's value.
+ *
+ * The channel is the LONGEST id in `knownChannelIds` that equals the claim
+ * id or is a dot-bounded prefix of it; the rest is the path. With no known
+ * ids (a harness that captured nothing) the split falls back to the first
+ * segment, which is what every single-segment channel id needs.
+ *
+ * @param claimId the claim's id as written (`story.chapter.title`).
+ * @param knownChannelIds the base channel ids the game captures.
+ * @returns the channel id and the (possibly empty) path.
+ */
+export function splitChannelClaimId(
+  claimId: string,
+  knownChannelIds: readonly string[],
+): { channelId: string; channelPath: string[] } {
+  let channelId: string | undefined;
+  for (const known of knownChannelIds) {
+    const prefixes = claimId === known || claimId.startsWith(known + '.');
+    if (prefixes && (channelId === undefined || known.length > channelId.length)) channelId = known;
+  }
+  if (channelId === undefined) {
+    const [first, ...rest] = claimId.split('.');
+    return { channelId: first, channelPath: rest };
+  }
+  const remainder = claimId.slice(channelId.length);
+  const channelPath = remainder.length > 0 ? remainder.slice(1).split('.') : [];
+  return { channelId, channelPath };
 }
 
 // ---------------------------------------------------------------------------

@@ -115,7 +115,10 @@ GH #355 ruled by David).** A `states` entry is one string, parsed only by
 document spells this grammar; this paragraph is its reference). Forms, tried
 in order: `story.state = <state>` / `!=` (the story's phase); `<entity>.<property>
 = <value>` / `!=` and `<entity>.<collection> contains <item>` / `not-contains`
-(single-word entity head; `location`, `contents`/`inventory`, or a plain
+(the head is everything before the last dot ahead of the property — a
+multi-word name with spaces, a kebab-case Chord IR id, an alias, or a world
+id all resolve, GH #375, 2026-09-06; it was a single word until then;
+`location`, `contents`/`inventory`, or a plain
 property); and the Chord-spelled form `[the] <name> is <state>` / `is not
 <state>`, which reads a Chord entity's own `states:` value (`chord.state.<ir-id>`,
 reached through the IR-id attribute the loader stamps on every entity it

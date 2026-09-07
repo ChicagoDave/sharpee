@@ -68,6 +68,8 @@ interface StubOptions {
   policy?: 'all-emitted-text';
   /** Per-command structured channel captures (`lastChannelValues`). */
   channelValues?: Record<string, unknown[]>;
+  /** The base channel ids the game captures (`capturedChannels`). */
+  capturedChannels?: string[];
 }
 
 /**
@@ -104,6 +106,7 @@ function stubHarness(options: StubOptions = {}) {
       world,
       bootChannelValues: { banner: ['Fernhill Manor'] },
       ...(options.channelValues !== undefined ? { lastChannelValues: options.channelValues } : {}),
+      ...(options.capturedChannels !== undefined ? { capturedChannels: options.capturedChannels } : {}),
       ...(options.policy !== undefined ? { autoAssertionPolicy: options.policy } : {}),
     };
   };
@@ -380,6 +383,34 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     expect(east.passed).toBe(false);
     expect(east.failure).toContain('score');
     expect(run.lines[0].status).toBe('failed');
+  });
+
+  it('a claim on a dotted channel id reads that channel, not a path into its first segment (GH #369)', async () => {
+    // The chapters extension's channel is `story.chapter`; its value is a
+    // record with a `title`. Splitting the claim on the first dot looked for
+    // a `story` capture and a `chapter.title` path — neither exists.
+    const harness = stubHarness({
+      capturedChannels: ['story.chapter', 'info'],
+      channelValues: { 'story.chapter': [{ name: 'six', title: 'Chapter VI', ordinal: 6 }] },
+    });
+    const run = await runTreeDocument(
+      doc([
+        okBoot(),
+        turn('north', {
+          assertions: { channels: [{ id: 'story.chapter.title', contains: ['Chapter VI'] }] },
+        }),
+        turn('east', {
+          assertions: { channels: [{ id: 'story.chapter.title', is: 'Chapter VII' }] },
+        }),
+      ]),
+      harness.load,
+    );
+
+    const rows = run.lines[0].result!.commands;
+    expect(rows.find((r) => r.command.input === 'north')!.passed).toBe(true);
+    const east = rows.find((r) => r.command.input === 'east')!;
+    expect(east.passed).toBe(false);
+    expect(east.failure).toContain('story.chapter.title');
   });
 
   it('exact supersedes the contains family', async () => {

@@ -1225,10 +1225,14 @@ export function evaluateStateExpression(
     return { matches: !isEqual, details: !isEqual ? undefined : `story.state should not be "${expected}"` };
   }
 
-  // Parse "entity.property = value" or "entity.property != value"
-  const equalityMatch = expression.match(/^(\w+)\.(\w+)\s*(=|!=)\s*(.+)$/);
+  // Parse "entity.property = value" or "entity.property != value". The
+  // head is any text up to the LAST dot before the property, so a
+  // multi-word name (`silver brooch.location`) or a kebab-case IR id
+  // (`silver-brooch.location`) both read (GH #375); `\w+` admitted neither.
+  const equalityMatch = expression.match(/^(.+)\.(\w+)\s*(=|!=)\s*(.+)$/);
   if (equalityMatch) {
-    const [, entityName, property, operator, expectedValue] = equalityMatch;
+    const [, rawName, property, operator, expectedValue] = equalityMatch;
+    const entityName = rawName.trim();
 
     const entity = findEntity(entityName, world);
     if (!entity) {
@@ -1255,10 +1259,12 @@ export function evaluateStateExpression(
     }
   }
 
-  // Parse "collection contains item" or "collection not-contains item"
-  const containsMatch = expression.match(/^(\w+)\.(\w+)\s+(contains|not-contains)\s+(.+)$/);
+  // Parse "collection contains item" or "collection not-contains item" —
+  // the same head rule as the equality form.
+  const containsMatch = expression.match(/^(.+)\.(\w+)\s+(contains|not-contains)\s+(.+)$/);
   if (containsMatch) {
-    const [, entityName, property, operator, itemName] = containsMatch;
+    const [, rawName, property, operator, itemName] = containsMatch;
+    const entityName = rawName.trim();
 
     const entity = findEntity(entityName, world);
     if (!entity) {
@@ -1367,6 +1373,9 @@ function findEntity(name: string, world: WorldModel): any {
     const entities = world.getAllEntities();
     for (const entity of entities) {
       if (entity.name === name || entity.id === name) return entity;
+      // The Chord IR id the loader stamps (`silver-brooch`) — the spelling
+      // a kebab-case claim head uses (GH #375).
+      if (entity.attributes?.[CHORD_IR_ID_ATTRIBUTE] === name) return entity;
       const identity =
         entity.get?.('identity') ?? entity.traits?.get?.('identity') ?? entity.traits?.identity;
       if (identity) {

@@ -676,3 +676,64 @@ Authorized 2026-08-23. The issues are filed; this is the landing order:
 ### Session
 
 effb6f, 2026-09-03 — publish-readiness plan Phase 4.
+
+## Amendment — W1: `make <actor> wear <item>` and `make <actor> take off <item>` (2026-09-06)
+
+**Status**: ACCEPTED (David, 2026-09-06, session 24532e — chosen at the acceptance of `docs/proposals/secret-letter-port-platform-defects.md` P-14, GH #360; no open questions). Adds two statements to the `move` family. ADR-329 D7 ("move puts; acting does") is the rule this rides; ADR-329 D1's exclusion of `the player` as an acting actor is unchanged.
+
+### Context
+
+- Chord can declare wearing at creation (`wears the straw hat`, lowered by the loader to a move onto the holder plus `WearableTrait.worn`/`wornBy`, `packages/story-loader/src/loader.ts:509-519`) and can read it (`is worn`, `Jack wears the woolen cap`, `while the woolen cap is worn`). No statement changes it at run time: `move the woolen cap to the player` puts the cap in her hands, and nothing puts it on. GH #360, found building the Secret Letter's Commerce Street arrival: the change document rules that the woolen cap goes back **on** Jack automatically (the source's own block, `story.ni:4266-4276`, `now the player wears the gray cloak`); the port moves the cap to her and lets the source's exit rule ("You'd better put your hat on") block every exit until she types `wear cap`. Playable, not what was ruled.
+- The acting statement (ADR-329) is not the answer. `Teisha wears the dress` already runs the real wearing action as Teisha, with its implicit take and its narration, but D1 excludes `the player` as an actor on purpose — a forced player act "reads in the second person as a choice the player never made" — and an arrival that silently restores a disguise must narrate nothing of its own. That is a *put*, and D7 says puts belong to the `move` family.
+- `WearableBehavior.wear`/`remove` (`packages/world-model/src/traits/wearable/wearableBehavior.ts:73-140`) flip `worn`/`wornBy` and nothing else; stdlib's wearing action does the holding check and the move. A statement that lowers onto the behavior, with the move done through the ordinary move lifecycle first, is the whole of the platform work.
+
+### Decision
+
+- **W1a — Two statements in the `move` family.** `make <actor> wear <item>` and `make <actor> take off <item>`, each with the ordinary `[when <condition>]` tail. `make` is the keyword because the natural spelling, `Jack wears the woolen cap`, is already the acting statement's shape (`name verb-words`) and would be matched as an act — refused for the player, performed with narration for an NPC. A distinct head keeps put and do apart at the parser, not the analyzer.
+- **W1b — `wear` puts the garment on.** If the actor does not already hold the item, it moves to the actor first through the move lifecycle (so `disappeared`/`entered` witness rows fire exactly as `move … to <actor>` fires them); if another actor is wearing it, it comes off them first. Then `WearableBehavior.wear`. Already worn by this actor: nothing happens (no second row). The statement narrates nothing of its own, as `move` narrates nothing of its own — the author's prose is the clause's `phrase` line.
+- **W1c — `take off` takes it off and leaves it in hand.** `WearableBehavior.remove`; the item stays held by the actor, as stdlib's taking-off action leaves it. Not worn by this actor: nothing happens. To take it off *and* put it somewhere, the author writes the `move` next.
+- **W1d — `the player` is a legal actor.** This is the reason the statement exists. `make the player wear the woolen cap` is legal everywhere `move the woolen cap to the player` is, including `on` intercepts (a put, not an act — ADR-329 D3's intercept ban does not apply).
+- **W1e — Compile-time gates.** The item must carry `wearable` (`analysis.wear-not-wearable`, the same check the `wears` declaration already runs, `analyzer.ts:1442-1448`); the actor must be `a person` (`analysis.wear-actor-not-person`). Both name the line.
+- **W1f — Reads and pins are unchanged.** `is worn`, `wears`, `while … is worn` read the trait as before; a tree document pins `the woolen cap is worn` through the existing Chord-spelled state form (ADR-307 addendum).
+- **W1g — IR.** Two additive statement kinds, `{ kind: 'wear' | 'take-off'; actor: IRValue; item: IRValue; stmtWhen?; span }`; the format stamp is unchanged (additive, as `verbatim` was).
+
+### Chosen spelling — the Commerce Street arrival as it will read
+
+```chord
+create the Commerce Street
+  a room
+  ...
+  east is blocked while the woolen cap is not worn and before rooftops: commerce-hat-on
+
+  after the player entering while Jack is dressed
+    move the dress to the cloth satchel
+    move the fashionable hat to the cloth satchel
+    make the player wear the woolen cap        ## NEW — W1a, unshipped
+    change Jack to urchin
+  end after
+```
+
+The exit gate stays: it is the source's own rule for a cap the player later takes off, not a workaround.
+
+### Considered and not chosen — worn as a `change` target
+
+```chord
+  after the player entering while Jack is dressed
+    move the woolen cap to the player
+    change the woolen cap to worn               ## NOT CHOSEN — would need `worn` as a change target
+    change Jack to urchin
+  end after
+```
+
+`worn` is a platform state adjective (a closed analyzer catalog, `chord.ebnf` "Noun phrases stop at"), and `change <entity> to <word>` today names a *declared* state. Admitting `worn` there would make one statement carry two kinds of state and leave the wearer unnamed — `worn` by whom? The `make` form names the actor and lowers onto the trait's own behavior.
+
+### Consequences
+
+- GH #360 closes with the landing. `commerce-street.chord`'s arrival block takes the statement; its `## GAP, reported not decided` comment goes.
+- The grammar changelog (`docs/architecture/chord-grammar-changes.md`), the Chord guide's statements page, and `genai-api` record the two statements in the same landing.
+- Slots and layers stay as they are (`WearableBehavior`'s two `TODO`s); W1 neither adds nor promises slot conflict handling.
+- ADR-329 D7's sentence gains a second example: `move` puts an entity somewhere; `make … wear` puts a garment on someone; acting still *does*.
+
+### Session
+
+24532e, 2026-09-06 — written at proposal acceptance (`secret-letter-port-platform-defects.md` P-14).

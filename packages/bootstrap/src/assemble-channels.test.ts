@@ -15,11 +15,11 @@ import { createRequire } from 'module';
 // artifact the CLI bundle consumes; importing src pulls the platform through
 // vite's transform and overflows its module graph.
 const nodeRequire = createRequire(__filename);
-const { assembleGame, flattenChannelValue } = nodeRequire('../dist/index.js');
+const { assembleGame, flattenChannelValue, resolveDeclaredChannelId } = nodeRequire('../dist/index.js');
 const { EntityType, IdentityTrait, RoomTrait, ActorTrait, CharacterModelTrait } =
   nodeRequire('@sharpee/world-model');
 
-function makeStory(opts?: { registerGated?: boolean }) {
+function makeStory(opts?: { registerGated?: boolean; registerDotted?: boolean }) {
   return {
     _startRoomId: undefined as string | undefined,
 
@@ -46,17 +46,30 @@ function makeStory(opts?: { registerGated?: boolean }) {
       room.add(new RoomTrait({ exits: {} }));
       this._startRoomId = room.id;
     },
-    ...(opts?.registerGated
+    ...(opts?.registerGated || opts?.registerDotted
       ? {
           registerChannels(registry: any) {
-            registry.add({
-              id: 'chime',
-              contentType: 'json',
-              mode: 'replace',
-              emit: 'always',
-              gatedBy: 'sound',
-              produce: () => ({ cue: 'chime', gain: 1 }),
-            });
+            if (opts?.registerGated) {
+              registry.add({
+                id: 'chime',
+                contentType: 'json',
+                mode: 'replace',
+                emit: 'always',
+                gatedBy: 'sound',
+                produce: () => ({ cue: 'chime', gain: 1 }),
+              });
+            }
+            if (opts?.registerDotted) {
+              // The shape of the chapters extension's channel (ADR-330 D4):
+              // a two-segment id carrying a record.
+              registry.add({
+                id: 'story.chapter',
+                contentType: 'json',
+                mode: 'replace',
+                emit: 'always',
+                produce: () => ({ name: 'six', title: 'Chapter VI', ordinal: 6 }),
+              });
+            }
           },
         }
       : {}),
@@ -115,6 +128,33 @@ describe('ADR-294 D15 assembleGame channel capture', () => {
     const snapshot = game.bootChannelValues;
     await game.executeCommand('look');
     expect(game.bootChannelValues).toBe(snapshot);   // never re-snapshotted
+  });
+
+  it('a declared path into a dotted channel id captures that channel (GH #369)', async () => {
+    // `story.chapter.title` names the channel `story.chapter` plus a path;
+    // the first-segment reading looked up `story` and threw.
+    const game = assembleGame(makeStory({ registerDotted: true }), {
+      seed: 42,
+      channels: ['story.chapter.title', 'story.chapter', 'info.title'],
+    });
+    expect(game.capturedChannels).toEqual(['story.chapter', 'info', 'banner', 'prologue']);
+    await game.executeCommand('look');
+    expect(game.lastChannelValues['story.chapter']).toEqual([
+      { name: 'six', title: 'Chapter VI', ordinal: 6 },
+    ]);
+    expect(game.lastChannelValues['story']).toBeUndefined();
+  });
+
+  it('resolveDeclaredChannelId picks the longest dot-bounded registered prefix', () => {
+    const registry = {
+      all: () => [{ id: 'story' }, { id: 'story.chapter' }, { id: 'info' }],
+    };
+    expect(resolveDeclaredChannelId('story.chapter.title', registry)).toBe('story.chapter');
+    expect(resolveDeclaredChannelId('story.chapter', registry)).toBe('story.chapter');
+    expect(resolveDeclaredChannelId('story.other', registry)).toBe('story');
+    expect(resolveDeclaredChannelId('info.title', registry)).toBe('info');
+    expect(resolveDeclaredChannelId('information', registry)).toBeUndefined();
+    expect(resolveDeclaredChannelId('nonesuch', registry)).toBeUndefined();
   });
 
   it('rejects an unknown declared channel by name', () => {

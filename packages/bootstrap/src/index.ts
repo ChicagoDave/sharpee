@@ -15,6 +15,7 @@ import { resolveStoryModulePath } from './resolve.js';
 import { purgeStoryModuleCache } from './purge.js';
 import { GameEngine, type TurnResult } from '@sharpee/engine';
 import { type ISemanticEvent } from '@sharpee/core';
+import { type IChannelRegistry } from '@sharpee/if-domain';
 import { packetProseText } from '@sharpee/channel-service';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
@@ -65,6 +66,14 @@ export interface LoadedGame {
    * questions.
    */
   lastChannels: Record<string, string[]>;
+  /**
+   * The base channel ids this game captures per command: every declared id
+   * resolved to its registered channel (see `resolveDeclaredChannelId`),
+   * plus the policy and opening channels the assembler always captures. A
+   * claim reader splits a dotted claim id against this set, so a
+   * two-segment channel id (`story.chapter`) is a base, not a path.
+   */
+  capturedChannels: readonly string[];
   /**
    * Per-command capture of declared channels as their STRUCTURED values, in
    * emission order (ADR-300 D13).
@@ -179,6 +188,30 @@ export function moduleFreshStory(location: string, modulePath: string): () => an
  * runners. Without a `freshStory` provider, a confirmed restart surfaces an
  * honest error in the command output instead of rebooting.
  */
+/**
+ * Resolve a declared capture id to the registered channel it names.
+ *
+ * A declared id may be a channel id (`info`, `story.chapter`) or a dotted
+ * path into one (`info.title`, `story.chapter.title`). The registered
+ * channel is the LONGEST registered id that equals the declared id or is a
+ * dot-bounded prefix of it, so a channel whose own id carries a dot is
+ * never mistaken for a path into a shorter one.
+ *
+ * @param id the declared id, as written in a `channels:` header or a claim
+ * @param registry the channel registry after story registration
+ * @returns the registered channel id, or undefined when no registered id
+ *   prefixes the declared one
+ */
+export function resolveDeclaredChannelId(id: string, registry: IChannelRegistry): string | undefined {
+  let best: string | undefined;
+  for (const channel of registry.all()) {
+    const candidate = channel.id;
+    const prefixes = id === candidate || id.startsWith(candidate + '.');
+    if (prefixes && (best === undefined || candidate.length > best.length)) best = candidate;
+  }
+  return best;
+}
+
 export function assembleGame(
   story: any,
   opts?: {
@@ -252,17 +285,22 @@ export function assembleGame(
   // banner (sparse, from game.started) and is claimable by hand in the IDE
   // picker, deliberately not auto-synthesized (David 2026-08-10).
   const openingChannels = ['banner', 'prologue', 'info'];
-  const capturedChannels = [
-    ...new Set([...(opts?.channels ?? []), ...policyChannels, ...openingChannels]),
-  ];
+  // Each declared id resolves to the registered channel it names — the id
+  // itself, or the longest registered dot-bounded prefix of a path into it
+  // (`story.chapter.title` captures `story.chapter`, GH #369). The capture
+  // set is the resolved BASE ids, each once.
+  const capturedChannels: string[] = [];
   const capabilities: Record<string, boolean> = { ...CLI_CAPABILITIES };
-  for (const id of capturedChannels) {
-    const channel = channelRegistry.get(id);
-    if (!channel) {
+  for (const declared of [...(opts?.channels ?? []), ...policyChannels, ...openingChannels]) {
+    const id = resolveDeclaredChannelId(declared, channelRegistry);
+    if (id === undefined) {
       throw new Error(
-        `unknown channel '${id}' declared (channels:) — not in the channel registry after story registration (ADR-294 D15)`
+        `unknown channel '${declared}' declared (channels:) — not in the channel registry after story registration (ADR-294 D15)`
       );
     }
+    if (capturedChannels.includes(id)) continue;
+    capturedChannels.push(id);
+    const channel = channelRegistry.get(id)!;
     if (channel.gatedBy !== undefined) capabilities[channel.gatedBy] = true;
   }
 
@@ -371,6 +409,7 @@ export function assembleGame(
     lastEvents: [],
     lastTurnResult: null,
     lastChannels: {},
+    capturedChannels,
     lastChannelValues: {},
     bootChannelValues: {},
 

@@ -48,12 +48,9 @@ describe('Chord-spelled state claims — `the <name> is <state>`', () => {
     expect(evaluateStateExpression('brass lamp is dark', world).matches).toBe(true);
   });
 
-  it('addresses a multi-word name the dotted head could not', () => {
+  it('addresses a multi-word name', () => {
     const world = ballroom();
     expect(evaluateStateExpression('the first partner is waiting', world).matches).toBe(true);
-    expect(evaluateStateExpression('first partner.location = anywhere', world).details).toBe(
-      'Could not parse expression: first partner.location = anywhere'
-    );
   });
 
   it('resolves an alias', () => {
@@ -120,5 +117,48 @@ describe('Chord-spelled state claims — `the story is <state>`', () => {
     const world = ballroom();
     expect(evaluateStateExpression('story.state = calm', world).matches).toBe(true);
     expect(evaluateStateExpression('story.state = alarmed', world).details).toBe('story.state is "calm", expected "alarmed"');
+  });
+});
+
+describe('dotted claims — a multi-word or kebab-case head (GH #375)', () => {
+  /** The ballroom with a room, the partner in it holding the lamp. */
+  function seated(): WorldModel {
+    const world = ballroom();
+    const hall = world.createEntity('Great Hall', 'room');
+    hall.add(new IdentityTrait({ name: 'Great Hall' }));
+    hall.attributes[CHORD_IR_ID_ATTRIBUTE] = 'great-hall';
+    const partner = world.getAllEntities().find((e) => e.name === 'first partner')!;
+    const lamp = world.getAllEntities().find((e) => e.name === 'brass lamp')!;
+    world.moveEntity(partner.id, hall.id);
+    world.moveEntity(lamp.id, partner.id);
+    return world;
+  }
+
+  it('reads a location claim whose head has spaces — the Chord spelling', () => {
+    const world = seated();
+    expect(evaluateStateExpression('first partner.location = Great Hall', world).matches).toBe(true);
+    expect(evaluateStateExpression('brass lamp.location = first partner', world).matches).toBe(true);
+    const wrong = evaluateStateExpression('brass lamp.location = Great Hall', world);
+    expect(wrong.matches).toBe(false);
+    expect(wrong.details).toContain('brass lamp.location is');
+  });
+
+  it('reads the same claim through the kebab-case IR id the loader stamps', () => {
+    const world = seated();
+    expect(evaluateStateExpression('first-partner.location = great-hall', world).matches).toBe(true);
+    expect(evaluateStateExpression('brass-lamp.location = first-partner', world).matches).toBe(true);
+    expect(evaluateStateExpression('brass-lamp.location != great-hall', world).matches).toBe(true);
+  });
+
+  it('reads a contains claim with a multi-word head', () => {
+    const world = seated();
+    expect(evaluateStateExpression('first partner.inventory contains brass lamp', world).matches).toBe(true);
+    expect(evaluateStateExpression('first-partner.contents not-contains pebble', world).matches).toBe(true);
+  });
+
+  it('still fails by name when the head resolves to nothing', () => {
+    const result = evaluateStateExpression('silver brooch.location = player', seated());
+    expect(result.matches).toBe(false);
+    expect(result.details).toBe('Entity "silver brooch" not found');
   });
 });

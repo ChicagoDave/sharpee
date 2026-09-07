@@ -16,6 +16,7 @@ import {
   mainLineLabelOf,
   roomSlugOf,
   serializeTreeDocument,
+  splitChannelClaimId,
   treeDocumentFileNameFor,
   type TreeDocument,
 } from '../src/tree-document.js';
@@ -247,7 +248,7 @@ describe('channelIdsReferencedBy — the capture set both consumers derive', () 
     expect(channelIdsReferencedBy(emptyTreeDocument('s', 1))).toEqual([]);
   });
 
-  it('a dotted claim id maps to its base channel — the capture is the structured value', () => {
+  it('a dotted claim id goes out WHOLE — the assembler resolves the base (GH #369)', () => {
     const document: TreeDocument = {
       version: 1,
       story: 's',
@@ -259,15 +260,67 @@ describe('channelIdsReferencedBy — the capture set both consumers derive', () 
           assertions: {
             channels: [
               { id: 'info.title', is: 'Mini' },
-              // Same base as the dotted claim — counted once.
               { id: 'info.description', is: 'A test.' },
               { id: 'banner.title', is: 'Mini' },
+              // A channel whose own id carries a dot: splitting on the first
+              // dot named `story`, a channel that does not exist.
+              { id: 'story.chapter.title', contains: ['Chapter VI'] },
             ],
           },
         },
       ],
     };
-    expect(channelIdsReferencedBy(document)).toEqual(['info', 'banner']);
+    expect(channelIdsReferencedBy(document)).toEqual([
+      'info.title',
+      'info.description',
+      'banner.title',
+      'story.chapter.title',
+    ]);
+  });
+});
+
+describe('splitChannelClaimId — the longest captured channel that prefixes the claim', () => {
+  it('splits a single-segment channel and its path', () => {
+    expect(splitChannelClaimId('info.title', ['info', 'banner'])).toEqual({
+      channelId: 'info',
+      channelPath: ['title'],
+    });
+    expect(splitChannelClaimId('prologue', ['prologue'])).toEqual({
+      channelId: 'prologue',
+      channelPath: [],
+    });
+  });
+
+  it('reads a dotted channel id as the channel, not as a path into its first segment (GH #369)', () => {
+    expect(splitChannelClaimId('story.chapter.title', ['story.chapter', 'info'])).toEqual({
+      channelId: 'story.chapter',
+      channelPath: ['title'],
+    });
+    expect(splitChannelClaimId('story.chapter', ['story.chapter'])).toEqual({
+      channelId: 'story.chapter',
+      channelPath: [],
+    });
+  });
+
+  it('prefers the longest prefix when a shorter channel id also matches', () => {
+    expect(splitChannelClaimId('story.chapter.title', ['story', 'story.chapter'])).toEqual({
+      channelId: 'story.chapter',
+      channelPath: ['title'],
+    });
+  });
+
+  it('a prefix must be dot-bounded — `storyline` is not `story`', () => {
+    expect(splitChannelClaimId('storyline.title', ['story'])).toEqual({
+      channelId: 'storyline',
+      channelPath: ['title'],
+    });
+  });
+
+  it('falls back to the first segment when nothing captured prefixes the claim', () => {
+    expect(splitChannelClaimId('banner.title', [])).toEqual({
+      channelId: 'banner',
+      channelPath: ['title'],
+    });
   });
 });
 

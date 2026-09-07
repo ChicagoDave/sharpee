@@ -1,0 +1,125 @@
+# Session Plan: Fix the fifteen platform defects the Secret Letter port surfaced
+
+**Created**: 2026-09-06
+**Plan Status**: ACTIVE
+**Overall scope**: Land the fifteen ACCEPTED items (P-1..P-4, P-6..P-16) of `docs/proposals/secret-letter-port-platform-defects.md` against `packages/` (branch-tester, devkit, the bundle CLI, story-loader, chord, world-model, stdlib, parser-en-us, lang-en-us), each with the real-path test its Done-when names, then close out by regenerating the Secret Letter tree, reverting the port's workarounds, closing nineteen GitHub issues, and updating docs. P-5 is REJECTED (duplicate of `publish-readiness-defects.md` P-11) and is not planned here.
+**Bounded contexts touched**: Testing Intelligence (branch-tester, devkit, bundle CLI, test-tree loader); Chord Story Language (chord analyzer/parser/IR, story-loader, world-index-adjacent runtime dispatch); Normative Character Layer (packages/character, issue 275); API/Service Engine (stdlib actions, parser-en-us grammar); Domain Modeling (world-model WearableBehavior); Story Content (branch-stories/secret-letter, close-out only)
+**Key domain language**: authored move vs. offstage move (ADR-330, ADR-325 D3h), region presence (ADR-236 D4), phrase-entry progress counters (ADR-245), composed-clause consultation (ADR-118 — explicitly NOT this plan's scope, see Phase 3 note), declared state vs. platform word collision, scope predicate (visible/touchable/carried, ADR-273), the `move` family's put-not-act rule (ADR-329 D7)
+
+## References consulted
+- `docs/proposals/secret-letter-port-platform-defects.md` — the source: fifteen ACCEPTED items (P-1..P-4, P-6..P-16), one REJECTED (P-5, duplicate of publish-readiness P-11); each item's Done-when carries its acceptance ruling and is this plan's test-and-scope contract.
+- `docs/architecture/adrs/adr-325-chord-presence-and-duration.md` — Amendment W1 (ACCEPTED 2026-09-06, session 24532e) is P-14's accepted design (W1a-W1g: `make <actor> wear/take off <item>` in the `move` family, additive IR, two compile-time gates); D3h (two movement clauses) is the citation P-6(c) amends for offstage moves raising `when <entity> moves`.
+- `docs/architecture/adrs/adr-330-chord-chapters.md` — `the player visits <room> for the first time` rides the arrival event (its own text, line 146-148); P-6(b) restores this reading rather than an end-of-action location check.
+- `docs/architecture/adrs/adr-326-adjacent-room-place-expression.md` — D5 (observers unchanged; a moved arrival fires the room's entering clause) is the addendum P-6(a)'s narration-order fix must match.
+- `docs/architecture/adrs/adr-236-chord-regions.md` — D4 (daemon attachment, region-owned `on every turn`) is the guide's presence rule P-7(a) restores: a region daemon fires only while the player is in a member room.
+- `docs/architecture/adrs/adr-245-chord-phrase-books.md` — places cycling/first-time/sticky firing counters on the phrase entry, not the bare key; P-9 restores this for `stopping` phrases shared across call sites.
+- `docs/architecture/adrs/adr-307-testing-tree-model-v2.md` — line 118 documents the dotted-claim head as single-word; P-2's Done-when updates this paragraph in the same landing that fixes the head.
+- `docs/architecture/adrs/adr-329-chord-acting-statement.md` — D1 excludes `the player` as an acting actor; D7 states `move` puts, acting does. P-14's review note is explicit that the acting statement is not the answer here — W1 rides D7's family, not D1's exclusion.
+- `docs/architecture/adrs/adr-118-stdlib-action-interceptors.md` — the composed-clause consultation-order gate for `publish-readiness-defects.md` P-11 (issues #332, #350). Not this plan's scope; cited only because Phase 3 (P-7) is sequenced near that amendment's landing in `story-loader` per this plan's own grouping guidance, without depending on or implementing it.
+- `docs/work/publish-readiness/plan.md` — the sibling platform plan. Its Phase 6a holds `publish-readiness` P-11 (ADR-118 Amendment 1, PENDING on acceptance) — this plan must not include that item; Phase 3 below (P-6, P-7) notes the adjacency but does not depend on or duplicate it.
+- `docs/context/project-profile.md` — stack/conventions: `./repokit build`, `dist/cli/sharpee.js` for transcript tests, `./sharpee test branch-stories/secret-letter` for the tree (1468 cards passing), Dungeo chain (952 passing) as the platform regression floor; branch-story mutation verification is carried by the tree's `states:` pins, not the `mutation-verification` agent.
+- `docs/context/session-20260906-0520-feat-secret-letter-port.md` — most recent session: no open blockers bear on this plan directly; confirms current suite baselines (Secret Letter 1468/2643, Dungeo chain 952) this plan's close-out phase re-verifies.
+- CLAUDE.md — "Platform changes require discussion first": every phase below that edits `packages/` presents its implementation approach to David before editing; "never modify real stories for platform tests" governs new test fixtures only, not the close-out phase's revert of the port's own existing workarounds in `branch-stories/secret-letter`.
+
+## Phases
+
+### Phase 1: Testing tools that pin the rest — branch-tester, devkit, and the bundle CLI (P-1, P-2, P-3, P-4)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Testing Intelligence. Four independent testing-seam fixes grouped because every later phase's real-path tests run through one of these tools: `channelIdsReferencedBy` (branch-tester), the dotted-claim head resolver (branch-tester), `loadChordStory`'s import resolver (bundle CLI), and `loadAuthorGame`'s channels option (devkit test-tree).
+- **Entry state**: Present the four implementation approaches to David before editing `packages/branch-tester`, `packages/devkit`, or the bundle CLI's story-loading path (`dist/cli` source, `scripts/make-story-artifacts.mjs`).
+- **Deliverable**: P-1 — `channelIdsReferencedBy` resolves an assertion id to the longest registered channel id prefix (or a known `story` namespace); a branch-tester test pins `story.chapter.title` against the chapters extension. P-2 — the dotted-claim head accepts kebab-case IR ids and Chord-spelled multi-word names (`silver brooch.location = player` and `silver-brooch.location = player`); a branch-tester test pins both spellings; the ADR-307 line-118 single-word-head paragraph is updated in the same landing. P-3 — `node dist/cli/sharpee.js --exec "look" --story branch-stories/secret-letter/secret-letter.story --seed 7` runs; `scripts/make-story-artifacts.mjs` regenerates `secret-letter.tests.json` from it; a `scripts/__tests__/` test drives the bundle against an imported story. P-4 — `loadAuthorGame` takes a channels option, `test-tree.ts` passes `spec.channels` through to `assembleGame`; a devkit test runs a tree whose root declares an extra capture channel and asserts on it.
+- **Exit state**: `pnpm --filter '@sharpee/branch-tester' test` and `pnpm --filter '@sharpee/devkit' test` green with new tests; `scripts/__tests__/` bundle-import test green; `./sharpee test branch-stories/secret-letter` still 1468 cards passing (unchanged by this phase, confirms no regression); the four issues (#369, #375, #352, #255) closed with evidence.
+- **Outcome (2026-09-06, session 24532e)**: P-1 — `resolveDeclaredChannelId` (bootstrap, longest dot-bounded registered prefix) + `LoadedGame.capturedChannels`; `channelIdsReferencedBy` returns claim ids whole; `splitChannelClaimId` (tree-document, shared wire file) splits a claim against the captured set; the walker threads `game.capturedChannels`. P-2 — the two dotted regexes take a full head; `findEntity` reads the Chord IR-id attribute; ADR-307 addendum sentence corrected. P-3 — `scripts/bundle-entry.js` compiles with devkit's `makeFsImportResolver` (shared via devkit dist, as the hatch transpiler already is); the README's secret-letter command runs. P-4 — **done as built**: `test-tree.ts` was replaced by the ADR-307 cutover (31ef79b28); `test-tree-document.ts` already derives the capture set from the document's claims and `loadAuthorGame` already takes `channels` — no root `channels:` field exists to honor; #255 closed as superseded. Pins: bootstrap `assemble-channels` 10 passing; branch-tester 114 passing; devkit `test-tree-document` 6 passing; new `scripts/__tests__/cli-chord-import.test.ts` 3 passing, other bundle tests 11 passing; `./sharpee test branch-stories/secret-letter` 1468 cards / 2643 assertions passing (unchanged). Issues #369, #375, #352 closed fixed, #255 closed superseded, each with the evidence above. Deferred to Phase 9 as planned: regenerating `secret-letter.tests.json` via the artifacts script and adding the Chapter 9 location pins.
+- **Status**: DONE (2026-09-06, session 24532e)
+
+### Phase 2: Authored-move narration/event order — the audit document and its four cases (P-6)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Chord Story Language runtime dispatch order (story-loader, engine) and the Normative Character Layer's scene sub-step (packages/character, case (d)). One systemic audit plus four fixes it governs, matching the recurrence class two prior sessions (20260904-2310, 20260905-1007) flagged.
+- **Entry state**: Phase 1 landed (P-3's bundle import fix and P-4's tree-channel plumbing let this phase's tree/story-loader tests run reliably). Present the audit document's scope and the four fix approaches to David before editing `packages/story-loader`, `packages/engine`, or `packages/character`.
+- **Deliverable**: A short document under `docs/architecture/`, titled for authored-move narration and event order, stating for an authored move the order of (arrival narration, destination entering clauses, watchers, chapter triggers) and which events an offstage move raises. Four cases pass as tests: (a) an authored `move the player` narrates the room header/description before `after the player entering` text, per ADR-326 D5; (b) `begins when the player visits <room> for the first time` fires when the destination's own entering clause moves the player again in the same turn, riding the arrival event per ADR-330; (c) `move <entity> offstage` raises `when <entity> moves`, with ADR-325 D3h's wording amended to cover authored moves; (d) `subjectChangedTurn` and `clockTurn` are compared on one scale so a player-driven topic change seizes an authored `when the subject changes:` row (issue 275's phase-entry-vs-action-side stamp mismatch).
+- **Exit state**: Issues #367, #368, #373, #275 closed with evidence. Story-loader tests pin (a)-(c); a character test pins (d). `pnpm --filter '@sharpee/story-loader' test` and `pnpm --filter '@sharpee/character' test` green. `./sharpee test branch-stories/secret-letter` passes (the `enter hole`/`follow bobby`/`follow olmer` narration-order branches, Chapter VI's begin-row, and the gallows watcher all real-path cases). Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 3: Region daemon presence and offstage-owned timer narration (P-7)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: Chord Story Language runtime (story-loader region/timer dispatch). Sequenced near — not dependent on — `publish-readiness-defects.md` Phase 6a's composed-clause consultation-order work (ADR-118 Amendment 1, PENDING), per this plan's own grouping guidance; both touch `story-loader`'s turn-cycle scheduling, so check for overlapping edits before landing, but this phase does not implement or wait on that amendment.
+- **Entry state**: Phase 2 landed (shares the story-loader turn-order audit's findings). Present both fix approaches to David before editing `packages/story-loader`.
+- **Deliverable**: (a) a region's `on every turn` clause fires only while the player is in a member room, per the regions guide and ADR-236 D4's presence rule; (b) a timer owned by an unplaced entity speaks its turn bodies wherever the player is (re-owned to the player, per David's ruling).
+- **Exit state**: Issues #365, #372 closed with evidence. Story-loader tests pin both cases. `pnpm --filter '@sharpee/story-loader' test` green. `./sharpee test branch-stories/secret-letter` passes (Toresal night-flip/Bobby non-member-room regression, the raid's five-row `overheard` timer). Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 4: Chord state and entity-name resolution — select-on, declared states, and connective names (P-8, P-10, P-11)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Chord Story Language analyzer/loader — three independent resolution-order fixes grouped because each is "the analyzer reads a name or state wrong, resolve it right": entity-subject resolution inside `select on`, declared-state-vs-platform-word collision, and a declared name containing `and`/`&`.
+- **Entry state**: Present the three fix approaches to David before editing `packages/chord` (analyzer) and `packages/story-loader`.
+- **Deliverable**: P-8 — `select on <entity>` resolves the entity subject to its declared state and runs the matching arm (issue 370's winch, `when raised`/`when lowered` over a reversible state), reverting the port's five-guarded-statement pivot workaround. P-10 — a declared `states:` name wins over the platform's own reading of the colliding word (issue 366's `x coin` `fresh, seen` collision); a story-loader test pins the runtime behavior and a chord test pins the analyzer's resolution order. P-11 — `while the Sandler and Sons is new` and `change the Sandler and Sons to greeted` parse with both `and` and `&`; a chord parser test pins both spellings.
+- **Exit state**: Issues #370, #366, #361 closed with evidence. `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green. `./sharpee test branch-stories/secret-letter` passes (winch's `turn winch` branch on the restored `select on` block). Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 5: Chord phrase-engine fixes — per-entry progress, timer reads on detail lines, and marker splicing in descriptions (P-9, P-12, P-13)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Chord Story Language phrase engine (chord analyzer/IR, story-loader phrase runtime) — three independent phrase-related fixes: `stopping` phrase progress ownership, timer-read admission on `phrase detail while`, and `{phrase}` marker splicing outside room prose.
+- **Entry state**: Present the three fix approaches to David before editing `packages/chord` (analyzer) and `packages/story-loader` (phrase runtime).
+- **Deliverable**: P-9 — a `stopping` phrase's cycling/first-time/sticky progress belongs to the phrase entry per ADR-245, not the call site; two clauses sharing one `stopping` phrase (issue 371's butler `give letter`/`show letter`) speak the first arm once, then the second, reverting the port's split-phrase workaround; a story-loader test pins it and the phrase reference states the rule. P-12 — a timer read is accepted on `phrase detail while` as it already is on a clause head (issue 359); a chord analyzer test pins it and records whether a bare entity-state word on the same line is accepted or refused by design. P-13 — `{phrase}` markers splice in entity descriptions exactly as in room prose (issue 364); a story-loader test pins a scenery entity with gated phrases.
+- **Exit state**: Issues #371, #359, #364 closed with evidence. `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green. `./sharpee test branch-stories/secret-letter` passes (the butler's restored single-phrase branch). Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 6: A runtime statement puts a garment on an actor, per ADR-325 Amendment W1 (P-14)
+- **Tier**: Large
+- **Budget**: 400
+- **Domain focus**: Chord Story Language surface addition, cross-cutting: `packages/chord` (parser, analyzer, IR — additive `wear`/`take-off` statement kinds), `packages/story-loader` (execution: move lifecycle then `WearableBehavior.wear`/`.remove`), `packages/world-model` (WearableBehavior is unchanged, only consumed), `packages/lang-en-us`/docs (grammar changelog, guide statements page, genai-api).
+- **Entry state**: Present the W1a-W1g implementation approach to David before editing `packages/chord`, `packages/story-loader`, or `packages/world-model` — this is the largest single-item phase in the plan and the ADR is ACCEPTED but unimplemented.
+- **Deliverable**: `make <actor> wear <item>` and `make <actor> take off <item>` land exactly as ADR-325 Amendment W1 decides: two `move`-family statements (not the acting statement — ADR-329 D1's `the player` exclusion does not apply, D7's put/act split is what this rides); `wear` moves the item to the actor through the move lifecycle if not already held (firing `disappeared`/`entered` witness rows), takes it off another wearer first if needed, then `WearableBehavior.wear`; already-worn is a no-op; `take off` runs `WearableBehavior.remove` and leaves the item held; `the player` is a legal actor; compile-time gates `analysis.wear-not-wearable` and `analysis.wear-actor-not-person`; additive IR kinds `{ kind: 'wear' | 'take-off'; actor; item; stmtWhen?; span }`. Grammar changelog, guide statements page, and genai-api record both statements.
+- **Exit state**: Issue #360 closed with evidence. Story-loader tests pin wear, take off, already-worn/not-worn no-ops, and both diagnostics. `pnpm --filter '@sharpee/chord' test` and `pnpm --filter '@sharpee/story-loader' test` green. `./sharpee test branch-stories/secret-letter` passes with Commerce Street's arrival block reading `make the player wear the woolen cap`, reverting the arrival block's GAP-comment workaround. Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 7: `sleeping` and `waking` ship as standard actions (P-15)
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: API/Service Engine surface addition — stdlib (four-phase actions), lang-en-us (stock refusals), parser-en-us (verb patterns). Cross-package but a single coherent feature.
+- **Entry state**: Present the action design (validate/execute/report/blocked per ADR-051) to David before editing `packages/stdlib`, `packages/lang-en-us`, or `packages/parser-en-us`.
+- **Deliverable**: stdlib ships `sleeping` and `waking` as four-phase standard actions with stock English refusals ("You aren't tired", "You're already awake") in lang-en-us and parser verb patterns (`sleep`, `go to sleep`, `go to bed`, `lie down`; `wake`, `wake up`); `on the player sleeping` loads without a `define action`.
+- **Exit state**: Issue #362 closed with evidence. stdlib tests pin both actions. `pnpm --filter '@sharpee/stdlib' test` green. The Maiden House's `define action sleeping` (`maiden-house.chord:513`) is dropped in favor of `on the player sleeping`; `./sharpee test branch-stories/secret-letter` passes. Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 8: An unplaced entity never wins scope over a carried one (P-16)
+- **Tier**: Small
+- **Budget**: 100
+- **Domain focus**: API/Service Engine — stdlib scope resolution for every action's `:item` slot.
+- **Entry state**: Present the fix approach to David before editing `packages/stdlib`.
+- **Deliverable**: With `the dress` unplaced and `the daydress` (aka `dress`) in the player's inventory, `wear dress` puts the day dress on and never reaches the offstage entity's intercept, for every action's `:item` slot (an entity with no location is out of scope; a carried match wins).
+- **Exit state**: Issue #374 closed with evidence. stdlib scope tests pin it. `pnpm --filter '@sharpee/stdlib' test` green. `./sharpee test branch-stories/secret-letter` passes, reverting `red-gate.chord`'s `wear day dress` pin workaround. Dungeo chain green.
+- **Status**: PENDING
+
+### Phase 9: Close-out — regenerate the tree, revert the port's workarounds, close issues, update docs
+- **Tier**: Medium
+- **Budget**: 250
+- **Domain focus**: Story Content (branch-stories/secret-letter, revert only — this is maintenance of the actual port, not a new test fixture) plus documentation across Chord Story Language and the platform reference. No new packages/ logic in this phase.
+- **Entry state**: Phases 1-8 all DONE.
+- **Deliverable**: Regenerate `secret-letter.tests.json` via `scripts/make-story-artifacts.mjs` against the bundle (P-3, Phase 1) now that all fixes are live. Revert the port's named workarounds now that their platform gaps are closed: Commerce Street's arrival-block GAP comment (Phase 6, P-14); the winch's five guarded statements back to `select on` (Phase 4, P-8); the butler's split phrase back to one shared `stopping` phrase (Phase 5, P-9); the Chapter VI `becomes`-trigger workaround (`black-gate.chord:54`, Phase 2, P-6b); Maiden House's `define action sleeping` (Phase 7, P-15); `red-gate.chord`'s `wear day dress` pin (Phase 8, P-16). Close all nineteen GitHub issues (#369, #375, #352, #255, #367, #368, #373, #275, #365, #372, #370, #371, #366, #361, #359, #364, #360, #362, #374) with evidence linking each to its phase's tests. Update docs: grammar changelog (`docs/architecture/chord-grammar-changes.md`), guide pages (regions, phrase books, statements), genai-api (`packages/sharpee/docs/genai-api/`), the ADR-307 addendum paragraph if not already closed in Phase 1, and the ADR-329 D7 example line to note the `wear`/`take-off` pair alongside `move`.
+- **Exit state**: `./sharpee test branch-stories/secret-letter` passes with none of the six named workarounds present, at a card count ≥ 1468 (the pre-fix baseline). `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript --stop-on-failure` passes at 952. All nineteen issues closed. All docs updated and consistent with the shipped behavior.
+- **Status**: PENDING
+
+## Item-to-phase trace
+- P-1 -> Phase 1
+- P-2 -> Phase 1
+- P-3 -> Phase 1
+- P-4 -> Phase 1
+- P-5 -> REJECTED, not planned (duplicate of `publish-readiness-defects.md` P-11)
+- P-6 -> Phase 2
+- P-7 -> Phase 3
+- P-8 -> Phase 4
+- P-9 -> Phase 5
+- P-10 -> Phase 4
+- P-11 -> Phase 4
+- P-12 -> Phase 5
+- P-13 -> Phase 5
+- P-14 -> Phase 6
+- P-15 -> Phase 7
+- P-16 -> Phase 8
+- (all items) -> Phase 9 (close-out: tree regeneration, workaround reverts, issue closure, doc updates)
