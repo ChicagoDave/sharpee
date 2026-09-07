@@ -8119,7 +8119,38 @@ class Parser {
 
     // <subject> <predicate>
     const subject = this.parseValueExpr(c, line, new Set());
+    this.extendNameThroughAnd(subject, c);
     return this.parsePredicate(c, line, subject);
+  }
+
+  /**
+   * GH #361: a declared name may contain `and` (`the Sandler and Sons`). A
+   * condition's subject must be followed by a predicate, so an `and` read
+   * directly after a subject reference is never the connective — it is part
+   * of the name. Keep reading through it (and any further `and`) up to the
+   * predicate word; the analyzer matches the whole phrase exactly and
+   * reports a miss by that phrase.
+   *
+   * @param subject the subject just parsed — extended in place when it is a name reference
+   * @param c the cursor, positioned after the subject
+   */
+  private extendNameThroughAnd(subject: ValueExpr, c: Cursor): void {
+    if (subject.kind !== 'ref' || subject.ref.kind !== 'name') return;
+    while (c.isWord('and')) {
+      const after = c.peek(1);
+      if (!after || after.kind !== 'word' || PHRASE_STOPS.has(after.text)) return;
+      const andTok = c.next()!;
+      subject.ref.words.push(andTok.text);
+      subject.ref.span = mergeSpans(subject.ref.span, andTok.span);
+      while (!c.atEnd()) {
+        const t = c.peek()!;
+        if (t.kind !== 'word' || PHRASE_STOPS.has(t.text)) break;
+        subject.ref.words.push(t.text);
+        subject.ref.span = mergeSpans(subject.ref.span, t.span);
+        c.next();
+      }
+      subject.span = subject.ref.span;
+    }
   }
 
   /**

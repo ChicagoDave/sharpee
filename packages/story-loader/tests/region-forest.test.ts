@@ -94,16 +94,15 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
     expect(forestSongs).toContain('forest-birdsong');
 
     expect(go(Direction.EAST)).toEqual(['open-sky']); // back out: crossing out
-    // ADR-328 D3 (2026-08-28): the region's daemon keeps firing with the
-    // player outside — located at the Forest, for the engine to tag absent
-    // and the client to hide. Membership decides what is SHOWN, never what
-    // fires; no hardcoded room set, no name heuristic, on either side.
+    // ADR-236 D4, restored by ADR-328 D3's 2026-09-06 amendment (GH #365):
+    // with the player outside, the region's daemon does not fire at all —
+    // no roll, no song. Membership decides what FIRES; no hardcoded room
+    // set, no name heuristic, on either side.
     const forest = story.entityId('forest')!;
     const fieldEvents: ISemanticEvent[] = [];
     for (let i = 0; i < 24; i++) fieldEvents.push(...tickEvents());
     const fieldSongs = fieldEvents.filter((e) => (e.data as { messageId?: string }).messageId === 'forest-birdsong');
-    expect(fieldSongs.length).toBeGreaterThan(0);
-    expect(fieldSongs.every((e) => e.entities.location === forest)).toBe(true);
+    expect(fieldSongs).toEqual([]);
     expect(world.isInRegion(world.getPlayer()!.id, forest)).toBe(false);
   });
 });

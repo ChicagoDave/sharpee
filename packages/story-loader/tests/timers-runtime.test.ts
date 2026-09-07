@@ -169,18 +169,35 @@ describe('stepping (D3f)', () => {
     expect(b.tick()).toEqual(['guards.expired-line']);
   });
 
-  it("a turn's prose is spoken with the owner off-stage — tagged absent, never dropped (ADR-328 D3)", () => {
+  it("a turn's prose is sourced at a placed owner's room, actor the owner (ADR-328 D3)", () => {
+    const b = boot(SOURCE('start the guards\' search'));
+    b.enterYard();
+    b.tick();
+    b.tick();
+    // Lingering reached with the guards still in the Yard: the line rides
+    // the owner's place so the engine tags presence from it.
+    const events = b.tickEvents();
+    expect(messageIdsOf(events)).toEqual(['guards.search.lingering']);
+    expect(events[0].entities.location).toBe(b.story.entityId('yard'));
+    expect(events[0].entities.actor).toBe(b.story.entityId('guards'));
+    expect(events[0].presence).toBeUndefined();
+    expect(b.record()).toMatchObject({ index: 2 });
+  });
+
+  it("a turn's prose is spoken with the owner off-stage — from the player, never dropped (GH #372)", () => {
     const b = boot(SOURCE('start the guards\' search'));
     b.enterYard();
     b.tick();
     b.tick();
     b.world.moveEntity(b.story.entityId('guards')!, null);
     // Lingering reached: the line fires. Its owner has no place at all, so
-    // the loader tags it `absent` itself (the funnel would find no location).
+    // there is nowhere to source it from — it goes out unsourced and the
+    // funnel defaults it to the player (ADR-328 D3, amended 2026-09-06).
     const events = b.tickEvents();
     expect(messageIdsOf(events)).toEqual(['guards.search.lingering']);
-    expect(events[0].presence).toBe('absent');
-    expect(events[0].entities.actor).toBe(b.story.entityId('guards'));
+    expect(events[0].presence).toBeUndefined();
+    expect(events[0].entities.location).toBeUndefined();
+    expect(events[0].entities.actor).toBeUndefined();
     expect(b.record()).toMatchObject({ index: 2 });
   });
 

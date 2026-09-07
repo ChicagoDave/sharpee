@@ -198,6 +198,13 @@ function tokenizeLine(raw: string, lineNo: number, start: number, diagnostics: D
       continue;
     }
 
+    // GH #361: `&` is a name word (`the Sandler & Sons`) — nothing else in
+    // Chord reads the character, so every name reader carries it whole.
+    if (ch === '&') {
+      tokens.push({ kind: 'word', text: ch, span: spanOf(lineNo, column) });
+      pos++;
+      continue;
+    }
     const single: Record<string, TokenKind> = { ':': 'colon', ',': 'comma', '(': 'lparen', ')': 'rparen', '[': 'lbracket', ']': 'rbracket', '{': 'lbrace', '}': 'rbrace' };
     tokens.push({ kind: single[ch] ?? 'punct', text: ch, span: spanOf(lineNo, column) });
     pos++;

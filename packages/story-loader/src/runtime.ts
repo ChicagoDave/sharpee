@@ -3625,10 +3625,18 @@ export class ChordRuntime {
    * only while they are NOT the one being played, checked before the
    * condition so the RNG stream and `, once` are untouched for as long as the
    * owner holds the role — the clause wakes, unconsumed, the turn the role
-   * moves off them. No presence gate (ADR-328 D3): the clause fires wherever
-   * the player is — `, once` and RNG conditions consume off-stage, and
-   * `sourced` stamps the owner's place so the engine tags `presence` and the
-   * client decides what to show.
+   * moves off them. No presence gate for a character or thing (ADR-328 D3):
+   * the clause fires wherever the player is — `, once` and RNG conditions
+   * consume off-stage, and `sourced` stamps the owner's place so the engine
+   * tags `presence` and the client decides what to show.
+   *
+   * A REGION owner is the exception (ADR-236 D4, restored by ADR-328 D3's
+   * 2026-09-06 amendment — GH #365): its clause fires only while the player
+   * is in a member room, transitive through nesting. Checked before the
+   * condition, so off-stage the clause neither rolls dice nor spends its
+   * `, once`. A region has no life of its own to freeze; what its daemon
+   * does off-stage is mutate the world where the player is not looking
+   * (a night flip, a `move … here`), which no presence tag can hide.
    *
    * @param irEntity the owning entity
    * @param clause the every-turn clause
@@ -3640,6 +3648,7 @@ export class ChordRuntime {
     const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
     if (this.storyOver(world)) return [];
     if (this.holdsPlayerRole(world, irEntity.id)) return [];
+    if (!this.playerPresentInRegionOwner(world, irEntity)) return [];
     const evalCtx: ExecContext = { world, it: irEntity.id };
     if (clause.condition && !this.evaluator.evalCondition(clause.condition, evalCtx)) return [];
     const fired = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
@@ -3648,6 +3657,25 @@ export class ChordRuntime {
     evalCtx.occurrence = fired;
     const at = this.placeOf(irEntity.id, world);
     return this.narrated(this.sourced(this.execStatements(clause.body, evalCtx), irEntity.id, world, at));
+  }
+
+  /**
+   * The region presence gate (ADR-236 D4): true for every non-region owner,
+   * and for a region owner only while the player stands in one of its member
+   * rooms — `isInRegion` walks the nesting, so a room of a nested child
+   * region counts. A region with no world entity (never lowered) is never
+   * present.
+   *
+   * @param world the live world
+   * @param irEntity the clause owner
+   * @returns whether the owner's every-turn clauses may fire this tick
+   */
+  private playerPresentInRegionOwner(world: WorldModel, irEntity: IREntity): boolean {
+    if (!irEntity.kinds.some((k) => k.name === 'region')) return true;
+    const regionId = this.host.entityId(irEntity.id);
+    const player = world.getPlayer();
+    if (!regionId || !player) return false;
+    return world.isInRegion(player.id, regionId);
   }
 
   /**
@@ -3942,8 +3970,13 @@ export class ChordRuntime {
       if (table[`${def.qualified}.${state}`]) {
         // ADR-328 D3: a named turn's prose fires wherever the player is;
         // an entity owner's place rides the event so it is tagged, not dropped.
+        // An owner with no place at all — a bookkeeping entity that was never
+        // placed, or one moved offstage — has nowhere to be heard from, so its
+        // turn speaks from the player instead (GH #372, David's ruling): the
+        // line goes out unsourced and the funnel defaults it to the player.
         const spoken = this.phraseEvent(`${def.qualified}.${state}`, { world });
-        out.push(...(def.owner && def.owner !== 'player' ? this.sourced([spoken], def.owner, world) : [spoken]));
+        const at = def.owner && def.owner !== 'player' ? this.placeOf(def.owner, world) : undefined;
+        out.push(...(at ? this.sourced([spoken], def.owner!, world, at) : [spoken]));
       }
       if (def.meanwhile && (def.meanwhile.chance === null || this.evaluator.evalCondition({ kind: 'chance', n: def.meanwhile.chance }, ownerCtx))) {
         out.push(...this.execStatements(def.meanwhile.body, ownerCtx));

@@ -7,11 +7,11 @@
  * ActionContext, cuttable.test.ts precedent) — assertions are on the
  * emitted narrated events per tick, never on daemon registration alone.
  * `while <condition>` and `, once` compose through the unchanged shared
- * lowering path. ADR-328 D3 (2026-08-28): the clauses fire every tick
- * wherever the player is — each event carries the region as
- * `entities.location` for the engine's presence tag — so `, once` and
- * conditions consume off-stage; the player's room decides what is SHOWN,
- * never what fires.
+ * lowering path. ADR-328 D3's 2026-09-06 amendment (GH #365) restores the
+ * gate its 2026-08-28 amendment had retired for regions: a region clause
+ * fires ONLY while the player is in a member room — off-stage it neither
+ * rolls dice nor spends its `, once`. Entity- and trait-owned clauses keep
+ * ADR-328 D3's fire-everywhere-and-tag rule.
  */
 import { describe, expect, it, beforeEach } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
@@ -183,48 +183,57 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     ]);
   });
 
-  it('fires every tick wherever the player is, each event located at its region (ADR-328 D3)', () => {
-    // Surface Camp — outside every region: the clauses still fire, located
-    // at their regions; the engine tags them absent and the client hides them.
-    const atSurface = tickEvents();
-    expect(messageIdsOf(atSurface)).toEqual(expect.arrayContaining(['underground-hum', 'mine-drip']));
-    expect(locationOf(atSurface, 'underground-hum')).toBe(story.entityId('underground'));
-    expect(locationOf(atSurface, 'mine-drip')).toBe(story.entityId('mines'));
+  it('fires only while the player is in a member room, each event located at its region (ADR-236 D4)', () => {
+    // Surface Camp — outside every region: nothing fires.
+    expect(tick()).toEqual([]);
 
-    // Round Room — inside the Underground: the same events, the same
-    // locations. Presence is the engine's question (`isInRegion`), not the
-    // daemon's.
+    // Round Room — a direct member of the Underground, not of the Mines.
     go(Direction.DOWN);
     const atRoundRoom = tickEvents();
+    expect(messageIdsOf(atRoundRoom)).toContain('underground-hum');
+    expect(messageIdsOf(atRoundRoom)).not.toContain('mine-drip');
     expect(locationOf(atRoundRoom, 'underground-hum')).toBe(story.entityId('underground'));
-    expect(locationOf(atRoundRoom, 'mine-drip')).toBe(story.entityId('mines'));
-    expect(world.isInRegion(world.getPlayer()!.id, story.entityId('underground')!)).toBe(true);
-    expect(world.isInRegion(world.getPlayer()!.id, story.entityId('mines')!)).toBe(false);
 
-    // Coal Seam — nested-child room: in both regions, transitively.
+    // Shaft Top — a room of the nested Mines: in both regions, transitively.
     go(Direction.NORTH);
+    const atShaftTop = tickEvents();
+    expect(messageIdsOf(atShaftTop)).toEqual(expect.arrayContaining(['underground-hum', 'mine-drip']));
+    expect(locationOf(atShaftTop, 'mine-drip')).toBe(story.entityId('mines'));
+
+    // Coal Seam — deeper in the Mines: still both.
     go(Direction.DOWN);
-    expect(world.isInRegion(world.getPlayer()!.id, story.entityId('underground')!)).toBe(true);
-    expect(world.isInRegion(world.getPlayer()!.id, story.entityId('mines')!)).toBe(true);
+    expect(tick()).toEqual(expect.arrayContaining(['underground-hum', 'mine-drip']));
+
+    // Back out to the Surface Camp: silent again the turn you leave.
+    go(Direction.UP);
+    go(Direction.SOUTH);
+    go(Direction.UP);
+    expect(tick()).toEqual([]);
   });
 
-  it('`, once` fires exactly once — and consumes off-stage (ADR-328 D3)', () => {
-    // The first tick fires it, player at the Surface Camp: located at the
-    // Mines, for the client to hide — but consumed.
+  it('`, once` fires exactly once — and is NOT consumed off-stage', () => {
+    // Ticks at the Surface Camp leave it unspent.
+    expect(tick()).not.toContain('first-drip');
+    expect(tick()).not.toContain('first-drip');
+
+    // Walking into the Mines finds it waiting; it fires once.
+    go(Direction.DOWN);
+    go(Direction.NORTH); // Shaft Top
     const first = tickEvents();
     expect(messageIdsOf(first)).toContain('first-drip');
     expect(locationOf(first, 'first-drip')).toBe(story.entityId('mines'));
     expect(tick()).not.toContain('first-drip');
 
-    // Walking in later finds it spent — the owl left while you were away.
+    // Leaving and returning does not rewind it.
+    go(Direction.SOUTH);
+    go(Direction.UP); // Surface Camp
+    expect(tick()).not.toContain('first-drip');
     go(Direction.DOWN);
     go(Direction.NORTH); // Shaft Top
     expect(tick()).not.toContain('first-drip');
-    go(Direction.DOWN); // Coal Seam
-    expect(tick()).not.toContain('first-drip');
   });
 
-  it('`while <condition>` composes on a region clause', () => {
+  it('`while <condition>` composes on a region clause, under the presence gate', () => {
     go(Direction.DOWN);
     go(Direction.NORTH); // Shaft Top — in the Mines
     expect(tick()).not.toContain('storm-rumble'); // story phase: calm
@@ -232,12 +241,9 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     world.setStateValue(CHORD_STORY_STATE_KEY, 'stormy');
     expect(tick()).toContain('storm-rumble');
 
-    // The while-gate is the ONLY gate (ADR-328 D3): stormy and off-stage
-    // still fires, located at the Mines for the client to hide.
+    // Stormy and off-stage: the presence gate holds — nothing fires.
     go(Direction.SOUTH);
     go(Direction.UP); // Surface Camp
-    const offStage = tickEvents();
-    expect(messageIdsOf(offStage)).toContain('storm-rumble');
-    expect(locationOf(offStage, 'storm-rumble')).toBe(story.entityId('mines'));
+    expect(tick()).not.toContain('storm-rumble');
   });
 });

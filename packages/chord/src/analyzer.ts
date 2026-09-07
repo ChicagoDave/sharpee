@@ -6446,7 +6446,15 @@ class Analyzer {
       case 'hold-tongue':
         return { kind: 'hold-tongue', span: stmt.span };
       case 'select-on': {
-        const subject = this.resolveValue(stmt.subject, scope);
+        let subject = this.resolveValue(stmt.subject, scope);
+        // GH #370: `select on <entity>` / `select on it` selects on the
+        // entity's declared state — the one thing an entity subject can
+        // yield an arm word from. Lowered to the `state` field read, so the
+        // arms validate against the declared states below and the runtime
+        // reads the state. `the player` is a role, not a state owner.
+        if ((subject.kind === 'entity' && subject.id !== 'player') || subject.kind === 'it') {
+          subject = { kind: 'field', base: subject, field: 'state' };
+        }
         const stateOwner = this.stateOwnerOf(subject, scope);
         // Trait scope: `select on its state` validates against the visible
         // state set (own + cross-trait, D8) with no concrete owner entity.
@@ -6837,6 +6845,29 @@ class Analyzer {
   }
 
   /** The entity whose `states:` list governs a select-on subject, if determinable. */
+  /**
+   * Whether a condition subject names a state owner that declares `word` as
+   * one of its own states (GH #366): a declared entity by exact name or
+   * alias, `it` in entity scope, or `it` in trait scope against the trait's
+   * visible states. Quiet — a miss returns false and the platform reading
+   * of the word stands.
+   *
+   * @param subject the condition's subject, pre-resolution
+   * @param word the colliding word
+   * @param scope the resolution scope (`it` binding)
+   */
+  private subjectDeclaresState(subject: ValueExpr, word: string, scope: Scope): boolean {
+    if (subject.kind !== 'ref' || subject.ref.kind !== 'name') return false;
+    if (nameIsIt(subject.ref)) {
+      if (scope.owner) return scope.owner.states.includes(word);
+      return scope.ownStates?.includes(word) ?? false;
+    }
+    const lower = subject.ref.words.join(' ').toLowerCase();
+    const exact = this.entities.filter((e) => e.nameLower === lower);
+    const owner = exact.length === 1 ? exact[0] : (() => { const byAlias = this.entities.filter((e) => e.aka.includes(lower)); return byAlias.length === 1 ? byAlias[0] : null; })();
+    return owner?.states.includes(word) ?? false;
+  }
+
   private stateOwnerOf(subject: IRValue, scope: Scope): EntitySymbol | null {
     if (subject.kind === 'field' && subject.field === 'state') {
       if (subject.base.kind === 'it') return scope.owner;
@@ -7784,6 +7815,23 @@ class Analyzer {
         this.requireDialogueScope(`asked ${cond.word}`, scope, cond.span);
         return { kind: 'asked', word: cond.word };
       case 'predicate': {
+        // GH #366: an entity's OWN declared state wins a colliding platform
+        // word — the rule resolveIsObject already applies to mood words. A
+        // recency word (`fresh`) or `concluded` read against a subject that
+        // declares it as a state is that state test, not a topic or thread
+        // read, so it re-enters here as an ordinary `is <state>` predicate.
+        if (cond.predicate.kind === 'recency' || cond.predicate.kind === 'concluded') {
+          const word = cond.predicate.kind === 'recency' ? cond.predicate.word : 'concluded';
+          if (this.subjectDeclaresState(cond.subject, word, scope)) {
+            return this.resolveCondition(
+              {
+                ...cond,
+                predicate: { kind: 'is', negated: cond.predicate.negated, value: { kind: 'bare', words: [word], span: cond.predicate.span }, span: cond.predicate.span },
+              },
+              scope,
+            );
+          }
+        }
         // ADR-320 D6/D9: recency and discussed-ness take the SUBJECT as a
         // topic, not an entity — intercept before entity resolution, and
         // normalize exactly as `knows` topics do.

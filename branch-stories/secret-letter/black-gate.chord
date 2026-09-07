@@ -950,18 +950,20 @@ end phrase
 ## the winch and its crank. The source's push/pull on the crank is not
 ## carried: the platform refuses pushing scenery before any clause runs.
 
-## The flip reads the state it just changed (statements run in sequence),
-## so it pivots through `turning`: raised → turning → lowered, lowered →
-## raised, each arm's line spoken on the state it lands in. (`select on the
-## gaudy chandelier` / `when raised` ran no arm at all — GH #370.)
+## The flip selects on the chandelier's state, each arm's line spoken on the
+## state it lands in (GH #370, fixed 2026-09-06: `select on <entity>` reads
+## the entity's declared state; the five-guarded-statement pivot is gone).
 
 define trait winch-crank
   on the player turning
-    change the gaudy chandelier to turning when the gaudy chandelier is raised
-    change the gaudy chandelier to raised when the gaudy chandelier is lowered
-    phrase winch-winds-the-rope when the gaudy chandelier is raised
-    change the gaudy chandelier to lowered when the gaudy chandelier is turning
-    phrase winch-lowers-the-rope when the gaudy chandelier is lowered
+    select on the gaudy chandelier
+      when raised
+        change the gaudy chandelier to lowered
+        phrase winch-lowers-the-rope
+      when lowered
+        change the gaudy chandelier to raised
+        phrase winch-winds-the-rope
+    end select
   end on
 
 end trait
@@ -1396,7 +1398,7 @@ create the gaudy chandelier
   scenery
   chandelier-lift
   in the Library
-  states, reversible: raised, lowered, turning
+  states, reversible: raised, lowered
 
   Nothing else seems to be hidden in the gaudy chandelier.
 
