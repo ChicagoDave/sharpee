@@ -55,8 +55,6 @@
 ##     on a walked move while the tension is still unimportant, which in
 ##     practice is only the walk into the square at the end, where the
 ##     goodbye speaks instead; the follower clause moves her and says nothing.
-##   * `wear dress` reaches Chapter 1's escape dress, which has no location
-##     (GH #374); the day dress answers to `wear day dress`.
 ##   * The furnace's contents listing and the box's contents listing ride
 ##     the platform's container reports.
 ##   * The love letters' `[first time]` tail sits with the documents' first

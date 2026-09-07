@@ -51,13 +51,14 @@
 ## (`story.ni:1325`) is a `detail` line on Jack (`secret-letter.story`) that
 ## APPENDS to her description where the source replaces it.
 ##
-## THE CHAPTER TRIGGER, fixed here: Chapter VI's row began "when the player
-## visits the Empty Alleyway for the first time", but the alleyway moves her
-## on to Commerce Street in the same turn and the chapter plugin reads her
-## location after the action (`chapters-plugin.ts:88`), so the row could
-## never fire (GH #368). It now begins when the hatch becomes opened — the
-## same clause's own first statement. The tree cannot pin the chapter
-## packet either (GH #369); the after-jail gates below are its evidence.
+## THE CHAPTER TRIGGER: Chapter VI's row begins "when the player visits the
+## Empty Alleyway for the first time". The alleyway moves her on to Commerce
+## Street in the same turn, which once kept the row from firing (GH #368,
+## fixed 2026-09-06: the first visit is a fact recorded on arrival, so the
+## trigger holds wherever she ends the turn); the `becomes opened` stand-in
+## is gone. The tree pins the chapter packet on the `story.chapter` channel
+## (GH #369, fixed 2026-09-06); the after-jail gates below are its evidence
+## in prose.
 ##
 ## NOT CARRIED, with reasons:
 ##   * `jump east` / `jump to <room>` — no direction slot on a story action;
@@ -68,7 +69,8 @@
 ##     for every other action — no catch-all clause; going, attacking, talk,
 ##     show and give carry.
 ##   * "without printing a room description" on the drag to the landing — an
-##     authored move narrates its destination (GH #367 notes the order).
+##     authored move narrates its destination (the room reads before the
+##     arrival clauses, GH #367, fixed 2026-09-06).
 ##   * The letter's printed name changing from "folded sheet of parchment"
 ##     to "letter" once read — a name is fixed; it is `the letter` throughout.
 ##   * The source's second search wording ("Rolled up…" after "Odd — rolled
@@ -87,8 +89,10 @@
 ##     patio's trickle, the garden's roses, the balcony) — dropped, as the
 ##     market's were (`secret-letter.story` header, item 1).
 ##   * The winch's and rope's state-dependent descriptions are examine
-##     refusals keyed on the chandelier (a marker in an entity description
-##     prints literally, GH #364), as the lanterns' night text is.
+##     refusals keyed on the chandelier, as the lanterns' night text is.
+##     (Built when a marker in an entity description printed literally —
+##     GH #364, fixed 2026-09-06; a `{phrase}` marker in the description
+##     would carry them now. The refusals stand as built.)
 ##   * The bed's two `[first time]` sentences follow the description on the
 ##     first look (an ordinal block) instead of sitting inside it.
 ##   * `pick <flowers>`, bare `shimmy`, `descend the walls`, the facing

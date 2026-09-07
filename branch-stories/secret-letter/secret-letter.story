@@ -131,7 +131,7 @@ define chapters
   jail - Chapter V - Jail and the Sewers
     begins when the player visits the Jail Cell for the first time
   rooftops - Chapter VI - The Rooftops and Black Gate Estate
-    begins when the hatch becomes opened
+    begins when the player visits the Empty Alleyway for the first time
   gallows - Chapter VII - The Gallows and the Raid on Maiden House
     begins when the butler becomes gone
   red-gate - Chapter VIII - Red Gate Estate

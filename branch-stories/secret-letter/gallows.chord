@@ -28,8 +28,9 @@
 ##   * THE TRIGGER — the hanging begins when the butler shoves her out
 ##     (Chapter 6's fourth gap): the crowd and the gallows are placed by the
 ##     butler's release clause (`black-gate.chord`), before her first room
-##     prints. (A `when the butler moves` clause here did not fire on his
-##     move offstage — an offstage move raises no move event, GH #373.)
+##     prints. (A `when the butler moves` clause here would fire now — a
+##     move offstage raises the move event since GH #373 was fixed on
+##     2026-09-06; the release-clause placement stands as built.)
 ##   * WHAT THE MERCENARIES KNOW — they still hunt the boy Jack: the captain's
 ##     "she"/"the girl" through the wall convert to "he"/"the boy", his
 ##     capture-line "boy" carries. Theresa's raid words are the boy words
@@ -461,8 +462,9 @@ end timer
 
 ## The six rows heard through the wall (`story.ni:9968-9982`), one a turn
 ## once she is inside: five as this clock's turns, the sixth on its expiry.
-## The clock is the player's: a timer owned by an offstage entity speaks no
-## turn bodies (the raid's own `overheard` printed nothing — GH #372).
+## The clock is the player's. It was moved here because a timer owned by an
+## offstage entity spoke no turn bodies (GH #372, fixed 2026-09-06: an
+## offstage owner's timer now speaks from the player); it stands as built.
 ## The captain's "she"/"the girl" are "he"/"the boy" (the ruling: they still
 ## hunt the boy Jack); Theresa's words are the boy words; Shannon's ruse is
 ## carried as written, "Jacqueline" and all.

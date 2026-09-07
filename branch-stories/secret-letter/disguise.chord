@@ -90,14 +90,17 @@ end phrase
 ## ---------------------------------------------------------------------------
 ## THE CHANGE — one action, one turn, Behind Fruit Stall only
 ##
-## Grammar carries David's three phrasings (CHANGE OUTFIT, SWITCH HATS, WEAR
-## DRESS) plus the plain ones a player types. The words are LITERAL: in a
-## grammar line `the <word>` declares a slot (`kick the target`), so `wear
-## the dress` would have bound any reachable thing as "the dress" and made
-## the body's `the dress` a slot reference (unmet on `change outfit` —
-## ADR-275 D6). `wear dress` is also stdlib `wearing`'s shape; whether the
-## story grammar wins is measured at play time (GH #317's scoping question)
-## — the intercepts above catch the case where stdlib wins.
+## Grammar carries the outfit-change phrasings (CHANGE OUTFIT, SWITCH HATS)
+## plus the plain ones a player types. The words are LITERAL: in a grammar
+## line `the <word>` declares a slot (`kick the target`), so `wear the
+## dress` would have bound any reachable thing as "the dress" and made the
+## body's `the dress` a slot reference (unmet on `change outfit` — ADR-275
+## D6). WEAR DRESS is deliberately NOT here: a story grammar line outranks
+## the standard one (ADR-268 D2) for the whole game, so `wear dress` as an
+## action pattern shadowed stdlib `wearing` in every chapter — Chapter 8's
+## day dress could not be worn by that phrase (GH #374). Wearing stays
+## stdlib's; the `on the player wearing` intercepts above are the story's
+## hook and redirect the escape dress and hat to the outfit change.
 ## ---------------------------------------------------------------------------
 
 define action changing-outfit
@@ -105,8 +108,6 @@ define action changing-outfit
     change outfit
     change clothes
     switch hats
-    put on dress
-    wear dress
   the player must have the dress: change-no-dress
   refuse when the player is not in Behind Fruit Stall: change-not-here
   refuse when Jack is not urchin: change-already
