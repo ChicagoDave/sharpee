@@ -34,6 +34,8 @@ Every line reference below was read this session against `packages/stdlib/src/` 
 - **D7 — The skipped tests are resolved, not carried.** Each of the 27 is either implemented (the feature exists and the test was never un-skipped), deleted (the feature was never built and is not planned), or replaced by a one-line note in the golden file naming the gap and the ADR or issue that owns it. "Skipped" is not a resting state. This is a plan phase with a 27-row table, each row one of the three verbs.
 - **D8 — Not on this branch, not now.** Discuss-first `packages/` work with its own plan on `main`, sequenced with the other survey ADRs at David's call; the Secret Letter port's plan closes first.
 
+**Amendment A1 (2026-09-08, session 4a2d5f — D2 and D4 applied with the code, `refactor/survey-adr-334-340`; D1's refusal-order dispositions, D3's deletions, and D7's skip table are held for David).** D2 as built: `CommandValidator.resolveWithSelection` (the class method, its interface member, and its parameter type `EntitySelections`, which nothing else used and the validation barrel never exported) removed with its six golden cases; `validate` is unchanged; no `selections?` parameter was added, since no caller exists. stdlib 1660 → 1654 passing (the six removed cases). D4 as built: both documents now state the measured convention — of 57 standard actions, `<name>.ts` and `index.ts` always, `-events.ts` in 46, `-messages.ts` in 21, `-data.ts` in 12, `-types.ts` in 7 — and say that a two-file action is complete.
+
 ## Consequences
 
 - A story author's `on <gerund>` clause is consulted on every path of every wired action, and the claim is a test rather than a convention. ADR-228's "every path" becomes true.

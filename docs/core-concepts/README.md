@@ -304,13 +304,15 @@ blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
 **Why it is a phase and not an error return**: each action owns the wording of its own refusals, so a blocked attempt is reported through the same event path as a successful one rather than through a thrown error or a bare string. `blocked` is optional on the interface (`enhanced-types.ts`); the default implementation covers actions with nothing special to say.
 
 ### Action Structure
-Each action lives in `/packages/stdlib/src/actions/standard/[action-name]/` with:
-- `[action-name].ts` - Main action implementation
-- `[action-name]-events.ts` - Event type definitions
-- `[action-name]-data.ts` - Data builder configuration
-- `[action-name]-messages.ts` - Message ids the action can emit
-- `[action-name]-types.ts` - Action-specific types (including its sharedData shape)
-- `index.ts` - Barrel
+Each action lives in `/packages/stdlib/src/actions/standard/[action-name]/`. Two files are always present, and the others appear only when the action has something to put in them (measured across the 57 standard actions, 2026-09-08):
+- `[action-name].ts` - Main action implementation (always)
+- `index.ts` - Barrel (always)
+- `[action-name]-events.ts` - Event type definitions, when the action emits its own event types (46 of 57)
+- `[action-name]-messages.ts` - Message ids the action can emit, when it has more than the default success and failure ids (21 of 57)
+- `[action-name]-data.ts` - Data builder configuration, when the action builds event data (12 of 57)
+- `[action-name]-types.ts` - Action-specific types, including its sharedData shape, when the shape is non-trivial (7 of 57)
+
+A directory with only the two required files is a complete action, not an unfinished one.
 
 ### Action Categories
 

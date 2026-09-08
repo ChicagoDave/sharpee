@@ -5065,6 +5065,13 @@ export declare class StoryInfoTrait implements ITrait {
  * state or closures. The serialized shape carries `schemaVersion`; later
  * shape changes add a versioned reader, never a hard break.
  *
+ * Mutators live here by design (ADR-338 D3; ADR-310 D17 Amendment): the
+ * model is one stateful object whose invariants span mood, threat, goals,
+ * lucidity, influences, and pressure together, so its state changes are
+ * methods on the trait, called by the character tick's sub-steps, rather
+ * than a behavior that would hold no state of its own. This is the one
+ * recorded exception to "behaviors own mutations".
+ *
  * Public interface: ICharacterModelData, CharacterModelTrait,
  *   CharacterPredicate, ActiveConversation, CHARACTER_MODEL_SCHEMA_VERSION.
  * Owner context: world-model / character-model trait

@@ -2156,10 +2156,6 @@ export interface ActionMetadata {
  */
 export type EntitySlot = 'directObject' | 'indirectObject' | 'instrument';
 /**
- * Entity selections for disambiguation resolution
- */
-export type EntitySelections = Partial<Record<EntitySlot, string>>;
-/**
  * Validator interface - resolves entities and checks preconditions
  */
 export interface CommandValidator {
@@ -2169,21 +2165,6 @@ export interface CommandValidator {
      * @returns Validated command or validation error
      */
     validate(command: IParsedCommand): Result<ValidatedCommand, IValidationError>;
-    /**
-     * Re-validate a command with explicit entity selections
-     * Used after AMBIGUOUS_ENTITY error when user selects from disambiguation choices
-     *
-     * @param command Original parsed command
-     * @param selections Map of slot to selected entity ID
-     * @returns Validated command or validation error
-     *
-     * @example
-     * // After receiving AMBIGUOUS_ENTITY for "take apple"
-     * const result = validator.resolveWithSelection(command, {
-     *   directObject: 'red-apple-001'  // User selected the red apple
-     * });
-     */
-    resolveWithSelection(command: IParsedCommand, selections: EntitySelections): Result<ValidatedCommand, IValidationError>;
 }
 /**
  * Enhanced command validator with full entity resolution

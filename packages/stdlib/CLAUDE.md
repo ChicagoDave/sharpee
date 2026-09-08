@@ -2,7 +2,7 @@
 
 > Scoped to `packages/stdlib/`. See the root `CLAUDE.md` for project-wide policy.
 
-Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-051. Each action lives in `src/actions/standard/<name>/` with `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, and `<name>-types.ts` (e.g., `taking/taking.ts`, `taking/taking-data.ts`).
+Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-051. Each action lives in `src/actions/standard/<name>/` with `<name>.ts` and `index.ts` always, and `<name>-events.ts`, `<name>-messages.ts`, `<name>-data.ts`, or `<name>-types.ts` only when the action has event types, message ids beyond the defaults, an event-data builder, or a non-trivial sharedData shape of its own (e.g., `taking/` has all six; `telling/` has the two). A two-file action is complete (ADR-337 D4).
 
 ## Language Layer Separation (stdlib side)
 
