@@ -17,7 +17,7 @@
 
 import type { ISemanticEvent } from '@sharpee/core';
 import { type IFEntity, TraitType } from '@sharpee/world-model';
-import { observeEvent } from '@sharpee/stdlib';
+import { observeEvent } from './character-observer.js';
 import { normalizeTopic } from '@sharpee/chord';
 import { detectActs, witnessActs, witnessStatement } from './index.js';
 import { type TickContext, type SceneTickSurface, createEvent } from '../tick-support.js';

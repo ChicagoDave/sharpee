@@ -3,7 +3,7 @@
  *
  * Verifies all three layers communicate through ADR-070 behavior hooks:
  * - Layer 1: CharacterModelTrait (world-model) stores state
- * - Layer 2: observeEvent / processLucidityDecay (stdlib) updates state
+ * - Layer 2: observeEvent / processLucidityDecay (character package, act-detection and arbiter) updates state
  * - Layer 3: CharacterBuilder (character package) configures state
  *
  * Uses a minimal scenario: NPC "Margaret" witnesses violence, threat increases,
@@ -23,12 +23,9 @@ import {
   ContainerTrait,
   ActorTrait,
 } from '@sharpee/world-model';
-import {
-  observeEvent,
-  processLucidityDecay,
-  enterLucidityWindow,
-  CharacterMessages,
-} from '@sharpee/stdlib';
+import { CharacterMessages } from '@sharpee/stdlib';
+import { observeEvent } from '../src/act-detection/character-observer';
+import { processLucidityDecay, enterLucidityWindow } from '../src/arbiter/lucidity-decay';
 import {
   CharacterBuilder,
   applyCharacter,

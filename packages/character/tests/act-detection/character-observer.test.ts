@@ -19,13 +19,13 @@ import {
   filterPerception,
   injectHallucinations,
   DefaultStateTransitions,
-} from '../../../src/npc/character-observer';
+} from '../../src/act-detection/character-observer';
 import {
   processLucidityDecay,
   enterLucidityWindow,
   DECAY_RATE_TURNS,
-} from '../../../src/npc/lucidity-decay';
-import { CharacterMessages } from '../../../src/npc/character-messages';
+} from '../../src/arbiter/lucidity-decay';
+import { CharacterMessages } from '@sharpee/stdlib';
 
 // ---------------------------------------------------------------------------
 // Test helpers

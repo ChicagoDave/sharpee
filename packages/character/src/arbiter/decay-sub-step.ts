@@ -14,7 +14,8 @@
 
 import type { ISemanticEvent } from '@sharpee/core';
 import { type IFEntity, TraitType, type CharacterModelTrait } from '@sharpee/world-model';
-import { processLucidityDecay, CharacterMessages } from '@sharpee/stdlib';
+import { CharacterMessages } from '@sharpee/stdlib';
+import { processLucidityDecay } from './lucidity-decay.js';
 import { type TickContext, createEvent } from '../tick-support.js';
 import type { CharacterPhaseRegistry } from '../tick-phases.js';
 

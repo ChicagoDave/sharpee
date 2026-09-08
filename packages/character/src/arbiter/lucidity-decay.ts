@@ -1,12 +1,15 @@
 /**
- * Lucidity decay processing (ADR-141)
+ * Lucidity decay: end-of-turn processing for an NPC's lucidity window. While
+ * a lucid window has no sustaining trigger active, its countdown runs and
+ * lucidity returns to baseline when it ends. Entering a window sets the
+ * countdown from the character's decay rate.
  *
- * End-of-turn processing for NPC lucidity windows.
- * When an NPC is in a lucid window with no sustaining trigger active,
- * lucidity decays and eventually returns to baseline.
+ * Public interface: processLucidityDecay, enterLucidityWindow, DECAY_RATE_TURNS.
+ * Owner context: @sharpee/character — arbiter (the per-turn decays sit together).
  *
- * Public interface: processLucidityDecay(), DECAY_RATE_TURNS.
- * Owner context: stdlib / npc
+ * References:
+ *   ADR-141 — the character model's lucidity states.
+ *   ADR-339 D2 — moved home from stdlib/npc; the decay sub-step is its caller.
  */
 
 import { type ISemanticEvent, type EntityId } from '@sharpee/core';
@@ -17,7 +20,7 @@ import {
   CharacterModelTrait,
   type DecayRate,
 } from '@sharpee/world-model';
-import { CharacterMessages } from './character-messages.js';
+import { CharacterMessages } from '@sharpee/stdlib';
 
 // ---------------------------------------------------------------------------
 // Decay rate mapping

@@ -1,11 +1,16 @@
 /**
- * Character observation handler (ADR-141)
+ * The character observer: an event an NPC witnesses passes through the
+ * cognitive profile's perception filter, may become a witnessed fact, and
+ * may move mood, threat, disposition, or lucidity by the transition rules.
+ * A hallucinating character also invents events of its own.
  *
- * Processes events witnessed by NPCs through the cognitive profile filter
- * and updates character model state accordingly.
+ * Public interface: observeEvent, filterPerception, injectHallucinations,
+ *   DefaultStateTransitions, StateTransitionRule.
+ * Owner context: @sharpee/character — act detection.
  *
- * Public interface: observeEvent(), DefaultStateTransitions.
- * Owner context: stdlib / npc
+ * References:
+ *   ADR-141 — the character model and its cognitive profile.
+ *   ADR-339 D2 — moved home from stdlib/npc; the observe sub-step is its caller.
  */
 
 import { type ISemanticEvent, type EntityId } from '@sharpee/core';
@@ -17,7 +22,7 @@ import {
   type Mood,
   type ThreatLevel,
 } from '@sharpee/world-model';
-import { CharacterMessages } from './character-messages.js';
+import { CharacterMessages } from '@sharpee/stdlib';
 
 // ---------------------------------------------------------------------------
 // State transition rules
