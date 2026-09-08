@@ -1,7 +1,8 @@
 # Session Plan: Publish-readiness defects — Sharpee 5.3.0 + Chord Writer
 
 **Created**: 2026-09-03
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
+**Disposition (rule 18b, option 1 "done but unmarked", 2026-09-08, session 4a2d5f)**: David: "the publish ready plan was completed, wasn't it?" then "mark it done and archive it, the three carry forward as issues." The publish itself landed 2026-09-04 (Sharpee 5.3.0 on npm, Chord Writer 1.4.0 notarized and live). The three open phases are closed here and carried forward as GitHub issues, not done: Phase 17 (P-43, the outside-repo proof) → GH #387, new; Phase 6a (P-11, composed-clause consultation order) → GH #332 / #350, gated on ADR-118 Amendment 1; Phase 8 (P-21, bare-verb grammar scoping) → GH #317, gated on ADR-267 Amendment 1. Phase 18's last item (P-44 Done-when 5) is #387's. A fourth item was already carried: P-37 (#224, the tutorial type-check) was deferred to David by Phase 14 on 2026-09-03 with its three options recorded there, and #224 stays open. `.current-plan` moves to `docs/work/adr-341-spike/plan.md`; the port plan stays PAUSED and does not take the pointer back (David, 2026-09-08: "we're on main for now").
 **Supersedes (rule 18b, "still live")**: `docs/work/secret-letter-port/plan.md` — that plan is stamped with a `Superseded by` line pointing here (2026-09-03, session 639650), per David's standing ruling on port-plan interruptions. Its Phases 4 and 6 stay CURRENT, untouched, resumable exactly where they are; `.current-plan` returns there when this plan is DONE or archived.
 **Overall scope**: Close the 44-item punch list in `docs/proposals/publish-readiness-defects.md` (40 ACCEPTED, 1 DONE, 3 PROPOSED pending this plan's Phase 1) that gates a formal `@sharpee/*@5.3.0` + Chord Writer publish: Chord-language and loader defects a first author hits, parser/stdlib defects the player sees, the web client's publish surface, and the release gate itself (test-green, docs, the outside-repo proof, the publish). Absorbs the archived `docs/work/backlog-tier1-2-platform/plan.md` Phases 4–8 verbatim in substance (its design conversation and Phases 5–8 for #313/#312/#314/#317/#318/#318/#320-adjacent items) — that plan is DONE, its remaining phases fold in here as Phases 5, 7, 8, 9.
 **Bounded contexts touched**: N/A — plain technical framing. This is defect remediation across `packages/` (chord, story-loader, world-model, stdlib, parser-en-us, lang-en-us, engine, platform-browser, devkit), branch/in-repo story content, and docs/release engineering — not new domain modeling. Chord's own domain concepts (topic tables, capability dispatch, scope predicates) are the subject matter of individual fixes but this plan does not introduce new ones.
@@ -123,7 +124,7 @@
 - **Entry state**: ADR-118 Amendment 1 ACCEPTED by David (its one open question — own-block-first — ruled) and P-11 flipped ACCEPTED in the proposal. Then: `WorldModel.getInterceptorsForAction` replaces the single lookup; `resolveLifecycle` pushes one consultation per binding; the three `hasInterceptor` sites follow; Secret Letter's folded stallkeeper refusal reverts to two traits.
 - **Deliverable**: P-11 per the amendment; a story-loader real-path fixture with two traits on one entity for the same action, and a trait's guard-false `asking` clause beside a topic table.
 - **Exit state**: #332, #350 closed. `world-model`, `stdlib`, `story-loader` suites green; Secret Letter suite passes with the reverted traits; Dungeo chain green.
-- **Status**: PENDING (blocked on ADR-118 A1 acceptance)
+- **Status**: DONE (closed by disposition 2026-09-08, session 4a2d5f — not built; carried forward as GH #332 / #350, gated on ADR-118 Amendment 1)
 
 ### Phase 7: Grammar coverage — bare take-from-container shape, and the removing-action re-wear bug (#314)
 - **Tier**: Medium
@@ -142,7 +143,7 @@
 - **Entry state**: Verify Phase 1's ADR-087/267 amendment is ACCEPTED and P-21 has been flipped ACCEPTED in `docs/proposals/publish-readiness-defects.md`. If still PROPOSED, this phase does not start. Present the chosen mechanism (fall-through vs. scoped grammar, per Phase 1's ruling) to David before editing `story-loader`/`packages/chord`/`parser-en-us`.
 - **Deliverable**: `aerial-runway.chord`'s interim `releasing` action (the static elsewhere-refusal printing "What do you want to drop?" with no follow-up) is removed; bare `drop` reaches stdlib's MISSING_OBJECT prompt everywhere except On the Wire, where it still means `let go` — the issue's own named acceptance check.
 - **Exit state**: #317 closed. `./sharpee test branch-stories/secret-letter` passes with the interim phrase removed. Relevant package unit suites (`story-loader`, `parser-en-us`, or `chord`, per the chosen mechanism) green. Dungeo walkthrough chain green.
-- **Status**: PENDING (blocked on ADR-267 Amendment 1 acceptance — `only while <condition>`; skipped 2026-09-03, session effb6f, per the entry state)
+- **Status**: DONE (closed by disposition 2026-09-08, session 4a2d5f — not built; carried forward as GH #317, gated on ADR-267 Amendment 1 `only while <condition>`; had been skipped 2026-09-03, session effb6f, per the entry state)
 
 ### Phase 9: Clarification follow-up — a bare noun after a missing-object prompt completes the command (#318)
 - **Tier**: Large
@@ -232,7 +233,7 @@
 - **Entry state**: All prior phases DONE or their gated items resolved (this proof exercises the cumulative fixed state). No platform-change discussion needed — this is a proof run, not a code change, unless it surfaces a defect, in which case that defect is filed and fixed under the standing discipline before the proof is re-run.
 - **Deliverable**: On a machine or directory with no clone of this repo: `npm i -g @sharpee/devkit@5.3.0`, `sharpee init`, a small story written from the sharpee.net getting-started page alone, `sharpee test`, `sharpee build`, `sharpee publish`, and the zip's `index.html` played in a browser through to an ending — recorded as a dated transcript of the commands and their output in `docs/work/publish-readiness/`.
 - **Exit state**: The dated transcript exists and shows every command succeeding through to a played ending.
-- **Status**: PENDING
+- **Status**: DONE (closed by disposition 2026-09-08, session 4a2d5f — the proof was never run; carried forward as GH #387)
 
 ### Phase 18: Release gate — the publish (P-44)
 - **Tier**: Medium
@@ -252,7 +253,7 @@
     - [x] `tools/ide/release-all.sh` — both slices built, notarized, stapled; `release/1.4.0/UPLOAD.md` written (16:12 CDT; every notarization upload after 15:24 went through the new `tools/ide/notary-submit.py` because notarytool crashed on upload — see the session file)
     - [x] David uploads (scp + `deploy.sh`); install page verified live — David ran both ~20:00 CDT 2026-09-04; verified 22:35 CDT: both DMGs, both Sparkle zips and both appcasts return 200 at sharpee.net, each appcast's top entry is 1.4.0 (1.3.1 and 1.3.0 below it), `/playground/current.json` pins 5.3.0 (GH #358's deploy fix took), and `/chord-writer/download` reads "Chord Writer 1.4.0 · Sharpee 5.3.0 / Chord 3.6.0" with both 1.4.0 DMG links.
 - **Outcome (2026-09-04, sessions 0135ed and 15cfa3)**: P-44's Done-when items (1)–(4) hold: (1) the language freeze — no `packages/chord` grammar/IR change since Phase 2 began outside this proposal's own Phases 3 and 6, and the 3.6.0 bump changed no grammar (EBNF pin hash unchanged, ADR-257 D2 note); (2) `@sharpee/*@5.3.0` on npm via `publish-npm.yml` (runs 33869141138 + 33870106653, `git diff --exit-code` clean; registry reads 5.3.0 for `@sharpee/sharpee` and `@sharpee/devkit`); (3) Chord Writer 1.4.0 signed, notarized and stapled for arm64 and x86_64, status bar "Chord Writer 1.4.0 · Sharpee 5.3.0 / Chord 3.6.0"; (4) the install page names the published versions. Item (5) — P-43's proof against the published artifacts — is Phase 17's deliverable and is still PENDING, so P-44 is not closed and this phase stays open on that one item.
-- **Status**: CURRENT — blocked on Phase 17 (P-43) for its last item
+- **Status**: DONE (2026-09-08, session 4a2d5f — P-44 items 1–4 held since 2026-09-04; item 5, the proof against the published artifacts, carries forward as GH #387 by David's disposition)
 
 ## Item-to-phase trace
 - Phase 1 (decisions only): gates P-11, P-21, P-29 acceptance; rules P-16, P-18, P-19 design
