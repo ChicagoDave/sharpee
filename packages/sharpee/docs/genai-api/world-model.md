@@ -8716,34 +8716,39 @@ export declare class ReachabilityBehavior extends Behavior {
 
 ```typescript
 /**
- * AuthorModel — unrestricted world model access for authoring and setup.
+ * The author's view of the live world: unrestricted access for world
+ * construction and setup. Creating an entity and moving it bypass the
+ * validation the runtime applies, so a closed container can be filled at
+ * load; a move is always allowed; three helpers make setup terse. Everything
+ * else is the live WorldModel itself. The view is a Proxy over that one
+ * instance, so a registration made through the view (a capability, an
+ * interceptor, an event handler) lands where the engine reads it, and a new
+ * world method reaches the view with no edit here.
  *
- * Public interface: Implements IWorldModel. Entity creation and movement
- * bypass validation. All other methods delegate to the backing WorldModel.
+ * Why a Proxy and not Object.create(world) with a few overrides: a world
+ * method that writes `this.field` would land the field on the derived object
+ * and shadow the world's own on the next read. The proxy binds every method
+ * to the world, so a write reaches the one instance. A bound method is
+ * cached per member per view; a non-function member is read through live, so
+ * the view never holds a copy of world state.
  *
- * Owner context: packages/world-model. Used during initializeWorld() for
- * setup that requires bypassing game rules (placing items in closed
- * containers, etc.).
+ * Public interface: AuthorModel (the type, and a constructor taking the
+ *   shared data store and the world so `new AuthorModel(store, world)` stays
+ *   a working spelling), createAuthorModel, AuthorHelpers, IDataStore,
+ *   IItemSpec.
+ * Owner context: packages/world-model — world.
+ *
+ * References:
+ *   ADR-016 — the author model bypasses rules during setup, emitting no events.
+ *   ADR-338 D1 — a view of the live world, not a copy of its surface.
+ *   docs/work/refactoring-survey/assessment-20260907-umbrella.md — the cached bind, and canMoveEntity kept.
  */
 import { IFEntity } from '../entities/if-entity.js';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
-import { TraitType } from '../traits/trait-types.js';
-import { SpatialIndex } from './SpatialIndex.js';
-import { ITrait } from '../traits/trait.js';
-import { ICapabilityStore } from './capabilities.js';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
-import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
-import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
-import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
-import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions, ConnectRoomsOptions } from './WorldModel.js';
-import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
-import type { ISemanticEvent } from '@sharpee/core';
-import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions.js';
-import type { ScopeRegistry } from '../scope/scope-registry.js';
-import type { IScopeRule } from '../scope/scope-rule.js';
-import type { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
+import type { SpatialIndex } from './SpatialIndex.js';
+import type { ITrait } from '../traits/trait.js';
+import type { TraitType } from '../traits/trait-types.js';
+import type { ICapabilityStore } from './capabilities.js';
+import type { WorldModel, IWorldModel } from './WorldModel.js';
 /**
  * Data store shared between WorldModel and AuthorModel.
  */
@@ -8765,168 +8770,33 @@ export interface IItemSpec {
     attributes?: Record<string, any>;
     traits?: TraitType[];
 }
-/**
- * AuthorModel provides unrestricted access to the world state for authoring,
- * testing, and world setup. It bypasses validation rules for entity creation
- * and movement. All other IWorldModel methods delegate to the backing WorldModel.
- *
- * @example
- * ```typescript
- * const author = new AuthorModel(world.getDataStore(), world);
- * const medicine = author.createEntity('Aspirin', 'item');
- * author.moveEntity(medicine.id, closedCabinet.id); // Works even though closed
- * ```
- */
-export declare class AuthorModel implements IWorldModel {
-    private dataStore;
-    private worldModel;
-    constructor(dataStore: IDataStore, worldModel: IWorldModel);
-    /**
-     * Get the shared data store.
-     */
-    getDataStore(): IDataStore;
-    /**
-     * Create a new entity without validation.
-     *
-     * @param name - Display name for the entity
-     * @param type - Entity type (room, item, actor, etc.)
-     * @returns The created entity
-     */
-    createEntity(name: string, type?: string): IFEntity;
-    /**
-     * Move an entity without validation. Can move into closed/locked containers.
-     *
-     * @param entityId - ID of entity to move
-     * @param targetId - ID of target location (null to remove from world)
-     * @returns Always true (no validation to fail)
-     */
-    moveEntity(entityId: string, targetId: string | null): boolean;
-    getEntity(id: string): IFEntity | undefined;
-    hasEntity(id: string): boolean;
-    removeEntity(id: string): boolean;
-    onEntityRemoved(observer: EntityRemovalObserver): void;
-    getAllEntities(): IFEntity[];
-    updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
-    getLocation(entityId: string): string | undefined;
-    getContents(containerId: string, options?: ContentsOptions): IFEntity[];
-    getCarriedAndWorn(holderId: string): {
-        carried: IFEntity[];
-        worn: IFEntity[];
-    };
-    canMoveEntity(entityId: string, targetId: string | null): boolean;
-    getContainingRoom(entityId: string): IFEntity | undefined;
-    getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
-    getState(): WorldState;
-    setState(state: WorldState): void;
-    getStateValue(key: string): any;
-    setStateValue(key: string, value: any): void;
-    getPrompt(): GamePrompt;
-    setPrompt(prompt: GamePrompt): void;
-    findByTrait(traitType: TraitType): IFEntity[];
-    findByType(entityType: string): IFEntity[];
-    findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];
-    getVisible(observerId: string): IFEntity[];
-    getInScope(observerId: string): IFEntity[];
-    canReach(observerId: string, targetId: string): boolean;
-    getReachable(observerId: string): IFEntity[];
-    canSee(observerId: string, targetId: string): boolean;
-    getRelated(entityId: string, relationshipType: string): string[];
-    areRelated(entity1Id: string, entity2Id: string, relationshipType: string): boolean;
-    addRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
-    removeRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
-    getTotalWeight(entityId: string): number;
-    wouldCreateLoop(entityId: string, targetId: string): boolean;
-    findPath(fromRoomId: string, toRoomId: string): string[] | null;
-    getPlayer(): IFEntity | undefined;
-    setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
-    createDoor(displayName: string, opts: {
-        room1Id: string;
-        room2Id: string;
-        direction: DirectionType;
-        description?: string;
-        aliases?: string[];
-        isOpen?: boolean;
-        isLocked?: boolean;
-        keyId?: string;
-    }): IFEntity;
-    createWall(spec: IWallSpec): WallEntity;
-    createWalls(spec: IWallsSpec): WallEntity[];
-    createRegion(id: string, options: RegionOptions): IFEntity;
-    assignRoom(roomId: string, regionId: string): void;
-    isInRegion(entityId: string, regionId: string): boolean;
-    getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
-    createScene(id: string, options: SceneOptions): IFEntity;
-    getSceneConditions(sceneId: string): SceneConditions | undefined;
-    getAllSceneConditions(): Map<string, SceneConditions>;
-    isSceneActive(sceneId: string): boolean;
-    hasSceneEnded(sceneId: string): boolean;
-    hasSceneHappened(sceneId: string): boolean;
-    registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
-    updateCapability(name: string, data: Partial<ICapabilityData>): void;
-    getCapability(name: string): ICapabilityData | undefined;
-    hasCapability(name: string): boolean;
-    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
-    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
-    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
-    evaluate(key: string): unknown;
-    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
-    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
-    registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
-    getInterceptorForAction(entity: {
-        traits: Map<string, ITrait>;
-    }, actionId: string): InterceptorLookupResult | undefined;
-    getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
-    getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
-    registerExitResolver(traitType: string, resolver: ExitResolver): void;
-    getExitResolver(traitType: string): ExitResolver | undefined;
-    getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
-    awardScore(id: string, points: number, description: string): boolean;
-    revokeScore(id: string): boolean;
-    hasScore(id: string): boolean;
-    getScore(): number;
-    getScoreEntries(): ScoreEntry[];
-    setMaxScore(max: number): void;
-    getMaxScore(): number;
-    setRanks(ranks: RankDefinition[]): void;
-    getRanks(): RankDefinition[];
-    getRank(): RankDefinition | undefined;
-    setScoringEnabled(enabled: boolean): void;
-    isScoringEnabled(): boolean;
-    toJSON(): string;
-    loadJSON(json: string): void;
-    clear(): void;
-    registerEventHandler(eventType: string, handler: EventHandler): void;
-    unregisterEventHandler(eventType: string): void;
-    registerEventValidator(eventType: string, validator: EventValidator): void;
-    registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
-    connectEventProcessor(wiring: IEventProcessorWiring): void;
-    chainEvent(triggerType: string, handler: EventChainHandler, options?: ChainEventOptions): void;
-    applyEvent(event: ISemanticEvent): void;
-    canApplyEvent(event: ISemanticEvent): boolean;
-    previewEvent(event: ISemanticEvent): WorldChange[];
-    getAppliedEvents(): ISemanticEvent[];
-    getEventsSince(timestamp: number): ISemanticEvent[];
-    clearEventHistory(): void;
-    getScopeRegistry(): ScopeRegistry;
-    addScopeRule(rule: IScopeRule): void;
-    removeScopeRule(ruleId: string): boolean;
-    evaluateScope(actorId: string, actionId?: string): string[];
-    getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
-    /**
-     * Move multiple entities to a container in one operation.
-     */
+/** The three setup conveniences the author's view adds to the world. */
+export interface AuthorHelpers {
+    /** Move multiple entities to a container in one operation. */
     populate(containerId: string, entityIds: string[]): void;
-    /**
-     * Add a trait to an entity.
-     */
+    /** Add a trait to an entity. */
     addTrait(entityId: string, trait: ITrait): void;
-    /**
-     * Remove a trait from an entity.
-     */
+    /** Remove a trait from an entity. */
     removeTrait(entityId: string, traitType: TraitType): void;
-    private generateId;
 }
+/** The author's view: the live world plus the author helpers. */
+export type AuthorModel = WorldModel & AuthorHelpers;
+/**
+ * Create the author's view of a world.
+ *
+ * @param worldModel - The live world; the view forwards to this one instance
+ * @returns A Proxy over the world carrying the two bypasses and the three helpers
+ */
+export declare function createAuthorModel(worldModel: IWorldModel): AuthorModel;
+/**
+ * The constructor spelling: `new AuthorModel(world.getDataStore(), world)`
+ * returns the same view createAuthorModel returns. The data store argument is
+ * accepted for the callers that pass it and is not read; the view takes the
+ * live store from the world.
+ */
+export declare const AuthorModel: {
+    new (dataStore: IDataStore, worldModel: IWorldModel): AuthorModel;
+};
 ```
 
 ### world/wall-creation

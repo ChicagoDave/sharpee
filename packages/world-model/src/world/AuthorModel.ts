@@ -1,65 +1,38 @@
 /**
- * AuthorModel — unrestricted world model access for authoring and setup.
+ * The author's view of the live world: unrestricted access for world
+ * construction and setup. Creating an entity and moving it bypass the
+ * validation the runtime applies, so a closed container can be filled at
+ * load; a move is always allowed; three helpers make setup terse. Everything
+ * else is the live WorldModel itself. The view is a Proxy over that one
+ * instance, so a registration made through the view (a capability, an
+ * interceptor, an event handler) lands where the engine reads it, and a new
+ * world method reaches the view with no edit here.
  *
- * Public interface: Implements IWorldModel. Entity creation and movement
- * bypass validation. All other methods delegate to the backing WorldModel.
+ * Why a Proxy and not Object.create(world) with a few overrides: a world
+ * method that writes `this.field` would land the field on the derived object
+ * and shadow the world's own on the next read. The proxy binds every method
+ * to the world, so a write reaches the one instance. A bound method is
+ * cached per member per view; a non-function member is read through live, so
+ * the view never holds a copy of world state.
  *
- * Owner context: packages/world-model. Used during initializeWorld() for
- * setup that requires bypassing game rules (placing items in closed
- * containers, etc.).
+ * Public interface: AuthorModel (the type, and a constructor taking the
+ *   shared data store and the world so `new AuthorModel(store, world)` stays
+ *   a working spelling), createAuthorModel, AuthorHelpers, IDataStore,
+ *   IItemSpec.
+ * Owner context: packages/world-model — world.
+ *
+ * References:
+ *   ADR-016 — the author model bypasses rules during setup, emitting no events.
+ *   ADR-338 D1 — a view of the live world, not a copy of its surface.
+ *   docs/work/refactoring-survey/assessment-20260907-umbrella.md — the cached bind, and canMoveEntity kept.
  */
 
 import { IFEntity } from '../entities/if-entity.js';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
-import { TraitType } from '../traits/trait-types.js';
-import { SpatialIndex } from './SpatialIndex.js';
-import { ITrait } from '../traits/trait.js';
-import { OpenableTrait } from '../traits/openable/openableTrait.js';
-import { LockableTrait } from '../traits/lockable/lockableTrait.js';
-import { ICapabilityStore } from './capabilities.js';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
-import type {
-  TraitBehaviorBinding,
-  BehaviorRegistrationOptions
-} from '../capabilities/capability-binding.js';
-import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
-import type {
-  TraitInterceptorBinding,
-  InterceptorRegistrationOptions,
-  InterceptorLookupResult
-} from '../capabilities/interceptor-binding.js';
-import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type {
-  IWorldModel,
-  EntityRemovalObserver,
-  EventHandler,
-  EventValidator,
-  EventPreviewer,
-  EventChainHandler,
-  ChainEventOptions,
-  RegionOptions,
-  RegionCrossings,
-  SceneOptions,
-  SceneConditions,
-  ConnectRoomsOptions,
-} from './WorldModel.js';
-import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
-import type { ISemanticEvent } from '@sharpee/core';
-import type {
-  WorldState,
-  ContentsOptions,
-  WorldChange,
-  IEventProcessorWiring,
-  GamePrompt,
-  IGrammarVocabularyProvider,
-} from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions.js';
-import type { ScopeRegistry } from '../scope/scope-registry.js';
-import type { IScopeRule } from '../scope/scope-rule.js';
-import type {
-  ICapabilityData,
-  ICapabilityRegistration,
-} from './capabilities.js';
+import type { SpatialIndex } from './SpatialIndex.js';
+import type { ITrait } from '../traits/trait.js';
+import type { TraitType } from '../traits/trait-types.js';
+import type { ICapabilityStore } from './capabilities.js';
+import type { WorldModel, IWorldModel } from './WorldModel.js';
 
 /**
  * Data store shared between WorldModel and AuthorModel.
@@ -84,35 +57,54 @@ export interface IItemSpec {
   traits?: TraitType[];
 }
 
+/** The three setup conveniences the author's view adds to the world. */
+export interface AuthorHelpers {
+  /** Move multiple entities to a container in one operation. */
+  populate(containerId: string, entityIds: string[]): void;
+  /** Add a trait to an entity. */
+  addTrait(entityId: string, trait: ITrait): void;
+  /** Remove a trait from an entity. */
+  removeTrait(entityId: string, traitType: TraitType): void;
+}
+
+/** The author's view: the live world plus the author helpers. */
+export type AuthorModel = WorldModel & AuthorHelpers;
+
+const TYPE_PREFIXES: Record<string, string> = {
+  'room': 'r',
+  'door': 'd',
+  'item': 'i',
+  'actor': 'a',
+  'container': 'c',
+  'supporter': 's',
+  'scenery': 'y',
+  'exit': 'e',
+  'object': 'o'
+};
+
 /**
- * AuthorModel provides unrestricted access to the world state for authoring,
- * testing, and world setup. It bypasses validation rules for entity creation
- * and movement. All other IWorldModel methods delegate to the backing WorldModel.
+ * Create the author's view of a world.
  *
- * @example
- * ```typescript
- * const author = new AuthorModel(world.getDataStore(), world);
- * const medicine = author.createEntity('Aspirin', 'item');
- * author.moveEntity(medicine.id, closedCabinet.id); // Works even though closed
- * ```
+ * @param worldModel - The live world; the view forwards to this one instance
+ * @returns A Proxy over the world carrying the two bypasses and the three helpers
  */
-export class AuthorModel implements IWorldModel {
-  private dataStore: IDataStore;
-  private worldModel: IWorldModel;
+export function createAuthorModel(worldModel: IWorldModel): AuthorModel {
+  const world = worldModel as WorldModel;
+  const dataStore = world.getDataStore();
 
-  constructor(dataStore: IDataStore, worldModel: IWorldModel) {
-    this.dataStore = dataStore;
-    this.worldModel = worldModel;
+  function generateId(type: string): string {
+    const prefix = TYPE_PREFIXES[type] || TYPE_PREFIXES['object'];
+    const counter = dataStore.idCounters.get(prefix) || 0;
+    const nextCounter = counter + 1;
+
+    if (nextCounter > 1295) {
+      throw new Error(`ID overflow for type '${type}' (prefix '${prefix}')`);
+    }
+
+    dataStore.idCounters.set(prefix, nextCounter);
+    const base36 = nextCounter.toString(36).padStart(2, '0');
+    return `${prefix}${base36}`;
   }
-
-  /**
-   * Get the shared data store.
-   */
-  getDataStore(): IDataStore {
-    return this.dataStore;
-  }
-
-  // ========== Overridden Methods (bypass validation) ==========
 
   /**
    * Create a new entity without validation.
@@ -121,8 +113,8 @@ export class AuthorModel implements IWorldModel {
    * @param type - Entity type (room, item, actor, etc.)
    * @returns The created entity
    */
-  createEntity(name: string, type: string = 'object'): IFEntity {
-    const id = this.generateId(type);
+  function createEntity(name: string, type: string = 'object'): IFEntity {
+    const id = generateId(type);
     const entity = new IFEntity(id, type, {
       attributes: {
         displayName: name,
@@ -131,7 +123,7 @@ export class AuthorModel implements IWorldModel {
       }
     });
 
-    this.dataStore.entities.set(id, entity);
+    dataStore.entities.set(id, entity);
     return entity;
   }
 
@@ -142,517 +134,75 @@ export class AuthorModel implements IWorldModel {
    * @param targetId - ID of target location (null to remove from world)
    * @returns Always true (no validation to fail)
    */
-  moveEntity(entityId: string, targetId: string | null): boolean {
-    const currentLocation = this.dataStore.spatialIndex.getParent(entityId);
+  function moveEntity(entityId: string, targetId: string | null): boolean {
+    const currentLocation = dataStore.spatialIndex.getParent(entityId);
     if (currentLocation) {
-      this.dataStore.spatialIndex.removeChild(currentLocation, entityId);
+      dataStore.spatialIndex.removeChild(currentLocation, entityId);
     }
 
     if (targetId !== null) {
-      this.dataStore.spatialIndex.addChild(targetId, entityId);
+      dataStore.spatialIndex.addChild(targetId, entityId);
     }
 
     return true;
   }
 
-  // ========== Delegated Methods ==========
-
-  // Entity Management
-  getEntity(id: string): IFEntity | undefined {
-    return this.dataStore.entities.get(id);
-  }
-
-  hasEntity(id: string): boolean {
-    return this.dataStore.entities.has(id);
-  }
-
-  removeEntity(id: string): boolean {
-    return this.worldModel.removeEntity(id);
-  }
-
-  onEntityRemoved(observer: EntityRemovalObserver): void {
-    this.worldModel.onEntityRemoved(observer);
-  }
-
-  getAllEntities(): IFEntity[] {
-    return Array.from(this.dataStore.entities.values());
-  }
-
-  updateEntity(entityId: string, updater: (entity: IFEntity) => void): void {
-    this.worldModel.updateEntity(entityId, updater);
-  }
-
-  // Spatial Management
-  getLocation(entityId: string): string | undefined {
-    return this.dataStore.spatialIndex.getParent(entityId);
-  }
-
-  getContents(containerId: string, options?: ContentsOptions): IFEntity[] {
-    return this.worldModel.getContents(containerId, options);
-  }
-
-  getCarriedAndWorn(holderId: string): { carried: IFEntity[]; worn: IFEntity[] } {
-    return this.worldModel.getCarriedAndWorn(holderId);
-  }
-
-  canMoveEntity(entityId: string, targetId: string | null): boolean {
-    return true; // AuthorModel always allows moves
-  }
-
-  getContainingRoom(entityId: string): IFEntity | undefined {
-    return this.worldModel.getContainingRoom(entityId);
-  }
-
-  getAllContents(entityId: string, options?: ContentsOptions): IFEntity[] {
-    return this.worldModel.getAllContents(entityId, options);
-  }
-
-  // World State Management
-  getState(): WorldState {
-    return { ...this.dataStore.state };
-  }
-
-  setState(state: WorldState): void {
-    Object.assign(this.dataStore.state, state);
-  }
-
-  getStateValue(key: string): any {
-    return this.dataStore.state[key];
-  }
-
-  setStateValue(key: string, value: any): void {
-    this.dataStore.state[key] = value;
-  }
-
-  // Prompt
-  getPrompt(): GamePrompt {
-    return this.worldModel.getPrompt();
-  }
-
-  setPrompt(prompt: GamePrompt): void {
-    this.worldModel.setPrompt(prompt);
-  }
-
-  // Query Operations
-  findByTrait(traitType: TraitType): IFEntity[] {
-    return this.worldModel.findByTrait(traitType);
-  }
-
-  findByType(entityType: string): IFEntity[] {
-    return this.worldModel.findByType(entityType);
-  }
-
-  findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[] {
-    return this.worldModel.findWhere(predicate);
-  }
-
-  getVisible(observerId: string): IFEntity[] {
-    return this.worldModel.getVisible(observerId);
-  }
-
-  getInScope(observerId: string): IFEntity[] {
-    return this.worldModel.getInScope(observerId);
-  }
-
-  canReach(observerId: string, targetId: string): boolean {
-    return this.worldModel.canReach(observerId, targetId);
-  }
-
-  getReachable(observerId: string): IFEntity[] {
-    return this.worldModel.getReachable(observerId);
-  }
-
-  canSee(observerId: string, targetId: string): boolean {
-    return this.worldModel.canSee(observerId, targetId);
-  }
-
-  // Relationship Queries
-  getRelated(entityId: string, relationshipType: string): string[] {
-    return this.worldModel.getRelated(entityId, relationshipType);
-  }
-
-  areRelated(entity1Id: string, entity2Id: string, relationshipType: string): boolean {
-    return this.worldModel.areRelated(entity1Id, entity2Id, relationshipType);
-  }
-
-  addRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void {
-    this.worldModel.addRelationship(entity1Id, entity2Id, relationshipType);
-  }
-
-  removeRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void {
-    this.worldModel.removeRelationship(entity1Id, entity2Id, relationshipType);
-  }
-
-  // Utility Methods
-  getTotalWeight(entityId: string): number {
-    return this.worldModel.getTotalWeight(entityId);
-  }
-
-  wouldCreateLoop(entityId: string, targetId: string): boolean {
-    return this.worldModel.wouldCreateLoop(entityId, targetId);
-  }
-
-  findPath(fromRoomId: string, toRoomId: string): string[] | null {
-    return this.worldModel.findPath(fromRoomId, toRoomId);
-  }
-
-  getPlayer(): IFEntity | undefined {
-    return this.worldModel.getPlayer();
-  }
-
-  setPlayer(entityId: string): void {
-    this.worldModel.setPlayer(entityId);
-  }
-
-  // Convenience Creators
-  connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void {
-    this.worldModel.connectRooms(room1Id, room2Id, direction, doorId, options);
-  }
-
-  createDoor(displayName: string, opts: {
-    room1Id: string;
-    room2Id: string;
-    direction: DirectionType;
-    description?: string;
-    aliases?: string[];
-    isOpen?: boolean;
-    isLocked?: boolean;
-    keyId?: string;
-  }): IFEntity {
-    return this.worldModel.createDoor(displayName, opts);
-  }
-
-  // Wall Adjacency (ADR-173)
-  createWall(spec: IWallSpec): WallEntity {
-    return this.worldModel.createWall(spec);
-  }
-
-  createWalls(spec: IWallsSpec): WallEntity[] {
-    return this.worldModel.createWalls(spec);
-  }
-
-  // Region Management (ADR-149)
-  createRegion(id: string, options: RegionOptions): IFEntity {
-    return this.worldModel.createRegion(id, options);
-  }
-
-  assignRoom(roomId: string, regionId: string): void {
-    this.worldModel.assignRoom(roomId, regionId);
-  }
-
-  isInRegion(entityId: string, regionId: string): boolean {
-    return this.worldModel.isInRegion(entityId, regionId);
-  }
-
-  getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings {
-    return this.worldModel.getRegionCrossings(fromRoomId, toRoomId);
-  }
-
-  // Scene Management (ADR-149)
-  createScene(id: string, options: SceneOptions): IFEntity {
-    return this.worldModel.createScene(id, options);
-  }
-
-  getSceneConditions(sceneId: string): SceneConditions | undefined {
-    return this.worldModel.getSceneConditions(sceneId);
-  }
-
-  getAllSceneConditions(): Map<string, SceneConditions> {
-    return this.worldModel.getAllSceneConditions();
-  }
-
-  isSceneActive(sceneId: string): boolean {
-    return this.worldModel.isSceneActive(sceneId);
-  }
-
-  hasSceneEnded(sceneId: string): boolean {
-    return this.worldModel.hasSceneEnded(sceneId);
-  }
-
-  hasSceneHappened(sceneId: string): boolean {
-    return this.worldModel.hasSceneHappened(sceneId);
-  }
-
-  // Capability Management
-  registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData {
-    return this.worldModel.registerCapability(name, registration);
-  }
-
-  updateCapability(name: string, data: Partial<ICapabilityData>): void {
-    this.worldModel.updateCapability(name, data);
-  }
-
-  getCapability(name: string): ICapabilityData | undefined {
-    return this.worldModel.getCapability(name);
-  }
-
-  hasCapability(name: string): boolean {
-    return this.worldModel.hasCapability(name);
-  }
-
-  // Capability-Behavior Binding Management (ADR-090 dispatch, ADR-207 ownership)
-  // — delegates to the underlying WorldModel, which owns the per-world map.
-  registerCapabilityBehavior<T extends ITrait = ITrait>(
-    traitType: string,
-    capability: string,
-    behavior: CapabilityBehavior,
-    options?: BehaviorRegistrationOptions<T>
-  ): void {
-    this.worldModel.registerCapabilityBehavior(traitType, capability, behavior, options);
-  }
-
-  getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined {
-    return this.worldModel.getBehaviorForCapability(trait, capability);
-  }
-
-  // Evaluator Registry (ADR-240) — delegates to the underlying WorldModel,
-  // which owns the per-world map.
-  registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void {
-    this.worldModel.registerEvaluator(key, fn);
-  }
-
-  evaluate(key: string): unknown {
-    return this.worldModel.evaluate(key);
-  }
-
-  getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined {
-    return this.worldModel.getBehaviorBinding(traitType, capability);
-  }
-
-  getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding> {
-    return this.worldModel.getAllCapabilityBindings();
-  }
-
-  // Action-Interceptor Binding Management (ADR-118 hooks, ADR-208 ownership)
-  // — delegates to the underlying WorldModel, which owns the per-world map.
-  registerActionInterceptor(
-    traitType: string,
-    actionId: string,
-    interceptor: ActionInterceptor,
-    options?: InterceptorRegistrationOptions
-  ): void {
-    this.worldModel.registerActionInterceptor(traitType, actionId, interceptor, options);
-  }
-
-  getInterceptorForAction(
-    entity: { traits: Map<string, ITrait> },
-    actionId: string
-  ): InterceptorLookupResult | undefined {
-    return this.worldModel.getInterceptorForAction(entity, actionId);
-  }
-
-  getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined {
-    return this.worldModel.getInterceptorBinding(traitType, actionId);
-  }
-
-  getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding> {
-    return this.worldModel.getAllActionInterceptors();
-  }
-
-  // Exit-Resolver Binding Management (ADR-295 computed exits)
-  // — delegates to the underlying WorldModel, which owns the per-world map.
-  registerExitResolver(traitType: string, resolver: ExitResolver): void {
-    this.worldModel.registerExitResolver(traitType, resolver);
-  }
-
-  getExitResolver(traitType: string): ExitResolver | undefined {
-    return this.worldModel.getExitResolver(traitType);
-  }
-
-  getAllExitResolvers(): ReadonlyMap<string, ExitResolver> {
-    return this.worldModel.getAllExitResolvers();
-  }
-
-  // Score Ledger
-  awardScore(id: string, points: number, description: string): boolean {
-    return this.worldModel.awardScore(id, points, description);
-  }
-
-  revokeScore(id: string): boolean {
-    return this.worldModel.revokeScore(id);
-  }
-
-  hasScore(id: string): boolean {
-    return this.worldModel.hasScore(id);
-  }
-
-  getScore(): number {
-    return this.worldModel.getScore();
-  }
-
-  getScoreEntries(): ScoreEntry[] {
-    return this.worldModel.getScoreEntries();
-  }
-
-  setMaxScore(max: number): void {
-    this.worldModel.setMaxScore(max);
-  }
-
-  getMaxScore(): number {
-    return this.worldModel.getMaxScore();
-  }
-
-  // Rank ladder (ADR-260)
-  setRanks(ranks: RankDefinition[]): void {
-    this.worldModel.setRanks(ranks);
-  }
-
-  getRanks(): RankDefinition[] {
-    return this.worldModel.getRanks();
-  }
-
-  getRank(): RankDefinition | undefined {
-    return this.worldModel.getRank();
-  }
-
-  setScoringEnabled(enabled: boolean): void {
-    this.worldModel.setScoringEnabled(enabled);
-  }
-
-  isScoringEnabled(): boolean {
-    return this.worldModel.isScoringEnabled();
-  }
-
-  // Persistence
-  toJSON(): string {
-    return this.worldModel.toJSON();
-  }
-
-  loadJSON(json: string): void {
-    this.worldModel.loadJSON(json);
-  }
-
-  clear(): void {
-    this.worldModel.clear();
-  }
-
-  // Event System
-  registerEventHandler(eventType: string, handler: EventHandler): void {
-    this.worldModel.registerEventHandler(eventType, handler);
-  }
-
-  unregisterEventHandler(eventType: string): void {
-    this.worldModel.unregisterEventHandler(eventType);
-  }
-
-  registerEventValidator(eventType: string, validator: EventValidator): void {
-    this.worldModel.registerEventValidator(eventType, validator);
-  }
-
-  registerEventPreviewer(eventType: string, previewer: EventPreviewer): void {
-    this.worldModel.registerEventPreviewer(eventType, previewer);
-  }
-
-  connectEventProcessor(wiring: IEventProcessorWiring): void {
-    this.worldModel.connectEventProcessor(wiring);
-  }
-
-  chainEvent(triggerType: string, handler: EventChainHandler, options?: ChainEventOptions): void {
-    this.worldModel.chainEvent(triggerType, handler, options);
-  }
-
-  applyEvent(event: ISemanticEvent): void {
-    this.worldModel.applyEvent(event);
-  }
-
-  canApplyEvent(event: ISemanticEvent): boolean {
-    return this.worldModel.canApplyEvent(event);
-  }
-
-  previewEvent(event: ISemanticEvent): WorldChange[] {
-    return this.worldModel.previewEvent(event);
-  }
-
-  getAppliedEvents(): ISemanticEvent[] {
-    return this.worldModel.getAppliedEvents();
-  }
-
-  getEventsSince(timestamp: number): ISemanticEvent[] {
-    return this.worldModel.getEventsSince(timestamp);
-  }
-
-  clearEventHistory(): void {
-    this.worldModel.clearEventHistory();
-  }
-
-  // Scope Management
-  getScopeRegistry(): ScopeRegistry {
-    return this.worldModel.getScopeRegistry();
-  }
-
-  addScopeRule(rule: IScopeRule): void {
-    this.worldModel.addScopeRule(rule);
-  }
-
-  removeScopeRule(ruleId: string): boolean {
-    return this.worldModel.removeScopeRule(ruleId);
-  }
-
-  evaluateScope(actorId: string, actionId?: string): string[] {
-    return this.worldModel.evaluateScope(actorId, actionId);
-  }
-
-  // Vocabulary Management
-  getGrammarVocabularyProvider(): IGrammarVocabularyProvider {
-    return this.worldModel.getGrammarVocabularyProvider();
-  }
-
-  // ========== Author-Only Convenience Methods ==========
-
-  /**
-   * Move multiple entities to a container in one operation.
-   */
-  populate(containerId: string, entityIds: string[]): void {
-    for (const entityId of entityIds) {
-      this.moveEntity(entityId, containerId);
-    }
-  }
-
-  /**
-   * Add a trait to an entity.
-   */
-  addTrait(entityId: string, trait: ITrait): void {
-    const entity = this.dataStore.entities.get(entityId);
-    if (entity) {
-      entity.add(trait);
-    }
-  }
-
-  /**
-   * Remove a trait from an entity.
-   */
-  removeTrait(entityId: string, traitType: TraitType): void {
-    const entity = this.dataStore.entities.get(entityId);
-    if (entity) {
-      entity.remove(traitType);
-    }
-  }
-
-  // ========== Private Helpers ==========
-
-  private generateId(type: string): string {
-    const TYPE_PREFIXES: Record<string, string> = {
-      'room': 'r',
-      'door': 'd',
-      'item': 'i',
-      'actor': 'a',
-      'container': 'c',
-      'supporter': 's',
-      'scenery': 'y',
-      'exit': 'e',
-      'object': 'o'
-    };
-
-    const prefix = TYPE_PREFIXES[type] || TYPE_PREFIXES['object'];
-    const counter = this.dataStore.idCounters.get(prefix) || 0;
-    const nextCounter = counter + 1;
-
-    if (nextCounter > 1295) {
-      throw new Error(`ID overflow for type '${type}' (prefix '${prefix}')`);
-    }
-
-    this.dataStore.idCounters.set(prefix, nextCounter);
-    const base36 = nextCounter.toString(36).padStart(2, '0');
-    return `${prefix}${base36}`;
-  }
+  /** The author's view always allows a move; a placement never fails. */
+  function canMoveEntity(_entityId: string, _targetId: string | null): boolean {
+    return true;
+  }
+
+  const helpers: AuthorHelpers = {
+    populate(containerId: string, entityIds: string[]): void {
+      for (const entityId of entityIds) {
+        moveEntity(entityId, containerId);
+      }
+    },
+    addTrait(entityId: string, trait: ITrait): void {
+      const entity = dataStore.entities.get(entityId);
+      if (entity) {
+        entity.add(trait);
+      }
+    },
+    removeTrait(entityId: string, traitType: TraitType): void {
+      const entity = dataStore.entities.get(entityId);
+      if (entity) {
+        entity.remove(traitType);
+      }
+    },
+  };
+
+  const overrides: Record<string, unknown> = Object.assign(Object.create(null), helpers, {
+    createEntity,
+    moveEntity,
+    canMoveEntity,
+  });
+
+  const bound = new Map<PropertyKey, unknown>();
+  return new Proxy(world, {
+    get(target, key) {
+      if (typeof key === 'string' && key in overrides) return overrides[key];
+      const hit = bound.get(key);
+      if (hit !== undefined) return hit;
+      const value = Reflect.get(target, key, target);
+      if (typeof value !== 'function') return value;
+      const member = (value as (...args: unknown[]) => unknown).bind(target);
+      bound.set(key, member);
+      return member;
+    },
+  }) as AuthorModel;
 }
+
+/**
+ * The constructor spelling: `new AuthorModel(world.getDataStore(), world)`
+ * returns the same view createAuthorModel returns. The data store argument is
+ * accepted for the callers that pass it and is not read; the view takes the
+ * live store from the world.
+ */
+export const AuthorModel = function AuthorModel(
+  this: unknown,
+  _dataStore: IDataStore,
+  worldModel: IWorldModel,
+): AuthorModel {
+  return createAuthorModel(worldModel);
+} as unknown as { new (dataStore: IDataStore, worldModel: IWorldModel): AuthorModel };

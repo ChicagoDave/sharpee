@@ -690,6 +690,8 @@ case 'if.event.perception.blocked':
 
 **Key Insight**: If your execute phase is complex, you're doing it wrong. Move the logic to a behavior.
 
+**The one recorded exception**: `CharacterModelTrait` keeps its own mutators (mood, threat, goals, lucidity, influences, pressure, the told record) on the trait, called by the character tick's sub-steps, because the model is one stateful object whose invariants span those fields together and a behavior would hold no state of its own (ADR-338 D3; ADR-310 D17 Amendment).
+
 ## Capability Dispatch (ADR-090)
 
 Capability dispatch allows entities to handle generic actions (like "lower" or "raise") with entity-specific behaviors. Instead of having fixed action semantics, these actions delegate to behaviors registered for specific traits.

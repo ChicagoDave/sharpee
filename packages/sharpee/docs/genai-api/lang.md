@@ -8,10 +8,19 @@ English language provider, message resolution, formatters.
 
 ```typescript
 /**
- * English Language Provider
+ * The English language provider: every user-facing string the platform
+ * renders, resolved by message id, plus the vocabulary and grammar shapes the
+ * parser and the assembler read. Self-contained, with no dependency outside
+ * the shared contracts. The engine's prose pipeline resolves each event's
+ * message id through this provider at turn end; nothing else formats text.
  *
- * Self-contained language implementation with no external dependencies
- * Enhanced to support getMessage interface for text service
+ * Public interface: EnglishLanguageProvider (implements ParserLanguageProvider),
+ *   and the default export, one shared instance.
+ * Owner context: @sharpee/lang-en-us
+ *
+ * References:
+ *   ADR-174 — the prose pipeline became the sole consumer of getMessage.
+ *   ADR-158 — the formatter chain the assembler applies to a resolved message.
  */
 import { type ParserLanguageProvider, type ActionHelp, type VerbVocabulary, type DirectionVocabulary, type SpecialVocabulary, type LanguageGrammarPattern, type LocaleSettings, type RenderContext } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
@@ -31,8 +40,9 @@ export declare class EnglishLanguageProvider implements ParserLanguageProvider {
     private readonly assembler;
     constructor();
     /**
-     * Load core system messages (command failures, etc.)
-     * These are used by text-service for command.failed events
+     * Load the core system messages: parser and validator failures, the
+     * disambiguation prompt, and the story-rule lead. The prose pipeline
+     * resolves these when a command fails before any action runs.
      */
     private loadCoreMessages;
     /**
