@@ -1,25 +1,28 @@
 /**
- * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
+ * The character-model NPC tick phase.
  *
- * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals → scenes →
- * arrival reactions (GH #353)
- * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
- * arbiter.) Ordering between sub-steps is a contract, which is why this
- * is one registration rather than three (docs/work/archive/adr-310/
- * contracts.md §2); scenes run last because they consume the propagation
- * and goal sub-steps' same-turn output.
- *
- * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
- * below holds ONLY authored configuration, re-registered at load, and has
- * no serialization path of its own.
- *
- * The registration signature is platform-internal — not author-facing
- * compatibility surface; revisable by ADR-317/R3 at refactor cost.
+ * One tick-phase registration running ordered sub-steps: decay, observe,
+ * influence, propagation, goals, scenes, arrival reactions. The order is a
+ * contract, which is why this is one registration rather than several, and
+ * it lives as data in CHARACTER_TICK_SUB_STEPS, where each step names the
+ * steps it requires. All mutable state rides CharacterModelTrait; the
+ * registry here holds only authored configuration, re-registered at load,
+ * with no serialization path of its own. The registration signature is
+ * platform-internal, not an author-facing surface.
  *
  * Public interface: createCharacterModelPhase, registerCharacterModelPhase,
- *   CharacterPhaseRegistry, CharacterPhaseConfig, CHARACTER_MODEL_PHASE_NAME.
+ *   CharacterPhaseRegistry, CharacterPhaseConfig, CHARACTER_MODEL_PHASE_NAME,
+ *   CHARACTER_TICK_SUB_STEPS, subStepOrderViolations, TickContext,
+ *   SceneTickSurface, TickSubStep, TickSubStepRun.
  * Owner context: @sharpee/character
+ *
+ * References:
+ *   ADR-310 D15/D17 — one registration with ordered sub-steps; state on the trait.
+ *   ADR-144/145/146 — the propagation, goal, and influence subsystems the sub-steps drive.
+ *   ADR-320 Phase 8 — scenes run last, consuming the earlier sub-steps' same-turn output.
+ *   GH #353 — arrival reactions, the seventh sub-step.
+ *   ADR-339 D3 — the order is data with per-step requires, pinned by a test.
+ *   docs/work/archive/adr-310/contracts.md §2 — the ordering contract.
  */
 
 import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
@@ -101,7 +104,7 @@ import {
 // ---------------------------------------------------------------------------
 
 /** Tick context — mirrors NpcTickContext from stdlib. */
-interface TickContext {
+export interface TickContext {
   world: WorldModel;
   turn: number;
   /** The session's per-point stream owner (ADR-293) */
@@ -313,7 +316,7 @@ function createEvent(
 // ---------------------------------------------------------------------------
 
 /** One turn's scene-relevant happenings, accumulated across sub-steps. */
-interface SceneTickSurface {
+export interface SceneTickSurface {
   /** Acts detected from this turn's player-action events (observe sub-step). */
   acts: Array<{ actorId: string; action: string; eventId: string; roomId: string }>;
 
@@ -379,21 +382,81 @@ export const CHARACTER_MODEL_PHASE_NAME = 'character-model';
 // phase's existing importers (the phase is its writer).
 export { CHARACTER_TURN_KEY } from './character-clock.js';
 
+/** What one tick hands every sub-step. */
+export interface TickSubStepRun {
+  /** The NPCs the scheduler handed this tick. */
+  npcs: IFEntity[];
+  /** The decay sub-step's targets: the NPCs, plus a modeled player. */
+  decayTargets: IFEntity[];
+  ctx: TickContext;
+  registry: CharacterPhaseRegistry;
+  /** This tick's surface, filled by the earlier sub-steps for the later ones. */
+  surface: SceneTickSurface;
+}
+
+/** One sub-step of the tick, with the sub-steps it must run after. */
+export interface TickSubStep {
+  readonly name: string;
+  /** Names of the sub-steps whose same-turn output this one reads. */
+  readonly requires: readonly string[];
+  run(step: TickSubStepRun): ISemanticEvent[];
+}
+
+/**
+ * The tick's sub-steps, in the order they run. Each entry's `requires`
+ * names the earlier sub-steps whose same-turn output it consumes, so the
+ * order is a stated dependency rather than a position: decay settles mood
+ * and lucidity before anything evaluates them; observe records what the
+ * player just did, and everything after reacts to it; influence expires and
+ * then applies effects so propagation and goals see them; propagation moves
+ * knowledge before goals re-evaluate activation conditions that read it;
+ * scenes consume the acts, transfers, says, and moves the earlier sub-steps
+ * put on the surface; arrival reactions run last so goals and scenes saw the
+ * world as it stood when each fact arrived. A modeled player joins only the
+ * decay targets; the other sub-steps stay NPC-only.
+ *
+ * A new sub-step is one entry here naming what it requires;
+ * subStepOrderViolations (and its test) says when an entry sits before
+ * something it needs.
+ */
+export const CHARACTER_TICK_SUB_STEPS: readonly TickSubStep[] = [
+  { name: 'decay', requires: [], run: (s) => runDecaySubStep(s.decayTargets, s.ctx, s.registry) },
+  { name: 'observe', requires: ['decay'], run: (s) => runObserveSubStep(s.npcs, s.ctx, s.registry, s.surface) },
+  { name: 'influence', requires: ['decay', 'observe'], run: (s) => runInfluenceSubStep(s.npcs, s.ctx, s.registry) },
+  { name: 'propagation', requires: ['influence'], run: (s) => runPropagationSubStep(s.npcs, s.ctx, s.registry, s.surface) },
+  { name: 'goals', requires: ['influence', 'propagation'], run: (s) => runGoalSubStep(s.npcs, s.ctx, s.registry, s.surface) },
+  { name: 'scenes', requires: ['observe', 'propagation', 'goals'], run: (s) => runSceneSubStep(s.npcs, s.ctx, s.registry, s.surface) },
+  { name: 'arrival-reactions', requires: ['propagation', 'scenes'], run: (s) => runArrivalReactions(s.ctx, s.registry, s.surface) },
+];
+
+/**
+ * Every place a sub-step list breaks its own `requires`: an entry that names
+ * a sub-step not in the list, or one that runs at or after it. Empty for a
+ * well-ordered list.
+ *
+ * @param steps - The list to check, in run order
+ * @returns One line per violation, naming both sub-steps
+ */
+export function subStepOrderViolations(steps: readonly TickSubStep[]): string[] {
+  const violations: string[] = [];
+  const position = new Map(steps.map((step, index) => [step.name, index] as const));
+  steps.forEach((step, index) => {
+    for (const required of step.requires) {
+      const at = position.get(required);
+      if (at === undefined) {
+        violations.push(`'${step.name}' requires '${required}', which is not in the list`);
+      } else if (at >= index) {
+        violations.push(`'${step.name}' requires '${required}', which runs after it`);
+      }
+    }
+  });
+  return violations;
+}
+
 /**
  * Create the character-model tick phase handler. Register it once:
- * `registerCharacterModelPhase(npcService, registry)`.
- *
- * Sub-step order (a contract, not a coincidence — contracts.md §2): decay
- * runs first so the turn's evaluation sees settled mood/lucidity;
- * observation second, so the turn's remaining evaluation reacts to what
- * the player just did; influence effects are expired then applied next
- * (expiry first so a recurring influence re-transitions the turn it
- * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
- * see them; propagation
- * moves knowledge before goals re-evaluate activation conditions that may
- * reference it; scenes run last (ADR-320 Phase 8), consuming the
- * transfers, say completions, moves, and detected acts the earlier
- * sub-steps surfaced this turn.
+ * `registerCharacterModelPhase(npcService, registry)`. The handler runs
+ * CHARACTER_TICK_SUB_STEPS in order over one fresh surface per tick.
  *
  * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function
@@ -405,26 +468,18 @@ export function createCharacterModelPhase(
     // Mirror the turn for the player-action dialogue surfaces (see key doc).
     ctx.world.setStateValue(CHARACTER_TURN_KEY, ctx.turn);
     // A modeled PC gets interior upkeep — mood/lucidity decay — without
-    // joining NPC turn scheduling (adr-320 contracts.md §2.1): the
-    // observe/influence/propagation/goal sub-steps stay NPC-only.
+    // joining NPC turn scheduling (adr-320 contracts.md §2.1).
     const player = ctx.world.getEntity(ctx.playerId);
     const decayTargets =
       player?.has(TraitType.CHARACTER_MODEL) && !npcs.some((n) => n.id === ctx.playerId)
         ? [...npcs, player]
         : npcs;
-    // Scenes run LAST (ADR-320 Phase 8): they consume the propagation
-    // sub-step's applied transfers and the goal sub-step's completions
-    // from the same turn, accumulated on the surface below.
-    const surface = emptySceneTickSurface();
-    return [
-      ...runDecaySubStep(decayTargets, ctx, registry),
-      ...runObserveSubStep(npcs, ctx, registry, surface),
-      ...runInfluenceSubStep(npcs, ctx, registry),
-      ...runPropagationSubStep(npcs, ctx, registry, surface),
-      ...runGoalSubStep(npcs, ctx, registry, surface),
-      ...runSceneSubStep(npcs, ctx, registry, surface),
-      ...runArrivalReactions(ctx, registry, surface),
-    ];
+    const run: TickSubStepRun = { npcs, decayTargets, ctx, registry, surface: emptySceneTickSurface() };
+    const events: ISemanticEvent[] = [];
+    for (const step of CHARACTER_TICK_SUB_STEPS) {
+      events.push(...step.run(run));
+    }
+    return events;
   };
 }
 
