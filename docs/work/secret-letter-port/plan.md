@@ -1,7 +1,7 @@
 # Session Plan: Port The Secret Letter (Textfyre, 2009) to Chord
 
 **Created**: 2026-08-21
-**Plan Status**: ACTIVE
+**Plan Status**: PAUSED (2026-09-08, session e49045 — David: "table the port for now"; no restart date. Phases 4, 6 and 10 stay CURRENT exactly where they are, resumable when `.current-plan` returns here)
 **Interrupted by**: docs/work/archive/tier-1-fixes/plan.md (2026-08-22, session 95a8f5 — Tier 1 issue fixes ran to DONE and were archived the same day; the pointer returned here with Phases 4 and 6 untouched)
 **Superseded by**: docs/work/archive/tier-2-import-seam/plan.md (2026-08-22, session 2fa584 — rule 18b "still live" disposition; this plan stays exactly where it is, Phases 4 and 6 untouched, resumable when `.current-plan` returns here)
 **Resumed**: 2026-08-22, session dfb7f6 — tier-2-import-seam ran to DONE and was archived (3370c05c); `.current-plan` returned here with Phases 4 and 6 still CURRENT

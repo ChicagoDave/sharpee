@@ -28,6 +28,10 @@
 
 ## Key Decisions
 
+### 0. The port is tabled (2026-09-08, after the push)
+David: "I'm going to table the port for now" — `docs/work/secret-letter-port/plan.md` set to **Plan Status: PAUSED**, no restart date, phases untouched (4, 6, 10 stay CURRENT). `.current-plan` released, since no plan is current; the port resumes by restoring the pointer to it. Uncommitted at the time of writing.
+
+
 ### 1. Refactoring survey implementation is not a priority right now
 David: the standing intent for ADR-334..340 (GH #382/#384/#385) is a regular check of basic coding principles, not an implementation push. No change to the open items (I-7f0471-1, I-7f0471-2) — they stay recorded as future work, not scheduled.
 
