@@ -909,17 +909,20 @@ import "silk-wares"
 ##   * `ST5`'s "You have any coin?" becomes a `define exchange` — the one place
 ##     the source's shape survives literally, since `ST6`/`ST7`/`ST8` really are
 ##     a yes/no/never-mind question.
-##   * The patience counter (`story.ni:1937-1949`) becomes the `asked again` and
-##     `asked many times` greeting arms — but it counts a different thing, and
-##     the difference is measured, not assumed (driven through `sharpee play`,
-##     2026-08-22). The source counts APPROACHES: every `talk to` bumps it, and
-##     moving to another stall resets it. Chord counts TOPIC ASKS, cumulatively
-##     and forever, and the arm is only consulted when a conversation scene
-##     REOPENS — a second `talk to` inside a live scene answers "doesn't
-##     respond", and the scene stays live for several turns after the player
-##     walks away. So a stallkeeper you pestered stays exasperated when you come
-##     back much later, where Gentry's cooled off the moment you moved on. The
-##     lines are his either way; only the trigger differs.
+##   * The patience counter (`story.ni:1937-1949`) is the `stallkeeper-patience`
+##     counter below, and it counts what Gentry counts: APPROACHES. Every
+##     `talk to` a keeper raises it by one (the `after the player talking`
+##     clause of the shared `wary` trait, `mercenaries.chord`); the second
+##     approach appends the exasperated line and the third onward the yell;
+##     and Jack's own `after going` (`secret-letter.story`) sets it back to 0,
+##     which is the source's "on the move" reset. Until 2026-09-08 the two
+##     lines hung off the `asked again` / `asked many times` greeting arms,
+##     which count topic asks cumulatively and forever and are consulted only
+##     when a scene reopens — a keeper stayed exasperated on any later visit,
+##     and a bare `yes` to the coin question (an answer, not an ask) never
+##     counted (GH #356). One difference stays, measured 2026-09-08: a second
+##     `talk to` inside a live scene answers "doesn't respond" where the
+##     source replays the opener, and the patience line follows that.
 ##   * `ST9`'s good-bye is authored on the `on leaving` arm and is CURRENTLY
 ##     UNREACHABLE (checked the same way, and then in the source): the arm means
 ##     "when this character walks out on YOU" — both its consumers key on the
@@ -943,6 +946,11 @@ import "silk-wares"
 ## Every line below is Gentry's, carried from `story.ni:1841-1949`.
 ## ---------------------------------------------------------------------------
 
+## The patience counter (`story.ni:1937`): raised once per approach by the
+## shared `wary` trait, set back to 0 by Jack's own `after going`.
+
+define counter stallkeeper-patience starts 0
+
 create the grocer
   a person, scenery
   wary
@@ -959,10 +967,6 @@ define greetings for the grocer
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1016,10 +1020,6 @@ define greetings for the fruit stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1062,10 +1062,6 @@ define greetings for the hat stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1108,10 +1104,6 @@ define greetings for the leather stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1154,10 +1146,6 @@ define greetings for the weaponsmith
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1200,10 +1188,6 @@ define greetings for the gems stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1246,10 +1230,6 @@ define greetings for the herbalist
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1292,10 +1272,6 @@ define greetings for the rope dealer
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1338,10 +1314,6 @@ define greetings for the candlemaker
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1384,10 +1356,6 @@ define greetings for the pottery stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings

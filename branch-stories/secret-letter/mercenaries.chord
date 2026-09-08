@@ -296,6 +296,13 @@ create the sword
 ## talking`, or the keeper's own, never fires beside this one. The `when`
 ## names the carrier's situation; only the fruit stallkeeper ever stands in
 ## the Fruit Stall.
+##
+## The `after` clause is the patience counter (`story.ni:1937-1949`, GH #356):
+## one approach raises `stallkeeper-patience` (declared beside the ST tree in
+## `grubbers-market.chord`), the second draws the exasperated line, the third
+## onward the yell. It lives in this trait for the same one-interceptor reason
+## as the fruit refusal — the `on`/`after` pair of one trait both fire, a
+## second trait's clause would not.
 
 define trait wary
   on the player talking
@@ -304,6 +311,12 @@ define trait wary
     refuse when it is in the Fruit Stall and the Fruit Stall is chaotic: fruit-keeper-busy
     refuse when the player's market-escape has started: escape-no-time
   end on
+
+  after the player talking
+    raise stallkeeper-patience by 1
+    phrase st-patience-second when stallkeeper-patience is 2
+    phrase st-patience-third when stallkeeper-patience is at least 3
+  end after
 end trait
 
 ## ---------------------------------------------------------------------------

@@ -26,7 +26,7 @@
 ##   4. Teisha's five repeat prefixes are Gentry's five, but fixed one per quip
 ##      instead of drawn at random, because Chord does not interpolate a phrase
 ##      inside another phrase's body (GH #286).
-##   5. `st-patience-third` in `stallkeepers.chord` expands Gentry's `[one of]
+##   5. `st-patience-third` in `grubbers-market.chord` expands Gentry's `[one of]
 ##      beat it[or]scram[or]get out of here[at random]` into three whole-phrase
 ##      variants, because Chord randomises phrase arms rather than words inside
 ##      one. Same three words, same odds. (Two quips are also FOLDED in that
@@ -277,6 +277,7 @@ create Jack
   after going
     restart the player's waiting when (hunted and Jack is not dressed) or (chase and Jack is identified)
     phrase escape-sprint when the player's market-escape has started
+    set stallkeeper-patience to 0
   end after
 
 create the old gray cloak
