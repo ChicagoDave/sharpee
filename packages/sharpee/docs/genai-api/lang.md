@@ -593,29 +593,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        room_description: string;
-        room_description_brief: string;
-        in_container: string;
-        on_supporter: string;
-        examine_surroundings: string;
-        hidden_at: string;
-        room_dark: string;
-        exits: string;
-        you_see: string;
-        contents_list: string;
-        nothing_special: string;
-        container_contents: string;
-        surface_contents: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         no_target: string;
         cant_take_self: string;
         already_have: string;
@@ -646,6 +623,29 @@ export declare const standardActionLanguage: ({
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        room_description: string;
+        room_description_brief: string;
+        in_container: string;
+        on_supporter: string;
+        examine_surroundings: string;
+        hidden_at: string;
+        room_dark: string;
+        exits: string;
+        you_see: string;
+        contents_list: string;
+        nothing_special: string;
+        container_contents: string;
+        surface_contents: string;
     };
     help: {
         description: string;

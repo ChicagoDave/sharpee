@@ -2474,8 +2474,37 @@ class Analyzer {
             case 'each':
               visit(stmt.body);
               break;
-            default:
+            // Every other kind carries no conversation target and no nested
+            // body. Listed so that a new kind is a compile error here until
+            // this check has decided whether to look inside it.
+            case 'refuse':
+            case 'phrase':
+            case 'emit':
+            case 'set':
+            case 'change':
+            case 'change-player':
+            case 'change-mood':
+            case 'change-feeling':
+            case 'move':
+            case 'act':
+            case 'remove':
+            case 'award':
+            case 'raise':
+            case 'lower':
+            case 'set-counter':
+            case 'timer':
+            case 'win':
+            case 'lose':
+            case 'kill':
+            case 'must':
+            case 'refuse-when':
+            case 'leave':
+            case 'hold-tongue':
               break;
+            default: {
+              const unhandled: never = stmt;
+              throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+            }
           }
         }
       };
@@ -3608,8 +3637,37 @@ class Analyzer {
         case 'each':
           this.collectInlineTexts(stmt.body, ownerId);
           break;
-        default:
+        // Every other kind carries no inline text and no nested body. Listed
+        // so that a new kind is a compile error here until this collector has
+        // decided whether it registers text.
+        case 'refuse':
+        case 'refuse-when':
+        case 'emit':
+        case 'media':
+        case 'set':
+        case 'change':
+        case 'change-player':
+        case 'change-mood':
+        case 'change-feeling':
+        case 'move':
+        case 'act':
+        case 'remove':
+        case 'award':
+        case 'raise':
+        case 'lower':
+        case 'timer-verb':
+        case 'win':
+        case 'lose':
+        case 'must':
+        case 'then-open':
+        case 'deflect':
+        case 'leave':
+        case 'hold-tongue':
           break;
+        default: {
+          const unhandled: never = stmt;
+          throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+        }
       }
     }
   }
@@ -6002,9 +6060,26 @@ class Analyzer {
           // inside it closes the partition for what follows.
           this.checkRoutingBlock([stmt.body], state, 'an `each` block', 'each');
           break;
-        default:
+        // Report-only and conversation statements end the partition: the
+        // first of them is what the message names. Listed so that a new kind
+        // is a compile error here until this check has decided which side of
+        // the partition it falls on.
+        case 'phrase':
+        case 'emit':
+        case 'media':
+        case 'win':
+        case 'lose':
+        case 'kill':
+        case 'then-open':
+        case 'deflect':
+        case 'leave':
+        case 'hold-tongue':
           state.ended ??= { kind: 'statement', what: statementWord(stmt) };
           break;
+        default: {
+          const unhandled: never = stmt;
+          throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+        }
       }
     }
   }
@@ -6521,6 +6596,12 @@ class Analyzer {
           body: stmt.body.map((s, i) => this.resolveStatement(s, eachScope, `${path}.${i}`)),
           span: stmt.span,
         };
+      }
+      default: {
+        // Unreachable at runtime; exists so the compiler proves every
+        // statement kind resolves to IR.
+        const unhandled: never = stmt;
+        throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
       }
     }
   }

@@ -4394,6 +4394,12 @@ export class ChordRuntime {
             `Conversation statement \`${stmt.kind}\` outside dialogue dispatch.`,
             stmt.span,
           );
+        default: {
+          // Unreachable at runtime; exists so the compiler proves every IR
+          // statement kind is executed by this walker.
+          const unhandled: never = stmt;
+          throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+        }
       }
     }
     // Z3: witnessed lifecycle narration enqueued during mutation phases
