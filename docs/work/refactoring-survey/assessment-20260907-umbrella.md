@@ -60,6 +60,10 @@ Chord placement goes through the author view's bypass: the loader constructs `ne
 
 The ADR's Context counts four `new AuthorModel(...)` sites (the loader and three helpers builders). There are three more, all in Dungeo: `stories/dungeo/src/regions/frigid-river.ts:434`, `round-room.ts:76`, `volcano.ts:359`, each placing a treasure in a closed container. D1 says "the four construction sites become `createAuthorModel(world)`", and the Scope line does not list `stories/dungeo`. Dungeo must keep working (it is the walkthrough chain that AC-4 relies on), so the plan either edits those three files, which is a scope change, or keeps `new AuthorModel(dataStore, world)` as a working spelling. The second is the smaller move and costs nothing: a JavaScript constructor may return an object, so the class constructor can return the proxy and the factory becomes a convenience. That also preserves the one author-facing mention in the API reference (`packages/sharpee/docs/genai-api/authoring.md:239`, the helpers' `skipValidation` doc) without a doc edit. This is a fact the plan needs, not a defect in the decision.
 
+### The author model has a third bypass D1 does not list
+
+D1 names two bypasses (`createEntity`, `moveEntity`) and three helpers as the only members the view overrides; everything else forwards to the live world. The current class has one more override with author-model semantics: `canMoveEntity` always returns `true` (`packages/world-model/src/world/AuthorModel.ts:197`, "AuthorModel always allows moves"), where the world's own version validates (`WorldModel.ts:1181`). Under D1 as written the view would forward to the validating version, and any caller asking the author model whether a placement is allowed would get a different answer than today. No caller was found in the loader, the helpers, or Dungeo (`grep` across `packages/story-loader/src`, `packages/helpers/src`, `stories/dungeo/src`, 2026-09-08), so the change is almost certainly unobserved. The plan still decides it in one line: either `canMoveEntity` joins the override list, keeping the author model's promise that a move never fails, or it is deleted deliberately with a note that the view now reports the world's answer. Leaving it to the forwarding default would be the one behavior change in D1 that nobody chose. (David, 2026-09-08: add this to the plan.)
+
 ### ADR-338 D3 and ADR-339 D2 point the same way
 
 D3 records the character-model trait as the one stateful object whose mutators live on the trait by design. ADR-339 D2 moves the two stdlib callers of those mutators, `lucidity-decay.ts` and `character-observer.ts`, into `packages/character`. The two decisions are consistent: 338 says the model is one object, 339 brings the object's per-turn drivers home to it. The ADR-310 D17 amendment paragraph that 338 D3 orders should name the tick's sub-steps as the mutators' callers, so the exception is recorded once with both halves. That means 338 D3 lands after 339 D2.
@@ -115,6 +119,29 @@ The runtime header rewrite (335 D2), the `never` defaults (336 D1), the hook-seq
 ### The proxy is the right primitive, and the reason is worth recording
 
 ADR-338 D1 is the only decision in the survey that replaces a compile-time structure (89 hand-written delegations) with a runtime one (a `Proxy` whose `get` trap binds every member to the live world). Two facts make it sound rather than clever. `WorldModel` has no JavaScript private fields (`grep -c '^\s*#' WorldModel.ts` → 0), so bound methods reach every field through the real instance. And the obvious lighter alternative, `Object.create(world)` with five overrides, is unsound: a method writing `this.field` would land on the derived object and shadow the world's own field on the next read. The proxy forwards writes to the one instance. No `instanceof WorldModel` or `instanceof AuthorModel` check exists in any package, so the proxy's target being the world is invisible to callers. The plan's header for `AuthorModel.ts` should say why `Object.create` was not used, or the next reader will "simplify" it.
+
+One refinement to the trap, decided for the plan (David, 2026-09-08). D1 says the trap forwards every member "bound to the live world"; read literally that is a `bind` on every property read, allocating a fresh bound function each time an author calls through the view. The plan binds once per member per view and caches the result, so the steady-state cost is one `Map` lookup per call and the first call to each member pays the bind:
+
+```ts
+export function createAuthorModel(world: WorldModel): AuthorModel {
+  const overrides = authorOverrides(world);   // the bypasses and helpers D1 names, plus canMoveEntity if the plan keeps it
+  const bound = new Map<PropertyKey, unknown>();
+  return new Proxy(world, {
+    get(target, key, receiver) {
+      if (key in overrides) return overrides[key];
+      const hit = bound.get(key);
+      if (hit !== undefined) return hit;
+      const value = Reflect.get(target, key, receiver);
+      if (typeof value !== 'function') return value;
+      const member = value.bind(target);
+      bound.set(key, member);
+      return member;
+    },
+  }) as AuthorModel;
+}
+```
+
+Only functions are cached. A non-function member is read through to the live world on every access, so the view never holds a stale copy of world state, which is the property D1 exists to guarantee. The trap remains the whole mechanism: the cache does not reopen the `Object.create` question above, and the header still records why that alternative was rejected. This is a plan-level detail, not an amendment to ADR-338 D1.
 
 ### D4 pins one thing the compiler already proves and one it cannot
 
@@ -179,4 +206,4 @@ Before any of them: amend ADR-334 D1, ADR-335 D1, and ADR-339 D3 to carry `requi
 - The survey has covered ten packages: seven ADRs (340 covers the two testing runtimes) and two issue-only cleanups (`lang-en-us` GH #382, `parser-en-us` GH #385).
 - ADR-340's plan needs three facts from above: the ADR-302 D15 amendment and its two code comments, the synthesis engine as the IDE-reached duplicate, and the browser-safe constraint on the core. Whichever comes next gets a row, an Alignment section, and an Elegance check against the ordered-list idiom, or a line in the Impact section if it ends as an issue.
 - Whether `earlyRefusal` should be named for slot-resolution failure (above) is a question for ADR-337's plan, not an amendment this document makes.
-- ADR-338's plan needs the seven-site count and a decision on whether `new AuthorModel(dataStore, world)` stays a working spelling (above); this document recommends it does.
+- ADR-338's plan needs the seven-site count and a decision on whether `new AuthorModel(dataStore, world)` stays a working spelling (above); this document recommends it does. It also carries two items added 2026-09-08 at David's direction: the `canMoveEntity` override is decided in one line (keep it or delete it with a note, never left to the forwarding default), and the proxy's `get` trap binds each member once per view and caches it (the snippet above).
