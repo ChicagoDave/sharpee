@@ -5,6 +5,8 @@
 **Prompted by**: an outside request for "a web version of Chord Writer"
 **Premise given**: assume cloud drive access (iCloud, OneDrive, Google Drive) solves storage
 
+> **Superseded on the desktop question (2026-09-08).** ADR-341 (`docs/architecture/adrs/adr-341-chord-writer-windows.md`) records David's ruling that the Windows version is a native mirror of the macOS app, in WPF or WinUI 3, not the TypeScript everywhere-else shell §12 recommends. §12.5's ranking and §12.7's "no parity" consequence no longer apply. §1 to §11 remain the record for the browser tier (ADR-191's line), and §2, §3, and §12.3's measurements are still cited by ADR-341.
+
 ---
 
 ## 1. The short version
