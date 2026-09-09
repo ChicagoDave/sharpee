@@ -1,0 +1,31 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "No Signal Home"
+          },
+          {
+            "id": "info.description",
+            "is": "Your fuel ran out beside a ship that has been dead for years. It is not as dead as it looks."
+          }
+        ]
+      },
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tug Cargo Hold",
+          "You come up out of low-power sleep the way you always do — badly, and all at once. Cold in your teeth. A red strobe washing the crates on and off. Somewhere aft, an alarm is trying to take your head off."
+        ]
+      },
+      "type": "boot"
+    }
+  ],
+  "seed": 42,
+  "story": "no-signal-home",
+  "version": 1
+}
