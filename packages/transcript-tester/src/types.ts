@@ -1,7 +1,17 @@
 /**
- * Transcript Testing Types
+ * types.ts — the shared shapes of both testing runtimes: parsed transcripts,
+ * claims, run configuration, golden recordings, results, and runner options.
  *
- * Defines the structure of parsed transcripts and test results.
+ * One type set for two worlds (ADR-340 D1): the text-transcript runner here
+ * and `@sharpee/branch-tester`'s tree runner build and read the same
+ * `Transcript`, `Assertion`, `CommandResult`, and `RunnerOptions`. Fields one
+ * world never sets are optional and say which world sets them (the golden
+ * tier's `tier`/`goldenPath`, the tree world's `turn`/`ending`/`world`).
+ * Type-only beyond `@sharpee/core`'s force spec, so the browser bundle can
+ * import it.
+ *
+ * Public interface: every exported type. Owner context: transcript-tester
+ * (testing tooling).
  */
 
 import type { RandomForceSpec } from '@sharpee/core';
@@ -78,6 +88,18 @@ export interface TranscriptHeader {
   entry?: string;
   author?: string;
   description?: string;
+  /**
+   * Parent transcript's filename stem (ADR-302 D1) — this transcript begins in
+   * the state its parent ended in. Absent means a root: a fresh game. Set by
+   * the tree world only.
+   *
+   * **A stem, not a path**: no `.transcript` extension, no directory
+   * component, and no way to address a point *inside* the parent. There is no
+   * `at <n>` form and never will be — a parent is always a whole file, which
+   * is what makes D14's rename a mechanical operation rather than a
+   * renumbering.
+   */
+  continues?: string;
   [key: string]: string | undefined;
 }
 
@@ -217,7 +239,8 @@ export interface Assertion {
   type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
       | 'event-assert' | 'state-assert'
-      | 'channel-contains' | 'channel-not-contains';
+      | 'channel-contains' | 'channel-not-contains'
+      | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
   value?: string;      // For contains/not-contains
   reason?: string;     // For fail/todo
 
@@ -231,6 +254,29 @@ export interface Assertion {
    * header, or there is nothing captured to read.
    */
   channelId?: string;
+
+  /**
+   * Dotted path into a record channel's value (ADR-300 D13).
+   *
+   * `[CHANNEL: banner.title, …]` addresses the `title` member of the `banner`
+   * channel's record, so a test names the piece it means instead of
+   * substring-matching a flattened rendering of the whole thing. Empty for an
+   * assertion about the channel's value as a whole.
+   *
+   * A path segment that lands on a LIST matches if any element matches — a
+   * `credits` list has no useful index for a test to name, and asserting on
+   * position would fail whenever an author adds a name.
+   */
+  channelPath?: string[];
+
+  /**
+   * Expected scalar for the `channel-is` / `channel-is-not` forms, already
+   * typed: a number when the transcript wrote a bare number, a string when it
+   * wrote a quoted one. The distinction is load-bearing — `is 5` against a
+   * text channel carrying `"5"` is a wrong-type failure, not a match
+   * (ADR-300 D13).
+   */
+  channelExpected?: string | number | boolean;
 
   // Event assertions
   assertTrue?: boolean;         // For event-assert and state-assert: true = must exist, false = must not exist
@@ -317,6 +363,18 @@ export interface Transcript {
   parseErrors?: ParseError[];
 
   /**
+   * Config header keys this transcript DECLARED, in declaration order
+   * (ADR-302 D8). Set by the tree world only.
+   *
+   * Needed because `config` always carries defaults, so a field's value cannot
+   * say whether the author wrote it: `channels: []` means both "declared
+   * empty" and "not declared". Inheritance has to distinguish them — a child
+   * that says nothing takes its parent's, a child that says something takes
+   * its own — so the declaration itself is recorded rather than inferred.
+   */
+  declaredConfigKeys?: string[];
+
+  /**
    * Master seed pinned by the `seed:` header field (ADR-293 D14 as amended by
    * ADR-294 D3 — the body-positional `[SEED:]` directive is a parse error).
    * Set only by the singular `seed:` form; a `seeds:` matrix (D8) lives in
@@ -376,6 +434,44 @@ export interface CommandResult {
   diff?: { recorded: string[]; actual: string[] };
 
   /**
+   * The engine turn this command executed as (1-based, the engine's own
+   * counter via `lastTurnResult`). Engine knowledge the transcript text
+   * cannot supply: meta commands do not advance the counter, a refused
+   * action does. Absent when nothing executed (a synthesized error result,
+   * an engine seam that does not report turns).
+   */
+  turn?: number;
+
+  /**
+   * The story ended during this command — the engine emitted `game.ended`
+   * with a real ending (`victory`/`defeat`/`quit`) on this turn. What lets
+   * the IDE mark a file terminal when its LAST command ends the story
+   * cleanly (ADR-307 R9): such a command leaves no dead tail behind it to
+   * observe. `restart` never sets this (the harness reboots in place — the
+   * story continues); `abort` never sets it (a runtime failure, carried as
+   * `error`, not an ending).
+   */
+  ending?: 'victory' | 'defeat' | 'quit';
+
+  /**
+   * The first failed assertion's message, verbatim (`Output does not
+   * contain "…"`). Present exactly when an assertion failed this command —
+   * the one-line answer a minimal consumer (the testing surface's run
+   * column) shows without re-deriving it from `assertionResults`, which
+   * never crosses the wire. Runtime throws keep riding `error` instead.
+   */
+  failure?: string;
+
+  /**
+   * The world AFTER this command (ADR-307 R3), captured under
+   * `captureWorld`: player location and inventory, each named with a display
+   * name and the single token a `[STATE:]` expression resolves back to the
+   * entity. Deliberately only the two facts the state evaluator can provably
+   * check.
+   */
+  world?: WorldSnapshot;
+
+  /**
    * The auto-assertion policy wrote this command's assertions on THIS run
    * (Phase 6e, #253): the command arrived bare, the story declares
    * `auto-assertion:`, and the runner synthesized + evaluated the policy's
@@ -395,6 +491,42 @@ export type AutoAssertionPolicy =
   | 'all-emitted-text'
   | 'room-description'
   | 'room-name-and-description';
+
+/** One entity as a {@link WorldSnapshot} names it (ADR-307 R3). */
+export interface WorldEntityRef {
+  /** Display name — what a surface shows. */
+  name: string;
+  /** The single whitespace-free token `[STATE:]`'s evaluator resolves back. */
+  token: string;
+}
+
+/**
+ * A compact world snapshot: where the player is and what they carry
+ * (ADR-307 R3/R5). A consumer derives "what changed" by comparing
+ * consecutive snapshots.
+ */
+export interface WorldSnapshot {
+  /** The player's location. Absent when the seam could not name one. */
+  location?: WorldEntityRef;
+  /** What the player carries, in world order. */
+  inventory: WorldEntityRef[];
+}
+
+/**
+ * How a story runtime keys its declared states in world state, so the state
+ * evaluator can read `story.state = x` and `[the] name is state` claims
+ * (GH #355) without knowing which runtime wrote them. Chord's loader keys
+ * are the one instance today; branch-tester supplies them, the text
+ * transcript world supplies none.
+ */
+export interface StoryStateKeys {
+  /** World-state key holding the story's own phase (`states:` in the header). */
+  storyState: string;
+  /** Prefix joined with an entity's runtime id → that entity's current state. */
+  entityStatePrefix: string;
+  /** Entity attribute carrying the runtime id the prefix is joined with. */
+  entityIdAttribute: string;
+}
 
 /**
  * Result of a single assertion check
@@ -520,6 +652,28 @@ export interface RunnerOptions {
   bless?: boolean;
   /** Recording path override; defaults to the transcript's `.golden` sibling (D7). */
   goldenPath?: string;
+  /**
+   * The transcript's EFFECTIVE config when it runs as a tree node (ADR-302
+   * D8): seeds, channels, events, forces as inherited root-to-here.
+   * Declared-keyed behaviour (session instruments, reseeds) deliberately
+   * does NOT read this: declaring an instrument is an instruction,
+   * inheriting one is not (D8/D9). Absent for flat and chain runs, where
+   * declared IS effective.
+   */
+  resolvedConfig?: TranscriptRunConfig;
+  /**
+   * Capture a {@link WorldSnapshot} after every executed command (ADR-307
+   * R3), and at each tree node's entry (R5's inherited-state header). Off by
+   * default: the IDE's runs always ask for it; a CLI consumer's green stream
+   * stays exactly as small as it was.
+   */
+  captureWorld?: boolean;
+  /**
+   * How the story runtime keys declared states, for the Chord-spelled state
+   * claims (GH #355). The tree runner supplies Chord's keys; absent, the
+   * `story.state` and `[the] name is state` forms are not recognized.
+   */
+  storyStateKeys?: StoryStateKeys;
   /**
    * This transcript runs as a chain member (one session across transcripts).
    * Later members legally pin no seed; their recordings carry the session

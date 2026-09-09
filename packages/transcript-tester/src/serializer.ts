@@ -161,6 +161,18 @@ function serializeAssertionTag(assertion: Assertion): string {
 
     case 'channel-not-contains':
       return `[CHANNEL: ${assertion.channelId}, not contains "${assertion.value}"]`;
+
+    case 'channel-is':
+    case 'channel-is-not':
+    case 'channel-absent':
+    case 'channel-present':
+      // The claim type set is shared with the tree world (ADR-340 D1), but the
+      // `.transcript` grammar never gained these four kinds (ADR-307 — the tree
+      // work does not change what a transcript may say). A tree-document claim
+      // reaching this writer is a caller error, named rather than dropped.
+      throw new Error(
+        `cannot serialize a "${assertion.type}" claim: the .transcript grammar has no form for it`
+      );
   }
 }
 

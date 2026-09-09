@@ -466,6 +466,13 @@ those are what Dungeo and the Family Zoo tutorial depend on not changing. It doe
 that reaches outside its own package changes nothing for any consumer, and a
 freeze that forbids it is protecting a defect rather than a contract.
 
+**Amended, 2026-09-08 (ADR-340 D1) — "no shared code" no longer holds.**
+`@sharpee/branch-tester` now depends on `@sharpee/transcript-tester` for the
+assertion core (the claim evaluator, `[STATE:]` expressions, channel claims,
+per-command execution) and carries no copy of it; what stays copied is nothing.
+The grammar freeze above is untouched: what a `.transcript` may say and what
+running one does are the same as before.
+
 Throughout this ADR, **"v1" is `@sharpee/transcript-tester` and "v2" is
 `@sharpee/branch-tester`**; the numbers are shorthand for those two names, not a
 claim that one supersedes the other. The split is permanent (D12), so nothing

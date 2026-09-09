@@ -415,9 +415,19 @@ export declare function loadAuthorGame(target: string, opts?: {
 
 ```typescript
 /**
- * Transcript Testing Types
+ * types.ts — the shared shapes of both testing runtimes: parsed transcripts,
+ * claims, run configuration, golden recordings, results, and runner options.
  *
- * Defines the structure of parsed transcripts and test results.
+ * One type set for two worlds (ADR-340 D1): the text-transcript runner here
+ * and `@sharpee/branch-tester`'s tree runner build and read the same
+ * `Transcript`, `Assertion`, `CommandResult`, and `RunnerOptions`. Fields one
+ * world never sets are optional and say which world sets them (the golden
+ * tier's `tier`/`goldenPath`, the tree world's `turn`/`ending`/`world`).
+ * Type-only beyond `@sharpee/core`'s force spec, so the browser bundle can
+ * import it.
+ *
+ * Public interface: every exported type. Owner context: transcript-tester
+ * (testing tooling).
  */
 import type { RandomForceSpec } from '@sharpee/core';
 import type { CoverageTracker } from './coverage.js';
@@ -474,6 +484,18 @@ export interface TranscriptHeader {
     entry?: string;
     author?: string;
     description?: string;
+    /**
+     * Parent transcript's filename stem (ADR-302 D1) — this transcript begins in
+     * the state its parent ended in. Absent means a root: a fresh game. Set by
+     * the tree world only.
+     *
+     * **A stem, not a path**: no `.transcript` extension, no directory
+     * component, and no way to address a point *inside* the parent. There is no
+     * `at <n>` form and never will be — a parent is always a whole file, which
+     * is what makes D14's rename a mechanical operation rather than a
+     * renumbering.
+     */
+    continues?: string;
     [key: string]: string | undefined;
 }
 /**
@@ -603,7 +625,7 @@ export interface GoldenRecording {
  * grammar — at a pinned seed there is exactly one output.
  */
 export interface Assertion {
-    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains';
+    type: 'ok' | 'ok-contains' | 'ok-not-contains' | 'fail' | 'skip' | 'todo' | 'event-assert' | 'state-assert' | 'channel-contains' | 'channel-not-contains' | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
     value?: string;
     reason?: string;
     /**
@@ -616,6 +638,27 @@ export interface Assertion {
      * header, or there is nothing captured to read.
      */
     channelId?: string;
+    /**
+     * Dotted path into a record channel's value (ADR-300 D13).
+     *
+     * `[CHANNEL: banner.title, …]` addresses the `title` member of the `banner`
+     * channel's record, so a test names the piece it means instead of
+     * substring-matching a flattened rendering of the whole thing. Empty for an
+     * assertion about the channel's value as a whole.
+     *
+     * A path segment that lands on a LIST matches if any element matches — a
+     * `credits` list has no useful index for a test to name, and asserting on
+     * position would fail whenever an author adds a name.
+     */
+    channelPath?: string[];
+    /**
+     * Expected scalar for the `channel-is` / `channel-is-not` forms, already
+     * typed: a number when the transcript wrote a bare number, a string when it
+     * wrote a quoted one. The distinction is load-bearing — `is 5` against a
+     * text channel carrying `"5"` is a wrong-type failure, not a match
+     * (ADR-300 D13).
+     */
+    channelExpected?: string | number | boolean;
     assertTrue?: boolean;
     eventPosition?: number;
     eventType?: string;
@@ -690,6 +733,17 @@ export interface Transcript {
      */
     parseErrors?: ParseError[];
     /**
+     * Config header keys this transcript DECLARED, in declaration order
+     * (ADR-302 D8). Set by the tree world only.
+     *
+     * Needed because `config` always carries defaults, so a field's value cannot
+     * say whether the author wrote it: `channels: []` means both "declared
+     * empty" and "not declared". Inheritance has to distinguish them — a child
+     * that says nothing takes its parent's, a child that says something takes
+     * its own — so the declaration itself is recorded rather than inferred.
+     */
+    declaredConfigKeys?: string[];
+    /**
      * Master seed pinned by the `seed:` header field (ADR-293 D14 as amended by
      * ADR-294 D3 — the body-positional `[SEED:]` directive is a parse error).
      * Set only by the singular `seed:` form; a `seeds:` matrix (D8) lives in
@@ -746,6 +800,40 @@ export interface CommandResult {
         actual: string[];
     };
     /**
+     * The engine turn this command executed as (1-based, the engine's own
+     * counter via `lastTurnResult`). Engine knowledge the transcript text
+     * cannot supply: meta commands do not advance the counter, a refused
+     * action does. Absent when nothing executed (a synthesized error result,
+     * an engine seam that does not report turns).
+     */
+    turn?: number;
+    /**
+     * The story ended during this command — the engine emitted `game.ended`
+     * with a real ending (`victory`/`defeat`/`quit`) on this turn. What lets
+     * the IDE mark a file terminal when its LAST command ends the story
+     * cleanly (ADR-307 R9): such a command leaves no dead tail behind it to
+     * observe. `restart` never sets this (the harness reboots in place — the
+     * story continues); `abort` never sets it (a runtime failure, carried as
+     * `error`, not an ending).
+     */
+    ending?: 'victory' | 'defeat' | 'quit';
+    /**
+     * The first failed assertion's message, verbatim (`Output does not
+     * contain "…"`). Present exactly when an assertion failed this command —
+     * the one-line answer a minimal consumer (the testing surface's run
+     * column) shows without re-deriving it from `assertionResults`, which
+     * never crosses the wire. Runtime throws keep riding `error` instead.
+     */
+    failure?: string;
+    /**
+     * The world AFTER this command (ADR-307 R3), captured under
+     * `captureWorld`: player location and inventory, each named with a display
+     * name and the single token a `[STATE:]` expression resolves back to the
+     * entity. Deliberately only the two facts the state evaluator can provably
+     * check.
+     */
+    world?: WorldSnapshot;
+    /**
      * The auto-assertion policy wrote this command's assertions on THIS run
      * (Phase 6e, #253): the command arrived bare, the story declares
      * `auto-assertion:`, and the runner synthesized + evaluated the policy's
@@ -761,6 +849,39 @@ export interface CommandResult {
  * a bare command keeps the ADR-294 D2 tier-boundary failure.
  */
 export type AutoAssertionPolicy = 'all-emitted-text' | 'room-description' | 'room-name-and-description';
+/** One entity as a {@link WorldSnapshot} names it (ADR-307 R3). */
+export interface WorldEntityRef {
+    /** Display name — what a surface shows. */
+    name: string;
+    /** The single whitespace-free token `[STATE:]`'s evaluator resolves back. */
+    token: string;
+}
+/**
+ * A compact world snapshot: where the player is and what they carry
+ * (ADR-307 R3/R5). A consumer derives "what changed" by comparing
+ * consecutive snapshots.
+ */
+export interface WorldSnapshot {
+    /** The player's location. Absent when the seam could not name one. */
+    location?: WorldEntityRef;
+    /** What the player carries, in world order. */
+    inventory: WorldEntityRef[];
+}
+/**
+ * How a story runtime keys its declared states in world state, so the state
+ * evaluator can read `story.state = x` and `[the] name is state` claims
+ * (GH #355) without knowing which runtime wrote them. Chord's loader keys
+ * are the one instance today; branch-tester supplies them, the text
+ * transcript world supplies none.
+ */
+export interface StoryStateKeys {
+    /** World-state key holding the story's own phase (`states:` in the header). */
+    storyState: string;
+    /** Prefix joined with an entity's runtime id → that entity's current state. */
+    entityStatePrefix: string;
+    /** Entity attribute carrying the runtime id the prefix is joined with. */
+    entityIdAttribute: string;
+}
 /**
  * Result of a single assertion check
  */
@@ -886,6 +1007,28 @@ export interface RunnerOptions {
     /** Recording path override; defaults to the transcript's `.golden` sibling (D7). */
     goldenPath?: string;
     /**
+     * The transcript's EFFECTIVE config when it runs as a tree node (ADR-302
+     * D8): seeds, channels, events, forces as inherited root-to-here.
+     * Declared-keyed behaviour (session instruments, reseeds) deliberately
+     * does NOT read this: declaring an instrument is an instruction,
+     * inheriting one is not (D8/D9). Absent for flat and chain runs, where
+     * declared IS effective.
+     */
+    resolvedConfig?: TranscriptRunConfig;
+    /**
+     * Capture a {@link WorldSnapshot} after every executed command (ADR-307
+     * R3), and at each tree node's entry (R5's inherited-state header). Off by
+     * default: the IDE's runs always ask for it; a CLI consumer's green stream
+     * stays exactly as small as it was.
+     */
+    captureWorld?: boolean;
+    /**
+     * How the story runtime keys declared states, for the Chord-spelled state
+     * claims (GH #355). The tree runner supplies Chord's keys; absent, the
+     * `story.state` and `[the] name is state` forms are not recognized.
+     */
+    storyStateKeys?: StoryStateKeys;
+    /**
      * This transcript runs as a chain member (one session across transcripts).
      * Later members legally pin no seed; their recordings carry the session
      * seed, and replaying one standalone is refused (D7).
@@ -928,9 +1071,24 @@ export type StoryLoader = (storyPath: string) => Promise<{
 
 ```typescript
 /**
- * Transcript Parser
+ * parser.ts — the `.transcript` grammar: text in, a `Transcript` out.
  *
- * Parses .transcript files into a structured format for testing.
+ * Owns what a transcript may say: the header fields and their validation
+ * (seeds, channels, forces, point-seeds, the auto-assertion policy), the
+ * body's commands, claims, directives, and comments, and the fenced text
+ * blocks. Its matched pair is `serializer.ts`, which writes the same grammar
+ * back canonically (ADR-300 D11/D17); the two ship together, pinned by the
+ * round-trip tests. The `REMOVED_FORMS` table names every control-flow
+ * directive ADR-294 D4 retired, so each is rejected by name rather than
+ * silently ignored.
+ *
+ * Public interface: `parseTranscript`, `parseTranscriptFile`,
+ * `validateTranscript`. Owner context: transcript-tester (testing tooling) —
+ * the transcript grammar's one home; the tree world does not parse this
+ * grammar (ADR-307).
+ *
+ * References: ADR-294 D4 (removed forms), ADR-300 D11/D17 (the serializer
+ * pair), ADR-287 (fenced text blocks), ADR-293 D14 (`seed:`).
  */
 import { Transcript } from './types.js';
 /**
@@ -1044,21 +1202,359 @@ export declare function parseGoldenFile(filePath: string): GoldenRecording;
  * transcript unconditionally (D5) — `--stop-on-failure` only ever controls
  * whether the RUN continues to other transcripts.
  *
- * Public interface: `runTranscript`, `goldenPathFor`. Owner context:
- * transcript-tester (testing tooling).
+ * The per-command machinery both tiers share — instruments, directives,
+ * running a command and evaluating its claims — is the assertion core
+ * (`assertion-core.ts`, `command-core.ts`, ADR-340 D1); this file owns the
+ * two loops and the golden tier.
+ *
+ * Public interface: `runTranscript`, `goldenPathFor`, `divergencePathFor`.
+ * Owner context: transcript-tester (testing tooling).
+ */
+import { Transcript, TranscriptResult, RunnerOptions } from './types.js';
+import { type GameEngine } from './command-core.js';
+/**
+ * Recording path for a transcript (D7/D8). A single-seed transcript records
+ * to its `.golden` sibling; a `seeds:` matrix records one file per seed as
+ * `<name>.<seed>.golden` — each replay diffs only against its own seed's
+ * recording.
+ */
+export declare function goldenPathFor(transcriptPath: string, matrixSeed?: number): string;
+/** Divergence-save path for a transcript (D18). Working artifact, never committed. */
+export declare function divergencePathFor(transcriptPath: string): string;
+/**
+ * Run a single transcript against an engine.
+ *
+ * Tier selection (D2): `--bless` records; an existing recording replays;
+ * otherwise the assertion tier runs. Parse errors never execute (AC-4).
+ */
+export declare function runTranscript(transcript: Transcript, engine: GameEngine, options?: RunnerOptions): Promise<TranscriptResult>;
+```
+
+### assertion-core
+
+```typescript
+/**
+ * assertion-core.ts — the claim language's one evaluator (ADR-340 D1).
+ *
+ * Both testing runtimes — `@sharpee/transcript-tester`'s text transcripts and
+ * `@sharpee/branch-tester`'s tree documents — write the same claims: `[OK]`
+ * output forms, channel claims over structured captures, event claims, and
+ * `[STATE:]` expressions over the live world. This module evaluates them,
+ * once, for both. It also carries the auto-assertion policy's synthesis, the
+ * other half of "what a claim means".
+ *
+ * Browser-safe by construction: no Node import, no package barrel — the
+ * IDE's testing surface bundles this file from source. Per-command execution,
+ * directives, and session instruments are Node-bound and live in
+ * `command-core.ts`.
+ *
+ * Public interface: `checkAssertion`, `checkEventAssertion`,
+ * `checkStateAssertion`, `evaluateStateExpression`, `findEntity`,
+ * `getEntityProperty`, `resolveValue`, `collectStrings`,
+ * `captureEntityTraits`, `normalizeOutput`, `synthesizePolicyAssertions`,
+ * `proseTextLinesOf`; the `WorldModel` seam; every shared type, re-exported.
+ * Owner context: transcript-tester (testing tooling) — the home of the
+ * assertion core; branch-tester imports it and carries no copy (D3).
+ *
+ * References: ADR-340 D1/D3 (one owner, drift is a test), ADR-300 D13
+ * (channel claims), ADR-294 D2 (the auto-assertion boundary), GH #355 (the
+ * Chord-spelled state claim).
+ */
+import type { Assertion, AssertionResult, AutoAssertionPolicy, EntityTraitSnapshot, StoryStateKeys, TestEventInfo } from './types.js';
+export type * from './types.js';
+/**
+ * Minimal interface for world model state queries ([STATE:] assertions).
+ * Structural, so neither tester imports the world-model class.
+ */
+export interface WorldModel {
+    getEntityById?(id: string): any;
+    getEntity?(id: string): any;
+    findEntityByName?(name: string): any;
+    getAllEntities?(): any[];
+    getLocation?(entityId: string): string | undefined;
+    getContents?(containerId: string): any[];
+    getPlayer?(): any;
+    /** World-state lookup — carries the Chord story phase (`story.state` claims). */
+    getStateValue?(key: string): unknown;
+}
+/**
+ * Check one assertion against the turn: its output, its events, the world,
+ * and the structured channel captures.
+ *
+ * @param assertion the parsed claim
+ * @param actualOutput the turn's composed prose, normalized
+ * @param expectedOutput the classic expected-output block, normalized
+ * @param events the turn's captured events (system.* already filtered)
+ * @param world the live world, for `[STATE:]` claims
+ * @param channels channel id → structured emissions this turn (ADR-300 D13)
+ * @param storyStateKeys how the story runtime keys declared states, when the
+ *   session has one (the Chord claim forms); absent → those forms are not
+ *   recognized
+ * @returns the verdict, with a message on a miss
+ */
+export declare function checkAssertion(assertion: Assertion, actualOutput: string, expectedOutput: string, events: TestEventInfo[], world?: WorldModel, channels?: Record<string, unknown[]>, storyStateKeys?: StoryStateKeys): AssertionResult;
+/**
+ * Check an event assertion: the event exists (or does not), at a position or
+ * anywhere, with matching data properties.
+ *
+ * @param assertion the `event-assert` claim
+ * @param events the turn's captured events
+ * @returns the verdict, naming what was found instead on a miss
+ */
+export declare function checkEventAssertion(assertion: Assertion, events: TestEventInfo[]): AssertionResult;
+/**
+ * Check a state assertion against the world model.
+ *
+ * @param assertion the `state-assert` claim
+ * @param world the live world; absent → a named failure, never a pass
+ * @param storyStateKeys the story runtime's state keys, for the Chord forms
+ * @returns the verdict; an evaluator throw is reported, never propagated
+ */
+export declare function checkStateAssertion(assertion: Assertion, world?: WorldModel, storyStateKeys?: StoryStateKeys): AssertionResult;
+/**
+ * Evaluate a state expression against the world model.
+ *
+ * Supports, tried in this order:
+ *   story.state = value / story.state != value        (the story's phase)
+ *   entity.property = value / entity.property != value
+ *   entity.collection contains item / not-contains item
+ *   [the] name is state / [the] name is not state     (a Chord entity's own
+ *     `states:`, spelled the way Chord spells the condition — GH #355;
+ *     `the story is state` reads the story's phase the same way)
+ *
+ * The `story.state` and `[the] name is state` forms read the story runtime's
+ * declared states, keyed as `storyStateKeys` says; with no keys supplied
+ * (a session without a story runtime that declares states) neither form is
+ * recognized and the expression falls through to the entity forms.
+ *
+ * @param expression - The pin text from a tree-document card or a `[STATE:]` line
+ * @param world - The live world after the command ran
+ * @param storyStateKeys - how the story runtime keys declared states, if any
+ * @returns Whether the pin holds, with a details line on a miss
+ */
+export declare function evaluateStateExpression(expression: string, world: WorldModel, storyStateKeys?: StoryStateKeys): {
+    matches: boolean;
+    details?: string;
+};
+/**
+ * Find an entity by name in the world model.
+ *
+ * `player` is a reserved word that always resolves to the player entity via
+ * `world.getPlayer()`, regardless of what the story named it. Otherwise
+ * entities match by name, by id, by their IdentityTrait name, or by any of
+ * their IdentityTrait aliases.
+ *
+ * @param name the token a claim wrote
+ * @param world the live world
+ * @returns the entity, or null when nothing matches
+ */
+export declare function findEntity(name: string, world: WorldModel): any;
+/**
+ * Read a property off an entity. `location`, `contents`, and `inventory` are
+ * spatial and go through the world; anything else reads the entity, then its
+ * traits.
+ *
+ * @param entity the entity `findEntity` resolved
+ * @param property the property name a claim wrote
+ * @param world the live world, for the spatial properties
+ * @returns the value, or undefined when the entity has no such property
+ */
+export declare function getEntityProperty(entity: any, property: string, world?: WorldModel): any;
+/**
+ * Resolve the right-hand side of a claim: an entity name becomes its id;
+ * `null`/`undefined`/`nowhere` become undefined; `true`/`false` become
+ * booleans; anything else stays the literal string.
+ *
+ * @param value the text a claim wrote
+ * @param world the live world, for entity names
+ * @returns the comparable value
+ */
+export declare function resolveValue(value: string, world: WorldModel): any;
+/**
+ * Recursively collect every string value in a data structure into `out`.
+ *
+ * @param value any event payload
+ * @param out the accumulator, appended in encounter order
+ */
+export declare function collectStrings(value: unknown, out: string[]): void;
+/**
+ * Extract entity ids from event data values and capture their trait snapshots.
+ *
+ * @param data the event payload; every string value is tried as an entity id
+ * @param world the live world
+ * @returns one snapshot per entity found with at least one trait
+ */
+export declare function captureEntityTraits(data: Record<string, any>, world: WorldModel): EntityTraitSnapshot[];
+/**
+ * Normalize output for assertion-tier comparison: CRLF → LF, every line
+ * trimmed, leading and trailing blank lines dropped.
+ *
+ * @param output raw captured prose
+ * @returns the comparable form
+ */
+export declare function normalizeOutput(output: string): string;
+/**
+ * Build the assertions an `auto-assertion:` policy writes for a bare command's
+ * first run, from the turn's real output.
+ *
+ * - `all-emitted-text` — `[OK]` + literal block of the whole composed turn
+ *   (ADR-287 exact match): every ordered emission — before text, room name,
+ *   description, list contents, NPC activity — in order, all of them.
+ * - `room-description` / `room-name-and-description` — contains-form built
+ *   from the turn's `room-name`/`room-description` STRUCTURED channel
+ *   captures (churn survival is the point of choosing less than all-text;
+ *   the flattened capture is a JSON rendering, so the text is read out of
+ *   the structured values). A turn that emitted neither chosen channel gets
+ *   `[SKIP]` — under a policy, "nothing of what I assert on was said" is a
+ *   deliberate skip, and the file then distinguishes it from a command
+ *   still awaiting its first run.
+ *
+ * @param policy the story's declared policy
+ * @param actualOutput the turn's composed prose, as captured
+ * @param channelValues the turn's structured channel captures (bootstrap
+ *   auto-captures the two room channels whenever a room policy is declared)
+ * @returns the assertions to push onto the command — never empty
+ */
+export declare function synthesizePolicyAssertions(policy: AutoAssertionPolicy, actualOutput: string, channelValues?: Record<string, unknown[]>): Assertion[];
+/**
+ * Extract the player-visible text of a prose channel's structured capture,
+ * one line per captured entry. A prose entry is `{ content: [...] }` where
+ * content items are plain strings or decorations (`{ className, content }`,
+ * ADR-174) — decorations flatten to their inner text, exactly what a
+ * `contains` fragment should hold. Plain strings pass through, so unit
+ * stubs and simple channels need no wrapping.
+ *
+ * @param values one channel's structured emissions this turn
+ * @returns the non-empty trimmed lines, in order
+ */
+export declare function proseTextLinesOf(values: unknown[] | undefined): string[];
+```
+
+### channel-assert
+
+```typescript
+/**
+ * channel-assert.ts — evaluating channel assertions against structured values
+ * (ADR-300 D13, D14).
+ *
+ * v1 could only substring-match a flattened rendering of a channel, so a test
+ * about the banner's title had to match text that also contained the version
+ * lines and the credits. D7 made a channel's value real structure; this is the
+ * assertion tier catching up to it.
+ *
+ * Three things are load-bearing here and none is obvious:
+ *
+ *  - **A path onto a list matches any element.** `banner.credits` has no index
+ *    a test could usefully name, and asserting on position would break every
+ *    time an author adds a name.
+ *  - **Type mismatches fail by name.** `is 5` against a channel carrying the
+ *    string `"5"` is a wrong-type failure, not a match. Coercing would make the
+ *    assertion vocabulary weaker than the values it reads.
+ *  - **Absence is assertable and distinct from emptiness.** A sparse channel
+ *    that stayed quiet is a fact worth pinning; conflating it with a channel
+ *    that emitted `""` hides a cue that stopped firing.
+ *
+ * Public interface: `resolveChannelPath`, `checkChannelAssertion`,
+ * `channelsReferencedBy`.
+ * Owner context: transcript-tester (testing tooling) — part of the assertion
+ * core both testing runtimes evaluate their claims with (ADR-340 D1).
+ *
+ * @see ADR-300 — Addressable Channels — D13, D14
+ */
+import { Assertion, AssertionResult } from './types.js';
+/** Outcome of walking a dotted path into a channel's value. */
+export interface PathResolution {
+    /** True when the path landed somewhere — even on `null`. */
+    readonly found: boolean;
+    /**
+     * Every value the path resolved to. More than one when a segment crossed a
+     * list: `banner.credits` yields each credit, so a `contains` matches if any
+     * element does.
+     */
+    readonly values: unknown[];
+}
+/**
+ * Walk a dotted path into a channel's emitted values (ADR-300 D13).
+ *
+ * `emissions` is what the channel emitted this turn, in order — one entry per
+ * emission, so an append-mode channel that fired twice has two. An empty path
+ * resolves to the emissions themselves.
+ *
+ * Crossing a list fans out rather than failing: every element is carried
+ * forward, and a later segment applies to each.
+ */
+export declare function resolveChannelPath(emissions: unknown[], path: readonly string[]): PathResolution;
+/**
+ * Evaluate one channel assertion against the turn's structured captures.
+ *
+ * @param assertion the assertion, already parsed
+ * @param captured channel id → that channel's emissions this turn. A channel
+ *   absent from the map emitted nothing.
+ */
+export declare function checkChannelAssertion(assertion: Assertion, captured: Record<string, unknown[]> | undefined): AssertionResult;
+/**
+ * Every channel id a transcript's assertions read (ADR-300 D14).
+ *
+ * This is the capture set. A transcript does not separately declare which
+ * channels to record — what it asserts about is what gets captured, so a
+ * `channels:` header cannot drift out of step with the assertions beneath it,
+ * and an assertion about an undeclared channel stops being an error about
+ * bookkeeping.
+ */
+export declare function channelsReferencedBy(assertions: Iterable<Assertion>): string[];
+```
+
+### command-core
+
+```typescript
+/**
+ * command-core.ts — per-command execution shared by both testing runtimes
+ * (ADR-340 D1).
+ *
+ * The transcript runner and the tree runner each own their loop (which
+ * commands run, in what order, how the opening is checked) and share
+ * everything one command needs: session instruments from the header
+ * (ADR-293 Phase C), directives (`$save`/`$restore`/test commands), running a
+ * command and evaluating its claims through `assertion-core`, and the
+ * synthetic results a failure produces. Node-bound: `$save`/`$restore` write
+ * files, so this module is reached through the package barrel, never from
+ * the browser.
+ *
+ * Public interface: `runCommand`, `executeDirective`,
+ * `configureRandomInstruments`, `unfiredForceError`, `forcesFailResult`,
+ * `directiveFailResult`, `errorResult`, `endingFrom`, `worldEntityRef`,
+ * `captureWorldSnapshot`; the `GameEngine` and `PlatformRandomService`
+ * seams.
+ * Owner context: transcript-tester (testing tooling) — the home of the
+ * assertion core; branch-tester imports it and carries no copy (D3).
+ *
+ * References: ADR-340 D1/D3, ADR-293 Phase C (instruments), ADR-294 D2/D5
+ * (the assertion boundary, failed directives), ADR-307 R3/R4/R9 (the tree
+ * world's turn, ending, and world snapshot).
  */
 import { type RandomForceSpec, type RandomForceStatus } from '@sharpee/core';
-import { Transcript, AutoAssertionPolicy, TranscriptResult, RunnerOptions } from './types.js';
+import type { Transcript, TranscriptCommand, Directive, AutoAssertionPolicy, CommandResult, TranscriptResult, RunnerOptions, WorldEntityRef, WorldSnapshot } from './types.js';
+import { type WorldModel } from './assertion-core.js';
 /**
  * Interface for the game engine wrapper the CLIs hand the runner.
  */
-interface GameEngine {
+export interface GameEngine {
     executeCommand(input: string): Promise<string> | string;
     getOutput?(): string;
     lastEvents?: Array<{
         type: string;
         data?: any;
     }>;
+    /**
+     * The engine's own record of the last executed turn — bootstrap's
+     * `LoadedGame` sets it after every `executeCommand`. The runner reads only
+     * `turn`: the 1-based counter the command executed as, which is engine
+     * knowledge (meta commands share a turn, refused actions consume one) and
+     * rides each `CommandResult` for the IDE's turn-budget view (R4).
+     */
+    lastTurnResult?: {
+        turn: number;
+    } | null;
     /**
      * The story's `auto-assertion:` policy (Phase 6e, #253), read off the
      * loaded game — bootstrap sets it from `story.config.autoAssertion`.
@@ -1075,11 +1571,15 @@ interface GameEngine {
     lastChannels?: Record<string, string[]>;
     /**
      * The same emissions as `lastChannels`, kept as their STRUCTURED values
-     * (ADR-300 D13). The auto-assertion policy reads its room-channel text
-     * out of these — the flattened line is a JSON rendering, unusable as a
-     * `contains` fragment.
+     * (ADR-300 D13). A dotted-path assertion (`banner.title`) reads these; a
+     * flattened-line consumer reads `lastChannels`. A flattened line cannot
+     * be un-flattened, which is why both exist.
      */
     lastChannelValues?: Record<string, unknown[]>;
+    /** Channel values captured during BOOT (banner, prologue) — the opening's
+     *  claims read these; per-command resets never see them (bootstrap D-note,
+     *  David 2026-08-09). */
+    bootChannelValues?: Record<string, unknown[]>;
     world?: WorldModel;
     /**
      * The underlying platform engine. $save/$restore go through its real
@@ -1092,10 +1592,9 @@ interface GameEngine {
         /**
          * Registration MERGES on the real engine and every hook is optional
          * (issue #229), so this declares the loosest shape that still says what
-         * the tester uses. Naming both as required — which it did until
-         * 2026-08-05 — made the real `(hooks: Partial<ISaveRestoreHooks>) => void`
-         * unassignable to it in both directions, since `unknown` is not an
-         * `ISaveData` and a required member is not a `Partial` one.
+         * the tester uses. It compiles either way here — this seam passes through
+         * a cast — but the declaration was making a claim about the engine that
+         * stopped being true, and v1 broke on exactly that.
          */
         registerSaveRestoreHooks(hooks: {
             onSaveRequested?(data: any): Promise<void>;
@@ -1114,41 +1613,146 @@ interface GameEngine {
  * The slice of `EngineRandomService` the runner drives (ADR-293 D8/D9/D11).
  * Structural so the tester never imports the engine class itself.
  */
-interface PlatformRandomService {
+export interface PlatformRandomService {
     loadForces(specs: readonly RandomForceSpec[]): void;
     clearForces(): void;
     getForceReport(): RandomForceStatus[];
     setPointSeedOverrides(overrides: Readonly<Record<string, number>>): void;
+    /**
+     * Drop the named points' stream continuity (ADR-302 D5/D8).
+     *
+     * A save carries the parent's stream states and `restore` adopts them, which
+     * is what a save is for. A branch child wants the parent's WORLD without the
+     * parent's luck, and this is how it says so: `save → restore → reseed`.
+     * Without it, a child's `seed:` or `point-seed:` is silently inert for every
+     * point that had already drawn — which is every point worth varying, since
+     * you branch after the interesting thing has started.
+     */
+    reseedStreams(points: 'all' | readonly string[]): void;
 }
 /**
- * Minimal interface for world model state queries ([STATE:] assertions).
- */
-interface WorldModel {
-    getEntityById?(id: string): any;
-    getEntity?(id: string): any;
-    findEntityByName?(name: string): any;
-    getAllEntities?(): any[];
-    getLocation?(entityId: string): string | undefined;
-    getContents?(containerId: string): any[];
-    getPlayer?(): any;
-}
-/**
- * Recording path for a transcript (D7/D8). A single-seed transcript records
- * to its `.golden` sibling; a `seeds:` matrix records one file per seed as
- * `<name>.<seed>.golden` — each replay diffs only against its own seed's
- * recording.
- */
-export declare function goldenPathFor(transcriptPath: string, matrixSeed?: number): string;
-/** Divergence-save path for a transcript (D18). Working artifact, never committed. */
-export declare function divergencePathFor(transcriptPath: string): string;
-/**
- * Run a single transcript against an engine.
+ * Configure the engine's session instruments from the transcript header:
+ * reset then load forces (D8/D9), apply point-seed overrides (D11), and
+ * enable trace — the runner is an opted-in surface (D16). Returns an error
+ * message on failure, null on success. Always resets instruments even for a
+ * transcript declaring none, so a chain member never inherits the previous
+ * member's forces.
  *
- * Tier selection (D2): `--bless` records; an existing recording replays;
- * otherwise the assertion tier runs. Parse errors never execute (AC-4).
+ * @param transcript the transcript whose header declares the instruments
+ * @param engine the engine wrapper; its platform engine owns the streams
+ * @returns an error message, or null on success
  */
-export declare function runTranscript(transcript: Transcript, engine: GameEngine, options?: RunnerOptions): Promise<TranscriptResult>;
-export {};
+export declare function configureRandomInstruments(transcript: Transcript, engine: GameEngine): string | null;
+/**
+ * The unfired-`once`-force check (D9 / AC-9): every transcript force is mode
+ * `once` and must have fired by end of run. Returns the error message naming
+ * each unfired force, or null when all fired (or none were declared).
+ *
+ * @param transcript the transcript that declared the forces
+ * @param engine the engine wrapper whose platform engine reports them
+ * @returns the error message, or null
+ */
+export declare function unfiredForceError(transcript: Transcript, engine: GameEngine): string | null;
+/**
+ * A failed synthetic result for the unfired-force check (D9).
+ *
+ * @param transcript the transcript, for the `forces:` line number
+ * @param error the unfired-force message
+ * @returns a command result carrying the error, never passed
+ */
+export declare function forcesFailResult(transcript: Transcript, error: string): CommandResult;
+/**
+ * Execute one directive. GOAL markers are structural and always succeed;
+ * `$save`/`$restore` go through the platform engine's real save format
+ * (ADR-293 D7); `test-command` needs ext-testing.
+ *
+ * @param directive the parsed directive
+ * @param engine the engine wrapper
+ * @param options saves directory, testing extension, verbosity
+ * @returns an error message on failure, null on success
+ */
+export declare function executeDirective(directive: Directive, engine: GameEngine, options: RunnerOptions): Promise<string | null>;
+/**
+ * A failed synthetic result for a directive (D5 — recorded, never swallowed).
+ *
+ * @param directive the directive that failed
+ * @param error its error message
+ * @returns a command result labelled with the directive, never passed
+ */
+export declare function directiveFailResult(directive: Directive, error: string): CommandResult;
+/**
+ * An error-status result: the transcript never (fully) ran.
+ *
+ * @param transcript the transcript
+ * @param startTime when the run began, for the duration
+ * @param message what stopped it
+ * @param tier the golden tier's tier, when it is the caller (ADR-294 D2)
+ * @param goldenPath the recording path, when the golden tier is the caller
+ * @returns a `status: 'error'` result with zero counts
+ */
+export declare function errorResult(transcript: Transcript, startTime: number, message: string, tier?: 'golden' | 'assertion', goldenPath?: string): TranscriptResult;
+/**
+ * Run one command against the engine and evaluate its assertions.
+ *
+ * `[SKIP]`/`[TODO]` commands still execute (ADR-294 D2: output not asserted,
+ * command still run). The turn number, the story ending, and — under
+ * `captureWorld` — a world snapshot ride the result for the tree world
+ * (ADR-307 R3/R4/R9); a transcript-world caller never reads them.
+ *
+ * @param command the command to run
+ * @param engine the engine wrapper
+ * @param options runner options; `storyStateKeys` reaches the state evaluator
+ * @param synthesize the auto-assertion policy, when the command arrived bare
+ * @returns the command's result
+ */
+export declare function runCommand(command: TranscriptCommand, engine: GameEngine, options: RunnerOptions, 
+/**
+ * Phase 6e (#253): the command arrived bare and the story declares this
+ * `auto-assertion:` policy — after execution, synthesize the policy's
+ * assertions from the turn's REAL output, push them onto the command, and
+ * evaluate them through the normal loop.
+ */
+synthesize?: AutoAssertionPolicy): Promise<CommandResult>;
+/**
+ * The story ending the engine announced during the command that just executed,
+ * read off the same per-command event capture both tiers already consume.
+ *
+ * Exactly ONE place maps `game.ended` to `CommandResult.ending` (R9), so the
+ * exclusions live here and nowhere else: `restart` is not an ending — the
+ * engine stops but the harness reboots the story within the same command;
+ * `abort` is not an ending — it is a runtime failure the result already
+ * carries as `error`. Returns undefined when the story did not end this turn
+ * or the engine seam does not expose events.
+ *
+ * @param engine the engine wrapper, after a command ran
+ * @returns the ending, or undefined
+ */
+export declare function endingFrom(engine: GameEngine): CommandResult['ending'];
+/**
+ * One entity as a snapshot names it (R3): the display name, and the single
+ * whitespace-free token the `[STATE:]` evaluator's own `findEntity` resolves
+ * back to this entity — an alias when one qualifies, the identity name or the
+ * entity's own name when they are single tokens, else the id (which always
+ * resolves). The runner picks the token because only the runner can vouch for
+ * the round-trip; a consumer that emitted `name` instead would trip the
+ * single-token parse rule R3 exists to bury.
+ *
+ * @param entity a world entity
+ * @returns its display name and its round-trippable token
+ */
+export declare function worldEntityRef(entity: any): WorldEntityRef;
+/**
+ * The world as it stands right now (R3/R5): player location and inventory,
+ * through the same structural seam the `[STATE:]` evaluator reads. Undefined
+ * when the seam has no world or no player — absent, never guessed, like every
+ * other optional fact on the wire.
+ *
+ * @param engine anything with a `world` seam
+ * @returns the snapshot, or undefined
+ */
+export declare function captureWorldSnapshot(engine: {
+    world?: WorldModel;
+}): WorldSnapshot | undefined;
 ```
 
 ### watch
@@ -1239,7 +1843,9 @@ export declare function startWatch(config: WatchConfig, io: WatchRunIO, policy: 
  */
 import { TranscriptResult, TestRunResult, CommandResult } from './types.js';
 /**
- * Report options
+ * Report options — the parameter type of the barrel's `reportCommandResult`
+ * and `reportTranscript`, kept and barrel-exported for that reason
+ * (ADR-340 D4).
  */
 export interface ReporterOptions {
     verbose?: boolean;
@@ -1316,7 +1922,9 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   `elapsedMs` clock — in one place so no producer can get them wrong.
  *   Emission is immediate: every method writes as it is called, which is what
  *   lets the IDE's Testing tab fill while the run is still going.
- * Public interface: `RunEventStream`.
+ * Public interface: `RunEventStream`, `ndjsonEventLine`, and the three
+ * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
+ * they are the parameter types of public methods; the barrel exports them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *

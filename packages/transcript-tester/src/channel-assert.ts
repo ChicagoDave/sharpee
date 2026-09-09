@@ -21,7 +21,8 @@
  *
  * Public interface: `resolveChannelPath`, `checkChannelAssertion`,
  * `channelsReferencedBy`.
- * Owner context: branch-tester (testing tooling).
+ * Owner context: transcript-tester (testing tooling) — part of the assertion
+ * core both testing runtimes evaluate their claims with (ADR-340 D1).
  *
  * @see ADR-300 — Addressable Channels — D13, D14
  */

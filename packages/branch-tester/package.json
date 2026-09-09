@@ -19,6 +19,7 @@
     "@sharpee/world-model": "workspace:*",
     "@sharpee/stdlib": "workspace:*",
     "@sharpee/story-loader": "workspace:*",
+    "@sharpee/transcript-tester": "workspace:*",
     "@sharpee/lang-en-us": "workspace:*",
     "@sharpee/parser-en-us": "workspace:*",
     "@sharpee/channel-service": "workspace:*",

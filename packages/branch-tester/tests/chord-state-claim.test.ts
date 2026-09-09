@@ -15,7 +15,12 @@
 import { describe, expect, it } from 'vitest';
 import { IdentityTrait, WorldModel } from '@sharpee/world-model';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
-import { evaluateStateExpression } from '../src/runner.js';
+import { evaluateStateExpression as evaluateCore } from '@sharpee/transcript-tester';
+import { CHORD_STORY_STATE_KEYS } from '../src/runner.js';
+
+/** The core evaluator under this package's keys — what the tree runner passes. */
+const evaluateStateExpression = (expression: string, world: WorldModel) =>
+  evaluateCore(expression, world, CHORD_STORY_STATE_KEYS);
 
 /** A world the loader could have built: a stamped lamp in `dark`, a stamped partner in `waiting`, the story `calm`. */
 function ballroom(): WorldModel {

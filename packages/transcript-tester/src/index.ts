@@ -25,6 +25,45 @@ export { serializeGolden, parseGolden, parseGoldenFile, GoldenFormatError } from
 // Runner
 export { runTranscript, goldenPathFor, divergencePathFor } from './runner.js';
 
+// The assertion core (ADR-340 D1): the claim language's one evaluator and
+// the per-command execution both testing runtimes share. `assertion-core`
+// is also a package subpath, browser-safe, for the IDE's testing surface.
+export {
+  checkAssertion,
+  checkEventAssertion,
+  checkStateAssertion,
+  evaluateStateExpression,
+  findEntity,
+  getEntityProperty,
+  resolveValue,
+  collectStrings,
+  captureEntityTraits,
+  normalizeOutput,
+  synthesizePolicyAssertions,
+  proseTextLinesOf,
+  type WorldModel,
+} from './assertion-core.js';
+export {
+  resolveChannelPath,
+  checkChannelAssertion,
+  channelsReferencedBy,
+  type PathResolution,
+} from './channel-assert.js';
+export {
+  runCommand,
+  executeDirective,
+  configureRandomInstruments,
+  unfiredForceError,
+  forcesFailResult,
+  directiveFailResult,
+  errorResult,
+  endingFrom,
+  worldEntityRef,
+  captureWorldSnapshot,
+  type GameEngine,
+  type PlatformRandomService,
+} from './command-core.js';
+
 // Watch mode (ADR-294 D14)
 export { classifyChange, BlessPolicy, runCycle, startWatch } from './watch.js';
 export type { ChangeTarget, WatchRunIO, WatchConfig } from './watch.js';
@@ -37,11 +76,19 @@ export {
   reportTranscriptEnd,
   reportTestRun,
   getExitCode,
+  type ReporterOptions,
 } from './reporter.js';
 
 // The run-event stream (ADR-277 D1 as amended 2026-08-06): events emitted as
 // the run happens, so a consumer sees a transcript start before it runs.
-export { RunEventStream, ndjsonEventLine, type RunEventWriter } from './run-event-stream.js';
+export {
+  RunEventStream,
+  ndjsonEventLine,
+  type RunEventWriter,
+  type StreamableCommandResult,
+  type StreamableRunResult,
+  type StreamableTranscriptResult,
+} from './run-event-stream.js';
 
 // Aggregation + the DEPRECATED `test --json` record builders (ADR-277 D1). The
 // builders are superseded by RunEventStream above; `aggregateTestRun` is not.

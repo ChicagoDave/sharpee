@@ -1,7 +1,22 @@
 /**
- * Transcript Parser
+ * parser.ts — the `.transcript` grammar: text in, a `Transcript` out.
  *
- * Parses .transcript files into a structured format for testing.
+ * Owns what a transcript may say: the header fields and their validation
+ * (seeds, channels, forces, point-seeds, the auto-assertion policy), the
+ * body's commands, claims, directives, and comments, and the fenced text
+ * blocks. Its matched pair is `serializer.ts`, which writes the same grammar
+ * back canonically (ADR-300 D11/D17); the two ship together, pinned by the
+ * round-trip tests. The `REMOVED_FORMS` table names every control-flow
+ * directive ADR-294 D4 retired, so each is rejected by name rather than
+ * silently ignored.
+ *
+ * Public interface: `parseTranscript`, `parseTranscriptFile`,
+ * `validateTranscript`. Owner context: transcript-tester (testing tooling) —
+ * the transcript grammar's one home; the tree world does not parse this
+ * grammar (ADR-307).
+ *
+ * References: ADR-294 D4 (removed forms), ADR-300 D11/D17 (the serializer
+ * pair), ADR-287 (fenced text blocks), ADR-293 D14 (`seed:`).
  */
 
 import * as fs from 'fs';

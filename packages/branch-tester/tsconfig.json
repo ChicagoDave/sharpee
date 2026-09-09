@@ -18,6 +18,7 @@
     { "path": "../stdlib" },
     { "path": "../story-loader" },
     { "path": "../text-blocks" },
+    { "path": "../transcript-tester" },
     { "path": "../world-model" }
   ]
 }

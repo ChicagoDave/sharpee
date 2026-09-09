@@ -52,7 +52,8 @@ import {
   TranscriptResult,
   RunnerOptions,
 } from './types.js';
-import { runTranscript, captureWorldSnapshot } from './runner.js';
+import { captureWorldSnapshot } from '@sharpee/transcript-tester';
+import { runTranscript } from './runner.js';
 import {
   TreeCard,
   TreeDocument,

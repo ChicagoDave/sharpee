@@ -1,7 +1,6 @@
 "use strict";
 (() => {
-  // packages/branch-tester/src/auto-assertion.ts
-  var DEFAULT_AUTO_ASSERTION_POLICY = "room-name-and-description";
+  // packages/transcript-tester/src/assertion-core.ts
   function synthesizePolicyAssertions(policy2, actualOutput, channelValues) {
     if (policy2 === "all-emitted-text") {
       return [{ type: "ok", block: actualOutput.replace(/\s+$/, "").split("\n") }];
@@ -18,6 +17,20 @@
     }
     return assertions.length > 0 ? assertions : [{ type: "skip" }];
   }
+  function proseTextLinesOf(values) {
+    const textOf = (v) => {
+      if (typeof v === "string") return v;
+      if (Array.isArray(v)) return v.map(textOf).join("");
+      if (v !== null && typeof v === "object" && "content" in v) {
+        return textOf(v.content);
+      }
+      return "";
+    };
+    return (values ?? []).map(textOf).map((s) => s.trim()).filter((s) => s.length > 0);
+  }
+
+  // packages/branch-tester/src/auto-assertion.ts
+  var DEFAULT_AUTO_ASSERTION_POLICY = "room-name-and-description";
   function synthesizeOpeningAssertions(policy2, bootChannelValues) {
     if (policy2 === void 0 || bootChannelValues === void 0) return [];
     const assertions = [];
@@ -50,17 +63,6 @@
       }
     }
     return assertions;
-  }
-  function proseTextLinesOf(values) {
-    const textOf = (v) => {
-      if (typeof v === "string") return v;
-      if (Array.isArray(v)) return v.map(textOf).join("");
-      if (v !== null && typeof v === "object" && "content" in v) {
-        return textOf(v.content);
-      }
-      return "";
-    };
-    return (values ?? []).map(textOf).map((s) => s.trim()).filter((s) => s.length > 0);
   }
 
   // packages/branch-tester/src/tree-document.ts

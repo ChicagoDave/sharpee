@@ -11,7 +11,8 @@
  * claims deserialize into the same shape) — the retired transcript-tag
  * grammar no longer exists to parse.
  *
- * Owner context: branch-tester test suite (tooling).
+ * Owner context: transcript-tester test suite (tooling) — moved with the
+ * module when the assertion core took one owner (ADR-340 D1).
  */
 import { describe, expect, it } from 'vitest';
 import {

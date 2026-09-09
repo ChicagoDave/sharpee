@@ -1,0 +1,31 @@
+{
+  "description": "Functions of the assertion core (ADR-340 D1/D3). Each is defined once, in @sharpee/transcript-tester; branch-tester imports them and never redefines one. A second copy of any name here fails assertion-core-ownership.test.ts by name.",
+  "names": [
+    "aggregateTestRun",
+    "captureEntityTraits",
+    "captureWorldSnapshot",
+    "channelsReferencedBy",
+    "checkAssertion",
+    "checkChannelAssertion",
+    "checkEventAssertion",
+    "checkStateAssertion",
+    "collectStrings",
+    "configureRandomInstruments",
+    "directiveFailResult",
+    "endingFrom",
+    "errorResult",
+    "evaluateStateExpression",
+    "executeDirective",
+    "findEntity",
+    "forcesFailResult",
+    "getEntityProperty",
+    "normalizeOutput",
+    "proseTextLinesOf",
+    "resolveChannelPath",
+    "resolveValue",
+    "runCommand",
+    "synthesizePolicyAssertions",
+    "unfiredForceError",
+    "worldEntityRef"
+  ]
+}
