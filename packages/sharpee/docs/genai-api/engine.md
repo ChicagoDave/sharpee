@@ -1571,18 +1571,31 @@ export declare class GameEngine {
     private eventProcessor;
     private platformEvents;
     private actionRegistry;
-    private textService?;
+    private textService;
     private turnEvents;
     private running;
     private story?;
-    private languageProvider?;
-    private parser?;
+    private languageProvider;
+    private parser;
     private eventListeners;
     /** Accumulated across every `registerSaveRestoreHooks` call, hence Partial. */
     private saveRestoreHooks?;
     private eventSource;
     private systemEventSource;
+    /**
+     * Set while a `listener_error` report is being delivered. The report
+     * goes out through `emit('event')`, so a listener that throws on every
+     * event would otherwise recurse without end (see `reportListenerError`).
+     */
+    private reportingListenerError;
     private pendingPlatformOps;
+    /**
+     * Sequence for platform event ids — `platform_<clock>_<n>`, the same
+     * shape `@sharpee/core` gives system events. A counter, not a random
+     * draw: ids are never rendered, and a draw would move every stream
+     * behind it.
+     */
+    private platformEventSequence;
     /**
      * The incomplete command a clarification question is holding open (GH
      * #318, ADR-225 as amended): consumed by the very next input, answer or
@@ -1624,6 +1637,7 @@ export declare class GameEngine {
     private inputModeHandlers;
     private vocabularyManager;
     private saveRestoreService;
+    /** `game.initialized` is emitted once per engine, on the first `start()`. */
     private hasEmittedInitialized;
     /**
      * Channel-I/O service (ADR-163 §13, §14). Constructed in `start()`
@@ -1663,11 +1677,11 @@ export declare class GameEngine {
     /**
      * Get the current parser
      */
-    getParser(): Parser | undefined;
+    getParser(): Parser;
     /**
      * Get the current language provider
      */
-    getLanguageProvider(): LanguageProvider | undefined;
+    getLanguageProvider(): LanguageProvider;
     /**
      * Returns a serializable snapshot of the engine's internal state for
      * tooling (VS Code extension, CLI --world-json). The engine owns the
@@ -1870,7 +1884,7 @@ export declare class GameEngine {
     /**
      * Get the text service
      */
-    getTextService(): IProsePipeline | undefined;
+    getTextService(): IProsePipeline;
     /**
      * Set a custom text service
      */
@@ -1881,7 +1895,7 @@ export declare class GameEngine {
      * Stories call this from `onEngineReady` to stage slot contributions (room
      * occupants, object detail clauses) into each turn's slot store before its
      * messages realize. The contributor runs once per turn at the top of the prose
-     * pipeline's `processTurn`. No-op if the text service is not yet constructed.
+     * pipeline's `processTurn`.
      *
      * @param contributor the slot contributor to register.
      */
@@ -1894,7 +1908,7 @@ export declare class GameEngine {
      * turn in the staging pass, before story-registered contributors, and its
      * content contributes to `slotKey` while the gate holds. Keyed
      * `(slotKey, owner)`, last-wins; nothing is serialized — re-register every
-     * story load. No-op if the text service is not yet constructed.
+     * story load.
      *
      * @param entry the slot entry to register (or replace).
      */
@@ -2024,6 +2038,19 @@ export declare class GameEngine {
      * Emit an event to listeners
      */
     private emit;
+    /**
+     * Report one of the facade's own failures as a `system.<type>` event of
+     * severity `error` on the system event source, which re-emits it to
+     * `event` listeners. Data carries the error's message and stack.
+     */
+    private reportError;
+    /**
+     * Report a listener that threw, as `system.listener_error` naming the
+     * event it was listening for. The report is delivered through `emit`
+     * itself, so a failure raised while one is in flight is dropped rather
+     * than reported — that is the case of a listener throwing on the report.
+     */
+    private reportListenerError;
     /**
      * Add event listener
      */

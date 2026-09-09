@@ -20,7 +20,6 @@ import {
   type ActionRegistry,
   StandardActionRegistry,
   standardActions,
-  vocabularyRegistry,
   type Parser,
   ParserFactory,
   CommandHistoryCapabilitySchema,
@@ -128,6 +127,23 @@ export const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities = {
 };
 
 /**
+ * The subsystem the facade reports its own failures under. Not in
+ * `Subsystems` (`@sharpee/core`), whose table names the pipeline stages;
+ * promoting it there is a one-line change if a second reporter appears.
+ */
+const ENGINE_SUBSYSTEM = 'engine';
+
+/**
+ * The serializable shape of a caught error, for a system event's data.
+ * Anything thrown that is not an `Error` is carried as its string form.
+ */
+function describeError(error: unknown): { message: string; stack?: string } {
+  return error instanceof Error
+    ? { message: error.message, stack: error.stack }
+    : { message: String(error) };
+}
+
+/**
  * Main game engine
  */
 export class GameEngine {
@@ -137,22 +153,35 @@ export class GameEngine {
   private sessionMoves: number = 0;
   private context: GameContext;
   private config: EngineConfig;
-  private commandExecutor!: CommandExecutor;
+  private commandExecutor: CommandExecutor;
   private eventProcessor: EventProcessor;
   private platformEvents: ISemanticEventSource;
   private actionRegistry: StandardActionRegistry;
-  private textService?: IProsePipeline;
+  private textService: IProsePipeline;
   private turnEvents = new Map<number, ISemanticEvent[]>();
   private running = false;
   private story?: Story;
-  private languageProvider?: LanguageProvider;
-  private parser?: Parser;
+  private languageProvider: LanguageProvider;
+  private parser: Parser;
   private eventListeners = new Map<GameEngineEventName, Set<(...args: any[]) => void>>();
   /** Accumulated across every `registerSaveRestoreHooks` call, hence Partial. */
   private saveRestoreHooks?: Partial<ISaveRestoreHooks>;
   private eventSource = createSemanticEventSource();
   private systemEventSource: IGenericEventSource<ISystemEvent>;
+  /**
+   * Set while a `listener_error` report is being delivered. The report
+   * goes out through `emit('event')`, so a listener that throws on every
+   * event would otherwise recurse without end (see `reportListenerError`).
+   */
+  private reportingListenerError = false;
   private pendingPlatformOps: IPlatformEvent[] = [];
+  /**
+   * Sequence for platform event ids — `platform_<clock>_<n>`, the same
+   * shape `@sharpee/core` gives system events. A counter, not a random
+   * draw: ids are never rendered, and a draw would move every stream
+   * behind it.
+   */
+  private platformEventSequence = 0;
 
   /**
    * The incomplete command a clarification question is holding open (GH
@@ -198,11 +227,10 @@ export class GameEngine {
   // Alternate input mode handlers (ADR-137)
   private inputModeHandlers = new Map<string, InputModeHandler>();
 
-  // Extracted services (Phase 4 remediation)
   private vocabularyManager: VocabularyManager;
   private saveRestoreService: SaveRestoreService;
 
-  // Phase 5: Track if initialized event has been emitted
+  /** `game.initialized` is emitted once per engine, on the first `start()`. */
   private hasEmittedInitialized = false;
 
   /**
@@ -309,7 +337,6 @@ export class GameEngine {
     this.randomService = new EngineRandomService(this.masterSeed);
     this.narrativeSettings = buildNarrativeSettings(); // Default: 2nd person
 
-    // Initialize extracted services (Phase 4 remediation)
     this.vocabularyManager = createVocabularyManager();
     this.saveRestoreService = createSaveRestoreService({
       maxSnapshots: this.config.maxUndoSnapshots ?? 10
@@ -324,7 +351,7 @@ export class GameEngine {
     this.actionRegistry.setLanguageProvider(this.languageProvider);
     
     // Wire parser with platform events if supported
-    if (this.parser && hasPlatformEventEmitter(this.parser)) {
+    if (hasPlatformEventEmitter(this.parser)) {
       this.parser.setPlatformEventEmitter((event) => {
         this.platformEvents.addEvent(event);
       });
@@ -358,8 +385,8 @@ export class GameEngine {
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries
 
-    // Note: game.initialized event is emitted in start() to avoid race condition
-    // (Phase 5 remediation - removed setTimeout)
+    // `game.initialized` is emitted from `start()`, not here: a listener
+    // subscribes after construction, so an event emitted now has no audience.
   }
 
   /**
@@ -412,14 +439,14 @@ export class GameEngine {
   /**
    * Get the current parser
    */
-  getParser(): Parser | undefined {
+  getParser(): Parser {
     return this.parser;
   }
 
   /**
    * Get the current language provider
    */
-  getLanguageProvider(): LanguageProvider | undefined {
+  getLanguageProvider(): LanguageProvider {
     return this.languageProvider;
   }
 
@@ -449,22 +476,6 @@ export class GameEngine {
   start(options?: { capabilities?: ClientCapabilities }): void {
     if (this.running) {
       throw new Error('Engine is already running');
-    }
-
-    if (!this.parser) {
-      throw new Error('Engine must have a parser before starting');
-    }
-
-    if (!this.languageProvider) {
-      throw new Error('Engine must have a language provider before starting');
-    }
-
-    if (!this.textService) {
-      throw new Error('Engine must have a text service before starting');
-    }
-
-    if (!this.commandExecutor) {
-      throw new Error('Engine must have a command executor before starting');
     }
 
     // Channel-I/O bootstrap (ADR-163 §13, §14):
@@ -497,7 +508,7 @@ export class GameEngine {
     this.channelService = new ChannelService(channelRegistry, this.clientCapabilities);
     this.emit('channel:manifest', this.channelService.buildManifest());
 
-    // Emit initialized event once (Phase 5 - moved from constructor to avoid race condition)
+    // Emit initialized event once, on the first start() (see the constructor)
     if (!this.hasEmittedInitialized) {
       const initializedEvent = createGameInitializedEvent();
       this.emitGameEvent(initializedEvent);
@@ -575,7 +586,7 @@ export class GameEngine {
         ? prologue
         : prologue.kind === 'literal'
           ? prologue.value
-          : (this.textService?.renderPhraseText?.(prologue.value) ?? '');
+          : (this.textService.renderPhraseText?.(prologue.value) ?? '');
     if (text) {
       this.world.updateCapability('storyInfo', { prologue: text });
     }
@@ -614,25 +625,21 @@ export class GameEngine {
       return;
     }
     
-    // Emit game ending event
-    const endingEvent = createGameEndingEvent(reason || 'quit', {
-      startTime: this.sessionStartTime,
-      endTime: Date.now(),
-      turns: this.sessionTurns,
-      moves: this.sessionMoves
-    });
-    this.emitGameEvent(endingEvent);
-    
-    this.running = false;
-    
-    // Emit specific end event based on reason
+    // One session record, one clock read: the ending event and the
+    // reason-specific end event describe the same session.
     const session = {
       startTime: this.sessionStartTime,
       endTime: Date.now(),
       turns: this.sessionTurns,
       moves: this.sessionMoves
     };
+
+    const endingEvent = createGameEndingEvent(reason || 'quit', session);
+    this.emitGameEvent(endingEvent);
     
+    this.running = false;
+    
+    // Emit specific end event based on reason
     if (reason === 'victory') {
       const wonEvent = createGameWonEvent(session, details);
       this.emitGameEvent(wonEvent);
@@ -801,7 +808,7 @@ export class GameEngine {
       throw new Error(`Cannot switch player: entity '${entityId}' not found`);
     }
 
-    const newActorTrait = newPlayer.get<ActorTrait>('actor');
+    const newActorTrait = newPlayer.get<ActorTrait>(TraitType.ACTOR);
     if (!newActorTrait) {
       throw new Error(`Cannot switch player: entity '${entityId}' does not have ActorTrait`);
     }
@@ -816,7 +823,7 @@ export class GameEngine {
     }
 
     // Clear old PC's flag
-    const oldActorTrait = oldPlayer.get<ActorTrait>('actor');
+    const oldActorTrait = oldPlayer.get<ActorTrait>(TraitType.ACTOR);
     if (oldActorTrait) {
       oldActorTrait.isPlayer = false;
     }
@@ -887,12 +894,12 @@ export class GameEngine {
 
     this.context.player = newPlayer;
 
-    if (this.parser && hasWorldContext(this.parser)) {
+    if (hasWorldContext(this.parser)) {
       const playerLocation = this.world.getLocation(newPlayerId) || '';
       this.parser.setWorldContext(this.world, newPlayerId, playerLocation);
     }
 
-    if (this.parser && hasPronounContext(this.parser)) {
+    if (hasPronounContext(this.parser)) {
       this.parser.resetPronounContext();
     }
 
@@ -1013,7 +1020,7 @@ export class GameEngine {
   /**
    * Get the text service
    */
-  getTextService(): IProsePipeline | undefined {
+  getTextService(): IProsePipeline {
     return this.textService;
   }
 
@@ -1030,12 +1037,12 @@ export class GameEngine {
    * Stories call this from `onEngineReady` to stage slot contributions (room
    * occupants, object detail clauses) into each turn's slot store before its
    * messages realize. The contributor runs once per turn at the top of the prose
-   * pipeline's `processTurn`. No-op if the text service is not yet constructed.
+   * pipeline's `processTurn`.
    *
    * @param contributor the slot contributor to register.
    */
   registerSlotContributor(contributor: SlotContributor): void {
-    this.textService?.registerSlotContributor(contributor);
+    this.textService.registerSlotContributor(contributor);
   }
 
   /**
@@ -1046,12 +1053,12 @@ export class GameEngine {
    * turn in the staging pass, before story-registered contributors, and its
    * content contributes to `slotKey` while the gate holds. Keyed
    * `(slotKey, owner)`, last-wins; nothing is serialized — re-register every
-   * story load. No-op if the text service is not yet constructed.
+   * story load.
    *
    * @param entry the slot entry to register (or replace).
    */
   registerSlotEntry(entry: SlotEntry): void {
-    this.textService?.registerSlotEntry(entry);
+    this.textService.registerSlotEntry(entry);
   }
 
   /**
@@ -1147,7 +1154,7 @@ export class GameEngine {
       await this.saveRestoreHooks.onSaveRequested(saveData);
       return true;
     } catch (error) {
-      console.error('Save failed:', error);
+      this.reportError('save_failed', error);
       return false;
     }
   }
@@ -1170,7 +1177,7 @@ export class GameEngine {
       this.loadSaveData(saveData);
       return true;
     } catch (error) {
-      console.error('Restore failed:', error);
+      this.reportError('restore_failed', error);
       return false;
     }
   }
@@ -1314,10 +1321,11 @@ export class GameEngine {
     const existingData = typeof event.data === 'object' && event.data !== null
       ? event.data
       : {};
+    const now = Date.now();
     const fullEvent: ISemanticEvent = {
       ...event,
-      id: `platform_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-      timestamp: Date.now(),
+      id: `platform_${now}_${++this.platformEventSequence}`,
+      timestamp: now,
       data: {
         ...existingData,
         turn: this.context.currentTurn
@@ -1356,9 +1364,36 @@ export class GameEngine {
         try {
           listener(...args);
         } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
+          this.reportListenerError(event, error);
         }
       }
+    }
+  }
+
+  /**
+   * Report one of the facade's own failures as a `system.<type>` event of
+   * severity `error` on the system event source, which re-emits it to
+   * `event` listeners. Data carries the error's message and stack.
+   */
+  private reportError(type: string, error: unknown, data: Record<string, unknown> = {}): void {
+    this.systemEventSource.emit(
+      createSystemEvent(ENGINE_SUBSYSTEM, type, { ...data, error: describeError(error) }, { severity: 'error' })
+    );
+  }
+
+  /**
+   * Report a listener that threw, as `system.listener_error` naming the
+   * event it was listening for. The report is delivered through `emit`
+   * itself, so a failure raised while one is in flight is dropped rather
+   * than reported — that is the case of a listener throwing on the report.
+   */
+  private reportListenerError(event: string, error: unknown): void {
+    if (this.reportingListenerError) return;
+    this.reportingListenerError = true;
+    try {
+      this.reportError('listener_error', error, { event });
+    } finally {
+      this.reportingListenerError = false;
     }
   }
 
