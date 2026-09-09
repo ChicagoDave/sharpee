@@ -1,7 +1,7 @@
 # Proposal: Code documentation sweep — headers separate logic from references
 
 **Status**: ACCEPTED — all eight items accepted 2026-09-07 (session 7f0471) after proposal-review returned tensions only
-**Origin**: conversation — David's overall addition to the refactoring-survey assessment (`docs/work/refactoring-survey/assessment-20260907-umbrella.md`, "Headers keep what the code does and which ADR decided it as separate concerns"), 2026-09-07: "The headers should have logic descriptions and ADR references as separate concerns so a reader can skip the references and focus on what the code is doing." Not architecture, so not an ADR: a sweep across all of the code, filed as GitHub issue #384 (2026-09-07).
+**Origin**: conversation — David's overall addition to the refactoring-survey assessment (`docs/work/archive/refactoring-survey/assessment-20260907-umbrella.md`, "Headers keep what the code does and which ADR decided it as separate concerns"), 2026-09-07: "The headers should have logic descriptions and ADR references as separate concerns so a reader can skip the references and focus on what the code is doing." Not architecture, so not an ADR: a sweep across all of the code, filed as GitHub issue #384 (2026-09-07).
 **Date**: 2026-09-07
 **Session**: 7f0471
 

@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GameEngine, splitChainedInput } from '../src/game-engine';
+import { GameEngine } from '../src/game-engine';
+import { splitChainedInput } from '../src/turn/chain';
 import { ActionTestStory } from './stories';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 

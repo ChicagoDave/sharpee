@@ -34,10 +34,8 @@ import {
   type CommandHistoryEntry,
   CommandHistoryCapabilitySchema,
   IFActions,
-  MetaCommandRegistry,
   type IPerceptionService,
   registerStandardChains,
-  createScopeResolver,
   channelRegistry,
   PLAYER_DIED_EVENT,
   createDeadlyRoomTransformer,
@@ -52,7 +50,7 @@ import { ChannelService } from '@sharpee/channel-service';
 import { type ISemanticEvent, type Presence, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
-import { PluginRegistry, type TurnPluginContext } from '@sharpee/plugins';
+import { PluginRegistry } from '@sharpee/plugins';
 import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
 import { ActorTurnPlugin } from './actor-turn-plugin.js';
 
@@ -60,11 +58,9 @@ import { ActorTurnPlugin } from './actor-turn-plugin.js';
 import {
   GameContext,
   TurnResult,
-  MetaCommandResult,
   CommandResult,
   EngineConfig,
   InputModeHandler,
-  INPUT_MODE_STATE_KEY,
   EngineIntrospection,
   ActionSummary,
   TraitSummary,
@@ -77,9 +73,10 @@ import { validateRoomSnippets } from './snippet-validation.js';
 import { validateCombatantHealth } from './combatant-health-validation.js';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
-import { createActionContext } from './action-context-factory.js';
 import { SoundDispatcher } from './sound/index.js';
 import { enrichTurnEvents, type TurnEventSource } from './turn-event-processor.js';
+import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused } from './turn/index.js';
+import type { TurnEngine, TurnStageContext } from './turn/context.js';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface.js';
 import { hasNarrativeSettings } from './language-provider-interface.js';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
@@ -148,20 +145,6 @@ export const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities = {
 /**
  * Main game engine
  */
-/**
- * Whether an action that produced these events was refused: modern
- * `blocked()` paths reuse the primary event type with `blocked: true` /
- * `failed: true` instead of emitting `action.error`, so `TurnResult.success`
- * alone would report a refused action as a success (platform-issue-sweep
- * Phase 7).
- */
-function wasRefused(events: ISemanticEvent[]): boolean {
-  return events.some(e => {
-    const data = e.data as { blocked?: unknown; failed?: unknown } | undefined;
-    return data?.blocked === true || data?.failed === true;
-  });
-}
-
 export class GameEngine {
   private world: WorldModel;
   private sessionStartTime?: number;
@@ -1084,582 +1067,68 @@ export class GameEngine {
       throw new Error('Engine must have a story set before executing turns');
     }
 
-    // Command chaining (classic IF): "open gate. south", "take feed; feed
-    // goats", or "unlock gate with keycard then open gate" run each statement
-    // as its own full turn, in order. A failed statement flushes the rest of
-    // the line, matching player expectations from Inform-style interpreters.
-    // Skipped while an alternate input mode is active (ADR-137) — mode
-    // handlers own the raw line, punctuation and all.
-    if (typeof input === 'string' && !this.world.getStateValue(INPUT_MODE_STATE_KEY)) {
-      const statements = splitChainedInput(input);
-      if (statements.length > 1) {
-        let result: TurnResult | undefined;
-        for (const statement of statements) {
-          result = await this.executeTurn(statement);
-          if (!result.success) break;
-        }
-        return result!;
-      }
-      // A single statement that differs from the raw line had separator
-      // punctuation to shed (e.g. a trailing period): run the cleaned form.
-      if (statements.length === 1 && statements[0] !== input) {
-        return this.executeTurn(statements[0]);
-      }
-    }
-
-    // GH #318 (ADR-225 as amended): a command held after a missing-object
-    // question is completed by this input when the input is not a command
-    // of its own; either way the hold is spent here — exactly one input.
-    input = this.spliceHeldCommand(input);
-    // GH #346: an open exchange is offered the input before the parse.
-    input = this.offerToOpenExchange(input);
-
-    // Create undo snapshot BEFORE processing the turn
-    // Skip for meta/info commands that shouldn't create undo points
-    // (Phase 6 remediation - use MetaCommandRegistry instead of hardcoded list)
-    if (!MetaCommandRegistry.isNonUndoable(input)) {
-      this.createUndoSnapshot();
-    }
-
-    // Note: AGAIN/G command handling has been moved to the again action (if.action.again)
-    // which emits platform.again_requested event, processed by processPlatformOperations.
-    // This enables proper i18n support - each parser package defines its own patterns
-    // (e.g., "again"/"g" in English, "encore"/"e" in French).
-
-    // Check if system events are enabled via debug capability
-    const debugData = this.world.getCapability('debug');
-    if (debugData && (debugData.debugParserEvents || debugData.debugValidationEvents || debugData.debugSystemEvents)) {
-      // Emit system events when enabled
-      // For now, we'll add these events directly to the result
-      // In the future, we could use a proper event source system
-      
-      // Note: The actual parser/validation events would be emitted by
-      // the parser and validator components when they detect these flags
-    }
-
-    const turn = this.context.currentTurn;
-
-    // Validate input
-    if (input === null || input === undefined) {
-      const errorEvent: ISemanticEvent = {
-        id: `cmd_failed_${turn}_${Date.now()}`,
-        type: 'command.failed',
-        timestamp: Date.now(),
-        entities: {},
-        data: {
-          reason: 'Input cannot be null or undefined',
-          input: input
-        }
-      };
-      
-      return {
-        turn,
-        input: input,
-        success: false,
-        events: [errorEvent],
-        error: 'Input cannot be null or undefined'
-      };
-    }
-
-    this.emit('turn:start', turn, input);
-
-    // Check for alternate input mode (ADR-137)
-    const activeModeId = this.world.getStateValue(INPUT_MODE_STATE_KEY) as string | undefined;
-    if (activeModeId) {
-      const handler = this.inputModeHandlers.get(activeModeId);
-      if (handler) {
-        return this.executeInputMode(input, handler, turn);
-      }
-      // Handler not registered — fall through to standard pipeline
-    }
-
-    try {
-      // Early detection: Parse first to check if this is a meta-command
-      // Meta-commands (VERSION, SCORE, HELP, etc.) take a completely separate path
-      // that doesn't interact with turn machinery (no turn increment, no NPCs, etc.)
-      if (this.parser) {
-        // Set world context for parser
-        const player = this.world.getPlayer();
-        if (player && hasWorldContext(this.parser)) {
-          const playerLocation = this.world.getLocation(player.id) || '';
-          this.parser.setWorldContext(this.world, player.id, playerLocation);
-        }
-
-        // Parse to get action ID
-        const parseResult = this.parser.parse(input);
-        if (parseResult.success) {
-          const parsedCommand = parseResult.value;
-          const actionId = parsedCommand.action;
-
-          // Check if this is a meta-command
-          if (actionId && MetaCommandRegistry.isMeta(actionId)) {
-            // Route to separate meta-command path
-            const metaResult = await this.executeMetaCommand(input, parsedCommand);
-
-            // Convert MetaCommandResult to TurnResult for backward compatibility
-            // Turn is included for display context but not incremented
-            return {
-              type: 'turn',  // For backward compatibility with callers that don't check type
-              turn,
-              input: metaResult.input,
-              success: metaResult.success,
-              events: metaResult.events,
-              error: metaResult.error,
-              actionId: metaResult.actionId
-            };
-          }
-        }
-        // If parse failed or not a meta-command, fall through to regular execution
-      }
-
-      // Regular command path - full turn processing
-      // Reset the per-turn sound buffer (ADR-172 Phase 6). Sounds emitted
-      // during this turn's report phase live here until the dispatcher
-      // fans them out to listeners after the plugin tick.
-      this.soundBuffer.length = 0;
-
-      // Execute the command
-      const result = await this.commandExecutor.execute(
-        input,
-        this.world,
-        this.context,
-        this.config,
-        this.soundBuffer,
-      );
-      // GH #318: remember a clarification for the next input (the hold).
-      if (result.error === 'CLARIFICATION_NEEDED') {
-        this.heldCommand = { input };
-      }
-
-      // One funnel for every source: enrich the action's events and
-      // filter them by perception (the plugin tick's batches take the
-      // same path).
-      const semanticEvents = this.enrichTurnEvents(
-        result.events,
-        turn,
-        this.world.getLocation(this.context.player.id),
-        { kind: 'action' }
-      );
-
-      // Merge with any existing events for this turn (e.g., game.started from engine.start())
-      const existingEvents = this.turnEvents.get(turn) || [];
-      this.turnEvents.set(turn, [...existingEvents, ...semanticEvents]);
-
-      // Also track in event source for save/restore
-      for (const semanticEvent of semanticEvents) {
-        this.eventSource.emit(semanticEvent);
-
-        // Check if this is a platform request event
-        if (isPlatformRequestEvent(semanticEvent)) {
-          this.pendingPlatformOps.push(semanticEvent as IPlatformEvent);
-        }
-      }
-
-      // Update command history if command was successful
-      // Note: Meta-commands take the early path (executeMetaCommand) and never reach here
-      if (result.success) {
-        this.updateCommandHistory(result, input, turn);
-
-        // Update pronoun context for "it"/"them"/"him"/"her" resolution (ADR-089)
-        if (this.parser && hasPronounContext(this.parser) && result.validatedCommand) {
-          this.parser.updatePronounContext(result.validatedCommand, turn);
-        }
-      }
-      // GH #97: a refusal that names an entity ("The oak door is closed.")
-      // makes it the pronoun referent — the player expects to act on
-      // whatever was just mentioned. A blocked action counts as a successful
-      // turn (its `blocked()` events are ordinary events), so this reads the
-      // events, not `result.success`: only `blocked: true` events and the
-      // events of a failed turn are scanned.
-      this.registerBlockedReferent(
-        result.success ? result.events.filter((e) => (e.data as { blocked?: unknown } | undefined)?.blocked === true) : result.events,
-        turn,
-      );
-
-      // Emit events if configured
-      if (this.config.onEvent) {
-        for (const event of result.events) {
-          this.config.onEvent(event);
-        }
-      }
-      
-      // Always emit events through the engine's event system
-      let victoryDetected = false;
-      let victoryDetails: any = null;
-
-      for (const event of result.events) {
-        this.emit('event', event);
-
-        // NOTE: Entity `on` handlers removed (ISSUE-068). Story-level handlers
-        // are dispatched by the event-processor in the command executor.
-
-        // Check for story victory event but don't stop immediately
-        // (we're still processing the turn)
-        if (event.type === 'story.victory') {
-          victoryDetected = true;
-          const data = event.data as { reason?: string; score?: number } | undefined;
-          victoryDetails = {
-            reason: data?.reason || 'Story completed',
-            score: data?.score || 0
-          };
-        }
-      }
-
-      // Run NPC and scheduler ticks after successful player action
-      // Order: NPC phase (ADR-070), then scheduler tick (ADR-071)
-      // Note: Meta-commands take the early path and never reach here
-      if (result.success) {
-        const playerLocation = this.world.getLocation(this.context.player.id);
-
-        // Plugin tick loop (ADR-120)
-        // Plugins run in priority order (NPC at 100, state machines at 75, scheduler at 50)
-        //
-        // actionResult.success must reflect GENUINE action success (Phase 7):
-        // result.success only checks for action.error events, but modern
-        // blocked() paths reuse the primary event type with blocked:true /
-        // failed:true — a refused action would otherwise report success and
-        // (e.g.) advance state-machine transitions it never earned.
-        const actionRefused = wasRefused(semanticEvents);
-        const pluginContext: TurnPluginContext = {
-          world: this.world,
-          turn,
-          playerId: this.context.player.id,
-          playerLocation: playerLocation || '',
-          random: this.randomService,
-          actionResult: {
-            actionId: result.actionId || '',
-            success: result.success && !actionRefused,
-            targetId: result.validatedCommand?.directObject?.entity?.id,
-          },
-          actionEvents: semanticEvents,
-          // ADR-320 Phase 8: NPC↔NPC scene moves emit conversation sounds
-          // from the tick; they land in the same per-turn buffer action
-          // sounds use and dispatch right after this loop.
-          emitSound: (sound) => {
-            this.soundBuffer.push(sound);
-          },
-        };
-        for (const plugin of this.pluginRegistry.getAll()) {
-          const pluginEvents = plugin.onAfterAction(pluginContext);
-          if (pluginEvents.length > 0) {
-            this.processPluginEvents(pluginEvents, turn, playerLocation, plugin.id);
-          }
-        }
-      }
-
-      // Sound dispatch (ADR-172 Phase 6). Fan out every buffered sound
-      // to every `ListenerTrait` entity, producing one
-      // `sound.audibility.heard` event per (sound × listener) pair the
-      // propagation function delivers (non-null). Runs after the plugin
-      // tick so any sounds emitted by NPC actions in a future plugin
-      // extension would also land in the buffer; runs before
-      // `textService.processTurn()` so the audibility channel and
-      // text-rendering see the events in this turn's packet.
-      if (this.soundBuffer.length > 0) {
-        const audibilityEvents = this.soundDispatcher.dispatch(
-          this.soundBuffer,
-          this.world,
-          turn,
-        );
-        if (audibilityEvents.length > 0) {
-          const existing = this.turnEvents.get(turn) ?? [];
-          this.turnEvents.set(turn, [...existing, ...audibilityEvents]);
-          for (const e of audibilityEvents) {
-            this.eventSource.emit(e);
-            // Make the events visible to onEvent subscribers and the
-            // engine's 'event' emitter, mirroring the action-event path.
-            if (this.config.onEvent) this.config.onEvent(e);
-            this.emit('event', e);
-          }
-          // Mirror the audibility events into result.events so callers
-          // that read TurnResult directly (tests, downstream renderers)
-          // see them alongside the action's events. Matches the pattern
-          // used after platform-op processing further below.
-          result.events = [...result.events, ...audibilityEvents];
-        }
-      }
-
-      // Update context and turn counter
-      // Note: Meta-commands take the early path and never reach here
-      this.updateContext(result);
-      // Update session statistics
-      this.sessionTurns++;
-      if (result.success) {
-        this.sessionMoves++;
-      }
-
-      // ADR-327 D9: drain the turn's player-switch request. The story loader
-      // holds no engine handle, so `change the player to X` mid-play reaches
-      // us as an event (the `triggerEnding` seam) and the switch itself
-      // happens here, at the turn boundary — never mid-action, where half the
-      // turn would have run as one character and half as another.
-      this.drainPlayerSwitch(turn);
-
-      // Process pending platform operations before text service
-      if (this.pendingPlatformOps.length > 0) {
-        await this.processPlatformOperations(turn);
-
-        // Update result.events with any platform completion events
-        const allTurnEvents = this.turnEvents.get(turn) || [];
-        result.events = allTurnEvents;
-      }
-
-      // Process text output (ADR-096, ADR-133)
-      if (this.textService) {
-        const turnEvents = this.turnEvents.get(turn) || [];
-        const blocks = this.textService.processTurn(turnEvents);
-
-        // Append prompt block (ADR-137)
-        this.appendPromptBlock(blocks);
-
-        result.blocks = blocks;
-        if (blocks.length > 0) {
-          this.emit('text:output', blocks, turn);
-        }
-        // ADR-163 channel packet co-emits with text:output so the new
-        // and legacy paths see the same turn boundary. Fires every
-        // turn (including blocks.length === 0 idle turns) so 'always'
-        // channels still re-emit.
-        this.emitChannelPacket(turnEvents, blocks, turn);
-      }
-
-      // Detect a canonical player-death event (ADR-224) *before* the turn's
-      // events are cleared below. The death may have been emitted this turn by
-      // the action, an interceptor, or a scheduler daemon — all have landed in
-      // this turn's event stream by now, and story policy (event handlers in the
-      // executor + state-machine plugins in the tick loop above) has already had
-      // its "first crack" to veto by resetting the player's HealthTrait.
-      const deathCause = this.playerDeathCauseThisTurn(turn);
-
-      // Clear turn events after processing to prevent accumulation on same turn (meta commands)
-      this.turnEvents.set(turn, []);
-
-      // Emit completion
-      this.emit('turn:complete', result);
-
-      // Check for victory from events
-      if (victoryDetected) {
-        this.stop('victory', victoryDetails);
-        return result;
-      }
-
-      // Route a still-dead player to game.lost. Only if the player's *derived*
-      // life-state is still dead do we end the game — the re-check of live state,
-      // not the event's `terminal` flag, is the engine's final word (ADR-224
-      // Q-2, AC-3). A story reincarnation policy that cleared `dead` above wins.
-      if (deathCause !== undefined && this.isPlayerDead()) {
-        this.stop('defeat', { reason: 'You have died.', cause: deathCause });
-        return result;
-      }
-
-      // Check for game over via story.isComplete()
-      if (this.isGameOver()) {
-        // Check if it's a victory (story completed successfully)
-        // For now, assume completion means victory
-        // Stories could provide more detail about the type of ending
-        this.stop('victory', {
-          reason: 'Story completed',
-          score: 0
-        });
-      }
-
-      return result;
-
-    } catch (error: any) {
-      this.emit('turn:failed', error as Error, turn);
-      throw error;
-    }
+    const context: TurnStageContext = {
+      engine: this.turnEngine(),
+      input,
+      turn: this.context.currentTurn,
+      started: false,
+      semanticEvents: [],
+      events: []
+    };
+    return runTurnStages(context, TURN_STAGES, META_STAGES);
   }
 
   /**
-   * Execute a meta-command (VERSION, SCORE, HELP, etc.)
-   *
-   * Meta-commands operate outside the turn cycle:
-   * - They don't increment turns
-   * - They don't trigger NPC ticks or scheduler
-   * - They don't create undo snapshots
-   * - They don't get stored in command history
-   * - Events are processed immediately through text service (not stored in turnEvents)
-   *
-   * @param input - Raw command string
-   * @param parsedCommand - Parsed command from parser
-   * @returns MetaCommandResult with events and success status
+   * The facade's turn-facing surface (ADR-334 D5): what the stages under
+   * `turn/` may reach. Getters read the live fields — the parser, text
+   * service, and executor are set by `setStory`; the pending platform
+   * list is replaced when drained.
    */
-  private async executeMetaCommand(
-    input: string,
-    parsedCommand: any
-  ): Promise<MetaCommandResult> {
-    const events: ISemanticEvent[] = [];
-
-    try {
-      // Validate the command
-      const validationResult = this.commandExecutor.validateCommand(parsedCommand);
-
-      if (!validationResult.success) {
-        // Validation failed - emit error event using domain event pattern
-        const errorEvent: ISemanticEvent = {
-          id: `meta_error_${Date.now()}`,
-          type: 'if.event.command_error',
-          timestamp: Date.now(),
-          data: {
-            messageId: `if.action.command.${validationResult.error?.code || 'validation_failed'}`,
-            params: validationResult.error?.details || {},
-            blocked: true,
-            reason: validationResult.error?.code || 'validation_failed'
-          },
-          entities: {}
-        };
-        events.push(errorEvent);
-
-        // Process error through text service and emit
-        this.processMetaEvents(events);
-
-        return {
-          type: 'meta',
-          input,
-          success: false,
-          events,
-          error: validationResult.error?.code || 'Validation failed',
-          actionId: parsedCommand.action
-        };
-      }
-
-      const command = validationResult.value;
-      const action = this.actionRegistry.get(command.actionId);
-
-      if (!action) {
-        const errorEvent: ISemanticEvent = {
-          id: `meta_error_${Date.now()}`,
-          type: 'if.event.command_error',
-          timestamp: Date.now(),
-          data: {
-            messageId: 'if.action.command.action_not_found',
-            params: { actionId: command.actionId },
-            blocked: true,
-            reason: 'action_not_found'
-          },
-          entities: {}
-        };
-        events.push(errorEvent);
-
-        this.processMetaEvents(events);
-
-        return {
-          type: 'meta',
-          input,
-          success: false,
-          events,
-          error: `Action not found: ${command.actionId}`,
-          actionId: command.actionId
-        };
-      }
-
-      // Create action context for meta-command execution
-      const scopeResolver = createScopeResolver(this.world);
-      const actionContext = createActionContext(this.world, this.context, command, action, scopeResolver, undefined, this.randomService);
-
-      // Run action's four-phase pattern
-      const actionValidation = action.validate(actionContext);
-
-      let actionEvents: ISemanticEvent[];
-      if (actionValidation.valid) {
-        // Execute and report
-        action.execute(actionContext);
-        actionEvents = action.report ? action.report(actionContext) : [];
-      } else {
-        // Blocked - get error events
-        actionEvents = action.blocked
-          ? action.blocked(actionContext, actionValidation)
-          : [{
-              id: `meta_blocked_${Date.now()}`,
-              type: 'if.event.command_error',
-              timestamp: Date.now(),
-              data: {
-                messageId: `if.action.command.${actionValidation.error || 'validation_failed'}`,
-                params: actionValidation.params || {},
-                blocked: true,
-                reason: actionValidation.error || 'validation_failed'
-              },
-              entities: {}
-            }];
-      }
-
-      events.push(...actionEvents);
-
-      // Handle platform operations inline (SAVE, RESTORE, QUIT, AGAIN, etc.)
-      // These are handled BEFORE text processing so completion events get rendered
-      const platformOps = events.filter(isPlatformRequestEvent);
-      for (const op of platformOps) {
-        const completionEvents = await this.processMetaPlatformOperation(op as IPlatformEvent);
-        events.push(...completionEvents);
-      }
-
-      // Process events through text service and emit to clients
-      // Events are NOT stored in turnEvents - processed immediately
-      this.processMetaEvents(events);
-
-      return {
-        type: 'meta',
-        input,
-        success: actionValidation.valid,
-        events,
-        actionId: command.actionId
-      };
-
-    } catch (error: any) {
-      const errorEvent: ISemanticEvent = {
-        id: `meta_error_${Date.now()}`,
-        type: 'command.failed',
-        timestamp: Date.now(),
-        data: {
-          reason: error.message,
-          input
-        },
-        entities: {}
-      };
-      events.push(errorEvent);
-
-      this.processMetaEvents(events);
-
-      return {
-        type: 'meta',
-        input,
-        success: false,
-        events,
-        error: error.message,
-        actionId: parsedCommand.action
-      };
-    }
-  }
-
-  /**
-   * Process meta-command events: text service → emit to clients
-   *
-   * - Does NOT store in turnEvents
-   * - Passes currentTurn for display context (turn/score shown to player)
-   * - Turn counter is NOT incremented
-   */
-  private processMetaEvents(events: ISemanticEvent[]): void {
-    if (!this.textService || events.length === 0) {
-      return;
-    }
-
-    // Emit individual events through engine's event system (for tests/listeners)
-    for (const event of events) {
-      this.emit('event', event);
-    }
-
-    // Process events through text service (ADR-133: emit structured blocks)
-    const blocks = this.textService.processTurn(events);
-
-    // Append prompt block (ADR-137)
-    this.appendPromptBlock(blocks);
-
-    if (blocks.length > 0) {
-      this.emit('text:output', blocks, this.context.currentTurn);
-    }
-    // ADR-163: meta commands also produce a channel packet.
-    this.emitChannelPacket(events, blocks, this.context.currentTurn);
+  private turnEngine(): TurnEngine {
+    const engine = this;
+    return {
+      get world() { return engine.world; },
+      get context() { return engine.context; },
+      get config() { return engine.config; },
+      get parser() { return engine.parser; },
+      get commandExecutor() { return engine.commandExecutor; },
+      get actionRegistry() { return engine.actionRegistry; },
+      get randomService() { return engine.randomService; },
+      get pluginRegistry() { return engine.pluginRegistry; },
+      get textService() { return engine.textService; },
+      get eventSource() { return engine.eventSource; },
+      get turnEvents() { return engine.turnEvents; },
+      get pendingPlatformOps() { return engine.pendingPlatformOps; },
+      get soundBuffer() { return engine.soundBuffer; },
+      get soundDispatcher() { return engine.soundDispatcher; },
+      get inputModeHandlers() { return engine.inputModeHandlers; },
+      emit: (event, ...args) => this.emit(event, ...args),
+      executeTurn: (input) => this.executeTurn(input),
+      spliceHeldCommand: (input) => this.spliceHeldCommand(input),
+      offerToOpenExchange: (input) => this.offerToOpenExchange(input),
+      holdCommand: (input) => { this.heldCommand = { input }; },
+      createUndoSnapshot: () => this.createUndoSnapshot(),
+      enrichTurnEvents: (events, turn, locationId, source) => this.enrichTurnEvents(events, turn, locationId, source),
+      processPluginEvents: (events, turn, playerLocation, pluginId) => this.processPluginEvents(events, turn, playerLocation, pluginId),
+      updateCommandHistory: (result, input, turn) => this.updateCommandHistory(result, input, turn),
+      registerBlockedReferent: (events, turn) => this.registerBlockedReferent(events, turn),
+      updateContext: (result) => this.updateContext(result),
+      countSessionTurn: (success) => {
+        this.sessionTurns++;
+        if (success) {
+          this.sessionMoves++;
+        }
+      },
+      drainPlayerSwitch: (turn) => this.drainPlayerSwitch(turn),
+      processPlatformOperations: (turn) => this.processPlatformOperations(turn),
+      processMetaPlatformOperation: (operation) => this.processMetaPlatformOperation(operation),
+      appendPromptBlock: (blocks) => this.appendPromptBlock(blocks),
+      emitChannelPacket: (events, blocks, turn) => this.emitChannelPacket(events, blocks, turn),
+      playerDeathCauseThisTurn: (turn) => this.playerDeathCauseThisTurn(turn),
+      isPlayerDead: () => this.isPlayerDead(),
+      isGameOver: () => this.isGameOver(),
+      stop: (reason, details) => this.stop(reason, details)
+    };
   }
 
   /**
@@ -1988,49 +1457,6 @@ export class GameEngine {
    */
   registerInputMode(id: string, handler: InputModeHandler): void {
     this.inputModeHandlers.set(id, handler);
-  }
-
-  /**
-   * Execute input through an alternate input mode handler (ADR-137).
-   *
-   * Bypasses the standard parser pipeline. Events go through the text
-   * service for rendering. Turn counter advances only if the handler says so.
-   */
-  private executeInputMode(
-    input: string,
-    handler: InputModeHandler,
-    turn: number
-  ): TurnResult {
-    const events = handler.handleInput(input, this.world);
-
-    // Emit events through engine event system
-    for (const event of events) {
-      this.emit('event', event);
-    }
-
-    // Process through text service
-    if (this.textService) {
-      const blocks = this.textService.processTurn(events);
-      this.appendPromptBlock(blocks);
-      if (blocks.length > 0) {
-        this.emit('text:output', blocks, turn);
-      }
-      // ADR-163: alternate input modes also fire channel packets.
-      this.emitChannelPacket(events, blocks, turn);
-    }
-
-    // Advance turn only if the mode says to
-    if (handler.advancesTurn) {
-      this.context.currentTurn++;
-    }
-
-    return {
-      type: 'turn',
-      turn,
-      input,
-      success: true,
-      events,
-    };
   }
 
   /**
@@ -2692,17 +2118,3 @@ export class GameEngine {
 
 }
 
-
-/**
- * Split a raw input line into chained statements (ADR pending — classic IF
- * command chaining). Separators are `.`, `;`, and the standalone word `then`.
- * Commas are NOT separators — they belong to multi-object phrases
- * ("take lamp, sword"). Empty statements (doubled or trailing separators)
- * are dropped.
- */
-export function splitChainedInput(input: string): string[] {
-  return input
-    .split(/(?:[.;]|\bthen\b)+/i)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-}

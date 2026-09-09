@@ -52,6 +52,9 @@ export * from './platform-operations.js';
 // Spatial sound propagation (ADR-172)
 export * from './sound/index.js';
 
+// The turn as an explicit stage list (ADR-334)
+export * from './turn/index.js';
+
 // ADR-250 D4: phrasebook read-point seam (key builder + evaluator contract)
 export { phrasebookTemplateKey } from './prose-pipeline/index.js';
 export type { PhrasebookResolution } from './prose-pipeline/index.js';

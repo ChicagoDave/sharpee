@@ -24,7 +24,7 @@
  * References:
  *   ADR-016 — the author model bypasses rules during setup, emitting no events.
  *   ADR-338 D1 — a view of the live world, not a copy of its surface.
- *   docs/work/refactoring-survey/assessment-20260907-umbrella.md — the cached bind, and canMoveEntity kept.
+ *   docs/work/archive/refactoring-survey/assessment-20260907-umbrella.md — the cached bind, and canMoveEntity kept.
  */
 
 import { IFEntity } from '../entities/if-entity.js';

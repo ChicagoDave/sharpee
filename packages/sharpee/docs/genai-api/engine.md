@@ -1319,6 +1319,9 @@ type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K
  * capabilities through.
  */
 export declare const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities;
+/**
+ * Main game engine
+ */
 export declare class GameEngine {
     private world;
     private sessionStartTime?;
@@ -1537,28 +1540,12 @@ export declare class GameEngine {
     private offerToOpenExchange;
     executeTurn(input: string): Promise<TurnResult>;
     /**
-     * Execute a meta-command (VERSION, SCORE, HELP, etc.)
-     *
-     * Meta-commands operate outside the turn cycle:
-     * - They don't increment turns
-     * - They don't trigger NPC ticks or scheduler
-     * - They don't create undo snapshots
-     * - They don't get stored in command history
-     * - Events are processed immediately through text service (not stored in turnEvents)
-     *
-     * @param input - Raw command string
-     * @param parsedCommand - Parsed command from parser
-     * @returns MetaCommandResult with events and success status
+     * The facade's turn-facing surface (ADR-334 D5): what the stages under
+     * `turn/` may reach. Getters read the live fields — the parser, text
+     * service, and executor are set by `setStory`; the pending platform
+     * list is replaced when drained.
      */
-    private executeMetaCommand;
-    /**
-     * Process meta-command events: text service → emit to clients
-     *
-     * - Does NOT store in turnEvents
-     * - Passes currentTurn for display context (turn/score shown to player)
-     * - Turn counter is NOT incremented
-     */
-    private processMetaEvents;
+    private turnEngine;
     /**
      * Run the one platform request a meta command emitted and return its
      * completion events for the command's result. Same dispatcher as the
@@ -1700,13 +1687,6 @@ export declare class GameEngine {
      * @param handler The input mode handler
      */
     registerInputMode(id: string, handler: InputModeHandler): void;
-    /**
-     * Execute input through an alternate input mode handler (ADR-137).
-     *
-     * Bypasses the standard parser pipeline. Events go through the text
-     * service for rendering. Turn counter advances only if the handler says so.
-     */
-    private executeInputMode;
     /**
      * Append a PROMPT block to the output (ADR-137).
      *
@@ -1944,14 +1924,6 @@ export declare class GameEngine {
      */
     off<K extends GameEngineEventName>(event: K, listener: GameEngineEventListener<K>): this;
 }
-/**
- * Split a raw input line into chained statements (ADR pending — classic IF
- * command chaining). Separators are `.`, `;`, and the standalone word `then`.
- * Commas are NOT separators — they belong to multi-object phrases
- * ("take lamp, sword"). Empty statements (doubled or trailing separators)
- * are dropped.
- */
-export declare function splitChainedInput(input: string): string[];
 export {};
 ```
 
@@ -2837,6 +2809,303 @@ export declare class SoundDispatcher {
      */
     dispatch(buffer: readonly ISound[], world: WorldModel, timestamp: number): ISemanticEvent[];
 }
+```
+
+### turn/context
+
+```typescript
+/**
+ * The turn-stage contract: what a stage is, what one turn's stages share,
+ * and what a stage may ask of the engine.
+ *
+ * A turn is an ordered list of named stages (`TurnStage`), each with one
+ * reason to change and a `requires` list naming the stages it must
+ * follow. A stage runs over a `TurnStageContext` — the input, the turn
+ * number, the result under construction, and the batches and flags the
+ * old inline phases passed between themselves as locals — and returns
+ * `'continue'` or `'stop'`; `'stop'` ends the list with the result as it
+ * stands. The parse stage alone sets `route`, and the runner selects the
+ * regular or the meta list on it. A stage reaches the engine only through
+ * `TurnEngine`, the facade's turn-facing surface: the services and state
+ * a turn touches and the helpers that stayed on the engine because other
+ * paths call them too.
+ *
+ * Public interface: `TurnStage`, `TurnStageContext`, `TurnEngine`,
+ * `StageOutcome`, `TurnRoute`.
+ * Owner context: `@sharpee/engine` — the turn cycle.
+ *
+ * References: ADR-334 D1 (the stage contract, the route set by parse
+ * alone), D1a (two lists sharing the parse stage), D5 (the facade does
+ * not move; stages reach it through this surface).
+ */
+import type { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
+import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
+import type { Parser, StandardActionRegistry } from '@sharpee/stdlib';
+import type { ISound } from '@sharpee/if-domain';
+import type { ITextBlock } from '@sharpee/text-blocks';
+import type { PluginRegistry } from '@sharpee/plugins';
+import type { EngineConfig, GameContext, InputModeHandler, TurnResult } from '../types.js';
+import type { CommandExecutor } from '../command-executor.js';
+import type { EngineRandomService } from '../engine-random-service.js';
+import type { IProsePipeline } from '../prose-pipeline/index.js';
+import type { SoundDispatcher } from '../sound/index.js';
+import type { TurnEventSource } from '../turn-event-processor.js';
+import type { GameEngineEvents } from '../game-engine.js';
+/** What a stage returns: run the next stage, or end the list here. */
+export type StageOutcome = 'continue' | 'stop';
+/** Which list the turn runs after parsing: a regular turn or a meta command. */
+export type TurnRoute = 'turn' | 'meta';
+/**
+ * One stage of a turn.
+ */
+export interface TurnStage {
+    /** The stage's name; what `requires` and the order test refer to. */
+    readonly name: string;
+    /** Stages this one must follow, by name; empty when it reads nothing they write. */
+    readonly requires: readonly string[];
+    /** Run the stage over the turn's context. */
+    run(context: TurnStageContext): Promise<StageOutcome>;
+}
+/**
+ * What one turn's stages share. Fields are written by the stage named in
+ * their comment and read by the stages after it.
+ */
+export interface TurnStageContext {
+    /** The engine's turn-facing surface. */
+    readonly engine: TurnEngine;
+    /** The input as it stands; the held-command and exchange stages rewrite it. */
+    input: string;
+    /** The turn number this input runs as (not incremented by a meta command). */
+    readonly turn: number;
+    /** Set by `turn-start` once `turn:start` has been emitted; the runner pairs `turn:failed` with it. */
+    started: boolean;
+    /** Set by `parse`; the runner switches lists on it. */
+    route?: TurnRoute;
+    /** Set by `parse` for a meta command; what the meta stages execute. */
+    parsedCommand?: IParsedCommand;
+    /** The result under construction; set by `execute-command`, the meta, input-mode, and stop stages. */
+    result?: TurnResult;
+    /** The action's events after enrichment and perception; set by `enrich-events`. */
+    semanticEvents: ISemanticEvent[];
+    /** The meta command's events, rendered by `meta-render`; set by `meta-command`. */
+    events: ISemanticEvent[];
+    /** The turn's rendered blocks; set by `render-prose`, read by `channel-packet`. */
+    blocks?: ITextBlock[];
+    /** A `story.victory` seen among the action's events; set by `emit-events`. */
+    victory?: {
+        reason: string;
+        score: number;
+    };
+    /** The cause of a player death this turn, if any; set by `detect-death`. */
+    deathCause?: string;
+}
+/**
+ * The facade's turn-facing surface. Getters read the engine's live
+ * fields (the parser, text service, and executor are set by `setStory`;
+ * the pending platform list is replaced when drained).
+ */
+export interface TurnEngine {
+    readonly world: WorldModel;
+    readonly context: GameContext;
+    readonly config: EngineConfig;
+    readonly parser: Parser | undefined;
+    readonly commandExecutor: CommandExecutor;
+    readonly actionRegistry: StandardActionRegistry;
+    readonly randomService: EngineRandomService;
+    readonly pluginRegistry: PluginRegistry;
+    readonly textService: IProsePipeline | undefined;
+    readonly eventSource: ISemanticEventSource;
+    /** Events stored per turn, rendered at turn end and cleared after. */
+    readonly turnEvents: Map<number, ISemanticEvent[]>;
+    /** Platform requests queued this turn for `processPlatformOperations`. */
+    readonly pendingPlatformOps: IPlatformEvent[];
+    /** The per-turn sound buffer the report phase and the plugin tick fill. */
+    readonly soundBuffer: ISound[];
+    readonly soundDispatcher: SoundDispatcher;
+    readonly inputModeHandlers: ReadonlyMap<string, InputModeHandler>;
+    /** Emit one of the engine's lifecycle events. */
+    emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
+    /** Run an input as a turn of its own (command chaining, AGAIN). */
+    executeTurn(input: string): Promise<TurnResult>;
+    /** Spend a held command on this input (GH #318). */
+    spliceHeldCommand(input: string): string;
+    /** Offer the input to an open exchange before the parse (GH #346). */
+    offerToOpenExchange(input: string): string;
+    /** Remember a clarification for the next input (GH #318). */
+    holdCommand(input: string): void;
+    createUndoSnapshot(): void;
+    /** The one enrichment funnel, with the engine's context filled in. */
+    enrichTurnEvents(events: readonly ISemanticEvent[], turn: number, locationId: string | null | undefined, source: TurnEventSource): ISemanticEvent[];
+    processPluginEvents(events: ISemanticEvent[], turn: number, playerLocation: string | null | undefined, pluginId: string): void;
+    updateCommandHistory(result: TurnResult, input: string, turn: number): void;
+    registerBlockedReferent(events: ISemanticEvent[], turn: number): void;
+    /** Advance the turn counter and player context from the result. */
+    updateContext(result: TurnResult): void;
+    /** Count a turn (and a move when it succeeded) in the session statistics. */
+    countSessionTurn(success: boolean): void;
+    drainPlayerSwitch(turn: number): void;
+    processPlatformOperations(turn: number): Promise<void>;
+    processMetaPlatformOperation(operation: IPlatformEvent): Promise<ISemanticEvent[]>;
+    appendPromptBlock(blocks: ITextBlock[]): void;
+    emitChannelPacket(events: ISemanticEvent[], blocks: ITextBlock[], turn: number): void;
+    playerDeathCauseThisTurn(turn: number): string | undefined;
+    isPlayerDead(): boolean;
+    isGameOver(): boolean;
+    stop(reason: 'victory' | 'defeat', details?: unknown): void;
+}
+```
+
+### turn/runner
+
+```typescript
+/**
+ * The stage runner: runs a turn's stages in order, switching to the meta
+ * list when the parse stage routes there, and pairs `turn:failed` with a
+ * `turn:start` that was emitted.
+ *
+ * The runner starts on the regular list. After the parse stage it reads
+ * the route the stage set; a meta route continues on the meta list from
+ * the stage after its own parse entry (both lists share the stages up to
+ * and including parse, which the order test pins). A `'stop'` outcome
+ * ends the list with the result as it stands; a stage that ends the list
+ * without a result is a programming error and throws. An error thrown by
+ * a stage after `turn:start` was emitted is reported as `turn:failed`
+ * and rethrown; before it, the turn has not begun and the error simply
+ * propagates.
+ *
+ * Public interface: `runTurnStages`, `requiresOrderViolations`,
+ * `OrderViolation`.
+ * Owner context: `@sharpee/engine` — the turn cycle.
+ *
+ * References: ADR-334 D1 (the runner), D1a (the route switch at parse),
+ * D2 (the order pinned by `requires` and the order test).
+ */
+import type { TurnResult } from '../types.js';
+import type { TurnStage, TurnStageContext } from './context.js';
+/** The stage where the regular and meta lists part. */
+export declare const ROUTE_STAGE = "parse";
+/**
+ * Run the stages of a turn over its context and return the result.
+ *
+ * @param context - The turn's context, built by the engine
+ * @param turnStages - The regular list; the runner starts here
+ * @param metaStages - The meta list; entered after parse when the route is meta
+ */
+export declare function runTurnStages(context: TurnStageContext, turnStages: readonly TurnStage[], metaStages: readonly TurnStage[]): Promise<TurnResult>;
+/** One ordering fault: `name` requires `requires`, which is absent or not earlier. */
+export interface OrderViolation {
+    readonly name: string;
+    readonly requires: string;
+}
+/**
+ * Every `requires` an ordered stage list fails to satisfy — a required
+ * name absent from the list, or present but not earlier.
+ *
+ * @param stages - The list in run order
+ */
+export declare function requiresOrderViolations(stages: ReadonlyArray<Pick<TurnStage, 'name' | 'requires'>>): OrderViolation[];
+```
+
+### turn/stages
+
+```typescript
+/**
+ * The two stage lists a turn can run: `TURN_STAGES` for a regular command
+ * and `META_STAGES` for a meta command. The order here IS the turn's
+ * contract; each stage's `requires` names what it must follow, and the
+ * order test pins both lists and drives each once.
+ *
+ * Both lists open with the same routing stages through `parse`, where
+ * they part: the regular list executes the command, enriches and emits
+ * its events, ticks the plugins, dispatches sound, advances the turn,
+ * lands a player switch, drains platform requests, renders, detects a
+ * death, clears the turn's events, announces completion, and ends the
+ * story if the turn did. The meta list runs the command outside the
+ * turn cycle and renders its events at once; that it never touches the
+ * turn machinery is readable as the absence of those stages from it.
+ *
+ * Public interface: `TURN_STAGES`, `META_STAGES`, `SHARED_STAGES`.
+ * Owner context: `@sharpee/engine` — the turn cycle.
+ *
+ * References: ADR-334 D1 (the list), D1a (two lists, shared prefix),
+ * D2 (the order pinned by test).
+ */
+import type { TurnStage } from './context.js';
+/** The routing stages both lists open with, through the parse that parts them. */
+export declare const SHARED_STAGES: readonly TurnStage[];
+/** A regular command's turn, in run order. */
+export declare const TURN_STAGES: readonly TurnStage[];
+/** A meta command's run, in run order: the shared routing, then the command and its render. */
+export declare const META_STAGES: readonly TurnStage[];
+```
+
+### turn/chain
+
+```typescript
+/**
+ * The chain stage: a line of several statements runs each as a turn of
+ * its own, in order, and a failed statement flushes the rest.
+ *
+ * "open gate. south", "take feed; feed goats", and "unlock gate with
+ * keycard then open gate" are classic-IF command chains. When the line
+ * splits into more than one statement the stage runs each through
+ * `executeTurn`, stops at the first that fails, and ends this turn with
+ * the last result. A single statement that differs from the raw line had
+ * separator punctuation to shed and runs in its cleaned form the same
+ * way. Skipped while an alternate input mode is active — mode handlers
+ * own the raw line, punctuation and all.
+ *
+ * Public interface: `chainStage`, `splitChainedInput`.
+ * Owner context: `@sharpee/engine` — the turn cycle.
+ *
+ * References: ADR-137 (input modes own the raw line).
+ */
+import type { TurnStage } from './context.js';
+/**
+ * Split a raw input line into chained statements. Separators are `.`,
+ * `;`, and the standalone word `then`. Commas are NOT separators — they
+ * belong to multi-object phrases ("take lamp, sword"). Empty statements
+ * (doubled or trailing separators) are dropped.
+ *
+ * @param input - The raw line
+ */
+export declare function splitChainedInput(input: string): string[];
+export declare const chainStage: TurnStage;
+```
+
+### turn/plugin-tick
+
+```typescript
+/**
+ * The plugin-tick stage: after a successful player action, run every
+ * turn plugin in priority order and route each one's events through the
+ * enrichment funnel.
+ *
+ * The tick's view of the action reports GENUINE success: the executor's
+ * flag only checks for `action.error` events, but modern `blocked()`
+ * paths reuse the primary event type with `blocked: true` / `failed:
+ * true`, and a refused action would otherwise advance state-machine
+ * transitions it never earned. Sounds a plugin emits land in the same
+ * per-turn buffer the action's sounds use.
+ *
+ * Public interface: `pluginTickStage`, `wasRefused`.
+ * Owner context: `@sharpee/engine` — the turn cycle.
+ *
+ * References: ADR-120 (the plugin tick), ADR-332 (the bands that order
+ * it), ADR-320 Phase 8 (scene sounds from the tick).
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { TurnStage } from './context.js';
+/**
+ * Whether an action that produced these events was refused: modern
+ * `blocked()` paths reuse the primary event type with `blocked: true` /
+ * `failed: true` instead of emitting `action.error`, so the result's
+ * success flag alone would report a refused action as a success.
+ *
+ * @param events - The action's events
+ */
+export declare function wasRefused(events: ISemanticEvent[]): boolean;
+export declare const pluginTickStage: TurnStage;
 ```
 
 ### prose-pipeline/pipeline
