@@ -19,6 +19,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withInventoryItem('elixir', {
@@ -39,12 +40,12 @@ const drive = (world: WorldModel, item: any) => {
     world,
     createCommand(IFActions.DRINKING, { entity: item, text: 'elixir' })
   );
-  const validation = drinkingAction.validate(context);
+  const validation = runValidatePhase(drinkingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: drinkingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(drinkingAction, context, validation) };
   }
-  drinkingAction.execute(context);
-  return { context, validation, events: drinkingAction.report(context) };
+  runExecutePhase(drinkingAction, context);
+  return { context, validation, events: runReportPhase(drinkingAction, context) };
 };
 
 describe('Drinking interceptor hooks (ADR-118)', () => {

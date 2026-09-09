@@ -19,6 +19,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withInventoryItem('seed cake', {
@@ -39,12 +40,12 @@ const drive = (world: WorldModel, item: any) => {
     world,
     createCommand(IFActions.EATING, { entity: item, text: 'seed cake' })
   );
-  const validation = eatingAction.validate(context);
+  const validation = runValidatePhase(eatingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: eatingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(eatingAction, context, validation) };
   }
-  eatingAction.execute(context);
-  return { context, validation, events: eatingAction.report(context) };
+  runExecutePhase(eatingAction, context);
+  return { context, validation, events: runReportPhase(eatingAction, context) };
 };
 
 describe('Eating interceptor hooks (ADR-118)', () => {

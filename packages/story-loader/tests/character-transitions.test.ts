@@ -16,6 +16,7 @@ import { EngineRandomService } from '@sharpee/engine';
 import { attackingAction } from '@sharpee/stdlib';
 import { CharacterModelTrait, IFEntity, MOOD_AXES, TraitType, WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const STORY =
   'story\n  title: T\n  authors:\n    N\n  id: t\n\n' +
@@ -68,11 +69,11 @@ function attack(world: WorldModel, player: IFEntity, target: IFEntity): ISemanti
     event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
       ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
   };
-  const validation = attackingAction.validate(context);
+  const validation = runValidatePhase(attackingAction, context);
   expect(validation.valid, JSON.stringify(validation)).toBe(true);
   context.validationResult = validation;
-  attackingAction.execute(context);
-  return attackingAction.report(context);
+  runExecutePhase(attackingAction, context);
+  return runReportPhase(attackingAction, context);
 }
 
 describe('D3 transitions through the real attack dispatch', () => {

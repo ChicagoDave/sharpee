@@ -31,13 +31,6 @@ import {
 import { PlayerConcealedEventData } from './hiding-events.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -47,6 +40,8 @@ import {
  */
 export const hidingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.HIDING,
+  reportEventType: 'if.event.player_concealed',
+  blockedEventType: 'if.event.hide_blocked',
   slots: [
     {
       id: 'target',
@@ -107,10 +102,6 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'nothing_to_hide' };
     }
 
-    const state = resolveLifecycle(context, hidingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Target must have ConcealmentTrait
     const concealmentTrait = target.get(ConcealmentTrait.type) as ConcealmentTrait | undefined;
     if (!concealmentTrait) {
@@ -138,10 +129,6 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     // Store data for execute/report phases
     const sharedData = getHidingSharedData(context);
     sharedData.targetId = target.id;
@@ -163,8 +150,6 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       quality: sharedData.quality!,
     }));
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -174,11 +159,6 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       params: result.params || {},
       reason: result.error,
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.hide_blocked', result.error);
-    }
 
     return events;
   },
@@ -200,9 +180,6 @@ export const hidingAction: Action & { metadata: ActionMetadata } = {
       position: sharedData.position,
       quality: sharedData.quality,
     } as PlayerConcealedEventData & { messageId: string; targetName: string; params: Record<string, unknown> })];
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.player_concealed');
 
     return events;
   },

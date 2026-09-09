@@ -24,13 +24,6 @@ import { resolveToolRequirements } from '../tool-shared.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -42,6 +35,8 @@ import {
  */
 export const openingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.OPENING,
+  reportEventType: 'if.event.opened',
+  blockedEventType: 'if.event.open_blocked',
   slots: [
     {
       id: 'target',
@@ -121,10 +116,6 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: OpeningMessages.NO_TARGET };
     }
 
-    const state = resolveLifecycle(context, openingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -177,10 +168,6 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
   
@@ -199,8 +186,6 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Store result for report phase
     context.sharedData.openResult = result;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -249,9 +234,6 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
     // Note: if.event.revealed is emitted by the opened event handler in stdlib
     // This ensures revealed events fire regardless of what action opened the container
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.opened');
-
     return events;
   },
 
@@ -277,11 +259,6 @@ export const openingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.open_blocked', result.error);
-    }
 
     return events;
   }

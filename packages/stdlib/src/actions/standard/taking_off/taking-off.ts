@@ -27,13 +27,6 @@ import {
 } from '../wearable-shared.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -43,6 +36,8 @@ import {
  */
 export const takingOffLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.TAKING_OFF,
+  reportEventType: 'if.event.removed',
+  blockedEventType: 'if.event.take_off_blocked',
   slots: [
     {
       id: 'item',
@@ -98,10 +93,6 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
-    const state = resolveLifecycle(context, takingOffLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     if (!item.has(TraitType.WEARABLE)) {
       return { valid: false, error: 'not_wearing', params: { item: nounPhraseFor(item) } };
     }
@@ -128,10 +119,6 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     if (hasRemovalRestrictions(wearableContext.wearableTrait)) {
       return { valid: false, error: 'cant_remove', params: { item: nounPhraseFor(item) } };
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -184,12 +171,10 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
     sharedData.params = buildWearableEventParams(item, wearableTrait);
     sharedData.messageId = 'removed';
 
-    // Interceptor lifecycle (ADR-228): postExecute runs after the successful
-    // mutation only — the defensive behavior-failure branch above
-    // early-returns with sharedData.failed and skips it, matching the
-    // switching_on precedent.
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
+    // The executor runs the interceptors' postExecute after this phase
+    // returns, on every path (ADR-337 D1) — including the defensive
+    // behavior-failure branch above, which the action's own wiring used
+    // to skip. That branch is unreachable when validate has passed.
   },
 
   /**
@@ -209,11 +194,6 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
       itemName: item?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.take_off_blocked', result.error);
-    }
 
     return events;
   },
@@ -251,9 +231,6 @@ export const takingOffAction: Action & { metadata: ActionMetadata } = {
         layer: sharedData.layer
       })
     ];
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.removed');
 
     return events;
   },

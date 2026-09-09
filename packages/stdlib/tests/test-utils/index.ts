@@ -21,6 +21,7 @@ import {
 import { registerStandardCapabilities } from '../../src/capabilities';
 import { createActionContext } from '../../src/actions/enhanced-context';
 import { Action, ActionContext } from '../../src/actions/enhanced-types';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../src/actions/lifecycle/phase-runner';
 
 /**
  * Creates a basic test world with player and room
@@ -592,14 +593,14 @@ export function executeWithValidation(
   action: Action,
   context: ActionContext
 ): SemanticEvent[] {
-  const validationResult = action.validate(context);
+  const validationResult = runValidatePhase(action, context);
 
   if (!validationResult.valid) {
-    return action.blocked(context, validationResult);
+    return runBlockedPhase(action, context, validationResult);
   }
 
-  action.execute(context);
-  return action.report(context);
+  runExecutePhase(action, context);
+  return runReportPhase(action, context);
 }
 
 /**

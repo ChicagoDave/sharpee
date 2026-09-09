@@ -22,6 +22,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('humming generator', {
@@ -39,12 +40,12 @@ const drive = (world: WorldModel, object: any) => {
     world,
     createCommand(IFActions.LISTENING, { entity: object })
   );
-  const validation = listeningAction.validate(context);
+  const validation = runValidatePhase(listeningAction, context);
   if (!validation.valid) {
-    return { context, validation, events: listeningAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(listeningAction, context, validation) };
   }
-  listeningAction.execute(context);
-  return { context, validation, events: listeningAction.report(context) };
+  runExecutePhase(listeningAction, context);
+  return { context, validation, events: runReportPhase(listeningAction, context) };
 };
 
 describe('Listening interceptor hooks (ADR-118)', () => {

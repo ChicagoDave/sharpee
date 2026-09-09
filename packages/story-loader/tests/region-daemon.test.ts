@@ -19,6 +19,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { goingAction } from '@sharpee/stdlib';
 import { Direction, DirectionType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 /** The story object's phase key (D2) — not exported via the package index. */
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
@@ -142,11 +143,11 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
       event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
     context.validationResult = validation;
-    goingAction.execute(context);
-    goingAction.report(context);
+    runExecutePhase(goingAction, context);
+    runReportPhase(goingAction, context);
   };
 
   const tickEvents = (): ISemanticEvent[] => {

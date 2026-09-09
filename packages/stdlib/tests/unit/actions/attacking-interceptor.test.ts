@@ -15,6 +15,7 @@ import { attackingAction, attackingLifecycle } from '../../../src/actions/standa
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT, SECOND_TEST_MARKER_TRAIT } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('Attacking interceptor surface (ADR-228)', () => {
   test('declares the postExecuteReplacesCore special contract on the descriptor, not a comment', () => {
@@ -69,10 +70,10 @@ describe('Attacking interceptor surface (ADR-228)', () => {
 
     // With a combat interceptor present, validation must NOT block with
     // violence_not_the_answer.
-    const validation = attackingAction.validate(context);
+    const validation = runValidatePhase(attackingAction, context);
     expect(validation.valid).toBe(true);
 
-    attackingAction.execute(context);
+    runExecutePhase(attackingAction, context);
 
     // THE contract pins: the hook's combat result landed in sharedData...
     expect((context.sharedData.attackResult as any).type).toBe('hit');
@@ -83,7 +84,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     expect(fired).toEqual(['target', 'weapon']);
 
     // The custom message flows through report.
-    const events = attackingAction.report(context);
+    const events = runReportPhase(attackingAction, context);
     const attacked = events.find(e => e.type === 'if.event.attacked')!;
     expect((attacked.data as any).messageId).toBe('test.combat.solid_hit');
   });
@@ -98,7 +99,7 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     const command = createCommand(IFActions.ATTACKING, { entity: troll });
     const context = createRealTestContext(attackingAction, world, command);
 
-    const validation = attackingAction.validate(context);
+    const validation = runValidatePhase(attackingAction, context);
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('violence_not_the_answer');
   });
@@ -122,9 +123,9 @@ describe('Attacking interceptor surface (ADR-228)', () => {
     const command = createCommand(IFActions.ATTACKING, { entity: vase });
     const context = createRealTestContext(attackingAction, world, command);
 
-    expect(attackingAction.validate(context).valid).toBe(true);
-    attackingAction.execute(context);
-    const events = attackingAction.report(context);
+    expect(runValidatePhase(attackingAction, context).valid).toBe(true);
+    runExecutePhase(attackingAction, context);
+    const events = runReportPhase(attackingAction, context);
 
     expect(world.getStateValue('vase.hook_ran')).toBe(true);
     expect(events.some(e => e.type === 'vase.chip_flies')).toBe(true);

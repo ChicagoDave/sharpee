@@ -19,6 +19,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('bell rope', {
@@ -40,12 +41,12 @@ const drive = (world: WorldModel, object: any) => {
     world,
     createCommand(IFActions.PULLING, { entity: object, text: 'bell rope' })
   );
-  const validation = pullingAction.validate(context);
+  const validation = runValidatePhase(pullingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: pullingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(pullingAction, context, validation) };
   }
-  pullingAction.execute(context);
-  return { context, validation, events: pullingAction.report(context) };
+  runExecutePhase(pullingAction, context);
+  return { context, validation, events: runReportPhase(pullingAction, context) };
 };
 
 describe('Pulling interceptor hooks (ADR-118)', () => {

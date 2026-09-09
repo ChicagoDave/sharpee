@@ -13,6 +13,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { cuttingAction } from '@sharpee/stdlib';
 import { IFEntity, TraitType, WorldModel, CuttableTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -252,15 +253,15 @@ end phrase`);
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
 
-    const validation = cuttingAction.validate(context);
+    const validation = runValidatePhase(cuttingAction, context);
     context.validationResult = validation;
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
 
     // PRECONDITION: rope starts in the Shed.
     expect(world.getLocation(rope.id)).toBe(story.entityId('shed')!);
 
-    cuttingAction.execute(context);
-    const events = cuttingAction.report(context);
+    runExecutePhase(cuttingAction, context);
+    const events = runReportPhase(cuttingAction, context);
 
     // THE state assertion: the story clause's mutation landed in the world —
     // the rope moved to the Bin.

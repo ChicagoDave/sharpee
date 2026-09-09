@@ -32,12 +32,7 @@ import { TakingMessages } from './taking-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
   runOnBlocked,
   runMultiObjectValidate,
   getMultiObjectLifecycle,
@@ -63,6 +58,9 @@ import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-
  */
 export const takingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.TAKING,
+  reportEventType: 'if.event.taken',
+  blockedEventType: 'if.event.take_blocked',
+  contracts: { handlesMultiObject: true },
   slots: [
     {
       id: 'item',
@@ -378,16 +376,8 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: TakingMessages.NO_TARGET };
     }
 
-    const state = resolveLifecycle(context, takingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     const standard = validateSingleEntity(context, noun);
     if (!standard.valid) return standard;
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -406,8 +396,6 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const noun = context.command.directObject!.entity!;
     executeSingleEntity(context, noun, getTakingSharedData(context));
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -434,8 +422,6 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     const noun = context.command.directObject!.entity!;
     reportSingleSuccess(context, noun, getTakingSharedData(context), events, false);
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.taken');
     return events;
   },
 
@@ -457,21 +443,16 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error
     })];
 
+    // The single-object path's onBlocked runs in the executor (ADR-337 D1).
+    // Multi-object all-fail path (ADR-228 D4, the declared remainder):
+      // failed item's error, so only that item's consultations are
+      // notified here — the other items produced no events for hooks to
+      // decorate. (Partial failures are handled per item in report().)
     if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) {
-        // Single-object path: notify all consultations (ADR-228 D2/D3)
-        runOnBlocked(context, state, events, 'if.event.take_blocked', result.error);
-      } else {
-        // Multi-object all-fail path: the blocked event carries the FIRST
-        // failed item's error, so only that item's consultations are
-        // notified here — the other items produced no events for hooks to
-        // decorate. (Partial failures are handled per item in report().)
-        const multi = getMultiObjectLifecycle(context);
-        const first = multi?.[0];
-        if (first && !first.success) {
-          runOnBlocked(context, first.state, events, 'if.event.take_blocked', first.error ?? result.error);
-        }
+      const multi = getMultiObjectLifecycle(context);
+      const first = multi?.[0];
+      if (first && !first.success) {
+        runOnBlocked(context, first.state, events, 'if.event.take_blocked', first.error ?? result.error);
       }
     }
 

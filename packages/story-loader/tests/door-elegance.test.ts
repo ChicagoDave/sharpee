@@ -23,6 +23,7 @@ import {
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const FIXTURE = readFileSync(
   join(__dirname, '..', '..', 'chord', 'tests', 'fixtures', 'door-vignette.story'),
@@ -59,11 +60,11 @@ describe('locked-door-and-key vignette (ADR-234 elegance parity)', () => {
         event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
           ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
       };
-      const validation = action.validate(context);
+      const validation = runValidatePhase(action, context);
       context.validationResult = validation;
       if (validation.valid) {
-        action.execute(context);
-        action.report(context);
+        runExecutePhase(action, context);
+        runReportPhase(action, context);
       }
       return validation;
     };

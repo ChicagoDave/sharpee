@@ -20,6 +20,7 @@ import {
   TEST_MARKER_TRAIT,
   SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -35,10 +36,10 @@ const drive = (world: WorldModel, item: IFEntity, target?: IFEntity) => {
     ? createCommand(IFActions.THROWING, { entity: item, secondEntity: target, preposition: 'at' })
     : createCommand(IFActions.THROWING, { entity: item });
   const context = createRealTestContext(throwingAction, world, command);
-  const validation = throwingAction.validate(context);
+  const validation = runValidatePhase(throwingAction, context);
   expect(validation.valid).toBe(true);
-  throwingAction.execute(context);
-  return { context, events: throwingAction.report(context) };
+  runExecutePhase(throwingAction, context);
+  return { context, events: runReportPhase(throwingAction, context) };
 };
 
 describe('Thrown-item interceptor resolution (ADR-118 extension)', () => {

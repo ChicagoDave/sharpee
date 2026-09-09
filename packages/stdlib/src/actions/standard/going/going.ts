@@ -41,13 +41,6 @@ import { collectContainedListings } from '../looking/looking-data.js';
 import { containedListingEvents } from '../looking/looking.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId,
   vetoOf
 } from '../../lifecycle/index.js';
@@ -199,6 +192,8 @@ function resolveExitEntities(context: ActionContext): { door?: IFEntity; destina
  */
 export const goingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.GOING,
+  reportEventType: 'if.event.went',
+  blockedEventType: 'if.event.went',
   slots: [
     {
       id: 'source',
@@ -302,9 +297,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Resolve the interceptor surface (ADR-228): source room, destination
     // room, and door — the engine owns hook order and veto semantics.
-    const state = resolveLifecycle(context, goingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
 
     // Check if the direction is blocked BEFORE requiring an exit config:
     // a blockedExits entry means "this direction is deliberately refused
@@ -402,8 +394,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Canonical placement (ADR-228): postValidate runs after ALL standard
     // validation, for every consultation (source → destination → door),
     // first veto wins.
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -452,8 +442,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       // The traversal does not happen: the actor stays put (ADR-295 D5;
       // Acceptance 5 asserts on the unchanged location).
       sharedData.currentLocation = sourceRoom.id;
-      const state = getLifecycleState(context);
-      if (state) runPostExecute(context, state);
       return;
     }
 
@@ -468,8 +456,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         params: { direction }
       };
       sharedData.currentLocation = sourceRoom.id;
-      const state = getLifecycleState(context);
-      if (state) runPostExecute(context, state);
       return;
     }
 
@@ -506,8 +492,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // Compute region boundary crossings (ADR-149)
     sharedData.regionCrossings = context.world.getRegionCrossings(sourceRoom.id, destination.id);
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -530,8 +514,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           blocked: true
         })
       ];
-      const state = getLifecycleState(context);
-      if (state) runPostReport(context, state, events, 'if.event.went');
       return events;
     }
 
@@ -594,8 +576,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // the darkness line, the room description. Only the protagonist reads
     // it; a witnessed NPC's arrival was narrated above.
     if (!isProtagonist) {
-      const state = getLifecycleState(context);
-      if (state) runPostReport(context, state, events, 'if.event.went');
       return events;
     }
 
@@ -621,8 +601,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         isDark: true
       }));
 
-      const state = getLifecycleState(context);
-      if (state) runPostReport(context, state, events, 'if.event.went');
       return events;
     }
 
@@ -724,8 +702,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
 
     // Note: if.event.went is only emitted on dark/blocked; override is a no-op
     // on success non-dark transitions. Use emit for narration after success.
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.went');
 
     return events;
   },
@@ -747,10 +723,6 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
     // All resolved consultations (source, destination, door) are notified;
     // single-override arbitration replaces the old blockedBy precedence
     // split (ADR-228 D2/D3).
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.went', result.error);
-    }
 
     return events;
   },

@@ -22,6 +22,7 @@ import {
   TEST_MARKER_TRAIT,
   SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = (toolRequired: boolean) => {
   const { world, player, room } = setupBasicWorld();
@@ -48,12 +49,12 @@ const drive = (world: WorldModel, crate: any, tool?: any) => {
       ...(tool ? { secondEntity: tool, preposition: 'with' } : {})
     })
   );
-  const validation = openingAction.validate(context);
+  const validation = runValidatePhase(openingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: openingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(openingAction, context, validation) };
   }
-  openingAction.execute(context);
-  return { context, validation, events: openingAction.report(context) };
+  runExecutePhase(openingAction, context);
+  return { context, validation, events: runReportPhase(openingAction, context) };
 };
 
 const isOpen = (crate: any) => (crate.get(TraitType.OPENABLE) as OpenableTrait).isOpen;

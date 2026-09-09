@@ -27,13 +27,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -43,6 +36,8 @@ import {
  */
 export const eatingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.EATING,
+  reportEventType: 'if.event.eaten',
+  blockedEventType: 'if.event.eaten',
   slots: [
     {
       id: 'item',
@@ -118,10 +113,6 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, eatingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the item
     const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -160,10 +151,6 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     if (!carryCheck.ok) {
       return carryCheck.error!;
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -263,8 +250,6 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = messageId;
     sharedData.eventData = eventData;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -282,11 +267,6 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       itemId: item?.id,
       itemName: item?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.eaten', result.error);
-    }
 
     return events;
   },
@@ -311,9 +291,6 @@ export const eatingAction: Action & { metadata: ActionMetadata } = {
       params: { item: item ? nounPhraseFor(item) : { name: sharedData.eventData?.itemName ?? '' } },
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.eaten');
 
     return events;
   },

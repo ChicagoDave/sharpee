@@ -23,6 +23,7 @@ import {
   TEST_MARKER_TRAIT
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('droppingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -411,9 +412,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(true);
-      droppingAction.execute(context);
+      runExecutePhase(droppingAction, context);
 
       // VERIFY POSTCONDITION: item is now in the room
       expectLocation(world, item.id, room.id);
@@ -439,9 +440,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(true);
-      droppingAction.execute(context);
+      runExecutePhase(droppingAction, context);
 
       // VERIFY POSTCONDITION: gem is now in the box
       expectLocation(world, gem.id, box.id);
@@ -466,9 +467,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(true);
-      droppingAction.execute(context);
+      runExecutePhase(droppingAction, context);
 
       // VERIFY POSTCONDITION: book is now on the table
       expectLocation(world, book.id, table.id);
@@ -485,7 +486,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(false);
 
       // VERIFY POSTCONDITION: item is still in the room (unchanged)
@@ -511,7 +512,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(false);
 
       // VERIFY POSTCONDITION: hat is still in player inventory (unchanged)
@@ -635,12 +636,12 @@ describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)'
       world,
       createCommand(IFActions.DROPPING, { entity: item, text: 'brass token' })
     );
-    const validation = droppingAction.validate(context);
+    const validation = runValidatePhase(droppingAction, context);
     if (!validation.valid) {
-      return { context, validation, events: droppingAction.blocked!(context, validation) };
+      return { context, validation, events: runBlockedPhase(droppingAction, context, validation) };
     }
-    droppingAction.execute(context);
-    return { context, validation, events: droppingAction.report(context) };
+    runExecutePhase(droppingAction, context);
+    return { context, validation, events: runReportPhase(droppingAction, context) };
   };
 
   test('preValidate veto blocks the drop — the item stays held, onBlocked decorates the blocked event', () => {
@@ -728,9 +729,9 @@ describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)',
     (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(droppingAction, world, command);
 
-    const validation = droppingAction.validate(context);
+    const validation = runValidatePhase(droppingAction, context);
     expect(validation.valid).toBe(true);
-    droppingAction.execute(context);
+    runExecutePhase(droppingAction, context);
 
     // State: both items moved to the room, both interceptor mutations landed
     // (this is the drop-all path that previously bypassed ALL five hooks).
@@ -739,7 +740,7 @@ describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)',
     expect(world.getStateValue('dropped.copper coin')).toBe(true);
     expect(world.getStateValue('dropped.green gem')).toBe(true);
 
-    droppingAction.report(context);
+    runReportPhase(droppingAction, context);
     expect(executed.sort()).toEqual(['copper coin', 'green gem']);
     expect(reported.sort()).toEqual(['copper coin', 'green gem']);
   });

@@ -19,6 +19,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('velvet curtain', {
@@ -38,12 +39,12 @@ const drive = (world: WorldModel, object: any) => {
     world,
     createCommand(IFActions.HIDING, { entity: object, extras: { position: 'behind' } })
   );
-  const validation = hidingAction.validate(context);
+  const validation = runValidatePhase(hidingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: hidingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(hidingAction, context, validation) };
   }
-  hidingAction.execute(context);
-  return { context, validation, events: hidingAction.report(context) };
+  runExecutePhase(hidingAction, context);
+  return { context, validation, events: runReportPhase(hidingAction, context) };
 };
 
 describe('Hiding interceptor hooks (ADR-118)', () => {

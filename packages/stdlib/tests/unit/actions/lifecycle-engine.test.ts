@@ -81,6 +81,8 @@ function makeContext(world: WorldModel, item: IFEntity, box?: IFEntity): ActionC
 /** The published two-slot descriptor used by most tests: direct → indirect. */
 const descriptor: ActionLifecycleDescriptor = {
   actionId: TEST_ACTION,
+  reportEventType: 'if.event.tested',
+  blockedEventType: 'if.event.test_blocked',
   slots: [
     {
       id: 'item',
@@ -130,6 +132,8 @@ describe('resolveLifecycle (D3 resolution)', () => {
 
     const bothIds: ActionLifecycleDescriptor = {
       actionId: TEST_ACTION,
+      reportEventType: 'if.event.tested',
+      blockedEventType: 'if.event.test_blocked',
       slots: [{
         id: 'item',
         actionIds: [SECOND_ID, TEST_ACTION],
@@ -149,6 +153,8 @@ describe('resolveLifecycle (D3 resolution)', () => {
 
     const seeded: ActionLifecycleDescriptor = {
       actionId: TEST_ACTION,
+      reportEventType: 'if.event.tested',
+      blockedEventType: 'if.event.test_blocked',
       slots: [{
         id: 'item',
         actionIds: [TEST_ACTION],
@@ -499,6 +505,8 @@ describe('multi-object lifecycle (D4)', () => {
 
   const multiDescriptor: ActionLifecycleDescriptor = {
     actionId: TEST_ACTION,
+    reportEventType: 'if.event.tested',
+    blockedEventType: 'if.event.test_blocked',
     slots: [
       { id: 'item', actionIds: [TEST_ACTION], resolve: () => undefined },
       {
@@ -549,6 +557,8 @@ describe('multi-object lifecycle (D4)', () => {
 
     const seededMulti: ActionLifecycleDescriptor = {
       actionId: TEST_ACTION,
+      reportEventType: 'if.event.tested',
+      blockedEventType: 'if.event.test_blocked',
       slots: [
         { id: 'item', actionIds: [TEST_ACTION], resolve: () => undefined },
         {

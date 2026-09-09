@@ -22,13 +22,6 @@ import { MESSAGES } from './locking-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -41,6 +34,8 @@ import {
  */
 export const lockingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.LOCKING,
+  reportEventType: 'if.event.locked',
+  blockedEventType: 'if.event.lock_blocked',
   slots: [
     {
       id: 'target',
@@ -132,10 +127,6 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, lockingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -175,10 +166,6 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
     if (keyValidation) {
       return keyValidation;
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -260,8 +247,6 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       sharedData.params.key = nounPhraseFor(withKey);
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -303,9 +288,6 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       })
     ];
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.locked');
-
     return events;
   },
 
@@ -326,11 +308,6 @@ export const lockingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.lock_blocked', result.error);
-    }
 
     return events;
   },

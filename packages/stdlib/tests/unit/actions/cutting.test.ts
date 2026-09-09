@@ -23,6 +23,7 @@ import {
   TEST_MARKER_TRAIT,
   SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const CUT_FLAG = 'test.rope_cut';
 
@@ -70,15 +71,15 @@ const drive = (world: WorldModel, rope: any, tool?: any) => {
       ...(tool ? { secondEntity: tool, preposition: 'with' } : {})
     })
   );
-  const validation = cuttingAction.validate(context);
+  const validation = runValidatePhase(cuttingAction, context);
   // Mirror the engine contract: validationResult is attached to the
   // context before execute/report (enhanced-types.ts).
   (context as any).validationResult = validation;
   if (!validation.valid) {
-    return { context, validation, events: cuttingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(cuttingAction, context, validation) };
   }
-  cuttingAction.execute(context);
-  return { context, validation, events: cuttingAction.report(context) };
+  runExecutePhase(cuttingAction, context);
+  return { context, validation, events: runReportPhase(cuttingAction, context) };
 };
 
 describe('Cutting eligibility and tool requirement (ADR-230 D3c)', () => {

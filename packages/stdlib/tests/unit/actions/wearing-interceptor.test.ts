@@ -18,6 +18,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withInventoryItem('leather cloak', {
@@ -38,12 +39,12 @@ const drive = (world: WorldModel, item: any) => {
     world,
     createCommand(IFActions.WEARING, { entity: item, text: 'leather cloak' })
   );
-  const validation = wearingAction.validate(context);
+  const validation = runValidatePhase(wearingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: wearingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(wearingAction, context, validation) };
   }
-  wearingAction.execute(context);
-  return { context, validation, events: wearingAction.report(context) };
+  runExecutePhase(wearingAction, context);
+  return { context, validation, events: runReportPhase(wearingAction, context) };
 };
 
 describe('Wearing interceptor hooks (ADR-118)', () => {

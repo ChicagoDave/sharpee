@@ -24,13 +24,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -40,6 +33,8 @@ import {
  */
 export const pullingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.PULLING,
+  reportEventType: 'if.event.pulled',
+  blockedEventType: 'if.event.pulled',
   slots: [
     {
       id: 'target',
@@ -98,10 +93,6 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
-    const state = resolveLifecycle(context, pullingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -127,10 +118,6 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'already_pulled', params: { target: nounPhraseFor(target) } };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
 
@@ -153,8 +140,6 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     pullable.state = 'pulled';
     pullable.pullCount = (pullable.pullCount || 0) + 1;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -172,11 +157,6 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.pulled', result.error);
-    }
 
     return events;
   },
@@ -199,9 +179,6 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
       pullCount: sharedData.pullCount,
       pullType: sharedData.pullType
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.pulled');
 
     return events;
   }

@@ -31,7 +31,11 @@ import {
   type ScopeResolver,
   type ValidatedCommand,
   createScopeResolver,
-  tryInferTarget
+  tryInferTarget,
+  runValidatePhase,
+  runExecutePhase,
+  runReportPhase,
+  runBlockedPhase
 } from '@sharpee/stdlib';
 
 import { GameContext, TurnResult, EngineConfig } from './types.js';
@@ -468,11 +472,14 @@ export class CommandExecutor {
       involvedEntities
     );
 
-    // Run action's four phases: validate → execute → report (or blocked)
-    // If capability dispatch applies, use capability behavior; otherwise use action
+    // Run action's four phases: validate → execute → report (or blocked).
+    // The phase runner puts the interceptor lifecycle (ADR-228) around each
+    // phase for every wired action — this is the one call site (ADR-337
+    // D1). If capability dispatch applies, the capability behavior replaces
+    // the action's phases outright and consults no interceptors, as before.
     let actionValidation = capabilityCheck.shouldDispatch
       ? executeCapabilityValidate(capabilityCheck, actionContext)
-      : action.validate(actionContext);
+      : runValidatePhase(action, actionContext);
     let currentCommand = command;
     let currentContext = actionContext;
     let useCapabilityDispatch = capabilityCheck.shouldDispatch;
@@ -548,7 +555,7 @@ export class CommandExecutor {
           // Re-validate with inferred target (using capability dispatch if applicable)
           const retryValidation = inferredCapabilityCheck.shouldDispatch
             ? executeCapabilityValidate(inferredCapabilityCheck, inferredContext)
-            : action.validate(inferredContext);
+            : runValidatePhase(action, inferredContext);
 
           if (retryValidation.valid) {
             // Inference succeeded - use the inferred command
@@ -574,16 +581,12 @@ export class CommandExecutor {
         events = executeCapabilityReport(currentContext);
       } else {
         // Standard action: use action phases
-        const executeResult = action.execute(currentContext);
+        const executeResult = runExecutePhase(action, currentContext);
 
         // Check pattern (new vs old)
         if (executeResult === undefined || executeResult === null) {
           // New pattern: use report() for success events only
-          if (action.report) {
-            events = action.report(currentContext);
-          } else {
-            throw new Error(`Action ${action.id} uses new pattern but lacks report()`);
-          }
+          events = runReportPhase(action, currentContext);
         } else {
           // Old pattern: events from execute()
           events = executeResult as ISemanticEvent[];
@@ -596,7 +599,7 @@ export class CommandExecutor {
         // Capability dispatch: use behavior's blocked phase
         events = executeCapabilityBlocked(currentContext, actionValidation, command.actionId);
       } else if (action.blocked) {
-        events = action.blocked(currentContext, actionValidation);
+        events = runBlockedPhase(action, currentContext, actionValidation);
       } else {
         // Fallback for unmigrated actions
         events = [{

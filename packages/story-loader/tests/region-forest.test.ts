@@ -16,6 +16,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { goingAction } from '@sharpee/stdlib';
 import { Direction, DirectionType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory, SchedulerDaemon } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const FIXTURE = readFileSync(
   join(__dirname, '..', '..', 'chord', 'tests', 'fixtures', 'region-forest.story'),
@@ -54,11 +55,11 @@ describe('region-forest elegance-parity fixture (ADR-236 AC-7, REAL-PATH)', () =
       event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
     context.validationResult = validation;
-    goingAction.execute(context);
-    const reported = goingAction.report(context);
+    runExecutePhase(goingAction, context);
+    const reported = runReportPhase(goingAction, context);
     return messageIdsOf(reported.flatMap((e) => story.runtime.fireEventClauses(world, e))) as string[];
   };
 

@@ -23,6 +23,7 @@ import {
   TEST_MARKER_TRAIT,
   SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const DUG_FLAG = 'test.earth_dug';
 
@@ -70,15 +71,15 @@ const drive = (world: WorldModel, rope: any, tool?: any) => {
       ...(tool ? { secondEntity: tool, preposition: 'with' } : {})
     })
   );
-  const validation = diggingAction.validate(context);
+  const validation = runValidatePhase(diggingAction, context);
   // Mirror the engine contract: validationResult is attached to the
   // context before execute/report (enhanced-types.ts).
   (context as any).validationResult = validation;
   if (!validation.valid) {
-    return { context, validation, events: diggingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(diggingAction, context, validation) };
   }
-  diggingAction.execute(context);
-  return { context, validation, events: diggingAction.report(context) };
+  runExecutePhase(diggingAction, context);
+  return { context, validation, events: runReportPhase(diggingAction, context) };
 };
 
 describe('Digging eligibility and tool requirement (tool gate (mirrors cutting, ADR-230 D3c))', () => {

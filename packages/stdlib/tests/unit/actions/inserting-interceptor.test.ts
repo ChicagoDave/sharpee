@@ -13,6 +13,7 @@ import { insertingAction } from '../../../src/actions/standard/inserting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -34,12 +35,12 @@ const drive = (world: WorldModel, item: IFEntity, container: IFEntity) => {
     preposition: 'in'
   });
   const context = createRealTestContext(insertingAction, world, command);
-  const validation = insertingAction.validate(context);
+  const validation = runValidatePhase(insertingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: insertingAction.blocked!(context, validation) };
+    return { context, validation, events: runBlockedPhase(insertingAction, context, validation) };
   }
-  insertingAction.execute(context);
-  return { context, validation, events: insertingAction.report(context) };
+  runExecutePhase(insertingAction, context);
+  return { context, validation, events: runReportPhase(insertingAction, context) };
 };
 
 describe('Inserting interceptor surface (ADR-228 D6-B)', () => {

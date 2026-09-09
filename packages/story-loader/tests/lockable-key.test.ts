@@ -13,6 +13,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { unlockingAction } from '@sharpee/stdlib';
 import { IFEntity, TraitType, WorldModel, LockableTrait } from '@sharpee/world-model';
 import { createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -105,11 +106,11 @@ describe('lockable with key on container kinds (ADR-230 Phase 9a)', () => {
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
 
-    const validation = unlockingAction.validate(context);
+    const validation = runValidatePhase(unlockingAction, context);
     (context as any).validationResult = validation;
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
-    unlockingAction.execute(context);
-    unlockingAction.report(context);
+    runExecutePhase(unlockingAction, context);
+    runReportPhase(unlockingAction, context);
 
     // THE state assertion: actually unlocked, by the configured key.
     expect((strongbox.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);

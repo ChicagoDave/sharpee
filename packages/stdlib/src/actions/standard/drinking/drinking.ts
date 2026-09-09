@@ -24,13 +24,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -40,6 +33,8 @@ import {
  */
 export const drinkingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.DRINKING,
+  reportEventType: 'if.event.drunk',
+  blockedEventType: 'if.event.drunk',
   slots: [
     {
       id: 'item',
@@ -218,10 +213,6 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_item' };
     }
 
-    const state = resolveLifecycle(context, drinkingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the item
     const scopeCheck = context.requireScope(item, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -258,10 +249,6 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     if (containerTrait && item.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(item)) {
       return { valid: false, error: 'container_closed', params: { item: nounPhraseFor(item) } };
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -344,8 +331,6 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
     sharedData.params = params;
     sharedData.eventData = eventData;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -362,11 +347,6 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       itemId: item?.id,
       itemName: item?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.drunk', result.error);
-    }
 
     return events;
   },
@@ -394,9 +374,6 @@ export const drinkingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params || {},
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.drunk');
 
     return events;
   }

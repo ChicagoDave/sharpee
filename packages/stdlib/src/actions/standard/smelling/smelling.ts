@@ -24,13 +24,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -41,6 +34,8 @@ import {
  */
 export const smellingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.SMELLING,
+  reportEventType: 'if.event.smelled',
+  blockedEventType: 'if.event.smell_blocked',
   slots: [
     {
       id: 'target',
@@ -193,10 +188,6 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.actor;
     const target = context.command.directObject?.entity;
 
-    const state = resolveLifecycle(context, smellingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // If target specified, check distance
     if (target) {
       // Check if in different rooms first (too far to smell)
@@ -212,10 +203,6 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     // Scent analysis happens in execute phase
     return { valid: true };
   },
@@ -230,8 +217,6 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
     sharedData.eventData = analysis.eventData;
     sharedData.params = analysis.params;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -249,11 +234,6 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name
     })];
 
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.smell_blocked', result.error);
-    }
-
     return events;
   },
 
@@ -267,9 +247,6 @@ export const smellingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params,
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.smelled');
 
     return events;
   },

@@ -38,13 +38,6 @@ import { resolveToolRequirements } from '../tool-shared.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -56,6 +49,8 @@ import {
  */
 export const diggingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.DIGGING,
+  reportEventType: 'if.event.dug',
+  blockedEventType: 'if.event.dug_blocked',
   slots: [
     {
       id: 'target',
@@ -137,10 +132,6 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: DiggingMessages.NO_TARGET };
     }
 
-    const state = resolveLifecycle(context, diggingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
       return scopeCheck.error!;
@@ -209,9 +200,6 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
       data = { behavior, sharedData };
     }
 
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true, data };
   },
 
@@ -229,8 +217,6 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
       context.sharedData.diggingDispatch = data;
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -264,9 +250,6 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
       ];
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.dug');
-
     return events;
   },
 
@@ -287,11 +270,6 @@ export const diggingAction: Action & { metadata: ActionMetadata } = {
         reason: result.error
       })
     ];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.dug_blocked', result.error);
-    }
 
     return events;
   }

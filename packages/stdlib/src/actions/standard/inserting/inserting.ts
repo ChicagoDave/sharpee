@@ -22,7 +22,7 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import { IFActions } from '../../constants.js';
-import { puttingAction } from '../putting/index.js';
+import { puttingAction, puttingLifecycle } from '../putting/index.js';
 import { createActionContext } from '../../enhanced-context.js';
 import { InsertingMessages } from './inserting-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -34,7 +34,6 @@ import {
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -50,6 +49,8 @@ import {
  */
 export const insertingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.INSERTING,
+  reportEventType: 'if.event.put_in',
+  blockedEventType: 'if.event.insert_blocked',
   slots: [
     {
       id: 'item',
@@ -161,12 +162,6 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // D6-B: consult the INSERTING-id hooks first (on the outer context) —
-    // the delegated putting phases run the PUTTING-id hooks themselves.
-    const state = resolveLifecycle(context, insertingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Create modified command with 'in' preposition for delegation to putting
     const modifiedCommand = createModifiedCommand(context);
 
@@ -184,6 +179,16 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getInsertingSharedData(context);
     sharedData.modifiedContext = modifiedContext;
 
+    // D6-B delegation seam: the executor runs the INSERTING-id hooks on
+    // the outer context; this action runs the PUTTING-id hooks on the
+    // delegated context itself, because the executor never sees the
+    // delegated call (ADR-337 D1). Order is unchanged: inserting's
+    // preValidate, then putting's, then putting's postValidate, then
+    // inserting's.
+    const puttingState = resolveLifecycle(modifiedContext, puttingLifecycle);
+    const puttingPreVeto = runPreValidate(modifiedContext, puttingState);
+    if (puttingPreVeto) return puttingPreVeto;
+
     // Delegate validation to putting action
     // This includes implicit take check - events stored in modifiedContext.sharedData
     const puttingValidation = puttingAction.validate(modifiedContext);
@@ -192,10 +197,8 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       return puttingValidation as ValidationResult;
     }
 
-    // Canonical placement (ADR-228): postValidate after ALL standard
-    // validation, including the delegated putting validation.
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
+    const puttingPostVeto = runPostValidate(modifiedContext, puttingState);
+    if (puttingPostVeto) return puttingPostVeto;
 
     return { valid: true };
   },
@@ -217,12 +220,11 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       );
     }
 
-    // Execute putting action (runs the PUTTING-id hooks internally)
+    // Execute putting action, then the PUTTING-id postExecute hooks on the
+    // delegated context (the executor runs inserting's own after this).
     puttingAction.execute(sharedData.modifiedContext!);
-
-    // Then the INSERTING-id hooks on the outer context (D6-B order)
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
+    const puttingState = getLifecycleState(sharedData.modifiedContext!);
+    if (puttingState) runPostExecute(sharedData.modifiedContext!, puttingState);
   },
 
   /**
@@ -253,15 +255,13 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       })];
     }
 
-    // Delegate to putting action's report (runs the PUTTING-id hooks)
+    // Delegate to putting action's report, then the PUTTING-id postReport
+    // hooks on the delegated context; the executor runs inserting's own
+    // after this. Inserting is always 'in', so the primary event is put_in.
     if ('report' in puttingAction && typeof puttingAction.report === 'function') {
       const events = puttingAction.report(modifiedContext);
-
-      // Then the INSERTING-id hooks on the outer context (D6-B order).
-      // Inserting is always 'in', so putting's primary event is put_in.
-      const state = getLifecycleState(context);
-      if (state) runPostReport(context, state, events, 'if.event.put_in');
-
+      const puttingState = getLifecycleState(modifiedContext);
+      if (puttingState) runPostReport(modifiedContext, puttingState, events, 'if.event.put_in');
       return events;
     }
 
@@ -293,11 +293,6 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
       containerName: container?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.insert_blocked', result.error);
-    }
 
     return events;
   }

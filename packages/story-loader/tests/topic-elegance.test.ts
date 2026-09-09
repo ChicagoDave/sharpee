@@ -17,6 +17,7 @@ import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const FIXTURE = readFileSync(
   join(__dirname, '..', '..', 'chord', 'tests', 'fixtures', 'topic-vignette.story'),
@@ -53,11 +54,11 @@ describe('gamekeeper interrogation vignette (ADR-239 elegance parity)', () => {
         event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
           ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
       };
-      const validation = askingAction.validate(context);
+      const validation = runValidatePhase(askingAction, context);
       context.validationResult = validation;
       expect(validation.valid).toBe(true);
-      askingAction.execute(context);
-      const events = askingAction.report(context);
+      runExecutePhase(askingAction, context);
+      const events = runReportPhase(askingAction, context);
       return (events[0]?.data as any)?.messageId as string;
     };
 

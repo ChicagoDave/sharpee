@@ -22,6 +22,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('goingAction (Golden Pattern)', () => {
   describe('Four-Phase Pattern Compliance', () => {
@@ -240,7 +241,7 @@ describe('goingAction (Golden Pattern)', () => {
       command.parsed.extras = { direction: Direction.NORTH };
       const context = createRealTestContext(goingAction, world, command);
 
-      const validation = goingAction.validate(context);
+      const validation = runValidatePhase(goingAction, context);
 
       expect(validation.valid).toBe(false);
       expect(validation.error).toBe('test.door.jammed');
@@ -801,9 +802,9 @@ describe('World State Mutations', () => {
 
     const context = createRealTestContext(goingAction, world, command);
 
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid).toBe(true);
-    goingAction.execute(context);
+    runExecutePhase(goingAction, context);
 
     // VERIFY POSTCONDITION: player is now in room2
     expect(world.getLocation(player.id)).toBe(room2.id);
@@ -844,7 +845,7 @@ describe('World State Mutations', () => {
     const context = createRealTestContext(goingAction, world, command);
 
     // Validation should fail
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid).toBe(false);
 
     // VERIFY POSTCONDITION: player still in room1 (no change)
@@ -880,7 +881,7 @@ describe('World State Mutations', () => {
     const context = createRealTestContext(goingAction, world, command);
 
     // Validation should fail
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid).toBe(false);
 
     // VERIFY POSTCONDITION: player still in room1 (no change)
@@ -920,9 +921,9 @@ describe('World State Mutations', () => {
 
     const context = createRealTestContext(goingAction, world, command);
 
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid).toBe(true);
-    goingAction.execute(context);
+    runExecutePhase(goingAction, context);
 
     // VERIFY POSTCONDITION: room2 is now marked as visited
     const room2TraitAfter = room2.getTrait(RoomTrait)!;
@@ -951,10 +952,10 @@ describe('Going interceptor hooks on the dark path (ADR-228 D7.1)', () => {
     command.parsed.extras = { direction: Direction.NORTH };
     const context = createRealTestContext(goingAction, world, command);
 
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid).toBe(true);
-    goingAction.execute(context);
-    const events = goingAction.report(context);
+    runExecutePhase(goingAction, context);
+    const events = runReportPhase(goingAction, context);
 
     // Player really moved into the dark room.
     expect(world.getLocation(player.id)).toBe(cave.id);

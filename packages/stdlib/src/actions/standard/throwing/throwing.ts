@@ -47,13 +47,6 @@ import { ThrowingEventMap } from './throwing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -68,6 +61,8 @@ import {
  */
 export const throwingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.THROWING,
+  reportEventType: 'if.event.thrown',
+  blockedEventType: 'if.event.throw_blocked',
   slots: [
     {
       id: 'item',
@@ -219,10 +214,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_item' };
     }
 
-    const state = resolveLifecycle(context, throwingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Item must be carried (or implicitly takeable)
     // This enables "throw apple at bob" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -277,10 +268,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         };
       }
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -340,10 +327,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.capabilityBehavior = behavior;
           sharedData.capabilityTrait = capTrait;
           behavior.execute(target, context.world, context.actor.id, context.sharedData);
-          // ADR-228 D7.2: capability behavior first, then interceptor
-          // hooks — this path previously returned before postExecute.
-          const capState = getLifecycleState(context);
-          if (capState) runPostExecute(context, capState);
           return;
         }
       }
@@ -451,8 +434,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       context.world.moveEntity(item.id, ''); // Empty string = nowhere
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -474,11 +455,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.throw_blocked', result.error);
-    }
 
     return events;
   },
@@ -503,8 +479,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
       }
       // ADR-228 D7.2: capability behavior first, then interceptor hooks —
       // this path previously returned before postReport.
-      const capState = getLifecycleState(context);
-      if (capState) runPostReport(context, capState, events, 'if.event.thrown');
       return events;
     }
 
@@ -555,9 +529,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         targetName: sharedData.targetName
       }));
     }
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.thrown');
 
     return events;
   },

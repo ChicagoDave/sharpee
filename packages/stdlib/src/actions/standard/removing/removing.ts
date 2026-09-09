@@ -44,12 +44,7 @@ import { isMultiObjectCommand, getExcludedNames } from '../../../helpers/multi-o
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
   runOnBlocked,
   runMultiObjectValidate,
   getMultiObjectLifecycle,
@@ -71,6 +66,9 @@ import {
  */
 export const removingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.REMOVING,
+  reportEventType: 'if.event.taken',
+  blockedEventType: 'if.event.remove_blocked',
+  contracts: { handlesMultiObject: true },
   slots: [
     {
       id: 'item',
@@ -445,16 +443,8 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, removingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     const standard = validateSingleEntity(context, item, source);
     if (!standard.valid) return standard;
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -477,8 +467,6 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
 
     executeSingleEntity(context, item, source, sharedData);
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -542,9 +530,6 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       })
     ];
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.taken');
-
     return events;
   },
 
@@ -573,19 +558,14 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error
     })];
 
+    // The single-object path's onBlocked runs in the executor (ADR-337 D1).
+    // Multi-object all-fail path (ADR-228 D4, the declared remainder):
+      // (taking's pattern — the blocked event carries that item's error).
     if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) {
-        // Single-object path: notify all consultations (ADR-228 D2/D3)
-        runOnBlocked(context, state, events, 'if.event.remove_blocked', result.error);
-      } else {
-        // Multi-object all-fail path: first failed item's consultations only
-        // (taking's pattern — the blocked event carries that item's error).
-        const multi = getMultiObjectLifecycle(context);
-        const first = multi?.[0];
-        if (first && !first.success) {
-          runOnBlocked(context, first.state, events, 'if.event.remove_blocked', first.error ?? result.error);
-        }
+      const multi = getMultiObjectLifecycle(context);
+      const first = multi?.[0];
+      if (first && !first.success) {
+        runOnBlocked(context, first.state, events, 'if.event.remove_blocked', first.error ?? result.error);
       }
     }
 

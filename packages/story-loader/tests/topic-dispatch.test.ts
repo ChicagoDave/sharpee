@@ -21,6 +21,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { askingAction, tellingAction } from '@sharpee/stdlib';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 const FIXTURE = readFileSync(join(CHORD_FIXTURES, 'topic-basic.story'), 'utf8');
@@ -86,12 +87,12 @@ function makeContext(l: Loaded, action: { id: string }, command: Record<string, 
 /** Drive all four phases of a real stdlib action; return report's events. */
 function drive(l: Loaded, action: any, command: Record<string, unknown>) {
   const context = makeContext(l, action, command);
-  const validation = action.validate(context);
+  const validation = runValidatePhase(action, context);
   context.validationResult = validation;
   let events: ISemanticEvent[] = [];
   if (validation.valid) {
-    action.execute(context);
-    events = action.report(context);
+    runExecutePhase(action, context);
+    events = runReportPhase(action, context);
   }
   return { validation, events };
 }

@@ -11,12 +11,13 @@
 - Both phases gated: `compare-gates.sh` IDENTICAL on the Dungeo chain, the seeded unit suite, and the three Chord trees; parser-en-us 328 passing 0 skipped; world-model 1512 passing 0 skipped; lang-en-us 452.
 - Found and filed GH #391: the incremental CJS `tsc` leaves `dist/**/*.d.ts` stale (fresh mtime, old content), so `./repokit build` regenerated the API reference with 450+ lines of removed API re-added. `tsc --build --force` on stdlib, world-model (via stdlib's references), and character fixed it; the reference diff is now deletions only.
 - Filed GH #390 (Chord Writer closes open files when a different story opens) and GH #392 (export the Testing view to a self-contained HTML file) at David's request.
+- Phase 14 item 1 (ADR-337 D1) DONE after David approved the two descriptor fields: the interceptor lifecycle's call site is stdlib's `lifecycle/phase-runner.ts`, called by `CommandExecutor.runPhases`; 605 plumbing lines gone from 40 actions; `contracts.runsOwnHooks` (attacking, the four conversation actions) and `contracts.handlesMultiObject` (taking, dropping, putting, removing) name the exceptions; inserting runs putting's hooks around its delegation. 58 test files now drive phases through the runner. **The refusal-order diff was empty** (both gate runs byte-identical); `earlyRefusal` is declared and unused. ADR-337 Amendment A2; `packages/stdlib/CLAUDE.md` updated; two new test files (engine hook sequence, stdlib structural pin). mutation-verification: clean.
 
 ## Key Decisions
 - David, 2026-09-08: "confirm both" — the Phase 3 and Phase 5 lists as posted, including the recommendations (delete `events.ts` whole; `IParser` stays in world-model; the ten-row and three-row skip tables as recommended).
 
 ## Open Items
-- Phase 14 (ADR-337 D1) needs a design note before its scratch diff: the executor cannot run `runPostReport`/`runOnBlocked` without each action's primary and blocked event types, which today are literals at 40 call sites; ADR-337 D5 says the descriptor gains only `earlyRefusal`. That tension is David's to resolve.
+- Phase 14 items 2 (D3 deletions: `pushing-original.ts` and the four `.removed` files) and 3 (D7's 27-row skip table: keep 4 that pass un-skipped, delete 23, three GH issues) posted for David's confirmation.
 - Phase 9 (ADR-340) waits for an attended session per the plan.
 
 ## Files Modified

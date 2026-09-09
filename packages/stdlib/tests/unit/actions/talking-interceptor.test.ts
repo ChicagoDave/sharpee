@@ -28,6 +28,7 @@ import {
   setupBasicWorld,
   createCommand,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -43,12 +44,12 @@ const drive = (world: WorldModel, target: IFEntity) => {
     world,
     createCommand(IFActions.TALKING, { entity: target, text: 'troll' })
   );
-  const validation = talkingAction.validate(context);
+  const validation = runValidatePhase(talkingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: talkingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(talkingAction, context, validation) };
   }
-  talkingAction.execute(context);
-  return { context, validation, events: talkingAction.report(context) };
+  runExecutePhase(talkingAction, context);
+  return { context, validation, events: runReportPhase(talkingAction, context) };
 };
 
 describe('Talking interceptor hooks (ADR-118)', () => {

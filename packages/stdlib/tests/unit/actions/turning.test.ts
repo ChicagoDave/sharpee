@@ -21,6 +21,7 @@ import {
   setupBasicWorld,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const TURN_FLAG = 'test.crank_turned';
 
@@ -45,15 +46,15 @@ const drive = (world: WorldModel, crank: any) => {
     world,
     createCommand(IFActions.TURNING, { entity: crank })
   );
-  const validation = turningAction.validate(context);
+  const validation = runValidatePhase(turningAction, context);
   // Mirror the engine contract: validationResult is attached to the
   // context before execute/report (enhanced-types.ts).
   (context as any).validationResult = validation;
   if (!validation.valid) {
-    return { context, validation, events: turningAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(turningAction, context, validation) };
   }
-  turningAction.execute(context);
-  return { context, validation, events: turningAction.report(context) };
+  runExecutePhase(turningAction, context);
+  return { context, validation, events: runReportPhase(turningAction, context) };
 };
 
 describe('Turning implementation surfaces (dual-surface)', () => {

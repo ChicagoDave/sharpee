@@ -1204,12 +1204,24 @@ export type IFActionType = typeof IFActions[keyof typeof IFActions];
  * stdlib wired-action registry (ADR-228 D5) is derived mechanically from
  * the descriptor table, never hand-maintained.
  *
+ * The descriptor is also what the command executor reads to run the
+ * hooks around the action's phases (ADR-337 D1): the executor, not the
+ * action, calls preValidate before `validate`, postValidate after it,
+ * postExecute after `execute`, postReport after `report`, and onBlocked
+ * after `blocked`. Every action whose descriptor is in the registry is
+ * therefore consulted at all four phase boundaries on every path. The
+ * few actions that must run a hook at a point the executor cannot know
+ * declare it in `contracts.runsOwnHooks` and call that hook themselves.
+ *
  * Public interface: `ActionLifecycleDescriptor`, `EntitySlotSpec`,
  * `LifecycleContracts`.
+ *
+ * References: ADR-228 (the lifecycle engine and its rulings), ADR-337 D1
+ * (the executor as the one call site), ADR-320 D16 (answering's grip).
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext } from '../enhanced-types.js';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
 /**
  * One consultable entity slot of a command.
  *
@@ -1277,6 +1289,30 @@ export interface LifecycleContracts {
      * the hook itself normally.
      */
     postExecuteReplacesCore?: boolean;
+    /**
+     * Hooks the action runs itself, at a point inside its phase the
+     * executor cannot know — the executor skips each hook named here
+     * (ADR-337 D1). attacking runs postExecute mid-execute because the
+     * hook IS the combat resolution its later logic reads, and runs
+     * postReport before it appends death and knockout events so the blow's
+     * narration precedes its consequences; the four conversation actions
+     * (asking, telling, talking, answering) run postValidate, postExecute,
+     * and postReport only when no open exchange or active thread has
+     * gripped the input (ADR-320 D16) — a gripped input never reaches the
+     * topic table, whose occurrence bump lives in postValidate. An action
+     * naming a hook here MUST call it on every path that reaches that
+     * phase and is not gripped, or the interceptors silently miss the
+     * boundary.
+     */
+    runsOwnHooks?: ReadonlyArray<'postValidate' | 'postExecute' | 'postReport'>;
+    /**
+     * The action runs one lifecycle per item for a multi-object command
+     * ("take all", "drop x and y") through the D4 primitives from inside
+     * its own item loop, so the executor runs none of the single-object
+     * hooks for such a command (ADR-337 D1's declared remainder). The
+     * executor still runs them for the action's single-object commands.
+     */
+    handlesMultiObject?: boolean;
 }
 /**
  * An action's declarative interceptor surface (ADR-228 D0-B).
@@ -1292,12 +1328,34 @@ export interface ActionLifecycleDescriptor {
      */
     actionId: string;
     /**
+     * The event type an interceptor's postReport `override` targets in the
+     * action's success events — the action's primary event (`if.event.taken`).
+     * A function when the primary event depends on the command (putting's
+     * `put_in` versus `put_on`); it is called after `report` with the same
+     * context, so it may read sharedData.
+     */
+    reportEventType: string | ((context: ActionContext) => string);
+    /**
+     * The event type the action's `blocked` phase emits and an interceptor's
+     * onBlocked `override` targets (`if.event.take_blocked`).
+     */
+    blockedEventType: string;
+    /**
      * Entity slots in the published consultation order (D3-B): direct
      * object → indirect/instrument → implicit entities.
      */
     slots: EntitySlotSpec[];
     /** Rare special contracts (D7.3). Omit unless the ADR names one. */
     contracts?: LifecycleContracts;
+    /**
+     * A refusal the interceptors must not be able to pre-empt (ADR-337 D1).
+     * The executor calls it before preValidate; a `{ valid: false }` result
+     * takes the action's `blocked` path with onBlocked still consulted, so
+     * an interceptor may reword the block but cannot veto ahead of it.
+     * Absent on every action until the D1 output diff names a refusal that
+     * needs it — declared per action, never by default.
+     */
+    earlyRefusal?(context: ActionContext): ValidationResult | undefined;
 }
 ```
 
@@ -1662,7 +1720,7 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  * registered under a given action id will ever be consulted.
  *
  * Public interface: `actionLifecycleDescriptors`,
- * `interceptorConsultingActionIds`.
+ * `interceptorConsultingActionIds`, `lifecycleDescriptorFor`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  *
  * NOTE: this module is deliberately NOT exported from `./index.ts` (the
@@ -1682,13 +1740,85 @@ import { ActionLifecycleDescriptor } from './descriptor.js';
  */
 export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[];
 /**
- * Every action id under which some wired action consults interceptors —
- * the union of all descriptors' slot actionIds (mechanically derived; the
- * both-ids delegation seams of ADR-228 D6 and implicit-entity ids like
- * `if.action.entering_room` fall out of the slots, not a hand-kept list).
- * An interceptor registered under an id NOT in this set will never fire.
+ * The descriptor for an action id, or `undefined` when the action is not
+ * wired (a structural exemption such as `about` or `looking`). The command
+ * executor reads this to run the interceptor hooks around the action's
+ * phases (ADR-337 D1); an action is consulted iff this returns a descriptor.
+ * @param actionId - the action's primary id (`if.action.taking`)
+ * @returns the descriptor, or `undefined` for an unwired action
  */
+export declare function lifecycleDescriptorFor(actionId: string): ActionLifecycleDescriptor | undefined;
 export declare const interceptorConsultingActionIds: ReadonlySet<string>;
+```
+
+### actions/lifecycle/phase-runner
+
+```typescript
+/**
+ * Runs an action's four phases with the interceptor lifecycle around them.
+ *
+ * The one place the ADR-228 hooks are called for a standard action: the
+ * command executor runs every action through these four functions, so an
+ * action whose descriptor is in the registry is consulted at all four
+ * phase boundaries on every path, and an action without one runs alone.
+ * Validate is preValidate, the action's own validation, then postValidate
+ * after ALL standard validation; execute and report each end with their
+ * hook; blocked ends with onBlocked. A descriptor's `earlyRefusal` runs
+ * ahead of preValidate, and its `contracts` name the two exceptions: a
+ * hook the action runs itself at a point inside its phase, and a
+ * multi-object command the action handles per item. The conversation
+ * actions declare postValidate too, because a gripped input (ADR-320
+ * D16) must never reach the topic table's occurrence bump.
+ *
+ * Tests that drive an action's phases directly call these functions too,
+ * so they see the same hook placement the executor gives a real turn.
+ *
+ * Public interface: `runValidatePhase`, `runExecutePhase`,
+ * `runReportPhase`, `runBlockedPhase`.
+ * Owner: stdlib standard-action infrastructure.
+ *
+ * References: ADR-337 D1 (the executor as the one call site), ADR-228
+ * (the lifecycle engine and its rulings), ADR-228 D4 (the per-item
+ * multi-object remainder).
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { Action, ActionContext, ValidationResult } from '../enhanced-types.js';
+/**
+ * Validate with the lifecycle's validate-phase hooks around the action's
+ * own `validate`: `earlyRefusal` first, then preValidate, then the action,
+ * then postValidate. The resolved state is stored on the context for the
+ * later phases.
+ * @param action - the action being run
+ * @param context - the action context (the original or an inferred one)
+ * @returns the validation result the later phases branch on
+ */
+export declare function runValidatePhase(action: Action, context: ActionContext): ValidationResult;
+/**
+ * Execute, then run postExecute for every consultation unless the action
+ * runs that hook itself.
+ * @param action - the action being run
+ * @param context - the context `runValidatePhase` validated
+ * @returns whatever the action's `execute` returned (events, for the
+ *   pre-report pattern; otherwise nothing)
+ */
+export declare function runExecutePhase(action: Action, context: ActionContext): ReturnType<Action['execute']>;
+/**
+ * Report, then run postReport against the action's primary event unless
+ * the action runs that hook itself.
+ * @param action - the action being run
+ * @param context - the context `runExecutePhase` ran
+ * @returns the action's success events, decorated by the interceptors
+ */
+export declare function runReportPhase(action: Action, context: ActionContext): ISemanticEvent[];
+/**
+ * Report a refusal, then run onBlocked against the action's blocked event.
+ * The standard blocked event always survives (ADR-228 D2).
+ * @param action - the action being run
+ * @param context - the context `runValidatePhase` refused
+ * @param result - the failing validation result
+ * @returns the action's blocked events, decorated by the interceptors
+ */
+export declare function runBlockedPhase(action: Action, context: ActionContext, result: ValidationResult): ISemanticEvent[];
 ```
 
 ### actions/standard

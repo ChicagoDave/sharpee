@@ -20,6 +20,7 @@ import { bootEngine } from './helpers/boot-engine';
 import { askingAction } from '@sharpee/stdlib';
 import { CharacterModelTrait, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const SOURCE =
   'story\n  title: T\n  authors:\n    N\n  id: char-dialogue\n  story-version: 0.0.1\n\n' +
@@ -103,12 +104,12 @@ function makeContext(l: Loaded, command: Record<string, unknown>): any {
 /** Ask the Maid about a topic through the real four-phase action. */
 function ask(l: Loaded, text: string) {
   const context = makeContext(l, { directObject: { entity: entity(l, 'maid') }, topic: { text } });
-  const validation = askingAction.validate(context);
+  const validation = runValidatePhase(askingAction, context);
   context.validationResult = validation;
   let events: ISemanticEvent[] = [];
   if (validation.valid) {
-    askingAction.execute(context);
-    events = askingAction.report(context);
+    runExecutePhase(askingAction, context);
+    events = runReportPhase(askingAction, context);
   }
   return { validation, events };
 }

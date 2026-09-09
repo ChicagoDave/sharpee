@@ -20,6 +20,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -39,12 +40,12 @@ const drive = (world: WorldModel, item: IFEntity, viewer: IFEntity) => {
     world,
     createCommand(IFActions.SHOWING, { entity: item, secondEntity: viewer, preposition: 'to' })
   );
-  const validation = showingAction.validate(context);
+  const validation = runValidatePhase(showingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: showingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(showingAction, context, validation) };
   }
-  showingAction.execute(context);
-  return { context, validation, events: showingAction.report(context) };
+  runExecutePhase(showingAction, context);
+  return { context, validation, events: runReportPhase(showingAction, context) };
 };
 
 describe('Showing interceptor hooks (ADR-118)', () => {

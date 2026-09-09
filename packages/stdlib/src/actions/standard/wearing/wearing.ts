@@ -30,13 +30,6 @@ import {
 import { MESSAGES } from './wearing-messages.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -46,6 +39,8 @@ import {
  */
 export const wearingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.WEARING,
+  reportEventType: 'if.event.worn',
+  blockedEventType: 'if.event.wear_blocked',
   slots: [
     {
       id: 'item',
@@ -103,10 +98,6 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
-    const state = resolveLifecycle(context, wearingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     if (!item.has(TraitType.WEARABLE)) {
       return { valid: false, error: 'not_wearable', params: { item: nounPhraseFor(item) } };
     }
@@ -138,10 +129,6 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
         params: { item: nounPhraseFor(conflictingItem) }
       };
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -195,8 +182,6 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
     sharedData.params = buildWearableEventParams(item, wearableTrait);
     sharedData.messageId = 'worn';
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -237,9 +222,6 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       layer: sharedData.layer
     }));
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.worn');
-
     return events;
   },
 
@@ -260,11 +242,6 @@ export const wearingAction: Action & { metadata: ActionMetadata } = {
       itemName: item?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.wear_blocked', result.error);
-    }
 
     return events;
   },

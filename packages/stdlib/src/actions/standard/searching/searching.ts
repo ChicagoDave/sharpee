@@ -33,13 +33,6 @@ import {
 } from '../searching-helpers.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -50,6 +43,8 @@ import {
  */
 export const searchingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.SEARCHING,
+  reportEventType: 'if.event.searched',
+  blockedEventType: 'if.event.searched',
   slots: [
     {
       id: 'target',
@@ -104,10 +99,6 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const target = context.command.directObject?.entity;
 
-    const state = resolveLifecycle(context, searchingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // If no target, we'll search the current location (always valid).
     // The container-open check only applies to a targeted search.
     if (target && target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
@@ -119,10 +110,6 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
         };
       }
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -148,8 +135,6 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = messageId;
     sharedData.params = params;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -164,11 +149,6 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name
     })];
 
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.searched', result.error);
-    }
-
     return events;
   },
 
@@ -182,9 +162,6 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params || {},
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.searched');
 
     return events;
   },

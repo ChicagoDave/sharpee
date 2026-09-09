@@ -15,6 +15,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { goingAction } from '@sharpee/stdlib';
 import { Direction, DirectionType, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
 
@@ -148,11 +149,11 @@ describe('region crossing reactions (ADR-236 D6, REAL-PATH)', () => {
       event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
-    const validation = goingAction.validate(context);
+    const validation = runValidatePhase(goingAction, context);
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
     context.validationResult = validation;
-    goingAction.execute(context);
-    const reported = goingAction.report(context);
+    runExecutePhase(goingAction, context);
+    const reported = runReportPhase(goingAction, context);
     const produced = reported.flatMap((e) => story.runtime.fireEventClauses(world, e));
     return messageIdsOf(produced) as string[];
   };

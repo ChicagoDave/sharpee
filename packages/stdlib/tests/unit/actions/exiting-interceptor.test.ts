@@ -12,6 +12,7 @@ import { exitingAction } from '../../../src/actions/standard/exiting';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -28,12 +29,12 @@ const setup = () => {
 const drive = (world: WorldModel) => {
   const command = createCommand(IFActions.EXITING);
   const context = createRealTestContext(exitingAction, world, command);
-  const validation = exitingAction.validate(context);
+  const validation = runValidatePhase(exitingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: exitingAction.blocked!(context, validation) };
+    return { context, validation, events: runBlockedPhase(exitingAction, context, validation) };
   }
-  exitingAction.execute(context);
-  return { context, validation, events: exitingAction.report(context) };
+  runExecutePhase(exitingAction, context);
+  return { context, validation, events: runReportPhase(exitingAction, context) };
 };
 
 describe('Exiting interceptor hooks on the implicit container (ADR-228)', () => {

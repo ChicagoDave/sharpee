@@ -19,6 +19,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('brass lantern', {
@@ -38,12 +39,12 @@ const drive = (world: WorldModel, target: any) => {
     world,
     createCommand(IFActions.SWITCHING_OFF, { entity: target, text: 'brass lantern' })
   );
-  const validation = switchingOffAction.validate(context);
+  const validation = runValidatePhase(switchingOffAction, context);
   if (!validation.valid) {
-    return { context, validation, events: switchingOffAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(switchingOffAction, context, validation) };
   }
-  switchingOffAction.execute(context);
-  return { context, validation, events: switchingOffAction.report(context) };
+  runExecutePhase(switchingOffAction, context);
+  return { context, validation, events: runReportPhase(switchingOffAction, context) };
 };
 
 describe('Switching off interceptor hooks (ADR-118)', () => {

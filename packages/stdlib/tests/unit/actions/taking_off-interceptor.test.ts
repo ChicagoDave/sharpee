@@ -19,6 +19,7 @@ import {
   setupBasicWorld,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -41,12 +42,12 @@ const drive = (world: WorldModel, hat: any) => {
     world,
     createCommand(IFActions.TAKING_OFF, { entity: hat, text: 'wool hat' })
   );
-  const validation = takingOffAction.validate(context);
+  const validation = runValidatePhase(takingOffAction, context);
   if (!validation.valid) {
-    return { context, validation, events: takingOffAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(takingOffAction, context, validation) };
   }
-  takingOffAction.execute(context);
-  return { context, validation, events: takingOffAction.report(context) };
+  runExecutePhase(takingOffAction, context);
+  return { context, validation, events: runReportPhase(takingOffAction, context) };
 };
 
 describe('Taking off interceptor hooks (ADR-118 / ADR-228)', () => {

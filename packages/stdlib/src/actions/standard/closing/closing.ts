@@ -26,13 +26,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -42,6 +35,8 @@ import {
  */
 export const closingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.CLOSING,
+  reportEventType: 'if.event.closed',
+  blockedEventType: 'if.event.close_blocked',
   slots: [
     {
       id: 'target',
@@ -110,10 +105,6 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, closingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -164,10 +155,6 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
 
@@ -186,8 +173,6 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getClosingSharedData(context);
     sharedData.closeResult = result;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -251,9 +236,6 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       item: noun.name
     }));
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.closed');
-
     return events;
   },
 
@@ -279,11 +261,6 @@ export const closingAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.close_blocked', result.error);
-    }
 
     return events;
   }

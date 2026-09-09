@@ -21,13 +21,6 @@ import { nounPhraseFor } from '../../../utils/index.js';
 import { closeConversationScene } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -46,6 +39,8 @@ function farewellPartner(ctx: ActionContext): IFEntity | undefined {
  */
 export const sayingGoodbyeLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.SAYING_GOODBYE,
+  reportEventType: 'if.event.said_goodbye',
+  blockedEventType: 'if.event.goodbye_blocked',
   slots: [
     {
       id: 'target',
@@ -81,20 +76,12 @@ export const sayingGoodbyeAction: Action & { metadata: ActionMetadata } = {
     context.sharedData.farewellPartner = partner;
     context.sharedData.farewellSceneId = scene.id;
 
-    const state = resolveLifecycle(context, sayingGoodbyeLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
 
   execute(context: ActionContext): void {
     // The scene close is a report-phase runtime directive (the arbiter
     // discipline: the runtime mutates, and its wire rides the events).
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -107,10 +94,6 @@ export const sayingGoodbyeAction: Action & { metadata: ActionMetadata } = {
         reason: result.error
       })
     ];
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.goodbye_blocked', result.error);
-    }
     return events;
   },
 
@@ -129,8 +112,6 @@ export const sayingGoodbyeAction: Action & { metadata: ActionMetadata } = {
       ...closeConversationScene(context, sceneId, context.actor.id)
     ];
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.said_goodbye');
     return events;
   }
 };

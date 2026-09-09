@@ -31,6 +31,7 @@ import {
   WorldModel,
 } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -140,11 +141,11 @@ function makeContext(l: Loaded, action: { id: string }, command: Record<string, 
 /** Run all four phases of a real stdlib action; returns the validation. */
 function drive(l: Loaded, action: any, command: Record<string, unknown>) {
   const context = makeContext(l, action, command);
-  const validation = action.validate(context);
+  const validation = runValidatePhase(action, context);
   context.validationResult = validation;
   if (validation.valid) {
-    action.execute(context);
-    action.report(context);
+    runExecutePhase(action, context);
+    runReportPhase(action, context);
   }
   return validation;
 }
