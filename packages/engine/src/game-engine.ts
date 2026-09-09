@@ -49,7 +49,7 @@ import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilit
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import { type ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type Presence, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, PlatformEventType, type ISaveContext, type IRestoreContext, type IQuitContext, type IRestartContext, type IAgainContext, createSaveCompletedEvent, createRestoreCompletedEvent, createQuitConfirmedEvent, createQuitCancelledEvent, createRestartCompletedEvent, createUndoCompletedEvent, createAgainFailedEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type Presence, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry, type TurnPluginContext } from '@sharpee/plugins';
@@ -79,13 +79,12 @@ import { validateCombatantHealth } from './combatant-health-validation.js';
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
 import { createActionContext } from './action-context-factory.js';
 import { SoundDispatcher } from './sound/index.js';
-import { processEvent } from './turn-event-processor.js';
+import { enrichTurnEvents, type TurnEventSource } from './turn-event-processor.js';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface.js';
 import { hasNarrativeSettings } from './language-provider-interface.js';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
-import { TurnEventProcessor, createTurnEventProcessor, EnrichmentContext } from './turn-event-processor.js';
-import { PlatformOperationHandler, createPlatformOperationHandler, EngineCallbacks } from './platform-operations.js';
+import { dispatchPlatformOperations, type PlatformOperationHost } from './platform-operations.js';
 
 /**
  * Game engine events
@@ -234,8 +233,6 @@ export class GameEngine {
   // Extracted services (Phase 4 remediation)
   private vocabularyManager: VocabularyManager;
   private saveRestoreService: SaveRestoreService;
-  private turnEventProcessor: TurnEventProcessor;
-  private platformOpHandler?: PlatformOperationHandler;
 
   // Phase 5: Track if initialized event has been emitted
   private hasEmittedInitialized = false;
@@ -349,7 +346,6 @@ export class GameEngine {
     this.saveRestoreService = createSaveRestoreService({
       maxSnapshots: this.config.maxUndoSnapshots ?? 10
     });
-    this.turnEventProcessor = createTurnEventProcessor(this.perceptionService);
 
     // Set provided dependencies
     this.languageProvider = options.language;
@@ -1235,31 +1231,15 @@ export class GameEngine {
         this.heldCommand = { input };
       }
 
-      // Get context for event enrichment
-      const playerLocation = this.world.getLocation(this.context.player.id);
-      const enrichmentContext = {
+      // One funnel for every source: enrich the action's events and
+      // filter them by perception (the plugin tick's batches take the
+      // same path).
+      const semanticEvents = this.enrichTurnEvents(
+        result.events,
         turn,
-        playerId: this.context.player.id,
-        locationId: playerLocation,
-        // ADR-296 D1: the player action is one transaction; every event in
-        // this batch is stamped with the same id (when not already carrying
-        // one inherited via executeChains — the funnel stamp is idempotent).
-        transactionId: `txn:${turn}:action`,
-        presenceOf: this.presenceResolver()
-      };
-
-      // Store events for this turn (process through enrichment pipeline)
-      let semanticEvents = result.events.map(e => processEvent(e, enrichmentContext));
-
-      // Apply perception filtering if service is configured
-      // This transforms events based on what the player can perceive
-      if (this.perceptionService) {
-        semanticEvents = this.perceptionService.filterEvents(
-          semanticEvents,
-          this.context.player,
-          this.world
-        );
-      }
+        this.world.getLocation(this.context.player.id),
+        { kind: 'action' }
+      );
 
       // Merge with any existing events for this turn (e.g., game.started from engine.start())
       const existingEvents = this.turnEvents.get(turn) || [];
@@ -1683,120 +1663,15 @@ export class GameEngine {
   }
 
   /**
-   * Process a single platform operation for meta-commands.
-   *
-   * This is similar to processPlatformOperations but handles one operation
-   * at a time and returns completion events for inclusion in the result.
+   * Run the one platform request a meta command emitted and return its
+   * completion events for the command's result. Same dispatcher as the
+   * turn path; the list is the difference.
    */
   private async processMetaPlatformOperation(platformOp: IPlatformEvent): Promise<ISemanticEvent[]> {
     const completionEvents: ISemanticEvent[] = [];
-
-    switch (platformOp.type) {
-      case PlatformEventType.SAVE_REQUESTED: {
-        const context = platformOp.payload.context as ISaveContext;
-        if (this.saveRestoreHooks?.onSaveRequested) {
-          try {
-            const saveData = this.createSaveData();
-            if (context?.saveName) {
-              saveData.metadata.description = context.saveName;
-            }
-            if (context?.metadata) {
-              Object.assign(saveData.metadata, context.metadata);
-            }
-            await this.saveRestoreHooks.onSaveRequested(saveData);
-            completionEvents.push(createSaveCompletedEvent(true));
-          } catch (error: any) {
-            completionEvents.push(createSaveCompletedEvent(false, error.message));
-          }
-        } else {
-          completionEvents.push(createSaveCompletedEvent(false, 'No save handler registered'));
-        }
-        break;
-      }
-
-      case PlatformEventType.RESTORE_REQUESTED: {
-        if (this.saveRestoreHooks?.onRestoreRequested) {
-          try {
-            const saveData = await this.saveRestoreHooks.onRestoreRequested();
-            if (saveData) {
-              this.loadSaveData(saveData);
-              completionEvents.push(createRestoreCompletedEvent(true));
-            } else {
-              completionEvents.push(createRestoreCompletedEvent(false, 'No save data available'));
-            }
-          } catch (error: any) {
-            completionEvents.push(createRestoreCompletedEvent(false, error.message));
-          }
-        } else {
-          completionEvents.push(createRestoreCompletedEvent(false, 'No restore handler registered'));
-        }
-        break;
-      }
-
-      case PlatformEventType.QUIT_REQUESTED: {
-        const context = platformOp.payload.context as IQuitContext;
-        if (this.saveRestoreHooks?.onQuitRequested) {
-          const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
-          if (shouldQuit) {
-            this.stop('quit');
-            completionEvents.push(createQuitConfirmedEvent());
-          } else {
-            completionEvents.push(createQuitCancelledEvent());
-          }
-        } else {
-          // No quit hook - auto-confirm
-          completionEvents.push(createQuitConfirmedEvent());
-        }
-        break;
-      }
-
-      case PlatformEventType.RESTART_REQUESTED: {
-        const context = platformOp.payload.context as IRestartContext;
-        const shouldRestart = this.saveRestoreHooks?.onRestartRequested
-          ? await this.saveRestoreHooks.onRestartRequested(context)
-          : true; // No restart hook — auto-confirm
-        if (shouldRestart) {
-          // ADR-248: ack in the final packet, then stop('restart'). The
-          // client's hook is the reboot trigger; the stop reason is
-          // bookkeeping. No restart_completed(true) — the reboot's opening
-          // banner is the success signal.
-          completionEvents.push(this.createRestartAckEvent());
-          this.stop('restart');
-        } else {
-          completionEvents.push(createRestartCompletedEvent(false));
-        }
-        break;
-      }
-
-      case PlatformEventType.UNDO_REQUESTED: {
-        const success = this.undo();
-        if (success) {
-          completionEvents.push(createUndoCompletedEvent(true, this.context.currentTurn));
-        } else {
-          completionEvents.push(createUndoCompletedEvent(false, undefined, 'Nothing to undo'));
-        }
-        break;
-      }
-
-      case PlatformEventType.AGAIN_REQUESTED: {
-        const againContext = platformOp.payload.context as IAgainContext;
-        if (!againContext?.command) {
-          completionEvents.push(createAgainFailedEvent('No command to repeat'));
-        } else {
-          // Recursive call - the repeated command will dispatch normally
-          // (meta path if it was meta, regular path if it was regular)
-          try {
-            await this.executeTurn(againContext.command);
-            // The repeated command handles its own text output
-            // No completion event needed for successful AGAIN
-          } catch (error: any) {
-            completionEvents.push(createAgainFailedEvent(error.message));
-          }
-        }
-        break;
-      }
-    }
-
+    await dispatchPlatformOperations([platformOp], this.platformOperationHost(), (event) => {
+      completionEvents.push(event);
+    });
     return completionEvents;
   }
 
@@ -2389,8 +2264,8 @@ export class GameEngine {
   }
 
   /**
-   * The ADR-328 D3 presence resolver both enrichment funnels hand to
-   * `processEvent`: the current player's presence at a producer-stamped
+   * The ADR-328 D3 presence resolver the enrichment funnel hands to
+   * `enrichTurnEvents`: the current player's presence at a producer-stamped
    * location, via the perception service. Undefined when no perception
    * service is configured — events then stay untagged.
    */
@@ -2398,6 +2273,52 @@ export class GameEngine {
     const service = this.perceptionService;
     if (!service) return undefined;
     return (locationId) => service.presenceOf(this.context.player, locationId, this.world);
+  }
+
+  /**
+   * The engine's side of the one enrichment funnel: the turn's context
+   * and, when a perception service is configured, filtering for the
+   * current player. Both the action's events and each plugin batch pass
+   * through here; only the source differs.
+   */
+  private enrichTurnEvents(
+    events: readonly ISemanticEvent[],
+    turn: number,
+    locationId: string | null | undefined,
+    source: TurnEventSource
+  ): ISemanticEvent[] {
+    return enrichTurnEvents(events, source, {
+      turn,
+      playerId: this.context.player.id,
+      locationId: locationId ?? undefined,
+      presenceOf: this.presenceResolver(),
+      perception: this.perceptionService
+        ? { service: this.perceptionService, player: this.context.player, world: this.world }
+        : undefined
+    });
+  }
+
+  /**
+   * The engine surface the platform dispatcher acts on. The hooks are
+   * read through a getter so a dispatch sees whatever is registered at
+   * the moment each request runs.
+   */
+  private platformOperationHost(): PlatformOperationHost {
+    const engine = this;
+    return {
+      get saveRestoreHooks() {
+        return engine.saveRestoreHooks;
+      },
+      createSaveData: () => this.createSaveData(),
+      loadSaveData: (saveData) => this.loadSaveData(saveData),
+      stop: (reason) => this.stop(reason),
+      createRestartAckEvent: () => this.createRestartAckEvent(),
+      undo: () => this.undo(),
+      currentTurn: () => this.context.currentTurn,
+      repeatCommand: async (command) => {
+        await this.executeTurn(command);
+      }
+    };
   }
 
   /**
@@ -2416,24 +2337,7 @@ export class GameEngine {
     playerLocation: string | null | undefined,
     pluginId: string
   ): void {
-    const enrichmentContext = {
-      turn,
-      playerId: this.context.player.id,
-      locationId: playerLocation ?? undefined,
-      // ADR-296 D1: each plugin batch is its own transaction.
-      transactionId: `txn:${turn}:plugin:${pluginId}`,
-      presenceOf: this.presenceResolver()
-    };
-
-    let processed = events.map(e => processEvent(e, enrichmentContext));
-
-    if (this.perceptionService) {
-      processed = this.perceptionService.filterEvents(
-        processed,
-        this.context.player,
-        this.world
-      );
-    }
+    const processed = this.enrichTurnEvents(events, turn, playerLocation, { kind: 'plugin', pluginId });
 
     // Add to turn events
     const existing = this.turnEvents.get(turn) || [];
@@ -2651,7 +2555,10 @@ export class GameEngine {
   }
 
   /**
-   * Process pending platform operations
+   * Drain the turn's pending platform requests through the dispatcher,
+   * delivering each completion event to the event source, the turn's
+   * event list, and the engine's emitter. Same dispatcher as the meta
+   * path; the list is the difference.
    */
   private async processPlatformOperations(turn?: number): Promise<void> {
     const currentTurn = turn ?? this.context.currentTurn;
@@ -2667,226 +2574,12 @@ export class GameEngine {
     const opsToProcess = [...this.pendingPlatformOps];
     this.pendingPlatformOps = [];
 
-    // Process each pending operation
-    for (const platformOp of opsToProcess) {
-      try {
-        switch (platformOp.type) {
-          case PlatformEventType.SAVE_REQUESTED: {
-            const context = platformOp.payload.context as ISaveContext;
-            if (this.saveRestoreHooks?.onSaveRequested) {
-              const saveData = this.createSaveData();
-              // Add any additional context from the platform event
-              if (context?.saveName) {
-                saveData.metadata.description = context.saveName;
-              }
-              if (context?.metadata) {
-                Object.assign(saveData.metadata, context.metadata);
-              }
-              
-              await this.saveRestoreHooks.onSaveRequested(saveData);
-              
-              // Emit completion event
-              const completionEvent = createSaveCompletedEvent(true);
-              this.eventSource.emit(completionEvent);
-              this.turnEvents.get(currentTurn)?.push(completionEvent);
-              // Also emit through engine's event emitter for tests
-              this.emit('event', completionEvent);
-            } else {
-              // No save hook registered
-              const errorEvent = createSaveCompletedEvent(false, 'No save handler registered');
-              this.eventSource.emit(errorEvent);
-              this.turnEvents.get(currentTurn)?.push(errorEvent);
-              // Also emit through engine's event emitter for tests
-              this.emit('event', errorEvent);
-            }
-            break;
-          }
-          
-          case PlatformEventType.RESTORE_REQUESTED: {
-            const context = platformOp.payload.context as IRestoreContext;
-            if (this.saveRestoreHooks?.onRestoreRequested) {
-              const saveData = await this.saveRestoreHooks.onRestoreRequested();
-              if (saveData) {
-                this.loadSaveData(saveData);
-                
-                // Emit completion event
-                const completionEvent = createRestoreCompletedEvent(true);
-                this.eventSource.emit(completionEvent);
-                this.turnEvents.get(currentTurn)?.push(completionEvent);
-                // Also emit through engine's event emitter for tests
-                this.emit('event', completionEvent);
-              } else {
-                // User cancelled or no save available
-                const errorEvent = createRestoreCompletedEvent(false, 'No save data available or restore cancelled');
-                this.eventSource.emit(errorEvent);
-                this.turnEvents.get(currentTurn)?.push(errorEvent);
-                // Also emit through engine's event emitter for tests
-                this.emit('event', errorEvent);
-              }
-            } else {
-              // No restore hook registered
-              const errorEvent = createRestoreCompletedEvent(false, 'No restore handler registered');
-              this.eventSource.emit(errorEvent);
-              this.turnEvents.get(currentTurn)?.push(errorEvent);
-              // Also emit through engine's event emitter for tests
-              this.emit('event', errorEvent);
-            }
-            break;
-          }
-          
-          case PlatformEventType.QUIT_REQUESTED: {
-            const context = platformOp.payload.context as IQuitContext;
-            
-            if (this.saveRestoreHooks?.onQuitRequested) {
-              const shouldQuit = await this.saveRestoreHooks.onQuitRequested(context);
-              if (shouldQuit) {
-                // Stop the engine with quit reason
-                this.stop('quit');
-                
-                // Emit confirmation event
-                const confirmEvent = createQuitConfirmedEvent();
-                this.eventSource.emit(confirmEvent);
-                const turnEvents = this.turnEvents.get(currentTurn);
-                if (turnEvents) {
-                  turnEvents.push(confirmEvent);
-                }
-                // Also emit through engine's event emitter for tests
-                this.emit('event', confirmEvent);
-              } else {
-                // User cancelled quit
-                const cancelEvent = createQuitCancelledEvent();
-                this.eventSource.emit(cancelEvent);
-                const turnEvents = this.turnEvents.get(currentTurn);
-                if (turnEvents) {
-                  turnEvents.push(cancelEvent);
-                }
-                // Also emit through engine's event emitter for tests
-                this.emit('event', cancelEvent);
-              }
-            } else {
-              // No quit hook registered, auto-confirm
-              const confirmEvent = createQuitConfirmedEvent();
-              this.eventSource.emit(confirmEvent);
-              const turnEvents = this.turnEvents.get(currentTurn);
-              if (turnEvents) {
-                turnEvents.push(confirmEvent);
-              }
-              // Also emit through engine's event emitter for tests
-              this.emit('event', confirmEvent);
-            }
-            
-            break;
-          }
-          
-          case PlatformEventType.RESTART_REQUESTED: {
-            const context = platformOp.payload.context as IRestartContext;
-            let shouldRestart = true;
-
-            if (this.saveRestoreHooks?.onRestartRequested) {
-              shouldRestart = await this.saveRestoreHooks.onRestartRequested(context);
-            }
-
-            if (shouldRestart) {
-              // ADR-248: ack in the final packet, then stop('restart').
-              // No restart_completed(true) — the client reboots and its
-              // opening banner is the success signal.
-              const ackEvent = this.createRestartAckEvent();
-              this.eventSource.emit(ackEvent);
-              this.turnEvents.get(currentTurn)?.push(ackEvent);
-              this.emit('event', ackEvent);
-              this.stop('restart');
-            } else {
-              const cancelEvent = createRestartCompletedEvent(false);
-              this.eventSource.emit(cancelEvent);
-              this.emit('event', cancelEvent);
-            }
-            break;
-          }
-
-          case PlatformEventType.UNDO_REQUESTED: {
-            const previousTurn = this.context.currentTurn;
-            const success = this.undo();
-
-            if (success) {
-              const completionEvent = createUndoCompletedEvent(true, this.context.currentTurn);
-              this.eventSource.emit(completionEvent);
-              this.turnEvents.get(currentTurn)?.push(completionEvent);
-              this.emit('event', completionEvent);
-            } else {
-              const errorEvent = createUndoCompletedEvent(false, undefined, 'Nothing to undo');
-              this.eventSource.emit(errorEvent);
-              this.turnEvents.get(currentTurn)?.push(errorEvent);
-              this.emit('event', errorEvent);
-            }
-            break;
-          }
-
-          case PlatformEventType.AGAIN_REQUESTED: {
-            const againContext = platformOp.payload.context as IAgainContext;
-
-            if (!againContext?.command) {
-              const errorEvent = createAgainFailedEvent('No command to repeat');
-              this.eventSource.emit(errorEvent);
-              this.turnEvents.get(currentTurn)?.push(errorEvent);
-              this.emit('event', errorEvent);
-              break;
-            }
-
-            // Re-execute the stored command
-            // Note: The repeated command goes through normal validation/execution
-            // and its events will be added to the current turn
-            try {
-              const repeatResult = await this.executeTurn(againContext.command);
-
-              // Merge the repeated command's events into this turn
-              // (executeTurn already stored them, but we want them in currentTurn's context)
-              // The events are already emitted by executeTurn, no need to re-emit
-            } catch (error) {
-              const errorEvent = createAgainFailedEvent(
-                error instanceof Error ? error.message : 'Failed to repeat command'
-              );
-              this.eventSource.emit(errorEvent);
-              this.turnEvents.get(currentTurn)?.push(errorEvent);
-              this.emit('event', errorEvent);
-            }
-            break;
-          }
-        }
-      } catch (error) {
-        console.error(`Error processing platform operation ${platformOp.type}:`, error);
-
-        // Emit appropriate error event based on operation type
-        let errorEvent: IPlatformEvent;
-        switch (platformOp.type) {
-          case PlatformEventType.SAVE_REQUESTED:
-            errorEvent = createSaveCompletedEvent(false, error instanceof Error ? error.message : 'Unknown error');
-            break;
-          case PlatformEventType.RESTORE_REQUESTED:
-            errorEvent = createRestoreCompletedEvent(false, error instanceof Error ? error.message : 'Unknown error');
-            break;
-          case PlatformEventType.QUIT_REQUESTED:
-            errorEvent = createQuitCancelledEvent();
-            break;
-          case PlatformEventType.RESTART_REQUESTED:
-            errorEvent = createRestartCompletedEvent(false);
-            break;
-          case PlatformEventType.UNDO_REQUESTED:
-            errorEvent = createUndoCompletedEvent(false, undefined, error instanceof Error ? error.message : 'Unknown error');
-            break;
-          case PlatformEventType.AGAIN_REQUESTED:
-            errorEvent = createAgainFailedEvent(error instanceof Error ? error.message : 'Unknown error');
-            break;
-          default:
-            continue;
-        }
-        
-        this.eventSource.emit(errorEvent);
-        this.turnEvents.get(currentTurn)?.push(errorEvent);
-        // Also emit through engine's event emitter for tests
-        this.emit('event', errorEvent);
-      }
-    }
-    // Note: pendingPlatformOps was cleared at the start of this function
+    await dispatchPlatformOperations(opsToProcess, this.platformOperationHost(), (event) => {
+      this.eventSource.emit(event);
+      this.turnEvents.get(currentTurn)?.push(event);
+      // Also emit through engine's event emitter for tests
+      this.emit('event', event);
+    });
   }
 
   /**

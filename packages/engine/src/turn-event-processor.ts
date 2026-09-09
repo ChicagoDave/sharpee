@@ -1,20 +1,33 @@
 /**
- * Turn Event Processor - Processes events during turn execution
+ * Turn event enrichment: the one funnel every event produced during a
+ * turn passes through before it is stored, emitted, or rendered.
  *
- * Extracted from GameEngine as part of Phase 4 remediation.
- * Handles event enrichment, perception filtering, and event emission.
+ * `processEvent` normalizes a single event (id, lower-cased type,
+ * timestamp, empty entity map) and enriches it with the turn's context —
+ * the turn number, the transaction stamp, presence at the producer's
+ * location, the acting player and their location as defaults, and a tag
+ * for the event family. `enrichTurnEvents` is the stage-level funnel over
+ * a batch: it stamps every event with the transaction id its source
+ * determines (the player action is one transaction; each plugin's batch
+ * is its own) and then applies perception filtering when a perception
+ * service is configured. The engine calls it once for the action's
+ * events and once per plugin batch; no other path builds an enrichment
+ * context.
+ *
+ * Public interface: `processEvent`, `enrichTurnEvents`,
+ * `transactionIdFor`, `EventProcessingContext`, `TurnEventSource`,
+ * `TurnEnrichment`.
+ * Owner context: `@sharpee/engine` — turn cycle, event enrichment.
+ *
+ * References: ADR-296 D1 (transaction stamping at the funnel, idempotent
+ * over `executeChains` inheritance); ADR-328 D3 (presence tagging from
+ * the producer's location before the player-location default); ADR-334
+ * D4 (one funnel, the source as a parameter).
  */
 
-import {
-  type ISemanticEvent,
-  type ISemanticEventSource,
-  isPlatformRequestEvent,
-  type IPlatformEvent,
-  type Presence
-} from '@sharpee/core';
-import { WorldModel, IFEntity } from '@sharpee/world-model';
+import { type ISemanticEvent, type Presence } from '@sharpee/core';
+import type { WorldModel, IFEntity } from '@sharpee/world-model';
 import { type IPerceptionService } from '@sharpee/stdlib';
-import { EngineConfig } from './types.js';
 
 /**
  * Context for event processing pipeline
@@ -42,6 +55,34 @@ export interface EventProcessingContext {
    * producer location (player actions today) are left untagged.
    */
   presenceOf?: (locationId: string) => Presence;
+}
+
+/**
+ * Who produced a batch of turn events. The source decides the transaction
+ * id every event in the batch is stamped with.
+ */
+export type TurnEventSource =
+  | { readonly kind: 'action' }
+  | { readonly kind: 'plugin'; readonly pluginId: string };
+
+/**
+ * What the funnel needs from the turn to enrich a batch.
+ */
+export interface TurnEnrichment {
+  /** The turn the events belong to. */
+  turn: number;
+  /** The acting player; the default actor for events that name none. */
+  playerId: string;
+  /** The player's location; the default location for events that name none. */
+  locationId: string | undefined;
+  /** Presence at a producer-stamped location; absent leaves events untagged. */
+  presenceOf?: (locationId: string) => Presence;
+  /** Perception filtering, applied after enrichment when configured. */
+  perception?: {
+    service: IPerceptionService;
+    player: IFEntity;
+    world: WorldModel;
+  };
 }
 
 /**
@@ -142,211 +183,42 @@ export function processEvent(
 }
 
 /**
- * Context for event enrichment - matches EventProcessingContext
- */
-export interface EnrichmentContext {
-  turn: number;
-  playerId: string;
-  locationId: string | undefined;
-}
-
-/**
- * Result of processing events for a turn phase
- */
-export interface ProcessedEventsResult {
-  /** Processed semantic events */
-  semanticEvents: ISemanticEvent[];
-  /** Platform events that need handling */
-  platformEvents: IPlatformEvent[];
-}
-
-/**
- * Callback type for emitting events
- */
-export type EventEmitCallback = (event: ISemanticEvent) => void;
-
-/**
- * Callback type for dispatching to entity handlers
- */
-export type EntityHandlerDispatcher = (event: ISemanticEvent) => void;
-
-/**
- * Service for processing turn events
+ * The transaction id a source's events carry in a turn: the player action
+ * is one transaction, each plugin batch its own.
  *
- * @deprecated Unused duplicate of the live funnel path (ADR-296 v2 finding
- * 12): GameEngine constructs an instance but never calls its methods — the
- * real funnels are the free `processEvent` calls in `game-engine.ts`
- * (action funnel and `processPluginEvents`). This class's methods build an
- * {@link EventProcessingContext} WITHOUT a `transactionId`, so events
- * routed through it would NOT receive ADR-296 D1 transaction stamps. Do
- * not wire new callers to it; route through the game-engine funnels.
+ * @param turn - The turn number
+ * @param source - Who produced the batch
  */
-export class TurnEventProcessor {
-  constructor(
-    private perceptionService?: IPerceptionService
-  ) {}
-
-  /**
-   * Process action events from command execution
-   *
-   * @param events - Raw events from command executor
-   * @param enrichmentContext - Context for event enrichment
-   * @param player - Player entity for perception filtering
-   * @param world - World model for perception filtering
-   * @returns Processed events and platform events
-   */
-  processActionEvents(
-    events: ISemanticEvent[],
-    enrichmentContext: EnrichmentContext,
-    player: IFEntity,
-    world: WorldModel
-  ): ProcessedEventsResult {
-    const context: EventProcessingContext = {
-      turn: enrichmentContext.turn,
-      playerId: enrichmentContext.playerId,
-      locationId: enrichmentContext.locationId
-    };
-
-    let semanticEvents = events.map((e) => processEvent(e, context));
-
-    // Apply perception filtering if service is configured
-    if (this.perceptionService) {
-      semanticEvents = this.perceptionService.filterEvents(
-        semanticEvents,
-        player,
-        world
-      );
-    }
-
-    // Check for platform request events
-    const platformEvents: IPlatformEvent[] = [];
-    for (const event of semanticEvents) {
-      if (isPlatformRequestEvent(event)) {
-        platformEvents.push(event as IPlatformEvent);
-      }
-    }
-
-    return { semanticEvents, platformEvents };
-  }
-
-  /**
-   * Process semantic events (e.g., from NPC or scheduler ticks)
-   *
-   * @param events - Semantic events to process
-   * @param enrichmentContext - Context for event enrichment
-   * @param player - Player entity for perception filtering
-   * @param world - World model for perception filtering
-   * @returns Processed events and platform events
-   */
-  processSemanticEvents(
-    events: ISemanticEvent[],
-    enrichmentContext: EnrichmentContext,
-    player: IFEntity,
-    world: WorldModel
-  ): ProcessedEventsResult {
-    const context: EventProcessingContext = {
-      turn: enrichmentContext.turn,
-      playerId: enrichmentContext.playerId,
-      locationId: enrichmentContext.locationId
-    };
-
-    // Process events through the pipeline
-    let semanticEvents = events.map((e) => processEvent(e, context));
-
-    // Apply perception filtering if service is configured
-    if (this.perceptionService) {
-      semanticEvents = this.perceptionService.filterEvents(
-        semanticEvents,
-        player,
-        world
-      );
-    }
-
-    // Check for platform request events
-    const platformEvents: IPlatformEvent[] = [];
-    for (const event of semanticEvents) {
-      if (isPlatformRequestEvent(event)) {
-        platformEvents.push(event as IPlatformEvent);
-      }
-    }
-
-    return { semanticEvents, platformEvents };
-  }
-
-  /**
-   * Emit events through all configured channels
-   *
-   * @param semanticEvents - Events to emit
-   * @param eventSource - Event source for tracking
-   * @param turnEvents - Turn events map to update
-   * @param turn - Current turn number
-   * @param config - Engine config with event callback
-   * @param eventEmitter - Callback for engine event emission
-   * @param entityDispatcher - Optional callback for entity handler dispatch
-   */
-  emitEvents(
-    semanticEvents: ISemanticEvent[],
-    eventSource: ISemanticEventSource,
-    turnEvents: Map<number, ISemanticEvent[]>,
-    turn: number,
-    config: EngineConfig,
-    eventEmitter: EventEmitCallback,
-    entityDispatcher?: EntityHandlerDispatcher
-  ): void {
-    // Store events for this turn
-    const existingEvents = turnEvents.get(turn) || [];
-    turnEvents.set(turn, [...existingEvents, ...semanticEvents]);
-
-    // Track in event source for save/restore
-    for (const event of semanticEvents) {
-      eventSource.emit(event);
-    }
-
-    // Emit events if configured
-    if (config.onEvent) {
-      for (const event of semanticEvents) {
-        config.onEvent(event);
-      }
-    }
-
-    // Emit through engine's event system
-    for (const event of semanticEvents) {
-      eventEmitter(event);
-
-      // Dispatch to entity handlers if provided
-      if (entityDispatcher) {
-        entityDispatcher(event);
-      }
-    }
-  }
-
-  /**
-   * Check for victory events in the processed events
-   *
-   * @param events - Events to check
-   * @returns Victory details if found, null otherwise
-   */
-  checkForVictory(
-    events: ISemanticEvent[]
-  ): { reason: string; score: number } | null {
-    for (const event of events) {
-      if (event.type === 'story.victory') {
-        const data = event.data as { reason?: string; score?: number } | undefined;
-        return {
-          reason: data?.reason || 'Story completed',
-          score: data?.score || 0
-        };
-      }
-    }
-    return null;
-  }
+export function transactionIdFor(turn: number, source: TurnEventSource): string {
+  return source.kind === 'action'
+    ? `txn:${turn}:action`
+    : `txn:${turn}:plugin:${source.pluginId}`;
 }
 
 /**
- * Create a turn event processor instance
+ * Enrich a batch of turn events from one source, then filter them by
+ * perception when a service is configured. The returned events are new
+ * objects; the input batch is untouched.
+ *
+ * @param events - The batch as the source produced it
+ * @param source - Who produced it; decides the transaction stamp
+ * @param enrichment - The turn's context and optional perception
  */
-export function createTurnEventProcessor(
-  perceptionService?: IPerceptionService
-): TurnEventProcessor {
-  return new TurnEventProcessor(perceptionService);
+export function enrichTurnEvents(
+  events: readonly ISemanticEvent[],
+  source: TurnEventSource,
+  enrichment: TurnEnrichment
+): ISemanticEvent[] {
+  const context: EventProcessingContext = {
+    turn: enrichment.turn,
+    playerId: enrichment.playerId,
+    locationId: enrichment.locationId,
+    transactionId: transactionIdFor(enrichment.turn, source),
+    presenceOf: enrichment.presenceOf
+  };
+  const enriched = events.map((event) => processEvent(event, context));
+  const perception = enrichment.perception;
+  return perception
+    ? perception.service.filterEvents(enriched, perception.player, perception.world)
+    : enriched;
 }

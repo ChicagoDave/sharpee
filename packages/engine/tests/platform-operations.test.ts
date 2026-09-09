@@ -202,6 +202,11 @@ describe('GameEngine Platform Operations', () => {
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(mockSaveData);
 
       engine.registerSaveRestoreHooks(mockHooks);
+
+      // Move past the save so the restore has somewhere to roll back to.
+      await engine.executeTurn('look');
+      await engine.executeTurn('look');
+      const turnBeforeRestore = engine.getContext().currentTurn;
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -214,6 +219,11 @@ describe('GameEngine Platform Operations', () => {
       const completedEvents = events.filter(e => e.type === 'platform.restore_completed');
       expect(completedEvents).toHaveLength(1);
       expect(completedEvents[0].payload.success).toBe(true);
+
+      // The engine actually rolled to the loaded save: the turn counter is
+      // the save's turn plus one, not where the two looks left it.
+      expect(engine.getContext().currentTurn).toBe(mockSaveData.metadata.turnCount + 1);
+      expect(engine.getContext().currentTurn).toBeLessThan(turnBeforeRestore);
     });
 
     it('should emit restore failed event when no save data available', async () => {

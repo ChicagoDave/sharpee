@@ -1,324 +1,232 @@
 /**
- * Platform Operations Handler - Handles platform events (save/restore/quit/restart/undo)
+ * Platform-operation dispatcher: the one place a platform request (save,
+ * restore, quit, restart, undo, again) becomes its completion or failure
+ * event.
  *
- * Extracted from GameEngine as part of Phase 4 remediation.
- * Uses strategy pattern to handle different platform operation types.
+ * Both engine paths call `dispatchPlatformOperations` with the same
+ * contract and differ only in the list they hand over. A meta command
+ * passes the one request its action emitted and collects the delivered
+ * events into its result; a regular turn passes the drained pending list
+ * and delivers each event to the event source, the turn's event list, and
+ * the engine's emitter. The switch on the request type lives here and
+ * nowhere else under the engine's source; a request whose hook throws is
+ * answered by `platformOperationFailure`, the one error mapping, and never
+ * stops the rest of the list.
+ *
+ * Delivery happens inside each operation at the point the old inline
+ * paths emitted — a restart's acknowledgment is delivered before the
+ * engine stops, a quit's confirmation after — so the order of events in a
+ * turn is the order it always was.
+ *
+ * Public interface: `dispatchPlatformOperations`, `PlatformOperationHost`,
+ * `platformOperationFailure`, `PlatformEventDelivery`.
+ * Owner context: `@sharpee/engine` — turn cycle, platform operations.
+ *
+ * References: ADR-334 D3 (one dispatcher, AGAIN included); ADR-248
+ * (a confirmed restart acknowledges in the final packet and stops with
+ * reason 'restart'; no pre-emptive completion event).
  */
 
 import {
   type IPlatformEvent,
   type ISemanticEvent,
-  type ISemanticEventSource,
   type ISaveRestoreHooks,
   type ISaveData,
   type ISaveContext,
-  type IRestoreContext,
   type IQuitContext,
   type IRestartContext,
+  type IAgainContext,
   PlatformEventType,
   createSaveCompletedEvent,
   createRestoreCompletedEvent,
   createQuitConfirmedEvent,
   createQuitCancelledEvent,
   createRestartCompletedEvent,
-  createUndoCompletedEvent
+  createUndoCompletedEvent,
+  createAgainFailedEvent
 } from '@sharpee/core';
-import type { IParser } from '@sharpee/world-model';
-import { SaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
-import { VocabularyManager } from './vocabulary-manager.js';
-import { hasPronounContext } from './parser-interface.js';
 
 /**
- * Context for platform operation handling
+ * What an operation needs from the engine. The engine builds one per
+ * dispatch so the hooks read are the hooks registered now, never a copy
+ * captured at construction.
  */
-export interface PlatformOperationContext {
-  currentTurn: number;
-  turnEvents: Map<number, ISemanticEvent[]>;
-  eventSource: ISemanticEventSource;
-  emitEvent: (event: ISemanticEvent) => void;
+export interface PlatformOperationHost {
+  /** The save/restore hooks as currently registered, if any. */
+  readonly saveRestoreHooks: Partial<ISaveRestoreHooks> | undefined;
+  /** Snapshot the engine's state for a save. */
+  createSaveData(): ISaveData;
+  /** Load a save into the engine, replacing the world and turn. */
+  loadSaveData(saveData: ISaveData): void;
+  /** Stop the engine with the given reason. */
+  stop(reason: 'quit' | 'restart'): void;
+  /** The restart acknowledgment rendered in the final packet. */
+  createRestartAckEvent(): ISemanticEvent;
+  /** Undo one turn; false when there is nothing to undo. */
+  undo(): boolean;
+  /** The turn number after an undo. */
+  currentTurn(): number;
+  /** Run a command as a fresh turn (the AGAIN repeat). */
+  repeatCommand(command: string): Promise<void>;
 }
 
-/**
- * Callbacks for engine-level operations that require engine access
- */
-export interface EngineCallbacks {
-  stopEngine: (reason?: 'quit' | 'victory' | 'defeat' | 'abort') => void;
-  restartStory: () => Promise<void>;
-  updateContext: (updates: { currentTurn?: number }) => void;
-  updateScopeVocabulary: () => void;
-  emitStateChanged: () => void;
-  getParser: () => IParser | undefined;
-}
+/** Receives each completion or failure event as the operation produces it. */
+export type PlatformEventDelivery = (event: ISemanticEvent) => void;
 
 /**
- * Handler for platform operations
+ * Run each request in order, delivering its completion events as they
+ * arise. A request whose hook throws delivers its failure event instead
+ * and the next request still runs.
+ *
+ * @param operations - The requests to run: one for a meta command, the
+ *   drained pending list for a turn
+ * @param host - The engine surface the operations act on
+ * @param deliver - Where each completion or failure event goes
  */
-export class PlatformOperationHandler {
-  constructor(
-    private saveRestoreHooks: ISaveRestoreHooks | undefined,
-    private saveRestoreService: SaveRestoreService,
-    private stateProvider: ISaveRestoreStateProvider,
-    private vocabularyManager: VocabularyManager
-  ) {}
-
-  /**
-   * Process all pending platform operations
-   *
-   * @param pendingOps - Array of pending platform operations
-   * @param context - Platform operation context
-   * @param engineCallbacks - Callbacks for engine-level operations
-   */
-  async processAll(
-    pendingOps: IPlatformEvent[],
-    context: PlatformOperationContext,
-    engineCallbacks: EngineCallbacks
-  ): Promise<void> {
-    // Ensure there's an entry for the current turn
-    if (!context.turnEvents.has(context.currentTurn)) {
-      context.turnEvents.set(context.currentTurn, []);
-    }
-
-    for (const platformOp of pendingOps) {
-      try {
-        const resultEvent = await this.handleOperation(
-          platformOp,
-          context,
-          engineCallbacks
-        );
-
-        if (resultEvent) {
-          // Add to event source and turn events
-          context.eventSource.emit(resultEvent);
-          context.turnEvents.get(context.currentTurn)?.push(resultEvent);
-          context.emitEvent(resultEvent);
-        }
-      } catch (error) {
-        console.error(`Error processing platform operation ${platformOp.type}:`, error);
-
-        // Emit appropriate error event
-        const errorEvent = this.createErrorEvent(
-          platformOp.type,
-          error instanceof Error ? error.message : 'Unknown error'
-        );
-
-        if (errorEvent) {
-          context.eventSource.emit(errorEvent);
-          context.turnEvents.get(context.currentTurn)?.push(errorEvent);
-          context.emitEvent(errorEvent);
-        }
+export async function dispatchPlatformOperations(
+  operations: readonly IPlatformEvent[],
+  host: PlatformOperationHost,
+  deliver: PlatformEventDelivery
+): Promise<void> {
+  for (const operation of operations) {
+    try {
+      await runPlatformOperation(operation, host, deliver);
+    } catch (error) {
+      console.error(`Error processing platform operation ${operation.type}:`, error);
+      const failure = platformOperationFailure(operation.type, error);
+      if (failure) {
+        deliver(failure);
       }
-    }
-  }
-
-  /**
-   * Handle a single platform operation
-   */
-  private async handleOperation(
-    platformOp: IPlatformEvent,
-    context: PlatformOperationContext,
-    engineCallbacks: EngineCallbacks
-  ): Promise<ISemanticEvent | null> {
-    switch (platformOp.type) {
-      case PlatformEventType.SAVE_REQUESTED:
-        return this.handleSave(platformOp);
-
-      case PlatformEventType.RESTORE_REQUESTED:
-        return this.handleRestore(platformOp, engineCallbacks);
-
-      case PlatformEventType.QUIT_REQUESTED:
-        return this.handleQuit(platformOp, context, engineCallbacks);
-
-      case PlatformEventType.RESTART_REQUESTED:
-        return this.handleRestart(platformOp, context, engineCallbacks);
-
-      case PlatformEventType.UNDO_REQUESTED:
-        return this.handleUndo(engineCallbacks);
-
-      default:
-        return null;
-    }
-  }
-
-  /**
-   * Handle save request
-   */
-  private async handleSave(platformOp: IPlatformEvent): Promise<ISemanticEvent> {
-    if (!this.saveRestoreHooks?.onSaveRequested) {
-      return createSaveCompletedEvent(false, 'No save handler registered');
-    }
-
-    const saveContext = platformOp.payload.context as ISaveContext | undefined;
-    const saveData = this.saveRestoreService.createSaveData(this.stateProvider);
-
-    // Add any additional context from the platform event
-    if (saveContext?.saveName) {
-      saveData.metadata.description = saveContext.saveName;
-    }
-    if (saveContext?.metadata) {
-      Object.assign(saveData.metadata, saveContext.metadata);
-    }
-
-    await this.saveRestoreHooks.onSaveRequested(saveData);
-    return createSaveCompletedEvent(true);
-  }
-
-  /**
-   * Handle restore request
-   */
-  private async handleRestore(
-    platformOp: IPlatformEvent,
-    engineCallbacks: EngineCallbacks
-  ): Promise<ISemanticEvent> {
-    if (!this.saveRestoreHooks?.onRestoreRequested) {
-      return createRestoreCompletedEvent(false, 'No restore handler registered');
-    }
-
-    const saveData = await this.saveRestoreHooks.onRestoreRequested();
-    if (!saveData) {
-      return createRestoreCompletedEvent(
-        false,
-        'No save data available or restore cancelled'
-      );
-    }
-
-    const result = this.saveRestoreService.loadSaveData(saveData, this.stateProvider);
-
-    // Update context
-    engineCallbacks.updateContext({ currentTurn: result.currentTurn });
-
-    // Reset pronoun context
-    const parser = engineCallbacks.getParser();
-    if (parser && hasPronounContext(parser)) {
-      parser.resetPronounContext();
-    }
-
-    // Update vocabulary for current scope
-    engineCallbacks.updateScopeVocabulary();
-    engineCallbacks.emitStateChanged();
-
-    return createRestoreCompletedEvent(true);
-  }
-
-  /**
-   * Handle quit request
-   */
-  private async handleQuit(
-    platformOp: IPlatformEvent,
-    context: PlatformOperationContext,
-    engineCallbacks: EngineCallbacks
-  ): Promise<ISemanticEvent> {
-    const quitContext = platformOp.payload.context as IQuitContext | undefined;
-
-    if (this.saveRestoreHooks?.onQuitRequested) {
-      const shouldQuit = await this.saveRestoreHooks.onQuitRequested(quitContext || {});
-      if (shouldQuit) {
-        engineCallbacks.stopEngine('quit');
-        return createQuitConfirmedEvent();
-      } else {
-        return createQuitCancelledEvent();
-      }
-    } else {
-      // No quit hook registered, auto-confirm
-      return createQuitConfirmedEvent();
-    }
-  }
-
-  /**
-   * Handle restart request
-   */
-  private async handleRestart(
-    platformOp: IPlatformEvent,
-    context: PlatformOperationContext,
-    engineCallbacks: EngineCallbacks
-  ): Promise<ISemanticEvent> {
-    const restartContext = platformOp.payload.context as IRestartContext | undefined;
-
-    if (this.saveRestoreHooks?.onRestartRequested) {
-      const shouldRestart = await this.saveRestoreHooks.onRestartRequested(
-        restartContext || {}
-      );
-      if (shouldRestart) {
-        // Reset pronoun context
-        const parser = engineCallbacks.getParser();
-        if (parser && hasPronounContext(parser)) {
-          parser.resetPronounContext();
-        }
-
-        await engineCallbacks.restartStory();
-        return createRestartCompletedEvent(true);
-      } else {
-        return createRestartCompletedEvent(false);
-      }
-    } else {
-      // No restart hook registered - default behavior is to restart
-      const parser = engineCallbacks.getParser();
-      if (parser && hasPronounContext(parser)) {
-        parser.resetPronounContext();
-      }
-
-      await engineCallbacks.restartStory();
-      return createRestartCompletedEvent(true);
-    }
-  }
-
-  /**
-   * Handle undo request
-   */
-  private handleUndo(engineCallbacks: EngineCallbacks): ISemanticEvent {
-    const world = this.stateProvider.getWorld();
-    const result = this.saveRestoreService.undo(world);
-
-    if (result) {
-      // Update context with restored turn
-      engineCallbacks.updateContext({ currentTurn: result.turn });
-
-      // Update vocabulary for current scope
-      engineCallbacks.updateScopeVocabulary();
-      engineCallbacks.emitStateChanged();
-
-      return createUndoCompletedEvent(true, result.turn);
-    } else {
-      return createUndoCompletedEvent(false, undefined, 'Nothing to undo');
-    }
-  }
-
-  /**
-   * Create an error event for a failed operation
-   */
-  private createErrorEvent(
-    operationType: string,
-    errorMessage: string
-  ): ISemanticEvent | null {
-    switch (operationType) {
-      case PlatformEventType.SAVE_REQUESTED:
-        return createSaveCompletedEvent(false, errorMessage);
-      case PlatformEventType.RESTORE_REQUESTED:
-        return createRestoreCompletedEvent(false, errorMessage);
-      case PlatformEventType.QUIT_REQUESTED:
-        return createQuitCancelledEvent();
-      case PlatformEventType.RESTART_REQUESTED:
-        return createRestartCompletedEvent(false);
-      case PlatformEventType.UNDO_REQUESTED:
-        return createUndoCompletedEvent(false, undefined, errorMessage);
-      default:
-        return null;
     }
   }
 }
 
 /**
- * Create a platform operation handler instance
+ * The failure event for a request whose operation threw, or undefined for
+ * an event type that is not a request.
+ *
+ * @param operationType - The request's event type
+ * @param error - What the operation threw
  */
-export function createPlatformOperationHandler(
-  saveRestoreHooks: ISaveRestoreHooks | undefined,
-  saveRestoreService: SaveRestoreService,
-  stateProvider: ISaveRestoreStateProvider,
-  vocabularyManager: VocabularyManager
-): PlatformOperationHandler {
-  return new PlatformOperationHandler(
-    saveRestoreHooks,
-    saveRestoreService,
-    stateProvider,
-    vocabularyManager
-  );
+export function platformOperationFailure(
+  operationType: string,
+  error: unknown
+): IPlatformEvent | undefined {
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  return FAILURE_EVENT[operationType]?.(message);
+}
+
+/** One failure event per request type — the one error mapping. */
+const FAILURE_EVENT: Readonly<Record<string, (message: string) => IPlatformEvent>> = {
+  [PlatformEventType.SAVE_REQUESTED]: (message) => createSaveCompletedEvent(false, message),
+  [PlatformEventType.RESTORE_REQUESTED]: (message) => createRestoreCompletedEvent(false, message),
+  [PlatformEventType.QUIT_REQUESTED]: () => createQuitCancelledEvent(),
+  [PlatformEventType.RESTART_REQUESTED]: () => createRestartCompletedEvent(false),
+  [PlatformEventType.UNDO_REQUESTED]: (message) => createUndoCompletedEvent(false, undefined, message),
+  [PlatformEventType.AGAIN_REQUESTED]: (message) => createAgainFailedEvent(message)
+};
+
+/**
+ * The one switch: run a single request against the host, delivering its
+ * completion events at the points the operation produces them. Throws
+ * propagate to the dispatcher's error mapping.
+ */
+async function runPlatformOperation(
+  operation: IPlatformEvent,
+  host: PlatformOperationHost,
+  deliver: PlatformEventDelivery
+): Promise<void> {
+  const hooks = host.saveRestoreHooks;
+
+  switch (operation.type) {
+    case PlatformEventType.SAVE_REQUESTED: {
+      if (!hooks?.onSaveRequested) {
+        deliver(createSaveCompletedEvent(false, 'No save handler registered'));
+        return;
+      }
+      const context = operation.payload.context as ISaveContext | undefined;
+      const saveData = host.createSaveData();
+      if (context?.saveName) {
+        saveData.metadata.description = context.saveName;
+      }
+      if (context?.metadata) {
+        Object.assign(saveData.metadata, context.metadata);
+      }
+      await hooks.onSaveRequested(saveData);
+      deliver(createSaveCompletedEvent(true));
+      return;
+    }
+
+    case PlatformEventType.RESTORE_REQUESTED: {
+      if (!hooks?.onRestoreRequested) {
+        deliver(createRestoreCompletedEvent(false, 'No restore handler registered'));
+        return;
+      }
+      const saveData = await hooks.onRestoreRequested();
+      if (!saveData) {
+        deliver(createRestoreCompletedEvent(false, 'No save data available'));
+        return;
+      }
+      host.loadSaveData(saveData);
+      deliver(createRestoreCompletedEvent(true));
+      return;
+    }
+
+    case PlatformEventType.QUIT_REQUESTED: {
+      const context = operation.payload.context as IQuitContext;
+      if (hooks?.onQuitRequested) {
+        const shouldQuit = await hooks.onQuitRequested(context);
+        if (!shouldQuit) {
+          deliver(createQuitCancelledEvent());
+          return;
+        }
+        host.stop('quit');
+      }
+      // No quit hook registered: auto-confirm without stopping here.
+      deliver(createQuitConfirmedEvent());
+      return;
+    }
+
+    case PlatformEventType.RESTART_REQUESTED: {
+      const context = operation.payload.context as IRestartContext;
+      const shouldRestart = hooks?.onRestartRequested
+        ? await hooks.onRestartRequested(context)
+        : true; // No restart hook: auto-confirm
+      if (!shouldRestart) {
+        deliver(createRestartCompletedEvent(false));
+        return;
+      }
+      // The acknowledgment lands in the final packet, then the engine
+      // stops; the client's reboot is the success signal.
+      deliver(host.createRestartAckEvent());
+      host.stop('restart');
+      return;
+    }
+
+    case PlatformEventType.UNDO_REQUESTED: {
+      if (!host.undo()) {
+        deliver(createUndoCompletedEvent(false, undefined, 'Nothing to undo'));
+        return;
+      }
+      deliver(createUndoCompletedEvent(true, host.currentTurn()));
+      return;
+    }
+
+    case PlatformEventType.AGAIN_REQUESTED: {
+      const context = operation.payload.context as IAgainContext | undefined;
+      if (!context?.command) {
+        deliver(createAgainFailedEvent('No command to repeat'));
+        return;
+      }
+      // The repeated command dispatches as its own turn (meta or regular)
+      // and reports its own text; a successful repeat needs no completion
+      // event. A throw reaches the dispatcher's failure mapping.
+      await host.repeatCommand(context.command);
+      return;
+    }
+
+    default:
+      // Completion events and other platform types are not requests.
+      return;
+  }
 }
