@@ -113,7 +113,7 @@ describe('wearingAction (Golden Pattern)', () => {
       expect(itemParam.name).toBe('wool hat');
     });
 
-    test.skip('should fail when item not held and not in room', () => {
+    test('should fail when item is out of scope (in another room)', () => {
       const { world, player } = setupBasicWorld();
       const otherRoom = world.createEntity('Other Room', 'room');
       otherRoom.add({ type: TraitType.ROOM });
@@ -135,7 +135,7 @@ describe('wearingAction (Golden Pattern)', () => {
       const events = executeWithValidation(wearingAction, context);
       
       expectEvent(events, 'if.event.wear_blocked', {
-        messageId: expect.stringContaining('not_held')
+        messageId: expect.stringContaining('not_known')
       });
     });
 

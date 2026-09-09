@@ -143,21 +143,6 @@ describe('CommandValidator (Golden Pattern)', () => {
       }
     });
 
-    test.skip('validates action without object in parsed command', () => {
-      // Skip: Parser currently requires object for 'take' verb
-      const parsed = parseCommand('take', world);
-      expect(parsed).not.toBeNull();
-
-      const result = validator.validate(parsed!);
-      
-      // Should succeed - the action will handle the missing object
-      expect(result.success).toBe(true);
-      if (result.success) {
-        expect(result.value.actionId).toBe('if.action.taking');
-        expect(result.value.directObject).toBeUndefined();
-      }
-    });
-
     test('validates simple entity resolution', () => {
       // Add a box using AuthorModel
       const box = author.createEntity('box', EntityType.CONTAINER);

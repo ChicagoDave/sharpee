@@ -74,58 +74,6 @@ describe('enteringAction (Golden Pattern)', () => {
       });
     });
 
-    test.skip('should fail when already inside target', () => {
-      // SKIPPED: This test requires scope logic to properly track when player is inside a vehicle
-      // Without scope logic, world.getLocation() returns undefined for entities in non-room containers
-      const { world, player, room } = setupBasicWorld();
-      
-      const vehicle = world.createEntity('sports car', EntityType.OBJECT);
-      vehicle.add({
-        type: TraitType.ENTRY,
-        canEnter: true,
-        preposition: 'in'
-      });
-      world.moveEntity(vehicle.id, room.id);
-      world.moveEntity(player.id, vehicle.id); // Already in car
-      
-      const command = createCommand(IFActions.ENTERING, {
-        entity: vehicle
-      });
-      const context = createRealTestContext(enteringAction, world, command);
-      
-      const events = executeWithValidation(enteringAction, context);
-      
-      expectEvent(events, 'if.event.entered', {
-        messageId: expect.stringContaining('already_inside'),
-        reason: 'already_inside'
-      });
-    });
-
-    test.skip('should fail when entry is blocked', () => {
-      // SKIPPED: Entry trait removed - containers/supporters can't be "blocked", only closed
-      // This concept might be reintroduced via custom event handlers
-      const { world, player, room } = setupBasicWorld();
-      
-      const booth = world.createEntity('phone booth', EntityType.SCENERY);
-      booth.add({
-        type: TraitType.CONTAINER,
-        enterable: false  // Not enterable
-      });
-      world.moveEntity(booth.id, room.id);
-      
-      const command = createCommand(IFActions.ENTERING, {
-        entity: booth
-      });
-      const context = createRealTestContext(enteringAction, world, command);
-      
-      const events = executeWithValidation(enteringAction, context);
-      
-      expectEvent(events, 'if.event.entered', {
-        messageId: expect.stringContaining('not_enterable'),
-        reason: 'not_enterable'
-      });
-    });
-
     test('should fail when container is closed', () => {
       const { world, player, room } = setupBasicWorld();
 
@@ -154,33 +102,6 @@ describe('enteringAction (Golden Pattern)', () => {
       expectEvent(events, 'if.event.entered', {
         messageId: expect.stringContaining('container_closed'),
         reason: 'container_closed'
-      });
-    });
-
-    test.skip('should fail when at maximum occupancy', () => {
-      // SKIPPED: Occupancy limits removed with EntryTrait
-      // Container/Supporter capacity is based on weight/size, not occupant count
-      // This could be implemented via custom event handlers if needed
-      const { world, player, room } = setupBasicWorld();
-      
-      const elevator = world.createEntity('small elevator', EntityType.CONTAINER);
-      elevator.add({
-        type: TraitType.CONTAINER,
-        enterable: true,
-        capacity: 0  // No capacity left
-      });
-      world.moveEntity(elevator.id, room.id);
-      
-      const command = createCommand(IFActions.ENTERING, {
-        entity: elevator
-      });
-      const context = createRealTestContext(enteringAction, world, command);
-      
-      const events = executeWithValidation(enteringAction, context);
-      
-      expectEvent(events, 'if.event.entered', {
-        messageId: expect.stringContaining('too_full'),
-        reason: 'too_full'
       });
     });
   });
@@ -308,32 +229,6 @@ describe('enteringAction (Golden Pattern)', () => {
       // Should succeed - no max occupancy set
       expectEvent(events, 'if.event.entered', {
         targetId: booth.id
-      });
-    });
-
-    test.skip('should handle custom prepositions', () => {
-      // SKIPPED: Custom prepositions removed with EntryTrait
-      // Containers always use 'in', supporters always use 'on'
-      // Custom prepositions could be added via event handlers if needed
-      const { world, player, room } = setupBasicWorld();
-      
-      const desk = world.createEntity('wooden desk', EntityType.SUPPORTER);
-      desk.add({
-        type: TraitType.SUPPORTER,
-        enterable: true
-      });
-      world.moveEntity(desk.id, room.id);
-      
-      const command = createCommand(IFActions.ENTERING, {
-        entity: desk
-      });
-      const context = createRealTestContext(enteringAction, world, command);
-      
-      const events = executeWithValidation(enteringAction, context);
-      
-      expectEvent(events, 'if.event.entered', {
-        targetId: desk.id,
-        preposition: 'on'  // Supporters always use 'on' now
       });
     });
   });

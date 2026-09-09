@@ -268,22 +268,18 @@ describe('takingAction (Golden Pattern)', () => {
       });
     });
 
-    test.skip('should fail when too heavy', () => {
+    test('should fail when too heavy', () => {
       const world = new WorldModel();
       const room = world.createEntity('Test Room', 'room');
       room.add({ type: TraitType.ROOM });
       
       const player = world.createEntity('yourself', 'actor');
-      player.add({
-        type: TraitType.ACTOR,
-        inventoryLimit: { maxWeight: 10 }
-      });
-      player.add({ type: TraitType.CONTAINER });
+      player.add({ type: TraitType.ACTOR });
+      player.add({ type: TraitType.CONTAINER, capacity: { maxWeight: 10 } });
       world.setPlayer(player.id);
-      
+
       const heavyItem = world.createEntity('heavy boulder', 'object');
-      // The test expects weight to be handled by the world model
-      // Let's just create the item without a PORTABLE trait for now
+      heavyItem.add({ type: TraitType.IDENTITY, name: 'heavy boulder', weight: 50 });
       
       world.moveEntity(player.id, room.id);
       world.moveEntity(heavyItem.id, room.id);

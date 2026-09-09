@@ -265,12 +265,12 @@ describe('throwingAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('hits_target')
       });    });
 
-    test.skip('should miss moving actor - implementation bug: duck/catch logic only runs on hit', () => {
+    test('should miss an agile actor, who ducks', () => {
       const { world, player, room, item: stone } = TestData.withInventoryItem('small stone');
       const npc = world.createEntity('nimble thief', 'actor');
       npc.add({
         type: TraitType.ACTOR,
-        agility: 8
+        customProperties: { agility: 8 }
       } as unknown as ITrait);
       world.moveEntity(npc.id, room.id);
       
@@ -292,12 +292,12 @@ describe('throwingAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('target_ducks')
       });    });
 
-    test.skip('should allow NPC to catch thrown item - implementation bug: catch logic only runs on hit', () => {
+    test('should allow an NPC that can catch to catch the thrown item', () => {
       const { world, player, room, item: apple } = TestData.withInventoryItem('red apple');
       const child = world.createEntity('young child', 'actor');
       child.add({
         type: TraitType.ACTOR,
-        canCatch: true
+        customProperties: { canCatch: true }
       } as unknown as ITrait);
       world.moveEntity(child.id, room.id);
       

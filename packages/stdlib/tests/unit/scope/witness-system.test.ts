@@ -228,7 +228,7 @@ describe('StandardWitnessSystem', () => {
   });
 
   describe('Witness Events', () => {
-    test.skip('should emit action witness event', () => {
+    test('should emit action witness event', () => {
       const ball = world.createEntity('ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
@@ -265,7 +265,7 @@ describe('StandardWitnessSystem', () => {
       );
     });
 
-    test.skip('should emit movement witness event', () => {
+    test('should emit movement witness event', () => {
       const ball = world.createEntity('ball', EntityType.OBJECT);
       world.moveEntity(ball.id, room.id);
 
@@ -297,7 +297,7 @@ describe('StandardWitnessSystem', () => {
       );
     });
 
-    test.skip('should emit unknown entity for partial witness level', () => {
+    test('should emit unknown entity for partial witness level', () => {
       // Mock partial witness level
       vi.spyOn(scopeResolver, 'canReach').mockReturnValue(false);
       
