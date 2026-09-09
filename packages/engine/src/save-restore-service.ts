@@ -375,7 +375,7 @@ export class SaveRestoreService {
     // engine, which is the same defect class this ADR closes (an observer
     // seeing state mid-mutation). Optional, so stories that do not persist
     // their own keys are unaffected.
-    story?.onWorldRestored?.(world);
+    story?.onWorldRestored?.(world, saveData.metadata.turnCount);
 
     return {
       eventSource,

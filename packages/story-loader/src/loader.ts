@@ -34,7 +34,7 @@ import {
   type StoryIR,
 } from '@sharpee/chord';
 import type { IRActionPattern, IRPatternPart, IRProseValue, ScopeRequirementWord } from '@sharpee/chord';
-import type { IROnClause, IRChapterTrigger } from '@sharpee/chord';
+import type { IROnClause } from '@sharpee/chord';
 
 /**
  * Topics an entity's own TURN-TRIGGERED clauses are gated on knowing.
@@ -72,17 +72,11 @@ import {
   type ActSlots,
   type ActResult,
 } from '@sharpee/stdlib';
-import {
-  createHungerCrossingWatcher,
-  getHungerSeverity,
-  setHungerSeverity,
-} from '@sharpee/ext-hunger';
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from '@sharpee/engine';
-import { TURN_BANDS, createBandNarrator, type BandAnnounceMode, type BandRung, type TurnPlugin } from '@sharpee/plugins';
-import { CHAPTER_CURRENT_KEY, CHAPTER_FIRED_PREFIX, createChaptersPlugin, type ChapterRow, type ChapterRuntimeTrigger } from '@sharpee/ext-chapters';
+import { TURN_BANDS, type TurnPlugin } from '@sharpee/plugins';
 import {
   applyCompiledCharacter,
   createTraitMemoryAccess,
@@ -94,13 +88,6 @@ import {
   type CompiledStoryOracle,
 } from '@sharpee/character';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
-import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
-import type {
-  EntityBindings,
-  StateDefinition,
-  StateMachineDefinition,
-  TransitionDefinition,
-} from '@sharpee/plugin-state-machine';
 import {
   createFollowerBehavior,
   createPatrolBehavior,
@@ -154,12 +141,12 @@ import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
 import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
-import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES } from './extension-registry.js';
+import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey, timerKey } from './state-keys.js';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
 
 /**
@@ -804,16 +791,13 @@ export class ChordStory implements Story {
     // player`) resolve through the `player` sentinel mapped just above.
     this.applyCharacterBlocks(world);
 
-    // ADR-330 D2: the opening chapter is current from the moment the game
-    // starts — before the first turn, so `during <opener>` holds while turn 1
-    // renders. Seeded here, not by the plugin (which runs after an action);
-    // the plugin announces it on turn 1. A restored world already carries
-    // these keys and is never re-seeded (this method runs once per boot,
-    // before any restore).
-    const opener = (this.ir.chapters ?? []).find((c) => c.trigger.kind === 'game-starts');
-    if (opener && world.getStateValue(CHAPTER_CURRENT_KEY) === undefined) {
-      world.setStateValue(CHAPTER_FIRED_PREFIX + opener.name, true);
-      world.setStateValue(CHAPTER_CURRENT_KEY, opener.ordinal);
+    // Extension state the story's rows seed before the first turn (the
+    // opening chapter is current while turn 1 renders). Each `use`d
+    // extension seeds its own keys from the IR, in the registry's order;
+    // a restored world already carries them and is never re-seeded (this
+    // method runs once per boot, before any restore).
+    for (const [name, registration] of EXTENSION_REGISTRY) {
+      if ((this.ir.uses ?? []).includes(name)) registration.seedWorldFromIR?.(this.ir, world);
     }
 
     // ADR-240: no initial derived-property evaluation — derived state is
@@ -1053,10 +1037,12 @@ export class ChordStory implements Story {
    * are never bare digits) are untouched.
    *
    * The engine fires this only when a restore has fully completed; see
-   * `Story.onWorldRestored`.
+   * `Story.onWorldRestored`. The runtime's two cross-turn counters reset
+   * to what the restored turn calls for (`ChordRuntime.resetAfterRestore`).
    */
-  onWorldRestored(world: WorldModel): void {
+  onWorldRestored(world: WorldModel, restoredTurn: number): void {
     sweepRetiredSelectKeys(world);
+    this.runtime.resetAfterRestore(restoredTurn);
   }
 
   /**
@@ -1128,105 +1114,33 @@ export class ChordStory implements Story {
       registerCharacterModelPhase(npcService, this.characterRegistry);
     }
 
-    // ADR-215 `use state-machines`: the plugin registers engine-side and
-    // every `define machine` lowers into its registry (Chord conditions
-    // ride as custom guards, Chord bodies as custom effects). Machines in
-    // rogue IR without the `use` are a LoadError, never silently dead.
-    if ((this.ir.machines ?? []).length > 0 && !(this.ir.uses ?? []).includes('state-machines')) {
-      throw new LoadError('`define machine` needs `use state-machines` in the story header.', this.ir.machines[0].span);
-    }
-    if ((this.ir.uses ?? []).includes('state-machines')) {
-      const smPlugin = new StateMachinePlugin();
-      engine.getPluginRegistry().register(smPlugin);
-      const smRegistry = smPlugin.getRegistry();
-      for (const machine of this.ir.machines ?? []) {
-        const { definition, bindings } = this.buildMachineDefinition(machine);
-        smRegistry.register(definition, bindings);
+    // The trusted extensions, in the registry's order — never the header's
+    // `use` order, so two extensions' equal-priority plugins keep one fixed
+    // tie-break whatever an author wrote first. First the rogue-IR
+    // backstop: a construct an extension's `use` unlocks, present without
+    // the `use`, is a LoadError, never silently dead (the compiler's gate
+    // catches it first; hand-built IR reaches here). Then, per `use`d
+    // extension, its config-free plugin slot and its IR-shaped construction
+    // — the only moment a plugin registry exists. Generic and naming no
+    // extension: enabling one is a registry entry, never a loader edit.
+    const uses = this.ir.uses ?? [];
+    for (const [name, registration] of EXTENSION_REGISTRY) {
+      if (uses.includes(name)) continue;
+      const gated = registration.gatedConstruct?.(this.ir);
+      if (gated) {
+        throw new LoadError(`\`${gated.construct}\` needs \`use ${name}\` in the story header.`, gated.span);
       }
     }
-
-    // ADR-260 D6: every `use`d extension gets its `registerPlugin` slot
-    // invoked here — the only moment a plugin registry exists. Generic over
-    // `ir.uses` and naming no extension, so enabling one is a registry entry
-    // rather than a loader edit. `state-machines` declines the slot above
-    // because it must retain the plugin instance to lower `define machine`
-    // blocks into it; nothing here needs lowering after construction.
-    for (const name of this.ir.uses ?? []) {
-      EXTENSION_REGISTRY.get(name)?.registerPlugin?.(engine.getPluginRegistry());
-    }
-
-    // ADR-261 D7 (amended by ADR-262 D3): every crossed rung speaks — its `says`
-    // phrase or the overridable platform fallback — so the narrator registers
-    // whenever a ladder exists, not only when some rung has a phrase. Gated on
-    // `ir.ranks` (generic IR, not an extension name). `announce silent` still
-    // suppresses output; the narrator simply emits nothing in that mode.
-    if (this.ir.ranks.length > 0) {
-      engine.getPluginRegistry().register(this.buildPromotionNarrator());
-    }
-
-    // ADR-263: the hunger meter — ADR-262's second consumer. Its eating handler
-    // is installed via EXTENSION_REGISTRY.registerWorld; the config-dependent
-    // parts lower here from `ir.hunger`, where grows/fatal/phrases and
-    // `killPlayer` are in reach (the registry map cannot carry them).
-    if (this.ir.hunger) {
-      const h = this.ir.hunger;
-      const registry = engine.getPluginRegistry();
-      const bands: BandRung[] = h.rungs.map((r) => ({
-        id: r.id,
-        threshold: r.threshold,
-        name: r.id,
-        phraseId: r.phraseKey,
-      }));
-
-      // Decay + death daemon (priority above the watcher/narrator so severity is
-      // current when they observe it this turn).
-      registry.register(this.buildHungerDaemon(h.grows ?? 0, h.fatal));
-      // The ADR-262 data watcher — `band_crossed` over the severity scalar.
-      registry.register(createHungerCrossingWatcher(bands));
-      // The Chord narrator: author `says` phrase or the overridable fallback,
-      // under `use hunger, announce <mode>` (default `all`).
-      registry.register(createBandNarrator({
-        id: 'chord.story.hunger-narrator',
-        // Watchers band (ADR-332), after the crossing watcher: the sentence follows the event.
-        priority: TURN_BANDS.watchers.floor + 15,
-        concept: 'hunger',
-        value: (world) => getHungerSeverity(world),
-        bands: () => bands,
-        mode: (this.ir.announceModes?.['hunger'] ?? 'all') as BandAnnounceMode,
-        narrationEventId: 'if.event.hunger_narrated',
-        fallbackPhraseId: 'if.action.hunger.crossed',
-      }));
-    }
-
-    // ADR-330: chapters. The rows lower here — the registry map cannot carry
-    // them (ADR-260 D5) — each trigger to what the plugin can read directly:
-    // a room's world id, a timer record's key, a state value's key. Rogue IR
-    // without the `use` is a LoadError, never silently dead (the machines
-    // precedent).
-    if ((this.ir.chapters ?? []).length > 0) {
-      if (!(this.ir.uses ?? []).includes('chapters')) {
-        throw new LoadError('`define chapters` needs `use chapters` in the story header.', this.ir.chapters![0].span);
-      }
-      const lower = (t: IRChapterTrigger): ChapterRuntimeTrigger => {
-        switch (t.kind) {
-          case 'game-starts':
-            return { kind: 'game-starts' };
-          case 'first-visit':
-            return { kind: 'first-visit', roomId: this.requireWorldId(t.room) };
-          case 'timer-expires':
-            return { kind: 'timer-expires', stateKey: timerKey(t.timer) };
-          case 'becomes':
-            return { kind: 'becomes', stateKey: t.owner === 'story' ? CHORD_STORY_STATE_KEY : CHORD_STATE_PREFIX + t.owner, state: t.state };
-        }
-      };
-      const rows: ChapterRow[] = this.ir.chapters!.map((c) => ({
-        name: c.name,
-        title: c.title,
-        description: c.description,
-        ordinal: c.ordinal,
-        trigger: lower(c.trigger),
-      }));
-      engine.getPluginRegistry().register(createChaptersPlugin(rows));
+    const installContext: ExtensionInstallContext = {
+      worldId: (irId) => this.worldIds.get(irId),
+      requireWorldId: (irId) => this.requireWorldId(irId),
+      evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
+      execMachineBody: (statements, world) => this.runtime.execMachineBody(statements, world),
+    };
+    for (const [name, registration] of EXTENSION_REGISTRY) {
+      if (!uses.includes(name)) continue;
+      registration.registerPlugin?.(engine.getPluginRegistry());
+      registration.installFromIR?.(this.ir, engine, installContext);
     }
 
     const daemons = this.runtime.buildSchedulerDaemons();
@@ -1249,99 +1163,6 @@ export class ChordStory implements Story {
     // declarative slot entry — no synthesized closures; the platform's
     // built-in contributor evaluates them.
     this.registerPresentEntries(engine);
-  }
-
-  /**
-   * The promotion narrator — the Chord render layer over the ADR-262 crossing
-   * engine (ADR-261 D7, amended by ADR-262 D3).
-   *
-   * A promotion *says* the rung's authored `says` phrase; a rung with **no**
-   * `says` now speaks the overridable platform fallback
-   * (`if.action.scoring.promotion`), because ADR-262 D3 made silence explicit —
-   * only `announce silent` suppresses. This is a thin {@link createBandNarrator}
-   * over the score scalar: it renders each crossed rung (`all` mode) so a
-   * multi-band jump reports each elevation (ADR-262 D6), mapping rank ids to
-   * their `says` keys.
-   *
-   * **Why the engine derives the crossing rather than observing an event.** It
-   * hands each plugin only the *action's* events (`TurnPluginContext.actionEvents`
-   * is a fixed snapshot taken before the plugin loop), so no plugin can see
-   * another's output — `ext-scoring`'s data watcher runs in the same loop and is
-   * invisible here. Both read the same derived ledger, so they cannot disagree
-   * about whether a rung was crossed; what differs is only what each produces —
-   * the platform its `band_crossed` event, the story its sentence.
-   *
-   * Registered by the Chord loader because only it holds the IR. `phraseKey`
-   * never crosses into a platform type: `RankDefinition` carries none (ADR-260
-   * D2), and the map below stays in this closure.
-   */
-  private buildPromotionNarrator(): TurnPlugin {
-    const phraseByRankId = new Map<string, string>();
-    for (const rung of this.ir.ranks) {
-      if (rung.phraseKey !== undefined) phraseByRankId.set(rung.id, rung.phraseKey);
-    }
-
-    return createBandNarrator({
-      id: 'chord.story.promotion-narrator',
-      // Watchers band (ADR-332), after ext-scoring's rank watcher: the sentence follows the event.
-      priority: TURN_BANDS.watchers.floor + 15,
-      concept: 'rank',
-      isEnabled: (world) => world.isScoringEnabled(),
-      value: (world) => world.getScore(),
-      bands: (world): BandRung[] =>
-        world.getRanks().map((r) => ({
-          id: r.id,
-          threshold: r.threshold,
-          name: r.name,
-          phraseId: phraseByRankId.get(r.id),
-        })),
-      // The bottom rung is the starting position — seed it silently.
-      seedAtOrBelow: 0,
-      // ADR-262 D3: `use scoring, announce <mode>`; default `all` reports each
-      // elevation on a multi-band jump (ADR-262 D6). The analyzer validated it.
-      mode: (this.ir.announceModes?.['scoring'] ?? 'all') as BandAnnounceMode,
-      narrationEventId: 'if.event.rank_narrated',
-      // ADR-262 D3: spoken when a rung has no `says`. Overridable via
-      // `override message scoring-promotion`.
-      fallbackPhraseId: 'if.action.scoring.promotion',
-      // Preserve scoring's authored `{rank}` / `{score}` phrase params.
-      paramsFor: (rung, span) => ({ rank: rung.name, score: span.value }),
-    });
-  }
-
-  /**
-   * The hunger decay + death daemon (ADR-263 D1). Each turn it raises the
-   * severity counter by `grows` (the `on every turn` mechanic) and, once
-   * severity reaches `fatal`, kills the player (`kill the player` — a raw-value
-   * trigger, not a band). Story-reactions band (ADR-332): above the crossing watcher
-   * and narrator, so they observe the updated severity the same turn.
-   */
-  private buildHungerDaemon(grows: number, fatal: number | undefined): TurnPlugin {
-    return {
-      id: 'chord.story.hunger-daemon',
-      // Story-reactions band (ADR-332): `grows N each turn` is a story clause;
-      // it runs before every platform phase and before its own watcher.
-      priority: TURN_BANDS.storyReactions.floor + 40,
-      onAfterAction(ctx): ISemanticEvent[] {
-        if (grows > 0) {
-          setHungerSeverity(ctx.world, getHungerSeverity(ctx.world) + grows);
-        }
-        if (fatal !== undefined && getHungerSeverity(ctx.world) >= fatal) {
-          const player = ctx.world.getPlayer();
-          if (player) {
-            // The death line is lang-en-us prose (overridable `hunger-starved`),
-            // routed through the death event's messageId — not a hardcoded string.
-            const event = killPlayer(ctx.world, player, {
-              cause: 'starvation',
-              messageId: 'if.action.hunger.starved',
-              terminal: true,
-            });
-            return event ? [event] : [];
-          }
-        }
-        return [];
-      },
-    };
   }
 
   /**
@@ -2378,95 +2199,6 @@ export class ChordStory implements Story {
     }
     behavior.id = `chord.npc.${pending.irId}`;
     return behavior;
-  }
-
-  /**
-   * Lower one `define machine` onto the ADR-119 shapes: platform id
-   * `chord.machine.<slug>`, role bindings as `$<role>` entries (world
-   * ids), action triggers on `if.action.<gerund>`, Chord conditions as
-   * custom guards over the shared evaluator, Chord bodies as one custom
-   * effect each through the runtime's statement executor.
-   */
-  private buildMachineDefinition(machine: NonNullable<StoryIR['machines']>[number]): {
-    definition: StateMachineDefinition;
-    bindings: EntityBindings;
-  } {
-    const bindings: EntityBindings = {};
-    for (const role of machine.roles) {
-      const worldId = this.worldIds.get(role.entity);
-      if (!worldId) {
-        throw new LoadError(`Machine \`${machine.name}\`: role \`${role.name}\`'s entity was never built.`, machine.span);
-      }
-      bindings[`$${role.name}`] = worldId;
-    }
-
-    const chordGuard = (condition: IRCondition) => ({
-      type: 'custom' as const,
-      evaluate: (world: unknown) => this.evaluator.evalCondition(condition, { world: world as WorldModel }),
-    });
-    const chordEffect = (statements: Parameters<ChordRuntime['execMachineBody']>[0]) => ({
-      type: 'custom' as const,
-      execute: (world: unknown) => ({
-        events: this.runtime
-          .execMachineBody(statements, world as WorldModel)
-          .map((e) => ({ type: e.type, data: e.data, entities: e.entities as Record<string, string> })),
-      }),
-    });
-
-    const states: Record<string, StateDefinition> = {};
-    for (const state of machine.states) {
-      const transitions: TransitionDefinition[] = state.transitions.map((t) => {
-        let trigger: TransitionDefinition['trigger'];
-        switch (t.trigger.kind) {
-          case 'action': {
-            let targetEntity: string | undefined;
-            if (t.trigger.target) {
-              targetEntity = t.trigger.target.startsWith('$')
-                ? t.trigger.target
-                : this.worldIds.get(t.trigger.target);
-              if (targetEntity === undefined) {
-                throw new LoadError(`Machine \`${machine.name}\`: a trigger target was never built.`, t.span);
-              }
-            }
-            trigger = {
-              type: 'action',
-              actionId: `if.action.${t.trigger.action}`,
-              ...(targetEntity !== undefined ? { targetEntity } : {}),
-            };
-            break;
-          }
-          case 'event':
-            // ADR-256: translate the dotless Chord id to the platform runtime
-            // type the machine fires on (media.* → dotted; author events pass
-            // through), matching the emit seam.
-            trigger = { type: 'event', eventId: translateEventId(t.trigger.event) };
-            break;
-          case 'condition':
-            trigger = { type: 'condition', condition: chordGuard(t.trigger.condition) };
-            break;
-        }
-        return {
-          target: t.target,
-          trigger,
-          ...(t.condition ? { guard: chordGuard(t.condition) } : {}),
-        };
-      });
-      states[state.name] = {
-        ...(state.terminal ? { terminal: true } : {}),
-        ...(state.onEnter.length > 0 ? { onEnter: [chordEffect(state.onEnter)] } : {}),
-        ...(state.onExit.length > 0 ? { onExit: [chordEffect(state.onExit)] } : {}),
-        ...(transitions.length > 0 ? { transitions } : {}),
-      };
-    }
-
-    return {
-      definition: {
-        id: `chord.machine.${machine.name.replace(/\s+/g, '-')}`,
-        initialState: machine.initialState,
-        states,
-      },
-      bindings,
-    };
   }
 
   /**

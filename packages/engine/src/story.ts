@@ -299,8 +299,10 @@ export interface Story {
    * See the comment at the undo site.
    *
    * @param world - The fully restored world model
+   * @param restoredTurn - The save's turn count: the number of turns it had
+   *   played, which is the turn its last turn-end phase ran on
    */
-  onWorldRestored?(world: WorldModel): void;
+  onWorldRestored?(world: WorldModel, restoredTurn: number): void;
 }
 
 /**

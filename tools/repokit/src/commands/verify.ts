@@ -11,6 +11,7 @@ import { execFileSync } from 'node:child_process';
 import { findRepoRoot, tsfBin } from '../repo';
 import { Command } from './command';
 import { findControlBytes, formatControlByteFailure } from './control-bytes';
+import { checkAliasCatalogModule } from './aliases';
 import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
 import { checkManifestModule } from './manifest';
 import { checkRandomGate, formatRandomGateFailure } from './random-gate';
@@ -48,6 +49,14 @@ export class VerifyCommand implements Command {
     if (!checkManifestModule(root)) {
       console.error(
         'verify: chord/src/stdlib-manifest.ts or character-manifest.ts is STALE against the platform sources — run `repokit manifest` and commit.',
+      );
+      return 1;
+    }
+    // ADR-335 D4: the Chord-side alias set is derived from the loader's
+    // curated map; a stale derivation is a build error, never silent drift.
+    if (!checkAliasCatalogModule(root)) {
+      console.error(
+        'verify: chord/src/message-alias-catalog.ts is STALE against story-loader/src/message-alias-map.ts — run `repokit aliases` and commit.',
       );
       return 1;
     }

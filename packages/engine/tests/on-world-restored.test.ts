@@ -41,9 +41,12 @@ class RestoreObservingStory extends MinimalTestStory {
   /** A world state value at hook time — proves the snapshot already landed. */
   markerAtHook: unknown = undefined;
   engineRef: { getUndoLevels?(): number } | null = null;
+  /** The restored turn the engine handed over — the save's turn count. */
+  restoredTurn: number | null = null;
 
-  onWorldRestored(world: WorldModel): void {
+  onWorldRestored(world: WorldModel, restoredTurn: number): void {
     this.calls += 1;
+    this.restoredTurn = restoredTurn;
     this.markerAtHook = world.getStateValue('test.marker');
     this.undoLevelsAtHook = this.engineRef?.getUndoLevels?.() ?? null;
   }
@@ -69,6 +72,8 @@ describe('ADR-289 D2 — Story.onWorldRestored', () => {
     expect(story.calls).toBe(1);
     // The hook ran after loadJSON, not before: it can see restored state.
     expect(story.markerAtHook).toBe('saved-value');
+    // The second argument is the save's own turn count.
+    expect(story.restoredTurn).toBe(saved.metadata.turnCount);
     target.engine.stop();
   });
 
