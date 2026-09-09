@@ -96,13 +96,13 @@ export interface TurnStageContext {
 
 /**
  * The facade's turn-facing surface. Getters read the engine's live
- * fields (the parser, text service, and executor are set by `setStory`;
+ * fields (the parser, text service, and executor are set by `installStory`;
  * the pending platform list is replaced when drained).
  */
 export interface TurnEngine {
   readonly world: WorldModel;
   readonly context: GameContext;
-  /** The installed story, or none before `setStory`. */
+  /** The installed story, or none before `installStory`. */
   readonly story: Story | undefined;
   readonly config: EngineConfig;
   readonly parser: Parser | undefined;

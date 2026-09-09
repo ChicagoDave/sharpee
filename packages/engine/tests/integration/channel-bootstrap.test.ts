@@ -120,7 +120,7 @@ describe('GameEngine — channel:manifest emission', () => {
   it('emits channel:manifest exactly once during start()', () => {
     const { engine } = setupTestEngine();
     const story = new StoryWithoutChannel();
-    engine.setStory(story);
+    engine.installStory(story);
     const manifests = captureManifest(engine);
 
     engine.start({ capabilities: FULL_CAPABILITIES });
@@ -132,7 +132,7 @@ describe('GameEngine — channel:manifest emission', () => {
   it('invokes Story.registerChannels before constructing the manifest', () => {
     const { engine } = setupTestEngine();
     const story = new StoryWithChannel();
-    engine.setStory(story);
+    engine.installStory(story);
     const manifests = captureManifest(engine);
 
     engine.start({ capabilities: FULL_CAPABILITIES });
@@ -144,7 +144,7 @@ describe('GameEngine — channel:manifest emission', () => {
 
   it('lists all standard channels in the manifest', () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const manifests = captureManifest(engine);
 
     engine.start({ capabilities: FULL_CAPABILITIES });
@@ -156,7 +156,7 @@ describe('GameEngine — channel:manifest emission', () => {
 
   it('filters the character author channel out of a player profile\'s manifest (ADR-310 D12 / Acceptance 8)', () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const manifests = captureManifest(engine);
 
     engine.start({ capabilities: { ...FULL_CAPABILITIES, authorChannels: false } });
@@ -171,7 +171,7 @@ describe('GameEngine — channel:manifest emission', () => {
     // author-profile presence side rides the all-standard-channels test
     // above, since all three ids are in STANDARD_CHANNEL_IDS.
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const manifests = captureManifest(engine);
 
     engine.start({ capabilities: { ...FULL_CAPABILITIES, authorChannels: false } });
@@ -184,7 +184,7 @@ describe('GameEngine — channel:manifest emission', () => {
 
   it('includes media channels when capabilities allow', () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const manifests = captureManifest(engine);
 
     engine.start({ capabilities: FULL_CAPABILITIES });
@@ -196,7 +196,7 @@ describe('GameEngine — channel:manifest emission', () => {
 
   it('filters media channels out under the default text-only capabilities', () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const manifests = captureManifest(engine);
 
     engine.start(); // omit capabilities → DEFAULT_TEXT_CAPABILITIES
@@ -215,7 +215,7 @@ describe('GameEngine — channel:manifest emission', () => {
 describe('GameEngine — channel:packet emission', () => {
   it('emits a channel:packet after each turn', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -229,7 +229,7 @@ describe('GameEngine — channel:packet emission', () => {
 
   it('always-mode standard channels appear in the packet payload', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -245,7 +245,7 @@ describe('GameEngine — channel:packet emission', () => {
 
   it('story channels emit on the packet alongside standards', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithChannel());
+    engine.installStory(new StoryWithChannel());
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -259,7 +259,7 @@ describe('GameEngine — channel:packet emission', () => {
 
   it('packet turn_id matches turn-${turn} pattern', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -270,7 +270,7 @@ describe('GameEngine — channel:packet emission', () => {
 
   it('infoChannel emits non-empty fields from Story.config (+ StoryInfoTrait when set)', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -291,7 +291,7 @@ describe('GameEngine — channel:packet emission', () => {
 describe('GameEngine — bootstrap order (AC-11)', () => {
   it('emits channel:manifest before the first channel:packet', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new StoryWithoutChannel());
+    engine.installStory(new StoryWithoutChannel());
 
     const order: string[] = [];
     engine.on('channel:manifest', () => order.push('manifest'));
@@ -310,7 +310,7 @@ describe('prologue resolution and emission (ADR-298 D3)', () => {
     const { engine, world } = setupTestEngine();
     const story = new MinimalTestStory();
     story.config = { ...story.config, prologue: 'Long ago, in the Great Underground Empire…' };
-    engine.setStory(story);
+    engine.installStory(story);
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -331,7 +331,7 @@ describe('prologue resolution and emission (ADR-298 D3)', () => {
       ...story.config,
       prologue: { kind: 'phrase-ref', value: 'opening-crawl' },
     };
-    engine.setStory(story);
+    engine.installStory(story);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
     const cap = world.getCapability('storyInfo') as { prologue?: string };
@@ -345,7 +345,7 @@ describe('prologue resolution and emission (ADR-298 D3)', () => {
       ...story.config,
       prologue: { kind: 'phrase-ref', value: 'never-registered-phrase' },
     };
-    engine.setStory(story);
+    engine.installStory(story);
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 
@@ -358,7 +358,7 @@ describe('prologue resolution and emission (ADR-298 D3)', () => {
 
   it('no prologue → capability default stays empty and the channel stays silent', async () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(new MinimalTestStory());
+    engine.installStory(new MinimalTestStory());
     const packets = capturePackets(engine);
     engine.start({ capabilities: FULL_CAPABILITIES });
 

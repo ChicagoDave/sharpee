@@ -119,7 +119,7 @@ function buildEngine() {
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
 
-  // Create the player up-front so the engine has it. setStory will then
+  // Create the player up-front so the engine has it. installStory will then
   // call createPlayer again (overwriting the engine-side reference, but
   // the new player is what's used). This mirrors what `setupTestEngine`
   // does for other tests.
@@ -142,11 +142,11 @@ describe('GameEngine sound buffer + dispatcher wiring (ADR-172 Phase 6 Step 6.3)
     let parser: EnglishParser;
     ({ engine, parser } = buildEngine());
     // Register the verb directly on the parser. The Story.extendParser
-    // hook is not invoked by the engine's setStory path, so we wire the
+    // hook is not invoked by the engine's installStory path, so we wire the
     // verb here as a test-fixture step.
     parser.addVerb(SHOUT_ACTION_ID, ['shout'], 'VERB_ONLY');
     story = new ShoutTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
     await engine.start();
   });
 

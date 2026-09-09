@@ -5,7 +5,7 @@
  *
  * Two sources describe the same story. The config is what the author
  * wrote; the trait is where the build pipeline and the host patch
- * metadata onto the world, sometimes after `setStory()` and before
+ * metadata onto the world, sometimes after `installStory()` and before
  * `start()` (a browser client stamping `clientVersion`, say). So the rule
  * is three-way, by field class, and the same rule runs at both moments:
  *

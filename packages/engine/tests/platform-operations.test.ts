@@ -51,7 +51,7 @@ describe('GameEngine Platform Operations', () => {
     const setup = setupTestEngine();
     engine = setup.engine;
     story = new MinimalTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
     
     // Create mock hooks
     mockHooks = {

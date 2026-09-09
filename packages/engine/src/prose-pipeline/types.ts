@@ -86,7 +86,7 @@ export interface SlotEntry {
  * Stateless transformer: takes the events emitted during a turn,
  * returns the structured `ITextBlock[]` the channel layer hands off
  * to renderers. Engine constructs an implementation once during
- * `setStory()` and calls `processTurn` per turn (and per
+ * `installStory()` and calls `processTurn` per turn (and per
  * meta-command / restart).
  */
 export interface IProsePipeline {

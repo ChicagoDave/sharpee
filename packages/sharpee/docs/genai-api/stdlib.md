@@ -4205,7 +4205,7 @@ export declare const turnChannel: IOChannel<number>;
  * Optional fields are omitted from the emitted payload when empty so
  * renderers can branch cleanly on presence. The engine populates the
  * underlying `storyInfo` capability from `StoryConfig` + `StoryInfoTrait`
- * during `setStory()`.
+ * during `installStory()`.
  */
 export interface StoryInfoPayload {
     title?: string;

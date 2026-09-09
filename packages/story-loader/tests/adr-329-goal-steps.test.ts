@@ -118,7 +118,7 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   world.setPlayer(placeholder.id);
   // A real PerceptionService: it is what tags presence (ADR-328 D3) on every event.
   const engine = new GameEngine({ world, player: placeholder, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
-  engine.setStory(story);
+  engine.installStory(story);
   world.removeEntity(placeholder.id);
   await engine.start();
   const id = (irId: string) => story.entityId(irId)!;

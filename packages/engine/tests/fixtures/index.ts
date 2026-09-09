@@ -135,7 +135,7 @@ export function createTestEngine(config?: any): any {
   
   const { engine } = setupTestEngine(config);
   const story = new MinimalTestStory();
-  engine.setStory(story);
+  engine.installStory(story);
   
   return engine;
 }

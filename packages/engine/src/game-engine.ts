@@ -11,12 +11,9 @@ import {
   ActorTrait,
   movePlayerRoleVocabulary,
   ContainerTrait,
-  ListenerTrait,
   StandardCapabilities,
   TraitType,
-  EntityType,
   StoryInfoTrait,
-  registerConcealedVisibilityBehavior,
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
 import {
@@ -40,7 +37,7 @@ import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilit
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry } from '@sharpee/plugins';
@@ -56,10 +53,9 @@ import {
   InputModeHandler
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection.js';
-import { Story, validateStoryConfig } from './story.js';
+import { Story } from './story.js';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative/index.js';
-import { validateRoomSnippets } from './snippet-validation.js';
-import { validateCombatantHealth } from './combatant-health-validation.js';
+import { runInstallSteps, STORY_INSTALL_STEPS, configureLanguageProviderNarrative } from './install/index.js';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
 import { SoundDispatcher } from './sound/index.js';
@@ -70,7 +66,7 @@ import { hasNarrativeSettings } from './language-provider-interface.js';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
 import type { PlatformOperationHost } from './platform-operations.js';
-import { STORY_INFO_SCHEMA, projectStoryInfo, findStoryInfoTrait } from './story-info-projection.js';
+import { projectStoryInfo, findStoryInfoTrait } from './story-info-projection.js';
 
 /**
  * Game engine events
@@ -367,144 +363,49 @@ export class GameEngine {
   }
 
   /**
-   * Set the story for this engine
+   * Install a story into this engine: run `STORY_INSTALL_STEPS` over the
+   * engine's collaborators, adopt what they produce, then hand the story
+   * the live engine.
+   *
+   * An engine installs exactly one story, before it starts. A second
+   * call, or a call after `start()`, throws naming the field that
+   * refuses it — the same engine cannot be reinstalled; `bootstrap` boots
+   * a fresh one per playthrough (ADR-248). A step that throws (a config
+   * or world validation failure) leaves the engine with nothing adopted.
+   *
+   * @param story - The story to install
+   * @throws Error when a story is already installed or the engine is running; whatever a step throws
    */
-  setStory(story: Story): void {
-    // Check the config before anything reads it. Every required field is read
-    // somewhere below without a guard, so a story missing one used to surface
-    // as a TypeError from whichever line happened to touch it first — an engine
-    // stack trace where the author needed to be told which field was missing.
-    validateStoryConfig(story.config);
-
-    // Emit story loading event
-    const loadingEvent = createStoryLoadingEvent(story.config.id);
-    this.emitGameEvent(loadingEvent);
-
-    this.story = story;
-
-    // Build narrative settings from story config (ADR-089)
-    this.narrativeSettings = buildNarrativeSettings(story.config.narrative);
-
-
-    // ADR-148 concealment: register the standard concealed-visibility
-    // behavior on this world (NPCs can't see a concealed player — the
-    // hide-and-observe mechanic). Registered BEFORE initializeWorld so a
-    // story can override the binding with its own NPC-detection behavior
-    // (per-world registration is last-wins, ADR-207). It has to stay ahead of
-    // the world build for that precedence to hold, which is why it did NOT
-    // travel with createPlayer when the two were swapped below.
-    registerConcealedVisibilityBehavior(this.world);
-
-    // ADR-327 D10 (design C, ruled 2026-08-26): the WORLD is built first, and
-    // the player second. Under D10 the protagonist is a named character the
-    // story's `before the game starts` block picks out — an ordinary world
-    // entity — so it cannot exist before the world does. `createPlayer` is now
-    // a lookup of that character, not a build, and a story places it in
-    // `createPlayer` (where the world is finished) rather than in
-    // `initializeWorld` (where the player used to already exist).
-    story.initializeWorld(this.world);
-
-    const newPlayer = story.createPlayer(this.world);
-    this.context.player = newPlayer;
-    this.world.setPlayer(newPlayer.id);
-
-    // ADR-172 Phase 4 — every engine-initialized player is a Listener for
-    // spatial sound propagation. Stories opt NPCs / devices in by adding
-    // the trait themselves (see ADR-172 §Multi-listener dispatch). The
-    // `has` check leaves any story-applied ListenerTrait untouched (the
-    // story may have already configured a custom subclass or future
-    // per-listener data fields).
-    if (!newPlayer.has(TraitType.LISTENER)) {
-      newPlayer.add(new ListenerTrait());
+  installStory(story: Story): void {
+    if (this.story) {
+      throw new Error(`A story is already installed (story: '${this.story.config.id}'); an engine installs exactly one`);
+    }
+    if (this.running) {
+      throw new Error('Cannot install a story after start() (running: true); install before starting');
     }
 
+    const installed = runInstallSteps({
+      story,
+      world: this.world,
+      parser: this.parser,
+      languageProvider: this.languageProvider,
+      actionRegistry: this.actionRegistry,
+      emitGameEvent: (event) => this.emitGameEvent(event),
+      draft: {}
+    }, STORY_INSTALL_STEPS);
 
-    // ADR-209 AC-5: fail load synchronously (naming room and marker) if any
-    // snippet-bearing room's description carries an unbound {snippet:name}.
-    validateRoomSnippets(this.world);
-    // ADR-226 AC-7: every combatant must carry the HealthTrait combat operates on.
-    validateCombatantHealth(this.world);
+    this.story = installed.story;
+    this.narrativeSettings = installed.narrativeSettings;
+    this.context.player = installed.player;
+    this.context.metadata.title = installed.metadata.title;
+    this.context.metadata.author = installed.metadata.author;
+    this.context.metadata.version = installed.metadata.version;
+    this.context.implicitActions = installed.implicitActions;
 
-    // Configure language provider with narrative settings (ADR-089)
-    this.configureLanguageProviderNarrative(newPlayer);
-
-    // Update metadata
-    this.context.metadata.title = story.config.title;
-    this.context.metadata.author = story.config.authors.join(', ');
-    this.context.metadata.version = story.config.version;
-
-    // Ensure a StoryInfo entity exists — the standard ABOUT action resolves
-    // its params (title/author/version/description) from `StoryInfoTrait`.
-    // Stories may create their own during `initializeWorld` (dungeo does, to
-    // add build-pipeline metadata) and that one wins; when none exists,
-    // create it from `StoryConfig` so ABOUT renders real story data with no
-    // story-side setup.
-    if (this.world.findByTrait(TraitType.STORY_INFO).length === 0) {
-      const storyInfoEntity = this.world.createEntity('story-info', EntityType.OBJECT);
-      storyInfoEntity.add(new StoryInfoTrait({
-        title: story.config.title,
-        author: this.context.metadata.author,
-        version: story.config.version,
-        description: story.config.description,
-      }));
-    }
-
-    // Seed the `storyInfo` capability for ADR-163 `infoChannel` /
-    // `ifidChannel` to project. Channels read from the world via
-    // `world.getCapability('storyInfo')`. The config and the trait
-    // combine under the one rule in `story-info-projection.ts`; the same
-    // rule runs again at `start()`, once the build pipeline and the host
-    // have had their chance to patch the trait.
-    this.world.registerCapability('storyInfo', {
-      schema: STORY_INFO_SCHEMA,
-      initialData: projectStoryInfo(story.config, findStoryInfoTrait(this.world)),
-    });
-
-    // Copy implicit actions config to context (ADR-104)
-    this.context.implicitActions = story.config.implicitActions;
-
-    // Register any custom actions
-    if (story.getCustomActions) {
-      const customActions = story.getCustomActions();
-      for (const action of customActions) {
-        this.actionRegistry.register(action);
-      }
-    }
-    
-    // Story-specific initialization
-    if (story.initialize) {
-      story.initialize();
-    }
-    
-    // Emit story loaded event
-    const loadedEvent = createStoryLoadedEvent({
-      id: story.config.id,
-      title: story.config.title,
-      author: this.context.metadata.author,
-      version: story.config.version
-    });
-    this.emitGameEvent(loadedEvent);
-    
-    // Register custom vocabulary if parser is available
-    if (story.getCustomVocabulary && this.parser && this.parser.registerVerbs) {
-      const customVocab = story.getCustomVocabulary();
-
-      // Register custom verbs
-      if (customVocab.verbs && customVocab.verbs.length > 0) {
-        this.parser.registerVerbs(customVocab.verbs);
-      }
-
-      // Future: Register other vocabulary types
-      // if (customVocab.nouns && this.parser.registerNouns) {
-      //   this.parser.registerNouns(customVocab.nouns);
-      // }
-    }
-
-    // Notify story that engine is fully initialized
-    // Allows stories to register command transformers and other hooks
-    if (story.onEngineReady) {
-      story.onEngineReady(this);
-    }
+    // The one playthrough-side call in the sequence: the story sees an
+    // engine that has finished installing, and registers command
+    // transformers and other hooks on it.
+    story.onEngineReady?.(this);
   }
 
 
@@ -570,7 +471,7 @@ export class GameEngine {
     //  1. Refresh `storyInfo` from `StoryInfoTrait` — pulls in the
     //     build-pipeline metadata (engineVersion / clientVersion /
     //     buildDate) that may have been patched onto the trait
-    //     between `setStory()` and here (e.g., `BrowserClient.start()`
+    //     between `installStory()` and here (e.g., `BrowserClient.start()`
     //     sets clientVersion just before calling `engine.start()`).
     //  2. Story registers / overrides channels on the shared registry.
     //  3. Engine constructs a fresh ChannelService bound to the
@@ -585,7 +486,7 @@ export class GameEngine {
     // the first turn. Each plugin gets its own name-derived seed, so plugin
     // streams are independent of each other and of the engine streams.
     // Story-registered plugins (scheduler, NPC, state-machine) are all in
-    // the registry by now — stories register during setStory().
+    // the registry by now — stories register during installStory().
     for (const plugin of this.pluginRegistry.getAll()) {
       plugin.onSessionSeed?.(
         deriveStreamSeed(this.masterSeed, `plugin.${plugin.id}`)
@@ -645,7 +546,7 @@ export class GameEngine {
    * current `StoryInfoTrait`. Called once during `start()`, before the
    * `ChannelService` is constructed, so `infoChannel` / `ifidChannel` see
    * the build-pipeline values (`engineVersion`, `clientVersion`,
-   * `buildDate`) a consumer patched onto the trait after `setStory()`.
+   * `buildDate`) a consumer patched onto the trait after `installStory()`.
    * The same precedence rule as at load: an authored field the config set
    * is not overwritten by the trait here.
    */
@@ -799,7 +700,7 @@ export class GameEngine {
   /**
    * The facade's turn-facing surface (ADR-334 D5): what the stages under
    * `turn/` may reach. Getters read the live fields — the parser, text
-   * service, and executor are set by `setStory`; the pending platform
+   * service, and executor are set by `installStory`; the pending platform
    * list is replaced when drained.
    */
   private turnEngine(): TurnEngine {
@@ -972,45 +873,6 @@ export class GameEngine {
   }
 
   /**
-   * Configure language provider with narrative settings (ADR-089)
-   *
-   * Sets up the language provider for perspective-aware message resolution.
-   * For 3rd person narratives, extracts player pronouns from ActorTrait.
-   */
-  private configureLanguageProviderNarrative(player: IFEntity): void {
-    // Check if language provider supports narrative settings
-    if (!this.languageProvider || !hasNarrativeSettings(this.languageProvider)) {
-      return;
-    }
-
-    // Build narrative context for language provider
-    const narrativeContext: NarrativeSettings = {
-      perspective: this.narrativeSettings.perspective,
-    };
-
-    // For 3rd person, get player pronouns from ActorTrait or story config
-    if (this.narrativeSettings.perspective === '3rd') {
-      // First try story config
-      if (this.narrativeSettings.playerPronouns) {
-        narrativeContext.playerPronouns = this.narrativeSettings.playerPronouns;
-      } else {
-        // Fall back to player entity's ActorTrait
-        const actorTrait = player.get(ActorTrait);
-        if (actorTrait?.pronouns) {
-          // Handle both single PronounSet and array of PronounSets
-          const pronounSet = Array.isArray(actorTrait.pronouns)
-            ? actorTrait.pronouns[0]
-            : actorTrait.pronouns;
-          narrativeContext.playerPronouns = pronounSet;
-        }
-      }
-    }
-
-    // Configure language provider (type narrowed by hasNarrativeSettings guard)
-    this.languageProvider.setNarrativeSettings(narrativeContext);
-  }
-
-  /**
    * Synchronize all derived player state after a player identity change (ADR-132).
    *
    * Updates GameContext.player, parser world context, pronoun context,
@@ -1035,7 +897,7 @@ export class GameEngine {
     }
 
     this.updateScopeVocabulary();
-    this.configureLanguageProviderNarrative(newPlayer);
+    configureLanguageProviderNarrative(this.languageProvider, this.narrativeSettings, newPlayer);
   }
 
   /**

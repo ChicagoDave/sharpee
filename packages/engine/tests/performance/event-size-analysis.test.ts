@@ -21,7 +21,7 @@ describe('Event Size Analysis', () => {
     
     // Set a minimal story
     const story = new MinimalTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
     
     // Capture all events
     engine.on('event', (event) => {

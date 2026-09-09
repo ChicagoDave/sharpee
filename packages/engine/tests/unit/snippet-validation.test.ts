@@ -10,7 +10,7 @@
  *          ADR-211 bare-fragment gate; '' is the legal empty variant and
  *          exempt; { messageId } texts resolve at render and are not checked
  *          here); mutates nothing.
- *   WHEN   GameEngine.setStory calls it right after initializeWorld returns.
+ *   WHEN   GameEngine.installStory calls it right after initializeWorld returns.
  *   BECAUSE an unbound marker puts broken text on screen, and a non-bare
  *          fragment would double-separate under the platform join rule —
  *          fail loudly at load, the PhraseParseError posture.
@@ -24,7 +24,7 @@ import {
   validateRoomSnippets,
   lintUnusedSnippetEntries,
   SnippetValidationError,
-} from '../../src/snippet-validation';
+} from '../../src/install/validate-room-snippets';
 import {
   WorldModel,
   RoomTrait,

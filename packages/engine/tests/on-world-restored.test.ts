@@ -54,7 +54,7 @@ class RestoreObservingStory extends MinimalTestStory {
 
 function boot(story: MinimalTestStory) {
   const setup = setupTestEngine();
-  setup.engine.setStory(story);
+  setup.engine.installStory(story);
   return { ...setup, story };
 }
 

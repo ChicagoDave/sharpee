@@ -1,7 +1,7 @@
 /**
  * The `storyInfo` capability's one precedence rule (ADR-334 A1(ii), F1):
  * authored fields config-wins-trait-fills, build-pipeline fields
- * trait-wins-config-fills, applied identically at `setStory` and at
+ * trait-wins-config-fills, applied identically at `installStory` and at
  * `start()`. The engine cases assert on the capability's stored data —
  * the state the channels read — at both moments, including the F1
  * defect: a trait description no longer overwrites the config's at start.
@@ -77,7 +77,7 @@ describe('projectStoryInfo — the three-way rule', () => {
 describe('the storyInfo capability at load and at start (F1)', () => {
   it('a trait description no longer overwrites the config description at start; buildDate is the trait\'s at both moments', () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(new TraitStory({ description: 'From the trait', buildDate: '2026-09-09', engineVersion: '5.2.0' }));
+    engine.installStory(new TraitStory({ description: 'From the trait', buildDate: '2026-09-09', engineVersion: '5.2.0' }));
 
     const atLoad = storyInfo(world);
     expect(atLoad.description).toBe('From the config');
@@ -95,9 +95,9 @@ describe('the storyInfo capability at load and at start (F1)', () => {
     expect(atStart.authors).toEqual(['Test Suite']);
   });
 
-  it('a build-pipeline field patched onto the trait between setStory and start appears at start', () => {
+  it('a build-pipeline field patched onto the trait between installStory and start appears at start', () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(new TraitStory({}));
+    engine.installStory(new TraitStory({}));
     expect(storyInfo(world).clientVersion ?? '').toBe('');
 
     findStoryInfoTrait(world)!.clientVersion = 'client-9';
@@ -109,7 +109,7 @@ describe('the storyInfo capability at load and at start (F1)', () => {
 
   it('a story with no trait of its own gets the engine-made trait and the config values at both moments', () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(new MinimalTestStory());
+    engine.installStory(new MinimalTestStory());
     expect(findStoryInfoTrait(world)).toBeDefined();
     expect(storyInfo(world).description).toBe('A minimal story for testing basic engine functionality');
 

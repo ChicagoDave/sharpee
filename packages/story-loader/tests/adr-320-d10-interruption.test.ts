@@ -199,7 +199,7 @@ async function boot(seed = 7, text: string = SOURCE): Promise<Booted> {
     perceptionService: new PerceptionService(),
     config: { seed, onEvent: (e) => stream.push(e) },
   });
-  engine.setStory(story);
+  engine.installStory(story);
   story.extendParser(parser);
   world.removeEntity(placeholder.id);
   await engine.start();

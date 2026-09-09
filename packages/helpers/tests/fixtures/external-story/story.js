@@ -40,7 +40,7 @@ class HelpersBoundaryStory {
       .properName()
       .build();
 
-    // ADR-327 D10: setStory builds the world FIRST, so the hall exists by the
+    // ADR-327 D10: installStory builds the world FIRST, so the hall exists by the
     // time this runs — the player is placed here, not in initializeWorld.
     if (this.hallId) world.moveEntity(player.id, this.hallId);
     return player;

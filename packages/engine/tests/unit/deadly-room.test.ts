@@ -16,7 +16,7 @@ import { Story } from '../../src/story';
 
 /** A story whose one room is a deadly room (falls-style: only LOOK/EXAMINE are safe). */
 function deadlyRoomStory(): Story {
-  // ADR-327 D10: setStory builds the world first, so the room exists by the
+  // ADR-327 D10: installStory builds the world first, so the room exists by the
   // time createPlayer runs and the placement lives there.
   let roomId: string | undefined;
   return {
@@ -37,7 +37,7 @@ function deadlyRoomStory(): Story {
 describe('deadly-room end-to-end (ADR-224)', () => {
   it('a non-safe verb (WAIT) in a deadly room kills the player and ends the game', async () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(deadlyRoomStory());
+    engine.installStory(deadlyRoomStory());
     engine.start();
 
     let gameOver = false;
@@ -62,7 +62,7 @@ describe('deadly-room end-to-end (ADR-224)', () => {
 
   it('a safe verb (LOOK) in a deadly room is harmless — player lives, game continues', async () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(deadlyRoomStory());
+    engine.installStory(deadlyRoomStory());
     engine.start();
 
     let gameOver = false;

@@ -61,7 +61,7 @@ const names = (stages: readonly TurnStage[]) => stages.map((s) => s.name);
 /** Count each stage's runs through a real engine turn. */
 async function runsPerStage(input: string): Promise<Map<string, number>> {
   const { engine } = setupTestEngine();
-  engine.setStory(new MinimalTestStory());
+  engine.installStory(new MinimalTestStory());
   engine.start();
   const all = [...TURN_STAGES, ...META_STAGES.filter((s) => !TURN_STAGES.includes(s))];
   const spies = all.map((stage) => [stage.name, vi.spyOn(stage, 'run')] as const);
@@ -125,7 +125,7 @@ describe('the turn stage lists (ADR-334 D2)', () => {
 
   it('a regular turn advances the turn counter and a meta command does not', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(new MinimalTestStory());
+    engine.installStory(new MinimalTestStory());
     engine.start();
     const before = engine.getContext().currentTurn;
     await engine.executeTurn('score');

@@ -90,7 +90,7 @@ export class MinimalTestStory implements Story {
       capacity: { maxItems: 10 }
     }));
 
-    // ADR-327 D10: setStory now runs initializeWorld FIRST, so the room
+    // ADR-327 D10: installStory now runs initializeWorld FIRST, so the room
     // exists by the time this is called and the player is placed here.
     if (this._room) {
       world.moveEntity(this._player.id, this._room.id);

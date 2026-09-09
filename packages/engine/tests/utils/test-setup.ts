@@ -91,7 +91,7 @@ export async function createTestEngine(story?: Story): Promise<GameEngine> {
   const engine = createStandardEngine();
   
   if (story) {
-    await engine.setStory(story);
+    await engine.installStory(story);
   } else {
     // Default to test language
     await engine.setLanguage('test');

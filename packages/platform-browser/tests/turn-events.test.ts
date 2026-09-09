@@ -137,7 +137,7 @@ interface FakeEngine {
   emit(event: string, ...args: any[]): void;
   executeTurn(command: string): Promise<{ events: Array<{ type: string }> }>;
   start(options?: unknown): Promise<void>;
-  setStory(story: unknown): void;
+  installStory(story: unknown): void;
   stop(reason?: string): void;
 }
 
@@ -176,7 +176,7 @@ function makeEngine(responseParagraphs: string[][]): FakeEngine {
       return { events: [{ type: 'action.success' }, { type: 'if.event.looked' }] };
     },
     async start() { /* no-op */ },
-    setStory() { /* no-op */ },
+    installStory() { /* no-op */ },
     stop() { /* no-op */ },
   };
   return engine;

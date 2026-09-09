@@ -31,7 +31,7 @@ describe('GameEngine', () => {
 
   describe('story config validation', () => {
     /**
-     * Every required config field is read unguarded somewhere in setStory, so
+     * Every required config field is read unguarded somewhere in installStory, so
      * without this check the first field to be touched decided the error — an
      * author omitting `authors` got a TypeError about `.join` rather than being
      * told which field was missing.
@@ -45,21 +45,21 @@ describe('GameEngine', () => {
     it('rejects a story whose config omits authors, by name', () => {
       const { engine } = setupTestEngine();
 
-      expect(() => engine.setStory(withConfig({ authors: undefined })))
+      expect(() => engine.installStory(withConfig({ authors: undefined })))
         .toThrow('Missing required story configuration fields');
     });
 
     it('rejects an empty authors array', () => {
       const { engine } = setupTestEngine();
 
-      expect(() => engine.setStory(withConfig({ authors: [] })))
+      expect(() => engine.installStory(withConfig({ authors: [] })))
         .toThrow('Missing required story configuration fields');
     });
 
     it('rejects a missing title', () => {
       const { engine } = setupTestEngine();
 
-      expect(() => engine.setStory(withConfig({ title: '' })))
+      expect(() => engine.installStory(withConfig({ title: '' })))
         .toThrow('Missing required story configuration fields');
     });
 
@@ -69,7 +69,7 @@ describe('GameEngine', () => {
       const createPlayer = vi.spyOn(broken, 'createPlayer');
       const initializeWorld = vi.spyOn(broken, 'initializeWorld');
 
-      expect(() => engine.setStory(broken)).toThrow();
+      expect(() => engine.installStory(broken)).toThrow();
 
       // Rejected up front: none of the story's own code was invoked, so a bad
       // config cannot half-build a world before it is caught.
@@ -80,14 +80,14 @@ describe('GameEngine', () => {
     it('accepts a valid config unchanged', () => {
       const { engine } = setupTestEngine();
 
-      expect(() => engine.setStory(story)).not.toThrow();
+      expect(() => engine.installStory(story)).not.toThrow();
     });
   });
 
   describe('initialization', () => {
     it('should create an engine with standard setup', () => {
       const { engine, world, player } = setupTestEngine();
-      engine.setStory(story);
+      engine.installStory(story);
       
       expect(engine).toBeDefined();
       expect(engine.getWorld()).toBeDefined();
@@ -96,7 +96,7 @@ describe('GameEngine', () => {
 
     it('should initialize with default config', () => {
       const { engine } = setupTestEngine();
-      engine.setStory(story);
+      engine.installStory(story);
       
       const context = engine.getContext();
       expect(context.currentTurn).toBe(1);
@@ -106,7 +106,7 @@ describe('GameEngine', () => {
 
     it('should accept custom config', () => {
       const { engine } = setupTestEngine();
-      engine.setStory(story);
+      engine.installStory(story);
       
       expect(engine).toBeDefined();
     });
@@ -121,7 +121,7 @@ describe('GameEngine', () => {
     });
 
     it('should set story and initialize components', () => {
-      engine.setStory(story);
+      engine.installStory(story);
       
       expect(story.wasInitialized()).toBe(true);
       expect(story.wasWorldInitialized()).toBe(true);
@@ -133,7 +133,7 @@ describe('GameEngine', () => {
     });
 
     it('should properly initialize world with story', () => {
-      engine.setStory(story);
+      engine.installStory(story);
       
       const world = engine.getWorld();
       const room = story.getRoom();
@@ -151,14 +151,14 @@ describe('GameEngine', () => {
       const badStory = new MinimalTestStory();
       badStory.forceInitError = true;
 
-      expect(() => engine.setStory(badStory)).toThrow();
+      expect(() => engine.installStory(badStory)).toThrow();
     });
 
     it('should register the concealed-visibility behavior on the story world (ADR-148)', () => {
-      engine.setStory(story);
+      engine.installStory(story);
 
       // The hide-and-observe mechanic: NPCs must not see a concealed
-      // player. setStory registers the standard binding per-world (before
+      // player. installStory registers the standard binding per-world (before
       // initializeWorld, so stories can override it last-wins).
       const world = engine.getWorld();
       const binding = world.getBehaviorBinding('if.trait.concealed_state', 'if.scope.visible');
@@ -167,10 +167,10 @@ describe('GameEngine', () => {
     });
 
     it('should auto-create a StoryInfo entity from StoryConfig when the story does not', () => {
-      engine.setStory(story);
+      engine.installStory(story);
 
       // The standard ABOUT action resolves its params from StoryInfoTrait —
-      // setStory must guarantee the entity exists (from config) when the
+      // installStory must guarantee the entity exists (from config) when the
       // story's initializeWorld didn't create one.
       const world = engine.getWorld();
       const infoEntities = world.findByTrait(TraitType.STORY_INFO);
@@ -187,7 +187,7 @@ describe('GameEngine', () => {
     beforeEach(() => {
       const setup = setupTestEngine();
       engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
     });
 
     it('should start and stop correctly', () => {
@@ -216,7 +216,7 @@ describe('GameEngine', () => {
     beforeEach(() => {
       const setup = setupTestEngine();
       engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
     });
 
@@ -265,7 +265,7 @@ describe('GameEngine', () => {
     it('should respect max history limit', async () => {
       // Create engine with small history limit
       const { engine: limitedEngine } = setupTestEngine();
-      limitedEngine.setStory(story);
+      limitedEngine.installStory(story);
       limitedEngine.start();
       
       // Override the default max history
@@ -297,7 +297,7 @@ describe('GameEngine', () => {
     beforeEach(() => {
       const setup = setupTestEngine();
       engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
     });
 
@@ -327,7 +327,7 @@ describe('GameEngine', () => {
 
       // Create new engine and load state
       const { engine: newEngine } = setupTestEngine();
-      newEngine.setStory(story);
+      newEngine.installStory(story);
 
       (newEngine as unknown as EnginePrivate).loadSaveData(savedState);
       newEngine.start();
@@ -373,7 +373,7 @@ describe('GameEngine', () => {
       const setup = setupTestEngine();
       engine = setup.engine;
       world = setup.world;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
     });
 
@@ -410,7 +410,7 @@ describe('GameEngine', () => {
     beforeEach(() => {
       const setup = setupTestEngine();
       engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
     });
 
@@ -434,7 +434,7 @@ describe('GameEngine', () => {
       // Create engine with onEvent callback
       const { engine: configuredEngine } = setupTestEngine();
       (configuredEngine as unknown as EnginePrivate).config = { onEvent: onEventSpy };
-      configuredEngine.setStory(story);
+      configuredEngine.installStory(story);
       configuredEngine.start();
       
       await configuredEngine.executeTurn('look');
@@ -460,7 +460,7 @@ describe('GameEngine', () => {
     beforeEach(() => {
       const setup = setupTestEngine();
       engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
     });
 
     it('should have text service configured', () => {

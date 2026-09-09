@@ -2,7 +2,7 @@
  * boot-engine.ts — a REAL `GameEngine` over a compiled Chord story, for the
  * suites that drive the engine-owned actor turn phase (ADR-328 D5).
  *
- * `setStory` is the engine's own path: it builds the world, creates the
+ * `installStory` is the engine's own path: it builds the world, creates the
  * player, and calls the story's `onEngineReady`, which registers the
  * story's NPC behaviors and character-model tick phase on the engine's
  * NPC service. The returned `phase` is the engine's actor turn plugin —
@@ -52,12 +52,12 @@ export function bootEngine(source: string, seed: number): Booted {
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
 
-  // The engine wants a player at construction; setStory replaces it with
+  // The engine wants a player at construction; installStory replaces it with
   // the story's own (the setup-test-engine pattern).
   const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
   world.setPlayer(placeholder.id);
   const engine = new GameEngine({ world, player: placeholder, parser, language, config: { seed } });
-  engine.setStory(story);
+  engine.installStory(story);
   world.removeEntity(placeholder.id);
 
   const player = world.getPlayer()!;

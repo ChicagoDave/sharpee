@@ -48,8 +48,8 @@ async function example2() {
   
   const engine = createStandardEngine();
   
-  // setStory automatically uses the language from config
-  await engine.setStory(story);
+  // installStory automatically uses the language from config
+  await engine.installStory(story);
   
   // Engine is now using Spanish parser and language provider
   engine.start();

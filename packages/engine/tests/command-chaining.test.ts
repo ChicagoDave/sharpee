@@ -42,7 +42,7 @@ describe('executeTurn chaining', () => {
     story = new ActionTestStory();
     const setup = setupTestEngine();
     engine = setup.engine;
-    engine.setStory(story);
+    engine.installStory(story);
     engine.start();
   });
 

@@ -155,7 +155,7 @@ async function start(): Promise<void> {
   });
 
   // Set the story and register save/restore hooks
-  engine.setStory(story);
+  engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
 
   // Start the game

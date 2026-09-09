@@ -165,7 +165,7 @@ export class SharpeeRuntimeBridge {
       // Bootstrap the engine stack
       this.world = new WorldModel();
       // ADR-327 D10: see the note in @sharpee/bridge — the role is claimed by
-      // `setStory`, after the world exists. This placeholder only satisfies the
+      // `installStory`, after the world exists. This placeholder only satisfies the
       // engine constructor.
       const player = this.world.createEntity('player', 'actor');
       this.world.setPlayer(player.id);
@@ -202,7 +202,7 @@ export class SharpeeRuntimeBridge {
       });
 
       // Set story and start
-      this.engine.setStory(this.story);
+      this.engine.installStory(this.story);
 
       // Extend parser/language if the story provides it
       if (this.story.extendParser) {

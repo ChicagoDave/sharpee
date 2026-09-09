@@ -323,7 +323,7 @@ export class SaveRestoreService {
     // spatial containment graph, ScoreLedger, capabilities, state
     // values, relationships, ID counters — rides the `worldSnapshot`
     // field. `WorldModel.loadJSON` clears the existing world and
-    // rebuilds, so the fresh-engine entities created by `setStory` are
+    // rebuilds, so the fresh-engine entities created by `installStory` are
     // replaced wholesale by the saved entities.
     const world = provider.getWorld();
     world.loadJSON(decompressWorldSnapshot(saveData.engineState.worldSnapshot));

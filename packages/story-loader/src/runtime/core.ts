@@ -314,7 +314,7 @@ export class RuntimeCore {
    * True only while `runStartBlock` is executing. This — not "does the world
    * have a player yet" — is what tells `change the player to` which of its two
    * meanings applies. Hosts are free to seed a placeholder player before
-   * `setStory` (bootstrap does), so the world's own answer says nothing about
+   * `installStory` (bootstrap does), so the world's own answer says nothing about
    * whether the story has opened.
    */
   inStartBlock = false;

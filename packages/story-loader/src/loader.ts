@@ -422,7 +422,7 @@ export class ChordStory implements Story {
     sweepRetiredSelectKeys(world);
 
     // ADR-094 chain hatches: register each replacement handler under its stdlib
-    // chain key. `registerStandardChains` ran at engine init (before setStory →
+    // chain key. `registerStandardChains` ran at engine init (before installStory →
     // initializeWorld), so a same-key `chainEvent` REPLACES the stdlib default
     // in place. Idempotent across restart (keyed replacement).
     for (const [alias, handler] of this.boundChains) {

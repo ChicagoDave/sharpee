@@ -135,7 +135,7 @@ class ThrowRngTestStory implements Story {
 function bootFresh() {
   const setup = setupTestEngine();
   const story = new ThrowRngTestStory();
-  setup.engine.setStory(story);
+  setup.engine.installStory(story);
   return { ...setup, story };
 }
 

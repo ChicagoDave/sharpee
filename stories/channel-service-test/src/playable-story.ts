@@ -95,7 +95,7 @@ export class ChannelServiceTestStory implements Story {
     }
     const player = world.createEntity('yourself', EntityType.ACTOR);
     ensurePlayerTraits(player);
-    // ADR-327 D10: setStory builds the world FIRST, so the lab exists by the
+    // ADR-327 D10: installStory builds the world FIRST, so the lab exists by the
     // time this runs — the player is placed here rather than in
     // initializeWorld, where it used to already exist.
     if (this.labId) world.moveEntity(player.id, this.labId);

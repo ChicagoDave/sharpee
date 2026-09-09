@@ -63,7 +63,7 @@ const parser = new EnglishParser(language);
 const engine = new GameEngine({ world, player, parser, language });
 
 // Register a story (configures world, player, grammar, channels)
-engine.setStory(story);
+engine.installStory(story);
 
 // Start the engine
 engine.start();
@@ -219,7 +219,7 @@ export function createStory(): Story {
 - `getWorld()`: Get world model
 - `getHistory()`: Get turn history
 - `getRecentEvents(count)`: Get recent events
-- `setStory(story: Story)`: Register a story (configures world, player, grammar, channels)
+- `installStory(story: Story)`: Install a story — runs `STORY_INSTALL_STEPS` (world, player, validation, story info, custom actions and vocabulary), adopts the result, then calls `onEngineReady`. Once per engine, before `start()`.
 - `getParser()`: Get current parser instance
 - `getLanguageProvider()`: Get current language provider instance
 - `registerSaveRestoreHooks(hooks)`: Register save/restore persistence hooks

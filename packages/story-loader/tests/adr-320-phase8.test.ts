@@ -128,7 +128,7 @@ interface Loaded {
 }
 
 function load(source: string = SOURCE): Loaded {
-  // A REAL engine: setStory runs the story's own engine-ready hook, which
+  // A REAL engine: installStory runs the story's own engine-ready hook, which
   // registers the character-model tick phase on the engine's NPC service.
   // The test drives the engine's actor phase exactly as the engine does.
   const { story, world, player, phase } = bootEngine(source, 7);

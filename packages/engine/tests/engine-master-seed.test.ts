@@ -73,7 +73,7 @@ describe('start() session-seed dispatch (re-cut Phase 3)', () => {
   it('hands every registered plugin a seed derived from (masterSeed, plugin id)', () => {
     const { engine } = setupTestEngine({ config: { seed: SEED } });
     const story = new MinimalTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
 
     const captured: number[] = [];
     engine.getPluginRegistry().register({
@@ -96,7 +96,7 @@ describe('start() session-seed dispatch (re-cut Phase 3)', () => {
   it('skips plugins that do not implement onSessionSeed', () => {
     const { engine } = setupTestEngine({ config: { seed: SEED } });
     const story = new MinimalTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
     engine.getPluginRegistry().register({
       id: 'test.no-seed-hook',
       priority: 1,

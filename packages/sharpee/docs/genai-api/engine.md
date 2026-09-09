@@ -1040,7 +1040,201 @@ export declare function executeCapabilityReport(context: ActionContext): ISemant
 export declare function executeCapabilityBlocked(context: ActionContext, result: ValidationResult, actionId: string): ISemanticEvent[];
 ```
 
-### snippet-validation
+### install/context
+
+```typescript
+/**
+ * The story-installation contract: what an install step is, what the
+ * steps share while a story is installed, and what they hand the engine
+ * when the list has run.
+ *
+ * Installing a story is an ordered list of named steps (`InstallStep`),
+ * each with one reason to change and a `requires` list naming the steps
+ * it must follow. A step runs over an `InstallContext`: the story being
+ * installed, the collaborators the steps mutate directly (the world, the
+ * parser, the language provider, the action registry, the engine's event
+ * emitter), and the `StoryInstallDraft` the steps fill in. No step writes
+ * engine state. The fields the engine adopts once the list has run — the
+ * narrative settings, the player, the metadata, the implicit-action
+ * settings — travel in the draft, and the runner hands them back as a
+ * `StoryInstallResult` only when every required one is present. The
+ * engine adopts the result and only then hands the story the live engine
+ * (`Story.onEngineReady`), which is why that hook is not a step: it is
+ * the one playthrough-side call in the sequence, and it sees an engine
+ * that has finished installing.
+ *
+ * Public interface: `InstallStep`, `InstallContext`, `StoryInstallDraft`,
+ * `StoryInstallResult`.
+ * Owner context: `@sharpee/engine` — story installation.
+ *
+ * References: ADR-334 A1 (`installStory` decomposed on the turn's list
+ * idiom); ADR-335 D1 and ADR-336 (ordered steps as data, pinned by test).
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { WorldModel, IFEntity } from '@sharpee/world-model';
+import type { Parser, StandardActionRegistry } from '@sharpee/stdlib';
+import type { LanguageProvider } from '@sharpee/if-domain';
+import type { Story, StoryConfig } from '../story.js';
+import type { NarrativeSettings } from '../narrative/index.js';
+/** The metadata a story's config supplies to the engine's context. */
+export interface StoryMetadata {
+    readonly title: string;
+    readonly author: string;
+    readonly version: string;
+}
+/**
+ * What the steps fill in, field by field, for the engine to adopt.
+ * Every field is optional here because the steps set them in order; the
+ * runner refuses to finish without the required ones.
+ */
+export interface StoryInstallDraft {
+    /** Set by `narrative-settings`. */
+    narrativeSettings?: NarrativeSettings;
+    /** Set by `create-player`. */
+    player?: IFEntity;
+    /** Set by `metadata`. */
+    metadata?: StoryMetadata;
+    /** Set by `implicit-actions`; absent when the config sets none. */
+    implicitActions?: StoryConfig['implicitActions'];
+}
+/** What the engine adopts once every step has run. */
+export interface StoryInstallResult {
+    readonly story: Story;
+    readonly narrativeSettings: NarrativeSettings;
+    readonly player: IFEntity;
+    readonly metadata: StoryMetadata;
+    readonly implicitActions?: StoryConfig['implicitActions'];
+}
+/**
+ * What one installation's steps share.
+ */
+export interface InstallContext {
+    /** The story being installed. */
+    readonly story: Story;
+    /** The world the story builds into. */
+    readonly world: WorldModel;
+    /** The parser, when the engine has one; custom vocabulary registers on it. */
+    readonly parser?: Parser;
+    /** The language provider, when the engine has one; narrative settings configure it. */
+    readonly languageProvider?: LanguageProvider;
+    /** The registry custom actions register on. */
+    readonly actionRegistry: StandardActionRegistry;
+    /** Emit a game lifecycle event through the engine. */
+    emitGameEvent(event: ISemanticEvent): void;
+    /** The fields under construction for the engine to adopt. */
+    readonly draft: StoryInstallDraft;
+}
+/**
+ * One step of a story's installation.
+ */
+export interface InstallStep {
+    /** The step's name; what `requires` and the order test refer to. */
+    readonly name: string;
+    /** Steps this one must follow, by name; empty when it reads nothing they write. */
+    readonly requires: readonly string[];
+    /** Run the step over the installation's context. */
+    run(context: InstallContext): void;
+}
+```
+
+### install/runner
+
+```typescript
+/**
+ * The install runner: runs a story's installation steps in order and
+ * returns what the engine adopts.
+ *
+ * Every step runs; a step that throws (a config or world validation
+ * failure) ends the installation with nothing adopted, which is the
+ * fail-fast posture the validators already take. When the list has run,
+ * the draft must carry narrative settings, a player, and metadata — a
+ * list that ends without one has lost a step, and that is a programming
+ * error reported by field, not a story the engine can start.
+ *
+ * Public interface: `runInstallSteps`.
+ * Owner context: `@sharpee/engine` — story installation.
+ *
+ * References: ADR-334 A1 (the list idiom shared with the turn runner).
+ */
+import type { InstallContext, InstallStep, StoryInstallResult } from './context.js';
+/**
+ * Run the installation steps over the context and return the result the
+ * engine adopts.
+ *
+ * @param context - The installation's context, built by the engine
+ * @param steps - The steps, in run order
+ * @throws whatever a step throws; an Error naming the missing field when the list ends without a required one
+ */
+export declare function runInstallSteps(context: InstallContext, steps: readonly InstallStep[]): StoryInstallResult;
+```
+
+### install/steps
+
+```typescript
+/**
+ * The story-installation order, as data. The order here IS the
+ * installation's contract; each step's `requires` names what it must
+ * follow, and the order test pins the list and drives it once.
+ *
+ * The list validates the config and announces the load; resolves the
+ * narrative settings; registers concealment ahead of the world build so
+ * a story can override it; builds the world and names the player; makes
+ * the player a listener; runs the two cross-entity validations the world
+ * build cannot enforce at the mutation; configures the language
+ * provider; carries the metadata and ensures the story-info entity and
+ * capability; carries the implicit-action settings; registers custom
+ * actions; runs the story's own initialize; announces the load complete;
+ * and registers custom vocabulary. The engine then adopts the result
+ * and hands the story the live engine.
+ *
+ * Public interface: `STORY_INSTALL_STEPS`.
+ * Owner context: `@sharpee/engine` — story installation.
+ *
+ * References: ADR-334 A1; ADR-335 D1 and ADR-336 (the list idiom).
+ */
+import type { InstallStep } from './context.js';
+/** A story's installation, in run order. */
+export declare const STORY_INSTALL_STEPS: readonly InstallStep[];
+```
+
+### install/narrative-language
+
+```typescript
+/**
+ * The narrative-language step: configure the language provider for
+ * perspective-aware message resolution from the installed narrative
+ * settings and the player.
+ *
+ * The configuring function is shared with the engine's player switch,
+ * which reconfigures the provider for the new player with the engine's
+ * own settings; here it runs with the draft's, before the engine has
+ * adopted them. For a third-person narrative the player's pronouns come
+ * from the story config first and the player's ActorTrait second.
+ *
+ * Public interface: `narrativeLanguageStep`,
+ * `configureLanguageProviderNarrative`.
+ * Owner context: `@sharpee/engine` — story installation.
+ *
+ * References: ADR-089 (narrative perspective), ADR-132 (player switch
+ * reconfigures the provider).
+ */
+import type { LanguageProvider } from '@sharpee/if-domain';
+import { type IFEntity } from '@sharpee/world-model';
+import type { NarrativeSettings } from '../narrative/index.js';
+import type { InstallStep } from './context.js';
+/**
+ * Configure a language provider with narrative settings, when it
+ * supports them; a provider without the seam is left alone.
+ *
+ * @param languageProvider - The provider to configure, if the engine has one
+ * @param settings - The narrative settings in force
+ * @param player - The player whose ActorTrait pronouns back a third-person narrative
+ */
+export declare function configureLanguageProviderNarrative(languageProvider: LanguageProvider | undefined, settings: NarrativeSettings, player: IFEntity): void;
+export declare const narrativeLanguageStep: InstallStep;
+```
+
+### install/validate-room-snippets
 
 ```typescript
 /**
@@ -1058,13 +1252,16 @@ export declare function executeCapabilityBlocked(context: ActionContext, result:
  * platform-owned. `{ messageId }` texts resolve at render and stay
  * render-graceful there (ADR-211 AC-10), never checked here.
  *
- * Public interface: `validateRoomSnippets`, `SnippetValidationError`.
+ * Public interface: `validateRoomSnippets`, `lintUnusedSnippetEntries`,
+ * `SnippetValidationError`, `validateRoomSnippetsStep`.
  *
- * Owner context: `@sharpee/engine` — story-load orchestration
- * (`GameEngine.setStory`). Render-time degradation for maps mutated after
- * load lives in the room-description handler path, not here.
+ * Owner context: `@sharpee/engine` — story installation (the
+ * `validate-room-snippets` step, after the world build and the player
+ * lookup). Render-time degradation for maps mutated after load lives in
+ * the room-description handler path, not here.
  */
 import type { WorldModel } from '@sharpee/world-model';
+import type { InstallStep } from './context.js';
 /**
  * Story-load failure for room snippets: unbound `{snippet:name}` markers
  * (ADR-209 AC-5) and non-bare literal fragments (ADR-211 AC-3).
@@ -1110,9 +1307,11 @@ export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
     room: string;
     entry: string;
 }>;
+/** The install step: runs the validation over the built world. */
+export declare const validateRoomSnippetsStep: InstallStep;
 ```
 
-### combatant-health-validation
+### install/validate-combatant-health
 
 ```typescript
 /**
@@ -1126,11 +1325,15 @@ export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
  * `validateRoomSnippets`. This is a story-authoring mistake, not a
  * runtime-recoverable state.
  *
- * Public interface: `validateCombatantHealth`, `CombatantHealthValidationError`.
+ * Public interface: `validateCombatantHealth`, `CombatantHealthValidationError`,
+ * `validateCombatantHealthStep`.
  *
- * Owner context: `@sharpee/engine` — story-load orchestration (`GameEngine.setStory`).
+ * Owner context: `@sharpee/engine` — story installation (the
+ * `validate-combatant-health` step, after the world build and the player
+ * lookup).
  */
 import type { WorldModel } from '@sharpee/world-model';
+import type { InstallStep } from './context.js';
 /**
  * Story-load failure: entities with `CombatantTrait` but no required `HealthTrait`.
  */
@@ -1152,6 +1355,8 @@ export declare class CombatantHealthValidationError extends Error {
  * @throws CombatantHealthValidationError naming every combatant with no `HealthTrait`
  */
 export declare function validateCombatantHealth(world: WorldModel): void;
+/** The install step: runs the validation over the built world. */
+export declare const validateCombatantHealthStep: InstallStep;
 ```
 
 ### parser-interface
@@ -1441,9 +1646,20 @@ export declare class GameEngine {
         config?: EngineConfig;
     });
     /**
-     * Set the story for this engine
+     * Install a story into this engine: run `STORY_INSTALL_STEPS` over the
+     * engine's collaborators, adopt what they produce, then hand the story
+     * the live engine.
+     *
+     * An engine installs exactly one story, before it starts. A second
+     * call, or a call after `start()`, throws naming the field that
+     * refuses it — the same engine cannot be reinstalled; `bootstrap` boots
+     * a fresh one per playthrough (ADR-248). A step that throws (a config
+     * or world validation failure) leaves the engine with nothing adopted.
+     *
+     * @param story - The story to install
+     * @throws Error when a story is already installed or the engine is running; whatever a step throws
      */
-    setStory(story: Story): void;
+    installStory(story: Story): void;
     /**
      * Get the current parser
      */
@@ -1480,7 +1696,7 @@ export declare class GameEngine {
      * current `StoryInfoTrait`. Called once during `start()`, before the
      * `ChannelService` is constructed, so `infoChannel` / `ifidChannel` see
      * the build-pipeline values (`engineVersion`, `clientVersion`,
-     * `buildDate`) a consumer patched onto the trait after `setStory()`.
+     * `buildDate`) a consumer patched onto the trait after `installStory()`.
      * The same precedence rule as at load: an authored field the config set
      * is not overwritten by the trait here.
      */
@@ -1530,7 +1746,7 @@ export declare class GameEngine {
     /**
      * The facade's turn-facing surface (ADR-334 D5): what the stages under
      * `turn/` may reach. Getters read the live fields — the parser, text
-     * service, and executor are set by `setStory`; the pending platform
+     * service, and executor are set by `installStory`; the pending platform
      * list is replaced when drained.
      */
     private turnEngine;
@@ -1576,13 +1792,6 @@ export declare class GameEngine {
      * Use this for text rendering that needs to know 1st/2nd/3rd person.
      */
     getNarrativeSettings(): NarrativeSettings;
-    /**
-     * Configure language provider with narrative settings (ADR-089)
-     *
-     * Sets up the language provider for perspective-aware message resolution.
-     * For 3rd person narratives, extracts player pronouns from ActorTrait.
-     */
-    private configureLanguageProviderNarrative;
     /**
      * Synchronize all derived player state after a player identity change (ADR-132).
      *
@@ -2809,13 +3018,13 @@ export interface TurnStageContext {
 }
 /**
  * The facade's turn-facing surface. Getters read the engine's live
- * fields (the parser, text service, and executor are set by `setStory`;
+ * fields (the parser, text service, and executor are set by `installStory`;
  * the pending platform list is replaced when drained).
  */
 export interface TurnEngine {
     readonly world: WorldModel;
     readonly context: GameContext;
-    /** The installed story, or none before `setStory`. */
+    /** The installed story, or none before `installStory`. */
     readonly story: Story | undefined;
     readonly config: EngineConfig;
     readonly parser: Parser | undefined;
@@ -3044,7 +3253,7 @@ export declare const pluginTickStage: TurnStage;
  *                bracket decorations and final `className`s.
  *
  * Public interface: `class ProsePipeline implements IProsePipeline`.
- * Engine constructs one instance during `setStory()` and calls
+ * Engine constructs one instance during `installStory()` and calls
  * `processTurn` per turn (same three call sites as the retiring
  * `TextService`).
  *
@@ -3063,7 +3272,7 @@ import type { IProsePipeline, SlotContributor, SlotEntry } from './types.js';
  * Engine-internal prose pipeline.
  *
  * Stateless transformer: events in, blocks out. Constructed once per
- * `setStory()` call with the active language provider; called per
+ * `installStory()` call with the active language provider; called per
  * turn by `GameEngine.executeTurn` and the meta-command path (the
  * same sites the retired `TextService.processTurn` had).
  */
@@ -3246,7 +3455,7 @@ export interface SlotEntry {
  * Stateless transformer: takes the events emitted during a turn,
  * returns the structured `ITextBlock[]` the channel layer hands off
  * to renderers. Engine constructs an implementation once during
- * `setStory()` and calls `processTurn` per turn (and per
+ * `installStory()` and calls `processTurn` per turn (and per
  * meta-command / restart).
  */
 export interface IProsePipeline {

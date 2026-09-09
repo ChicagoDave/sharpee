@@ -131,7 +131,7 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
   world.setPlayer(placeholder.id);
   const engine = new GameEngine({ world, player: placeholder, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
-  engine.setStory(story);
+  engine.installStory(story);
   world.removeEntity(placeholder.id);
   await engine.start();
   const id = (irId: string) => story.entityId(irId)!;

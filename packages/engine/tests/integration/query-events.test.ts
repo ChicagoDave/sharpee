@@ -46,7 +46,7 @@ describe('Query Event Emission', () => {
     world = setup.world;
     
     // Set story and start
-    engine.setStory(story);
+    engine.installStory(story);
     engine.start();
   });
   

@@ -171,7 +171,7 @@ describe('cloak.story loads into a playable world', () => {
   });
 });
 
-describe('engine lifecycle order: initializeWorld BEFORE createPlayer (GameEngine.setStory)', () => {
+describe('engine lifecycle order: initializeWorld BEFORE createPlayer (GameEngine.installStory)', () => {
   // ADR-327 D10: the engine builds the world first and claims the role second,
   // because the protagonist is one of the world's own characters. Placement,
   // worn items and initial darkness must all be settled by the time

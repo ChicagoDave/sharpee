@@ -48,7 +48,7 @@ function sourceFiles(dir: string): string[] {
 /** A started engine over the minimal story with the given hooks. */
 function startedEngine(hooks: Partial<ISaveRestoreHooks>): GameEngine {
   const { engine } = setupTestEngine();
-  engine.setStory(new MinimalTestStory());
+  engine.installStory(new MinimalTestStory());
   engine.registerSaveRestoreHooks({
     onSaveRequested: undefined,
     onRestoreRequested: undefined,

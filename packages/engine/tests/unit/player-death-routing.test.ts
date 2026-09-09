@@ -51,7 +51,7 @@ function gasHazardDaemon(world: WorldModel) {
 describe('engine player-death routing (ADR-224)', () => {
   it('AC-1: a still-dead player routes to game.lost', async () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(deathTestStory());
+    engine.installStory(deathTestStory());
     engine.start();
 
     const lostEvents: unknown[] = [];
@@ -78,7 +78,7 @@ describe('engine player-death routing (ADR-224)', () => {
 
   it('AC-3: a reincarnation policy vetoes game.lost by clearing HealthTrait first', async () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(deathTestStory());
+    engine.installStory(deathTestStory());
     engine.start();
 
     const safeRoom = world.createEntity('Safe Room', EntityType.ROOM);

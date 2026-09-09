@@ -23,9 +23,8 @@ export * from './command-executor.js';
 // Universal capability dispatch (ADR-090 extension)
 export * from './capability-dispatch-helper.js';
 
-// Load-time room-snippet validation (ADR-209 AC-5)
-export * from './snippet-validation.js';
-export * from './combatant-health-validation.js';
+// Story installation as an explicit step list (ADR-334 A1), with the two load-time validators
+export * from './install/index.js';
 
 // Parser interface for engine integration
 export * from './parser-interface.js';

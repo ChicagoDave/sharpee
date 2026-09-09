@@ -18,7 +18,7 @@ interface FakeEngine {
   emit(event: string, ...args: any[]): void;
   executeTurn(command: string): Promise<void>;
   start(options?: unknown): Promise<void>;
-  setStory(story: unknown): void;
+  installStory(story: unknown): void;
   createSaveData?(): unknown;
 }
 
@@ -46,7 +46,7 @@ function makeFakeEngine(opts: { withSaveData?: boolean } = {}) {
     async start() {
       /* no-op */
     },
-    setStory() {
+    installStory() {
       /* no-op */
     },
   };

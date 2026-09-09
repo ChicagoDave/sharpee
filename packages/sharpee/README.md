@@ -51,7 +51,7 @@ const world = new WorldModel();
 const engine = new GameEngine({ world, player, parser, language });
 
 // Register the story, then start
-engine.setStory(story);
+engine.installStory(story);
 engine.start();
 
 // Process player commands

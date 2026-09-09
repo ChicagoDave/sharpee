@@ -21,7 +21,7 @@ import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
 function started(story: MinimalTestStory = new MinimalTestStory()): { engine: GameEngine; world: WorldModel } {
   const { engine } = setupTestEngine();
-  engine.setStory(story);
+  engine.installStory(story);
   engine.start();
   return { engine, world: engine.getWorld() };
 }

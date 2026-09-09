@@ -124,7 +124,7 @@ describe('resetAfterRestore — the cross-turn counters after a restore', () => 
     const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
     world.setPlayer(placeholder.id);
     const engine = new GameEngine({ world, player: placeholder, parser, language, config: { seed: 7, onEvent: (e) => stream.push(e) } });
-    engine.setStory(story);
+    engine.installStory(story);
     story.extendParser(parser);
     world.removeEntity(placeholder.id);
     const guards = (story as unknown as { runtime: Guards }).runtime;

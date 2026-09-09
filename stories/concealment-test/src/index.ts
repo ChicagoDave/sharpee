@@ -51,7 +51,7 @@ export class ConcealmentTestStory implements Story {
       name: 'yourself',
       description: 'As good-looking as ever.',
     }));
-    // ADR-327 D10: setStory builds the world FIRST, so the study exists here.
+    // ADR-327 D10: installStory builds the world FIRST, so the study exists here.
     if (this.studyId) world.moveEntity(player.id, this.studyId);
     return player;
   }

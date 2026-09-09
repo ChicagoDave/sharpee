@@ -758,7 +758,7 @@ export class DungeoStory implements Story {
     // Death-capable game: the player carries life-state (ADR-226 AC-1 / §3).
     player.add(new HealthTrait({ health: 100, maxHealth: 100 }));
 
-    // ADR-327 D10: setStory builds the world FIRST, so West of House exists.
+    // ADR-327 D10: installStory builds the world FIRST, so West of House exists.
     world.moveEntity(player.id, this.whiteHouseIds.westOfHouse);
 
     return player;

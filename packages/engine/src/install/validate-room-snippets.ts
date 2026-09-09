@@ -13,16 +13,19 @@
  * platform-owned. `{ messageId }` texts resolve at render and stay
  * render-graceful there (ADR-211 AC-10), never checked here.
  *
- * Public interface: `validateRoomSnippets`, `SnippetValidationError`.
+ * Public interface: `validateRoomSnippets`, `lintUnusedSnippetEntries`,
+ * `SnippetValidationError`, `validateRoomSnippetsStep`.
  *
- * Owner context: `@sharpee/engine` — story-load orchestration
- * (`GameEngine.setStory`). Render-time degradation for maps mutated after
- * load lives in the room-description handler path, not here.
+ * Owner context: `@sharpee/engine` — story installation (the
+ * `validate-room-snippets` step, after the world build and the player
+ * lookup). Render-time degradation for maps mutated after load lives in
+ * the room-description handler path, not here.
  */
 
 import { extractSnippetMarkers } from '@sharpee/if-domain';
 import type { SnippetEntry, SnippetText } from '@sharpee/if-domain';
 import type { WorldModel } from '@sharpee/world-model';
+import type { InstallStep } from './context.js';
 import { TraitType, RoomTrait, IdentityTrait } from '@sharpee/world-model';
 
 /** Separator-shaped leading characters a bare fragment must not carry (ADR-211). */
@@ -145,3 +148,12 @@ export function lintUnusedSnippetEntries(
 
   return unused;
 }
+
+/** The install step: runs the validation over the built world. */
+export const validateRoomSnippetsStep: InstallStep = {
+  name: 'validate-room-snippets',
+  requires: ['initialize-world', 'create-player'],
+  run(context) {
+    validateRoomSnippets(context.world);
+  }
+};

@@ -9,13 +9,17 @@
  * `validateRoomSnippets`. This is a story-authoring mistake, not a
  * runtime-recoverable state.
  *
- * Public interface: `validateCombatantHealth`, `CombatantHealthValidationError`.
+ * Public interface: `validateCombatantHealth`, `CombatantHealthValidationError`,
+ * `validateCombatantHealthStep`.
  *
- * Owner context: `@sharpee/engine` — story-load orchestration (`GameEngine.setStory`).
+ * Owner context: `@sharpee/engine` — story installation (the
+ * `validate-combatant-health` step, after the world build and the player
+ * lookup).
  */
 
 import type { WorldModel } from '@sharpee/world-model';
 import { TraitType } from '@sharpee/world-model';
+import type { InstallStep } from './context.js';
 
 /**
  * Story-load failure: entities with `CombatantTrait` but no required `HealthTrait`.
@@ -57,3 +61,12 @@ export function validateCombatantHealth(world: WorldModel): void {
     throw new CombatantHealthValidationError(missing);
   }
 }
+
+/** The install step: runs the validation over the built world. */
+export const validateCombatantHealthStep: InstallStep = {
+  name: 'validate-combatant-health',
+  requires: ['initialize-world', 'create-player'],
+  run(context) {
+    validateCombatantHealth(context.world);
+  }
+};

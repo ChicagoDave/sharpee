@@ -27,7 +27,7 @@ function minimalStory(): Story {
 describe('GameEngine.resume', () => {
   it('restores turn execution after a defeat stop, without touching the world', async () => {
     const { engine, world } = setupTestEngine();
-    engine.setStory(minimalStory());
+    engine.installStory(minimalStory());
     engine.start();
 
     await engine.executeTurn('look'); // sanity: runs while started
@@ -47,7 +47,7 @@ describe('GameEngine.resume', () => {
 
   it('is a no-op while running', async () => {
     const { engine } = setupTestEngine();
-    engine.setStory(minimalStory());
+    engine.installStory(minimalStory());
     engine.start();
 
     engine.resume(); // must not throw or disturb the session
@@ -57,7 +57,7 @@ describe('GameEngine.resume', () => {
   });
 
   it('throws if the engine was never started', () => {
-    // No setStory/start: the command executor is never wired.
+    // No installStory/start: the command executor is never wired.
     const { engine } = setupTestEngine();
 
     expect(() => engine.resume()).toThrow('Engine must have been started before it can resume');

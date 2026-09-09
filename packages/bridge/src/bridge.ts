@@ -189,8 +189,8 @@ export class NativeEngineBridge {
       // Bootstrap the engine
       this.world = new WorldModel();
       // ADR-327 D10: the story's protagonist is one of the world's own
-      // characters, so it cannot be claimed before `setStory` builds the world.
-      // The engine needs *a* player at construction; `setStory` replaces this
+      // characters, so it cannot be claimed before `installStory` builds the world.
+      // The engine needs *a* player at construction; `installStory` replaces this
       // placeholder with the real one (the same shape `@sharpee/bootstrap` uses).
       const player = this.world.createEntity('player', 'actor');
       this.world.setPlayer(player.id);
@@ -238,7 +238,7 @@ export class NativeEngineBridge {
       });
 
       // Set story and extend parser/language
-      this.engine.setStory(this.story);
+      this.engine.installStory(this.story);
 
       if (this.story.extendParser) {
         this.story.extendParser(parser);

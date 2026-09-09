@@ -249,7 +249,7 @@ describe('ADR-172 Phase 6 Step 6.4 — Tapestry integration scenario', () => {
     parser.addVerb(SHOUT_ACTION_ID, ['shout'], 'VERB_ONLY');
 
     story = new TapestryStory();
-    engine.setStory(story);
+    engine.installStory(story);
     await engine.start();
   });
 

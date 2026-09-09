@@ -151,9 +151,9 @@ async function boot(seed = 7): Promise<Booted> {
   const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
   world.setPlayer(placeholder.id);
   const engine = new GameEngine({ world, player: placeholder, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
-  engine.setStory(story);
+  engine.installStory(story);
   // The story's own grammar (`run away`, `ring out`, `blink out`) — bootstrap's
-  // step, which the engine's setStory does not take.
+  // step, which the engine's installStory does not take.
   story.extendParser(parser);
   world.removeEntity(placeholder.id);
   await engine.start();
@@ -349,7 +349,7 @@ end before
     const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
     world.setPlayer(placeholder.id);
     const engine = new GameEngine({ world, player: placeholder, parser, language, config: { seed: 7, onEvent: (e) => stream.push(e) } });
-    engine.setStory(story);
+    engine.installStory(story);
     story.extendParser(parser);
     world.removeEntity(placeholder.id);
     await engine.start();
