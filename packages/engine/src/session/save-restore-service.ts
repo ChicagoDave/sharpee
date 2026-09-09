@@ -40,7 +40,7 @@
  *     see the same data reorganized.
  */
 
-import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from './actor-turn-plugin.js';
+import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from '../plugins/actor-turn-plugin.js';
 import { gunzipSync, gzipSync, strFromU8, strToU8 } from 'fflate';
 
 import { WorldModel } from '@sharpee/world-model';
@@ -55,8 +55,8 @@ import {
   createSemanticEventSource
 } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { TurnResult, GameContext } from './types.js';
-import { Story } from './story.js';
+import { TurnResult, GameContext } from '../types.js';
+import { Story } from '../install/story.js';
 import {
   ACTION_STREAM_POINT_NAME,
   EngineRandomService

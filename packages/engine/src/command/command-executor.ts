@@ -20,7 +20,7 @@
 import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, QuerySource, QueryType, Result, type RandomService } from '@sharpee/core';
 import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity, type DirectionType } from '@sharpee/world-model';
 import { type ISound } from '@sharpee/if-domain';
-import { hasWorldContext } from './parser-interface.js';
+import { hasWorldContext } from '../ports/parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -38,7 +38,7 @@ import {
   runBlockedPhase
 } from '@sharpee/stdlib';
 
-import { GameContext, TurnResult, EngineConfig } from './types.js';
+import { GameContext, TurnResult, EngineConfig } from '../types.js';
 import { createActionContext } from './action-context-factory.js';
 import {
   checkCapabilityDispatch,

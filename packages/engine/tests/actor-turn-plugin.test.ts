@@ -23,8 +23,8 @@ import {
   type IFEntity,
 } from '@sharpee/world-model';
 import { IFActions, type NpcBehavior } from '@sharpee/stdlib';
-import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from '../src/actor-turn-plugin';
-import { SaveRestoreService } from '../src/save-restore-service';
+import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from '../src/plugins/actor-turn-plugin';
+import { SaveRestoreService } from '../src/session/save-restore-service';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
 /** A world with the player's room, a second room to the east, an NPC, and a lamp. */

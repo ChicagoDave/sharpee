@@ -8,7 +8,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorldModel } from '@sharpee/world-model';
-import { StoryWithEvents } from '../../src/story';
+import { StoryWithEvents } from '../../src/install/story';
 
 describe('Event Handler System (Integration)', () => {
   let world: WorldModel;

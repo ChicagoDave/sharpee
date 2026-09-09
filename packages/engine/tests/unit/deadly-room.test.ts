@@ -12,7 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import { EntityType, TraitType, HealthTrait, HealthBehavior, DeadlyRoomTrait, WorldModel } from '@sharpee/world-model';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
-import { Story } from '../../src/story';
+import { Story } from '../../src/install/story';
 
 /** A story whose one room is a deadly room (falls-style: only LOOK/EXAMINE are safe). */
 function deadlyRoomStory(): Story {

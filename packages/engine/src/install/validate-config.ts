@@ -11,7 +11,7 @@
  * Owner context: `@sharpee/engine` — story installation.
  */
 
-import { validateStoryConfig } from '../story.js';
+import { validateStoryConfig } from './story.js';
 import type { InstallStep } from './context.js';
 
 export const validateConfigStep: InstallStep = {

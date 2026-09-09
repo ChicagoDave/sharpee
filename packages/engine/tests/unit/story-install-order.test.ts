@@ -18,8 +18,8 @@ import { join } from 'node:path';
 import { STORY_INSTALL_STEPS } from '../../src/install/steps';
 import { requiresOrderViolations } from '../../src/turn/runner';
 import type { GameEngine } from '../../src/game-engine';
-import type { NarrativeSettings } from '../../src/narrative';
-import type { StoryConfig, CustomVocabulary } from '../../src/story';
+import type { NarrativeSettings } from '../../src/install/narrative';
+import type { StoryConfig, CustomVocabulary } from '../../src/install/story';
 import { vocabularyRegistry } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import { MinimalTestStory } from '../stories';
@@ -71,7 +71,7 @@ describe('the story installation list (ADR-334 A1)', () => {
     const modules = readdirSync(join(__dirname, '..', '..', 'src', 'install'))
       .filter((f) => f.endsWith('.ts'))
       .map((f) => f.replace(/\.ts$/, ''))
-      .filter((f) => !['context', 'runner', 'steps', 'index'].includes(f));
+      .filter((f) => !['context', 'runner', 'steps', 'index', 'story', 'story-info-projection'].includes(f));
     expect(new Set(modules)).toEqual(new Set(INSTALL_ORDER));
   });
 

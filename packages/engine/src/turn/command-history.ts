@@ -19,7 +19,7 @@
 import type { ISemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
 import type { CommandHistoryData, CommandHistoryEntry } from '@sharpee/stdlib';
-import { hasPronounContext } from '../parser-interface.js';
+import { hasPronounContext } from '../ports/parser-interface.js';
 import type { TurnResult } from '../types.js';
 import type { TurnStage, TurnEngine } from './context.js';
 

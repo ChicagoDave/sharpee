@@ -7,7 +7,7 @@
  */
 
 import type { LanguageProvider } from '@sharpee/if-domain';
-import type { NarrativeSettings } from './narrative/index.js';
+import type { NarrativeSettings } from '../install/narrative/index.js';
 
 /**
  * Extended language provider interface for engine integration.

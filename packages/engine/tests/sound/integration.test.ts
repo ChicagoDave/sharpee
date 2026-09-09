@@ -54,7 +54,7 @@ import type { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 
 import { GameEngine } from '../../src/game-engine';
-import type { Story, StoryConfig } from '../../src/story';
+import type { Story, StoryConfig } from '../../src/install/story';
 
 // =============================================================================
 // Test action — player shouts at volume 'raised'.

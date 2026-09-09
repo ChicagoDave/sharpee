@@ -6,7 +6,7 @@
  * Owner context: @sharpee/engine — turn cycle
  */
 
-import { SceneEvaluationPlugin } from '../../src/scene-evaluation-plugin';
+import { SceneEvaluationPlugin } from '../../src/plugins/scene-evaluation-plugin';
 import { ProsePipeline } from '../../src/prose-pipeline/pipeline';
 import {
   WorldModel,

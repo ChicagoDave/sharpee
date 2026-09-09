@@ -32,7 +32,7 @@ import {
   ContainerTrait,
   RoomTrait,
 } from '@sharpee/world-model';
-import { Story, StoryConfig } from '../src/story';
+import { Story, StoryConfig } from '../src/install/story';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
 /** Type alias for accessing private GameEngine save/restore methods. */

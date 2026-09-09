@@ -20,8 +20,8 @@
 
 import { isPlatformRequestEvent, type IPlatformEvent, type ISemanticEvent } from '@sharpee/core';
 import { createScopeResolver } from '@sharpee/stdlib';
-import { createActionContext } from '../action-context-factory.js';
-import { dispatchPlatformOperations } from '../platform-operations.js';
+import { createActionContext } from '../command/action-context-factory.js';
+import { dispatchPlatformOperations } from './platform-dispatcher.js';
 import type { TurnStage, TurnStageContext, TurnEngine } from './context.js';
 
 /**

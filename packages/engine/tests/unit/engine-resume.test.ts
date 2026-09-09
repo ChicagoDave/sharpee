@@ -11,7 +11,7 @@ import { describe, it, expect } from 'vitest';
 import { GameEngine } from '../../src/game-engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
-import { Story } from '../../src/story';
+import { Story } from '../../src/install/story';
 
 function minimalStory(): Story {
   return {

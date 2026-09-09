@@ -11,7 +11,7 @@
  * References: ADR-089 (narrative perspective).
  */
 
-import { buildNarrativeSettings } from '../narrative/index.js';
+import { buildNarrativeSettings } from './narrative/index.js';
 import type { InstallStep } from './context.js';
 
 export const narrativeSettingsStep: InstallStep = {

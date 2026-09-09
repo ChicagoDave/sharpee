@@ -9,8 +9,8 @@
 
 import { describe, it, expect } from 'vitest';
 import { EntityType, StoryInfoTrait, type WorldModel } from '@sharpee/world-model';
-import { projectStoryInfo, findStoryInfoTrait } from '../../src/story-info-projection';
-import type { StoryConfig } from '../../src/story';
+import { projectStoryInfo, findStoryInfoTrait } from '../../src/install/story-info-projection';
+import type { StoryConfig } from '../../src/install/story';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 

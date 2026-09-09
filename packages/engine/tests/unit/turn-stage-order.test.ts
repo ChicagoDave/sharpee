@@ -106,7 +106,7 @@ describe('the turn stage lists (ADR-334 D2)', () => {
     const modules = readdirSync(join(__dirname, '..', '..', 'src', 'turn'))
       .filter((f) => f.endsWith('.ts'))
       .map((f) => f.replace(/\.ts$/, ''))
-      .filter((f) => !['context', 'runner', 'stages', 'index'].includes(f));
+      .filter((f) => !['context', 'runner', 'stages', 'index', 'turn-event-processor', 'platform-dispatcher'].includes(f));
     const stageNames = new Set([...TURN_ORDER, ...META_ORDER]);
     expect(new Set(modules)).toEqual(stageNames);
   });

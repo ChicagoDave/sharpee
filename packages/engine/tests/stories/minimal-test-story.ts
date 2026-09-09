@@ -2,7 +2,7 @@
  * Minimal test story for basic engine functionality testing
  */
 
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, RoomBehavior, OpenableTrait, RoomTrait } from '@sharpee/world-model';
 
 /**

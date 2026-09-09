@@ -5,7 +5,7 @@
 import { GameEngine } from '../../src/game-engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { registerStandardCapabilities, PerceptionService } from '@sharpee/stdlib';
-import { Story } from '../../src/story';
+import { Story } from '../../src/install/story';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 

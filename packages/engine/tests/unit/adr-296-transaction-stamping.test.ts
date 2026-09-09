@@ -13,7 +13,7 @@
  * `_narrativeSlot` stamp and its Phase 2 `_transactionId` stamp.
  */
 
-import { processEvent } from '../../src/turn-event-processor';
+import { processEvent } from '../../src/turn/turn-event-processor';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { TurnPluginContext } from '@sharpee/plugins';

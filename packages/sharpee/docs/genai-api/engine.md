@@ -253,7 +253,7 @@ export interface EngineConfig {
 }
 ```
 
-### introspection
+### introspection/introspect
 
 ```typescript
 /**
@@ -369,7 +369,7 @@ export interface EngineIntrospection {
 export declare function introspect(world: WorldModel, actionRegistry: StandardActionRegistry, languageProvider: LanguageProvider | undefined): EngineIntrospection;
 ```
 
-### narrative/narrative-settings
+### install/narrative/narrative-settings
 
 ```typescript
 /**
@@ -446,7 +446,7 @@ export interface NarrativeConfig {
 export declare function buildNarrativeSettings(config?: NarrativeConfig): NarrativeSettings;
 ```
 
-### story
+### install/story
 
 ```typescript
 /**
@@ -456,7 +456,7 @@ import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '
 import { type LanguageProvider, type IChannelRegistry } from '@sharpee/if-domain';
 import { type Parser } from '@sharpee/stdlib';
 import { type ISemanticEvent } from '@sharpee/core';
-import type { GameEngine } from './game-engine.js';
+import type { GameEngine } from '../game-engine.js';
 import { NarrativeConfig } from './narrative/index.js';
 /**
  * Story configuration
@@ -750,7 +750,7 @@ export declare class StoryWithEvents implements Story {
 export declare function validateStoryConfig(config: StoryConfig): void;
 ```
 
-### command-executor
+### command/command-executor
 
 ```typescript
 /**
@@ -777,7 +777,7 @@ import { type ISound } from '@sharpee/if-domain';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { type ActionRegistry } from '@sharpee/stdlib';
-import { GameContext, TurnResult, EngineConfig } from './types.js';
+import { GameContext, TurnResult, EngineConfig } from '../types.js';
 /**
  * Data passed to pre-action hook listeners (ADR-148).
  *
@@ -928,7 +928,7 @@ export declare class CommandExecutor {
 export declare function createCommandExecutor(world: WorldModel, actionRegistry: ActionRegistry, eventProcessor: EventProcessor, parser: IParser, systemEvents?: IGenericEventSource<ISystemEvent>, randomService?: RandomService): CommandExecutor;
 ```
 
-### capability-dispatch-helper
+### command/capability-dispatch-helper
 
 ```typescript
 /**
@@ -1074,8 +1074,8 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel, IFEntity } from '@sharpee/world-model';
 import type { Parser, StandardActionRegistry } from '@sharpee/stdlib';
 import type { LanguageProvider } from '@sharpee/if-domain';
-import type { Story, StoryConfig } from '../story.js';
-import type { NarrativeSettings } from '../narrative/index.js';
+import type { Story, StoryConfig } from './story.js';
+import type { NarrativeSettings } from './narrative/index.js';
 /** The metadata a story's config supplies to the engine's context. */
 export interface StoryMetadata {
     readonly title: string;
@@ -1220,7 +1220,7 @@ export declare const STORY_INSTALL_STEPS: readonly InstallStep[];
  */
 import type { LanguageProvider } from '@sharpee/if-domain';
 import { type IFEntity } from '@sharpee/world-model';
-import type { NarrativeSettings } from '../narrative/index.js';
+import type { NarrativeSettings } from './narrative/index.js';
 import type { InstallStep } from './context.js';
 /**
  * Configure a language provider with narrative settings, when it
@@ -1359,7 +1359,7 @@ export declare function validateCombatantHealth(world: WorldModel): void;
 export declare const validateCombatantHealthStep: InstallStep;
 ```
 
-### parser-interface
+### ports/parser-interface
 
 ```typescript
 /**
@@ -1440,7 +1440,7 @@ export declare function hasPlatformEventEmitter(parser: IParser): parser is IEng
 };
 ```
 
-### shared-data-keys
+### command/shared-data-keys
 
 ```typescript
 /**
@@ -1512,13 +1512,13 @@ import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type T
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { type ISemanticEvent, type ISaveRestoreHooks, type ISemanticEventSource } from '@sharpee/core';
-import { EngineRandomService } from './engine-random-service.js';
+import { EngineRandomService } from './session/engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
 import { GameContext, TurnResult, EngineConfig, InputModeHandler } from './types.js';
-import { type EngineIntrospection } from './introspection.js';
-import { Story } from './story.js';
-import { NarrativeSettings } from './narrative/index.js';
-import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
+import { type EngineIntrospection } from './introspection/introspect.js';
+import { Story } from './install/story.js';
+import { NarrativeSettings } from './install/narrative/index.js';
+import { ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
 /**
  * Game engine events
  */
@@ -2063,7 +2063,7 @@ export declare class GameEngine {
 export {};
 ```
 
-### scene-evaluation-plugin
+### plugins/scene-evaluation-plugin
 
 ```typescript
 /**
@@ -2102,7 +2102,7 @@ export declare class SceneEvaluationPlugin implements TurnPlugin {
 }
 ```
 
-### actor-turn-plugin
+### plugins/actor-turn-plugin
 
 ```typescript
 /**
@@ -2178,7 +2178,7 @@ export declare class ActorTurnPlugin implements TurnPlugin {
 }
 ```
 
-### vocabulary-manager
+### ports/vocabulary-manager
 
 ```typescript
 /**
@@ -2217,7 +2217,7 @@ export declare class VocabularyManager {
 export declare function createVocabularyManager(): VocabularyManager;
 ```
 
-### save-restore-service
+### session/save-restore-service
 
 ```typescript
 /**
@@ -2264,8 +2264,8 @@ export declare function createVocabularyManager(): VocabularyManager;
 import { WorldModel } from '@sharpee/world-model';
 import { type ISaveData, type ISerializedTurn, type ISemanticEventSource } from '@sharpee/core';
 import { PluginRegistry } from '@sharpee/plugins';
-import { TurnResult, GameContext } from './types.js';
-import { Story } from './story.js';
+import { TurnResult, GameContext } from '../types.js';
+import { Story } from '../install/story.js';
 import { EngineRandomService } from './engine-random-service.js';
 /**
  * Save format version. Bumped `2.0.0` → `3.0.0` for ADR-293 D7: the save
@@ -2383,7 +2383,7 @@ export declare class SaveRestoreService {
 export declare function createSaveRestoreService(config?: UndoConfig): SaveRestoreService;
 ```
 
-### engine-random-service
+### session/engine-random-service
 
 ```typescript
 /**
@@ -2605,7 +2605,7 @@ export declare class EngineRandomService implements RandomService {
 }
 ```
 
-### turn-event-processor
+### turn/turn-event-processor
 
 ```typescript
 /**
@@ -2717,7 +2717,7 @@ export declare function transactionIdFor(turn: number, source: TurnEventSource):
 export declare function enrichTurnEvents(events: readonly ISemanticEvent[], source: TurnEventSource, enrichment: TurnEnrichment): ISemanticEvent[];
 ```
 
-### platform-operations
+### turn/platform-dispatcher
 
 ```typescript
 /**
@@ -2985,14 +2985,14 @@ import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
 import type { EngineConfig, GameContext, InputModeHandler, TurnResult } from '../types.js';
-import type { CommandExecutor } from '../command-executor.js';
-import type { EngineRandomService } from '../engine-random-service.js';
+import type { CommandExecutor } from '../command/command-executor.js';
+import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
 import type { SoundDispatcher } from '../sound/index.js';
 import type { GameEngineEvents } from '../game-engine.js';
-import type { Story } from '../story.js';
-import type { PlatformOperationHost } from '../platform-operations.js';
-import type { SaveRestoreService } from '../save-restore-service.js';
+import type { Story } from '../install/story.js';
+import type { PlatformOperationHost } from './platform-dispatcher.js';
+import type { SaveRestoreService } from '../session/save-restore-service.js';
 import type { ChannelService } from '@sharpee/channel-service';
 import type { LanguageProvider } from '@sharpee/if-domain';
 /** What a stage returns: run the next stage, or end the list here. */

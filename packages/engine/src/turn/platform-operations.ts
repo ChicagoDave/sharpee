@@ -13,7 +13,7 @@
  * References: ADR-334 D3 (the one dispatcher both paths call).
  */
 
-import { dispatchPlatformOperations } from '../platform-operations.js';
+import { dispatchPlatformOperations } from './platform-dispatcher.js';
 import type { TurnStage, TurnEngine } from './context.js';
 
 /**

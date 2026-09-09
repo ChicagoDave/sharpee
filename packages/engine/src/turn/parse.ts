@@ -17,7 +17,7 @@
  */
 
 import { MetaCommandRegistry } from '@sharpee/stdlib';
-import { hasWorldContext } from '../parser-interface.js';
+import { hasWorldContext } from '../ports/parser-interface.js';
 import type { TurnStage } from './context.js';
 
 export const parseStage: TurnStage = {

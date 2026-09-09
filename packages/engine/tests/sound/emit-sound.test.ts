@@ -33,8 +33,8 @@ import {
 } from '@sharpee/stdlib';
 import { ISound } from '@sharpee/if-domain';
 
-import { createActionContext } from '../../src/action-context-factory';
-import { EngineRandomService } from '../../src/engine-random-service';
+import { createActionContext } from '../../src/command/action-context-factory';
+import { EngineRandomService } from '../../src/session/engine-random-service';
 import { GameContext } from '../../src/types';
 
 // =============================================================================

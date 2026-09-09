@@ -14,7 +14,7 @@ import { describe, it, expect } from 'vitest';
 import { EntityType, TraitType, HealthTrait, HealthBehavior, WorldModel } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
-import { Story } from '../../src/story';
+import { Story } from '../../src/install/story';
 
 /** A minimal story that drops the player into a room so `look` succeeds. */
 function deathTestStory(): Story {

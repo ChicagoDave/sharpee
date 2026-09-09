@@ -13,7 +13,7 @@
  */
 
 import { isPlatformRequestEvent, type IPlatformEvent, type ISemanticEvent, type Presence } from '@sharpee/core';
-import { enrichTurnEvents, type TurnEventSource } from '../turn-event-processor.js';
+import { enrichTurnEvents, type TurnEventSource } from './turn-event-processor.js';
 import type { TurnStage, TurnEngine } from './context.js';
 
 /**

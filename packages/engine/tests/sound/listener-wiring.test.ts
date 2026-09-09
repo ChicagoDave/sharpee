@@ -22,7 +22,7 @@ import {
 } from '@sharpee/world-model';
 
 import { GameEngine } from '../../src/game-engine';
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import { MinimalTestStory } from '../stories/minimal-test-story';
 

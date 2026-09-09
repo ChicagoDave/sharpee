@@ -37,11 +37,11 @@ import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } f
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
 import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
-import { EngineRandomService } from './engine-random-service.js';
+import { EngineRandomService } from './session/engine-random-service.js';
 
 import { PluginRegistry } from '@sharpee/plugins';
-import { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
-import { ActorTurnPlugin } from './actor-turn-plugin.js';
+import { SceneEvaluationPlugin } from './plugins/scene-evaluation-plugin.js';
+import { ActorTurnPlugin } from './plugins/actor-turn-plugin.js';
 
 
 import {
@@ -51,21 +51,21 @@ import {
   EngineConfig,
   InputModeHandler
 } from './types.js';
-import { introspect as introspectEngine, type EngineIntrospection } from './introspection.js';
-import { Story } from './story.js';
-import { NarrativeSettings, buildNarrativeSettings } from './narrative/index.js';
+import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
+import { Story } from './install/story.js';
+import { NarrativeSettings, buildNarrativeSettings } from './install/narrative/index.js';
 import { runInstallSteps, STORY_INSTALL_STEPS, configureLanguageProviderNarrative } from './install/index.js';
 
-import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
+import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
 import { SoundDispatcher } from './sound/index.js';
 import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused } from './turn/index.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
-import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface.js';
-import { hasNarrativeSettings } from './language-provider-interface.js';
-import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
-import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
-import type { PlatformOperationHost } from './platform-operations.js';
-import { projectStoryInfo, findStoryInfoTrait } from './story-info-projection.js';
+import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './ports/parser-interface.js';
+import { hasNarrativeSettings } from './ports/language-provider-interface.js';
+import { VocabularyManager, createVocabularyManager } from './ports/vocabulary-manager.js';
+import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './session/save-restore-service.js';
+import type { PlatformOperationHost } from './turn/platform-dispatcher.js';
+import { projectStoryInfo, findStoryInfoTrait } from './install/story-info-projection.js';
 
 /**
  * Game engine events

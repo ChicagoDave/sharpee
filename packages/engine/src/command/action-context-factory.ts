@@ -6,7 +6,7 @@ import { type ActionContext, type Action, type ScopeResolver, type ValidatedComm
 import { WorldModel, IFEntity, TraitType } from '@sharpee/world-model';
 import { type ISemanticEvent, createEvent as coreCreateEvent, type RandomService } from '@sharpee/core';
 import { type ISound } from '@sharpee/if-domain';
-import { GameContext } from './types.js';
+import { GameContext } from '../types.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 
 /**

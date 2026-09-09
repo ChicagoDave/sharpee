@@ -16,7 +16,7 @@ import {
   executeCapabilityExecute,
   executeCapabilityReport,
   executeCapabilityBlocked
-} from '../src/capability-dispatch-helper';
+} from '../src/command/capability-dispatch-helper';
 import {
   WorldModel,
   IWorldModel,
@@ -26,7 +26,7 @@ import {
   CapabilitySharedData
 } from '@sharpee/world-model';
 import { ActionContext, ValidationResult } from '@sharpee/stdlib';
-import { CapabilityDispatchData } from '../src/capability-dispatch-helper';
+import { CapabilityDispatchData } from '../src/command/capability-dispatch-helper';
 
 // Test trait that claims 'if.action.taking' capability
 class GuardedItemTrait implements ITrait {

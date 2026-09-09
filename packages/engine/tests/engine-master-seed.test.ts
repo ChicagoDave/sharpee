@@ -13,7 +13,7 @@ import { MinimalTestStory } from './stories/minimal-test-story';
 import {
   ACTION_STREAM_POINT_NAME,
   TURN_STREAM_POINT_NAME
-} from '../src/engine-random-service';
+} from '../src/session/engine-random-service';
 
 const SEED = 20260801;
 

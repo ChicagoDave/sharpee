@@ -88,7 +88,7 @@ describe('one platform-operation dispatcher (ADR-334 D3)', () => {
     const switching = sourceFiles(SRC_DIR).filter((file) =>
       /case PlatformEventType\./.test(readFileSync(file, 'utf8'))
     );
-    expect(switching.map((f) => f.replace(SRC_DIR, 'src'))).toEqual(['src/platform-operations.ts']);
+    expect(switching.map((f) => f.replace(SRC_DIR, 'src'))).toEqual(['src/turn/platform-dispatcher.ts']);
   });
 
   it('save: both paths hand the same save data to the hook and complete', async () => {

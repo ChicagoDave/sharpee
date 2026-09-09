@@ -32,7 +32,7 @@ import { EnglishParser } from '@sharpee/parser-en-us';
 import type { ISemanticEvent } from '@sharpee/core';
 
 import { GameEngine } from '../../src/game-engine';
-import type { Story, StoryConfig } from '../../src/story';
+import type { Story, StoryConfig } from '../../src/install/story';
 
 // =============================================================================
 // Test story: one room, player, a custom four-phase 'shout' action that

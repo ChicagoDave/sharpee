@@ -2,7 +2,7 @@
  * Game state test story for testing save/load and state persistence
  */
 
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 interface StateMarker {

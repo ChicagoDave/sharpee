@@ -13,7 +13,7 @@ import { describe, it, expect } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { IFEntity, WorldModel } from '@sharpee/world-model';
 import type { IPerceptionService } from '@sharpee/stdlib';
-import { enrichTurnEvents, transactionIdFor } from '../../src/turn-event-processor';
+import { enrichTurnEvents, transactionIdFor } from '../../src/turn/turn-event-processor';
 
 function makeEvent(type: string, data?: Record<string, unknown>, entities: ISemanticEvent['entities'] = {}): ISemanticEvent {
   return { id: `e-${type}`, type, timestamp: 1, entities, data };

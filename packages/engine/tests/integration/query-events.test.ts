@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GameEngine } from '../../src/game-engine';
 import { WorldModel, EntityType } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '@sharpee/stdlib';
-import { Story } from '../../src/story';
+import { Story } from '../../src/install/story';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
 describe('Query Event Emission', () => {

@@ -15,7 +15,7 @@
  * precedence rule).
  */
 
-import { STORY_INFO_SCHEMA, projectStoryInfo, findStoryInfoTrait } from '../story-info-projection.js';
+import { STORY_INFO_SCHEMA, projectStoryInfo, findStoryInfoTrait } from './story-info-projection.js';
 import type { InstallStep } from './context.js';
 
 export const storyInfoCapabilityStep: InstallStep = {

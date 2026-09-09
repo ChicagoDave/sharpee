@@ -11,7 +11,7 @@ import {
   SchedulerContext,
 } from '@sharpee/plugin-scheduler';
 import { WorldModel, IFEntity } from '@sharpee/world-model';
-import { EngineRandomService } from '../../../src/engine-random-service';
+import { EngineRandomService } from '../../../src/session/engine-random-service';
 
 // Mock WorldModel
 function createMockWorld(): WorldModel {

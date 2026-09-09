@@ -9,28 +9,28 @@
 
 // Types
 export * from './types.js';
-export type { EngineIntrospection, ActionSummary, TraitSummary, BehaviorBindingSummary, MessageSummary } from './introspection.js';
+export type { EngineIntrospection, ActionSummary, TraitSummary, BehaviorBindingSummary, MessageSummary } from './introspection/introspect.js';
 
 // Narrative settings (ADR-089)
-export * from './narrative/index.js';
+export * from './install/narrative/index.js';
 
 // Story interface
-export * from './story.js';
+export * from './install/story.js';
 
 // Command execution
-export * from './command-executor.js';
+export * from './command/command-executor.js';
 
 // Universal capability dispatch (ADR-090 extension)
-export * from './capability-dispatch-helper.js';
+export * from './command/capability-dispatch-helper.js';
 
 // Story installation as an explicit step list (ADR-334 A1), with the two load-time validators
 export * from './install/index.js';
 
 // Parser interface for engine integration
-export * from './parser-interface.js';
+export * from './ports/parser-interface.js';
 
 // Shared data keys for typed action communication
-export * from './shared-data-keys.js';
+export * from './command/shared-data-keys.js';
 
 // Main engine
 export * from './game-engine.js';
@@ -39,15 +39,15 @@ export * from './game-engine.js';
 export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 
 // Scene evaluation (ADR-149)
-export { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
-export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from './actor-turn-plugin.js';
+export { SceneEvaluationPlugin } from './plugins/scene-evaluation-plugin.js';
+export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from './plugins/actor-turn-plugin.js';
 
 // Extracted services
-export * from './vocabulary-manager.js';
-export * from './save-restore-service.js';
-export * from './engine-random-service.js';
-export * from './turn-event-processor.js';
-export * from './platform-operations.js';
+export * from './ports/vocabulary-manager.js';
+export * from './session/save-restore-service.js';
+export * from './session/engine-random-service.js';
+export * from './turn/turn-event-processor.js';
+export * from './turn/platform-dispatcher.js';
 
 // Spatial sound propagation (ADR-172)
 export * from './sound/index.js';
@@ -67,4 +67,4 @@ export {
 export {
   CommandExecutor,
   createCommandExecutor
-} from './command-executor.js';
+} from './command/command-executor.js';

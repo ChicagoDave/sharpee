@@ -9,8 +9,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { CommandExecutor } from '../src/command-executor';
-import { EngineRandomService } from '../src/engine-random-service';
+import { CommandExecutor } from '../src/command/command-executor';
+import { EngineRandomService } from '../src/session/engine-random-service';
 import { GameContext } from '../src/types';
 import {
   WorldModel,

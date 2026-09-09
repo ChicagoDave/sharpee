@@ -12,7 +12,7 @@
  * References: ADR-225 as amended (GH #318).
  */
 
-import { hasWorldContext } from '../parser-interface.js';
+import { hasWorldContext } from '../ports/parser-interface.js';
 import type { TurnStage, TurnEngine } from './context.js';
 
 /**
