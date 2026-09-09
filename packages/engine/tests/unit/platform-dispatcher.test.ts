@@ -28,6 +28,8 @@ import {
   type ISemanticEvent
 } from '@sharpee/core';
 import * as engineIndex from '../../src/index';
+import * as turnEventProcessor from '../../src/turn/turn-event-processor';
+import * as platformDispatcher from '../../src/turn/platform-dispatcher';
 import { GameEngine } from '../../src/game-engine';
 import { processPlatformOperations } from '../../src/turn/platform-operations';
 import { processMetaPlatformOperation } from '../../src/turn/meta-command';
@@ -250,14 +252,19 @@ describe('no dead twins (ADR-334 D4)', () => {
     expect(source).not.toMatch(/platformOpHandler|turnEventProcessor/);
   });
 
-  it('the package exports processEvent and not the removed class, factory, or handler', () => {
+  it('the modules export processEvent and the dispatcher, not the removed class, factory, or handler, and the barrel names none of them (ADR-342 D2)', () => {
+    const events = turnEventProcessor as Record<string, unknown>;
+    const dispatcher = platformDispatcher as Record<string, unknown>;
+    expect(typeof events.processEvent).toBe('function');
+    expect(typeof events.enrichTurnEvents).toBe('function');
+    expect(typeof dispatcher.dispatchPlatformOperations).toBe('function');
+    expect(events.TurnEventProcessor).toBeUndefined();
+    expect(events.createTurnEventProcessor).toBeUndefined();
+    expect(dispatcher.PlatformOperationHandler).toBeUndefined();
+    expect(dispatcher.createPlatformOperationHandler).toBeUndefined();
     const surface = engineIndex as Record<string, unknown>;
-    expect(typeof surface.processEvent).toBe('function');
-    expect(typeof surface.enrichTurnEvents).toBe('function');
-    expect(typeof surface.dispatchPlatformOperations).toBe('function');
-    expect(surface.TurnEventProcessor).toBeUndefined();
-    expect(surface.createTurnEventProcessor).toBeUndefined();
-    expect(surface.PlatformOperationHandler).toBeUndefined();
-    expect(surface.createPlatformOperationHandler).toBeUndefined();
+    expect(surface.processEvent).toBeUndefined();
+    expect(surface.enrichTurnEvents).toBeUndefined();
+    expect(surface.dispatchPlatformOperations).toBeUndefined();
   });
 });
