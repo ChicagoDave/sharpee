@@ -10,7 +10,7 @@ import { Direction, type DirectionType } from '@sharpee/world-model';
 /**
  * Full English words → Direction constant mappings.
  */
-export const DirectionWords: Record<string, DirectionType> = {
+const DirectionWords: Record<string, DirectionType> = {
   'north': Direction.NORTH,
   'south': Direction.SOUTH,
   'east': Direction.EAST,
@@ -30,7 +30,7 @@ export const DirectionWords: Record<string, DirectionType> = {
 /**
  * Abbreviations → Direction constant mappings.
  */
-export const DirectionAbbreviations: Record<string, DirectionType> = {
+const DirectionAbbreviations: Record<string, DirectionType> = {
   'n': Direction.NORTH,
   's': Direction.SOUTH,
   'e': Direction.EAST,
@@ -41,24 +41,6 @@ export const DirectionAbbreviations: Record<string, DirectionType> = {
   'sw': Direction.SOUTHWEST,
   'u': Direction.UP,
   'd': Direction.DOWN,
-};
-
-/**
- * Reverse map: Direction constant → preferred display word.
- */
-const DisplayNames: Record<string, string> = {
-  [Direction.NORTH]: 'north',
-  [Direction.SOUTH]: 'south',
-  [Direction.EAST]: 'east',
-  [Direction.WEST]: 'west',
-  [Direction.NORTHEAST]: 'northeast',
-  [Direction.NORTHWEST]: 'northwest',
-  [Direction.SOUTHEAST]: 'southeast',
-  [Direction.SOUTHWEST]: 'southwest',
-  [Direction.UP]: 'up',
-  [Direction.DOWN]: 'down',
-  [Direction.IN]: 'in',
-  [Direction.OUT]: 'out',
 };
 
 /**
@@ -82,12 +64,4 @@ export function parseDirection(input: string): DirectionType | null {
   }
 
   return null;
-}
-
-/**
- * Get the display word for a Direction constant.
- * Used for output — "You go north."
- */
-export function getDirectionWord(direction: DirectionType): string {
-  return DisplayNames[direction] ?? direction.toLowerCase();
 }

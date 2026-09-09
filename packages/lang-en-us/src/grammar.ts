@@ -94,33 +94,6 @@ export const EnglishGrammarPatterns = {
 export type EnglishGrammarPatternName = keyof typeof EnglishGrammarPatterns;
 
 /**
- * English-specific token type for language processing
- */
-export interface EnglishToken {
-  /** Original word as typed */
-  word: string;
-  /** Normalized form (lowercase, etc.) */
-  normalized: string;
-  /** Character position in original input */
-  position: number;
-  /** Length of the token */
-  length: number;
-  /** Possible English parts of speech */
-  partsOfSpeech: EnglishPartOfSpeech[];
-  /** Additional English-specific data */
-  englishData?: {
-    /** Is this a contraction? */
-    isContraction?: boolean;
-    /** Expanded form if contraction */
-    expandedForm?: string;
-    /** Is this part of a phrasal verb? */
-    isPhrasalVerbParticle?: boolean;
-    /** Is this a modal verb? */
-    isModal?: boolean;
-  };
-}
-
-/**
  * English verb forms and conjugations
  */
 export interface EnglishVerbForms {
@@ -152,18 +125,6 @@ export interface EnglishNounProperties {
   isProperNoun?: boolean;
   /** Common adjectives that collocate with this noun */
   commonAdjectives?: string[];
-}
-
-/**
- * English preposition properties
- */
-export interface EnglishPrepositionProperties {
-  /** The preposition */
-  preposition: string;
-  /** Type of relationship it expresses */
-  relationshipType: 'spatial' | 'temporal' | 'logical' | 'other';
-  /** Can it be used as a particle in phrasal verbs? */
-  canBeParticle?: boolean;
 }
 
 /**

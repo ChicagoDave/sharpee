@@ -247,57 +247,6 @@ describe('Darkness and Light Source Scope Rules', () => {
     expect(visibleIds).toContain(torch.id);
   });
 
-  it.skip('should support partial darkness with specific visibility - SKIPPED: Scope rules should not affect physical visibility', () => {
-    // Add a glowing crystal that provides dim light
-    const crystal = world.createEntity('glowing crystal', 'object');
-    crystal.add(new SceneryTrait());
-    world.moveEntity(crystal.id, darkCave.id);
-
-    // Add rule for dim light
-    const dimLightRule: ScopeRule = {
-      id: 'dim_light_visibility',
-      fromLocations: [darkCave.id],
-      includeEntities: (context) => {
-        // In dim light, can only see large/glowing objects
-        const results: string[] = [];
-        const roomContents = context.world.getContents(context.currentLocation);
-        
-        for (const item of roomContents) {
-          // Can see glowing things
-          const name = item.attributes.displayName || item.id;
-          if (name.includes('glowing') || name.includes('crystal')) {
-            results.push(item.id);
-          }
-          // Can see large things like treasure
-          if (item.id === treasure.id) {
-            results.push(item.id);
-          }
-        }
-        
-        return results;
-      },
-      condition: (context) => {
-        // Check if crystal is in room
-        const roomContents = context.world.getContents(context.currentLocation);
-        return roomContents.some(e => e.id === crystal.id);
-      },
-      priority: 150 // Between darkness and normal
-    };
-
-    world.addScopeRule(dimLightRule);
-    world.moveEntity(player.id, darkCave.id);
-
-    const visible = world.getVisible(player.id);
-    const visibleIds = visible.map(e => e.id);
-
-    // Can see crystal and treasure in dim light
-    expect(visibleIds).toContain(crystal.id);
-    expect(visibleIds).toContain(treasure.id);
-    
-    // But not the inscription (too small/faint)
-    expect(visibleIds).not.toContain(inscription.id);
-  });
-
   it('should lose visibility when light source is switched off', () => {
     world.moveEntity(player.id, darkCave.id);
     world.moveEntity(lantern.id, player.id); // Carry lit lantern

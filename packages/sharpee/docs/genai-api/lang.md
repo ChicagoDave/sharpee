@@ -434,32 +434,6 @@ export declare const EnglishGrammarPatterns: {
  */
 export type EnglishGrammarPatternName = keyof typeof EnglishGrammarPatterns;
 /**
- * English-specific token type for language processing
- */
-export interface EnglishToken {
-    /** Original word as typed */
-    word: string;
-    /** Normalized form (lowercase, etc.) */
-    normalized: string;
-    /** Character position in original input */
-    position: number;
-    /** Length of the token */
-    length: number;
-    /** Possible English parts of speech */
-    partsOfSpeech: EnglishPartOfSpeech[];
-    /** Additional English-specific data */
-    englishData?: {
-        /** Is this a contraction? */
-        isContraction?: boolean;
-        /** Expanded form if contraction */
-        expandedForm?: string;
-        /** Is this part of a phrasal verb? */
-        isPhrasalVerbParticle?: boolean;
-        /** Is this a modal verb? */
-        isModal?: boolean;
-    };
-}
-/**
  * English verb forms and conjugations
  */
 export interface EnglishVerbForms {
@@ -490,17 +464,6 @@ export interface EnglishNounProperties {
     isProperNoun?: boolean;
     /** Common adjectives that collocate with this noun */
     commonAdjectives?: string[];
-}
-/**
- * English preposition properties
- */
-export interface EnglishPrepositionProperties {
-    /** The preposition */
-    preposition: string;
-    /** Type of relationship it expresses */
-    relationshipType: 'spatial' | 'temporal' | 'logical' | 'other';
-    /** Can it be used as a particle in phrasal verbs? */
-    canBeParticle?: boolean;
 }
 /**
  * Utility functions for English grammar
@@ -921,42 +884,6 @@ export declare const standardActionLanguage: ({
         cant_reach: string;
         key_not_held: string;
         still_locked: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
     };
     help: {
         description: string;
@@ -1637,6 +1564,38 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        revealed: string;
+        not_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
         waited: string;
         waited_patiently: string;
         time_passes: string;
@@ -1899,16 +1858,14 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
     };
     help: {
         description: string;
@@ -1919,8 +1876,14 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        revealed: string;
-        not_hidden: string;
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
     };
     help: {
         description: string;
@@ -2490,126 +2453,14 @@ export declare const directionMap: Record<string, string>;
 
 ```typescript
 /**
- * @file English Message Templates
- * @description Message templates for action failure reasons and system messages
+ * English parser error messages: the text the player reads when a command
+ * fails to parse, keyed by the parse error's message id.
+ *
+ * Public interface: `parserErrors` (the template table) and
+ * `getParserErrorMessage(messageId, context)` (template resolution).
+ *
+ * Owner context: `@sharpee/lang-en-us`, the English language layer.
  */
-/**
- * Action failure reasons
- * These match the failure codes used in the IF system
- */
-export declare const ActionFailureReason: {
-    readonly NOT_VISIBLE: "not_visible";
-    readonly NOT_REACHABLE: "not_reachable";
-    readonly NOT_IN_SCOPE: "not_in_scope";
-    readonly FIXED_IN_PLACE: "fixed_in_place";
-    readonly ALREADY_OPEN: "already_open";
-    readonly ALREADY_CLOSED: "already_closed";
-    readonly NOT_OPENABLE: "not_openable";
-    readonly LOCKED: "locked";
-    readonly NOT_LOCKABLE: "not_lockable";
-    readonly ALREADY_LOCKED: "already_locked";
-    readonly ALREADY_UNLOCKED: "already_unlocked";
-    readonly STILL_OPEN: "still_open";
-    readonly CONTAINER_FULL: "container_full";
-    readonly CONTAINER_CLOSED: "container_closed";
-    readonly NOT_A_CONTAINER: "not_a_container";
-    readonly NOT_A_SUPPORTER: "not_a_supporter";
-    readonly ALREADY_IN_CONTAINER: "already_in_container";
-    readonly NOT_IN_CONTAINER: "not_in_container";
-    readonly NOT_WEARABLE: "not_wearable";
-    readonly ALREADY_WEARING: "already_wearing";
-    readonly NOT_WEARING: "not_wearing";
-    readonly WORN_BY_OTHER: "worn_by_other";
-    readonly TOO_HEAVY: "too_heavy";
-    readonly CARRYING_TOO_MUCH: "carrying_too_much";
-    readonly WRONG_KEY: "wrong_key";
-    readonly NO_KEY_SPECIFIED: "no_key_specified";
-    readonly NOT_A_KEY: "not_a_key";
-    readonly NOT_HOLDING_KEY: "not_holding_key";
-    readonly ALREADY_ON: "already_on";
-    readonly ALREADY_OFF: "already_off";
-    readonly NOT_SWITCHABLE: "not_switchable";
-    readonly NO_POWER: "no_power";
-    readonly NO_EXIT_THAT_WAY: "no_exit_that_way";
-    readonly CANT_GO_THAT_WAY: "cant_go_that_way";
-    readonly DOOR_CLOSED: "door_closed";
-    readonly DOOR_LOCKED: "door_locked";
-    readonly TOO_DARK: "too_dark";
-    readonly CANT_TALK_TO_THAT: "cant_talk_to_that";
-    readonly NO_RESPONSE: "no_response";
-    readonly NOT_A_PERSON: "not_a_person";
-    readonly CANT_DO_THAT: "cant_do_that";
-    readonly NOT_IMPLEMENTED: "not_implemented";
-    readonly INVALID_TARGET: "invalid_target";
-    readonly AMBIGUOUS_TARGET: "ambiguous_target";
-    readonly NOTHING_HAPPENS: "nothing_happens";
-    readonly ACTOR_CANT_SEE: "actor_cant_see";
-    readonly ACTOR_CANT_REACH: "actor_cant_reach";
-    readonly ACTOR_BUSY: "actor_busy";
-    readonly NOT_EDIBLE: "not_edible";
-    readonly NOT_READABLE: "not_readable";
-    readonly NOTHING_WRITTEN: "nothing_written";
-    readonly WONT_ACCEPT: "wont_accept";
-    readonly CANT_GIVE_TO_SELF: "cant_give_to_self";
-    readonly CANT_USE_THAT: "cant_use_that";
-    readonly CANT_USE_TOGETHER: "cant_use_together";
-    readonly NOTHING_TO_USE_WITH: "nothing_to_use_with";
-    readonly CANT_PUSH_THAT: "cant_push_that";
-    readonly CANT_PULL_THAT: "cant_pull_that";
-    readonly CANT_TURN_THAT: "cant_turn_that";
-    readonly WONT_BUDGE: "wont_budge";
-    readonly WEARING_IT: "wearing_it";
-    readonly NO_TARGET: "no_target";
-};
-type ActionFailureReasonType = typeof ActionFailureReason[keyof typeof ActionFailureReason];
-/**
- * Mapping of action failure reasons to English messages
- */
-export declare const failureMessages: Record<ActionFailureReasonType, string>;
-/**
- * System messages for meta-commands and special situations
- */
-export declare const systemMessages: {
-    inventoryEmpty: string;
-    inventoryHeader: string;
-    inventoryWearing: string;
-    locationDescription: string;
-    canSee: string;
-    canAlsoSee: string;
-    nothingSpecial: string;
-    insideContainer: string;
-    onSupporter: string;
-    savePrompt: string;
-    saveSuccess: string;
-    saveFailed: string;
-    restorePrompt: string;
-    restoreSuccess: string;
-    restoreFailed: string;
-    saving_game: string;
-    game_saved: string;
-    save_failed: string;
-    restoring_game: string;
-    game_restored: string;
-    restore_failed: string;
-    quitting_game: string;
-    quit_confirmed: string;
-    quit_cancelled: string;
-    restarting_game: string;
-    game_restarted: string;
-    restart_cancelled: string;
-    quitConfirm: string;
-    scoreDisplay: string;
-    turnsDisplay: string;
-    unknownVerb: string;
-    unknownObject: string;
-    ambiguousObject: string;
-    missingObject: string;
-    missingIndirectObject: string;
-    ok: string;
-    done: string;
-    taken: string;
-    dropped: string;
-};
 /**
  * Parser error messages
  * Keys match the messageId from ParseErrorCode analysis
@@ -2628,7 +2479,6 @@ export declare const parserErrors: Record<string, string | ((ctx: Record<string,
  * @returns The formatted error message
  */
 export declare function getParserErrorMessage(messageId: string, context?: Record<string, any>): string;
-export {};
 ```
 
 ### sound-messages

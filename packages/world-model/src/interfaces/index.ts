@@ -1,8 +1,6 @@
 /**
- * Core interfaces for the IF command processing system
+ * The parser contract the engine drives: `IParser`, whose result types
+ * (`IParsedCommand`, `IParseError`, `CommandResult`) live beside it in this package.
  */
 
 export * from './parser.js';
-export * from './command-validator.js';
-export * from './command-executor.js';
-export * from './command-processor.js';

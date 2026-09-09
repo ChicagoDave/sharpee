@@ -88,9 +88,6 @@ export * from './traits/health/healthTrait.js';
 // Deadly-room trigger shape (ADR-224) — leaf barrel (trait + behavior + verdict type)
 export * from './traits/deadly-room/index.js';
 
-// Extension system
-export * from './extensions/index.js';
-
 // World model
 export * from './world/index.js';
 
