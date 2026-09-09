@@ -10,14 +10,42 @@
  * Owner context: `@sharpee/engine` — the turn cycle.
  */
 
-import type { TurnStage } from './context.js';
+import type { TurnResult } from '../types.js';
+import type { TurnStage, TurnEngine } from './context.js';
+
+/**
+ * Record the result in the context's history (trimmed to `maxHistory`),
+ * advance the turn counter, stamp last-played, refresh the scope
+ * vocabulary for the new turn, and announce the changed state.
+ */
+function updateContext(engine: TurnEngine, result: TurnResult): void {
+  const { context, config } = engine;
+  // Add to history
+  context.history.push(result);
+
+  // Trim history if needed
+  if (context.history.length > config.maxHistory!) {
+    context.history = context.history.slice(-config.maxHistory!);
+  }
+
+  // Increment turn
+  context.currentTurn++;
+
+  // Update last played
+  context.metadata.lastPlayed = new Date();
+
+  // Update vocabulary for new scope
+  engine.updateScopeVocabulary();
+
+  engine.emit('state:changed', context);
+}
 
 export const advanceTurnStage: TurnStage = {
   name: 'advance-turn',
   requires: ['sound-dispatch'],
   async run(context) {
     const result = context.result!;
-    context.engine.updateContext(result);
+    updateContext(context.engine, result);
     context.engine.countSessionTurn(result.success);
     return 'continue';
   }

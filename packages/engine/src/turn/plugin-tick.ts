@@ -17,9 +17,47 @@
  * it), ADR-320 Phase 8 (scene sounds from the tick).
  */
 
-import type { ISemanticEvent } from '@sharpee/core';
+import { isPlatformRequestEvent, type IPlatformEvent, type ISemanticEvent } from '@sharpee/core';
 import type { TurnPluginContext } from '@sharpee/plugins';
-import type { TurnStage } from './context.js';
+import type { TurnStage, TurnEngine } from './context.js';
+import { enrichWithEngineContext } from './enrich-events.js';
+
+/**
+ * Route one plugin's events through the enrichment funnel and deliver
+ * them: into the turn's stored events, the event source (queueing any
+ * platform request), the config's `onEvent` callback, and the engine's
+ * emitter — the same four destinations the action's events reach.
+ */
+function processPluginEvents(
+  engine: TurnEngine,
+  events: ISemanticEvent[],
+  turn: number,
+  playerLocation: string | null | undefined,
+  pluginId: string
+): void {
+  const processed = enrichWithEngineContext(engine, events, turn, playerLocation, { kind: 'plugin', pluginId });
+
+  // Add to turn events
+  engine.storeTurnEvents(turn, processed);
+
+  // Track in event source and check for platform requests
+  for (const event of processed) {
+    engine.eventSource.emit(event);
+    if (isPlatformRequestEvent(event)) {
+      engine.queuePlatformOperation(event as IPlatformEvent);
+    }
+  }
+
+  // Emit through callbacks and event system
+  if (engine.config.onEvent) {
+    for (const event of processed) {
+      engine.config.onEvent(event);
+    }
+  }
+  for (const event of processed) {
+    engine.emit('event', event);
+  }
+}
 
 /**
  * Whether an action that produced these events was refused: modern
@@ -65,7 +103,7 @@ export const pluginTickStage: TurnStage = {
       for (const plugin of engine.pluginRegistry.getAll()) {
         const pluginEvents = plugin.onAfterAction(pluginContext);
         if (pluginEvents.length > 0) {
-          engine.processPluginEvents(pluginEvents, turn, playerLocation, plugin.id);
+          processPluginEvents(engine, pluginEvents, turn, playerLocation, plugin.id);
         }
       }
     }

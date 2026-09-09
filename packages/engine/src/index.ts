@@ -9,6 +9,7 @@
 
 // Types
 export * from './types.js';
+export type { EngineIntrospection, ActionSummary, TraitSummary, BehaviorBindingSummary, MessageSummary } from './introspection.js';
 
 // Narrative settings (ADR-089)
 export * from './narrative/index.js';

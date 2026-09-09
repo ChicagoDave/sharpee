@@ -29,6 +29,8 @@ import {
 } from '@sharpee/core';
 import * as engineIndex from '../../src/index';
 import { GameEngine } from '../../src/game-engine';
+import { processPlatformOperations } from '../../src/turn/platform-operations';
+import { processMetaPlatformOperation } from '../../src/turn/meta-command';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
@@ -66,7 +68,7 @@ function shape(event: ISemanticEvent): unknown {
 
 /** Run one request through the meta path; return what it delivered. */
 async function metaPath(engine: GameEngine, request: IPlatformEvent): Promise<unknown[]> {
-  const delivered = await engine['processMetaPlatformOperation'](request);
+  const delivered = await processMetaPlatformOperation(engine['turnEngine'](), request);
   return delivered.map(shape);
 }
 
@@ -75,7 +77,7 @@ async function turnPath(engine: GameEngine, request: IPlatformEvent): Promise<un
   const emitted: ISemanticEvent[] = [];
   engine.on('event', (event) => emitted.push(event));
   engine['pendingPlatformOps'].push(request);
-  await engine['processPlatformOperations']();
+  await processPlatformOperations(engine['turnEngine']());
   return emitted
     .filter((e) => e.type.startsWith('platform.') || e.type === 'game.message')
     .map(shape);

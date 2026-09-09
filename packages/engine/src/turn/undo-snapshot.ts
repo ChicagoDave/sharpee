@@ -16,7 +16,8 @@ export const undoSnapshotStage: TurnStage = {
   requires: ['exchange-offer'],
   async run(context) {
     if (!MetaCommandRegistry.isNonUndoable(context.input)) {
-      context.engine.createUndoSnapshot();
+      const { engine } = context;
+      engine.saveRestoreService.createUndoSnapshot(engine.world, engine.context.currentTurn);
     }
     return 'continue';
   }

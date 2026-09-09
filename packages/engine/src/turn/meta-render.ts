@@ -14,6 +14,8 @@
  * ADR-163 (meta commands produce a channel packet too).
  */
 
+import { appendPromptBlock } from './render-prose.js';
+import { emitChannelPacket } from './channel-packet.js';
 import type { TurnStage } from './context.js';
 
 export const metaRenderStage: TurnStage = {
@@ -30,12 +32,12 @@ export const metaRenderStage: TurnStage = {
     }
 
     const blocks = engine.textService.processTurn(events);
-    engine.appendPromptBlock(blocks);
+    appendPromptBlock(engine, blocks);
 
     if (blocks.length > 0) {
       engine.emit('text:output', blocks, engine.context.currentTurn);
     }
-    engine.emitChannelPacket(events, blocks, engine.context.currentTurn);
+    emitChannelPacket(engine, events, blocks, engine.context.currentTurn);
     return 'continue';
   }
 };

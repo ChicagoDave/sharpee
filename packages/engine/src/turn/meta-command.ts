@@ -12,7 +12,7 @@
  * becomes an error event and a failed result; the stage always
  * continues so the render stage shows it.
  *
- * Public interface: `metaCommandStage`.
+ * Public interface: `metaCommandStage`, `processMetaPlatformOperation`.
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
  * References: ADR-334 D1a (the meta list), D3 (the shared dispatcher).
@@ -21,7 +21,24 @@
 import { isPlatformRequestEvent, type IPlatformEvent, type ISemanticEvent } from '@sharpee/core';
 import { createScopeResolver } from '@sharpee/stdlib';
 import { createActionContext } from '../action-context-factory.js';
-import type { TurnStage, TurnStageContext } from './context.js';
+import { dispatchPlatformOperations } from '../platform-operations.js';
+import type { TurnStage, TurnStageContext, TurnEngine } from './context.js';
+
+/**
+ * Run the one platform request a meta command emitted and return its
+ * completion events for the command's result. Same dispatcher as the
+ * turn path; the list is the difference.
+ * @param engine the turn-facing engine surface
+ * @param operation the request among the meta command's events
+ * @returns the completion or failure events the operation produced
+ */
+export async function processMetaPlatformOperation(engine: TurnEngine, operation: IPlatformEvent): Promise<ISemanticEvent[]> {
+  const completionEvents: ISemanticEvent[] = [];
+  await dispatchPlatformOperations([operation], engine.platformOperationHost(), (event) => {
+    completionEvents.push(event);
+  });
+  return completionEvents;
+}
 
 /** The turn's result for a meta command: the turn number for display, never incremented. */
 function metaResult(
@@ -136,7 +153,7 @@ export const metaCommandStage: TurnStage = {
       // completion events show in the same output.
       const platformOps = events.filter(isPlatformRequestEvent);
       for (const op of platformOps) {
-        const completionEvents = await engine.processMetaPlatformOperation(op as IPlatformEvent);
+        const completionEvents = await processMetaPlatformOperation(engine, op as IPlatformEvent);
         events.push(...completionEvents);
       }
 

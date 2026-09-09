@@ -13,14 +13,10 @@ import {
   ContainerTrait,
   ListenerTrait,
   StandardCapabilities,
-  type ITrait,
   TraitType,
   EntityType,
   StoryInfoTrait,
-  HealthTrait,
-  HealthBehavior,
   registerConcealedVisibilityBehavior,
-  sceneWith
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
 import {
@@ -30,14 +26,11 @@ import {
   vocabularyRegistry,
   type Parser,
   ParserFactory,
-  type CommandHistoryData,
-  type CommandHistoryEntry,
   CommandHistoryCapabilitySchema,
   IFActions,
   type IPerceptionService,
   registerStandardChains,
   channelRegistry,
-  PLAYER_DIED_EVENT,
   createDeadlyRoomTransformer,
   type INpcService,
   type ActSlots,
@@ -45,9 +38,9 @@ import {
 } from '@sharpee/stdlib';
 import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type CmgtPacket, type TurnPacket, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
-import { type ITextBlock, BLOCK_KEYS } from '@sharpee/text-blocks';
+import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type Presence, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, isPlatformRequestEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createStoryLoadingEvent, createStoryLoadedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 
 import { PluginRegistry } from '@sharpee/plugins';
@@ -60,13 +53,9 @@ import {
   TurnResult,
   CommandResult,
   EngineConfig,
-  InputModeHandler,
-  EngineIntrospection,
-  ActionSummary,
-  TraitSummary,
-  BehaviorBindingSummary,
-  MessageSummary
+  InputModeHandler
 } from './types.js';
+import { introspect as introspectEngine, type EngineIntrospection } from './introspection.js';
 import { Story, validateStoryConfig } from './story.js';
 import { NarrativeSettings, buildNarrativeSettings } from './narrative/index.js';
 import { validateRoomSnippets } from './snippet-validation.js';
@@ -74,14 +63,14 @@ import { validateCombatantHealth } from './combatant-health-validation.js';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
 import { SoundDispatcher } from './sound/index.js';
-import { enrichTurnEvents, type TurnEventSource } from './turn-event-processor.js';
 import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused } from './turn/index.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
 import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './parser-interface.js';
 import { hasNarrativeSettings } from './language-provider-interface.js';
 import { VocabularyManager, createVocabularyManager } from './vocabulary-manager.js';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './save-restore-service.js';
-import { dispatchPlatformOperations, type PlatformOperationHost } from './platform-operations.js';
+import type { PlatformOperationHost } from './platform-operations.js';
+import { STORY_INFO_SCHEMA, projectStoryInfo, findStoryInfoTrait } from './story-info-projection.js';
 
 /**
  * Game engine events
@@ -462,52 +451,13 @@ export class GameEngine {
 
     // Seed the `storyInfo` capability for ADR-163 `infoChannel` /
     // `ifidChannel` to project. Channels read from the world via
-    // `world.getCapability('storyInfo')`; this is the single
-    // population point. Two sources merge:
-    //   - `StoryConfig` — authoritative for title/author/version/ifid
-    //     and the description / buildDate when set there.
-    //   - `StoryInfoTrait` (populated by the story during
-    //     `initializeWorld`) — carries build-pipeline metadata
-    //     (`engineVersion`, `clientVersion`, sometimes `buildDate` /
-    //     `description` set by the story rather than the config).
-    // Config values win on conflict; trait values fill in the gaps.
-    const storyInfoEntities = this.world.findByTrait(TraitType.STORY_INFO);
-    const trait = storyInfoEntities[0]?.get<StoryInfoTrait>(TraitType.STORY_INFO);
-    // ADR-298: the wire is data-only — `authors`/`testers` ride as arrays
-    // (consumers join for display). The engine-internal joined string lives
-    // on `context.metadata.author` (banner/save projections), never here.
-    const initialStoryInfo: Record<string, unknown> = {
-      title: story.config.title,
-      authors: story.config.authors,
-      version: story.config.version,
-    };
-    if (story.config.testers?.length) initialStoryInfo.testers = story.config.testers;
-    if (story.config.ifid) initialStoryInfo.ifid = story.config.ifid;
-    if (story.config.description) initialStoryInfo.description = story.config.description;
-    if (story.config.buildDate) initialStoryInfo.buildDate = story.config.buildDate;
-    // Trait values fill in fields the config didn't set.
-    if (trait?.description && !initialStoryInfo.description) {
-      initialStoryInfo.description = trait.description;
-    }
-    if (trait?.buildDate && !initialStoryInfo.buildDate) {
-      initialStoryInfo.buildDate = trait.buildDate;
-    }
-    if (trait?.engineVersion) initialStoryInfo.engineVersion = trait.engineVersion;
-    if (trait?.clientVersion) initialStoryInfo.clientVersion = trait.clientVersion;
+    // `world.getCapability('storyInfo')`. The config and the trait
+    // combine under the one rule in `story-info-projection.ts`; the same
+    // rule runs again at `start()`, once the build pipeline and the host
+    // have had their chance to patch the trait.
     this.world.registerCapability('storyInfo', {
-      schema: {
-        title: { type: 'string', default: '' },
-        authors: { type: 'array', default: [] },
-        testers: { type: 'array', default: [] },
-        version: { type: 'string', default: '' },
-        ifid: { type: 'string', default: '' },
-        description: { type: 'string', default: '' },
-        prologue: { type: 'string', default: '' },
-        buildDate: { type: 'string', default: '' },
-        engineVersion: { type: 'string', default: '' },
-        clientVersion: { type: 'string', default: '' },
-      },
-      initialData: initialStoryInfo,
+      schema: STORY_INFO_SCHEMA,
+      initialData: projectStoryInfo(story.config, findStoryInfoTrait(this.world)),
     });
 
     // Copy implicit actions config to context (ADR-104)
@@ -580,130 +530,7 @@ export class GameEngine {
    * @returns EngineIntrospection with actions, patterns, and metadata
    */
   introspect(): EngineIntrospection {
-    const actions: ActionSummary[] = [];
-    const lang = this.languageProvider;
-
-    for (const action of this.actionRegistry.getAll()) {
-      const patterns = lang?.getActionPatterns(action.id) ?? [];
-      const rawHelp = lang?.getActionHelp?.(action.id);
-      const help = rawHelp
-        ? { description: rawHelp.description, verbs: rawHelp.verbs, examples: rawHelp.examples }
-        : null;
-
-      actions.push({
-        id: action.id,
-        group: action.group ?? null,
-        priority: action.priority ?? 0,
-        isStandard: action.id.startsWith('if.action.'),
-        patterns,
-        help,
-      });
-    }
-
-    // Trait summaries — enumerate all trait types in use across entities
-    const traitMap = new Map<string, { entityIds: string[]; sample: ITrait | null }>();
-    for (const entity of this.world.getAllEntities()) {
-      for (const trait of entity.getTraits()) {
-        const type = trait.type as string;
-        const entry = traitMap.get(type);
-        if (entry) {
-          entry.entityIds.push(entity.id);
-          if (!entry.sample) entry.sample = trait;
-        } else {
-          traitMap.set(type, { entityIds: [entity.id], sample: trait });
-        }
-      }
-    }
-
-    // Collect capability and interceptor registrations per trait type
-    const capsByTrait = new Map<string, string[]>();
-    for (const [key] of this.world.getAllCapabilityBindings()) {
-      const [traitType, capability] = key.split(':');
-      const list = capsByTrait.get(traitType) ?? [];
-      list.push(capability);
-      capsByTrait.set(traitType, list);
-    }
-
-    const intsByTrait = new Map<string, string[]>();
-    for (const [key] of this.world.getAllActionInterceptors()) {
-      const [traitType, actionId] = key.split(':');
-      const list = intsByTrait.get(traitType) ?? [];
-      list.push(actionId);
-      intsByTrait.set(traitType, list);
-    }
-
-    const PLATFORM_PREFIXES = ['room', 'identity', 'container', 'supporter', 'openable',
-      'lockable', 'switchable', 'readable', 'scenery', 'actor', 'combatant',
-      'light-source', 'wearable', 'region', 'scene', 'story-info', 'player',
-      'npc', 'portable'];
-
-    const traits: TraitSummary[] = [];
-    for (const [type, { entityIds, sample }] of traitMap) {
-      const properties = sample
-        ? Object.keys(sample).filter(k => k !== 'type')
-        : [];
-
-      traits.push({
-        type,
-        isStandard: PLATFORM_PREFIXES.includes(type) || type.startsWith('if.'),
-        entityCount: entityIds.length,
-        entityIds,
-        properties,
-        capabilities: capsByTrait.get(type) ?? [],
-        interceptors: intsByTrait.get(type) ?? [],
-      });
-    }
-
-    // Behavior bindings — capability behaviors and action interceptors
-    const behaviors: BehaviorBindingSummary[] = [];
-
-    for (const [key, binding] of this.world.getAllCapabilityBindings()) {
-      const [traitType, capability] = key.split(':');
-      const behavior = binding.behavior;
-      const phases: string[] = [];
-      if (typeof behavior.validate === 'function') phases.push('validate');
-      if (typeof behavior.execute === 'function') phases.push('execute');
-      if (typeof behavior.report === 'function') phases.push('report');
-      if (typeof behavior.blocked === 'function') phases.push('blocked');
-
-      behaviors.push({
-        traitType,
-        actionId: capability,
-        priority: binding.priority ?? 0,
-        phases,
-        kind: 'capability',
-      });
-    }
-
-    for (const [key, binding] of this.world.getAllActionInterceptors()) {
-      const [traitType, actionId] = key.split(':');
-      const interceptor = binding.interceptor;
-      const phases: string[] = [];
-      if (typeof interceptor.preValidate === 'function') phases.push('preValidate');
-      if (typeof interceptor.postValidate === 'function') phases.push('postValidate');
-      if (typeof interceptor.postExecute === 'function') phases.push('postExecute');
-
-      behaviors.push({
-        traitType,
-        actionId,
-        priority: binding.priority ?? 0,
-        phases,
-        kind: 'interceptor',
-      });
-    }
-
-    // Language messages — all registered message IDs with text and source
-    const messages: MessageSummary[] = [];
-    const allMessages = lang?.getAllMessages?.();
-    if (allMessages) {
-      const PLATFORM_PREFIXES = ['if.', 'core.', 'game.', 'npc.', 'combat.', 'character.'];
-      for (const [id, text] of allMessages) {
-        const source = PLATFORM_PREFIXES.some(p => id.startsWith(p)) ? 'platform' : 'story';
-        messages.push({ id, text, source });
-      }
-    }
-
-    return { actions, traits, behaviors, messages };
+    return introspectEngine(this.world, this.actionRegistry, this.languageProvider);
   }
 
   /**
@@ -814,29 +641,20 @@ export class GameEngine {
   }
 
   /**
-   * Refresh the `storyInfo` capability from the current
-   * `StoryInfoTrait`. Called once during `start()` (before the
-   * `ChannelService` is constructed) so `infoChannel` / `ifidChannel`
-   * project the trait's late-stage values (`engineVersion`,
-   * `clientVersion`, `buildDate`) that consumers may have patched
-   * after `setStory()`.
-   *
-   * No-op when no `StoryInfoTrait` is found (legacy stories that
-   * don't use the trait still get the `StoryConfig`-only values from
-   * the initial `setStory()` registration).
+   * Re-project the `storyInfo` capability from the story's config and the
+   * current `StoryInfoTrait`. Called once during `start()`, before the
+   * `ChannelService` is constructed, so `infoChannel` / `ifidChannel` see
+   * the build-pipeline values (`engineVersion`, `clientVersion`,
+   * `buildDate`) a consumer patched onto the trait after `setStory()`.
+   * The same precedence rule as at load: an authored field the config set
+   * is not overwritten by the trait here.
    */
   private refreshStoryInfoCapability(): void {
-    const entities = this.world.findByTrait(TraitType.STORY_INFO);
-    const trait = entities[0]?.get<StoryInfoTrait>(TraitType.STORY_INFO);
-    if (!trait) return;
-    const update: Record<string, string> = {};
-    if (trait.engineVersion) update.engineVersion = trait.engineVersion;
-    if (trait.clientVersion) update.clientVersion = trait.clientVersion;
-    if (trait.buildDate) update.buildDate = trait.buildDate;
-    if (trait.description) update.description = trait.description;
-    if (Object.keys(update).length > 0) {
-      this.world.updateCapability('storyInfo', update);
-    }
+    if (!this.story) return;
+    this.world.updateCapability(
+      'storyInfo',
+      projectStoryInfo(this.story.config, findStoryInfoTrait(this.world)),
+    );
   }
 
   /**
@@ -860,28 +678,6 @@ export class GameEngine {
     if (text) {
       this.world.updateCapability('storyInfo', { prologue: text });
     }
-  }
-
-  /**
-   * Build and emit a `channel:packet` for the turn just processed.
-   * Co-fires with `text:output` at every block-emission site so
-   * channel consumers and legacy text-service consumers see the same
-   * turn boundary. No-op when the engine has no channel service yet
-   * (`start()` has not run).
-   */
-  private emitChannelPacket(
-    events: readonly ISemanticEvent[],
-    blocks: readonly ITextBlock[],
-    turn: number,
-  ): void {
-    if (!this.channelService) return;
-    const packet = this.channelService.build({
-      world: this.world,
-      events,
-      blocks,
-      turn,
-    });
-    this.emit('channel:packet', packet, turn);
   }
 
   /**
@@ -980,84 +776,6 @@ export class GameEngine {
   /**
    * Execute a turn
    */
-  /**
-   * Register the first entity a failed turn's events name as the pronoun
-   * referent (GH #97). Refusal events carry their named entities as
-   * template params — `NounPhrase`s with a `referableId` (ADR-158) — so the
-   * door a `go west` stopped at, or the window a `look` mentioned, becomes
-   * what `it` means next. The first such phrase wins; a turn naming nothing
-   * leaves the context alone.
-   *
-   * @param events - The failed turn's events
-   * @param turn - The current turn number
-   */
-  private registerBlockedReferent(events: ISemanticEvent[], turn: number): void {
-    const parser = this.parser as unknown as { registerPronounEntity?: (id: string, text: string, turn: number) => void } | undefined;
-    if (!parser || typeof parser.registerPronounEntity !== 'function') return;
-    for (const event of events) {
-      const params = (event.data as { params?: Record<string, unknown> } | undefined)?.params;
-      if (!params) continue;
-      for (const value of Object.values(params)) {
-        const np = value as { kind?: unknown; referableId?: unknown; name?: unknown } | null;
-        if (np && typeof np === 'object' && np.kind === 'noun' && typeof np.referableId === 'string') {
-          parser.registerPronounEntity(np.referableId, typeof np.name === 'string' ? np.name : np.referableId, turn);
-          return;
-        }
-      }
-    }
-  }
-
-  /**
-   * Spend the held command (GH #318): when a clarification question is open
-   * and this input does not parse as a command of its own, splice it onto
-   * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
-   * box`) and run the spliced form if it parses. An input that parses on
-   * its own drops the hold and runs as written. The hold is cleared here
-   * whatever happens — exactly one input.
-   *
-   * @param input - The raw input for this turn
-   * @returns The input to run: spliced, or as given
-   */
-  private spliceHeldCommand(input: string): string {
-    const held = this.heldCommand;
-    this.heldCommand = undefined;
-    if (!held || !this.parser) return input;
-    const player = this.world.getPlayer();
-    if (player && hasWorldContext(this.parser)) {
-      this.parser.setWorldContext(this.world, player.id, this.world.getLocation(player.id) || '');
-    }
-    if (this.parser.parse(input).success) return input;
-    const spliced = `${held.input} ${input}`;
-    return this.parser.parse(spliced).success ? spliced : input;
-  }
-
-  /**
-   * GH #346: while the player's live conversation scene holds an open
-   * exchange, bare input the exchange claims (`yes`, `norwich`) is offered
-   * to it first and runs as an answer; input the exchange does not claim
-   * runs unchanged — the innermost open question gets the first offer.
-   *
-   * @param input - The raw input for this turn
-   * @returns `answer <input>` when the open exchange claims it, else the input
-   */
-  private offerToOpenExchange(input: string): string {
-    const player = this.world.getPlayer();
-    if (!player) return input;
-    const scene = sceneWith(this.world, player.id);
-    const exchange = scene?.openExchange;
-    const registration = this.world.getDialogueSelector();
-    if (!scene || !exchange || !registration?.exchangeClaims) return input;
-    const speaker = this.world.getEntity(exchange.speakerId);
-    if (!speaker) return input;
-    const text = input.trim();
-    const claimed = registration.exchangeClaims(
-      speaker,
-      { type: 'say', text },
-      { world: this.world, speakerId: player.id, scene },
-    );
-    return claimed ? `answer ${text}` : input;
-  }
-
   async executeTurn(input: string): Promise<TurnResult> {
     if (!this.running) {
       throw new Error('Engine is not running');
@@ -1089,6 +807,7 @@ export class GameEngine {
     return {
       get world() { return engine.world; },
       get context() { return engine.context; },
+      get story() { return engine.story; },
       get config() { return engine.config; },
       get parser() { return engine.parser; },
       get commandExecutor() { return engine.commandExecutor; },
@@ -1096,52 +815,58 @@ export class GameEngine {
       get randomService() { return engine.randomService; },
       get pluginRegistry() { return engine.pluginRegistry; },
       get textService() { return engine.textService; },
+      get languageProvider() { return engine.languageProvider; },
+      get saveRestoreService() { return engine.saveRestoreService; },
+      get channelService() { return engine.channelService; },
+      get perceptionService() { return engine.perceptionService; },
       get eventSource() { return engine.eventSource; },
-      get turnEvents() { return engine.turnEvents; },
+      turnEventsOf: (turn) => {
+        let events = engine.turnEvents.get(turn);
+        if (!events) {
+          events = [];
+          engine.turnEvents.set(turn, events);
+        }
+        return events;
+      },
+      storeTurnEvents: (turn, events) => {
+        let stored = engine.turnEvents.get(turn);
+        if (!stored) {
+          stored = [];
+          engine.turnEvents.set(turn, stored);
+        }
+        stored.push(...events);
+      },
+      clearTurnEvents: (turn) => { engine.turnEvents.set(turn, []); },
       get pendingPlatformOps() { return engine.pendingPlatformOps; },
       get soundBuffer() { return engine.soundBuffer; },
       get soundDispatcher() { return engine.soundDispatcher; },
       get inputModeHandlers() { return engine.inputModeHandlers; },
       emit: (event, ...args) => this.emit(event, ...args),
+      emitGameEvent: (event) => this.emitGameEvent(event),
+      updateScopeVocabulary: () => this.updateScopeVocabulary(),
+      switchPlayer: (entityId) => this.switchPlayer(entityId),
       executeTurn: (input) => this.executeTurn(input),
-      spliceHeldCommand: (input) => this.spliceHeldCommand(input),
-      offerToOpenExchange: (input) => this.offerToOpenExchange(input),
       holdCommand: (input) => { this.heldCommand = { input }; },
-      createUndoSnapshot: () => this.createUndoSnapshot(),
-      enrichTurnEvents: (events, turn, locationId, source) => this.enrichTurnEvents(events, turn, locationId, source),
-      processPluginEvents: (events, turn, playerLocation, pluginId) => this.processPluginEvents(events, turn, playerLocation, pluginId),
-      updateCommandHistory: (result, input, turn) => this.updateCommandHistory(result, input, turn),
-      registerBlockedReferent: (events, turn) => this.registerBlockedReferent(events, turn),
-      updateContext: (result) => this.updateContext(result),
+      takeHeldCommand: () => {
+        const held = this.heldCommand;
+        this.heldCommand = undefined;
+        return held?.input;
+      },
       countSessionTurn: (success) => {
         this.sessionTurns++;
         if (success) {
           this.sessionMoves++;
         }
       },
-      drainPlayerSwitch: (turn) => this.drainPlayerSwitch(turn),
-      processPlatformOperations: (turn) => this.processPlatformOperations(turn),
-      processMetaPlatformOperation: (operation) => this.processMetaPlatformOperation(operation),
-      appendPromptBlock: (blocks) => this.appendPromptBlock(blocks),
-      emitChannelPacket: (events, blocks, turn) => this.emitChannelPacket(events, blocks, turn),
-      playerDeathCauseThisTurn: (turn) => this.playerDeathCauseThisTurn(turn),
-      isPlayerDead: () => this.isPlayerDead(),
-      isGameOver: () => this.isGameOver(),
+      platformOperationHost: () => this.platformOperationHost(),
+      queuePlatformOperation: (operation) => { this.pendingPlatformOps.push(operation); },
+      drainPendingPlatformOperations: () => {
+        const drained = this.pendingPlatformOps;
+        this.pendingPlatformOps = [];
+        return drained;
+      },
       stop: (reason, details) => this.stop(reason, details)
     };
-  }
-
-  /**
-   * Run the one platform request a meta command emitted and return its
-   * completion events for the command's result. Same dispatcher as the
-   * turn path; the list is the difference.
-   */
-  private async processMetaPlatformOperation(platformOp: IPlatformEvent): Promise<ISemanticEvent[]> {
-    const completionEvents: ISemanticEvent[] = [];
-    await dispatchPlatformOperations([platformOp], this.platformOperationHost(), (event) => {
-      completionEvents.push(event);
-    });
-    return completionEvents;
   }
 
   /**
@@ -1169,42 +894,6 @@ export class GameEngine {
    * Story code must position the new PC (via world.moveEntity) BEFORE
    * calling switchPlayer, since parser context uses the entity's current location.
    */
-  /**
-   * Apply this turn's `if.event.player.switch_requested`, if any (ADR-327 D9).
-   *
-   * @param turn the turn just executed
-   * @returns nothing; on a request the role moves and `game.pc_switched` is
-   *   emitted. Two requests in one turn are a story bug, not a sequence: the
-   *   first wins and the rest are reported as `runtime.double-player-switch`,
-   *   because "who is the player at the end of this turn" has one answer and
-   *   silently taking the last one hides the contradiction.
-   */
-  private drainPlayerSwitch(turn: number): void {
-    const requests = (this.turnEvents.get(turn) ?? []).filter(
-      (e) => e.type === 'if.event.player.switch_requested',
-    );
-    if (requests.length === 0) return;
-
-    const first = requests[0].data as { entityId?: string };
-    if (requests.length > 1) {
-      const targets = requests.map((r) => (r.data as { entityId?: string }).entityId ?? '?');
-      this.emitGameEvent({
-        id: `runtime-double-player-switch-${turn}`,
-        type: 'runtime.double-player-switch',
-        timestamp: Date.now(),
-        entities: {},
-        data: {
-          message: `Two \`change the player to\` statements ran in one turn (${targets.join(', ')}). The first won.`,
-          targets,
-          turn,
-        },
-      });
-    }
-    if (first.entityId && first.entityId !== this.context.player.id) {
-      this.switchPlayer(first.entityId);
-    }
-  }
-
   switchPlayer(entityId: string): void {
     const newPlayer = this.world.getEntity(entityId);
     if (!newPlayer) {
@@ -1460,27 +1149,6 @@ export class GameEngine {
   }
 
   /**
-   * Append a PROMPT block to the output (ADR-137).
-   *
-   * Reads the current prompt from world state, resolves through the
-   * language provider, and appends as the last block.
-   */
-  private appendPromptBlock(blocks: ITextBlock[]): void {
-    if (!this.languageProvider || !this.world) return;
-
-    const prompt = this.world.getPrompt();
-    const resolved = this.languageProvider.getMessage(
-      prompt.messageId,
-      prompt.params as Record<string, any>
-    );
-
-    // Only append if the message resolved (not echoed back as the ID)
-    if (resolved && resolved !== prompt.messageId) {
-      blocks.push({ key: BLOCK_KEYS.PROMPT, content: [resolved] });
-    }
-  }
-
-  /**
    * Get the text service
    */
   getTextService(): IProsePipeline | undefined {
@@ -1646,13 +1314,6 @@ export class GameEngine {
   }
 
   /**
-   * Create an undo snapshot of the current world state
-   */
-  private createUndoSnapshot(): void {
-    this.saveRestoreService.createUndoSnapshot(this.world, this.context.currentTurn);
-  }
-
-  /**
    * Undo to previous turn
    * @returns true if undo succeeded, false if nothing to undo
    */
@@ -1690,41 +1351,6 @@ export class GameEngine {
   }
 
   /**
-   * The ADR-328 D3 presence resolver the enrichment funnel hands to
-   * `enrichTurnEvents`: the current player's presence at a producer-stamped
-   * location, via the perception service. Undefined when no perception
-   * service is configured — events then stay untagged.
-   */
-  private presenceResolver(): ((locationId: string) => Presence) | undefined {
-    const service = this.perceptionService;
-    if (!service) return undefined;
-    return (locationId) => service.presenceOf(this.context.player, locationId, this.world);
-  }
-
-  /**
-   * The engine's side of the one enrichment funnel: the turn's context
-   * and, when a perception service is configured, filtering for the
-   * current player. Both the action's events and each plugin batch pass
-   * through here; only the source differs.
-   */
-  private enrichTurnEvents(
-    events: readonly ISemanticEvent[],
-    turn: number,
-    locationId: string | null | undefined,
-    source: TurnEventSource
-  ): ISemanticEvent[] {
-    return enrichTurnEvents(events, source, {
-      turn,
-      playerId: this.context.player.id,
-      locationId: locationId ?? undefined,
-      presenceOf: this.presenceResolver(),
-      perception: this.perceptionService
-        ? { service: this.perceptionService, player: this.context.player, world: this.world }
-        : undefined
-    });
-  }
-
-  /**
    * The engine surface the platform dispatcher acts on. The hooks are
    * read through a getter so a dispatch sees whatever is registered at
    * the moment each request runs.
@@ -1745,47 +1371,6 @@ export class GameEngine {
         await this.executeTurn(command);
       }
     };
-  }
-
-  /**
-   * Process events from a plugin through the shared pipeline (ADR-120)
-   * Enriches, filters, stores, and emits events.
-   *
-   * @param pluginId - Id of the contributing plugin; forms the batch's
-   *   transaction id `txn:{turn}:plugin:{pluginId}` (ADR-296 D1). One batch
-   *   per plugin per turn today — if a plugin ever runs multiple batches in
-   *   one turn, this id shape under-specifies and needs an invocation
-   *   counter (stop and design it; do not improvise).
-   */
-  private processPluginEvents(
-    events: ISemanticEvent[],
-    turn: number,
-    playerLocation: string | null | undefined,
-    pluginId: string
-  ): void {
-    const processed = this.enrichTurnEvents(events, turn, playerLocation, { kind: 'plugin', pluginId });
-
-    // Add to turn events
-    const existing = this.turnEvents.get(turn) || [];
-    this.turnEvents.set(turn, [...existing, ...processed]);
-
-    // Track in event source and check for platform requests
-    for (const event of processed) {
-      this.eventSource.emit(event);
-      if (isPlatformRequestEvent(event)) {
-        this.pendingPlatformOps.push(event as IPlatformEvent);
-      }
-    }
-
-    // Emit through callbacks and event system
-    if (this.config.onEvent) {
-      for (const event of processed) {
-        this.config.onEvent(event);
-      }
-    }
-    for (const event of processed) {
-      this.emit('event', event);
-    }
   }
 
   /**
@@ -1881,134 +1466,6 @@ export class GameEngine {
   }
 
   /**
-   * Update context after a turn
-   */
-  private updateContext(result: TurnResult): void {
-    // Add to history
-    this.context.history.push(result);
-
-    // Trim history if needed
-    if (this.context.history.length > this.config.maxHistory!) {
-      this.context.history = this.context.history.slice(-this.config.maxHistory!);
-    }
-
-    // Increment turn
-    this.context.currentTurn++;
-
-    // Update last played
-    this.context.metadata.lastPlayed = new Date();
-
-    // Update vocabulary for new scope
-    this.updateScopeVocabulary();
-
-    this.emit('state:changed', this.context);
-  }
-
-  /**
-   * Update command history capability
-   */
-  private updateCommandHistory(result: TurnResult, input: string, turn: number): void {
-    // Get command history capability
-    const historyData = this.world.getCapability(StandardCapabilities.COMMAND_HISTORY) as CommandHistoryData | null;
-    if (!historyData) {
-      // Command history capability not registered
-      return;
-    }
-
-    // Note: Meta-commands (again, undo, save, etc.) are excluded by the isMeta check
-    // in executeTurn before calling this function. No need for string-based exclusion.
-
-    // Get the action ID from the result
-    const actionId = result.actionId;
-    if (!actionId) {
-      // No action was executed (parse error, etc.)
-      return;
-    }
-
-    // Extract the parsed command structure
-    let parsedCommand: any = {
-      verb: result.parsedCommand?.action || input.split(' ')[0]
-    };
-
-    // If we have a full parsed command structure, use it
-    if (result.parsedCommand) {
-      const parsed = result.parsedCommand;
-
-      // Handle new ParsedCommand structure (has structure property)
-      if (parsed.structure) {
-        parsedCommand = {
-          verb: parsed.structure.verb?.text || parsed.action,
-          directObject: parsed.structure.directObject?.text,
-          preposition: parsed.structure.preposition?.text,
-          indirectObject: parsed.structure.indirectObject?.text
-        };
-      }
-      // Handle old ParsedCommandV1 structure (directObject at top level)
-      // Use type assertion for backward compatibility
-      else {
-        const v1 = parsed as unknown as { directObject?: { text?: string }; indirectObject?: { text?: string }; preposition?: string };
-        if (v1.directObject || v1.indirectObject) {
-          parsedCommand = {
-            verb: parsed.action,
-            directObject: v1.directObject?.text,
-            preposition: v1.preposition,
-            indirectObject: v1.indirectObject?.text
-          };
-        }
-      }
-    }
-
-    // Create the history entry
-    const entry: CommandHistoryEntry = {
-      actionId,
-      originalText: input,
-      parsedCommand,
-      turnNumber: turn,
-      timestamp: Date.now()
-    };
-
-    // Add to history
-    if (!historyData.entries) {
-      historyData.entries = [];
-    }
-    historyData.entries.push(entry);
-
-    // Trim to maxEntries if needed
-    const maxEntries = historyData.maxEntries || 100;
-    if (historyData.entries.length > maxEntries) {
-      historyData.entries = historyData.entries.slice(-maxEntries);
-    }
-  }
-
-  /**
-   * Drain the turn's pending platform requests through the dispatcher,
-   * delivering each completion event to the event source, the turn's
-   * event list, and the engine's emitter. Same dispatcher as the meta
-   * path; the list is the difference.
-   */
-  private async processPlatformOperations(turn?: number): Promise<void> {
-    const currentTurn = turn ?? this.context.currentTurn;
-
-    // Ensure there's an entry for the current turn
-    if (!this.turnEvents.has(currentTurn)) {
-      this.turnEvents.set(currentTurn, []);
-    }
-
-    // IMPORTANT: Save and clear pending ops at START to prevent infinite recursion
-    // When AGAIN calls executeTurn() recursively, that nested call must not see
-    // the same pending operations, or it will process AGAIN_REQUESTED again.
-    const opsToProcess = [...this.pendingPlatformOps];
-    this.pendingPlatformOps = [];
-
-    await dispatchPlatformOperations(opsToProcess, this.platformOperationHost(), (event) => {
-      this.eventSource.emit(event);
-      this.turnEvents.get(currentTurn)?.push(event);
-      // Also emit through engine's event emitter for tests
-      this.emit('event', event);
-    });
-  }
-
-  /**
    * Emit a game lifecycle event.
    * All game events now use ISemanticEvent with data in the `data` field.
    * (IGameEvent with `payload` is deprecated - see ADR-097)
@@ -2041,51 +1498,6 @@ export class GameEngine {
         }
       }
     }
-  }
-
-  /**
-   * Check if game is over
-   */
-  private isGameOver(): boolean {
-    // Check story-specific completion
-    if (this.story && this.story.isComplete) {
-      return this.story.isComplete();
-    }
-
-    // Default: game never ends
-    return false;
-  }
-
-  /**
-   * The `cause` of a canonical player-death event (ADR-224) emitted during the
-   * given turn, or `undefined` if the player did not die this turn. Scans the
-   * turn's accumulated events, so it sees deaths from the action, interceptors,
-   * and scheduler daemons alike. When several fire in one turn (rare), the first
-   * is authoritative — `killPlayer` is idempotent, so later calls emit nothing.
-   * @param turn the turn number whose events to scan
-   */
-  private playerDeathCauseThisTurn(turn: number): string | undefined {
-    const events = this.turnEvents.get(turn) || [];
-    for (const event of events) {
-      if (event.type === PLAYER_DIED_EVENT) {
-        const cause = (event.data as { cause?: unknown } | undefined)?.cause;
-        return typeof cause === 'string' ? cause : 'unknown';
-      }
-    }
-    return undefined;
-  }
-
-  /**
-   * Whether the player is currently dead by their derived `HealthTrait` state
-   * (ADR-226/ADR-224). A player with no `HealthTrait` is alive by default (the
-   * opt-in rule) — `killPlayer` lazily attaches one, so a real death always has a
-   * trait to read. This is the engine's "final word" after story policy has run.
-   */
-  private isPlayerDead(): boolean {
-    const player = this.context.player;
-    if (!player) return false;
-    const health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
-    return health ? !HealthBehavior.isAlive(health) : false;
   }
 
   /**

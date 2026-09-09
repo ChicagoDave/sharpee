@@ -15,6 +15,8 @@
  */
 
 import { INPUT_MODE_STATE_KEY } from '../types.js';
+import { appendPromptBlock } from './render-prose.js';
+import { emitChannelPacket } from './channel-packet.js';
 import type { TurnStage } from './context.js';
 
 export const inputModeStage: TurnStage = {
@@ -35,11 +37,11 @@ export const inputModeStage: TurnStage = {
 
     if (engine.textService) {
       const blocks = engine.textService.processTurn(events);
-      engine.appendPromptBlock(blocks);
+      appendPromptBlock(engine, blocks);
       if (blocks.length > 0) {
         engine.emit('text:output', blocks, turn);
       }
-      engine.emitChannelPacket(events, blocks, turn);
+      emitChannelPacket(engine, events, blocks, turn);
     }
 
     if (handler.advancesTurn) {

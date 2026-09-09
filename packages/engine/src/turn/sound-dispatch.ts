@@ -24,8 +24,7 @@ export const soundDispatchStage: TurnStage = {
     if (engine.soundBuffer.length > 0) {
       const audibilityEvents = engine.soundDispatcher.dispatch(engine.soundBuffer, engine.world, turn);
       if (audibilityEvents.length > 0) {
-        const existing = engine.turnEvents.get(turn) ?? [];
-        engine.turnEvents.set(turn, [...existing, ...audibilityEvents]);
+        engine.storeTurnEvents(turn, audibilityEvents);
         for (const e of audibilityEvents) {
           engine.eventSource.emit(e);
           if (engine.config.onEvent) engine.config.onEvent(e);

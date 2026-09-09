@@ -251,6 +251,30 @@ export interface EngineConfig {
      */
     seed?: number;
 }
+```
+
+### introspection
+
+```typescript
+/**
+ * The engine's introspection read-model: a serializable snapshot of the
+ * actions, traits, behavior bindings, and messages a loaded story has,
+ * for tooling (the IDE's project manifest, the CLI's `introspect`).
+ *
+ * A pure read over `(world, actionRegistry, languageProvider)`; it holds
+ * no engine state and changes nothing. `GameEngine.introspect()` delegates
+ * here, and the five summary types below are what it returns.
+ *
+ * Public interface: `introspect`, `EngineIntrospection`, `ActionSummary`,
+ * `TraitSummary`, `BehaviorBindingSummary`, `MessageSummary`.
+ * Owner context: `@sharpee/engine` — tooling surface.
+ *
+ * References: ADR-184 (the IDE manifest this feeds), ADR-334 A1(i) (the
+ * extraction out of the facade).
+ */
+import type { WorldModel } from '@sharpee/world-model';
+import type { StandardActionRegistry } from '@sharpee/stdlib';
+import type { LanguageProvider } from '@sharpee/if-domain';
 /**
  * Summary of a registered action, suitable for JSON serialization.
  * Produced by GameEngine.introspect().
@@ -335,6 +359,14 @@ export interface EngineIntrospection {
     /** All registered message IDs with text and source classification. */
     messages: MessageSummary[];
 }
+/**
+ * Build the introspection snapshot.
+ * @param world the loaded world (entities, capability and interceptor bindings)
+ * @param actionRegistry the registered actions
+ * @param languageProvider the language layer, for patterns, help, and messages; none yields empty lists
+ * @returns the snapshot, ready for JSON serialization
+ */
+export declare function introspect(world: WorldModel, actionRegistry: StandardActionRegistry, languageProvider: LanguageProvider | undefined): EngineIntrospection;
 ```
 
 ### narrative/narrative-settings
@@ -1273,11 +1305,12 @@ import { EventProcessor } from '@sharpee/event-processor';
 import { type Parser, type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
 import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type TurnPacket } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
-import { type ITextBlock } from '@sharpee/text-blocks';
+import type { ITextBlock } from '@sharpee/text-blocks';
 import { type ISemanticEvent, type ISaveRestoreHooks, type ISemanticEventSource } from '@sharpee/core';
 import { EngineRandomService } from './engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
-import { GameContext, TurnResult, EngineConfig, InputModeHandler, EngineIntrospection } from './types.js';
+import { GameContext, TurnResult, EngineConfig, InputModeHandler } from './types.js';
+import { type EngineIntrospection } from './introspection.js';
 import { Story } from './story.js';
 import { NarrativeSettings } from './narrative/index.js';
 import { ParsedCommandTransformer, BeforeActionHookListener } from './command-executor.js';
@@ -1443,16 +1476,13 @@ export declare class GameEngine {
         capabilities?: ClientCapabilities;
     }): void;
     /**
-     * Refresh the `storyInfo` capability from the current
-     * `StoryInfoTrait`. Called once during `start()` (before the
-     * `ChannelService` is constructed) so `infoChannel` / `ifidChannel`
-     * project the trait's late-stage values (`engineVersion`,
-     * `clientVersion`, `buildDate`) that consumers may have patched
-     * after `setStory()`.
-     *
-     * No-op when no `StoryInfoTrait` is found (legacy stories that
-     * don't use the trait still get the `StoryConfig`-only values from
-     * the initial `setStory()` registration).
+     * Re-project the `storyInfo` capability from the story's config and the
+     * current `StoryInfoTrait`. Called once during `start()`, before the
+     * `ChannelService` is constructed, so `infoChannel` / `ifidChannel` see
+     * the build-pipeline values (`engineVersion`, `clientVersion`,
+     * `buildDate`) a consumer patched onto the trait after `setStory()`.
+     * The same precedence rule as at load: an authored field the config set
+     * is not overwritten by the trait here.
      */
     private refreshStoryInfoCapability;
     /**
@@ -1465,14 +1495,6 @@ export declare class GameEngine {
      * values write nothing (sparse-suppress — the channel skips emission).
      */
     private resolvePrologue;
-    /**
-     * Build and emit a `channel:packet` for the turn just processed.
-     * Co-fires with `text:output` at every block-emission site so
-     * channel consumers and legacy text-service consumers see the same
-     * turn boundary. No-op when the engine has no channel service yet
-     * (`start()` has not run).
-     */
-    private emitChannelPacket;
     /**
      * Resume a stopped engine without touching world state.
      *
@@ -1504,40 +1526,6 @@ export declare class GameEngine {
     /**
      * Execute a turn
      */
-    /**
-     * Register the first entity a failed turn's events name as the pronoun
-     * referent (GH #97). Refusal events carry their named entities as
-     * template params — `NounPhrase`s with a `referableId` (ADR-158) — so the
-     * door a `go west` stopped at, or the window a `look` mentioned, becomes
-     * what `it` means next. The first such phrase wins; a turn naming nothing
-     * leaves the context alone.
-     *
-     * @param events - The failed turn's events
-     * @param turn - The current turn number
-     */
-    private registerBlockedReferent;
-    /**
-     * Spend the held command (GH #318): when a clarification question is open
-     * and this input does not parse as a command of its own, splice it onto
-     * the held input (`drop` + `pear` → `drop pear`; `put pear` + `in the
-     * box`) and run the spliced form if it parses. An input that parses on
-     * its own drops the hold and runs as written. The hold is cleared here
-     * whatever happens — exactly one input.
-     *
-     * @param input - The raw input for this turn
-     * @returns The input to run: spliced, or as given
-     */
-    private spliceHeldCommand;
-    /**
-     * GH #346: while the player's live conversation scene holds an open
-     * exchange, bare input the exchange claims (`yes`, `norwich`) is offered
-     * to it first and runs as an answer; input the exchange does not claim
-     * runs unchanged — the innermost open question gets the first offer.
-     *
-     * @param input - The raw input for this turn
-     * @returns `answer <input>` when the open exchange claims it, else the input
-     */
-    private offerToOpenExchange;
     executeTurn(input: string): Promise<TurnResult>;
     /**
      * The facade's turn-facing surface (ADR-334 D5): what the stages under
@@ -1546,12 +1534,6 @@ export declare class GameEngine {
      * list is replaced when drained.
      */
     private turnEngine;
-    /**
-     * Run the one platform request a meta command emitted and return its
-     * completion events for the command's result. Same dispatcher as the
-     * turn path; the list is the difference.
-     */
-    private processMetaPlatformOperation;
     /**
      * Get current game context
      */
@@ -1574,17 +1556,6 @@ export declare class GameEngine {
      * Story code must position the new PC (via world.moveEntity) BEFORE
      * calling switchPlayer, since parser context uses the entity's current location.
      */
-    /**
-     * Apply this turn's `if.event.player.switch_requested`, if any (ADR-327 D9).
-     *
-     * @param turn the turn just executed
-     * @returns nothing; on a request the role moves and `game.pc_switched` is
-     *   emitted. Two requests in one turn are a story bug, not a sequence: the
-     *   first wins and the rest are reported as `runtime.double-player-switch`,
-     *   because "who is the player at the end of this turn" has one answer and
-     *   silently taking the last one hides the contradiction.
-     */
-    private drainPlayerSwitch;
     switchPlayer(entityId: string): void;
     /**
      * Get world model
@@ -1688,13 +1659,6 @@ export declare class GameEngine {
      */
     registerInputMode(id: string, handler: InputModeHandler): void;
     /**
-     * Append a PROMPT block to the output (ADR-137).
-     *
-     * Reads the current prompt from world state, resolves through the
-     * language provider, and appends as the last block.
-     */
-    private appendPromptBlock;
-    /**
      * Get the text service
      */
     getTextService(): IProsePipeline | undefined;
@@ -1795,10 +1759,6 @@ export declare class GameEngine {
      */
     restore(): Promise<boolean>;
     /**
-     * Create an undo snapshot of the current world state
-     */
-    private createUndoSnapshot;
-    /**
      * Undo to previous turn
      * @returns true if undo succeeded, false if nothing to undo
      */
@@ -1812,36 +1772,11 @@ export declare class GameEngine {
      */
     getUndoLevels(): number;
     /**
-     * The ADR-328 D3 presence resolver the enrichment funnel hands to
-     * `enrichTurnEvents`: the current player's presence at a producer-stamped
-     * location, via the perception service. Undefined when no perception
-     * service is configured — events then stay untagged.
-     */
-    private presenceResolver;
-    /**
-     * The engine's side of the one enrichment funnel: the turn's context
-     * and, when a perception service is configured, filtering for the
-     * current player. Both the action's events and each plugin batch pass
-     * through here; only the source differs.
-     */
-    private enrichTurnEvents;
-    /**
      * The engine surface the platform dispatcher acts on. The hooks are
      * read through a getter so a dispatch sees whatever is registered at
      * the moment each request runs.
      */
     private platformOperationHost;
-    /**
-     * Process events from a plugin through the shared pipeline (ADR-120)
-     * Enriches, filters, stores, and emits events.
-     *
-     * @param pluginId - Id of the contributing plugin; forms the batch's
-     *   transaction id `txn:{turn}:plugin:{pluginId}` (ADR-296 D1). One batch
-     *   per plugin per turn today — if a plugin ever runs multiple batches in
-     *   one turn, this id shape under-specifies and needs an invocation
-     *   counter (stop and design it; do not improvise).
-     */
-    private processPluginEvents;
     /**
      * Create save data from current engine state
      */
@@ -1871,21 +1806,6 @@ export declare class GameEngine {
      */
     emitPlatformEvent(event: Omit<ISemanticEvent, 'id' | 'timestamp'>): void;
     /**
-     * Update context after a turn
-     */
-    private updateContext;
-    /**
-     * Update command history capability
-     */
-    private updateCommandHistory;
-    /**
-     * Drain the turn's pending platform requests through the dispatcher,
-     * delivering each completion event to the event source, the turn's
-     * event list, and the engine's emitter. Same dispatcher as the meta
-     * path; the list is the difference.
-     */
-    private processPlatformOperations;
-    /**
      * Emit a game lifecycle event.
      * All game events now use ISemanticEvent with data in the `data` field.
      * (IGameEvent with `payload` is deprecated - see ADR-097)
@@ -1895,26 +1815,6 @@ export declare class GameEngine {
      * Emit an event to listeners
      */
     private emit;
-    /**
-     * Check if game is over
-     */
-    private isGameOver;
-    /**
-     * The `cause` of a canonical player-death event (ADR-224) emitted during the
-     * given turn, or `undefined` if the player did not die this turn. Scans the
-     * turn's accumulated events, so it sees deaths from the action, interceptors,
-     * and scheduler daemons alike. When several fire in one turn (rare), the first
-     * is authoritative — `killPlayer` is idempotent, so later calls emit nothing.
-     * @param turn the turn number whose events to scan
-     */
-    private playerDeathCauseThisTurn;
-    /**
-     * Whether the player is currently dead by their derived `HealthTrait` state
-     * (ADR-226/ADR-224). A player with no `HealthTrait` is alive by default (the
-     * opt-in rule) — `killPlayer` lazily attaches one, so a real death always has a
-     * trait to read. This is the engine's "final word" after story policy has run.
-     */
-    private isPlayerDead;
     /**
      * Add event listener
      */
@@ -2826,21 +2726,25 @@ export declare class SoundDispatcher {
  * `'continue'` or `'stop'`; `'stop'` ends the list with the result as it
  * stands. The parse stage alone sets `route`, and the runner selects the
  * regular or the meta list on it. A stage reaches the engine only through
- * `TurnEngine`, the facade's turn-facing surface: the services and state
- * a turn touches and the helpers that stayed on the engine because other
- * paths call them too.
+ * `TurnEngine`, the facade's turn-facing surface: getters over the services
+ * and state a turn touches, and operations on the state the engine keeps
+ * across turns (the held command, the pending platform requests, the
+ * per-turn event store, the session counters). The bodies of the turn's
+ * own helpers live in the stage modules; nothing turn-only remains on the
+ * facade.
  *
  * Public interface: `TurnStage`, `TurnStageContext`, `TurnEngine`,
  * `StageOutcome`, `TurnRoute`.
  * Owner context: `@sharpee/engine` — the turn cycle.
  *
  * References: ADR-334 D1 (the stage contract, the route set by parse
- * alone), D1a (two lists sharing the parse stage), D5 (the facade does
- * not move; stages reach it through this surface).
+ * alone), D1a (two lists sharing the parse stage), D5 as amended by A1
+ * (the facade's public surface does not move; stages reach its state
+ * through this surface).
  */
 import type { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
-import type { Parser, StandardActionRegistry } from '@sharpee/stdlib';
+import type { Parser, StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
@@ -2849,8 +2753,12 @@ import type { CommandExecutor } from '../command-executor.js';
 import type { EngineRandomService } from '../engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
 import type { SoundDispatcher } from '../sound/index.js';
-import type { TurnEventSource } from '../turn-event-processor.js';
 import type { GameEngineEvents } from '../game-engine.js';
+import type { Story } from '../story.js';
+import type { PlatformOperationHost } from '../platform-operations.js';
+import type { SaveRestoreService } from '../save-restore-service.js';
+import type { ChannelService } from '@sharpee/channel-service';
+import type { LanguageProvider } from '@sharpee/if-domain';
 /** What a stage returns: run the next stage, or end the list here. */
 export type StageOutcome = 'continue' | 'stop';
 /** Which list the turn runs after parsing: a regular turn or a meta command. */
@@ -2907,6 +2815,8 @@ export interface TurnStageContext {
 export interface TurnEngine {
     readonly world: WorldModel;
     readonly context: GameContext;
+    /** The installed story, or none before `setStory`. */
+    readonly story: Story | undefined;
     readonly config: EngineConfig;
     readonly parser: Parser | undefined;
     readonly commandExecutor: CommandExecutor;
@@ -2914,43 +2824,53 @@ export interface TurnEngine {
     readonly randomService: EngineRandomService;
     readonly pluginRegistry: PluginRegistry;
     readonly textService: IProsePipeline | undefined;
+    readonly languageProvider: LanguageProvider | undefined;
+    /** Snapshots for undo (the undo-snapshot stage takes one per undoable input). */
+    readonly saveRestoreService: SaveRestoreService;
+    /** The channel-I/O producer, constructed by `start()`; none before it. */
+    readonly channelService: ChannelService | undefined;
+    /** The perception service, when one was given; enrichment and presence tagging read it. */
+    readonly perceptionService: IPerceptionService | undefined;
     readonly eventSource: ISemanticEventSource;
-    /** Events stored per turn, rendered at turn end and cleared after. */
-    readonly turnEvents: Map<number, ISemanticEvent[]>;
-    /** Platform requests queued this turn for `processPlatformOperations`. */
-    readonly pendingPlatformOps: IPlatformEvent[];
-    /** The per-turn sound buffer the report phase and the plugin tick fill. */
+    /** Platform requests queued this turn, read-only; `queuePlatformOperation` adds, `drainPendingPlatformOperations` takes. */
+    readonly pendingPlatformOps: readonly IPlatformEvent[];
+    /**
+     * The per-turn sound buffer. A live handle on purpose: the command executor's
+     * signature takes the array and fills it in place during the report phase, the
+     * plugin tick pushes into the same one, and `executeAsActor` hands it out too —
+     * the collection's identity is the contract, so an operation would only wrap it.
+     */
     readonly soundBuffer: ISound[];
     readonly soundDispatcher: SoundDispatcher;
     readonly inputModeHandlers: ReadonlyMap<string, InputModeHandler>;
+    /** The events stored for a turn — the live list, created empty on first ask; append through `storeTurnEvents`. */
+    turnEventsOf(turn: number): ISemanticEvent[];
+    /** Append events to a turn's stored list, rendered at turn end and cleared after. */
+    storeTurnEvents(turn: number, events: readonly ISemanticEvent[]): void;
+    /** Empty a turn's stored list once it has been rendered. */
+    clearTurnEvents(turn: number): void;
     /** Emit one of the engine's lifecycle events. */
     emit<K extends keyof GameEngineEvents>(event: K, ...args: Parameters<GameEngineEvents[K]>): void;
+    /** Emit a game event and store it in the current turn's events (nothing stored before turn one). */
+    emitGameEvent(event: ISemanticEvent): void;
+    /** Refresh the parser's scope vocabulary for the player's current surroundings. */
+    updateScopeVocabulary(): void;
+    /** Make another playable actor the player (ADR-327); throws for a missing or unplayable entity. */
+    switchPlayer(entityId: string): void;
     /** Run an input as a turn of its own (command chaining, AGAIN). */
     executeTurn(input: string): Promise<TurnResult>;
-    /** Spend a held command on this input (GH #318). */
-    spliceHeldCommand(input: string): string;
-    /** Offer the input to an open exchange before the parse (GH #346). */
-    offerToOpenExchange(input: string): string;
     /** Remember a clarification for the next input (GH #318). */
     holdCommand(input: string): void;
-    createUndoSnapshot(): void;
-    /** The one enrichment funnel, with the engine's context filled in. */
-    enrichTurnEvents(events: readonly ISemanticEvent[], turn: number, locationId: string | null | undefined, source: TurnEventSource): ISemanticEvent[];
-    processPluginEvents(events: ISemanticEvent[], turn: number, playerLocation: string | null | undefined, pluginId: string): void;
-    updateCommandHistory(result: TurnResult, input: string, turn: number): void;
-    registerBlockedReferent(events: ISemanticEvent[], turn: number): void;
-    /** Advance the turn counter and player context from the result. */
-    updateContext(result: TurnResult): void;
+    /** Take the held command, if any, clearing the hold — exactly one input spends it (GH #318). */
+    takeHeldCommand(): string | undefined;
     /** Count a turn (and a move when it succeeded) in the session statistics. */
     countSessionTurn(success: boolean): void;
-    drainPlayerSwitch(turn: number): void;
-    processPlatformOperations(turn: number): Promise<void>;
-    processMetaPlatformOperation(operation: IPlatformEvent): Promise<ISemanticEvent[]>;
-    appendPromptBlock(blocks: ITextBlock[]): void;
-    emitChannelPacket(events: ISemanticEvent[], blocks: ITextBlock[], turn: number): void;
-    playerDeathCauseThisTurn(turn: number): string | undefined;
-    isPlayerDead(): boolean;
-    isGameOver(): boolean;
+    /** What a platform operation needs of the engine: the hooks, save data, stop, undo, repeat (ADR-334 D3). */
+    platformOperationHost(): PlatformOperationHost;
+    /** Queue a platform request for the turn's platform-operations stage. */
+    queuePlatformOperation(operation: IPlatformEvent): void;
+    /** Take every queued request, leaving the queue empty — so a nested turn (AGAIN) sees none of them. */
+    drainPendingPlatformOperations(): IPlatformEvent[];
     stop(reason: 'victory' | 'defeat', details?: unknown): void;
 }
 ```
@@ -3094,7 +3014,7 @@ export declare const chainStage: TurnStage;
  * References: ADR-120 (the plugin tick), ADR-332 (the bands that order
  * it), ADR-320 Phase 8 (scene sounds from the tick).
  */
-import type { ISemanticEvent } from '@sharpee/core';
+import { type ISemanticEvent } from '@sharpee/core';
 import type { TurnStage } from './context.js';
 /**
  * Whether an action that produced these events was refused: modern

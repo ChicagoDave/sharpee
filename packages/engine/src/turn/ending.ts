@@ -17,7 +17,30 @@
  * References: ADR-224 (death detection and the live-state re-check).
  */
 
-import type { TurnStage } from './context.js';
+import { TraitType, HealthBehavior, type HealthTrait } from '@sharpee/world-model';
+import type { TurnStage, TurnEngine } from './context.js';
+
+/**
+ * Whether the player is currently dead by their derived `HealthTrait`
+ * state (ADR-226/ADR-224). A player with no `HealthTrait` is alive by
+ * default (the opt-in rule) — `killPlayer` lazily attaches one, so a real
+ * death always has a trait to read. This is the engine's "final word"
+ * after story policy has run.
+ */
+function isPlayerDead(engine: TurnEngine): boolean {
+  const player = engine.context.player;
+  if (!player) return false;
+  const health = player.get(TraitType.HEALTH) as HealthTrait | undefined;
+  return health ? !HealthBehavior.isAlive(health) : false;
+}
+
+/** Whether the story reports itself complete; a story without `isComplete` never ends by itself. */
+function isGameOver(engine: TurnEngine): boolean {
+  if (engine.story && engine.story.isComplete) {
+    return engine.story.isComplete();
+  }
+  return false;
+}
 
 export const endingStage: TurnStage = {
   name: 'ending',
@@ -30,12 +53,12 @@ export const endingStage: TurnStage = {
       return 'stop';
     }
 
-    if (context.deathCause !== undefined && engine.isPlayerDead()) {
+    if (context.deathCause !== undefined && isPlayerDead(engine)) {
       engine.stop('defeat', { reason: 'You have died.', cause: context.deathCause });
       return 'stop';
     }
 
-    if (engine.isGameOver()) {
+    if (isGameOver(engine)) {
       // Completion means victory for now; stories could provide more
       // detail about the type of ending.
       engine.stop('victory', {

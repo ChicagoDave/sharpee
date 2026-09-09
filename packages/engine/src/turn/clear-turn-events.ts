@@ -16,7 +16,7 @@ export const clearTurnEventsStage: TurnStage = {
   name: 'clear-turn-events',
   requires: ['channel-packet', 'detect-death'],
   async run(context) {
-    context.engine.turnEvents.set(context.turn, []);
+    context.engine.clearTurnEvents(context.turn);
     return 'continue';
   }
 };
