@@ -5,8 +5,9 @@
  *
  * The list validates the config and announces the load; resolves the
  * narrative settings; registers concealment ahead of the world build so
- * a story can override it; builds the world and names the player; makes
- * the player a listener; runs the two cross-entity validations the world
+ * a story can override it; builds the world and names the player; refuses a
+ * player that is unplaced, trait-less or unplayable; makes the player a
+ * listener; runs the two cross-entity validations the world
  * build cannot enforce at the mutation; configures the language
  * provider; carries the metadata and ensures the story-info entity and
  * capability; carries the implicit-action settings; registers custom
@@ -27,6 +28,7 @@ import { narrativeSettingsStep } from './narrative-settings.js';
 import { concealedVisibilityStep } from './concealed-visibility.js';
 import { initializeWorldStep } from './initialize-world.js';
 import { createPlayerStep } from './create-player.js';
+import { validateRoleHolderStep } from './validate-role-holder.js';
 import { listenerTraitStep } from './listener-trait.js';
 import { validateRoomSnippetsStep } from './validate-room-snippets.js';
 import { validateCombatantHealthStep } from './validate-combatant-health.js';
@@ -48,6 +50,7 @@ export const STORY_INSTALL_STEPS: readonly InstallStep[] = Object.freeze([
   concealedVisibilityStep,
   initializeWorldStep,
   createPlayerStep,
+  validateRoleHolderStep,
   listenerTraitStep,
   validateRoomSnippetsStep,
   validateCombatantHealthStep,

@@ -17,7 +17,7 @@ import { createRequire } from 'module';
 // same precondition as everything else that consumes dist.)
 const nodeRequire = createRequire(__filename);
 const { assembleGame } = nodeRequire('../dist/index.js');
-const { EntityType, IdentityTrait, RoomTrait } = nodeRequire('@sharpee/world-model');
+const { EntityType, ActorTrait, IdentityTrait, RoomTrait } = nodeRequire('@sharpee/world-model');
 
 interface TestStoryHandle {
   story: any;
@@ -43,6 +43,7 @@ function makeStory(): TestStoryHandle {
     createPlayer(world: any) {
       // ADR-327 D10: initializeWorld runs first now, so the room exists.
       const player = world.createEntity('you', EntityType.ACTOR);
+      player.add(new ActorTrait());
       player.add(new IdentityTrait({ name: 'you', description: 'An adventurer.' }));
       if (this._startRoomId) world.moveEntity(player.id, this._startRoomId);
       return player;

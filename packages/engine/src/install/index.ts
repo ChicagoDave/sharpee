@@ -14,3 +14,4 @@ export { STORY_INSTALL_STEPS } from './steps.js';
 export { configureLanguageProviderNarrative } from './narrative-language.js';
 export { validateRoomSnippets, lintUnusedSnippetEntries, SnippetValidationError } from './validate-room-snippets.js';
 export { validateCombatantHealth, CombatantHealthValidationError } from './validate-combatant-health.js';
+export { validateRoleHolder, RoleHolderValidationError, type RoleHolderFailure } from './validate-role-holder.js';

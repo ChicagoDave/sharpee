@@ -4,7 +4,7 @@
 
 import { describe, it, expect, beforeEach } from 'vitest';
 import { GameEngine } from '../../src/game-engine';
-import { WorldModel, EntityType } from '@sharpee/world-model';
+import { WorldModel, EntityType, ActorTrait } from '@sharpee/world-model';
 import { registerStandardCapabilities } from '@sharpee/stdlib';
 import { Story } from '../../src/install/story';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
@@ -15,6 +15,7 @@ describe('Query Event Emission', () => {
   
   beforeEach(() => {
     // Create a minimal test story
+    let playerId: string | undefined;
     const story: Story = {
       config: {
         id: 'test-story',
@@ -23,20 +24,23 @@ describe('Query Event Emission', () => {
         version: '1.0.0'
       },
       
-      createPlayer: (world: WorldModel) => {
-        return world.createEntity('You', EntityType.ACTOR);
-      },
-      
+      // The player is built and placed by `initializeWorld` and merely looked
+      // up here (ADR-327 D10). It used to be built unplaced in `createPlayer`
+      // while `initializeWorld` reached for `world.getEntity('you')` — an id
+      // that never existed yet, since initializeWorld runs first — and the
+      // `if (player)` around the move swallowed the miss silently.
+      createPlayer: (world: WorldModel) => world.getEntity(playerId!)!,
+
       initializeWorld: (world: WorldModel) => {
         // Register standard capabilities 
         registerStandardCapabilities(world);
         
         // Create a simple test room
         const room = world.createEntity('Test Room', EntityType.ROOM);
-        const player = world.getEntity('you');
-        if (player) {
-          world.moveEntity(player.id, room.id);
-        }
+        const player = world.createEntity('You', EntityType.ACTOR);
+        player.add(new ActorTrait());
+        world.moveEntity(player.id, room.id);
+        playerId = player.id;
       }
     };
     

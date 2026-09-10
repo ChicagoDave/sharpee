@@ -1121,7 +1121,26 @@ export interface Story {
      */
     initializeWorld(world: WorldModel): void;
     /**
-     * Create the player entity
+     * Name the entity that holds the player role.
+     *
+     * A lookup, not a build: `initializeWorld` has already run, so the
+     * character exists and is placed by the time this is called (ADR-327 D10).
+     * Building an unplaced actor here leaves every scope-dependent assertion
+     * running against an empty scope.
+     *
+     * The returned entity must satisfy three conditions, checked by the
+     * `validate-role-holder` install step immediately after this call:
+     *
+     *  1. it is placed somewhere in the world — an unplaced player character
+     *     is nowhere to play, and nothing places it for you;
+     *  2. it carries an `ActorTrait`;
+     *  3. that trait marks it playable (`isPlayable`).
+     *
+     * A holder that fails any of them fails the install, naming the entity
+     * and the condition. Nothing is repaired on the story's behalf.
+     *
+     * @param world the world `initializeWorld` built
+     * @returns the entity that holds the player role
      */
     createPlayer(world: WorldModel): IFEntity;
     /**

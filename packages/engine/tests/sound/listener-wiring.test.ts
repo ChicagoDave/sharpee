@@ -77,6 +77,10 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
         );
         this._customTrait = new ListenerTrait();
         player.add(this._customTrait);
+        // `_startRoomId` was recorded by initializeWorld and, until the
+        // install seam began checking, never used — the holder was built
+        // and left nowhere.
+        world.moveEntity(player.id, this._startRoomId!);
         this._player = player;
         return player;
       }

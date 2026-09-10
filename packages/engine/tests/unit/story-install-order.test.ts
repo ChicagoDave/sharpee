@@ -32,6 +32,7 @@ const INSTALL_ORDER = [
   'concealed-visibility',
   'initialize-world',
   'create-player',
+  'validate-role-holder',
   'listener-trait',
   'validate-room-snippets',
   'validate-combatant-health',

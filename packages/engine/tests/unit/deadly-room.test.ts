@@ -10,7 +10,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { EntityType, TraitType, HealthTrait, HealthBehavior, DeadlyRoomTrait, WorldModel } from '@sharpee/world-model';
+import { EntityType, TraitType, ActorTrait, HealthTrait, HealthBehavior, DeadlyRoomTrait, WorldModel } from '@sharpee/world-model';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import { Story } from '../../src/install/story';
 
@@ -23,6 +23,7 @@ function deadlyRoomStory(): Story {
     config: { id: 'deadly-room-test', title: 'Deadly Room', authors: ['Test'], version: '1.0.0' },
     createPlayer: (world: WorldModel) => {
       const player = world.createEntity('You', EntityType.ACTOR);
+      player.add(new ActorTrait());
       if (roomId) world.moveEntity(player.id, roomId);
       return player;
     },
