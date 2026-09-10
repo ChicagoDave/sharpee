@@ -56,6 +56,8 @@
 - Per ADR-0007 Decision 5, the plan directory is archived immediately: `bash ~/.claude/scripts/plan-archive.sh game-engine-residue` moves `docs/work/game-engine-residue/` to `docs/work/archive/game-engine-residue/` and releases `.current-plan` if it named this plan.
 - **Branch disposition is explicitly David's call, not mine.** The plan's own header states: "the branch merges to `main` once when this plan closes rather than twice" — `refactor/survey-adr-334-340` carries both this plan and the prior refactoring-survey plan (already archived). Nothing about the branch was merged or pushed as part of this finalization.
 
+- **After the second finalize (19:40 CDT onward)**: David: "write the PR" — PR #397 opened, `refactor/survey-adr-334-340` → `main`, 22 commits, the whole survey (ADRs 334-340, 342) by package, gates, follow-ups, issue refs #376-#383 and #385 without closing keywords. David: "this should be a patch bump for both Sharpee and Chord (I think)" — `tsf version --bump patch`: every `@sharpee/*` package 5.3.0 → 5.3.1; `./repokit build dungeo --no-genai` stamped `engine-version.ts` and Dungeo's `version.ts`; `website/scripts/sync-versions.mjs` regenerated `versions.json` (sharpee 5.3.1). The Chord LANGUAGE version stays 3.6.0 by ADR-257 D2 (compiler refactors and platform releases do not bump it; no author-visible syntax changed on the branch). Committed c855c8df8, pushed; PR body gained a Version section. Not merged.
+
 ## Key Decisions
 
 ### 1. ADR-342 — engine package contract
@@ -69,6 +71,9 @@ David ruled the adapter lives inside `packages/engine`, not in `if-domain`'s `Pa
 
 ### 4. `onEngineReady` deferred to its own ADR (Phase 9)
 The one edge holding the 55-file SCC together besides the type that moved — `install/story.ts → game-engine.ts` via `Story.onEngineReady(engine: GameEngine)` — is deliberately left as an allow-listed edge in the new layering test rather than resolved this session. A role-interface for what a story genuinely needs at ready time is a separate design question and an amendment to ADR-342 D1 (stories would then name the new type). Tracked as I-42e176-3.
+
+- PR #397 is the merge vehicle; the merge is David's. Chord Writer's version was not touched.
+- Sharpee 5.3.1 is committed on the branch, so the publish workflow's `git diff --exit-code` stamping check passes once merged; the Chord language stays 3.6.0.
 
 ## Next Phase
 Plan complete — all phases (0-9) done. `docs/work/game-engine-residue/plan.md` has been archived to `docs/work/archive/game-engine-residue/plan.md` as part of this finalization.
