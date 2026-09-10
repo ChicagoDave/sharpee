@@ -17,7 +17,6 @@
  */
 
 import { MetaCommandRegistry } from '@sharpee/stdlib';
-import { hasWorldContext } from '../ports/parser-interface.js';
 import type { TurnStage } from './context.js';
 
 export const parseStage: TurnStage = {
@@ -25,22 +24,20 @@ export const parseStage: TurnStage = {
   requires: ['input-mode'],
   async run(context) {
     const { engine } = context;
-    if (engine.parser) {
-      const player = engine.world.getPlayer();
-      if (player && hasWorldContext(engine.parser)) {
-        const playerLocation = engine.world.getLocation(player.id) || '';
-        engine.parser.setWorldContext(engine.world, player.id, playerLocation);
-      }
+    const player = engine.world.getPlayer();
+    if (player) {
+      const playerLocation = engine.world.getLocation(player.id) || '';
+      engine.parser.setWorldContext(engine.world, player.id, playerLocation);
+    }
 
-      const parseResult = engine.parser.parse(context.input);
-      if (parseResult.success) {
-        const parsedCommand = parseResult.value;
-        const actionId = parsedCommand.action;
-        if (actionId && MetaCommandRegistry.isMeta(actionId)) {
-          context.route = 'meta';
-          context.parsedCommand = parsedCommand;
-          return 'continue';
-        }
+    const parseResult = engine.parser.parse(context.input);
+    if (parseResult.success) {
+      const parsedCommand = parseResult.value;
+      const actionId = parsedCommand.action;
+      if (actionId && MetaCommandRegistry.isMeta(actionId)) {
+        context.route = 'meta';
+        context.parsedCommand = parsedCommand;
+        return 'continue';
       }
     }
     context.route = 'turn';

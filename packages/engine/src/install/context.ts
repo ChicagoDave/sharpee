@@ -31,7 +31,7 @@ import type { WorldModel, IFEntity } from '@sharpee/world-model';
 import type { Parser, StandardActionRegistry } from '@sharpee/stdlib';
 import type { LanguageProvider } from '@sharpee/if-domain';
 import type { Story, StoryConfig } from './story.js';
-import type { NarrativeSettings } from './narrative/index.js';
+import type { NarrativeSettings } from '../types.js';
 
 /** The metadata a story's config supplies to the engine's context. */
 export interface StoryMetadata {

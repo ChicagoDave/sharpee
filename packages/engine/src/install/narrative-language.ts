@@ -19,7 +19,7 @@
 
 import type { LanguageProvider } from '@sharpee/if-domain';
 import { ActorTrait, type IFEntity } from '@sharpee/world-model';
-import type { NarrativeSettings } from './narrative/index.js';
+import type { NarrativeSettings } from '../types.js';
 import { hasNarrativeSettings } from '../ports/language-provider-interface.js';
 import type { InstallStep } from './context.js';
 

@@ -5,8 +5,9 @@
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
-import { type IParsedCommand, type IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
+import { type IParsedCommand, type IValidatedCommand, type PronounSet, IFEntity, WorldModel } from '@sharpee/world-model';
 import { type ITextBlock } from '@sharpee/text-blocks';
+import type { CmgtPacket, TurnPacket } from '@sharpee/if-domain';
 
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
@@ -284,4 +285,76 @@ export interface EngineConfig {
    * play is as varied as before.
    */
   seed?: number;
+}
+
+/**
+ * Narrative perspective for player actions (ADR-089 Phase C).
+ * - '1st': "I take the lamp" (rare, Anchorhead-style)
+ * - '2nd': "You take the lamp" (default, Zork-style)
+ * - '3rd': "She takes the lamp" (experimental)
+ */
+export type Perspective = '1st' | '2nd' | '3rd';
+
+/**
+ * Narrative tense (future consideration).
+ * - 'present': "You take the lamp" (default)
+ * - 'past': "You took the lamp"
+ */
+export type Tense = 'present' | 'past';
+
+/**
+ * The resolved narrative settings of a story: how player-facing
+ * messages are rendered. Built from `StoryConfig.narrative` at install
+ * (`install/narrative/`) and read at render time by the prose pipeline
+ * and the language provider, so it is a shared type, not an install one.
+ */
+export interface NarrativeSettings {
+  /**
+   * Narrative perspective for player actions
+   * - '1st': "I take the lamp" (rare)
+   * - '2nd': "You take the lamp" (default)
+   * - '3rd': "She takes the lamp" (experimental)
+   */
+  perspective: Perspective;
+
+  /**
+   * For 3rd person: which pronoun set to use for the PC.
+   * If not specified, derived from player entity's ActorTrait.
+   * Ignored for 1st/2nd person perspectives.
+   */
+  playerPronouns?: PronounSet;
+
+  /**
+   * Narrative tense (future consideration)
+   * Currently only 'present' is supported.
+   */
+  tense?: Tense;
+}
+
+/**
+ * The facade's event map: what `GameEngine.on` accepts, keyed by event
+ * name, each value the listener's signature.
+ */
+export interface GameEngineEvents {
+  'turn:start': (turn: number, input: string) => void;
+  'turn:complete': (result: TurnResult) => void;
+  'turn:failed': (error: Error, turn: number) => void;
+  'event': (event: ISemanticEvent) => void;
+  'state:changed': (context: GameContext) => void;
+  'game:over': (context: GameContext) => void;
+  'text:output': (blocks: ITextBlock[], turn: number) => void;
+  /**
+   * CMGT manifest emission (ADR-163 §11). Fires once per session
+   * during `start()` after `Story.registerChannels?` has run and the
+   * `ChannelService` is constructed. Carries the capability-filtered
+   * channel definitions for this client.
+   */
+  'channel:manifest': (cmgt: CmgtPacket) => void;
+  /**
+   * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
+   * `text-service.processTurn` produces the turn's blocks; carries
+   * payload entries for every standard, story, and media channel that
+   * had something to emit this turn.
+   */
+  'channel:packet': (packet: TurnPacket, turn: number) => void;
 }

@@ -32,7 +32,7 @@ import {
   type ActSlots,
   type ActResult,
 } from '@sharpee/stdlib';
-import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type CmgtPacket, type TurnPacket, type ISound } from '@sharpee/if-domain';
+import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
@@ -49,50 +49,26 @@ import {
   TurnResult,
   CommandResult,
   EngineConfig,
-  InputModeHandler
+  InputModeHandler,
+  type GameEngineEvents
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
 import { Story } from './install/story.js';
-import { NarrativeSettings, buildNarrativeSettings } from './install/narrative/index.js';
+import type { NarrativeSettings } from './types.js';
+import { buildNarrativeSettings } from './install/narrative/index.js';
 import { runInstallSteps, STORY_INSTALL_STEPS, configureLanguageProviderNarrative } from './install/index.js';
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
 import { SoundDispatcher } from './sound/index.js';
 import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused } from './turn/index.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
-import { IEngineAwareParser, hasPronounContext, hasPlatformEventEmitter, hasWorldContext } from './ports/parser-interface.js';
+import { adaptParser, type EngineParser } from './ports/parser-interface.js';
 import { hasNarrativeSettings } from './ports/language-provider-interface.js';
 import { VocabularyManager, createVocabularyManager } from './ports/vocabulary-manager.js';
 import { SaveRestoreService, createSaveRestoreService, ISaveRestoreStateProvider } from './session/save-restore-service.js';
 import type { PlatformOperationHost } from './turn/platform-dispatcher.js';
 import { projectStoryInfo, findStoryInfoTrait } from './install/story-info-projection.js';
 
-/**
- * Game engine events
- */
-export interface GameEngineEvents {
-  'turn:start': (turn: number, input: string) => void;
-  'turn:complete': (result: TurnResult) => void;
-  'turn:failed': (error: Error, turn: number) => void;
-  'event': (event: ISemanticEvent) => void;
-  'state:changed': (context: GameContext) => void;
-  'game:over': (context: GameContext) => void;
-  'text:output': (blocks: ITextBlock[], turn: number) => void;
-  /**
-   * CMGT manifest emission (ADR-163 §11). Fires once per session
-   * during `start()` after `Story.registerChannels?` has run and the
-   * `ChannelService` is constructed. Carries the capability-filtered
-   * channel definitions for this client.
-   */
-  'channel:manifest': (cmgt: CmgtPacket) => void;
-  /**
-   * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
-   * `text-service.processTurn` produces the turn's blocks; carries
-   * payload entries for every standard, story, and media channel that
-   * had something to emit this turn.
-   */
-  'channel:packet': (packet: TurnPacket, turn: number) => void;
-}
 
 type GameEngineEventName = keyof GameEngineEvents;
 type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K];
@@ -163,6 +139,8 @@ export class GameEngine {
   private story?: Story;
   private languageProvider: LanguageProvider;
   private parser: Parser;
+  /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
+  private readonly engineParser: EngineParser;
   private eventListeners = new Map<GameEngineEventName, Set<(...args: any[]) => void>>();
   /** Accumulated across every `registerSaveRestoreHooks` call, hence Partial. */
   private saveRestoreHooks?: Partial<ISaveRestoreHooks>;
@@ -345,24 +323,23 @@ export class GameEngine {
     // Set provided dependencies
     this.languageProvider = options.language;
     this.parser = options.parser;
+    this.engineParser = adaptParser(options.parser);
     this.textService = new ProsePipeline(this.languageProvider, this.world);
     
     // Update action registry with language provider
     this.actionRegistry.setLanguageProvider(this.languageProvider);
     
-    // Wire parser with platform events if supported
-    if (hasPlatformEventEmitter(this.parser)) {
-      this.parser.setPlatformEventEmitter((event) => {
-        this.platformEvents.addEvent(event);
-      });
-    }
+    // Wire the parser's debug events into the platform event source
+    this.engineParser.setPlatformEventEmitter((event) => {
+      this.platformEvents.addEvent(event);
+    });
     
     // Create command executor with dependencies
     this.commandExecutor = createCommandExecutor(
       this.world,
       this.actionRegistry,
       this.eventProcessor,
-      this.parser,
+      this.engineParser,
       this.systemEventSource,
       this.randomService
     );
@@ -717,7 +694,7 @@ export class GameEngine {
       get context() { return engine.context; },
       get story() { return engine.story; },
       get config() { return engine.config; },
-      get parser() { return engine.parser; },
+      get parser() { return engine.engineParser; },
       get commandExecutor() { return engine.commandExecutor; },
       get actionRegistry() { return engine.actionRegistry; },
       get randomService() { return engine.randomService; },
@@ -894,14 +871,9 @@ export class GameEngine {
 
     this.context.player = newPlayer;
 
-    if (hasWorldContext(this.parser)) {
-      const playerLocation = this.world.getLocation(newPlayerId) || '';
-      this.parser.setWorldContext(this.world, newPlayerId, playerLocation);
-    }
-
-    if (hasPronounContext(this.parser)) {
-      this.parser.resetPronounContext();
-    }
+    const playerLocation = this.world.getLocation(newPlayerId) || '';
+    this.engineParser.setWorldContext(this.world, newPlayerId, playerLocation);
+    this.engineParser.resetPronounContext();
 
     this.updateScopeVocabulary();
     configureLanguageProviderNarrative(this.languageProvider, this.narrativeSettings, newPlayer);

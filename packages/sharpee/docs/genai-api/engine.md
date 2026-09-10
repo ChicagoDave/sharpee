@@ -15,43 +15,16 @@ GameEngine, Story interface, turn cycle, command executor, save/restore, vocabul
 import { WorldModel, IFEntity } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { type Parser, type IPerceptionService, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
-import { type LanguageProvider, type ClientCapabilities, type CmgtPacket, type TurnPacket } from '@sharpee/if-domain';
+import { type LanguageProvider, type ClientCapabilities } from '@sharpee/if-domain';
 import { IProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
-import type { ITextBlock } from '@sharpee/text-blocks';
 import { type ISemanticEvent, type ISaveRestoreHooks, type ISemanticEventSource } from '@sharpee/core';
 import { EngineRandomService } from './session/engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
-import { GameContext, TurnResult, EngineConfig, InputModeHandler } from './types.js';
+import { GameContext, TurnResult, EngineConfig, InputModeHandler, type GameEngineEvents } from './types.js';
 import { type EngineIntrospection } from './introspection/introspect.js';
 import { Story } from './install/story.js';
-import { NarrativeSettings } from './install/narrative/index.js';
+import type { NarrativeSettings } from './types.js';
 import { ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
-/**
- * Game engine events
- */
-export interface GameEngineEvents {
-    'turn:start': (turn: number, input: string) => void;
-    'turn:complete': (result: TurnResult) => void;
-    'turn:failed': (error: Error, turn: number) => void;
-    'event': (event: ISemanticEvent) => void;
-    'state:changed': (context: GameContext) => void;
-    'game:over': (context: GameContext) => void;
-    'text:output': (blocks: ITextBlock[], turn: number) => void;
-    /**
-     * CMGT manifest emission (ADR-163 §11). Fires once per session
-     * during `start()` after `Story.registerChannels?` has run and the
-     * `ChannelService` is constructed. Carries the capability-filtered
-     * channel definitions for this client.
-     */
-    'channel:manifest': (cmgt: CmgtPacket) => void;
-    /**
-     * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
-     * `text-service.processTurn` produces the turn's blocks; carries
-     * payload entries for every standard, story, and media channel that
-     * had something to emit this turn.
-     */
-    'channel:packet': (packet: TurnPacket, turn: number) => void;
-}
 type GameEngineEventName = keyof GameEngineEvents;
 type GameEngineEventListener<K extends GameEngineEventName> = GameEngineEvents[K];
 /**
@@ -84,6 +57,8 @@ export declare class GameEngine {
     private story?;
     private languageProvider;
     private parser;
+    /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
+    private readonly engineParser;
     private eventListeners;
     /** Accumulated across every `registerSaveRestoreHooks` call, hence Partial. */
     private saveRestoreHooks?;
@@ -579,8 +554,9 @@ export {};
  * The engine manages game state, turn execution, and event sequencing
  */
 import { type ISemanticEvent } from '@sharpee/core';
-import { type IParsedCommand, type IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
+import { type IParsedCommand, type IValidatedCommand, type PronounSet, IFEntity, WorldModel } from '@sharpee/world-model';
 import { type ITextBlock } from '@sharpee/text-blocks';
+import type { CmgtPacket, TurnPacket } from '@sharpee/if-domain';
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
 /**
  * Timing data for performance tracking
@@ -816,6 +792,72 @@ export interface EngineConfig {
      * play is as varied as before.
      */
     seed?: number;
+}
+/**
+ * Narrative perspective for player actions (ADR-089 Phase C).
+ * - '1st': "I take the lamp" (rare, Anchorhead-style)
+ * - '2nd': "You take the lamp" (default, Zork-style)
+ * - '3rd': "She takes the lamp" (experimental)
+ */
+export type Perspective = '1st' | '2nd' | '3rd';
+/**
+ * Narrative tense (future consideration).
+ * - 'present': "You take the lamp" (default)
+ * - 'past': "You took the lamp"
+ */
+export type Tense = 'present' | 'past';
+/**
+ * The resolved narrative settings of a story: how player-facing
+ * messages are rendered. Built from `StoryConfig.narrative` at install
+ * (`install/narrative/`) and read at render time by the prose pipeline
+ * and the language provider, so it is a shared type, not an install one.
+ */
+export interface NarrativeSettings {
+    /**
+     * Narrative perspective for player actions
+     * - '1st': "I take the lamp" (rare)
+     * - '2nd': "You take the lamp" (default)
+     * - '3rd': "She takes the lamp" (experimental)
+     */
+    perspective: Perspective;
+    /**
+     * For 3rd person: which pronoun set to use for the PC.
+     * If not specified, derived from player entity's ActorTrait.
+     * Ignored for 1st/2nd person perspectives.
+     */
+    playerPronouns?: PronounSet;
+    /**
+     * Narrative tense (future consideration)
+     * Currently only 'present' is supported.
+     */
+    tense?: Tense;
+}
+/**
+ * The facade's event map: what `GameEngine.on` accepts, keyed by event
+ * name, each value the listener's signature.
+ */
+export interface GameEngineEvents {
+    'turn:start': (turn: number, input: string) => void;
+    'turn:complete': (result: TurnResult) => void;
+    'turn:failed': (error: Error, turn: number) => void;
+    'event': (event: ISemanticEvent) => void;
+    'state:changed': (context: GameContext) => void;
+    'game:over': (context: GameContext) => void;
+    'text:output': (blocks: ITextBlock[], turn: number) => void;
+    /**
+     * CMGT manifest emission (ADR-163 §11). Fires once per session
+     * during `start()` after `Story.registerChannels?` has run and the
+     * `ChannelService` is constructed. Carries the capability-filtered
+     * channel definitions for this client.
+     */
+    'channel:manifest': (cmgt: CmgtPacket) => void;
+    /**
+     * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
+     * `text-service.processTurn` produces the turn's blocks; carries
+     * payload entries for every standard, story, and media channel that
+     * had something to emit this turn.
+     */
+    'channel:packet': (packet: TurnPacket, turn: number) => void;
 }
 ```
 
@@ -1127,51 +1169,13 @@ export declare function validateStoryConfig(config: StoryConfig): void;
 
 ```typescript
 /**
- * Narrative Settings - Story-level perspective configuration
- *
- * ADR-089 Phase C: Defines how the story narrates player actions.
- * Stories can be written in 1st, 2nd, or 3rd person perspective.
+ * Narrative configuration and its resolution at install (ADR-089 Phase C):
+ * `NarrativeConfig` is what a story writes; `buildNarrativeSettings` turns it
+ * into the `NarrativeSettings` the engine reads (the settings type itself
+ * lives in `types.ts`, shared with the render side).
  */
 import { type PronounSet } from '@sharpee/world-model';
-/**
- * Narrative perspective for player actions
- * - '1st': "I take the lamp" (rare, Anchorhead-style)
- * - '2nd': "You take the lamp" (default, Zork-style)
- * - '3rd': "She takes the lamp" (experimental)
- */
-export type Perspective = '1st' | '2nd' | '3rd';
-/**
- * Narrative tense (future consideration)
- * - 'present': "You take the lamp" (default)
- * - 'past': "You took the lamp"
- */
-export type Tense = 'present' | 'past';
-/**
- * Narrative settings for a story
- *
- * Controls how the text service renders player-facing messages.
- * Set via StoryConfig at story definition time.
- */
-export interface NarrativeSettings {
-    /**
-     * Narrative perspective for player actions
-     * - '1st': "I take the lamp" (rare)
-     * - '2nd': "You take the lamp" (default)
-     * - '3rd': "She takes the lamp" (experimental)
-     */
-    perspective: Perspective;
-    /**
-     * For 3rd person: which pronoun set to use for the PC.
-     * If not specified, derived from player entity's ActorTrait.
-     * Ignored for 1st/2nd person perspectives.
-     */
-    playerPronouns?: PronounSet;
-    /**
-     * Narrative tense (future consideration)
-     * Currently only 'present' is supported.
-     */
-    tense?: Tense;
-}
+import type { NarrativeSettings, Perspective } from '../../types.js';
 /**
  * Default narrative settings (2nd person present tense, Zork-style)
  */
@@ -1281,7 +1285,8 @@ export interface ActorCommand {
     direction?: DirectionType;
 }
 export declare class CommandExecutor {
-    private parser;
+    /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
+    private readonly parser;
     private validator;
     private actionRegistry;
     private eventProcessor;
@@ -1501,18 +1506,18 @@ export declare const META_STAGES: readonly TurnStage[];
  */
 import type { ISemanticEvent, ISemanticEventSource, IPlatformEvent } from '@sharpee/core';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
-import type { Parser, StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
+import type { StandardActionRegistry, IPerceptionService } from '@sharpee/stdlib';
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
-import type { EngineConfig, GameContext, InputModeHandler, TurnResult } from '../types.js';
+import type { EngineConfig, GameContext, GameEngineEvents, InputModeHandler, TurnResult } from '../types.js';
 import type { CommandExecutor } from '../command/command-executor.js';
 import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
 import type { SoundDispatcher } from '../sound/index.js';
-import type { GameEngineEvents } from '../game-engine.js';
 import type { Story } from '../install/story.js';
 import type { PlatformOperationHost } from './platform-dispatcher.js';
+import type { EngineParser } from '../ports/parser-interface.js';
 import type { SaveRestoreService } from '../session/save-restore-service.js';
 import type { ChannelService } from '@sharpee/channel-service';
 import type { LanguageProvider } from '@sharpee/if-domain';
@@ -1566,7 +1571,7 @@ export interface TurnStageContext {
 }
 /**
  * The facade's turn-facing surface. Getters read the engine's live
- * fields (the parser, text service, and executor are set by `installStory`;
+ * fields (the text service and executor are set by `installStory`;
  * the pending platform list is replaced when drained).
  */
 export interface TurnEngine {
@@ -1575,7 +1580,8 @@ export interface TurnEngine {
     /** The installed story, or none before `installStory`. */
     readonly story: Story | undefined;
     readonly config: EngineConfig;
-    readonly parser: Parser | undefined;
+    /** The parser as the engine calls it: every engine-facing method present. */
+    readonly parser: EngineParser;
     readonly commandExecutor: CommandExecutor;
     readonly actionRegistry: StandardActionRegistry;
     readonly randomService: EngineRandomService;

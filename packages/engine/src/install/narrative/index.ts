@@ -3,9 +3,6 @@
  */
 
 export {
-  Perspective,
-  Tense,
-  NarrativeSettings,
   NarrativeConfig,
   DEFAULT_NARRATIVE_SETTINGS,
   buildNarrativeSettings,

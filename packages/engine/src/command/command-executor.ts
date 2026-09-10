@@ -20,7 +20,7 @@
 import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, QuerySource, QueryType, Result, type RandomService } from '@sharpee/core';
 import { type IParser, type IValidatedCommand, type IParsedCommand, type IValidationError, type IFEntity, type DirectionType } from '@sharpee/world-model';
 import { type ISound } from '@sharpee/if-domain';
-import { hasWorldContext } from '../ports/parser-interface.js';
+import { adaptParser, type EngineParser } from '../ports/parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -144,7 +144,8 @@ function slotReference(entity: IFEntity | undefined) {
 }
 
 export class CommandExecutor {
-  private parser: IParser;
+  /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
+  private readonly parser: EngineParser;
   private validator: CommandValidator;
   private actionRegistry: ActionRegistry;
   private eventProcessor: EventProcessor;
@@ -172,7 +173,7 @@ export class CommandExecutor {
     if (!eventProcessor) throw new Error('Event processor is required');
     if (!parser) throw new Error('Parser is required');
 
-    this.parser = parser;
+    this.parser = adaptParser(parser);
     this.validator = new CommandValidator(world, actionRegistry);
     if (systemEvents) {
       this.validator.setSystemEventSource(systemEvents);
@@ -268,7 +269,7 @@ export class CommandExecutor {
       // read stays player-bound (ADR-328 D2 threads the actor only from the
       // validated command onward).
       const player = world.getPlayer();
-      if (player && hasWorldContext(this.parser)) {
+      if (player) {
         const playerLocation = world.getLocation(player.id) || '';
         this.parser.setWorldContext(world, player.id, playerLocation);
       }

@@ -33,14 +33,14 @@ import type { Parser, StandardActionRegistry, IPerceptionService } from '@sharpe
 import type { ISound } from '@sharpee/if-domain';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import type { PluginRegistry } from '@sharpee/plugins';
-import type { EngineConfig, GameContext, InputModeHandler, TurnResult } from '../types.js';
+import type { EngineConfig, GameContext, GameEngineEvents, InputModeHandler, TurnResult } from '../types.js';
 import type { CommandExecutor } from '../command/command-executor.js';
 import type { EngineRandomService } from '../session/engine-random-service.js';
 import type { IProsePipeline } from '../prose-pipeline/index.js';
 import type { SoundDispatcher } from '../sound/index.js';
-import type { GameEngineEvents } from '../game-engine.js';
 import type { Story } from '../install/story.js';
 import type { PlatformOperationHost } from './platform-dispatcher.js';
+import type { EngineParser } from '../ports/parser-interface.js';
 import type { SaveRestoreService } from '../session/save-restore-service.js';
 import type { ChannelService } from '@sharpee/channel-service';
 import type { LanguageProvider } from '@sharpee/if-domain';
@@ -96,7 +96,7 @@ export interface TurnStageContext {
 
 /**
  * The facade's turn-facing surface. Getters read the engine's live
- * fields (the parser, text service, and executor are set by `installStory`;
+ * fields (the text service and executor are set by `installStory`;
  * the pending platform list is replaced when drained).
  */
 export interface TurnEngine {
@@ -105,7 +105,8 @@ export interface TurnEngine {
   /** The installed story, or none before `installStory`. */
   readonly story: Story | undefined;
   readonly config: EngineConfig;
-  readonly parser: Parser | undefined;
+  /** The parser as the engine calls it: every engine-facing method present. */
+  readonly parser: EngineParser;
   readonly commandExecutor: CommandExecutor;
   readonly actionRegistry: StandardActionRegistry;
   readonly randomService: EngineRandomService;

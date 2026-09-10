@@ -19,7 +19,6 @@
 import type { ISemanticEvent } from '@sharpee/core';
 import { StandardCapabilities } from '@sharpee/world-model';
 import type { CommandHistoryData, CommandHistoryEntry } from '@sharpee/stdlib';
-import { hasPronounContext } from '../ports/parser-interface.js';
 import type { TurnResult } from '../types.js';
 import type { TurnStage, TurnEngine } from './context.js';
 
@@ -105,12 +104,10 @@ function updateCommandHistory(engine: TurnEngine, result: TurnResult, input: str
  * GH #97: a refused turn still names what the player meant — the first
  * noun phrase among the refusal's params becomes the parser's pronoun
  * referent, so `it` next turn means that. The first such phrase wins; a
- * turn naming nothing leaves the context alone. Nothing happens when the
- * parser cannot register referents.
+ * turn naming nothing leaves the context alone.
  */
 function registerBlockedReferent(engine: TurnEngine, events: ISemanticEvent[], turn: number): void {
-  const parser = engine.parser as unknown as { registerPronounEntity?: (id: string, text: string, turn: number) => void } | undefined;
-  if (!parser || typeof parser.registerPronounEntity !== 'function') return;
+  const parser = engine.parser;
   for (const event of events) {
     const params = (event.data as { params?: Record<string, unknown> } | undefined)?.params;
     if (!params) continue;
@@ -133,7 +130,7 @@ export const commandHistoryStage: TurnStage = {
 
     if (result.success) {
       updateCommandHistory(engine, result, context.input, turn);
-      if (engine.parser && hasPronounContext(engine.parser) && result.validatedCommand) {
+      if (result.validatedCommand) {
         engine.parser.updatePronounContext(result.validatedCommand, turn);
       }
     }

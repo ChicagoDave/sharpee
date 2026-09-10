@@ -12,7 +12,6 @@
  * References: ADR-225 as amended (GH #318).
  */
 
-import { hasWorldContext } from '../ports/parser-interface.js';
 import type { TurnStage, TurnEngine } from './context.js';
 
 /**
@@ -29,10 +28,10 @@ import type { TurnStage, TurnEngine } from './context.js';
 function spliceHeldCommand(engine: TurnEngine, input: string): string {
   const held = engine.takeHeldCommand();
   const parser = engine.parser;
-  if (held === undefined || !parser) return input;
+  if (held === undefined) return input;
   const world = engine.world;
   const player = world.getPlayer();
-  if (player && hasWorldContext(parser)) {
+  if (player) {
     parser.setWorldContext(world, player.id, world.getLocation(player.id) || '');
   }
   if (parser.parse(input).success) return input;
