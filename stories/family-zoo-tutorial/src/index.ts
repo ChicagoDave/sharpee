@@ -52,7 +52,7 @@
 // IMPORTS
 // ============================================================================
 
-import { type Story, type StoryConfig, GameEngine } from '@sharpee/engine';
+import { type Story, type StoryConfig, type StoryEngine } from '@sharpee/engine';
 import {
   WorldModel,
   IFEntity,
@@ -308,7 +308,7 @@ export class FriendlyZooStory implements Story {
     registerMessages(language);
   }
 
-  onEngineReady(engine: GameEngine): void {
+  onEngineReady(engine: StoryEngine): void {
     const world = engine.getWorld();
 
     // --- Room-occupant slot entries (ADR-212) ---

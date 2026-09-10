@@ -9,7 +9,7 @@
  * - Dungeon Master: Endgame NPC, asks trivia questions
  */
 
-import type { GameEngine } from '@sharpee/engine';
+import type { StoryEngine } from '@sharpee/engine';
 import type { INpcService } from '@sharpee/stdlib';
 import type { WorldModel } from '@sharpee/world-model';
 
@@ -40,7 +40,7 @@ export interface NpcConfig {
  * Register all NPCs with the NPC service
  */
 export function registerNpcs(
-  engine: GameEngine,
+  engine: StoryEngine,
   npcService: INpcService,
   world: WorldModel,
   config: NpcConfig

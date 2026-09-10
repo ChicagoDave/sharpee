@@ -13,7 +13,6 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import {
@@ -30,6 +29,7 @@ import {
   PLAYER_DIED_EVENT,
 } from '@sharpee/stdlib';
 import { ChordStory, createStory } from '../src';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
@@ -78,10 +78,9 @@ type Transformer = (parsed: IParsedCommand, world: WorldModel) => IParsedCommand
 /** Capture the transformer onEngineReady registers via a structural engine stub. */
 function captureTransformer(story: ChordStory): Transformer {
   const captured: Transformer[] = [];
-  story.onEngineReady({ getNpcService: () => createNpcService(),
-    getPluginRegistry: () => ({ register: () => {} }),
-    registerParsedCommandTransformer: (t: Transformer) => captured.push(t),
-  });
+  story.onEngineReady(stubStoryEngine({
+    registerParsedCommandTransformer: (t) => captured.push(t),
+  }));
   expect(captured).toHaveLength(1);
   return captured[0];
 }
@@ -169,10 +168,9 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
     world.setPlayer(player.id);
 
     const captured: Transformer[] = [];
-    story.onEngineReady({ getNpcService: () => createNpcService(),
-      getPluginRegistry: () => ({ register: () => {} }),
-      registerParsedCommandTransformer: (t: Transformer) => captured.push(t),
-    });
+    story.onEngineReady(stubStoryEngine({
+      registerParsedCommandTransformer: (t) => captured.push(t),
+    }));
     expect(captured).toHaveLength(0);
   });
 });

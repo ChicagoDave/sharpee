@@ -22,7 +22,7 @@ import { EngineRandomService } from './session/engine-random-service.js';
 import { PluginRegistry } from '@sharpee/plugins';
 import { GameContext, TurnResult, EngineConfig, InputModeHandler, type GameEngineEvents } from './types.js';
 import { type EngineIntrospection } from './introspection/introspect.js';
-import { Story } from './install/story.js';
+import { Story, type StoryEngine } from './install/story.js';
 import type { NarrativeSettings } from './types.js';
 import { ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
 type GameEngineEventName = keyof GameEngineEvents;
@@ -40,7 +40,7 @@ export declare const DEFAULT_TEXT_CAPABILITIES: ClientCapabilities;
 /**
  * Main game engine
  */
-export declare class GameEngine {
+export declare class GameEngine implements StoryEngine {
     private world;
     private sessionStartTime?;
     private sessionTurns;
@@ -868,11 +868,55 @@ export interface GameEngineEvents {
  * Story configuration and interfaces
  */
 import { WorldModel, IFEntity, type IGameEvent, type SimpleEventHandler } from '@sharpee/world-model';
-import { type LanguageProvider, type IChannelRegistry } from '@sharpee/if-domain';
-import { type Parser } from '@sharpee/stdlib';
-import { type ISemanticEvent } from '@sharpee/core';
-import type { GameEngine } from '../game-engine.js';
+import { type LanguageProvider, type IChannelRegistry, type ClientCapabilities } from '@sharpee/if-domain';
+import { type Parser, type INpcService, type ActSlots, type ActResult } from '@sharpee/stdlib';
+import { EventProcessor } from '@sharpee/event-processor';
+import { PluginRegistry } from '@sharpee/plugins';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
+import type { GameContext, InputModeHandler } from '../types.js';
+import type { ParsedCommandTransformer } from '../command/command-executor.js';
+import type { SlotContributor, SlotEntry } from '../prose-pipeline/types.js';
 import { NarrativeConfig } from './narrative/index.js';
+/**
+ * The engine as a story sees it at ready time (ADR-343).
+ *
+ * `Story.onEngineReady` receives this, not the `GameEngine` class: the
+ * thirteen members a story registers on or reads from an engine that has
+ * finished installing. `GameEngine` implements it, so the compiler holds
+ * the facade to the role. The lifecycle (`start`/`stop`/`resume`/
+ * `installStory`), save and restore, player switching, the text service,
+ * introspection, history, and platform events are the host's and are
+ * deliberately absent — a story reaching for them would be reaching past
+ * its role.
+ */
+export interface StoryEngine {
+    /** The turn-plugin registry a story registers daemons and watchers on. */
+    getPluginRegistry(): PluginRegistry;
+    /** The NPC service a story registers per-entity behaviors on (ADR-328 D5). */
+    getNpcService(): INpcService;
+    /** Register a declarative slot entry (ADR-212 §1). */
+    registerSlotEntry(entry: SlotEntry): void;
+    /** Register a realize-time slot contributor (ADR-195 §3). */
+    registerSlotContributor(contributor: SlotContributor): void;
+    /** Register a transformer that rewrites a parsed command before execution. */
+    registerParsedCommandTransformer(transformer: ParsedCommandTransformer): void;
+    /** Register a named input mode the story drives (e.g. a debug console). */
+    registerInputMode(id: string, handler: InputModeHandler): void;
+    /** The world the story built, as the engine holds it. */
+    getWorld(): WorldModel;
+    /** The live game context — the turn counter, the player, the metadata. */
+    getContext(): GameContext;
+    /** The language provider, for stories that register their own text. */
+    getLanguageProvider(): LanguageProvider;
+    /** The event processor, for stories that register their own handlers. */
+    getEventProcessor(): EventProcessor;
+    /** The session's seeded random source (ADR-293). */
+    getRandomService(): RandomService;
+    /** The capabilities the client negotiated at `start()` (ADR-216). */
+    getClientCapabilities(): ClientCapabilities;
+    /** Perform one action as an actor, through the engine's execution entry (ADR-329 D4). */
+    executeAsActor(actorId: string, actionId: string, slots?: ActSlots): ActResult;
+}
 /**
  * Story configuration
  */
@@ -1092,7 +1136,7 @@ export interface Story {
      *
      * @param engine - The fully initialized game engine
      */
-    onEngineReady?(engine: GameEngine): void;
+    onEngineReady?(engine: StoryEngine): void;
     /**
      * Register or override channels on the platform's channel registry
      * (ADR-163 §6, §7, §14). Invoked by `engine.start()` before the

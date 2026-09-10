@@ -15,7 +15,7 @@ import ts from 'typescript';
 const PACKAGE_ROOT = join(__dirname, '..', '..');
 const ENTRY = join(PACKAGE_ROOT, 'src', 'index.ts');
 
-/** ADR-342 D1: the contract, one name at a time. */
+/** ADR-342 D1 (as amended by ADR-343): the contract, one name at a time. */
 const CONTRACT = [
   // The facade
   'GameEngine',
@@ -27,6 +27,7 @@ const CONTRACT = [
   'StoryWithEvents',
   'validateStoryConfig',
   'CustomVocabulary',
+  'StoryEngine',
   'NarrativeConfig',
   'ParsedCommandTransformer',
   'InputModeHandler',

@@ -35,7 +35,7 @@
  * Owner: npm regression test suite
  */
 
-import { type Story, type StoryConfig, GameEngine, type CustomVocabulary } from '@sharpee/engine';
+import { type Story, type StoryConfig, type StoryEngine, type CustomVocabulary } from '@sharpee/engine';
 import { WorldModel, IFEntity, EntityType, type IWorldModel } from '@sharpee/world-model';
 import { IdentityTrait, ActorTrait, ContainerTrait } from '@sharpee/world-model';
 import { type ISemanticEvent } from '@sharpee/core';
@@ -296,7 +296,7 @@ class RegressionStory implements Story {
    * Called after the engine is fully initialized. Register plugins, daemons,
    * event handlers, and scoring chains.
    */
-  onEngineReady(engine: GameEngine): void {
+  onEngineReady(engine: StoryEngine): void {
     const world = engine.getWorld();
 
     // --- NPC behaviors (the engine owns the actor turn phase, ADR-328 D5) ---

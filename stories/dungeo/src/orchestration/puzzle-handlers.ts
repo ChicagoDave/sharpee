@@ -8,7 +8,7 @@
  * - Command interception for special movement
  */
 
-import type { GameEngine } from '@sharpee/engine';
+import type { StoryEngine } from '@sharpee/engine';
 import type { ISchedulerService } from '@sharpee/plugin-scheduler';
 import type { WorldModel } from '@sharpee/world-model';
 import { RoomTrait, Direction } from '@sharpee/world-model';
@@ -45,7 +45,7 @@ export interface PuzzleConfig {
  * Register complex puzzle handlers with the engine
  */
 export function registerPuzzleHandlers(
-  engine: GameEngine,
+  engine: StoryEngine,
   world: WorldModel,
   config: PuzzleConfig,
   scheduler?: ISchedulerService

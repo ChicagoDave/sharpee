@@ -11,11 +11,11 @@
  *   isWithin — a visited-set guard so rogue containment cycles terminate.
  */
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { AuthorModel, IFEntity, TraitType, WorldModel } from '@sharpee/world-model';
 import type { ReadableTrait } from '@sharpee/world-model';
 import { ChordStory, createStory, Evaluator } from '../src';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 
@@ -120,11 +120,10 @@ end before
 `;
     const l = load(source);
     const entries: Array<{ owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }> = [];
-    l.story.onEngineReady({ getNpcService: () => createNpcService(),
-      getPluginRegistry: () => ({ register: () => {} }),
-      registerSlotEntry: (entry: { owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }) =>
-        entries.push(entry),
-    } as never);
+    l.story.onEngineReady(stubStoryEngine({
+      registerSlotEntry: (entry) =>
+        entries.push(entry as unknown as { owner: string; gate?: { kind: string; holds(w: WorldModel): boolean } }),
+    }));
 
     const hallId = l.story.entityId('hall')!;
     const hallEntry = entries.find((e) => e.owner === hallId);

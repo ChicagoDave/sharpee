@@ -13,10 +13,11 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { WorldModel } from '@sharpee/world-model';
-import { createNpcService } from '@sharpee/stdlib';
+import type { TurnPlugin } from '@sharpee/plugins';
 import { createStory, LoadError } from '../src';
 import { EXTENSION_REGISTRY } from '../src/extension-registry';
 import { compileSource } from './helpers/boot-engine';
+import { stubStoryEngine, recordingPluginRegistry } from './helpers/stub-story-engine';
 
 const SRC = join(__dirname, '..', 'src');
 
@@ -75,11 +76,8 @@ function bootHeadless(source: string, uses?: string[]) {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  const plugins: Array<{ id: string; priority: number }> = [];
-  const engine = {
-    getNpcService: () => createNpcService(),
-    getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p as { id: string; priority: number }) }),
-  } as unknown as Parameters<typeof story.onEngineReady>[0];
+  const plugins: TurnPlugin[] = [];
+  const engine = stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) });
   return { story, engine, plugins };
 }
 

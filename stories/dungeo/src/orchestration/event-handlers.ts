@@ -10,7 +10,7 @@
  * - Balloon item tracking
  */
 
-import type { GameEngine } from '@sharpee/engine';
+import type { StoryEngine } from '@sharpee/engine';
 import type { EventProcessor } from '@sharpee/event-processor';
 import { type ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
@@ -47,7 +47,7 @@ export interface EventHandlerConfig {
  * Register all event handlers with the event processor
  */
 export function registerEventHandlers(
-  engine: GameEngine,
+  engine: StoryEngine,
   world: WorldModel,
   config: EventHandlerConfig,
 ): void {

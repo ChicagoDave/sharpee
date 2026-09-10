@@ -33,7 +33,7 @@ import type {
 import { ISemanticEvent } from '@sharpee/core';
 import { IdentityTrait } from '@sharpee/world-model';
 
-onEngineReady(engine: GameEngine): void {
+onEngineReady(engine: StoryEngine): void {
   // … the NPC plugin registration from Chapter 20 stays here …
 
   const schedulerPlugin = new SchedulerPlugin();

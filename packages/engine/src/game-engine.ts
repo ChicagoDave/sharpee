@@ -53,7 +53,7 @@ import {
   type GameEngineEvents
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
-import { Story } from './install/story.js';
+import { Story, type StoryEngine } from './install/story.js';
 import type { NarrativeSettings } from './types.js';
 import { buildNarrativeSettings } from './install/narrative/index.js';
 import { runInstallSteps, STORY_INSTALL_STEPS, configureLanguageProviderNarrative } from './install/index.js';
@@ -122,7 +122,7 @@ function describeError(error: unknown): { message: string; stack?: string } {
 /**
  * Main game engine
  */
-export class GameEngine {
+export class GameEngine implements StoryEngine {
   private world: WorldModel;
   private sessionStartTime?: number;
   private sessionTurns: number = 0;

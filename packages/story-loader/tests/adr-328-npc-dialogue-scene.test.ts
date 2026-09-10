@@ -9,7 +9,6 @@
  * opener, move clock) and on event payloads.
  */
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { CommandExecutor, EngineRandomService, type GameContext } from '@sharpee/engine';
 import { EventProcessor } from '@sharpee/event-processor';
@@ -19,6 +18,7 @@ import { IFActions, StandardActionRegistry, standardActions } from '@sharpee/std
 import { WorldModel, sceneWith } from '@sharpee/world-model';
 import type { IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 const CHARACTER_TURN_KEY = 'character.turn';
 
@@ -73,7 +73,7 @@ function load(): Loaded {
   world.setPlayer(player.id);
   // The story's engine-ready hook binds the character layer the way the
   // engine would; the scene runtime this test drives is the real one.
-  story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => undefined }) });
+  story.onEngineReady(stubStoryEngine());
   expect(world.getSceneRuntime()).toBeDefined();
   world.setStateValue(CHARACTER_TURN_KEY, 1);
 

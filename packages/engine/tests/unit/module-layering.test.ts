@@ -17,10 +17,13 @@ const SRC_DIR = join(__dirname, '..', '..', 'src');
 /**
  * Edges the package knowingly carries, each with its reason. An edge
  * listed here must still exist — when it goes, remove it from the list.
+ *
+ * Empty since ADR-343: `Story.onEngineReady` takes the `StoryEngine` role,
+ * so the story contract no longer names the facade and the graph is
+ * acyclic outright. The list stays as the place a future exception is
+ * recorded, with its reason, rather than left implicit.
  */
-const ALLOWED_CYCLE_EDGES: ReadonlyArray<readonly [from: string, to: string, why: string]> = [
-  ['install/story.ts', 'game-engine.ts', '`Story.onEngineReady(engine: GameEngine)` names the concrete class; a role interface for what a story needs at ready time is its own ADR'],
-];
+const ALLOWED_CYCLE_EDGES: ReadonlyArray<readonly [from: string, to: string, why: string]> = [];
 
 /** Every `.ts` file under `src/`, recursively, as paths relative to `src/`. */
 function sourceFiles(dir: string): string[] {

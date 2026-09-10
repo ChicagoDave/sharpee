@@ -62,6 +62,8 @@
 
 - **Merge and release (David: "merge is done", "do the dry run", "run the live publish")**: PR #397 merged to `main` as c9a6d1916 (00:47 UTC). Publish workflow dry run 34422922044 on that commit: every step green, 34 packages packed at 5.3.1, all 34 already on npm at 5.3.0 (no first-publish risk). Live run 34423781725: success, 34 packages published at 5.3.1 to `latest`. The Chord language stays 3.6.0. The feature branch was not deleted.
 
+- **ADR-343 written (David: "let's do the next ADR", ~20:05 CDT)**: `docs/architecture/adrs/adr-343-story-engine-role.md`, PROPOSED — `StoryEngine`, the thirteen-member role `Story.onEngineReady` receives instead of `GameEngine`; the facade `implements` it; it joins the contract (ADR-342 D1 → 32); in-repo implementers and the Chord loader name it (the loader already hand-wrote the role structurally at `loader.ts:1053`); the layering allow-list empties. Inventory: 32 implementer files, 12 members used (tallied), `registerSlotContributor` added as the documented thirteenth; `engine.on`/`engine.start` comment-only. Implementation is its own one-phase plan after acceptance.
+
 ## Key Decisions
 
 ### 1. ADR-342 — engine package contract

@@ -14,12 +14,12 @@
  * something the engine does natively.
  */
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, SchedulerDaemon } from '../src';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 const SOURCE = `story
   title: Record Channel
@@ -78,7 +78,7 @@ function load(source: string) {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => {} }) });
+  story.onEngineReady(stubStoryEngine());
 
   const registry = new StdlibChannelRegistry();
   story.registerChannels(registry);

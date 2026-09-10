@@ -1,4 +1,4 @@
-onEngineReady(engine: GameEngine): void {
+onEngineReady(engine: StoryEngine): void {
   // 1. The engine owns the NPC turn phase; ask it for the
   //    service that holds the behaviors
   const npcService = engine.getNpcService();

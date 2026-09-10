@@ -17,10 +17,11 @@ import { GameEngine, SaveRestoreService, type ISaveRestoreStateProvider, type St
 import { CHAPTER_BEGAN_EVENT, CHAPTER_CURRENT_KEY, CHAPTER_STALE_EVENT, chapterChannel } from '@sharpee/ext-chapters';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import { PerceptionService, StdlibChannelRegistry, createNpcService } from '@sharpee/stdlib';
+import { PerceptionService, StdlibChannelRegistry } from '@sharpee/stdlib';
 import { EntityType, WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, LoadError, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 const SOURCE = `story
   title: Chapters
@@ -282,7 +283,7 @@ describe('ADR-330 chapters on the real path', () => {
     const p = rogue.createPlayer(w);
     w.setPlayer(p.id);
     expect(() =>
-      rogue.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => {} }) } as unknown as Parameters<ChordStory['onEngineReady']>[0]),
+      rogue.onEngineReady(stubStoryEngine()),
     ).toThrow(LoadError);
   });
 

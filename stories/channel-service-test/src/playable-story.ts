@@ -16,7 +16,7 @@
  * "renderer parity" are covered identically.
  */
 
-import type { GameEngine } from '@sharpee/engine';
+import type { StoryEngine } from '@sharpee/engine';
 import { type Story, type StoryConfig } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
@@ -120,7 +120,7 @@ export class ChannelServiceTestStory implements Story {
     // intentionally empty
   }
 
-  onEngineReady?(_engine: GameEngine): void {
+  onEngineReady?(_engine: StoryEngine): void {
     // intentionally empty
   }
 }

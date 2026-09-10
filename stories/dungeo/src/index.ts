@@ -6,7 +6,7 @@
  * There is a small mailbox here."
  */
 
-import { type Story, type StoryConfig, GameEngine } from '@sharpee/engine';
+import { type Story, type StoryConfig, type StoryEngine } from '@sharpee/engine';
 import type { Parser } from '@sharpee/parser-en-us';
 import type { LanguageProvider } from '@sharpee/lang-en-us';
 // ScopeBuilder now used in grammar files
@@ -822,7 +822,7 @@ export class DungeoStory implements Story {
    * Called when the engine is fully initialized.
    * Delegates to orchestration module for all engine registrations.
    */
-  onEngineReady(engine: GameEngine): void {
+  onEngineReady(engine: StoryEngine): void {
     // Register GDT input mode handler (ADR-137)
     engine.registerInputMode(GDT_INPUT_MODE_ID, gdtInputModeHandler);
 

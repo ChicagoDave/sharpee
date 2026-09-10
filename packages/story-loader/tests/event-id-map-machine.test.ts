@@ -9,11 +9,12 @@
  * loader → real StateMachinePlugin evaluate.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
+import type { TurnPlugin } from '@sharpee/plugins';
 import { ChordStory, createStory } from '../src';
+import { stubStoryEngine, recordingPluginRegistry } from './helpers/stub-story-engine';
 
 const SOURCE = `story
   title: Chime
@@ -83,8 +84,8 @@ describe('ADR-256 machine `when event` seam translates the Chord event id (REAL-
     story.initializeWorld(world);
     player = story.createPlayer(world);
     world.setPlayer(player.id);
-    const plugins: unknown[] = [];
-    story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p) }) });
+    const plugins: TurnPlugin[] = [];
+    story.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
     smPlugin = plugins.find((p): p is StateMachinePlugin => p instanceof StateMachinePlugin)!;
     expect(smPlugin, 'StateMachinePlugin registered').toBeDefined();
     turn = 0;

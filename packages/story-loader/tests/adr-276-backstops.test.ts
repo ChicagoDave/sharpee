@@ -10,11 +10,11 @@
  * (loader.test.ts, cuttable.test.ts).
  */
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory, LoadError } from '../src';
 import { captureGrammarRules } from './helpers/grammar-harness';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 function compileClean(source: string): StoryIR {
   const result = compile(source);
@@ -118,7 +118,7 @@ create the keeper
     story.initializeWorld(world);
     story.createPlayer(world);
     expect(() =>
-      story.onEngineReady({ getNpcService: () => createNpcService(), getPluginRegistry: () => ({ register: () => undefined }) } as never),
+      story.onEngineReady(stubStoryEngine()),
     ).toThrowError(/needs `with route/);
   });
 

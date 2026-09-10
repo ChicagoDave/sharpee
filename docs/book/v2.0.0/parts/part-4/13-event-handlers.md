@@ -189,7 +189,7 @@ once the world is fully built. The two reaction sections that follow both live
 inside it:
 
 ```typescript
-onEngineReady(engine: GameEngine): void {
+onEngineReady(engine: StoryEngine): void {
   const world = engine.getWorld();
   // the chainEvent registrations below go here
 }

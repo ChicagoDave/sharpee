@@ -12,12 +12,13 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { StdlibChannelRegistry } from '@sharpee/stdlib';
 import { WorldModel } from '@sharpee/world-model';
+import type { ClientCapabilities } from '@sharpee/if-domain';
 import { createStory, SchedulerDaemon } from '../src';
+import { stubStoryEngine } from './helpers/stub-story-engine';
 
 const FIXTURE = readFileSync(
   join(__dirname, '..', '..', 'chord', 'tests', 'fixtures', 'compass.story'),
@@ -41,10 +42,9 @@ const load = (capabilities?: Record<string, unknown>) => {
   story.initializeWorld(world);
   const player = story.createPlayer(world);
   world.setPlayer(player.id);
-  story.onEngineReady({ getNpcService: () => createNpcService(),
-    getPluginRegistry: () => ({ register: () => {} }),
-    ...(capabilities ? { getClientCapabilities: () => capabilities } : {}),
-  });
+  story.onEngineReady(stubStoryEngine({
+    ...(capabilities ? { getClientCapabilities: () => capabilities as unknown as ClientCapabilities } : {}),
+  }));
   const registry = new StdlibChannelRegistry();
   story.registerChannels(registry);
   const daemons: SchedulerDaemon[] = story.runtime.buildSchedulerDaemons();

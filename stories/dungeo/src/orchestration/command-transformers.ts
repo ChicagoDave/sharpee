@@ -9,7 +9,7 @@
  * - Movement restrictions (chimney, river, rainbow)
  */
 
-import type { GameEngine } from '@sharpee/engine';
+import type { StoryEngine } from '@sharpee/engine';
 import type { WorldModel, IParsedCommand } from '@sharpee/world-model';
 import type { RandomService } from '@sharpee/core';
 
@@ -48,7 +48,7 @@ export interface TransformerConfig {
  * Register all parsed command transformers with the engine
  */
 export function registerCommandTransformers(
-  engine: GameEngine,
+  engine: StoryEngine,
   world: WorldModel,
   config: TransformerConfig
 ): void {

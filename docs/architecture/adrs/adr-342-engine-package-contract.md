@@ -41,6 +41,8 @@ Every file and line below was read this session at `8e6290215` (Phase 7 landed).
   - *Plugins*: `ActorTurnPlugin`, `ACTOR_TURN_PLUGIN_ID`, and `PluginRegistry` re-exported from `@sharpee/plugins` for as long as story-loader's tests take it from here.
   - *Seams another package calls by name*: `phrasebookTemplateKey`, `PhrasebookResolution` (story-loader), `lintUnusedSnippetEntries` (devkit).
 
+  **Amendment A1 (2026-09-09, session 42e176 — ADR-343 ACCEPTED)**: `StoryEngine` joins the list, making it **32 names**. `Story.onEngineReady` takes the role instead of the `GameEngine` class, and fourteen implementers name the parameter type, so D3's trigger is met — a type a consumer must *name* is added, and this line is the record of the decision. Declared in `install/story.ts` beside `Story`; the facade `implements` it.
+
   Thirty of the thirty-one are the inventory (26) plus the four stage names the plan carries from ADR-334. **`EngineConfig` is the one addition made by judgment**: it is the host's construction contract, `StoryConfig`'s counterpart on the other side of `new GameEngine(...)`, and a host that types its options at all has to name it. No other name is added on the strength of "someone might want it"; D3 says what happens when someone does.
 
 - **D2 — Eighty-one names stop being exported**, by group, with the reason:

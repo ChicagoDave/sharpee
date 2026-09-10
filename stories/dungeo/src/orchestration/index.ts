@@ -12,7 +12,7 @@
  * This pattern establishes the canonical structure for Sharpee stories.
  */
 
-import type { GameEngine } from '@sharpee/engine';
+import type { StoryEngine } from '@sharpee/engine';
 import type { WorldModel } from '@sharpee/world-model';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import { StateMachinePlugin } from '@sharpee/plugin-state-machine';
@@ -104,7 +104,7 @@ export interface OrchestrationConfig {
  * @param config - Configuration containing all room IDs and feature flags
  */
 export function initializeOrchestration(
-  engine: GameEngine,
+  engine: StoryEngine,
   world: WorldModel,
   config: OrchestrationConfig,
 ): void {

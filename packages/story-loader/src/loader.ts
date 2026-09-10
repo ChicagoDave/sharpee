@@ -75,7 +75,7 @@ import {
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
-import type { Story, StoryConfig } from '@sharpee/engine';
+import type { Story, StoryConfig, StoryEngine } from '@sharpee/engine';
 import { TURN_BANDS, type TurnPlugin } from '@sharpee/plugins';
 import {
   applyCompiledCharacter,
@@ -1050,33 +1050,18 @@ export class ChordStory implements Story {
    * every-turn trait clauses) as plugin-scheduler daemons. All progression
    * state is world state — no runner-state plumbing (design.md §6).
    */
-  onEngineReady(engine: {
-    getPluginRegistry(): { register(plugin: unknown): void };
-    getNpcService(): INpcService;
-    registerSlotEntry?(entry: ChordSlotEntry): void;
-    registerParsedCommandTransformer?(t: (parsed: IParsedCommand, world: WorldModel) => IParsedCommand): void;
-    getClientCapabilities?(): object;
-    getContext?(): { currentTurn: number };
-    getRandomService?(): RandomService;
-    executeAsActor?(actorId: string, actionId: string, slots?: ActSlots): ActResult;
-  }): void {
+  onEngineReady(engine: StoryEngine): void {
     // ADR-325 D3f: timers stamp the turn they start on from the engine's
     // live counter, so a `start` in the player's action waits one turn.
-    if (engine.getContext) {
-      const getContext = engine.getContext.bind(engine);
-      this.runtime.setTurnProvider(() => getContext().currentTurn);
-    }
+    const getContext = engine.getContext.bind(engine);
+    this.runtime.setTurnProvider(() => getContext().currentTurn);
     // ADR-216 `client has`: wire the LIVE capability source (the engine
     // negotiates capabilities at start(); reads happen per evaluation).
     // Engines without the accessor leave the text-only default in place.
-    if (engine.getClientCapabilities) {
-      this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities!() as Record<string, unknown>);
-    }
+    this.evaluator.setCapabilitiesProvider(() => engine.getClientCapabilities() as unknown as Record<string, unknown>);
     // ADR-326 D6: an adjacent-room draw that meets a computed exit consults
     // the resolver, which draws on the engine's session random service.
-    if (engine.getRandomService) {
-      this.evaluator.setRandomService(engine.getRandomService());
-    }
+    this.evaluator.setRandomService(engine.getRandomService());
     // ADR-215 Q4: NPCs are CORE — the engine owns the actor turn phase
     // (ADR-328 D5), so there is nothing to register; each factory-configured
     // behavior registers under its per-entity id on the engine's service.
@@ -1087,18 +1072,16 @@ export class ChordStory implements Story {
     // plugin below, which runs right after the player's action — before the
     // actor phase (ADR-332: the story-reactions band leads) — so the act narrates immediately after the report
     // that caused it. Acts fired inside scheduler daemons drain on the tick.
-    if (engine.executeAsActor) {
-      this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
-      if (this.runtime.hasDeferredNarration()) {
-        engine.getPluginRegistry().register({
-          id: 'chord.acted-events',
-          // First of the story reactions (ADR-332): the flush still runs
-          // right after the player's action, ahead of the scheduler and
-          // every platform phase.
-          priority: TURN_BANDS.storyReactions.floor + 90,
-          onAfterAction: () => this.runtime.drainActEvents(),
-        } satisfies TurnPlugin);
-      }
+    this.runtime.setExecutionEntry(engine.executeAsActor.bind(engine));
+    if (this.runtime.hasDeferredNarration()) {
+      engine.getPluginRegistry().register({
+        id: 'chord.acted-events',
+        // First of the story reactions (ADR-332): the flush still runs
+        // right after the player's action, ahead of the scheduler and
+        // every platform phase.
+        priority: TURN_BANDS.storyReactions.floor + 90,
+        onAfterAction: () => this.runtime.drainActEvents(),
+      } satisfies TurnPlugin);
     }
     const npcService = engine.getNpcService();
     for (const pending of this.npcBehaviors) {
@@ -1155,7 +1138,7 @@ export class ChordStory implements Story {
     // the collected deadly-exit map, redirecting a matching going command to
     // the platform's generic extras-driven deadly-death action (the same
     // seam stdlib's own deadly-room transformer uses).
-    if (this.deadlyExits.size > 0 && engine.registerParsedCommandTransformer) {
+    if (this.deadlyExits.size > 0) {
       engine.registerParsedCommandTransformer(this.buildDeadlyExitTransformer());
     }
 
@@ -1273,10 +1256,10 @@ export class ChordStory implements Story {
    * presence check so the gate narrows the channel rather than replacing
    * its semantics.
    *
-   * @param engine the engine surface (structural — absent method is a no-op)
+   * @param engine the story-facing engine role (ADR-343)
    */
-  private registerPresentEntries(engine: { registerSlotEntry?(entry: ChordSlotEntry): void }): void {
-    if (!engine.registerSlotEntry || !this.world) return;
+  private registerPresentEntries(engine: StoryEngine): void {
+    if (!this.world) return;
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     let order = 0;
     for (const irEntity of this.ir.entities) {
@@ -2553,20 +2536,6 @@ export class ChordStory implements Story {
       }
     }
   }
-}
-
-/**
- * Structural slice of `GameEngine.registerSlotEntry`'s entry (ADR-212 §1) —
- * typed at the use site to keep story-loader's dependency surface unchanged
- * (the `extendParser` precedent).
- */
-interface ChordSlotEntry {
-  slotKey: string;
-  owner: string;
-  content: Phrase;
-  order?: number;
-  gate?: { kind: 'predicate'; holds: (world: WorldModel) => boolean };
-  counterKey?: string;
 }
 
 /**

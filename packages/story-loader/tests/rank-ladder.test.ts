@@ -7,13 +7,13 @@
  * "no loader-side special-casing of the `scoring` name".
  */
 import { describe, expect, it } from 'vitest';
-import { createNpcService } from '@sharpee/stdlib';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 import { createSeededRandom } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
+import { stubStoryEngine, recordingPluginRegistry } from './helpers/stub-story-engine';
 
 const source = (headerBody: string, phrases = '') => `story
   title: The Folly
@@ -56,9 +56,7 @@ function load(text: string) {
   world.setPlayer(story.createPlayer(world).id);
 
   const plugins: TurnPlugin[] = [];
-  story.onEngineReady({ getNpcService: () => createNpcService(),
-    getPluginRegistry: () => ({ register: (p: unknown) => plugins.push(p as TurnPlugin) }),
-  });
+  story.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
   return { story, world, plugins };
 }
 

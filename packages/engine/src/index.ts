@@ -7,7 +7,7 @@
  * adding a name here is a recorded decision (ADR-342 D1, D3), pinned by
  * `tests/unit/public-surface.test.ts` (ADR-342 D5).
  *
- * Public interface: the 31 names below — the facade, what a story author
+ * Public interface: the 32 names below — the facade, what a story author
  * writes against, what a turn hands back, the turn's stage lists, the
  * services a host or test drives, the plugins, and the seams other
  * packages call by name.
@@ -21,7 +21,7 @@ export type { EngineConfig } from './types.js';
 
 // What a story author writes against
 export { StoryWithEvents, validateStoryConfig } from './install/story.js';
-export type { Story, StoryConfig, CustomVocabulary } from './install/story.js';
+export type { Story, StoryConfig, CustomVocabulary, StoryEngine } from './install/story.js';
 export type { NarrativeConfig } from './install/narrative/narrative-settings.js';
 export type { ParsedCommandTransformer } from './command/command-executor.js';
 export type { InputModeHandler } from './types.js';
