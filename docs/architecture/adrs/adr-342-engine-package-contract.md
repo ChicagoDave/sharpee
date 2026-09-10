@@ -43,6 +43,8 @@ Every file and line below was read this session at `8e6290215` (Phase 7 landed).
 
   **Amendment A1 (2026-09-09, session 42e176 — ADR-343 ACCEPTED)**: `StoryEngine` joins the list, making it **32 names**. `Story.onEngineReady` takes the role instead of the `GameEngine` class, and fourteen implementers name the parameter type, so D3's trigger is met — a type a consumer must *name* is added, and this line is the record of the decision. Declared in `install/story.ts` beside `Story`; the facade `implements` it.
 
+  **Amendment A2 (2026-09-09, session 01fe7c)**: `PluginRegistry` leaves the list, making it **31 names** again. The *Plugins* bullet re-exported it "for as long as story-loader's tests take it from here"; those three tests (`adr-320-phase8`, `adr-320-phase9`, `adr-320-phase10-threads`) now import it from `@sharpee/plugins` directly, so the condition has expired and the re-export is retired. `@sharpee/plugins` remains its only home; the umbrella (`packages/sharpee`) already sourced it from there.
+
   Thirty of the thirty-one are the inventory (26) plus the four stage names the plan carries from ADR-334. **`EngineConfig` is the one addition made by judgment**: it is the host's construction contract, `StoryConfig`'s counterpart on the other side of `new GameEngine(...)`, and a host that types its options at all has to name it. No other name is added on the strength of "someone might want it"; D3 says what happens when someone does.
 
 - **D2 — Eighty-one names stop being exported**, by group, with the reason:
@@ -71,7 +73,7 @@ Every file and line below was read this session at `8e6290215` (Phase 7 landed).
 - The engine package has an inside. The next extraction out of the facade lands in `command/`, `install/`, `session/`, `turn/`, or `ports/` without becoming public API, which is what Phases 7 and 8 were for ("so that the next extraction out of the facade has somewhere to go that is not public API", plan header).
 - Adding an export is a recorded decision: an amendment line on D1 and a fixture change in the D5 test, in the same commit. Removing one is likewise a decision, checked by the same test and by the consumer builds.
 - The generated reference the IDE ships to authors describes the contract rather than the internals; its diff at this phase is the record of what left.
-- Three story-loader tests keep taking `PluginRegistry` from the engine; repointing them to `@sharpee/plugins` and retiring that re-export is a small follow-up, not part of this phase.
+- Three story-loader tests took `PluginRegistry` from the engine; they were repointed to `@sharpee/plugins` and the re-export retired on 2026-09-09 (session 01fe7c, Amendment A2). The engine no longer re-exports another package's class.
 - `index.ts` carries a rule-9 header naming the contract and its owner (`documentationStandard: always`, `.devarch/descriptor.json`).
 
 ## Acceptance

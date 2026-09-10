@@ -20,11 +20,11 @@ import {
 } from '@sharpee/stdlib';
 import {
   SaveRestoreService,
-  PluginRegistry,
   type GameContext,
   type ISaveRestoreStateProvider,
   type Story,
 } from '@sharpee/engine';
+import { PluginRegistry } from '@sharpee/plugins';
 import {
   CharacterModelTrait,
   IFEntity,

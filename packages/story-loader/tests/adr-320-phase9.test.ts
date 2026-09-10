@@ -28,11 +28,11 @@ import type { ChannelProduceContext } from '@sharpee/if-domain';
 import { IFEntity, WorldModel, sceneWith, type ExchangeAffordances } from '@sharpee/world-model';
 import {
   SaveRestoreService,
-  PluginRegistry,
   type GameContext,
   type ISaveRestoreStateProvider,
   type Story,
 } from '@sharpee/engine';
+import { PluginRegistry } from '@sharpee/plugins';
 import { ChordStory, createStory } from '../src';
 import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 

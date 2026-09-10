@@ -250,5 +250,4 @@ await engine.setLanguage('en-US');
 ## Questions?
 
 - Check ADR-028 for design rationale
-- See `examples/language-management.ts` for usage examples
 - File issues for migration problems

@@ -32,11 +32,11 @@ import type { ActorTurnPlugin } from '@sharpee/engine';
 import { bootEngine } from './helpers/boot-engine';
 import {
   SaveRestoreService,
-  PluginRegistry,
   type GameContext,
   type ISaveRestoreStateProvider,
   type Story,
 } from '@sharpee/engine';
+import { PluginRegistry } from '@sharpee/plugins';
 import { createSemanticEventSource } from '@sharpee/core';
 import {
   createSeededRandom,

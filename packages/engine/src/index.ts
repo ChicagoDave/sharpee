@@ -43,7 +43,6 @@ export { VocabularyManager } from './ports/vocabulary-manager.js';
 
 // Plugins
 export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID } from './plugins/actor-turn-plugin.js';
-export { PluginRegistry } from '@sharpee/plugins';
 
 // Seams another package calls by name
 export { phrasebookTemplateKey } from './prose-pipeline/phrase-render.js';
