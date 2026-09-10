@@ -8,26 +8,11 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { GameEngine } from '../../src/game-engine';
-import { WorldModel, EntityType } from '@sharpee/world-model';
-import { setupTestEngine } from '../test-helpers/setup-test-engine';
-import { Story } from '../../src/install/story';
-
-function minimalStory(): Story {
-  return {
-    config: { id: 'resume-test', title: 'Resume Test', authors: ['Test'], version: '1.0.0' },
-    createPlayer: (world: WorldModel) => world.createEntity('You', EntityType.ACTOR),
-    initializeWorld: (world: WorldModel) => {
-      const room = world.createEntity('Quiet Room', EntityType.ROOM);
-      world.moveEntity(world.getPlayer()!.id, room.id);
-    },
-  };
-}
+import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 
 describe('GameEngine.resume', () => {
   it('restores turn execution after a defeat stop, without touching the world', async () => {
-    const { engine, world } = setupTestEngine();
-    engine.installStory(minimalStory());
+    const { engine, world } = setupTestEngineWithStory();
     engine.start();
 
     await engine.executeTurn('look'); // sanity: runs while started
@@ -46,8 +31,7 @@ describe('GameEngine.resume', () => {
   });
 
   it('is a no-op while running', async () => {
-    const { engine } = setupTestEngine();
-    engine.installStory(minimalStory());
+    const { engine } = setupTestEngineWithStory();
     engine.start();
 
     engine.resume(); // must not throw or disturb the session

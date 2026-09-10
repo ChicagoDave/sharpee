@@ -23,7 +23,7 @@ import type { StoryConfig, CustomVocabulary } from '../../src/install/story';
 import { vocabularyRegistry } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 import { MinimalTestStory } from '../stories';
-import { setupTestEngine } from '../test-helpers/setup-test-engine';
+import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 
 const INSTALL_ORDER = [
   'validate-config',
@@ -92,10 +92,12 @@ describe('the install guard: one story, before start', () => {
   });
 
   it('an install after start() throws naming the running field', () => {
-    const { engine } = setupTestEngine();
+    // A running engine always carries a story now, so this case also pins the
+    // guard order: story-first would answer with "already installed" instead.
+    const { engine } = setupTestEngineWithStory();
     engine.start();
     expect(() => engine.installStory(new MinimalTestStory())).toThrow(/running: true/);
-    expect(engine.getStory()).toBeUndefined();
+    expect(engine.getStory()?.config.id).toBe('test-story'); // the rejected story was not adopted
   });
 
   it('a failed step adopts nothing', () => {
@@ -104,7 +106,9 @@ describe('the install guard: one story, before start', () => {
     story.forceInitError = true;
     expect(() => engine.installStory(story)).toThrow('Forced initialization error');
     expect(engine.getStory()).toBeUndefined();
-    expect(engine.getContext().metadata.title).toBeUndefined();
+    // Nothing adopted, in the strongest form the post-D6 engine can state it:
+    // the context is built by a completed install, so a failed one leaves none.
+    expect(() => engine.getContext()).toThrow(/No story installed/);
     // Nothing adopted, so a good story still installs.
     expect(() => engine.installStory(new MinimalTestStory())).not.toThrow();
   });
@@ -174,7 +178,10 @@ describe('what the steps leave behind', () => {
     }
     const { engine } = setupTestEngine();
     expect(engine.getNarrativeSettings().perspective).toBe('2nd');
-    expect(engine.getContext().implicitActions).toBeUndefined();
+    // `implicitActions` lives on the context, which does not exist until a
+    // story is installed — so the pre-install half of this claim is that
+    // there is nothing to read yet, not that it reads undefined.
+    expect(() => engine.getContext()).toThrow(/No story installed/);
     engine.installStory(new FirstPersonStory());
     expect(engine.getNarrativeSettings().perspective).toBe('1st');
     expect(engine.getContext().implicitActions).toEqual({ implicitTake: false });

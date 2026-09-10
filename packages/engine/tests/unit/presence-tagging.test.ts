@@ -21,7 +21,8 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PerceptionService, registerStandardCapabilities } from '@sharpee/stdlib';
 import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
-import { WorldModel, EntityType, RoomTrait, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, EntityType, RoomTrait, ActorTrait, type IFEntity } from '@sharpee/world-model';
+import type { Story } from '../../src/install/story';
 import type { ISemanticEvent, Presence } from '@sharpee/core';
 
 function makeEvent(entities: ISemanticEvent['entities'], presence?: Presence): ISemanticEvent {
@@ -79,25 +80,50 @@ describe('presence tagging through the live engine (REAL PATH)', () => {
   function buildEngine(): { engine: GameEngine; world: WorldModel; player: IFEntity; hall: IFEntity; cellar: IFEntity; thief: IFEntity } {
     const world = new WorldModel();
     registerStandardCapabilities(world);
-    const player = world.createEntity('You', EntityType.ACTOR);
-    world.setPlayer(player.id);
-    const hall = world.createEntity('Hall', EntityType.ROOM);
-    const cellar = world.createEntity('Cellar', EntityType.ROOM);
-    hall.add(new RoomTrait({ requiresLight: false, exits: { EAST: { destination: cellar.id } } }));
-    cellar.add(new RoomTrait({ requiresLight: false, exits: { WEST: { destination: hall.id } } }));
-    world.moveEntity(player.id, hall.id);
-    const thief = world.createEntity('thief', EntityType.ACTOR);
+
+    // The two-room world with its player and its thief comes from the story
+    // (ADR-344 D3/D6): `initializeWorld` builds and places them, `createPlayer`
+    // looks the player up, and the ids below are captured for the assertions.
+    let ids: { player: string; hall: string; cellar: string; thief: string } | undefined;
+    const story: Story = {
+      config: {
+        id: 'presence-tagging-test',
+        title: 'Presence Tagging',
+        authors: ['Test Author'],
+        version: '1.0.0',
+      },
+      initializeWorld: (w: WorldModel) => {
+        const player = w.createEntity('You', EntityType.ACTOR);
+        player.add(new ActorTrait());
+        const hall = w.createEntity('Hall', EntityType.ROOM);
+        const cellar = w.createEntity('Cellar', EntityType.ROOM);
+        hall.add(new RoomTrait({ requiresLight: false, exits: { EAST: { destination: cellar.id } } }));
+        cellar.add(new RoomTrait({ requiresLight: false, exits: { WEST: { destination: hall.id } } }));
+        w.moveEntity(player.id, hall.id);
+        const thief = w.createEntity('thief', EntityType.ACTOR);
+        ids = { player: player.id, hall: hall.id, cellar: cellar.id, thief: thief.id };
+      },
+      createPlayer: (w: WorldModel) => w.getEntity(ids!.player)!,
+    };
 
     const language = new EnglishLanguageProvider();
     const parser = new EnglishParser(language, { world });
     const engine = new GameEngine({
       world,
-      player,
       parser,
       language,
       perceptionService: new PerceptionService(),
     });
-    return { engine, world, player, hall, cellar, thief };
+    engine.installStory(story);
+
+    return {
+      engine,
+      world,
+      player: world.getEntity(ids!.player)!,
+      hall: world.getEntity(ids!.hall)!,
+      cellar: world.getEntity(ids!.cellar)!,
+      thief: world.getEntity(ids!.thief)!,
+    };
   }
 
   async function runOneTurn(npcRoom: (rooms: { hall: IFEntity; cellar: IFEntity }) => IFEntity) {

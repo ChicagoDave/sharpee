@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { GameEngine } from '../../src/game-engine';
 import { MinimalTestStory } from '../stories';
-import { setupTestEngine } from '../test-helpers/setup-test-engine';
+import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 
 function startedEngine(): GameEngine {
   const { engine } = setupTestEngine();
@@ -111,7 +111,7 @@ describe('the facade reports its failures as system events', () => {
 
 describe('platform event ids', () => {
   it('are platform_<clock>_<n> from a per-engine counter, the timestamp being the same clock read', () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const clock = vi.spyOn(Date, 'now').mockReturnValue(1_700_000_000_000);
 
     engine.emitPlatformEvent({ type: 'platform.probe', entities: {}, data: {} });
@@ -128,8 +128,8 @@ describe('platform event ids', () => {
   });
 
   it('a second engine starts its counter afresh', () => {
-    const first = setupTestEngine().engine;
-    const second = setupTestEngine().engine;
+    const first = setupTestEngineWithStory().engine;
+    const second = setupTestEngineWithStory().engine;
     first.emitPlatformEvent({ type: 'platform.probe', entities: {}, data: {} });
     second.emitPlatformEvent({ type: 'platform.probe', entities: {}, data: {} });
 

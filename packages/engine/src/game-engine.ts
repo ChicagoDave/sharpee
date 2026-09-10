@@ -391,21 +391,26 @@ export class GameEngine implements StoryEngine {
    * engine's collaborators, adopt what they produce, then hand the story
    * the live engine.
    *
-   * An engine installs exactly one story, before it starts. A second
-   * call, or a call after `start()`, throws naming the field that
-   * refuses it — the same engine cannot be reinstalled; `bootstrap` boots
-   * a fresh one per playthrough (ADR-248). A step that throws (a config
-   * or world validation failure) leaves the engine with nothing adopted.
+   * An engine installs exactly one story, before it starts. A call after
+   * `start()`, or a second call, throws naming the field that refuses it —
+   * the same engine cannot be reinstalled; `bootstrap` boots a fresh one
+   * per playthrough (ADR-248). A step that throws (a config or world
+   * validation failure) leaves the engine with nothing adopted.
    *
    * @param story - The story to install
-   * @throws Error when a story is already installed or the engine is running; whatever a step throws
+   * @throws Error when the engine is running or a story is already installed; whatever a step throws
    */
   installStory(story: Story): void {
-    if (this.story) {
-      throw new Error(`A story is already installed (story: '${this.story.config.id}'); an engine installs exactly one`);
-    }
+    // `running` is checked before `story`, and the order is load-bearing:
+    // since start() began requiring an installed story, a running engine
+    // always carries one, so a story-first check would answer every
+    // install-after-start with "already installed" and this guard's more
+    // actionable wording would never be reached.
     if (this.running) {
       throw new Error('Cannot install a story after start() (running: true); install before starting');
+    }
+    if (this.story) {
+      throw new Error(`A story is already installed (story: '${this.story.config.id}'); an engine installs exactly one`);
     }
 
     const installed = runInstallSteps({

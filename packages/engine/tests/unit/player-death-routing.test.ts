@@ -11,21 +11,29 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { EntityType, TraitType, HealthTrait, HealthBehavior, WorldModel } from '@sharpee/world-model';
+import { EntityType, TraitType, ActorTrait, HealthTrait, HealthBehavior, WorldModel } from '@sharpee/world-model';
 import { killPlayer } from '@sharpee/stdlib';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import { Story } from '../../src/install/story';
 
-/** A minimal story that drops the player into a room so `look` succeeds. */
+/**
+ * A minimal story that drops the player into a room so `look` succeeds.
+ *
+ * The player is built and placed in `initializeWorld` and merely looked up in
+ * `createPlayer` (ADR-327 D10): the world is built first, the player found second.
+ */
 function deathTestStory(): Story {
+  let playerId: string | undefined;
   return {
     config: { id: 'death-test', title: 'Death Test', authors: ['Test'], version: '1.0.0' },
-    createPlayer: (world: WorldModel) => world.createEntity('You', EntityType.ACTOR),
     initializeWorld: (world: WorldModel) => {
       const room = world.createEntity('Hazard Room', EntityType.ROOM);
-      const player = world.getPlayer()!;
+      const player = world.createEntity('You', EntityType.ACTOR);
+      player.add(new ActorTrait());
       world.moveEntity(player.id, room.id);
+      playerId = player.id;
     },
+    createPlayer: (world: WorldModel) => world.getEntity(playerId!)!,
   };
 }
 

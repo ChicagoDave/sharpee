@@ -7,7 +7,7 @@ import { GameEngine } from '../src/game-engine';
 import { MinimalTestStory, ActionTestStory, CompletionTestStory, ComplexWorldTestStory } from './stories';
 import { TurnResult } from '../src/types';
 import { ISaveData } from '@sharpee/core';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngine, setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 
 describe('Engine Integration Tests', () => {
   describe('Full game flow', () => {
@@ -227,15 +227,16 @@ describe('Engine Integration Tests', () => {
 
   describe('Standard engine setup', () => {
     it('should create functional standard engine', () => {
-      const { engine, world, player } = setupTestEngine({ 
-        includeCapabilities: true 
+      const { engine, world, player } = setupTestEngineWithStory({
+        includeCapabilities: true
       });
-      
+
       expect(engine).toBeDefined();
       expect(world).toBeDefined();
       expect(player).toBeDefined();
-      
-      // Should be able to start without story
+
+      // The story is what makes it functional: the player comes from the story
+      // and start() refuses without one (ADR-344 D6/D6a).
       expect(() => engine.start()).not.toThrow();
       engine.stop();
     });
