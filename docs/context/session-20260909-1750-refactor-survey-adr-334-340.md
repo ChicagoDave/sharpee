@@ -60,6 +60,8 @@
 
 - **SonarCloud quality gate on PR #397 (David: "quality gate failed", 19:33 CDT)**: Reliability Rating on New Code D (required A), 5 new bugs: `typescript:S2871` bare `.sort()` on string arrays at `story-loader/src/runtime/bind.ts:52-53` and `character/src/conversation/scene-sub-step.ts:369,386`, and `typescript:S7727` `.map(normalizeTopic)` at `story-loader/src/runtime/dialogue.ts:56`. All five lines pre-exist on `main` (`runtime.ts:503-504,1197`, `tick-phases.ts:1573,1590`); the survey's file splits made them "new code". Fixed behavior-preservingly: comparator `(a, b) => (a < b ? -1 : a > b ? 1 : 0)` (the default string ordering, code-unit order — not `localeCompare`, which would change order) and an arrow wrapper on the map (`normalizeTopic(text: string)` takes one argument, so the index was never consumed; the wrapper only satisfies the rule). story-loader 121 files / 1104 passed; character 54 / 641; gate `sonar-fix` (19:39 CDT) IDENTICAL ×4, engine 80 / 764 / 7. Duplication on new code 0.9% (threshold 3%), security and maintainability A.
 
+- **Merge and release (David: "merge is done", "do the dry run", "run the live publish")**: PR #397 merged to `main` as c9a6d1916 (00:47 UTC). Publish workflow dry run 34422922044 on that commit: every step green, 34 packages packed at 5.3.1, all 34 already on npm at 5.3.0 (no first-publish risk). Live run 34423781725: success, 34 packages published at 5.3.1 to `latest`. The Chord language stays 3.6.0. The feature branch was not deleted.
+
 ## Key Decisions
 
 ### 1. ADR-342 — engine package contract
