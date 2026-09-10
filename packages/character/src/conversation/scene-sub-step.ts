@@ -366,7 +366,7 @@ export function runSceneSubStep(
   }
 
   function seizeSceneOccasion(scene: ConversationSceneState, occasion: SceneOccasion): void {
-    for (const pid of [...scene.participantIds].sort()) {
+    for (const pid of [...scene.participantIds].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))) {
       if (!world.getEntity(pid)?.has(TraitType.CHARACTER_MODEL)) continue;
       const seizure = runtime!.seizeInitiative!(pid, occasion);
       if (!seizure) continue;
@@ -383,7 +383,7 @@ export function runSceneSubStep(
   // on `exit` — legality held by construction (the world accepted the
   // move in the goal sub-step).
   for (const scene of Object.values(readSceneStore(world).scenes)) {
-    const mover = [...scene.participantIds].filter((p) => surface.movedNpcIds.has(p)).sort()[0];
+    const mover = [...scene.participantIds].filter((p) => surface.movedNpcIds.has(p)).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0))[0];
     if (!mover) continue;
     const rooms = new Set(scene.participantIds.map((p) => world.getLocation(p)));
     if (rooms.size <= 1) continue;

@@ -49,8 +49,8 @@ export class BindSection {
       if (!data) {
         throw new LoadError(`Phrasebook \`${book.name}\` is not in the load-time data registry — the compile-time manifest knows the name, the runtime has no entries for it.`);
       }
-      const manifestKeys = [...(PHRASEBOOK_REGISTRY.get(book.name)?.keys ?? [])].sort();
-      const dataKeys = Object.keys(data.entries).sort();
+      const manifestKeys = [...(PHRASEBOOK_REGISTRY.get(book.name)?.keys ?? [])].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
+      const dataKeys = Object.keys(data.entries).sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
       if (manifestKeys.join('\u0000') !== dataKeys.join('\u0000')) {
         throw new LoadError(`Phrasebook \`${book.name}\`: manifest keys [${manifestKeys.join(', ')}] and data keys [${dataKeys.join(', ')}] disagree.`);
       }

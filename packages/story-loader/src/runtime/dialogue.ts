@@ -53,7 +53,7 @@ export class DialogueSection {
   ): string[] {
     return filter.kind === 'entity'
       ? [filter.id]
-      : [normalizeTopic(filter.primary), ...filter.aliases.map(normalizeTopic)];
+      : [normalizeTopic(filter.primary), ...filter.aliases.map((alias) => normalizeTopic(alias))];
   }
 
   /**
