@@ -16,7 +16,7 @@ import { purgeStoryModuleCache } from './purge.js';
 import { GameEngine, type TurnResult } from '@sharpee/engine';
 import { type ISemanticEvent } from '@sharpee/core';
 import { packetProseText } from '@sharpee/channel-service';
-import { WorldModel, EntityType } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { PerceptionService, channelRegistry } from '@sharpee/stdlib';
 // @ts-ignore — lang-en-us ships without bundled .d.ts in some build modes
@@ -271,8 +271,6 @@ export function assembleGame(
   /** Build world/parser/engine for one boot and wire output capture. */
   function boot(s: any): void {
     world = new WorldModel();
-    const player = world.createEntity('player', EntityType.ACTOR);
-    world.setPlayer(player.id);
 
     const language = new LanguageProvider();
     const parser = new Parser(language);
@@ -284,7 +282,6 @@ export function assembleGame(
 
     engine = new GameEngine({
       world,
-      player,
       parser,
       language,
       perceptionService,
@@ -310,14 +307,11 @@ export function assembleGame(
     // CLI_CAPABILITIES when no extra channels were declared.
     engine.start({ capabilities } as any);
 
-    // engine.start() created the real player via story.createPlayer() and re-pointed
-    // world.setPlayer() at it; the placeholder above (needed only for the GameEngine
-    // constructor) is now orphaned. Remove it so it doesn't leak into world
-    // enumeration — e.g. project introspection showing a stray 'player' (ADR-184/185).
-    const activePlayer = world.getPlayer();
-    if (activePlayer && activePlayer.id !== player.id) {
-      world.removeEntity(player.id);
-    }
+    // No placeholder to clean up: the engine takes no player at construction and
+    // the story supplies the only one there is (ADR-344 D6). The removal that used
+    // to stand here existed solely to stop the fabricated 'player' leaking into
+    // world enumeration (ADR-184/185 introspection); deleting the fabrication
+    // deletes the need for it.
 
     engine.on('channel:manifest', () => {
       // No-op in test mode.

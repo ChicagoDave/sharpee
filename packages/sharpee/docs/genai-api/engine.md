@@ -45,7 +45,27 @@ export declare class GameEngine implements StoryEngine {
     private sessionStartTime?;
     private sessionTurns;
     private sessionMoves;
-    private context;
+    /**
+     * The game context, constructed by `installStory` (ADR-344 D6 as amended).
+     *
+     * Undefined until a story is installed: the context cannot be complete
+     * before a story supplies the player, and building it eagerly is what
+     * forced every caller to fabricate a placeholder actor. Read through the
+     * `context` getter below, which throws rather than handing back a context
+     * with a made-up player.
+     */
+    /**
+     * When this engine was constructed. Kept separate from the context so the
+     * "started" timestamp still reflects construction rather than install.
+     */
+    private readonly startedAt;
+    private _context;
+    /**
+     * The game context. Throws before a story is installed.
+     *
+     * @throws Error when no story has been installed yet.
+     */
+    private get context();
     private config;
     private commandExecutor;
     private eventProcessor;
@@ -135,7 +155,6 @@ export declare class GameEngine implements StoryEngine {
     private clientCapabilities?;
     constructor(options: {
         world: WorldModel;
-        player: IFEntity;
         parser: Parser;
         language: LanguageProvider;
         perceptionService?: IPerceptionService;

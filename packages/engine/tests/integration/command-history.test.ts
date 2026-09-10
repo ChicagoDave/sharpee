@@ -6,7 +6,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { GameEngine } from '../../src/game-engine';
 import { WorldModel, StandardCapabilities, EntityType } from '@sharpee/world-model';
 import { CommandHistoryData, IFActions } from '@sharpee/stdlib';
-import { setupTestEngine } from '../test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 import { createMockProsePipeline as createMockTextService } from '../../src/test-helpers/mock-prose-pipeline';
 
 describe('Command History Integration', () => {
@@ -15,7 +15,7 @@ describe('Command History Integration', () => {
   
   beforeEach(() => {
     // Set up test engine with pre-configured services
-    const setup = setupTestEngine({ 
+    const setup = setupTestEngineWithStory({ 
       includeCapabilities: true,
       includeObjects: true 
     });
@@ -162,7 +162,7 @@ describe('Command History Integration', () => {
     it('should always register command history capability', () => {
       // The GameEngine constructor now unconditionally registers command history.
       // Verify that a fresh engine always has the capability available.
-      const setup = setupTestEngine({ includeCapabilities: false });
+      const setup = setupTestEngineWithStory({ includeCapabilities: false });
       const historyData = setup.world.getCapability(StandardCapabilities.COMMAND_HISTORY);
       expect(historyData).toBeDefined();
     });

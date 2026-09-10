@@ -25,12 +25,12 @@ import {
 import { IFActions, type NpcBehavior } from '@sharpee/stdlib';
 import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from '../src/plugins/actor-turn-plugin';
 import { SaveRestoreService } from '../src/session/save-restore-service';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 
 /** A world with the player's room, a second room to the east, an NPC, and a lamp. */
 function stage(behavior: NpcBehavior, npcRoom: 'here' | 'east' = 'here') {
   // The real PerceptionService: presence is tagged from where each act happened.
-  const { engine, world, player } = setupTestEngine({ withPerception: true });
+  const { engine, world, player } = setupTestEngineWithStory({ withPerception: true });
   const here = world.getEntity(world.getLocation(player.id)!)!;
   const east = world.createEntity('East Room', EntityType.ROOM);
   here.add(new RoomTrait({ exits: { [Direction.EAST]: { destination: east.id } } }));
@@ -55,7 +55,7 @@ function stage(behavior: NpcBehavior, npcRoom: 'here' | 'east' = 'here') {
 
 describe('the actor turn phase (ADR-328 D5)', () => {
   it('is registered by the engine itself, first in turn order', () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const order = engine.getPluginRegistry().getAll().map((p) => p.id);
     expect(order[0]).toBe(ACTOR_TURN_PLUGIN_ID);
     expect(engine.getNpcService()).toBeDefined();

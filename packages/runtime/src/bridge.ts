@@ -167,16 +167,12 @@ export class SharpeeRuntimeBridge {
       // ADR-327 D10: see the note in @sharpee/bridge — the role is claimed by
       // `installStory`, after the world exists. This placeholder only satisfies the
       // engine constructor.
-      const player = this.world.createEntity('player', 'actor');
-      this.world.setPlayer(player.id);
-
       const language = new EnglishLanguageProvider();
       const parser = new EnglishParser(language);
       const perceptionService = new PerceptionService();
 
       this.engine = new GameEngine({
         world: this.world,
-        player,
         parser,
         language,
         perceptionService,

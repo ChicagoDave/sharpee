@@ -10,7 +10,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { ITrait, ActionInterceptor } from '@sharpee/world-model';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 
 class GuardedTrait implements ITrait {
   static readonly type = 'test.trait.guarded';
@@ -24,7 +24,7 @@ const guardedInterceptor: ActionInterceptor = {
 
 describe('engine introspection of interceptor bindings (ADR-208 AC-7)', () => {
   it('enumerates bindings registered on the running world, with phases and kind', () => {
-    const { engine, world, player } = setupTestEngine();
+    const { engine, world, player } = setupTestEngineWithStory();
     // Put the trait in use so the trait summary includes it
     player.add(new GuardedTrait());
     world.registerActionInterceptor(GuardedTrait.type, 'if.action.taking', guardedInterceptor, {
@@ -46,14 +46,14 @@ describe('engine introspection of interceptor bindings (ADR-208 AC-7)', () => {
   });
 
   it('does not leak bindings into a different engine/world (world-scoped, not global)', () => {
-    const first = setupTestEngine();
+    const first = setupTestEngineWithStory();
     first.world.registerActionInterceptor(
       GuardedTrait.type,
       'if.action.taking',
       guardedInterceptor
     );
 
-    const second = setupTestEngine();
+    const second = setupTestEngineWithStory();
     const summary = second.engine.introspect();
 
     expect(

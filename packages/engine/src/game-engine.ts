@@ -127,7 +127,36 @@ export class GameEngine implements StoryEngine {
   private sessionStartTime?: number;
   private sessionTurns: number = 0;
   private sessionMoves: number = 0;
-  private context: GameContext;
+  /**
+   * The game context, constructed by `installStory` (ADR-344 D6 as amended).
+   *
+   * Undefined until a story is installed: the context cannot be complete
+   * before a story supplies the player, and building it eagerly is what
+   * forced every caller to fabricate a placeholder actor. Read through the
+   * `context` getter below, which throws rather than handing back a context
+   * with a made-up player.
+   */
+  /**
+   * When this engine was constructed. Kept separate from the context so the
+   * "started" timestamp still reflects construction rather than install.
+   */
+  private readonly startedAt: Date = new Date();
+
+  private _context: GameContext | undefined;
+
+  /**
+   * The game context. Throws before a story is installed.
+   *
+   * @throws Error when no story has been installed yet.
+   */
+  private get context(): GameContext {
+    if (!this._context) {
+      throw new Error(
+        'No story installed: the game context does not exist until installStory() has run.'
+      );
+    }
+    return this._context;
+  }
   private config: EngineConfig;
   private commandExecutor: CommandExecutor;
   private eventProcessor: EventProcessor;
@@ -226,7 +255,6 @@ export class GameEngine implements StoryEngine {
 
   constructor(options: {
     world: WorldModel;
-    player: IFEntity;
     parser: Parser;
     language: LanguageProvider;
     perceptionService?: IPerceptionService;
@@ -254,16 +282,8 @@ export class GameEngine implements StoryEngine {
       ...options.config
     };
 
-    // Initialize context
-    this.context = {
-      currentTurn: 1,  // Start at 1 per test expectations
-      player: options.player,
-      history: [],
-      metadata: {
-        started: new Date(),
-        lastPlayed: new Date()
-      }
-    };
+    // The context is NOT built here — `installStory` constructs it once the
+    // story has supplied the player (ADR-344 D6 as amended).
 
     // Create action registry and register standard actions
     this.actionRegistry = new StandardActionRegistry();
@@ -400,11 +420,21 @@ export class GameEngine implements StoryEngine {
 
     this.story = installed.story;
     this.narrativeSettings = installed.narrativeSettings;
-    this.context.player = installed.player;
-    this.context.metadata.title = installed.metadata.title;
-    this.context.metadata.author = installed.metadata.author;
-    this.context.metadata.version = installed.metadata.version;
-    this.context.implicitActions = installed.implicitActions;
+    // The context is constructed here, not patched: it cannot be complete
+    // before the story supplies the player (ADR-344 D6 as amended).
+    this._context = {
+      currentTurn: 1,  // Start at 1 per test expectations
+      player: installed.player,
+      history: [],
+      metadata: {
+        title: installed.metadata.title,
+        author: installed.metadata.author,
+        version: installed.metadata.version,
+        started: this.startedAt,
+        lastPlayed: new Date()
+      },
+      implicitActions: installed.implicitActions
+    };
 
     // The one playthrough-side call in the sequence: the story sees an
     // engine that has finished installing, and registers command
@@ -453,6 +483,15 @@ export class GameEngine implements StoryEngine {
   start(options?: { capabilities?: ClientCapabilities }): void {
     if (this.running) {
       throw new Error('Engine is already running');
+    }
+
+    // A story is required to start (David's ruling, 2026-09-10; ADR-344 D6a).
+    // An engine with no story has no player, no world content and nothing to
+    // render, so starting one is meaningless. Stated here rather than left to
+    // the context getter's incidental throw, so the requirement is a contract
+    // with its own message instead of an implementation detail leaking out.
+    if (!this._context) {
+      throw new Error('Cannot start: no story installed — call installStory() first.');
     }
 
     // Channel-I/O bootstrap (ADR-163 §13, §14):
@@ -1315,11 +1354,17 @@ export class GameEngine implements StoryEngine {
   private emitGameEvent(event: ISemanticEvent): void {
     this.emit('event', event);
 
-    // Store in turn events for text-service processing
-    if (this.context.currentTurn > 0) {
-      const turnEvents = this.turnEvents.get(this.context.currentTurn) || [];
+    // Turn bucketing is engine state, not story state: install steps
+    // (`emit-story-loading`, `emit-story-loaded`) emit before the context
+    // exists, so read the backing field and default to turn 1 rather than
+    // going through the throwing `context` getter. Before ADR-344 D6 moved
+    // the context into `installStory`, these events bucketed into turn 1
+    // because the constructor initialised `currentTurn: 1`; they still do.
+    const currentTurn = this._context?.currentTurn ?? 1;
+    if (currentTurn > 0) {
+      const turnEvents = this.turnEvents.get(currentTurn) || [];
       turnEvents.push(event);
-      this.turnEvents.set(this.context.currentTurn, turnEvents);
+      this.turnEvents.set(currentTurn, turnEvents);
     }
   }
   

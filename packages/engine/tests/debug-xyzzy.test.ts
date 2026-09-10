@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 import { StandardCapabilities } from '@sharpee/world-model';
 import { CommandHistoryData } from '@sharpee/stdlib';
 
 describe('Debug XYZZY Test', () => {
   it('should not track xyzzy in command history but should emit events', async () => {
-    const setup = setupTestEngine({ 
+    const setup = setupTestEngineWithStory({ 
       includeCapabilities: true,
       includeObjects: true 
     });
@@ -34,7 +34,7 @@ describe('Debug XYZZY Test', () => {
   });
   
   it('should track successful commands in history and emit events', async () => {
-    const setup = setupTestEngine({ 
+    const setup = setupTestEngineWithStory({ 
       includeCapabilities: true,
       includeObjects: true 
     });

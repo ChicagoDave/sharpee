@@ -17,11 +17,11 @@
  */
 
 import { describe, it, expect, vi } from 'vitest';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 
 describe('registerSaveRestoreHooks merges (#229)', () => {
   it('keeps an entry a later registration did not name', () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const onRestartRequested = vi.fn(async () => true);
 
     engine.registerSaveRestoreHooks({ onRestartRequested });
@@ -37,7 +37,7 @@ describe('registerSaveRestoreHooks merges (#229)', () => {
   });
 
   it('replaces an entry a later registration DOES name', () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const first = vi.fn(async () => null);
     const second = vi.fn(async () => null);
 
@@ -50,7 +50,7 @@ describe('registerSaveRestoreHooks merges (#229)', () => {
   it('removes an entry named explicitly as undefined', () => {
     // Merging would otherwise make a hook unremovable. Naming it is the escape
     // hatch, and every read site treats absent and undefined alike.
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     engine.registerSaveRestoreHooks({ onQuitRequested: async () => true });
     engine.registerSaveRestoreHooks({ onQuitRequested: undefined });
 
@@ -61,21 +61,21 @@ describe('registerSaveRestoreHooks merges (#229)', () => {
     // Partial registration is now the supported shape, so `save()` must answer
     // for the hook it needs rather than calling `undefined` and reporting the
     // resulting TypeError as "Save failed".
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     engine.registerSaveRestoreHooks({ onRestartRequested: async () => true });
 
     await expect(engine.save()).resolves.toBe(false);
   });
 
   it('restore() reports no capability when only unrelated hooks are registered', async () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     engine.registerSaveRestoreHooks({ onRestartRequested: async () => true });
 
     await expect(engine.restore()).resolves.toBe(false);
   });
 
   it('save() runs once the hook it needs is merged in', async () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const onSaveRequested = vi.fn(async () => {});
 
     engine.registerSaveRestoreHooks({ onRestartRequested: async () => true });
@@ -90,7 +90,7 @@ describe('registerSaveRestoreHooks merges (#229)', () => {
     // The original defect, at the layer that caused it: the confirmation hook
     // is still consulted after an unrelated registration, so a client that
     // wants to defer or refuse a restart still gets the chance.
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const onRestartRequested = vi.fn(async () => false);
 
     engine.registerSaveRestoreHooks({ onRestartRequested });

@@ -20,7 +20,7 @@ import {
   IRandomTraceData
 } from '@sharpee/core';
 import { EngineRandomService } from '../src/session/engine-random-service';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 
 const MASTER_SEED = 424242;
 const yesNo = { classes: ['yes', 'no'] as const };
@@ -442,7 +442,7 @@ describe('trace (D16)', () => {
 describe('GameEngine trace wiring (D16 — setRandomTraceEnabled)', () => {
   it('routes each firing onto the system-event channel as system.draw with the trace record as data', () => {
     const point = definePoint('test-forcing.engine-wiring', yesNo);
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const events: Array<{ type: string; data: unknown }> = [];
     engine.on('event', (e: { type: string; data: unknown }) => events.push(e));
 
@@ -463,7 +463,7 @@ describe('GameEngine trace wiring (D16 — setRandomTraceEnabled)', () => {
 
   it('setRandomTraceEnabled(false) stops emission; never enabling emits nothing (AC-14 groundwork)', () => {
     const point = definePoint('test-forcing.engine-wiring-off', yesNo);
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
     const events: Array<{ type: string }> = [];
     engine.on('event', (e: { type: string }) => events.push(e));
 

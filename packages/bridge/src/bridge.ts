@@ -192,16 +192,12 @@ export class NativeEngineBridge {
       // characters, so it cannot be claimed before `installStory` builds the world.
       // The engine needs *a* player at construction; `installStory` replaces this
       // placeholder with the real one (the same shape `@sharpee/bootstrap` uses).
-      const player = this.world.createEntity('player', 'actor');
-      this.world.setPlayer(player.id);
-
       const language = new EnglishLanguageProvider();
       const parser = new EnglishParser(language);
       const perceptionService = new PerceptionService();
 
       this.engine = new GameEngine({
         world: this.world,
-        player,
         parser,
         language,
         perceptionService,

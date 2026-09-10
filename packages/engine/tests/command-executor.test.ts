@@ -11,7 +11,7 @@ import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
 import { StandardActionRegistry, ActionResult, ActionContext } from '@sharpee/stdlib';
 import { GameContext, EngineConfig } from '../src/types';
-import { setupTestEngine } from './test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
@@ -29,8 +29,8 @@ describe('CommandExecutor', () => {
     // Create story and world
     story = new ActionTestStory();
     
-    // Use setupTestEngine to get all dependencies
-    const setup = setupTestEngine();
+    // Use setupTestEngineWithStory to get all dependencies
+    const setup = setupTestEngineWithStory();
     world = setup.world;
     languageProvider = setup.languageProvider;
     parser = setup.parser;

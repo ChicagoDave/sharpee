@@ -46,9 +46,10 @@ import { WorldModel } from '@sharpee/world-model';
 const language = new EnglishLanguageProvider();
 const parser = new EnglishParser(language);
 
-// Build the engine (world and player typically come from your story setup)
+// Build the engine. The player is NOT passed here — `installStory` below
+// takes it from the story, which is the only thing that knows who it is.
 const world = new WorldModel();
-const engine = new GameEngine({ world, player, parser, language });
+const engine = new GameEngine({ world, parser, language });
 
 // Register the story, then start
 engine.installStory(story);

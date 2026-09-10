@@ -205,10 +205,12 @@ describe('GameEngine', () => {
       await expect(engine.executeTurn('look')).rejects.toThrow('Engine is not running');
     });
 
-    it('should start without a story if dependencies are provided', () => {
+    it('refuses to start without a story', () => {
+      // ADR-344 D6a: an engine with no story has no player and nothing to
+      // render. This asserted the opposite until 2026-09-10, when the story
+      // became the only source of the player.
       const { engine: newEngine } = setupTestEngine();
-      expect(() => newEngine.start()).not.toThrow();
-      newEngine.stop();
+      expect(() => newEngine.start()).toThrow(/no story installed/i);
     });
   });
 

@@ -56,11 +56,12 @@ import { GameEngine } from '@sharpee/engine';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 
-// Build the world and player (typically via your story's setup)
+// Build the world (typically via your story's setup). The player comes from
+// the story at `installStory`, never from the constructor.
 const language = new EnglishLanguageProvider();
 const parser = new EnglishParser(language);
 
-const engine = new GameEngine({ world, player, parser, language });
+const engine = new GameEngine({ world, parser, language });
 
 // Register a story (configures world, player, grammar, channels)
 engine.installStory(story);
@@ -98,7 +99,7 @@ const config: EngineConfig = {
   validateEvents: true
 };
 
-const engine = new GameEngine({ world, player, parser, language, config });
+const engine = new GameEngine({ world, parser, language, config });
 
 // Listen to engine events
 engine.on('turn:complete', (result) => {

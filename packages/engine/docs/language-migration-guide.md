@@ -1,5 +1,13 @@
 # Language Management Migration Guide
 
+> **Historical document.** This describes a migration that is long complete, and its
+> code samples are preserved as they were written. They use a positional
+> `new GameEngine(world, player, config, languageProvider)` constructor that no longer
+> exists: the constructor takes an options object and, since ADR-344 D6, takes **no
+> player at all** — the player comes from the story at `installStory`. Read the samples
+> below as a record of the language-management change, not as current API. For today's
+> shape see `packages/engine/README.md`.
+
 This guide helps you migrate from manual parser registration to the new automatic language management system.
 
 ## Overview

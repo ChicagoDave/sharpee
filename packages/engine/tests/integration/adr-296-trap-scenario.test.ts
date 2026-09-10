@@ -11,7 +11,7 @@
  * pipeline → blocks). No stubs of owned dependencies.
  */
 
-import { setupTestEngine } from '../test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 import { RoomTrait, RoomBehavior, IdentityTrait, EntityType, Direction } from '@sharpee/world-model';
 import type { ITextBlock } from '@sharpee/text-blocks';
 
@@ -24,7 +24,7 @@ function blockText(block: ITextBlock): string {
 
 describe('ADR-296 end-to-end trap scenario', () => {
   it('renders the chained trap phrase after the room description and contents listing', async () => {
-    const { engine, world, player } = setupTestEngine();
+    const { engine, world, player } = setupTestEngineWithStory();
 
     // Wire a second room north of the start room, with visible contents
     // so the description is a full anchor CLUSTER (description + list).

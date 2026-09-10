@@ -1,6 +1,6 @@
 # Plugins
 
-Plugin system, NPC plugin, scheduler (daemons/fuses), state machine.
+Plugin system, scheduler (daemons/fuses), state machine.
 
 ---
 
@@ -328,8 +328,6 @@ export interface BandNarratorConfig extends BandCrossingConfig {
  */
 export declare function createBandNarrator(config: BandNarratorConfig): TurnPlugin;
 ```
-
-> **plugin-npc**: dist/index.d.ts not found — build first.
 
 ## @sharpee/plugin-scheduler
 

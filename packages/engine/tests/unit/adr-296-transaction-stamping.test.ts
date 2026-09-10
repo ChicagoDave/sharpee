@@ -14,7 +14,7 @@
  */
 
 import { processEvent } from '../../src/turn/turn-event-processor';
-import { setupTestEngine } from '../test-helpers/setup-test-engine';
+import { setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { TurnPluginContext } from '@sharpee/plugins';
 
@@ -89,7 +89,7 @@ describe('processEvent transaction stamping (ADR-296 D1)', () => {
 
 describe('funnel stamping in a live turn (ADR-296 D1, direct funnel test)', () => {
   it('action events and each plugin batch carry distinct, correctly-shaped transaction ids', async () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngineWithStory();
 
     const npcEvent = makeEvent('if.event.npc_acted', { npcId: 'troll' });
     const schedulerEvent = makeEvent('if.event.daemon_ticked', { daemonId: 'lantern' });
@@ -146,7 +146,7 @@ describe('funnel stamping in a live turn (ADR-296 D1, direct funnel test)', () =
   });
 
   it('a chained phrase produced during command execution carries both stamps (Phases 1+2 together)', async () => {
-    const { engine, world } = setupTestEngine();
+    const { engine, world } = setupTestEngineWithStory();
 
     // ADR-094's trap shape: a chain off an action event returning a phrase.
     world.chainEvent('if.event.looked', () => ({
