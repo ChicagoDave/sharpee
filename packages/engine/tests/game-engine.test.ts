@@ -195,22 +195,31 @@ describe('GameEngine', () => {
       expect(() => engine.stop()).not.toThrow();
     });
 
-    it('should throw if already running', () => {
+    it('should throw if already running, naming the phase it found', () => {
       engine.start();
-      expect(() => engine.start()).toThrow('Engine is already running');
+      // ADR-345 AC-2: the refusal names the phase actually found, not a
+      // boolean it read. 'Engine is already running' said the same thing in
+      // one of three unrelated sentences the class used to carry.
+      expect(() => engine.start()).toThrow(/'playing' phase/);
       engine.stop();
     });
 
-    it('should throw if executing turn when not running', async () => {
-      await expect(engine.executeTurn('look')).rejects.toThrow('Engine is not running');
+    it('should throw if executing turn before start, naming the phase it found', async () => {
+      // A story is installed (beforeEach) but start() has not run, so the
+      // phase is 'ready'. The old pair of guards could not say this: it
+      // answered 'Engine is not running', which was equally true of a
+      // stopped engine.
+      await expect(engine.executeTurn('look')).rejects.toThrow(/'ready' phase/);
     });
 
-    it('refuses to start without a story', () => {
+    it('refuses to start without a story, naming the phase it found', () => {
       // ADR-344 D6a: an engine with no story has no player and nothing to
       // render. This asserted the opposite until 2026-09-10, when the story
-      // became the only source of the player.
+      // became the only source of the player. ADR-345 D4 turned the bespoke
+      // check into the statement that start() accepts 'ready'.
       const { engine: newEngine } = setupTestEngine();
-      expect(() => newEngine.start()).toThrow(/no story installed/i);
+      expect(() => newEngine.start()).toThrow(/'empty' phase/);
+      expect(() => newEngine.start()).toThrow(/installStory\(\) first/);
     });
   });
 

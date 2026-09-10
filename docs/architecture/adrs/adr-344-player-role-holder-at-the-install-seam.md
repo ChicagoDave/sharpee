@@ -137,7 +137,15 @@ There is no legitimate case for a pre-story player: a caller with no story to in
 
 This puts the uncertainty where the uncertainty is. The phantom player existed because the constructor built a context that needed a player before any story existed; building the context at install removes the cause rather than making its symptom nullable.
 
-**D6a — `start()` requires a story** (David's ruling, 2026-09-10, during Phase 2). An engine with no story has no player, no world content and nothing to render, so starting one is meaningless. `start()` refuses with `Cannot start: no story installed — call installStory() first.` — stated as its own contract rather than left to the context getter's incidental throw, so the requirement carries its own message instead of an implementation detail leaking out.
+**D6a — `start()` requires a story** (David's ruling, 2026-09-10, during Phase 2). An engine with no story has no player, no world content and nothing to render, so starting one is meaningless. `start()` refuses — stated as its own contract rather than left to the context getter's incidental throw, so the requirement carries its own message instead of an implementation detail leaking out.
+
+**Amended 2026-09-10, session 772af3, in the commit that landed ADR-345 D2 (its D13, gated by its AC-8).** This paragraph quoted the refusal verbatim as `Cannot start: no story installed — call installStory() first.` ADR-345 D4 replaced that bespoke `if (!this._context)` check with the statement that `start()` accepts the `ready` phase, so the shipped refusal now names the phase it found:
+
+> `Cannot start(): the engine is in the 'empty' phase, and start() requires 'ready'. Call installStory() first.`
+
+**The decision is unchanged; only its realization is.** D6a said "`start()` requires a story" and gave it a message of its own rather than an incidental throw, and both still hold — the requirement is now carried by the phase model instead of a hand-written guard, which is what ADR-345 was written to do. The remedy hint survives word-for-word because it was the useful half of the original string.
+
+Amended here rather than left to drift on ADR-345's own precedent for this ADR's D5 and D7, which owed amendments to ADR-289 D4 and ADR-327 D9 and got them from the implementing session in the same commit, gated by AC-4 and AC-5. An unowned flip is how a corpus of Status lines stops being trustworthy.
 
 This surfaced as a test asserting the opposite: `packages/engine/tests/game-engine.test.ts:208`, *"should start without a story if dependencies are provided"*, which was the pre-D6 contract written down. It is now a rejection test. D6 states where the player comes from; D6a states what follows — if the story is the only source of a player, an engine without one cannot run.
 

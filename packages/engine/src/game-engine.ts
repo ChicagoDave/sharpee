@@ -120,6 +120,45 @@ function describeError(error: unknown): { message: string; stack?: string } {
 }
 
 /**
+ * The engine's lifecycle phase — what is true of the engine right now.
+ *
+ * Before ADR-345 this was carried by five independent proxies (`running`,
+ * `story`, `_context`, `channelService`, `commandExecutor`), and six guards
+ * asked about it through whichever field was nearest. Three of them asked
+ * "is there a story?" and answered in three different sentences, and
+ * `resume()` could not ask its question at all: `running === false` spans
+ * both "installed, never started" and "started, then stopped", so it read a
+ * collaborator (`channelService`) that happens to be created during `start()`.
+ * A state machine whose states are not distinguishable by its own state
+ * variables is being simulated rather than modeled.
+ *
+ * The names describe a condition, not an outcome, because every consumer is
+ * a guard and a guard asks what it may do — never what happened (ADR-345 D11).
+ *
+ * The transitions are `empty → ready → playing ⇄ stopped`, with `resume` the
+ * only back-edge. The set is closed: `restart` is engine *disposal*, not a
+ * transition — the client builds a fresh engine and the old one ends at
+ * `stopped` like any other ending (ADR-345 D10).
+ *
+ * Deliberately not exported. No consumer outside `GameEngine` needs to read
+ * the phase (ADR-345 D7); what reaches outward is the optionality it
+ * disproves, not the discriminant.
+ */
+type EnginePhase =
+  | { name: 'empty' }
+  | { name: 'ready'; story: Story; context: GameContext }
+  | { name: 'playing'; story: Story; context: GameContext }
+  | { name: 'stopped'; story: Story; context: GameContext };
+
+/**
+ * The phases that carry a story and a context — every phase but `empty`.
+ *
+ * Named so the narrowing accessors below state their own precondition
+ * instead of repeating a three-way union at each use.
+ */
+type InstalledPhase = Exclude<EnginePhase, { name: 'empty' }>;
+
+/**
  * Main game engine
  */
 export class GameEngine implements StoryEngine {
@@ -142,20 +181,76 @@ export class GameEngine implements StoryEngine {
    */
   private readonly startedAt: Date = new Date();
 
-  private _context: GameContext | undefined;
+  /**
+   * The single source of truth for the engine's lifecycle (ADR-345 D1).
+   *
+   * Replaces `running`, `story`, `_context` and the two collaborator proxies
+   * as the way lifecycle is *read*. Written only by `installStory`, `start`,
+   * `stop` and `resume`.
+   */
+  private phase: EnginePhase = { name: 'empty' };
 
   /**
-   * The game context. Throws before a story is installed.
+   * The game context, narrowed out of the phase rather than null-checked.
    *
-   * @throws Error when no story has been installed yet.
+   * Every phase but `empty` carries one, so readers in those phases get it
+   * without a guard of their own; the throw survives only as the `empty`-phase
+   * refusal (ADR-345 D3).
+   *
+   * @throws Error when the engine is in the `empty` phase (no story installed).
    */
   private get context(): GameContext {
-    if (!this._context) {
+    if (this.phase.name === 'empty') {
       throw new Error(
         'No story installed: the game context does not exist until installStory() has run.'
       );
     }
-    return this._context;
+    return this.phase.context;
+  }
+
+  /**
+   * The installed story, or `undefined` in the `empty` phase.
+   *
+   * A derived read, not a guard: the lifecycle questions are asked of
+   * `this.phase` directly. Kept so the several non-guard `this.story?.…`
+   * readers below need no rewrite.
+   */
+  private get story(): Story | undefined {
+    return this.phase.name === 'empty' ? undefined : this.phase.story;
+  }
+
+  /**
+   * The context when one exists, `undefined` in the `empty` phase.
+   *
+   * The one legitimate "there may be no context" read in the class, for
+   * `emitGameEvent`'s turn bucketing — install steps emit before the context
+   * exists. Distinct from the dead optionality ADR-345 D7 removes elsewhere;
+   * see the comment at its single call site.
+   */
+  private get contextIfInstalled(): GameContext | undefined {
+    return this.phase.name === 'empty' ? undefined : this.phase.context;
+  }
+
+  /**
+   * The refusal a lifecycle method throws when the engine is in a phase it
+   * does not accept (ADR-345 D2).
+   *
+   * One shape for all four methods, so a caller reading any of them learns
+   * the same two things: what was attempted, and what phase the engine was
+   * actually in. Before this, three guards asked "is there a story?" through
+   * three different fields and answered in three different sentences.
+   *
+   * @param attempted - The method that refused, written as a call (`'start()'`).
+   * @param accepted - The phase or phases it accepts, quoted (`"'ready'"`).
+   * @param hint - Optional remedy or detail appended to the message.
+   * @returns The Error to throw — never thrown here, so the call site reads
+   *          as a `throw` and control flow stays obvious.
+   */
+  private wrongPhase(attempted: string, accepted: string, hint?: string): Error {
+    const detail = hint ? ` ${hint}` : '';
+    return new Error(
+      `Cannot ${attempted}: the engine is in the '${this.phase.name}' phase, and ${attempted} requires ${accepted}.${detail}`
+    );
   }
   private config: EngineConfig;
   private commandExecutor: CommandExecutor;
@@ -164,8 +259,9 @@ export class GameEngine implements StoryEngine {
   private actionRegistry: StandardActionRegistry;
   private textService: IProsePipeline;
   private turnEvents = new Map<number, ISemanticEvent[]>();
-  private running = false;
-  private story?: Story;
+  // `running` and `story` are gone: both were proxies for the lifecycle
+  // phase, and both are now read off `this.phase` (ADR-345 D1). `story`
+  // survives as a derived getter above for its non-guard readers.
   private languageProvider: LanguageProvider;
   private parser: Parser;
   /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
@@ -401,16 +497,20 @@ export class GameEngine implements StoryEngine {
    * @throws Error when the engine is running or a story is already installed; whatever a step throws
    */
   installStory(story: Story): void {
-    // `running` is checked before `story`, and the order is load-bearing:
-    // since start() began requiring an installed story, a running engine
-    // always carries one, so a story-first check would answer every
-    // install-after-start with "already installed" and this guard's more
-    // actionable wording would never be reached.
-    if (this.running) {
-      throw new Error('Cannot install a story after start() (running: true); install before starting');
-    }
-    if (this.story) {
-      throw new Error(`A story is already installed (story: '${this.story.config.id}'); an engine installs exactly one`);
+    // One guard, so there is no order to get wrong (ADR-345 D2). The two
+    // guards this replaces had a load-bearing order — `running` before
+    // `story`, because a running engine always carries one — and getting it
+    // backwards silently made the second unreachable. That question does not
+    // exist once the phase is a single field.
+    //
+    // This also pins ADR-345 D10: `installStory` on a `stopped` engine
+    // refuses, so there is no back-edge to `empty` and no re-installation.
+    if (this.phase.name !== 'empty') {
+      throw this.wrongPhase(
+        'installStory()',
+        "'empty'",
+        `An engine installs exactly one story (installed: '${this.phase.story.config.id}').`
+      );
     }
 
     const installed = runInstallSteps({
@@ -423,22 +523,28 @@ export class GameEngine implements StoryEngine {
       draft: {}
     }, STORY_INSTALL_STEPS);
 
-    this.story = installed.story;
     this.narrativeSettings = installed.narrativeSettings;
     // The context is constructed here, not patched: it cannot be complete
-    // before the story supplies the player (ADR-344 D6 as amended).
-    this._context = {
-      currentTurn: 1,  // Start at 1 per test expectations
-      player: installed.player,
-      history: [],
-      metadata: {
-        title: installed.metadata.title,
-        author: installed.metadata.author,
-        version: installed.metadata.version,
-        started: this.startedAt,
-        lastPlayed: new Date()
-      },
-      implicitActions: installed.implicitActions
+    // before the story supplies the player (ADR-344 D6 as amended). Story
+    // and context enter the phase together — they were always one fact, and
+    // storing them in two fields is what let `start()` reach for the context
+    // to report a *story* problem (ADR-345 D1).
+    this.phase = {
+      name: 'ready',
+      story: installed.story,
+      context: {
+        currentTurn: 1,  // Start at 1 per test expectations
+        player: installed.player,
+        history: [],
+        metadata: {
+          title: installed.metadata.title,
+          author: installed.metadata.author,
+          version: installed.metadata.version,
+          started: this.startedAt,
+          lastPlayed: new Date()
+        },
+        implicitActions: installed.implicitActions
+      }
     };
 
     // The one playthrough-side call in the sequence: the story sees an
@@ -486,18 +592,19 @@ export class GameEngine implements StoryEngine {
    *   explicit declaration.
    */
   start(options?: { capabilities?: ClientCapabilities }): void {
-    if (this.running) {
-      throw new Error('Engine is already running');
+    // A story is required to start (ADR-344 D6a, as realized by ADR-345 D4):
+    // an engine with no story has no player, no world content and nothing to
+    // render. That requirement is no longer a bespoke `!this._context` check
+    // with its own sentence — it is the statement that `start()` accepts
+    // `ready`, which also subsumes the old "already running" guard.
+    if (this.phase.name !== 'ready') {
+      throw this.wrongPhase(
+        'start()',
+        "'ready'",
+        this.phase.name === 'empty' ? 'Call installStory() first.' : undefined
+      );
     }
-
-    // A story is required to start (David's ruling, 2026-09-10; ADR-344 D6a).
-    // An engine with no story has no player, no world content and nothing to
-    // render, so starting one is meaningless. Stated here rather than left to
-    // the context getter's incidental throw, so the requirement is a contract
-    // with its own message instead of an implementation detail leaking out.
-    if (!this._context) {
-      throw new Error('Cannot start: no story installed — call installStory() first.');
-    }
+    const ready = this.phase;
 
     // Channel-I/O bootstrap (ADR-163 §13, §14):
     //  1. Refresh `storyInfo` from `StoryInfoTrait` — pulls in the
@@ -510,7 +617,11 @@ export class GameEngine implements StoryEngine {
     //     negotiated capabilities.
     //  4. Manifest fires before the first turn — bootstrap-order
     //     invariant from §11.
-    this.refreshStoryInfoCapability();
+    // Both take the story from the narrowed phase rather than re-checking a
+    // field: `start()` accepts only `ready`, so a story is guaranteed here.
+    // The `if (!this.story) return;` these used to carry was dead defence of
+    // exactly the kind ADR-345 D3 removes.
+    this.refreshStoryInfoCapability(ready.story);
     this.resolvePrologue();
     this.clientCapabilities = options?.capabilities ?? DEFAULT_TEXT_CAPABILITIES;
 
@@ -545,7 +656,7 @@ export class GameEngine implements StoryEngine {
     });
     this.emitGameEvent(startingEvent);
 
-    this.running = true;
+    this.phase = { name: 'playing', story: ready.story, context: ready.context };
     this.sessionStartTime = Date.now();
     this.sessionTurns = 0;
     this.sessionMoves = 0;
@@ -582,11 +693,10 @@ export class GameEngine implements StoryEngine {
    * The same precedence rule as at load: an authored field the config set
    * is not overwritten by the trait here.
    */
-  private refreshStoryInfoCapability(): void {
-    if (!this.story) return;
+  private refreshStoryInfoCapability(story: Story): void {
     this.world.updateCapability(
       'storyInfo',
-      projectStoryInfo(this.story.config, findStoryInfoTrait(this.world)),
+      projectStoryInfo(story.config, findStoryInfoTrait(this.world)),
     );
   }
 
@@ -627,25 +737,43 @@ export class GameEngine implements StoryEngine {
    * (no command executor) — resuming presumes a completed `start()`.
    */
   resume(): void {
-    if (this.running) {
+    // Tolerant of `playing`, like `stop` is tolerant of everything else
+    // (ADR-345 D8a). `branch-tester`'s tree walker calls this on every test
+    // line — `tree-walker.ts:360`, "Harmless when the engine is running" —
+    // because a line's prefix may or may not have ended the game. Making
+    // this strict would throw on every non-death line of every tree.
+    if (this.phase.name === 'playing') {
       return;
     }
-    // The channel service exists only once start() has completed — resuming
-    // an engine that never started would bypass the whole bootstrap order.
-    if (!this.channelService) {
-      throw new Error('Engine must have been started before it can resume');
+    // This is the method that motivated ADR-345. It used to check
+    // `this.channelService` — a collaborator, not a state flag — because
+    // `running === false` spanned both "installed, never started" and
+    // "started, then stopped" and the boolean pair could not tell them
+    // apart. The phase can.
+    if (this.phase.name !== 'stopped') {
+      throw this.wrongPhase(
+        'resume()',
+        "'stopped'",
+        'An engine must have been started before it can resume.'
+      );
     }
-    this.running = true;
+    this.phase = { name: 'playing', story: this.phase.story, context: this.phase.context };
   }
 
   /**
    * Stop the game engine
    */
   stop(reason?: 'quit' | 'victory' | 'defeat' | 'abort' | 'restart', details?: any): void {
-    if (!this.running) {
+    // Deliberately tolerant, not strict (ADR-345 D8). `BrowserClient
+    // .disposeAndReboot` calls `stop('restart')` unconditionally and relies
+    // on the no-op — menu-path restarts have no turn in flight, so the
+    // engine never stopped itself. Do not "finish the job" by making this
+    // match its siblings.
+    if (this.phase.name !== 'playing') {
       return;
     }
-    
+    const playing = this.phase;
+
     // One session record, one clock read: the ending event and the
     // reason-specific end event describe the same session.
     const session = {
@@ -658,8 +786,11 @@ export class GameEngine implements StoryEngine {
     const endingEvent = createGameEndingEvent(reason || 'quit', session);
     this.emitGameEvent(endingEvent);
     
-    this.running = false;
-    
+    // The reason is not stored on the phase: it is already the payload of
+    // the events emitted here, and one fact in two places is the defect
+    // ADR-345 was written about (D9).
+    this.phase = { name: 'stopped', story: playing.story, context: playing.context };
+
     // Emit specific end event based on reason
     if (reason === 'victory') {
       const wonEvent = createGameWonEvent(session, details);
@@ -706,12 +837,15 @@ export class GameEngine implements StoryEngine {
    * Execute a turn
    */
   async executeTurn(input: string): Promise<TurnResult> {
-    if (!this.running) {
-      throw new Error('Engine is not running');
-    }
-
-    if (!this.commandExecutor) {
-      throw new Error('Engine must have a story set before executing turns');
+    // Two guards collapse into one (ADR-345 D2). The pair asked the same
+    // question twice — `!this.running`, then `!this.commandExecutor` as a
+    // stand-in for "is there a story?" — and answered in two sentences.
+    if (this.phase.name !== 'playing') {
+      throw this.wrongPhase(
+        'executeTurn()',
+        "'playing'",
+        this.phase.name === 'stopped' ? 'The game has ended; call resume() to continue.' : undefined
+      );
     }
 
     const context: TurnStageContext = {
@@ -1365,7 +1499,14 @@ export class GameEngine implements StoryEngine {
     // going through the throwing `context` getter. Before ADR-344 D6 moved
     // the context into `installStory`, these events bucketed into turn 1
     // because the constructor initialised `currentTurn: 1`; they still do.
-    const currentTurn = this._context?.currentTurn ?? 1;
+    // NOT the dead optionality ADR-345 D7 removes from the two bridge hosts.
+    // This one fires: `emit-story-loading` and `emit-story-loaded` are install
+    // steps, so they emit while the phase is still `empty` and there is
+    // genuinely no context to read. It is the single site in this class where
+    // "no context" is correct rather than impossible — hence the dedicated
+    // `contextIfInstalled` accessor rather than a bare `?.`. Do not "clean
+    // this up" by analogy with the bridges; a test pins it.
+    const currentTurn = this.contextIfInstalled?.currentTurn ?? 1;
     if (currentTurn > 0) {
       const turnEvents = this.turnEvents.get(currentTurn) || [];
       turnEvents.push(event);

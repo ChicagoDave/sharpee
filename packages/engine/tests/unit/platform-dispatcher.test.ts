@@ -144,8 +144,8 @@ describe('one platform-operation dispatcher (ADR-334 D3)', () => {
     const turn = await turnPath(confirmTurn, request);
     expect(meta).toEqual([{ type: 'platform.quit_confirmed', payload: { success: true } }]);
     expect(turn).toEqual(meta);
-    expect(confirmMeta['running']).toBe(false);
-    expect(confirmTurn['running']).toBe(false);
+    expect(confirmMeta['phase'].name).toBe('stopped');
+    expect(confirmTurn['phase'].name).toBe('stopped');
 
     const declineMeta = startedEngine({ onQuitRequested: async () => false });
     const declineTurn = startedEngine({ onQuitRequested: async () => false });
@@ -153,8 +153,8 @@ describe('one platform-operation dispatcher (ADR-334 D3)', () => {
     const turnDeclined = await turnPath(declineTurn, request);
     expect(metaDeclined).toEqual([{ type: 'platform.quit_cancelled', payload: { success: false } }]);
     expect(turnDeclined).toEqual(metaDeclined);
-    expect(declineMeta['running']).toBe(true);
-    expect(declineTurn['running']).toBe(true);
+    expect(declineMeta['phase'].name).toBe('playing');
+    expect(declineTurn['phase'].name).toBe('playing');
   });
 
   it('restart: both paths acknowledge then stop with reason restart, or cancel and keep running', async () => {
@@ -168,8 +168,8 @@ describe('one platform-operation dispatcher (ADR-334 D3)', () => {
     // The turn path also sees the stop's own game.* events; the platform-side
     // shape it delivers is the same ack and nothing else.
     expect(turn.filter((e) => (e as { type: string }).type !== 'game.ended')).toEqual(meta);
-    expect(confirmMeta['running']).toBe(false);
-    expect(confirmTurn['running']).toBe(false);
+    expect(confirmMeta['phase'].name).toBe('stopped');
+    expect(confirmTurn['phase'].name).toBe('stopped');
 
     const declineMeta = startedEngine({ onRestartRequested: async () => false });
     const declineTurn = startedEngine({ onRestartRequested: async () => false });
@@ -177,8 +177,8 @@ describe('one platform-operation dispatcher (ADR-334 D3)', () => {
     const turnDeclined = await turnPath(declineTurn, request);
     expect(metaDeclined).toEqual([{ type: 'platform.restart_cancelled', payload: { success: false } }]);
     expect(turnDeclined).toEqual(metaDeclined);
-    expect(declineMeta['running']).toBe(true);
-    expect(declineTurn['running']).toBe(true);
+    expect(declineMeta['phase'].name).toBe('playing');
+    expect(declineTurn['phase'].name).toBe('playing');
   });
 
   it('undo: both paths roll back one turn, and both refuse when there is nothing to undo', async () => {

@@ -85,19 +85,23 @@ describe('the story installation list (ADR-334 A1)', () => {
 });
 
 describe('the install guard: one story, before start', () => {
-  it('a second install throws naming the story field', () => {
+  it('a second install refuses, naming the ready phase and the installed story', () => {
     const { engine } = setupTestEngine();
     engine.installStory(new MinimalTestStory());
-    expect(() => engine.installStory(new MinimalTestStory())).toThrow(/story: 'minimal-test'/);
+    expect(() => engine.installStory(new MinimalTestStory())).toThrow(/'ready' phase/);
+    expect(() => engine.installStory(new MinimalTestStory())).toThrow(/installed: 'minimal-test'/);
     expect(engine.getStory()?.config.id).toBe('minimal-test');
   });
 
-  it('an install after start() throws naming the running field', () => {
-    // A running engine always carries a story now, so this case also pins the
-    // guard order: story-first would answer with "already installed" instead.
+  it('an install after start() refuses, naming the playing phase', () => {
+    // This replaces the guard-*order* pin that used to live here (ADR-345
+    // AC-2). The order was load-bearing when two guards read two fields:
+    // story-first would have answered "already installed" and the running
+    // guard would have been dead code. There is one guard now, so there is
+    // no order to pin — only the phase it reports.
     const { engine } = setupTestEngineWithStory();
     engine.start();
-    expect(() => engine.installStory(new MinimalTestStory())).toThrow(/running: true/);
+    expect(() => engine.installStory(new MinimalTestStory())).toThrow(/'playing' phase/);
     expect(engine.getStory()?.config.id).toBe('test-story'); // the rejected story was not adopted
   });
 

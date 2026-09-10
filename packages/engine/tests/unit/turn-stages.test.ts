@@ -157,11 +157,11 @@ describe('ending', () => {
 
     await engine.executeTurn('take lamp');
 
-    expect(engine['running']).toBe(false);
+    expect(engine['phase'].name).toBe('stopped');
     const ended = emitted.filter((e) => e.type === 'game.ended');
     expect(ended).toHaveLength(1);
     expect((ended[0].data as { ending?: { type?: string } }).ending?.type).toBe('victory');
-    await expect(engine.executeTurn('look')).rejects.toThrow('Engine is not running');
+    await expect(engine.executeTurn('look')).rejects.toThrow(/'stopped' phase/);
   });
 
   it('a story that reports itself complete ends as a victory after the turn', async () => {
@@ -173,7 +173,7 @@ describe('ending', () => {
 
     await engine.executeTurn('take lamp');
 
-    expect(engine['running']).toBe(false);
+    expect(engine['phase'].name).toBe('stopped');
     const ended = emitted.filter((e) => e.type === 'game.ended');
     expect((ended[0].data as { ending?: { type?: string } }).ending?.type).toBe('victory');
   });
@@ -205,7 +205,7 @@ describe('meta-command failure', () => {
     expect(result.success).toBe(false);
     expect(result.error).toBe('registry offline');
     expect(result.events.map((e) => e.type)).toEqual(['command.failed']);
-    expect(engine['running']).toBe(true);
+    expect(engine['phase'].name).toBe('playing');
   });
 });
 

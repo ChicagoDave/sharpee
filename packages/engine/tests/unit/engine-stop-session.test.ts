@@ -48,7 +48,7 @@ describe('stop() closes the session with one record', () => {
     const expected: SessionRecord = { startTime: 1_000, endTime: 5_000, turns: 2, moves: 1 };
     expect(sessionOf(ending!)).toEqual(expected);
     expect(sessionOf(won!)).toEqual(expected);
-    expect(engine['running']).toBe(false);
+    expect(engine['phase'].name).toBe('stopped');
   });
 
   it('a stopped engine ignores a second stop', () => {

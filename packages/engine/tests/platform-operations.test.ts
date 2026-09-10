@@ -278,7 +278,7 @@ describe('GameEngine Platform Operations', () => {
       
       const confirmedEvents = events.filter(e => e.type === 'platform.quit_confirmed');
       expect(confirmedEvents).toHaveLength(1);
-      expect(engine['running']).toBe(false);
+      expect(engine['phase'].name).toBe('stopped');
     });
 
     it('should emit cancelled event when quit declined', async () => {
@@ -295,7 +295,7 @@ describe('GameEngine Platform Operations', () => {
       
       const cancelledEvents = events.filter(e => e.type === 'platform.quit_cancelled');
       expect(cancelledEvents).toHaveLength(1);
-      expect(engine['running']).toBe(true);
+      expect(engine['phase'].name).toBe('playing');
     });
 
     it('should quit by default when no hook registered', async () => {
@@ -361,7 +361,7 @@ describe('GameEngine Platform Operations', () => {
       expect(acks).toHaveLength(1);
 
       // Engine stopped with reason 'restart'; game.ended carries it
-      expect(engine['running']).toBe(false);
+      expect(engine['phase'].name).toBe('stopped');
       const ended = events.filter(e => e.type === 'game.ended');
       expect(ended).toHaveLength(1);
       expect(ended[0].data?.ending?.type).toBe('restart');
@@ -390,7 +390,7 @@ describe('GameEngine Platform Operations', () => {
       expect(cancelledEvents[0].payload.success).toBe(false);
 
       // Declined restart tears nothing down (ADR-248): world intact, engine running
-      expect(engine['running']).toBe(true);
+      expect(engine['phase'].name).toBe('playing');
       expect(world.getAllEntities().length).toBe(entityCountBefore);
     });
 
@@ -404,7 +404,7 @@ describe('GameEngine Platform Operations', () => {
         e.type === 'game.message' &&
         e.data?.messageId === 'if.action.restarting.game_restarting'
       )).toHaveLength(1);
-      expect(engine['running']).toBe(false);
+      expect(engine['phase'].name).toBe('stopped');
     });
 
     it('meta path: declined restart returns restart_cancelled and keeps the engine running', async () => {
@@ -416,7 +416,7 @@ describe('GameEngine Platform Operations', () => {
       const completionEvents = await processMetaPlatformOperation(engine['turnEngine'](), restartEvent);
 
       expect(completionEvents.filter((e: any) => e.type === 'platform.restart_cancelled')).toHaveLength(1);
-      expect(engine['running']).toBe(true);
+      expect(engine['phase'].name).toBe('playing');
     });
   });
 
