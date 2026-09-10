@@ -34,7 +34,10 @@ class HelpersBoundaryStory {
   createPlayer(world) {
     const { actor } = createHelpers(world);
 
+    // ADR-344 D7: playability is opt-in, so a protagonist built through the
+    // author API says so explicitly.
     const player = actor('yourself')
+      .playable()
       .description('As good-looking as ever.')
       .aliases('self', 'me')
       .properName()

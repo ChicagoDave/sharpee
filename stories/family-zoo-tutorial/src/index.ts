@@ -265,7 +265,7 @@ export class FriendlyZooStory implements Story {
   createPlayer(world: WorldModel): IFEntity {
     const player = world.createEntity('yourself', EntityType.ACTOR);
     player.add(new IdentityTrait({ name: 'yourself', description: 'Just an ordinary visitor to the zoo.', aliases: ['self', 'myself', 'me'], properName: true, article: '' }));
-    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ActorTrait({ isPlayer: true, isPlayable: true }));
     player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
     // ADR-327 D10: installStory builds the world FIRST, so the entrance exists by
     // the time this runs — the player is placed here, not in initializeWorld.

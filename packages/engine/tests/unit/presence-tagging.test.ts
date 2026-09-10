@@ -94,7 +94,7 @@ describe('presence tagging through the live engine (REAL PATH)', () => {
       },
       initializeWorld: (w: WorldModel) => {
         const player = w.createEntity('You', EntityType.ACTOR);
-        player.add(new ActorTrait());
+        player.add(new ActorTrait({ isPlayable: true }));
         const hall = w.createEntity('Hall', EntityType.ROOM);
         const cellar = w.createEntity('Cellar', EntityType.ROOM);
         hall.add(new RoomTrait({ requiresLight: false, exits: { EAST: { destination: cellar.id } } }));

@@ -35,7 +35,9 @@ function storyWithHolder(
       const player = world.createEntity('You', EntityType.ACTOR);
 
       if (shape !== 'no-actor-trait') {
-        player.add(new ActorTrait(shape === 'not-playable' ? { isPlayable: false } : {}));
+        // Explicit both ways since ADR-344 D7 flipped the trait's default to
+        // non-playable — `{}` no longer produces a compliant holder.
+        player.add(new ActorTrait({ isPlayable: shape !== 'not-playable' }));
       }
       if (shape !== 'unplaced') {
         world.moveEntity(player.id, room.id);

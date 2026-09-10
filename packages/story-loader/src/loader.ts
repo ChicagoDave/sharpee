@@ -1626,7 +1626,11 @@ export class ChordStory implements Story {
       }
       case 'person': {
         entity = world.createEntity(irEntity.name, 'actor');
-        entity.add(new ActorTrait());
+        // ADR-344 D7 (completing ADR-327 D9): `playable` reaches the runtime here.
+        // The trait's default is non-playable, so absence of the flag means what
+        // Chord means by absence and the install seam's role-holder guard can
+        // refuse a protagonist the author never marked.
+        entity.add(new ActorTrait({ isPlayable: irEntity.isPlayable }));
         // ADR-327 D10 (Q4, ruled 2026-08-26): a character who can hold the
         // player role needs somewhere to carry things — the capacity the
         // synthetic `yourself` actor used to be born with. Non-playable

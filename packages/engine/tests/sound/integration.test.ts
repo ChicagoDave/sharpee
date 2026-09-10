@@ -120,7 +120,7 @@ class TapestryStory implements Story {
 
   createPlayer(world: WorldModel): IFEntity {
     const player = world.createEntity('yourself', 'actor');
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
     player.add(new ContainerTrait());
     player.add(new IdentityTrait({ name: 'yourself', article: '' }));
     if (!this._actors) this._actors = { player, bystander: null as any };

@@ -81,7 +81,7 @@ class ShoutTestStory implements Story {
 
   createPlayer(world: WorldModel): IFEntity {
     const p = world.createEntity('yourself', 'actor');
-    p.add(new ActorTrait());
+    p.add(new ActorTrait({ isPlayable: true }));
     p.add(new ContainerTrait());
     p.add(new IdentityTrait({ name: 'yourself', article: '' }));
     this._player = p;

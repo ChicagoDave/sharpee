@@ -151,7 +151,10 @@ export class ActorTrait implements ITrait, IActorTrait {
   readonly type = TraitType.ACTOR;
 
   isPlayer: boolean = false;
-  isPlayable: boolean = true;
+  // Opt-in, matching Chord's `playable`: absence means this character may not
+  // hold the player role. Written by the loader from `IREntity.isPlayable`;
+  // hand-written stories pass it explicitly (ADR-344 D7).
+  isPlayable: boolean = false;
   state?: string;
 
   /** Pronouns - defaults to they/them (ADR-089) */

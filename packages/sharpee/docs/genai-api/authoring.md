@@ -359,7 +359,7 @@ export declare class ContainerBuilder {
 /**
  * ActorBuilder — fluent builder for actor entities.
  *
- * Public interface: description, aliases, properName, inventory, in,
+ * Public interface: description, aliases, properName, playable, inventory, in,
  * skipValidation, build.
  *
  * Owner context: @sharpee/helpers (ADR-140)
@@ -372,6 +372,7 @@ import type { IWorldModel, ITrait } from '@sharpee/world-model';
  * @example
  * ```typescript
  * const player = actor('yourself')
+ *   .playable()
  *   .description('As good-looking as ever.')
  *   .aliases('self', 'me', 'myself')
  *   .properName()
@@ -385,6 +386,7 @@ export declare class ActorBuilder {
     private _description?;
     private _aliases?;
     private _properName;
+    private _playable;
     private _inventory?;
     private _location?;
     private _skipValidation;
@@ -410,6 +412,17 @@ export declare class ActorBuilder {
      * @returns this (for chaining)
      */
     properName(): this;
+    /**
+     * Mark the actor as eligible to hold the player role.
+     *
+     * Opt-in on purpose, and deliberately not the default even here: a
+     * protagonist must say so, the same way a Chord `person` says `playable`.
+     * An actor built without it is an NPC and is refused by the install seam's
+     * role-holder guard and by `switchPlayer` (ADR-344 D7).
+     *
+     * @returns this (for chaining)
+     */
+    playable(): this;
     /**
      * Add inventory capacity (adds ContainerTrait).
      *

@@ -151,6 +151,32 @@ The half-measure to avoid is writing the flag while leaving the default `true`: 
 
 **ADR-327 D9 carries a pointer amendment** recording that its loader step was completed here. The decision itself lives in this ADR; ADR-327 is not reopened.
 
+**Site-list corrections, 2026-09-10 (session 52e228, implementing).** D7's own list of
+hand-written protagonists to opt in was short by two, both found before the flip landed
+and both now opted in:
+
+- **`stories/dungeo`.** The paragraph above names Dungeo's troll, bat and robot among the
+  actors that correctly become non-playable, but Dungeo also has a hand-written
+  `createPlayer` (`stories/dungeo/src/index.ts:683`) whose `ActorTrait` passed only
+  `isPlayer: true`. Left alone, the flagship story would have failed
+  `validate-role-holder` with `not-playable` at install. The walkthrough-chain gate
+  would have caught it; the site list should have named it.
+- **`packages/helpers/tests/fixtures/external-story/story.js`.** The REAL-PATH bundle
+  fixture builds its protagonist through the documented author API —
+  `actor('yourself').…build()` — which is exactly the case the builder paragraph above
+  predicts. It now calls `.playable()`, making the fixture the worked example of the
+  opt-in it argues for. Worth noting how it surfaced: the helpers vitest suite passed
+  against source while the real path was broken, and only failed once `./repokit build`
+  rebuilt the bundle with the flipped default. That is the same
+  "check structurally incapable of observing what broke" pattern this plan has hit four
+  times, and the same REAL-PATH test that caught the Phase 2 defect caught this one.
+
+Beyond those two, sixteen test-side role holders across `engine`, `bootstrap` and the
+engine's shared fixtures needed the same opt-in; each surfaced as a
+`RoleHolderValidationError … is not marked playable` at install, which is the guard
+doing its job rather than a defect. NPCs and bystanders in the same files were left
+non-playable deliberately.
+
 **Amendment ownership (both amendments).** The session that implements the decision writes the amendment into the target ADR's own file, in the same commit as the code, before that decision's acceptance criterion can be marked met: AC-4 gates D5's strike of ADR-289 D4's fallback clause, AC-5 gates D7's pointer note on ADR-327 D9. Neither target ADR's Status changes — both stay ACCEPTED; these are amendments, not supersessions.
 
 **D8 — The unguarded story handoffs are named, and only `createPlayer`'s is closed here** (Q-4 resolved, David, 2026-09-10, by measurement). Audited 2026-09-10 at `87f06800c`: of the eighteen install steps, **three validate anything, and all three are the ones named `validate-*`** (`validate-config`, `validate-room-snippets`, `validate-combatant-health`). Validation in this pipeline is opt-in by naming convention.
@@ -186,7 +212,20 @@ Each criterion names the command that decides it. AC-9 is met; the rest gate imp
 
 4. **AC-4 (D5) — one placement rule, and ADR-289 says so.** `finalizeRoleHolder` contains no first-room fallback; a Chord story whose protagonist has no placement line fails installation; ADR-289 D4's "keeping the first-declared-room fallback" clause is struck by an amendment written in `adr-289-chord-routing-decided-once.md` in the implementing commit. Verified by the new refusal test, by `./sharpee test branch-stories/fernhill` and the Dungeo chain still passing, and by reading the amended ADR. **PREMISE-DEPENDENT** — premise: that no shipped story relies on the fallback. Established by the measurement recorded in D5 (85 sources, 64 explicit, 19 fixtures, 0 shipped, 2026-09-10 at `87f06800c`), to be re-run at implementation.
 
-5. **AC-5 (D7) — `playable` reaches the runtime.** `ActorTrait.isPlayable` defaults to `false`; the loader writes it from `irEntity.isPlayable`; a Chord character without `playable` fails `switchPlayer`'s guard, and one with it passes; ADR-327 D9 carries the pointer amendment. Verified by a new world-model test on the default, a story-loader test asserting the written flag for both cases, an engine test driving `switchPlayer` both ways, a helpers test that `actor(...).build()` is non-playable while `actor(...).playable().build()` is playable, and green suites for the six hand-written stories that now opt in. **SELF-VERIFYING** — the negative case fails if the loader write is dropped, which is the exact failure ADR-327's own AC-5 could not detect.
+5. **AC-5 (D7) — `playable` reaches the runtime.** `ActorTrait.isPlayable` defaults to `false`; the loader writes it from `irEntity.isPlayable`; a Chord character without `playable` fails `switchPlayer`'s guard, and one with it passes; ADR-327 D9 carries the pointer amendment. Verified by a new world-model test on the default, a story-loader test asserting the written flag for both cases, an engine test driving `switchPlayer` both ways, a helpers test that `actor(...).build()` is non-playable while `actor(...).playable().build()` is playable, and green suites for the six hand-written stories that now opt in. **SELF-VERIFYING** — the write is pinned in both directions: with the class default now `false`, dropping the loader write fails the POSITIVE assertions (a `playable` character reads back non-playable), while the negative assertion pins that the write is conditional on the IR rather than a blanket `true`. Before D7 neither could fail, which is the exact failure ADR-327's own AC-5 could not detect.
+
+   **MET 2026-09-10** (session 52e228). Evidence, all run 2026-09-10 10:33–10:41 CDT:
+   - `pnpm --filter '@sharpee/world-model' test --run` — 86 files, **1516 passed, 0 failed** (default flip + the new "playability is opt-in" block).
+   - `pnpm --filter '@sharpee/story-loader' test --run` — 123 files, **1111 passed, 0 failed** (1107 → 1111; `adr-344-d7-playable-reaches-runtime.test.ts`, 4 tests).
+   - `pnpm --filter '@sharpee/engine' test --run` — 82 files, **776 passed, 0 failed, 7 skipped** (`adr-344-d7-switch-player-playability.test.ts`, 4 tests, drives `switchPlayer` both ways).
+   - `pnpm --filter '@sharpee/helpers' test:ci` — 5 files, **17 passed, 0 failed** (13 → 17; `actor-builder-playable.test.ts`).
+   - `pnpm exec turbo run test:ci` — **67 tasks, 67 successful**, run after `./repokit build dungeo` (exit 0, bundle 4,434,065 bytes).
+   - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` — **952 tests in 17 transcripts, 952 passed**, all 17 goldens matched (single run, pinned seed).
+   - `./sharpee test branch-stories/fernhill` — **86 cards passing, 104 assertions passing**, 222 commands.
+   - `node dist/cli/sharpee.js --test stories/concealment-test/tests/transcripts/*.transcript` — **38 tests in 2 transcripts, 38 passed**.
+   - Nine of the ten other Chord stories carrying `playable` boot and play a turn through the bundle. `branch-stories/secret-letter` does not — a shelved port that fails on `analysis.import-unresolved` (the bundle CLI provides no import resolver, GH #352) and undeclared traits, phrases and timers. `stories/armoured`'s opt-in is verified by inspection only: it is an old sample kept for early testing, outside the workspace with no build path (David, 2026-09-10).
+
+   **Two corrections to D7's own site list, found while implementing** — both recorded in D7 above.
 
 6. **AC-6 (D2) — the contract states the obligation.** `Story.createPlayer`'s doc comment in `install/story.ts` names all three conditions the returned entity must satisfy. Verified by reading it. **PREMISE-DEPENDENT** — premise: AC-1 landed, so the comment describes enforced behavior rather than aspiration.
 

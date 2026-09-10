@@ -78,7 +78,7 @@ export class MinimalTestStory implements Story {
 
   createPlayer(world: WorldModel): IFEntity {
     this._player = world.createEntity('yourself', 'actor');
-    this._player.add(new ActorTrait());
+    this._player.add(new ActorTrait({ isPlayable: true }));
     this._player.add(new IdentityTrait({
       name: 'yourself',
       aliases: ['self', 'me', 'myself'],

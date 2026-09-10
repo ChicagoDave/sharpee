@@ -34,7 +34,7 @@ export function createTestWorld(): { world: WorldModel; player: IFEntity; room: 
     properName: true,
     article: ''
   }));
-  player.add(new ActorTrait({ isPlayer: true }));
+  player.add(new ActorTrait({ isPlayer: true, isPlayable: true }));
   player.add(new ContainerTrait({
     capacity: { maxItems: 10 }
   }));

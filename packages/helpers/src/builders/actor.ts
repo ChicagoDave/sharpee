@@ -1,7 +1,7 @@
 /**
  * ActorBuilder — fluent builder for actor entities.
  *
- * Public interface: description, aliases, properName, inventory, in,
+ * Public interface: description, aliases, properName, playable, inventory, in,
  * skipValidation, build.
  *
  * Owner context: @sharpee/helpers (ADR-140)
@@ -22,6 +22,7 @@ import type { IWorldModel, ITrait } from '@sharpee/world-model';
  * @example
  * ```typescript
  * const player = actor('yourself')
+ *   .playable()
  *   .description('As good-looking as ever.')
  *   .aliases('self', 'me', 'myself')
  *   .properName()
@@ -33,6 +34,7 @@ export class ActorBuilder {
   private _description?: string;
   private _aliases?: string[];
   private _properName = false;
+  private _playable = false;
   private _inventory?: { maxItems?: number };
   private _location?: IFEntity;
   private _skipValidation = false;
@@ -72,6 +74,21 @@ export class ActorBuilder {
    */
   properName(): this {
     this._properName = true;
+    return this;
+  }
+
+  /**
+   * Mark the actor as eligible to hold the player role.
+   *
+   * Opt-in on purpose, and deliberately not the default even here: a
+   * protagonist must say so, the same way a Chord `person` says `playable`.
+   * An actor built without it is an NPC and is refused by the install seam's
+   * role-holder guard and by `switchPlayer` (ADR-344 D7).
+   *
+   * @returns this (for chaining)
+   */
+  playable(): this {
+    this._playable = true;
     return this;
   }
 
@@ -125,7 +142,7 @@ export class ActorBuilder {
    */
   build(): IFEntity {
     const entity = this.world.createEntity(this.name, 'actor');
-    entity.add(new ActorTrait());
+    entity.add(new ActorTrait({ isPlayable: this._playable }));
     entity.add(new IdentityTrait({
       name: this.name,
       description: this._description,

@@ -74,7 +74,7 @@ export class ComplexWorldTestStory implements Story {
       properName: true,
       article: ''
     }));
-    this._player.add(new ActorTrait({ isPlayer: true }));
+    this._player.add(new ActorTrait({ isPlayer: true, isPlayable: true }));
     this._player.add(new ContainerTrait({
       capacity: { maxItems: 10, maxWeight: 50 }
     }));

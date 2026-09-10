@@ -259,6 +259,15 @@ new form is added.
 
 ### D9. Reassigning the role: `change the player to <entity>`
 
+> **Amendment, 2026-09-10 (ADR-344 D7).** D9's loader half — writing
+> `ActorTrait.isPlayable` from the `playable` create-block line — was specified here
+> and never implemented, so the flag stayed at the trait's own `true` default for
+> every actor and `switchPlayer`'s playability constraint below could not fire. It is
+> completed by ADR-344 D7: the loader writes the flag at `loader.ts`'s `'person'` case,
+> and `ActorTrait.isPlayable`'s class default is flipped to `false` so absence means
+> what Chord means by absence. The decision lives in ADR-344; this is a pointer, D9 is
+> otherwise unchanged, and this ADR's Status stays ACCEPTED.
+
 (David, 2026-08-25: *"I would prefer 'change the player to Viola'."*) The statement that
 moves the PC role to another entity is the existing `change` effect with `the player` as
 its object — the role is a thing whose current value is an entity, and `change X to Y`

@@ -106,7 +106,7 @@ export class ArmouredStory implements Story {
       })
     );
 
-    player.add(new ActorTrait());
+    player.add(new ActorTrait({ isPlayable: true }));
 
     // Player is a combatant with modest starting stats
     player.add(

@@ -695,7 +695,8 @@ export class DungeoStory implements Story {
 
       if (!existingPlayer.has('actor')) {
         existingPlayer.add(new ActorTrait({
-          isPlayer: true
+          isPlayer: true,
+          isPlayable: true
         }));
       }
 
@@ -738,7 +739,8 @@ export class DungeoStory implements Story {
     }));
 
     player.add(new ActorTrait({
-      isPlayer: true
+      isPlayer: true,
+      isPlayable: true
     }));
 
     player.add(new ContainerTrait({

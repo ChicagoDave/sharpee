@@ -115,7 +115,7 @@ export function createMinimalStory(options: { includeObjects?: boolean } = {}): 
     initializeWorld: (world: WorldModel) => {
       const room = world.createEntity('Story Room', EntityType.ROOM);
       const player = world.createEntity('You', EntityType.ACTOR);
-      player.add(new ActorTrait());
+      player.add(new ActorTrait({ isPlayable: true }));
       world.moveEntity(player.id, room.id);
       playerId = player.id;
 

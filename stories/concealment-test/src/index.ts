@@ -45,7 +45,7 @@ export class ConcealmentTestStory implements Story {
   private studyId?: string;
   createPlayer(world: WorldModel) {
     const player = world.createEntity('yourself', EntityType.ACTOR);
-    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ActorTrait({ isPlayer: true, isPlayable: true }));
     player.add(new ContainerTrait());
     player.add(new IdentityTrait({
       name: 'yourself',

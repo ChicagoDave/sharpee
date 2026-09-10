@@ -90,7 +90,7 @@ class RegressionStory implements Story {
         article: '',
       }),
     );
-    player.add(new ActorTrait({ isPlayer: true }));
+    player.add(new ActorTrait({ isPlayer: true, isPlayable: true }));
     player.add(new ContainerTrait({ capacity: { maxItems: 10 } }));
     return player;
   }

@@ -1,6 +1,7 @@
 // tests/unit/traits/actor.test.ts
 
 import { ActorTrait, PRONOUNS, type PronounSet } from '../../../src/traits/actor/actorTrait';
+import { ActorBehavior } from '../../../src/traits/actor/actorBehavior';
 import { IFEntity } from '../../../src/entities/if-entity';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
@@ -19,7 +20,9 @@ describe('ActorTrait', () => {
 
       expect(trait.type).toBe(TraitType.ACTOR);
       expect(trait.isPlayer).toBe(false);
-      expect(trait.isPlayable).toBe(true);
+      // Non-playable unless opted in (ADR-344 D7) — absence means what Chord's
+      // `playable` means by absence.
+      expect(trait.isPlayable).toBe(false);
       expect(trait.state).toBeUndefined();
       // Default pronouns are THEY_THEM (ADR-089)
       expect(trait.pronouns).toEqual(PRONOUNS.THEY_THEM);
@@ -356,7 +359,7 @@ describe('ActorTrait', () => {
       const trait = new ActorTrait({});
 
       expect(trait.isPlayer).toBe(false);
-      expect(trait.isPlayable).toBe(true);
+      expect(trait.isPlayable).toBe(false);
       expect(trait.pronouns).toEqual(PRONOUNS.THEY_THEM);
     });
 
@@ -364,7 +367,7 @@ describe('ActorTrait', () => {
       const trait = new ActorTrait(undefined);
 
       expect(trait.isPlayer).toBe(false);
-      expect(trait.isPlayable).toBe(true);
+      expect(trait.isPlayable).toBe(false);
       expect(trait.state).toBeUndefined();
     });
 
@@ -487,6 +490,38 @@ describe('ActorTrait', () => {
       expect(trait.honorific).toBe('Dr.');
       expect(trait.grammaticalGender).toBe('feminine');
       expect(trait.briefDescription).toBe('the scientist');
+    });
+  });
+
+  describe('playability is opt-in (ADR-344 D7)', () => {
+    it('an actor added to an entity without the flag reads back non-playable', () => {
+      const npc = world.createEntity('a passerby', 'actor');
+      npc.add(new ActorTrait());
+
+      expect(ActorBehavior.isPlayable(npc)).toBe(false);
+    });
+
+    it('an actor that opted in reads back playable through the behavior', () => {
+      const protagonist = world.createEntity('yourself', 'actor');
+      protagonist.add(new ActorTrait({ isPlayable: true }));
+
+      expect(ActorBehavior.isPlayable(protagonist)).toBe(true);
+    });
+
+    it('isPlayer alone does not confer playability — the two fields are independent', () => {
+      const trait = new ActorTrait({ isPlayer: true });
+
+      expect(trait.isPlayer).toBe(true);
+      expect(trait.isPlayable).toBe(false);
+    });
+
+    it('makePlayer() grants both, so a promoted actor is coherent', () => {
+      const trait = new ActorTrait();
+
+      trait.makePlayer();
+
+      expect(trait.isPlayer).toBe(true);
+      expect(trait.isPlayable).toBe(true);
     });
   });
 });

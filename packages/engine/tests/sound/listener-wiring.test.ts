@@ -67,7 +67,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
 
       createPlayer(world: WorldModel): IFEntity {
         const player = world.createEntity('yourself', 'actor');
-        player.add(new ActorTrait());
+        player.add(new ActorTrait({ isPlayable: true }));
         player.add(new ContainerTrait());
         player.add(
           new IdentityTrait({

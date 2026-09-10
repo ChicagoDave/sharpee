@@ -138,7 +138,7 @@ function ensurePlayerTraits(entity: IFEntity): void {
     );
   }
   if (!entity.has('actor')) {
-    entity.add(new ActorTrait({ isPlayer: true }));
+    entity.add(new ActorTrait({ isPlayer: true, isPlayable: true }));
   }
   if (!entity.has('container')) {
     entity.add(new ContainerTrait({ capacity: { maxItems: 10 } }));

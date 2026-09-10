@@ -23,7 +23,7 @@ function deadlyRoomStory(): Story {
     config: { id: 'deadly-room-test', title: 'Deadly Room', authors: ['Test'], version: '1.0.0' },
     createPlayer: (world: WorldModel) => {
       const player = world.createEntity('You', EntityType.ACTOR);
-      player.add(new ActorTrait());
+      player.add(new ActorTrait({ isPlayable: true }));
       if (roomId) world.moveEntity(player.id, roomId);
       return player;
     },

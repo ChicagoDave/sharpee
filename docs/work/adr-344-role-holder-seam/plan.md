@@ -151,21 +151,52 @@ D1's third condition (`isPlayable`) is decorative until D7 lands (today's defaul
   - `docs/architecture/adrs/adr-327-explicit-references.md` D9: a pointer amendment recording that the loader's `isPlayable` write was completed here (ADR-344 D7), in the same commit as the code. ADR-327's Status stays ACCEPTED.
   - Tests: a world-model test asserting the new default; a story-loader test asserting the written flag for both `playable` and absent-`playable` Chord characters; an engine test driving `switchPlayer` both ways (playable succeeds, non-playable throws the existing guard at `game-engine.ts:793`); a helpers test that `actor(...).build()` is non-playable while `actor(...).playable().build()` is playable.
 - **Exit state**: green suites for `pnpm --filter '@sharpee/world-model' test`, `--filter '@sharpee/story-loader' test`, `--filter '@sharpee/engine' test`, `--filter '@sharpee/helpers' test`, and the six hand-written stories/fixtures (build + relevant story test/transcript for each). `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` byte-identical at its pinned seed (single run). Any Chord story beyond Dungeo with a `playable` protagonist (at minimum `stories/cloak-of-darkness`, `branch-stories/fernhill`) installs and switches correctly. Evidence for AC-5 recorded inline.
-- **Status**: CURRENT (since 2026-09-10)
+
+- **Progress (2026-09-10, session 52e228)** — DONE, on budget. The three platform changes landed together in one unit, as D7 requires: `actorTrait.ts:154` default `true` → `false`; `loader.ts`'s `'person'` case writes `new ActorTrait({ isPlayable: irEntity.isPlayable })`; `ActorBuilder` gains `.playable()` and `build()` stops adding a bare `ActorTrait`. ADR-327 D9 carries its pointer amendment, written in the same commit.
+
+- **The deliverable's site list was short by two, both found by confirming line numbers before editing (the plan's own instruction) rather than by a failing gate:**
+  - **`stories/dungeo`** — a hand-written `createPlayer` at `src/index.ts:683`, `ActorTrait` at `:697`/`:740` passing only `isPlayer: true`. Named in neither the plan nor ADR-344 D7, though D7's measurement names Dungeo's *NPCs*. Left alone the flagship story fails install with `not-playable`; the chain gate would have caught it late.
+  - **`packages/helpers/tests/fixtures/external-story/story.js`** — the REAL-PATH bundle fixture, whose protagonist is built through the documented author API (`actor('yourself').…build()`), i.e. precisely the case D7's builder paragraph predicts. Now calls `.playable()`.
+
+- **How that second one surfaced is the phase's one methodological finding.** `pnpm --filter '@sharpee/helpers' test --run` passed **before** `./repokit build dungeo` and failed **after** it — the vitest suite reads source, but that one test drives `dist/cli/sharpee.js`, so it could not see the flipped default until the bundle was rebuilt. Fourth instance of "a check structurally incapable of observing what broke" in this plan, and the same REAL-PATH test that caught the Phase 2 production defect. **Lesson for Phase 6**: run the package suites *after* `./repokit build`, never only before.
+
+- **Sixteen test-side role holders** across `engine` (8 files, 23 failures), `bootstrap` (2) and the engine's shared fixtures/helpers (`setup-test-engine.ts`, `tests/fixtures/index.ts`) needed the same opt-in, each announcing itself as `RoleHolderValidationError … is not marked playable` at install — the guard firing for the first time, not a defect. NPCs and bystanders in those same files (e.g. `sound/integration.test.ts:191`'s bystander) were deliberately left non-playable. Two pre-existing assertions that pinned the old default were updated: `world-model/tests/unit/traits/actor.test.ts` (three default assertions) and `engine/tests/unit/validate-role-holder.test.ts:38`, whose `'compliant'` shape built `new ActorTrait({})` and is now explicit in both directions.
+
+- **Tests added**: 12 across four packages, all four named by the plan — `story-loader/tests/adr-344-d7-playable-reaches-runtime.test.ts` (4), `engine/tests/unit/adr-344-d7-switch-player-playability.test.ts` (4), `helpers/tests/actor-builder-playable.test.ts` (4), plus a "playability is opt-in (ADR-344 D7)" block in `world-model/tests/unit/traits/actor.test.ts`. `mutation-verification` graded all 16 new/updated assertions GREEN and confirmed by live-deleting each mutation site that the suites catch the regression; it also corrected the story-loader test's header, which claimed the *negative* assertion was load-bearing — with the default now `false` it is the *positive* one, and the comment says so.
+
+- **Exit evidence — all run 2026-09-10 10:33–10:41 CDT**
+  - `pnpm --filter '@sharpee/world-model' test --run` → 86 files, **1516 passed, 0 failed**.
+  - `pnpm --filter '@sharpee/story-loader' test --run` → 123 files, **1111 passed, 0 failed** (1107 → 1111).
+  - `pnpm --filter '@sharpee/engine' test --run` → 82 files, **776 passed, 0 failed, 7 skipped**.
+  - `pnpm --filter '@sharpee/helpers' test:ci` → 5 files, **17 passed, 0 failed** (13 → 17).
+  - `pnpm --filter` on `bootstrap` **52**, `devkit` **177 passed / 1 skipped**, `platform-browser` **148**, `character` **641**, `stdlib` **1664** — all unchanged from baseline.
+  - `./repokit build dungeo` → exit 0, bundle **4,434,065 bytes**.
+  - `pnpm exec turbo run test:ci` → **67 tasks, 67 successful**, run after the build.
+  - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` → **952 tests in 17 transcripts, 952 passed**, all 17 goldens matched (single run, pinned seed).
+  - `./sharpee test branch-stories/fernhill` → **86 cards passing, 104 assertions passing**, 222 commands.
+  - `node dist/cli/sharpee.js --test stories/concealment-test/tests/transcripts/*.transcript` → **38 tests in 2 transcripts, 38 passed**.
+  - `node dist/cli/sharpee.js --exec "look" --story …` boots and plays for `cloak-of-darkness`, `family-zoo-tutorial`, and nine of the ten other Chord stories carrying `playable`.
+
+- **Two stories could not be exercised, and neither is a gap** (David, 2026-09-10) — both are out of the active tree by intent, so their opt-ins landed and were verified by inspection only:
+  - `branch-stories/secret-letter` — a port shelved indefinitely. It fails on `analysis.import-unresolved` (the bundle CLI provides no import resolver, GH #352) plus undeclared traits, phrases and timers. Not a D7 signal and not to be fixed here.
+  - `stories/armoured` — an old Sharpee sample kept strictly for early testing. It is not a `pnpm-workspace.yaml` member and has no build path, so `pnpm --filter` and `./repokit build armoured` report "No projects matched" and `--exec` throws `ERR_UNSUPPORTED_DIR_IMPORT` at module resolution. That is its settled state, not a regression this phase should chase.
+- **Status**: DONE (2026-09-10, session 52e228)
 
 ### Phase 6: Tree green end-to-end, D8/AC-7 confirmed, evidence compiled
 - **Tier**: Small
 - **Budget**: 100
 - **Domain focus**: closure — no new code, verification and record-keeping only.
-- **Entry state**: Phases 1–4 landed and each individually green.
+- **Entry state**: Phases 1–5 landed and each individually green.
 - **Deliverable**:
   - `npx tsc --noEmit` at repo root, full run.
   - `pnpm --filter '@sharpee/engine' test`, `--filter '@sharpee/story-loader' test`, `--filter '@sharpee/world-model' test`, `--filter '@sharpee/helpers' test`, `--filter '@sharpee/devkit' test` (AC-8's named suites) run together as a final confirmation, not just per-phase.
   - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` — one run, byte-identical at the pinned seed (do not re-run to check for flakiness, per project convention).
   - AC-7/D8 confirmed by reading `STORY_INSTALL_STEPS`: exactly one step (`validate-role-holder`) added by this plan; `initializeWorld` and `story-initialize` remain unguarded, matching D8's recording. No code change for this bullet.
-  - Compile the nine-AC evidence table (AC-1 through AC-9, AC-9 already met) into the ADR itself or a closing note, each line naming the command run, what it returned, and the date — per the project's "evidence inline, never cited" convention.
+  - Compile the nine-AC evidence table (AC-1 through AC-9, AC-9 already met) into the ADR itself or a closing note, each line naming the command run, what it returned, and the date — per the project's "evidence inline, never cited" convention. AC-5's evidence is already written into ADR-344 by Phase 5.
+  - **Run the package suites AFTER `./repokit build`, not only before** — Phase 5's lesson: `@sharpee/helpers`' REAL-PATH bundle test reads `dist/cli/sharpee.js`, so it passed against a stale bundle and failed once the bundle was rebuilt.
+  - Sweep the remaining `new GameEngine({ ..., player })` test sites carried in as I-86894c-1.
 - **Exit state**: all eight ACs (AC-1–AC-8) have inline evidence; AC-9 reconfirmed by inspection only. Plan phases all marked DONE.
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-09-10)
 
 ## Notes for the implementing session
 
