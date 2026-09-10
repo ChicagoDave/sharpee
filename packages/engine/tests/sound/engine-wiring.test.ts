@@ -119,14 +119,10 @@ function buildEngine() {
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
 
-  // Create the player up-front so the engine has it. installStory will then
-  // call createPlayer again (overwriting the engine-side reference, but
-  // the new player is what's used). This mirrors what `setupTestEngine`
-  // does for other tests.
-  const placeholder = world.createEntity('yourself', 'actor');
-  world.setPlayer(placeholder.id);
-
-  const engine = new GameEngine({ world, player: placeholder, parser, language });
+  // The player comes from the story alone: `installStory` adopts the one
+  // `createPlayer` returns (ADR-344 D6). Building one here only left a
+  // second, unreachable 'yourself' in the world.
+  const engine = new GameEngine({ world, parser, language });
   return { engine, world, parser, language };
 }
 

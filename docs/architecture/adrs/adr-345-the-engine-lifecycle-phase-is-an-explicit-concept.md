@@ -12,7 +12,7 @@
 
 ADR-344 D6 (the player comes from the story; `installStory` constructs the `GameContext`) and its D6a amendment (`start()` requires an installed story, David's ruling 2026-09-10). This ADR is a finding *against* the shape those decisions left behind, in the same spirit ADR-344 was a finding against ADR-334's refactor: D6 and D6a are both correct and both stay: what they exposed is that the engine had no place to put them except another hand-written guard.
 
-**Related**: ADR-334 A1 (`STORY_INSTALL_STEPS` — the install sequence *is* modeled as data, which is exactly the contrast drawn below). `docs/work/adr-344-role-holder-seam/plan.md` Phase 2, whose last failing test surfaced this.
+**Related**: ADR-334 A1 (`STORY_INSTALL_STEPS` — the install sequence *is* modeled as data, which is exactly the contrast drawn below). `docs/work/archive/adr-344-role-holder-seam/plan.md` Phase 2, whose last failing test surfaced this.
 
 ## Context — verified, not assumed
 

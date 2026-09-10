@@ -19,7 +19,7 @@ import { GameEngine } from '@sharpee/engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
-import { CharacterModelTrait, EntityType, OpenableTrait, TraitType, WorldModel, type IFEntity } from '@sharpee/world-model';
+import { CharacterModelTrait, OpenableTrait, TraitType, WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
 
@@ -128,11 +128,8 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
   const stream: ISemanticEvent[] = [];
-  const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
-  world.setPlayer(placeholder.id);
-  const engine = new GameEngine({ world, player: placeholder, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
+  const engine = new GameEngine({ world, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
   engine.installStory(story);
-  world.removeEntity(placeholder.id);
   await engine.start();
   const id = (irId: string) => story.entityId(irId)!;
   const errand = () => (world.getEntity(id('wizard'))?.get(TraitType.CHARACTER_MODEL) as CharacterModelTrait | undefined)?.goalState['errand'];

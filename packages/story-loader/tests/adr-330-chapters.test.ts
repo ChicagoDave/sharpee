@@ -18,7 +18,7 @@ import { CHAPTER_BEGAN_EVENT, CHAPTER_CURRENT_KEY, CHAPTER_STALE_EVENT, chapterC
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PerceptionService, StdlibChannelRegistry } from '@sharpee/stdlib';
-import { EntityType, WorldModel, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, LoadError, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
 import { stubStoryEngine } from './helpers/stub-story-engine';
@@ -149,14 +149,11 @@ async function boot(seed = 7): Promise<Booted> {
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
   const stream: ISemanticEvent[] = [];
-  const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
-  world.setPlayer(placeholder.id);
-  const engine = new GameEngine({ world, player: placeholder, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
+  const engine = new GameEngine({ world, parser, language, perceptionService: new PerceptionService(), config: { seed, onEvent: (e) => stream.push(e) } });
   engine.installStory(story);
   // The story's own grammar (`run away`, `ring out`, `blink out`) — bootstrap's
   // step, which the engine's installStory does not take.
   story.extendParser(parser);
-  world.removeEntity(placeholder.id);
   await engine.start();
   const turn = async (input: string) => {
     const from = stream.length;
@@ -347,12 +344,9 @@ end before
     const language = new EnglishLanguageProvider();
     const parser = new EnglishParser(language, { world });
     const stream: ISemanticEvent[] = [];
-    const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
-    world.setPlayer(placeholder.id);
-    const engine = new GameEngine({ world, player: placeholder, parser, language, config: { seed: 7, onEvent: (e) => stream.push(e) } });
+    const engine = new GameEngine({ world, parser, language, config: { seed: 7, onEvent: (e) => stream.push(e) } });
     engine.installStory(story);
     story.extendParser(parser);
-    world.removeEntity(placeholder.id);
     await engine.start();
     await engine.executeTurn('look');
     await engine.executeTurn('east');

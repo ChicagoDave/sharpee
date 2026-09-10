@@ -235,6 +235,31 @@ Each criterion names the command that decides it. AC-9 is met; the rest gate imp
 
 9. **AC-9 (D9) — MET 2026-09-10.** The three browser templates call `installStory`; `browser-build.test.ts` type-checks the scaffold via `runBuildCommand` before bundling; the guard demonstrably fails on the defect (`src/browser-entry.ts(122,10): error TS2551: Property 'setStory' does not exist on type 'GameEngine'. Did you mean 'getStory'?`) and passes with the fix; four `config.author` → `authors` sites repaired. Evidence: `pnpm --filter '@sharpee/devkit' test` — 27 files, 177 passing / 1 skipped, 2026-09-10 00:50 CDT. **SELF-VERIFYING.**
 
+## Implementation closed — the nine-AC evidence table
+
+D1–D8 landed across six phases (`docs/work/archive/adr-344-role-holder-seam/plan.md`), 2026-09-10, sessions 7776c8, b314e2, 86894c, 52e228 and 4b4f4d. Every line below names the command, what it returned, and when it was run. Unless marked otherwise, the runs are the closing sweep of 2026-09-10 11:16–11:18 CDT, taken **after** `./repokit build dungeo` — the ordering Phase 5 learned the hard way, when `@sharpee/helpers`' bundle-reading test passed against a stale `dist/cli/sharpee.js` and failed once it was rebuilt.
+
+| AC | Command | Result | Date |
+|---|---|---|---|
+| AC-1 (D1, D4) | `pnpm --filter '@sharpee/engine' test --run` | 82 files, 776 passed / 7 skipped, 0 failed — includes `tests/unit/validate-role-holder.test.ts` (8 tests) | 2026-09-10 11:16 CDT |
+| AC-1 self-verification | three mutations run and reverted: step removed from `STORY_INSTALL_STEPS`; step moved after `listener-trait`; the `not-playable` condition deleted | 7 / 2 / 1 tests fail respectively — absence, misordering and a dropped condition are each detected independently | 2026-09-10 (Phase 3, session b314e2) |
+| AC-2 (D3) | `sed -n '/export function setupTestEngine/,/^}/p' … \| grep -c createEntity` | `0` — the helper creates no player and no room; `createMinimalStory` builds and places its actor in `initializeWorld` | 2026-09-10 11:19 CDT |
+| AC-3 (D6, D6a) | `node dist/cli/sharpee.js --world-json --story stories/cloak-of-darkness/cloak.story` | one actor, `a01` "Alex" at `r01` with `actor`/`container`/`identity`/`listener`; no `a02` and no unaccounted id anywhere in the dump | 2026-09-10 11:18 CDT |
+| AC-3 (build) | `./repokit build dungeo` | exit 0, bundle 4,434,065 bytes | 2026-09-10 11:16 CDT |
+| AC-4 (D5) | `git grep -l "change the player to" -- "*.story"`, split by placement line | 80 sources, 61 explicit, 19 on the fallback, **0 shipped stories** — the premise holds exactly; the 85/64 in D5 was a mis-count, corrected there | 2026-09-10 (Phase 4, session 86894c) |
+| AC-4 (runtime) | `./sharpee test branch-stories/fernhill` | 86 cards passing, 104 assertions passing, 222 commands | 2026-09-10 11:18 CDT |
+| AC-5 (D7) | see the MET block under AC-5 above | reconfirmed by this sweep's world-model (1516), story-loader (1111) and helpers (17) runs | 2026-09-10 11:16 CDT |
+| AC-6 (D2) | read `packages/engine/src/install/story.ts:280-302` | the `createPlayer` doc comment states the lookup-not-build contract and all three conditions, and names `validate-role-holder` as their enforcer | 2026-09-10 11:19 CDT |
+| AC-7 (D8) | read `packages/engine/src/install/steps.ts:46-66` | 19 steps; exactly one added by this ADR — `validateRoleHolderStep` at position 7, between `createPlayerStep` and `listenerTraitStep`. `initialize-world` and `story-initialize` each delegate to their story hook and assert nothing, unguarded as D8 records | 2026-09-10 11:18 CDT |
+| AC-8 (suites) | `pnpm --filter` on `world-model`, `story-loader`, `engine`, `helpers`, `devkit` | 1516 / 1111 / 776 (+7 skipped) / 17 / 177 (+1 skipped) passing, 0 failed | 2026-09-10 11:16 CDT |
+| AC-8 (workspace) | `pnpm exec turbo run test:ci` | 67 tasks, 67 successful | 2026-09-10 11:17 CDT |
+| AC-8 (chain) | `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` | 952 tests in 17 transcripts, 952 passed, all 17 goldens matched (single run, pinned seed) | 2026-09-10 11:18 CDT |
+| AC-9 (D9) | MET 2026-09-10 00:50 CDT; see the block under AC-9 above | `pnpm --filter '@sharpee/devkit' test` — 27 files, 177 passing / 1 skipped | reconfirmed 2026-09-10 11:16 CDT |
+
+**The root `npx tsc --noEmit` was run and exited 0 (2026-09-10 11:16 CDT), and it is recorded here only so its weakness is on the page.** `tsconfig.json` carries `files: []` and four project references, so it type-checks none of the packages this ADR touched and none of the test files Phase 6 swept. AC-3 and AC-8 name `./repokit build dungeo` as the check for exactly this reason. This is the fifth instance the plan logged of a check structurally incapable of observing what broke; the class is tracked as an open item for a systemic audit, not closed here.
+
+**Phase 6 carried one code change, not none.** The `new GameEngine({ ..., player })` sweep left over from Phase 1 finished here: eleven test sites across `story-loader` (7), `engine` (3) and `platform-browser` (1) still passed a `player` field the constructor no longer declares, most of them fabricating a throwaway actor and deleting it again after `installStory`. All eleven now construct player-free and take the protagonist the story supplies. Because none of those files is reached by the root check and vitest type-checks nothing, every one of them was invisible to both gates — including `engine-parser.test.ts`, which destructured a `player` that `setupTestEngine` has not returned since Phase 1.
+
 ## Consequences
 
 - **Chord and hand-written stories get the same guarantee through the one path both take.** The loader's `finalizeRoleHolder` continues to *satisfy* the invariant; it stops being the only thing that *knows* it.

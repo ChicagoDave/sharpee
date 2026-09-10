@@ -13,7 +13,7 @@ import type { ISaveData, ISemanticEvent } from '@sharpee/core';
 import { GameEngine } from '@sharpee/engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import { EntityType, WorldModel } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
 import type { ChordRuntime } from '../src/runtime';
 import { compileSource } from './helpers/boot-engine';
@@ -121,12 +121,9 @@ describe('resetAfterRestore — the cross-turn counters after a restore', () => 
     const language = new EnglishLanguageProvider();
     const parser = new EnglishParser(language, { world });
     const stream: ISemanticEvent[] = [];
-    const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
-    world.setPlayer(placeholder.id);
-    const engine = new GameEngine({ world, player: placeholder, parser, language, config: { seed: 7, onEvent: (e) => stream.push(e) } });
+    const engine = new GameEngine({ world, parser, language, config: { seed: 7, onEvent: (e) => stream.push(e) } });
     engine.installStory(story);
     story.extendParser(parser);
-    world.removeEntity(placeholder.id);
     const guards = (story as unknown as { runtime: Guards }).runtime;
     const clockIds = () => stream.filter((e) => e.type === 'estate-clock').map((e) => e.id);
 

@@ -81,11 +81,10 @@ describe('adaptParser (Phase 6)', () => {
   });
 
   it('an engine built over a bare parse-only parser starts and runs a turn', async () => {
-    const { world, player, languageProvider } = setupTestEngine();
+    const { world, languageProvider } = setupTestEngine();
     const bare = bareParser();
     const engine = new GameEngine({
       world,
-      player,
       parser: bare as never,
       language: languageProvider,
     });

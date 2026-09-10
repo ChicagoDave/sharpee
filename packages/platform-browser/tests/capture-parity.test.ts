@@ -45,7 +45,7 @@ import { resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 import { GameEngine, type Story } from '@sharpee/engine';
-import { WorldModel, EntityType } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -210,16 +210,13 @@ async function runInBrowserClient(
   client.initialize(mountHostElements());
 
   const world = new WorldModel();
-  const player = world.createEntity('player', EntityType.ACTOR);
-  world.setPlayer(player.id);
-
   const language = new LanguageProvider();
   const parser = new Parser(language);
   if (story.extendParser) story.extendParser(parser);
   if (story.extendLanguage) story.extendLanguage(language);
 
   const perceptionService = new PerceptionService();
-  const engine = new GameEngine({ world, player, parser, language, perceptionService });
+  const engine = new GameEngine({ world, parser, language, perceptionService });
 
   client.connectEngine(engine, world);
   engine.installStory(story);

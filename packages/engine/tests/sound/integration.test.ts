@@ -242,10 +242,8 @@ describe('ADR-172 Phase 6 Step 6.4 — Tapestry integration scenario', () => {
     const language = new EnglishLanguageProvider();
     const parser = new EnglishParser(language, { world });
 
-    const placeholder = world.createEntity('yourself-placeholder', 'actor');
-    world.setPlayer(placeholder.id);
-
-    engine = new GameEngine({ world, player: placeholder, parser, language });
+    // The player comes from the story alone (ADR-344 D6).
+    engine = new GameEngine({ world, parser, language });
     parser.addVerb(SHOUT_ACTION_ID, ['shout'], 'VERB_ONLY');
 
     story = new TapestryStory();

@@ -1,7 +1,7 @@
 # Session Plan: Implement ADR-344 D1–D8 — the player role-holder invariant at the install seam
 
 **Created**: 2026-09-10
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-09-10 — all six phases DONE; AC-1 through AC-9 evidenced inline in ADR-344's "Implementation closed" section)
 **Overall scope**: Implement ADR-344 decisions D1–D8 only. D9 already shipped (`f3d3d24a3`) and is out of scope. The work adds an install-time guard (`validate-role-holder`) that refuses an unplaced, trait-less, or non-playable role holder; brings the engine test fixture and nine story-less engine tests into compliance instead of special-casing them; removes the engine's fabricated pre-install player everywhere it is constructed (bootstrap, bridge, runtime, and ~20 test call sites); removes the loader's first-declared-room placement fallback (with an ADR-289 D4 amendment); flips `ActorTrait.isPlayable`'s default to `false` and wires the loader to write it from Chord's `playable` flag (with an ADR-327 D9 pointer amendment); and records, without fixing, the two remaining unguarded install-step handoffs (`initializeWorld`, `story-initialize` — AC-7 requires they stay unfixed here). AC-1 through AC-8 are the phase gates; AC-9 is already met and is not re-verified except by inspection in Phase 5's final sweep.
 **Bounded contexts touched**: N/A — infrastructure/install-pipeline and entity-trait invariant enforcement, not new domain modeling. No `docs/ddd/notation.yaml` exists in this repo and this work introduces no new domain concepts (it enforces an existing one, the player role, at a seam that didn't check it); framed in plain technical terms per the "DDD does not apply" rule, consistent with the sibling ADR-293/294 plans in `docs/work/`.
 **Platform change**: every phase below touches `packages/` (engine, world-model, story-loader, bootstrap, bridge, runtime, helpers) and therefore needs David's go-ahead before implementation, per CLAUDE.md's platform-change rule. Each phase's entry state below states exactly what it touches so approval can be per-phase rather than blanket.
@@ -196,7 +196,30 @@ D1's third condition (`isPlayable`) is decorative until D7 lands (today's defaul
   - **Run the package suites AFTER `./repokit build`, not only before** — Phase 5's lesson: `@sharpee/helpers`' REAL-PATH bundle test reads `dist/cli/sharpee.js`, so it passed against a stale bundle and failed once the bundle was rebuilt.
   - Sweep the remaining `new GameEngine({ ..., player })` test sites carried in as I-86894c-1.
 - **Exit state**: all eight ACs (AC-1–AC-8) have inline evidence; AC-9 reconfirmed by inspection only. Plan phases all marked DONE.
-- **Status**: CURRENT (since 2026-09-10)
+
+- **Delivered (2026-09-10, session 4b4f4d)** — the nine-AC evidence table is written into ADR-344 itself, under a new "Implementation closed" section between AC-9 and Consequences, one row per AC naming the command, its result and its date. AC-5 and AC-9 keep their existing MET blocks and are cross-referenced rather than restated.
+
+- **The I-86894c-1 sweep found eleven sites, not the ten the item estimated.** All eleven passed a `player` field the constructor stopped declaring in Phase 1: `story-loader` (7 — `adr-329-act-statement`, `adr-329-d10-perform-step`, `adr-329-goal-steps`, `adr-330-chapters` (two boots), `adr-320-d10-interruption`, `adr-332-arrival-reaction`, `runtime-guards`, plus the shared `tests/helpers/boot-turns.ts`), `engine` (3 — `sound/engine-wiring`, `sound/integration`, `unit/engine-parser`), and `platform-browser` (1 — `capture-parity`). Nine of them ran the same three-line dance: create a `placeholder` actor, `setPlayer` it, then `removeEntity` it after `installStory`. All now construct player-free and take the protagonist the story supplies, matching `tests/helpers/boot-engine.ts`'s shape from Phase 4; the six now-unused `EntityType` imports went with them.
+  - `engine-wiring.test.ts` also carried a comment explaining that the engine needed a player up front and that `installStory` would overwrite it — a description of behavior that no longer exists. Replaced with the ADR-344 D6 contract.
+  - `engine-parser.test.ts` destructured `const { world, player, languageProvider } = setupTestEngine()`, but `setupTestEngine` has returned no `player` since Phase 1. It was passing `player: undefined` and no gate could see it.
+
+- **The root `tsc --noEmit` is the fifth logged instance of the recurring class, and this phase is where it is worth stating plainly.** `tsconfig.json` carries `files: []` and four project references (`core`, `stdlib`, `extensions/conversation`, `cloak-of-darkness`). It therefore type-checks none of `engine`, `story-loader`, `world-model`, `helpers`, `devkit`, `bootstrap`, `bridge`, `runtime` or `platform-browser`, and none of the eleven test files swept above. It exits 0 both before and after the sweep. AC-3 and AC-8 already named `./repokit build dungeo` as the real check; the plan's Phase 6 bullet asking for a "full run" of the root check was written before that correction and is satisfied only in the letter. Recorded against I-52e228-1 rather than fixed here — widening the root config is its own decision.
+
+- **Exit evidence — all run 2026-09-10 11:16–11:19 CDT, after `./repokit build dungeo`**
+  - `./repokit build dungeo` → exit 0, bundle **4,434,065 bytes** (byte-identical to Phase 5's).
+  - `npx tsc --noEmit` (repo root) → exit 0, no output. See the caveat above.
+  - `pnpm --filter '@sharpee/world-model' test --run` → 86 files, **1516 passed, 0 failed**.
+  - `pnpm --filter '@sharpee/story-loader' test --run` → 123 files, **1111 passed, 0 failed**.
+  - `pnpm --filter '@sharpee/engine' test --run` → 82 files, **776 passed, 0 failed, 7 skipped**.
+  - `pnpm --filter '@sharpee/helpers' test --run` → 5 files, **17 passed, 0 failed**.
+  - `pnpm --filter '@sharpee/devkit' test --run` → 28 files, **177 passed, 1 skipped, 0 failed**.
+  - `pnpm exec turbo run test:ci` → **67 tasks, 67 successful**.
+  - `node dist/cli/sharpee.js --test --chain stories/dungeo/walkthroughs/wt-*.transcript` → **952 tests in 17 transcripts, 952 passed**, all 17 goldens matched (single run, pinned seed).
+  - `./sharpee test branch-stories/fernhill` → **86 cards passing, 104 assertions passing**, 222 commands.
+  - `node dist/cli/sharpee.js --world-json --story stories/cloak-of-darkness/cloak.story` → one actor, `a01` "Alex" at `r01`; no `a02`, no unaccounted id (AC-3).
+  - `packages/engine/src/install/steps.ts:46-66` read → 19 steps, `validateRoleHolderStep` at position 7 between `createPlayerStep` and `listenerTraitStep`; `initialize-world` and `story-initialize` each delegate to their story hook and assert nothing (AC-7/D8 confirmed, no step added for either).
+  - `packages/engine/src/install/story.ts:280-302` read → `createPlayer`'s doc comment states all three conditions and names their enforcer (AC-6).
+- **Status**: DONE (2026-09-10, session 4b4f4d)
 
 ## Notes for the implementing session
 

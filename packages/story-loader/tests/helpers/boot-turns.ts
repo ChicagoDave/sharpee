@@ -14,7 +14,7 @@ import { GameEngine } from '@sharpee/engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
-import { EntityType, WorldModel, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../../src';
 import { compileSource } from './boot-engine';
 
@@ -49,11 +49,8 @@ export async function bootTurns(source: string, seed = 7): Promise<BootedTurns> 
   const parser = new EnglishParser(language, { world });
   const stream: ISemanticEvent[] = [];
   const rendered: unknown[] = [];
-  const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
-  world.setPlayer(placeholder.id);
   const engine = new GameEngine({
     world,
-    player: placeholder,
     parser,
     language,
     perceptionService: new PerceptionService(),
@@ -65,7 +62,6 @@ export async function bootTurns(source: string, seed = 7): Promise<BootedTurns> 
   story.extendParser(parser);
   story.extendLanguage(language);
   engine.installStory(story);
-  world.removeEntity(placeholder.id);
   await engine.start();
   const turnText = async (input: string) => {
     const from = stream.length;
