@@ -133,7 +133,14 @@ function decompressWorldSnapshot(b64: string): string {
 export interface ISaveRestoreStateProvider {
   getWorld(): WorldModel;
   getContext(): GameContext;
-  getStory(): Story | undefined;
+  /**
+   * The installed story. Not optional: saving and restoring happen during a
+   * turn, and a turn runs only while a story is installed (ADR-345 D7). The
+   * engine supplies this through a narrow adapter rather than itself, because
+   * its own public `getStory()` must stay optional for callers that may ask
+   * an engine with no story.
+   */
+  getStory(): Story;
   getEventSource(): ISemanticEventSource;
   getPluginRegistry(): PluginRegistry;
   getParser(): unknown | undefined;

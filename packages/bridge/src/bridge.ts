@@ -490,11 +490,16 @@ export class NativeEngineBridge {
       }
     }
 
+    // `getContext()` is non-optional and delegates to a getter that throws,
+    // so the old `context?.currentTurn ?? 0` could never short-circuit: if
+    // the context were absent this line would already have thrown. The `?? 0`
+    // was a hedge against a phase this host could not name — and an inert one
+    // that would have quietly reported turn 0 if it ever fired (ADR-345 D7).
     const context = this.engine.getContext();
     this.send({
       type: 'status',
       location: locationName,
-      turn: context?.currentTurn ?? 0,
+      turn: context.currentTurn,
     });
   }
 

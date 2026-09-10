@@ -32,8 +32,12 @@ export function emitChannelPacket(
   blocks: readonly ITextBlock[],
   turn: number,
 ): void {
+  // No `if (!channelService) return;` here any more (ADR-345 D7). That guard
+  // dropped an entire turn's packet in silence — the same shape as the
+  // bridges' `?? 0` quietly reporting turn 0 — and it hedged against a case
+  // the phase model rules out: `start()` builds the service before the phase
+  // becomes `playing`, and turns run only in `playing`.
   const { channelService } = engine;
-  if (!channelService) return;
   const packet = channelService.build({
     world: engine.world,
     events,

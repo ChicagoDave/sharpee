@@ -151,14 +151,6 @@ type EnginePhase =
   | { name: 'stopped'; story: Story; context: GameContext };
 
 /**
- * The phases that carry a story and a context — every phase but `empty`.
- *
- * Named so the narrowing accessors below state their own precondition
- * instead of repeating a three-way union at each use.
- */
-type InstalledPhase = Exclude<EnginePhase, { name: 'empty' }>;
-
-/**
  * Main game engine
  */
 export class GameEngine implements StoryEngine {
@@ -246,6 +238,69 @@ export class GameEngine implements StoryEngine {
    * @returns The Error to throw — never thrown here, so the call site reads
    *          as a `throw` and control flow stays obvious.
    */
+  /**
+   * The installed story, for readers that only run once one exists.
+   *
+   * The turn-facing surface and the save provider are both reachable only
+   * from a phase that carries a story, so they get a `Story` rather than a
+   * `Story | undefined` they would have to re-check (ADR-345 D7). Distinct
+   * from the public `getStory()`, which stays optional because callers may
+   * ask an `empty` engine — and because a failed install must be observable
+   * as "no story adopted" (ADR-344).
+   *
+   * @throws Error when the engine is in the `empty` phase.
+   */
+  private get storyForTurn(): Story {
+    if (this.phase.name === 'empty') {
+      throw new Error(
+        'No story installed: the turn-facing surface does not exist until installStory() has run.'
+      );
+    }
+    return this.phase.story;
+  }
+
+  /**
+   * The channel-I/O producer, for readers that only run during a turn.
+   *
+   * `start()` constructs it before the phase becomes `playing`, and turns run
+   * only in `playing`, so a turn-facing reader always has one (ADR-345 D7).
+   * This replaces `emitChannelPacket`'s `if (!channelService) return;`, which
+   * silently dropped a turn's entire packet — the same silent-wrongness shape
+   * as the bridges' `?? 0`.
+   *
+   * @throws Error when `start()` has not run.
+   */
+  private get channelServiceForTurn(): ChannelService {
+    if (!this.channelService) {
+      throw new Error(
+        'No channel service: it is constructed by start(), and turns run only after it.'
+      );
+    }
+    return this.channelService;
+  }
+
+  /**
+   * The engine as the save/restore service sees it (ADR-345 D7).
+   *
+   * A narrow adapter rather than passing `this`, for one reason: the
+   * interface's `getStory()` can honestly promise a `Story` because saving
+   * and restoring happen during a turn, while the engine's own public
+   * `getStory()` must stay optional. Same pattern as `turnEngine()` below.
+   *
+   * @returns A provider bound to this engine's live state.
+   */
+  private saveProvider(): ISaveRestoreStateProvider {
+    return {
+      getWorld: () => this.getWorld(),
+      getContext: () => this.getContext(),
+      getStory: () => this.storyForTurn,
+      getEventSource: () => this.getEventSource(),
+      getPluginRegistry: () => this.getPluginRegistry(),
+      getParser: () => this.getParser(),
+      getRandomService: () => this.getRandomService(),
+    };
+  }
+
   private wrongPhase(attempted: string, accepted: string, hint?: string): Error {
     const detail = hint ? ` ${hint}` : '';
     return new Error(
@@ -870,7 +925,7 @@ export class GameEngine implements StoryEngine {
     return {
       get world() { return engine.world; },
       get context() { return engine.context; },
-      get story() { return engine.story; },
+      get story() { return engine.storyForTurn; },
       get config() { return engine.config; },
       get parser() { return engine.engineParser; },
       get commandExecutor() { return engine.commandExecutor; },
@@ -880,7 +935,7 @@ export class GameEngine implements StoryEngine {
       get textService() { return engine.textService; },
       get languageProvider() { return engine.languageProvider; },
       get saveRestoreService() { return engine.saveRestoreService; },
-      get channelService() { return engine.channelService; },
+      get channelService() { return engine.channelServiceForTurn; },
       get perceptionService() { return engine.perceptionService; },
       get eventSource() { return engine.eventSource; },
       turnEventsOf: (turn) => {
@@ -1396,14 +1451,14 @@ export class GameEngine implements StoryEngine {
    * Create save data from current engine state
    */
   private createSaveData(): ISaveData {
-    return this.saveRestoreService.createSaveData(this);
+    return this.saveRestoreService.createSaveData(this.saveProvider());
   }
 
   /**
    * Load save data into engine
    */
   private loadSaveData(saveData: ISaveData): void {
-    const result = this.saveRestoreService.loadSaveData(saveData, this);
+    const result = this.saveRestoreService.loadSaveData(saveData, this.saveProvider());
 
     // Update event source
     this.eventSource = result.eventSource;

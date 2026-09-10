@@ -102,8 +102,8 @@ export interface TurnStageContext {
 export interface TurnEngine {
   readonly world: WorldModel;
   readonly context: GameContext;
-  /** The installed story, or none before `installStory`. */
-  readonly story: Story | undefined;
+  /** The installed story. Turn stages run only while playing, which always carries one (ADR-345 D7). */
+  readonly story: Story;
   readonly config: EngineConfig;
   /** The parser as the engine calls it: every engine-facing method present. */
   readonly parser: EngineParser;
@@ -115,8 +115,8 @@ export interface TurnEngine {
   readonly languageProvider: LanguageProvider | undefined;
   /** Snapshots for undo (the undo-snapshot stage takes one per undoable input). */
   readonly saveRestoreService: SaveRestoreService;
-  /** The channel-I/O producer, constructed by `start()`; none before it. */
-  readonly channelService: ChannelService | undefined;
+  /** The channel-I/O producer. Constructed by `start()`, before the phase becomes playing, so a turn always has one (ADR-345 D7). */
+  readonly channelService: ChannelService;
   /** The perception service, when one was given; enrichment and presence tagging read it. */
   readonly perceptionService: IPerceptionService | undefined;
   readonly eventSource: ISemanticEventSource;

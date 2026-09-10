@@ -59,13 +59,93 @@ export declare class GameEngine implements StoryEngine {
      * "started" timestamp still reflects construction rather than install.
      */
     private readonly startedAt;
-    private _context;
     /**
-     * The game context. Throws before a story is installed.
+     * The single source of truth for the engine's lifecycle (ADR-345 D1).
      *
-     * @throws Error when no story has been installed yet.
+     * Replaces `running`, `story`, `_context` and the two collaborator proxies
+     * as the way lifecycle is *read*. Written only by `installStory`, `start`,
+     * `stop` and `resume`.
+     */
+    private phase;
+    /**
+     * The game context, narrowed out of the phase rather than null-checked.
+     *
+     * Every phase but `empty` carries one, so readers in those phases get it
+     * without a guard of their own; the throw survives only as the `empty`-phase
+     * refusal (ADR-345 D3).
+     *
+     * @throws Error when the engine is in the `empty` phase (no story installed).
      */
     private get context();
+    /**
+     * The installed story, or `undefined` in the `empty` phase.
+     *
+     * A derived read, not a guard: the lifecycle questions are asked of
+     * `this.phase` directly. Kept so the several non-guard `this.story?.…`
+     * readers below need no rewrite.
+     */
+    private get story();
+    /**
+     * The context when one exists, `undefined` in the `empty` phase.
+     *
+     * The one legitimate "there may be no context" read in the class, for
+     * `emitGameEvent`'s turn bucketing — install steps emit before the context
+     * exists. Distinct from the dead optionality ADR-345 D7 removes elsewhere;
+     * see the comment at its single call site.
+     */
+    private get contextIfInstalled();
+    /**
+     * The refusal a lifecycle method throws when the engine is in a phase it
+     * does not accept (ADR-345 D2).
+     *
+     * One shape for all four methods, so a caller reading any of them learns
+     * the same two things: what was attempted, and what phase the engine was
+     * actually in. Before this, three guards asked "is there a story?" through
+     * three different fields and answered in three different sentences.
+     *
+     * @param attempted - The method that refused, written as a call (`'start()'`).
+     * @param accepted - The phase or phases it accepts, quoted (`"'ready'"`).
+     * @param hint - Optional remedy or detail appended to the message.
+     * @returns The Error to throw — never thrown here, so the call site reads
+     *          as a `throw` and control flow stays obvious.
+     */
+    /**
+     * The installed story, for readers that only run once one exists.
+     *
+     * The turn-facing surface and the save provider are both reachable only
+     * from a phase that carries a story, so they get a `Story` rather than a
+     * `Story | undefined` they would have to re-check (ADR-345 D7). Distinct
+     * from the public `getStory()`, which stays optional because callers may
+     * ask an `empty` engine — and because a failed install must be observable
+     * as "no story adopted" (ADR-344).
+     *
+     * @throws Error when the engine is in the `empty` phase.
+     */
+    private get storyForTurn();
+    /**
+     * The channel-I/O producer, for readers that only run during a turn.
+     *
+     * `start()` constructs it before the phase becomes `playing`, and turns run
+     * only in `playing`, so a turn-facing reader always has one (ADR-345 D7).
+     * This replaces `emitChannelPacket`'s `if (!channelService) return;`, which
+     * silently dropped a turn's entire packet — the same silent-wrongness shape
+     * as the bridges' `?? 0`.
+     *
+     * @throws Error when `start()` has not run.
+     */
+    private get channelServiceForTurn();
+    /**
+     * The engine as the save/restore service sees it (ADR-345 D7).
+     *
+     * A narrow adapter rather than passing `this`, for one reason: the
+     * interface's `getStory()` can honestly promise a `Story` because saving
+     * and restoring happen during a turn, while the engine's own public
+     * `getStory()` must stay optional. Same pattern as `turnEngine()` below.
+     *
+     * @returns A provider bound to this engine's live state.
+     */
+    private saveProvider;
+    private wrongPhase;
     private config;
     private commandExecutor;
     private eventProcessor;
@@ -73,8 +153,6 @@ export declare class GameEngine implements StoryEngine {
     private actionRegistry;
     private textService;
     private turnEvents;
-    private running;
-    private story?;
     private languageProvider;
     private parser;
     /** The parser as the engine calls it: every engine-facing method present (`adaptParser`). */
@@ -1659,8 +1737,8 @@ export interface TurnStageContext {
 export interface TurnEngine {
     readonly world: WorldModel;
     readonly context: GameContext;
-    /** The installed story, or none before `installStory`. */
-    readonly story: Story | undefined;
+    /** The installed story. Turn stages run only while playing, which always carries one (ADR-345 D7). */
+    readonly story: Story;
     readonly config: EngineConfig;
     /** The parser as the engine calls it: every engine-facing method present. */
     readonly parser: EngineParser;
@@ -1672,8 +1750,8 @@ export interface TurnEngine {
     readonly languageProvider: LanguageProvider | undefined;
     /** Snapshots for undo (the undo-snapshot stage takes one per undoable input). */
     readonly saveRestoreService: SaveRestoreService;
-    /** The channel-I/O producer, constructed by `start()`; none before it. */
-    readonly channelService: ChannelService | undefined;
+    /** The channel-I/O producer. Constructed by `start()`, before the phase becomes playing, so a turn always has one (ADR-345 D7). */
+    readonly channelService: ChannelService;
     /** The perception service, when one was given; enrichment and presence tagging read it. */
     readonly perceptionService: IPerceptionService | undefined;
     readonly eventSource: ISemanticEventSource;
@@ -2012,7 +2090,14 @@ export declare const SAVE_FORMAT_VERSION = "3.0.0";
 export interface ISaveRestoreStateProvider {
     getWorld(): WorldModel;
     getContext(): GameContext;
-    getStory(): Story | undefined;
+    /**
+     * The installed story. Not optional: saving and restoring happen during a
+     * turn, and a turn runs only while a story is installed (ADR-345 D7). The
+     * engine supplies this through a narrow adapter rather than itself, because
+     * its own public `getStory()` must stay optional for callers that may ask
+     * an engine with no story.
+     */
+    getStory(): Story;
     getEventSource(): ISemanticEventSource;
     getPluginRegistry(): PluginRegistry;
     getParser(): unknown | undefined;

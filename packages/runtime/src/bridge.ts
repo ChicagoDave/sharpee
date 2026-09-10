@@ -313,13 +313,18 @@ export class SharpeeRuntimeBridge {
       }
     }
 
+    // Same inert hedge as `packages/bridge/src/bridge.ts` (ADR-345 D7):
+    // `getContext()` is non-optional and delegates to a throwing getter, so
+    // the `?.` could never short-circuit. This one carried no `?? 0`, so its
+    // only effect was to widen `turns` to `number | undefined` for a case
+    // that cannot occur.
     const context = this.engine.getContext();
     const playerIdentity = player.get<IdentityTrait>(IdentityTrait.type);
     this.send({
       type: 'sharpee:status',
       location: locationName,
       score: playerIdentity?.points,
-      turns: context?.currentTurn,
+      turns: context.currentTurn,
     });
   }
 

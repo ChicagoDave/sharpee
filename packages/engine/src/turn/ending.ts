@@ -36,7 +36,10 @@ function isPlayerDead(engine: TurnEngine): boolean {
 
 /** Whether the story reports itself complete; a story without `isComplete` never ends by itself. */
 function isGameOver(engine: TurnEngine): boolean {
-  if (engine.story && engine.story.isComplete) {
+  // `engine.story` is no longer optional (ADR-345 D7) — a turn runs only
+  // while playing, which always carries a story. `isComplete` itself stays
+  // optional: a story without one never ends by itself.
+  if (engine.story.isComplete) {
     return engine.story.isComplete();
   }
   return false;
