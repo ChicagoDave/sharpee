@@ -28,12 +28,9 @@ import {
 } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -44,6 +41,11 @@ import {
  */
 export const answeringLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.ANSWERING,
+  reportEventType: 'if.event.answered',
+  blockedEventType: 'if.event.answer_blocked',
+  // postValidate is declared and never called: a valid answer is always gripped
+  // by the open exchange (ADR-320 D16), so the topic table is never consulted.
+  contracts: { runsOwnHooks: ['postValidate', 'postExecute', 'postReport'] },
   slots: [
     {
       id: 'target',
@@ -81,10 +83,6 @@ export const answeringAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_question' };
     }
     context.sharedData.answeringSpeaker = speaker;
-
-    const state = resolveLifecycle(context, answeringLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
 
     if (!context.command.topic?.text) {
       return { valid: false, error: 'no_response' };
@@ -126,10 +124,6 @@ export const answeringAction: Action & { metadata: ActionMetadata } = {
       })
     ];
 
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.answer_blocked', result.error);
-    }
     return events;
   },
 

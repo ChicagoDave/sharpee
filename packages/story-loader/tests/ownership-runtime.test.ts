@@ -14,6 +14,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, OpenableTrait, TraitType, WorldModel } from '@sharpee/world-model';
 import { CHORD_STATE_PREFIX, ChordStory, createStory, LoadError, SchedulerDaemon } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
 /** The story object's phase key (D2) — not exported via the package index. */
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
@@ -465,10 +466,10 @@ describe('body-level `must` and statement `when` suffix (Finding 8)', () => {
     });
     const run = (action: DispatchAction, target: IFEntity) => {
       const ctx = context(target);
-      const validation = action.validate(ctx);
-      if (!validation.valid) return { validation, events: action.blocked(ctx, validation) };
-      action.execute(ctx);
-      return { validation, events: action.report(ctx) };
+      const validation = runValidatePhase(action, ctx);
+      if (!validation.valid) return { validation, events: runBlockedPhase(action, ctx, validation) };
+      runExecutePhase(action, ctx);
+      return { validation, events: runReportPhase(action, ctx) };
     };
     return { ...loaded, actions, run };
   }

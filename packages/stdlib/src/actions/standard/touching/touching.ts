@@ -24,13 +24,6 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -40,6 +33,8 @@ import {
  */
 export const touchingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.TOUCHING,
+  reportEventType: 'if.event.touched',
+  blockedEventType: 'if.event.touch_blocked',
   slots: [
     {
       id: 'target',
@@ -110,19 +105,11 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, touchingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
       return scopeCheck.error!;
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     // Tactile property computation happens in execute phase
     return { valid: true };
@@ -254,8 +241,6 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
     sharedData.messageId = messageId;
     sharedData.eventData = eventData;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -276,11 +261,6 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name
     })];
 
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.touch_blocked', result.error);
-    }
-
     return events;
   },
 
@@ -296,9 +276,6 @@ export const touchingAction: Action & { metadata: ActionMetadata } = {
       params: { target: target ? nounPhraseFor(target) : { name: sharedData.targetName } },
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.touched');
 
     return events;
   },

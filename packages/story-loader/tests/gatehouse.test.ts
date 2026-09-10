@@ -37,7 +37,7 @@ describe('the gatehouse — full S3 stack in one story (elegance parity)', () =>
     expect(ir.hasHatches).toBe(false); // the ENTIRE stack is pure IR
     expect(ir.uses.sort()).toEqual(['combat', 'state-machines']);
 
-    // A real engine (ADR-328 D5): setStory runs the story's engine-ready
+    // A real engine (ADR-328 D5): installStory runs the story's engine-ready
     // hook against the engine's own plugin registry and NPC service; the
     // client's capabilities are negotiated at start, as in play.
     const { engine, story, world, player, phase } = bootEngine(FIXTURE, 11);

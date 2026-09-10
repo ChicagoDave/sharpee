@@ -20,6 +20,7 @@ import {
   TEST_MARKER_TRAIT,
   SECOND_TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -47,12 +48,12 @@ const drive = (world: WorldModel, chest: any, key: any) => {
       preposition: 'with'
     })
   );
-  const validation = unlockingAction.validate(context);
+  const validation = runValidatePhase(unlockingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: unlockingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(unlockingAction, context, validation) };
   }
-  unlockingAction.execute(context);
-  return { context, validation, events: unlockingAction.report(context) };
+  runExecutePhase(unlockingAction, context);
+  return { context, validation, events: runReportPhase(unlockingAction, context) };
 };
 
 describe('Unlocking interceptor hooks (ADR-118 / ADR-228)', () => {
@@ -203,10 +204,10 @@ describe('Key slot (ADR-229 R2)', () => {
       world,
       createCommand(IFActions.UNLOCKING, { entity: chest })
     );
-    const validation = unlockingAction.validate(context);
+    const validation = runValidatePhase(unlockingAction, context);
     expect(validation.valid).toBe(true);
-    unlockingAction.execute(context);
-    unlockingAction.report(context);
+    runExecutePhase(unlockingAction, context);
+    runReportPhase(unlockingAction, context);
 
     expect(keyConsulted).toBe(false);
     expect((chest.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);

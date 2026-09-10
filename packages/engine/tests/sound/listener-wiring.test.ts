@@ -22,7 +22,7 @@ import {
 } from '@sharpee/world-model';
 
 import { GameEngine } from '../../src/game-engine';
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import { MinimalTestStory } from '../stories/minimal-test-story';
 
@@ -36,7 +36,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
   it('attaches ListenerTrait to a freshly-created player without story authoring', () => {
     // MinimalTestStory.createPlayer() does NOT add a ListenerTrait.
     const story = new MinimalTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
 
     const player = story.getPlayer();
     expect(player).not.toBeNull();
@@ -100,7 +100,7 @@ describe('GameEngine — player Listener-trait wiring (ADR-172 Phase 4)', () => 
     }
 
     const story = new StoryWithListener();
-    engine.setStory(story);
+    engine.installStory(story);
 
     const player = story.getPlayer();
     const customTrait = story.getCustomTrait();

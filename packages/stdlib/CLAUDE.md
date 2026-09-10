@@ -2,7 +2,7 @@
 
 > Scoped to `packages/stdlib/`. See the root `CLAUDE.md` for project-wide policy.
 
-Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-051. Each action lives in `src/actions/standard/<name>/` with `<name>.ts`, `<name>-data.ts`, `<name>-events.ts`, `<name>-messages.ts`, and `<name>-types.ts` (e.g., `taking/taking.ts`, `taking/taking-data.ts`).
+Actions follow the four-phase pattern (validate/execute/report/blocked) per ADR-051. Each action lives in `src/actions/standard/<name>/` with `<name>.ts` and `index.ts` always, and `<name>-events.ts`, `<name>-messages.ts`, `<name>-data.ts`, or `<name>-types.ts` only when the action has event types, message ids beyond the defaults, an event-data builder, or a non-trivial sharedData shape of its own (e.g., `taking/` has all six; `telling/` has the two). A two-file action is complete (ADR-337 D4).
 
 ## Language Layer Separation (stdlib side)
 
@@ -110,12 +110,23 @@ world.registerActionInterceptor(TrollAxeTrait.type, 'if.action.taking', TrollAxe
 Stdlib actions resolve interceptors via `context.world.getInterceptorForAction(entity,
 actionId)` — never a module-level registry (the old free-function registry is deleted).
 
-**Lifecycle engine (ADR-228)**: actions never hand-roll hook plumbing. Each action
-exports an `ActionLifecycleDescriptor` (`src/actions/lifecycle/`) declaring its
-consultable entity slots; the shared engine owns hook order (published, first veto
-wins), veto-only guard semantics, structured onBlocked, and per-item multi-object
-lifecycles. New actions get interceptor correctness by writing a descriptor —
-hand-rolled lifecycle code is a review-rejectable smell.
+**Lifecycle engine (ADR-228) and its one call site (ADR-337 D1)**: actions never
+hand-roll hook plumbing, and they never call the hooks. Each action exports an
+`ActionLifecycleDescriptor` (`src/actions/lifecycle/`) declaring its consultable
+entity slots, its primary (`reportEventType`) and blocked (`blockedEventType`)
+event types, and any rare contract; the shared engine owns hook order (published,
+first veto wins), veto-only guard semantics, structured onBlocked, and per-item
+multi-object lifecycles; and the **phase runner** (`lifecycle/phase-runner.ts`:
+`runValidatePhase`, `runExecutePhase`, `runReportPhase`, `runBlockedPhase`) calls
+the hooks around the action's phases — the engine's command executor runs every
+action through it. A new action gets interceptor correctness by writing a
+descriptor and adding it to the registry; a `resolveLifecycle`/`runPreValidate`/
+`runPostReport` call inside an action is a review-rejectable smell unless the
+descriptor declares why (`contracts.runsOwnHooks` for a hook the action must run
+mid-phase or conditionally — attacking, the four conversation actions;
+`contracts.handlesMultiObject` for the D4 per-item loop — taking, dropping, putting,
+removing; inserting runs putting's hooks around the phases it delegates into). The
+structural test `tests/unit/actions/lifecycle-call-site.test.ts` pins that list.
 
 **Wired-action registry (ADR-228 D5)**: `src/actions/lifecycle/registry.ts` lists
 every descriptor and derives `interceptorConsultingActionIds` (the union of all slot
@@ -209,13 +220,19 @@ test('should actually move item to player inventory', () => {
   expect(world.getLocation(ball.id)).toBe(room.id);
 
   const context = createRealTestContext(takingAction, world, command);
-  takingAction.validate(context);
-  takingAction.execute(context);
+  runValidatePhase(takingAction, context);
+  runExecutePhase(takingAction, context);
 
   // POSTCONDITION — THE CRITICAL ASSERTION
   expect(world.getLocation(ball.id)).toBe(player.id);
 });
 ```
+
+**Drive phases through the phase runner, not the action** (ADR-337 D1): a test that
+calls `takingAction.validate(context)` directly runs no interceptor hook, because the
+hooks live in `runValidatePhase`/`runExecutePhase`/`runReportPhase`/`runBlockedPhase`
+(`src/actions/lifecycle/phase-runner.ts`), the same functions the executor calls.
+`executeWithValidation` in `tests/test-utils` already goes through them.
 
 **Interceptor registration keys in tests** (decision 2026-07-16, David): never
 borrow a real trait (READABLE with empty text, dummy PUSHABLE) as the

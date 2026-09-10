@@ -24,13 +24,6 @@ import {
 } from './reading-events.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -40,6 +33,8 @@ import {
  */
 export const readingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.READING,
+  reportEventType: 'if.event.read',
+  blockedEventType: 'if.event.read',
   slots: [
     {
       id: 'target',
@@ -105,10 +100,6 @@ export const reading: Action = {
 
     const target = directObject.entity;
 
-    const state = resolveLifecycle(context, readingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to see the target
     const scopeCheck = context.requireScope(target, ScopeLevel.VISIBLE);
     if (!scopeCheck.ok) {
@@ -152,10 +143,6 @@ export const reading: Action = {
       // TODO: Check if player has the required ability
       // For now, we'll assume they do if requiredAbility is set
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -214,8 +201,6 @@ export const reading: Action = {
     sharedData.messageId = messageId;
     sharedData.params = params;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -229,11 +214,6 @@ export const reading: Action = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.read', result.error);
-    }
 
     return events;
   },
@@ -256,9 +236,6 @@ export const reading: Action = {
       targetName: String(target?.attributes.name || 'something'),
       text: sharedData.params?.text
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.read');
 
     return events;
   }

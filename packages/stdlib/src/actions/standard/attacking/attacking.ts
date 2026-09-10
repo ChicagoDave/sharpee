@@ -42,13 +42,9 @@ import {
   ActionLifecycleDescriptor,
   LifecycleState,
   ResolvedConsultation,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
-  runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -66,6 +62,8 @@ import {
  */
 export const attackingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.ATTACKING,
+  reportEventType: 'if.event.attacked',
+  blockedEventType: 'if.event.attacked',
   slots: [
     {
       id: 'target',
@@ -85,7 +83,7 @@ export const attackingLifecycle: ActionLifecycleDescriptor = {
       })
     }
   ],
-  contracts: { postExecuteReplacesCore: true }
+  contracts: { postExecuteReplacesCore: true, runsOwnHooks: ['postExecute', 'postReport'] }
 };
 
 function getAttackingSharedData(context: ActionContext): AttackingSharedData {
@@ -153,10 +151,6 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
-    const state = resolveLifecycle(context, attackingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check if target is visible
     if (!context.canSee(target)) {
       return { valid: false, error: 'not_visible', params: { target: nounPhraseFor(target) } };
@@ -186,15 +180,14 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       if (health && !HealthBehavior.isAlive(health)) {
         return { valid: false, error: 'already_dead', params: { target: nounPhraseFor(target) } };
       }
-      // No combat interceptor registered on the target — block with standard IF response
-      if (!targetConsultation(state)) {
+      // No combat interceptor registered on the target — block with standard IF
+      // response. The executor resolved the lifecycle before this phase
+      // (ADR-337 D1), so the consultations are readable here.
+      const state = getLifecycleState(context);
+      if (!state || !targetConsultation(state)) {
         return { valid: false, error: 'violence_not_the_answer', params: { target: nounPhraseFor(target) } };
       }
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -363,11 +356,6 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.attacked', result.error);
-    }
 
     return events;
   },

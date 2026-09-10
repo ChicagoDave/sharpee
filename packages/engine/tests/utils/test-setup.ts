@@ -5,7 +5,7 @@
  */
 
 import { GameEngine, createStandardEngine } from '../../src/game-engine';
-import { Story } from '../../src/story';
+import { Story } from '../../src/install/story';
 import { createMockParser } from '../fixtures/mock-parser';
 import { ParserFactory } from '@sharpee/stdlib';
 
@@ -14,8 +14,8 @@ import { ParserFactory } from '@sharpee/stdlib';
  */
 export function setupLanguageMocks() {
   // Mock the language provider loader
-  jest.mock('../../src/story', () => ({
-    ...jest.requireActual('../../src/story'),
+  jest.mock('../../src/install/story', () => ({
+    ...jest.requireActual('../../src/install/story'),
     loadLanguageProvider: jest.fn().mockImplementation(async (languageCode: string) => {
       // Return a mock language provider
       return {
@@ -91,7 +91,7 @@ export async function createTestEngine(story?: Story): Promise<GameEngine> {
   const engine = createStandardEngine();
   
   if (story) {
-    await engine.setStory(story);
+    await engine.installStory(story);
   } else {
     // Default to test language
     await engine.setLanguage('test');
@@ -104,6 +104,6 @@ export async function createTestEngine(story?: Story): Promise<GameEngine> {
  * Clean up mocks after tests
  */
 export function cleanupLanguageMocks() {
-  jest.unmock('../../src/story');
+  jest.unmock('../../src/install/story');
   jest.restoreAllMocks();
 }

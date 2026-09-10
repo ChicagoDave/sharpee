@@ -13,7 +13,7 @@ import {
   createSeededRandom,
   deriveStreamSeed
 } from '@sharpee/core';
-import { EngineRandomService } from '../src/engine-random-service';
+import { EngineRandomService } from '../src/session/engine-random-service';
 
 const MASTER_SEED = 424242;
 

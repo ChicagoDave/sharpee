@@ -30,3 +30,4 @@ export {
   type RevealArbitrationInput,
   type RevealArbitration,
 } from './reveal.js';
+export { processLucidityDecay, enterLucidityWindow, DECAY_RATE_TURNS } from './lucidity-decay.js';

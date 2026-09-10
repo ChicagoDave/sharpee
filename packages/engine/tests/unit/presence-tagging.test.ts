@@ -15,7 +15,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { processEvent } from '../../src/turn-event-processor';
+import { processEvent } from '../../src/turn/turn-event-processor';
 import { GameEngine } from '../../src/game-engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';

@@ -19,6 +19,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('stone ledge', {
@@ -36,12 +37,12 @@ const drive = (world: WorldModel, object: any) => {
     world,
     createCommand(IFActions.CLIMBING, { entity: object })
   );
-  const validation = climbingAction.validate(context);
+  const validation = runValidatePhase(climbingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: climbingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(climbingAction, context, validation) };
   }
-  climbingAction.execute(context);
-  return { context, validation, events: climbingAction.report(context) };
+  runExecutePhase(climbingAction, context);
+  return { context, validation, events: runReportPhase(climbingAction, context) };
 };
 
 describe('Climbing interceptor hooks (ADR-118)', () => {

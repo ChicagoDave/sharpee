@@ -18,7 +18,7 @@ describe('Engine Integration Tests', () => {
       story = new ActionTestStory();
       const setup = setupTestEngine();
       engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
     });
 
     it('should complete a full game session', async () => {
@@ -70,7 +70,7 @@ describe('Engine Integration Tests', () => {
       // Create new engine and restore
       const newSetup = setupTestEngine();
       const newEngine = newSetup.engine;
-      newEngine.setStory(story);
+      newEngine.installStory(story);
 
       (newEngine as unknown as EnginePrivate).loadSaveData(savedState);
       newEngine.start();
@@ -84,7 +84,7 @@ describe('Engine Integration Tests', () => {
     it.skip('should handle game completion', async () => {
       // TODO: Implement engine.isComplete() method
       const completionStory = new CompletionTestStory();
-      engine.setStory(completionStory);
+      engine.installStory(completionStory);
       engine.start();
       
       // Play through to completion
@@ -103,7 +103,7 @@ describe('Engine Integration Tests', () => {
       const setup = setupTestEngine();
       engine = setup.engine;
       const story = new MinimalTestStory();
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
     });
 
@@ -117,8 +117,11 @@ describe('Engine Integration Tests', () => {
     });
 
     it('should recover from action errors', async () => {
-      const story = new ActionTestStory();
-      engine.setStory(story);
+      // An engine installs one story, before it starts — this scenario
+      // needs the action-test story, so it boots its own engine.
+      const { engine } = setupTestEngine();
+      engine.installStory(new ActionTestStory());
+      engine.start();
       
       // Execute action that might fail
       const result = await engine.executeTurn('error test');
@@ -139,7 +142,7 @@ describe('Engine Integration Tests', () => {
       const setup = setupTestEngine();
       const engine = setup.engine;
       const story = new MinimalTestStory();
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       const startTime = Date.now();
@@ -163,7 +166,7 @@ describe('Engine Integration Tests', () => {
       const setup = setupTestEngine();
       const engine = setup.engine;
       const story = new ActionTestStory();
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       const events: any[] = [];
@@ -191,7 +194,7 @@ describe('Engine Integration Tests', () => {
       const story = new ComplexWorldTestStory();
       const setup = setupTestEngine();
       const engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       const result = await engine.executeTurn('look');
@@ -208,7 +211,7 @@ describe('Engine Integration Tests', () => {
       const setup = setupTestEngine();
       const engine = setup.engine;
       const story = new ComplexWorldTestStory();
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       // Initial vocabulary update
@@ -243,7 +246,7 @@ describe('Engine Integration Tests', () => {
       const story = new ComplexWorldTestStory();
       const setup = setupTestEngine();
       const engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       // Navigate through rooms
@@ -267,7 +270,7 @@ describe('Engine Integration Tests', () => {
       
       const setup = setupTestEngine();
       const engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       // Execute turns until completion
@@ -287,7 +290,7 @@ describe('Engine Integration Tests', () => {
       
       const setup = setupTestEngine();
       const engine = setup.engine;
-      engine.setStory(story);
+      engine.installStory(story);
       engine.start();
       
       // Execute action that gives score

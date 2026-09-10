@@ -76,79 +76,6 @@ describe('Window Visibility Scope Rule - Fixed', () => {
     expect(visibleIds).not.toContain(tree.id);
   });
 
-  it.skip('should see garden entities when window is open with scope rule - SKIPPED: Cross-room visibility violates architecture', () => {
-    // Open the window
-    const openable = window.get<OpenableTrait>('openable');
-    if (openable) {
-      openable.isOpen = true;
-    }
-
-    // Add window visibility rule
-    const windowRule: ScopeRule = {
-      id: 'window_view',
-      fromLocations: [livingRoom.id],
-      includeLocations: [garden.id],
-      forActions: ['looking', 'examining'],
-      condition: (context) => {
-        const win = context.world.getEntity(window.id);
-        const openable = win?.get<OpenableTrait>('openable');
-        return openable?.isOpen === true;
-      },
-      message: 'You can see through the window.',
-      priority: 75 // Higher than default room visibility
-    };
-
-    world.addScopeRule(windowRule);
-
-    // Now check visibility
-    const visible = world.getVisible(player.id);
-    const visibleIds = visible.map(e => e.id);
-
-    // Should see living room contents
-    expect(visibleIds).toContain(livingRoom.id);
-    expect(visibleIds).toContain(window.id);
-    expect(visibleIds).toContain(couch.id);
-
-    // Should also see garden contents
-    expect(visibleIds).toContain(garden.id);
-    expect(visibleIds).toContain(tree.id);
-  });
-
-  it.skip('should not see garden when window closes again - SKIPPED: Cross-room visibility violates architecture', () => {
-    // Add the window rule
-    const windowRule: ScopeRule = {
-      id: 'window_view',
-      fromLocations: [livingRoom.id],
-      includeLocations: [garden.id],
-      forActions: ['looking', 'examining'],
-      condition: (context) => {
-        const win = context.world.getEntity(window.id);
-        const openable = win?.get<OpenableTrait>('openable');
-        return openable?.isOpen === true;
-      },
-      priority: 75
-    };
-
-    world.addScopeRule(windowRule);
-
-    // Open window first
-    const openable = window.get<OpenableTrait>('openable');
-    if (openable) {
-      openable.isOpen = true;
-    }
-    
-    let visible = world.getVisible(player.id);
-    expect(visible.map(e => e.id)).toContain(tree.id);
-
-    // Close window
-    if (openable) {
-      openable.isOpen = false;
-    }
-    
-    visible = world.getVisible(player.id);
-    expect(visible.map(e => e.id)).not.toContain(tree.id);
-  });
-
   it('should support action-specific visibility', () => {
     const openable = window.get<OpenableTrait>('openable');
     if (openable) {
@@ -224,39 +151,6 @@ describe('Window Visibility Scope Rule - Fixed', () => {
     const foggyScope = world.evaluateScope(player.id, 'examining');
     expect(foggyScope).toContain('moon'); // Still night
     expect(foggyScope).not.toContain('mountain'); // Can't see through fog
-  });
-
-  it.skip('should support scope rule removal - SKIPPED: Cross-room visibility violates architecture', () => {
-    const openable = window.get<OpenableTrait>('openable');
-    if (openable) {
-      openable.isOpen = true;
-    }
-
-    const windowRule: ScopeRule = {
-      id: 'window_view_test',
-      fromLocations: [livingRoom.id],
-      includeLocations: [garden.id],
-      condition: () => {
-        const win = world.getEntity(window.id);
-        const openable = win?.get<OpenableTrait>('openable');
-        return openable?.isOpen === true;
-      },
-      priority: 75
-    };
-
-    world.addScopeRule(windowRule);
-
-    // Verify rule works
-    let visible = world.getVisible(player.id);
-    expect(visible.map(e => e.id)).toContain(tree.id);
-
-    // Remove rule
-    const removed = world.removeScopeRule('window_view_test');
-    expect(removed).toBe(true);
-
-    // Should no longer see garden
-    visible = world.getVisible(player.id);
-    expect(visible.map(e => e.id)).not.toContain(tree.id);
   });
 
   it('should handle one-way visibility', () => {

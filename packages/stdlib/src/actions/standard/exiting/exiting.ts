@@ -17,13 +17,6 @@ import { ExitingMessages } from './exiting-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -47,6 +40,8 @@ function resolveCurrentContainer(context: ActionContext): IFEntity | undefined {
  */
 export const exitingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.EXITING,
+  reportEventType: 'if.event.exited',
+  blockedEventType: 'if.event.exited',
   slots: [
     {
       id: 'container',
@@ -94,10 +89,6 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
   validate(context: ActionContext): ValidationResult {
     const actor = context.actor;
     const currentLocation = context.world.getLocation(actor.id);
-
-    const state = resolveLifecycle(context, exitingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
 
     if (!currentLocation) {
       return {
@@ -163,10 +154,6 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
   
@@ -201,8 +188,6 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     const sharedData = getExitingSharedData(context);
     sharedData.exitingState = state;
 
-    const lifecycleState = getLifecycleState(context);
-    if (lifecycleState) runPostExecute(context, lifecycleState);
   },
   
   /**
@@ -236,9 +221,6 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       preposition: state.preposition
     } as ExitedEventData & { messageId: string; params: Record<string, any>; fromLocationName: string })];
 
-    const lifecycleState = getLifecycleState(context);
-    if (lifecycleState) runPostReport(context, lifecycleState, events, 'if.event.exited');
-
     return events;
   },
 
@@ -253,11 +235,6 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       params: result.params || {},
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.exited', result.error);
-    }
 
     return events;
   },

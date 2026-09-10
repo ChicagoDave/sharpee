@@ -26,11 +26,11 @@ import { PluginRegistry } from '@sharpee/plugins';
 import {
   SaveRestoreService,
   ISaveRestoreStateProvider
-} from '../src/save-restore-service';
+} from '../src/session/save-restore-service';
 import {
   ACTION_STREAM_POINT_NAME,
   EngineRandomService
-} from '../src/engine-random-service';
+} from '../src/session/engine-random-service';
 import { GameContext } from '../src/types';
 
 const MASTER_SEED = 20260801;

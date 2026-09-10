@@ -4336,65 +4336,39 @@ export type InfluenceMessageId = (typeof InfluenceMessages)[keyof typeof Influen
 
 ```typescript
 /**
- * The character-model NPC tick phase (ADR-144, 145, 146; ADR-310 D15/D17)
+ * The character-model NPC tick phase.
  *
- * One tick-phase registration — `'character-model'` — running ordered
- * sub-steps: decay → observe → influence → propagation → goals → scenes →
- * arrival reactions (GH #353)
- * (ADR-320 Phase 8). (Arbiter bookkeeping arrives with ADR-318's
- * arbiter.) Ordering between sub-steps is a contract, which is why this
- * is one registration rather than three (docs/work/archive/adr-310/
- * contracts.md §2); scenes run last because they consume the propagation
- * and goal sub-steps' same-turn output.
- *
- * All mutable state rides CharacterModelTrait (ADR-310 D17): the registry
- * below holds ONLY authored configuration, re-registered at load, and has
- * no serialization path of its own.
- *
- * The registration signature is platform-internal — not author-facing
- * compatibility surface; revisable by ADR-317/R3 at refactor cost.
+ * One tick-phase registration running ordered sub-steps: decay, observe,
+ * influence, propagation, goals, scenes, arrival reactions. The order is a
+ * contract, which is why this is one registration rather than several, and
+ * it lives as data in CHARACTER_TICK_SUB_STEPS, where each step names the
+ * steps it requires. All mutable state rides CharacterModelTrait; the
+ * registry here holds only authored configuration, re-registered at load,
+ * with no serialization path of its own. The registration signature is
+ * platform-internal, not an author-facing surface.
  *
  * Public interface: createCharacterModelPhase, registerCharacterModelPhase,
- *   CharacterPhaseRegistry, CharacterPhaseConfig, CHARACTER_MODEL_PHASE_NAME.
+ *   CharacterPhaseRegistry, CharacterPhaseConfig, CHARACTER_MODEL_PHASE_NAME,
+ *   CHARACTER_TICK_SUB_STEPS, subStepOrderViolations, TickContext,
+ *   SceneTickSurface, TickSubStep, TickSubStepRun.
  * Owner context: @sharpee/character
+ *
+ * References:
+ *   ADR-310 D15/D17 — one registration with ordered sub-steps; state on the trait.
+ *   ADR-144/145/146 — the propagation, goal, and influence subsystems the sub-steps drive.
+ *   ADR-320 Phase 8 — scenes run last, consuming the earlier sub-steps' same-turn output.
+ *   GH #353 — arrival reactions, the seventh sub-step.
+ *   ADR-339 D3 — the order is data with per-step requires, pinned by a test.
+ *   docs/work/archive/adr-310/contracts.md §2 — the ordering contract.
  */
-import { type ISemanticEvent, type EntityId, type RandomService } from '@sharpee/core';
-import type { ISound } from '@sharpee/if-domain';
-import { IFEntity, WorldModel, type TemperamentDef } from '@sharpee/world-model';
-import { type ExecutionEntry } from '@sharpee/stdlib';
+import type { ISemanticEvent } from '@sharpee/core';
+import { type IFEntity, type WorldModel, type TemperamentDef } from '@sharpee/world-model';
 import type { CompiledStoryOracle } from './story-oracle.js';
-import { PropagationProfile } from './propagation/index.js';
-import { GoalDef, MovementProfile, GoalManager } from './goals/index.js';
-import { InfluenceDef, ResistanceDef } from './influence/index.js';
-/** Tick context — mirrors NpcTickContext from stdlib. */
-interface TickContext {
-    world: WorldModel;
-    turn: number;
-    /** The session's per-point stream owner (ADR-293) */
-    random: RandomService;
-    playerLocation: EntityId;
-    playerId: EntityId;
-    /**
-     * The execution entry (ADR-328 D2; ADR-329 D6): how a goal step's chosen
-     * act — `taking`, `giving`, `dropping`, `going` — becomes a real action
-     * run as the NPC through the engine's four phases. The engine supplies
-     * it every tick; the goal sub-step is its only consumer here.
-     */
-    act: ExecutionEntry;
-    /**
-     * The player action's events this turn (ADR-310 Phase 5) — the observe
-     * sub-step's input. Absent (older callers, unit harnesses) = nothing
-     * observed this turn.
-     */
-    actionEvents?: ISemanticEvent[];
-    /**
-     * Feed the engine's per-turn sound buffer (ADR-172; ADR-320 Phase 8) —
-     * the scenes sub-step emits conversation sounds here so eavesdropping
-     * rides spatial propagation. Absent (older callers, unit harnesses) =
-     * scenes run silently (mutations land, no sounds).
-     */
-    emitSound?: (sound: ISound) => void;
-}
+import type { PropagationProfile } from './propagation/index.js';
+import { type GoalDef, type MovementProfile, GoalManager } from './goals/index.js';
+import type { InfluenceDef, ResistanceDef } from './influence/index.js';
+import { type TickContext, type SceneTickSurface, type ArrivedFact } from './tick-support.js';
+export type { TickContext, SceneTickSurface, ArrivedFact } from './tick-support.js';
 /** Per-NPC character configuration for the tick phase. Authored data only. */
 export interface CharacterPhaseConfig {
     propagationProfile?: PropagationProfile;
@@ -4427,19 +4401,6 @@ export interface CharacterPhaseConfig {
      * Derived from the compiled story at load; authors declare nothing.
      */
     arrivalNarratedTopics?: ReadonlySet<string>;
-}
-/** A fact that just landed on a listener by propagation (GH #353). */
-export interface ArrivedFact {
-    /** The NPC who now knows the topic, as a world id. */
-    listenerId: string;
-    /** The NPC who passed it, as a world id. */
-    speakerId: string;
-    /** The topic that arrived. */
-    topic: string;
-    /** The room the transfer happened in. */
-    roomId: string;
-    /** The turn it landed on. */
-    turn: number;
 }
 /**
  * The story's reaction to an arrival-narrated fact landing (GH #353) — the
@@ -4512,21 +4473,55 @@ export declare class CharacterPhaseRegistry {
 /** The one tick-phase name this package registers (contracts.md §2 — frozen, platform-internal). */
 export declare const CHARACTER_MODEL_PHASE_NAME = "character-model";
 export { CHARACTER_TURN_KEY } from './character-clock.js';
+/** What one tick hands every sub-step. */
+export interface TickSubStepRun {
+    /** The NPCs the scheduler handed this tick. */
+    npcs: IFEntity[];
+    /** The decay sub-step's targets: the NPCs, plus a modeled player. */
+    decayTargets: IFEntity[];
+    ctx: TickContext;
+    registry: CharacterPhaseRegistry;
+    /** This tick's surface, filled by the earlier sub-steps for the later ones. */
+    surface: SceneTickSurface;
+}
+/** One sub-step of the tick, with the sub-steps it must run after. */
+export interface TickSubStep {
+    readonly name: string;
+    /** Names of the sub-steps whose same-turn output this one reads. */
+    readonly requires: readonly string[];
+    run(step: TickSubStepRun): ISemanticEvent[];
+}
+/**
+ * The tick's sub-steps, in the order they run. Each entry's `requires`
+ * names the earlier sub-steps whose same-turn output it consumes, so the
+ * order is a stated dependency rather than a position: decay settles mood
+ * and lucidity before anything evaluates them; observe records what the
+ * player just did, and everything after reacts to it; influence expires and
+ * then applies effects so propagation and goals see them; propagation moves
+ * knowledge before goals re-evaluate activation conditions that read it;
+ * scenes consume the acts, transfers, says, and moves the earlier sub-steps
+ * put on the surface; arrival reactions run last so goals and scenes saw the
+ * world as it stood when each fact arrived. A modeled player joins only the
+ * decay targets; the other sub-steps stay NPC-only.
+ *
+ * A new sub-step is one entry here naming what it requires;
+ * subStepOrderViolations (and its test) says when an entry sits before
+ * something it needs.
+ */
+export declare const CHARACTER_TICK_SUB_STEPS: readonly TickSubStep[];
+/**
+ * Every place a sub-step list breaks its own `requires`: an entry that names
+ * a sub-step not in the list, or one that runs at or after it. Empty for a
+ * well-ordered list.
+ *
+ * @param steps - The list to check, in run order
+ * @returns One line per violation, naming both sub-steps
+ */
+export declare function subStepOrderViolations(steps: readonly TickSubStep[]): string[];
 /**
  * Create the character-model tick phase handler. Register it once:
- * `registerCharacterModelPhase(npcService, registry)`.
- *
- * Sub-step order (a contract, not a coincidence — contracts.md §2): decay
- * runs first so the turn's evaluation sees settled mood/lucidity;
- * observation second, so the turn's remaining evaluation reacts to what
- * the player just did; influence effects are expired then applied next
- * (expiry first so a recurring influence re-transitions the turn it
- * recurs — ADR-310 D8), so propagation and goal evaluation the same turn
- * see them; propagation
- * moves knowledge before goals re-evaluate activation conditions that may
- * reference it; scenes run last (ADR-320 Phase 8), consuming the
- * transfers, say completions, moves, and detected acts the earlier
- * sub-steps surfaced this turn.
+ * `registerCharacterModelPhase(npcService, registry)`. The handler runs
+ * CHARACTER_TICK_SUB_STEPS in order over one fresh surface per tick.
  *
  * @param registry - The character phase registry (authored configs)
  * @returns Tick phase handler function
@@ -4702,6 +4697,95 @@ export declare function witnessStatement(world: WorldModel, speakerId: string, t
  * @returns Topic names actually learned, per observer id
  */
 export declare function witnessActs(acts: readonly DetectedAct[], observers: readonly IFEntity[], turn: number): Record<string, string[]>;
+```
+
+### act-detection/character-observer
+
+```typescript
+/**
+ * The character observer: an event an NPC witnesses passes through the
+ * cognitive profile's perception filter, may become a witnessed fact, and
+ * may move mood, threat, disposition, or lucidity by the transition rules.
+ * A hallucinating character also invents events of its own.
+ *
+ * Public interface: observeEvent, filterPerception, injectHallucinations,
+ *   DefaultStateTransitions, StateTransitionRule.
+ * Owner context: @sharpee/character — act detection.
+ *
+ * References:
+ *   ADR-141 — the character model and its cognitive profile.
+ *   ADR-339 D2 — moved home from stdlib/npc; the observe sub-step is its caller.
+ */
+import { type ISemanticEvent, type EntityId } from '@sharpee/core';
+import { IFEntity, WorldModel, CharacterModelTrait } from '@sharpee/world-model';
+/** A default state transition triggered by an event type. */
+export interface StateTransitionRule {
+    /** Event type pattern to match (exact string match). */
+    eventType: string;
+    /** Threat delta when this event is observed. */
+    threatDelta?: number;
+    /** Mood valence delta. */
+    moodValenceDelta?: number;
+    /** Mood arousal delta. */
+    moodArousalDelta?: number;
+    /**
+     * Disposition delta toward the event's actor.
+     * Only applied when the event has an actor entity.
+     */
+    dispositionDelta?: number;
+}
+/**
+ * Default state transition rules.
+ *
+ * Stories can override by providing their own rules array
+ * to observeEvent(). These are sensible defaults per ADR-141:
+ * violence increases threat, gifts improve disposition, etc.
+ */
+export declare const DefaultStateTransitions: StateTransitionRule[];
+/**
+ * Filter an event through the NPC's cognitive profile.
+ *
+ * @param trait - The NPC's CharacterModelTrait
+ * @param event - The incoming event
+ * @returns 'pass' if the event should be processed, 'miss' if filtered out,
+ *          'amplify' if the event should be processed with heightened impact
+ */
+export declare function filterPerception(trait: CharacterModelTrait, event: ISemanticEvent): 'pass' | 'miss' | 'amplify';
+/**
+ * Inject hallucinated facts for an NPC with augmented perception.
+ *
+ * Only injects when the NPC's current lucidity state matches
+ * the perceived event's `when` condition.
+ *
+ * @param trait - The NPC's CharacterModelTrait
+ * @param npcId - The NPC entity ID
+ * @param turn - Current turn number
+ * @returns Array of hallucination events (may be empty)
+ */
+export declare function injectHallucinations(trait: CharacterModelTrait, npcId: EntityId, turn: number): ISemanticEvent[];
+/**
+ * Process an event observed by an NPC through the character model.
+ *
+ * 1. Checks for CharacterModelTrait (returns early if absent — opt-in).
+ * 2. Filters event through cognitive profile perception mode.
+ * 3. Applies default state transition rules.
+ * 4. Checks lucidity triggers.
+ * 5. Injects hallucinated facts (augmented perception).
+ * 6. Emits observable behavior events for state changes.
+ *
+ * Knowledge topics are NOT minted here (ADR-310 D10): raw event types are
+ * platform wire vocabulary, not author-facing topics. Witnessed events
+ * become knowledge only through act detection's derived topics
+ * (@sharpee/character, D12a) and authored `knows` declarations.
+ *
+ * @param npc - The NPC entity
+ * @param event - The observed event
+ * @param world - The world model
+ * @param turn - Current turn number
+ * @param rules - State transition rules (defaults to DefaultStateTransitions)
+ * @returns Array of observable behavior events emitted by state changes
+ */
+export declare function observeEvent(npc: IFEntity, event: ISemanticEvent, world: WorldModel, turn: number, rules?: StateTransitionRule[]): ISemanticEvent[];
 ```
 
 ### arbiter/arbiter-types
@@ -5039,6 +5123,58 @@ export interface RevealArbitration {
  *   (no gate — the row proceeds untouched)
  */
 export declare function arbitrateConfidedReveal(input: RevealArbitrationInput): RevealArbitration | null;
+```
+
+### arbiter/lucidity-decay
+
+```typescript
+/**
+ * Lucidity decay: end-of-turn processing for an NPC's lucidity window. While
+ * a lucid window has no sustaining trigger active, its countdown runs and
+ * lucidity returns to baseline when it ends. Entering a window sets the
+ * countdown from the character's decay rate.
+ *
+ * Public interface: processLucidityDecay, enterLucidityWindow, DECAY_RATE_TURNS.
+ * Owner context: @sharpee/character — arbiter (the per-turn decays sit together).
+ *
+ * References:
+ *   ADR-141 — the character model's lucidity states.
+ *   ADR-339 D2 — moved home from stdlib/npc; the decay sub-step is its caller.
+ */
+import { type ISemanticEvent } from '@sharpee/core';
+import { IFEntity, WorldModel, CharacterModelTrait, type DecayRate } from '@sharpee/world-model';
+/**
+ * Maps decay rate words to number of turns before baseline is restored.
+ * These are the window durations when no sustaining trigger is active.
+ */
+export declare const DECAY_RATE_TURNS: Record<DecayRate, number>;
+/**
+ * Process end-of-turn lucidity decay for a single NPC.
+ *
+ * If the NPC has a CharacterModelTrait with an active lucidity window,
+ * decrements the window counter. When it reaches zero, the cognitive
+ * profile returns to baseline and a LUCIDITY_BASELINE_RESTORED event
+ * is emitted.
+ *
+ * If no lucidity config or no active window, returns empty array.
+ *
+ * @param npc - The NPC entity
+ * @param world - The world model (unused in current impl, reserved for future)
+ * @param turn - Current turn number (unused in current impl, reserved for future)
+ * @returns Array of events emitted (baseline restored, or empty)
+ */
+export declare function processLucidityDecay(npc: IFEntity, world: WorldModel, turn: number): ISemanticEvent[];
+/**
+ * Initialize a lucidity window with the appropriate turn count
+ * based on the NPC's configured decay rate.
+ *
+ * Call this when entering a lucidity state via a trigger, so the
+ * window has the correct duration based on decayRate.
+ *
+ * @param trait - The NPC's CharacterModelTrait
+ * @param targetState - The lucidity state to enter
+ */
+export declare function enterLucidityWindow(trait: CharacterModelTrait, targetState: string): void;
 ```
 
 ### character-clock

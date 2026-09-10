@@ -54,7 +54,7 @@ import type { Action, ActionContext, ValidationResult } from '@sharpee/stdlib';
 import type { ISemanticEvent } from '@sharpee/core';
 
 import { GameEngine } from '../../src/game-engine';
-import type { Story, StoryConfig } from '../../src/story';
+import type { Story, StoryConfig } from '../../src/install/story';
 
 // =============================================================================
 // Test action — player shouts at volume 'raised'.
@@ -249,7 +249,7 @@ describe('ADR-172 Phase 6 Step 6.4 — Tapestry integration scenario', () => {
     parser.addVerb(SHOUT_ACTION_ID, ['shout'], 'VERB_ONLY');
 
     story = new TapestryStory();
-    engine.setStory(story);
+    engine.installStory(story);
     await engine.start();
   });
 

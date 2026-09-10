@@ -121,26 +121,6 @@ describe('exitingAction (Golden Pattern)', () => {
       expect(world.getLocation(player.id)).toBe(room.id);
     });
 
-    test.skip('should fail when no location set', () => {
-      // SKIPPED: The new context creation requires player to have a valid location
-      const world = new WorldModel();
-      const player = world.createEntity('yourself', EntityType.ACTOR);
-      player.add({ type: TraitType.ACTOR, isPlayer: true });
-      world.setPlayer(player.id);
-      // Player has no location
-
-      const command = createCommand(IFActions.EXITING);
-      const context = createRealTestContext(exitingAction, world, command);
-
-      const events = executeWithValidation(exitingAction, context);
-
-      expectEvent(events, 'if.event.exited', {
-        blocked: true,
-        messageId: 'if.action.exiting.nowhere_to_go',
-        reason: 'nowhere_to_go'
-      });
-    });
-
     test('should fail when container has no parent location', () => {
       const world = new WorldModel();
       const player = world.createEntity('yourself', EntityType.ACTOR);
@@ -162,60 +142,6 @@ describe('exitingAction (Golden Pattern)', () => {
         blocked: true,
         messageId: 'if.action.exiting.nowhere_to_go',
         reason: 'nowhere_to_go'
-      });
-    });
-
-    test.skip('should fail when container is closed', () => {
-      // SKIPPED: Requires scope logic to properly set context.currentLocation for entities in containers
-      const { world, player, room } = setupBasicWorld();
-
-      const crate = world.createEntity('shipping crate', EntityType.CONTAINER);
-      crate.add({
-        type: TraitType.CONTAINER,
-        enterable: true
-      });
-      crate.add({
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
-
-      world.moveEntity(crate.id, room.id);
-      world.moveEntity(player.id, crate.id);  // Player inside closed crate
-
-      const command = createCommand(IFActions.EXITING);
-      const context = createRealTestContext(exitingAction, world, command);
-
-      const events = executeWithValidation(exitingAction, context);
-
-      expectEvent(events, 'if.event.exited', {
-        blocked: true,
-        messageId: 'if.action.exiting.container_closed',
-        reason: 'container_closed'
-      });
-    });
-
-    test.skip('should fail when exit is blocked', () => {
-      // SKIPPED: Requires scope logic to properly set context.currentLocation for entities with ENTRY trait
-      const { world, player, room } = setupBasicWorld();
-
-      const booth = world.createEntity('phone booth', EntityType.SCENERY);
-      booth.add({
-        type: TraitType.ENTRY,
-        canEnter: false  // Can't enter means can't exit
-      });
-
-      world.moveEntity(booth.id, room.id);
-      world.moveEntity(player.id, booth.id);
-
-      const command = createCommand(IFActions.EXITING);
-      const context = createRealTestContext(exitingAction, world, command);
-
-      const events = executeWithValidation(exitingAction, context);
-
-      expectEvent(events, 'if.event.exited', {
-        blocked: true,
-        messageId: 'if.action.exiting.cant_exit',
-        reason: 'cant_exit'
       });
     });
   });
@@ -271,71 +197,6 @@ describe('exitingAction (Golden Pattern)', () => {
         fromLocation: platform.id,
         toLocation: room.id,
         preposition: 'off'
-      });
-    });
-
-    test.skip('should exit from vehicle with ENTRY trait', () => {
-      // SKIPPED: Requires scope logic to properly set context.currentLocation for entities in vehicles
-      const { world, player, room } = setupBasicWorld();
-      
-      const car = world.createEntity('red car', EntityType.OBJECT);
-      car.add({
-        type: TraitType.ENTRY,
-        canEnter: true,
-        preposition: 'in'
-      });
-      
-      world.moveEntity(car.id, room.id);
-      world.moveEntity(player.id, car.id);
-      
-      const command = createCommand(IFActions.EXITING);
-      const context = createRealTestContext(exitingAction, world, command);
-      
-      const events = executeWithValidation(exitingAction, context);
-      
-      expectEvent(events, 'if.event.exited', {
-        fromLocation: car.id,
-        toLocation: room.id,
-        preposition: 'out of'  // 'in' converts to 'out of'
-      });
-    });
-
-    test.skip('should handle custom prepositions correctly', () => {
-      // SKIPPED: Requires scope logic to properly set context.currentLocation for various entry types
-      const prepositionTests = [
-        { enter: 'in', exit: 'out of' },
-        { enter: 'on', exit: 'off' },
-        { enter: 'under', exit: 'from under' },
-        { enter: 'behind', exit: 'from behind' }
-      ];
-      
-      prepositionTests.forEach(({ enter, exit }) => {
-        const { world, player, room } = setupBasicWorld();
-        
-        const furniture = world.createEntity('furniture', EntityType.SUPPORTER);
-        furniture.add({
-          type: TraitType.ENTRY,
-          canEnter: true,
-          preposition: enter
-        });
-        
-        world.moveEntity(furniture.id, room.id);
-        world.moveEntity(player.id, furniture.id);
-        
-        const command = createCommand(IFActions.EXITING);
-        const context = createRealTestContext(exitingAction, world, command);
-        
-        const events = executeWithValidation(exitingAction, context);
-        
-        expectEvent(events, 'if.event.exited', {
-          preposition: exit
-        });
-        
-        // All exits use the same event type with messageId
-        expectEvent(events, 'if.event.exited', {
-          messageId: 'if.action.exiting.exited',
-          preposition: exit
-        });
       });
     });
 

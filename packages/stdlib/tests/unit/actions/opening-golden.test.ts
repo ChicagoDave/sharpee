@@ -13,7 +13,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { openingAction } from '../../../src/actions/standard/opening';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, AuthorModel, EntityType, OpenableTrait, LockableTrait } from '@sharpee/world-model';
+import { TraitType, OpenableTrait, LockableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -187,37 +187,9 @@ describe('openingAction (Golden Pattern)', () => {
       expect(openedEvent?.data).not.toHaveProperty('revealedItems');
     });
 
-    // SKIP: The opening action delegates if.event.revealed emission to an external
-    // event handler (opening.ts:186-187). This is a deliberate design choice so that
-    // revealed events fire regardless of which action opens the container.
-    // Unskipping requires either moving revealed emission into the action or
-    // registering the handler in test setup.
-    test.skip('should emit separate revealed events for container contents', () => {
-      const { world, player, room } = setupBasicWorld();
-      const author = new AuthorModel(world.getDataStore(), world);
-
-      const box = author.createEntity('wooden box', EntityType.CONTAINER);
-      box.add({ type: TraitType.CONTAINER });
-      box.add({ type: TraitType.OPENABLE, isOpen: false });
-      author.moveEntity(box.id, room.id);
-
-      const coin = author.createEntity('gold coin', EntityType.ITEM);
-      const ruby = author.createEntity('ruby', EntityType.ITEM);
-      author.moveEntity(coin.id, box.id);
-      author.moveEntity(ruby.id, box.id);
-
-      const command = createCommand(IFActions.OPENING, { entity: box });
-      const context = createRealTestContext(openingAction, world, command);
-      const events = executeWithValidation(openingAction, context);
-
-      expectEvent(events, 'if.event.opened', {
-        targetId: box.id,
-        targetName: 'wooden box'
-      });
-
-      const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
-      expect(revealedEvents).toHaveLength(2);
-    });
+    // `if.event.revealed` is not this action's to emit: the opened→revealed chain
+    // (ADR-094, `src/chains/opened-revealed.ts`) derives it from `if.event.opened`,
+    // and `tests/unit/chains/opened-revealed.test.ts` covers the contents listing.
 
     test('should report empty container with special message', () => {
       const { world, object } = TestData.withObject('empty box', {
@@ -287,30 +259,6 @@ describe('openingAction (Golden Pattern)', () => {
       // proper room setup with exits, which is complex to test here
     });
   });
-
-  describe('Event Structure Validation', () => {
-    // SKIP: Requires if.event.revealed which the opening action delegates to
-    // an external handler (opening.ts:186-187). Same root cause as the
-    // container-reveals test above.
-    test.skip('should include proper atomic events', () => {
-      const { world, object } = TestData.withObject('cabinet', {
-        [TraitType.OPENABLE]: { type: TraitType.OPENABLE, isOpen: false },
-        [TraitType.CONTAINER]: { type: TraitType.CONTAINER }
-      });
-
-      const author = new AuthorModel(world.getDataStore(), world);
-      const pen = author.createEntity('pen', 'object');
-      author.moveEntity(pen.id, object.id);
-
-      const command = createCommand(IFActions.OPENING, { entity: object });
-      const context = createRealTestContext(openingAction, world, command);
-      const events = executeWithValidation(openingAction, context);
-
-      const eventTypes = events.map(e => e.type);
-      expect(eventTypes).toContain('if.event.opened');
-      expect(eventTypes).toContain('if.event.revealed');
-    });
-  });
 });
 
 describe('Opening Action Edge Cases', () => {
@@ -368,33 +316,6 @@ describe('Opening Action Edge Cases', () => {
       messageId: expect.stringContaining('opened'),
       params: { item: expect.objectContaining({ name: 'thick book' }) }
     });
-  });
-
-  // SKIP: Same as above — requires if.event.revealed emission from the opening
-  // action, which is currently delegated to an external event handler.
-  test.skip('should emit multiple revealed events for multiple items', () => {
-    const { world, player, room } = setupBasicWorld();
-    const author = new AuthorModel(world.getDataStore(), world);
-
-    const chest = author.createEntity('treasure chest', EntityType.CONTAINER);
-    chest.add({ type: TraitType.CONTAINER });
-    chest.add({ type: TraitType.OPENABLE, isOpen: false });
-    author.moveEntity(chest.id, room.id);
-
-    const items = [
-      author.createEntity('gold bar', EntityType.ITEM),
-      author.createEntity('silver coin', EntityType.ITEM),
-      author.createEntity('bronze medal', EntityType.ITEM),
-      author.createEntity('ancient scroll', EntityType.ITEM)
-    ];
-    items.forEach(item => author.moveEntity(item.id, chest.id));
-
-    const command = createCommand(IFActions.OPENING, { entity: chest });
-    const context = createRealTestContext(openingAction, world, command);
-    const events = executeWithValidation(openingAction, context);
-
-    const revealedEvents = events.filter(e => e.type === 'if.event.revealed');
-    expect(revealedEvents).toHaveLength(4);
   });
 });
 

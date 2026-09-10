@@ -23,6 +23,9 @@ inline in D2, D3, and the End-to-End Scenario.
 **Untouched**: `@sharpee/transcript-tester` and the platform's hand-authored
 text transcript world — walkthroughs, unit transcripts, `--chain`, Dungeo.
 That is Sharpee's own author-facing test language and it stays text.
+*(Note, 2026-09-08, ADR-340 D1: transcript-tester now exports the assertion
+core — the claim evaluator and per-command execution — that this package's
+runner imports; its grammar, golden tier, and CLI are unchanged.)*
 **Companion**: `docs/work/testing/functional-logic-testing-surface-20260809.md`
 (the as-built model v1 this proposal supersedes, and the walkthrough record).
 

@@ -6,7 +6,8 @@
  */
 
 import { describe, it, expect, beforeEach } from 'vitest';
-import { GameEngine, splitChainedInput } from '../src/game-engine';
+import { GameEngine } from '../src/game-engine';
+import { splitChainedInput } from '../src/turn/chain';
 import { ActionTestStory } from './stories';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
@@ -41,7 +42,7 @@ describe('executeTurn chaining', () => {
     story = new ActionTestStory();
     const setup = setupTestEngine();
     engine = setup.engine;
-    engine.setStory(story);
+    engine.installStory(story);
     engine.start();
   });
 

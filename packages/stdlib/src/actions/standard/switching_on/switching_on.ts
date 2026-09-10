@@ -35,13 +35,6 @@ import { nounPhraseFor } from '../../../utils/index.js';
 import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -51,6 +44,8 @@ import {
  */
 export const switchingOnLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.SWITCHING_ON,
+  reportEventType: 'if.event.switched_on',
+  blockedEventType: 'if.event.switch_on_blocked',
   slots: [
     {
       id: 'target',
@@ -127,10 +122,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: MESSAGES.NO_TARGET };
     }
 
-    const state = resolveLifecycle(context, switchingOnLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -150,10 +141,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
         return { valid: false, error: MESSAGES.NO_POWER, params: { target: nounPhraseFor(noun) } };
       }
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -265,8 +252,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       willOpen
     );
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -368,9 +353,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.switched_on');
-
     return events;
   },
 
@@ -391,11 +373,6 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       targetName: noun?.name,
       reason: result.error
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.switch_on_blocked', result.error);
-    }
 
     return events;
   },

@@ -25,6 +25,7 @@ import { IfidCommand } from './commands/ifid';
 import { TestCommand } from './commands/test';
 import { PlayCommand } from './commands/play';
 import { GrammarCommand } from './commands/grammar';
+import { AliasesCommand } from './commands/aliases';
 import { ManifestCommand } from './commands/manifest';
 
 /**
@@ -39,6 +40,7 @@ const COMMANDS: Command[] = [
   new TestNpmCommand(),
   new CleanCommand(),
   new GrammarCommand(),
+  new AliasesCommand(),
   new ManifestCommand(),
   new TestCommand(),
   new PlayCommand(),

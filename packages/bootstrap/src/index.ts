@@ -290,7 +290,7 @@ export function assembleGame(
       perceptionService,
       ...(opts?.seed !== undefined ? { config: { seed: opts.seed } } : {})
     });
-    engine.setStory(s);
+    engine.installStory(s);
 
     // ADR-248: auto-confirm restart (the harness has no player to ask) and
     // defer the reboot until the restart turn's output has been captured.

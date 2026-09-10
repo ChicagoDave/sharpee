@@ -11,6 +11,8 @@ import {
   EntityType
 } from '@sharpee/world-model';
 import { GameEngine } from '../src/game-engine';
+import { processPlatformOperations } from '../src/turn/platform-operations';
+import { processMetaPlatformOperation } from '../src/turn/meta-command';
 import {
   SaveRestoreHooks,
   SaveData,
@@ -49,7 +51,7 @@ describe('GameEngine Platform Operations', () => {
     const setup = setupTestEngine();
     engine = setup.engine;
     story = new MinimalTestStory();
-    engine.setStory(story);
+    engine.installStory(story);
     
     // Create mock hooks
     mockHooks = {
@@ -81,7 +83,7 @@ describe('GameEngine Platform Operations', () => {
       engine['pendingPlatformOps'].push(saveEvent);
       
       // Process platform operations
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       // Verify save hook was called
       expect(mockHooks.onSaveRequested).toHaveBeenCalled();
@@ -105,7 +107,7 @@ describe('GameEngine Platform Operations', () => {
       engine['pendingPlatformOps'].push(saveEvent);
       
       // Process operations
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(mockHooks.onSaveRequested).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -126,7 +128,7 @@ describe('GameEngine Platform Operations', () => {
       });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const completedEvents = events.filter(e => e.type === 'platform.save_completed');
       expect(completedEvents).toHaveLength(1);
@@ -146,7 +148,7 @@ describe('GameEngine Platform Operations', () => {
       });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const failedEvents = events.filter(e => e.type === 'platform.save_failed');
       expect(failedEvents).toHaveLength(1);
@@ -165,7 +167,7 @@ describe('GameEngine Platform Operations', () => {
       });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const failedEvents = events.filter(e => e.type === 'platform.save_failed');
       expect(failedEvents).toHaveLength(1);
@@ -186,7 +188,7 @@ describe('GameEngine Platform Operations', () => {
       const restoreEvent = createRestoreRequestedEvent(restoreContext);
       
       engine['pendingPlatformOps'].push(restoreEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(mockHooks.onRestoreRequested).toHaveBeenCalled();
     });
@@ -202,6 +204,11 @@ describe('GameEngine Platform Operations', () => {
       mockHooks.onRestoreRequested = vi.fn().mockResolvedValue(mockSaveData);
 
       engine.registerSaveRestoreHooks(mockHooks);
+
+      // Move past the save so the restore has somewhere to roll back to.
+      await engine.executeTurn('look');
+      await engine.executeTurn('look');
+      const turnBeforeRestore = engine.getContext().currentTurn;
       
       const events: any[] = [];
       engine.on('event', (event) => events.push(event));
@@ -209,11 +216,16 @@ describe('GameEngine Platform Operations', () => {
       const restoreEvent = createRestoreRequestedEvent({ saveName: 'test-save' });
       
       engine['pendingPlatformOps'].push(restoreEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const completedEvents = events.filter(e => e.type === 'platform.restore_completed');
       expect(completedEvents).toHaveLength(1);
       expect(completedEvents[0].payload.success).toBe(true);
+
+      // The engine actually rolled to the loaded save: the turn counter is
+      // the save's turn plus one, not where the two looks left it.
+      expect(engine.getContext().currentTurn).toBe(mockSaveData.metadata.turnCount + 1);
+      expect(engine.getContext().currentTurn).toBeLessThan(turnBeforeRestore);
     });
 
     it('should emit restore failed event when no save data available', async () => {
@@ -226,7 +238,7 @@ describe('GameEngine Platform Operations', () => {
       const restoreEvent = createRestoreRequestedEvent({ saveName: 'test-save' });
       
       engine['pendingPlatformOps'].push(restoreEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const failedEvents = events.filter(e => e.type === 'platform.restore_failed');
       expect(failedEvents).toHaveLength(1);
@@ -246,7 +258,7 @@ describe('GameEngine Platform Operations', () => {
       const quitEvent = createQuitRequestedEvent(quitContext);
       
       engine['pendingPlatformOps'].push(quitEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(mockHooks.onQuitRequested).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -262,7 +274,7 @@ describe('GameEngine Platform Operations', () => {
       const quitEvent = createQuitRequestedEvent({ reason: 'user_requested' });
       
       engine['pendingPlatformOps'].push(quitEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const confirmedEvents = events.filter(e => e.type === 'platform.quit_confirmed');
       expect(confirmedEvents).toHaveLength(1);
@@ -279,7 +291,7 @@ describe('GameEngine Platform Operations', () => {
       const quitEvent = createQuitRequestedEvent({ reason: 'user_requested' });
       
       engine['pendingPlatformOps'].push(quitEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const cancelledEvents = events.filter(e => e.type === 'platform.quit_cancelled');
       expect(cancelledEvents).toHaveLength(1);
@@ -295,7 +307,7 @@ describe('GameEngine Platform Operations', () => {
       const quitEvent = createQuitRequestedEvent({ reason: 'user_requested' });
       
       engine['pendingPlatformOps'].push(quitEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const confirmedEvents = events.filter(e => e.type === 'platform.quit_confirmed');
       expect(confirmedEvents).toHaveLength(1);
@@ -315,7 +327,7 @@ describe('GameEngine Platform Operations', () => {
       const restartEvent = createRestartRequestedEvent(restartContext);
       
       engine['pendingPlatformOps'].push(restartEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(mockHooks.onRestartRequested).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -335,7 +347,7 @@ describe('GameEngine Platform Operations', () => {
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
 
       engine['pendingPlatformOps'].push(restartEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
 
       // No pre-emptive success claim — the client's reboot banner is the
       // success signal (ADR-248 decision 1)
@@ -371,7 +383,7 @@ describe('GameEngine Platform Operations', () => {
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
 
       engine['pendingPlatformOps'].push(restartEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
 
       const cancelledEvents = events.filter(e => e.type === 'platform.restart_cancelled');
       expect(cancelledEvents).toHaveLength(1);
@@ -385,7 +397,7 @@ describe('GameEngine Platform Operations', () => {
     it('meta path: confirmed restart returns ack, no completion, and stops the engine (ADR-248)', async () => {
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
 
-      const completionEvents = await engine['processMetaPlatformOperation'](restartEvent);
+      const completionEvents = await processMetaPlatformOperation(engine['turnEngine'](), restartEvent);
 
       expect(completionEvents.filter((e: any) => e.type === 'platform.restart_completed')).toHaveLength(0);
       expect(completionEvents.filter((e: any) =>
@@ -401,7 +413,7 @@ describe('GameEngine Platform Operations', () => {
 
       const restartEvent = createRestartRequestedEvent({ reason: 'user_requested' });
 
-      const completionEvents = await engine['processMetaPlatformOperation'](restartEvent);
+      const completionEvents = await processMetaPlatformOperation(engine['turnEngine'](), restartEvent);
 
       expect(completionEvents.filter((e: any) => e.type === 'platform.restart_cancelled')).toHaveLength(1);
       expect(engine['running']).toBe(true);
@@ -432,7 +444,7 @@ describe('GameEngine Platform Operations', () => {
       engine['pendingPlatformOps'].push(saveEvent);
       engine['pendingPlatformOps'].push(restoreEvent);
       
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(callOrder).toEqual(['save', 'restore']);
     });
@@ -449,7 +461,7 @@ describe('GameEngine Platform Operations', () => {
       engine['pendingPlatformOps'].push(saveEvent);
       engine['pendingPlatformOps'].push(restoreEvent);
       
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(mockHooks.onSaveRequested).toHaveBeenCalled();
       expect(mockHooks.onRestoreRequested).toHaveBeenCalled();
@@ -468,7 +480,7 @@ describe('GameEngine Platform Operations', () => {
       const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       const eventsForTurn = turnEvents.get(currentTurn);
       expect(eventsForTurn).toBeDefined();
@@ -482,7 +494,7 @@ describe('GameEngine Platform Operations', () => {
       const saveEvent = createSaveRequestedEvent({ saveName: 'test', timestamp: Date.now() });
       
       engine['pendingPlatformOps'].push(saveEvent);
-      await engine['processPlatformOperations']();
+      await processPlatformOperations(engine['turnEngine']());
       
       expect(emittedEvents.some(e => e.type === 'platform.save_completed')).toBe(true);
     });

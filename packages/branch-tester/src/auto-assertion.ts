@@ -5,16 +5,22 @@
  * The runner calls this at the ADR-294 D2 tier boundary (a bare command run
  * under a policy); the tab calls it when a turn lands, persisting the result
  * into the tree document. Anything either writer records comes from HERE — a
- * second spelling of the synthesis is drift. (`@sharpee/transcript-tester`
- * keeps its full copy per ADR-302 D15; that copy is frozen and cannot drift
- * because it never moves.)
+ * second spelling of the synthesis is drift. The policy synthesis itself and
+ * the prose reader live in the assertion core (`@sharpee/transcript-tester`'s
+ * `assertion-core`, ADR-340 D1) and are re-exported here, so the IDE surface's
+ * `@sharpee/branch-tester/auto-assertion` import keeps its shape (D5); the
+ * opening defaults and the wire rendering are this package's own.
  *
  * Public interface: `synthesizePolicyAssertions(policy, actualOutput,
  * channelValues)`, `synthesizeOpeningAssertions(policy, bootChannelValues)`,
- * `proseTextLinesOf(values)`.
+ * `proseTextLinesOf(values)`, `describeAssertion`, `streamableCommandResult`,
+ * `DEFAULT_AUTO_ASSERTION_POLICY`.
  * Owner context: @sharpee/branch-tester (test authoring infrastructure).
  */
-import { Assertion, AutoAssertionPolicy } from './types.js';
+import { proseTextLinesOf } from '@sharpee/transcript-tester/assertion-core';
+import type { Assertion, AutoAssertionPolicy } from './types.js';
+
+export { synthesizePolicyAssertions, proseTextLinesOf } from '@sharpee/transcript-tester/assertion-core';
 
 /**
  * The platform's effective policy when a story declares no `auto-assertion:`
@@ -106,57 +112,6 @@ export function streamableCommandResult<
 }
 
 /**
- * Build the assertions an `auto-assertion:` policy writes for a bare command's
- * first run, from the turn's real output.
- *
- * - `all-emitted-text` — `[OK]` + literal block of the whole composed turn
- *   (ADR-287 exact match): every ordered emission — before text, room name,
- *   description, list contents, NPC activity — in order, all of them.
- * - `room-description` / `room-name-and-description` — contains-form built
- *   from the turn's `room-name`/`room-description` STRUCTURED channel
- *   captures (churn survival is the point of choosing less than all-text;
- *   the flattened capture is a JSON rendering, so the text is read out of
- *   the structured values). A turn that emitted neither chosen channel gets
- *   `[SKIP]` — under a policy, "nothing of what I assert on was said" is a
- *   deliberate skip, and the file then distinguishes it from a command
- *   still awaiting its first run.
- *
- * @param policy the story's declared policy
- * @param actualOutput the turn's composed prose, as captured
- * @param channelValues the turn's structured channel captures (bootstrap
- *   auto-captures the two room channels whenever a room policy is declared)
- * @returns the assertions to push onto the command — never empty
- */
-export function synthesizePolicyAssertions(
-  policy: AutoAssertionPolicy,
-  actualOutput: string,
-  channelValues?: Record<string, unknown[]>
-): Assertion[] {
-  if (policy === 'all-emitted-text') {
-    return [{ type: 'ok', block: actualOutput.replace(/\s+$/, '').split('\n') }];
-  }
-
-  /** Inline `[OK: contains "…"]` for a clean single line; block form when a
-   *  quote would corrupt the inline grammar or the fragment spans lines. */
-  const containsOf = (lines: string[]): Assertion =>
-    lines.length === 1 && !lines[0].includes('"')
-      ? { type: 'ok-contains', value: lines[0] }
-      : { type: 'ok-contains', block: lines };
-
-  const nameLines = proseTextLinesOf(channelValues?.['room-name']);
-  const descriptionLines = proseTextLinesOf(channelValues?.['room-description']);
-
-  const assertions: Assertion[] = [];
-  if (policy === 'room-name-and-description' && nameLines.length > 0) {
-    assertions.push(containsOf(nameLines));
-  }
-  if (descriptionLines.length > 0) {
-    assertions.push(containsOf(descriptionLines));
-  }
-  return assertions.length > 0 ? assertions : [{ type: 'skip' }];
-}
-
-/**
  * The opening card's default claims (ADR-307 open question D, resolved by
  * David 2026-08-10): the story's **prologue, title, and description** — who
  * and what this story is, checked where the story first says it. Synthesized
@@ -215,27 +170,4 @@ export function synthesizeOpeningAssertions(
   }
 
   return assertions;
-}
-
-/**
- * Extract the player-visible text of a prose channel's structured capture,
- * one line per captured entry. A prose entry is `{ content: [...] }` where
- * content items are plain strings or decorations (`{ className, content }`,
- * ADR-174) — decorations flatten to their inner text, exactly what a
- * `contains` fragment should hold. Plain strings pass through, so unit
- * stubs and simple channels need no wrapping.
- */
-export function proseTextLinesOf(values: unknown[] | undefined): string[] {
-  const textOf = (v: unknown): string => {
-    if (typeof v === 'string') return v;
-    if (Array.isArray(v)) return v.map(textOf).join('');
-    if (v !== null && typeof v === 'object' && 'content' in (v as Record<string, unknown>)) {
-      return textOf((v as { content: unknown }).content);
-    }
-    return '';
-  };
-  return (values ?? [])
-    .map(textOf)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
 }

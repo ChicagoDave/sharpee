@@ -17,7 +17,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import { EngineRandomService } from '@sharpee/engine';
-import { runTranscript, captureWorldSnapshot } from '../src/runner.js';
+import { captureWorldSnapshot } from '@sharpee/transcript-tester';
+import { runTranscript } from '../src/runner.js';
 import type { Assertion, Transcript, TranscriptCommand, TranscriptItem } from '../src/types.js';
 
 /** Build an in-memory transcript the way the tree-walker does from a line. */

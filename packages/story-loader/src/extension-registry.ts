@@ -1,26 +1,49 @@
 /**
- * extension-registry.ts — the trusted runtime extension registry (ADR-215).
+ * extension-registry.ts — the trusted runtime extension registry.
  *
- * Purpose: the MAPPINGS half of the names-vs-mappings split — the fixed,
- * runtime-bundled set of extensions a story's `use <name>` may resolve to,
- * each entry carrying its world-side registration and its adjective→trait
- * field routing. Because every entry ships with the runtime and no author
- * code crosses the boundary, a `use`-only story stays pure IR. An unknown
- * `use` name is a LoadError (the compiler's manifest gate catches it first;
- * this is the rogue-IR backstop). The chord-side manifest registry
- * (@sharpee/chord EXTENSION_MANIFESTS) must carry exactly these names — the
- * manifest-conformance test pins the two together.
+ * The MAPPINGS half of the names-vs-mappings split — the fixed,
+ * runtime-bundled set of extensions a story's `use <name>` may resolve to.
+ * Each entry ships with the runtime and no author code crosses the
+ * boundary, so a `use`-only story stays pure IR. An entry carries every
+ * moment an extension takes part in: its world-side registration at load,
+ * its world-state seeding from the story's rows, its config-free plugin
+ * slot and its IR-shaped construction at engine-ready, its channel
+ * registration, and the construct its `use` unlocks (so rogue IR carrying
+ * the construct without the `use` is refused). The loader drives every
+ * moment generically over this map and names no extension; adding one is
+ * a module under `extensions/` and a row here, never a loader edit. The
+ * entries are iterated in this map's order — never the header's `use`
+ * order — so two extensions' equal-priority plugins keep one fixed
+ * tie-break whatever an author wrote first. An unknown `use` name is a
+ * LoadError (the compiler's manifest gate catches it first; this is the
+ * rogue-IR backstop). The chord-side manifest registry must carry exactly
+ * these names — the manifest-conformance test pins the two together.
+ *
+ * The adjective→trait field routes also live here: derived views of the
+ * setting schema, so the manifest generator, the loader, and the
+ * conformance test read one declarative source.
  *
  * Public interface: EXTENSION_REGISTRY, ExtensionRegistration,
- * COMBAT_FIELD_ROUTES, FieldRoute.
+ * ExtensionEngineHost, ExtensionInstallContext, COMBAT_FIELD_ROUTES,
+ * NPC_FIELD_ROUTES, NPC_BEHAVIOR_ADJECTIVES, FieldRoute, NpcFieldRoute.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).
+ *
+ * References:
+ * - ADR-215 — the names-vs-mappings split; the three-part contract
+ *   (world, plugin, channels); the combat spelling; Q4's core NPC vocabulary.
+ * - ADR-260 D6 — every `use`d extension gets a `registerPlugin` slot.
+ * - ADR-276 Q-3 — the field routes derive from SETTING_SCHEMA.
+ * - ADR-226 — `health`/`max-health` route to the required HealthTrait.
+ * - ADR-335 D3 — IR-shaped construction moved into the entries.
  */
-import { registerBasicCombat } from '@sharpee/ext-basic-combat';
-import { registerScoring, registerScoringPlugin } from '@sharpee/ext-scoring';
-import { registerHunger } from '@sharpee/ext-hunger';
-import { registerChaptersChannels } from '@sharpee/ext-chapters';
-import type { IChannelRegistry } from '@sharpee/if-domain';
+import type { IRCondition, IRStatement, Span, StoryIR } from '@sharpee/chord';
+import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
+import { CHAPTERS_EXTENSION } from './extensions/chapters.js';
+import { COMBAT_EXTENSION } from './extensions/combat.js';
+import { HUNGER_EXTENSION } from './extensions/hunger.js';
+import { SCORING_EXTENSION } from './extensions/scoring.js';
+import { STATE_MACHINES_EXTENSION } from './extensions/state-machines.js';
 import { SETTING_SCHEMA } from './setting-schema';
 
 /**
@@ -36,13 +59,12 @@ export interface FieldRoute {
 }
 
 /**
- * `combatant`/`weapon` field routing (ADR-215 combat spelling) — a DERIVED
- * VIEW of SETTING_SCHEMA (ADR-276 Q-3: one declarative source for setting
- * value types; the manifest generator reads the same table). Exported so
- * the manifest-conformance test can assert every chord-manifest key has a
- * route AND every route's field exists on the real trait — the drift gate.
- * Note the ADR-226 split: `health`/`max-health` route to the REQUIRED
- * HealthTrait (auto-attached), never to CombatantTrait.
+ * `combatant`/`weapon` field routing — a DERIVED VIEW of SETTING_SCHEMA
+ * (one declarative source for setting value types; the manifest generator
+ * reads the same table). Exported so the manifest-conformance test can
+ * assert every chord-manifest key has a route AND every route's field
+ * exists on the real trait — the drift gate. `health`/`max-health` route
+ * to the REQUIRED HealthTrait (auto-attached), never to CombatantTrait.
  */
 export const COMBAT_FIELD_ROUTES: ReadonlyMap<string, FieldRoute> = (() => {
   const routes = new Map<string, FieldRoute>();
@@ -60,12 +82,12 @@ export const COMBAT_FIELD_ROUTES: ReadonlyMap<string, FieldRoute> = (() => {
 })();
 
 /**
- * NpcTrait routing for the CORE NPC behavior adjectives (ADR-215 Q4 —
- * always on, no `use`) — a DERIVED VIEW of SETTING_SCHEMA's shared NPC
- * settings. Behavior-factory params (`move-chance`, `immediate`, `route`,
- * `loop`, `wait-turns`) are NOT trait fields — they carry no route in the
- * schema, configure the per-entity behavior instance at engine-ready, and
- * are proven by the REAL-PATH tests, not this table.
+ * NpcTrait routing for the CORE NPC behavior adjectives (always on, no
+ * `use`) — a DERIVED VIEW of SETTING_SCHEMA's shared NPC settings.
+ * Behavior-factory params (`move-chance`, `immediate`, `route`, `loop`,
+ * `wait-turns`) are NOT trait fields — they carry no route in the schema,
+ * configure the per-entity behavior instance at engine-ready, and are
+ * proven by the REAL-PATH tests, not this table.
  */
 export interface NpcFieldRoute {
   field: string;
@@ -90,55 +112,67 @@ export const NPC_BEHAVIOR_ADJECTIVES: ReadonlySet<string> = new Set([
   'patrol',
 ]);
 
-/** One trusted extension's runtime registration surface (ADR-215's three-part contract). */
+/** What the loader hands an extension at engine-ready: the engine's plugin registry. */
+export interface ExtensionEngineHost {
+  getPluginRegistry(): { register(plugin: unknown): void };
+}
+
+/**
+ * The loader-side services IR-shaped construction may need: the IR-id to
+ * world-id map, the story's evaluator, and the runtime's statement
+ * executor. Handed to `installFromIR` so an entry never reaches into the
+ * loader.
+ */
+export interface ExtensionInstallContext {
+  /** The world id an IR entity id was built as, or undefined if never built. */
+  worldId(irId: string): string | undefined;
+  /** The world id an IR entity id was built as; throws the loader's LoadError when never built. */
+  requireWorldId(irId: string): string;
+  /** Evaluate a compiled condition against a live world through the story's evaluator. */
+  evalCondition(condition: IRCondition, world: WorldModel): boolean;
+  /** Run a compiled statement body against a live world through the runtime's statement executor. */
+  execMachineBody(statements: IRStatement[], world: WorldModel): ISemanticEvent[];
+}
+
+/** One trusted extension's runtime registration surface — every moment it takes part in. */
 export interface ExtensionRegistration {
   /** World-side registration (interceptors, resolvers) run at load. */
   registerWorld?: (world: WorldModel) => void;
   /**
-   * Engine plugin registration (TurnPlugin instances). Invoked generically
-   * over `ir.uses` from the loader's `onEngineReady` — the only moment a
-   * plugin registry exists (ADR-260 D6). An extension whose plugin needs
-   * story data lowered into it after construction (`state-machines`) wires
-   * itself in that hook directly instead.
+   * Config-free engine plugin registration (TurnPlugin instances). Invoked
+   * at engine-ready — the only moment a plugin registry exists — for every
+   * `use`d extension, before its `installFromIR`.
    */
   registerPlugin?: (registry: { register(plugin: unknown): void }) => void;
-  /**
-   * Channel + renderer registration (ADR-215's third contribution part) —
-   * reserved slot, filled in by Phase 6.
-   */
+  /** Channel + renderer registration (the contract's third contribution part). */
   registerChannels?: (registry: unknown) => void;
+  /**
+   * The IR construct this extension's `use` unlocks: the construct's
+   * spelling and the span of its first occurrence when the IR carries one,
+   * else null. IR carrying the construct without the `use` is refused at
+   * engine-ready — never silently dead.
+   */
+  gatedConstruct?: (ir: StoryIR) => { construct: string; span: Span | undefined } | null;
+  /**
+   * World-side, IR-shaped seeding at the end of world build: state the
+   * extension's plugin reads from turn 1. Runs once per boot, before any
+   * restore, for every `use`d extension.
+   */
+  seedWorldFromIR?: (ir: StoryIR, world: WorldModel) => void;
+  /**
+   * Engine-ready, IR-shaped construction: the plugins built from the
+   * story's own rows (a rank ladder's narrator, a hunger meter's daemon,
+   * the lowered machines, the chapter rows), registered on the engine.
+   * Runs for every `use`d extension, after its `registerPlugin`.
+   */
+  installFromIR?: (ir: StoryIR, engine: ExtensionEngineHost, context: ExtensionInstallContext) => void;
 }
 
 /** `use` name → its trusted, runtime-bundled registration. Fixed set — growing it is a grammar change. */
 export const EXTENSION_REGISTRY: ReadonlyMap<string, ExtensionRegistration> = new Map<string, ExtensionRegistration>([
-  ['combat', { registerWorld: (world) => registerBasicCombat(world) }],
-  // scoring is the first entry to fill TWO of the contract's three parts
-  // (ADR-261 D1): `registerWorld` enables scoring at world-build time, and
-  // `registerPlugin` installs the promotion watcher at onEngineReady —
-  // ExtensionRegistration.registerPlugin's first live use anywhere.
-  //
-  // Neither hook carries the rank ladder, and neither can: `registerWorld` is
-  // `(world) => void` on this module-level const map, so no entry here can
-  // reach a story's IR (ADR-260 D5). The ladder travels the loader's generic
-  // lowering path instead, which names no extension.
-  ['scoring', {
-    registerWorld: (world) => registerScoring(world),
-    registerPlugin: (registry) => registerScoringPlugin(registry),
-  }],
-  // state-machines registers engine-side (onEngineReady): the plugin
-  // instance must be kept to lower `define machine` blocks into its
-  // registry, so its wiring lives with the loader's engine hook. The
-  // entry exists so the `use` gate knows the name.
-  ['state-machines', {}],
-  // hunger (ADR-263): `registerWorld` installs the eating handler (config-free).
-  // The decay/death daemon, the ADR-262 crossing watcher, and the narrator are
-  // config-dependent (grows/fatal/rungs/phrases), so — like scoring's ladder —
-  // they travel the loader's generic `ir.hunger` lowering path, not this map.
-  ['hunger', { registerWorld: (world) => registerHunger(world) }],
-  // chapters (ADR-330): `registerChannels` installs the `story.chapter`
-  // channel — this slot's first live use (ADR-215's third contribution
-  // part). The plugin needs the story's rows, so — like state-machines and
-  // hunger's daemon — it is built from `ir.chapters` in the loader's
-  // onEngineReady, not here.
-  ['chapters', { registerChannels: (registry) => registerChaptersChannels(registry as IChannelRegistry) }],
+  ['combat', COMBAT_EXTENSION],
+  ['scoring', SCORING_EXTENSION],
+  ['state-machines', STATE_MACHINES_EXTENSION],
+  ['hunger', HUNGER_EXTENSION],
+  ['chapters', CHAPTERS_EXTENSION],
 ]);

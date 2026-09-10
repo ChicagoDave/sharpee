@@ -43,6 +43,7 @@ import {
   type SeededRandom,
 } from '@sharpee/core';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const PHRASES =
   'define phrase weather-line\n  "Rain again."\nend phrase\n' +
@@ -187,12 +188,12 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
 
 function run(l: Loaded, action: typeof askingAction, command: Record<string, unknown>) {
   const context = makeContext(l, action, command);
-  const validation = action.validate(context);
+  const validation = runValidatePhase(action, context);
   context.validationResult = validation;
   let events: ISemanticEvent[] = [];
   if (validation.valid) {
-    action.execute(context);
-    events = action.report(context);
+    runExecutePhase(action, context);
+    events = runReportPhase(action, context);
   }
   return { validation, events };
 }

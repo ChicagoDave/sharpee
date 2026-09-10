@@ -134,6 +134,8 @@ full kebabbing yields **zero collisions** across the whole catalog (D7).
 > hand-owned catalog that follows the action-scoped convention; D2's original
 > "decoupled, not a de-dot" framing is superseded by the action-scoped form.
 
+> **Amendment (2026-09-09, session 4e5843, ADR-335 D4).** The loader's `message-alias-map.ts` is the one hand-maintained table; the Chord-side names-only set (`packages/chord/src/message-alias-catalog.ts`) is derived from that table's keys by `./repokit aliases`, and `./repokit aliases --check` runs under `./repokit verify`. Nothing is generated from the language pack; ownership and the naming convention above are unchanged.
+
 ### D3 — Every standard-action message is overridable (ruled by David)
 
 The ACL exposes an alias for **every** `if.action.<action>.<key>` in lang-en-us.

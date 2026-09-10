@@ -19,7 +19,7 @@ import {
   UndeclaredForceClassError,
   IRandomTraceData
 } from '@sharpee/core';
-import { EngineRandomService } from '../src/engine-random-service';
+import { EngineRandomService } from '../src/session/engine-random-service';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
 const MASTER_SEED = 424242;

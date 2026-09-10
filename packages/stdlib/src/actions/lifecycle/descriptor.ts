@@ -13,13 +13,25 @@
  * stdlib wired-action registry (ADR-228 D5) is derived mechanically from
  * the descriptor table, never hand-maintained.
  *
+ * The descriptor is also what the command executor reads to run the
+ * hooks around the action's phases (ADR-337 D1): the executor, not the
+ * action, calls preValidate before `validate`, postValidate after it,
+ * postExecute after `execute`, postReport after `report`, and onBlocked
+ * after `blocked`. Every action whose descriptor is in the registry is
+ * therefore consulted at all four phase boundaries on every path. The
+ * few actions that must run a hook at a point the executor cannot know
+ * declare it in `contracts.runsOwnHooks` and call that hook themselves.
+ *
  * Public interface: `ActionLifecycleDescriptor`, `EntitySlotSpec`,
  * `LifecycleContracts`.
+ *
+ * References: ADR-228 (the lifecycle engine and its rulings), ADR-337 D1
+ * (the executor as the one call site), ADR-320 D16 (answering's grip).
  * Owner: stdlib standard-action infrastructure (ADR-228).
  */
 
 import { IFEntity } from '@sharpee/world-model';
-import { ActionContext } from '../enhanced-types.js';
+import { ActionContext, ValidationResult } from '../enhanced-types.js';
 
 /**
  * One consultable entity slot of a command.
@@ -96,6 +108,32 @@ export interface LifecycleContracts {
    * the hook itself normally.
    */
   postExecuteReplacesCore?: boolean;
+
+  /**
+   * Hooks the action runs itself, at a point inside its phase the
+   * executor cannot know — the executor skips each hook named here
+   * (ADR-337 D1). attacking runs postExecute mid-execute because the
+   * hook IS the combat resolution its later logic reads, and runs
+   * postReport before it appends death and knockout events so the blow's
+   * narration precedes its consequences; the four conversation actions
+   * (asking, telling, talking, answering) run postValidate, postExecute,
+   * and postReport only when no open exchange or active thread has
+   * gripped the input (ADR-320 D16) — a gripped input never reaches the
+   * topic table, whose occurrence bump lives in postValidate. An action
+   * naming a hook here MUST call it on every path that reaches that
+   * phase and is not gripped, or the interceptors silently miss the
+   * boundary.
+   */
+  runsOwnHooks?: ReadonlyArray<'postValidate' | 'postExecute' | 'postReport'>;
+
+  /**
+   * The action runs one lifecycle per item for a multi-object command
+   * ("take all", "drop x and y") through the D4 primitives from inside
+   * its own item loop, so the executor runs none of the single-object
+   * hooks for such a command (ADR-337 D1's declared remainder). The
+   * executor still runs them for the action's single-object commands.
+   */
+  handlesMultiObject?: boolean;
 }
 
 /**
@@ -113,6 +151,21 @@ export interface ActionLifecycleDescriptor {
   actionId: string;
 
   /**
+   * The event type an interceptor's postReport `override` targets in the
+   * action's success events — the action's primary event (`if.event.taken`).
+   * A function when the primary event depends on the command (putting's
+   * `put_in` versus `put_on`); it is called after `report` with the same
+   * context, so it may read sharedData.
+   */
+  reportEventType: string | ((context: ActionContext) => string);
+
+  /**
+   * The event type the action's `blocked` phase emits and an interceptor's
+   * onBlocked `override` targets (`if.event.take_blocked`).
+   */
+  blockedEventType: string;
+
+  /**
    * Entity slots in the published consultation order (D3-B): direct
    * object → indirect/instrument → implicit entities.
    */
@@ -120,4 +173,14 @@ export interface ActionLifecycleDescriptor {
 
   /** Rare special contracts (D7.3). Omit unless the ADR names one. */
   contracts?: LifecycleContracts;
+
+  /**
+   * A refusal the interceptors must not be able to pre-empt (ADR-337 D1).
+   * The executor calls it before preValidate; a `{ valid: false }` result
+   * takes the action's `blocked` path with onBlocked still consulted, so
+   * an interceptor may reword the block but cannot veto ahead of it.
+   * Absent on every action until the D1 output diff names a refusal that
+   * needs it — declared per action, never by default.
+   */
+  earlyRefusal?(context: ActionContext): ValidationResult | undefined;
 }

@@ -18,6 +18,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { takingAction } from '@sharpee/stdlib';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runBlockedPhase } from '@sharpee/stdlib';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -108,7 +109,7 @@ describe('entity-scoped refusal key resolution (ADR-231 D1)', () => {
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
 
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
 
     expect(validation.valid).toBe(false);
     // resolvePhraseKey found the entity-local phrase, so the refusal
@@ -116,7 +117,7 @@ describe('entity-scoped refusal key resolution (ADR-231 D1)', () => {
     expect(validation.error).toBe('iron-ring.stuck-fast');
     expect(validation.errorQualified).toBe(true);
 
-    const events = takingAction.blocked(context, validation);
+    const events = runBlockedPhase(takingAction, context, validation);
     const blocked = events.find((e) => e.type === 'if.event.take_blocked')!;
     expect(blocked).toBeDefined();
     // THE pin: the entity-scoped id verbatim — never the bare key, never
@@ -227,12 +228,12 @@ describe('refusal on a strategy phrase carries the Choice (GH #304)', () => {
     const yardId = story.entityId('yard')!;
 
     const context = takeContextFor(world, player, statue);
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expectHeldFastChoice(validation);
 
     // The Choice must survive into the blocked event the prose pipeline
     // renders — params on the veto alone would still print the placeholder.
-    const events = takingAction.blocked(context, validation);
+    const events = runBlockedPhase(takingAction, context, validation);
     const blocked = events.find((e) => e.type === 'if.event.take_blocked')!;
     expect(blocked).toBeDefined();
     expect((blocked.data as any).messageId).toBe('held-fast');
@@ -248,7 +249,7 @@ describe('refusal on a strategy phrase carries the Choice (GH #304)', () => {
     const yardId = story.entityId('yard')!;
 
     const context = takeContextFor(world, player, bench);
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expectHeldFastChoice(validation);
 
     // State: the refusal really blocked the take.

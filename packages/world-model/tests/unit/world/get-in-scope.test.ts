@@ -55,23 +55,6 @@ describe('WorldModel.getInScope', () => {
     expect(inScope).toContainEqual(item);
   });
 
-  it.skip('should include deeply nested items - SKIPPED: Default scope rules may need adjustment for deep nesting', () => {
-    const outerBox = world.createEntity('Outer Box', 'container');
-    outerBox.add(new ContainerTrait());
-    const innerBox = world.createEntity('Inner Box', 'container');
-    innerBox.add(new ContainerTrait());
-    const item = world.createEntity('Item', 'item');
-    
-    world.moveEntity(outerBox.id, room.id);
-    world.moveEntity(innerBox.id, outerBox.id);
-    world.moveEntity(item.id, innerBox.id);
-    
-    const inScope = world.getInScope(player.id);
-    expect(inScope).toContainEqual(outerBox);
-    expect(inScope).toContainEqual(innerBox);
-    expect(inScope).toContainEqual(item);
-  });
-
   it('should include items carried by the observer', () => {
     const item = world.createEntity('Carried Item', 'item');
     world.moveEntity(item.id, player.id);

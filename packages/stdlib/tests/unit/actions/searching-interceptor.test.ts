@@ -18,6 +18,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -41,12 +42,12 @@ const drive = (world: WorldModel, target: any) => {
     world,
     createCommand(IFActions.SEARCHING, { entity: target, text: 'wooden crate' })
   );
-  const validation = searchingAction.validate(context);
+  const validation = runValidatePhase(searchingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: searchingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(searchingAction, context, validation) };
   }
-  searchingAction.execute(context);
-  return { context, validation, events: searchingAction.report(context) };
+  runExecutePhase(searchingAction, context);
+  return { context, validation, events: runReportPhase(searchingAction, context) };
 };
 
 describe('Searching interceptor hooks (ADR-118)', () => {

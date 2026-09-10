@@ -23,12 +23,12 @@ export const quittingLanguage = {
     'quit_save_query': "Would {you} like to save before quitting?",
     'quit_unsaved_query': "{You} {have} unsaved progress. What would {you} like to do?",
 
-    // Response messages (for text service after confirmation)
+    // Response messages, rendered once the player has answered the query
     'quit_confirmed': "Thanks for playing!\n\nFinal score: {finalScore} out of {maxScore}\nMoves: {moves}",
     'quit_cancelled': "Quit cancelled.",
     'quit_and_saved': "Game saved.\n\nThanks for playing!\n\nFinal score: {finalScore} out of {maxScore}\nMoves: {moves}",
 
-    // Additional stat messages that the text service might use
+    // Closing statistics a story may render beside the confirmation
     'final_score': "{Your} final score was {finalScore} out of {maxScore}.",
     'final_stats': "Final Statistics:\nScore: {finalScore}/{maxScore}\nMoves: {moves}\nTime played: {playTime}",
     'achievements_earned': "{You} earned {count} achievements during {your} play!"

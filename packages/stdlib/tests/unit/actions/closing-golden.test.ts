@@ -21,6 +21,7 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('closingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -311,9 +312,9 @@ describe('World State Mutations', () => {
     });
     const context = createRealTestContext(closingAction, world, command);
 
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(true);
-    closingAction.execute(context);
+    runExecutePhase(closingAction, context);
 
     // VERIFY POSTCONDITION: box is now closed
     const openableAfter = object.get(OpenableTrait)!;
@@ -348,9 +349,9 @@ describe('World State Mutations', () => {
     });
     const context = createRealTestContext(closingAction, world, command);
 
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(true);
-    closingAction.execute(context);
+    runExecutePhase(closingAction, context);
 
     // VERIFY POSTCONDITION: chest is now closed
     const openableAfter = box.get(OpenableTrait)!;
@@ -379,7 +380,7 @@ describe('World State Mutations', () => {
     const context = createRealTestContext(closingAction, world, command);
 
     // Validation should fail
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(false);
     expect(validation.error).toContain('already_closed');
 
@@ -407,7 +408,7 @@ describe('World State Mutations', () => {
     const context = createRealTestContext(closingAction, world, command);
 
     // Validation should fail
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(false);
     expect(validation.error).toContain('prevents_closing');
 
@@ -426,7 +427,7 @@ describe('World State Mutations', () => {
     const context = createRealTestContext(closingAction, world, command);
 
     // Validation should fail
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(false);
     expect(validation.error).toContain('not_closable');
 
@@ -456,9 +457,9 @@ describe('World State Mutations', () => {
     });
     const context = createRealTestContext(closingAction, world, command);
 
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(true);
-    closingAction.execute(context);
+    runExecutePhase(closingAction, context);
 
     // VERIFY POSTCONDITION: door is now closed
     const openableAfter = object.get(OpenableTrait)!;
@@ -487,13 +488,13 @@ describe('Interceptor postReport (ADR-118, interceptor-wiring audit 2026-07-12)'
       world,
       createCommand(IFActions.CLOSING, { entity: box, text: 'music box' })
     );
-    const validation = closingAction.validate(context);
+    const validation = runValidatePhase(closingAction, context);
     expect(validation.valid).toBe(true);
-    closingAction.execute(context);
+    runExecutePhase(closingAction, context);
     // State: actually closed.
     expect((box.get(OpenableTrait) as any).isOpen).toBe(false);
 
-    const events = closingAction.report(context);
+    const events = runReportPhase(closingAction, context);
     const closed = events.find(e => e.type === 'if.event.closed')!;
     expect((closed.data as any).messageId).toBe('box.custom_closed');
     expect((closed.data as any).params).toEqual({ tune: 'stops' });

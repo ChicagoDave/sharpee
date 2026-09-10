@@ -10,7 +10,7 @@ import { compile } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
 import { createSeededRandom } from '@sharpee/core';
-import { WorldModel } from '@sharpee/world-model';
+import { type HealthTrait, TraitType, WorldModel } from '@sharpee/world-model';
 import { getHungerSeverity, setHungerSeverity } from '@sharpee/ext-hunger';
 import { createStory } from '../src';
 
@@ -120,6 +120,9 @@ describe('use hunger loader lowering (ADR-263)', () => {
     setHungerSeverity(world, 100);
     const events = daemonOf(plugins).onAfterAction(context(world));
     expect(events.length).toBeGreaterThan(0); // a death event was emitted
+    // The state the event reports: the player's health trait is dead.
+    const health = world.getPlayer()!.get(TraitType.HEALTH) as HealthTrait;
+    expect(health.dead).toBe(true);
   });
 
   it('severity survives save/restore (ADR-263 #4a)', () => {

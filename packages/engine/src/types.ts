@@ -5,8 +5,9 @@
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
-import { type IParsedCommand, type IValidatedCommand, IFEntity, WorldModel } from '@sharpee/world-model';
+import { type IParsedCommand, type IValidatedCommand, type PronounSet, IFEntity, WorldModel } from '@sharpee/world-model';
 import { type ITextBlock } from '@sharpee/text-blocks';
+import type { CmgtPacket, TurnPacket } from '@sharpee/if-domain';
 
 // Re-export perception types from stdlib for convenience
 export { IPerceptionService, Sense } from '@sharpee/stdlib';
@@ -286,91 +287,74 @@ export interface EngineConfig {
   seed?: number;
 }
 
-// ---------------------------------------------------------------------------
-// Engine introspection — serializable summaries for tooling
-// ---------------------------------------------------------------------------
+/**
+ * Narrative perspective for player actions (ADR-089 Phase C).
+ * - '1st': "I take the lamp" (rare, Anchorhead-style)
+ * - '2nd': "You take the lamp" (default, Zork-style)
+ * - '3rd': "She takes the lamp" (experimental)
+ */
+export type Perspective = '1st' | '2nd' | '3rd';
 
 /**
- * Summary of a registered action, suitable for JSON serialization.
- * Produced by GameEngine.introspect().
+ * Narrative tense (future consideration).
+ * - 'present': "You take the lamp" (default)
+ * - 'past': "You took the lamp"
  */
-export interface ActionSummary {
-  /** Action identifier (e.g., "if.action.taking" or "dungeo.action.say"). */
-  id: string;
-  /** Semantic group (e.g., "inventory", "container"). */
-  group: string | null;
-  /** Pattern matching priority. */
-  priority: number;
-  /** True for stdlib actions (if.action.* prefix). */
-  isStandard: boolean;
-  /** Verb patterns from the language provider (e.g., ["take :item", "get :item"]). */
-  patterns: string[];
-  /** Help text from the language provider, if available. */
-  help: { description: string; verbs: string[]; examples: string[] } | null;
+export type Tense = 'present' | 'past';
+
+/**
+ * The resolved narrative settings of a story: how player-facing
+ * messages are rendered. Built from `StoryConfig.narrative` at install
+ * (`install/narrative/`) and read at render time by the prose pipeline
+ * and the language provider, so it is a shared type, not an install one.
+ */
+export interface NarrativeSettings {
+  /**
+   * Narrative perspective for player actions
+   * - '1st': "I take the lamp" (rare)
+   * - '2nd': "You take the lamp" (default)
+   * - '3rd': "She takes the lamp" (experimental)
+   */
+  perspective: Perspective;
+
+  /**
+   * For 3rd person: which pronoun set to use for the PC.
+   * If not specified, derived from player entity's ActorTrait.
+   * Ignored for 1st/2nd person perspectives.
+   */
+  playerPronouns?: PronounSet;
+
+  /**
+   * Narrative tense (future consideration)
+   * Currently only 'present' is supported.
+   */
+  tense?: Tense;
 }
 
 /**
- * Summary of a trait type in use across all entities.
- * Produced by GameEngine.introspect().
+ * The facade's event map: what `GameEngine.on` accepts, keyed by event
+ * name, each value the listener's signature.
  */
-export interface TraitSummary {
-  /** Trait type identifier (e.g., "container", "dungeo.trait.troll_axe"). */
-  type: string;
-  /** True for world-model/stdlib traits, false for story-defined traits. */
-  isStandard: boolean;
-  /** Number of entities that have this trait. */
-  entityCount: number;
-  /** Entity IDs that have this trait. */
-  entityIds: string[];
-  /** Property names from a sample trait instance. */
-  properties: string[];
-  /** Capability action IDs this trait declares (from static capabilities). */
-  capabilities: string[];
-  /** Interceptor action IDs this trait declares (from static interceptors). */
-  interceptors: string[];
-}
-
-/**
- * Summary of a capability behavior binding (trait + action + phases).
- * Produced by GameEngine.introspect().
- */
-export interface BehaviorBindingSummary {
-  /** Trait type this behavior is registered on. */
-  traitType: string;
-  /** Action/capability ID this behavior handles. */
-  actionId: string;
-  /** Registration priority (higher = checked first). */
-  priority: number;
-  /** Which 4-phase methods the behavior implements. */
-  phases: string[];
-  /** "capability" for CapabilityBehavior, "interceptor" for ActionInterceptor. */
-  kind: 'capability' | 'interceptor';
-}
-
-/**
- * Summary of a registered message ID and its text.
- * Produced by GameEngine.introspect().
- */
-export interface MessageSummary {
-  /** Full message ID (e.g., "if.action.taking.taken" or "dungeo.thief.appears"). */
-  id: string;
-  /** The message text or template string. */
-  text: string;
-  /** "platform" for stdlib/engine messages, "story" for story-registered messages. */
-  source: 'platform' | 'story';
-}
-
-/**
- * Serializable snapshot of engine state for tooling (VS Code extension, CLI).
- * Returned by GameEngine.introspect().
- */
-export interface EngineIntrospection {
-  /** All registered actions with patterns and metadata. */
-  actions: ActionSummary[];
-  /** All trait types in use with usage counts and metadata. */
-  traits: TraitSummary[];
-  /** All capability behavior and interceptor bindings. */
-  behaviors: BehaviorBindingSummary[];
-  /** All registered message IDs with text and source classification. */
-  messages: MessageSummary[];
+export interface GameEngineEvents {
+  'turn:start': (turn: number, input: string) => void;
+  'turn:complete': (result: TurnResult) => void;
+  'turn:failed': (error: Error, turn: number) => void;
+  'event': (event: ISemanticEvent) => void;
+  'state:changed': (context: GameContext) => void;
+  'game:over': (context: GameContext) => void;
+  'text:output': (blocks: ITextBlock[], turn: number) => void;
+  /**
+   * CMGT manifest emission (ADR-163 §11). Fires once per session
+   * during `start()` after `Story.registerChannels?` has run and the
+   * `ChannelService` is constructed. Carries the capability-filtered
+   * channel definitions for this client.
+   */
+  'channel:manifest': (cmgt: CmgtPacket) => void;
+  /**
+   * Per-turn channel packet emission (ADR-163 §1, §5). Fires after
+   * `text-service.processTurn` produces the turn's blocks; carries
+   * payload entries for every standard, story, and media channel that
+   * had something to emit this turn.
+   */
+  'channel:packet': (packet: TurnPacket, turn: number) => void;
 }

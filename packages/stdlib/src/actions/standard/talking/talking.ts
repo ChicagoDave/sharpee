@@ -36,13 +36,10 @@ import {
 } from '../../helpers/dialogue-selector.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
   runPostValidate,
   runPostExecute,
   runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -58,6 +55,9 @@ import {
  */
 export const talkingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.TALKING,
+  reportEventType: 'if.event.talked',
+  blockedEventType: 'if.event.talk_blocked',
+  contracts: { runsOwnHooks: ['postValidate', 'postExecute', 'postReport'] },
   slots: [
     {
       id: 'target',
@@ -135,10 +135,6 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, talkingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check if target is visible
     if (!context.canSee(target)) {
       return { 
@@ -199,8 +195,10 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       // open exchange > active thread > parked resume > topic table.
       markThreadGripped(context);
     } else {
-      // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-      const postVeto = runPostValidate(context, state);
+      // Not gripped: the topic table's postValidate runs here, never for a
+      // gripped input (ADR-320 D16) — declared in contracts.runsOwnHooks.
+      const state = getLifecycleState(context);
+      const postVeto = state ? runPostValidate(context, state) : null;
       if (postVeto) return postVeto;
     }
 
@@ -298,11 +296,6 @@ export const talkingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.talk_blocked', result.error);
-    }
 
     return events;
   },

@@ -43,6 +43,7 @@ import {
 import { registerCharacterScenes, createMapMemoryAccess, openScene } from '../../src/conversation';
 import type { ConversationMemoryAccess } from '../../src/conversation';
 import { CHARACTER_TURN_KEY } from '../../src/character-clock';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 // -- harness ---------------------------------------------------------------
 
@@ -98,10 +99,10 @@ function makeCommand(actionId: string, entity: IFEntity, topicText?: string): Va
 
 function runAction(action: Action, world: WorldModel, command: ValidatedCommand) {
   const context = createActionContext(world, world.getPlayer()!, action, command, fixtureRandom());
-  const validation = action.validate(context);
+  const validation = runValidatePhase(action, context);
   expect(validation.valid).toBe(true);
-  action.execute(context);
-  return { events: action.report(context), context: context as ActionContext };
+  runExecutePhase(action, context);
+  return { events: runReportPhase(action, context), context: context as ActionContext };
 }
 
 describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', () => {
@@ -425,7 +426,7 @@ describe('conversation dispatch × the real scene runtime (ADR-320 Phase 6)', ()
       const context = createActionContext(
         world, player, askingAction, makeCommand(IFActions.ASKING, npc, 'anything'), fixtureRandom(),
       );
-      const validation = askingAction.validate(context);
+      const validation = runValidatePhase(askingAction, context);
       expect(validation.valid).toBe(true);
       expect((context.sharedData as { exchangeGripped?: boolean }).exchangeGripped).toBeUndefined();
     });

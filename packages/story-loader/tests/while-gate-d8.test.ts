@@ -13,6 +13,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
 /** The story-level state key (not exported via the package index). */
 const CHORD_STORY_STATE_KEY = 'chord.story.state';
@@ -253,10 +254,10 @@ function dispatch(loaded: Loaded, verb: string, irId: string) {
       data,
     }),
   };
-  const validation = action.validate(ctx);
-  if (!validation.valid) return { validation, events: action.blocked(ctx, validation) };
-  action.execute(ctx);
-  return { validation, events: action.report(ctx) };
+  const validation = runValidatePhase(action, ctx);
+  if (!validation.valid) return { validation, events: runBlockedPhase(action, ctx, validation) };
+  runExecutePhase(action, ctx);
+  return { validation, events: runReportPhase(action, ctx) };
 }
 
 const stateOf = (loaded: Loaded, irId: string) =>

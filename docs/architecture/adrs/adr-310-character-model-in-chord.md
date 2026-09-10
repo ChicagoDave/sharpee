@@ -797,6 +797,8 @@ is no separate graph object to persist.
 its first release, and later shape changes add a versioned reader rather than a
 hard break — the v3→v4 save-format lesson, applied in advance this time.
 
+**Amendment (2026-09-08, session 4a2d5f — ordered by ADR-338 D3, landed with its plan).** The model's *mutators* live on the trait by design, not only its state. `CharacterModelTrait` carries eleven state-changing methods (`setMood`, `adjustMood`, `setThreat`, `adjustThreat`, `addInfluenceInForce`, `setPressure`, `mintLedgerEntry`, `addGoal`, `removeGoal`, `enterLucidityState`, `decayLucidity`), and their callers are the character tick's sub-steps (`packages/character/src/{arbiter,act-detection,propagation,goals,influence,conversation}/*-sub-step.ts`, ADR-339 D1) together with the dialogue extension, the arbiter's pressure bookkeeping, the influence duration tracker, and the claims folding. This is the one recorded exception to core-concepts' "behaviors own mutations": the model is one stateful object whose invariants span mood, threat, goals, and lucidity together, and a behavior would hold no state of its own and only forward to the trait — the same delegation shape ADR-338 D1 removed from `AuthorModel`. The read methods (effective state, facts, beliefs, goals, predicates) stay on the trait as the model's queries; D8's influence overlay is a read.
+
 ### D18. The demonstration story is thealderman, ported to Chord.
 
 Resolves Open Question 1. David's ruling, 2026-08-15.

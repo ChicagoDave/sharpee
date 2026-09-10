@@ -1,6 +1,6 @@
 {
   "name": "@sharpee/transcript-tester",
-  "version": "5.3.0",
+  "version": "5.3.1",
   "description": "Transcript-based testing tool for Sharpee interactive fiction",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -44,10 +44,22 @@
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js"
+    },
+    "./assertion-core": {
+      "types": "./dist/assertion-core.d.ts",
+      "import": "./dist-esm/assertion-core.js",
+      "require": "./dist/assertion-core.js"
     }
   },
   "publishConfig": {
     "access": "public"
+  },
+  "typesVersions": {
+    "*": {
+      "assertion-core": [
+        "./dist/assertion-core.d.ts"
+      ]
+    }
   },
   "module": "./dist-esm/index.js",
   "repository": {

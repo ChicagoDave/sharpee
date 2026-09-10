@@ -60,11 +60,11 @@ export async function bootTurns(source: string, seed = 7): Promise<BootedTurns> 
     config: { seed, onEvent: (e) => stream.push(e) },
   });
   engine.on('text:output', (blocks) => rendered.push(...blocks));
-  // Bootstrap's order: parser and language extended before setStory, so the
+  // Bootstrap's order: parser and language extended before installStory, so the
   // story's phrase texts and vocabulary are registered when the boot look runs.
   story.extendParser(parser);
   story.extendLanguage(language);
-  engine.setStory(story);
+  engine.installStory(story);
   world.removeEntity(placeholder.id);
   await engine.start();
   const turnText = async (input: string) => {

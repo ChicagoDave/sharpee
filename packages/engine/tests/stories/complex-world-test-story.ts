@@ -2,7 +2,7 @@
  * Complex world test story for testing world navigation and object manipulation
  */
 
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 /**

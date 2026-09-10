@@ -22,13 +22,6 @@ import { buildEventData } from '../../data-builder-types.js';
 import { getStateClauses } from '@sharpee/world-model';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -38,6 +31,8 @@ import {
  */
 export const examiningLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.EXAMINING,
+  reportEventType: 'if.event.examined',
+  blockedEventType: 'if.event.examined',
   slots: [
     {
       id: 'target',
@@ -91,10 +86,6 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, examiningLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to see the target (unless examining yourself)
     if (noun.id !== actor.id) {
       const scopeCheck = context.requireScope(noun, ScopeLevel.VISIBLE);
@@ -103,10 +94,6 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     // Valid - all event data will be built in report()
     return { valid: true };
   },
@@ -114,8 +101,6 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
   execute(context: ActionContext): void {
     // No standard mutations - examining is a read-only action.
     // Interceptor postExecute hooks may still mutate (ADR-228).
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
   
   report(context: ActionContext): ISemanticEvent[] {
@@ -159,9 +144,6 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.examined');
-
     return events;
   },
 
@@ -179,11 +161,6 @@ export const examiningAction: Action & { metadata: ActionMetadata } = {
       targetId: noun?.id,
       targetName: noun?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.examined', result.error);
-    }
 
     return events;
   },

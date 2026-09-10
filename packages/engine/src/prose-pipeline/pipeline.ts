@@ -11,7 +11,7 @@
  *                bracket decorations and final `className`s.
  *
  * Public interface: `class ProsePipeline implements IProsePipeline`.
- * Engine constructs one instance during `setStory()` and calls
+ * Engine constructs one instance during `installStory()` and calls
  * `processTurn` per turn (same three call sites as the retiring
  * `TextService`).
  *
@@ -84,7 +84,7 @@ function tagPresence(event: ISemanticEvent, blocks: ITextBlock[]): ITextBlock[] 
  * Engine-internal prose pipeline.
  *
  * Stateless transformer: events in, blocks out. Constructed once per
- * `setStory()` call with the active language provider; called per
+ * `installStory()` call with the active language provider; called per
  * turn by `GameEngine.executeTurn` and the meta-command path (the
  * same sites the retired `TextService.processTurn` had).
  */

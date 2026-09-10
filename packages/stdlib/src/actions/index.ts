@@ -22,6 +22,11 @@ export * from './lifecycle/index.js';
 // and this module imports the actions (cycle otherwise).
 export * from './lifecycle/registry.js';
 
+// Phase runner (ADR-337 D1) — the four phases with the lifecycle hooks
+// around them; the executor's one call site. Beside the registry for the
+// same cycle reason.
+export * from './lifecycle/phase-runner.js';
+
 // Standard actions
 export * from './standard/index.js';
 

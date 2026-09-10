@@ -14,7 +14,7 @@ import { SchedulerPlugin } from '@sharpee/plugin-scheduler';
 import type { TurnPluginContext } from '@sharpee/plugins';
 import { definePoint } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
-import { EngineRandomService } from '../../../src/engine-random-service';
+import { EngineRandomService } from '../../../src/session/engine-random-service';
 
 const DAEMON_POINT = definePoint('test-scheduler-plugin.daemon-draw');
 

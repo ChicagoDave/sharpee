@@ -346,17 +346,6 @@ describe('EnglishParser', () => {
         expect(['UNKNOWN_VERB', 'INVALID_SYNTAX']).toContain(result.error.code);
       }
     });
-
-    test.skip('should handle pattern mismatch', () => {
-      // TODO: Investigate why 'take in box' is parsing successfully
-      // It might be matching a valid pattern we're not expecting
-      const result = parser.parse('take in box');
-
-      expect(result.success).toBe(false);
-      if (!result.success) {
-        expect(result.error.code).toBe('INVALID_SYNTAX');
-      }
-    });
   });
 
   describe('tokenize', () => {
@@ -439,14 +428,6 @@ describe('EnglishParser', () => {
   });
 
   describe('parseWithErrors', () => {
-    test.skip('should return multiple candidates', () => {
-      // TODO: parseWithErrors needs updating for new grammar engine
-      const result = parser.parseWithErrors('look ball');
-
-      expect(result.candidates.length).toBeGreaterThan(0);
-      expect(result.errors.length).toBe(0);
-    });
-
     test('should include partial matches', () => {
       const result = parser.parseWithErrors('take unknown_word', { allowPartial: true });
 
@@ -488,17 +469,6 @@ describe('EnglishParser', () => {
         // ADR-231 D3: the leading article is split off the noun phrase
         expect(result.value.structure.directObject?.text).toBe('mirror');
         expect(result.value.structure.directObject?.articles).toEqual(['the']);
-      }
-    });
-
-    test.skip('should choose highest confidence pattern', () => {
-      // TODO: 'put down' without object doesn't match any pattern currently
-      const result = parser.parse('put down');
-
-      expect(result.success).toBe(true);
-      if (result.success) {
-        // Should match as "put down" compound verb (dropping)
-        expect(result.value.action).toBe('if.action.dropping');
       }
     });
   });

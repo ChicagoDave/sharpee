@@ -4,7 +4,7 @@
  * Behavior Statement (validateCombatantHealth):
  *   DOES   throw CombatantHealthValidationError naming every entity that carries a
  *          CombatantTrait but no HealthTrait; mutates nothing.
- *   WHEN   GameEngine.setStory calls it right after initializeWorld returns.
+ *   WHEN   GameEngine.installStory calls it right after initializeWorld returns.
  *   BECAUSE combat operates on the entity's health (ADR-226 §2) — a combatant with
  *          no HealthTrait has no target for damage; fail loudly at load, the same
  *          posture as validateRoomSnippets.
@@ -17,7 +17,7 @@
 import {
   validateCombatantHealth,
   CombatantHealthValidationError,
-} from '../../src/combatant-health-validation';
+} from '../../src/install/validate-combatant-health';
 import {
   WorldModel,
   CombatantTrait,

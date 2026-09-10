@@ -26,6 +26,7 @@ import {
   WorldModel
 } from '@sharpee/world-model';
 import { ChordStory, createStory, LoadError } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -256,15 +257,15 @@ end phrase`));
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent
     };
 
-    const validation = turningAction.validate(context);
+    const validation = runValidatePhase(turningAction, context);
     context.validationResult = validation;
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
 
     // PRECONDITION: prize starts in the Bin.
     expect(world.getLocation(prize.id)).toBe(story.entityId('bin')!);
 
-    turningAction.execute(context);
-    const events = turningAction.report(context);
+    runExecutePhase(turningAction, context);
+    const events = runReportPhase(turningAction, context);
 
     // THE state assertion: the clause's mutation landed — prize moved.
     expect(world.getLocation(prize.id)).toBe(story.entityId('shed')!);
@@ -290,7 +291,7 @@ end phrase`));
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent
     };
 
-    const validation = turningAction.validate(context);
+    const validation = runValidatePhase(turningAction, context);
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('cant_turn_that');
   });

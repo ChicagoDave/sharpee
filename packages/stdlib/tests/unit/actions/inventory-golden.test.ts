@@ -191,9 +191,6 @@ describe('inventoryAction (Golden Pattern)', () => {
   });
 
   describe('Weight Information', () => {
-    // TODO: Re-enable when inventoryLimit is added to ActorTrait
-    test.skip('should include weight data when player has weight limit', () => {});
-
     test('should not include weight data when no weight limit', () => {
       const { world, player, room } = setupBasicWorld();
       
@@ -375,11 +372,6 @@ describe('Testing Pattern Examples for Inventory', () => {
     
     const invEvent = events.find(e => e.type === 'if.event.inventory');
     expect(invEvent?.data.items).toHaveLength(4);
-  });
-
-  // TODO: Re-enable when inventoryLimit is added to ActorTrait
-  test.skip('pattern: weight calculation', () => {
-    expect(invEvent?.data.maxWeight).toBe(50);
   });
 
   test('pattern: empty inventory variations', () => {

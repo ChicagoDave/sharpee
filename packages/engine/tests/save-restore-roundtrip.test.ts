@@ -61,7 +61,7 @@ type EnginePrivate = {
 function bootFresh() {
   const setup = setupTestEngine();
   const story = new MinimalTestStory();
-  setup.engine.setStory(story);
+  setup.engine.installStory(story);
   return { ...setup, story };
 }
 

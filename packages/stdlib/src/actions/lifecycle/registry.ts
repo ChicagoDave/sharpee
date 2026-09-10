@@ -10,7 +10,7 @@
  * registered under a given action id will ever be consulted.
  *
  * Public interface: `actionLifecycleDescriptors`,
- * `interceptorConsultingActionIds`.
+ * `interceptorConsultingActionIds`, `lifecycleDescriptorFor`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  *
  * NOTE: this module is deliberately NOT exported from `./index.ts` (the
@@ -136,6 +136,22 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
  * `if.action.entering_room` fall out of the slots, not a hand-kept list).
  * An interceptor registered under an id NOT in this set will never fire.
  */
+const descriptorsByActionId: ReadonlyMap<string, ActionLifecycleDescriptor> = new Map(
+  actionLifecycleDescriptors.map((descriptor) => [descriptor.actionId, descriptor])
+);
+
+/**
+ * The descriptor for an action id, or `undefined` when the action is not
+ * wired (a structural exemption such as `about` or `looking`). The command
+ * executor reads this to run the interceptor hooks around the action's
+ * phases (ADR-337 D1); an action is consulted iff this returns a descriptor.
+ * @param actionId - the action's primary id (`if.action.taking`)
+ * @returns the descriptor, or `undefined` for an unwired action
+ */
+export function lifecycleDescriptorFor(actionId: string): ActionLifecycleDescriptor | undefined {
+  return descriptorsByActionId.get(actionId);
+}
+
 export const interceptorConsultingActionIds: ReadonlySet<string> = new Set(
   actionLifecycleDescriptors.flatMap((descriptor) =>
     descriptor.slots.flatMap((slot) => slot.actionIds)

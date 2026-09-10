@@ -1,22 +1,31 @@
 /**
  * analyzer.ts — Chord semantic analysis: two-pass resolution, the load-time
- * gates, and Story IR construction (design.md §5.2/§5.3).
+ * gates, and Story IR construction.
  *
  * Pass 1 collects declarations (entities + aliases + states, phrases per
  * locale, named conditions, hatches, flags). Pass 2 resolves every
- * reference with article stripping and builds the IR, reporting the AC-3
- * gate classes as errors with `.story` spans:
+ * reference with article stripping and builds the IR, reporting the gate
+ * classes as errors with `.story` spans:
  *   missing phrase key · unknown predicate value (nearest-valid suggestion)
  *   · undeclared state · ambiguous entity reference (rename suggestion)
  *   · refusal after mutation (phase-order rule) · unbound `{…}` marker.
+ * The passes run in the order `ANALYSIS_PASSES` declares, each entry naming
+ * the passes it reads from; one `create` block compiles through the entity
+ * line builders under `analyzer/entity/`, in their declared order.
  *
- * Public interface: analyze().
+ * Public interface: analyze(); ANALYSIS_PASSES and
+ * analysisPassOrderViolations() for the pass-order test; normalizeTopic().
  * Owner context: @sharpee/chord (language frontend; browser-safe).
  *
  * Invariants:
  * - Ambiguity is an error with a suggestion, never a guess.
  * - The returned IR is pure JSON data (round-trips through JSON.stringify).
  * - Diagnostics gate the load (atomic): callers must check hasErrors().
+ * - The pass list and the builder list satisfy their own `requires`.
+ *
+ * References:
+ * - design.md §5.2/§5.3 — the two-pass shape and the AC-3 gate classes.
+ * - ADR-336 D2/D3 — entity line builders; the pass list as data.
  */
 import {
   ActStmt,
@@ -81,6 +90,12 @@ import {
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
+import { normalizeTopic } from './analyzer/topic.js';
+import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
+import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, newEntityDraft } from './analyzer/entity/index.js';
+import type { EntityBuildContext } from './analyzer/entity/context.js';
+
+export { normalizeTopic };
 import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
 import type { ScopeRequirementWord } from './catalog.js';
 import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
@@ -234,18 +249,6 @@ const IMPLIED_IMAGE_LAYERS = new Set(['background', 'main', 'overlay']);
 /** Ring 1 of the boolean-state gate (D9): literal booleans as state names. */
 const BOOLEAN_STATE_WORDS = new Set(['true', 'false', 'yes', 'no']);
 
-/**
- * ADR-239 D4 topic normalization — ONE implementation for both halves of
- * the lookup contract: the analyzer's overlap gates here, and the
- * story-loader's runtime table lookup (which imports this). Rules:
- * case-insensitive, leading article stripped, whitespace collapsed.
- * Whole-topic equality only; never substring matching.
- */
-export function normalizeTopic(text: string): string {
-  const words = text.trim().toLowerCase().split(/\s+/);
-  if (words.length > 1 && (words[0] === 'the' || words[0] === 'a' || words[0] === 'an')) words.shift();
-  return words.join(' ');
-}
 
 /**
  * Negation prefixes/suffix for ring 3 of the boolean-state gate (D9):
@@ -367,7 +370,7 @@ const STANDARD_ACTION_ROLES: Record<string, string[]> = {
  * (entity-scoped clauses); `fields` are the enclosing trait's data fields
  * (Phase B); `slots` are grammar-slot / role context values.
  */
-interface Scope {
+export interface Scope {
   owner: EntitySymbol | null;
   fields: Map<string, TraitField> | null;
   slots: Set<string> | null;
@@ -553,26 +556,8 @@ export function analyze(ast: StoryFile, diagnostics: DiagnosticBag): StoryIR {
   return new Analyzer(ast, diagnostics).run();
 }
 
-/**
- * `a person` composed on a create block — the ADR-327 D10 eligibility floor
- * for holding the player role.
- */
-function isPersonDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some((c) => c.article && c.words.join(' ').toLowerCase() === 'person');
-}
 
-/**
- * `playable` composed on a create block (ADR-327 D10) — a bare, single-word
- * composition matched ahead of profile/personality/trait routing, so the word
- * never reaches parser vocabulary or the unknown-trait census gate.
- */
-function isPlayableDecl(decl: CreateDecl): boolean {
-  return decl.compositions.some(
-    (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
-  );
-}
-
-interface EntitySymbol {
+export interface EntitySymbol {
   id: string;
   nameLower: string;
   nameWords: string[];
@@ -740,7 +725,30 @@ function statementWord(stmt: Statement): string {
   return stmt.kind === 'media' ? stmt.form : stmt.kind === 'timer-verb' ? stmt.verb : stmt.kind;
 }
 
-class Analyzer {
+/**
+ * One analysis pass: a named step of `Analyzer.run`, and the passes whose
+ * results it reads. The order is checked against `requires`, never inferred.
+ */
+export interface AnalysisPass {
+  /** The pass name — the method it runs, or the step it performs. */
+  readonly name: string;
+  /** Names of earlier passes this one reads the results of. */
+  readonly requires: readonly string[];
+  /** Run the pass against the analyzer. */
+  run: (analyzer: Analyzer) => void;
+}
+
+/**
+ * Every `requires` an ordered pass list fails to satisfy — see
+ * `requiresOrderViolations`. Pure, so a test can check a reordered copy.
+ * @param passes the list to check, in execution order
+ * @returns the faults, empty when the order satisfies every entry
+ */
+export function analysisPassOrderViolations(passes: ReadonlyArray<AnalysisPass>): OrderViolation[] {
+  return requiresOrderViolations(passes);
+}
+
+export class Analyzer {
   private entities: EntitySymbol[] = [];
   private byId = new Map<string, EntitySymbol>();
   private conditionNames = new Set<string>();
@@ -851,6 +859,14 @@ class Analyzer {
 
   /** Extensions admitted by validated `use` lines (ADR-215). */
   private usedExtensions = new Set<string>();
+  /** `use <name>, announce <mode>` per extension (ADR-262 D3), recorded by `validateUses`. */
+  private announceModes: Record<string, string> = {};
+  /** The lowered `use hunger` body, built before the IR and spread in only when present. */
+  private hungerDef: IRHungerDef | undefined;
+  /** The IR under construction — null until `createIR` runs (see `builtIR`). */
+  private storyIR: StoryIR | null = null;
+  /** The entity line builders' surface, built on first use (see `entityContext`). */
+  private entityBuildContext: EntityBuildContext | null = null;
 
   /**
    * Phrasebooks in arbitration order (ADR-250 D3): header `use phrasebook`
@@ -893,18 +909,117 @@ class Analyzer {
    */
   private descriptionKeys = new Set<string>();
 
+  /**
+   * The analysis passes, in the order `run` executes them. Each entry names
+   * the passes whose results it reads; `analysisPassOrderViolations` checks
+   * the list against those names, and a test pins it, so a pass that reads a
+   * table before the pass that builds it fails by name. Passes that apply
+   * only sometimes keep their condition inside the entry — the list itself
+   * is unconditional. Declared inside the class so the entries can name
+   * private methods; exported as `ANALYSIS_PASSES` beside the class.
+   */
+  static readonly PASSES: ReadonlyArray<AnalysisPass> = [
+    // A `grammar` header confines the file to define-action grammar surfaces;
+    // behavior and story declarations are named errors, never ignored.
+    { name: 'checkGrammarFileMode', requires: [], run: (a) => { if (a.ast.grammarHeader) a.checkGrammarFileMode(); } },
+    // Pass 1: entities, aliases, states, phrases, named conditions, hatches.
+    { name: 'collect', requires: [], run: (a) => a.collect() },
+    { name: 'validateUses', requires: [], run: (a) => a.validateUses() },
+    { name: 'checkScoringUse', requires: ['collect', 'validateUses'], run: (a) => a.checkScoringUse() },
+    // Built before the IR because it emits diagnostics; createIR spreads the
+    // result in only when present.
+    { name: 'buildHunger', requires: [], run: (a) => { a.hungerDef = a.buildHunger(); } },
+    // Fact-value sets and named profiles build before entities: `thinks` and
+    // `cognitive-profile` lines resolve against them.
+    { name: 'buildFacts', requires: ['collect'], run: (a) => a.buildFacts() },
+    { name: 'buildProfiles', requires: [], run: (a) => a.buildProfiles() },
+    // Code bundles resolve once, before entities flatten them; a scope may name an entity.
+    { name: 'buildCodes', requires: ['collect'], run: (a) => a.buildCodes() },
+    // Claims tags check against the built fact table.
+    { name: 'resolveClaims', requires: ['buildFacts'], run: (a) => a.resolveClaims() },
+    // Witnessed-act aliases resolve against the entity table.
+    { name: 'buildWitnessedTopics', requires: ['collect'], run: (a) => a.buildWitnessedTopics() },
+    // Timers resolve their owners against the entity table.
+    { name: 'buildTimers', requires: ['collect'], run: (a) => a.buildTimers() },
+    // Chapters resolve their triggers against entities, timers, and states.
+    { name: 'buildChapters', requires: ['collect', 'validateUses', 'buildTimers'], run: (a) => a.buildChapters() },
+    // The IR skeleton, from every table the passes above filled.
+    {
+      name: 'createIR',
+      requires: ['collect', 'validateUses', 'buildHunger', 'buildFacts', 'buildWitnessedTopics', 'buildTimers', 'buildChapters'],
+      run: (a) => a.createIR(),
+    },
+    // Pass 2 over the declarations: entities, and every `define` that emits.
+    { name: 'buildDeclarations', requires: ['createIR', 'buildFacts', 'buildProfiles', 'buildCodes', 'buildTimers'], run: (a) => a.buildDeclarations() },
+    // After every entity: `change the player to <name>` may name a character declared anywhere.
+    { name: 'buildStartBlock', requires: ['buildDeclarations'], run: (a) => { a.builtIR().startBlock = a.buildStartBlock(); } },
+    { name: 'buildPhrasebooks', requires: ['createIR', 'collect'], run: (a) => a.buildPhrasebooks() },
+    // The implied bed's span is recorded while statements resolve.
+    { name: 'emitImpliedMainBed', requires: ['buildDeclarations'], run: (a) => a.emitImpliedMainBed() },
+    // Phrase conditions resolve during pass 2.
+    { name: 'emitPhraseTables', requires: ['buildDeclarations'], run: (a) => a.emitPhraseTables() },
+    { name: 'markHatches', requires: ['buildDeclarations'], run: (a) => a.markHatches() },
+    // The `define` tables fold onto their owner entities after every entity is built.
+    { name: 'applyTopics', requires: ['buildDeclarations'], run: (a) => a.applyTopics(a.builtIR().entities) },
+    { name: 'applyManner', requires: ['buildDeclarations'], run: (a) => a.applyManner(a.builtIR().entities) },
+    { name: 'applyGreetings', requires: ['buildDeclarations'], run: (a) => a.applyGreetings(a.builtIR().entities) },
+    { name: 'applyExchanges', requires: ['buildDeclarations'], run: (a) => a.applyExchanges(a.builtIR().entities) },
+    { name: 'applyInitiative', requires: ['buildDeclarations'], run: (a) => a.applyInitiative(a.builtIR().entities) },
+    { name: 'applyConversations', requires: ['buildDeclarations'], run: (a) => a.applyConversations(a.builtIR().entities) },
+    // Conversation targets validate after every fold: an opened exchange and
+    // a deflect row must both be the owner's own.
+    {
+      name: 'checkConversationTargets',
+      requires: ['applyTopics', 'applyManner', 'applyGreetings', 'applyExchanges', 'applyInitiative', 'applyConversations'],
+      run: (a) => a.checkConversationTargets(a.builtIR().entities),
+    },
+    // Whole-graph gates: cross-entity lookups need every entity built.
+    { name: 'checkRegions', requires: ['buildDeclarations'], run: (a) => a.checkRegions(a.builtIR().entities) },
+    { name: 'checkDoors', requires: ['buildDeclarations'], run: (a) => a.checkDoors(a.builtIR().entities) },
+    { name: 'checkCompositionLegality', requires: ['buildDeclarations'], run: (a) => a.checkCompositionLegality(a.builtIR()) },
+    // The influencer may be declared after the resister.
+    { name: 'checkInfluenceReferences', requires: ['buildDeclarations'], run: (a) => a.checkInfluenceReferences(a.builtIR()) },
+    // Inline and override bindings synthesize temperament defs during entity build.
+    { name: 'emitTemperaments', requires: ['buildDeclarations'], run: (a) => a.emitTemperaments() },
+    { name: 'checkAlterationTargets', requires: ['buildDeclarations'], run: (a) => a.checkAlterationTargets(a.builtIR()) },
+    // Bare `{…}` markers must name a declared hatch or phrase key.
+    { name: 'checkMarkers', requires: ['collect', 'buildDeclarations'], run: (a) => a.checkMarkers() },
+    { name: 'checkDescriptionMarkers', requires: ['collect'], run: (a) => a.checkDescriptionMarkers() },
+    // Header phrase references resolve against the collected phrase table.
+    { name: 'checkHeaderFields', requires: ['collect'], run: (a) => a.checkHeaderFields() },
+    // Return-field cross-check once every `emit` is collected.
+    { name: 'checkChannelReturns', requires: ['buildDeclarations'], run: (a) => a.checkChannelReturns(a.builtIR().channels) },
+  ];
+
+  /**
+   * Run every analysis pass in `ANALYSIS_PASSES` order and return the IR.
+   * The order is data: each entry names the passes it reads from, and a
+   * test asserts the list satisfies every one of those `requires`.
+   */
   run(): StoryIR {
-    // ADR-269 D8: grammar-file mode — a `grammar` header confines the file
-    // to define-action grammar surfaces; behavior and story declarations
-    // are named errors, never silently ignored.
-    if (this.ast.grammarHeader) this.checkGrammarFileMode();
+    for (const pass of ANALYSIS_PASSES) pass.run(this);
+    return this.builtIR();
+  }
 
-    this.collect();
+  /**
+   * The IR under construction. Asserts `createIR` has run: every pass after
+   * it writes into this object, and one ordered before it would otherwise
+   * write into nothing.
+   */
+  private builtIR(): StoryIR {
+    if (this.storyIR === null) throw new Error('Analyzer: a pass read the IR before createIR built it');
+    return this.storyIR;
+  }
 
-    // ADR-215: validate `use` lines against the manifest registry — an
-    // unknown name is a compile error (the loader's trusted registry check
-    // backstops rogue IR), a duplicate is one-`use`-per-extension.
-    const announceModes: Record<string, string> = {};
+  /**
+   * Validate the header's `use` lines against the manifest registry and
+   * record each line's announce mode. An unknown name is a compile error
+   * (the loader's trusted-registry check backstops rogue IR), core
+   * vocabulary is never `use`d, and a second `use` of one extension is a
+   * duplicate.
+   * References: ADR-215 (the registry); ADR-262 D3 (`, announce <mode>`).
+   */
+  private validateUses(): void {
     const VALID_ANNOUNCE_MODES = ['all', 'collapsed', 'combined', 'silent'];
     for (const use of this.ast.header?.uses ?? []) {
       // ADR-262 D3: validate the `, announce <mode>` suffix and record it.
@@ -916,7 +1031,7 @@ class Analyzer {
             use.span,
           );
         } else {
-          announceModes[use.name] = use.announce;
+          this.announceModes[use.name] = use.announce;
         }
       }
       const manifest = EXTENSION_MANIFESTS.get(use.name);
@@ -945,35 +1060,28 @@ class Analyzer {
       }
     }
 
-    // ADR-261 D4: scoring's constructs sit behind `use scoring`. Gating them
-    // together is what makes D3 ("absent `use scoring` means the game has no
-    // score") a rule with no exceptions — scoring is on precisely when the
-    // header says so, and there is one place to look. Reported once per
-    // construct kind, at the first offending site, rather than once per line.
+  }
+
+  /**
+   * Scoring's constructs sit behind `use scoring`; a `score` declaration
+   * without it is reported once, at the first offending site, so scoring is
+   * on precisely when the header says so.
+   * Reference: ADR-261 D4 (D3: absent `use scoring` means no score).
+   */
+  private checkScoringUse(): void {
     if (!this.usedExtensions.has('scoring') && this.scoreDecls.length > 0) {
       this.reportScoringGate('score', this.scoreDecls[0].span);
     }
+  }
 
-    // Built once (it emits diagnostics), spread in only when present so the
-    // optional `hunger` field never appears as `undefined` on a story without it.
-    const hungerDef = this.buildHunger();
-    // ADR-310 D14/D4: fact-value sets and named profiles build before
-    // entities — `thinks` lines and `cognitive-profile` lines resolve
-    // against them.
-    this.buildFacts();
-    this.buildProfiles();
-    // ADR-318 D4: code bundles resolve once, before entities flatten them.
-    this.buildCodes();
-    // ADR-318 D9: claims tags check against the built fact table.
-    this.resolveClaims();
-    // ADR-318 D12a: witnessed-act aliases resolve against the entity table.
-    this.buildWitnessedTopics();
-    // ADR-325 D3: timers resolve their owners against the entity table.
-    this.buildTimers();
-    // ADR-330: chapters resolve their triggers against entities, timers, and states.
-    this.buildChapters();
-
-    const ir: StoryIR = {
+  /**
+   * Build the IR skeleton from the tables the passes before it filled — in
+   * wire order, optional sections spread in only when present so a story
+   * without one never carries the field. The passes after it write into
+   * this object through `builtIR()`.
+   */
+  private createIR(): void {
+    this.storyIR = {
       format: IR_FORMAT,
       languageVersion: CHORD_LANGUAGE_VERSION, // ADR-257 D3 — the language version that compiled this story
 
@@ -986,7 +1094,7 @@ class Analyzer {
       // present so a story's IR never carries the field.
       ...(this.ast.grammarHeader ? { grammarFile: { name: this.ast.grammarHeader.name } } : {}),
       uses: [...this.usedExtensions],
-      announceModes,
+      announceModes: this.announceModes,
       story: {
         states: this.storyStates,
         reversible: this.ast.header?.statesReversible ?? false,
@@ -1014,7 +1122,7 @@ class Analyzer {
       actions: [],
       scores: this.scoreDecls,
       ranks: this.buildRanks(),
-      ...(hungerDef !== undefined ? { hunger: hungerDef } : {}),
+      ...(this.hungerDef !== undefined ? { hunger: this.hungerDef } : {}),
       counters: [],
       timers: this.timerDefs,
       sequences: [],
@@ -1043,7 +1151,16 @@ class Analyzer {
         ? { customPersonalities: [...this.customPersonalities.values()].map((p) => ({ name: p.name, span: p.span })) }
         : {}),
     };
+  }
 
+  /**
+   * Pass 2 over the declarations: build each entity, and lower every
+   * `define` that emits into the IR. Declarations collected in pass 1 that
+   * only apply onto owners after all entities exist are named here as
+   * deliberate no-ops, so the switch stays exhaustive.
+   */
+  private buildDeclarations(): void {
+    const ir = this.builtIR();
     for (const decl of this.ast.declarations) {
       switch (decl.kind) {
         case 'create':
@@ -1180,12 +1297,15 @@ class Analyzer {
       }
     }
 
-    // ADR-327 D10: the start block resolves after every entity is built —
-    // `change the player to <name>` refers to characters declared anywhere.
-    ir.startBlock = this.buildStartBlock();
+  }
 
-    // ADR-250 D3: books in arbitration order; predicates resolve here in
-    // pass 2 (an entity declared after the book may appear in its `while`).
+  /**
+   * Phrasebooks in arbitration order; their `while` predicates resolve here
+   * in pass 2, since an entity declared after the book may appear in one.
+   * Reference: ADR-250 D3.
+   */
+  private buildPhrasebooks(): void {
+    const ir = this.builtIR();
     ir.phrasebooks = this.phrasebookDecls.map((b) => ({
       name: b.name,
       source: b.source,
@@ -1194,42 +1314,47 @@ class Analyzer {
       span: b.span,
     }));
     this.stampPhrasebookSpecificity(ir.phrasebooks);
+  }
 
-    // ADR-241 D3/D4: the implied `main` ambient bed — used by an ambient
-    // statement without a declaration — joins the channel manifest so the
-    // loader registers it (nothing platform-side pre-registers ambient).
+  /**
+   * The implied `main` ambient bed — used by an ambient statement without a
+   * declaration — joins the channel manifest so the loader registers it
+   * (nothing platform-side pre-registers ambient).
+   * Reference: ADR-241 D3/D4.
+   */
+  private emitImpliedMainBed(): void {
+    const ir = this.builtIR();
     if (this.impliedMainBedSpan && !this.familyChannels.ambient.has('main')) {
       ir.channels.push({ name: 'main', family: 'ambient', span: this.impliedMainBedSpan });
     }
+  }
 
+  /** Copy the per-locale phrase and message-override tables onto the IR. */
+  private emitPhraseTables(): void {
+    const ir = this.builtIR();
     for (const [locale, table] of this.phrases) {
       ir.phrases.locales[locale] = Object.fromEntries(table);
     }
     for (const [locale, table] of this.messageOverrides) {
       ir.messageOverrides.locales[locale] = Object.fromEntries(table);
     }
-    ir.hasHatches = ir.hatches.length > 0;
+  }
 
-    this.applyTopics(ir.entities);
-    this.applyManner(ir.entities);
-    this.applyGreetings(ir.entities);
-    this.applyExchanges(ir.entities);
-    this.applyInitiative(ir.entities);
-    this.applyConversations(ir.entities);
-    this.checkConversationTargets(ir.entities);
-    this.checkRegions(ir.entities);
-    this.checkDoors(ir.entities);
-    this.checkCompositionLegality(ir);
-    this.checkInfluenceReferences(ir);
-    // ADR-318 D3: after entities — inline/override bindings synthesize defs
-    // during entity build. Additive and optional, the facts idiom.
+  /** `hasHatches` is derived: true when any hatch was declared. */
+  private markHatches(): void {
+    const ir = this.builtIR();
+    ir.hasHatches = ir.hatches.length > 0;
+  }
+
+  /**
+   * Temperament definitions onto the IR — after entities, because inline
+   * and override bindings synthesize defs during entity build. Additive
+   * and optional, the facts idiom.
+   * Reference: ADR-318 D3.
+   */
+  private emitTemperaments(): void {
+    const ir = this.builtIR();
     if (this.temperamentDefs.size > 0) ir.temperaments = [...this.temperamentDefs.values()];
-    this.checkAlterationTargets(ir);
-    this.checkMarkers();
-    this.checkDescriptionMarkers();
-    this.checkHeaderFields(); // ADR-298: header phrase-refs resolve; missing IFID warns
-    this.checkChannelReturns(ir.channels); // ADR-253 D1: return-field cross-check (all emits collected)
-    return ir;
   }
 
   /**
@@ -2474,8 +2599,37 @@ class Analyzer {
             case 'each':
               visit(stmt.body);
               break;
-            default:
+            // Every other kind carries no conversation target and no nested
+            // body. Listed so that a new kind is a compile error here until
+            // this check has decided whether to look inside it.
+            case 'refuse':
+            case 'phrase':
+            case 'emit':
+            case 'set':
+            case 'change':
+            case 'change-player':
+            case 'change-mood':
+            case 'change-feeling':
+            case 'move':
+            case 'act':
+            case 'remove':
+            case 'award':
+            case 'raise':
+            case 'lower':
+            case 'set-counter':
+            case 'timer':
+            case 'win':
+            case 'lose':
+            case 'kill':
+            case 'must':
+            case 'refuse-when':
+            case 'leave':
+            case 'hold-tongue':
               break;
+            default: {
+              const unhandled: never = stmt;
+              throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+            }
           }
         }
       };
@@ -3608,8 +3762,37 @@ class Analyzer {
         case 'each':
           this.collectInlineTexts(stmt.body, ownerId);
           break;
-        default:
+        // Every other kind carries no inline text and no nested body. Listed
+        // so that a new kind is a compile error here until this collector has
+        // decided whether it registers text.
+        case 'refuse':
+        case 'refuse-when':
+        case 'emit':
+        case 'media':
+        case 'set':
+        case 'change':
+        case 'change-player':
+        case 'change-mood':
+        case 'change-feeling':
+        case 'move':
+        case 'act':
+        case 'remove':
+        case 'award':
+        case 'raise':
+        case 'lower':
+        case 'timer-verb':
+        case 'win':
+        case 'lose':
+        case 'must':
+        case 'then-open':
+        case 'deflect':
+        case 'leave':
+        case 'hold-tongue':
           break;
+        default: {
+          const unhandled: never = stmt;
+          throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+        }
       }
     }
   }
@@ -4865,925 +5048,62 @@ class Analyzer {
     return true;
   }
 
+  /**
+   * Compile one `create` block: create its draft, run the entity line
+   * builders in their declared order (each writes its slice and reports its
+   * own gates), and assemble the wire entity from the draft.
+   * @param decl the block
+   * @returns the IR entity, `topics` left empty for `applyTopics`
+   */
   private buildEntity(decl: CreateDecl): IREntity {
     const sym = this.byId.get(decl.name.words.join('-').toLowerCase());
-    const id = sym?.id ?? decl.name.words.join('-').toLowerCase();
-    const isPerson = isPersonDecl(decl);
-    // ADR-327 D10: `playable` marks a character eligible for the player role.
-    const isPlayable = isPlayableDecl(decl);
-    if (isPlayable && !isPerson) {
-      const comp = decl.compositions.find(
-        (c) => !c.article && c.words.length === 1 && c.words[0].toLowerCase() === 'playable',
-      )!;
-      this.diagnostics.error(
-        'analysis.playable-non-person',
-        `\`playable\` marks a character who can hold the player role — \`${decl.name.words.join(' ')}\` is not \`a person\`.`,
-        comp.span,
-      );
-    }
+    const draft = newEntityDraft(decl, sym ?? null, entityScope(sym ?? null));
+    for (const builder of ENTITY_LINE_BUILDERS) builder.build(decl, draft, this.entityContext());
+    return assembleEntity(draft);
+  }
 
-    const kinds = [];
-    const traits = [];
-    const personality: IRPersonalityEntry[] = [];
-    let profile: Record<string, string> | undefined;
-    let sawProfileLine = false;
-    for (const comp of decl.compositions) {
-      // ADR-327 D10: `playable` is a reserved bare composition. Consumed here,
-      // ahead of profile/personality/trait routing, so the word never enters
-      // parser vocabulary and never reaches the unknown-trait census gate.
-      if (!comp.article && comp.words.length === 1 && comp.words[0].toLowerCase() === 'playable') {
-        continue;
-      }
-      // ADR-310 D4: `cognitive-profile <name> [with …]` rides the
-      // composition grammar and compiles into character data.
-      if (!comp.article && comp.words[0]?.toLowerCase() === 'cognitive-profile') {
-        const built = this.routeProfileComposition(comp, isPerson, decl.name.words.join(' '), sawProfileLine);
-        sawProfileLine = true;
-        if (built) profile = built;
-        continue;
-      }
-      // ADR-310 D2: a bare composition that reads as a personality
-      // adjective (`very honest`, `cowardly`) compiles into character data.
-      // Consumed words never reach trait composition, so they never enter
-      // parser vocabulary (the D2 no-parser-vocabulary rule) and never hit
-      // the census-15 unknown-trait gate.
-      if (!comp.article && this.routeCharacterComposition(comp, isPerson, decl.name.words.join(' '), personality)) {
-        continue;
-      }
-      const built = {
-        name: comp.words.join(' ').toLowerCase(),
-        config: comp.config.map((c) => ({
-          key: c.key.join(' '),
-          value: c.value,
-          valueKind: c.valueKind,
-          // `[ … ]` list entries resolve to entity IDs here (ADR-215) —
-          // unresolved names report through the standard unknown-entity gate.
-          ...(c.valueKind === 'list'
-            ? { values: (c.listValues ?? []).map((ref) => this.resolveEntityId(ref) ?? '').filter((id) => id !== '') }
-            : {}),
-        })),
-        condition: comp.condition ? this.resolveCondition(comp.condition, entityScope(sym ?? null)) : null,
-        span: comp.span,
+  /**
+   * The surface the entity line builders resolve through — built once, every
+   * member delegating to this analyzer (see `EntityBuildContext`).
+   */
+  private entityContext(): EntityBuildContext {
+    if (this.entityBuildContext === null) {
+      this.entityBuildContext = {
+        diagnostics: this.diagnostics,
+        usedExtensions: this.usedExtensions,
+        pronounSetDecls: this.pronounSetDecls,
+        byId: this.byId,
+        factById: this.factById,
+        temperamentDefs: this.temperamentDefs,
+        codes: this.codes,
+        honorDefs: this.honorDefs,
+        resolveEntityId: (ref) => this.resolveEntityId(ref),
+        resolveCondition: (cond, scope) => this.resolveCondition(cond, scope),
+        suggestText: (input, candidates) => this.suggestText(input, candidates),
+        requirePhrase: (key, span, owner) => this.requirePhrase(key, span, owner),
+        routeProfileComposition: (comp, isPerson, entityName, isDuplicate) =>
+          this.routeProfileComposition(comp, isPerson, entityName, isDuplicate),
+        routeCharacterComposition: (comp, isPerson, entityName, out) => this.routeCharacterComposition(comp, isPerson, entityName, out),
+        isMoodWord: (word) => this.isMoodWord(word),
+        moodVocabulary: () => this.moodVocabulary(),
+        checkTheoryOfMind: (ref, construct) => this.checkTheoryOfMind(ref, construct),
+        classifyKnowledgeSlots: (slots, construct) => this.classifyKnowledgeSlots(slots, construct),
+        canonicalFactValue: (v) => this.canonicalFactValue(v),
+        lowerPerformStep: (step) => this.lowerPerformStep(step),
+        resolveForcePairs: (pairs, owner) => this.resolveForcePairs(pairs, owner),
+        categorySurface: (category) => this.categorySurface(category),
+        resolveNeverLine: (n) => this.resolveNeverLine(n),
+        resolveObligationLine: (o) => this.resolveObligationLine(o),
+        resolveScopeRefDecl: (sr) => this.resolveScopeRefDecl(sr),
+        buildLanding: (landing) => this.buildLanding(landing),
+        buildCounterDecl: (counter) => this.buildCounterDecl(counter),
+        checkDuplicateClauses: (clauses, ownerDesc) => this.checkDuplicateClauses(clauses, ownerDesc),
+        buildOnClause: (clause, scope, ownerKey, clauseIndex) => this.buildOnClause(clause, scope, ownerKey, clauseIndex),
+        buildTimerClause: (clause, scope, ownerKey, index) => this.buildTimerClause(clause, scope, ownerKey, index),
+        buildMoveClause: (clause, scope, ownerKey, index) => this.buildMoveClause(clause, scope, ownerKey, index),
       };
-      if (comp.article) kinds.push(built);
-      else traits.push(built);
-
-      // ADR-215: extension vocabulary is admitted only when its `use` is
-      // declared (core manifests — npc — are always admitted), and its
-      // `with`-fields are the manifest's closed, typed set — unknown keys
-      // and mistyped values are compile errors, never a silent drop at the
-      // loader. `[ … ]` list values exist only as manifest list fields.
-      if (!comp.article) {
-        const contributed = manifestForAdjective(built.name);
-        if (!contributed) {
-          for (const cfg of comp.config) {
-            if (cfg.valueKind === 'list') {
-              this.diagnostics.error(
-                'analysis.config-list-host',
-                `\`[ … ]\` list values belong to extension fields that declare them (e.g. \`patrol route [ … ]\`) — \`${built.name}\` has none.`,
-                cfg.span,
-              );
-            }
-          }
-        }
-        if (contributed) {
-          if (!contributed.manifest.core && !this.usedExtensions.has(contributed.manifest.name)) {
-            this.diagnostics.error(
-              'analysis.extension-not-used',
-              `\`${built.name}\` is \`${contributed.manifest.name}\` extension vocabulary — add \`use ${contributed.manifest.name}\` to the story header.`,
-              comp.span,
-            );
-          } else {
-            for (const cfg of comp.config) {
-              const key = cfg.key.join(' ');
-              const field = contributed.adjective.fields.find((f) => f.key === key);
-              if (!field) {
-                const known = contributed.adjective.fields.map((f) => f.key).join(', ');
-                this.diagnostics.error(
-                  'analysis.extension-config-key',
-                  `\`${key}\` is not a \`${built.name}\` field — known fields: ${known}.`,
-                  cfg.span,
-                );
-              } else if (field.valueKind !== cfg.valueKind) {
-                this.diagnostics.error(
-                  'analysis.extension-config-value',
-                  `\`${key}\` takes a ${field.valueKind} value, not ${cfg.valueKind === 'name' ? 'an entity name' : `a ${cfg.valueKind}`}.`,
-                  cfg.span,
-                );
-              }
-            }
-          }
-        }
-      }
     }
-
-    // ADR-231 D5a pairing gate: each `starts <state>` initializer requires
-    // its paired trait composed on the same entity (`starts locked` needs
-    // `lockable`, `starts closed`/`open` need `openable`, `starts off`/`on`
-    // need `switchable`). Table-driven — STARTS_STATE_PAIRINGS is the one
-    // place future stateful traits extend. Mismatch = load-time error, never
-    // a silent no-op.
-    const startsStates: string[] = [];
-    for (const s of decl.startsStates) {
-      const requiredTrait = STARTS_STATE_PAIRINGS.get(s.state);
-      if (!requiredTrait) continue; // parser already rejected the word
-      if (!traits.some((t) => t.name === requiredTrait)) {
-        this.diagnostics.error(
-          'analysis.starts-state-pairing',
-          `\`starts ${s.state}\` requires \`${requiredTrait}\` composed on this entity.`,
-          s.span,
-        );
-        continue;
-      }
-      startsStates.push(s.state);
-    }
-
-    // ADR-242 D1 as extended by GH #342 (David, 2026-08-30): `proper`
-    // composes on ANY create block — a place-as-scenery, a shop, an
-    // institution is a name as much as a person is. The person-only gate
-    // is retired; the unconditional gate stays (identity is not turn
-    // state), an analyzer diagnostic so the author reads the specific
-    // reason, not the loader's generic conditional-composition error.
-    for (const comp of decl.compositions) {
-      if (comp.article || comp.words.join(' ').toLowerCase() !== 'proper') continue;
-      if (comp.condition) {
-        this.diagnostics.error(
-          'analysis.proper-conditional',
-          'Identity is not conditional — `proper while …` is not supported; a name is proper or it is not.',
-          comp.span,
-        );
-      }
-    }
-
-    // ADR-242 D5: `pronouns <word>` — person-only, at most one line, and
-    // the word resolves against the standard four or a `define pronouns`
-    // set (never guessed; nearest-match suggestion on a miss, ruled Q-2:
-    // no default is injected when the line is absent).
-    let pronouns: string | undefined;
-    if (decl.pronouns.length > 0) {
-      if (!isPerson) {
-        this.diagnostics.error(
-          'analysis.pronouns-person-only',
-          `\`pronouns\` is a person line — \`${decl.name.words.join(' ')}\` is not a person.`,
-          decl.pronouns[0].span,
-        );
-      }
-      for (const extra of decl.pronouns.slice(1)) {
-        this.diagnostics.error('analysis.pronouns-duplicate', 'This `create` block already has a `pronouns` line.', extra.span);
-      }
-      const word = decl.pronouns[0].word;
-      if (PRONOUN_WORDS.has(word) || this.pronounSetDecls.has(word)) {
-        if (isPerson) pronouns = word;
-      } else {
-        const known = [...PRONOUN_WORDS, ...this.pronounSetDecls.keys()];
-        this.diagnostics.error(
-          'analysis.unknown-pronouns',
-          `\`${word}\` is not a pronoun set — the standard sets are ${[...PRONOUN_WORDS].map((w) => `\`${w}\``).join(', ')}, plus any \`define pronouns\` set${this.suggestText(word, known)}.`,
-          decl.pronouns[0].span,
-        );
-      }
-    }
-
-    // ADR-310 D3/D14: `mood` / `feels` / `knows` / `thinks` declaration
-    // lines — the same person-only/never-the-player gates as personality
-    // adjectives. Words resolve against the character manifest; targets
-    // like any entity ref; `thinks` against the fact table.
-    let mood: string | undefined;
-    const feels: IRFeelsEntry[] = [];
-    const knows: IRKnowsEntry[] = [];
-    const thinks: IRThinksEntry[] = [];
-    let spreads: IRSpreads | undefined;
-    const goals: IRGoalDef[] = [];
-    const influences: IRInfluenceDef[] = [];
-    const resists: IRResistsEntry[] = [];
-    const temperaments: IRTemperamentBinding[] = [];
-    const principles: IRPrincipleEntry[] = [];
-    const obligations: IRObligationEntry[] = [];
-    let honor: IRHonorDecl | undefined;
-    const burdenedBy: string[] = [];
-    const firstCharacterLine =
-      decl.moods[0] ??
-      decl.feels[0] ??
-      decl.knows[0] ??
-      decl.thinks[0] ??
-      decl.spreads[0] ??
-      decl.goals[0] ??
-      decl.influences[0] ??
-      decl.resists[0] ??
-      decl.temperaments[0] ??
-      decl.nevers[0] ??
-      decl.obligations[0] ??
-      decl.codes[0] ??
-      decl.honors[0] ??
-      decl.burdens[0];
-    if (firstCharacterLine && !isPerson) {
-      this.diagnostics.error(
-        'analysis.character-line-person-only',
-        `Character declaration lines (mood, feels, knows, thinks, spreads, goal, influence, resists, temperament, never, protects, answers, code, honor, burdened by) compose only on a person — \`${decl.name.words.join(' ')}\` is not a person.`,
-        firstCharacterLine.span,
-      );
-    } else if (firstCharacterLine) {
-      if (decl.moods.length > 0) {
-        const word = decl.moods[0].word;
-        if (!this.isMoodWord(word)) {
-          this.diagnostics.error(
-            'analysis.unknown-mood-word',
-            `\`${word}\` is not a mood word — the vocabulary: ${this.moodVocabulary().join(', ')}${this.suggestText(word, this.moodVocabulary())}.`,
-            decl.moods[0].span,
-          );
-        } else {
-          mood = word;
-        }
-        for (const extra of decl.moods.slice(1)) {
-          this.diagnostics.error('analysis.mood-duplicate', 'This `create` block already has a `mood` line.', extra.span);
-        }
-      }
-      for (const f of decl.feels) {
-        if (!CHARACTER_MANIFEST.dispositions.includes(f.disposition)) {
-          this.diagnostics.error(
-            'analysis.unknown-disposition-word',
-            `\`${f.disposition}\` is not a disposition word — the vocabulary: ${CHARACTER_MANIFEST.dispositions.join(', ')}.`,
-            f.span,
-          );
-          continue;
-        }
-        const target = this.resolveEntityId(f.target);
-        if (target === null) continue; // resolveEntityId already reported
-        if (feels.some((e) => e.target === target)) {
-          this.diagnostics.error(
-            'analysis.feels-duplicate',
-            `This block already declares a feeling toward \`${f.target.words.join(' ')}\`.`,
-            f.span,
-          );
-          continue;
-        }
-        feels.push({ disposition: f.disposition, target, span: f.span });
-      }
-      for (const k of decl.knows) {
-        if (this.checkTheoryOfMind(k.topic, 'knows')) continue;
-        const topic = normalizeTopic(k.topic.words.join(' '));
-        const { source, confidence, confided, ok } = this.classifyKnowledgeSlots(k.slots, 'knows');
-        if (!ok) continue;
-        if (source === undefined) {
-          this.diagnostics.error(
-            'analysis.knows-missing-source',
-            `\`knows ${k.topic.words.join(' ')}\` needs a source — ${CHARACTER_MANIFEST.factSources.join(', ')} (e.g. \`knows the murder, witnessed\`).`,
-            k.span,
-          );
-          continue;
-        }
-        if (knows.some((e) => e.topic === topic)) {
-          this.diagnostics.error('analysis.knows-duplicate', `This block already declares \`knows ${topic}\`.`, k.span);
-          continue;
-        }
-        knows.push({
-          topic,
-          source,
-          ...(confidence !== undefined ? { confidence } : {}),
-          ...(confided !== undefined ? { confided } : {}),
-          span: k.span,
-        });
-      }
-      for (const t of decl.thinks) {
-        if (this.checkTheoryOfMind(t.fact, 'thinks')) continue;
-        const factId = t.fact.words.join('-').toLowerCase();
-        const fact = this.factById.get(factId);
-        if (!fact) {
-          this.diagnostics.error(
-            'analysis.unknown-fact',
-            `No \`define fact\` named \`${t.fact.words.join(' ')}\`${this.suggestText(factId, [...this.factById.keys()])}.`,
-            t.fact.span,
-          );
-          continue;
-        }
-        const value = this.canonicalFactValue(t.value);
-        if (value === null) continue; // canonicalFactValue already reported
-        if (!fact.values.includes(value)) {
-          this.diagnostics.error(
-            'analysis.unknown-fact-value',
-            `\`${t.value.words.join(' ')}\` is not a declared value of \`${fact.name}\` — the set: ${fact.values.join(', ')}.`,
-            t.value.span,
-          );
-          continue;
-        }
-        const { source, confidence, ok } = this.classifyKnowledgeSlots(t.slots, 'thinks');
-        if (!ok) continue;
-        if (thinks.some((e) => e.factId === factId)) {
-          this.diagnostics.error('analysis.thinks-duplicate', `This block already declares a belief about \`${fact.name}\`.`, t.span);
-          continue;
-        }
-        thinks.push({
-          factId,
-          value,
-          ...(confidence !== undefined ? { confidence } : {}),
-          ...(source !== undefined ? { source } : {}),
-          span: t.span,
-        });
-      }
-      // ADR-310 D10: at most one `spreads` line; the audience resolves
-      // against the manifest; topics normalize like `knows` topics.
-      for (const extra of decl.spreads.slice(1)) {
-        this.diagnostics.error('analysis.spreads-duplicate', 'This block already has a `spreads` line.', extra.span);
-      }
-      const s = decl.spreads[0];
-      if (s?.mode === 'nothing') {
-        spreads = { kind: 'nothing', span: s.span };
-      } else if (s) {
-        if (!CHARACTER_MANIFEST.audiences.includes(s.audience.word)) {
-          this.diagnostics.error(
-            'analysis.unknown-audience',
-            `\`${s.audience.word}\` is not an audience — ${CHARACTER_MANIFEST.audiences.join(', ')}.`,
-            s.audience.span,
-          );
-        } else {
-          const topics: string[] = [];
-          for (const t of s.topics) {
-            const topic = normalizeTopic(t.words.join(' '));
-            if (topics.includes(topic)) {
-              this.diagnostics.error('analysis.spreads-topic-duplicate', `\`${topic}\` is already in this \`spreads\` list.`, t.span);
-              continue;
-            }
-            topics.push(topic);
-          }
-          const except = s.except.map((e) => this.resolveEntityId(e)).filter((id): id is string => id !== null);
-          spreads = { kind: 'spreads', topics, to: s.audience.word, except, span: s.span };
-        }
-      }
-      // ADR-310 D8: goal blocks. Conditions resolve with `it` = the owner
-      // (the on-clause scope); step refs resolve like any entity ref;
-      // act/say keys are phrase keys.
-      for (const g of decl.goals) {
-        if (g.priority === null) continue; // header already errored at parse
-        if (!CHARACTER_MANIFEST.goalPriorities.includes(g.priority.word)) {
-          this.diagnostics.error(
-            'analysis.unknown-priority',
-            `\`${g.priority.word}\` is not a goal priority — ${CHARACTER_MANIFEST.goalPriorities.join(', ')}.`,
-            g.priority.span,
-          );
-          continue;
-        }
-        if (goals.some((e) => e.id === g.name)) {
-          this.diagnostics.error('analysis.goal-duplicate', `This block already has a goal named \`${g.name}\`.`, g.span);
-          continue;
-        }
-        const scope = entityScope(sym ?? null);
-        const steps: IRGoalStep[] = [];
-        for (const step of g.steps) {
-          switch (step.kind) {
-            case 'seek': {
-              const target = this.resolveEntityId(step.target);
-              if (target === null) break;
-              const inId = step.in ? this.resolveEntityId(step.in) : null;
-              if (step.in && inId === null) break;
-              steps.push({ kind: 'seek', target, ...(inId !== null ? { in: inId } : {}), span: step.span });
-              break;
-            }
-            case 'acquire': {
-              const target = this.resolveEntityId(step.target);
-              if (target !== null) steps.push({ kind: 'acquire', target, span: step.span });
-              break;
-            }
-            case 'wait-for':
-              steps.push({ kind: 'wait-for', condition: this.resolveCondition(step.condition, scope), span: step.span });
-              break;
-            case 'move-to': {
-              const target = this.resolveEntityId(step.target);
-              if (target !== null) steps.push({ kind: 'move-to', target, span: step.span });
-              break;
-            }
-            case 'act':
-              this.requirePhrase(step.phraseKey, step.span, null);
-              steps.push({ kind: 'act', phraseKey: step.phraseKey, span: step.span });
-              break;
-            case 'say': {
-              this.requirePhrase(step.phraseKey, step.span, null);
-              const target = step.target ? this.resolveEntityId(step.target) : null;
-              if (step.target && target === null) break;
-              steps.push({ kind: 'say', phraseKey: step.phraseKey, ...(target !== null ? { target } : {}), span: step.span });
-              break;
-            }
-            case 'give': {
-              const item = this.resolveEntityId(step.item);
-              const target = this.resolveEntityId(step.target);
-              if (item !== null && target !== null) steps.push({ kind: 'give', item, target, span: step.span });
-              break;
-            }
-            case 'drop': {
-              const item = this.resolveEntityId(step.item);
-              if (item === null) break;
-              const inId = step.in ? this.resolveEntityId(step.in) : null;
-              if (step.in && inId === null) break;
-              steps.push({ kind: 'drop', item, ...(inId !== null ? { in: inId } : {}), span: step.span });
-              break;
-            }
-            case 'perform': {
-              const lowered = this.lowerPerformStep(step);
-              if (lowered !== null) steps.push(lowered);
-              break;
-            }
-          }
-        }
-        goals.push({
-          id: g.name,
-          priority: g.priority.word,
-          activeWhen: g.activeWhen ? this.resolveCondition(g.activeWhen, scope) : null,
-          steps,
-          span: g.span,
-        });
-      }
-      // ADR-310 D9: influence blocks — header slots classify order-free
-      // (mode and range are disjoint vocabularies); effect axes carry
-      // vocabulary words; phrase hooks are author-written prose keys.
-      for (const inf of decl.influences) {
-        if (influences.some((e) => e.name === inf.name)) {
-          this.diagnostics.error('analysis.influence-duplicate', `This block already defines an influence named \`${inf.name}\`.`, inf.span);
-          continue;
-        }
-        let mode: string | undefined;
-        let range: string | undefined;
-        let slotError = false;
-        for (const slot of inf.slots) {
-          if (CHARACTER_MANIFEST.influenceModes.includes(slot.word)) {
-            if (mode !== undefined) slotError = true;
-            mode = slot.word;
-          } else if (CHARACTER_MANIFEST.influenceRanges.includes(slot.word)) {
-            if (range !== undefined) slotError = true;
-            range = slot.word;
-          } else {
-            this.diagnostics.error(
-              'analysis.unknown-influence-slot',
-              `\`${slot.word}\` is not an influence mode (${CHARACTER_MANIFEST.influenceModes.join(', ')}) or range (${CHARACTER_MANIFEST.influenceRanges.join(', ')}).`,
-              slot.span,
-            );
-            slotError = true;
-          }
-        }
-        if (mode === undefined || range === undefined || slotError) {
-          if (!slotError) {
-            this.diagnostics.error(
-              'analysis.influence-missing-mode-range',
-              `An influence header needs a mode (${CHARACTER_MANIFEST.influenceModes.join(', ')}) and a range (${CHARACTER_MANIFEST.influenceRanges.join(', ')}).`,
-              inf.span,
-            );
-          }
-          continue;
-        }
-        const effect: Record<string, string> = {};
-        let witnessed: string | undefined;
-        let resisted: string | undefined;
-        let expired: string | undefined;
-        for (const e of inf.effects) {
-          if (e.kind === 'clouds-focus') {
-            if (effect['focus'] !== undefined) {
-              this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already clouds focus.', e.span);
-              continue;
-            }
-            effect['focus'] = 'clouded';
-          } else if (e.kind === 'makes') {
-            const vocab = e.axis === 'mood' ? this.moodVocabulary() : e.axis === 'threat' ? [...CHARACTER_MANIFEST.threats] : null;
-            if (vocab === null) {
-              this.diagnostics.error(
-                'analysis.unknown-influence-axis',
-                `\`makes ${e.axis}\` is not an influence effect — \`makes mood <word>\`, \`makes threat <word>\`, or \`clouds focus\`.`,
-                e.span,
-              );
-              continue;
-            }
-            if (!vocab.includes(e.value)) {
-              this.diagnostics.error(
-                'analysis.unknown-influence-effect-word',
-                `\`${e.value}\` is not a ${e.axis} word — the vocabulary: ${vocab.join(', ')}.`,
-                e.span,
-              );
-              continue;
-            }
-            if (effect[e.axis] !== undefined) {
-              this.diagnostics.error('analysis.influence-effect-duplicate', `This influence already sets ${e.axis}.`, e.span);
-              continue;
-            }
-            effect[e.axis] = e.value;
-          } else {
-            this.requirePhrase(e.key, e.span, null);
-            if (e.on === 'witnessed') {
-              if (witnessed !== undefined) {
-                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has a witnessed phrase.', e.span);
-                continue;
-              }
-              witnessed = e.key;
-            } else if (e.on === 'resisted') {
-              if (resisted !== undefined) {
-                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has a resisted phrase.', e.span);
-                continue;
-              }
-              resisted = e.key;
-            } else {
-              if (expired !== undefined) {
-                this.diagnostics.error('analysis.influence-effect-duplicate', 'This influence already has an expired phrase.', e.span);
-                continue;
-              }
-              expired = e.key;
-            }
-          }
-        }
-        influences.push({
-          name: inf.name,
-          mode,
-          range,
-          effect,
-          ...(witnessed !== undefined ? { witnessed } : {}),
-          ...(resisted !== undefined ? { resisted } : {}),
-          ...(expired !== undefined ? { expired } : {}),
-          span: inf.span,
-        });
-      }
-      // ADR-310 D9: resistance is one line on the target; the influence
-      // name joins across entities (checked post-build, when every
-      // influence exists — checkInfluenceReferences).
-      for (const r of decl.resists) {
-        if (resists.some((e) => e.influence === r.influence)) {
-          this.diagnostics.error('analysis.resists-duplicate', `This block already resists \`${r.influence}\`.`, r.span);
-          continue;
-        }
-        let exceptFrom: IRResistsEntry['exceptFrom'];
-        if (r.exceptFrom) {
-          if (r.exceptFrom.article === 'a' || r.exceptFrom.article === 'an') {
-            exceptFrom = { kind: 'classifier', value: r.exceptFrom.words.join(' ').toLowerCase() };
-          } else {
-            const id = this.resolveEntityId(r.exceptFrom);
-            if (id === null) continue;
-            exceptFrom = { kind: 'entity', value: id };
-          }
-        }
-        resists.push({ influence: r.influence, ...(exceptFrom !== undefined ? { exceptFrom } : {}), span: r.span });
-      }
-      // ADR-318 D3/D7: temperament bindings. Named defs resolve; inline
-      // orderings and `with` overrides synthesize defs (`@` in the name —
-      // unreachable from author kebab words, so no collision with `define
-      // temperament` names). At most one binding live per state (the tie
-      // gate D3 names, same shape as D16's phrasebook tie).
-      let synthesized = 0;
-      for (const t of decl.temperaments) {
-        let defName: string;
-        if (t.name !== null) {
-          const base = this.temperamentDefs.get(t.name);
-          if (!base) {
-            this.diagnostics.error(
-              'analysis.unknown-temperament',
-              `No \`define temperament\` named \`${t.name}\`${this.suggestText(t.name, [...this.temperamentDefs.keys()].filter((n) => !n.includes('@')))}.`,
-              t.span,
-            );
-            continue;
-          }
-          if (t.pairs.length === 0) {
-            defName = t.name;
-          } else {
-            // `with` overrides fold as in ADR-310 D4: an override replaces
-            // any base pair over the same two forces, and adds otherwise.
-            const overrides = this.resolveForcePairs(t.pairs, `this \`${t.name}\` override`);
-            const folded = base.pairs.filter(([a, b]) => !overrides.some(([c, d]) => (a === c && b === d) || (a === d && b === c)));
-            folded.push(...overrides);
-            defName = `${id}@temperament-${++synthesized}`;
-            this.temperamentDefs.set(defName, { name: defName, pairs: folded, span: t.span });
-          }
-        } else {
-          const pairs = this.resolveForcePairs(t.pairs, 'this temperament');
-          if (pairs.length === 0) continue; // every pair errored above
-          defName = `${id}@temperament-${++synthesized}`;
-          this.temperamentDefs.set(defName, { name: defName, pairs, span: t.span });
-        }
-        if (t.while) {
-          const states = this.byId.get(id)?.states ?? [];
-          if (!states.includes(t.while.word)) {
-            this.diagnostics.error(
-              'analysis.temperament-unknown-state',
-              `\`${t.while.word}\` is not a declared state of \`${decl.name.words.join(' ')}\` — a temperament binds to a word from the entity's \`states:\` line.`,
-              t.while.span,
-            );
-            continue;
-          }
-        }
-        const clash = temperaments.find((e) => (e.while ?? null) === (t.while?.word ?? null));
-        if (clash) {
-          this.diagnostics.error(
-            'analysis.temperament-tie',
-            t.while
-              ? `Two temperaments bound to \`${t.while.word}\` — at most one may be live per state; give each its own state.`
-              : `This block already has an unconditional \`temperament\` line — at most one may be live; bind one to a state with \`while <state>\`.`,
-            t.span,
-          );
-          continue;
-        }
-        temperaments.push({ name: defName, ...(t.while ? { while: t.while.word } : {}), span: t.span });
-      }
-      // ADR-318 D4/D5: principles and obligations — `code` bundles flatten
-      // first (in reference order), then the bare lines union in. An exact
-      // duplicate (category + scope + except) is dead weight, refused.
-      const principleKey = (p: IRPrincipleEntry) =>
-        JSON.stringify({ category: p.category, scope: p.scope ?? null, except: p.except ?? null });
-      const obligationKey = (o: IRObligationEntry) => JSON.stringify({ kind: o.kind, scope: o.scope ?? null });
-      const addPrinciple = (p: IRPrincipleEntry, span: Span): void => {
-        if (principles.some((e) => principleKey(e) === principleKey(p))) {
-          this.diagnostics.error(
-            'analysis.principle-duplicate',
-            `This block already holds \`never ${this.categorySurface(p.category)}\`${p.scope || p.except ? ' with the same scope' : ''}.`,
-            span,
-          );
-          return;
-        }
-        principles.push({ ...p, span });
-      };
-      const addObligation = (o: IRObligationEntry, span: Span): void => {
-        if (obligations.some((e) => obligationKey(e) === obligationKey(o))) {
-          this.diagnostics.error('analysis.obligation-duplicate', `This block already holds \`${o.kind}\` with the same scope.`, span);
-          return;
-        }
-        obligations.push({ ...o, span });
-      };
-      for (const ref of decl.codes) {
-        const bundle = this.codes.get(ref.name);
-        if (!bundle) {
-          this.diagnostics.error(
-            'analysis.unknown-code',
-            `No \`define code\` named \`${ref.name}\`${this.suggestText(ref.name, [...this.codes.keys()])}.`,
-            ref.span,
-          );
-          continue;
-        }
-        for (const p of bundle.principles) addPrinciple(p, ref.span);
-        for (const o of bundle.obligations) addObligation(o, ref.span);
-      }
-      for (const n of decl.nevers) {
-        const p = this.resolveNeverLine(n);
-        if (p) addPrinciple(p, n.span);
-      }
-      for (const o of decl.obligations) {
-        const r = this.resolveObligationLine(o);
-        if (r) addObligation(r, o.span);
-      }
-      // ADR-318 D7: at most one honor declaration; the full platform
-      // bundle for `honor before`, the named bundle's subset otherwise.
-      for (const h of decl.honors) {
-        if (honor !== undefined) {
-          this.diagnostics.error('analysis.honor-duplicate', 'This block already has an `honor` line.', h.span);
-          continue;
-        }
-        let faceActs: string[];
-        if (h.name !== null) {
-          const bundle = this.honorDefs.get(h.name);
-          if (!bundle) {
-            this.diagnostics.error(
-              'analysis.unknown-honor',
-              `No \`define honor\` named \`${h.name}\`${this.suggestText(h.name, [...this.honorDefs.keys()])}.`,
-              h.span,
-            );
-            continue;
-          }
-          faceActs = [...bundle];
-        } else {
-          faceActs = [...CHARACTER_MANIFEST.faceActs];
-        }
-        const scope = this.resolveScopeRefDecl(h.scope);
-        if (scope === null) continue;
-        const except = h.except.map((e) => this.resolveEntityId(e)).filter((eid): eid is string => eid !== null);
-        honor = { scope, except, faceActs, span: h.span };
-      }
-      // ADR-318 D8: `burdened by` seeds — the topic must be HELD (a
-      // compile check: pre-story guilt over something the character does
-      // not know is unexpressable, refused rather than silently inert).
-      for (const b of decl.burdens) {
-        const topic = normalizeTopic(b.topic.words.join(' '));
-        if (!knows.some((k) => k.topic === topic)) {
-          this.diagnostics.error(
-            'analysis.burdened-unheld',
-            `\`burdened by ${b.topic.words.join(' ')}\` needs the topic held — add \`knows ${b.topic.words.join(' ')}, <source>\` to this block.`,
-            b.span,
-          );
-          continue;
-        }
-        if (burdenedBy.includes(topic)) {
-          this.diagnostics.error('analysis.burdened-duplicate', `This block is already \`burdened by ${topic}\`.`, b.span);
-          continue;
-        }
-        burdenedBy.push(topic);
-      }
-    }
-
-    // ADR-327 D10: the player-block composition gates (`analysis.player-kind`,
-    // `analysis.player-behavior`) are gone with the player block itself. A
-    // `playable` character composes like any other person, and an NPC behavior
-    // adjective on one is legitimate — it drives them for as long as they are
-    // NOT the role-holder, which is exactly what D9's role gate makes possible.
-
-    // ADR-234 D3: a door's location IS its room pair — the loader places
-    // it in room1 per the platform convention; a placement line is a load
-    // error (the region-placement gate is the direct precedent).
-    if (kinds.some((k) => k.name === 'door') && decl.placement) {
-      this.diagnostics.error(
-        'analysis.door-placement',
-        `A door has no placement — its location IS its room pair (the loader places it in the first room of its \`through\` exit line). Remove this line.`,
-        decl.placement.span,
-      );
-    }
-
-    // ADR-236 D1: a region's "location" IS its member list — placement
-    // lines on a region block are a load error (mirror of ADR-234 D3's
-    // door-placement gate).
-    const isRegion = kinds.some((k) => k.name === 'region');
-    if (isRegion && decl.placement) {
-      this.diagnostics.error(
-        'analysis.region-placement',
-        `A region has no location — its place IS its member list. Remove this line; membership is \`containing <rooms>\`.`,
-        decl.placement.span,
-      );
-    }
-    // ADR-325 D5: `landing` is a region's door — on any other block it
-    // names nothing.
-    if (!isRegion && decl.landing) {
-      this.diagnostics.error(
-        'analysis.landing-host',
-        `\`landing\` declares where things put in a region land — \`${decl.name.words.join(' ')}\` is not a region.`,
-        decl.landing.span,
-      );
-    }
-    // ADR-236 D2: `containing` is region membership — on any other block it
-    // would be a silent no-op, so it is a load error, never a guess.
-    if (!isRegion && decl.containing.length > 0) {
-      this.diagnostics.error(
-        'analysis.region-containing-host',
-        `\`containing\` declares region membership — \`${decl.name.words.join(' ')}\` is not a region. (Contents are placed with \`in\`/\`on\` lines on the contained entity.)`,
-        decl.containing[0].span,
-      );
-    }
-
-    // Z1: `first time` prose compiles to RoomTrait.initialDescription —
-    // only rooms carry that field, so any other kind is a load error
-    // until a platform surface exists (never a guess).
-    if (decl.initialDescription && !kinds.some((k) => k.name === 'room')) {
-      this.diagnostics.error(
-        'analysis.first-time-non-room',
-        `\`first time\` prose is only supported on rooms (it compiles to RoomTrait.initialDescription) — \`${decl.name.words.join(' ')}\` is not a room.`,
-        decl.initialDescription.span,
-      );
-    }
-
-    // ADR-289 D6: an exit wires into RoomTrait.exits, which only a room
-    // carries — anywhere else the line compiles and then does nothing, the
-    // silent no-op Chord exists to refuse. Blocked and deadly exits ride the
-    // same gate: each names a direction out of a place, and a non-room is
-    // not a place you leave. The loader keeps a defensive throw against
-    // rogue IR (ADR-276's two-layer pattern).
-    if (!kinds.some((k) => k.name === 'room')) {
-      const strayExit = decl.exits[0] ?? decl.blockedExits[0] ?? decl.deadlyExits[0];
-      if (strayExit) {
-        this.diagnostics.error(
-          'analysis.exit-non-room',
-          `Exits belong to rooms — \`${decl.name.words.join(' ')}\` is not a room. Remove the line, or make this block \`a room\`.`,
-          strayExit.span,
-        );
-      }
-    }
-
-    return {
-      id,
-      name: decl.name.words.join(' '),
-      article: decl.name.article,
-      aka: decl.aka,
-      // Present only when declared and resolved (ruled Q-2: absent means
-      // the platform's by-number fallback — and zero golden churn).
-      ...(pronouns !== undefined ? { pronouns } : {}),
-      isPlayable,
-      kinds,
-      traits,
-      // ADR-310 D7: present exactly when the block declared at least one
-      // character construct — a person with none compiles exactly as today.
-      ...(personality.length > 0 ||
-      mood !== undefined ||
-      feels.length > 0 ||
-      knows.length > 0 ||
-      thinks.length > 0 ||
-      profile !== undefined ||
-      spreads !== undefined ||
-      goals.length > 0 ||
-      influences.length > 0 ||
-      resists.length > 0 ||
-      temperaments.length > 0 ||
-      principles.length > 0 ||
-      obligations.length > 0 ||
-      honor !== undefined ||
-      burdenedBy.length > 0
-        ? {
-            character: {
-              personality,
-              ...(mood !== undefined ? { mood } : {}),
-              feels,
-              knows,
-              thinks,
-              ...(profile !== undefined ? { profile } : {}),
-              ...(spreads !== undefined ? { spreads } : {}),
-              goals,
-              influences,
-              resists,
-              temperaments,
-              principles,
-              obligations,
-              ...(honor !== undefined ? { honor } : {}),
-              burdenedBy,
-            },
-          }
-        : {}),
-      startsStates,
-      placement: decl.placement
-        ? {
-            relation: decl.placement.relation,
-            place: this.resolveEntityId(decl.placement.place) ?? '',
-            span: decl.placement.span,
-          }
-        : null,
-      wears: decl.wears.map((w) => this.resolveEntityId(w) ?? '').filter((w) => w !== ''),
-      carries: decl.carries.map((c) => this.resolveEntityId(c) ?? '').filter((c) => c !== ''),
-      containing: decl.containing
-        .map((m) => ({ id: this.resolveEntityId(m) ?? '', span: m.span }))
-        .filter((m) => m.id !== ''),
-      ...(decl.landing && isRegion ? { landing: this.buildLanding(decl.landing) } : {}),
-      exits: decl.exits.map((e) => ({
-        direction: e.direction,
-        to: this.resolveEntityId(e.to) ?? '',
-        // `through the <door>` (ADR-234 D1): resolved like any entity
-        // reference — an unknown name is the standard unresolved-entity
-        // error; '' marks it so checkDoors skips what is already reported.
-        via: e.via ? (this.resolveEntityId(e.via) ?? '') : null,
-        ...(e.oneWay ? { oneWay: true as const } : {}),
-        span: e.span,
-      })),
-      blockedExits: decl.blockedExits.map((b, i) => {
-        this.requirePhrase(b.phraseKey, b.span);
-        // GH #315: a direction's blocked lines compose in declaration order —
-        // the first line whose condition holds supplies the refusal, and a
-        // condition-less line always holds. Any later line on the same
-        // direction can therefore never be selected; say so at compile time
-        // instead of leaving the order rule as runtime folklore.
-        const shadowedBy = decl.blockedExits.findIndex(
-          (earlier, j) => j < i && earlier.direction === b.direction && !earlier.condition,
-        );
-        if (shadowedBy !== -1) {
-          this.diagnostics.warning(
-            'analysis.blocked-exit-unreachable',
-            `This \`${b.direction} is blocked\` line can never fire: the condition-less \`${b.direction} is blocked\` line above it always supplies the refusal first. Blocked lines compose in declaration order — put the condition-less fallback last.`,
-            b.span,
-          );
-        }
-        return {
-          direction: b.direction,
-          phraseKey: b.phraseKey,
-          condition: b.condition ? this.resolveCondition(b.condition, entityScope(sym ?? null)) : null,
-          span: b.span,
-        };
-      }),
-      deadlyExits: decl.deadlyExits.map((d) => {
-        this.requirePhrase(d.phraseKey, d.span);
-        // Compile gate (platform-issue-sweep Phase 8 #15d): the conditional
-        // form is post-scope (mirror: role-bound trait clauses). It used to
-        // fail only at LOAD (loader.ts throw — kept there as the defensive
-        // backstop), which the harness's expect-fail-manifest convention
-        // cannot pin; failing here makes it a compile diagnostic.
-        if (d.condition !== null) {
-          this.diagnostics.error(
-            'analysis.deadly-while-unsupported',
-            '`is deadly while <condition>` is not wired yet — the conditional deadly exit is post-scope. Use an unconditional `is deadly:` or an `on going` clause with `kill the player when <condition>`.',
-            d.span,
-          );
-        }
-        return {
-          direction: d.direction,
-          phraseKey: d.phraseKey,
-          condition: d.condition ? this.resolveCondition(d.condition, entityScope(sym ?? null)) : null,
-          span: d.span,
-        };
-      }),
-      deadly: decl.deadly
-        ? (this.requirePhrase(decl.deadly.phraseKey, decl.deadly.span),
-          { phraseKey: decl.deadly.phraseKey, span: decl.deadly.span })
-        : null,
-      // Merged set: own `states:` plus every composed trait's declared
-      // states (ratchet D8) — the loader initializes from states[0].
-      states: sym ? sym.states : decl.states.map((s) => s.name),
-      statesReversible: decl.statesReversible,
-      counters: decl.counters.map((c) => this.buildCounterDecl(c)),
-      descriptionKey: decl.description ? `${id}.description` : null,
-      initialDescriptionKey: decl.initialDescription ? `${id}.initial-description` : null,
-      onClauses: this.checkDuplicateClauses(decl.onClauses, decl.name.words.join(' ').toLowerCase()).map((c, i) =>
-        this.buildOnClause(c, entityScope(sym ?? null), id, i),
-      ),
-      ...(decl.timerClauses.length > 0
-        ? { timerClauses: decl.timerClauses.map((c, i) => this.buildTimerClause(c, entityScope(sym ?? null), id, i)) }
-        : {}),
-      ...(decl.moveClauses.length > 0
-        ? { moveClauses: decl.moveClauses.map((c, i) => this.buildMoveClause(c, entityScope(sym ?? null), id, i)) }
-        : {}),
-      // Filled by applyTopics after every entity is built (ADR-239).
-      topics: [],
-      span: decl.span,
-    };
+    return this.entityBuildContext;
   }
 
   /**
@@ -6002,9 +5322,26 @@ class Analyzer {
           // inside it closes the partition for what follows.
           this.checkRoutingBlock([stmt.body], state, 'an `each` block', 'each');
           break;
-        default:
+        // Report-only and conversation statements end the partition: the
+        // first of them is what the message names. Listed so that a new kind
+        // is a compile error here until this check has decided which side of
+        // the partition it falls on.
+        case 'phrase':
+        case 'emit':
+        case 'media':
+        case 'win':
+        case 'lose':
+        case 'kill':
+        case 'then-open':
+        case 'deflect':
+        case 'leave':
+        case 'hold-tongue':
           state.ended ??= { kind: 'statement', what: statementWord(stmt) };
           break;
+        default: {
+          const unhandled: never = stmt;
+          throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+        }
       }
     }
   }
@@ -6521,6 +5858,12 @@ class Analyzer {
           body: stmt.body.map((s, i) => this.resolveStatement(s, eachScope, `${path}.${i}`)),
           span: stmt.span,
         };
+      }
+      default: {
+        // Unreachable at runtime; exists so the compiler proves every
+        // statement kind resolves to IR.
+        const unhandled: never = stmt;
+        throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
       }
     }
   }
@@ -8253,6 +7596,13 @@ class Analyzer {
     return best ? ` — did you mean \`${best}\`?` : '';
   }
 }
+
+/**
+ * The analysis passes in execution order — `Analyzer.PASSES`, exported under
+ * the name the order test and ADR-336 D3 use. Each entry's `requires` names
+ * the passes it reads from; `analysisPassOrderViolations` checks the order.
+ */
+export const ANALYSIS_PASSES: ReadonlyArray<AnalysisPass> = Analyzer.PASSES;
 
 /** Separator-shaped leading characters a bare fragment must not carry (mirrors the engine's ADR-211 gate). */
 const SEPARATOR_LED = /^[\s,.;:?!]/;

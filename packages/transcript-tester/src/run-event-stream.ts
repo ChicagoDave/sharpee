@@ -7,7 +7,9 @@
  *   `elapsedMs` clock — in one place so no producer can get them wrong.
  *   Emission is immediate: every method writes as it is called, which is what
  *   lets the IDE's Testing tab fill while the run is still going.
- * Public interface: `RunEventStream`.
+ * Public interface: `RunEventStream`, `ndjsonEventLine`, and the three
+ * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
+ * they are the parameter types of public methods; the barrel exports them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *

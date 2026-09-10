@@ -159,7 +159,7 @@ describe('Wearable and Clothing Integration Tests', () => {
       expect(allItems).toContain(keys);
     });
 
-    it.skip('should handle items in pockets visibility - SKIPPED: Complex visibility scenario needs review', () => {
+    it('should handle items in pockets visibility', () => {
       const vest = createTestClothing(world, 'Fishing Vest', {
         slot: 'torso'
       });

@@ -22,6 +22,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('ripe cheese', {
@@ -39,12 +40,12 @@ const drive = (world: WorldModel, object: any) => {
     world,
     createCommand(IFActions.SMELLING, { entity: object })
   );
-  const validation = smellingAction.validate(context);
+  const validation = runValidatePhase(smellingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: smellingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(smellingAction, context, validation) };
   }
-  smellingAction.execute(context);
-  return { context, validation, events: smellingAction.report(context) };
+  runExecutePhase(smellingAction, context);
+  return { context, validation, events: runReportPhase(smellingAction, context) };
 };
 
 describe('Smelling interceptor hooks (ADR-118)', () => {

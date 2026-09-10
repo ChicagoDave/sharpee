@@ -14,6 +14,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '@sharpee/stdlib';
 
 const SOURCE = `story
   title: Action Body
@@ -134,10 +135,10 @@ function run(l: Loaded, actionId: string, targetIrId: string) {
     event: (type, data) => ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }),
   };
   const action = l.actions.get(actionId)!;
-  const validation = action.validate(ctx);
-  if (!validation.valid) return { validation, events: action.blocked(ctx, validation) };
-  action.execute(ctx);
-  return { validation, events: action.report(ctx) };
+  const validation = runValidatePhase(action, ctx);
+  if (!validation.valid) return { validation, events: runBlockedPhase(action, ctx, validation) };
+  runExecutePhase(action, ctx);
+  return { validation, events: runReportPhase(action, ctx) };
 }
 
 const messageIds = (events: ISemanticEvent[]) =>

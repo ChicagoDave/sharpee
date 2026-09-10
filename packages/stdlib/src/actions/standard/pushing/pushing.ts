@@ -33,13 +33,6 @@ import { getPushingSharedData, PushingSharedData } from './pushing-types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -49,6 +42,8 @@ import {
  */
 export const pushingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.PUSHING,
+  reportEventType: 'if.event.pushed',
+  blockedEventType: 'if.event.pushed',
   slots: [
     {
       id: 'target',
@@ -108,10 +103,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, pushingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -144,10 +135,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         error: 'pushing_does_nothing'
       };
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -262,8 +249,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
         break;
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -282,11 +267,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.pushed', result.error);
-    }
 
     return events;
   },
@@ -317,9 +297,6 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
       revealsPassage: sharedData.revealsPassage,
       requiresStrength: sharedData.requiresStrength
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.pushed');
 
     return events;
   },

@@ -24,13 +24,6 @@ import { ShownEventData } from './showing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -45,6 +38,8 @@ import {
  */
 export const showingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.SHOWING,
+  reportEventType: 'if.event.shown',
+  blockedEventType: 'if.event.show_blocked',
   slots: [
     {
       id: 'item',
@@ -224,10 +219,6 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, showingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Item must be carried (or implicitly takeable)
     // This enables "show apple to bob" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -264,10 +255,6 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
 
@@ -283,8 +270,6 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       sharedData.params = analysis.params;
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -306,11 +291,6 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       viewerName: viewer?.name
     })];
 
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.show_blocked', result.error);
-    }
-
     return events;
   },
 
@@ -329,9 +309,6 @@ export const showingAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params,
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.shown');
 
     return events;
   },

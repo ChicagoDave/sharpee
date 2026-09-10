@@ -28,6 +28,9 @@ const autoAssertion = resolve(repoRoot, 'packages/branch-tester/src/auto-asserti
 const runEvents = resolve(repoRoot, 'packages/ide-protocol/src/run-events.ts');
 const btTypes = resolve(repoRoot, 'packages/branch-tester/src/types.ts');
 const btTreeDocument = resolve(repoRoot, 'packages/branch-tester/src/tree-document.ts');
+// The assertion core the synthesis module re-exports from (ADR-340 D1) —
+// browser-safe by construction, and from source for the same reason.
+const assertionCore = resolve(repoRoot, 'packages/transcript-tester/src/assertion-core.ts');
 
 /** esbuild options shared by the one-shot and watch paths. */
 const options = {
@@ -43,6 +46,7 @@ const options = {
     '@sharpee/branch-tester/auto-assertion': autoAssertion,
     '@sharpee/branch-tester/types': btTypes,
     '@sharpee/branch-tester/tree-document': btTreeDocument,
+    '@sharpee/transcript-tester/assertion-core': assertionCore,
     '@sharpee/ide-protocol/run-events': runEvents,
   },
   bundle: true,

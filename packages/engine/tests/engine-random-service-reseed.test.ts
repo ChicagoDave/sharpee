@@ -22,7 +22,7 @@
 
 import { describe, it, expect } from 'vitest';
 import { definePoint, createSeededRandom, deriveStreamSeed } from '@sharpee/core';
-import { EngineRandomService } from '../src/engine-random-service';
+import { EngineRandomService } from '../src/session/engine-random-service';
 
 const PARENT_SEED = 42;
 const CHILD_SEED = 999;

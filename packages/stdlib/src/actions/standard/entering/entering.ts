@@ -27,13 +27,6 @@ import { EnteringMessages } from './entering-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -43,6 +36,8 @@ import {
  */
 export const enteringLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.ENTERING,
+  reportEventType: 'if.event.entered',
+  blockedEventType: 'if.event.entered',
   slots: [
     {
       id: 'target',
@@ -105,10 +100,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, enteringLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Check scope - must be able to reach the target
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
@@ -143,10 +134,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
 
@@ -176,8 +163,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     };
     sharedData.enteringState = state;
 
-    const lifecycleState = getLifecycleState(context);
-    if (lifecycleState) runPostExecute(context, lifecycleState);
   },
 
   /**
@@ -213,9 +198,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       preposition: state.preposition
     } as EnteredEventData & { messageId: string; params: Record<string, any>; targetName: string })];
 
-    const lifecycleState = getLifecycleState(context);
-    if (lifecycleState) runPostReport(context, lifecycleState, events, 'if.event.entered');
-
     return events;
   },
 
@@ -235,11 +217,6 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
       targetId: target?.id,
       targetName: target?.name
     })];
-
-    if (result.error) {
-      const lifecycleState = getLifecycleState(context);
-      if (lifecycleState) runOnBlocked(context, lifecycleState, events, 'if.event.entered', result.error);
-    }
 
     return events;
   },

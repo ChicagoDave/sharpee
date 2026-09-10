@@ -24,13 +24,6 @@ import { ClimbedEventData } from './climbing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -41,6 +34,8 @@ import {
  */
 export const climbingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.CLIMBING,
+  reportEventType: 'if.event.climbed',
+  blockedEventType: 'if.event.climbed',
   slots: [
     {
       id: 'target',
@@ -97,19 +92,11 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: 'no_target' };
     }
 
-    const state = resolveLifecycle(context, climbingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Handle directional climbing (climb up, climb down) or object climbing
     const result = (direction && !target)
       ? validateDirectionalClimbing(direction, context)
       : validateObjectClimbing(target, context);
     if (!result.valid) return result;
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return result;
   },
@@ -175,8 +162,6 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   /**
@@ -195,11 +180,6 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name,
       direction
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.climbed', result.error);
-    }
 
     return events;
   },
@@ -262,9 +242,6 @@ export const climbingAction: Action & { metadata: ActionMetadata } = {
         }));
       }
     }
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.climbed');
 
     return events;
   }

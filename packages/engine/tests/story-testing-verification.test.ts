@@ -16,7 +16,7 @@ describe('Story-Based Testing Verification', () => {
     const { engine } = setupTestEngine();
     
     // Set the story (no longer async)
-    engine.setStory(story);
+    engine.installStory(story);
     
     // Verify story was initialized
     expect(story.wasInitialized()).toBe(true);

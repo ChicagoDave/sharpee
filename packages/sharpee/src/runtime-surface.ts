@@ -30,7 +30,6 @@ export {
   createCommandExecutor,
   VocabularyManager,
   SaveRestoreService,
-  TurnEventProcessor,
   type NarrativeConfig,
   SharedDataKeys,
 } from '@sharpee/engine';

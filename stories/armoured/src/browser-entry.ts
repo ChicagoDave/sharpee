@@ -102,7 +102,7 @@ async function start(): Promise<void> {
   });
 
   client.connectEngine(engine, world);
-  engine.setStory(story);
+  engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
 
   await client.start();

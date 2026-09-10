@@ -24,13 +24,6 @@ import { ListenedEventData } from './listening-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -42,6 +35,8 @@ import {
  */
 export const listeningLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.LISTENING,
+  reportEventType: 'if.event.listened',
+  blockedEventType: 'if.event.listen_blocked',
   slots: [
     {
       id: 'target',
@@ -185,14 +180,8 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
   },
   
   validate(context: ActionContext): ValidationResult {
-    const state = resolveLifecycle(context, listeningLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
 
     // Listening always succeeds - no standard preconditions.
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -207,8 +196,6 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
     sharedData.params = analysis.params;
     sharedData.eventData = analysis.eventData;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -228,11 +215,6 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
       targetName: target?.name
     })];
 
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.listen_blocked', result.error);
-    }
-
     return events;
   },
 
@@ -246,9 +228,6 @@ export const listeningAction: Action & { metadata: ActionMetadata } = {
       params: sharedData.params,
       ...sharedData.eventData
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.listened');
 
     return events;
   }

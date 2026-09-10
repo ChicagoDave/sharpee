@@ -18,6 +18,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import { unlockingAction } from '@sharpee/stdlib';
 import { IFEntity, LockableTrait, OpenableTrait, SwitchableTrait, TraitType, WorldModel } from '@sharpee/world-model';
 import { createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -134,11 +135,11 @@ describe('starts <state> through the real loader (ADR-231 D5a)', () => {
       event: (type: string, data: Record<string, unknown>): ISemanticEvent =>
         ({ id: `t-${type}`, type, timestamp: 0, entities: {}, data }) as ISemanticEvent,
     };
-    const validation = unlockingAction.validate(context);
+    const validation = runValidatePhase(unlockingAction, context);
     (context as any).validationResult = validation;
     expect(validation.valid, JSON.stringify(validation)).toBe(true);
-    unlockingAction.execute(context);
-    unlockingAction.report(context);
+    runExecutePhase(unlockingAction, context);
+    runReportPhase(unlockingAction, context);
     // THE state assertion: `starts locked` produced a real lock that the
     // real action just mutated — no seeding of isLocked anywhere in this test.
     expect((safe.get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);

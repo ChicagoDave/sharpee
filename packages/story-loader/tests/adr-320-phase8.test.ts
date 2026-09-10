@@ -46,6 +46,7 @@ import {
   type SeededRandom,
 } from '@sharpee/core';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '@sharpee/stdlib';
 
 const CHARACTER_TURN_KEY = 'character.turn';
 
@@ -127,7 +128,7 @@ interface Loaded {
 }
 
 function load(source: string = SOURCE): Loaded {
-  // A REAL engine: setStory runs the story's own engine-ready hook, which
+  // A REAL engine: installStory runs the story's own engine-ready hook, which
   // registers the character-model tick phase on the engine's NPC service.
   // The test drives the engine's actor phase exactly as the engine does.
   const { story, world, player, phase } = bootEngine(source, 7);
@@ -177,12 +178,12 @@ function makeContext(l: Loaded, action: typeof askingAction, command: Record<str
 
 function run(l: Loaded, action: typeof askingAction, command: Record<string, unknown>) {
   const context = makeContext(l, action, command);
-  const validation = action.validate(context);
+  const validation = runValidatePhase(action, context);
   context.validationResult = validation;
   let events: ISemanticEvent[] = [];
   if (validation.valid) {
-    action.execute(context);
-    events = action.report(context);
+    runExecutePhase(action, context);
+    events = runReportPhase(action, context);
   }
   return { validation, events };
 }

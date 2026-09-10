@@ -34,11 +34,7 @@ import { IFActions } from '../../constants.js';
 import { PuttingMessages } from './putting-messages.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
   runPostReport,
   runOnBlocked,
   runMultiObjectValidate,
@@ -65,6 +61,9 @@ import { nounPhraseFor } from '../../../utils/index.js';
  */
 export const puttingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.PUTTING,
+  reportEventType: puttingPrimaryEventType,
+  blockedEventType: 'if.event.put_blocked',
+  contracts: { handlesMultiObject: true },
   slots: [
     {
       id: 'item',
@@ -99,6 +98,22 @@ export const puttingLifecycle: ActionLifecycleDescriptor = {
 // ============================================================================
 // Helper Functions (standalone to avoid `this` issues in object literal)
 // ============================================================================
+
+/**
+ * The primary success event of a single-object put — `put_in` for a
+ * container target, `put_on` for a supporter — read by the descriptor so
+ * the executor's postReport targets the event this report emitted
+ * (ADR-337 D1).
+ * @param context - the action context after `report`
+ * @returns the event type an interceptor's override targets
+ */
+function puttingPrimaryEventType(context: ActionContext): string {
+  const target = context.command.indirectObject!.entity!;
+  const preposition = context.command.parsed.structure.preposition?.text;
+  return determineTargetPreposition(preposition, target).targetPreposition === 'in'
+    ? 'if.event.put_in'
+    : 'if.event.put_on';
+}
 
 /**
  * Determine the target preposition based on preposition text and target type
@@ -419,10 +434,6 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, puttingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Item must be carried (or implicitly takeable)
     // This enables "put apple in box" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -435,10 +446,6 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     if (!standardResult.valid) {
       return standardResult;
     }
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return standardResult;
   },
@@ -470,8 +477,6 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
     // Store data for report phase
     executeSingleEntity(context, item, target, sharedData, targetPreposition);
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -541,12 +546,6 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       }));
     }
 
-    const state = getLifecycleState(context);
-    if (state) {
-      const primaryEventType = targetPreposition === 'in' ? 'if.event.put_in' : 'if.event.put_on';
-      runPostReport(context, state, events, primaryEventType);
-    }
-
     return events;
   },
 
@@ -574,21 +573,16 @@ export const puttingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error
     })];
 
+    // The single-object path's onBlocked runs in the executor (ADR-337 D1).
+    // Multi-object all-fail path (ADR-228 D4, the declared remainder):
+      // failed item's error, so only that item's consultations are
+      // notified here — the other items produced no events for hooks to
+      // decorate. (Partial failures are handled per item in report().)
     if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) {
-        // Single-object path: notify all consultations (ADR-228 D2/D3)
-        runOnBlocked(context, state, events, 'if.event.put_blocked', result.error);
-      } else {
-        // Multi-object all-fail path: the blocked event carries the FIRST
-        // failed item's error, so only that item's consultations are
-        // notified here — the other items produced no events for hooks to
-        // decorate. (Partial failures are handled per item in report().)
-        const multi = getMultiObjectLifecycle(context);
-        const first = multi?.[0];
-        if (first && !first.success) {
-          runOnBlocked(context, first.state, events, 'if.event.put_blocked', first.error ?? result.error);
-        }
+      const multi = getMultiObjectLifecycle(context);
+      const first = multi?.[0];
+      if (first && !first.success) {
+        runOnBlocked(context, first.state, events, 'if.event.put_blocked', first.error ?? result.error);
       }
     }
 

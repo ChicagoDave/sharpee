@@ -22,6 +22,7 @@ import {
   createCommand,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const result = TestData.withObject('marble statue', {
@@ -37,12 +38,12 @@ const drive = (world: WorldModel, object: any) => {
     world,
     createCommand(IFActions.TOUCHING, { entity: object, text: 'marble statue' })
   );
-  const validation = touchingAction.validate(context);
+  const validation = runValidatePhase(touchingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: touchingAction.blocked(context, validation) };
+    return { context, validation, events: runBlockedPhase(touchingAction, context, validation) };
   }
-  touchingAction.execute(context);
-  return { context, validation, events: touchingAction.report(context) };
+  runExecutePhase(touchingAction, context);
+  return { context, validation, events: runReportPhase(touchingAction, context) };
 };
 
 describe('Touching interceptor hooks (ADR-118)', () => {

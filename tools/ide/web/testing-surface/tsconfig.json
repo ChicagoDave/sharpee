@@ -24,6 +24,7 @@
       "@sharpee/branch-tester/auto-assertion": ["../../../../packages/branch-tester/src/auto-assertion.ts"],
       "@sharpee/branch-tester/types": ["../../../../packages/branch-tester/src/types.ts"],
       "@sharpee/branch-tester/tree-document": ["../../../../packages/branch-tester/src/tree-document.ts"],
+      "@sharpee/transcript-tester/assertion-core": ["../../../../packages/transcript-tester/src/assertion-core.ts"],
       "@sharpee/ide-protocol/run-events": ["../../../../packages/ide-protocol/src/run-events.ts"]
     }
   },

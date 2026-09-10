@@ -98,31 +98,6 @@ describe('Meta-Commands Integration', () => {
   });
   
   describe('Author commands', () => {
-    it.skip('should recognize author.parser_events as meta', async () => {
-      // TODO: ParserEventsAction not yet implemented
-      // Import to trigger registration
-      const { ParserEventsAction } = await import('../../src/actions/author/parser-events');
-      const action = new ParserEventsAction();
-      
-      expect(MetaCommandRegistry.isMeta('author.parser_events')).toBe(true);
-    });
-    
-    it.skip('should recognize author.validation_events as meta', async () => {
-      // TODO: ValidationEventsAction not yet implemented
-      const { ValidationEventsAction } = await import('../../src/actions/author/validation-events');
-      const action = new ValidationEventsAction();
-      
-      expect(MetaCommandRegistry.isMeta('author.validation_events')).toBe(true);
-    });
-    
-    it.skip('should recognize author.system_events as meta', async () => {
-      // TODO: SystemEventsAction not yet implemented
-      const { SystemEventsAction } = await import('../../src/actions/author/system-events');
-      const action = new SystemEventsAction();
-      
-      expect(MetaCommandRegistry.isMeta('author.system_events')).toBe(true);
-    });
-    
     it('should recognize author.trace as meta', async () => {
       // This action actually exists
       const { TraceAction } = await import('../../src/actions/author/trace');

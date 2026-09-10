@@ -2,7 +2,7 @@
  * Tests for Story module
  */
 
-import { Story, StoryConfig, validateStoryConfig } from '../src/story';
+import { Story, StoryConfig, validateStoryConfig } from '../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, EntityType } from '@sharpee/world-model';
 import { Action } from '@sharpee/stdlib';
 

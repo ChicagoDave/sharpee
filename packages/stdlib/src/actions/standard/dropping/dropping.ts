@@ -32,12 +32,7 @@ import { nounPhraseFor } from '../../../utils/index.js';
 import { DroppingMessages } from './dropping-messages.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
   getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
   runOnBlocked,
   runMultiObjectValidate,
   getMultiObjectLifecycle,
@@ -61,6 +56,9 @@ import { isMultiObjectCommand, expandMultiObject } from '../../../helpers/multi-
  */
 export const droppingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.DROPPING,
+  reportEventType: 'if.event.dropped',
+  blockedEventType: 'if.event.drop_blocked',
+  contracts: { handlesMultiObject: true },
   slots: [
     {
       id: 'item',
@@ -321,16 +319,8 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: DroppingMessages.NO_TARGET };
     }
 
-    const state = resolveLifecycle(context, droppingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     const validation = validateSingleEntity(context, noun);
     if (!validation.valid) return validation;
-
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
 
     return { valid: true };
   },
@@ -362,8 +352,6 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     // Store result for report phase using sharedData
     sharedData.dropResult = result;
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -407,9 +395,6 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       })
     ];
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.dropped');
-
     return events;
   },
 
@@ -426,21 +411,16 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
       reason: result.error
     })];
 
+    // The single-object path's onBlocked runs in the executor (ADR-337 D1).
+    // Multi-object all-fail path (ADR-228 D4, the declared remainder):
+      // failed item's error, so only that item's consultations are
+      // notified here — the other items produced no events for hooks to
+      // decorate. (Partial failures are handled per item in report().)
     if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) {
-        // Single-object path: notify all consultations (ADR-228 D2/D3)
-        runOnBlocked(context, state, events, 'if.event.drop_blocked', result.error);
-      } else {
-        // Multi-object all-fail path: the blocked event carries the FIRST
-        // failed item's error, so only that item's consultations are
-        // notified here — the other items produced no events for hooks to
-        // decorate. (Partial failures are handled per item in report().)
-        const multi = getMultiObjectLifecycle(context);
-        const first = multi?.[0];
-        if (first && !first.success) {
-          runOnBlocked(context, first.state, events, 'if.event.drop_blocked', first.error ?? result.error);
-        }
+      const multi = getMultiObjectLifecycle(context);
+      const first = multi?.[0];
+      if (first && !first.success) {
+        runOnBlocked(context, first.state, events, 'if.event.drop_blocked', first.error ?? result.error);
       }
     }
 

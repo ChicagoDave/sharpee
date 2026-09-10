@@ -18,7 +18,9 @@ import chalk from 'chalk';
 import { formatEntityTraitLines } from './trait-formatter.js';
 
 /**
- * Report options
+ * Report options — the parameter type of the barrel's `reportCommandResult`
+ * and `reportTranscript`, kept and barrel-exported for that reason
+ * (ADR-340 D4).
  */
 export interface ReporterOptions {
   verbose?: boolean;

@@ -1,7 +1,7 @@
 // author-model.test.ts - Unit tests for AuthorModel
 
 import { WorldModel } from '../../src/world/WorldModel';
-import { AuthorModel } from '../../src/world/AuthorModel';
+import { AuthorModel, createAuthorModel } from '../../src/world/AuthorModel';
 import { TraitType } from '../../src/traits/trait-types';
 import { OpenableTrait } from '../../src/traits/openable/openableTrait';
 import { LockableTrait } from '../../src/traits/lockable/lockableTrait';
@@ -215,6 +215,44 @@ describe('AuthorModel', () => {
       const visible = world.getVisible(player.id);
       expect(visible).toContain(cabinet);
       expect(visible).not.toContain(medicine);
+    });
+  });
+
+  describe('a view of the live world (ADR-338 D1)', () => {
+    it('lands a registration made through the view on the live world', () => {
+      author.registerCapability('adr-338-view', { initialData: { seen: true } });
+      author.registerEventHandler('if.event.taken', () => []);
+
+      expect(world.hasCapability('adr-338-view')).toBe(true);
+      expect(world.getCapability('adr-338-view')?.seen).toBe(true);
+      // Unregistering through the world removes what the view registered:
+      // there is one handler map, not a copy.
+      expect(() => world.unregisterEventHandler('if.event.taken')).not.toThrow();
+    });
+
+    it('is the same instance the world is, not a second surface over the store', () => {
+      expect(author instanceof WorldModel).toBe(true);
+      const created = author.createEntity('Lamp', 'item');
+      expect(world.getEntity(created.id)).toBe(created);
+      expect(createAuthorModel(world).getEntity(created.id)).toBe(created);
+    });
+
+    it('binds each forwarded method once per view', () => {
+      expect(author.getEntity).toBe(author.getEntity);
+      expect(author.getEntity).not.toBe(world.getEntity);
+      expect(createAuthorModel(world).getEntity).not.toBe(author.getEntity);
+    });
+
+    it('keeps the author promise that a placement never fails', () => {
+      const cabinet = author.createEntity('Cabinet', 'container');
+      cabinet.add(new ContainerTrait());
+      cabinet.add(new OpenableTrait({ isOpen: false }));
+      const pill = author.createEntity('Pill', 'item');
+
+      expect(world.canMoveEntity(pill.id, cabinet.id)).toBe(false);
+      expect(author.canMoveEntity(pill.id, cabinet.id)).toBe(true);
+      expect(author.moveEntity(pill.id, cabinet.id)).toBe(true);
+      expect(world.getLocation(pill.id)).toBe(cabinet.id);
     });
   });
 });

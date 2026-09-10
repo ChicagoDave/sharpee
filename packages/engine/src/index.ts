@@ -1,67 +1,51 @@
 /**
- * @sharpee/engine - Runtime engine for Sharpee IF Platform
+ * @sharpee/engine — the package's public contract.
  *
- * This package provides:
- * - Game engine with turn management
- * - Command executor for orchestrating flow
- * - Game state management
+ * Every name a consumer of `@sharpee/engine` can import is listed here by
+ * name, from the module that declares it. There is no `export *`: a module
+ * under `src/` is internal until a consumer needs one of its names, and
+ * adding a name here is a recorded decision (ADR-342 D1, D3), pinned by
+ * `tests/unit/public-surface.test.ts` (ADR-342 D5).
+ *
+ * Public interface: the 31 names below — the facade, what a story author
+ * writes against, what a turn hands back, the turn's stage lists, the
+ * services a host or test drives, the plugins, and the seams other
+ * packages call by name.
+ *
+ * Owner context: the engine package boundary (`packages/engine`).
  */
 
-// Types
-export * from './types.js';
+// The facade
+export { GameEngine, DEFAULT_TEXT_CAPABILITIES } from './game-engine.js';
+export type { EngineConfig } from './types.js';
 
-// Narrative settings (ADR-089)
-export * from './narrative/index.js';
+// What a story author writes against
+export { StoryWithEvents, validateStoryConfig } from './install/story.js';
+export type { Story, StoryConfig, CustomVocabulary } from './install/story.js';
+export type { NarrativeConfig } from './install/narrative/narrative-settings.js';
+export type { ParsedCommandTransformer } from './command/command-executor.js';
+export type { InputModeHandler } from './types.js';
+export { SharedDataKeys } from './command/shared-data-keys.js';
 
-// Story interface
-export * from './story.js';
+// What a turn hands back
+export type { GameContext, TurnResult } from './types.js';
 
-// Command execution
-export * from './command-executor.js';
+// The turn as a named list (ADR-334)
+export { TURN_STAGES, META_STAGES, SHARED_STAGES } from './turn/stages.js';
+export type { TurnStage } from './turn/context.js';
 
-// Universal capability dispatch (ADR-090 extension)
-export * from './capability-dispatch-helper.js';
+// Services a host or a test drives directly
+export { CommandExecutor, createCommandExecutor } from './command/command-executor.js';
+export { EngineRandomService } from './session/engine-random-service.js';
+export { SaveRestoreService, SAVE_FORMAT_VERSION } from './session/save-restore-service.js';
+export type { ISaveRestoreStateProvider } from './session/save-restore-service.js';
+export { VocabularyManager } from './ports/vocabulary-manager.js';
 
-// Load-time room-snippet validation (ADR-209 AC-5)
-export * from './snippet-validation.js';
-export * from './combatant-health-validation.js';
+// Plugins
+export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID } from './plugins/actor-turn-plugin.js';
+export { PluginRegistry } from '@sharpee/plugins';
 
-// Parser interface for engine integration
-export * from './parser-interface.js';
-
-// Shared data keys for typed action communication
-export * from './shared-data-keys.js';
-
-// Main engine
-export * from './game-engine.js';
-
-// Plugin system (ADR-120)
-export { PluginRegistry, TurnPlugin, TurnPluginContext } from '@sharpee/plugins';
-
-// Scene evaluation (ADR-149)
-export { SceneEvaluationPlugin } from './scene-evaluation-plugin.js';
-export { ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from './actor-turn-plugin.js';
-
-// Extracted services
-export * from './vocabulary-manager.js';
-export * from './save-restore-service.js';
-export * from './engine-random-service.js';
-export * from './turn-event-processor.js';
-export * from './platform-operations.js';
-
-// Spatial sound propagation (ADR-172)
-export * from './sound/index.js';
-
-// ADR-250 D4: phrasebook read-point seam (key builder + evaluator contract)
-export { phrasebookTemplateKey } from './prose-pipeline/index.js';
-export type { PhrasebookResolution } from './prose-pipeline/index.js';
-
-// Re-export commonly used items
-export {
-  GameEngine
-} from './game-engine.js';
-
-export {
-  CommandExecutor,
-  createCommandExecutor
-} from './command-executor.js';
+// Seams another package calls by name
+export { phrasebookTemplateKey } from './prose-pipeline/phrase-render.js';
+export type { PhrasebookResolution } from './prose-pipeline/phrase-render.js';
+export { lintUnusedSnippetEntries } from './install/validate-room-snippets.js';

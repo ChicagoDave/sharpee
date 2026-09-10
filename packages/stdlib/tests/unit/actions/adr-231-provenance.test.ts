@@ -35,6 +35,7 @@ import {
   TestData,
   TEST_MARKER_TRAIT,
 } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('blockedMessageId (ADR-231 D1) — the one qualification seam', () => {
   // The helper only reads context.action.id; a minimal stub keeps the
@@ -80,14 +81,14 @@ describe('Interceptor veto pass-through (formerly always-prefixed actions)', () 
       world,
       createCommand(IFActions.WEARING, { entity: item, text: 'gold ring' })
     );
-    const validation = wearingAction.validate(context);
+    const validation = runValidatePhase(wearingAction, context);
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('ring-fused');
     // Provenance marker: the engine stamps every interceptor veto.
     expect(validation.errorQualified).toBe(true);
 
-    const events = wearingAction.blocked(context, validation);
+    const events = runBlockedPhase(wearingAction, context, validation);
     const blocked = events.find(e => e.type === 'if.event.wear_blocked')!;
     expect(blocked).toBeDefined();
     // THE pin: exactly the bare key — no 'if.action.wearing.' prefix.
@@ -116,13 +117,13 @@ describe('Interceptor veto pass-through (formerly always-prefixed actions)', () 
       world,
       createCommand(IFActions.GIVING, { entity: coin, secondEntity: npc, preposition: 'to' })
     );
-    const validation = givingAction.validate(context);
+    const validation = runValidatePhase(givingAction, context);
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('coin-cursed');
     expect(validation.errorQualified).toBe(true);
 
-    const events = givingAction.blocked(context, validation);
+    const events = runBlockedPhase(givingAction, context, validation);
     const blocked = events.find(e => e.type === 'if.event.give_blocked')!;
     expect(blocked).toBeDefined();
     // THE pin: bare key, not 'if.action.giving.coin-cursed'.
@@ -160,8 +161,8 @@ describe('Capability-behavior veto pass-through (ADR-231 D1)', () => {
       world,
       createCommand(IFActions.CUTTING, { entity: rope, text: 'thick rope' })
     );
-    const validation = cuttingAction.validate(context);
-    return { validation, events: cuttingAction.blocked(context, validation) };
+    const validation = runValidatePhase(cuttingAction, context);
+    return { validation, events: runBlockedPhase(cuttingAction, context, validation) };
   };
 
   test('CUTTING: behavior veto WITH a key — errorQualified is stamped, blocked messageId is the bare key', () => {
@@ -250,13 +251,13 @@ describe('Scope refusals emit fully-qualified scope.* keys', () => {
       world,
       createCommand(IFActions.TOUCHING, { entity: gem, text: 'ruby gem' })
     );
-    const validation = touchingAction.validate(context);
+    const validation = runValidatePhase(touchingAction, context);
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('scope.not_reachable');
     expect(validation.errorQualified).toBe(true);
 
-    const events = touchingAction.blocked(context, validation);
+    const events = runBlockedPhase(touchingAction, context, validation);
     const blocked = events.find(e => e.type === 'if.event.touch_blocked')!;
     expect(blocked).toBeDefined();
     // THE pin: the shared-namespace key, NOT 'if.action.touching.scope.not_reachable'.
@@ -286,13 +287,13 @@ describe('Cross-action helper key survives the consuming action', () => {
       world,
       createCommand(IFActions.GIVING, { entity: statue, secondEntity: npc, preposition: 'to' })
     );
-    const validation = givingAction.validate(context);
+    const validation = runValidatePhase(givingAction, context);
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('if.action.taking.fixed_in_place');
     expect(validation.errorQualified).toBe(true);
 
-    const events = givingAction.blocked(context, validation);
+    const events = runBlockedPhase(givingAction, context, validation);
     const blocked = events.find(e => e.type === 'if.event.give_blocked')!;
     expect(blocked).toBeDefined();
     // THE pin: taking's namespace — NOT 'if.action.giving.fixed_in_place'
@@ -317,13 +318,13 @@ describe('Cross-action helper key survives the consuming action', () => {
       world,
       createCommand(IFActions.TAKING, { entity: frame })
     );
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
 
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('story.frame.wall-mounted');
     expect(validation.errorQualified).toBe(true);
 
-    const events = takingAction.blocked(context, validation);
+    const events = runBlockedPhase(takingAction, context, validation);
     const blocked = events.find(e => e.type === 'if.event.take_blocked')!;
     expect(blocked).toBeDefined();
     expect((blocked.data as any).messageId).toBe('story.frame.wall-mounted');
@@ -350,10 +351,10 @@ describe('Multi-object provenance (ADR-228 D4 + ADR-231 D1)', () => {
     (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(takingAction, world, command);
 
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true); // at least one item succeeds
-    takingAction.execute(context);
-    const events = takingAction.report(context);
+    runExecutePhase(takingAction, context);
+    const events = runReportPhase(takingAction, context);
 
     // State: the clean item moved, the vetoed one did not.
     expect(world.getLocation(gem.id)).toBe(player.id);

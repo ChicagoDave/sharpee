@@ -51,8 +51,38 @@ function* walk(body: IRStatement[]): Generator<IRStatement> {
       case 'each':
         yield* walk(stmt.body);
         break;
-      default:
+      // Every other kind has no nested body. Listed so that a new kind is a
+      // compile error here until this walk has decided whether to descend.
+      case 'refuse':
+      case 'phrase':
+      case 'emit':
+      case 'set':
+      case 'change':
+      case 'change-player':
+      case 'change-mood':
+      case 'change-feeling':
+      case 'move':
+      case 'act':
+      case 'remove':
+      case 'award':
+      case 'raise':
+      case 'lower':
+      case 'set-counter':
+      case 'timer':
+      case 'win':
+      case 'lose':
+      case 'kill':
+      case 'must':
+      case 'refuse-when':
+      case 'then-open':
+      case 'deflect':
+      case 'leave':
+      case 'hold-tongue':
         break;
+      default: {
+        const unhandled: never = stmt;
+        throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
+      }
     }
   }
 }

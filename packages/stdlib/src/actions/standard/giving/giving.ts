@@ -32,13 +32,6 @@ import { GivingEventMap } from './giving-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -60,6 +53,8 @@ import {
  */
 export const givingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.GIVING,
+  reportEventType: 'if.event.given',
+  blockedEventType: 'if.event.give_blocked',
   slots: [
     {
       id: 'item',
@@ -166,10 +161,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    const state = resolveLifecycle(context, givingLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     // Item must be carried (or implicitly takeable)
     // This enables "give apple to bob" when apple is on the ground
     const carryCheck = context.requireCarriedOrImplicitTake(item);
@@ -249,10 +240,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // Canonical placement (ADR-228): postValidate runs after ALL standard validation
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true };
   },
 
@@ -275,9 +262,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
         sharedData.capabilityBehavior = behavior;
         sharedData.capabilityTrait = capTrait;
         behavior.execute(recipient, context.world, context.actor.id, context.sharedData);
-        // Interceptor hooks still run after a capability-handled give (ADR-228 D3)
-        const capState = getLifecycleState(context);
-        if (capState) runPostExecute(context, capState);
         return;
       }
     }
@@ -332,8 +316,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       recipient: nounPhraseFor(recipient)
     };
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   blocked(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
@@ -354,11 +336,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       recipientId: recipient?.id,
       recipientName: recipient?.name
     })];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.give_blocked', result.error);
-    }
 
     return events;
   },
@@ -383,8 +360,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       }
       // Interceptor hooks still run (ADR-228 D3); note there is no
       // `if.event.given` on this path for an override to target.
-      const capState = getLifecycleState(context);
-      if (capState) runPostReport(context, capState, events, 'if.event.given');
       return events;
     }
 
@@ -398,9 +373,6 @@ export const givingAction: Action & { metadata: ActionMetadata } = {
       recipientName: sharedData.recipientName,
       accepted: true
     }));
-
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.given');
 
     return events;
   },

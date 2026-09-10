@@ -13,6 +13,7 @@ import { removingAction } from '../../../src/actions/standard/removing';
 import { IFActions } from '../../../src/actions/constants';
 import { TraitType, WorldModel, IFEntity } from '@sharpee/world-model';
 import { setupBasicWorld, createRealTestContext, createCommand, TEST_MARKER_TRAIT } from '../../test-utils';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 const setup = () => {
   const { world, player, room } = setupBasicWorld();
@@ -34,12 +35,12 @@ const drive = (world: WorldModel, item: IFEntity, source: IFEntity) => {
     preposition: 'from'
   });
   const context = createRealTestContext(removingAction, world, command);
-  const validation = removingAction.validate(context);
+  const validation = runValidatePhase(removingAction, context);
   if (!validation.valid) {
-    return { context, validation, events: removingAction.blocked!(context, validation) };
+    return { context, validation, events: runBlockedPhase(removingAction, context, validation) };
   }
-  removingAction.execute(context);
-  return { context, validation, events: removingAction.report(context) };
+  runExecutePhase(removingAction, context);
+  return { context, validation, events: runReportPhase(removingAction, context) };
 };
 
 describe('Removing consults taking-id interceptors (ADR-228 D6-B — TrollAxe bypass closed)', () => {
@@ -101,10 +102,10 @@ describe('Removing consults taking-id interceptors (ADR-228 D6-B — TrollAxe by
     (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(removingAction, world, command);
 
-    const validation = removingAction.validate(context);
+    const validation = runValidatePhase(removingAction, context);
     expect(validation.valid).toBe(true); // coin succeeds
-    removingAction.execute(context);
-    const events = removingAction.report(context);
+    runExecutePhase(removingAction, context);
+    const events = runReportPhase(removingAction, context);
 
     // The unguarded coin was removed; the guarded axe stayed put.
     expect(world.getLocation(coin.id)).toBe(player.id);

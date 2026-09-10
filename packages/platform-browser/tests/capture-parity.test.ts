@@ -222,7 +222,7 @@ async function runInBrowserClient(
   const engine = new GameEngine({ world, player, parser, language, perceptionService });
 
   client.connectEngine(engine, world);
-  engine.setStory(story);
+  engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
 
   await client.start();

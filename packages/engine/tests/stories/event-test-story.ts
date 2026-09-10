@@ -2,7 +2,7 @@
  * Event test story for testing event generation and sequencing
  */
 
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 import { type Action, type ActionContext, ActionResult } from '@sharpee/stdlib';
 import type { IGameEvent as GameEvent } from '@sharpee/event-processor';

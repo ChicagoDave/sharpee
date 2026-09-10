@@ -3,8 +3,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { CommandExecutor, createCommandExecutor } from '../src/command-executor';
-import { EngineRandomService } from '../src/engine-random-service';
+import { CommandExecutor, createCommandExecutor } from '../src/command/command-executor';
+import { EngineRandomService } from '../src/session/engine-random-service';
 import { ActionTestStory } from './stories';
 import { createMockAction } from './fixtures/index';
 import { WorldModel } from '@sharpee/world-model';

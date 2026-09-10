@@ -17,6 +17,7 @@ import { compile } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { IFEntity, WorldModel } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
+import { runValidatePhase } from '@sharpee/stdlib';
 
 const HEADER = 'story\n  title: T\n  authors:\n    N\n  id: t\n  story-version: 0.0.1\n\n';
 const WORLD = `create the Cockpit\n  a room\n\n  A cockpit.\n\ncreate the tiller\n  scenery\n  in the Cockpit\n\n  A tiller.\n\ncreate Alex\n  a person\n  playable\n  starts in the Cockpit\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`;
@@ -155,7 +156,7 @@ ${WORLD}`;
     const loaded = load(source);
     const action = loaded.actions.get('chord.action.sailing')!;
     const ctx = ctxOf(loaded.world, loaded.player, { direction: 'port' });
-    expect(action.validate(ctx)).toEqual({ valid: false, error: 'boat-gone' });
+    expect(runValidatePhase(action, ctx)).toEqual({ valid: false, error: 'boat-gone' });
   });
 
   it('D6: a refuse-when arm over an unbindable subject does NOT fire (fails open) — ADR-289 Acceptance 11', () => {
@@ -186,7 +187,7 @@ ${WORLD}`;
     const loaded = load(source);
     const action = loaded.actions.get('chord.action.sailing')!;
     const ctx = ctxOf(loaded.world, loaded.player, { direction: 'port' });
-    expect(action.validate(ctx)).toEqual({ valid: true });
+    expect(runValidatePhase(action, ctx)).toEqual({ valid: true });
   });
 
   it('D1: an action with no entity-less pattern keeps the dispatch miss', () => {
@@ -194,6 +195,6 @@ ${WORLD}`;
     const loaded = load(source);
     const action = loaded.actions.get('chord.action.polishing')!;
     const ctx = ctxOf(loaded.world, loaded.player);
-    expect(action.validate(ctx)).toEqual({ valid: false, error: 'cant-polish' });
+    expect(runValidatePhase(action, ctx)).toEqual({ valid: false, error: 'cant-polish' });
   });
 });

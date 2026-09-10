@@ -2036,69 +2036,6 @@ export interface IParser {
 }
 ```
 
-### interfaces/command-validator
-
-```typescript
-/**
- * Command validator interface for resolving entities and checking preconditions
- */
-import type { IParsedCommand, IValidatedCommand, IValidationError } from '../commands/index.js';
-import type { Result } from '@sharpee/core';
-/**
- * Validator interface - resolves entities and checks preconditions
- */
-export interface ICommandValidator {
-    /**
-     * Validate parsed command against world state
-     * @param command Parsed command to validate
-     * @returns Validated command or validation error
-     */
-    validate(command: IParsedCommand): Result<IValidatedCommand, IValidationError>;
-}
-```
-
-### interfaces/command-executor
-
-```typescript
-/**
- * Command executor interface for executing validated commands
- */
-import type { ISemanticEvent } from '@sharpee/core';
-import type { IValidatedCommand, IExecutionError, CommandResult } from '../commands/index.js';
-/**
- * Executor interface - applies business logic
- */
-export interface ICommandExecutor {
-    /**
-     * Execute validated command
-     * @param command Validated command to execute
-     * @returns Generated events or execution error
-     */
-    execute(command: IValidatedCommand): CommandResult<ISemanticEvent[], IExecutionError>;
-}
-```
-
-### interfaces/command-processor
-
-```typescript
-/**
- * Command processor interface for the complete command pipeline
- */
-import type { ISemanticEvent } from '@sharpee/core';
-import type { CommandError, CommandResult } from '../commands/index.js';
-/**
- * Combined command processor using all three phases
- */
-export interface ICommandProcessor {
-    /**
-     * Process raw input through all phases
-     * @param input Raw text input
-     * @returns Generated events or appropriate error
-     */
-    process(input: string): Promise<CommandResult<ISemanticEvent[], CommandError>>;
-}
-```
-
 ### traits/trait
 
 ```typescript
@@ -5065,6 +5002,13 @@ export declare class StoryInfoTrait implements ITrait {
  * state or closures. The serialized shape carries `schemaVersion`; later
  * shape changes add a versioned reader, never a hard break.
  *
+ * Mutators live here by design (ADR-338 D3; ADR-310 D17 Amendment): the
+ * model is one stateful object whose invariants span mood, threat, goals,
+ * lucidity, influences, and pressure together, so its state changes are
+ * methods on the trait, called by the character tick's sub-steps, rather
+ * than a behavior that would hold no state of its own. This is the one
+ * recorded exception to "behaviors own mutations".
+ *
  * Public interface: ICharacterModelData, CharacterModelTrait,
  *   CharacterPredicate, ActiveConversation, CHARACTER_MODEL_SCHEMA_VERSION.
  * Owner context: world-model / character-model trait
@@ -7244,396 +7188,6 @@ export declare class DeadlyRoomBehavior extends Behavior {
 }
 ```
 
-### extensions/types
-
-```typescript
-/**
- * Extension system interfaces and types
- *
- * This module defines the contract for creating trait extensions
- * that can add new functionality to the world model.
- */
-import { ITraitConstructor } from '../traits/trait.js';
-import { Behavior } from '../behaviors/behavior.js';
-/**
- * Extension metadata
- */
-export interface IExtensionMetadata {
-    /** Unique identifier for the extension (e.g., 'com.example.dialogue') */
-    id: string;
-    /** Human-readable name */
-    name: string;
-    /** Extension version (semver format) */
-    version: string;
-    /** Brief description of what the extension provides */
-    description?: string;
-    /** Author information */
-    author?: string | {
-        name: string;
-        email?: string;
-        url?: string;
-    };
-    /** Dependencies on other extensions */
-    dependencies?: IExtensionDependency[];
-    /** Namespace for all traits/events/actions in this extension */
-    namespace: string;
-}
-/**
- * Extension dependency specification
- */
-export interface IExtensionDependency {
-    /** Extension ID */
-    id: string;
-    /** Version requirement (e.g., '^1.0.0', '>=2.0.0') */
-    version: string;
-    /** Whether this dependency is optional */
-    optional?: boolean;
-}
-/**
- * Trait definition for extensions
- */
-export interface IExtensionTraitDefinition {
-    /** Trait type (will be prefixed with namespace) */
-    type: string;
-    /** Trait constructor */
-    implementation: ITraitConstructor;
-    /** Associated behavior (optional) */
-    behavior?: typeof Behavior;
-    /** Category for organization */
-    category?: string;
-}
-/**
- * Event type definition for extensions
- */
-export interface IExtensionEventDefinition {
-    /** Event type (will be prefixed with namespace) */
-    type: string;
-    /** Description of when this event is emitted */
-    description?: string;
-    /** Expected payload structure */
-    payloadSchema?: Record<string, unknown>;
-}
-/**
- * Action definition for extensions
- */
-export interface IExtensionActionDefinition {
-    /** Action ID (will be prefixed with namespace) */
-    id: string;
-    /** Action executor function */
-    execute: (command: any, context: any) => any[];
-    /** Associated command definitions */
-    commands?: IExtensionCommandDefinition[];
-}
-/**
- * Command definition for extensions
- */
-export interface IExtensionCommandDefinition {
-    /** Verb that triggers this command */
-    verb: string;
-    /** Aliases for the verb */
-    aliases?: string[];
-    /** Maps to which action */
-    action: string;
-    /** Command parsing rules */
-    rules?: {
-        requiresNoun?: boolean;
-        requiresSecondNoun?: boolean;
-        prepositions?: string[];
-    };
-}
-/**
- * Main extension interface
- *
- * All trait extensions must implement this interface
- */
-export interface ITraitExtension {
-    /** Extension metadata */
-    readonly metadata: IExtensionMetadata;
-    /** Traits provided by this extension */
-    readonly traits?: IExtensionTraitDefinition[];
-    /** Event types defined by this extension */
-    readonly events?: IExtensionEventDefinition[];
-    /** Actions provided by this extension */
-    readonly actions?: IExtensionActionDefinition[];
-    /** Commands that map to actions */
-    readonly commands?: IExtensionCommandDefinition[];
-    /**
-     * Initialize the extension
-     * Called when the extension is loaded
-     * @param registry - The extension registry for registering components
-     */
-    initialize?(registry?: IExtensionRegistry): Promise<void> | void;
-    /**
-     * Cleanup when extension is unloaded
-     */
-    cleanup?(): Promise<void> | void;
-    /**
-     * Shutdown the extension (alias for cleanup)
-     */
-    shutdown?(): Promise<void> | void;
-    /**
-     * Get extension API for other extensions to use
-     */
-    getAPI?(): Record<string, unknown>;
-    /**
-     * Get language data for a specific locale
-     */
-    getLanguageData?(locale: string): IExtensionLanguageData | undefined;
-}
-/**
- * Language data provided by extensions
- */
-export interface IExtensionLanguageData {
-    /** Locale identifier (e.g., 'en-US') */
-    locale: string;
-    /** Verb definitions */
-    verbs?: Record<string, string[]>;
-    /** Message templates */
-    messages?: Record<string, string>;
-    /** Event descriptions */
-    events?: Record<string, string>;
-    /** Action failure messages */
-    failures?: Record<string, string>;
-}
-/**
- * Extension loader interface
- */
-export interface IExtensionLoader {
-    /**
-     * Load an extension
-     */
-    loadExtension(extension: ITraitExtension): Promise<void>;
-    /**
-     * Unload an extension
-     */
-    unloadExtension(extensionId: string): Promise<void>;
-    /**
-     * Get loaded extension by ID
-     */
-    getExtension(extensionId: string): ITraitExtension | undefined;
-    /**
-     * Get all loaded extensions
-     */
-    getLoadedExtensions(): ITraitExtension[];
-    /**
-     * Check if an extension is loaded
-     */
-    isLoaded(extensionId: string): boolean;
-}
-/**
- * Extension registry interface
- *
- * Manages registration of traits, behaviors, and other extension components
- */
-export interface IExtensionRegistry {
-    /**
-     * Register a trait from an extension
-     */
-    registerTrait(namespace: string, definition: IExtensionTraitDefinition): void;
-    /**
-     * Register an event type from an extension
-     */
-    registerEvent(namespace: string, definition: IExtensionEventDefinition): void;
-    /**
-     * Register an action from an extension
-     */
-    registerAction(namespace: string, definition: IExtensionActionDefinition): void;
-    /**
-     * Get a namespaced trait type
-     */
-    getTraitType(namespace: string, type: string): string;
-    /**
-     * Get a namespaced event type
-     */
-    getEventType(namespace: string, type: string): string;
-    /**
-     * Get a namespaced action ID
-     */
-    getActionId(namespace: string, id: string): string;
-    /**
-     * Clear all registrations for a namespace
-     */
-    clearNamespace(namespace: string): void;
-}
-/**
- * Utility to create namespaced identifiers
- */
-export declare function createNamespacedId(namespace: string, id: string): string;
-/**
- * Utility to parse namespaced identifiers
- */
-export declare function parseNamespacedId(namespacedId: string): {
-    namespace: string;
-    id: string;
-} | null;
-/**
- * Type aliases for backwards compatibility
- */
-export type IExtension = ITraitExtension;
-export type IExtensionManager = IExtensionLoader;
-export type VersionString = string;
-```
-
-### extensions/registry
-
-```typescript
-/**
- * Extension registry implementation
- *
- * Manages registration and lookup of extension-provided traits,
- * events, actions, and other components.
- */
-import { ITraitConstructor } from '../traits/trait.js';
-import { IExtensionRegistry, IExtensionTraitDefinition, IExtensionEventDefinition, IExtensionActionDefinition } from './types.js';
-/**
- * Default implementation of the extension registry
- */
-export declare class ExtensionRegistry implements IExtensionRegistry {
-    private traits;
-    private events;
-    private actions;
-    private namespaces;
-    /**
-     * Register a trait from an extension
-     */
-    registerTrait(namespace: string, definition: IExtensionTraitDefinition): void;
-    /**
-     * Register an event type from an extension
-     */
-    registerEvent(namespace: string, definition: IExtensionEventDefinition): void;
-    /**
-     * Register an action from an extension
-     */
-    registerAction(namespace: string, definition: IExtensionActionDefinition): void;
-    /**
-     * Get a namespaced trait type
-     */
-    getTraitType(namespace: string, type: string): string;
-    /**
-     * Get a namespaced event type
-     */
-    getEventType(namespace: string, type: string): string;
-    /**
-     * Get a namespaced action ID
-     */
-    getActionId(namespace: string, id: string): string;
-    /**
-     * Get a trait constructor by its full type
-     */
-    getTrait(fullType: string): ITraitConstructor | undefined;
-    /**
-     * Get an event definition by its full type
-     */
-    getEvent(fullType: string): IExtensionEventDefinition | undefined;
-    /**
-     * Get an action definition by its full ID
-     */
-    getAction(fullId: string): IExtensionActionDefinition | undefined;
-    /**
-     * Check if a namespace is registered
-     */
-    hasNamespace(namespace: string): boolean;
-    /**
-     * Get all registered namespaces
-     */
-    getNamespaces(): string[];
-    /**
-     * Get all traits in a namespace
-     */
-    getTraitsByNamespace(namespace: string): string[];
-    /**
-     * Get all events in a namespace
-     */
-    getEventsByNamespace(namespace: string): string[];
-    /**
-     * Get all actions in a namespace
-     */
-    getActionsByNamespace(namespace: string): string[];
-    /**
-     * Clear all registrations for a namespace
-     */
-    clearNamespace(namespace: string): void;
-    /**
-     * Clear all registrations
-     */
-    clear(): void;
-    /**
-     * Get all traits (for compatibility)
-     */
-    getTraits(): Map<string, ITraitConstructor>;
-    /**
-     * Get all events (for compatibility)
-     */
-    getEvents(): Map<string, IExtensionEventDefinition>;
-    /**
-     * Get all actions (for compatibility)
-     */
-    getActions(): Map<string, IExtensionActionDefinition>;
-    /**
-     * Get services (placeholder for future implementation)
-     */
-    getServices(): Map<string, unknown>;
-}
-export declare const extensionRegistry: ExtensionRegistry;
-export declare function getExtensionRegistry(): ExtensionRegistry;
-```
-
-### extensions/loader
-
-```typescript
-/**
- * Extension loader implementation
- *
- * Manages loading, initialization, and lifecycle of trait extensions
- */
-import { IExtensionLoader, ITraitExtension, IExtensionRegistry } from './types.js';
-/**
- * Extension loading error
- */
-export declare class ExtensionLoadError extends Error {
-    extensionId: string;
-    cause?: Error | undefined;
-    constructor(message: string, extensionId: string, cause?: Error | undefined);
-}
-/**
- * Default implementation of the extension loader
- */
-export declare class ExtensionLoader implements IExtensionLoader {
-    private extensions;
-    private registry;
-    constructor(registry?: IExtensionRegistry);
-    /**
-     * Load an extension
-     */
-    loadExtension(extension: ITraitExtension): Promise<void>;
-    /**
-     * Unload an extension
-     */
-    unloadExtension(extensionId: string): Promise<void>;
-    /**
-     * Get loaded extension by ID
-     */
-    getExtension(extensionId: string): ITraitExtension | undefined;
-    /**
-     * Get all loaded extensions
-     */
-    getLoadedExtensions(): ITraitExtension[];
-    /**
-     * Check if an extension is loaded
-     */
-    isLoaded(extensionId: string): boolean;
-    /**
-     * Get extensions in load order (respecting dependencies)
-     */
-    getLoadOrder(): string[];
-    /**
-     * Validate extension dependencies are satisfied
-     */
-    validateDependencies(extension: ITraitExtension): string[];
-}
-export declare const extensionLoader: ExtensionLoader;
-```
-
 ### world/WorldModel
 
 ```typescript
@@ -8716,34 +8270,39 @@ export declare class ReachabilityBehavior extends Behavior {
 
 ```typescript
 /**
- * AuthorModel — unrestricted world model access for authoring and setup.
+ * The author's view of the live world: unrestricted access for world
+ * construction and setup. Creating an entity and moving it bypass the
+ * validation the runtime applies, so a closed container can be filled at
+ * load; a move is always allowed; three helpers make setup terse. Everything
+ * else is the live WorldModel itself. The view is a Proxy over that one
+ * instance, so a registration made through the view (a capability, an
+ * interceptor, an event handler) lands where the engine reads it, and a new
+ * world method reaches the view with no edit here.
  *
- * Public interface: Implements IWorldModel. Entity creation and movement
- * bypass validation. All other methods delegate to the backing WorldModel.
+ * Why a Proxy and not Object.create(world) with a few overrides: a world
+ * method that writes `this.field` would land the field on the derived object
+ * and shadow the world's own on the next read. The proxy binds every method
+ * to the world, so a write reaches the one instance. A bound method is
+ * cached per member per view; a non-function member is read through live, so
+ * the view never holds a copy of world state.
  *
- * Owner context: packages/world-model. Used during initializeWorld() for
- * setup that requires bypassing game rules (placing items in closed
- * containers, etc.).
+ * Public interface: AuthorModel (the type, and a constructor taking the
+ *   shared data store and the world so `new AuthorModel(store, world)` stays
+ *   a working spelling), createAuthorModel, AuthorHelpers, IDataStore,
+ *   IItemSpec.
+ * Owner context: packages/world-model — world.
+ *
+ * References:
+ *   ADR-016 — the author model bypasses rules during setup, emitting no events.
+ *   ADR-338 D1 — a view of the live world, not a copy of its surface.
+ *   docs/work/archive/refactoring-survey/assessment-20260907-umbrella.md — the cached bind, and canMoveEntity kept.
  */
 import { IFEntity } from '../entities/if-entity.js';
-import { WallEntity, IWallSpec, IWallsSpec } from '../entities/wall-entity.js';
-import { TraitType } from '../traits/trait-types.js';
-import { SpatialIndex } from './SpatialIndex.js';
-import { ITrait } from '../traits/trait.js';
-import { ICapabilityStore } from './capabilities.js';
-import type { CapabilityBehavior } from '../capabilities/capability-behavior.js';
-import type { TraitBehaviorBinding, BehaviorRegistrationOptions } from '../capabilities/capability-binding.js';
-import type { ActionInterceptor } from '../capabilities/action-interceptor.js';
-import type { TraitInterceptorBinding, InterceptorRegistrationOptions, InterceptorLookupResult } from '../capabilities/interceptor-binding.js';
-import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
-import type { IWorldModel, EntityRemovalObserver, EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions, RegionOptions, RegionCrossings, SceneOptions, SceneConditions, ConnectRoomsOptions } from './WorldModel.js';
-import type { ScoreEntry, RankDefinition } from './ScoreLedger.js';
-import type { ISemanticEvent } from '@sharpee/core';
-import type { WorldState, ContentsOptions, WorldChange, IEventProcessorWiring, GamePrompt, IGrammarVocabularyProvider } from '@sharpee/if-domain';
-import type { DirectionType } from '../constants/directions.js';
-import type { ScopeRegistry } from '../scope/scope-registry.js';
-import type { IScopeRule } from '../scope/scope-rule.js';
-import type { ICapabilityData, ICapabilityRegistration } from './capabilities.js';
+import type { SpatialIndex } from './SpatialIndex.js';
+import type { ITrait } from '../traits/trait.js';
+import type { TraitType } from '../traits/trait-types.js';
+import type { ICapabilityStore } from './capabilities.js';
+import type { WorldModel, IWorldModel } from './WorldModel.js';
 /**
  * Data store shared between WorldModel and AuthorModel.
  */
@@ -8765,168 +8324,33 @@ export interface IItemSpec {
     attributes?: Record<string, any>;
     traits?: TraitType[];
 }
-/**
- * AuthorModel provides unrestricted access to the world state for authoring,
- * testing, and world setup. It bypasses validation rules for entity creation
- * and movement. All other IWorldModel methods delegate to the backing WorldModel.
- *
- * @example
- * ```typescript
- * const author = new AuthorModel(world.getDataStore(), world);
- * const medicine = author.createEntity('Aspirin', 'item');
- * author.moveEntity(medicine.id, closedCabinet.id); // Works even though closed
- * ```
- */
-export declare class AuthorModel implements IWorldModel {
-    private dataStore;
-    private worldModel;
-    constructor(dataStore: IDataStore, worldModel: IWorldModel);
-    /**
-     * Get the shared data store.
-     */
-    getDataStore(): IDataStore;
-    /**
-     * Create a new entity without validation.
-     *
-     * @param name - Display name for the entity
-     * @param type - Entity type (room, item, actor, etc.)
-     * @returns The created entity
-     */
-    createEntity(name: string, type?: string): IFEntity;
-    /**
-     * Move an entity without validation. Can move into closed/locked containers.
-     *
-     * @param entityId - ID of entity to move
-     * @param targetId - ID of target location (null to remove from world)
-     * @returns Always true (no validation to fail)
-     */
-    moveEntity(entityId: string, targetId: string | null): boolean;
-    getEntity(id: string): IFEntity | undefined;
-    hasEntity(id: string): boolean;
-    removeEntity(id: string): boolean;
-    onEntityRemoved(observer: EntityRemovalObserver): void;
-    getAllEntities(): IFEntity[];
-    updateEntity(entityId: string, updater: (entity: IFEntity) => void): void;
-    getLocation(entityId: string): string | undefined;
-    getContents(containerId: string, options?: ContentsOptions): IFEntity[];
-    getCarriedAndWorn(holderId: string): {
-        carried: IFEntity[];
-        worn: IFEntity[];
-    };
-    canMoveEntity(entityId: string, targetId: string | null): boolean;
-    getContainingRoom(entityId: string): IFEntity | undefined;
-    getAllContents(entityId: string, options?: ContentsOptions): IFEntity[];
-    getState(): WorldState;
-    setState(state: WorldState): void;
-    getStateValue(key: string): any;
-    setStateValue(key: string, value: any): void;
-    getPrompt(): GamePrompt;
-    setPrompt(prompt: GamePrompt): void;
-    findByTrait(traitType: TraitType): IFEntity[];
-    findByType(entityType: string): IFEntity[];
-    findWhere(predicate: (entity: IFEntity) => boolean): IFEntity[];
-    getVisible(observerId: string): IFEntity[];
-    getInScope(observerId: string): IFEntity[];
-    canReach(observerId: string, targetId: string): boolean;
-    getReachable(observerId: string): IFEntity[];
-    canSee(observerId: string, targetId: string): boolean;
-    getRelated(entityId: string, relationshipType: string): string[];
-    areRelated(entity1Id: string, entity2Id: string, relationshipType: string): boolean;
-    addRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
-    removeRelationship(entity1Id: string, entity2Id: string, relationshipType: string): void;
-    getTotalWeight(entityId: string): number;
-    wouldCreateLoop(entityId: string, targetId: string): boolean;
-    findPath(fromRoomId: string, toRoomId: string): string[] | null;
-    getPlayer(): IFEntity | undefined;
-    setPlayer(entityId: string): void;
-    connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
-    createDoor(displayName: string, opts: {
-        room1Id: string;
-        room2Id: string;
-        direction: DirectionType;
-        description?: string;
-        aliases?: string[];
-        isOpen?: boolean;
-        isLocked?: boolean;
-        keyId?: string;
-    }): IFEntity;
-    createWall(spec: IWallSpec): WallEntity;
-    createWalls(spec: IWallsSpec): WallEntity[];
-    createRegion(id: string, options: RegionOptions): IFEntity;
-    assignRoom(roomId: string, regionId: string): void;
-    isInRegion(entityId: string, regionId: string): boolean;
-    getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
-    createScene(id: string, options: SceneOptions): IFEntity;
-    getSceneConditions(sceneId: string): SceneConditions | undefined;
-    getAllSceneConditions(): Map<string, SceneConditions>;
-    isSceneActive(sceneId: string): boolean;
-    hasSceneEnded(sceneId: string): boolean;
-    hasSceneHappened(sceneId: string): boolean;
-    registerCapability(name: string, registration?: Partial<ICapabilityRegistration>): ICapabilityData;
-    updateCapability(name: string, data: Partial<ICapabilityData>): void;
-    getCapability(name: string): ICapabilityData | undefined;
-    hasCapability(name: string): boolean;
-    registerCapabilityBehavior<T extends ITrait = ITrait>(traitType: string, capability: string, behavior: CapabilityBehavior, options?: BehaviorRegistrationOptions<T>): void;
-    getBehaviorForCapability(trait: ITrait, capability: string): CapabilityBehavior | undefined;
-    registerEvaluator(key: string, fn: (world: IWorldModel) => unknown): void;
-    evaluate(key: string): unknown;
-    getBehaviorBinding(traitType: string, capability: string): TraitBehaviorBinding | undefined;
-    getAllCapabilityBindings(): ReadonlyMap<string, TraitBehaviorBinding>;
-    registerActionInterceptor(traitType: string, actionId: string, interceptor: ActionInterceptor, options?: InterceptorRegistrationOptions): void;
-    getInterceptorForAction(entity: {
-        traits: Map<string, ITrait>;
-    }, actionId: string): InterceptorLookupResult | undefined;
-    getInterceptorBinding(traitType: string, actionId: string): TraitInterceptorBinding | undefined;
-    getAllActionInterceptors(): ReadonlyMap<string, TraitInterceptorBinding>;
-    registerExitResolver(traitType: string, resolver: ExitResolver): void;
-    getExitResolver(traitType: string): ExitResolver | undefined;
-    getAllExitResolvers(): ReadonlyMap<string, ExitResolver>;
-    awardScore(id: string, points: number, description: string): boolean;
-    revokeScore(id: string): boolean;
-    hasScore(id: string): boolean;
-    getScore(): number;
-    getScoreEntries(): ScoreEntry[];
-    setMaxScore(max: number): void;
-    getMaxScore(): number;
-    setRanks(ranks: RankDefinition[]): void;
-    getRanks(): RankDefinition[];
-    getRank(): RankDefinition | undefined;
-    setScoringEnabled(enabled: boolean): void;
-    isScoringEnabled(): boolean;
-    toJSON(): string;
-    loadJSON(json: string): void;
-    clear(): void;
-    registerEventHandler(eventType: string, handler: EventHandler): void;
-    unregisterEventHandler(eventType: string): void;
-    registerEventValidator(eventType: string, validator: EventValidator): void;
-    registerEventPreviewer(eventType: string, previewer: EventPreviewer): void;
-    connectEventProcessor(wiring: IEventProcessorWiring): void;
-    chainEvent(triggerType: string, handler: EventChainHandler, options?: ChainEventOptions): void;
-    applyEvent(event: ISemanticEvent): void;
-    canApplyEvent(event: ISemanticEvent): boolean;
-    previewEvent(event: ISemanticEvent): WorldChange[];
-    getAppliedEvents(): ISemanticEvent[];
-    getEventsSince(timestamp: number): ISemanticEvent[];
-    clearEventHistory(): void;
-    getScopeRegistry(): ScopeRegistry;
-    addScopeRule(rule: IScopeRule): void;
-    removeScopeRule(ruleId: string): boolean;
-    evaluateScope(actorId: string, actionId?: string): string[];
-    getGrammarVocabularyProvider(): IGrammarVocabularyProvider;
-    /**
-     * Move multiple entities to a container in one operation.
-     */
+/** The three setup conveniences the author's view adds to the world. */
+export interface AuthorHelpers {
+    /** Move multiple entities to a container in one operation. */
     populate(containerId: string, entityIds: string[]): void;
-    /**
-     * Add a trait to an entity.
-     */
+    /** Add a trait to an entity. */
     addTrait(entityId: string, trait: ITrait): void;
-    /**
-     * Remove a trait from an entity.
-     */
+    /** Remove a trait from an entity. */
     removeTrait(entityId: string, traitType: TraitType): void;
-    private generateId;
 }
+/** The author's view: the live world plus the author helpers. */
+export type AuthorModel = WorldModel & AuthorHelpers;
+/**
+ * Create the author's view of a world.
+ *
+ * @param worldModel - The live world; the view forwards to this one instance
+ * @returns A Proxy over the world carrying the two bypasses and the three helpers
+ */
+export declare function createAuthorModel(worldModel: IWorldModel): AuthorModel;
+/**
+ * The constructor spelling: `new AuthorModel(world.getDataStore(), world)`
+ * returns the same view createAuthorModel returns. The data store argument is
+ * accepted for the callers that pass it and is not read; the view takes the
+ * live store from the world.
+ */
+export declare const AuthorModel: {
+    new (dataStore: IDataStore, worldModel: IWorldModel): AuthorModel;
+};
 ```
 
 ### world/wall-creation

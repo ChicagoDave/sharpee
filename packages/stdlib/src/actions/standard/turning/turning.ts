@@ -41,13 +41,6 @@ import { TurningMessages } from './turning-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
-  resolveLifecycle,
-  getLifecycleState,
-  runPreValidate,
-  runPostValidate,
-  runPostExecute,
-  runPostReport,
-  runOnBlocked,
   blockedMessageId
 } from '../../lifecycle/index.js';
 
@@ -57,6 +50,8 @@ import {
  */
 export const turningLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.TURNING,
+  reportEventType: 'if.event.turned',
+  blockedEventType: 'if.event.turn_blocked',
   slots: [
     {
       id: 'target',
@@ -117,10 +112,6 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: TurningMessages.NO_TARGET };
     }
 
-    const state = resolveLifecycle(context, turningLifecycle);
-    const preVeto = runPreValidate(context, state);
-    if (preVeto) return preVeto;
-
     const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
       return scopeCheck.error!;
@@ -161,9 +152,6 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
       data = { behavior, sharedData };
     }
 
-    const postVeto = runPostValidate(context, state);
-    if (postVeto) return postVeto;
-
     return { valid: true, data };
   },
 
@@ -181,8 +169,6 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
       context.sharedData.turningDispatch = data;
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostExecute(context, state);
   },
 
   report(context: ActionContext): ISemanticEvent[] {
@@ -212,9 +198,6 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
       ];
     }
 
-    const state = getLifecycleState(context);
-    if (state) runPostReport(context, state, events, 'if.event.turned');
-
     return events;
   },
 
@@ -235,11 +218,6 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
         reason: result.error
       })
     ];
-
-    if (result.error) {
-      const state = getLifecycleState(context);
-      if (state) runOnBlocked(context, state, events, 'if.event.turn_blocked', result.error);
-    }
 
     return events;
   }

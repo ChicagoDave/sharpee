@@ -5,7 +5,7 @@
  * Context: ActionContext has TWO production implementations:
  *
  *   1. The engine's closure-based factory
- *      (`packages/engine/src/action-context-factory.ts`), where
+ *      (`packages/engine/src/command/action-context-factory.ts`), where
  *      `event` is an arrow function captured in closure.
  *   2. The stdlib's class-based `InternalActionContext` returned by
  *      `createActionContext` in `enhanced-context.ts`, where `event`

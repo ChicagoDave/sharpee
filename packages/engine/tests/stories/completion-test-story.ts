@@ -2,7 +2,7 @@
  * Completion test story for testing game over detection and completion handling
  */
 
-import { Story, StoryConfig } from '../../src/story';
+import { Story, StoryConfig } from '../../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 interface CompletionCondition {

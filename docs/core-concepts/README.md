@@ -304,13 +304,15 @@ blocked?(context: ActionContext, result: ValidationResult): ISemanticEvent[] {
 **Why it is a phase and not an error return**: each action owns the wording of its own refusals, so a blocked attempt is reported through the same event path as a successful one rather than through a thrown error or a bare string. `blocked` is optional on the interface (`enhanced-types.ts`); the default implementation covers actions with nothing special to say.
 
 ### Action Structure
-Each action lives in `/packages/stdlib/src/actions/standard/[action-name]/` with:
-- `[action-name].ts` - Main action implementation
-- `[action-name]-events.ts` - Event type definitions
-- `[action-name]-data.ts` - Data builder configuration
-- `[action-name]-messages.ts` - Message ids the action can emit
-- `[action-name]-types.ts` - Action-specific types (including its sharedData shape)
-- `index.ts` - Barrel
+Each action lives in `/packages/stdlib/src/actions/standard/[action-name]/`. Two files are always present, and the others appear only when the action has something to put in them (measured across the 57 standard actions, 2026-09-08):
+- `[action-name].ts` - Main action implementation (always)
+- `index.ts` - Barrel (always)
+- `[action-name]-events.ts` - Event type definitions, when the action emits its own event types (46 of 57)
+- `[action-name]-messages.ts` - Message ids the action can emit, when it has more than the default success and failure ids (21 of 57)
+- `[action-name]-data.ts` - Data builder configuration, when the action builds event data (12 of 57)
+- `[action-name]-types.ts` - Action-specific types, including its sharedData shape, when the shape is non-trivial (7 of 57)
+
+A directory with only the two required files is a complete action, not an unfinished one.
 
 ### Action Categories
 
@@ -689,6 +691,8 @@ case 'if.event.perception.blocked':
   - Generate events for output in report phase
 
 **Key Insight**: If your execute phase is complex, you're doing it wrong. Move the logic to a behavior.
+
+**The one recorded exception**: `CharacterModelTrait` keeps its own mutators (mood, threat, goals, lucidity, influences, pressure, the told record) on the trait, called by the character tick's sub-steps, because the model is one stateful object whose invariants span those fields together and a behavior would hold no state of its own (ADR-338 D3; ADR-310 D17 Amendment).
 
 ## Capability Dispatch (ADR-090)
 

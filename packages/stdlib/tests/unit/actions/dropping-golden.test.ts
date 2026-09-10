@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, EntityType, IParsedCommand } from '@sharpee/world-model';
+import { TraitType, IParsedCommand } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -23,6 +23,7 @@ import {
   TEST_MARKER_TRAIT
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
+import { runValidatePhase, runExecutePhase, runReportPhase, runBlockedPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('droppingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -124,66 +125,10 @@ describe('droppingAction (Golden Pattern)', () => {
   });
 
   describe('Container Checks', () => {
-    test.skip('should allow dropping inside a closed container', () => {
-      // TODO: Implement scope-based implied destinations (ADR-043)
-      // This test requires command validation to add implicit "in container" destination
-      // This test verifies an important IF convention: when the player is trapped
-      // inside a closed container (like being locked in a trunk, coffin, or box),
-      // they can still drop items. The items stay in the container with them.
-      // 
-      // The closed/open state prevents movement IN/OUT from outside, but doesn't
-      // affect actions within the container. This is crucial for puzzle scenarios
-      // where the player might be trapped but needs to manipulate objects.
-      // 
-      // Example scenarios:
-      // - Trapped in a coffin, drop the lighter to preserve oxygen
-      // - Locked in a trunk, rearrange items to find an escape tool
-      // - Inside a closed elevator, drop items to lighten the load
-      //
-      // Setup: Player is inside a closed box holding a ball
-      // Expected: Dropping succeeds, ball ends up in the box (not the room)
-      const { world, player, room } = setupBasicWorld();
-      
-      const box = world.createEntity('wooden box', 'object');
-      box.add({ type: TraitType.CONTAINER });
-      box.add({ 
-        type: TraitType.OPENABLE,
-        isOpen: false  // Closed
-      });
-      world.moveEntity(box.id, room.id);
-      
-      const ball = world.createEntity('ball', 'object');
-      
-      // Player is in the closed box with the ball
-      world.moveEntity(player.id, box.id);
-      world.moveEntity(ball.id, player.id);
-      
-      const command = createCommand(IFActions.DROPPING, {
-        entity: ball
-      });
-      const context = createRealTestContext(droppingAction, world, command);
-      
-      const events = executeWithValidation(droppingAction, context);
-      
-      // Should succeed - dropping inside a closed container is allowed
-      // The closed state prevents things moving IN/OUT from outside, not inside actions
-      expectEvent(events, 'if.event.dropped', {
-        itemId: ball.id,
-        itemName: 'ball',
-        toLocation: box.id,
-        toLocationName: 'wooden box',
-        toContainer: true
-      });
-      
-      expectEvent(events, 'if.event.dropped', {
-        messageId: expect.stringContaining('dropped_in'),
-        params: {
-          item: { name: 'ball' },
-          container: { name: 'wooden box' },
-          location: { name: 'wooden box' }
-        }
-      });
-    });
+    // Gap: dropping while inside a CLOSED container ("trapped in the trunk")
+    // refuses today, because `ContainerBehavior.canAccept` rejects closed
+    // containers from any side. ADR-043 (scope and implied indirect objects)
+    // names the convention; nothing implements it yet.
 
     test('should fail when container is full', () => {
       const { world, player, room } = setupBasicWorld();
@@ -411,9 +356,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(true);
-      droppingAction.execute(context);
+      runExecutePhase(droppingAction, context);
 
       // VERIFY POSTCONDITION: item is now in the room
       expectLocation(world, item.id, room.id);
@@ -439,9 +384,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(true);
-      droppingAction.execute(context);
+      runExecutePhase(droppingAction, context);
 
       // VERIFY POSTCONDITION: gem is now in the box
       expectLocation(world, gem.id, box.id);
@@ -466,9 +411,9 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(true);
-      droppingAction.execute(context);
+      runExecutePhase(droppingAction, context);
 
       // VERIFY POSTCONDITION: book is now on the table
       expectLocation(world, book.id, table.id);
@@ -485,7 +430,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(false);
 
       // VERIFY POSTCONDITION: item is still in the room (unchanged)
@@ -511,7 +456,7 @@ describe('droppingAction (Golden Pattern)', () => {
       });
       const context = createRealTestContext(droppingAction, world, command);
 
-      const validation = droppingAction.validate(context);
+      const validation = runValidatePhase(droppingAction, context);
       expect(validation.valid).toBe(false);
 
       // VERIFY POSTCONDITION: hat is still in player inventory (unchanged)
@@ -580,43 +525,6 @@ describe('Dropping Action Edge Cases', () => {
       toRoom: true
     });
   });
-
-  test.skip('should handle edge case of player dropping item while not in a room', () => {
-    // TODO: This test is failing because context.currentLocation returns the room
-    // instead of the car when the player is in a vehicle. This might be a bug in
-    // how currentLocation is determined in the test context.
-    const { world, player, room } = setupBasicWorld();
-    
-    // Create a non-room, non-container location (e.g., a vehicle)
-    const car = world.createEntity('red car', EntityType.OBJECT);
-    const keys = world.createEntity('car keys', 'object');
-    
-    world.moveEntity(player.id, car.id);
-    world.moveEntity(keys.id, player.id);
-    
-    const command = createCommand(IFActions.DROPPING, {
-      entity: keys
-    });
-    const context = createRealTestContext(droppingAction, world, command);
-    
-    const events = executeWithValidation(droppingAction, context);
-    
-    // Should succeed with basic dropped message
-    expectEvent(events, 'if.event.dropped', {
-      itemId: keys.id,
-      itemName: 'car keys',
-      toLocation: car.id,
-      toLocationName: 'red car'
-    });
-    
-    expectEvent(events, 'if.event.dropped', {
-      messageId: expect.stringContaining('dropped'),
-      params: { 
-        item: 'car keys',
-        location: 'red car'
-      }
-    });
-  });
 });
 
 describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)', () => {
@@ -635,12 +543,12 @@ describe('Dropping interceptor hooks (ADR-118 via the ADR-228 lifecycle engine)'
       world,
       createCommand(IFActions.DROPPING, { entity: item, text: 'brass token' })
     );
-    const validation = droppingAction.validate(context);
+    const validation = runValidatePhase(droppingAction, context);
     if (!validation.valid) {
-      return { context, validation, events: droppingAction.blocked!(context, validation) };
+      return { context, validation, events: runBlockedPhase(droppingAction, context, validation) };
     }
-    droppingAction.execute(context);
-    return { context, validation, events: droppingAction.report(context) };
+    runExecutePhase(droppingAction, context);
+    return { context, validation, events: runReportPhase(droppingAction, context) };
   };
 
   test('preValidate veto blocks the drop — the item stays held, onBlocked decorates the blocked event', () => {
@@ -728,9 +636,9 @@ describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)',
     (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(droppingAction, world, command);
 
-    const validation = droppingAction.validate(context);
+    const validation = runValidatePhase(droppingAction, context);
     expect(validation.valid).toBe(true);
-    droppingAction.execute(context);
+    runExecutePhase(droppingAction, context);
 
     // State: both items moved to the room, both interceptor mutations landed
     // (this is the drop-all path that previously bypassed ALL five hooks).
@@ -739,7 +647,7 @@ describe('Multi-object dropping drives per-item interceptor hooks (ADR-228 D4)',
     expect(world.getStateValue('dropped.copper coin')).toBe(true);
     expect(world.getStateValue('dropped.green gem')).toBe(true);
 
-    droppingAction.report(context);
+    runReportPhase(droppingAction, context);
     expect(executed.sort()).toEqual(['copper coin', 'green gem']);
     expect(reported.sort()).toEqual(['copper coin', 'green gem']);
   });

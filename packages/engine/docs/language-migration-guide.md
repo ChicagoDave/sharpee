@@ -86,7 +86,7 @@ const story = {
 };
 
 const engine = new GameEngine(world, player, config);
-await engine.setStory(story); // Automatically handles language
+await engine.installStory(story); // Automatically handles language
 ```
 
 ## Complete Example Migration
@@ -126,7 +126,7 @@ function initializeGame() {
   };
   
   // Set story (language already configured)
-  engine.setStory(story);
+  engine.installStory(story);
   engine.start();
   
   return engine;
@@ -161,7 +161,7 @@ async function initializeGame() {
   };
   
   // Set story - automatically configures language
-  await engine.setStory(story);
+  await engine.installStory(story);
   engine.start();
   
   return engine;

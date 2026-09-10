@@ -22,6 +22,7 @@ import {
 } from '../../test-utils';
 import type { ActionContext } from '../../../src/actions/enhanced-types';
 import type { ISemanticEvent } from '@sharpee/core';
+import { runValidatePhase, runExecutePhase, runReportPhase } from '../../../src/actions/lifecycle/phase-runner';
 
 describe('takingAction (Golden Pattern)', () => {
   describe('Three-Phase Pattern Compliance', () => {
@@ -267,22 +268,18 @@ describe('takingAction (Golden Pattern)', () => {
       });
     });
 
-    test.skip('should fail when too heavy', () => {
+    test('should fail when too heavy', () => {
       const world = new WorldModel();
       const room = world.createEntity('Test Room', 'room');
       room.add({ type: TraitType.ROOM });
       
       const player = world.createEntity('yourself', 'actor');
-      player.add({
-        type: TraitType.ACTOR,
-        inventoryLimit: { maxWeight: 10 }
-      });
-      player.add({ type: TraitType.CONTAINER });
+      player.add({ type: TraitType.ACTOR });
+      player.add({ type: TraitType.CONTAINER, capacity: { maxWeight: 10 } });
       world.setPlayer(player.id);
-      
+
       const heavyItem = world.createEntity('heavy boulder', 'object');
-      // The test expects weight to be handled by the world model
-      // Let's just create the item without a PORTABLE trait for now
+      heavyItem.add({ type: TraitType.IDENTITY, name: 'heavy boulder', weight: 50 });
       
       world.moveEntity(player.id, room.id);
       world.moveEntity(heavyItem.id, room.id);
@@ -479,9 +476,9 @@ describe('World State Mutations', () => {
     );
 
     // Execute the action
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true);
-    takingAction.execute(context);
+    runExecutePhase(takingAction, context);
 
     // VERIFY POSTCONDITION: item is now in player's inventory
     expect(world.getLocation(ball.id)).toBe(player.id);
@@ -505,9 +502,9 @@ describe('World State Mutations', () => {
       createCommand(IFActions.TAKING, { entity: coin })
     );
 
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true);
-    takingAction.execute(context);
+    runExecutePhase(takingAction, context);
 
     // VERIFY POSTCONDITION: coin is now in player's inventory
     expect(world.getLocation(coin.id)).toBe(player.id);
@@ -531,9 +528,9 @@ describe('World State Mutations', () => {
       createCommand(IFActions.TAKING, { entity: book })
     );
 
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true);
-    takingAction.execute(context);
+    runExecutePhase(takingAction, context);
 
     // VERIFY POSTCONDITION: book is now in player's inventory
     expect(world.getLocation(book.id)).toBe(player.id);
@@ -554,7 +551,7 @@ describe('World State Mutations', () => {
     );
 
     // Validation should fail
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(false);
     expect(validation.error).toBe('already_have');
 
@@ -641,10 +638,10 @@ describe('Interceptor postExecute/postReport (ADR-118 full contract)', () => {
       world,
       createCommand(IFActions.TAKING, { entity: item, text: 'brass token' })
     );
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true);
-    takingAction.execute(context);
-    return { context, events: takingAction.report(context) };
+    runExecutePhase(takingAction, context);
+    return { context, events: runReportPhase(takingAction, context) };
   };
 
   test('postExecute runs after the transfer and its world mutation persists', () => {
@@ -738,9 +735,9 @@ describe('Multi-object taking drives per-item interceptor hooks (ADR-118)', () =
     (command.parsed.structure.directObject as any).isAll = true;
     const context = createRealTestContext(takingAction, world, command);
 
-    const validation = takingAction.validate(context);
+    const validation = runValidatePhase(takingAction, context);
     expect(validation.valid).toBe(true);
-    takingAction.execute(context);
+    runExecutePhase(takingAction, context);
 
     // State: both items transferred, both interceptor mutations landed.
     expect(world.getLocation(coin.id)).toBe(player.id);
@@ -748,7 +745,7 @@ describe('Multi-object taking drives per-item interceptor hooks (ADR-118)', () =
     expect(world.getStateValue('taken.copper coin')).toBe(true);
     expect(world.getStateValue('taken.green gem')).toBe(true);
 
-    takingAction.report(context);
+    runReportPhase(takingAction, context);
     expect(executed.sort()).toEqual(['copper coin', 'green gem']);
     expect(reported.sort()).toEqual(['copper coin', 'green gem']);
   });
