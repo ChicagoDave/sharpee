@@ -6,7 +6,7 @@
  */
 
 import { GameEngine } from '@sharpee/engine';
-import { WorldModel, EntityType } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -92,10 +92,10 @@ async function start(): Promise<void> {
   // reboot re-runs start() and must get fully fresh story state.
   const story = createStory();
 
-  // Create world and player
+  // Create the world. The player comes from the story, adopted by
+  // installStory below (ADR-344 D6) — fabricating one here left a stray
+  // 'player' actor in the world for the whole session.
   const world = new WorldModel();
-  const player = world.createEntity('player', EntityType.ACTOR);
-  world.setPlayer(player.id);
 
   // Create parser and language
   const language = new LanguageProvider();
@@ -115,7 +115,6 @@ async function start(): Promise<void> {
   // Create engine
   const engine = new GameEngine({
     world,
-    player,
     parser,
     language,
     perceptionService,

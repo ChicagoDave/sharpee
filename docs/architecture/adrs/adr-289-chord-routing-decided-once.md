@@ -411,12 +411,21 @@ has the same claim on the word, with no principled line between them.
 
 Both call sites stop testing the relation and place what the author wrote:
 pass 2 (`loader.ts:416`) drops its `!== 'starts-in'` condition, and
-`finalizePlayer` (`:645-648`) drops its `=== 'starts-in'` condition, keeping
-the first-declared-room fallback only for a player with no placement line at
-all. This fixes both halves of the drop by **deleting** two special cases
-rather than adding two gates — the parser has offered all three relations to
-every create block all along (`parser.ts:1002-1015`), and this makes the
-loader agree with the grammar it was already given.
+`finalizePlayer` (`:645-648`) drops its `=== 'starts-in'` condition. This
+fixes both halves of the drop by **deleting** two special cases rather than
+adding two gates — the parser has offered all three relations to every create
+block all along (`parser.ts:1002-1015`), and this makes the loader agree with
+the grammar it was already given.
+
+**Amended 2026-09-10 (ADR-344 D5, session 86894c).** The sentence above
+originally ended "keeping the first-declared-room fallback only for a player
+with no placement line at all." That clause is struck: the fallback is gone
+from `finalizeRoleHolder` (`finalizePlayer`'s successor), so a protagonist
+with no placement line is left unplaced and refused by the engine's
+`validate-role-holder` install step rather than started in whichever room
+happened to be declared first. D4's subject — the `in` / `on` / `starts in`
+unification — is unaffected, and this ADR stays ACCEPTED; only the retained
+exception to it is withdrawn.
 
 No analyzer gate is added for either pairing. The door and region placement
 gates stay as they are: those refuse placement *entirely* for kinds whose

@@ -7,8 +7,9 @@
  *             which pass 2 never touched because the player is not in `built`;
  *   placement — `in`, `on`, and `starts in` are one placement concept, so
  *             both call sites stop testing the relation and place what the
- *             author wrote. The first-declared-room fallback survives only
- *             for a player with no placement line at all.
+ *             author wrote. There is no role-specific fallback: a player with
+ *             no placement line is left unplaced and refused at the install
+ *             seam (ADR-344 D5 struck the first-declared-room clause).
  *
  * Acceptance 12, 13. Asserts on WORLD STATE — the chord state value, the
  * counter value, and the actual container the entity sits in.
@@ -151,7 +152,7 @@ end before
     expect(locationName(l, l.player.id)).toBe('Kitchen');
   });
 
-  it('a player with NO placement line falls back to the first declared room', () => {
+  it('a player with NO placement line is left unplaced — no first-room fallback', () => {
     const l = load(`${HEADER}${ROOMS}
 create Alex
   a person
@@ -164,7 +165,12 @@ before the game starts
 end before
 
 `);
-    expect(locationName(l, l.player.id)).toBe('Hall');
+    // The loader places what the author wrote and nothing else. `Hall` is the
+    // first declared room and used to be where this protagonist silently
+    // started; the omission is now the author's to fix, reported by the
+    // engine's install seam (ADR-344 D5).
+    expect(l.world.getLocation(l.player.id)).toBeUndefined();
+    expect(locationName(l, l.player.id)).toBeNull();
   });
 
   it('an NPC declared `starts in the Kitchen` is IN the Kitchen at load, not unplaced', () => {

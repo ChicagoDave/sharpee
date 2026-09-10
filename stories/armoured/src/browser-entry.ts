@@ -9,7 +9,7 @@
 
 import { GameEngine } from '@sharpee/engine';
 import type { Story } from '@sharpee/engine';
-import { WorldModel, EntityType } from '@sharpee/world-model';
+import { WorldModel } from '@sharpee/world-model';
 import { Parser } from '@sharpee/parser-en-us';
 import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
@@ -79,9 +79,9 @@ async function start(): Promise<void> {
   });
   }
 
+  // The player comes from the story, adopted by installStory below
+  // (ADR-344 D6).
   const world = new WorldModel();
-  const player = world.createEntity('player', EntityType.ACTOR);
-  world.setPlayer(player.id);
 
   const language = new LanguageProvider();
   const parser = new Parser(language);
@@ -95,7 +95,6 @@ async function start(): Promise<void> {
 
   const engine = new GameEngine({
     world,
-    player,
     parser,
     language,
     perceptionService,

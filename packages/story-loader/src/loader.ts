@@ -771,18 +771,13 @@ export class ChordStory implements Story {
     // positions (`feels wary of the player`, `define timer … for the player`)
     // resolves to whoever opens the story in the role.
     this.worldIds.set('player', assigned);
-    const irId = this.irIds.get(assigned);
-    const irPlayer = irId ? (this.ir.entities.find((e) => e.id === irId) ?? null) : null;
 
-    // Starting location fallback (ADR-289 D4): a protagonist with no placement
-    // line starts in the first declared room. Pass 2 places what the author
-    // wrote; only the unwritten case is left, and only for the role — an
-    // unplaced NPC is offstage on purpose, an unplaced PC is nowhere to play.
-    if (world.getLocation(assigned) === undefined) {
-      const firstRoom = this.ir.entities.find((e) => e.kinds.some((k) => k.name === 'room'));
-      if (firstRoom) world.moveEntity(assigned, this.requireWorldId(firstRoom.id, firstRoom));
-    }
-
+    // The role-holder is placed by pass 2, from the placement line the author
+    // wrote, exactly like every other entity. There is no role-specific
+    // fallback: a protagonist with no placement line is refused at the install
+    // seam rather than quietly started in whichever room happened to be
+    // declared first (ADR-344 D5, amending ADR-289 D4).
+    //
     // Carried and worn items were placed in pass 2 with every other
     // entity's — the role-holder's inventory is not a role fact.
 

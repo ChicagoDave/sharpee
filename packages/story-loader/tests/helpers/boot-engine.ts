@@ -18,7 +18,7 @@ import { compile, StoryIR } from '@sharpee/chord';
 import { ACTOR_TURN_PLUGIN_ID, GameEngine, type ActorTurnPlugin } from '@sharpee/engine';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
-import { EntityType, WorldModel, type IFEntity } from '@sharpee/world-model';
+import { WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../../src';
 
 /** Compile Chord source, failing loudly on diagnostics. */
@@ -52,13 +52,11 @@ export function bootEngine(source: string, seed: number): Booted {
   const language = new EnglishLanguageProvider();
   const parser = new EnglishParser(language, { world });
 
-  // The engine wants a player at construction; installStory replaces it with
-  // the story's own (the setup-test-engine pattern).
-  const placeholder = world.createEntity('placeholder', EntityType.ACTOR);
-  world.setPlayer(placeholder.id);
-  const engine = new GameEngine({ world, player: placeholder, parser, language, config: { seed } });
+  // The player comes from the story alone — the engine takes none at
+  // construction, and `installStory` adopts the one `createPlayer` returns
+  // (ADR-344 D6).
+  const engine = new GameEngine({ world, parser, language, config: { seed } });
   engine.installStory(story);
-  world.removeEntity(placeholder.id);
 
   const player = world.getPlayer()!;
   const phase = engine.getPluginRegistry().getById(ACTOR_TURN_PLUGIN_ID) as ActorTurnPlugin;
