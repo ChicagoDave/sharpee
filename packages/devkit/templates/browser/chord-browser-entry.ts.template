@@ -122,7 +122,7 @@ async function start(): Promise<void> {
   }
 
   if (!client) {
-    const author = story.config.author;
+    const authors = story.config.authors;
     // Author channels (ADR-318 D11 / ADR-310 D12): the IDE's testing page
     // sets this global before any client script runs, flipping the
     // `authorChannels` capability so the `character` channel's per-NPC rows
@@ -143,7 +143,7 @@ async function start(): Promise<void> {
       storyInfo: {
         title: story.config.title,
         description: story.config.description || '',
-        authors: Array.isArray(author) ? author.join(', ') : author,
+        authors: authors.join(', '),
         version: STORY_VERSION,
         engineVersion: ENGINE_VERSION,
         buildDate: BUILD_DATE,
@@ -194,7 +194,7 @@ async function start(): Promise<void> {
   applyPinnedPlayForces(engine);
 
   client.connectEngine(engine, world);
-  engine.setStory(story);
+  engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
 
   await client.start();

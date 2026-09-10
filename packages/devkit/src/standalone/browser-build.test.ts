@@ -18,6 +18,7 @@ import { mkdtempSync, rmSync, readFileSync, existsSync, statSync, mkdirSync, wri
 import { join, resolve } from 'node:path';
 import { runInitCommand } from './init.js';
 import { runInitBrowserCommand } from './init-browser.js';
+import { runBuildCommand } from './build.js';
 import { runBuildBrowserCommand } from './build-browser.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');
@@ -100,6 +101,15 @@ describe('browser scaffold (real path)', () => {
     // browser build. Regression guard for the TS2307 "Cannot find module './version.js'" bug.
     const seededVersion = readFileSync(join(projectDir, 'src', 'version.ts'), 'utf-8');
     expect(seededVersion).toContain('export const STORY_VERSION');
+
+    // Type-check the scaffolded entry before bundling it. esbuild strips types
+    // without checking them, so every assertion below this line passes on a
+    // browser-entry that calls a method the engine does not have — which is how
+    // `engine.setStory` survived its rename to `installStory` in all three
+    // browser templates. `runBuildCommand` is the only step that runs tsc
+    // (`build.ts:122`), and it exits 1 on a type error, which the process.exit
+    // spy above turns into a test failure.
+    await runBuildCommand([], projectDir);
 
     // Author assets (ADR-187 AC-2): a referenced media path under assets/ must be
     // bundled so audio/x.mp3 resolves in the served output; dotfiles are skipped.

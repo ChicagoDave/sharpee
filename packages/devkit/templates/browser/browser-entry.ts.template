@@ -20,7 +20,7 @@ ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
 // Config-only instance (cheap); the playable story instance is created
 // fresh inside start() per boot (ADR-248 factory contract).
 const config = createStory().config;
-const author = config.author;
+const authors = config.authors;
 // Author channels (ADR-318 D11 / ADR-310 D12): the IDE's testing page sets
 // this global before any client script runs, flipping the `authorChannels`
 // capability so the `character` channel's per-NPC rows ride the turn feed.
@@ -43,7 +43,7 @@ const client = new BrowserClient({
   storyInfo: {
     title: config.title,
     description: config.description || '',
-    authors: Array.isArray(author) ? author.join(', ') : author,
+    authors: authors.join(', '),
     version: STORY_VERSION,
     engineVersion: ENGINE_VERSION,
     buildDate: BUILD_DATE,
@@ -119,7 +119,7 @@ async function start(): Promise<void> {
   }
 
   client.connectEngine(engine, world);
-  engine.setStory(story);
+  engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
 
   await client.start();

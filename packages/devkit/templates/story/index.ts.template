@@ -16,7 +16,7 @@ import {
 const config: StoryConfig = {
   id: '{{STORY_ID}}',
   title: '{{STORY_TITLE}}',
-  author: '{{AUTHOR}}',
+  authors: ['{{AUTHOR}}'],
   version: '1.0.0',
   description: '{{DESCRIPTION}}',
 };

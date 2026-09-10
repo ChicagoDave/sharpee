@@ -29,7 +29,7 @@ Complete type-level API documentation for the Sharpee interactive fiction platfo
 | [stdlib.md](stdlib.md) | @sharpee/stdlib | All 43 standard actions, validation, scope builders |
 | [parser.md](parser.md) | @sharpee/parser-en-us | English parser, grammar patterns, story grammar extension |
 | [lang.md](lang.md) | @sharpee/lang-en-us | English language output, message registry |
-| [plugins.md](plugins.md) | @sharpee/plugin-npc, scheduler, state-machine | NPC behaviors, timed events, puzzle orchestration |
+| [plugins.md](plugins.md) | @sharpee/plugins, scheduler, state-machine | Turn-plugin contracts, timed events, puzzle orchestration |
 | [text.md](text.md) | @sharpee/text-blocks, text-service | Structured text output, rendering |
 | [combat.md](combat.md) | @sharpee/ext-basic-combat | Generic skill-based combat extension |
 | [event-processor.md](event-processor.md) | @sharpee/event-processor | Event sequencing and application |

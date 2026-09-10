@@ -82,7 +82,7 @@ function boot(source: string): void {
   const story = createStory(result.ir) as unknown as Story;
 
   if (!client) {
-    const author = story.config.author;
+    const authors = story.config.authors;
     client = new BrowserClient({
       storagePrefix: '{{STORAGE_PREFIX}}-',
       // The playground reboots into DIFFERENT stories under this one prefix:
@@ -96,7 +96,7 @@ function boot(source: string): void {
       storyInfo: {
         title: story.config.title,
         description: story.config.description || '',
-        authors: Array.isArray(author) ? author.join(', ') : author,
+        authors: authors.join(', '),
         version: STORY_VERSION,
         engineVersion: ENGINE_VERSION,
         buildDate: BUILD_DATE,
@@ -134,7 +134,7 @@ function boot(source: string): void {
   const engine = new GameEngine({ world, player, parser, language, perceptionService });
 
   client.connectEngine(engine, world);
-  engine.setStory(story);
+  engine.installStory(story);
   engine.registerSaveRestoreHooks(client.getSaveRestoreHooks());
 
   void client.start();

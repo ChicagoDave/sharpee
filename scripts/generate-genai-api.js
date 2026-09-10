@@ -74,10 +74,9 @@ const PACKAGE_GROUPS = [
   {
     output: 'plugins.md',
     title: 'Plugins',
-    description: 'Plugin system, NPC plugin, scheduler (daemons/fuses), state machine.',
+    description: 'Plugin system, scheduler (daemons/fuses), state machine.',
     packages: [
       { name: 'plugins', dir: 'packages/plugins' },
-      { name: 'plugin-npc', dir: 'packages/plugin-npc' },
       { name: 'plugin-scheduler', dir: 'packages/plugin-scheduler' },
       { name: 'plugin-state-machine', dir: 'packages/plugin-state-machine' },
     ],

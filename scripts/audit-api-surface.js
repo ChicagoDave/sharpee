@@ -27,7 +27,7 @@ const OUT_DIR = path.join(ROOT, 'docs', 'work', 'book', 'api-audit');
 const GENAI_DOCUMENTED = new Set([
   '@sharpee/core', '@sharpee/if-domain', '@sharpee/world-model', '@sharpee/engine',
   '@sharpee/stdlib', '@sharpee/parser-en-us', '@sharpee/lang-en-us', '@sharpee/plugins',
-  '@sharpee/plugin-npc', '@sharpee/plugin-scheduler', '@sharpee/plugin-state-machine',
+  '@sharpee/plugin-scheduler', '@sharpee/plugin-state-machine',
   '@sharpee/text-blocks', '@sharpee/if-services', '@sharpee/event-processor',
   '@sharpee/ext-basic-combat',
 ]);
