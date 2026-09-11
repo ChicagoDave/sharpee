@@ -50,6 +50,7 @@ import {
   CommandResult,
   EngineConfig,
   InputModeHandler,
+  INPUT_MODE_STATE_KEY,
   type GameEngineEvents
 } from './types.js';
 import { introspect as introspectEngine, type EngineIntrospection } from './introspection/introspect.js';
@@ -60,7 +61,8 @@ import { runInstallSteps, STORY_INSTALL_STEPS, configureLanguageProviderNarrativ
 
 import { CommandExecutor, createCommandExecutor, ParsedCommandTransformer, BeforeActionHookListener } from './command/command-executor.js';
 import { SoundDispatcher } from './sound/index.js';
-import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused } from './turn/index.js';
+import { runTurnStages, TURN_STAGES, META_STAGES, wasRefused, splitChainedInput } from './turn/index.js';
+import { resolveRoute } from './turn/parse.js';
 import type { TurnEngine, TurnStageContext } from './turn/context.js';
 import { adaptParser, type EngineParser } from './ports/parser-interface.js';
 import { hasNarrativeSettings } from './ports/language-provider-interface.js';
@@ -899,17 +901,69 @@ export class GameEngine implements StoryEngine {
   }
 
   /**
+   * Whether a stopped engine accepts this input (ADR-345 D15).
+   *
+   * True only in the `stopped` phase, and only when the input's first
+   * chained statement routes to a meta command — RESTART, RESTORE, QUIT,
+   * UNDO and their siblings, the verbs a player reaches for at an
+   * end-game prompt. A regular command, an unparseable line, and input
+   * destined for an active input mode are all refused.
+   *
+   * **Why the route is asked here and not at the runner's route switch.**
+   * Four of the stages that run before the route is known do not merely
+   * observe: `undo-snapshot` writes a snapshot, `turn-start` emits
+   * `turn:start`, and `input-mode` can advance the turn outright. Letting
+   * a soon-to-be-refused command reach them would, in the worst case,
+   * overwrite the player's undo state with a snapshot of the world the
+   * story has already finished with. So the question is answered before
+   * any stage runs, which costs one extra parse on the accepted path —
+   * a cost this pipeline already pays elsewhere, since the regular
+   * route's executor parses again itself.
+   *
+   * @param input - the raw input line, before any stage has spliced it
+   * @returns true when a stopped engine may run this input
+   */
+  private acceptsWhileStopped(input: string): boolean {
+    if (this.phase.name !== 'stopped') return false;
+    if (typeof input !== 'string') return false;
+
+    // An active input mode owns the raw line, punctuation and all
+    // (ADR-137), and `input-mode` runs BEFORE `parse` — so whatever this
+    // preflight decided about the line, the mode handler would consume it
+    // first and write to the world unchecked. A stopped engine therefore
+    // refuses while a mode is active, rather than deciding a route the
+    // pipeline would not honour. `stop()` does not clear the mode, so this
+    // is reachable, not theoretical.
+    if (this.world.getStateValue(INPUT_MODE_STATE_KEY)) return false;
+
+    // The chain stage runs each statement of a line as its own turn, so
+    // this answers for the first statement only; the rest arrive here on
+    // their own and are answered on their own. Safe to split
+    // unconditionally here: `chainStage` skips splitting only while an
+    // input mode is active, which the guard above has already refused.
+    const first = splitChainedInput(input)[0] ?? input;
+    return resolveRoute(this.engineParser, this.world, first).route === 'meta';
+  }
+
+  /**
    * Execute a turn
    */
   async executeTurn(input: string): Promise<TurnResult> {
     // Two guards collapse into one (ADR-345 D2). The pair asked the same
     // question twice — `!this.running`, then `!this.commandExecutor` as a
     // stand-in for "is there a story?" — and answered in two sentences.
-    if (this.phase.name !== 'playing') {
+    //
+    // The second clause is D15's named exception, on the same footing as
+    // D8's for `stop` and D8a's for `resume`: it does not loosen D2's
+    // one-guard-per-method shape generally, it narrows what one phase
+    // refuses. See `acceptsWhileStopped`.
+    if (this.phase.name !== 'playing' && !this.acceptsWhileStopped(input)) {
       throw this.wrongPhase(
         'executeTurn()',
         "'playing'",
-        this.phase.name === 'stopped' ? 'The game has ended; call resume() to continue.' : undefined
+        this.phase.name === 'stopped'
+          ? 'The game has ended; only meta commands (RESTART, RESTORE, QUIT, UNDO) are accepted — call resume() to continue play.'
+          : undefined
       );
     }
 
@@ -1416,6 +1470,12 @@ export class GameEngine implements StoryEngine {
       this.syncPlayerState(restoredPlayer.id);
     }
 
+    // Same obligation as `loadSaveData`, and the same narrow condition:
+    // UNDO at an end-game prompt exists to take the player back to a turn
+    // they were alive for, and a phase still reading `stopped` would refuse
+    // the turn they came back to take.
+    if (this.phase.name === 'stopped') this.resume();
+
     this.emit('state:changed', this.context);
     return true;
   }
@@ -1488,6 +1548,19 @@ export class GameEngine implements StoryEngine {
     if (restoredPlayer) {
       this.syncPlayerState(restoredPlayer.id);
     }
+
+    // A restore replaces the world wholesale, so the engine's phase must
+    // follow the world it now holds. Without this, RESTORE at an end-game
+    // prompt (ADR-345 D15) loads a live save and leaves the engine refusing
+    // every command — GH #414's own defect, one level deeper.
+    //
+    // Only from `stopped`, and deliberately not "resume unconditionally and
+    // let D8a's tolerance absorb it": that tolerance covers `playing`, not
+    // `ready`, and a host may restore into an engine it never started —
+    // fifteen tests in this package do exactly that. A restore does not
+    // start an engine; it returns a stopped one to play, over the existing
+    // back-edge rather than a new one (D10, D11).
+    if (this.phase.name === 'stopped') this.resume();
 
     this.emit('state:changed', this.context);
   }

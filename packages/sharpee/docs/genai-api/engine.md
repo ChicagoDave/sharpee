@@ -335,6 +335,30 @@ export declare class GameEngine implements StoryEngine {
      */
     private createRestartAckEvent;
     /**
+     * Whether a stopped engine accepts this input (ADR-345 D15).
+     *
+     * True only in the `stopped` phase, and only when the input's first
+     * chained statement routes to a meta command — RESTART, RESTORE, QUIT,
+     * UNDO and their siblings, the verbs a player reaches for at an
+     * end-game prompt. A regular command, an unparseable line, and input
+     * destined for an active input mode are all refused.
+     *
+     * **Why the route is asked here and not at the runner's route switch.**
+     * Four of the stages that run before the route is known do not merely
+     * observe: `undo-snapshot` writes a snapshot, `turn-start` emits
+     * `turn:start`, and `input-mode` can advance the turn outright. Letting
+     * a soon-to-be-refused command reach them would, in the worst case,
+     * overwrite the player's undo state with a snapshot of the world the
+     * story has already finished with. So the question is answered before
+     * any stage runs, which costs one extra parse on the accepted path —
+     * a cost this pipeline already pays elsewhere, since the regular
+     * route's executor parses again itself.
+     *
+     * @param input - the raw input line, before any stage has spliced it
+     * @returns true when a stopped engine may run this input
+     */
+    private acceptsWhileStopped;
+    /**
      * Execute a turn
      */
     executeTurn(input: string): Promise<TurnResult>;

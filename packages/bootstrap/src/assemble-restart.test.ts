@@ -147,6 +147,45 @@ describe('ADR-248 assembleGame restart reboot', () => {
     expect(look).not.toContain('Engine is not running');
   });
 
+  it('#414 — a story that has ENDED still takes RESTART, and still refuses a world command', async () => {
+    // GH #414, the player-facing half: before ADR-345 D15, reaching an
+    // ending left every command dead — `restart` among them — so a finished
+    // story could not be restarted from the prompt announcing it finished.
+    // Real path: the same `assembleGame` + `executeCommand` surface the CLI
+    // bundle runs, with the ending driven by the same `stop('defeat')` call
+    // `endingStage` makes (`engine/src/turn/ending.ts:60`).
+    const first = makeStory();
+    const second = makeStory();
+    let freshCalls = 0;
+
+    const game = assembleGame(first.story, {
+      freshStory: () => {
+        freshCalls += 1;
+        return second.story;
+      },
+    });
+
+    game.engine.stop('defeat', { reason: 'You have died.', cause: 'test' });
+
+    // The boundary: a world command is still refused, and the refusal names
+    // the phase it found rather than inventing a story reason.
+    const dead = await game.executeCommand('look');
+    expect(dead).toContain("'stopped' phase");
+    expect(dead).not.toContain('Test Chamber');
+
+    // The fix: RESTART runs from the end-game prompt and reboots for real.
+    const output = await game.executeCommand('restart');
+    expect(output).toContain('The story restarts.');
+    expect(freshCalls).toBe(1);
+    expect(second.initCount()).toBe(1);
+
+    // And the game on the other side takes turns again, which is the whole
+    // point — the player is out of the dead end, not merely told something.
+    const look = await game.executeCommand('look');
+    expect(look).toContain('Test Chamber');
+    expect(look).not.toContain("'stopped' phase");
+  });
+
   it('without a freshStory provider, a confirmed restart surfaces an honest error', async () => {
     const { story } = makeStory();
     const game = assembleGame(story);

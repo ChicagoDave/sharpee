@@ -19,6 +19,7 @@ import { describe, it, expect } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
+import { INPUT_MODE_STATE_KEY } from '../../src/types';
 
 describe('stop() stays phase-tolerant while its siblings go strict (ADR-345 D8, AC-4)', () => {
   // This suite's whole purpose is to catch over-application of D2. If you
@@ -158,5 +159,120 @@ describe('install-time events bucket to turn 1 with no context (ADR-345 D7 exclu
     expect(turn1.map((e: ISemanticEvent) => e.type)).toEqual(
       expect.arrayContaining(['game.story_loading', 'game.story_loaded'])
     );
+  });
+});
+
+describe('a stopped engine accepts a meta command and refuses everything else (ADR-345 D15, AC-10)', () => {
+  // GH #414: reaching an ending left every command dead, `restart` among
+  // them, so a finished story could not be restarted from the prompt that
+  // announced it had finished. D15 narrows what `stopped` refuses; it adds
+  // no phase and no transition, which the phase assertions below pin.
+
+  /** A started engine driven to `stopped` the way an ending drives it. */
+  function endedEngine() {
+    const { engine } = setupTestEngineWithStory();
+    engine.start();
+    engine.stop('defeat', { reason: 'You have died.' });
+    return engine;
+  }
+
+  it('runs a meta command, and the lifecycle is untouched by it', async () => {
+    const engine = endedEngine();
+
+    const emitted: ISemanticEvent[] = [];
+    engine.on('event', (event) => emitted.push(event));
+
+    await expect(engine.executeTurn('score')).resolves.toBeDefined();
+
+    // The command ran; the engine did not come back to life to run it.
+    expect(engine['phase'].name).toBe('stopped');
+    expect(emitted.filter((e) => e.type === 'game.resumed')).toEqual([]);
+  });
+
+  it('still refuses a regular command, naming the phase it found', async () => {
+    const engine = endedEngine();
+
+    await expect(engine.executeTurn('look')).rejects.toThrow(/'stopped' phase/);
+    expect(engine['phase'].name).toBe('stopped');
+  });
+
+  it('refuses before any stage runs, so a dead world never reaches the undo snapshot', async () => {
+    // This is the assertion the design turns on. The route is asked in
+    // `executeTurn` rather than at the runner's route switch because
+    // `undo-snapshot` runs BEFORE the route is known: a refusal made any
+    // later would overwrite the player's undo state with a snapshot of the
+    // world the story has already finished with.
+    const engine = endedEngine();
+
+    const started: string[] = [];
+    engine.on('turn:start', (_turn: number, input: string) => started.push(input));
+
+    const service = engine['saveRestoreService'];
+    const snapshots: number[] = [];
+    const realSnapshot = service.createUndoSnapshot.bind(service);
+    service.createUndoSnapshot = ((world: unknown, turn: number) => {
+      snapshots.push(turn);
+      return realSnapshot(world as never, turn);
+    }) as typeof service.createUndoSnapshot;
+
+    // The verb matters. `look` would prove nothing here — it is in
+    // `MetaCommandRegistry`'s non-undoable list (`meta-registry.ts:185-195`),
+    // so `undo-snapshot` skips it in every phase whether this guard exists
+    // or not. `north` is undoable, so an empty `snapshots` depends on the
+    // refusal having happened before the stage ran.
+    await expect(engine.executeTurn('north')).rejects.toThrow(/'stopped' phase/);
+
+    expect(snapshots).toEqual([]); // no snapshot of the ended world
+    expect(started).toEqual([]); // and the turn never began at all
+  });
+
+  it('an input mode active at the ending does not get to consume the line', async () => {
+    // `input-mode` runs BEFORE `parse`, and `stop()` does not clear the
+    // mode, so a line that parses as a meta command would reach the mode
+    // handler — an unconstrained write against the world — before the route
+    // was ever consulted. A stopped engine refuses while a mode is active.
+    const engine = endedEngine();
+    engine['world'].setStateValue(INPUT_MODE_STATE_KEY, 'test-mode');
+
+    let handled = 0;
+    engine.registerInputMode('test-mode', {
+      advancesTurn: false,
+      handleInput: () => {
+        handled += 1;
+        return [];
+      }
+    });
+
+    await expect(engine.executeTurn('score')).rejects.toThrow(/'stopped' phase/);
+    expect(handled).toBe(0);
+  });
+
+  it('a restore that lands a live world returns the engine to play', async () => {
+    // GH #414 one level deeper: RESTORE is one of the verbs D15 exists to
+    // allow, and a restore that leaves the phase `stopped` hands the player
+    // a live world they still cannot type into.
+    const engine = setupTestEngineWithStory().engine;
+    engine.start();
+    const save = engine['createSaveData']();
+    engine.stop('defeat', { reason: 'You have died.' });
+    expect(engine['phase'].name).toBe('stopped');
+
+    engine['loadSaveData'](save);
+
+    expect(engine['phase'].name).toBe('playing');
+    await expect(engine.executeTurn('look')).resolves.toBeDefined();
+  });
+
+  it('a meta command does run the stages — the refusal is narrowed, not relocated', async () => {
+    // The mirror of the test above: whatever `stopped` accepts runs the
+    // same pipeline a playing engine runs it through, turn:start included.
+    const engine = endedEngine();
+
+    const started: string[] = [];
+    engine.on('turn:start', (_turn: number, input: string) => started.push(input));
+
+    await engine.executeTurn('score');
+
+    expect(started).toEqual(['score']);
   });
 });
