@@ -412,7 +412,10 @@ export class TestingExtension implements ITestingExtension {
   }
 
   /**
-   * Save a checkpoint
+   * Save a checkpoint.
+   *
+   * World-only, like its restore counterpart — see `restoreCheckpoint` below for the
+   * contract that pairing carries.
    */
   async saveCheckpoint(name: string, world: WorldModel): Promise<void> {
     const data = serializeCheckpoint(world, name);
@@ -429,6 +432,12 @@ export class TestingExtension implements ITestingExtension {
    * @throws Error when the stored checkpoint's format version is not readable by this
    *   build. Deliberately distinct from the `false` return: "written by a format I don't
    *   understand" is not "not there", and must not be reported as a plain miss.
+   *
+   * **World-only by contract: the caller owns the engine's lifecycle phase.** The
+   * ending is a world member since ADR-347, so overwriting the world here can put it
+   * at odds with a phase this extension cannot see. The full contract, and why this is
+   * not an engine restore seam, is on `TestingExtensionInterface.restoreCheckpoint` in
+   * `types.ts` — the declaration a caller reads.
    */
   async restoreCheckpoint(name: string, world: WorldModel): Promise<boolean> {
     const data = await this.checkpoints.load(name);

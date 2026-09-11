@@ -25,7 +25,9 @@
  * // Execute test command
  * const result = testing.executeTestCommand('$teleport west-of-house', world);
  *
- * // Save/restore checkpoints
+ * // Save/restore checkpoints. World-only: restoring does not touch the engine's
+ * // lifecycle phase, and reconciling the two is the caller's job — see
+ * // `restoreCheckpoint` in types.ts.
  * await testing.saveCheckpoint('before-troll', world);
  * await testing.restoreCheckpoint('before-troll', world);
  * ```

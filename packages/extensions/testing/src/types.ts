@@ -455,7 +455,10 @@ export interface ITestingExtension {
   createContext(world: WorldModel): DebugContext;
 
   /**
-   * Save current state as checkpoint
+   * Save current state as checkpoint.
+   *
+   * World-only, like its restore counterpart: a checkpoint records world state and
+   * nothing about the engine that was driving it.
    */
   saveCheckpoint(name: string, world: WorldModel): Promise<void>;
 
@@ -464,6 +467,23 @@ export interface ITestingExtension {
    *
    * Resolves false when no checkpoint is stored under `name`; rejects when a stored
    * checkpoint's format version is not readable by this build.
+   *
+   * **World-only by contract: the caller owns the engine's lifecycle phase.** This
+   * replaces the world wholesale and never touches the engine, because the extension
+   * holds no engine to ask — every method here takes a `WorldModel` and that is the
+   * whole of its reach. Since ADR-347 the story's ending is a world member
+   * (`getEnding()`/`setEnding()`), so a restore can leave a stopped engine holding a
+   * world that never ended, or a playing engine holding one that did. Bringing the two
+   * back into agreement is the driving harness's job, the way the branch-tester calls
+   * `reviveEngine()` on every line rather than reading the phase (ADR-345 D7, D8a).
+   *
+   * The engine's own restore seams — `loadSaveData()` and `undo()` — reconcile the
+   * phase through `derivePhaseFromEnding()`. This is deliberately not one of them.
+   *
+   * Nothing in the repository calls this today: ADR-110's `$save` and `$restore` debug
+   * commands were specified but never registered, so only `$saves` (list) exists.
+   * Whether restore should instead become a real restore seam that takes the engine is
+   * left to whoever wires those commands, who will have a caller to design against.
    */
   restoreCheckpoint(name: string, world: WorldModel): Promise<boolean>;
 
