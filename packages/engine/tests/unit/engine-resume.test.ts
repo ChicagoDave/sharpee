@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import type { ISemanticEvent } from '@sharpee/core';
 import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 
 describe('GameEngine.resume', () => {
@@ -60,6 +61,55 @@ describe('GameEngine.resume', () => {
 
     const result = await engine.executeTurn('look');
     expect(result).toBeDefined();
+  });
+
+  // ── ADR-345 AC-5: resume() emits exactly one game.resumed ──────────────
+  //
+  // D12: every sibling transition emits and this one did not, so a session
+  // reconstructed from the event stream showed a game that ended and then
+  // kept taking turns. The full arc is driven here (start → stop → resume)
+  // rather than resume() alone, because "exactly one" is a claim about the
+  // whole stream, not about one call.
+  it('emits exactly one game.resumed when a stopped engine returns to play', async () => {
+    const { engine } = setupTestEngineWithStory();
+    engine.start();
+
+    const emitted: string[] = [];
+    engine.on('event', (event) => emitted.push(event.type));
+
+    engine.stop('defeat', { reason: 'You have died.' });
+    const beforeResume = emitted.filter((type) => type === 'game.resumed');
+    expect(beforeResume).toHaveLength(0); // stopping is not resuming
+
+    engine.resume();
+
+    expect(emitted.filter((type) => type === 'game.resumed')).toHaveLength(1);
+    // Past tense, and no `-ing` partner: resume is atomic, so unlike
+    // start/stop there is nothing that could fail between guard and flip
+    // (rule 10; ADR-345 D12 follows the PC_SWITCHED precedent).
+    expect(emitted).not.toContain('game.resuming');
+  });
+
+  it('emits a game.resumed that renders nothing — no message, text or messageId', () => {
+    const { engine } = setupTestEngineWithStory();
+    engine.start();
+
+    const events: ISemanticEvent[] = [];
+    engine.on('event', (event) => events.push(event));
+
+    engine.stop('defeat', { reason: 'You have died.' });
+    engine.resume();
+
+    const resumed = events.filter((event) => event.type === 'game.resumed');
+    expect(resumed).toHaveLength(1);
+    const data = resumed[0].data as Record<string, unknown>;
+    expect(data.gameState).toBe('running');
+    // D14: these three fields are the prose pipeline's three render paths for
+    // an unrecognized `game.*` event. Any of them present and the event starts
+    // producing blocks, which shifts pinned transcript goldens.
+    expect(data.message).toBeUndefined();
+    expect(data.text).toBeUndefined();
+    expect(data.messageId).toBeUndefined();
   });
 
   it('refuses on an empty engine, naming the phase it found', () => {

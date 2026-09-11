@@ -1143,6 +1143,18 @@ export interface GameLifecycleAbortedData {
     };
     [key: string]: unknown;
 }
+/**
+ * Data for `game.resumed` — a stopped engine returning to play (ADR-345 D12).
+ *
+ * `gameState` is the state after the transition, matching every sibling in
+ * this file. Nothing else is carried: the payload must hold no `message`,
+ * `text` or `messageId`, each of which is a path by which the prose pipeline
+ * would render the event, and D14 requires it to render nothing.
+ */
+export interface GameLifecycleResumedData {
+    gameState: 'running';
+    [key: string]: unknown;
+}
 export interface GameLifecycleSessionSavingData {
     saveId?: string;
     [key: string]: unknown;
@@ -1197,6 +1209,7 @@ export declare const GameEventType: {
     readonly GAME_LOST: "game.lost";
     readonly GAME_QUIT: "game.quit";
     readonly GAME_ABORTED: "game.aborted";
+    readonly GAME_RESUMED: "game.resumed";
     readonly SESSION_SAVING: "game.session_saving";
     readonly SESSION_SAVED: "game.session_saved";
     readonly SESSION_RESTORING: "game.session_restoring";
@@ -1237,6 +1250,22 @@ export declare function createGameWonEvent(session?: GameEventSessionData, endin
 export declare function createGameLostEvent(reason: string, session?: GameEventSessionData): ISemanticEvent;
 export declare function createGameQuitEvent(session?: GameEventSessionData): ISemanticEvent;
 export declare function createGameAbortedEvent(error: string, session?: GameEventSessionData): ISemanticEvent;
+/**
+ * Create a `game.resumed` event — a stopped engine returned to play.
+ *
+ * The counterpart to the `game.ended` family: `resume()` is the one lifecycle
+ * transition that used to change state and emit nothing (ADR-345 D12), which
+ * left a session reconstructed from the event stream showing a game that
+ * ended and then kept taking turns.
+ *
+ * The payload is deliberately bare. It must carry no `message`, `text` or
+ * `messageId` — each is a path by which the prose pipeline would render the
+ * event, and D14 requires it to render nothing so pinned transcript goldens
+ * do not shift.
+ *
+ * @returns the event, ready to emit
+ */
+export declare function createGameResumedEvent(): ISemanticEvent;
 export declare function createPcSwitchedEvent(previousPlayerId: string, newPlayerId: string): ISemanticEvent;
 /** Type guard to check if an event has specific data type */
 export declare function isGameStartedEvent(event: ISemanticEvent): event is ISemanticEvent & {
@@ -1309,6 +1338,7 @@ export interface EventDataRegistry {
     'game.lost': GameEndedData;
     'game.quit': EmptyData;
     'game.aborted': EmptyData;
+    'game.resumed': GameResumedData;
     'game.pc_switched': PcSwitchedData;
     'platform.save_requested': SaveRequestedData;
     'platform.save_completed': SaveCompletedData;
@@ -1376,6 +1406,16 @@ export interface GameEndedData {
     moves?: number;
     reason?: string;
     rank?: string;
+}
+/**
+ * Data for `game.resumed` — the post-mortem revival transition (ADR-345 D12).
+ *
+ * Deliberately minimal. The payload must carry no `message`, `text` or
+ * `messageId`: each of those is a path by which the prose pipeline would
+ * render the event, and D14 requires it to render nothing.
+ */
+export interface GameResumedData {
+    gameState: 'running';
 }
 export interface PcSwitchedData {
     previousPlayerId: string;

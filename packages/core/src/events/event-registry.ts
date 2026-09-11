@@ -61,6 +61,7 @@ export interface EventDataRegistry {
   'game.lost': GameEndedData;
   'game.quit': EmptyData;
   'game.aborted': EmptyData;
+  'game.resumed': GameResumedData;
   'game.pc_switched': PcSwitchedData;
 
   // ============================================================
@@ -163,6 +164,17 @@ export interface GameEndedData {
   moves?: number;
   reason?: string;
   rank?: string;
+}
+
+/**
+ * Data for `game.resumed` — the post-mortem revival transition (ADR-345 D12).
+ *
+ * Deliberately minimal. The payload must carry no `message`, `text` or
+ * `messageId`: each of those is a path by which the prose pipeline would
+ * render the event, and D14 requires it to render nothing.
+ */
+export interface GameResumedData {
+  gameState: 'running';
 }
 
 export interface PcSwitchedData {

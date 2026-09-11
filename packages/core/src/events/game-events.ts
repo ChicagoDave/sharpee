@@ -141,6 +141,19 @@ export interface GameLifecycleAbortedData {
   [key: string]: unknown;
 }
 
+/**
+ * Data for `game.resumed` — a stopped engine returning to play (ADR-345 D12).
+ *
+ * `gameState` is the state after the transition, matching every sibling in
+ * this file. Nothing else is carried: the payload must hold no `message`,
+ * `text` or `messageId`, each of which is a path by which the prose pipeline
+ * would render the event, and D14 requires it to render nothing.
+ */
+export interface GameLifecycleResumedData {
+  gameState: 'running';
+  [key: string]: unknown;
+}
+
 export interface GameLifecycleSessionSavingData {
   saveId?: string;
   [key: string]: unknown;
@@ -208,7 +221,10 @@ export const GameEventType = {
   GAME_LOST: 'game.lost',                        // Player was defeated
   GAME_QUIT: 'game.quit',                        // Player quit the game
   GAME_ABORTED: 'game.aborted',                  // Game ended abnormally
-  
+
+  // Post-mortem revival (ADR-345 D12)
+  GAME_RESUMED: 'game.resumed',                  // A stopped engine returned to play
+
   // Session events
   SESSION_SAVING: 'game.session_saving',         // Save in progress
   SESSION_SAVED: 'game.session_saved',           // Save completed
@@ -440,6 +456,27 @@ export function createGameAbortedEvent(
     error: {
       message: error
     }
+  });
+}
+
+/**
+ * Create a `game.resumed` event — a stopped engine returned to play.
+ *
+ * The counterpart to the `game.ended` family: `resume()` is the one lifecycle
+ * transition that used to change state and emit nothing (ADR-345 D12), which
+ * left a session reconstructed from the event stream showing a game that
+ * ended and then kept taking turns.
+ *
+ * The payload is deliberately bare. It must carry no `message`, `text` or
+ * `messageId` — each is a path by which the prose pipeline would render the
+ * event, and D14 requires it to render nothing so pinned transcript goldens
+ * do not shift.
+ *
+ * @returns the event, ready to emit
+ */
+export function createGameResumedEvent(): ISemanticEvent {
+  return createGameEvent<GameLifecycleResumedData>(GameEventType.GAME_RESUMED, {
+    gameState: 'running'
   });
 }
 

@@ -464,6 +464,52 @@ describe('ProsePipeline slot contributors (ADR-195 §3)', () => {
   });
 });
 
+describe('game.resumed renders nothing (ADR-345 D14 / AC-6)', () => {
+  // The premise check AC-6 names first. D12 adds `game.resumed` to a stream
+  // whose consumers include the transcript goldens, and `resume()` is the
+  // RETRY path — so an event that reached rendered output would shift pinned
+  // recordings. The chain run that follows this test proves nothing unless
+  // this holds, which is why the ADR orders them.
+  //
+  // The pipeline has three render paths for an unrecognized `game.*` type,
+  // and all three must miss: `tryProcessDomainEventMessage` (a `messageId`
+  // in the payload), `handleGenericEvent`'s inline branch (`message`/`text`),
+  // and its template branch (a provider entry keyed `game.resumed`).
+  it('yields zero blocks for the event the engine actually emits', () => {
+    const pipeline = makePipeline(); // no template registered, as in lang-en-us
+    const event = makeEvent('game.resumed', { gameState: 'running' });
+
+    expect(pipeline.processTurn([event])).toEqual([]);
+  });
+
+  it('yields zero blocks even alongside an event that does render', () => {
+    // Guards the sort step (PP4 orders lifecycle events before domain ones):
+    // a lifecycle event that rendered nothing on its own could still add a
+    // block when it is not the only event in the turn.
+    const pipeline = makePipeline({ 'owl.hoot': 'The owl hoots.' });
+    const blocks = pipeline.processTurn([
+      makeEvent('game.resumed', { gameState: 'running' }),
+      makeEvent('game.message', { messageId: 'owl.hoot' }),
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].content).toEqual(['The owl hoots.']);
+  });
+
+  it('would render if the payload carried a message — the condition is real, not inherited', () => {
+    // A negative control. Without it, the two tests above pass equally well
+    // against a pipeline that drops every `game.*` event, and would keep
+    // passing if a later payload change added inline text.
+    const pipeline = makePipeline();
+    const blocks = pipeline.processTurn([
+      makeEvent('game.resumed', { gameState: 'running', message: 'You live again.' }),
+    ]);
+
+    expect(blocks).toHaveLength(1);
+    expect(blocks[0].content).toEqual(['You live again.']);
+  });
+});
+
 describe('createProsePipeline factory', () => {
   it('should return a functional IProsePipeline', () => {
     expect(createProsePipeline(makeProvider({})).processTurn([])).toEqual([]);

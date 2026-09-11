@@ -36,7 +36,7 @@ import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilit
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
 import type { ITextBlock } from '@sharpee/text-blocks';
 import { ChannelService } from '@sharpee/channel-service';
-import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
+import { type ISemanticEvent, type ISystemEvent, type IGenericEventSource, createSemanticEventSource, createGenericEventSource, type ISaveData, type ISaveRestoreHooks, type ISaveResult, type IRestoreResult, type ISerializedEvent, type ISerializedTurn, type IEngineState, type ISaveMetadata, type ISerializedParserState, type IPlatformEvent, type ISemanticEventSource, GameEventType, createGameInitializingEvent, createGameInitializedEvent, createGameStartingEvent, createGameStartedEvent, createGameEndingEvent, createGameEndedEvent, createGameWonEvent, createGameLostEvent, createGameQuitEvent, createGameAbortedEvent, createGameResumedEvent, createPcSwitchedEvent, getUntypedEventData, deriveStreamSeed, createSystemEvent, Subsystems } from '@sharpee/core';
 import { EngineRandomService } from './session/engine-random-service.js';
 
 import { PluginRegistry } from '@sharpee/plugins';
@@ -786,10 +786,12 @@ export class GameEngine implements StoryEngine {
    * snapshot — e.g. the transcript-tester's RETRY block via
    * `world.loadJSON()` — needs turn execution back without any world
    * teardown (a full reboot would clear the world it just restored).
-   * Flips `running` back on; emits nothing, rebuilds nothing.
+   * Returns the phase to `playing` and emits `game.resumed`; rebuilds nothing.
    *
-   * No-op when already running. Throws if the engine was never started
-   * (no command executor) — resuming presumes a completed `start()`.
+   * No-op when already playing. Throws if the engine was never started —
+   * resuming presumes a completed `start()`.
+   *
+   * @throws when the phase is `empty` or `ready`, naming the phase it found
    */
   resume(): void {
     // Tolerant of `playing`, like `stop` is tolerant of everything else
@@ -813,6 +815,14 @@ export class GameEngine implements StoryEngine {
       );
     }
     this.phase = { name: 'playing', story: this.phase.story, context: this.phase.context };
+
+    // Every sibling transition emits; this one did not, which is what ADR-345
+    // D12 fixes. Emitted after the flip, like `stop()`'s terminal events
+    // (`game.ended` and the reason-specific ones), so a subscriber that reads
+    // the engine on receipt sees the phase the event announces. The event
+    // renders no prose (D14) — its payload carries no `message`, `text` or
+    // `messageId`, and no template is registered under `game.resumed`.
+    this.emitGameEvent(createGameResumedEvent());
   }
 
   /**

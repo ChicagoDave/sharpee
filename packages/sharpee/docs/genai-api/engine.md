@@ -312,10 +312,12 @@ export declare class GameEngine implements StoryEngine {
      * snapshot — e.g. the transcript-tester's RETRY block via
      * `world.loadJSON()` — needs turn execution back without any world
      * teardown (a full reboot would clear the world it just restored).
-     * Flips `running` back on; emits nothing, rebuilds nothing.
+     * Returns the phase to `playing` and emits `game.resumed`; rebuilds nothing.
      *
-     * No-op when already running. Throws if the engine was never started
-     * (no command executor) — resuming presumes a completed `start()`.
+     * No-op when already playing. Throws if the engine was never started —
+     * resuming presumes a completed `start()`.
+     *
+     * @throws when the phase is `empty` or `ready`, naming the phase it found
      */
     resume(): void;
     /**
