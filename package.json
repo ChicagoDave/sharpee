@@ -45,6 +45,7 @@
     "test:mutate": "stryker run",
     "audit:templates": "node scripts/audit-templates.js",
     "typecheck": "turbo run typecheck",
+  "typecheck:tests": "turbo run typecheck:tests",
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
     "sharpee": "node packages/sharpee/dist/cli/index.js",

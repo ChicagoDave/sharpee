@@ -26,6 +26,7 @@ export const FULL_CAPABILITIES: ClientCapabilities = {
   transitions: true,
   layers: true,
   customFonts: true,
+  authorChannels: false,
 };
 
 /**
@@ -50,4 +51,5 @@ export const TEXT_ONLY_CAPABILITIES: ClientCapabilities = {
   transitions: false,
   layers: false,
   customFonts: false,
+  authorChannels: false,
 };

@@ -15,7 +15,6 @@ import { join, resolve } from 'node:path';
 import { runInitCommand } from './init.js';
 import { runBuildBrowserCommand } from './build-browser.js';
 import { runBuildCommand } from './build.js';
-import { runBuildCommand } from './build.js';
 import { loadAuthorGame } from './author-game.js';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..', '..');

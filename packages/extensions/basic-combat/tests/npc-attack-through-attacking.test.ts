@@ -58,7 +58,7 @@ describe('an NPC attacks through the real attacking action (ADR-328 D5; ADR-227 
     if (!validation.valid) return { valid: false as const, events: attackingAction.blocked!(context, validation) };
     context.validationResult = validation;
     attackingAction.execute(context);
-    return { valid: true as const, events: attackingAction.report(context) };
+    return { valid: true as const, events: attackingAction.report!(context) };
   };
 
   /** Attack `target` repeatedly (fixed seed) until a killing blow lands. */

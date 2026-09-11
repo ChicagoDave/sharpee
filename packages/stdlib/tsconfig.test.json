@@ -1,18 +1,36 @@
+// tsconfig.test.json — typechecks this package's test files (GH #401).
+//
+// The package's own tsconfig scopes `include` to src/**/* and excludes *.test.ts,
+// and vitest transpiles through esbuild without typechecking, so before this file
+// existed no command in the repository ever compiled a test file.
+//
+// Why the overrides: `rootDir` moves to the package root so tests/ is allowed
+// beside src/; `composite`/`declaration` go off because this project only ever
+// checks; `exclude` is replaced rather than extended, since the parent's
+// exclusion of *.test.ts is the very thing being undone. `vitest/globals` supplies
+// describe/it/expect, matching `globals: true` in the vitest configs.
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "noEmit": true,
+    "composite": false,
+    "declaration": false,
+    "declarationMap": false,
+    "module": "esnext",
     "rootDir": ".",
     "types": [
-      "vitest/globals",
-      "node"
+      "node",
+      "vitest/globals"
     ]
   },
   "include": [
     "src/**/*",
-    "tests/**/*"
+    "tests/**/*",
+    "__tests__/**/*"
   ],
   "exclude": [
     "node_modules",
-    "dist"
+    "dist",
+    "dist-esm"
   ]
 }

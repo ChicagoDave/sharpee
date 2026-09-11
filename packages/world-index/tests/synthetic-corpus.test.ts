@@ -167,7 +167,9 @@ describe('the obstacles govern the walk', () => {
 
     const behind = roomsOf(ir)[obstacle.to];
     if (behind === undefined) throw new Error(`fixture has no room at index ${obstacle.to}`);
-    opener.placement = { relation: 'in', place: behind.id, span: opener.placement?.span };
+    const openerSpan = opener.placement?.span;
+    if (openerSpan === undefined) throw new Error(`fixture opener \`${openerName}\` has no placement span`);
+    opener.placement = { relation: 'in', place: behind.id, span: openerSpan };
 
     return deriveReach(ir);
   }

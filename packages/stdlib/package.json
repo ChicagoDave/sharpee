@@ -14,6 +14,7 @@
   },
   "scripts": {
     "build": "tsc --build && tsc -p tsconfig.esm.json",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
     "test:ci": "CI=true vitest run",

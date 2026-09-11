@@ -15,9 +15,9 @@ import { EventProcessor } from '../../src/processor';
 import { WorldModel } from '@sharpee/world-model';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import type { Effect } from '../../src/effects';
-import type { SemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent } from '@sharpee/core';
 
-const event = (type: string, id: string): SemanticEvent => ({
+const event = (type: string, id: string): ISemanticEvent => ({
   id,
   type,
   entities: { actor: 'player', target: 'thing1' },

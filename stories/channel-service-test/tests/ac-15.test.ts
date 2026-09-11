@@ -58,6 +58,7 @@ const FULL_CAPS: ClientCapabilities = {
   transitions: true,
   layers: true,
   customFonts: true,
+  authorChannels: false,
 };
 
 class InMemoryRegistry implements IChannelRegistry {

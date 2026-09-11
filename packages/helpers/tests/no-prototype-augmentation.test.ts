@@ -24,7 +24,7 @@ describe('@sharpee/helpers does not augment WorldModel.prototype', () => {
     // The import above is the side effect under test — if the package still
     // patched the prototype, loading this module would have done it by now.
     expect('helpers' in WorldModel.prototype).toBe(false);
-    expect((WorldModel.prototype as Record<string, unknown>).helpers).toBeUndefined();
+    expect((WorldModel.prototype as unknown as Record<string, unknown>).helpers).toBeUndefined();
   });
 
   it('leaves a constructed world without a helpers method', () => {

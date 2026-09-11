@@ -11,7 +11,7 @@ import { EventProcessor } from '../../src/processor';
 import { WorldModel } from '@sharpee/world-model';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import { IFEvents } from '@sharpee/if-domain';
-import { SemanticEvent } from '@sharpee/core';
+import { ISemanticEvent } from '@sharpee/core';
 
 describe('Event Handler Invocation', () => {
   let mockWorld: MockWorldModel;
@@ -34,7 +34,7 @@ describe('Event Handler Invocation', () => {
         }
       });
 
-      const pushEvent: SemanticEvent = {
+      const pushEvent: ISemanticEvent = {
         id: 'test-push-1',
         type: IFEvents.PUSHED,
         entities: {
@@ -53,7 +53,7 @@ describe('Event Handler Invocation', () => {
 
     it('should not invoke handler when entity does not exist', () => {
       // Event targets nonexistent entity
-      const pushEvent: SemanticEvent = {
+      const pushEvent: ISemanticEvent = {
         id: 'test-push-1',
         type: IFEvents.PUSHED,
         entities: {

@@ -41,6 +41,7 @@
   ],
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
+    "typecheck:tests": "tsc -p tsconfig.test.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "dev": "tsc --watch",
     "clean": "rm -rf dist dist-esm tsconfig.tsbuildinfo",

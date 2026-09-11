@@ -133,7 +133,7 @@ export class MockWorldModel implements Partial<WorldModel> {
   observeEntity(entityId: string, observer: any): void {}
   unobserveEntity(entityId: string, observer: any): void {}
   query(selector: any): any[] { return []; }
-  registerCapability(name: string, capability: any): void {}
+  registerCapability(_name: string, _registration?: any): any { return {}; }
   emit(event: string, ...args: any[]): void {}
 }
 

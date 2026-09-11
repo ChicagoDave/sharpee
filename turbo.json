@@ -27,6 +27,11 @@
       "dependsOn": ["^build"],
       "outputs": [],
       "cache": false
+    },
+    "typecheck:tests": {
+      "dependsOn": ["^build"],
+      "outputs": [],
+      "cache": false
     }
   }
 }

@@ -18,13 +18,13 @@ import { EventProcessor } from '../../src/processor';
 import { WorldModel } from '@sharpee/world-model';
 import { createMockWorld, MockWorldModel } from '../fixtures/mock-world';
 import type { Effect } from '../../src/effects';
-import type { SemanticEvent } from '@sharpee/core';
+import type { ISemanticEvent } from '@sharpee/core';
 
 function makeEvent(
   type: string,
   data: Record<string, unknown>,
   id = `test-${type}-${Math.random().toString(36).slice(2)}`
-): SemanticEvent {
+): ISemanticEvent {
   return {
     id,
     type,
@@ -34,7 +34,7 @@ function makeEvent(
   };
 }
 
-function gameMessage(data: Record<string, unknown>): SemanticEvent {
+function gameMessage(data: Record<string, unknown>): ISemanticEvent {
   return makeEvent('game.message', data);
 }
 

@@ -193,5 +193,6 @@ function makeCaps(): ClientCapabilities {
     transitions: false,
     layers: false,
     customFonts: false,
+    authorChannels: false,
   };
 }

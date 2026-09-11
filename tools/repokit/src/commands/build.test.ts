@@ -169,7 +169,7 @@ describe('buildPlatform ESM pass', () => {
     }) as never);
   });
 
-  afterEach(() => vi.clearAllMocks());
+  afterEach(() => { vi.clearAllMocks(); });
 
   it('runs a whole-tree esm build by default — not a per-package filter', () => {
     buildPlatform('/nonexistent-root', { skipTo: '__no_such_package__', quiet: true });

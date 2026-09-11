@@ -36,7 +36,7 @@ beforeAll(() => {
   // A room with two exits and a description.
   const room = world.createEntity('West of House', EntityType.ITEM);
   room.add(new IdentityTrait({ name: 'West of House', description: '  A white house.  ' }));
-  room.add(new RoomTrait({ exits: { north: { destination: 'r-x' }, south: { destination: 'r-y' } } }));
+  room.add(new RoomTrait({ exits: { NORTH: { destination: 'r-x' }, SOUTH: { destination: 'r-y' } } }));
 
   // An openable, non-lockable container item.
   const box = world.createEntity('small mailbox', EntityType.ITEM);
@@ -143,7 +143,7 @@ describe('buildManifest — category derivation', () => {
 
 describe('buildManifest — trait summary', () => {
   it('projects room exits as direction keys', () => {
-    expect(find(ids.room)?.traits.room?.exits.sort()).toEqual(['north', 'south']);
+    expect(find(ids.room)?.traits.room?.exits.sort()).toEqual(['NORTH', 'SOUTH']);
   });
 
   it('trims an identity description', () => {
