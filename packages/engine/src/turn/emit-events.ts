@@ -1,10 +1,12 @@
 /**
  * The emission stage: hand the action's events to the configured callback
- * and the engine's emitter, and notice a story victory among them.
+ * and the engine's emitter.
  *
- * A `story.victory` is recorded for the ending stage rather than acted
- * on here — the turn is still being processed. Entity `on` handlers are
- * not dispatched from here (ISSUE-068): story-level handlers run in the
+ * It no longer watches for a `story.victory` among them: the ending is a
+ * fact the world owns (ADR-347), declared through `endStory`, so the
+ * ending stage reads it from the world rather than from a second copy
+ * this stage kept on the turn context. Entity `on` handlers are not
+ * dispatched from here (ISSUE-068): story-level handlers run in the
  * executor's event processor.
  *
  * Public interface: `emitEventsStage`.
@@ -28,13 +30,6 @@ export const emitEventsStage: TurnStage = {
 
     for (const event of result.events) {
       engine.emit('event', event);
-      if (event.type === 'story.victory') {
-        const data = event.data as { reason?: string; score?: number } | undefined;
-        context.victory = {
-          reason: data?.reason || 'Story completed',
-          score: data?.score || 0
-        };
-      }
     }
     return 'continue';
   }

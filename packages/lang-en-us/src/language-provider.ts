@@ -108,6 +108,10 @@ export class EnglishLanguageProvider implements ParserLanguageProvider {
       'game.started.banner': "{title}\nBy {author}\n\nType HELP for instructions.",
       // Platform prompt (ADR-137)
       'if.platform.prompt': '> ',
+      // The prompt once the story has ended (ADR-347 D3a). The engine
+      // derives it from the world's Ending; the verbs it names are the
+      // ones a stopped engine accepts (ADR-345 D15).
+      'if.platform.prompt.ended': '[The story has ended. RESTART, RESTORE or UNDO] ',
     };
 
     for (const [key, value] of Object.entries(coreMessages)) {

@@ -318,11 +318,6 @@ export interface Story {
   initialize?(): void;
   
   /**
-   * Check if the story is complete (optional)
-   */
-  isComplete?(): boolean;
-  
-  /**
    * Extend the parser with story-specific vocabulary (optional)
    */
   extendParser?(parser: Parser): void;

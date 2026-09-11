@@ -15,6 +15,7 @@
  */
 
 import { BLOCK_KEYS, type ITextBlock } from '@sharpee/text-blocks';
+import { EndGamePrompt } from '@sharpee/if-domain';
 import type { TurnStage, TurnEngine } from './context.js';
 
 /**
@@ -22,6 +23,13 @@ import type { TurnStage, TurnEngine } from './context.js';
  * current prompt resolved through the language provider. Nothing is
  * appended when the message does not resolve (the provider echoes the
  * id back) or before a language provider is set.
+ *
+ * A world that carries an Ending gets the end-game prompt instead of its
+ * own (ADR-347 D3a) — derived, not stored, because a story's last prompt
+ * is the wrong one to show at a prompt the story has finished with, and
+ * because deriving means an UNDO back to a live turn restores the normal
+ * prompt with no second rule to remember.
+ *
  * @param engine the turn-facing engine surface
  * @param blocks the rendered blocks, extended in place
  */
@@ -29,7 +37,7 @@ export function appendPromptBlock(engine: TurnEngine, blocks: ITextBlock[]): voi
   const { languageProvider, world } = engine;
   if (!languageProvider || !world) return;
 
-  const prompt = world.getPrompt();
+  const prompt = world.getEnding() ? EndGamePrompt : world.getPrompt();
   const resolved = languageProvider.getMessage(
     prompt.messageId,
     prompt.params as Record<string, any>

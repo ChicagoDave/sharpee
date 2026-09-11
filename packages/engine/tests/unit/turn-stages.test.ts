@@ -10,6 +10,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createSaveRequestedEvent, type ISemanticEvent } from '@sharpee/core';
 import { ActorTrait, EntityType, type WorldModel } from '@sharpee/world-model';
+import { endStory, killPlayer } from '@sharpee/stdlib';
 import { INPUT_MODE_STATE_KEY } from '../../src/types';
 import { GameEngine } from '../../src/game-engine';
 import { chainStage } from '../../src/turn/chain';
@@ -150,13 +151,21 @@ describe('platform-operations (regular turn)', () => {
 });
 
 describe('ending', () => {
-  it('a story.victory among the action’s events stops the engine with reason victory', async () => {
-    const { engine } = started();
+  it('AC-2: a story that declares victory through endStory stops the engine after the turn', async () => {
+    const { engine, world } = started();
     const emitted = collectEvents(engine);
-    reactToTake(engine, { id: 'win', type: 'story.victory', timestamp: 1, entities: {}, data: { reason: 'Lamp lit', score: 7 } });
+    // The declaring site is the story's own reaction to the take — the same
+    // verb a Chord `win` lowers to. Nothing implements `isComplete`.
+    engine.getEventProcessor().registerHandler('if.event.taken', () => {
+      endStory(world, 'victory', { turn: 1, messageId: 'lamp.lit' });
+      return [];
+    });
 
     await engine.executeTurn('take lamp');
 
+    // POSTCONDITION: the world records the ending, and the engine stopped
+    // because of that record.
+    expect(world.getEnding()).toMatchObject({ kind: 'victory', turn: 1, messageId: 'lamp.lit' });
     expect(engine['phase'].name).toBe('stopped');
     const ended = emitted.filter((e) => e.type === 'game.ended');
     expect(ended).toHaveLength(1);
@@ -164,18 +173,34 @@ describe('ending', () => {
     await expect(engine.executeTurn('look')).rejects.toThrow(/'stopped' phase/);
   });
 
-  it('a story that reports itself complete ends as a victory after the turn', async () => {
-    class CompleteStory extends MinimalTestStory {
+  it('AC-2: the poll is gone — a story still carrying isComplete() is never asked', async () => {
+    // The hook is off the `Story` interface (ADR-347 D2b), so a story that
+    // kept the method is just a story with an extra method. If this test
+    // ever stops at `stopped`, the poll came back.
+    class PollingStory extends MinimalTestStory {
       isComplete(): boolean { return true; }
     }
-    const { engine } = started(new CompleteStory());
-    const emitted = collectEvents(engine);
+    const { engine, world } = started(new PollingStory());
 
     await engine.executeTurn('take lamp');
 
+    expect(world.getEnding()).toBeUndefined();
+    expect(engine['phase'].name).toBe('playing');
+  });
+
+  it('a death story policy did not revive becomes a defeat Ending on the world', async () => {
+    const { engine, world } = started();
+    const emitted = collectEvents(engine);
+    const player = world.getPlayer()!;
+    reactToTake(engine, killPlayer(world, player, { cause: 'grue' })!);
+
+    await engine.executeTurn('take lamp');
+
+    expect(world.getEnding()).toMatchObject({ kind: 'defeat', cause: 'grue' });
     expect(engine['phase'].name).toBe('stopped');
     const ended = emitted.filter((e) => e.type === 'game.ended');
-    expect((ended[0].data as { ending?: { type?: string } }).ending?.type).toBe('victory');
+    expect((ended[0].data as { ending?: { type?: string } }).ending?.type).toBe('defeat');
+    expect(emitted.some((e) => e.type === 'game.lost')).toBe(true);
   });
 });
 

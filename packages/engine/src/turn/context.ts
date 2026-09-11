@@ -88,8 +88,6 @@ export interface TurnStageContext {
   events: ISemanticEvent[];
   /** The turn's rendered blocks; set by `render-prose`, read by `channel-packet`. */
   blocks?: ITextBlock[];
-  /** A `story.victory` seen among the action's events; set by `emit-events`. */
-  victory?: { reason: string; score: number };
   /** The cause of a player death this turn, if any; set by `detect-death`. */
   deathCause?: string;
 }

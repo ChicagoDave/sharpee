@@ -610,6 +610,34 @@ export declare class GameEngine implements StoryEngine {
      */
     private createSaveData;
     /**
+     * Bring the engine's phase into agreement with the world it now holds
+     * (ADR-347 D3) — the restore seam, and the only seam where this happens.
+     *
+     * A restore or an undo replaces the world wholesale, and the Ending lives
+     * in the world (ADR-347 D2a). So the phase is *derived* from the restored
+     * world rather than set alongside it: a save carrying an Ending leaves the
+     * engine stopped, and a save without one returns it to play. That is what
+     * makes RESTORE and UNDO work at an end-game prompt — the player comes
+     * back to a turn the story had not finished, and the phase agrees.
+     *
+     * This replaces the GH #414 Phase 1 patch, which resumed from `stopped`
+     * unconditionally and so loaded an *ended* save into a playing engine —
+     * reconciling two records of one fact instead of reading the one that
+     * owns it.
+     *
+     * Only this seam, deliberately (ADR-347 D5). A live engine may legitimately
+     * be `playing` while the world carries an Ending — the transcript-tester
+     * RETRY path revives a dead player on purpose, and ADR-345 D8a's tolerance
+     * exists for it. Deriving continuously would break that.
+     *
+     * Neither direction adds a state or an edge to ADR-345's closed set
+     * (D10, D11): `playing → stopped` is `stop()`'s own edge and
+     * `stopped → playing` is `resume()`'s. An engine in `empty` or `ready` is
+     * left alone — a restore does not start an engine, and fifteen tests in
+     * this package restore into one that was never started.
+     */
+    private derivePhaseFromEnding;
+    /**
      * Load save data into engine
      */
     private loadSaveData;
@@ -1261,10 +1289,6 @@ export interface Story {
      */
     initialize?(): void;
     /**
-     * Check if the story is complete (optional)
-     */
-    isComplete?(): boolean;
-    /**
      * Extend the parser with story-specific vocabulary (optional)
      */
     extendParser?(parser: Parser): void;
@@ -1747,11 +1771,6 @@ export interface TurnStageContext {
     events: ISemanticEvent[];
     /** The turn's rendered blocks; set by `render-prose`, read by `channel-packet`. */
     blocks?: ITextBlock[];
-    /** A `story.victory` seen among the action's events; set by `emit-events`. */
-    victory?: {
-        reason: string;
-        score: number;
-    };
     /** The cause of a player death this turn, if any; set by `detect-death`. */
     deathCause?: string;
 }

@@ -24,7 +24,7 @@
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
 
-import type { IOChannel, ProseEntry, ProseChannelId } from '@sharpee/if-domain';
+import type { IOChannel, ProseEntry, ProseChannelId, IStoryEnding } from '@sharpee/if-domain';
 import { PREFERRED_LAYOUT_CHANNEL } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
@@ -520,6 +520,45 @@ export const endgameChannel: IOChannel<string> = {
 };
 
 /**
+ * `story-ending` — replace-mode **state** channel carrying the world's
+ * `IStoryEnding` (ADR-347 D3a, D2d).
+ *
+ * The sibling of `endgame`, deliberately not a widening of it.
+ * `endgame` is an event-mode *notification*: it projects a message
+ * string a renderer shows once, and widening its payload would delete
+ * that rendered text and move every golden that records it. This
+ * channel answers the different question — "has this story ended, and
+ * how" — which a client needs as state, to disable an input box or
+ * present an end-game prompt, and which it previously had to infer from
+ * prose (GH #414 defect 3).
+ *
+ * The value is read from the world, never from an event, because the
+ * world is where the Ending lives (ADR-347 D2a). So it is correct on a
+ * turn that did not produce the ending — the turn after a RESTORE of an
+ * ended save, say — and it clears when the Ending does.
+ *
+ * Three return shapes, per the `IOChannel` contract:
+ *  - the record, when the world carries an Ending;
+ *  - `null`, the clear signal, on the turn a previously-reported Ending
+ *    goes away (an UNDO or RESTORE back to a live turn), so a client
+ *    that disabled something can re-enable it;
+ *  - `undefined`, staying quiet, when there is no Ending and none was
+ *    reported.
+ */
+export const storyEndingChannel: IOChannel<IStoryEnding | null> = {
+  id: 'story-ending',
+  contentType: 'json',
+  mode: 'replace',
+  emit: 'sparse',
+  produce: (ctx) => {
+    const world = ctx.world as { getEnding?: () => IStoryEnding | undefined } | undefined;
+    const ending = world?.getEnding?.();
+    if (ending) return ending;
+    return ctx.prevValue ? null : undefined;
+  },
+};
+
+/**
  * `score_notify` — event-mode transient score-change announcement.
  * Closure scans for `if.event.score_changed` and emits its message.
  */
@@ -657,6 +696,7 @@ export const STANDARD_CHANNELS: ReadonlyArray<IOChannel> = [
   ifidChannel,
   deathChannel,
   endgameChannel,
+  storyEndingChannel,
   scoreNotifyChannel,
   lifecycleChannel,
   characterAuthorChannel,
@@ -688,6 +728,7 @@ export const STANDARD_CHANNEL_IDS = {
   BANNER: 'banner',
   DEATH: 'death',
   ENDGAME: 'endgame',
+  STORY_ENDING: 'story-ending',
   SCORE_NOTIFY: 'score_notify',
   LIFECYCLE: 'lifecycle',
   CHARACTER: 'character',

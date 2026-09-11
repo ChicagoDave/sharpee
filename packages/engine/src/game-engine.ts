@@ -1470,11 +1470,7 @@ export class GameEngine implements StoryEngine {
       this.syncPlayerState(restoredPlayer.id);
     }
 
-    // Same obligation as `loadSaveData`, and the same narrow condition:
-    // UNDO at an end-game prompt exists to take the player back to a turn
-    // they were alive for, and a phase still reading `stopped` would refuse
-    // the turn they came back to take.
-    if (this.phase.name === 'stopped') this.resume();
+    this.derivePhaseFromEnding();
 
     this.emit('state:changed', this.context);
     return true;
@@ -1525,6 +1521,45 @@ export class GameEngine implements StoryEngine {
   }
 
   /**
+   * Bring the engine's phase into agreement with the world it now holds
+   * (ADR-347 D3) — the restore seam, and the only seam where this happens.
+   *
+   * A restore or an undo replaces the world wholesale, and the Ending lives
+   * in the world (ADR-347 D2a). So the phase is *derived* from the restored
+   * world rather than set alongside it: a save carrying an Ending leaves the
+   * engine stopped, and a save without one returns it to play. That is what
+   * makes RESTORE and UNDO work at an end-game prompt — the player comes
+   * back to a turn the story had not finished, and the phase agrees.
+   *
+   * This replaces the GH #414 Phase 1 patch, which resumed from `stopped`
+   * unconditionally and so loaded an *ended* save into a playing engine —
+   * reconciling two records of one fact instead of reading the one that
+   * owns it.
+   *
+   * Only this seam, deliberately (ADR-347 D5). A live engine may legitimately
+   * be `playing` while the world carries an Ending — the transcript-tester
+   * RETRY path revives a dead player on purpose, and ADR-345 D8a's tolerance
+   * exists for it. Deriving continuously would break that.
+   *
+   * Neither direction adds a state or an edge to ADR-345's closed set
+   * (D10, D11): `playing → stopped` is `stop()`'s own edge and
+   * `stopped → playing` is `resume()`'s. An engine in `empty` or `ready` is
+   * left alone — a restore does not start an engine, and fifteen tests in
+   * this package restore into one that was never started.
+   */
+  private derivePhaseFromEnding(): void {
+    const ending = this.world.getEnding();
+
+    if (ending && this.phase.name === 'playing') {
+      this.stop(ending.kind);
+      return;
+    }
+    if (!ending && this.phase.name === 'stopped') {
+      this.resume();
+    }
+  }
+
+  /**
    * Load save data into engine
    */
   private loadSaveData(saveData: ISaveData): void {
@@ -1549,18 +1584,7 @@ export class GameEngine implements StoryEngine {
       this.syncPlayerState(restoredPlayer.id);
     }
 
-    // A restore replaces the world wholesale, so the engine's phase must
-    // follow the world it now holds. Without this, RESTORE at an end-game
-    // prompt (ADR-345 D15) loads a live save and leaves the engine refusing
-    // every command — GH #414's own defect, one level deeper.
-    //
-    // Only from `stopped`, and deliberately not "resume unconditionally and
-    // let D8a's tolerance absorb it": that tolerance covers `playing`, not
-    // `ready`, and a host may restore into an engine it never started —
-    // fifteen tests in this package do exactly that. A restore does not
-    // start an engine; it returns a stopped one to play, over the existing
-    // back-edge rather than a new one (D10, D11).
-    if (this.phase.name === 'stopped') this.resume();
+    this.derivePhaseFromEnding();
 
     this.emit('state:changed', this.context);
   }

@@ -11,7 +11,6 @@ import { join } from 'node:path';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import { exitBlockedKey, exitMessageKey } from '@sharpee/stdlib';
-import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import {
   ContainerTrait,
   Direction,
@@ -151,11 +150,10 @@ describe('cloak.story loads into a playable world', () => {
     expect(story.producers.get('garbled')).toBe(garbled);
   });
 
-  it('endings: triggerEnding sets the flag, isComplete flips, event carries the contract', () => {
-    expect(story.isComplete()).toBe(false);
-    const event = story.triggerEnding(world, 'victory', 'message-intact');
-    expect(world.getStateValue(STORY_ENDING_FLAG)).toBe('victory');
-    expect(story.isComplete()).toBe(true);
+  it('endings: triggerEnding records the Ending on the world, event carries the contract', () => {
+    expect(world.getEnding()).toBeUndefined();
+    const event = story.triggerEnding(world, 'victory', 4, 'message-intact')!;
+    expect(world.getEnding()).toEqual({ kind: 'victory', turn: 4, messageId: 'message-intact' });
     expect(event.type).toBe('story.victory');
     // GH #274: the key rides as `endingMessageId`, never as a top-level
     // `messageId`. The engine's ADR-097 domain-message handler renders any
@@ -165,9 +163,11 @@ describe('cloak.story loads into a playable world', () => {
     expect(event.data).toMatchObject({ ending: 'victory', endingMessageId: 'message-intact' });
     expect((event.data as Record<string, unknown>).messageId).toBeUndefined();
 
-    const defeat = story.triggerEnding(world, 'defeat');
-    expect(defeat.type).toBe('story.defeat');
-    expect(world.getStateValue(STORY_ENDING_FLAG)).toBe('defeat');
+    // First ending wins (ADR-347 D2d): the defeat is refused outright and
+    // the recorded victory — turn and all — is left exactly as it was.
+    const defeat = story.triggerEnding(world, 'defeat', 5);
+    expect(defeat).toBeUndefined();
+    expect(world.getEnding()).toEqual({ kind: 'victory', turn: 4, messageId: 'message-intact' });
   });
 });
 

@@ -7,7 +7,7 @@
  * emitters build the events with existing primitives.
  *
  * Public interface: `StoryEndingEvents`, `STORY_ENDING_FLAG`,
- * `StoryEndingKind`, `IStoryEndingData`.
+ * `StoryEndingKind`, `IStoryEndingData`, `IStoryEnding`.
  *
  * Owner context: `@sharpee/if-domain` — shared by the story-loader (emits on
  * `win`/`lose`), the engine/clients (react to endings), and transcript tests
@@ -28,9 +28,14 @@ export const StoryEndingEvents = {
 export type StoryEndingKind = 'victory' | 'defeat';
 
 /**
- * World-state key holding the ending once one is reached (a
- * `StoryEndingKind`), or unset while play continues. The generic
- * `isComplete()` reads this key; stories never implement completion logic.
+ * World-state key that once held the ending.
+ *
+ * **Superseded by {@link IStoryEnding}** (ADR-347 D2a), which is a real
+ * `WorldModel` member rather than a key in an untyped state bag. Nothing
+ * reads or writes this key any more — the constant survives only because
+ * this file's values are frozen contract. Do not reach for it: an ending
+ * recorded here is invisible to the engine, the scheduler and every
+ * client.
  */
 export const STORY_ENDING_FLAG = 'story.ending';
 
@@ -39,4 +44,39 @@ export interface IStoryEndingData {
   ending: StoryEndingKind;
   /** Message ID of the ending phrase, when the author supplied one. */
   messageId?: string;
+}
+
+/**
+ * The ending a story reached, or absent while play continues (ADR-347 D1, D2d).
+ *
+ * A story that has not ended carries no Ending — which is a different
+ * statement from "carries an Ending that says nothing". Once written it is
+ * final: the first ending wins (`endStory`'s rejection rule), so a reader
+ * may treat `turn` as the turn the conclusion actually happened on.
+ */
+export interface IStoryEnding {
+  /** Victory or defeat. */
+  readonly kind: StoryEndingKind;
+
+  /**
+   * The turn the story ended on.
+   *
+   * Required, so a client can always say *when* and a save can always say
+   * whether the ending it carries is the one it was written at. The world
+   * holds no turn counter, so the declaring site supplies it — Chord's
+   * runtime has `turnNow`, the engine's stages have `context.turn`. A
+   * headless Chord run with no engine turn provider wired records `0`,
+   * which is `turnNow`'s existing fallback and the same answer timers get.
+   */
+  readonly turn: number;
+
+  /**
+   * Message ID of the ending phrase, when the author supplied one. It
+   * identifies the phrase; it does not render it (GH #274) — same rule as
+   * {@link IStoryEndingData.messageId}.
+   */
+  readonly messageId?: string;
+
+  /** Free-form cause, e.g. the `cause` a player death carried. */
+  readonly cause?: string;
 }

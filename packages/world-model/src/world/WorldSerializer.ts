@@ -11,6 +11,7 @@
 import { IFEntity } from '../entities/if-entity.js';
 import { SpatialIndex } from './SpatialIndex.js';
 import { ICapabilityStore } from './capabilities.js';
+import type { IStoryEnding } from '@sharpee/if-domain';
 import type { ScoreLedger } from './ScoreLedger.js';
 import type { WorldEventSystem } from './WorldEventSystem.js';
 
@@ -23,6 +24,8 @@ export interface SerializableState {
   spatialIndex: SpatialIndex;
   state: Record<string, unknown>;
   playerId?: string;
+  /** The story's Ending, or undefined while play continues (ADR-347 D2a). */
+  ending?: IStoryEnding;
   relationships: Map<string, Map<string, Set<string>>>;
   idCounters: Map<string, number>;
   capabilities: ICapabilityStore;
@@ -50,6 +53,7 @@ export class WorldSerializer {
       })),
       state: state.state,
       playerId: state.playerId,
+      ending: state.ending,
       spatialIndex: state.spatialIndex.toJSON(),
       relationships: Array.from(state.relationships.entries()).map(([entityId, rels]) => ({
         entityId,
@@ -95,6 +99,9 @@ export class WorldSerializer {
     // Restore state
     Object.assign(state.state, data.state || {});
     state.playerId = data.playerId;
+    // A save written before the story ended carries no `ending` key; absent
+    // restores as "this story has not ended" (ADR-347 D1).
+    state.ending = data.ending ?? undefined;
 
     // Restore spatial index
     if (data.spatialIndex) {

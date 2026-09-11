@@ -12,8 +12,8 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import {RoomTrait, TraitType, WearableTrait, WorldModel , darkKey } from '@sharpee/world-model';
+import { endStory } from '@sharpee/stdlib';
 import { CHORD_STATE_PREFIX, ChordStory, createStory } from '../src';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
@@ -135,8 +135,28 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
     const result = readMessage(cw);
     expect(result.override).toMatchObject({ messageId: 'message-intact' });
     expect(result.emit).toMatchObject([{ type: 'story.victory' }]);
-    expect(cw.world.getStateValue(STORY_ENDING_FLAG)).toBe('victory');
-    expect(cw.story.isComplete()).toBe(true);
+    // The cloak's `win` carries no phrase key of its own — the interceptor's
+    // override renders the prose — so the Ending records the kind and the
+    // turn (0 headless, where no engine turn provider is wired) and no
+    // message id.
+    expect(cw.world.getEnding()).toMatchObject({ kind: 'victory' });
+    expect(cw.world.getEnding()).not.toHaveProperty('messageId');
+  });
+
+  it('AC-3: one verb, two surfaces — a Chord `win` and a direct endStory agree', () => {
+    const cw = loadCloak();
+    hangCloak(cw);
+    const chord = readMessage(cw);
+
+    // The TypeScript surface, on its own world, with the same inputs the
+    // Chord statement supplies headless (no phrase key, turn 0).
+    const direct = new WorldModel();
+    const event = endStory(direct, 'victory', { turn: 0 });
+
+    // Identical world state and identical event type. If Chord ever grows
+    // its own implementation again, these diverge.
+    expect(cw.world.getEnding()).toEqual(direct.getEnding());
+    expect(chord.emit![0].type).toBe(event!.type);
   });
 
   // GH #274: nothing in the emitted set may render the ending phrase a
@@ -163,7 +183,7 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
     // never the function (the template binder string-coerces non-Phrases).
     expect((result.override!.params as any).garbled).toEqual({ kind: 'literal', text: 'swept aside' });
     expect(result.emit).toBeUndefined();
-    expect(cw.world.getStateValue(STORY_ENDING_FLAG)).toBeUndefined();
+    expect(cw.world.getEnding()).toBeUndefined();
   });
 
   it('obliterated: overrides with message-obliterated and loses', () => {
@@ -175,7 +195,7 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
     const result = readMessage(cw);
     expect(result.override).toMatchObject({ messageId: 'message-obliterated' });
     expect(result.emit).toMatchObject([{ type: 'story.defeat' }]);
-    expect(cw.world.getStateValue(STORY_ENDING_FLAG)).toBe('defeat');
+    expect(cw.world.getEnding()).toMatchObject({ kind: 'defeat' });
   });
 });
 

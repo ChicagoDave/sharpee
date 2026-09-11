@@ -2,6 +2,8 @@
 
 **Status**: **ACCEPTED** (David, 2026-09-11, session aceb2e — "accept". Written the same session on `main` at his "yes, write it". Raised during GH #414's Phase 1 when `mutation-verification` found that a RESTORE at an end-game prompt loaded a live save into an engine that still refused every command — and the fix for that was a patch reconciling two records of one fact. The framing is Evans, *Domain-Driven Design* ch. 9: do not leave implicit what should be explicit.
 
+**Amended 2026-09-11 (session c3f995) — D2d's `turn` contract reconciled.** Implementing Phase 2 found D2d internally inconsistent: it required `IStoryEnding.turn` while giving `endStory` no way to supply it. The session shipped `turn?` under a stated deviation and reported it; David ruled `turn` stays required and `opts` becomes required to carry it. D2d now states the reconciled contract. Nothing else in the decision changed.
+
 **All six open questions resolved by interview** (2026-09-11, same session), Q-1 first — the premise is ruled and implementation is scheduled, not deferred — so the Open Questions section is gone and D1-D5 with their sub-decisions are the whole decision. The interview also **corrected the Context**: the claim that no client reads the ending was wrong in the ADR's favour, and the `endgame` channel it missed is a fourth naming of the same fact rather than a counterexample.
 
 `adr-review` ran at **11/20 NEEDS WORK**, eight findings — no Acceptance Criteria section at all, three unpinned interface contracts, no rejection test for a double ending, no amendment owner for ADR-345, and **three internal contradictions where prose written as a proposal had not caught up with the interview's rulings** (a Consequences bullet still placing the value in `if-domain` after Q-2 put it on `WorldModel`, another still offering deferral after Q-1 declined it, and D2b pointing at D4a where it meant D2c). All folded, ending at **20/20 READY FOR IMPLEMENTATION**.
@@ -113,7 +115,13 @@ export interface IStoryEnding {
 
 `turn` is not decoration: it is the field that lets a client say *when* and a save say *whether this ending is the one it was written at*. `messageId` matches `IStoryEndingData`'s existing field and carries the same rule — it identifies the phrase, it does not render it (GH #274).
 
-**The verb's signature**: `endStory(world: WorldModel, kind: StoryEndingKind, opts?: { messageId?: string; cause?: string }): ISemanticEvent | undefined`. It returns the blessed event for the caller to emit, which is what `triggerEnding` does today (`loader.ts:1530-1540`).
+**The verb's signature**: `endStory(world: WorldModel, kind: StoryEndingKind, opts: { turn: number; messageId?: string; cause?: string }): ISemanticEvent | undefined`. It returns the blessed event for the caller to emit, which is what `triggerEnding` does today (`loader.ts:1530-1540`).
+
+**Amended 2026-09-11 (session c3f995, David: "make turn required") — `opts` is required, and it carries `turn`.** As first written, D2d pinned two halves that could not both hold: `turn` was a required field on `IStoryEnding` and `opts` was optional with no `turn` in it, so there was no way to supply the fact the record demanded. The implementing session shipped `turn?` to resolve it, reported the deviation, and David ruled the other way — the record keeps `turn` required and the verb takes it.
+
+That makes `opts` required too, which is the only real cost: a declaring site must now name the turn, and `endStory(world, 'victory')` no longer compiles. Every site has one to hand — Chord's runtime has `core.turnNow()`, the engine's stages have `context.turn` — and the alternative was a field that lied by default, since the world holds no turn counter and `0` would have read as turn zero rather than "nobody knew". A headless Chord run records `0` because `turnNow()` falls back to the last tick's turn, which is `turnNow`'s existing semantics and the same answer timers get; that is a real answer, not a missing one.
+
+`ChordStory.triggerEnding` and `RuntimeHost.triggerEnding` therefore take `(world, ending, turn, messageId?)` — the turn ahead of the optional phrase key, because TypeScript will not take a required parameter after an optional one.
 
 **Its rejection rule — the first ending wins.** Called on a world that already carries an Ending, `endStory` writes nothing, emits nothing, and returns `undefined`. The precedent is `killPlayer`, which is already idempotent for the same reason, recorded at `engine/src/turn/detect-death.ts:26-28`: when several fire in one turn the first is authoritative. An ending that could be overwritten would make the Ending's `turn` a lie and give a story two closing events for one conclusion.
 

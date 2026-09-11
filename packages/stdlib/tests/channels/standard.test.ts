@@ -30,6 +30,7 @@ import {
   bannerChannel,
   deathChannel,
   endgameChannel,
+  storyEndingChannel,
   scoreNotifyChannel,
   lifecycleChannel,
   STANDARD_CHANNEL_EVENTS,
@@ -698,5 +699,53 @@ describe('banner channel (opening is addressable on its own)', () => {
       { content: ['West of House'] },
     ]);
     expect(preferredLayoutChannel.produce(makeCtx({ blocks }))).toEqual(['room-name']);
+  });
+});
+
+describe('storyEndingChannel (ADR-347 D3a) — the state sibling of `endgame`', () => {
+  /** A produce context whose world answers `getEnding` with the given value. */
+  function ctxWith(ending: unknown, prevValue?: unknown): ChannelProduceContext {
+    return {
+      world: { getEnding: () => ending },
+      events: [],
+      blocks: [],
+      turn: 3,
+      prevValue,
+    } as unknown as ChannelProduceContext;
+  }
+
+  it('stays quiet while the story has not ended', () => {
+    expect(storyEndingChannel.produce(ctxWith(undefined))).toBeUndefined();
+  });
+
+  it('carries the Ending record itself, not a message', () => {
+    const ending = { kind: 'victory', turn: 3, messageId: 'won.phrase' };
+    expect(storyEndingChannel.produce(ctxWith(ending))).toEqual(ending);
+  });
+
+  it('reads the world, so it is right on a turn that did not produce the ending', () => {
+    // No events, no blocks — the turn after a RESTORE of an ended save.
+    const ending = { kind: 'defeat', turn: 9, cause: 'grue' };
+    expect(storyEndingChannel.produce(ctxWith(ending))).toEqual(ending);
+  });
+
+  it('sends the clear signal when a reported Ending goes away', () => {
+    // An UNDO or RESTORE back to a live turn: the client re-enables what it
+    // disabled. `null` is the contract's clear signal, distinct from the
+    // `undefined` that means "nothing to say".
+    const prev = { kind: 'victory', turn: 3 };
+    expect(storyEndingChannel.produce(ctxWith(undefined, prev))).toBeNull();
+  });
+
+  it('is a replace-mode json channel, not an event-mode notification', () => {
+    // The distinction is the decision: `endgame` notifies, this one states.
+    expect(storyEndingChannel.id).toBe('story-ending');
+    expect(storyEndingChannel.mode).toBe('replace');
+    expect(storyEndingChannel.contentType).toBe('json');
+  });
+
+  it('leaves `endgame` untouched — the sibling is additive', () => {
+    expect(endgameChannel.contentType).toBe('text');
+    expect(endgameChannel.mode).toBe('event');
   });
 });

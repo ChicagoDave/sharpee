@@ -59,7 +59,8 @@ import {
   type IEventProcessorWiring,
   type GamePrompt,
   DefaultPrompt,
-  PROMPT_STATE_KEY
+  PROMPT_STATE_KEY,
+  type IStoryEnding
 } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { RuleScopeEvaluator } from '../scope/scope-evaluator.js';
@@ -461,6 +462,8 @@ export interface IWorldModel {
   findPath(fromRoomId: string, toRoomId: string): string[] | null;
   getPlayer(): IFEntity | undefined;
   setPlayer(entityId: string): void;
+  getEnding(): IStoryEnding | undefined;
+  setEnding(ending: IStoryEnding): void;
 
   // Convenience Creators
   connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
@@ -581,6 +584,8 @@ export class WorldModel implements IWorldModel {
   private removalObservers: EntityRemovalObserver[] = [];
   private state: WorldState = {};
   private playerId: string | undefined;
+  /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
+  private storyEnding: IStoryEnding | undefined;
   private spatialIndex: SpatialIndex;
   private config: WorldConfig;
   private capabilities: ICapabilityStore = {};
@@ -1473,6 +1478,37 @@ export class WorldModel implements IWorldModel {
     this.playerId = entityId;
   }
 
+  /**
+   * The ending this story reached (ADR-347 D2a), or `undefined` while play
+   * continues — absent is the answer "this story has not ended", not a
+   * missing value.
+   *
+   * @returns the Ending, or `undefined` if the story has not ended
+   */
+  getEnding(): IStoryEnding | undefined {
+    return this.storyEnding;
+  }
+
+  /**
+   * Record the ending this story reached.
+   *
+   * This is the plain setter, on the `setPlayer` precedent: it writes and
+   * nothing else. It does NOT emit the ending event and it does NOT enforce
+   * first-ending-wins — both belong to stdlib's `endStory`, the declaring
+   * verb (ADR-347 D2c), exactly as `HealthBehavior.kill` is the plain
+   * mutator under `killPlayer`'s idempotence. Call `endStory` unless you
+   * are restoring a saved world.
+   *
+   * @param ending the Ending to record
+   * @throws if `kind` is neither 'victory' nor 'defeat'
+   */
+  setEnding(ending: IStoryEnding): void {
+    if (ending.kind !== 'victory' && ending.kind !== 'defeat') {
+      throw new Error(`Invalid story ending kind: ${String(ending.kind)}`);
+    }
+    this.storyEnding = ending;
+  }
+
   // Score Ledger (ADR-129) — delegates to ScoreLedger
   awardScore(id: string, points: number, description: string): boolean {
     return this.scoreLedger.award(id, points, description);
@@ -1546,6 +1582,7 @@ export class WorldModel implements IWorldModel {
 
     // Sync primitives back (objects are shared by reference)
     this.playerId = serializableState.playerId;
+    this.storyEnding = serializableState.ending;
   }
 
   private getSerializableState() {
@@ -1554,6 +1591,7 @@ export class WorldModel implements IWorldModel {
       spatialIndex: this.spatialIndex,
       state: this.state,
       playerId: this.playerId,
+      ending: this.storyEnding,
       relationships: this.relationships,
       idCounters: this.idCounters,
       capabilities: this.capabilities,
@@ -1564,6 +1602,7 @@ export class WorldModel implements IWorldModel {
     this.entities.clear();
     this.state = {};
     this.playerId = undefined;
+    this.storyEnding = undefined;
     this.spatialIndex.clear();
     this.relationships.clear();
     this.idCounters.clear();

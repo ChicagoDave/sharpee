@@ -38,6 +38,7 @@ import { StatusLine } from './display/StatusLine.js';
 import { AudioManager } from './audio/AudioManager.js';
 import {
   registerDefaultBrowserRenderers,
+  applyStoryEndingToInput,
   type BrowserDefaultLayout,
 } from './channels/index.js';
 
@@ -188,6 +189,15 @@ export class BrowserClient implements BrowserClientInterface {
   connectEngine(engine: GameEngine, world: WorldModel): void {
     this.engine = engine;
     this.world = world;
+
+    // Whichever world this client is now bound to, the input reflects it
+    // (ADR-347 D3a). On a restart reboot this is the only thing that can:
+    // the client, the DOM and this very input element are reused, while the
+    // fresh engine's channel service starts with no previous value — so
+    // `story-ending` stays quiet rather than sending its clear signal, and
+    // a box disabled by the old story's ending would stay disabled in the
+    // new one.
+    this.syncEndingFromWorld();
 
     if (this.saveManager) {
       // Reboot path: managers exist; re-point and re-subscribe only.
@@ -1006,6 +1016,28 @@ export class BrowserClient implements BrowserClientInterface {
     (
       this.engine as unknown as { loadSaveData(d: ISaveData): void }
     ).loadSaveData(data);
+    this.syncEndingFromWorld();
+  }
+
+  /**
+   * Reflect the world's Ending on the input box (ADR-347 D3a).
+   *
+   * The `story-ending` channel is the live signal and carries this
+   * during play. A restore runs *between* turns, though — the boot-time
+   * autosave restore and the restore menu both replace the world with
+   * no turn to produce a packet — so the client reads the same world
+   * the channel reads, at the same two seams the engine derives its own
+   * phase at. It is one fact with one owner; only the delivery differs.
+   *
+   * This is why GH #414's reload loop is fixed by persisting the ended
+   * world rather than by refusing to save it: the state is representable
+   * now, so the reload lands at an end-game prompt that works instead of
+   * a live-looking box behind a dead engine.
+   */
+  private syncEndingFromWorld(): void {
+    const input = this.elements.commandInput;
+    if (!input) return;
+    applyStoryEndingToInput(input, this.world?.getEnding() ?? null);
   }
 
   private performSave(slotName: string): void {

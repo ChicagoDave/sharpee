@@ -813,14 +813,6 @@ export class DungeoStory implements Story {
   }
 
   /**
-   * Check if the story is complete
-   */
-  isComplete(): boolean {
-    // For now, story is never complete (full game completion TBD)
-    return false;
-  }
-
-  /**
    * Called when the engine is fully initialized.
    * Delegates to orchestration module for all engine registrations.
    */

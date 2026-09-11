@@ -255,6 +255,77 @@ describe('ADR-248 restart reboot (BrowserClient)', () => {
     expect(subscribedEvents).toContain('channel:manifest');
   });
 
+  it('a reboot from an end-game prompt re-enables the input (ADR-347 D3a)', () => {
+    // Restarting is one of the verbs an end-game prompt exists to answer,
+    // and it reuses this client and this very input element. The fresh
+    // engine's channel service has no previous value, so `story-ending`
+    // stays quiet rather than sending its clear signal — which would have
+    // left the player in a brand-new game unable to type.
+    document.body.innerHTML = '';
+    const mk = (id: string, tag = 'div'): any => {
+      const el = document.createElement(tag);
+      el.id = id;
+      document.body.appendChild(el);
+      return el;
+    };
+    const elements: any = {
+      statusLocation: mk('location-name'),
+      statusScore: mk('score-turns'),
+      textContent: mk('text-content'),
+      mainWindow: mk('main-window'),
+      commandInput: mk('command-input', 'input'),
+      saveDialog: mk('save-dialog', 'dialog'),
+      restoreDialog: mk('restore-dialog', 'dialog'),
+      startupDialog: mk('startup-dialog', 'dialog'),
+      saveNameInput: mk('save-name-input', 'input'),
+      saveSlotsListEl: mk('save-slots-list'),
+      restoreSlotsListEl: mk('restore-slots-list'),
+      noSavesMessage: mk('no-saves-message'),
+      startupSaveInfo: mk('startup-save-info'),
+      menuBar: mk('menu-bar'),
+    };
+
+    const client = new BrowserClient({
+      storagePrefix: PREFIX,
+      defaultTheme: 'classic',
+      themes: [],
+      storyInfo: {
+        title: 'Reboot Ending Test',
+        description: '',
+        authors: 'tester',
+        version: '0.0.0',
+        engineVersion: '0.0.0',
+        buildDate: '',
+      },
+    } as any);
+    client.initialize(elements);
+
+    const fakeEngine = () => ({ on: vi.fn(), executeTurn: vi.fn(async () => ({})), stop: vi.fn() });
+    const makeWorld = () => {
+      const world = new WorldModel();
+      const player = world.createEntity('you', 'actor' as any);
+      world.setPlayer(player.id);
+      const room = world.createEntity('Room', 'room' as any);
+      world.moveEntity(player.id, room.id);
+      return world;
+    };
+
+    const ended = makeWorld();
+    ended.setEnding({ kind: 'victory', turn: 7 });
+    client.connectEngine(fakeEngine() as any, ended);
+
+    const input = elements.commandInput as HTMLInputElement;
+    // PRECONDITION: the ended world disabled the box.
+    expect(input.disabled).toBe(true);
+    expect(input.getAttribute('data-story-ended')).toBe('victory');
+
+    // The reboot: a fresh engine on a world that has not ended.
+    client.connectEngine(fakeEngine() as any, makeWorld());
+
+    expect(input.disabled).toBe(false);
+    expect(input.hasAttribute('data-story-ended')).toBe(false);
+  });
+
   it('a failed reboot displays the real error text, not a parse fallback', async () => {
     const reboot = vi.fn(async () => {
       throw new Error('assignRoom: room r01 not found');

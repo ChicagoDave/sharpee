@@ -33,6 +33,7 @@ import * as platformDispatcher from '../../src/turn/platform-dispatcher';
 import { GameEngine } from '../../src/game-engine';
 import { processPlatformOperations } from '../../src/turn/platform-operations';
 import { processMetaPlatformOperation } from '../../src/turn/meta-command';
+import { endStory } from '@sharpee/stdlib';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 
@@ -124,6 +125,43 @@ describe('one platform-operation dispatcher (ADR-334 D3)', () => {
     expect(turn.events).toEqual(meta.events);
     expect(meta.after).toBeLessThan(meta.before);
     expect(turn.after).toBe(meta.after);
+  });
+
+  it('restore of an ended save stops the engine, and the stop cascade stays out of the restore’s own response (ADR-347 D3)', async () => {
+    // The seam `derivePhaseFromEnding` sits on, driven through the real
+    // RESTORE_REQUESTED dispatch rather than the private method: a browser
+    // boot restores its autosave into an engine it has just started, so an
+    // ended autosave is a *playing* engine handed a finished world.
+    const source = startedEngine({});
+    endStory(source.getWorld(), 'victory', { turn: 1 });
+    const ended = source['createSaveData']() as ISaveData;
+
+    const engine = startedEngine({});
+    engine.registerSaveRestoreHooks({ onRestoreRequested: async () => ended });
+    // PRECONDITION: playing, on a world that has not ended.
+    expect(engine['phase'].name).toBe('playing');
+    expect(engine.getWorld().getEnding()).toBeUndefined();
+
+    const emitted: ISemanticEvent[] = [];
+    engine.on('event', (event) => emitted.push(event));
+
+    const delivered = await metaPath(engine, createRestoreRequestedEvent({ saveName: 'ended' }));
+
+    // POSTCONDITION: the Ending came back with the world and the phase
+    // followed it, so the player lands at the end-game prompt.
+    expect(engine.getWorld().getEnding()).toMatchObject({ kind: 'victory', turn: 1 });
+    expect(engine['phase'].name).toBe('stopped');
+
+    // And the restore's own rendered response is the completion event and
+    // nothing else. `stop()` does not know it was called from a restore, so
+    // its cascade fires — but into the engine's event stream, not into the
+    // meta command's `context.events`, which is what `meta-render` renders
+    // from. This is the assertion that keeps a restore from re-printing the
+    // ending it restored.
+    expect(delivered).toEqual([
+      { type: 'platform.restore_completed', payload: { success: true, error: undefined } }
+    ]);
+    expect(emitted.some((e) => e.type === 'game.won')).toBe(true);
   });
 
   it('restore: both paths fail the same way when the hook has no data', async () => {

@@ -4,7 +4,7 @@
 
 import { Story, StoryConfig, validateStoryConfig } from '../src/install/story';
 import { WorldModel, IFEntity, IdentityTrait, EntityType } from '@sharpee/world-model';
-import { Action } from '@sharpee/stdlib';
+import { Action, endStory } from '@sharpee/stdlib';
 
 describe('Story', () => {
   describe('StoryConfig validation', () => {
@@ -100,8 +100,10 @@ describe('Story', () => {
       };
 
       private turnCount = 0;
+      private world: WorldModel | null = null;
 
       initializeWorld(world: WorldModel): void {
+        this.world = world;
         const room = world.createEntity('Room', EntityType.ROOM);
         room.add(new IdentityTrait({ name: 'Room' }));
       }
@@ -112,25 +114,30 @@ describe('Story', () => {
         return player;
       }
 
-      isComplete(): boolean {
-        return this.turnCount >= 10;
-      }
-
       incrementTurn(): void {
         this.turnCount++;
+        // Declared, never polled (ADR-347 D2b): the story ends the story at
+        // the moment its own condition becomes true.
+        if (this.turnCount >= 10 && this.world) {
+          endStory(this.world, 'victory', { turn: this.turnCount });
+        }
       }
     }
 
-    it('should track completion state', () => {
+    it('declares its ending on the world once its own condition holds', () => {
       const story = new LifecycleTestStory();
-      
-      expect(story.isComplete()).toBe(false);
-      
+      const world = new WorldModel();
+      story.initializeWorld(world);
+
+      // PRECONDITION: nothing has ended.
+      expect(world.getEnding()).toBeUndefined();
+
       for (let i = 0; i < 10; i++) {
         story.incrementTurn();
       }
-      
-      expect(story.isComplete()).toBe(true);
+
+      // POSTCONDITION: the world carries the ending, stamped with the turn.
+      expect(world.getEnding()).toEqual({ kind: 'victory', turn: 10 });
     });
   });
 });

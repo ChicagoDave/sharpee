@@ -4,8 +4,8 @@
  * Purpose: interpret a compiled IR into the platform's standard story
  * lifecycle: world building (`initializeWorld`), player creation
  * (`createPlayer`), phrase registration (`extendLanguage`), story grammar
- * and alterations (`extendParser`, ADR-270), and completion (`isComplete`
- * via the if-domain ending flag). Phase A slice: static world only — when-
+ * and alterations (`extendParser`, ADR-270), and endings (`triggerEnding`,
+ * which lowers to stdlib's `endStory` — ADR-347 D2c). Phase A slice: static world only — when-
  * rules, on-clause
  * interceptors, derived properties, and the evaluator bind in Phase 5.
  *
@@ -68,13 +68,14 @@ import {
   createAmbientChannel,
   createImageChannel,
   killPlayer,
+  endStory,
   type INpcService,
   type ActSlots,
   type ActResult,
 } from '@sharpee/stdlib';
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
 import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
-import { SlotType, STORY_ENDING_FLAG, StoryEndingEvents } from '@sharpee/if-domain';
+import { SlotType } from '@sharpee/if-domain';
 import type { Story, StoryConfig, StoryEngine } from '@sharpee/engine';
 import { TURN_BANDS, type TurnPlugin } from '@sharpee/plugins';
 import {
@@ -1509,15 +1510,17 @@ export class ChordStory implements Story {
     }
   }
 
-  isComplete(): boolean {
-    return this.world != null && this.world.getStateValue(STORY_ENDING_FLAG) != null;
-  }
-
   // ------------------------------------------------------------- endings
 
   /**
-   * End the story: set the if-domain ending flag and build the blessed
-   * ending event (Prerequisite 3). The caller (rule evaluator) emits it.
+   * End the story: record the Ending on the world and build the blessed
+   * ending event. The caller (rule evaluator) emits it.
+   *
+   * This carries no implementation of its own — it lowers to stdlib's
+   * `endStory` (ADR-347 D2c), exactly as the `kill` statement lowers to
+   * `killPlayer`. One verb, two surfaces, nothing to drift from. The
+   * first ending wins, so a story whose rules fire `win` twice in one
+   * turn gets `undefined` back the second time and emits nothing.
    *
    * The phrase key rides as `endingMessageId`, NOT as a top-level
    * `messageId`: the engine's ADR-097 domain-message handler renders any
@@ -1526,16 +1529,25 @@ export class ChordStory implements Story {
    * `kill` does). Carrying it as `messageId` here printed every story's
    * final paragraph twice (GH #274). Clients that want to identify the
    * ending still get the key — it just no longer renders itself.
+   *
+   * `turn` is required and comes before the optional phrase key, because
+   * {@link IStoryEnding} records the turn as a fact (ADR-347 D2d) and the
+   * runtime always knows it — `core.turnNow()` answers with the engine's
+   * counter when one is wired and the last tick's turn when none is.
+   *
+   * @param world the world that owns the Ending
+   * @param ending victory or defeat
+   * @param turn the turn the story ended on
+   * @param messageId the ending phrase's key, when the author supplied one
+   * @returns the blessed ending event, or `undefined` if the story had already ended
    */
-  triggerEnding(world: WorldModel, ending: StoryEndingKind, messageId?: string): ISemanticEvent {
-    world.setStateValue(STORY_ENDING_FLAG, ending);
-    return {
-      id: `${this.config.id}-${ending}-${world.getStateValue('chord.turn') ?? 0}`,
-      type: ending === 'victory' ? StoryEndingEvents.VICTORY : StoryEndingEvents.DEFEAT,
-      timestamp: Date.now(),
-      entities: {},
-      data: { ending, ...(messageId ? { endingMessageId: messageId } : {}) },
-    };
+  triggerEnding(
+    world: WorldModel,
+    ending: StoryEndingKind,
+    turn: number,
+    messageId?: string,
+  ): ISemanticEvent | undefined {
+    return endStory(world, ending, { turn, messageId });
   }
 
   // ------------------------------------------------------- entity build

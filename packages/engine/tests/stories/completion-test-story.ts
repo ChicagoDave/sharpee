@@ -1,8 +1,13 @@
 /**
- * Completion test story for testing game over detection and completion handling
+ * Completion test story for testing game over detection and completion handling.
+ *
+ * It declares its ending rather than being polled for one (ADR-347 D2b):
+ * `checkCompletion()` evaluates the configured conditions and, when one
+ * holds, calls `endStory` — the same verb a real story calls.
  */
 
 import { Story, StoryConfig } from '../../src/install/story';
+import { endStory } from '@sharpee/stdlib';
 import { WorldModel, IFEntity, IdentityTrait, ActorTrait, ContainerTrait, EntityType } from '@sharpee/world-model';
 
 interface CompletionCondition {
@@ -34,6 +39,7 @@ export class CompletionTestStory implements Story {
   private _room: IFEntity | null = null;
   private _player: IFEntity | null = null;
   private _treasureFound: boolean = false;
+  private _world: WorldModel | null = null;
 
   constructor() {
     // Set up default completion conditions
@@ -60,6 +66,8 @@ export class CompletionTestStory implements Story {
   }
 
   initializeWorld(world: WorldModel): void {
+    this._world = world;
+
     // Create test room
     this._room = world.createEntity('Completion Test Room', EntityType.ROOM);
     this._room.add(new IdentityTrait({
@@ -161,18 +169,23 @@ export class CompletionTestStory implements Story {
     ];
   }
 
-  isComplete(): boolean {
-    // Check all completion conditions
+  /**
+   * Evaluate the configured completion conditions and declare the ending
+   * when one holds. A real story calls `endStory` at the moment its
+   * condition becomes true; this fixture keeps the conditions in one place
+   * and checks them on demand, which is the same shape with the timing
+   * under a test's control.
+   *
+   * @returns true when the story has ended (now or earlier)
+   */
+  checkCompletion(): boolean {
     for (const condition of this._completionConditions.values()) {
       if (condition.check()) {
-        this._completionStatus = {
-          isComplete: true,
-          reason: condition.description
-        };
+        this.setComplete(true, condition.description);
         return true;
       }
     }
-    
+
     return this._completionStatus.isComplete;
   }
 
@@ -187,6 +200,12 @@ export class CompletionTestStory implements Story {
 
   setComplete(isComplete: boolean, reason?: string): void {
     this._completionStatus = { isComplete, reason };
+    // Declaring is the whole point (ADR-347 D2b): the world records the
+    // ending, and the engine stops because of that record rather than
+    // because it asked this story a question.
+    if (isComplete && this._world) {
+      endStory(this._world, 'victory', { turn: this._turnCount, cause: reason });
+    }
   }
 
   getCompletionStatus(): { isComplete: boolean; reason?: string } {

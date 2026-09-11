@@ -137,9 +137,9 @@ export class TimersSection {
     }
   }
 
-  /** The current turn: the engine's when wired, else the last tick's. */
+  /** The current turn — the core owns the one implementation. */
   private turnNow(): number {
-    return this.core.turnProvider ? this.core.turnProvider() : this.core.lastTickTurn;
+    return this.core.turnNow();
   }
 
   private timerRecord(qualified: string, world: WorldModel): TimerRecord {

@@ -1892,7 +1892,7 @@ export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
+export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
 ```
 
 ### actions/author/trace
@@ -3825,6 +3825,69 @@ export declare const DEADLY_ROOM_MESSAGE_KEY = "deadlyRoomMessageId";
 export declare function createDeadlyRoomTransformer(random?: RandomService): (parsed: IParsedCommand, world: WorldModel) => IParsedCommand;
 ```
 
+### endings/end-story
+
+```typescript
+/**
+ * `endStory` — the single declaring verb for a story's ending (ADR-347 D2c).
+ *
+ * Every ending mechanism (a Chord `win`/`lose` statement, a TypeScript action,
+ * an event handler that notices the last treasure was scored) calls this
+ * instead of hand-setting a world flag or hand-building an ending event. It
+ * records the Ending on the world (ADR-347 D2a) and returns the blessed
+ * `story.victory` / `story.defeat` event; the caller routes that event into
+ * its own event stream, exactly as it does with `killPlayer`'s death event.
+ *
+ * Public interface: `endStory`, `IEndStoryOptions`.
+ * Owner context: `@sharpee/stdlib` — the story-ending primitive (ADR-347),
+ * sitting beside the player-death primitive it is modelled on.
+ */
+import type { ISemanticEvent } from '@sharpee/core';
+import type { StoryEndingKind } from '@sharpee/if-domain';
+import type { WorldModel } from '@sharpee/world-model';
+/**
+ * Options for {@link endStory}.
+ */
+export interface IEndStoryOptions {
+    /**
+     * The turn the story ended on. Required, because {@link IStoryEnding}
+     * records it as a fact and there is no honest default: the world holds
+     * no turn counter, so only the declaring site knows.
+     */
+    turn: number;
+    /**
+     * Message ID of the ending phrase, when the author supplied one.
+     *
+     * It rides the event as `endingMessageId`, never as a top-level
+     * `messageId`: the engine's ADR-097 domain-message handler renders any
+     * event carrying `data.messageId`, and a `win`/`lose` statement already
+     * emits the phrase through the ordinary phrase path, so carrying it as
+     * `messageId` printed every story's final paragraph twice (GH #274).
+     */
+    messageId?: string;
+    /** Free-form cause, e.g. the `cause` a player death carried. */
+    cause?: string;
+}
+/**
+ * End the story: record the Ending on the world and produce the blessed
+ * ending event.
+ *
+ * First ending wins. Called on a world that already carries an Ending, this
+ * writes nothing, emits nothing, and returns `undefined` — the precedent is
+ * `killPlayer`, idempotent for the same reason (`engine/src/turn/detect-death.ts`):
+ * when several fire in one turn the first is authoritative. An ending that
+ * could be overwritten would make the Ending's `turn` a lie and give one
+ * conclusion two closing events.
+ *
+ * @param world the world that owns the Ending
+ * @param kind victory or defeat
+ * @param opts the turn it happened on (required), plus an optional
+ *   ending-phrase message id and cause
+ * @returns the blessed ending event, or `undefined` if the story had already ended
+ */
+export declare function endStory(world: WorldModel, kind: StoryEndingKind, opts: IEndStoryOptions): ISemanticEvent | undefined;
+```
+
 ### chains
 
 ```typescript
@@ -4091,7 +4154,7 @@ export declare const channelRegistry: IChannelRegistry;
  *
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
-import type { IOChannel, ProseEntry } from '@sharpee/if-domain';
+import type { IOChannel, ProseEntry, IStoryEnding } from '@sharpee/if-domain';
 /**
  * Event types the standard channels listen for. Stories or extensions
  * that want to populate `death`, `endgame`, or `score_notify` emit
@@ -4287,6 +4350,33 @@ export declare const deathChannel: IOChannel<string>;
  */
 export declare const endgameChannel: IOChannel<string>;
 /**
+ * `story-ending` — replace-mode **state** channel carrying the world's
+ * `IStoryEnding` (ADR-347 D3a, D2d).
+ *
+ * The sibling of `endgame`, deliberately not a widening of it.
+ * `endgame` is an event-mode *notification*: it projects a message
+ * string a renderer shows once, and widening its payload would delete
+ * that rendered text and move every golden that records it. This
+ * channel answers the different question — "has this story ended, and
+ * how" — which a client needs as state, to disable an input box or
+ * present an end-game prompt, and which it previously had to infer from
+ * prose (GH #414 defect 3).
+ *
+ * The value is read from the world, never from an event, because the
+ * world is where the Ending lives (ADR-347 D2a). So it is correct on a
+ * turn that did not produce the ending — the turn after a RESTORE of an
+ * ended save, say — and it clears when the Ending does.
+ *
+ * Three return shapes, per the `IOChannel` contract:
+ *  - the record, when the world carries an Ending;
+ *  - `null`, the clear signal, on the turn a previously-reported Ending
+ *    goes away (an UNDO or RESTORE back to a live turn), so a client
+ *    that disabled something can re-enable it;
+ *  - `undefined`, staying quiet, when there is no Ending and none was
+ *    reported.
+ */
+export declare const storyEndingChannel: IOChannel<IStoryEnding | null>;
+/**
  * `score_notify` — event-mode transient score-change announcement.
  * Closure scans for `if.event.score_changed` and emits its message.
  */
@@ -4358,6 +4448,7 @@ export declare const STANDARD_CHANNEL_IDS: {
     readonly BANNER: "banner";
     readonly DEATH: "death";
     readonly ENDGAME: "endgame";
+    readonly STORY_ENDING: "story-ending";
     readonly SCORE_NOTIFY: "score_notify";
     readonly LIFECYCLE: "lifecycle";
     readonly CHARACTER: "character";
@@ -4789,6 +4880,7 @@ export * from './services/index.js';
 export * from './npc/index.js';
 export * from './combat/index.js';
 export * from './death/index.js';
+export * from './endings/index.js';
 export * from './chains/index.js';
 export * from './inference/index.js';
 export * from './utils/index.js';

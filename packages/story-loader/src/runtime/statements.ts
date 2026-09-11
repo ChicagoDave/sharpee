@@ -111,9 +111,15 @@ export class StatementsSection {
         case 'lose':
           if (phase !== 'mutations' && holds) {
             if (stmt.phraseKey) events.push(this.core.phrases.phraseEvent(stmt.phraseKey, ctx));
-            events.push(
-              this.core.host.triggerEnding(ctx.world, stmt.kind === 'win' ? 'victory' : 'defeat', stmt.phraseKey ?? undefined),
+            // `undefined` means the story had already ended this turn — the
+            // first ending wins (ADR-347 D2d), so there is nothing to emit.
+            const ended = this.core.host.triggerEnding(
+              ctx.world,
+              stmt.kind === 'win' ? 'victory' : 'defeat',
+              this.core.turnNow(),
+              stmt.phraseKey ?? undefined,
             );
+            if (ended) events.push(ended);
           }
           break;
         case 'kill':

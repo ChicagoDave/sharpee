@@ -7216,7 +7216,7 @@ import type { TraitInterceptorBinding, InterceptorRegistrationOptions, Intercept
 import type { ExitResolver } from '../capabilities/exit-resolver-binding.js';
 import type { DialogueSelectorRegistration } from '../capabilities/dialogue-selector-binding.js';
 import type { SceneRuntimeBinding } from '../capabilities/scene-runtime-binding.js';
-import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt } from '@sharpee/if-domain';
+import { type WorldState, type WorldConfig, type ContentsOptions, type WorldChange, type IGrammarVocabularyProvider, type IEventProcessorWiring, type GamePrompt, type IStoryEnding } from '@sharpee/if-domain';
 import { ScopeRegistry } from '../scope/scope-registry.js';
 import { IScopeRule } from '../scope/scope-rule.js';
 import { EventHandler, EventValidator, EventPreviewer, EventChainHandler, ChainEventOptions } from './WorldEventSystem.js';
@@ -7550,6 +7550,8 @@ export interface IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
+    getEnding(): IStoryEnding | undefined;
+    setEnding(ending: IStoryEnding): void;
     connectRooms(room1Id: string, room2Id: string, direction: DirectionType, doorId?: string, options?: ConnectRoomsOptions): void;
     createDoor(displayName: string, opts: {
         room1Id: string;
@@ -7625,6 +7627,8 @@ export declare class WorldModel implements IWorldModel {
     private removalObservers;
     private state;
     private playerId;
+    /** The ending this story reached, or undefined while play continues (ADR-347 D2a). */
+    private storyEnding;
     private spatialIndex;
     private config;
     private capabilities;
@@ -7764,6 +7768,28 @@ export declare class WorldModel implements IWorldModel {
     findPath(fromRoomId: string, toRoomId: string): string[] | null;
     getPlayer(): IFEntity | undefined;
     setPlayer(entityId: string): void;
+    /**
+     * The ending this story reached (ADR-347 D2a), or `undefined` while play
+     * continues — absent is the answer "this story has not ended", not a
+     * missing value.
+     *
+     * @returns the Ending, or `undefined` if the story has not ended
+     */
+    getEnding(): IStoryEnding | undefined;
+    /**
+     * Record the ending this story reached.
+     *
+     * This is the plain setter, on the `setPlayer` precedent: it writes and
+     * nothing else. It does NOT emit the ending event and it does NOT enforce
+     * first-ending-wins — both belong to stdlib's `endStory`, the declaring
+     * verb (ADR-347 D2c), exactly as `HealthBehavior.kill` is the plain
+     * mutator under `killPlayer`'s idempotence. Call `endStory` unless you
+     * are restoring a saved world.
+     *
+     * @param ending the Ending to record
+     * @throws if `kind` is neither 'victory' nor 'defeat'
+     */
+    setEnding(ending: IStoryEnding): void;
     awardScore(id: string, points: number, description: string): boolean;
     revokeScore(id: string): boolean;
     hasScore(id: string): boolean;

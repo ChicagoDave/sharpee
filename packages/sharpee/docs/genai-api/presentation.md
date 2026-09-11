@@ -274,6 +274,22 @@ export declare class BrowserClient implements BrowserClientInterface {
     private engineCreateSave;
     /** Apply an engine save to the live world via `WorldModel.loadJSON`. */
     private engineApplySave;
+    /**
+     * Reflect the world's Ending on the input box (ADR-347 D3a).
+     *
+     * The `story-ending` channel is the live signal and carries this
+     * during play. A restore runs *between* turns, though — the boot-time
+     * autosave restore and the restore menu both replace the world with
+     * no turn to produce a packet — so the client reads the same world
+     * the channel reads, at the same two seams the engine derives its own
+     * phase at. It is one fact with one owner; only the delivery differs.
+     *
+     * This is why GH #414's reload loop is fixed by persisting the ended
+     * world rather than by refusing to save it: the state is representable
+     * now, so the reload lands at an end-game prompt that works instead of
+     * a live-looking box behind a dead engine.
+     */
+    private syncEndingFromWorld;
     private performSave;
     private getSaveContext;
     private updateStatusLine;
@@ -1246,12 +1262,13 @@ import { createPromptChannelRenderer } from './prompt.js';
 import { createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer } from './status.js';
 import { createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createChapterChannelRenderer } from './info.js';
 import { createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer } from './notify.js';
+import { createStoryEndingChannelRenderer, applyStoryEndingToInput } from './story-ending.js';
 import { createImageChannelRenderer, createImagePreloadChannelRenderer } from './image.js';
 import { createSoundChannelRenderer, createMusicChannelRenderer, type AudioManagerLike } from './audio.js';
 import { createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer } from './animation.js';
 import { createLifecycleChannelRenderer, type LifecycleChannelRendererOptions } from './lifecycle.js';
 import { mountDefaultLayout, type BrowserDefaultLayout } from './layout.js';
-export { createProseChannelRenderers, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createChapterChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
+export { createProseChannelRenderers, createPromptChannelRenderer, createLocationChannelRenderer, createScoreChannelRenderer, createTurnChannelRenderer, createInfoChannelRenderer, createIfidChannelRenderer, createPrologueChannelRenderer, createBannerChannelRenderer, createChapterChannelRenderer, createDeathChannelRenderer, createEndgameChannelRenderer, createStoryEndingChannelRenderer, applyStoryEndingToInput, createScoreNotifyChannelRenderer, createImageChannelRenderer, createImagePreloadChannelRenderer, createSoundChannelRenderer, createMusicChannelRenderer, createAnimationChannelRenderer, createAnimateChannelRenderer, createTransitionChannelRenderer, createLayoutChannelRenderer, createClearChannelRenderer, createLifecycleChannelRenderer, mountDefaultLayout, };
 export type { BrowserDefaultLayout, AudioManagerLike, LifecycleChannelRendererOptions };
 export { createAmbientChannelRenderer } from './audio.js';
 export { createGenericPanelRenderer } from './panel.js';

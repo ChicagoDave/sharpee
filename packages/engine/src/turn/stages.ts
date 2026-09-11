@@ -71,9 +71,13 @@ export const TURN_STAGES: readonly TurnStage[] = Object.freeze([
   advanceTurnStage,
   playerSwitchStage,
   platformOperationsStage,
+  // ADR-347: before `render-prose`, not after `channel-packet`. A death is
+  // an ending the story never declared, and this stage declares it — so it
+  // has to happen while the turn can still carry it, or the turn that ends
+  // the story renders the ordinary prompt and sends no `story-ending`.
+  detectDeathStage,
   renderProseStage,
   channelPacketStage,
-  detectDeathStage,
   clearTurnEventsStage,
   turnCompleteStage,
   endingStage

@@ -191,6 +191,9 @@ function makeWorld() {
     getPlayer: () => undefined,
     getContainingRoom: () => undefined,
     getLocation: () => undefined,
+    // The client reads the world's Ending on every `connectEngine`
+    // (ADR-347 D3a), so this stub has to answer it.
+    getEnding: () => undefined,
   } as any;
 }
 

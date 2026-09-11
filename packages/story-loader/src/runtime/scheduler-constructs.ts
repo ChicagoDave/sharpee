@@ -14,7 +14,6 @@
  */
 import type { IREntity, IROnClause, IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { STORY_ENDING_FLAG } from '@sharpee/if-domain';
 import { HealthTrait, WorldModel } from '@sharpee/world-model';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from '../state-keys.js';
 import { ExecContext, SchedulerDaemon, knownTopicsIn, type RuntimeCore } from './core.js';
@@ -206,7 +205,7 @@ export class SchedulerConstructsSection {
    * ended the game ("Sparks walk the waxed cord" after the blast).
    */
   private storyOver(world: WorldModel): boolean {
-    if (world.getStateValue(STORY_ENDING_FLAG) !== undefined) return true;
+    if (world.getEnding() !== undefined) return true;
     const player = world.getPlayer();
     const health = player?.get(HealthTrait) as { dead?: boolean } | undefined;
     return health?.dead === true;

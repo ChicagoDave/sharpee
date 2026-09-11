@@ -27,6 +27,7 @@ export * from './services/index.js';
 export * from './npc/index.js';
 export * from './combat/index.js';
 export * from './death/index.js';
+export * from './endings/index.js';
 export * from './chains/index.js';
 export * from './inference/index.js';
 export * from './utils/index.js';

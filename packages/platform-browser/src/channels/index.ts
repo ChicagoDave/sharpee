@@ -38,6 +38,7 @@ import {
   createEndgameChannelRenderer,
   createScoreNotifyChannelRenderer,
 } from './notify.js';
+import { createStoryEndingChannelRenderer, applyStoryEndingToInput } from './story-ending.js';
 import {
   createImageChannelRenderer,
   createImagePreloadChannelRenderer,
@@ -75,6 +76,8 @@ export {
   createChapterChannelRenderer,
   createDeathChannelRenderer,
   createEndgameChannelRenderer,
+  createStoryEndingChannelRenderer,
+  applyStoryEndingToInput,
   createScoreNotifyChannelRenderer,
   createImageChannelRenderer,
   createImagePreloadChannelRenderer,
@@ -205,6 +208,9 @@ export function registerDefaultBrowserRenderers(
   renderer.registerRenderer('story.chapter', createChapterChannelRenderer(layout.main));
   renderer.registerRenderer('death', createDeathChannelRenderer(layout.notify));
   renderer.registerRenderer('endgame', createEndgameChannelRenderer(layout.notify));
+  // ADR-347 D3a: `endgame` prints the ending, `story-ending` says the
+  // story ended. The second is the one the input box can act on.
+  renderer.registerRenderer('story-ending', createStoryEndingChannelRenderer(layout.input));
   renderer.registerRenderer('score_notify', createScoreNotifyChannelRenderer(layout.notify));
 
   // ── Image channels ───────────────────────────────────────────────

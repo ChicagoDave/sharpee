@@ -17,6 +17,7 @@
 
 import { describe, it, expect } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
+import { endStory } from '@sharpee/stdlib';
 import { MinimalTestStory } from '../stories';
 import { setupTestEngine, setupTestEngineWithStory } from '../test-helpers/setup-test-engine';
 import { INPUT_MODE_STATE_KEY } from '../../src/types';
@@ -247,10 +248,12 @@ describe('a stopped engine accepts a meta command and refuses everything else (A
     expect(handled).toBe(0);
   });
 
-  it('a restore that lands a live world returns the engine to play', async () => {
+  it('AC-5: a restore that lands a live world returns the engine to play', async () => {
     // GH #414 one level deeper: RESTORE is one of the verbs D15 exists to
     // allow, and a restore that leaves the phase `stopped` hands the player
-    // a live world they still cannot type into.
+    // a live world they still cannot type into. Since ADR-347 D3 the phase
+    // is *derived* from the restored world rather than resumed regardless
+    // of it — the save here carries no Ending, which is why it plays.
     const engine = setupTestEngineWithStory().engine;
     engine.start();
     const save = engine['createSaveData']();
@@ -274,5 +277,105 @@ describe('a stopped engine accepts a meta command and refuses everything else (A
     await engine.executeTurn('score');
 
     expect(started).toEqual(['score']);
+  });
+});
+
+describe('the phase derives from the Ending at the restore seam (ADR-347 D3, AC-5)', () => {
+  // The GH #414 Phase 1 patch resumed from `stopped` unconditionally, which
+  // meant a RESTORE of an *ended* save produced a playing engine holding a
+  // finished world — two records of one fact, reconciled in the wrong
+  // direction. D3 retires it: the world owns the Ending, so the phase reads
+  // it. The mirror case, a live save returning a stopped engine to play, is
+  // pinned in the D15 suite above.
+
+  it('AC-5: a save carrying an Ending leaves a stopped engine stopped', async () => {
+    const engine = setupTestEngineWithStory().engine;
+    engine.start();
+    endStory(engine.getWorld(), 'victory', { turn: 1, messageId: 'won.phrase' });
+    const ended = engine['createSaveData']();
+    engine.stop('victory');
+    // PRECONDITION: stopped, and the save it is about to load says why.
+    expect(engine['phase'].name).toBe('stopped');
+
+    engine['loadSaveData'](ended);
+
+    // POSTCONDITION: the Ending came back with the world, and the phase
+    // agrees with it — the player lands at the end-game prompt, not in a
+    // live turn of a finished story.
+    expect(engine.getWorld().getEnding()).toMatchObject({ kind: 'victory', turn: 1 });
+    expect(engine['phase'].name).toBe('stopped');
+    await expect(engine.executeTurn('look')).rejects.toThrow(/'stopped' phase/);
+  });
+
+  it('a restore of an ended save into a playing engine stops it', async () => {
+    // GH #414 defect 2 from the other side: the browser persists an ended
+    // world and boots a fresh engine at `playing`. Deriving at the seam
+    // settles it here, instead of letting the next turn re-discover the
+    // ending and stop again.
+    const engine = setupTestEngineWithStory().engine;
+    engine.start();
+    const live = engine['createSaveData']();
+    endStory(engine.getWorld(), 'victory', { turn: 1 });
+    const ended = engine['createSaveData']();
+
+    // A live save into a playing engine changes nothing — an agreeing phase
+    // is left alone, which is what keeps this a derivation and not a flip.
+    engine['loadSaveData'](live);
+    expect(engine.getWorld().getEnding()).toBeUndefined();
+    expect(engine['phase'].name).toBe('playing');
+
+    engine['loadSaveData'](ended);
+
+    expect(engine.getWorld().getEnding()).toMatchObject({ kind: 'victory' });
+    expect(engine['phase'].name).toBe('stopped');
+  });
+
+  it('UNDO back to a live turn returns a stopped engine to play', async () => {
+    const engine = setupTestEngineWithStory({ includeObjects: true }).engine;
+    engine.start();
+    await engine.executeTurn('take lamp'); // undoable — snapshots the live world
+    endStory(engine.getWorld(), 'victory', { turn: 2 });
+    engine.stop('victory');
+    expect(engine['phase'].name).toBe('stopped');
+
+    expect(engine.undo()).toBe(true);
+
+    // The snapshot predates the ending, so the restored world carries none
+    // and the phase follows it.
+    expect(engine.getWorld().getEnding()).toBeUndefined();
+    expect(engine['phase'].name).toBe('playing');
+    await expect(engine.executeTurn('look')).resolves.toBeDefined();
+  });
+
+  it('a restore into an engine that was never started leaves it ready', () => {
+    // A restore does not start an engine (ADR-345 D10, D11), whatever the
+    // save says — the derivation touches `playing` and `stopped` only.
+    const engine = setupTestEngineWithStory().engine;
+    const { engine: source } = setupTestEngineWithStory();
+    source.start();
+    endStory(source.getWorld(), 'victory', { turn: 1 });
+    const ended = source['createSaveData']();
+
+    expect(engine['phase'].name).toBe('ready');
+    engine['loadSaveData'](ended);
+    expect(engine['phase'].name).toBe('ready');
+  });
+
+  it('AC-7: stop(restart) and stop(victory) still produce the same phase', () => {
+    // `stopped` answers "may the engine take a turn" and nothing else
+    // (ADR-347 D4). The Ending is the concept that tells the two apart, and
+    // neither `stop()` call records one — the story did, or nobody did.
+    const restarted = setupTestEngineWithStory().engine;
+    restarted.start();
+    restarted.stop('restart');
+
+    const won = setupTestEngineWithStory().engine;
+    won.start();
+    won.stop('victory');
+
+    expect(restarted['phase'].name).toBe('stopped');
+    expect(won['phase'].name).toBe(restarted['phase'].name);
+    expect(restarted.getWorld().getEnding()).toBeUndefined();
+    expect(won.getWorld().getEnding()).toBeUndefined();
   });
 });

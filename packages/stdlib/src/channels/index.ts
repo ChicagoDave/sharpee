@@ -60,6 +60,7 @@ export {
   bannerChannel,
   deathChannel,
   endgameChannel,
+  storyEndingChannel,
   scoreNotifyChannel,
   lifecycleChannel,
   // Sets

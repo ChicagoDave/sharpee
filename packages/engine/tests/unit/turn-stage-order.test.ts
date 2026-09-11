@@ -35,9 +35,12 @@ const TURN_ORDER = [
   'advance-turn',
   'player-switch',
   'platform-operations',
+  // ADR-347: `detect-death` declares the defeat Ending, so it moved ahead
+  // of `render-prose` — the turn that ends the story has to be able to
+  // carry the end-game prompt and the `story-ending` channel.
+  'detect-death',
   'render-prose',
   'channel-packet',
-  'detect-death',
   'clear-turn-events',
   'turn-complete',
   'ending'
@@ -97,8 +100,12 @@ describe('the turn stage lists (ADR-334 D2)', () => {
     const render = swapped.findIndex((s) => s.name === 'render-prose');
     const platform = swapped.findIndex((s) => s.name === 'platform-operations');
     [swapped[render], swapped[platform]] = [swapped[platform], swapped[render]];
+    // Moving `platform-operations` behind the render strands both stages
+    // that depend on it — `detect-death` joined that set when it moved
+    // ahead of the render (ADR-347). Both are named, which is the point.
     expect(requiresOrderViolations(swapped)).toEqual([
-      { name: 'render-prose', requires: 'platform-operations' }
+      { name: 'render-prose', requires: 'platform-operations' },
+      { name: 'detect-death', requires: 'platform-operations' }
     ]);
   });
 

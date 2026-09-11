@@ -132,7 +132,16 @@ export interface RuntimeHost {
   entityId(irId: string): string | undefined;
   irIdOf(worldId: string): string | undefined;
   producers: Map<string, PhraseProducer>;
-  triggerEnding(world: WorldModel, ending: StoryEndingKind, messageId?: string): ISemanticEvent;
+  /**
+   * Declare the story's ending; `undefined` when it had already ended
+   * (first ending wins — ADR-347 D2d).
+   */
+  triggerEnding(
+    world: WorldModel,
+    ending: StoryEndingKind,
+    turn: number,
+    messageId?: string,
+  ): ISemanticEvent | undefined;
   /**
    * Character-model story data for the topic dispatch (ADR-310/318 Phase
    * 6): authored temperament defs and the kind-membership half of the
@@ -273,6 +282,17 @@ export class RuntimeCore {
       list.push({ clause, it: null });
       this.timerClauses.set(clause.timer, list);
     }
+  }
+
+  /**
+   * The current turn: the engine's when wired, else the last tick's — the
+   * headless fallback. One implementation, so a caller never picks a
+   * different answer to the same question.
+   *
+   * @returns the turn number to stamp on anything that records "when"
+   */
+  turnNow(): number {
+    return this.turnProvider ? this.turnProvider() : this.lastTickTurn;
   }
 
   /**
