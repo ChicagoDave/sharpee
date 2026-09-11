@@ -121,7 +121,7 @@ export class SharpeeTaskProvider implements vscode.TaskProvider {
 
   private createBuildTask(storyId: string): vscode.Task {
     const workspaceFolder = vscode.workspace.workspaceFolders![0];
-    const buildScript = resolveBuildScript(workspaceFolder.uri.fsPath);
+    const buildScript = resolveBuildScript();
 
     const definition: vscode.TaskDefinition = {
       type: SharpeeTaskProvider.type,
@@ -258,7 +258,7 @@ export async function handlePlayInBrowser(): Promise<void> {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) return;
 
-  const buildScript = resolveBuildScript(workspaceFolder.uri.fsPath);
+  const buildScript = resolveBuildScript();
 
   // Build with browser client
   const definition: vscode.TaskDefinition = {

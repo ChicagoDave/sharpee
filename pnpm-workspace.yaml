@@ -5,6 +5,11 @@ packages:
   - packages/extensions/scoring
   - packages/extensions/hunger
   - packages/extensions/chapters
+  # packages/extensions/conversation is deliberately absent: it is a stub, not a
+  # package. Its entire source is `export const version = '0.1.0'` — no dist, no
+  # importer, absent from story-loader's EXTENSION_REGISTRY, and never published
+  # (`npm view @sharpee/extension-conversation` 404s). Listing it here would put an
+  # empty shell on every build and gate list. Verified 2026-09-10, GH #404.
   - '!packages/map-editor'
   # packages/interpreter retired 2026-08-13 (David) — the legacy Tauri
   # runner, unbuilt and importerless. Archived at
@@ -13,6 +18,7 @@ packages:
   - '!packages/_archive/**'
   - stories/dungeo
   - stories/channel-service-test
+  - stories/concealment-test
   # ADR-259 D8: `stories/friendly-zoo` is now a pure Chord story — a
   # `.story`, its hatch, and its transcripts, with no package.json at all
   # (ADR-252 D2). The TypeScript tutorial that used to share the directory
@@ -31,6 +37,7 @@ packages:
   # tools/_archive/zifmia, out of the workspace so its deps and build
   # artifacts stop being installed and rebuilt.
   - tools/repokit
+  - tools/vscode-ext
 
 # Public-hoist @sharpee/* and the lz-string vendored baseline entry so
 # Node's ESM resolver can find every Story Runtime Baseline (ADR-178)
