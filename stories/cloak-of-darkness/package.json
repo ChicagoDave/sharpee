@@ -4,6 +4,7 @@
   "description": "The classic Cloak of Darkness IF demonstration game — a Chord story (cloak.story) with one TypeScript hatch module (src/extras.ts)",
   "scripts": {
     "build": "tsc -p tsconfig.chord.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rimraf dist"
   },
   "dependencies": {

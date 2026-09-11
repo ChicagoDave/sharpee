@@ -44,7 +44,7 @@
     "test:grade:summary": "./scripts/grade-tests.sh --summary",
     "test:mutate": "stryker run",
     "audit:templates": "node scripts/audit-templates.js",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "turbo run typecheck",
     "lint": "pnpm -r run lint",
     "watch": "pnpm -r --parallel run watch",
     "sharpee": "node packages/sharpee/dist/cli/index.js",

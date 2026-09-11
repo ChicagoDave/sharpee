@@ -18,6 +18,7 @@
   },
   "scripts": {
     "build": "tsc && tsc -p tsconfig.esm.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",
     "lint": "eslint src --ext .ts",
     "build:npm": "tsc --outDir dist",
