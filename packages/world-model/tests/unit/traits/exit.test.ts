@@ -2,6 +2,7 @@
 
 import { IFEntity } from '../../../src/entities/if-entity';
 import { ExitTrait } from '../../../src/traits/exit/exitTrait';
+import { ExitBehavior } from '../../../src/traits/exit/exitBehavior';
 import { TraitType } from '../../../src/traits/trait-types';
 import { WorldModel } from '../../../src/world/WorldModel';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
@@ -28,10 +29,23 @@ describe('ExitTrait', () => {
       expect(trait.conditional).toBe(false);
     });
 
-    it('should throw error if required fields are missing', () => {
-      expect(() => new ExitTrait({} as Partial<ExitTrait>)).toThrow();
-      expect(() => new ExitTrait({ from: 'room1' } as Partial<ExitTrait>)).toThrow();
-      expect(() => new ExitTrait({ from: 'room1', to: 'room2' } as Partial<ExitTrait>)).toThrow();
+    it('allows an incomplete passage — the trait polices nothing', () => {
+      // ADR-346 D1/D7: completeness belongs to ExitBehavior, not to construction.
+      const bare = new ExitTrait();
+      expect(bare.from).toBeUndefined();
+      expect(bare.to).toBeUndefined();
+      expect(bare.command).toBeUndefined();
+      expect(bare.type).toBe(TraitType.EXIT);
+
+      const partial = new ExitTrait({ from: 'room1' });
+      expect(partial.from).toBe('room1');
+      expect(partial.to).toBeUndefined();
+    });
+
+    it('an exit with no command matches nothing by command', () => {
+      const exit = new IFEntity('e-1', 'exit');
+      exit.add(new ExitTrait({ from: 'room1', to: 'room2' }));
+      expect(ExitBehavior.matchesCommand(exit, 'north')).toBe(false);
     });
 
     it('should create trait with all optional values', () => {

@@ -1903,8 +1903,12 @@ export class WorldModel implements IWorldModel {
     if (!doorTrait) {
       throw new Error(`connectRooms: \`${doorId}\` has no DoorTrait — compose the trait before wiring`);
     }
-    // DoorTrait's constructor requires both rooms, so the pair is always
-    // pre-set: verify it names the rooms being wired (room1 = placement).
+    // A door may be one-sided — declared before the story knows where it leads —
+    // so an unset side is filled in here rather than rejected (room1 = placement).
+    // A side that is already set and names a DIFFERENT room stays an error: silently
+    // re-pointing a wired door would hide an authoring mistake.
+    if (doorTrait.room1 === undefined) doorTrait.room1 = room1Id;
+    if (doorTrait.room2 === undefined) doorTrait.room2 = room2Id;
     if (doorTrait.room1 !== room1Id || doorTrait.room2 !== room2Id) {
       throw new Error(
         `connectRooms: DoorTrait on \`${doorId}\` connects (${doorTrait.room1}, ${doorTrait.room2}), not (${room1Id}, ${room2Id})`

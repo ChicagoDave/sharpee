@@ -23,8 +23,9 @@ export class ExitBehavior {
     const trait = exit.get(TraitType.EXIT) as ExitTrait;
     if (!trait) return false;
     
-    // Check main command
-    if (trait.command.toLowerCase() === command.toLowerCase()) {
+    // Check main command. An exit that has not been given one matches nothing by
+    // command — unreachable by typing, which is what an unnamed exit is (ADR-346 D7).
+    if (trait.command !== undefined && trait.command.toLowerCase() === command.toLowerCase()) {
       return true;
     }
     

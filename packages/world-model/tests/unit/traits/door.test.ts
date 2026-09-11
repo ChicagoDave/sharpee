@@ -8,6 +8,7 @@ import { OpenableTrait } from '../../../src/traits/openable/openableTrait';
 import { LockableTrait } from '../../../src/traits/lockable/lockableTrait';
 import { createTestDoor, createConnectedRoomsWithDoor } from '../../fixtures/test-interactive';
 import { RoomTrait } from '../../../src/traits/room/roomTrait';
+import { Direction } from '../../../src/constants/directions';
 
 describe('DoorTrait', () => {
   let world: WorldModel;
@@ -32,11 +33,32 @@ describe('DoorTrait', () => {
       expect(trait.bidirectional).toBe(true);
     });
 
-    it('should throw error without room connections', () => {
-      expect(() => new DoorTrait()).toThrow('Door must connect two rooms');
-      expect(() => new DoorTrait({})).toThrow('Door must connect two rooms');
-      expect(() => new DoorTrait({ room1: 'r01' })).toThrow('Door must connect two rooms');
-      expect(() => new DoorTrait({ room2: 'r02' })).toThrow('Door must connect two rooms');
+    it('allows a one-sided door — the story supplies the destination later', () => {
+      // A door declared before its destination is known is a door, not an error:
+      // the trait is pure data and polices nothing (doorTrait.ts header).
+      const oneSided = new DoorTrait({ room1: 'r01' });
+      expect(oneSided.room1).toBe('r01');
+      expect(oneSided.room2).toBeUndefined();
+
+      const unplaced = new DoorTrait();
+      expect(unplaced.room1).toBeUndefined();
+      expect(unplaced.room2).toBeUndefined();
+      expect(unplaced.type).toBe(TraitType.DOOR);
+    });
+
+    it('connectRooms fills in the side a one-sided door left unset', () => {
+      const kitchen = world.createEntity('Kitchen', 'room');
+      kitchen.add(new RoomTrait());
+      const pantry = world.createEntity('Pantry', 'room');
+      pantry.add(new RoomTrait());
+      const door = world.createEntity('pantry door', 'door');
+      door.add(new DoorTrait({ room1: kitchen.id }));
+
+      world.connectRooms(kitchen.id, pantry.id, Direction.NORTH, door.id);
+
+      const trait = door.get(TraitType.DOOR) as DoorTrait;
+      expect(trait.room1).toBe(kitchen.id);
+      expect(trait.room2).toBe(pantry.id);
     });
 
     it('should handle unidirectional doors', () => {

@@ -11,7 +11,7 @@
 import { describe, test, expect, beforeEach } from 'vitest';
 import { lockingAction } from '../../../src/actions/standard/locking';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, LockableTrait, OpenableTrait } from '@sharpee/world-model';
+import { ContainerTrait, DoorTrait, LockableTrait, OpenableTrait, TraitType } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -62,10 +62,9 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when target is not lockable', () => {
       const { world, player, room } = setupBasicWorld();
       const box = world.createEntity('wooden box', 'object');
-      box.add({
-        type: TraitType.OPENABLE,
+      box.add(new OpenableTrait({
         isOpen: false
-      });
+      }));
       // No lockable trait
 
       world.moveEntity(box.id, room.id);
@@ -87,11 +86,10 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when already locked', () => {
       const { world, player, room } = setupBasicWorld();
       const chest = world.createEntity('treasure chest', 'object');
-      chest.add({
-        type: TraitType.LOCKABLE,
+      chest.add(new LockableTrait({
         isLocked: true,  // Already locked
         keyId: 'golden_key'
-      });
+      }));
 
       world.moveEntity(chest.id, room.id);
 
@@ -112,14 +110,12 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when target is open', () => {
       const { world, player, room } = setupBasicWorld();
       const cabinet = world.createEntity('cabinet', 'object');
-      cabinet.add({
-        type: TraitType.OPENABLE,
+      cabinet.add(new OpenableTrait({
         isOpen: true  // Open - can't lock
-      });
-      cabinet.add({
-        type: TraitType.LOCKABLE,
+      }));
+      cabinet.add(new LockableTrait({
         isLocked: false
-      });
+      }));
 
       world.moveEntity(cabinet.id, room.id);
 
@@ -142,15 +138,13 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when key required but not provided', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('oak door', 'object');
-      door.add({
-        type: TraitType.OPENABLE,
+      door.add(new OpenableTrait({
         isOpen: false
-      });
-      door.add({
-        type: TraitType.LOCKABLE,
+      }));
+      door.add(new LockableTrait({
         isLocked: false,
         keyId: 'brass_key'  // Requires key
-      });
+      }));
 
       world.moveEntity(door.id, room.id);
 
@@ -171,15 +165,13 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail when key not held by player', () => {
       const { world, player, room } = setupBasicWorld();
       const chest = world.createEntity('chest', 'object');
-      chest.add({
-        type: TraitType.OPENABLE,
+      chest.add(new OpenableTrait({
         isOpen: false
-      });
-      chest.add({
-        type: TraitType.LOCKABLE,
+      }));
+      chest.add(new LockableTrait({
         isLocked: false,
         keyId: 'iron_key'
-      });
+      }));
 
       const key = world.createEntity('iron key', 'object');
 
@@ -205,15 +197,13 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should fail with wrong key', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('door', 'object');
-      door.add({
-        type: TraitType.OPENABLE,
+      door.add(new OpenableTrait({
         isOpen: false
-      });
-      door.add({
-        type: TraitType.LOCKABLE,
+      }));
+      door.add(new LockableTrait({
         isLocked: false,
         keyId: 'gold_key'  // Requires gold key
-      });
+      }));
 
       const wrongKey = world.createEntity('silver key', 'object');
 
@@ -244,18 +234,14 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should lock object without key requirement', () => {
       const { world, player, room } = setupBasicWorld();
       const box = world.createEntity('small box', 'object');
-      box.add({ 
-        type: TraitType.OPENABLE,
+      box.add(new OpenableTrait({
         isOpen: false
-      });
-      box.add({
-        type: TraitType.LOCKABLE,
+      }));
+      box.add(new LockableTrait({
         isLocked: false
         // No keyId - doesn't require key
-      });
-      box.add({
-        type: TraitType.CONTAINER
-      });
+      }));
+      box.add(new ContainerTrait());
       
       world.moveEntity(box.id, room.id);
       
@@ -280,19 +266,17 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should lock with correct key', () => {
       const { world, player, room } = setupBasicWorld();
       const safe = world.createEntity('wall safe', 'object');
-      safe.add({
-        type: TraitType.OPENABLE,
+      safe.add(new OpenableTrait({
         isOpen: false
-      });
+      }));
       // Add lockable trait without keyId initially
 
       const key = world.createEntity('safe key', 'object');
       // Store the key's actual ID in the lockable trait
-      safe.add({
-        type: TraitType.LOCKABLE,
+      safe.add(new LockableTrait({
         isLocked: false,
         keyId: key.id  // Use the actual entity ID
-      });
+      }));
 
       world.moveEntity(safe.id, room.id);
       world.moveEntity(key.id, player.id);  // Player has key
@@ -321,22 +305,19 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should lock door with key', () => {
       const { world, player, room } = setupBasicWorld();
       const door = world.createEntity('front door', 'object');
-      door.add({ 
-        type: TraitType.OPENABLE,
+      door.add(new OpenableTrait({
         isOpen: false
-      });
-      door.add({
-        type: TraitType.DOOR,
-        connectsTo: 'outside'
-      });
+      }));
+      door.add(new DoorTrait({
+        room1: room.id
+      }));
       
       const key = world.createEntity('house key', 'object');
       
-      door.add({
-        type: TraitType.LOCKABLE,
+      door.add(new LockableTrait({
         isLocked: false,
         keyId: key.id  // Use the actual entity ID
-      });
+      }));
       
       world.moveEntity(door.id, room.id);
       world.moveEntity(key.id, player.id);
@@ -366,19 +347,17 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should handle multiple valid keys', () => {
       const { world, player, room } = setupBasicWorld();
       const chest = world.createEntity('old chest', 'object');
-      chest.add({ 
-        type: TraitType.OPENABLE,
+      chest.add(new OpenableTrait({
         isOpen: false
-      });
+      }));
       const key = world.createEntity('skeleton key', 'object');
       const key2 = world.createEntity('chest key', 'object');
       const key3 = world.createEntity('master key', 'object');
       
-      chest.add({
-        type: TraitType.LOCKABLE,
+      chest.add(new LockableTrait({
         isLocked: false,
         keyIds: [key3.id, key2.id, key.id]  // Multiple valid keys using actual IDs
-      });
+      }));
       
       world.moveEntity(chest.id, room.id);
       world.moveEntity(key.id, player.id);
@@ -402,15 +381,13 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should include lock sound if specified', () => {
       const { world, player, room } = setupBasicWorld();
       const vault = world.createEntity('bank vault', 'object');
-      vault.add({ 
-        type: TraitType.OPENABLE,
+      vault.add(new OpenableTrait({
         isOpen: false
-      });
-      vault.add({
-        type: TraitType.LOCKABLE,
+      }));
+      vault.add(new LockableTrait({
         isLocked: false,
         lockSound: 'heavy clunk'
-      });
+      }));
       
       world.moveEntity(vault.id, room.id);
       
@@ -437,14 +414,12 @@ describe('lockingAction (Golden Pattern)', () => {
     test('should include proper entities in all events', () => {
       const { world, player, room } = setupBasicWorld();
       const locker = world.createEntity('locker', 'object');
-      locker.add({ 
-        type: TraitType.OPENABLE,
+      locker.add(new OpenableTrait({
         isOpen: false 
-      });
-      locker.add({ 
-        type: TraitType.LOCKABLE,
+      }));
+      locker.add(new LockableTrait({
         isLocked: false
-      });
+      }));
       
       world.moveEntity(locker.id, room.id);
       
@@ -471,10 +446,9 @@ describe('Locking Action Edge Cases', () => {
   test('should handle lockable without openable trait', () => {
     const { world, player, room } = setupBasicWorld();
     const padlock = world.createEntity('padlock', 'object');
-    padlock.add({
-      type: TraitType.LOCKABLE,
+    padlock.add(new LockableTrait({
       isLocked: false
-    });
+    }));
     // No openable trait - just a lockable thing
     
     world.moveEntity(padlock.id, room.id);
@@ -496,20 +470,18 @@ describe('Locking Action Edge Cases', () => {
   test('should prefer keyId over keyIds when both present', () => {
     const { world, player, room } = setupBasicWorld();
     const box = world.createEntity('box', 'object');
-    box.add({ 
-      type: TraitType.OPENABLE,
+    box.add(new OpenableTrait({
       isOpen: false 
-    });
+    }));
     const primaryKey = world.createEntity('primary key', 'object');
     const backupKey1 = world.createEntity('backup key 1', 'object');
     const backupKey2 = world.createEntity('backup key 2', 'object');
     
-    box.add({
-      type: TraitType.LOCKABLE,
+    box.add(new LockableTrait({
       isLocked: false,
       keyId: primaryKey.id,  // Primary key using actual ID
       keyIds: [backupKey1.id, backupKey2.id]  // Also has backup keys
-    });
+    }));
     
     world.moveEntity(box.id, room.id);
     world.moveEntity(primaryKey.id, player.id);
@@ -534,18 +506,16 @@ describe('Locking Action Edge Cases', () => {
   test('should use backup key when primary not available', () => {
     const { world, player, room } = setupBasicWorld();
     const gate = world.createEntity('gate', 'object');
-    gate.add({
-      type: TraitType.OPENABLE,
+    gate.add(new OpenableTrait({
       isOpen: false
-    });
+    }));
     const gateKey = world.createEntity('gate key', 'object');
     const masterKey = world.createEntity('master key', 'object');
 
-    gate.add({
-      type: TraitType.LOCKABLE,
+    gate.add(new LockableTrait({
       isLocked: false,
       keyIds: [gateKey.id, masterKey.id]  // Using actual entity IDs
-    });
+    }));
 
     world.moveEntity(gate.id, room.id);
     world.moveEntity(masterKey.id, player.id);
@@ -578,14 +548,12 @@ describe('World State Mutations', () => {
   test('should actually set isLocked to true after locking', () => {
     const { world, player, room } = setupBasicWorld();
     const box = world.createEntity('small box', 'object');
-    box.add({
-      type: TraitType.OPENABLE,
+    box.add(new OpenableTrait({
       isOpen: false
-    });
-    box.add({
-      type: TraitType.LOCKABLE,
+    }));
+    box.add(new LockableTrait({
       isLocked: false
-    });
+    }));
     world.moveEntity(box.id, room.id);
 
     // VERIFY PRECONDITION: box is unlocked
@@ -609,16 +577,14 @@ describe('World State Mutations', () => {
   test('should actually set isLocked to true when using correct key', () => {
     const { world, player, room } = setupBasicWorld();
     const chest = world.createEntity('treasure chest', 'object');
-    chest.add({
-      type: TraitType.OPENABLE,
+    chest.add(new OpenableTrait({
       isOpen: false
-    });
+    }));
     const key = world.createEntity('golden key', 'object');
-    chest.add({
-      type: TraitType.LOCKABLE,
+    chest.add(new LockableTrait({
       isLocked: false,
       keyId: key.id
-    });
+    }));
     world.moveEntity(chest.id, room.id);
     world.moveEntity(key.id, player.id);
 
@@ -645,14 +611,12 @@ describe('World State Mutations', () => {
   test('should NOT change isLocked when already locked', () => {
     const { world, player, room } = setupBasicWorld();
     const safe = world.createEntity('wall safe', 'object');
-    safe.add({
-      type: TraitType.OPENABLE,
+    safe.add(new OpenableTrait({
       isOpen: false
-    });
-    safe.add({
-      type: TraitType.LOCKABLE,
+    }));
+    safe.add(new LockableTrait({
       isLocked: true // Already locked
-    });
+    }));
     world.moveEntity(safe.id, room.id);
 
     // VERIFY PRECONDITION: safe is locked
@@ -677,14 +641,12 @@ describe('World State Mutations', () => {
   test('should NOT change isLocked when target is open', () => {
     const { world, player, room } = setupBasicWorld();
     const cabinet = world.createEntity('cabinet', 'object');
-    cabinet.add({
-      type: TraitType.OPENABLE,
+    cabinet.add(new OpenableTrait({
       isOpen: true // Open - can't lock
-    });
-    cabinet.add({
-      type: TraitType.LOCKABLE,
+    }));
+    cabinet.add(new LockableTrait({
       isLocked: false
-    });
+    }));
     world.moveEntity(cabinet.id, room.id);
 
     // VERIFY PRECONDITION: cabinet is unlocked and open
@@ -731,20 +693,17 @@ describe('World State Mutations', () => {
   test('should actually lock a door with key', () => {
     const { world, player, room } = setupBasicWorld();
     const door = world.createEntity('oak door', 'object');
-    door.add({
-      type: TraitType.OPENABLE,
+    door.add(new OpenableTrait({
       isOpen: false
-    });
-    door.add({
-      type: TraitType.DOOR,
-      connectsTo: 'room2'
-    });
+    }));
+    door.add(new DoorTrait({
+      room1: room.id
+    }));
     const key = world.createEntity('brass key', 'object');
-    door.add({
-      type: TraitType.LOCKABLE,
+    door.add(new LockableTrait({
       isLocked: false,
       keyId: key.id
-    });
+    }));
     world.moveEntity(door.id, room.id);
     world.moveEntity(key.id, player.id);
 

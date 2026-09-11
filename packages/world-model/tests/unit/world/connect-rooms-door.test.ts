@@ -95,6 +95,46 @@ describe('connectRooms with a door (ADR-237 D4)', () => {
       expect(world.getLocation(door.id)).toBeUndefined();
     });
 
+    it('fills in the side a one-sided door left unset (ADR-346 D3)', () => {
+      const door = world.createEntity('pantry door', 'door');
+      door.add(new DoorTrait({ room1: kitchen.id }));
+
+      world.connectRooms(kitchen.id, hall.id, Direction.NORTH, door.id);
+
+      const trait = door.get(TraitType.DOOR) as DoorTrait;
+      expect(trait.room1).toBe(kitchen.id);
+      expect(trait.room2).toBe(hall.id);
+      expect(roomTrait(kitchen).exits?.[Direction.NORTH]?.via).toBe(door.id);
+      expect(world.getLocation(door.id)).toBe(kitchen.id);
+    });
+
+    it('fills in room1 when that is the side left unset (ADR-346 D3, mirror case)', () => {
+      // The fill-in has two symmetric branches; this is the one a door composed
+      // destination-first exercises.
+      const door = world.createEntity('pantry door', 'door');
+      door.add(new DoorTrait({ room2: hall.id }));
+
+      world.connectRooms(kitchen.id, hall.id, Direction.NORTH, door.id);
+
+      const trait = door.get(TraitType.DOOR) as DoorTrait;
+      expect(trait.room1).toBe(kitchen.id);
+      expect(trait.room2).toBe(hall.id);
+      expect(world.getLocation(door.id)).toBe(kitchen.id);
+    });
+
+    it('still rejects when the ONE side a one-sided door does name disagrees', () => {
+      // The fill-in runs before the comparison, so this is the path that could
+      // mask a mismatch: room2 gets filled, room1 is set and wrong.
+      const pantry = makeRoom('Pantry');
+      const door = world.createEntity('oak door', 'door');
+      door.add(new DoorTrait({ room1: pantry.id }));
+
+      expect(() => world.connectRooms(kitchen.id, hall.id, Direction.NORTH, door.id))
+        .toThrow(/connects \(.*\), not \(.*\)/);
+      expectUnwired();
+      expect(world.getLocation(door.id)).toBeUndefined();
+    });
+
     it('rejects a reversed room order (room1 is the placement room, never guessed)', () => {
       const door = composeDoor('oak door', kitchen.id, hall.id);
       expect(() => world.connectRooms(hall.id, kitchen.id, Direction.SOUTH, door.id))

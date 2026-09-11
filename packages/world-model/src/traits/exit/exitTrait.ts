@@ -6,24 +6,29 @@ import { TraitType } from '../trait-types.js';
 /**
  * Exit trait for entities that represent passages between locations.
  * Used for doors, passages, portals, and any custom exits like "xyzzy".
- * 
+ *
+ * `from`, `to` and `command` may each be unset while a story is still composing
+ * the passage — the trait polices nothing (ADR-346 D7). `ExitBehavior` is where a
+ * passage is required to be complete before it is used: `createBidirectional`
+ * already refuses incomplete data of its own accord.
+ *
  * This trait contains only data - all behavior is in ExitBehavior.
  */
 export class ExitTrait implements ITrait {
   static readonly type = TraitType.EXIT;
   readonly type = TraitType.EXIT;
   
-  /** Source location ID (must be an entity ID, not a name) */
-  from: string;
+  /** Source location ID (an entity ID, not a name) — unset while unplaced. */
+  from?: string;
   
-  /** Destination location ID (must be an entity ID, not a name) */
-  to: string;
+  /** Destination location ID (an entity ID, not a name) — unset until the story supplies it. */
+  to?: string;
   
   /** Standard direction (north, south, up, etc.) - optional */
   direction?: string;
   
-  /** Command to use this exit (e.g., "go north", "enter portal", "xyzzy") */
-  command: string;
+  /** Command to use this exit (e.g., "go north", "enter portal", "xyzzy") — unset until named. */
+  command?: string;
   
   /** Alternative commands that work for this exit */
   aliases?: string[];
@@ -55,14 +60,10 @@ export class ExitTrait implements ITrait {
   /** Condition identifier (checked by behaviors) */
   conditionId?: string;
   
-  constructor(data: Partial<ExitTrait>) {
-    if (!data.from || !data.to || !data.command) {
-      throw new Error('ExitTrait requires from, to, and command');
-    }
-    
-    this.from = data.from;
-    this.to = data.to;
-    this.command = data.command;
+  constructor(data: Partial<ExitTrait> = {}) {
+    if (data.from !== undefined) this.from = data.from;
+    if (data.to !== undefined) this.to = data.to;
+    if (data.command !== undefined) this.command = data.command;
     
     if (data.direction !== undefined) this.direction = data.direction;
     if (data.aliases !== undefined) this.aliases = data.aliases;

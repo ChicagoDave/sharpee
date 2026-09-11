@@ -16,7 +16,7 @@ export class DoorBehavior extends Behavior {
   /**
    * Get the rooms this door connects
    */
-  static getRooms(door: IFEntity): [string, string] {
+  static getRooms(door: IFEntity): [string | undefined, string | undefined] {
     const trait = DoorBehavior.require<DoorTrait>(door, TraitType.DOOR);
     return [trait.room1, trait.room2];
   }
@@ -28,9 +28,9 @@ export class DoorBehavior extends Behavior {
   static getOtherRoom(door: IFEntity, currentRoom: string): string | undefined {
     const trait = DoorBehavior.require<DoorTrait>(door, TraitType.DOOR);
     
-    if (trait.room1 === currentRoom) {
+    if (trait.room1 !== undefined && trait.room1 === currentRoom) {
       return trait.room2;
-    } else if (trait.room2 === currentRoom) {
+    } else if (trait.room2 !== undefined && trait.room2 === currentRoom) {
       // Check if traversal is allowed in this direction
       return trait.bidirectional ? trait.room1 : undefined;
     }
@@ -67,7 +67,7 @@ export class DoorBehavior extends Behavior {
    * Get the entry room (for one-way doors)
    * This is the room you can enter from
    */
-  static getEntryRoom(door: IFEntity): string {
+  static getEntryRoom(door: IFEntity): string | undefined {
     const trait = DoorBehavior.require<DoorTrait>(door, TraitType.DOOR);
     return trait.room1;
   }
@@ -76,7 +76,7 @@ export class DoorBehavior extends Behavior {
    * Get the exit room (for one-way doors)
    * This is the room you exit to
    */
-  static getExitRoom(door: IFEntity): string {
+  static getExitRoom(door: IFEntity): string | undefined {
     const trait = DoorBehavior.require<DoorTrait>(door, TraitType.DOOR);
     return trait.room2;
   }
