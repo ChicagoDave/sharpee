@@ -15,13 +15,13 @@
     {
       "id": "002",
       "title": "The character model in Chord",
-      "status": "DRAFT",
-      "built": "partial — @sharpee/character exists and passes 301 tests across 19 files, but had zero consumers when ADR-310 was written; the Chord surface over it does not exist",
+      "status": "SHIPPED — the Chord surface landed in Sharpee 5.1.0 / Chord 3.3.0, 2026-08-18",
+      "built": "yes — the zero-consumer state that prompted ADR-310 is over. @sharpee/character is consumed by chord (ast.ts, ir.ts), stdlib (npc/npc-service.ts), the umbrella, and six story-loader modules (loader, evaluator, runtime/statements, runtime/dialogue, runtime/topic-tables, runtime/conversation-threads); the Chord surface is define manner, define greetings, define exchange, define initiative and define conversation, and four stories use it (verified 2026-09-11)",
       "created": "2026-08-11",
-      "targetDate": "TBD",
-      "targetSharpee": "TBD",
-      "targetChord": "TBD",
-      "tracesTo": "ADR-310 (amended 2026-08-14) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in docs/work/archive/adr-310/prior-art.md · consumed by 003",
+      "targetDate": "shipped 2026-08-18",
+      "targetSharpee": "5.1.0 (shipped)",
+      "targetChord": "3.3.0 (shipped)",
+      "tracesTo": "ADR-310 (amended 2026-08-14, ACCEPTED 2026-08-15) · ADR-318 (the normative layer) · ADR-320 (conversation, eleven phases) · ADR-329 (the acting statement, which gave goal steps a real execution path) · builds on ADR-141, ADR-142, ADR-144, ADR-145, ADR-146, ADR-210, ADR-222, ADR-239 · prior art in docs/work/archive/adr-310/prior-art.md · consumed by 003",
       "summary": "Giving Chord authors a way to write characters — words the author writes, numbers the runtime owns. @sharpee/character was designed and built across four days in April 2026 (ADRs 141–146) and works, but an audit found it shipping with zero consumers. ADR-310 is the response: what the Chord surface over it should be."
     },
     {
@@ -63,13 +63,13 @@
     {
       "id": "006",
       "title": "Native Windows IDE",
-      "status": "PROPOSED — no ADR exists",
+      "status": "ACCEPTED — ADR-341, 2026-09-08; the spike is the first phase",
       "built": "none — Chord Writer is macOS-only (tools/ide/project.yml declares platform: macOS)",
       "created": "2026-08-14 (first recorded as a roadmap item; no prior design doc)",
       "targetDate": "TBD",
       "targetSharpee": "TBD",
       "targetChord": "TBD",
-      "tracesTo": "nothing yet — Chord Writer's own ADRs (ADR-279 packaging, ADR-280 project model) are the closest prior art",
+      "tracesTo": "ADR-341 · issue #386 · builds on ADR-279 (packaging) and ADR-280 (project model)",
       "summary": "A Chord authoring IDE for Windows. Chord Writer 1.0.0 shipped for macOS; Windows authors currently have the CLI and a text editor."
     },
     {

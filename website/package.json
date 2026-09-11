@@ -3,11 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "sync": "node scripts/sync-versions.mjs && node scripts/sync-chord-ebnf.mjs && node scripts/sync-roadmap.mjs && node scripts/sync-releases.mjs && node scripts/build-search-index.mjs",
+    "dev": "npm run sync && next dev",
     "search-index": "node scripts/build-search-index.mjs",
-    "prebuild": "node scripts/sync-versions.mjs && node scripts/sync-chord-ebnf.mjs && node scripts/sync-roadmap.mjs && node scripts/build-search-index.mjs",
-    "predev": "node scripts/sync-versions.mjs && node scripts/sync-chord-ebnf.mjs && node scripts/sync-roadmap.mjs && node scripts/build-search-index.mjs",
-    "build": "next build",
+    "build": "npm run sync && next build",
     "start": "next start",
     "lint": "eslint"
   },

@@ -12,12 +12,20 @@
  */
 import { DocPage } from "@/components/doc-page";
 import roadmap from "@/lib/roadmap-data.json";
+import versions from "@/lib/versions.json";
 
-/** Versions shown in the intro. Each moves on its own cadence (ADR-257). */
+/**
+ * Versions shown in the intro. Each moves on its own cadence (ADR-257).
+ *
+ * DERIVED from `versions.json`, never hand-written. These three were literal
+ * strings until 2026-09-11, by which point they read 5.0.1 / 3.0.0 / 1.0.0
+ * against an actual 5.3.2 / 3.6.0 / 1.4.0 — the same drift `sync-versions.mjs`
+ * was written to stop, on a second page it did not reach.
+ */
 const VERSIONS = [
-  { label: "Sharpee", value: "5.0.1" },
-  { label: "Chord language", value: "3.0.0" },
-  { label: "Chord Writer", value: "1.0.0" },
+  { label: "Sharpee", value: versions.sharpee },
+  { label: "Chord language", value: versions.chord },
+  { label: "Chord Writer", value: versions.chordWriter },
 ];
 
 /** Muted pill used for an item's status and its build state. */

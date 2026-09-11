@@ -1,0 +1,118 @@
+{
+  "releases": [
+    {
+      "version": "5.3.2",
+      "title": "the Chord playable release",
+      "status": "PUBLISHED",
+      "published": "2026-09-11",
+      "chord": "3.6.0",
+      "tracesTo": "ADR-343 · ADR-344 · ADR-345 · ADR-346 · #400 · #401 · #402 · #404 · #410",
+      "summary": "The Chord playable keyword finally reaches the runtime. It had been in the language since 2026-08-26 and the analyzer had enforced it from that day, but the loader step that writes the flag onto the actor was never built and the trait defaulted to *true* — so every actor in every story read as playable, and the guard that checks it could never fire. Connecting it opened three more seams, and all four are in this release.",
+      "notes": [
+        "The player role holder is validated where the story is installed (ADR-344): it must exist, be placed, carry an actor trait, and be playable. The loader's old fallback of dropping an unplaced protagonist into the first declared room is gone — every story places its own.",
+        "The engine is never handed a player. GameEngine no longer takes one at construction; it comes from the story source, for Chord and TypeScript stories alike.",
+        "ActorTrait.isPlayable now defaults to false, matching what Chord means by the word's absence. A protagonist built through the author-facing builder says so with .playable().",
+        "The engine's lifecycle is an explicit phase — empty → ready → playing ⇄ stopped (ADR-345) — rather than something each method re-derived from whichever field was nearest. resume() emits game.resumed, which it previously did silently.",
+        "Traits no longer police completeness (ADR-346): a door may be one-sided and an exit half-built while a story is still composing the passage. Detection belongs where the world is checked as a whole.",
+        "Gate work rode along: pnpm typecheck became a real gate (it had been compiling zero files), test files entered it, seven packages' suites entered the test:ci sweep, and engine tests stopped running on the wall clock."
+      ]
+    },
+    {
+      "version": "5.3.1",
+      "title": "the refactoring survey",
+      "status": "PUBLISHED",
+      "published": "2026-09-10",
+      "chord": "3.6.0",
+      "tracesTo": "ADR-334 · ADR-335 · ADR-336 · ADR-337 · ADR-338 · ADR-339 · ADR-340 · ADR-342 · #376",
+      "summary": "A patch release carrying a structural survey of the platform: seven ADRs, each naming one package's shape and fixing it. No author-visible syntax moved, which is why Chord stayed at 3.6.0 and this went out as a patch rather than a minor.",
+      "notes": [
+        "ADR-334: the turn is a stage list. game-engine.ts gave up its turn helpers, one platform dispatcher and one enrichment funnel replaced duplicated pairs, and the package reorganized into command/, install/, session/, ports/ and introspection/.",
+        "ADR-342: the engine's root barrel narrows to a contract — 31 named exports, no export *. A type reachable only through a kept export's signature stays internal.",
+        "ADR-337: the interceptor lifecycle has exactly one call site, the executor's phase runner, and one validation pipeline replaced two.",
+        "ADR-338: AuthorModel became a proxy view of the live world rather than a parallel one.",
+        "ADR-339: the character tick's seven sub-steps live beside the subsystems they belong to, as a list with per-step requirements, pinned by a test.",
+        "ADR-340: transcript-tester and branch-tester share one assertion core instead of 1,129 identical forked lines.",
+        "Chord Writer 1.4.0 ships alongside."
+      ]
+    },
+    {
+      "version": "5.3.0",
+      "title": "publish-readiness, and the acting statement",
+      "status": "PUBLISHED",
+      "published": "2026-09-04",
+      "chord": "3.6.0",
+      "tracesTo": "ADR-325 · ADR-326 · ADR-327 · ADR-328 · ADR-329 · ADR-330 · ADR-332 · the publish-readiness proposal (40 items)",
+      "summary": "The largest release of the 5.x line, and the first that was measured against a specific question: what does an outside author writing a modest Chord story hit in their first hours? Forty defects were triaged into a plan and worked through in sixteen phases. Underneath it, ADR-327 made clause heads name who acts, ADR-328 threaded an actor through the whole standard-action library, and ADR-329 gave Chord the acting statement — one character performing one real action, validated and interceptable, through the same execution entry a player's command takes.",
+      "notes": [
+        "5.2.0 is not missing. It was bumped on 2026-08-29 and never published; everything in it ships here. That is why Chord went 3.3.0 → 3.6.0 in one step — 3.4.0 and 3.5.0 are landing history.",
+        "ADR-327 is a Chord major folded into this release: on <gerund> it is gone, clause heads name the actor (on the player taking, after Jack entering), and syntactic it/its left statements and conditions outside a define trait body.",
+        "The player became a role a named character holds: playable marks who is eligible, and change the player to <character> assigns it and can move it mid-play. create the player is gone.",
+        "ADR-325 places and timers; ADR-326's move <entity> to a random adjacent room; ADR-330's chapters extension; , one-way exits; proper on any create block.",
+        "The held command (a bare noun answering a disambiguation), possessive entity names in conditions, remove marking an entity *gone* rather than destroying it, and one-way exits are all publish-readiness fixes that an author meets early.",
+        "@sharpee/world-index arrived (ADR-321): a story's map, reach and vocabulary gaps derived as JSON, surfaced in Chord Writer's World tab.",
+        "Nested Chord imports (ADR-251 D5 amended), with Span.file so a diagnostic names the fragment it came from."
+      ]
+    },
+    {
+      "version": "5.1.1",
+      "title": "the ESM build, repaired",
+      "status": "PUBLISHED",
+      "published": "2026-08-19",
+      "chord": "3.3.0",
+      "tracesTo": "#276 · #277 · #279 · #280",
+      "summary": "A patch release almost entirely about the build. The ESM target was not being produced whole-tree, which broke vitest's ability to resolve dist-esm/ packages and, with it, the Chord Writer release pipeline. The fix makes the ESM build default-on and derives vitest's workspace aliases instead of requiring a prior dist-esm build.",
+      "notes": [
+        "Chord Writer 1.3.1 ships alongside, with its release pipeline working again.",
+        "#280: an opening card that could never be claimed.",
+        "Full card sets and walkthroughs for the conversation stories, and The Ides of March moves.",
+        "Author documentation for characters and conversation on sharpee.net, written against the syntax 5.1.0 had just shipped."
+      ]
+    },
+    {
+      "version": "5.1.0",
+      "title": "conversation",
+      "status": "PUBLISHED",
+      "published": "2026-08-18",
+      "chord": "3.3.0",
+      "tracesTo": "ADR-310 · ADR-318 · ADR-320 · ADR-141 through ADR-146 (prior art)",
+      "summary": "The character model reached Chord. @sharpee/character had existed since April 2026 and passed its tests with zero consumers; ADR-310 and ADR-318 gave it a Chord surface, and ADR-320 built conversation on top across eleven phases. Authors can now write manner, greetings, exchanges, initiative and whole conversation threads in a .story file, and The Ides of March was written as the story that proves it.",
+      "notes": [
+        "Chord 3.1.0, 3.2.0 and 3.3.0 all landed inside this release: the conversation grammar arrived in three slices, each with its vocabulary frozen by the owner the same day.",
+        "NPC-to-NPC scenes, with earshot derived from spatial sound, player intrusion into a scene in progress, and mid-scene save/restore.",
+        "Trait-level conversation memory: what a character has been told, and how recently, is world state that persists.",
+        "Chord Writer gained an explain-NPC-turn panel — an author channel that reports why a character did what it did on a given turn.",
+        "Goals, influence and information propagation are in scope rather than deferred, on the owner's ruling that they are the point of the character model."
+      ]
+    },
+    {
+      "version": "5.0.1",
+      "title": "Chord Writer ships its own toolchain",
+      "status": "PUBLISHED",
+      "published": "2026-08-14",
+      "chord": "3.0.0",
+      "tracesTo": "ADR-279 · ADR-284",
+      "summary": "A patch release whose real content is on the desktop side: Chord Writer became installable without a Node toolchain. The DMG now carries a per-architecture vendor toolchain, so the download page could drop the npm install step an author previously had to perform before the app would do anything.",
+      "notes": [
+        "Per-architecture build and packaging, with two download tiles on the site rather than one universal binary.",
+        "The app runs on any Apple silicon Mac, not only the machine it was built on.",
+        "Self-hosted analytics on sharpee.net, provisioned by the deploy with a salt that persists itself rather than rotating on every deploy.",
+        "The app icon arrived: parchment at large sizes, a single note at small ones, masked into the macOS tile shape."
+      ]
+    },
+    {
+      "version": "5.0.0",
+      "title": "the testing surface is the tree",
+      "status": "PUBLISHED",
+      "published": "2026-08-11",
+      "chord": "3.0.0",
+      "tracesTo": "ADR-307 · ADR-309 · #248",
+      "summary": "A new model for testing a story. ADR-307 replaced the transcript-shaped testing UX with a tree document — one <story-id>.tests.json per story, where the tree *is* the model rather than a view over something else — and @sharpee/branch-tester is the greenfield walker that replays it against a real engine. Chord Writer's Testing tab became the play surface itself rather than a panel beside one.",
+      "notes": [
+        "The tree document is a wire format with a schema, round-trip tests and discovery, shared by two consumers — the walker and the IDE — whose parity was signed off before the cutover.",
+        "JSON is the source of truth for a story's tests; the old transcript-shaped IDE artifacts went away rather than being kept in parallel.",
+        "ADR-309 made the IFID tool-owned: minted at story creation into <story-name>.config.json and rendered into the Chord header on save and build, so the compiler stopped asking authors for one.",
+        "@sharpee/transcript-tester stays, and keeps owning the .transcript grammar for Sharpee's own hand-authored suites. The two runtimes are for different audiences."
+      ]
+    }
+  ]
+}

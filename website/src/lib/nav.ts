@@ -391,15 +391,23 @@ export const NAV: NavSection[] = [
     ],
   },
   {
-    // Deliberately its own section rather than a page under Sharpee or Chord:
-    // the roadmap spans both (and Chord Writer), so filing it under either
-    // would misstate its scope. No `version` — it documents no one artifact.
-    title: 'Roadmap',
+    // Deliberately its own section rather than pages under Sharpee or Chord:
+    // both the roadmap and the release notes span both (and Chord Writer), so
+    // filing either under one of them would misstate its scope. Renamed from
+    // 'Roadmap' when the release notes joined it — a section holding what is
+    // planned AND what has shipped is not a roadmap. No `version`: it documents
+    // no one artifact, and the release notes name every version themselves.
+    title: 'Notes',
     groups: [
       {
         title: 'Roadmap',
         open: true,
         items: [{ title: 'What we are building', href: '/roadmap' }],
+      },
+      {
+        title: 'Releases',
+        open: true,
+        items: [{ title: 'Release notes', href: '/releases' }],
       },
     ],
   },
