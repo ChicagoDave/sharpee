@@ -2253,8 +2253,7 @@ export declare function createVocabularyManager(): VocabularyManager;
  * evaluation plugin); stories reach the decision layer through
  * `GameEngine.getNpcService()`.
  *
- * Public interface: ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID,
- * LEGACY_NPC_PLUGIN_ID.
+ * Public interface: ActorTurnPlugin, ACTOR_TURN_PLUGIN_ID.
  * Owner context: @sharpee/engine — turn cycle
  */
 import { type ISemanticEvent } from '@sharpee/core';
@@ -2262,12 +2261,6 @@ import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { type ExecutionEntry, type INpcService } from '@sharpee/stdlib';
 /** The plugin id this phase saves behavior state under. */
 export declare const ACTOR_TURN_PLUGIN_ID = "sharpee.engine.actors";
-/**
- * The id `@sharpee/plugin-npc` saved behavior state under before the actor
- * phase moved into the engine (ADR-328 D5). Read-side alias only: a save
- * carrying it restores into this phase; nothing writes it.
- */
-export declare const LEGACY_NPC_PLUGIN_ID = "sharpee.plugin.npc";
 export declare class ActorTurnPlugin implements TurnPlugin {
     private readonly act;
     /** Stable plugin id. */

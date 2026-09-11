@@ -7,8 +7,9 @@
  * the engine's execution entry: the world changes, the act's events join
  * the turn, presence is tagged from where the act happened, and a refusal
  * comes back to the behavior as `success: false`. Save state rides the
- * engine's plugin states under the phase's id, and a save written under
- * `plugin-npc`'s old id restores into it.
+ * engine's plugin states under the phase's id and nothing else — a save
+ * written under `plugin-npc`'s pre-ADR-328-D5 id restores nothing, because
+ * the platform is not save-backward-compatible yet.
  */
 import { describe, expect, it } from 'vitest';
 import type { ISemanticEvent } from '@sharpee/core';
@@ -23,7 +24,7 @@ import {
   type IFEntity,
 } from '@sharpee/world-model';
 import { IFActions, type NpcBehavior } from '@sharpee/stdlib';
-import { ACTOR_TURN_PLUGIN_ID, LEGACY_NPC_PLUGIN_ID } from '../src/plugins/actor-turn-plugin';
+import { ACTOR_TURN_PLUGIN_ID } from '../src/plugins/actor-turn-plugin';
 import { SaveRestoreService } from '../src/session/save-restore-service';
 import { setupTestEngineWithStory } from './test-helpers/setup-test-engine';
 
@@ -148,7 +149,7 @@ describe('the actor turn phase (ADR-328 D5)', () => {
     expect(seen).toEqual(['leaves', 'enters']);
   });
 
-  it('behavior state rides the save under the phase id, and a plugin-npc save restores into it', () => {
+  it('behavior state rides the save under the phase id, and a pre-ADR-328 id restores nothing', () => {
     const state: Record<string, unknown> = { cursor: 2 };
     const { engine, npc } = stage({
       id: 'stateful',
@@ -170,16 +171,33 @@ describe('the actor turn phase (ADR-328 D5)', () => {
       [ACTOR_TURN_PLUGIN_ID]: { behaviors: { [npc.id]: { cursor: 2 } } },
     });
 
-    // A save written before the phase moved into the engine.
-    const legacy = {
+    // The round trip under the registered id restores the cursor. Built as a
+    // fresh literal rather than reusing `saved`: `getState` hands back the live
+    // `state` object, so a save reused in-process tracks later mutations to it.
+    const current = {
       ...saved,
       engineState: {
         ...saved.engineState,
-        pluginStates: { [LEGACY_NPC_PLUGIN_ID]: { behaviors: { [npc.id]: { cursor: 7 } } } },
+        pluginStates: { [ACTOR_TURN_PLUGIN_ID]: { behaviors: { [npc.id]: { cursor: 7 } } } },
       },
     };
     state.cursor = 0;
-    service.loadSaveData(legacy, engine);
+    service.loadSaveData(current, engine);
     expect(state.cursor).toBe(7);
+
+    // A save written under `plugin-npc`'s pre-ADR-328-D5 id restores NOTHING:
+    // the read-side alias is gone. No story has shipped, so the platform owes
+    // no save written by an older build — the cursor keeps its current value
+    // rather than silently taking the stale one.
+    const preAdr328 = {
+      ...saved,
+      engineState: {
+        ...saved.engineState,
+        pluginStates: { 'sharpee.plugin.npc': { behaviors: { [npc.id]: { cursor: 7 } } } },
+      },
+    };
+    state.cursor = 0;
+    service.loadSaveData(preAdr328, engine);
+    expect(state.cursor).toBe(0);
   });
 });

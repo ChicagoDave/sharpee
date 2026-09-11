@@ -50,7 +50,6 @@ open dist/web/index.html
 | `@sharpee/queries` | LINQ-style fluent entity query API |
 | `@sharpee/character` | NPC behavior chain: character model, conversation, goals, influence, propagation |
 | `@sharpee/plugins` | Plugin contracts for engine turn-cycle extensibility |
-| `@sharpee/plugin-npc` | NPC behaviors and autonomous turn processing |
 | `@sharpee/plugin-scheduler` | Daemons and fuses (timed events) |
 | `@sharpee/plugin-state-machine` | Declarative puzzle and narrative orchestration |
 | `@sharpee/media` | Audio event types, AudioRegistry, and capability negotiation |

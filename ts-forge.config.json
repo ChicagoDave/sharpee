@@ -18,7 +18,6 @@
     "packages/plugins/tsconfig.json",
     "packages/plugin-state-machine/tsconfig.json",
     "packages/plugin-scheduler/tsconfig.json",
-    "packages/plugin-npc/tsconfig.json",
     "packages/platform-browser/tsconfig.json",
     "packages/parser-en-us/tsconfig.json",
     "packages/media/tsconfig.json",

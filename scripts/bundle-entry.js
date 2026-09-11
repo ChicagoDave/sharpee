@@ -302,6 +302,12 @@ Examples:
   // hosts cannot drift.
   const { requireHatchModule: resolveHatch } =
     require('../packages/devkit/dist/standalone/hatch-transpile.js');
+  // The same rule for `import "<name>"`: @sharpee/chord is filesystem-free,
+  // so the host supplies the resolver. Devkit's compose/test/play already
+  // resolve a fragment beside the importing `.story`; the bundle shares that
+  // one implementation so the two hosts cannot drift (GH #352).
+  const { makeFsImportResolver } =
+    require('../packages/devkit/dist/standalone/author-game.js');
 
   function requireHatchModule(storyDir, modulePath) {
     try {
@@ -318,7 +324,10 @@ Examples:
   // Load-time-gate diagnostics abort with `.story` line numbers (AC-3).
   function loadChordStory(storyFile, seed) {
     const source = fs.readFileSync(storyFile, 'utf-8');
-    const result = chord.compile(source);
+    const storyDir = path.dirname(path.resolve(storyFile));
+    const result = chord.compile(source, {
+      importResolver: makeFsImportResolver(storyDir),
+    });
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     if (!result.ok) {
       const lines = errors.map(
@@ -326,7 +335,6 @@ Examples:
       );
       throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
     }
-    const storyDir = path.dirname(storyFile);
     const hatchModules = {};
     for (const hatch of result.ir.hatches) {
       if (!(hatch.modulePath in hatchModules)) {

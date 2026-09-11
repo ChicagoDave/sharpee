@@ -74,10 +74,8 @@ packages/
 ├── event-processor/       # Applies semantic events to world model
 ├── parser-en-us/          # English natural language parser
 ├── lang-en-us/            # English language messages
-├── text-service/          # Template resolution, text formatting
 ├── text-blocks/           # Structured text output interfaces
 ├── plugins/               # Plugin contracts
-├── plugin-npc/            # NPC behaviors and turn processing
 ├── plugin-scheduler/      # Daemons and fuses (timed events)
 ├── plugin-state-machine/  # Declarative puzzle orchestration
 ├── extensions/
