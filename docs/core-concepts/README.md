@@ -37,7 +37,7 @@ Thirty-one packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/world-model`** — Entities, traits, and behaviors: the world's state and the rules for changing it. Behaviors own every mutation, and the capability registry (ADR-090) lives here, letting a trait claim action ids and supply its own validate/execute/report/blocked.
 
-**`@sharpee/engine`** — The runtime: turn cycle, command execution, event dispatch, save/restore, and the prose pipeline that turns turn-end events into `ITextBlock[]`. `GameEngine` takes `{ world, player, parser, language, perceptionService?, config? }` and owns the master seed every random stream derives from (ADR-293).
+**`@sharpee/engine`** — The runtime: turn cycle, command execution, event dispatch, save/restore, and the prose pipeline that turns turn-end events into `ITextBlock[]`. `GameEngine` takes `{ world, parser, language, perceptionService?, config? }` — no player: the role holder comes from the story at `installStory()` (ADR-344 D6) — and owns the master seed every random stream derives from (ADR-293).
 
 **`@sharpee/event-processor`** — Applies semantic events to the world model through registered handlers, bridging event-producing actions and actual state mutation. It also hosts the effects system (ADR-075).
 
@@ -586,13 +586,17 @@ const perceptionService = new PerceptionService();
 // Wire to engine
 const engine = new GameEngine({
   world,
-  player,
   parser,
   language,
   perceptionService,  // Enable perception filtering
   config              // optional (seed, narrative settings)
 });
 ```
+
+**The engine is never handed a player.** `installStory()` settles the role holder
+from the story's own source, and the install seam refuses one that is not placed,
+not an actor, or not `playable` (ADR-344 D1, D6). Every caller used to satisfy a
+required `player` option with a placeholder the install discarded seconds later.
 
 ### How It Works
 

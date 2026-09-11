@@ -3327,19 +3327,24 @@ import { ITrait } from '../trait.js';
  * Exit trait for entities that represent passages between locations.
  * Used for doors, passages, portals, and any custom exits like "xyzzy".
  *
+ * `from`, `to` and `command` may each be unset while a story is still composing
+ * the passage — the trait polices nothing (ADR-346 D7). `ExitBehavior` is where a
+ * passage is required to be complete before it is used: `createBidirectional`
+ * already refuses incomplete data of its own accord.
+ *
  * This trait contains only data - all behavior is in ExitBehavior.
  */
 export declare class ExitTrait implements ITrait {
     static readonly type: "exit";
     readonly type: "exit";
-    /** Source location ID (must be an entity ID, not a name) */
-    from: string;
-    /** Destination location ID (must be an entity ID, not a name) */
-    to: string;
+    /** Source location ID (an entity ID, not a name) — unset while unplaced. */
+    from?: string;
+    /** Destination location ID (an entity ID, not a name) — unset until the story supplies it. */
+    to?: string;
     /** Standard direction (north, south, up, etc.) - optional */
     direction?: string;
-    /** Command to use this exit (e.g., "go north", "enter portal", "xyzzy") */
-    command: string;
+    /** Command to use this exit (e.g., "go north", "enter portal", "xyzzy") — unset until named. */
+    command?: string;
     /** Alternative commands that work for this exit */
     aliases?: string[];
     /** Whether this exit is visible to players */
@@ -3360,7 +3365,7 @@ export declare class ExitTrait implements ITrait {
     conditional: boolean;
     /** Condition identifier (checked by behaviors) */
     conditionId?: string;
-    constructor(data: Partial<ExitTrait>);
+    constructor(data?: Partial<ExitTrait>);
 }
 ```
 
@@ -3915,7 +3920,12 @@ export declare class EdibleBehavior extends Behavior {
 ```typescript
 import { ITrait } from '../trait.js';
 /**
- * Door trait marks an entity as a connection between two rooms.
+ * Door trait marks an entity as a connection between rooms.
+ *
+ * A door may be **one-sided**: `room2` is the destination, and a story is free to
+ * declare the door before it knows where it leads, filling the destination in later
+ * (`WorldModel.connectRooms` does exactly that). `room1` is likewise optional, for a
+ * door composed before it is placed. Neither is policed here.
  *
  * This is a pure data structure - all validation and logic
  * should be handled by DoorBehavior.
@@ -3923,10 +3933,10 @@ import { ITrait } from '../trait.js';
 export declare class DoorTrait implements ITrait {
     static readonly type: "door";
     readonly type: "door";
-    /** First room this door connects (must be an entity ID, not a name) */
-    room1: string;
-    /** Second room this door connects (must be an entity ID, not a name) */
-    room2: string;
+    /** First room this door connects (an entity ID, not a name) — unset until placed. */
+    room1?: string;
+    /** Second room this door connects (an entity ID, not a name) — unset on a one-sided door. */
+    room2?: string;
     /** Whether the door can be traversed in both directions */
     bidirectional: boolean;
     constructor(data?: Partial<DoorTrait>);
@@ -3948,7 +3958,7 @@ export declare class DoorBehavior extends Behavior {
     /**
      * Get the rooms this door connects
      */
-    static getRooms(door: IFEntity): [string, string];
+    static getRooms(door: IFEntity): [string | undefined, string | undefined];
     /**
      * Get the other room when coming from a specific room
      * @returns The other room ID, or undefined if the door doesn't connect to the current room
@@ -3970,12 +3980,12 @@ export declare class DoorBehavior extends Behavior {
      * Get the entry room (for one-way doors)
      * This is the room you can enter from
      */
-    static getEntryRoom(door: IFEntity): string;
+    static getEntryRoom(door: IFEntity): string | undefined;
     /**
      * Get the exit room (for one-way doors)
      * This is the room you exit to
      */
-    static getExitRoom(door: IFEntity): string;
+    static getExitRoom(door: IFEntity): string | undefined;
 }
 ```
 
