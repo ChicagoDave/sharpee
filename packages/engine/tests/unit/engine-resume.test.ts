@@ -1,10 +1,10 @@
 /**
  * GameEngine.resume() — the post-mortem revival seam.
  *
- * After stop('defeat') (player death), a harness that restored a live-player
- * world snapshot (transcript-tester RETRY via world.loadJSON) needs turn
- * execution back without any world teardown. resume() flips
- * `running` back on and nothing else.
+ * After stop('defeat') (player death), a harness with more work for the
+ * stopped engine — the branch-tester's tree walker, line by line — needs turn
+ * execution back without any world teardown. resume() returns the phase to
+ * `playing` and nothing else.
  */
 
 import { describe, it, expect } from 'vitest';

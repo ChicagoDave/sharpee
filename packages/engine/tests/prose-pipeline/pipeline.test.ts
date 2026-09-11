@@ -466,10 +466,11 @@ describe('ProsePipeline slot contributors (ADR-195 §3)', () => {
 
 describe('game.resumed renders nothing (ADR-345 D14 / AC-6)', () => {
   // The premise check AC-6 names first. D12 adds `game.resumed` to a stream
-  // whose consumers include the transcript goldens, and `resume()` is the
-  // RETRY path — so an event that reached rendered output would shift pinned
-  // recordings. The chain run that follows this test proves nothing unless
-  // this holds, which is why the ADR orders them.
+  // whose consumers include the pinned transcript recordings, and the
+  // branch-tester revives the engine between test lines
+  // (`tree-walker.ts:360`) — so an event that reached rendered output would
+  // shift those recordings. The chain run that follows this test proves
+  // nothing unless this holds, which is why the ADR orders them.
   //
   // The pipeline has three render paths for an unrecognized `game.*` type,
   // and all three must miss: `tryProcessDomainEventMessage` (a `messageId`
