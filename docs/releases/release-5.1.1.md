@@ -12,7 +12,7 @@ which broke vitest's ability to resolve `dist-esm/` packages and, with it, the C
 pipeline. The fix makes the ESM build default-on and derives vitest's workspace aliases instead of
 requiring a prior `dist-esm` build.
 
-## Notes
+## Details
 
 - Chord Writer 1.3.1 ships alongside, with its release pipeline working again.
 - [#280](https://github.com/ChicagoDave/sharpee/issues/280): an opening card that could never be claimed.

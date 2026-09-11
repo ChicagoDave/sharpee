@@ -100,9 +100,12 @@ function parseRelease(filename, text) {
   const paragraph = whatShipped.replace(/^\s*\n/, '').split(/\n\s*\n/)[0];
   release.summary = plain(paragraph.replace(/\s*\n\s*/g, ' '));
 
-  // Notes: the "- " bullets under "## Notes", each folded to one line. A
-  // release with nothing to itemize is legal — the summary carries it.
-  const notesSection = text.split(/^##\s*Notes\s*$/m)[1];
+  // Notes: the "- " bullets under "## Details", each folded to one line. A
+  // release with nothing to itemize is legal — the summary carries it. The
+  // heading was `## Notes` until 2026-09-11; it was renamed because the site
+  // already had a 'Notes' nav section and a 'Release notes' page, so the word
+  // named three different things and predicted none of them.
+  const notesSection = text.split(/^##\s*Details\s*$/m)[1];
   release.notes = notesSection
     ? notesSection
         .split(/\n(?=- )/)

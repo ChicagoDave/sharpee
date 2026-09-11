@@ -13,7 +13,7 @@ conversation on top across eleven phases. Authors can now write manner, greeting
 initiative and whole conversation threads in a `.story` file, and The Ides of March was written
 as the story that proves it.
 
-## Notes
+## Details
 
 - Chord 3.1.0, 3.2.0 and 3.3.0 all landed inside this release: the conversation grammar arrived in
   three slices, each with its vocabulary frozen by the owner the same day.

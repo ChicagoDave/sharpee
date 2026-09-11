@@ -29,7 +29,7 @@ Every file carries these, in this order, or the sync script fails the build:
 | `**Traces to**` | ADRs and GitHub issues a reader can follow, `·`-separated |
 
 Then a `## What shipped` section whose **first paragraph** becomes the summary on
-the site, and a `## Notes` section of bullets, each of which becomes one line.
+the site, and a `## Details` section of bullets, each of which becomes one line.
 Prose below those two sections stays in the repository and is not published.
 
 ## Writing them

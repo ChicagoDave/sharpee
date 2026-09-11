@@ -393,22 +393,23 @@ export const NAV: NavSection[] = [
   {
     // Deliberately its own section rather than pages under Sharpee or Chord:
     // both the roadmap and the release notes span both (and Chord Writer), so
-    // filing either under one of them would misstate its scope. Renamed from
-    // 'Roadmap' when the release notes joined it — a section holding what is
-    // planned AND what has shipped is not a roadmap. No `version`: it documents
-    // no one artifact, and the release notes name every version themselves.
-    title: 'Notes',
-    groups: [
-      {
-        title: 'Roadmap',
-        open: true,
-        items: [{ title: 'What we are building', href: '/roadmap' }],
-      },
-      {
-        title: 'Releases',
-        open: true,
-        items: [{ title: 'Release notes', href: '/releases' }],
-      },
+    // filing either under one of them would misstate its scope. No `version`:
+    // it documents no one artifact, and the release notes name every version
+    // themselves.
+    //
+    // It was called 'Roadmap' until the release notes joined it, then 'Notes',
+    // which was worse: 'Notes' names no category a reader could predict, and it
+    // sat above a 'Releases' group above a 'Release notes' page, so the rail
+    // read Notes › Releases › Release notes and the word did three jobs. The
+    // section is named for its two contents instead, and the two single-item
+    // groups are gone — a group wrapping one item only adds a level to the
+    // crumb trail. Section-level items render as flush-left peers, which is
+    // what two sibling pages should look like.
+    title: 'Roadmap & Releases',
+    groups: [],
+    items: [
+      { title: 'What we are building', href: '/roadmap' },
+      { title: 'Release notes', href: '/releases' },
     ],
   },
 ];

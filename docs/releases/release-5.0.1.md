@@ -12,7 +12,7 @@ without a Node toolchain. The DMG now carries a per-architecture vendor toolchai
 download page could drop the `npm install` step an author previously had to perform before the
 app would do anything.
 
-## Notes
+## Details
 
 - Per-architecture build and packaging, with two download tiles on the site rather than one
   universal binary.

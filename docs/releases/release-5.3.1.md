@@ -11,7 +11,7 @@ A patch release carrying a structural survey of the platform: seven ADRs, each n
 shape and fixing it. No author-visible syntax moved, which is why Chord stayed at 3.6.0 and this went
 out as a patch rather than a minor.
 
-## Notes
+## Details
 
 - ADR-334: the turn is a stage list. `game-engine.ts` gave up its turn helpers, one platform
   dispatcher and one enrichment funnel replaced duplicated pairs, and the package reorganized into

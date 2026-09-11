@@ -13,7 +13,7 @@ than a view over something else — and `@sharpee/branch-tester` is the greenfie
 replays it against a real engine. Chord Writer's Testing tab became the play surface itself
 rather than a panel beside one.
 
-## Notes
+## Details
 
 - The tree document is a wire format with a schema, round-trip tests and discovery, shared by
   two consumers — the walker and the IDE — whose parity was signed off before the cutover.

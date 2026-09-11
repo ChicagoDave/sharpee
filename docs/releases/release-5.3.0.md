@@ -14,7 +14,7 @@ name who acts, ADR-328 threaded an actor through the whole standard-action libra
 Chord the acting statement — one character performing one real action, validated and interceptable,
 through the same execution entry a player's command takes.
 
-## Notes
+## Details
 
 - **5.2.0 is not missing.** It was bumped on 2026-08-29 and never published; everything in it ships
   here. That is why Chord went 3.3.0 → 3.6.0 in one step — 3.4.0 and 3.5.0 are landing history.

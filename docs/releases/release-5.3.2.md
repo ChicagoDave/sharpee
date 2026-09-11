@@ -13,7 +13,7 @@ onto the actor was never built and the trait defaulted to *true* — so every ac
 as playable, and the guard that checks it could never fire. Connecting it opened three more seams,
 and all four are in this release.
 
-## Notes
+## Details
 
 - The player role holder is validated where the story is installed (ADR-344): it must exist, be
   placed, carry an actor trait, and be `playable`. The loader's old fallback of dropping an unplaced
