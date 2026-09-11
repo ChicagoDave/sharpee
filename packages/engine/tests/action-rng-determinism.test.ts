@@ -35,6 +35,9 @@ import {
 import { Story, StoryConfig } from '../src/install/story';
 import { setupTestEngine } from './test-helpers/setup-test-engine';
 
+/** Fixed master seed for every engine in this file (ADR-293 D1). */
+const THROW_RNG_SEED = 20260911;
+
 /** Type alias for accessing private GameEngine save/restore methods. */
 type EnginePrivate = {
   createSaveData(): ISaveData;
@@ -133,7 +136,11 @@ class ThrowRngTestStory implements Story {
 
 /** Boot a fresh engine + ThrowRngTestStory (not started). */
 function bootFresh() {
-  const setup = setupTestEngine();
+  // Pinned explicitly rather than relying on the helper's default: every claim in
+  // this file is about seeds, so the seed belongs in the file that asserts on it.
+  // Unseeded, both engines take `config.seed ?? Date.now()` and a point that had
+  // not drawn before the save reseeds from a DIFFERENT master seed after it.
+  const setup = setupTestEngine({ config: { seed: THROW_RNG_SEED } });
   const story = new ThrowRngTestStory();
   setup.engine.installStory(story);
   return { ...setup, story };

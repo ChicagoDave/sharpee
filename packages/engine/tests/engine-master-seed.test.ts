@@ -54,10 +54,12 @@ describe('EngineConfig.seed (D1)', () => {
   });
 
   it('still resolves a master seed without config.seed (clock, read once)', () => {
-    const { engine } = setupTestEngine();
+    const { engine } = setupTestEngine({ unseeded: true });
 
     // No seed injected: the master seed exists and is reportable (D14) —
     // its exact value is clock-derived, so only its presence is asserted.
+    // `unseeded` is required here because the test helper now seeds by default;
+    // this is the one case that wants the production fallback.
     expect(Number.isInteger(engine.getMasterSeed())).toBe(true);
     expect(engine.getRandomService().getMasterSeed()).toBe(engine.getMasterSeed());
   });

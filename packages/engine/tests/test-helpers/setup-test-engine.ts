@@ -10,11 +10,25 @@ import { Story } from '../../src/install/story';
 import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 
+/**
+ * The master seed every test engine gets unless it asks otherwise. Any fixed
+ * value works; this one is the date the default was introduced, so a search for
+ * it lands on the reason.
+ */
+export const TEST_MASTER_SEED = 20260911;
+
 export interface TestEngineOptions {
   includeCapabilities?: boolean;
   includeObjects?: boolean;
   /** Optional EngineConfig forwarded to the GameEngine constructor (e.g. `seed`). */
   config?: import('../../src/types').EngineConfig;
+  /**
+   * Boot WITHOUT a master seed, taking `GameEngine`'s production default
+   * (`config.seed ?? Date.now()`). Only for a test whose subject IS the unseeded
+   * path — everything else gets `TEST_MASTER_SEED`, so a test can never run on
+   * the wall clock by forgetting to ask for a seed.
+   */
+  unseeded?: boolean;
   /** Wire the real stdlib PerceptionService (presence tagging, ADR-328 D3). */
   withPerception?: boolean;
 }
@@ -29,7 +43,15 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
   languageProvider: EnglishLanguageProvider;
   parser: EnglishParser;
 } {
-  const { includeCapabilities = true, includeObjects = false, config, withPerception = false } = options;
+  const { includeCapabilities = true, includeObjects = false, config, withPerception = false, unseeded = false } = options;
+
+  // A test that draws from the engine's RandomService and injects no seed runs on
+  // `Date.now()` — deterministic within a run, different every run, and silent
+  // about it. Seeding by default makes the omission harmless; `unseeded: true` is
+  // the explicit opt-out, and a caller's own `config.seed` still wins.
+  const engineConfig = unseeded
+    ? config
+    : { seed: TEST_MASTER_SEED, ...(config ?? {}) };
 
   // Create world model
   const world = new WorldModel();
@@ -63,7 +85,7 @@ export function setupTestEngine(options: TestEngineOptions = {}): {
     world,
     parser,
     language: languageProvider,
-    ...(config ? { config } : {}),
+    ...(engineConfig ? { config: engineConfig } : {}),
     ...(withPerception ? { perceptionService: new PerceptionService() } : {}),
   });
 
