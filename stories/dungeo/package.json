@@ -27,6 +27,7 @@
     "dev": "tsc -p tsconfig.dev.json --watch",
     "clean": "rimraf dist",
     "test": "vitest",
+    "test:ci": "vitest run",
     "play": "node dist/run.js"
   },
   "dependencies": {

@@ -9,6 +9,7 @@
     "typecheck:tests": "tsc -p tsconfig.test.json",
     "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p tsconfig.test.json",
     "test": "vitest run",
+    "test:ci": "vitest run",
     "test:watch": "vitest watch",
     "clean": "rimraf dist dist-esm tsconfig.tsbuildinfo",
     "build:npm": "tsc --outDir dist"

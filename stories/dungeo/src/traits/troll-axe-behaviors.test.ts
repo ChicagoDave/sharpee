@@ -17,7 +17,14 @@ import {
   WeaponTrait,
   type IFEntity,
 } from '@sharpee/world-model';
-import { createActionContext, takingAction, IFActions, type ValidatedCommand } from '@sharpee/stdlib';
+import {
+  createActionContext,
+  takingAction,
+  runValidatePhase,
+  runExecutePhase,
+  IFActions,
+  type ValidatedCommand,
+} from '@sharpee/stdlib';
 import { createFixtureRandomService } from '../test-support/fixture-random-service';
 import { TrollAxeTrait } from './troll-axe-trait';
 import { TrollAxeTakingInterceptor, TrollAxeMessages } from './troll-axe-behaviors';
@@ -62,8 +69,11 @@ function takeAxe(world: WorldModel, player: IFEntity, axe: IFEntity, actor: IFEn
     directObject: { entity: axe, parsed: { text: 'axe', candidates: ['axe'] } },
   };
   const context = createActionContext(world, player, takingAction, command, createFixtureRandomService(1), undefined, actor);
-  const validation = takingAction.validate(context);
-  if (validation.valid) takingAction.execute(context);
+  // ADR-337 D1: the phase runner resolves the lifecycle, which is what
+  // turns the axe's TrollAxeTrait interceptor into a consultation the
+  // taking action's validate() can see — without it the refusal never fires.
+  const validation = runValidatePhase(takingAction, context);
+  if (validation.valid) runExecutePhase(takingAction, context);
   return validation;
 }
 

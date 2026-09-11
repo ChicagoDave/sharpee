@@ -28,6 +28,10 @@ import {
 import {
   attackingAction,
   createActionContext,
+  runValidatePhase,
+  runExecutePhase,
+  runReportPhase,
+  runBlockedPhase,
   IFActions,
   PLAYER_DIED_EVENT,
   type ValidatedCommand,
@@ -54,11 +58,14 @@ describe('an NPC attacks through the real attacking action (ADR-328 D5; ADR-227 
       directObject: { entity: target, parsed: { text: target.name, candidates: [target.name] } },
     };
     const context = createActionContext(world, player, attackingAction, command, random, undefined, attacker);
-    const validation = attackingAction.validate(context);
-    if (!validation.valid) return { valid: false as const, events: attackingAction.blocked!(context, validation) };
+    // ADR-337 D1: the phases run through the phase runner, which is what
+    // resolves the lifecycle — the registered combat interceptor only
+    // becomes a consultation validate() can see once it has.
+    const validation = runValidatePhase(attackingAction, context);
+    if (!validation.valid) return { valid: false as const, events: runBlockedPhase(attackingAction, context, validation) };
     context.validationResult = validation;
-    attackingAction.execute(context);
-    return { valid: true as const, events: attackingAction.report!(context) };
+    runExecutePhase(attackingAction, context);
+    return { valid: true as const, events: runReportPhase(attackingAction, context) };
   };
 
   /** Attack `target` repeatedly (fixed seed) until a killing blow lands. */
@@ -163,7 +170,7 @@ describe('an NPC attacks through the real attacking action (ADR-328 D5; ADR-227 
       directObject: { entity: you, parsed: { text: 'yourself', candidates: ['yourself'] } },
     };
     const context = createActionContext(bare, you, attackingAction, command, createFixtureRandomService(1), undefined, brute);
-    expect(attackingAction.validate(context)).toMatchObject({ valid: false, error: 'violence_not_the_answer' });
+    expect(runValidatePhase(attackingAction, context)).toMatchObject({ valid: false, error: 'violence_not_the_answer' });
     expect((you.get(TraitType.HEALTH) as HealthTrait).health).toBe(2);
   });
 });

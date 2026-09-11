@@ -24,6 +24,10 @@ import { createFixtureRandomService } from '../test-support/fixture-random-servi
 import {
   attackingAction,
   createActionContext,
+  runValidatePhase,
+  runExecutePhase,
+  runReportPhase,
+  runBlockedPhase,
   IFActions,
   PLAYER_DIED_EVENT,
   type ValidatedCommand,
@@ -82,11 +86,14 @@ function trollSwings(world: WorldModel, player: ReturnType<typeof buildArena>['p
     directObject: { entity: player, parsed: { text: 'yourself', candidates: ['yourself'] } },
   };
   const context = createActionContext(world, player, attackingAction, command, random ?? createFixtureRandomService(seed), undefined, troll);
-  const validation = attackingAction.validate(context);
-  if (!validation.valid) return { valid: false as const, events: attackingAction.blocked!(context, validation) };
+  // ADR-337 D1: the phase runner resolves the lifecycle, which is what
+  // turns the hero's registered MeleeInterceptor into a consultation the
+  // attacking action's validate() can see.
+  const validation = runValidatePhase(attackingAction, context);
+  if (!validation.valid) return { valid: false as const, events: runBlockedPhase(attackingAction, context, validation) };
   context.validationResult = validation;
-  attackingAction.execute(context);
-  return { valid: true as const, events: attackingAction.report!(context) };
+  runExecutePhase(attackingAction, context);
+  return { valid: true as const, events: runReportPhase(attackingAction, context) };
 }
 
 describe('a villain blow through the real attacking action (ADR-328 D5)', () => {
