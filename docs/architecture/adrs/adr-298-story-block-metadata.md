@@ -100,6 +100,19 @@ every build and destroy the byte-stability that ADR-289 Phase 6's
 "diff is exactly four `languageVersion` lines" check depends on. Source-side
 version fields would also be author-writable lies the compiler must police.
 
+**Amendment (2026-09-12, session c70351): `engineVersion` no longer rides that stamp path.**
+D2's ruling stands — generated metadata stays out of the story block — but its parenthetical
+named three fields, and one of them has since left. `engineVersion` is not stamped by anything
+that writes a story's `version.ts`, and is not carried on `StoryInfoTrait`: the running engine
+is the only authority on its own version, so the `version`/`about` actions and the `info`
+channel read the platform constant `packages/stdlib/src/actions/standard/version/engine-version.ts`
+stamps at platform build. `buildDate` still rides the path exactly as D2 describes. `clientVersion` reaches
+`StoryInfoTrait` from the host rather than from `version-stamp.ts` — `packages/platform-browser/src/BrowserClient.ts`
+sets it after install — which D2's parenthetical folded in loosely and this note does not change.
+The Context section above lists `engineVersion` among `StoryInfoData`'s fields; that was true
+when this ADR was written and is left as written. See GH #433; the deletion is
+`docs/work/archive/engine-version-single-source/plan.md`.
+
 ### D3 — `description` is metadata; `prologue` is the one new emission field (rulings 2–3)
 
 `description:` is one metadata field, mapped to `StoryConfig.description`
