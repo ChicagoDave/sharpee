@@ -1,6 +1,27 @@
 {
   "releases": [
     {
+      "version": "5.4.1",
+      "title": "one source for the engine version, and installable packages again",
+      "status": "PUBLISHED",
+      "published": "2026-09-11",
+      "chord": "3.6.0",
+      "tracesTo": "ADR-334 · ChicagoDave/tsf#1 · #433",
+      "summary": "Two fixes that both come down to a tool being wrong about something it did not own.",
+      "notes": [
+        "The engine version has one source: the platform constant stamped at platform build time. The version and about actions, the info channel, and the opening banner all read it directly.",
+        "A Chord story's banner now carries its engine line. start() read the version off StoryInfoTrait, which only a build pipeline writes, so a story loaded from IR emitted game.started with no version and the banner dropped the platform-version block silently.",
+        "An author build no longer stamps a version range as a version. The author-side stampers computed the value from the ^<major>.0.0 dependency range with its caret stripped, which is how every 5.x author build came to report 5.0.0.",
+        "engineVersion is removed from StoryInfoTrait, from the story-info projection, from BrowserBuildEnv, from the browser client's StoryInfo config, and from every generated story version.ts. STORY_VERSION and BUILD_DATE still stamp — those are per-build facts a story owns.",
+        "The info channel still carries engineVersion for clients that show it, now always present and sourced from the constant rather than from whatever the story happened to be stamped with.",
+        "Published packages carry their subpath exports again (tsf 1.0.4). @sharpee/platform-browser ships ./channels, ./channels/prose, ./channels/status, ./channels/text-content and ./styles/*; @sharpee/transcript-tester ships ./assertion-core. ## Upgrading Breaking in its public types, though nothing a story reads:",
+        "StoryInfoTrait.engineVersion is removed. A story that set it can drop the line — the value it was setting is now supplied by the engine.",
+        "BrowserBuildEnv.engineVersion is removed, and PlaygroundBuildEnv.engineVersion is renamed to version: it was the playground's own version pin and never an engine version.",
+        "StoryInfo.engineVersion is removed from the browser client's config, and the generated browser entries no longer pass it.",
+        "A generated src/version.ts no longer exports ENGINE_VERSION. A hand-written browser entry that imports it should drop the import; the next build restamps the file either way. Anyone on 5.4.0 should move to 5.4.1 — 5.4.0 remains uninstallable for any package that declares a subpath entry point."
+      ]
+    },
+    {
       "version": "5.4.0",
       "title": "the explicit ending release",
       "status": "PUBLISHED",
