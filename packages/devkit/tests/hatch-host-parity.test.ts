@@ -35,7 +35,6 @@ function env(esbuildCwd: string): BrowserBuildEnv {
     stylesDir: path.join(REPO_ROOT, 'packages', 'platform-browser', 'styles'),
     templatesDir: path.join(REPO_ROOT, 'packages', 'devkit', 'templates', 'browser'),
     esbuildCwd,
-    engineVersion: '0.0.0-test',
   };
 }
 

@@ -11,8 +11,11 @@
  *
  * - **Authored** fields — `title`, `authors`, `testers`, `version`,
  *   `ifid`, `description` — the config wins; the trait fills a gap.
- * - **Build-pipeline** fields — `engineVersion`, `clientVersion`,
- *   `buildDate` — the trait wins; the config fills a gap.
+ * - **Build-pipeline** fields — `clientVersion`, `buildDate` — the trait
+ *   wins; the config fills a gap. `engineVersion` is deliberately not among
+ *   them: the running engine is the only authority on its own version, so it
+ *   is a stamped platform constant its readers import, never a field a build
+ *   tool writes onto the world.
  * - `prologue` is neither source's: `resolvePrologue` writes it at start.
  *
  * Only fields that have a value appear in the projection, so applying it
@@ -40,7 +43,6 @@ export const STORY_INFO_SCHEMA = {
   description: { type: 'string', default: '' },
   prologue: { type: 'string', default: '' },
   buildDate: { type: 'string', default: '' },
-  engineVersion: { type: 'string', default: '' },
   clientVersion: { type: 'string', default: '' },
 } as const;
 
@@ -53,7 +55,6 @@ export interface StoryInfoProjection {
   ifid?: string;
   description?: string;
   buildDate?: string;
-  engineVersion?: string;
   clientVersion?: string;
 }
 
@@ -88,7 +89,6 @@ export function projectStoryInfo(config: StoryConfig, trait: StoryInfoTrait | un
   // Build-pipeline: the trait wins, the config fills the gap.
   const buildDate = trait?.buildDate || config.buildDate;
   if (buildDate) projection.buildDate = buildDate;
-  if (trait?.engineVersion) projection.engineVersion = trait.engineVersion;
   if (trait?.clientVersion) projection.clientVersion = trait.clientVersion;
 
   return projection;

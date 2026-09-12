@@ -9,6 +9,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ChannelProduceContext } from '@sharpee/if-domain';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
+import { ENGINE_VERSION } from '../../src/actions/standard/version/engine-version';
 import {
   roomNameChannel,
   roomDescriptionChannel,
@@ -415,6 +416,9 @@ describe('infoChannel.produce', () => {
       authors: ['Roger Firth', 'Sharpee Team'],
       testers: ['Joe Mason'],
       version: '1.0',
+      // Not from the capability: the running engine's own stamped version,
+      // carried so a client can show it without asking the story.
+      engineVersion: ENGINE_VERSION,
     });
   });
 
@@ -431,7 +435,10 @@ describe('infoChannel.produce', () => {
     const world = makeWorldStub({
       storyInfo: { title: 'Sparse', authors: [], testers: [] },
     });
-    expect(infoChannel.produce(makeCtx({ world }))).toEqual({ title: 'Sparse' });
+    expect(infoChannel.produce(makeCtx({ world }))).toEqual({
+      title: 'Sparse',
+      engineVersion: ENGINE_VERSION,
+    });
   });
 
   it('returns undefined when storyInfo is absent', () => {

@@ -157,7 +157,6 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
       stylesDir: join(root, 'packages', 'platform-browser', 'styles'),
       templatesDir: join(root, 'packages', 'devkit', 'templates', 'browser'),
       esbuildCwd: root,
-      engineVersion: sharpeeVersion(root),
       mirror: (outDir, storyId) => mirrorToWebsite(root, outDir, storyId),
     };
     devkit().buildBrowser(storyFile, env, { quiet: opts.quiet });

@@ -26,7 +26,7 @@ import { PerceptionService } from '@sharpee/stdlib';
 import { BrowserClient, ThemeManager } from '@sharpee/platform-browser';
 import { compile } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
-import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+import { STORY_VERSION, BUILD_DATE } from './version.js';
 
 const THEME_STORAGE_KEY = '{{STORAGE_PREFIX}}-theme';
 ThemeManager.applyEarlyTheme(THEME_STORAGE_KEY);
@@ -98,7 +98,6 @@ function boot(source: string): void {
         description: story.config.description || '',
         authors: authors.join(', '),
         version: STORY_VERSION,
-        engineVersion: ENGINE_VERSION,
         buildDate: BUILD_DATE,
       },
     });

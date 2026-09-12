@@ -216,7 +216,6 @@ export class DungeoStory implements Story {
       version: config.version,
       description: config.description,
       buildDate: VERSION_INFO.buildDate,
-      engineVersion: VERSION_INFO.engineVersion,
       portedBy: config.custom?.portedBy as string | undefined,
     }));
 

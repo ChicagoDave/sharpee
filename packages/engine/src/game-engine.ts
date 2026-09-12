@@ -31,6 +31,7 @@ import {
   type INpcService,
   type ActSlots,
   type ActResult,
+  ENGINE_VERSION,
 } from '@sharpee/stdlib';
 import { type LanguageProvider, type IEventProcessorWiring, type ClientCapabilities, type ISound } from '@sharpee/if-domain';
 import { IProsePipeline, ProsePipeline, type SlotContributor, type SlotEntry } from './prose-pipeline/index.js';
@@ -665,8 +666,8 @@ export class GameEngine implements StoryEngine {
 
     // Channel-I/O bootstrap (ADR-163 §13, §14):
     //  1. Refresh `storyInfo` from `StoryInfoTrait` — pulls in the
-    //     build-pipeline metadata (engineVersion / clientVersion /
-    //     buildDate) that may have been patched onto the trait
+    //     build-pipeline metadata (clientVersion / buildDate) that may
+    //     have been patched onto the trait
     //     between `installStory()` and here (e.g., `BrowserClient.start()`
     //     sets clientVersion just before calling `engine.start()`).
     //  2. Story registers / overrides channels on the shared registry.
@@ -719,10 +720,14 @@ export class GameEngine implements StoryEngine {
     this.sessionMoves = 0;
     // Keep currentTurn as is (already 1 from constructor)
 
-    // Get version info from StoryInfoTrait
+    // The client version is the host's to report, so it comes off the trait a
+    // browser client stamps. The engine version is the engine's own fact: the
+    // stamped constant, always, so the banner's platform-version line renders
+    // for every story — including the Chord/story-loader stories that never
+    // populate a StoryInfoTrait at all, which showed no engine line before.
     const storyInfoEntities = this.world.findByTrait(TraitType.STORY_INFO);
     const storyInfoTrait = storyInfoEntities[0]?.get(StoryInfoTrait);
-    const engineVersion = storyInfoTrait?.engineVersion;
+    const engineVersion = ENGINE_VERSION;
     const clientVersion = storyInfoTrait?.clientVersion;
 
     // Emit game started event
@@ -745,8 +750,9 @@ export class GameEngine implements StoryEngine {
    * Re-project the `storyInfo` capability from the story's config and the
    * current `StoryInfoTrait`. Called once during `start()`, before the
    * `ChannelService` is constructed, so `infoChannel` / `ifidChannel` see
-   * the build-pipeline values (`engineVersion`, `clientVersion`,
-   * `buildDate`) a consumer patched onto the trait after `installStory()`.
+   * the build-pipeline values (`clientVersion`, `buildDate`) a consumer
+   * patched onto the trait after `installStory()`. The engine version is not
+   * among them — it is the engine's own stamped constant, not a story fact.
    * The same precedence rule as at load: an authored field the config set
    * is not overwritten by the trait here.
    */

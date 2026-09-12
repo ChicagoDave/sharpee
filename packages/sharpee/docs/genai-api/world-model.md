@@ -4982,7 +4982,13 @@ export declare class StoryInfoTrait implements ITrait {
     version: string;
     description?: string;
     buildDate?: string;
-    engineVersion?: string;
+    /**
+     * The host's own version, stamped after install by the client running the
+     * story (a browser client, say). There is deliberately no `engineVersion`
+     * beside it: the running engine is the only authority on which engine is
+     * running, so that value is a stamped platform constant the engine and the
+     * `version`/`about` actions read directly.
+     */
     clientVersion?: string;
     portedBy?: string;
     /**

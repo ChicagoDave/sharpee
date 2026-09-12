@@ -156,6 +156,24 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     expect(ir.entities.length).toBeGreaterThan(0);
   }, 120_000);
 
+  it('stamps story facts into the built entry and no engine version', async () => {
+    trapExit();
+    await runBuildBrowserCommand([], projectDir);
+
+    // The scaffold ships a hand-written src/browser-entry.ts, so buildBrowser
+    // stamps beside it (browser-core.ts:696-703); only a bare `.story` project
+    // with no entry gets the scratch dist/.browser-entry/<id>/ path.
+    const entryVersion = readFileSync(join(projectDir, 'src', 'version.ts'), 'utf-8');
+    expect(entryVersion).toContain('export const STORY_VERSION');
+    expect(entryVersion).toContain('export const BUILD_DATE');
+    // The defect this closes: a build tool stamping its own idea of the engine
+    // version, which the entry handed the player. There is no such stamp now —
+    // the running engine reports itself.
+    // (The bundle still contains the word `engineVersion` — it is a param name
+    // in the version action's own event data. What must be gone is the stamp.)
+    expect(entryVersion).not.toContain('ENGINE_VERSION');
+  }, 120_000);
+
   it('a gate error fails the build on the author machine with file:line diagnostics — never a broken page', async () => {
     trapExit();
     const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});

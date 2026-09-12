@@ -21,7 +21,7 @@ import {
   DUNGEO_RNAME_CHANNEL_ID,
   DUNGEO_OBJECTS_CHANNEL_ID,
 } from './channels';
-import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version';
+import { STORY_VERSION, BUILD_DATE } from './version';
 
 // Storage key for theme
 const THEME_STORAGE_KEY = 'dungeo-theme';
@@ -59,7 +59,6 @@ const client = new BrowserClient({
     authors: GAME_AUTHORS,
     portedBy: PORTED_BY,
     version: STORY_VERSION,
-    engineVersion: ENGINE_VERSION,
     buildDate: BUILD_DATE,
   },
 });

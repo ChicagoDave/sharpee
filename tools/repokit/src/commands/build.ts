@@ -124,8 +124,7 @@ export const ENGINE_VERSION = '${sharpeeVersion}';
  */
 export const STORY_VERSION = '${storyVer}';
 export const BUILD_DATE = '${buildDate}';
-export const ENGINE_VERSION = '${sharpeeVersion}';
-export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
+export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE } as const;
 `,
       );
     }

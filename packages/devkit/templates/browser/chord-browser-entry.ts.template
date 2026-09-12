@@ -16,7 +16,7 @@ import { LanguageProvider } from '@sharpee/lang-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { BrowserClient, BROWSER_CAPABILITIES, ThemeManager } from '@sharpee/platform-browser';
 import { createStory } from '@sharpee/story-loader';
-import { STORY_VERSION, ENGINE_VERSION, BUILD_DATE } from './version.js';
+import { STORY_VERSION, BUILD_DATE } from './version.js';
 // The story's TypeScript hatches (ADR-259 D1/D2), generated beside this file
 // at build time exactly as version.ts is. Empty for a pure-IR story.
 import { hatchModules } from './hatch-modules.js';
@@ -145,7 +145,6 @@ async function start(): Promise<void> {
         description: story.config.description || '',
         authors: authors.join(', '),
         version: STORY_VERSION,
-        engineVersion: ENGINE_VERSION,
         buildDate: BUILD_DATE,
       },
     });

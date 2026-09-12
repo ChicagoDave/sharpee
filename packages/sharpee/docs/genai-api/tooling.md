@@ -267,8 +267,6 @@ export interface BrowserBuildEnv {
      *  from node_modules via `--conditions=require`, so the bundle is identical —
      *  no in-repo alias fork (byte-identical parity, verified). */
     esbuildCwd: string;
-    /** The platform (engine) version stamped into the story's version.ts. */
-    engineVersion: string;
     /** Post-build mirror (in-repo: website/public/web/<id>); undefined in author mode. */
     mirror?: (outDir: string, storyId: string) => void;
 }
@@ -314,8 +312,10 @@ export interface PlaygroundBuildEnv {
     templatesDir: string;
     /** cwd for esbuild + the root under which `dist/playground` is written. */
     esbuildCwd: string;
-    /** The platform (engine) version — the pinned playground version (AC-8). */
-    engineVersion: string;
+    /** The playground app's own version — the platform version, which is what
+     *  the website pins it under (AC-8). Not stamped as an engine version:
+     *  nothing carries that but the platform constant itself. */
+    version: string;
     /** Version-pinned sync of the built bundle (in-repo: website/public/playground/v<X.Y.Z>/). */
     sync?: (outDir: string, version: string) => void;
 }

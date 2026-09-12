@@ -58,10 +58,9 @@ describe('projectStoryInfo — the three-way rule', () => {
   });
 
   it('build-pipeline fields: the trait wins and the config fills a gap', () => {
-    const trait = new StoryInfoTrait({ buildDate: '2026-09-09', engineVersion: '5.2.0', clientVersion: '3.5.0' });
+    const trait = new StoryInfoTrait({ buildDate: '2026-09-09', clientVersion: '3.5.0' });
     const withBoth = projectStoryInfo({ ...CONFIG, buildDate: '2026-01-01' }, trait);
     expect(withBoth.buildDate).toBe('2026-09-09');
-    expect(withBoth.engineVersion).toBe('5.2.0');
     expect(withBoth.clientVersion).toBe('3.5.0');
     expect(projectStoryInfo({ ...CONFIG, buildDate: '2026-01-01' }, new StoryInfoTrait()).buildDate).toBe('2026-01-01');
     expect(projectStoryInfo({ ...CONFIG, buildDate: '2026-01-01' }, undefined).buildDate).toBe('2026-01-01');
@@ -77,12 +76,11 @@ describe('projectStoryInfo — the three-way rule', () => {
 describe('the storyInfo capability at load and at start (F1)', () => {
   it('a trait description no longer overwrites the config description at start; buildDate is the trait\'s at both moments', () => {
     const { engine, world } = setupTestEngine();
-    engine.installStory(new TraitStory({ description: 'From the trait', buildDate: '2026-09-09', engineVersion: '5.2.0' }));
+    engine.installStory(new TraitStory({ description: 'From the trait', buildDate: '2026-09-09' }));
 
     const atLoad = storyInfo(world);
     expect(atLoad.description).toBe('From the config');
     expect(atLoad.buildDate).toBe('2026-09-09');
-    expect(atLoad.engineVersion).toBe('5.2.0');
     expect(atLoad.ifid).toBe('IFID-1');
 
     engine.start();
@@ -90,7 +88,6 @@ describe('the storyInfo capability at load and at start (F1)', () => {
     const atStart = storyInfo(world);
     expect(atStart.description).toBe('From the config');
     expect(atStart.buildDate).toBe('2026-09-09');
-    expect(atStart.engineVersion).toBe('5.2.0');
     expect(atStart.title).toBe('Minimal Test Story');
     expect(atStart.authors).toEqual(['Test Suite']);
   });

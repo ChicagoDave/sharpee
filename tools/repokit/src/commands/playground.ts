@@ -64,7 +64,7 @@ export function buildPlaygroundClient(root: string, opts: PlaygroundBuildOptions
     stylesDir: join(root, 'packages', 'platform-browser', 'styles'),
     templatesDir: join(root, 'packages', 'devkit', 'templates', 'browser'),
     esbuildCwd: root,
-    engineVersion: sharpeeVersion(root),
+    version: sharpeeVersion(root),
     sync: (outDir, version) => syncToWebsite(root, outDir, version),
   };
   devkit().buildPlaygroundBundle(env, { quiet: opts.quiet });

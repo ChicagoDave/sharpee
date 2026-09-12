@@ -39,8 +39,7 @@ describe('stampVersions', () => {
  */
 export const STORY_VERSION = '1.0.0';
 export const BUILD_DATE = '2026-05-12T21:38:50Z';
-export const ENGINE_VERSION = '0.9.113';
-export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
+export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE } as const;
 `;
     expect(readFileSync(join(root, 'stories/dungeo/src/version.ts'), 'utf8')).toBe(expected);
   });

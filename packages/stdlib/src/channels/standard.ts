@@ -33,6 +33,7 @@ import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
 import { playerLocationName, readCapability } from './world-helpers.js';
 import { characterAuthorChannel } from './character-author.js';
 import { sceneChannel, exchangeAffordancesChannel, threadAffordancesChannel } from './scene.js';
+import { ENGINE_VERSION } from '../actions/standard/version/engine-version.js';
 
 /**
  * Local copy of the `flattenContent` helper. stdlib intentionally does
@@ -95,8 +96,11 @@ export const STANDARD_CHANNEL_EVENTS = {
  *  - prologue — `StoryConfig.prologue`, resolved to text by the engine
  *    at story start (phrase references included, ADR-298 D3)
  *  - buildDate — `StoryConfig.buildDate` or `StoryInfoTrait.buildDate`
- *  - engineVersion / clientVersion — `StoryInfoTrait` (set by build
- *    pipelines)
+ *  - clientVersion — `StoryInfoTrait` (set by the host; a browser client
+ *    stamps it after install)
+ *  - engineVersion — the stamped platform constant, not the capability:
+ *    the engine's own fact, carried so a client can show it without
+ *    asking the story
  */
 interface StoryInfoData {
   title?: string;
@@ -107,7 +111,6 @@ interface StoryInfoData {
   description?: string;
   prologue?: string;
   buildDate?: string;
-  engineVersion?: string;
   clientVersion?: string;
 }
 
@@ -339,6 +342,7 @@ export interface StoryInfoPayload {
   version?: string;
   description?: string;
   buildDate?: string;
+  /** Always set, from the stamped platform constant — never from the story. */
   engineVersion?: string;
   clientVersion?: string;
 }
@@ -365,7 +369,9 @@ export const infoChannel: IOChannel<StoryInfoPayload> = {
     if (cap.version) payload.version = cap.version;
     if (cap.description) payload.description = cap.description;
     if (cap.buildDate) payload.buildDate = cap.buildDate;
-    if (cap.engineVersion) payload.engineVersion = cap.engineVersion;
+    // Always present, and never sourced from the story: the running engine
+    // is the only authority on its own version.
+    payload.engineVersion = ENGINE_VERSION;
     if (cap.clientVersion) payload.clientVersion = cap.clientVersion;
     return payload;
   },

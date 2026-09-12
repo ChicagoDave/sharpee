@@ -1,7 +1,7 @@
 /**
  * version-stamp.ts — generates a story project's src/version.ts.
  *
- * browser-entry.ts imports STORY_VERSION/ENGINE_VERSION/BUILD_DATE from `./version`.
+ * browser-entry.ts imports STORY_VERSION/BUILD_DATE from `./version`.
  * An author project never gets this file from the platform build (the monorepo only
  * stamps stories/<name>), so the devkit standalone commands stamp it themselves:
  * `init-browser` seeds it alongside browser-entry.ts (so the import resolves
@@ -13,11 +13,13 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { platformRanges } from './init.js';
 
 /**
- * Write `<projectDir>/src/version.ts` with the project's version, the platform line,
- * and the build timestamp. Overwrites any existing file (it is marked auto-generated).
+ * Write `<projectDir>/src/version.ts` with the project's version and the build
+ * timestamp — story facts only. Overwrites any existing file (it is marked
+ * auto-generated). The engine version is deliberately absent: the running engine
+ * is the only authority on it, so its readers import the stamped platform
+ * constant instead of a build tool's copy.
  * @param projectDir the story project root (contains package.json + src/)
  * @param storyId    the project id, used only in the file's header comment
  */
@@ -29,7 +31,6 @@ export function stampVersion(projectDir: string, storyId: string): void {
   } catch {
     // Keep the default.
   }
-  const engineVersion = platformRanges().sharpeeRange.replace(/^[\^~]/, '');
   const buildDate = new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   fs.mkdirSync(path.join(projectDir, 'src'), { recursive: true });
   fs.writeFileSync(
@@ -40,8 +41,7 @@ export function stampVersion(projectDir: string, storyId: string): void {
  */
 export const STORY_VERSION = '${storyVersion}';
 export const BUILD_DATE = '${buildDate}';
-export const ENGINE_VERSION = '${engineVersion}';
-export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
+export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE } as const;
 `,
   );
 }

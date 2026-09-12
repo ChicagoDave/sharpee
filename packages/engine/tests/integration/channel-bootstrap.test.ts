@@ -27,6 +27,7 @@ import type {
   IChannelRegistry,
   IOChannel,
 } from '@sharpee/if-domain';
+import { ENGINE_VERSION } from '@sharpee/stdlib';
 import { setupTestEngine } from '../test-helpers/setup-test-engine';
 import { MinimalTestStory } from '../stories/minimal-test-story';
 import {
@@ -277,13 +278,15 @@ describe('GameEngine — channel:packet emission', () => {
     await engine.executeTurn('look');
     const infoPayload = packets[0].packet.payload['info'];
     // MinimalTestStory's config carries title/author/version/description.
-    // No StoryInfoTrait is set by this fixture, so build-pipeline
-    // fields (engineVersion / clientVersion / buildDate) stay absent.
+    // No StoryInfoTrait is set by this fixture, so the build-pipeline fields
+    // (clientVersion / buildDate) stay absent. The engine version is not one
+    // of them: it is the engine's own stamped constant and is always carried.
     expect(infoPayload).toEqual({
       title: 'Minimal Test Story',
       authors: ['Test Suite'],
       version: '1.0.0',
       description: 'A minimal story for testing basic engine functionality',
+      engineVersion: ENGINE_VERSION,
     });
   });
 });

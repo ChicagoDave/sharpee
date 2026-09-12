@@ -335,8 +335,6 @@ export interface BrowserBuildEnv {
    *  from node_modules via `--conditions=require`, so the bundle is identical —
    *  no in-repo alias fork (byte-identical parity, verified). */
   esbuildCwd: string;
-  /** The platform (engine) version stamped into the story's version.ts. */
-  engineVersion: string;
   /** Post-build mirror (in-repo: website/public/web/<id>); undefined in author mode. */
   mirror?: (outDir: string, storyId: string) => void;
 }
@@ -358,11 +356,15 @@ export interface BrowserBuildOpts {
   buildDate?: string;
 }
 
-/** Write the story's `src/version.ts` beside its entry, from the IR version (D2). */
+/**
+ * Write the story's `src/version.ts` beside its entry, from the IR version (D2).
+ * Story facts only: the engine version is not among them — the running engine is
+ * the only authority on its own version, so its readers import the stamped
+ * platform constant rather than receiving a build tool's copy of it.
+ */
 function stampBrowserVersion(
   entryDir: string,
   meta: BrowserMeta,
-  engineVersion: string,
   buildDate: string,
 ): void {
   fs.mkdirSync(entryDir, { recursive: true });
@@ -374,8 +376,7 @@ function stampBrowserVersion(
  */
 export const STORY_VERSION = '${meta.version || '0.0.0'}';
 export const BUILD_DATE = '${buildDate}';
-export const ENGINE_VERSION = '${engineVersion}';
-export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE, engineVersion: ENGINE_VERSION } as const;
+export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE } as const;
 `,
   );
 }
@@ -706,7 +707,7 @@ export function buildBrowser(
 
   // version.ts (imported by the entry as ./version) — stamped from the IR (D2).
   const buildDate = opts.buildDate ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-  stampBrowserVersion(entryDir, meta, env.engineVersion, buildDate);
+  stampBrowserVersion(entryDir, meta, buildDate);
 
   // hatch-modules.ts (imported by the entry as ./hatch-modules) — ADR-259 D2.
   // Regenerated for BOTH entry paths, so the D4 escape hatch keeps hatch
@@ -895,8 +896,10 @@ export interface PlaygroundBuildEnv {
   templatesDir: string;
   /** cwd for esbuild + the root under which `dist/playground` is written. */
   esbuildCwd: string;
-  /** The platform (engine) version — the pinned playground version (AC-8). */
-  engineVersion: string;
+  /** The playground app's own version — the platform version, which is what
+   *  the website pins it under (AC-8). Not stamped as an engine version:
+   *  nothing carries that but the platform constant itself. */
+  version: string;
   /** Version-pinned sync of the built bundle (in-repo: website/public/playground/v<X.Y.Z>/). */
   sync?: (outDir: string, version: string) => void;
 }
@@ -945,7 +948,7 @@ export function buildPlaygroundBundle(
   opts: BrowserBuildOpts = {},
 ): string {
   const log = (m: string) => !opts.quiet && console.log(m);
-  const version = env.engineVersion;
+  const version = env.version;
   const meta: BrowserMeta = { ...PLAYGROUND_META, version };
 
   const outDir = path.join(env.esbuildCwd, 'dist', 'playground');
@@ -957,7 +960,7 @@ export function buildPlaygroundBundle(
   const entryDir = path.join(env.esbuildCwd, 'dist', '.playground-entry');
   const entryFile = generatePlaygroundEntry(env.templatesDir, entryDir);
   const buildDate = opts.buildDate ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');
-  stampBrowserVersion(entryDir, meta, env.engineVersion, buildDate);
+  stampBrowserVersion(entryDir, meta, buildDate);
 
   // --- Bundle the entry → dist/playground/game.js (single IIFE payload). ---
   log('  Bundling game.js...');

@@ -20,8 +20,8 @@ import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { VersionDisplayedEventData } from './version-events.js';
 // Stamped by ./repokit build (never hand-edited): the lockstep platform
-// version — the banner fallback when a story carries no engineVersion
-// (every Chord .story file). Re-exported for existing consumers.
+// version, and the single source of the engine-version banner text.
+// Re-exported for existing consumers.
 import { ENGINE_VERSION } from './engine-version.js';
 
 export { ENGINE_VERSION };
@@ -57,7 +57,10 @@ export const versionAction: Action & { metadata: ActionMetadata } = {
 
     const storyTitle = trait?.title || 'Unknown';
     const storyVersion = trait?.version || '0.0.0';
-    const engineVersion = trait?.engineVersion || ENGINE_VERSION;
+    // The engine version is the engine's own fact, never the story's: read the
+    // stamped constant, not the trait. A per-story stamp could only ever agree
+    // with this value or be wrong about which engine is running.
+    const engineVersion = ENGINE_VERSION;
     const clientVersion = trait?.clientVersion || 'N/A';
     const buildDate = trait?.buildDate;
     const author = trait?.author || 'Unknown';

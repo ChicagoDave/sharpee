@@ -29,8 +29,6 @@ export interface StoryInfo {
   portedBy?: string;
   /** Story version */
   version: string;
-  /** Engine version */
-  engineVersion: string;
   /** Build date string */
   buildDate: string;
 }

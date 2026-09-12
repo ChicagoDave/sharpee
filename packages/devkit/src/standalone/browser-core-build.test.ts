@@ -57,7 +57,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
   it('builds fernhill from a bare .story: IR metadata, no package.json in the output (D1/D2)', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const root = mkroot('core-fernhill');
-    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root };
     const outDir = buildBrowser(FERNHILL, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
 
     // The deliverable exists and traces to the IR (fernhill id + header version).
@@ -96,7 +96,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
   it('menu: false strips the in-page menu bar from the built page, custom page included (ADR-290 D6, GH #196)', () => {
     vi.spyOn(console, 'log').mockImplementation(() => {});
     const root = mkroot('core-fernhill-menuless');
-    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root };
 
     const outDir = buildBrowser(FERNHILL, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z', menu: false });
 
@@ -118,10 +118,10 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     // Author env: no mirror (author mode). In-repo env: a mirror that targets a
     // throwaway dir so the website tree is untouched by the test.
     const mirrorDir = mkroot('core-mirror');
-    const outA = buildBrowser(FERNHILL, { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: rootA, engineVersion: '9.9.9' }, FIX);
+    const outA = buildBrowser(FERNHILL, { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: rootA }, FIX);
     const outB = buildBrowser(
       FERNHILL,
-      { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: rootB, engineVersion: '9.9.9', mirror: (o, id) => void [o, id, mirrorDir] },
+      { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: rootB, mirror: (o, id) => void [o, id, mirrorDir] },
       FIX,
     );
 
@@ -142,7 +142,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
       storyFile,
       `story\n  title: Panel Proof\n  authors:\n    T\n  id: panelproof\n  story-version: 0.0.1\n\ncreate the Hall\n  a room\n\n  A bare proving hall.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
-    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root };
     const outDir = buildBrowser(storyFile, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
 
     // A generated entry was written to the build-scratch dir and bundled.
@@ -169,7 +169,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
       join(root, 'browser', 'index.html'),
       '<!DOCTYPE html><html data-theme="classic"><body><div id="text-content"></div><input id="command-input"><script src="game.js"></script></body></html>',
     );
-    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root };
     const outDir = buildBrowser(storyFile, env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
 
     const html = readFileSync(join(outDir, 'index.html'), 'utf-8');
@@ -184,7 +184,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const root = mkroot('core-badclient');
     const storyFile = join(root, 'x.story');
     writeFileSync(storyFile, `story\n  title: X\n  authors:\n    T\n  id: x\n  client: terminal\n\ncreate the Hall\n  a room\n\n  Hall.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`);
-    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root };
     expect(() => buildBrowser(storyFile, env, { quiet: true })).toThrow(/unknown client 'terminal'/);
   });
 
@@ -194,7 +194,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const storyFile = join(root, 'bad.story');
     // References an entity that does not exist → analysis gate error.
     writeFileSync(storyFile, `story\n  title: Bad\n  authors:\n    T\n  id: bad\n\ncreate Alex\n  a person\n  playable\n  starts in the Nowhere\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`);
-    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root, engineVersion: '9.9.9' };
+    const env: BrowserBuildEnv = { stylesDir: STYLES, templatesDir: TEMPLATES, esbuildCwd: root };
     expect(() => buildBrowser(storyFile, env, { quiet: true })).toThrow(/failed the load-time gates/);
     expect(existsSync(join(root, 'dist', 'web', 'bad', 'game.js'))).toBe(false);
   });
@@ -244,7 +244,7 @@ describe('buildPlaygroundBundle core (real path, ADR-191)', () => {
       stylesDir: STYLES,
       templatesDir: TEMPLATES,
       esbuildCwd: root,
-      engineVersion: '9.9.9',
+      version: '9.9.9',
     };
     const outDir = buildPlaygroundBundle(env, { quiet: true, buildDate: '2020-01-01T00:00:00Z' });
 
@@ -271,7 +271,7 @@ describe('buildPlaygroundBundle core (real path, ADR-191)', () => {
       stylesDir: STYLES,
       templatesDir: TEMPLATES,
       esbuildCwd: root,
-      engineVersion: '1.2.3',
+      version: '1.2.3',
       sync: (outDir, version) => calls.push({ outDir, version }),
     };
     const outDir = buildPlaygroundBundle(env, { quiet: true });

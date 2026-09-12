@@ -15,7 +15,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp.js';
-import { platformRanges } from './init.js';
 import { findStoryFile } from './author-game.js';
 import { StoryConfigError, configPathFor, reconcileHeader } from './story-config.js';
 import {
@@ -187,7 +186,6 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
       stylesDir: resolveEngineStylesDir(projectDir),
       templatesDir: TEMPLATES_DIR,
       esbuildCwd: projectDir,
-      engineVersion: platformRanges().sharpeeRange.replace(/^[\^~]/, ''),
     };
     try {
       const outDir = buildBrowser(storyFile, authorEnv, { minify, sourcemap, menu });

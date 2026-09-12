@@ -288,8 +288,9 @@ export declare class GameEngine implements StoryEngine {
      * Re-project the `storyInfo` capability from the story's config and the
      * current `StoryInfoTrait`. Called once during `start()`, before the
      * `ChannelService` is constructed, so `infoChannel` / `ifidChannel` see
-     * the build-pipeline values (`engineVersion`, `clientVersion`,
-     * `buildDate`) a consumer patched onto the trait after `installStory()`.
+     * the build-pipeline values (`clientVersion`, `buildDate`) a consumer
+     * patched onto the trait after `installStory()`. The engine version is not
+     * among them — it is the engine's own stamped constant, not a story fact.
      * The same precedence rule as at load: an authored field the config set
      * is not overwritten by the trait here.
      */

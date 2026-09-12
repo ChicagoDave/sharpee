@@ -27,7 +27,6 @@ import { buildBrowser, type BrowserBuildEnv } from './browser-core.js';
 import { resolveEngineStylesDir } from './build-browser.js';
 import { findStoryFile, makeFsImportResolver } from './author-game.js';
 import { StoryConfigError, reconcileHeader } from './story-config.js';
-import { platformRanges } from './init.js';
 
 /** A refusal raised before anything is written. */
 export class PublishError extends Error {
@@ -183,7 +182,6 @@ export async function runPublishCommand(args: string[], targetArg?: string): Pro
     stylesDir: resolveEngineStylesDir(target.projectDir),
     templatesDir: templatesDir(),
     esbuildCwd: target.projectDir,
-    engineVersion: platformRanges().sharpeeRange.replace(/^[\^~]/, ''),
   };
 
   // A published artifact must contain exactly what THIS build produced.

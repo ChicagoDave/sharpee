@@ -19,6 +19,9 @@ import { TraitType, StoryInfoTrait } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { AboutDisplayedEventData } from './about-events.js';
+// The engine version is the engine's own fact, not the story's: the stamped
+// platform constant is its single source (see version/engine-version.ts).
+import { ENGINE_VERSION } from '../version/engine-version.js';
 
 export const aboutAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.ABOUT,
@@ -57,7 +60,7 @@ export const aboutAction: Action & { metadata: ActionMetadata } = {
         author: Array.isArray(storyConfig.author) ? storyConfig.author.join(', ') : (storyConfig.author || 'Unknown'),
         version: storyConfig.version || '0.0.0',
         description: storyConfig.description || '',
-        engineVersion: storyConfig.engineVersion || '',
+        engineVersion: ENGINE_VERSION,
         buildDate: storyConfig.buildDate || '',
         clientVersion: storyConfig.clientVersion || '',
         portedBy: storyConfig.portedBy || '',

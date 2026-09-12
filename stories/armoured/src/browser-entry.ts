@@ -56,7 +56,6 @@ async function start(): Promise<void> {
       // Engine + build date come from the build pipeline in real
       // bundles; armoured doesn't generate a version.ts so we leave
       // them empty here.
-      engineVersion: '',
       buildDate: '',
     },
   });

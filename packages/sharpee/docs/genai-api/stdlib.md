@@ -4277,6 +4277,7 @@ export interface StoryInfoPayload {
     version?: string;
     description?: string;
     buildDate?: string;
+    /** Always set, from the stamped platform constant — never from the story. */
     engineVersion?: string;
     clientVersion?: string;
 }
