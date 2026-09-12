@@ -1,0 +1,57 @@
+{
+  "epoch": "2026-09-11T18:52:49Z",
+  "generatedSession": "c70351",
+  "generatedDate": "2026-09-11",
+  "summariesAnalyzed": 20,
+  "range": ["2026-09-09", "2026-09-11"],
+  "categories": {
+    "Build / Toolchain": {
+      "count": 6,
+      "sessions": ["52e228", "748218", "6682ed", "379680", "86894c", "4b4f4d"],
+      "threads": [
+        {
+          "rootCause": "a type-check or build-tool gate is scoped, dry-run-interpreted, or artifact-cached such that it structurally cannot observe a real class of failure (tsconfig include/exclude gaps, turbo --dry=json counting a NONEXISTENT task as success, package suites reading a stale dist/ build as fresh, a story's own tsconfig excluding shipped browser entries)",
+          "count": 6,
+          "sessions": ["52e228", "748218", "6682ed", "379680", "86894c", "4b4f4d"],
+          "confirmed": true
+        }
+      ]
+    },
+    "Test Infrastructure": {
+      "count": 4,
+      "sessions": ["aceb2e", "cbdf63", "7776c8", "fc5724"],
+      "threads": [
+        {
+          "rootCause": "a test or gate reports pass without exercising the real behavior or path it claims to verify — a phase guard never reached by a real-path test, a resume path the harness structurally cannot enter, or a seed/determinism trapdoor one layer above where a prior fix closed it",
+          "count": 4,
+          "sessions": ["aceb2e", "cbdf63", "7776c8", "fc5724"],
+          "confirmed": true
+        }
+      ]
+    },
+    "Architecture": {
+      "count": 2,
+      "sessions": ["fc5724", "aceb2e"],
+      "threads": [
+        {
+          "rootCause": "a single fact is kept in one canonical source but re-derived or hand-duplicated through a separate mechanism elsewhere instead of being imported, so the copies drift silently",
+          "count": 2,
+          "sessions": ["fc5724", "aceb2e"],
+          "confirmed": true
+        }
+      ]
+    },
+    "Documentation": {
+      "count": 2,
+      "sessions": ["42e176", "4b4f4d"],
+      "threads": [
+        {
+          "rootCause": "a comment or example file describes a mechanism, behavior, or grammar that has since been removed or changed, and nothing sweeps for surviving references when the removal lands",
+          "count": 2,
+          "sessions": ["42e176", "4b4f4d"],
+          "confirmed": true
+        }
+      ]
+    }
+  }
+}
