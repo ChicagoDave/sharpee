@@ -6,8 +6,12 @@
  * Provides:
  * - Interactive debug mode (GDT-style) with short codes
  * - Test commands ($teleport, $take, $assert, etc.) for transcripts
- * - Checkpoint save/restore system
- * - Playtester annotations (planned)
+ * - Playtester annotations (ADR-109)
+ *
+ * Checkpointing is deliberately NOT here. `$save`/`$restore` are transcript-tester
+ * directives backed by the platform engine's real save seam
+ * (`transcript-tester/src/command-core.ts`), which is the one mechanism; this package
+ * once carried a second, world-only checkpoint store that nothing read back.
  *
  * @example
  * ```typescript
@@ -15,8 +19,7 @@
  *
  * const testing = new TestingExtension({
  *   debugMode: { enabled: true, prefix: 'gdt' },
- *   testMode: { enabled: true, deterministicRandom: true },
- *   checkpoints: { directory: './saves' }
+ *   testMode: { enabled: true, deterministicRandom: true }
  * });
  *
  * // Execute GDT command
@@ -24,12 +27,6 @@
  *
  * // Execute test command
  * const result = testing.executeTestCommand('$teleport west-of-house', world);
- *
- * // Save/restore checkpoints. World-only: restoring does not touch the engine's
- * // lifecycle phase, and reconciling the two is the caller's job — see
- * // `restoreCheckpoint` in types.ts.
- * await testing.saveCheckpoint('before-troll', world);
- * await testing.restoreCheckpoint('before-troll', world);
  * ```
  */
 
@@ -45,10 +42,6 @@ export type {
   CommandResult,
   CommandCategory,
   CommandRegistry,
-  CheckpointData,
-  CheckpointStore,
-  SerializedDaemon,
-  SerializedFuse,
   // Annotation types (ADR-109)
   AnnotationType,
   Annotation,
@@ -62,17 +55,6 @@ export { createDebugContext, formatEntity, formatLocationChain } from './context
 
 // Command registry utilities
 export { createCommandRegistry, parseGdtInput, parseTestInput } from './commands/registry.js';
-
-// Checkpoint utilities
-export {
-  serializeCheckpoint,
-  deserializeCheckpoint,
-  validateCheckpoint,
-  isSupportedCheckpointVersion,
-  CHECKPOINT_FORMAT_VERSION,
-  SUPPORTED_CHECKPOINT_VERSIONS,
-} from './checkpoints/serializer.js';
-export { createFileStore, createMemoryStore, createLocalStorageStore } from './checkpoints/store.js';
 
 // Annotation utilities (ADR-109)
 export { createAnnotationStore, captureContext, createEmptyContext } from './annotations/index.js';

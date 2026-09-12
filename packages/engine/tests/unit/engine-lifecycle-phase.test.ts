@@ -379,3 +379,80 @@ describe('the phase derives from the Ending at the restore seam (ADR-347 D3, AC-
     expect(won.getWorld().getEnding()).toBeUndefined();
   });
 });
+
+describe('the derivation is a seam, not a per-turn poll (ADR-348 D3, AC-4)', () => {
+  // D1 reads as a licence to derive everywhere, and D3 is the sentence that
+  // says otherwise: a live engine may legitimately be `playing` while the
+  // world carries an Ending. `branch-tester`'s tree walker depends on it —
+  // `tree-walker.ts:360` revives the engine on every test line, because a
+  // line's prefix may have ended the game and the line's own cards still
+  // have to run. Moving the derivation into the turn loop would re-stop
+  // that engine before its first card, and until these tests the only thing
+  // that would have noticed was an integration tree failing emergently.
+
+  /**
+   * The walker's shape, made local: an engine a victory stopped, revived
+   * over the very world that ended it. The Ending is left standing on
+   * purpose — that disagreement is the thing under test.
+   */
+  function revivedOverEndedWorld() {
+    const { engine } = setupTestEngineWithStory();
+    engine.start();
+    endStory(engine.getWorld(), 'victory', { turn: 1, messageId: 'won.phrase' });
+    engine.stop('victory');
+    engine.resume();
+    return engine;
+  }
+
+  it('a revived engine runs a full regular turn with an Ending standing in the world', async () => {
+    const engine = revivedOverEndedWorld();
+
+    // PRECONDITION: the world and the phase disagree, and that is legal.
+    expect(engine.getWorld().getEnding()).toMatchObject({ kind: 'victory' });
+    expect(engine['phase'].name).toBe('playing');
+
+    const started: string[] = [];
+    engine.on('turn:start', (_turn: number, input: string) => started.push(input));
+
+    // `look` is the verb that matters: a meta command would prove nothing,
+    // since `stopped` accepts those anyway (D15). A regular command is
+    // refused by a stopped engine, so it only runs if nothing re-derived
+    // the phase from the standing Ending on the way in.
+    await expect(engine.executeTurn('look')).resolves.toBeDefined();
+    expect(started).toEqual(['look']); // the turn began, rather than being refused
+
+    // POSTCONDITION: the engine is stopped again — by the `ending` stage at
+    // turn end (`turn/ending.ts`), which is the turn cycle's own business.
+    // The turn it stopped is the turn that ran, not one it refused.
+    expect(engine['phase'].name).toBe('stopped');
+  });
+
+  it('executes a turn without calling the derivation, which the restore seam still calls', async () => {
+    // The behavioural test above catches a derivation moved to the top of
+    // the turn. This one names the method, so a derivation added anywhere
+    // in the cycle fails here even where the phase happens to survive it.
+    const engine = revivedOverEndedWorld();
+
+    // Guard against a vacuous pass: if the method is renamed, the spy below
+    // shadows nothing and the count stays 0 for the wrong reason.
+    expect(typeof engine['derivePhaseFromEnding']).toBe('function');
+
+    let derivations = 0;
+    const realDerive = engine['derivePhaseFromEnding'].bind(engine);
+    engine['derivePhaseFromEnding'] = () => {
+      derivations += 1;
+      realDerive();
+    };
+
+    await engine.executeTurn('look');
+    expect(derivations).toBe(0); // a whole turn, and the world was never asked
+
+    // The positive control — without it, a spy that never fires proves
+    // nothing about where the derivation lives. `loadSaveData` is one of
+    // the two seams, so this is the count going up exactly where it should.
+    const { engine: source } = setupTestEngineWithStory();
+    source.start();
+    engine['loadSaveData'](source['createSaveData']());
+    expect(derivations).toBe(1);
+  });
+});

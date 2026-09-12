@@ -10,7 +10,6 @@ import type {
   TestingExtensionConfig,
   ITestingExtension,
   CommandRegistry,
-  CheckpointStore,
   DebugContext,
   CommandResult,
   DebugCommand,
@@ -20,8 +19,6 @@ import type {
 } from './types.js';
 import { createDebugContext } from './context/debug-context.js';
 import { createCommandRegistry, parseGdtInput, parseTestInput } from './commands/registry.js';
-import { createMemoryStore, createFileStore } from './checkpoints/store.js';
-import { serializeCheckpoint, deserializeCheckpoint } from './checkpoints/serializer.js';
 import { createAnnotationStore, captureContext } from './annotations/index.js';
 
 /**
@@ -38,9 +35,6 @@ const DEFAULT_CONFIG: Required<TestingExtensionConfig> = {
     deterministicRandom: true,
     assertions: true,
   },
-  checkpoints: {
-    directory: './checkpoints',
-  },
   commands: [],
 };
 
@@ -50,7 +44,6 @@ const DEFAULT_CONFIG: Required<TestingExtensionConfig> = {
 export class TestingExtension implements ITestingExtension {
   readonly config: TestingExtensionConfig;
   readonly commands: CommandRegistry;
-  readonly checkpoints: CheckpointStore;
   readonly annotations: AnnotationStore;
 
   private isDebugModeActive: boolean = false;
@@ -64,7 +57,6 @@ export class TestingExtension implements ITestingExtension {
     this.config = {
       debugMode: { ...DEFAULT_CONFIG.debugMode, ...config.debugMode },
       testMode: { ...DEFAULT_CONFIG.testMode, ...config.testMode },
-      checkpoints: { ...DEFAULT_CONFIG.checkpoints, ...config.checkpoints },
       commands: config.commands ?? [],
     };
 
@@ -77,14 +69,6 @@ export class TestingExtension implements ITestingExtension {
     // Register custom commands
     for (const command of this.config.commands ?? []) {
       this.commands.register(command);
-    }
-
-    // Initialize checkpoint store
-    // Use memory store by default; file store requires explicit path
-    if (this.config.checkpoints?.directory) {
-      this.checkpoints = createFileStore(this.config.checkpoints.directory);
-    } else {
-      this.checkpoints = createMemoryStore();
     }
 
     // Initialize annotation store
@@ -178,16 +162,6 @@ export class TestingExtension implements ITestingExtension {
       category: 'display',
       usage: 'object <object-id>',
       execute: (context, args) => this.cmdDisplayObject(context, args),
-    });
-
-    // Saves list command
-    this.commands.register({
-      code: 'SL',
-      testSyntax: 'saves',
-      name: 'List Saves',
-      description: 'List available checkpoints',
-      category: 'utility',
-      execute: (context, args) => this.cmdListSaves(context, args),
     });
 
     // Describe Entity command (detailed)
@@ -412,44 +386,6 @@ export class TestingExtension implements ITestingExtension {
   }
 
   /**
-   * Save a checkpoint.
-   *
-   * World-only, like its restore counterpart — see `restoreCheckpoint` below for the
-   * contract that pairing carries.
-   */
-  async saveCheckpoint(name: string, world: WorldModel): Promise<void> {
-    const data = serializeCheckpoint(world, name);
-    await this.checkpoints.save(name, data);
-  }
-
-  /**
-   * Restore from a checkpoint.
-   *
-   * @param name - Checkpoint name to load
-   * @param world - World model to overwrite with the checkpoint's state
-   * @returns true when the world was restored; false when no checkpoint is stored under
-   *   `name` (or the stored data is structurally invalid)
-   * @throws Error when the stored checkpoint's format version is not readable by this
-   *   build. Deliberately distinct from the `false` return: "written by a format I don't
-   *   understand" is not "not there", and must not be reported as a plain miss.
-   *
-   * **World-only by contract: the caller owns the engine's lifecycle phase.** The
-   * ending is a world member since ADR-347, so overwriting the world here can put it
-   * at odds with a phase this extension cannot see. The full contract, and why this is
-   * not an engine restore seam, is on `TestingExtensionInterface.restoreCheckpoint` in
-   * `types.ts` — the declaration a caller reads.
-   */
-  async restoreCheckpoint(name: string, world: WorldModel): Promise<boolean> {
-    const data = await this.checkpoints.load(name);
-    if (!data) {
-      return false;
-    }
-
-    deserializeCheckpoint(data, world);
-    return true;
-  }
-
-  /**
    * Set context for annotation commands (called by transcript-tester after each command)
    */
   setCommandContext(command: string, response: string): void {
@@ -665,15 +601,6 @@ export class TestingExtension implements ITestingExtension {
     }
 
     return { success: true, output };
-  }
-
-  private cmdListSaves(_context: DebugContext, _args: string[]): CommandResult {
-    // Note: This is a synchronous stub. Full checkpoint listing
-    // requires async access - use $saves from transcript-tester instead.
-    return {
-      success: true,
-      output: ['Use $saves in transcript tests to list checkpoints.'],
-    };
   }
 
   private cmdDescribeEntity(context: DebugContext, args: string[]): CommandResult {
@@ -963,12 +890,6 @@ export class TestingExtension implements ITestingExtension {
     const name = args.join(' ');
     const annotationContext = captureContext(context.world, this.lastCommand, this.lastResponse);
     const annotation = this.annotations.addAnnotation('bookmark', name, annotationContext);
-
-    // Also save a checkpoint with this name
-    const checkpointData = serializeCheckpoint(context.world, name);
-    this.checkpoints.save(name, checkpointData).catch(() => {
-      // Silently ignore checkpoint save errors
-    });
 
     return {
       success: true,

@@ -39,14 +39,6 @@ export interface TestingExtensionConfig {
   };
 
   /**
-   * Checkpoint configuration
-   */
-  checkpoints?: {
-    /** Directory for checkpoint files */
-    directory?: string;
-  };
-
-  /**
    * Additional story-specific commands
    */
   commands?: DebugCommand[];
@@ -237,95 +229,6 @@ export interface CommandRegistry {
 }
 
 // ============================================================================
-// Checkpoint System
-// ============================================================================
-
-/**
- * Serialized checkpoint data
- */
-export interface CheckpointData {
-  /**
-   * Checkpoint format version.
-   *
-   * Deliberately typed `string`, not a literal union: a format bump must not be a
-   * breaking type change for anyone holding a `CheckpointData`. Support is decided at
-   * read time instead — see `SUPPORTED_CHECKPOINT_VERSIONS` and
-   * `deserializeCheckpoint()` in `checkpoints/serializer.ts`.
-   */
-  version: string;
-  /** When checkpoint was created */
-  timestamp: number;
-  /** Metadata about the checkpoint */
-  metadata: {
-    /** Optional name for the checkpoint */
-    name?: string;
-    /** Current turn number */
-    turn: number;
-    /** Player location at checkpoint */
-    location?: string;
-  };
-  /** Serialized world state */
-  worldState: string;
-  /** Scheduler state (daemons, fuses) */
-  schedulerState?: {
-    turn: number;
-    daemons: SerializedDaemon[];
-    fuses: SerializedFuse[];
-  };
-}
-
-/**
- * Serialized daemon data
- */
-export interface SerializedDaemon {
-  id: string;
-  handler: string;
-  interval: number;
-  lastRun: number;
-  data?: Record<string, unknown>;
-}
-
-/**
- * Serialized fuse data
- */
-export interface SerializedFuse {
-  id: string;
-  handler: string;
-  turnsRemaining: number;
-  data?: Record<string, unknown>;
-}
-
-/**
- * Checkpoint storage interface
- */
-export interface CheckpointStore {
-  /**
-   * Save a checkpoint
-   */
-  save(name: string, data: CheckpointData): Promise<void>;
-
-  /**
-   * Load a checkpoint
-   */
-  load(name: string): Promise<CheckpointData | undefined>;
-
-  /**
-   * List available checkpoints
-   */
-  list(): Promise<string[]>;
-
-  /**
-   * Delete a checkpoint
-   */
-  delete(name: string): Promise<boolean>;
-
-  /**
-   * Check if checkpoint exists
-   */
-  exists(name: string): Promise<boolean>;
-}
-
-// ============================================================================
 // Annotation System (ADR-109)
 // ============================================================================
 
@@ -433,9 +336,6 @@ export interface ITestingExtension {
   /** Command registry */
   readonly commands: CommandRegistry;
 
-  /** Checkpoint store */
-  readonly checkpoints: CheckpointStore;
-
   /** Annotation store */
   readonly annotations: AnnotationStore;
 
@@ -453,39 +353,6 @@ export interface ITestingExtension {
    * Create a debug context for the current world state
    */
   createContext(world: WorldModel): DebugContext;
-
-  /**
-   * Save current state as checkpoint.
-   *
-   * World-only, like its restore counterpart: a checkpoint records world state and
-   * nothing about the engine that was driving it.
-   */
-  saveCheckpoint(name: string, world: WorldModel): Promise<void>;
-
-  /**
-   * Restore state from checkpoint.
-   *
-   * Resolves false when no checkpoint is stored under `name`; rejects when a stored
-   * checkpoint's format version is not readable by this build.
-   *
-   * **World-only by contract: the caller owns the engine's lifecycle phase.** This
-   * replaces the world wholesale and never touches the engine, because the extension
-   * holds no engine to ask — every method here takes a `WorldModel` and that is the
-   * whole of its reach. Since ADR-347 the story's ending is a world member
-   * (`getEnding()`/`setEnding()`), so a restore can leave a stopped engine holding a
-   * world that never ended, or a playing engine holding one that did. Bringing the two
-   * back into agreement is the driving harness's job, the way the branch-tester calls
-   * `reviveEngine()` on every line rather than reading the phase (ADR-345 D7, D8a).
-   *
-   * The engine's own restore seams — `loadSaveData()` and `undo()` — reconcile the
-   * phase through `derivePhaseFromEnding()`. This is deliberately not one of them.
-   *
-   * Nothing in the repository calls this today: ADR-110's `$save` and `$restore` debug
-   * commands were specified but never registered, so only `$saves` (list) exists.
-   * Whether restore should instead become a real restore seam that takes the engine is
-   * left to whoever wires those commands, who will have a caller to design against.
-   */
-  restoreCheckpoint(name: string, world: WorldModel): Promise<boolean>;
 
   /**
    * Set context for annotation commands (called by transcript-tester after each command)

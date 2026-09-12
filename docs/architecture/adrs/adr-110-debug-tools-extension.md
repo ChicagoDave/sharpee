@@ -5,7 +5,35 @@ Implemented: 2026-01-23
 
 ## Status
 
-Accepted (Implemented)
+Accepted (Implemented) — **with one section superseded; see the correction below.**
+
+## Correction: the checkpoint section did not ship as specified (2026-09-11, session 450284)
+
+**"Save/Restore Commands (Checkpoint System)" below is superseded.** It specifies `$save`,
+`$restore`, `$saves` (GDT code SL) and `$delete-save` as debug commands in the extension's
+own registry, backed by an extension-owned checkpoint store. What shipped is different, and
+better, and this note records it so the table is not read as a description of the code.
+
+**`$save <name>` and `$restore <name>` are transcript-tester directives**, matched in
+`packages/transcript-tester/src/parser.ts` ahead of the catch-all that routes every other
+`$` line to this extension, and implemented in `command-core.ts`'s `executeDirective`. They
+go through **the platform engine's real save seam** — `GameEngine.save()` / `restore()` via
+`registerSaveRestoreHooks`, writing to the runner's `savesDirectory` — so a `$restore`
+carries the engine's turn counter, RNG stream states and plugin states, and derives the
+lifecycle phase from the restored world (ADR-347 D3, ADR-348 D1). They are also written bare
+as directive lines rather than `> `-prefixed commands.
+
+The extension's parallel checkpoint store — `saveCheckpoint`, `restoreCheckpoint`, the
+`checkpoints/` module and the `checkpoints` config key — was **deleted 2026-09-11** (GH
+#429). It was world-only, so it could not have carried any of the above, and in production
+it was write-only: `$bookmark` wrote a checkpoint on every use, and nothing in the repository
+could read one back. `$saves`/SL went with it; it returned a stub telling the reader to use
+`$saves` in a transcript, which routed straight back into the same stub. `$delete-save` was
+never implemented.
+
+**What remains true** from that section: the use cases it names (segment independence,
+faster iteration, debugging a tricky stretch) are served, and its Implementation Requirements
+1-4 are met by the engine's save format rather than by a checkpoint format of its own.
 
 ## Context
 
@@ -278,6 +306,9 @@ For `.walkthrough` files. Full directive support:
 | `$assert not <condition>` | Negation |
 
 ### Save/Restore Commands (Checkpoint System)
+
+> **Superseded** — see the correction at the top of this ADR. `$save`/`$restore` shipped as
+> engine-backed transcript directives; `$saves` and `$delete-save` do not exist.
 
 Walkthroughs can be split into independent segments using save/restore:
 

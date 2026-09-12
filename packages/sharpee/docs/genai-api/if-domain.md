@@ -3519,19 +3519,19 @@ export declare function extractSnippetMarkers(text: string): string[];
 /**
  * @file Story ending contract (ADR-210 Platform Prerequisite 3).
  *
- * Purpose: bless the existing story-ending convention as a stable wire
- * contract — the event types stories/loaders emit when a story ends and the
- * world-state key the generic `isComplete()` reads. No behavior lives here;
- * emitters build the events with existing primitives.
+ * Purpose: bless the story-ending convention as a stable wire contract — the
+ * event types stories/loaders emit when a story ends, and the shape of the
+ * Ending the world carries (ADR-347 D2a). No behavior lives here; emitters
+ * build the events with existing primitives.
  *
- * Public interface: `StoryEndingEvents`, `STORY_ENDING_FLAG`,
- * `StoryEndingKind`, `IStoryEndingData`, `IStoryEnding`.
+ * Public interface: `StoryEndingEvents`, `StoryEndingKind`,
+ * `IStoryEndingData`, `IStoryEnding`.
  *
  * Owner context: `@sharpee/if-domain` — shared by the story-loader (emits on
  * `win`/`lose`), the engine/clients (react to endings), and transcript tests
  * (assert on the event types), so per the co-located wire-type rule it lives
- * here. INVARIANT: values are frozen contract — changing them breaks saved
- * games and golden transcripts; additions only.
+ * here. INVARIANT: the event-type values are frozen contract — changing them
+ * breaks golden transcripts; additions only.
  */
 /** Semantic event types emitted when a story ends. */
 export declare const StoryEndingEvents: {
@@ -3542,17 +3542,6 @@ export declare const StoryEndingEvents: {
 };
 /** How a story ended. */
 export type StoryEndingKind = 'victory' | 'defeat';
-/**
- * World-state key that once held the ending.
- *
- * **Superseded by {@link IStoryEnding}** (ADR-347 D2a), which is a real
- * `WorldModel` member rather than a key in an untyped state bag. Nothing
- * reads or writes this key any more — the constant survives only because
- * this file's values are frozen contract. Do not reach for it: an ending
- * recorded here is invisible to the engine, the scheduler and every
- * client.
- */
-export declare const STORY_ENDING_FLAG = "story.ending";
 /** Payload carried by a `StoryEndingEvents` event. */
 export interface IStoryEndingData {
     ending: StoryEndingKind;
