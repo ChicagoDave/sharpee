@@ -10,14 +10,18 @@
  *
  *  1. `game-title`         — title
  *  2. `story-version`      — `Story v{version}` + optional build date
- *  3. `platform-version`   — `Sharpee v{engineVersion}` (if provided)
- *  4. `sub-title`          — description (if provided)
- *  5. `author-list[]`      — `credits` if provided, else single
+ *  3. `sub-title`          — description (if provided)
+ *  4. `author-list[]`      — `credits` if provided, else single
  *                            `By {author}` line if `author` is set
- *  6. `banner-spacer`      — empty `<p>` for visual separation
- *  7. story-tail           — appended via `createBlocks` from
+ *  5. `banner-spacer`      — empty `<p>` for visual separation
+ *  6. story-tail           — appended via `createBlocks` from
  *                            `game.banner.story-tail` if the language
  *                            provider has that template
+ *
+ * The banner carries no platform version. It is the story's own first
+ * screen, and an engine version there is the tool naming itself inside
+ * someone's fiction, with no way for an author to decline it. A player or
+ * tester who needs it types `version` (David, 2026-09-11).
  *
  * Owner context: `@sharpee/engine` — internal prose pipeline.
  */
@@ -48,7 +52,6 @@ export interface BannerStoryInfo {
 export function buildBannerBlocks(
   key: string,
   story: BannerStoryInfo | undefined,
-  engineVersion: string | undefined,
   context: HandlerContext,
 ): ITextBlock[] {
   if (!story) return [];
@@ -65,14 +68,6 @@ export function buildBannerBlocks(
       ? `Story v${story.version} (built ${buildDate})`
       : `Story v${story.version}`;
     blocks.push(createBlock(key, versionText, { className: 'story-version' }));
-  }
-
-  if (engineVersion) {
-    blocks.push(
-      createBlock(key, `Sharpee v${engineVersion}`, {
-        className: 'platform-version',
-      }),
-    );
   }
 
   if (story.description) {

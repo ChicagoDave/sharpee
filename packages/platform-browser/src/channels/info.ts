@@ -128,7 +128,6 @@ export function createBannerChannelRenderer(slot: HTMLElement): ChannelRenderer 
 
       emit(banner.title, 'sharpee-banner-title');
       emit(banner.storyVersion, 'sharpee-banner-story-version');
-      emit(banner.platformVersion, 'sharpee-banner-platform-version');
       emit(banner.subtitle, 'sharpee-banner-subtitle');
       for (const credit of (banner.credits as unknown[]) ?? []) {
         emit(credit, 'sharpee-banner-credit');

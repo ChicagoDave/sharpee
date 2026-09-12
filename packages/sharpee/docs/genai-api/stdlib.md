@@ -4300,13 +4300,16 @@ export declare const ifidChannel: IOChannel<string>;
  * Structured opening banner (ADR-163 §channel content types).
  *
  * Each piece is its own property rather than a run of prose lines, so a client
- * decides how the title, the versions and the credits are laid out instead of
+ * decides how the title, the version and the credits are laid out instead of
  * receiving somebody else's paragraph breaks. A test can name one piece.
+ *
+ * There is no platform version among them: the banner is the story's own first
+ * screen, and the engine no longer puts its name there (David, 2026-09-11).
+ * A player who wants it types `version`.
  */
 export interface BannerData {
     title?: string;
     storyVersion?: string;
-    platformVersion?: string;
     subtitle?: string;
     credits?: string[];
     /** Story-supplied closing lines (`game.banner.story-tail`). */

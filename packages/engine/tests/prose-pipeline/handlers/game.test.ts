@@ -32,14 +32,16 @@ describe('handleGameStarted', () => {
     expect(blocks.map((b) => b.className)).toEqual([
       'game-title',
       'story-version',
-      'platform-version',
       'sub-title',
       'author-list',
       'banner-spacer',
     ]);
     expect(blocks.every((b) => b.key === 'game.banner')).toBe(true);
     expect(blocks[0].content).toEqual(['Dungeon']);
-    expect(blocks[2].content).toEqual(['Sharpee v0.9.113']);
+    // No platform version: the banner is the story's first screen, not the
+    // engine's. `version` is where a player asks for it.
+    expect(blocks.some((b) => b.className === 'platform-version')).toBe(false);
+    expect(JSON.stringify(blocks)).not.toContain('Sharpee v');
   });
 
   it('includes the build date in the story-version line when present', () => {

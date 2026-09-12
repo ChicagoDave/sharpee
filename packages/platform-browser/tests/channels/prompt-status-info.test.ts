@@ -152,7 +152,6 @@ describe('info / ifid renderers', () => {
       {
         title: 'Aliens in Amberville',
         storyVersion: 'Story v0.1.0',
-        platformVersion: 'Sharpee v5.0.1',
         subtitle: 'A story of mis-matched perspectives...',
         credits: ['By David Cornelson'],
         tail: ['Type HELP for instructions.'],
@@ -161,7 +160,7 @@ describe('info / ifid renderers', () => {
     );
 
     const emitted = [...meta.querySelectorAll('p')].map((p) => p.className);
-    expect(emitted.length).toBe(6);
+    expect(emitted.length).toBe(5);
 
     const base = readFileSync(resolve(__dirname, '../../styles/base.css'), 'utf8');
     for (const className of emitted) {

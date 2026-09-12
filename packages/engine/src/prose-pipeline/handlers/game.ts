@@ -3,7 +3,7 @@
  *
  * Emits the opening banner via the shared `buildBannerBlocks` helper:
  * one semantically-classed block per piece (`game-title`,
- * `story-version`, `platform-version`, `sub-title`, `author-list[]`,
+ * `story-version`, `sub-title`, `author-list[]`,
  * `banner-spacer`), then any story-defined `game.banner.story-tail`
  * template appended through `createBlocks`.
  *
@@ -35,10 +35,5 @@ export function handleGameStarted(
   context: HandlerContext,
 ): ITextBlock[] {
   const data = event.data as GameLifecycleStartedData;
-  return buildBannerBlocks(
-    'game.banner',
-    data?.story,
-    data?.engineVersion,
-    context,
-  );
+  return buildBannerBlocks('game.banner', data?.story, context);
 }

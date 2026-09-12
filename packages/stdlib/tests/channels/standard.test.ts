@@ -656,7 +656,6 @@ describe('banner channel (opening is addressable on its own)', () => {
         blocks: [
           bannerBlock('DUNGEON', 'game-title'),
           bannerBlock('Story v4.3.0', 'story-version'),
-          bannerBlock('Sharpee v4.3.0', 'platform-version'),
           bannerBlock('A port of Mainframe Zork (1981)', 'sub-title'),
           bannerBlock('By Tim Anderson', 'author-list'),
           bannerBlock('Ported by David Cornelson', 'author-list'),
@@ -668,7 +667,6 @@ describe('banner channel (opening is addressable on its own)', () => {
     expect(result).toEqual({
       title: 'DUNGEON',
       storyVersion: 'Story v4.3.0',
-      platformVersion: 'Sharpee v4.3.0',
       subtitle: 'A port of Mainframe Zork (1981)',
       credits: ['By Tim Anderson', 'Ported by David Cornelson'],
     });
