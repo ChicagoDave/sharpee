@@ -7,7 +7,7 @@
  * Public interface: VerifyCommand.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from '../proc';
 import { findRepoRoot, tsfBin } from '../repo';
 import { Command } from './command';
 import { findControlBytes, formatControlByteFailure } from './control-bytes';
@@ -86,9 +86,9 @@ export class VerifyCommand implements Command {
     }
 
     log('=== repokit verify: tsf build --npm ===');
-    execFileSync(tsf, ['build', '--npm'], { cwd: root, stdio });
+    runTool(tsf, ['build', '--npm'], { cwd: root, stdio });
     log('=== repokit verify: tsf publish --tag beta --dry-run ===');
-    execFileSync(tsf, ['publish', '--tag', 'beta', '--dry-run'], { cwd: root, stdio });
+    runTool(tsf, ['publish', '--tag', 'beta', '--dry-run'], { cwd: root, stdio });
     log('verify: npm build + publish dry-run OK');
     return 0;
   }

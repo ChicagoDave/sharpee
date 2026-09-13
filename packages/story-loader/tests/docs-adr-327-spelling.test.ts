@@ -42,7 +42,7 @@
  * ADR-272 D7 already names for it.
  */
 import { readFileSync, globSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { compile } from '@sharpee/chord';
 
@@ -138,7 +138,7 @@ const PARSE_BLOCKED_FENCES: ReadonlySet<string> = new Set([
 
 /** Every published reference page, in the two trees the docs-tab build ships. */
 function referencePages(): string[] {
-  return globSync('{chord,learn}/**/content.mdx', { cwd: DOCS_ROOT }).sort();
+  return globSync('{chord,learn}/**/content.mdx', { cwd: DOCS_ROOT }).map((p) => p.split(sep).join('/')).sort();
 }
 
 /** Extract every ```chord fence from an MDX file, in document order. */

@@ -8,7 +8,7 @@
  * Public interface: runBundle(opts) -> void. Throws if the bundle is absent/empty
  * after esbuild (the no-silent-✓ invariant).
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from '../proc';
 import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { BUNDLE_ALIASES, BUNDLE_DTS, findRepoRoot } from '../repo';
@@ -43,7 +43,7 @@ export function runBundle(opts: BundleOptions = {}): void {
     '--sourcemap',
     ...BUNDLE_ALIASES.map(([name, path]) => `--alias:${name}=${path}`),
   ];
-  execFileSync('npx', args, { cwd: root, stdio: opts.quiet ? 'ignore' : 'inherit' });
+  runTool('npx', args, { cwd: root, stdio: opts.quiet ? 'ignore' : 'inherit' });
 
   // Hand-written declarations (verbatim build.sh heredoc).
   writeFileSync(join(root, 'dist', 'cli', 'sharpee.d.ts'), BUNDLE_DTS);

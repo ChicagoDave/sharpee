@@ -12,6 +12,12 @@ user_invocable: true
 
 ## Cold start (fresh clone only)
 
+> These steps assume the machine toolchain is already in place — Node, and **pnpm at the
+> exact version `package.json` declares**, installed via `corepack enable`. A machine
+> without pnpm fails step one with `exit 127`, and a Windows machine has a further class
+> of problem entirely. Both are covered, with checks, in
+> `docs/core-concepts/prerequisites.md`.
+
 Two bootstrap steps before `./repokit` exists:
 
 ```bash

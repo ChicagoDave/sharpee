@@ -212,9 +212,15 @@ UI by channels (ADR-163/174) — there is no separate text service.
 
 ## Repository Development
 
+Prerequisites — Node, pnpm at the exact declared version, and the platform-specific
+extras — are listed with their checks in
+[`docs/core-concepts/prerequisites.md`](./docs/core-concepts/prerequisites.md). Worth two
+minutes before the first build on a new machine.
+
 ```bash
 git clone https://github.com/ChicagoDave/sharpee.git
 cd sharpee
+corepack enable        # pins pnpm to the version package.json declares
 pnpm install
 
 # FRESH CLONE ONLY (needed once): tsf compiles the platform packages, then

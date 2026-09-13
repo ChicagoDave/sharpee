@@ -13,6 +13,15 @@ Secondary does not mean subordinate. **Sharpee and Chord need to align as elegan
 
 So the test for a `packages/` change is not "did Chord ask for this." It is whether the change makes the platform and the language fit together more elegantly than they did before. A change that does neither — that serves the platform's own internal tidiness while the seam stays where it was — is a change to question rather than a detail to sort out later.
 
+### Before you build anything
+
+A build, a test run, a commit, and a publish each have prerequisites that announce
+themselves only as `ENOENT`, `exit 127`, an unresolvable module, or a silent no-op that
+returns zero. They are listed with their checks — and with the record of every session
+they have cost — in [`prerequisites.md`](./prerequisites.md), beside this file. Read it
+before the first build on a machine, a clone, or a platform that has not done this work
+before.
+
 ## The Packages
 
 Thirty-one packages under `packages/`. Grouped by what they are for, not by dependency order.
@@ -106,6 +115,36 @@ Three different things carry the name `sharpee` or sit next to it, and confusing
 **`dist/cli/sharpee.js` — the platform bundle.** The esbuild output produced by `./repokit build`, and the thing to run for transcript testing and interactive play: `--test`, `--chain`, `--play`, `--exec`. It loads in roughly 170ms against about five seconds for the equivalent package-by-package path, which is why it is the required entry point for all in-repo transcript testing. It is a testing and development surface, not an authoring product.
 
 The short version: **`./sharpee` is for authors, `./repokit` builds the platform, and `dist/cli/sharpee.js` runs the tests.**
+
+## Build outputs: `dist/` and `dist-esm/`
+
+Every platform package builds twice, into two directories that differ by **module format**,
+not by audience. Both are published and both are used in-repo (`packages/engine/package.json`
+is representative):
+
+| Directory | Format | Who points at it |
+| --- | --- | --- |
+| `dist/` | CommonJS, **plus the `.d.ts` declarations for both formats** | `main`, `types`, `exports["."].require`, `exports["."].types` |
+| `dist-esm/` | ESM | `module`, `exports["."].import` |
+
+`files` lists both — `["dist", "dist-esm"]` — so the npm tarball carries both. In-repo, the
+CLI bundle and every `require` path resolve through `dist/`, while **browser bundling resolves
+`@sharpee/*` through the `import` condition and therefore needs `dist-esm/`**: a package
+missing it breaks `./repokit build --browser` with "Could not resolve", and a package that
+*promises* `exports["."].import` without building it fails `tsf validate --publish` — which
+is what broke the 5.1.0 publish dry run for `@sharpee/character`.
+
+How they are produced: `tsf build` compiles each project's `tsconfig.json` into `dist/`;
+`./repokit build` then runs **one whole-tree** `tsf build --target esm` pass for `dist-esm/`
+(not a per-package loop — that was the defect that skipped four packages with no
+`tsconfig.esm.json`) and writes a `{"type":"module"}` marker into each `dist-esm/`, because
+the package root is CJS and without the marker Node reparses every ESM file and sprays
+`MODULE_TYPELESS_PACKAGE_JSON` warnings onto stderr.
+
+**There is no `dist-npm`.** Eighteen `dist-npm -> dist` symlinks were committed by accident
+on 2026-04-24 with the since-retired multiuser-server work ("also includes: dist-npm build
+artifacts") and untracked on 2026-09-12. Nothing ever read them; the only reference in the
+repository was a scanner's skip-list. If you see one, it is a leftover, not a target.
 
 ## Publishing to npm
 

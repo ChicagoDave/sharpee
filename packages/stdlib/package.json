@@ -17,7 +17,7 @@
     "typecheck:tests": "tsc -p tsconfig.test.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest",
-    "test:ci": "CI=true vitest run",
+    "test:ci": "cross-env CI=true vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "clean": "rimraf dist dist-esm coverage tsconfig.tsbuildinfo tsconfig.esm.tsbuildinfo",

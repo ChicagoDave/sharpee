@@ -92,7 +92,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/branch-tester:
     dependencies:
@@ -147,7 +147,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.3.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/bridge:
     dependencies:
@@ -371,7 +371,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/engine:
     dependencies:
@@ -476,7 +476,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/extensions/chapters:
     dependencies:
@@ -504,7 +504,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/extensions/hunger:
     dependencies:
@@ -532,7 +532,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/extensions/scoring:
     dependencies:
@@ -560,7 +560,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/extensions/testing:
     dependencies:
@@ -585,7 +585,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/helpers:
     dependencies:
@@ -632,7 +632,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/if-domain:
     dependencies:
@@ -878,7 +878,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.0.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/queries:
     dependencies:
@@ -900,7 +900,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/runtime:
     dependencies:
@@ -1269,7 +1269,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.3.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/world-index:
     dependencies:
@@ -1300,7 +1300,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   packages/world-model:
     dependencies:
@@ -1422,23 +1422,23 @@ importers:
   stories/concealment-test:
     dependencies:
       '@sharpee/core':
-        specifier: file:../../packages/core
-        version: file:packages/core
+        specifier: workspace:*
+        version: link:../../packages/core
       '@sharpee/engine':
-        specifier: file:../../packages/engine
-        version: file:packages/engine
+        specifier: workspace:*
+        version: link:../../packages/engine
       '@sharpee/lang-en-us':
-        specifier: file:../../packages/lang-en-us
-        version: file:packages/lang-en-us
+        specifier: workspace:*
+        version: link:../../packages/lang-en-us
       '@sharpee/parser-en-us':
-        specifier: file:../../packages/parser-en-us
-        version: file:packages/parser-en-us
+        specifier: workspace:*
+        version: link:../../packages/parser-en-us
       '@sharpee/stdlib':
-        specifier: file:../../packages/stdlib
-        version: file:packages/stdlib
+        specifier: workspace:*
+        version: link:../../packages/stdlib
       '@sharpee/world-model':
-        specifier: file:../../packages/world-model
-        version: file:packages/world-model
+        specifier: workspace:*
+        version: link:../../packages/world-model
     devDependencies:
       typescript:
         specifier: ^5.3.3
@@ -1506,7 +1506,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.3.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   stories/family-zoo-tutorial:
     dependencies:
@@ -1574,7 +1574,7 @@ importers:
         version: 5.9.3
       vitest:
         specifier: ^1.6.0
-        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
+        version: 1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
   tools/vscode-ext:
     devDependencies:
@@ -2648,30 +2648,6 @@ packages:
     resolution: {integrity: sha512-Nqc90v4lWCXyakD6xNyNACBJNJ0tNCwj2WNk/7ivyacYHxiITVgmLUFXTBOeCdy79iz6HtN9Y31uw/jbLrdOAg==}
     engines: {node: '>=20.0.0'}
 
-  '@sharpee/core@file:packages/core':
-    resolution: {directory: packages/core, type: directory}
-    engines: {node: '>=18.0.0'}
-
-  '@sharpee/engine@file:packages/engine':
-    resolution: {directory: packages/engine, type: directory}
-    engines: {node: '>=18.0.0'}
-
-  '@sharpee/lang-en-us@file:packages/lang-en-us':
-    resolution: {directory: packages/lang-en-us, type: directory}
-    engines: {node: '>=18.0.0'}
-
-  '@sharpee/parser-en-us@file:packages/parser-en-us':
-    resolution: {directory: packages/parser-en-us, type: directory}
-    engines: {node: '>=18.0.0'}
-
-  '@sharpee/stdlib@file:packages/stdlib':
-    resolution: {directory: packages/stdlib, type: directory}
-    engines: {node: '>=18.0.0'}
-
-  '@sharpee/world-model@file:packages/world-model':
-    resolution: {directory: packages/world-model, type: directory}
-    engines: {node: '>=18.0.0'}
-
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
@@ -3473,9 +3449,6 @@ packages:
 
   eventemitter3@5.0.1:
     resolution: {integrity: sha512-GWkBvjiSZK87ELrYOSESUYeVIc9mvLLf/nXalMOS5dYrgZq9o5OVkbZAVM06CVxYsCwH9BDZFPlQTlPA1j4ahA==}
-
-  eventemitter3@5.0.4:
-    resolution: {integrity: sha512-mlsTRyGaPBjPedk6Bvw+aqbsXDtoAyAzm5MO7JgU+yVRyMQ5O8bD4Kcci7BS85f93veegeCPkL8R4GLClnjLFw==}
 
   execa@8.0.1:
     resolution: {integrity: sha512-VyhnebXciFV2DESc+p6B+y0LjSm0krU4OgJN44qFAhBY0TJ+1V61tYD2+wHusZ6F9n5K+vl8k0sTy7PEfV4qpg==}
@@ -5936,51 +5909,6 @@ snapshots:
 
   '@secretlint/types@10.2.2': {}
 
-  '@sharpee/core@file:packages/core':
-    dependencies:
-      eventemitter3: 5.0.4
-
-  '@sharpee/engine@file:packages/engine':
-    dependencies:
-      '@sharpee/channel-service': link:packages/channel-service
-      '@sharpee/core': link:packages/core
-      '@sharpee/event-processor': link:packages/event-processor
-      '@sharpee/if-domain': link:packages/if-domain
-      '@sharpee/if-services': link:packages/if-services
-      '@sharpee/lang-en-us': link:packages/lang-en-us
-      '@sharpee/parser-en-us': link:packages/parser-en-us
-      '@sharpee/plugins': link:packages/plugins
-      '@sharpee/stdlib': link:packages/stdlib
-      '@sharpee/text-blocks': link:packages/text-blocks
-      '@sharpee/world-model': link:packages/world-model
-      fflate: 0.8.2
-
-  '@sharpee/lang-en-us@file:packages/lang-en-us':
-    dependencies:
-      '@sharpee/core': link:packages/core
-      '@sharpee/if-domain': link:packages/if-domain
-
-  '@sharpee/parser-en-us@file:packages/parser-en-us':
-    dependencies:
-      '@sharpee/core': link:packages/core
-      '@sharpee/if-domain': link:packages/if-domain
-      '@sharpee/lang-en-us': link:packages/lang-en-us
-      '@sharpee/world-model': link:packages/world-model
-
-  '@sharpee/stdlib@file:packages/stdlib':
-    dependencies:
-      '@sharpee/core': link:packages/core
-      '@sharpee/if-domain': link:packages/if-domain
-      '@sharpee/if-services': link:packages/if-services
-      '@sharpee/lang-en-us': link:packages/lang-en-us
-      '@sharpee/text-blocks': link:packages/text-blocks
-      '@sharpee/world-model': link:packages/world-model
-
-  '@sharpee/world-model@file:packages/world-model':
-    dependencies:
-      '@sharpee/core': link:packages/core
-      '@sharpee/if-domain': link:packages/if-domain
-
   '@sinclair/typebox@0.27.8': {}
 
   '@sindresorhus/merge-streams@2.3.0': {}
@@ -6345,6 +6273,14 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1)
+
+  '@vitest/mocker@3.2.4(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1))':
+    dependencies:
+      '@vitest/spy': 3.2.4
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1)
 
   '@vitest/pretty-format@3.2.4':
     dependencies:
@@ -7034,8 +6970,6 @@ snapshots:
   esutils@2.0.3: {}
 
   eventemitter3@5.0.1: {}
-
-  eventemitter3@5.0.4: {}
 
   execa@8.0.1:
     dependencies:
@@ -8472,7 +8406,7 @@ snapshots:
       lightningcss: 1.30.2
       terser: 5.44.1
 
-  vitest@1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4(vitest@3.2.4))(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1):
+  vitest@1.6.1(@types/node@20.19.27)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1):
     dependencies:
       '@vitest/expect': 1.6.1
       '@vitest/runner': 1.6.1
@@ -8553,7 +8487,7 @@ snapshots:
     dependencies:
       '@types/chai': 5.2.3
       '@vitest/expect': 3.2.4
-      '@vitest/mocker': 3.2.4(vite@5.4.21(@types/node@20.19.27)(lightningcss@1.30.2)(terser@5.44.1))
+      '@vitest/mocker': 3.2.4(vite@5.4.21(@types/node@24.10.9)(lightningcss@1.30.2)(terser@5.44.1))
       '@vitest/pretty-format': 3.2.4
       '@vitest/runner': 3.2.4
       '@vitest/snapshot': 3.2.4

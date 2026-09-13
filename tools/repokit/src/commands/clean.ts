@@ -8,7 +8,7 @@
  * Public interface: CleanCommand.
  * Owner context: tools/repokit — the in-repo platform build tool (unpublished).
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from '../proc';
 import { existsSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { findRepoRoot } from '../repo';
@@ -71,7 +71,7 @@ export class CleanCommand implements Command {
     // next `./repokit build` fails with "engine not built" and the tool can
     // only be recovered by hand. A build tool must survive its own clean.
     // Use `pnpm --filter @sharpee/repokit run clean` to clear repokit itself.
-    execFileSync('pnpm', ['-r', '--if-present', '--filter', '!@sharpee/repokit', 'run', 'clean'], {
+    runTool('pnpm', ['-r', '--if-present', '--filter', '!@sharpee/repokit', 'run', 'clean'], {
       cwd: root,
       stdio: quiet ? 'ignore' : 'inherit',
     });

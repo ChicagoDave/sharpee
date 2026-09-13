@@ -160,10 +160,30 @@ describe('resolveStory (path or name)', () => {
 describe('buildPlatform ESM pass', () => {
   const calls: Array<{ cmd: string; args: string[] }> = [];
 
+  /**
+   * Normalize both of runTool's spawn shapes to one `{ cmd, args }` record.
+   *
+   * A directly-executable file is spawned with an args array. A Windows `.cmd` shim
+   * cannot be (EINVAL), so it is spawned as one pre-quoted command line with no args
+   * array at all — see `src/proc.ts` for why that shape rather than `shell: true` plus
+   * args. The second mock parameter is therefore an args array in the first case and
+   * the options object in the second, which is what distinguishes them.
+   *
+   * Without this, the suite asserts only on POSIX: on Windows `pnpm` resolves to
+   * `pnpm.CMD` and every recorded `args` was `undefined`.
+   */
+  const record = (cmd: string, argsOrOpts?: unknown): { cmd: string; args: string[] } => {
+    if (Array.isArray(argsOrOpts)) return { cmd, args: [...(argsOrOpts as string[])] };
+    const tokens = (cmd.match(/"(?:[^"\\]|\\.)*"/g) ?? []).map((t) =>
+      t.slice(1, -1).replace(/\\"/g, '"'),
+    );
+    return { cmd: tokens[0] ?? cmd, args: tokens.slice(1) };
+  };
+
   beforeEach(() => {
     calls.length = 0;
-    vi.mocked(execFileSync).mockImplementation(((cmd: string, args: string[]) => {
-      calls.push({ cmd, args });
+    vi.mocked(execFileSync).mockImplementation(((cmd: string, argsOrOpts?: unknown) => {
+      calls.push(record(cmd, argsOrOpts));
       return Buffer.from('');
     }) as never);
   });

@@ -17,7 +17,7 @@
  *   packFilenameFrom(stdout, packageName)    -> tarball filename from `npm pack --json` (pure)
  *   generateConsumer(opts)                   -> writes package.json (+ tarballs for local)
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from './proc';
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -235,7 +235,7 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
       const cached = packed.get(name);
       if (cached !== undefined) return cached;
       const dir = join(opts.stagingDir, staging[name]);
-      const out = execFileSync(
+      const out = runTool(
         'npm',
         ['pack', dir, '--pack-destination', vendorDir, '--ignore-scripts', '--json'],
         { encoding: 'utf8' },

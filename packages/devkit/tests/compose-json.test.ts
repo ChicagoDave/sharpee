@@ -219,7 +219,8 @@ describe('compose --json — piped stdout integrity (the real IDE transport)', (
   // stdio pipes — not the in-process runCompose call, which never exits.
   it('delivers a >64KB payload intact through a pipe', async () => {
     const { execFileSync } = await import('node:child_process');
-    const cli = new URL('../dist/cli.js', import.meta.url).pathname;
+    const { fileURLToPath } = await import('node:url');
+    const cli = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
 
     const first = ['Amber', 'Basalt', 'Cedar', 'Dune', 'Ember', 'Flint', 'Garnet',
       'Hazel', 'Iris', 'Jasper', 'Kestrel', 'Larch', 'Maple', 'Nettle', 'Onyx', 'Pine'];

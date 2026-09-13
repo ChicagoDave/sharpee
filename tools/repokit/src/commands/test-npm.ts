@@ -9,7 +9,7 @@
  * Public interface: runTestNpm(opts) -> TestNpmResult. The CLI maps the result to
  * an exit code; tests assert on the returned counts.
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from '../proc';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir, homedir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -154,7 +154,7 @@ export function runTestNpm(opts: TestNpmOptions): TestNpmResult {
 
     // 4. Install + compile.
     const run = (cmd: string, args: string[]) =>
-      execFileSync(cmd, args, { cwd: tmp, stdio: 'inherit' });
+      runTool(cmd, args, { cwd: tmp, stdio: 'inherit' });
     log('--- npm install ---');
     run('npm', ['install', '--no-fund', '--no-audit']);
     log('--- tsc ---');

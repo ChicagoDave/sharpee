@@ -7,6 +7,12 @@ node_modules/
 dist/
 dist-esm/
 dist-npm/
+# The slash-less form too: `dist-npm/` matches only directories, and git treats a
+# symlink as a non-directory entry — which is how 18 `dist-npm -> dist` symlinks
+# got committed past that rule (c3a07d106, 2026-04-24, "also includes: dist-npm
+# build artifacts") for a product since retired. Untracked 2026-09-12; nothing
+# reads them, and with core.symlinks=false on Windows git cannot even hash them.
+dist-npm
 build/
 lib/
 out/

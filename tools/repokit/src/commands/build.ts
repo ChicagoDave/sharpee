@@ -9,7 +9,7 @@
  * Public interface: runBuild(opts). Sub-steps stampVersions/buildPlatform/
  * generateGenaiApi/buildStory are exported for the parity harness + tests.
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from '../proc';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import {
@@ -136,7 +136,7 @@ export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE } as
 /** Build all platform packages in dependency order (build.sh build_platform). */
 export function buildPlatform(root: string, opts: BuildOptions): void {
   const run = (pkg: string, args: string[]) =>
-    execFileSync(pkg, args, { cwd: root, stdio: opts.quiet ? 'ignore' : 'inherit' });
+    runTool(pkg, args, { cwd: root, stdio: opts.quiet ? 'ignore' : 'inherit' });
 
   let skipping = Boolean(opts.skipTo);
   for (const [pkg, dir] of PLATFORM_PACKAGES) {
@@ -188,7 +188,7 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
 
 /** Generate the genai-api reference (build.sh generate_genai_api). */
 export function generateGenaiApi(root: string, opts: BuildOptions): void {
-  execFileSync('node', ['scripts/generate-genai-api.js'], {
+  runTool('node', ['scripts/generate-genai-api.js'], {
     cwd: root,
     stdio: opts.quiet ? 'ignore' : 'inherit',
   });
@@ -214,12 +214,12 @@ export function buildStory(root: string, story: string, opts: BuildOptions): voi
       `'${story}' is a standalone project (not a workspace member) — build it with the standalone 'sharpee build' toolchain`,
     );
   }
-  execFileSync('pnpm', ['--filter', resolved.pkg, 'build'], {
+  runTool('pnpm', ['--filter', resolved.pkg, 'build'], {
     cwd: root,
     stdio: opts.quiet ? 'ignore' : 'inherit',
   });
   if (!opts.noEsm && existsSync(join(resolved.dir, 'tsconfig.esm.json'))) {
-    execFileSync(tsfBin(root), ['build', '--condition', 'esm', '--filter', resolved.pkg], {
+    runTool(tsfBin(root), ['build', '--condition', 'esm', '--filter', resolved.pkg], {
       cwd: root,
       stdio: opts.quiet ? 'ignore' : 'inherit',
     });

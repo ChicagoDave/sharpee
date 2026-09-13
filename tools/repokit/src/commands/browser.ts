@@ -20,7 +20,7 @@
  * mirrorToWebsite(root, outDir, storyId), writeOverrideStylesheet(storyDir, outDir, storyId),
  * processStoryTokens(html, storyId), chordStoryFile(root, story).
  */
-import { execFileSync } from 'node:child_process';
+import { runTool } from '../proc';
 import {
   cpSync,
   existsSync,
@@ -176,7 +176,7 @@ export function buildBrowserClient(root: string, story: string, opts: BrowserBui
 
   // Bundle — verbatim build.sh esbuild invocation (single platform-browser alias; the
   // IIFE bakes the platform + story into one payload, so the page boots in a single load).
-  execFileSync(
+  runTool(
     'npx',
     [
       'esbuild',
