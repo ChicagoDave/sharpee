@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>pane</title>
+<style>
+  /* ADR-297 D3: appearance is app-wide. A pane does NOT choose its own palette —
+     the host tells it, and these values are the same Theme.swift pairs the chrome
+     uses. An earlier pass hardcoded the dark values here, and the result was a
+     right-hand panel that ignored View > Appearance entirely. */
+  :root {
+    --bg: #E6E9EF; --fg: #4C4F69; --dim: #6C6F85;
+    --border: #ACB0BE; --accent: #1E66F5; --code: #EFF1F5;
+  }
+  :root[data-appearance="dark"] {
+    --bg: #13141A; --fg: #D8D9E0; --dim: #8E90A0;
+    --border: #3A3C48; --accent: #89B4FA; --code: #1E1F26;
+  }
+  body { font: 13px/1.6 "Segoe UI", system-ui; margin: 0; padding: 24px;
+         color: var(--fg); background: var(--bg); }
+  code { background: var(--code); padding: 1px 5px; border-radius: 3px;
+         border: 1px solid var(--border); }
+  a { color: var(--accent); }
+  button { font: inherit; padding: 6px 12px; border-radius: 4px;
+           border: 1px solid var(--border); background: var(--code);
+           color: var(--fg); cursor: pointer; }
+  .note { color: var(--dim); font-size: 12px; }
+</style>
+<h2>Pane hosted through WebView2</h2>
+<p>Served from a directory over <code>https://pane.chordwriter.invalid</code> through the
+   resource-request hook &mdash; the counterpart of <code>WKURLSchemeHandler</code>.</p>
+<p><a href="https://example.com" target="_blank">An external link</a> &mdash; should open in the
+   real browser, not here (ADR-281 D3).</p>
+<p><button id="b">Post a message to the host</button></p>
+<p class="note">appearance: <span id="ap">(waiting for the host)</span> &mdash;
+   pushed across the WebView boundary, not chosen here.</p>
+<script>
+  document.getElementById('b').onclick = function () {
+    window.chrome.webview.postMessage('hello from the pane at ' + new Date().toLocaleTimeString());
+  };
+
+  // The host half of the D3 contract: appearance arrives as a message.
+  function applyAppearance(value) {
+    document.documentElement.setAttribute('data-appearance', value);
+    document.getElementById('ap').textContent = value;
+  }
+  window.chrome.webview.addEventListener('message', function (e) {
+    var d = typeof e.data === 'string' ? e.data : '';
+    if (d.indexOf('appearance:') === 0) applyAppearance(d.slice('appearance:'.length));
+  });
+  // The host also stamps an initial value before first paint, so the pane never
+  // flashes the wrong palette on load.
+  if (window.__appearance) applyAppearance(window.__appearance);
+</script>

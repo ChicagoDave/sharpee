@@ -1,0 +1,164 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ae="clr-namespace:ICSharpCode.AvalonEdit;assembly=ICSharpCode.AvalonEdit"
+        xmlns:wv="clr-namespace:Microsoft.Web.WebView2.Wpf;assembly=Microsoft.Web.WebView2.Wpf"
+        xmlns:local="clr-namespace:Adr341.WpfSpike"
+        x:Class="Adr341.WpfSpike.MainWindow"
+        Title="ADR-341 — WPF spike" Height="820" Width="1340"
+        Background="{DynamicResource Theme.EditorBackground}"
+        WindowStartupLocation="CenterScreen">
+
+  <Window.InputBindings>
+    <KeyBinding Key="S" Modifiers="Ctrl" Command="{x:Static local:MainWindow.SaveCmd}"/>
+    <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="{x:Static local:MainWindow.SaveAllCmd}"/>
+    <KeyBinding Key="W" Modifiers="Ctrl" Command="{x:Static local:MainWindow.CloseTabCmd}"/>
+    <KeyBinding Key="R" Modifiers="Ctrl" Command="{x:Static local:MainWindow.ReloadCmd}"/>
+  </Window.InputBindings>
+
+  <DockPanel>
+
+    <!-- Menu: View > Appearance mirrors ADR-297 D2's System / Light / Dark pin -->
+    <Menu DockPanel.Dock="Top" Background="{DynamicResource Theme.RailBackground}"
+          Foreground="{DynamicResource Theme.Foreground}">
+      <MenuItem Header="_File" Foreground="{DynamicResource Theme.Foreground}">
+        <MenuItem Header="Save" InputGestureText="Ctrl+S" Click="Save_Click"/>
+        <MenuItem Header="Save All" InputGestureText="Ctrl+Shift+S" Click="SaveAll_Click"/>
+        <MenuItem Header="Reload from Disk" InputGestureText="Ctrl+R" Click="Reload_Click"/>
+        <Separator/>
+        <MenuItem Header="Close Tab" InputGestureText="Ctrl+W" Click="CloseTab_Click"/>
+      </MenuItem>
+      <MenuItem Header="_View" Foreground="{DynamicResource Theme.Foreground}">
+        <MenuItem Header="Appearance">
+          <MenuItem x:Name="ApSystem" Header="System" IsCheckable="True" Click="Appearance_Click" Tag="System"/>
+          <MenuItem x:Name="ApLight"  Header="Light"  IsCheckable="True" Click="Appearance_Click" Tag="Light"/>
+          <MenuItem x:Name="ApDark"   Header="Dark"   IsCheckable="True" Click="Appearance_Click" Tag="Dark"/>
+        </MenuItem>
+        <MenuItem Header="Word Wrap" IsCheckable="True" x:Name="WrapItem" Click="Wrap_Click"/>
+        <Separator/>
+        <MenuItem Header="Toggle Bottom Dock" Click="ToggleDock_Click"/>
+        <MenuItem Header="Go to span (diagnostic navigation)" Click="GoToSpan_Click"/>
+        <MenuItem Header="Programmatic undoable replace" Click="Replace_Click"/>
+      </MenuItem>
+    </Menu>
+
+    <!-- Centred title band -->
+    <Border DockPanel.Dock="Top" Height="38"
+            Background="{DynamicResource Theme.RailBackground}"
+            BorderBrush="{DynamicResource Theme.Border}" BorderThickness="0,0,0,1">
+      <Grid>
+        <TextBlock Text="The Secret Letter" HorizontalAlignment="Center" VerticalAlignment="Center"
+                   FontWeight="SemiBold" Foreground="{DynamicResource Theme.Foreground}"/>
+        <TextBlock x:Name="Perf" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"
+                   FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource Theme.ForegroundDim}"/>
+      </Grid>
+    </Border>
+
+    <!-- Status bar -->
+    <Border DockPanel.Dock="Bottom" Height="24" Background="{DynamicResource Theme.Accent}">
+      <TextBlock x:Name="Status" Margin="10,0" VerticalAlignment="Center" FontSize="11"
+                 Foreground="{DynamicResource Theme.StatusBarText}"/>
+    </Border>
+
+    <Grid>
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="52"/>
+        <ColumnDefinition Width="230" MinWidth="140"/>
+        <ColumnDefinition Width="4"/>
+        <ColumnDefinition Width="*" MinWidth="300"/>
+        <ColumnDefinition Width="4"/>
+        <ColumnDefinition Width="520" MinWidth="260"/>
+      </Grid.ColumnDefinitions>
+
+      <!-- rail -->
+      <Border Grid.Column="0" Background="{DynamicResource Theme.RailBackground}"
+              BorderBrush="{DynamicResource Theme.Border}" BorderThickness="0,0,1,0">
+        <StackPanel Margin="0,10">
+          <StackPanel.Resources>
+            <Style TargetType="Button">
+              <Setter Property="Background" Value="Transparent"/>
+              <Setter Property="BorderThickness" Value="0"/>
+              <Setter Property="Width" Value="40"/>
+              <Setter Property="Height" Value="36"/>
+              <Setter Property="Margin" Value="0,4"/>
+              <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+              <Setter Property="FontSize" Value="18"/>
+              <Setter Property="Cursor" Value="Hand"/>
+              <Setter Property="Template">
+                <Setter.Value>
+                  <ControlTemplate TargetType="Button">
+                    <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="5">
+                      <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                      <Trigger Property="IsMouseOver" Value="True">
+                        <Setter TargetName="b" Property="Background" Value="{DynamicResource Theme.ProjectBackground}"/>
+                      </Trigger>
+                    </ControlTemplate.Triggers>
+                  </ControlTemplate>
+                </Setter.Value>
+              </Setter>
+            </Style>
+          </StackPanel.Resources>
+          <Button x:Name="RailProject" Content="&#xE8B7;" Click="Rail_Project" ToolTip="Project pane"
+                  Foreground="{DynamicResource Theme.Accent}"/>
+          <Button x:Name="RailPlay" Content="&#xE768;" Click="Rail_Play" ToolTip="Play pane"
+                  Foreground="{DynamicResource Theme.ForegroundDim}"/>
+          <Button x:Name="RailProblems" Content="&#xE7BA;" Click="Rail_Problems" ToolTip="Problems (bottom dock)"
+                  Foreground="{DynamicResource Theme.ForegroundDim}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- project pane -->
+      <Border x:Name="ProjectPane" Grid.Column="1" Background="{DynamicResource Theme.ProjectBackground}">
+        <DockPanel>
+          <TextBlock DockPanel.Dock="Top" Text="PROJECT" Margin="12,10,0,6" FontSize="10"
+                     FontWeight="SemiBold" Foreground="{DynamicResource Theme.ForegroundFaint}"/>
+          <TreeView x:Name="Tree" Background="Transparent" BorderThickness="0"
+                    Foreground="{DynamicResource Theme.Foreground}"
+                    SelectedItemChanged="Tree_SelectedItemChanged"
+                    MouseDoubleClick="Tree_DoubleClick"
+                    KeyDown="Tree_KeyDown"/>
+        </DockPanel>
+      </Border>
+      <GridSplitter x:Name="ProjectSplitter" Grid.Column="2" Width="4" HorizontalAlignment="Stretch"
+                    Background="{DynamicResource Theme.Border}"/>
+
+      <!-- editor -->
+      <Grid Grid.Column="3" Background="{DynamicResource Theme.EditorBackground}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+          <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <local:TabStrip x:Name="EditorTabs" Grid.Row="0"/>
+        <ae:TextEditor x:Name="Editor" Grid.Row="1"
+                       FontFamily="Cascadia Mono, Consolas" FontSize="13"
+                       ShowLineNumbers="True" Background="Transparent"/>
+        <Border x:Name="Dock" Grid.Row="2" Height="150" Visibility="Collapsed"
+                Background="{DynamicResource Theme.ProjectBackground}"
+                BorderBrush="{DynamicResource Theme.Border}" BorderThickness="0,1,0,0">
+          <DockPanel>
+            <local:TabStrip x:Name="DockTabs" DockPanel.Dock="Top"/>
+            <TextBlock Margin="12" Foreground="{DynamicResource Theme.ForegroundDim}" FontFamily="Consolas"
+                       FontSize="11" Text="Problems / Game Errors — the bottom dock, hidden by default."/>
+          </DockPanel>
+        </Border>
+      </Grid>
+      <GridSplitter Grid.Column="4" Width="4" HorizontalAlignment="Stretch"
+                    Background="{DynamicResource Theme.Border}"/>
+
+      <!-- right panel -->
+      <Grid Grid.Column="5" Background="{DynamicResource Theme.PlayBackground}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <local:TabStrip x:Name="RightTabs" Grid.Row="0"/>
+        <Grid Grid.Row="1">
+          <wv:WebView2 x:Name="Web" Visibility="Visible"/>
+          <local:WorldMap x:Name="Map" Visibility="Collapsed"/>
+        </Grid>
+      </Grid>
+    </Grid>
+  </DockPanel>
+</Window>

@@ -1,0 +1,4 @@
+/* Served from disk through the resource-request hook. The probe reads the
+   computed colour back to prove the stylesheet actually applied, rather than
+   merely that a request went out. */
+#h { color: rgb(17, 34, 51); }

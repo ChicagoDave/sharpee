@@ -1,0 +1,27 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <AssemblyName>Adr341WpfSpike</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Phase 2 named these. AvalonEdit drives highlighting from an external
+         tokenizer (IHighlighter / DocumentColorizingTransformer), which is what
+         D4's one-grammar rule requires. -->
+    <PackageReference Include="AvalonEdit" Version="6.3.1.120" />
+    <PackageReference Include="TreeSitter.DotNet" Version="1.3.0" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4191.47" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="pane\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,8 @@
+# The vendored Node build is an 83 MB download, not source.
+vendor/
+bin/
+obj/
+layout/
+# The packed package is build output too — 40.9 MB, and reproducible from the
+# layout by `makeappx pack`. The evidence is msix-packaging-check.md, not the file.
+*.msix

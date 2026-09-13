@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- SPIKE — ADR-341 D2 Phase 5 (D7 packaging check). Minimal Desktop-Bridge manifest.
+     runFullTrust is the capability that decides check (b): it is what lets a packaged
+     Win32 app touch the user's real folders the way the sandboxless macOS app does. -->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap rescap">
+
+  <Identity Name="Sharpee.Adr341.MsixCheck"
+            Publisher="CN=Sharpee ADR-341 Spike"
+            Version="1.0.0.0"
+            ProcessorArchitecture="x64" />
+
+  <Properties>
+    <DisplayName>ADR-341 MSIX Check</DisplayName>
+    <PublisherDisplayName>Sharpee</PublisherDisplayName>
+    <Logo>Assets\Square150x150Logo.png</Logo>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.17763.0" MaxVersionTested="10.0.26100.0" />
+  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+  </Resources>
+
+  <Applications>
+    <Application Id="Check" Executable="Adr341MsixCheck.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements DisplayName="ADR-341 MSIX Check" Description="D7 packaging check"
+                          Square150x150Logo="Assets\Square150x150Logo.png"
+                          Square44x44Logo="Assets\Square44x44Logo.png"
+                          BackgroundColor="transparent" />
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

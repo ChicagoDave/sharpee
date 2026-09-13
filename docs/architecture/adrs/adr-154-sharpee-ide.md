@@ -147,7 +147,7 @@ This ADR defines the **authoring tool for authors willing to write TypeScript**.
 
 - **A no-code authoring tool** for authors who will not write code at all. That is a separate question. If Sharpee ever ships a Twine/RPG-Maker-style no-code surface, it would be a distinct product, likely a Plugin to this IDE (a "Visual Story Builder" plugin) or a separate app entirely.
 - **A DSL on top of the TypeScript API.** The authoring API stays TypeScript. The IDE's job is to make that TypeScript pleasant to work with; it is not the IDE's job to present a different language.
-- **A specific implementation technology** (Electron vs Tauri vs native). Implementation choice is deferred to the implementation plan.
+- **A specific implementation technology** (Electron vs Tauri vs native). Implementation choice is deferred to the implementation plan. — **CLOSED as native on both desktop platforms** by [ADR-341](./adr-341-chord-writer-windows.md) (macOS: native Swift/AppKit, recorded retroactively; Windows: native C# on .NET, D2), with the spike evidence in `docs/work/adr-341-spike/decision.md` (2026-09-12, session `89f9e0`). Electron and Tauri are both rejected there; the WPF-vs-WinUI-3 choice *within* native is a separate, narrower question settled by that same record.
 - **The runtime distribution** — how Node and `sharpee.js` physically reach the author's machine is in `docs/work/sharpee-standalone.md`. The IDE consumes whatever that document lands on.
 
 ## Consequences
