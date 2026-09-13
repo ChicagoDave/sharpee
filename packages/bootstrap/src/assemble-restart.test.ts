@@ -1,5 +1,6 @@
 /**
- * ADR-248 harness reboot tests for assembleGame().
+ * ADR-248 harness reboot tests for assembleGame(), and the `lastError` field
+ * that records whether a command's turn executed at all.
  *
  * Real-path: a real minimal story runs through the real engine; RESTART
  * flows through the stdlib restarting action, the engine's platform-op
@@ -194,5 +195,52 @@ describe('ADR-248 assembleGame restart reboot', () => {
 
     expect(output).toContain('Restart failed:');
     expect(output).toContain('no freshStory provider');
+  });
+});
+
+describe('LoadedGame.lastError — did this command execute at all', () => {
+  // #415/#425: the testers answered this by matching `lastOutput` against
+  // `'Error: Engine is not running'`, a sentence ADR-345 D1 stopped emitting,
+  // so both matchers went dead without failing. The fact now lives where the
+  // throw is caught. Real path: the same assembleGame + executeCommand
+  // surface the CLI bundle runs, refused via the same `stop()` call
+  // `endingStage` makes.
+
+  it('carries the refusal message when the engine refuses the turn', async () => {
+    const { story } = makeStory();
+    const game = assembleGame(story);
+
+    game.engine.stop('defeat', { reason: 'You have died.', cause: 'test' });
+    await game.executeCommand('look');
+
+    expect(game.lastError).toBeDefined();
+    expect(game.lastError).toContain("'stopped' phase");
+    // And it is the message alone — bootstrap's `Error: ` prefix belongs to
+    // the rendered output, not to the field a consumer branches on.
+    expect(game.lastError).not.toContain('Error: ');
+  });
+
+  it('is undefined after a turn that completed', async () => {
+    const { story } = makeStory();
+    const game = assembleGame(story);
+
+    const look = await game.executeCommand('look');
+
+    expect(look).toContain('Test Chamber');
+    expect(game.lastError).toBeUndefined();
+  });
+
+  it('clears on the next command rather than pinning the previous failure', async () => {
+    const { story } = makeStory();
+    const second = makeStory();
+    const game = assembleGame(story, { freshStory: () => second.story });
+
+    game.engine.stop('defeat', { reason: 'You have died.', cause: 'test' });
+    await game.executeCommand('look');
+    expect(game.lastError).toBeDefined();
+
+    await game.executeCommand('restart');
+
+    expect(game.lastError).toBeUndefined();
   });
 });

@@ -14,7 +14,7 @@ first consumer. The D3 host contract comes after those, and the shell after that
 
 **The spike does not live here.** ADR-341 D2's WPF and WinUI 3 spikes are throwaway
 evidence, not product, and they live under `tools/spikes/adr-341/` so that no spike
-code is ever mistaken for the shell. See `docs/work/adr-341-spike/plan.md`.
+code is ever mistaken for the shell. See `docs/work/archive/adr-341-spike/plan.md`.
 
 **Not `packages/`.** This is a tool, like `tools/ide` (the macOS app) and
 `tools/repokit` (the in-repo platform build). It is never published to npm.

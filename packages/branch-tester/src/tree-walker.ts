@@ -71,6 +71,14 @@ import {
 export interface TreeWalkerGame {
   executeCommand(input: string): Promise<string> | string;
   /**
+   * The message of the error the last command's turn threw, `undefined` when
+   * it completed — bootstrap's `LoadedGame.lastError`, which is the one place
+   * that catches the throw. The walker reads it to tell a refused turn from
+   * ordinary engine text; matching output for a sentinel string is what broke
+   * here before (#425).
+   */
+  lastError?: string;
+  /**
    * Resume the engine after a game-over stopped it. A line may legitimately
    * fork on the card that ended the game — its replay lands on a stopped
    * engine, and the branch's own cards still have to run.
@@ -322,14 +330,17 @@ export async function runTreeDocument(
 
     // ── Replay the prefix, verbatim, claims not re-evaluated ─────────────
     // Only what the runner itself treats as an execution error counts as
-    // one here — a throw, or the stopped-engine sentinel. Any other output
-    // is engine text the owning line saw too and is not divergence.
+    // one here — a throw, or a turn the engine refused. Any other output is
+    // engine text the owning line saw too and is not divergence. The refusal
+    // is read off `game.lastError`, which bootstrap sets from the catch; it
+    // was matched against the literal `'Error: Engine is not running'` until
+    // ADR-345 D1 retired that sentence out from under this check.
     let replayError: string | undefined;
     for (const command of line.prefix) {
       let failure: string | undefined;
       try {
-        const output = String(await game.executeCommand(command));
-        if (output === 'Error: Engine is not running') failure = output;
+        await game.executeCommand(command);
+        if (game.lastError) failure = game.lastError;
       } catch (error) {
         failure = error instanceof Error ? error.message : String(error);
       }

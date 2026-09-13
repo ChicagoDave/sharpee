@@ -1556,6 +1556,14 @@ export interface GameEngine {
         turn: number;
     } | null;
     /**
+     * The message of the error the last command's turn threw, `undefined` when
+     * it completed — bootstrap's `LoadedGame.lastError`, set by the one layer
+     * that catches the throw. The runner reads it to tell a turn the engine
+     * refused from ordinary engine text; matching the rendered output for a
+     * sentinel string is what broke here before (#425).
+     */
+    lastError?: string;
+    /**
      * The story's `auto-assertion:` policy (Phase 6e, #253), read off the
      * loaded game — bootstrap sets it from `story.config.autoAssertion`.
      * Consulted only at the assertion tier's D2 boundary; absent = "let me

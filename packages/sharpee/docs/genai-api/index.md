@@ -41,4 +41,4 @@ Generated for Sharpee 5.4.1
 | [character.md](character.md) | @sharpee/character | NPC/character authoring — builders, applyCharacter, character model. (55 files, ~5250 lines) |
 | [authoring.md](authoring.md) | Authoring Helpers | Fluent entity-builder DSL (helpers) and the EntityQuery API (queries). (7 files, ~805 lines) |
 | [presentation.md](presentation.md) | Presentation | Browser web client, channel renderers, and media/audio. (26 files, ~2812 lines) |
-| [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (21 files, ~2448 lines) |
+| [tooling.md](tooling.md) | Tooling | Build/CLI orchestration (devkit) and the transcript test engine. (21 files, ~2456 lines) |

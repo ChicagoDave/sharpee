@@ -90,6 +90,19 @@ export interface LoadedGame {
    */
   bootChannelValues: Record<string, unknown[]>;
   /**
+   * The message of the error the last command's turn threw, or `undefined`
+   * when it completed. The canonical answer to "did this command execute at
+   * all", set by the one layer that catches the throw.
+   *
+   * Consumers used to re-derive this by matching `lastOutput` against the
+   * literal `'Error: Engine is not running'`, which the engine emitted from a
+   * boolean running-guard. ADR-345 D1 replaced that guard with one that names
+   * the phase it found, so the literal stopped being produced and every
+   * matcher for it went quietly dead (#415, #425). A field the catch sets
+   * cannot drift out from under its readers the same way.
+   */
+  lastError?: string;
+  /**
    * The story's transcript auto-assertion policy (Phase 6e, #253), read off
    * `story.config.autoAssertion` at assembly. The test runner consults it at
    * the ADR-294 D2 tier boundary: under a policy, a bare (assertion-less)
@@ -394,12 +407,14 @@ export function assembleGame(
       channelBuffers = {};
       channelValueBuffers = {};
       let lastTurnResult: TurnResult | null = null;
+      let lastError: string | undefined;
 
       try {
         const result = await engine.executeTurn(input);
         lastTurnResult = result ?? null;
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
+        lastError = message;
         outputBuffer.push(`Error: ${message}`);
       }
 
@@ -422,6 +437,7 @@ export function assembleGame(
       game.lastOutput = outputBuffer.join('\n');
       game.lastEvents = eventBuffer;
       game.lastTurnResult = lastTurnResult;
+      game.lastError = lastError;
       game.lastChannels = channelBuffers;
       game.lastChannelValues = channelValueBuffers;
       return game.lastOutput;

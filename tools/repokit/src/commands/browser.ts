@@ -73,11 +73,6 @@ export function chordStoryFile(root: string, story: string): string | null {
   return findChordStoryFile(storyDir);
 }
 
-/** Read the lockstep platform (sharpee) version — stamped into the story's version.ts. */
-function sharpeeVersion(root: string): string {
-  return JSON.parse(readFileSync(join(root, 'packages', 'sharpee', 'package.json'), 'utf8')).version;
-}
-
 /**
  * Substitute the story tokens the browser index.html template carries.
  *

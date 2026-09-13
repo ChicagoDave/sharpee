@@ -52,8 +52,15 @@ function roomEngine(policy?: AutoAssertionPolicy) {
     // room name arrives decorated — the policy must read the text OUT of
     // the structure, never the flattened JSON rendering.
     lastChannelValues: {} as Record<string, unknown[]>,
+    /**
+     * The refusal message bootstrap records when the engine will not execute
+     * the turn — set on a normal RETURN, never a throw, because bootstrap
+     * catches the engine's exception itself (#425).
+     */
+    lastError: undefined as string | undefined,
     executeCommand: (cmd: string) => {
       engine.lastChannelValues = {};
+      engine.lastError = undefined;
       if (cmd === 'north') {
         engine.lastChannelValues = {
           'room-name': [{ content: [{ className: 'sharpee-room', content: ['Meadow'] }] }],
@@ -64,6 +71,10 @@ function roomEngine(policy?: AutoAssertionPolicy) {
       if (cmd === 'take scythe') return 'Taken.';
       if (cmd === 'blank') return '';
       if (cmd === 'crash') throw new Error('engine exploded');
+      if (cmd === 'refuse') {
+        engine.lastError = "engine is in the 'stopped' phase";
+        return `Error: ${engine.lastError}`;
+      }
       return `You ${cmd}.`;
     },
     world: {},
@@ -201,6 +212,34 @@ describe('the boundary and its exclusions hold', () => {
     expect(result.commands[0].autoAsserted).toBeUndefined();
     expect(transcript.commands[0].assertions).toEqual([]);
     expect(fs.readFileSync(filePath, 'utf-8')).toBe(before);
+  });
+
+  it('a REFUSED turn fails the same way, though the engine never threw', async () => {
+    // #425: the runner read a refusal by matching output against the literal
+    // 'Error: Engine is not running', which ADR-345 D1 retired — so this path
+    // went dead while the throwing `crash` case above kept passing. The
+    // refusal arrives as bootstrap delivers it: a normal return with the
+    // message on `lastError`.
+    const { transcript, filePath } = fixtureOnDisk('title: T\n---\n> refuse\n');
+    const before = fs.readFileSync(filePath, 'utf-8');
+    const result = await runTranscript(transcript, roomEngine('all-emitted-text') as never, {});
+
+    expect(result.status).toBe('failed');
+    expect(result.commands[0].error).toContain("'stopped' phase");
+    expect(result.commands[0].autoAsserted).toBeUndefined();
+    expect(transcript.commands[0].assertions).toEqual([]);
+    expect(fs.readFileSync(filePath, 'utf-8')).toBe(before);
+  });
+
+  it('a clean turn is not mistaken for a refusal', async () => {
+    // The other half: `lastError` is cleared per command, so an ordinary turn
+    // after a refused one must pass. Without this, a field set once and never
+    // cleared would satisfy the test above while failing every real run.
+    const { transcript } = fixtureOnDisk('title: T\n---\n> refuse\n> north\n');
+    const result = await runTranscript(transcript, roomEngine('all-emitted-text') as never, {});
+
+    expect(result.commands[1].error).toBeUndefined();
+    expect(result.commands[1].autoAsserted).toBe(true);
   });
 
   it('blank output on a bare command keeps the blank-output failure, unwritten', async () => {

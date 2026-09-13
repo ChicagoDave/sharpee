@@ -21,6 +21,7 @@ import {
   flattenTreeLines,
   formatTreeDocumentRun,
   runTreeDocument,
+  type TreeWalkerGame,
 } from '../src/tree-walker.js';
 
 // ---------------------------------------------------------------------------
@@ -62,6 +63,14 @@ interface StubOptions {
   throwOn?: Record<string, string>;
   /** command → thrown error message, but only from the SECOND boot on. */
   throwOnReplay?: Record<string, string>;
+  /**
+   * command → refusal message, only from the SECOND boot on, surfaced the way
+   * bootstrap actually surfaces one: `executeCommand` RETURNS normally and the
+   * message lands on `game.lastError`. Distinct from `throwOnReplay` on
+   * purpose — bootstrap catches the engine's throw internally, so a refusal
+   * the walker must notice never reaches it as an exception (#425).
+   */
+  refuseOnReplay?: Record<string, string>;
   /** command → room name the player is in after it executes. */
   movesTo?: Record<string, string>;
   /** The story's `auto-assertion:` policy, read off the game by the runner. */
@@ -89,7 +98,7 @@ function stubHarness(options: StubOptions = {}) {
       getEntity: () => ({ id: 'room-1', name: room }),
       getContents: () => [],
     };
-    return {
+    const game: Record<string, unknown> = {
       executeCommand: async (command: string) => {
         executed.push({ command, from: token, boot: bootNumber });
         token = `${token}+${command}`;
@@ -97,6 +106,11 @@ function stubHarness(options: StubOptions = {}) {
           options.throwOn?.[command] ??
           (bootNumber > 1 ? options.throwOnReplay?.[command] : undefined);
         if (thrown !== undefined) throw new Error(thrown);
+        // Bootstrap's shape: the refusal is recorded on the game and the call
+        // returns, cleared per command so it never pins a previous failure.
+        const refused = bootNumber > 1 ? options.refuseOnReplay?.[command] : undefined;
+        game.lastError = refused;
+        if (refused !== undefined) return `Error: ${refused}`;
         const moved = options.movesTo?.[command];
         if (moved !== undefined) room = moved;
         return `did ${command}`;
@@ -106,6 +120,7 @@ function stubHarness(options: StubOptions = {}) {
       ...(options.channelValues !== undefined ? { lastChannelValues: options.channelValues } : {}),
       ...(options.policy !== undefined ? { autoAssertionPolicy: options.policy } : {}),
     };
+    return game as unknown as TreeWalkerGame;
   };
 
   return {
@@ -298,6 +313,47 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     expect(branch.error).toContain('not reproducible');
     // The branch's own cards never ran.
     expect(commandsOf(harness)).not.toContain('east');
+  });
+
+  it('a replay the engine REFUSES reports error too, though nothing throws', async () => {
+    // #425: the walker read a refusal by matching output against the literal
+    // 'Error: Engine is not running', which ADR-345 D1 retired — so this
+    // whole path went dead while the throwing path above kept passing. The
+    // refusal arrives the way bootstrap delivers it: a normal return with the
+    // message on `lastError`.
+    const harness = stubHarness({ refuseOnReplay: { north: "engine is in the 'stopped' phase" } });
+    const run = await runTreeDocument(
+      doc([
+        okBoot(),
+        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+      ]),
+      harness.load,
+    );
+
+    const branch = run.lines[1];
+    expect(branch.status).toBe('error');
+    expect(branch.error).toContain('not reproducible');
+    expect(branch.error).toContain("'stopped' phase");
+    expect(commandsOf(harness)).not.toContain('east');
+  });
+
+  it('a clean replay is not mistaken for a refusal', async () => {
+    // The other half of the branch: `lastError` is cleared per command, so a
+    // prefix that runs cleanly must not inherit an earlier failure. Without
+    // this, a field that was set once and never cleared would pass the test
+    // above while failing every ordinary run.
+    const harness = stubHarness({ refuseOnReplay: { west: 'unreached' } });
+    const run = await runTreeDocument(
+      doc([
+        okBoot(),
+        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+      ]),
+      harness.load,
+    );
+
+    expect(run.lines[1].status).not.toBe('error');
+    expect(run.lines[1].error).toBeUndefined();
+    expect(commandsOf(harness)).toContain('east');
   });
 
   it('skip cards execute without asserting; the JSON is the whole truth', async () => {

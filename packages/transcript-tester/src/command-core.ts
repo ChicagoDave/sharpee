@@ -70,6 +70,14 @@ export interface GameEngine {
    */
   lastTurnResult?: { turn: number } | null;
   /**
+   * The message of the error the last command's turn threw, `undefined` when
+   * it completed — bootstrap's `LoadedGame.lastError`, set by the one layer
+   * that catches the throw. The runner reads it to tell a turn the engine
+   * refused from ordinary engine text; matching the rendered output for a
+   * sentinel string is what broke here before (#425).
+   */
+  lastError?: string;
+  /**
    * The story's `auto-assertion:` policy (Phase 6e, #253), read off the
    * loaded game — bootstrap sets it from `story.config.autoAssertion`.
    * Consulted only at the assertion tier's D2 boundary; absent = "let me
@@ -520,10 +528,15 @@ export async function runCommand(
     if (options.captureWorld) world = captureWorldSnapshot(engine);
     actualOutput = typeof result === 'string' ? result : (engine.getOutput?.() || '');
 
-    // A stopped engine (player death ended the game) surfaces as this exact
-    // captured output rather than a throw (the bootstrap layer catches it).
-    if (actualOutput === 'Error: Engine is not running') {
-      error = 'Engine is not running';
+    // A refused turn (a stopped engine after player death, or any other
+    // phase the engine will not execute from) surfaces as a caught throw
+    // rather than a returned error — bootstrap catches it and records the
+    // message on `lastError`. Read that, never the rendered output: this
+    // matched the literal `'Error: Engine is not running'` until ADR-345 D1
+    // replaced the boolean running-guard with one that names the phase it
+    // found, retiring the sentence and silently deadening the branch.
+    if (engine.lastError) {
+      error = engine.lastError;
     }
 
     // Capture events from the engine (filter out system.* debug events)
