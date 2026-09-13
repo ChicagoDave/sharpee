@@ -1,0 +1,127 @@
+[   0.048s] native host — .NET 10.0.8 on macOS 26.6.2 (Arm64); pid 35892
+[   0.050s] auto mode: running every check
+[   0.051s] native host — .NET 10.0.8 on macOS 26.6.2 (Arm64); pid 35892
+[   0.051s] IsNative=True
+[   0.051s] Documents=/Users/david/Documents
+[   0.051s] Story folder=/Users/david/Documents/OpenSilver Capability Check
+[   0.051s] Toolchain shim=/Users/david/repos/spikes/opensilver-ide/hello/Hello.Photino/bin/Debug/net10.0/osx-arm64/toolchain/bin/sharpee
+[   0.051s] Toolchain node=/Users/david/repos/spikes/opensilver-ide/hello/Hello.Photino/bin/Debug/net10.0/osx-arm64/toolchain/node/bin/node
+[   0.054s] wrote /Users/david/Documents/OpenSilver Capability Check/capability-check.txt
+[   0.054s] read back: written by the OpenSilver spike at 2026-09-13T01:42:15.0575710-05:00
+[   0.054s] round trip: MATCH
+[   0.054s] story file: 402 chars, first line "story"
+[   0.055s] $ node --version
+[   0.129s]   out| v22.23.1
+[   0.132s] exit 0, 1 lines, 77 ms
+[   0.133s] $ sharpee compose /Users/david/Documents/OpenSilver Capability Check/opensilver-capability-check.story --json
+[   0.233s]   out| {"schemaVersion":2,"diagnostics":[],"ir":{"format":"story language 4","languageVersion":"3.6.0","meta":{"title":"OpenSilver Capability Check","fields":{"id":"op… (2467 chars)
+[   0.233s] exit 0, 1 lines, 89 ms
+[   0.233s] $ sharpee build /Users/david/Documents/OpenSilver Capability Check/opensilver-capability-check.story
+[   0.313s]   out| 
+[   0.313s]   out| 🔨 Building browser bundle
+[   0.313s]   out| 
+[   0.329s]   out|   Story: OpenSilver Capability Check (opensilver-capability-check)
+[   0.329s]   out|   ✓ Validated opensilver-capability-check.story (gate-clean) — source not shipped (`publish-source:` absent)
+[   0.329s]   out|   ✓ Story IR → dist/opensilver-capability-check.ir.json
+[   0.333s]   out|   Generated browser entry from template
+[   0.333s]   out|   ✓ Embedded the compiled story IR into the bundle
+[   0.333s]   out|   Bundling game.js...
+[   0.377s]   err| ✘ [ERROR] Could not resolve "@sharpee/character"
+[   0.377s]   err| 
+[   0.377s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (224 chars)
+[   0.377s]   err|       16 │ ...ilityFor, threadStateFor, witnessActs } from '@sharpee/character';
+[   0.378s]   err|          ╵                                                 ~~~~~~~~~~~~~~~~~~~~
+[   0.378s]   err| 
+[   0.378s]   err|   The module "./dist-esm/index.js" was not found on the file system:
+[   0.378s]   err| 
+[   0.378s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (192 chars)
+[   0.378s]   err|       11 │       "import": "./dist-esm/index.js",
+[   0.378s]   err|          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+[   0.378s]   err| 
+[   0.378s]   err|   You can mark the path "@sharpee/character" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle… (161 chars)
+[   0.378s]   err| 
+[   0.378s]   err| ✘ [ERROR] Could not resolve "@sharpee/character"
+[   0.378s]   err| 
+[   0.378s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (207 chars)
+[   0.378s]   err|       35 │ import { dialogueTurn } from '@sharpee/character';
+[   0.378s]   err|          ╵                              ~~~~~~~~~~~~~~~~~~~~
+[   0.378s]   err| 
+[   0.378s]   err|   The module "./dist-esm/index.js" was not found on the file system:
+[   0.378s]   err| 
+[   0.378s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (192 chars)
+[   0.378s]   err|       11 │       "import": "./dist-esm/index.js",
+[   0.378s]   err|          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+[   0.378s]   err| 
+[   0.378s]   err|   You can mark the path "@sharpee/character" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle… (161 chars)
+[   0.378s]   err| 
+[   0.378s]   err| ✘ [ERROR] Could not resolve "@sharpee/character"
+[   0.378s]   err| 
+[   0.378s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (212 chars)
+[   0.378s]   err|       16 │ ...ssed, renderSilence, selectMannerBeat } from '@sharpee/character';
+[   0.378s]   err|          ╵                                                 ~~~~~~~~~~~~~~~~~~~~
+[   0.378s]   err| 
+[   0.378s]   err|   The module "./dist-esm/index.js" was not found on the file system:
+[   0.378s]   err| 
+[   0.378s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (192 chars)
+[   0.378s]   err|       11 │       "import": "./dist-esm/index.js",
+[   0.378s]   err|          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+[   0.378s]   err| 
+[   0.378s]   err|   You can mark the path "@sharpee/character" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle… (161 chars)
+[   0.378s]   err| 
+[   0.393s]   err| ✘ [ERROR] Could not resolve "@sharpee/character"
+[   0.393s]   err| 
+[   0.393s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (203 chars)
+[   0.393s]   err|       5 │ ...dWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
+[   0.393s]   err|         ╵                                                  ~~~~~~~~~~~~~~~~~~~~
+[   0.393s]   err| 
+[   0.393s]   err|   The module "./dist-esm/index.js" was not found on the file system:
+[   0.393s]   err| 
+[   0.393s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (192 chars)
+[   0.393s]   err|       11 │       "import": "./dist-esm/index.js",
+[   0.393s]   err|          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+[   0.393s]   err| 
+[   0.393s]   err|   You can mark the path "@sharpee/character" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle… (161 chars)
+[   0.393s]   err| 
+[   0.394s]   err| ✘ [ERROR] Could not resolve "@sharpee/character"
+[   0.395s]   err| 
+[   0.395s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (202 chars)
+[   0.395s]   err|       52 │ ...rModelPhase, registerCharacterScenes, } from '@sharpee/character';
+[   0.395s]   err|          ╵                                                 ~~~~~~~~~~~~~~~~~~~~
+[   0.395s]   err| 
+[   0.395s]   err|   The module "./dist-esm/index.js" was not found on the file system:
+[   0.395s]   err| 
+[   0.395s]   err|     ../../repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@sharpee+story-loader@file+packages+story-loader/node_modules/@sharp… (192 chars)
+[   0.395s]   err|       11 │       "import": "./dist-esm/index.js",
+[   0.395s]   err|          ╵                 ~~~~~~~~~~~~~~~~~~~~~
+[   0.395s]   err| 
+[   0.395s]   err|   You can mark the path "@sharpee/character" as external to exclude it from the bundle, which will remove this error and leave the unresolved path in the bundle… (161 chars)
+[   0.395s]   err| 
+[   0.409s]   err| 5 errors
+[   0.409s]   err| node:child_process:955
+[   0.409s]   err|     throw err;
+[   0.409s]   err|     ^
+[   0.409s]   err| 
+[   0.409s]   err| Error: Command failed: /Users/david/repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/@esbuild+darwin-arm64@0.27.2/node_modules/… (674 chars)
+[   0.409s]   err|     at genericNodeError (node:internal/errors:983:15)
+[   0.409s]   err|     at wrappedFn (node:internal/errors:537:14)
+[   0.409s]   err|     at checkExecSyncError (node:child_process:916:11)
+[   0.409s]   err|     at Object.execFileSync (node:child_process:952:15)
+[   0.409s]   err|     at Object.<anonymous> (/Users/david/repos/spikes/opensilver-ide/toolchain-staging/toolchain/devkit/node_modules/.pnpm/esbuild@0.27.2/node_modules/esbuild/bi… (177 chars)
+[   0.409s]   err|     at Module._compile (node:internal/modules/cjs/loader:1781:14)
+[   0.409s]   err|     at Object..js (node:internal/modules/cjs/loader:1913:10)
+[   0.409s]   err|     at Module.load (node:internal/modules/cjs/loader:1505:32)
+[   0.409s]   err|     at Function._load (node:internal/modules/cjs/loader:1309:12)
+[   0.409s]   err|     at wrapModuleLoad (node:internal/modules/cjs/loader:254:19) {
+[   0.409s]   err|   status: 1,
+[   0.410s]   err|   signal: null,
+[   0.410s]   err|   output: [ null, null, null ],
+[   0.410s]   err|   pid: 35920,
+[   0.410s]   err|   stdout: null,
+[   0.410s]   err|   stderr: null
+[   0.410s]   err| }
+[   0.410s]   err| 
+[   0.410s]   err| Node.js v22.23.1
+[   0.410s]   err| 
+[   0.410s]   err| Error: esbuild bundling failed.
+[   0.426s] exit 1, 106 lines, 177 ms
+[   0.429s] auto mode: done

@@ -1,0 +1,16 @@
+[   0.056s] pane: loading pane-play ← sharpee-play://app/index.html
+[   0.061s] native host — .NET 10.0.8 on macOS 26.6.2 (Arm64); pid 71091
+[   0.061s] appearance: light (system)
+[   0.063s] pane: loading pane-editor ← sharpee-editor://app/index.html
+[   0.232s] editor: loaded fernhill.story (30509 chars)
+[   0.232s] pane-play ← turn: {"turn":1,"command":"look","output":"Iron Gates\nThe cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to… (7272 chars)
+[   0.243s] editor ← {"type":"loaded","name":"fernhill.story","length":30509,"lines":1180,"tokens":5279}
+[   0.243s] editor ← {"type":"themed","dark":false}
+[   0.316s] appearance: light → light
+[   0.324s] compose: exit 0, 0 diagnostic(s)
+[   0.324s] editor ← {"type":"themed","dark":false}
+[   1.821s] probe: before flip — IsDark=False, RailBackground token #DCE0E8, DOM rail rgb(220, 224, 232), DOM band rgba(0, 0, 0, 0)
+[   1.827s] editor ← {"type":"themed","dark":true}
+[   2.125s] probe: after flip — IsDark=True, RailBackground token #16171D, DOM rail rgb(22, 23, 29), DOM band rgba(0, 0, 0, 0), Apply() took 0.9 ms
+[   2.130s] editor ← {"type":"themed","dark":false}
+[   2.429s] probe: restored — DOM rail rgb(220, 224, 232)

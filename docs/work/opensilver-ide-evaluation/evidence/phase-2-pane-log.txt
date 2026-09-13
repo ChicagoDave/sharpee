@@ -1,0 +1,56 @@
+[   0.055s] native host — .NET 10.0.8 on macOS 26.6.2 (Arm64); pid 52895
+[   0.059s] auto: phase 2 checks
+[   0.059s] pane: loading testing ← sharpee-play://app/index-testing.html
+[   0.185s] pane ← turnEvents #1: {"turn":1,"command":"look","output":"Iron Gates\nThe cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to… (7340 chars)
+[   0.207s] pane ← turnEvents #2: {"turn":2,"command":"north","output":"Gravel Drive\nThe drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; th… (7154 chars)
+[   0.239s] pane ← turnEvents #3: {"turn":3,"command":"ask tobias about the folly","output":"The lantern stops swinging. \"Twenty years I've not opened that door, and her ladyship neither.\" He … (6904 chars)
+[   0.255s] pane ← turnEvents #4: {"turn":4,"command":"north","output":"Fountain Court\nA paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenho… (7182 chars)
+[   0.269s] pane ← turnEvents #5: {"turn":5,"command":"east","output":"Boiler Shed\nBrick, low, and bitter with old coal dust. The estate's boiler sits cold as a tomb against the back wall, its … (7489 chars)
+[   0.287s] pane ← turnEvents #6: {"turn":6,"command":"turn stopcock","output":"You crank the stopcock a hard quarter-turn.\n\nSomewhere inside the iron, water gurgles down into the jacket.","ca… (6691 chars)
+[   0.302s] pane ← turnEvents #7: {"turn":7,"command":"push plunger","output":"You push the primer plunger.\n\nThe plunger meets resistance at last and thumps home. The boiler is primed.","captu… (6893 chars)
+[   0.335s] pane ← turnEvents #8: {"turn":8,"command":"switch on boiler","output":"The boiler hums to life.\n\nFlame catches with a soft whump, and within moments the pipes begin to tick and str… (7235 chars)
+[   0.351s] pane ← turnEvents #9: {"turn":9,"command":"west","output":"Fountain Court\nA paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenhou… (7530 chars)
+[   0.366s] pane ← turnEvents #10: {"turn":10,"command":"north","output":"Entrance Hall\nThe heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock s… (7995 chars)
+[   0.383s] pane ← turnEvents #11: {"turn":11,"command":"east","output":"Kitchen\nCopper pans hang in ranks over the cold range. The pantry door stands in the north wall.\n\nYou can see a garden … (7266 chars)
+[   0.399s] pane ← turnEvents #12: {"turn":12,"command":"take shears","output":"Taken.\n\nFar off in the village, the church bell counts another quarter hour gone.","captures":[{"channel":"action… (6769 chars)
+[   0.415s] pane ← turnEvents #13: {"turn":13,"command":"take sherry","output":"Taken.","captures":[{"channel":"action-result","values":[{"content":["Taken."],"presence":"present","location":"r0a… (6587 chars)
+[   0.431s] pane ← turnEvents #14: {"turn":14,"command":"west","output":"Entrance Hall\nThe heart of the house: a cold marble floor, a dead fireplace under a wide mantel, and a tall case clock st… (7953 chars)
+[   0.447s] pane ← turnEvents #15: {"turn":15,"command":"give sherry to kettle","output":"Mrs Kettle turns the bottle to read the label, and something in her shoulders comes down an inch. \"Her l… (6888 chars)
+[   0.463s] pane ← turnEvents #16: {"turn":16,"command":"south","output":"Fountain Court\nA paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenh… (7842 chars)
+[   0.479s] pane ← turnEvents #17: {"turn":17,"command":"west","output":"Greenhouse\nGlass panes furred with frost on both sides. Staging benches run the length of the house, and a door in the no… (7336 chars)
+[   0.493s] pane ← turnEvents #18: {"turn":18,"command":"prune vine","output":"You take the dead growth off in three clean cuts, and the vine answers the warmth almost while you watch: a single h… (7262 chars)
+[   0.511s] pane ← turnEvents #19: {"turn":19,"command":"take locket","output":"Taken.\n\nA gust rattles every pane in the greenhouse at once.","captures":[{"channel":"action-result","values":[{"… (6988 chars)
+[   0.526s] pane ← turnEvents #20: {"turn":20,"command":"north","output":"Folly Hill\nThe hill rises behind the greenhouse, and on its crown stands the folly: a little stone temple, fire-scarred … (7417 chars)
+[   0.544s] pane ← turnEvents #21: {"turn":21,"command":"open folly door","output":"You open the folly door.","captures":[{"channel":"action-result","values":[{"content":["You open the folly door… (6852 chars)
+[   0.574s] pane ← turnEvents #22: {"turn":22,"command":"north","output":"Folly\nSoot still ghosts the walls in here, twenty years on. The night sky shows through a scorched hole in the dome, and… (8268 chars)
+[   0.591s] pane ← turnEvents #23: {"turn":23,"command":"cut fuse with shears","output":"The shears bite through the waxed cord. The spark train staggers, gutters, and dies a hand's breadth from … (6834 chars)
+[   0.606s] pane ← turnEvents #24: {"turn":24,"command":"open deed box with locket","output":"You open the deed box.\n\nInside the deed box you see deed.","captures":[{"channel":"action-result","… (6777 chars)
+[   0.623s] pane ← turnEvents #25: {"turn":25,"command":"take deed","output":"You take the deed from the deed box.\n\nSomewhere below, a door you have never opened settles on its hinges, as if it… (6911 chars)
+[   0.637s] pane ← turnEvents #26: {"turn":26,"command":"south","output":"Folly Hill\nThe hill rises behind the greenhouse, and on its crown stands the folly: a little stone temple, fire-scarred … (7765 chars)
+[   0.655s] pane ← turnEvents #27: {"turn":27,"command":"south","output":"Greenhouse\nGlass panes furred with frost on both sides. Staging benches run the length of the house, and a door in the n… (7823 chars)
+[   0.671s] pane ← turnEvents #28: {"turn":28,"command":"east","output":"Fountain Court\nA paved court before the front door, holding a dry fountain crusted with last summer's leaves. The greenho… (7671 chars)
+[   0.687s] pane ← turnEvents #29: {"turn":29,"command":"south","output":"Gravel Drive\nThe drive curves between bare lime trees, gravel crunching underfoot. The house looms ahead to the north; t… (7357 chars)
+[   0.702s] pane ← turnEvents #30: {"turn":30,"command":"south","output":"Iron Gates\nWrought-iron gates stand open on one hinge apiece, rust freckling the scrollwork. The gravel drive runs north… (8181 chars)
+[   0.717s] pane ← testingSurface: {"forkBoot":true}
+[   0.717s] pane ← turnEvents #31: {"turn":31,"command":"restart","output":"","captures":[],"events":[],"world":{"entities":[{"kind":"item","id":"d01","name":"folly door","token":"d01","location"… (5709 chars)
+[   2.566s] pane → {"type":"eval","id":0,"js":"JSON.stringify({ shim: window.__sharpeeShim, webkitDescriptor: String(JSON.stringify(Object.getOwnPropertyDescriptor(window, \u0027w… (415 chars)
+[   2.574s] pane ← eval: {"id":0,"result":"{\"shim\":{\"strategy\":\"assign\",\"installed\":true},\"webkitDescriptor\":\"{\\\"value\\\":{\\\"messageHandlers\\\":{\\\"turnEvents\\\":{},\… (375 chars)
+[  15.727s] pane ← testingSurface state #1: {"state":{"active":0,"dialogs":[],"collapsed":[]}}
+[  15.736s] testing pane: replay settled — 31 turn records delivered, 1 state post(s), 0 document post(s)
+[  15.737s] pane → {"type":"type","command":"inventory"}
+[  15.742s] pane ← turnEvents #32: {"turn":32,"command":"inventory","output":"","captures":[],"events":[],"world":{"entities":[{"kind":"item","id":"d01","name":"folly door","token":"d01","locatio… (5711 chars)
+[  15.758s] pane ← testingSurface document #1: 21412 chars → /Users/david/repos/spikes/opensilver-ide/out/fernhill.tests.json
+[  15.758s] pane ← testingSurface state #2: {"state":{"active":0,"dialogs":[],"collapsed":[]}}
+[  15.839s] testing pane: document posted after a typed turn (1 new record(s))
+[  16.843s] pane: loading play ← sharpee-play://app/index.html
+[  16.895s] pane ← turnEvents #1: {"turn":1,"command":"look","output":"Iron Gates\nThe cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to… (7248 chars)
+[  16.943s] pane → {"type":"type","command":"look"}
+[  16.991s] pane ← turnEvents #2: {"turn":2,"command":"look","output":"Iron Gates\nWrought-iron gates stand open on one hinge apiece, rust freckling the scrollwork. The gravel drive runs north t… (6881 chars)
+[  17.044s] play pane: typed 'look', turn record #2 arrived
+[  17.044s] pane → {"type":"eval","id":2,"js":"document.querySelectorAll(\u0027[data-turn]\u0027).length"}
+[  17.055s] pane ← eval: {"id":2,"result":9}
+[  18.048s] pane: loading docs ← sharpee-docs://app/index.html
+[  18.079s] pane ← docsTab: {"type":"shown","href":"/chord-writer"}
+[  18.082s] pane ← docsTab: {"type":"ready"}
+[  18.879s] pane ← docsTab: {"type":"loaded","title":"Sharpee — Documentation","navLinks":106,"version":"Chord 3.6.0"}
+[  21.050s] auto: phase 2 done
