@@ -2,6 +2,7 @@
 
 **Created**: 2026-09-13
 **Plan Status**: ACTIVE
+**Superseded by**: docs/work/avalonia-ide-evaluation/plan.md (2026-09-14 — David's rule-18b disposition: "still live". Phase 5 stays CURRENT and Phase 6 PENDING, untouched; this plan remains resumable at exactly the phase it reached.)
 **Overall scope**: An evaluation, not a build. Determine, on evidence, whether OpenSilver (XAML + C# compiled to WebAssembly for the browser, with a **.NET-native desktop host** — not Tauri, not Electron; David's correction, 2026-09-13, see Phase 0) can replace ADR-341's WPF ruling for Chord Writer on Windows — and, since an OpenSilver app is cross-platform, whether it eventually replaces the Swift macOS app too. Output is a filled parity-table column, a decision record with inline evidence, and (only on David's ADR-worthy confirmation) a draft new ADR that supersedes or confirms ADR-341. ADR-341 itself is not edited by this plan.
 **Bounded contexts touched**: N/A — infrastructure/tooling evaluation, no domain behavior change. Product surface judged is the existing macOS `tools/ide/SharpeeIDE` parity table; no Chord change, no `packages/` change.
 **Key domain language**: N/A (see above) — the evaluation's own vocabulary is "capability parity" (native host capability: subprocess, filesystem, toolchain) versus "control parity" (editor feel, custom drawing), and this plan orders work capability-first.

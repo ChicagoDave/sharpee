@@ -1,0 +1,22 @@
+[   0.344s] project pane: 8 file(s) from the real story folder
+[   0.352s] world map: 13 rooms, 12 connections (3 with doors), 2 levels, 1 displaced — from the real world-index output
+[   0.512s] editor: fernhill.story — 1180 lines, 5279 tokens
+[   1.772s] ── drawing model ──
+[   1.872s]   RightTabs: 1 Render(DrawingContext) call(s) after first layout
+[   1.872s]   BottomTabs: 2 Render(DrawingContext) call(s) after first layout
+[   1.872s]   EditorTabs: 2 Render(DrawingContext) call(s) after first layout
+[   1.872s]   WorldMap: 1 Render(DrawingContext) call(s) after first layout
+[   1.872s]   ProjectPane: 2 Render(DrawingContext) call(s) after first layout
+[   1.971s]   after AffectsRender property change: RightTabs 1, EditorTabs 1
+[   2.070s]   after explicit InvalidateVisual: RightTabs 1, BottomTabs 1, EditorTabs 1, WorldMap 1, ProjectPane 1 in 99.28 ms
+[   2.329s]   idle over 8 frame waits, no invalidation: RightTabs 0, BottomTabs 0, EditorTabs 0, WorldMap 0, ProjectPane 0
+[   2.329s] ── ADR-297 live flip ──
+[   2.428s]   before: IsDark=False, railBackground=#DCE0E8, editorBackground=#EFF1F5, accent=#1E66F5
+[   2.434s]   before: RightTabs pixel(200,20) = #DCE0E8
+[   2.533s]   after:  IsDark=True, railBackground=#16171D, editorBackground=#1E1F26, accent=#89B4FA
+[   2.533s]   Apply(22 tokens) took 0.06 ms; drawn surfaces repainted: RightTabs 0, BottomTabs 0, EditorTabs 0, WorldMap 0, ProjectPane 0
+[   2.534s]   after:  RightTabs pixel(200,20) = #16171D — CHANGED
+[   2.534s]   note: the brushes are shared instances. Zero Render calls with changed pixels means the recorded draw operations hold the brush by reference and the compositor re-reads its colour — the flip costs no re-record at all.
+[   2.535s] native menu: 2 top-level item(s) — File (4), Story (2)
+[   2.535s] shell: done
+[   2.535s] shell: holding the window open (--hold), IsDark=False

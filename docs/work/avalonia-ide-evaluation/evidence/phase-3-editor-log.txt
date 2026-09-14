@@ -1,0 +1,12 @@
+[   0.367s] lexer service: ready in 116 ms — packages/chord/src/lexer.ts under the vendored node, kinds=[word,number,string,colon,comma,lparen,rparen,lbracket,rbracket,lbrace,rbrace,compare,punct]
+[   0.439s] loaded: measure-1755.story — 51984 chars, 1756 lines, 8545 tokens, 658 styled runs, 29 comment lines, payload 141162 bytes
+[   0.848s] style pass: 7.96 ms per pass over 50 passes
+[   0.849s] style pass breakdown (medians): lexer 0.49 ms inside node | whole bridge round trip 3.93 ms (serialize + pipe + parse 8545 tokens) | index rebuild 3.86 ms in C#
+[   2.332s] typing: 200 single-character inserts at the end of the document — 1482 ms wall, 7.41 ms per character (min 4.48, median 7.50, p90 9.77, max 12.06)
+[   2.333s] typing: document now 1756 lines, 52184 chars, 8546 tokens
+[   2.342s] select: 897:8–897:30 → from=22348 to=22370 text="phrase out-of-the-wind"; first visible line after scroll-to = 874
+[   2.358s] replace: 2:10–2:30 "The Folly at Fernhil" → "The Folly at Fernhill (edited)"; length 51984 → 51994, hash e097d899
+[   2.366s] undo: length 51984, hash 72cd60f0 — MATCH against the pre-edit document
+[   2.366s] gutter: ShowLineNumbers=True, margins=2
+[   2.367s] wrap: WordWrap=True set live, no reload
+[   2.367s] editor: done
