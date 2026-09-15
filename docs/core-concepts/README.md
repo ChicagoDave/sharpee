@@ -878,6 +878,18 @@ The scope resolver determines which entities are available for commands based on
 
 ## Testing Patterns
 
+### Which harness: transcript-tester or branch-tester
+
+Two runtimes run a story and assert on what it says. They are split by **who authored the story**, not by what is under test.
+
+**`@sharpee/transcript-tester`** owns the `.transcript` text grammar and Sharpee's own hand-authored suites — Dungeo's `wt-*` walkthrough chain and the unit transcripts under `stories/{story}/tests/transcripts/`. It also owns the **assertion core** that both runtimes evaluate their claims with (ADR-340 D1).
+
+**`@sharpee/branch-tester`** owns the tree-document runtime (ADR-307): one test tree per story as `<story-id>.tests.json`, a walker that replays it against a real engine, and the channel-claim and policy-synthesis machinery the walker and the IDE's Testing tab both consume. It imports the assertion core and never copies it (ADR-340 D3).
+
+So a **Chord** feature's runtime test belongs in a tree document, and a **platform** feature exercised through Sharpee's own in-repo stories belongs in a transcript. The failure this prevents is writing a Dungeo transcript for a Chord construct: Dungeo declares none of them, and it is not a design input for Chord work.
+
+Neither harness is where a **structural** invariant goes. "Both consumers read the same projection" is a property of the code, not of a run — it belongs in a package unit test, where it fails at the moment someone adds a second derivation instead of wherever a sampled turn happens to notice.
+
 ### Unit Tests
 - Test individual action phases
 - Mock ActionContext and entities

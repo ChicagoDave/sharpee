@@ -1,6 +1,6 @@
 # ADR-349: The location heading is authored and composed per turn
 
-**Status**: **DRAFT** (written 2026-09-14, session 4ca16b, on `main`, at David's "two ADRs — one for the room name". Raised by his report of a gap in Chord — "a maze puzzle where all the room names are identical" — which the session traced through four successively better framings, each retired by a case he supplied: the maze, the Kitchen at night and in daylight, the Dungeo barrel, and finally the well-room bucket, which is the one the decision is shaped around. **Nothing here is accepted and no implementation is authorized.** The Open Questions section is non-empty, so this document is DRAFT by rule 11a and must not be marked ACCEPTED while it stands.
+**Status**: **ACCEPTED** (2026-09-14, session 483831, at David's "accept 349" — his flip, made with the Open Questions section empty as rule 11a requires. Written 2026-09-14, session 4ca16b, on `main`, at David's "two ADRs — one for the room name". Raised by his report of a gap in Chord — "a maze puzzle where all the room names are identical" — which the session traced through four successively better framings, each retired by a case he supplied: the maze, the Kitchen at night and in daylight, the Dungeo barrel, and finally the well-room bucket, which is the one the decision is shaped around. **The decision is accepted; no implementation is scheduled.** Acceptance settles what is to be built, not when: no plan phase covers this work, and none of the acceptance criteria are discharged.
 
 **`adr-review` ran at 3/13 BLOCKED** (2026-09-14, same session, at David's "let's run 349"), ten findings. The blocker was the one the checklist's newest item exists to catch, and it hit the first document reviewed after that item was added: **D3's "single function" had no home**, because engine depends on stdlib and not the reverse, so a projection in `packages/engine` is unreachable from the `location` channel producer in `packages/stdlib` — and every viable host package was absent from the Scope line, which made AC-2, AC-3, AC-4 and AC-7 undischargeable as written.
 
@@ -16,9 +16,11 @@ The rest are **not folded because they need David's rulings**, and are recorded 
 
 **All six open questions are resolved** (2026-09-14, same session). Q-6 turned out not to be a new decision at all: `packages/lang-en-us/src/assembler/english-assembler.ts:4-7` already declares the English Assembler "the SOLE authority for every cross-cutting correctness concern — article, agreement, **punctuation, whitespace**, reference, and case", so joining the heading's parts was always the assembler's, and the three candidates the question weighed were each about to take it from the component the platform names as its owner. David ruled the parts join as a **Sequence**, not a list. Q-5 he ruled as **refusal**: a heading that can vary is never auto-pinned, the author writes that assertion by hand, and the test is static because a `while` arm is an IR property known before a turn runs. Q-2 then fell out of Q-4 and Q-6 together rather than needing a ruling of its own.
 
-Two criteria were added for the new rulings (AC-10, AC-11), and the Scope line gained `packages/lang-en-us/src/assembler/` and `packages/branch-tester/src/auto-assertion.ts`. The Open Questions section is now empty, which under rule 11a is what makes an ACCEPTED status possible — it does not by itself make the document accepted.)
+Two criteria were added for the new rulings (AC-10, AC-11), and the Scope line gained `packages/lang-en-us/src/assembler/` and `packages/branch-tester/src/auto-assertion.ts`. The Open Questions section is now empty, which under rule 11a is what made the ACCEPTED status above possible.)
 
 **Amended the same session — D15, D16, D16a.** The review's two surviving failures were the Chord IR shape and the boundary contracts, both of which had waited on Q-1. With regions ruled in, they are written: the arms reuse the numbered-key convention `detail` already uses, the loader hands `world-model` closures rather than `IRCondition`s in the shape the snippet and slot gates already use, and `resolve` walks contributors through region membership `WorldModel` already models. Writing them exposed one defect in the decision as it stood: **D7's entity-name fallback was too wide** — a maze whose text lives on its region would have rendered "maze-1, Maze of twisty little passages, all alike", because a silent room contributed its own name. D16a narrows the fallback to "no contributor produced a part at all", and AC-13 is the test that fails without it.
+
+**Amended 2026-09-14 after a second `adr-review`** (session 483831, at David's "run 349"), which scored **11/14 BLOCKED** against the accepted text. Three folds, none of them a change of decision. **D11's `HeadingPart.role` gains `'region'`** — Q-1's ruling made a region a contributor and D11, written before it, never moved. **D16's contract 2 moves the arm predicates off a carrier trait into an entity-keyed registry**, because a trait is serialized and a closure is not: the accepted shape would have come back from a save with every arm unconditional, and AC-14 is now the test for it. **AC-3 is restated as a structural unit test**, after David's objection that its "walkthrough" wording pointed at `transcript-tester` — Sharpee's own hand-authored suite — for a Chord construct; the harness split it turned on is now recorded in `docs/core-concepts/README.md`.
 
 **Scope**: `packages/world-model` (**the projection's home** — D11; `VisibilityBehavior.getDescribableLocation` is already there), `packages/chord` (the `room name` construct — grammar, analyzer, IR), `packages/story-loader` (the registration seam), `packages/engine/src/prose-pipeline/handlers/room.ts` (the heading block), `packages/stdlib/src/channels/standard.ts` and `src/channels/world-helpers.ts` (the `location` channel), `packages/if-domain/src/channels/types.ts` (the channel payload type), `packages/channel-service/src/render-to-string.ts` (`renderStatusLine`, the second status-rendering path), `packages/platform-browser/src/channels/status.ts` (the status renderer), `packages/lang-en-us/src/assembler/` (the English Assembler joins the parts — Q-6), `packages/branch-tester/src/auto-assertion.ts` (the auto-assertion refusal — Q-5), and `packages/stdlib/src/actions/standard/looking/looking-data.ts` (`inVehicle`, which D8 supersedes).
 
@@ -234,11 +236,11 @@ The contract:
 static resolve(observer: IFEntity, world: WorldModel): ReadonlyArray<HeadingPart>;
 
 interface HeadingPart {
-  /** The entity that supplied this text — the place, or the enclosure. */
+  /** The entity that supplied this text — the place, the enclosure, or a region. */
   readonly ownerId: string;
   /** The winning arm's resolved prose, pre-decoration. */
   readonly text: string;
-  readonly role: 'place' | 'enclosure';
+  readonly role: 'place' | 'enclosure' | 'region';
 }
 ```
 
@@ -268,19 +270,23 @@ Analyzer gates: **at most one unconditional arm**, and if present it must be **l
 
 1. **chord → story-loader** is D15's key convention. Chord emits numbered phrase entries and nothing else; the dotted platform vocabulary stays out of the compiler exactly as ADR-255 Interface Contract 3 requires.
 
-2. **story-loader → world-model** is a compile pass in the shape of the ones beside it. `compileLocationNames(world)` walks `ir.entities`, reads each entity's numbered keys, and for any entity with at least one arm adds a carrier trait:
+2. **story-loader → world-model** is a compile pass in the shape of the ones beside it. `compileLocationNames(world)` walks `ir.entities`, reads each entity's numbered keys, and for any entity with at least one arm **registers** them:
 
 ```ts
-// packages/world-model/src/traits/location-name/locationNameTrait.ts
+// packages/world-model/src/location-heading-registry.ts
 interface LocationNameArm {
   /** Absent on the unconditional fallback arm. */
-  readonly holds?: (world: WorldModel) => boolean;
+  readonly holds?: () => boolean;
   readonly text: string;
 }
-class ChordLocationNameTrait { readonly arms: ReadonlyArray<LocationNameArm>; }
+function registerLocationName(entityId: string, arms: ReadonlyArray<LocationNameArm>): void;
+function lookupLocationName(entityId: string): ReadonlyArray<LocationNameArm> | undefined;
+function clearLocationNames(): void;
 ```
 
    **The predicates are closures, not `IRCondition`s.** The loader closes over its own evaluator — `() => this.evaluator.evalCondition(condition, { world })` — exactly as the snippet gate (`loader.ts:2368`) and the slot-entry gate (`:1304`) already do, so `world-model` never learns what an `IRCondition` is and the dependency direction stays intact.
+
+   **A registry keyed by entity id, not a carrier trait, and the reason is the save file.** `IFEntity.toJSON` spreads every trait (`if-entity.ts:433`) and `JSON.stringify` silently drops function-valued fields, while `trait-rehydrator.ts` restores prototypes for registered core types and cannot reconstruct a per-instance closure. Arms stored on a trait would therefore survive a round trip stripped of their conditions, leaving every arm unconditional and the first one winning permanently — a failure that reads as a story bug and is a serialization one. The registry is the shape the platform already uses for exactly this: `registerSnippetGate` keys live gates by `(roomId, marker)` under a written lifecycle contract — "nothing here is serialized — a gate is a live closure and never touches a save file" (`packages/stdlib/src/actions/standard/looking/snippet-gate-registry.ts:20-24`) — and `state-clauses.ts` is the same Map-based, idempotent-last-wins family already living in `world-model`. **The lifecycle is that contract**: the loader re-registers on every story load, a story switch clears first, an in-game RESTORE reuses the registrations already in place, and nothing is written to a save. AC-14 is the test.
 
 3. **world-model → both consumers** is D11's `resolve`, which reads the trait off each contributor D4 names and needs no new lookup to do it: the place and the enclosure come from `getDescribableLocation`, and the region chain from `RoomTrait.regionId` → `RegionTrait.parentRegionId`, both of which `WorldModel` already models (`assignRoom`, `isInRegion`, `WorldModel.ts:487-488`).
 
@@ -296,7 +302,7 @@ None are discharged — nothing is implemented.
 
 2. **AC-2 (D2, state-varying).** A room whose `room name` has a `while` arm renders one heading before the condition holds and the other after, with no look in between forcing it. **SELF-VERIFYING** — pinning the arms as literals fails it.
 
-3. **AC-3 (D3/D3a, parity).** For every turn of a walkthrough, the `room.name` block's content and the `location` channel's value are equal — asserted across the run rather than at one point, so a path that recomputes independently fails somewhere. **SELF-VERIFYING**, and it is what makes D3a enforceable rather than merely intended: the only way to pass it is to have one projection, which is the property FyreVM got from having one `locationName` and Sharpee lost by having three names.
+3. **AC-3 (D3/D3a, parity).** The room-block handler and the `location` channel producer each obtain their text from D11's `resolve` and from nowhere else — a unit test over the two call sites, which is where the property actually lives. **STRUCTURAL**, and it is what makes D3a enforceable rather than merely intended: it fails the moment a second derivation appears, rather than wherever a sampled turn happens to notice. The property is the one FyreVM got from having a single `locationName` and Sharpee lost by having three names. A runtime companion, if one is wanted, is a **branch-tester tree claim** comparing the two channels at a state where both emit — never a `.transcript`: walkthroughs are Sharpee's own hand-authored suite over Dungeo, which declares no `room name` and is not a design input for Chord work (the split is recorded in `docs/core-concepts/README.md`). The earlier wording asked for per-turn equality across a walkthrough, which is not expressible — every assertion form compares one source against a literal (`packages/transcript-tester/src/types.ts:238-244`) — and which D3's own sparsity makes ill-posed, since `location` emits every turn and `room-name` only when a room description is produced.
 
 4. **AC-4 (D4/D5, the bucket).** With the player inside a transparent vehicle, the heading carries the room's text and the vehicle's, the vehicle's arms respond to its own state, and neither room mentions the vehicle in its own source. **REAL-PATH** (rule 13a) — driven through an assembled engine, not a stubbed composer. **Written in TypeScript, not Chord**: ADR-350 is research and not scheduled (David, 2026-09-14), so no Chord vehicle surface exists to write it against. The criterion tests the platform projection, which is what this ADR decides; a Chord fixture becomes possible only if ADR-350 is ever taken up.
 
@@ -317,6 +323,8 @@ None are discharged — nothing is implemented.
 12. **AC-12 (D15, the arms).** A `room name` block with three arms compiles to `<id>.room-name`, `<id>.room-name.2`, `<id>.room-name.3` in declaration order, and the first arm whose condition holds wins at runtime. Two negatives: a second unconditional arm is a compile error, and an unconditional arm followed by a conditional one is a compile error. **MECHANICAL.**
 
 13. **AC-13 (D4/D16a, region contribution and the maze).** A region carrying a `room name` contributes a part to each member room's heading; a member with its own arm renders both parts in place-then-region order; and **a member with no arm of its own renders the region's part alone, not its entity name beside it.** The third is D16a's refinement and the reason the maze can be written once on the region. **SELF-VERIFYING** — the pre-refinement fallback renders "maze-1, Maze of twisty little passages, all alike" and fails.
+
+14. **AC-14 (D2/D16, the round trip).** A room whose `room name` carries a `while` arm renders the arm-appropriate heading **after a save and restore**, not the first arm permanently. **NEGATIVE, SELF-VERIFYING** — it fails for any implementation that stores the arm predicates on a serialized trait, and it is the criterion the registry in D16 contract 2 exists to satisfy.
 
 ## Consequences
 
