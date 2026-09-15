@@ -8,13 +8,19 @@ Six findings folded the same session: D11 names `packages/world-model` as the ho
 
 The rest are **not folded because they need David's rulings**, and are recorded as Q-2 and Q-6: the `location` payload's exact shape, which is the update contract and blocks implementation outright; and **who owns the separator between the place's text and the enclosure's**, which the review found as the language-layer-separation failure and which an earlier turn of the design had answered and then dropped. Folding left the decision unchanged and added no criterion that is not dischargeable within the amended scope.
 
-**Amended the same session — D3a, from FyreVM's precedent.** The review's Q-4 asked whether the two surfaces might ever differ. David answered it as the designer of the system Sharpee's channel model comes from: in FyreVM, `locationName` was **singular**, serving the status line and the inline printout alike. That is now D3a, and it reframed the Context — the fact has accumulated **three** names in Sharpee (`room.name`, `room-name`, `location`) across two channels with two resolvers, which is the same shape ADR-347 recorded for the story's ending and is what GH #468 fell through. Q-4 was replaced by the question D3a raises instead: whether the two channels should collapse back into one.
+**Amended the same session — D3a, from FyreVM's precedent.** The review's Q-4 asked whether the two surfaces might ever differ. David answered it as the designer of the system Sharpee's channel model comes from: in FyreVM, `locationName` was **singular**, serving the status line and the inline printout alike. That is now D3a, and it reframed the Context: the fact is resolved **twice** in Sharpee, once through `getDescribableLocation` for the block and once through `getContainingRoom` for the status channel, which is the shape ADR-347 recorded for the story's ending and is what GH #468 fell through.
 
-**Two more rulings the same session.** **Q-4 — collapse**, "as FyreVM had it": `roomNameChannel` and `locationChannel` become one prose-typed channel for one fact. The ruling stands; what it leaves is a cadence conflict recorded under Q-4, since the scrollback wants sparse-append and the status bar wants always-replace, and a LOOK in an unchanged room must reprint a heading whose value did not change. **Q-1 — a region may contribute**, "at the author's design", which is now D4 and D4b: a region contributes a *part*, never a template and never by default, and because regions nest this lifts the two-contribution cap the ADR had claimed.
+**Two more rulings the same session, and a correction to how the first was asked.** **Q-4 — collapse**, "as FyreVM had it". The ADR then asked *which channel* survives, and David corrected the question: *"channels and text blocks are different things."* He is right, and the ADR had conflated them — `room-name` is the transport that routes the `room.name` block to the scrollback, not a rival derivation of the location. So what collapses is the **derivation and the name**, not the channel count: both surfaces call D11's `resolve`, two channels stay because a scrollback entry and a status value are different surfaces, and the "cadence conflict" a prior revision recorded under Q-4 was an artifact of the bad framing rather than a real constraint. Q-4 and the Context are rewritten accordingly.
 
-**Q-6 remains the one open blocker**, and the explanation David asked for found that it is not a new decision: `packages/lang-en-us/src/assembler/english-assembler.ts:4-7` already declares the English Assembler "the SOLE authority for every cross-cutting correctness concern — article, agreement, **punctuation, whitespace**, reference, and case". Joining the parts is therefore the assembler's by a contract that predates this ADR, and the three candidates the question weighed were all about to take it from the component the platform names as its owner.)
+**Q-1 — a region may contribute**, "at the author's design", which is now D4 and D4b: a region contributes a *part*, never a template and never by default, and because regions nest this lifts the two-contribution cap the ADR had claimed.
 
-**Scope**: `packages/world-model` (**the projection's home** — D11; `VisibilityBehavior.getDescribableLocation` is already there), `packages/chord` (the `room name` construct — grammar, analyzer, IR), `packages/story-loader` (the registration seam), `packages/engine/src/prose-pipeline/handlers/room.ts` (the heading block), `packages/stdlib/src/channels/standard.ts` and `src/channels/world-helpers.ts` (the `location` channel), `packages/if-domain/src/channels/types.ts` (the channel payload type), `packages/channel-service/src/render-to-string.ts` (`renderStatusLine`, the second status-rendering path), `packages/platform-browser/src/channels/status.ts` (the status renderer), and `packages/stdlib/src/actions/standard/looking/looking-data.ts` (`inVehicle`, which D8 supersedes).
+**All six open questions are resolved** (2026-09-14, same session). Q-6 turned out not to be a new decision at all: `packages/lang-en-us/src/assembler/english-assembler.ts:4-7` already declares the English Assembler "the SOLE authority for every cross-cutting correctness concern — article, agreement, **punctuation, whitespace**, reference, and case", so joining the heading's parts was always the assembler's, and the three candidates the question weighed were each about to take it from the component the platform names as its owner. David ruled the parts join as a **Sequence**, not a list. Q-5 he ruled as **refusal**: a heading that can vary is never auto-pinned, the author writes that assertion by hand, and the test is static because a `while` arm is an IR property known before a turn runs. Q-2 then fell out of Q-4 and Q-6 together rather than needing a ruling of its own.
+
+Two criteria were added for the new rulings (AC-10, AC-11), and the Scope line gained `packages/lang-en-us/src/assembler/` and `packages/branch-tester/src/auto-assertion.ts`. The Open Questions section is now empty, which under rule 11a is what makes an ACCEPTED status possible — it does not by itself make the document accepted.)
+
+**Amended the same session — D15, D16, D16a.** The review's two surviving failures were the Chord IR shape and the boundary contracts, both of which had waited on Q-1. With regions ruled in, they are written: the arms reuse the numbered-key convention `detail` already uses, the loader hands `world-model` closures rather than `IRCondition`s in the shape the snippet and slot gates already use, and `resolve` walks contributors through region membership `WorldModel` already models. Writing them exposed one defect in the decision as it stood: **D7's entity-name fallback was too wide** — a maze whose text lives on its region would have rendered "maze-1, Maze of twisty little passages, all alike", because a silent room contributed its own name. D16a narrows the fallback to "no contributor produced a part at all", and AC-13 is the test that fails without it.
+
+**Scope**: `packages/world-model` (**the projection's home** — D11; `VisibilityBehavior.getDescribableLocation` is already there), `packages/chord` (the `room name` construct — grammar, analyzer, IR), `packages/story-loader` (the registration seam), `packages/engine/src/prose-pipeline/handlers/room.ts` (the heading block), `packages/stdlib/src/channels/standard.ts` and `src/channels/world-helpers.ts` (the `location` channel), `packages/if-domain/src/channels/types.ts` (the channel payload type), `packages/channel-service/src/render-to-string.ts` (`renderStatusLine`, the second status-rendering path), `packages/platform-browser/src/channels/status.ts` (the status renderer), `packages/lang-en-us/src/assembler/` (the English Assembler joins the parts — Q-6), `packages/branch-tester/src/auto-assertion.ts` (the auto-assertion refusal — Q-5), and `packages/stdlib/src/actions/standard/looking/looking-data.ts` (`inVehicle`, which D8 supersedes).
 
 ## Date: 2026-09-14
 
@@ -179,7 +185,7 @@ packages/stdlib/src/channels/standard.ts:721  ROOM_NAME: 'room-name'    // prose
 packages/stdlib/src/channels/standard.ts:730  LOCATION:  'location'     // status channel id
 ```
 
-and two channels — `roomNameChannel` (`:181`, prose, `json`/`append`/`sparse`) and `locationChannel` (`:269-275`, status, `text`/`replace`/`always`) — carrying the same fact by two routes from two different resolvers.
+Of those, `room.name` is a block key and `room-name` is the channel that transports that block — one fact, one route. The split that matters is the **third**: `locationChannel` (`:269-275`, status, `text`/`replace`/`always`) derives the location independently, through `getContainingRoom`, while the block derives it through `getDescribableLocation`. Two resolvers, one fact.
 
 That is the shape ADR-347 recorded for the story's ending, where one fact had accumulated four namings and the consumers disagreed. Here it has three, and GH #468 is the disagreement it permitted. The divergence is not an implementation slip on top of a sound model; it is what a split concept produces eventually, and the original design did not have the split.
 
@@ -240,6 +246,48 @@ It returns *parts*, not a joined string, because who joins them is Q-6 and the p
 
 **D12 — This is a one-shot cutover, with no compatibility path.** The `location` channel's payload changes shape and the old `string` form is not kept alongside it. No story is affected (D7), and the repository's stance is that back-compat shims are not written. A client that renders `location` moves in the same change or breaks loudly, which is the intended failure mode.
 
+**D13 — The English Assembler joins the parts, as a `Sequence`.** D11's `resolve` returns parts and never a joined string; realizing them into text is the locale's job, and the assembler already holds it by written contract — "the SOLE authority for every cross-cutting correctness concern — article, agreement, **punctuation, whitespace**, reference, and case" (`packages/lang-en-us/src/assembler/english-assembler.ts:4-7`). Parts are positional and take no conjunction: "Top of Well, in the bucket", never "Top of Well and the bucket". A `PhraseList` would impose ADR-190's comma-and-and list semantics, which reads an enclosure as a second item in a list of places. This is locale-owned realization, not a template, so D9 stands untouched.
+
+**D14 — A heading that can vary is never auto-pinned.** The `room-name-and-description` auto-assertion policy refuses to synthesize an assertion for a room whose `room name` carries a `while` arm, and the author writes it by hand. **The test is static**: a conditional arm is an IR property, known before a turn runs, so the refusal needs no heuristic and no repeated run. An unconditional `room name`, or a room with none, auto-pins exactly as today. Refusal rather than a warning, because an auto-pinned varying heading produces a test that passes for whichever state it was recorded in and later fails in a way that reads as a regression.
+
+**D15 — The IR carries the arms under the existing numbered-key convention; no new IR structure.** Chord already stores multi-arm conditional entity phrases in the flat phrase table by numbering the arms, and `room name` uses that idiom unchanged:
+
+```ts
+// the shape already used for `detail` — packages/story-loader/src/loader.ts:2453-2456
+for (let i = 1; ; i++) {
+  const key = i === 1 ? `${irEntity.id}.detail` : `${irEntity.id}.detail.${i}`;
+  const phrase = table[key];
+  if (!phrase) break;
+```
+
+So the arms live at `<entityId>.room-name`, `<entityId>.room-name.2`, `<entityId>.room-name.3`, … — first unsuffixed, the rest numbered from 2 in declaration order, read until the first gap. Each is an ordinary `IRPhrase` carrying its optional `condition`. `IREntity` gains no field and `IRPhrases` gains no shape.
+
+Analyzer gates: **at most one unconditional arm**, and if present it must be **last** (an unconditional arm before a conditional one makes the later arm dead, which is a compile error rather than a silent no-op); and a `room name` block is legal on a room, on an enterable enclosure, and on a region, which is every block kind D4 names as a contributor.
+
+**D16 — The three boundary contracts.**
+
+1. **chord → story-loader** is D15's key convention. Chord emits numbered phrase entries and nothing else; the dotted platform vocabulary stays out of the compiler exactly as ADR-255 Interface Contract 3 requires.
+
+2. **story-loader → world-model** is a compile pass in the shape of the ones beside it. `compileLocationNames(world)` walks `ir.entities`, reads each entity's numbered keys, and for any entity with at least one arm adds a carrier trait:
+
+```ts
+// packages/world-model/src/traits/location-name/locationNameTrait.ts
+interface LocationNameArm {
+  /** Absent on the unconditional fallback arm. */
+  readonly holds?: (world: WorldModel) => boolean;
+  readonly text: string;
+}
+class ChordLocationNameTrait { readonly arms: ReadonlyArray<LocationNameArm>; }
+```
+
+   **The predicates are closures, not `IRCondition`s.** The loader closes over its own evaluator — `() => this.evaluator.evalCondition(condition, { world })` — exactly as the snippet gate (`loader.ts:2368`) and the slot-entry gate (`:1304`) already do, so `world-model` never learns what an `IRCondition` is and the dependency direction stays intact.
+
+3. **world-model → both consumers** is D11's `resolve`, which reads the trait off each contributor D4 names and needs no new lookup to do it: the place and the enclosure come from `getDescribableLocation`, and the region chain from `RoomTrait.regionId` → `RegionTrait.parentRegionId`, both of which `WorldModel` already models (`assignRoom`, `isInRegion`, `WorldModel.ts:487-488`).
+
+**D16a — Part order, and a refinement D7 needs.** Parts are emitted **place, then enclosure, then regions innermost-to-outermost**.
+
+And D7's fallback is narrower than it was written: **the entity-name fallback applies only when no contributor produced a part at all.** As first written — "a room with no `room name` falls back to its entity name" — a maze whose text lives on the region would render "maze-1, Maze of twisty little passages, all alike", because the room's silence became a part. A silent contributor contributes nothing; the entity name appears only when the whole heading would otherwise be empty. This is what makes the region form of the maze work, and it is the reason Q-1's ruling could not be folded without touching D7.
+
 ## Acceptance Criteria
 
 None are discharged — nothing is implemented.
@@ -262,6 +310,14 @@ None are discharged — nothing is implemented.
 
 9. **AC-9 (D1/D7, every arm fails).** A `room name` block whose arms all carry conditions, none of which hold, falls back to the entity name exactly as an absent block does — it does not render empty, and it does not render the last arm. Paired with the positive case: an unconditional arm present alongside failing conditional ones wins. **NEGATIVE, MECHANICAL.**
 
+10. **AC-10 (Q-6, joining).** A heading with a place part and an enclosure part renders with the assembler's punctuation and no conjunction — "Top of Well, in the bucket", not "Top of Well and the bucket" — and a heading with one part renders with no separator at all. **MECHANICAL**, and it fails if the parts are realized as a `PhraseList`.
+
+11. **AC-11 (Q-5, auto-assertion refusal).** A room whose `room name` carries a `while` arm is not auto-pinned under `room-name-and-description`; a room whose `room name` is unconditional, and a room with none, are pinned exactly as today. **SELF-VERIFYING, and probed in both directions** — removing the refusal pins the varying heading, and over-applying it stops pinning the unconditional ones.
+
+12. **AC-12 (D15, the arms).** A `room name` block with three arms compiles to `<id>.room-name`, `<id>.room-name.2`, `<id>.room-name.3` in declaration order, and the first arm whose condition holds wins at runtime. Two negatives: a second unconditional arm is a compile error, and an unconditional arm followed by a conditional one is a compile error. **MECHANICAL.**
+
+13. **AC-13 (D4/D16a, region contribution and the maze).** A region carrying a `room name` contributes a part to each member room's heading; a member with its own arm renders both parts in place-then-region order; and **a member with no arm of its own renders the region's part alone, not its entity name beside it.** The third is D16a's refinement and the reason the maze can be written once on the region. **SELF-VERIFYING** — the pre-refinement fallback renders "maze-1, Maze of twisty little passages, all alike" and fails.
+
 ## Consequences
 
 - **The entity name stops being what the player reads, and keeps being what everything else reads.** GO TO, the map editor, transcript assertions keyed on a room name, and the `--introspect` manifest all continue to see `maze-5`. For a maze that is arguably correct; it is stated here so it is a decision rather than a discovery.
@@ -272,24 +328,11 @@ None are discharged — nothing is implemented.
 
 ## Open Questions
 
-1. **Does a region carry a `room name` for its members?** David: "I wouldn't use any scopes for this … I might let region into the mix somehow, but not trait." The maze is the case for it — twelve identical blocks is exactly the repetition a region removes, and fernhill's regions already carry behavior member rooms inherit (`fernhill.story:28-45`). Trait is ruled out. Unresolved: region in v1, region later, or never.
+None. All six were resolved the same session the ADR was written — five by David's rulings (Q-1, Q-4, Q-5, Q-6, and Q-2 falling out of Q-4 and Q-6 together), and Q-3 by inspection:
 
-2. **What is the `location` channel's new payload, exactly?** `TextContent[]` directly, the `ProseEntry` shape the prose channels use (`standard.ts:162-177`), or a new shape. This determines how far the change reaches into clients.
+**Q-3 — the no-lid container bug (GH #467) — does not block this ADR.** D4a and D5 are expressed in terms of what `getDescribableLocation` returns, not in terms of which traits an enclosure carries, so they are correct whether or not a lidless container is fixed to report itself as transparent. If #467 is fixed, such a container starts occupying the enclosure slot and contributes a part; if it is not, it occupies the place slot and supplies the whole heading. Either is well-defined here, so the two can ship in either order.
 
-3. **Is the no-lid container bug in scope? (GH #467)** A `CONTAINER` with no `OpenableTrait` falls through to the closed branch (`VisibilityBehavior.ts:581-595`), so the coal-mine basket hides the Shaft Room from a player sitting in it. "No lid" should mean "always open." Fixing it changes the basket's behavior and brings it under D5; leaving it out means D5 covers vehicles and openable containers but not lidless ones. Now filed separately as **GH #467** with a reproduction, so it will be fixed on its own schedule — the question here is only whether this ADR waits on it.
-
-4. **RESOLVED — the channels collapse, as FyreVM had it** (David, 2026-09-14: "Q4 collapse as FyreVM had it"). `roomNameChannel` and `locationChannel` become one prose-typed channel for one fact, restoring the singular `locationName` the Context describes. Two details the collapse must settle, neither of which reopens the ruling:
-   - **The name.** `location-name` matches FyreVM's `locationName` under Sharpee's kebab channel convention; `location` keeps one of the two existing ids. Either way `room-name` goes.
-   - **The cadence conflict, which is real.** The two channels differ in emission as well as content: prose channels are `append`/`sparse` and route to the scrollback (`createProseChannelRenderers(layout.main, PROSE_CHANNEL_IDS, …)`, `packages/platform-browser/src/channels/index.ts:182`), while `location` is `replace`/`always` and routes to the status slot (`:198`). One channel cannot be both. Change-detection in the client is *not* sufficient — LOOK in an unchanged room must reprint the heading while the value has not changed — so the collapsed channel needs a way to say "print this now" alongside "this is where you are." Whether that is one channel carrying both signals, or the channel carrying state while the inline heading stays a block, is the implementation question the collapse leaves.
-
-5. **What happens to transcript assertions that match on a room name?** `auto-assertion: room-name-and-description` (`packages/chord/src/ir.ts:228`) pins the heading. Under D2 the heading can now vary with world state, which makes that policy's output state-dependent in a way it was not. Whether that is a feature, a gate, or a diagnostic is undecided.
-
-6. **Who owns the separator between the place's part and the enclosure's?** D4 says there are two contributions and never says what sits between "Top of Well" and "in the bucket" — a comma, a space, a dash, a line break. This is user-facing text, so it has a language-layer home somewhere, and the candidates differ in what they allow:
-   - **the client**, matching ADR-174's span-and-class model and letting a status bar and a title line punctuate differently (block-to-block separators already work this way — `renderToString`'s "smart separators between same-key vs different-key block transitions", `packages/channel-service/src/render-to-string.ts`) — but this separator is *inside* one block, so that machinery does not reach it;
-   - **the author**, by writing the leading punctuation into the enclosure's own arm (`, in the bucket`), which is simple and makes a part unusable in a position its punctuation does not suit;
-   - **`lang-{locale}`**, as a core template, which is where platform-authored user-facing text belongs — but D9 deliberately keeps this decision out of the core-template surface.
-
-   D11's `resolve` deliberately returns parts rather than a joined string so this stays open; nothing can be implemented past the projection until it is answered. **Found by `adr-review`, 2026-09-14**, as the language-layer-separation failure.
+The remaining decisions are recorded as D1 through D16a above.
 
 ## What would falsify this
 
