@@ -1,0 +1,12 @@
+AdapterCreated: handleType=Avalonia.Controls.Win.WebView2.WebView2HwndAdapter
+  CoreWebView2=0x7d000120000
+  QI ICoreWebView2_3 hr=0x00000000
+  SetVirtualHostNameToFolderMapping("sharpee-panes.invalid", "C:/Users/David/spikes/avalonia-ide/out/vhost", ALLOW) => hr=0x00000000
+adapter: type=WebView2 engine=Blink version=153.0.4234.32
+virtual host mapping applied: True
+navigating to https://sharpee-panes.invalid/index.html  (no HttpListener in this process)
+nav completed: WebViewNavigationCompletedEventArgs
+document.title   => "PHASE7-VIRTUAL-HOST-OK"
+location.origin  => "https://sharpee-panes.invalid"
+marker           => "PHASE7-VIRTUAL-HOST-OK"
+h1 text          => "served from the host's own folder"

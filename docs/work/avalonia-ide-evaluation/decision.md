@@ -161,3 +161,57 @@ Grounds, in order of weight:
 - **GH #458** (the orphaned `~/Documents/OpenSilver Capability Check/` fixture) — read by Phase 2, not adopted; David's disposition, unchanged.
 - **D3's contract module should own the post door** so panes stop naming `window.webkit` — true under every shape evaluated, and load-bearing under this one.
 - **The felt sessions** — the whole shell against the shipping Mac app, and typing in the editor window. Both are David's, and §7's first condition is one of them.
+
+---
+
+## 12. Phase 7 addendum — confirmed on Windows, with one correction
+
+**Added 2026-09-14, session 6c19b3.** Full record and evidence: `phase-7-windows-check.md`.
+This is the "confirmed on Windows" addendum §11 said Phase 7 owed this record.
+
+**The column confirms.** `PaneHost` built on Windows 11 (x64) with 0 warnings and 0 errors
+against the same pins — Avalonia 12.1.2, `Avalonia.Controls.WebView` 12.1.0,
+`Avalonia.AvaloniaEdit` 12.0.0, `vpk` 1.2.0 — on .NET SDK 10.0.401 rather than the pinned
+10.0.300 (recorded as a deviation, not waved through). The WebView2 backend reports
+`type=WebView2 engine=Blink version=153.0.4234.32`.
+
+**The correction is in Avalonia's favour, and it moves an ADR-341 ruling.** §5 of this
+record concluded from Phase 1 that there is no response-supply or custom-scheme door and
+that the panes must be served over a token-scoped loopback origin. That conclusion is
+**correct for macOS and wrong for Windows**:
+
+- Avalonia's *own* API is Request-only on both platforms — the custom-scheme navigation
+  fails identically here, so nothing about Avalonia's surface changed.
+- But `NativeWebView.AdapterCreated` hands out a **public** `IWindowsWebView2PlatformHandle`
+  carrying a live `CoreWebView2` pointer, which `QueryInterface`s clean for `ICoreWebView2`,
+  `_2`, `_3` and `_22`.
+- `ICoreWebView2_3::SetVirtualHostNameToFolderMapping` was **called for real** (`hr=0x0`) and
+  a pane was served from `https://sharpee-panes.invalid/index.html` off a host-owned folder,
+  **with no `HttpListener` in the process**.
+
+So the loopback fallback is a macOS necessity, not an O6 necessity. Windows gets a stable,
+port-free, token-free origin. **ADR-341 D3 therefore answers differently per platform**,
+which is the specific outcome D3 exists to prevent — and it is a gap in Avalonia's
+abstraction rather than in either platform. Whether a shipping implementation writes the
+per-platform door behind one seam or standardizes on loopback for uniformity is a decision
+this addendum does not make; D3's contract module is where it belongs.
+
+**Velopack inverts too.** 0-for-1 on macOS (§5: the bundle cannot be sealed) becomes 1-for-1
+here: `Setup.exe` at 56,446,248 bytes, a portable zip, a full nupkg, all in 8.4 seconds, and
+a **working delta channel** — 72,533 bytes against a 51,984,680-byte full package.
+`--azureTrustedSignFile` exists in `vpk` 1.2.0 and the code-sign step runs as its own phase.
+Still owed: an actually-signed build (needs David's Azure Trusted Signing identity) and an
+actual install run. Also learned: `vpk` hard-refuses to pack an app whose `Main` does not
+call `VelopackApp.Build().Run()`, verified by assembly inspection.
+
+**The real Windows gap is the toolchain, not the toolkit.** `tools/ide/vendor-toolchain.sh:298`
+writes `bin/sharpee` as `#!/bin/sh`; the shim requires `$root/node/bin/node`
+(`vendor-toolchain.sh:311`), a POSIX layout Windows Node does not use; and
+`tools/ide/vendor/node/` holds only `darwin-arm64` and `darwin-x64` tarballs, so **there is
+no Windows Node asset to vendor at all**. GH #448 sits downstream. This work is unpriced, on
+the critical path, and would be identical under WPF — it is not an Avalonia cost.
+
+**Not established here**: the play and testing panes (fernhill's browser bundle has never
+been built on this clone, which is entangled with the toolchain gap above — the docs pane
+did complete its round trip, 200 with 106 nav links and 3 posts), a signed installer, and any
+install run.

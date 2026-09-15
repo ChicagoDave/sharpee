@@ -1,0 +1,40 @@
+[   0.393s] environment requested: args=Avalonia.Platform.WindowsWebView2EnvironmentRequestedEventArgs
+[   0.632s] ── stage 0: backend ──
+[   0.634s] adapter: type=WebView2 engine=Blink version=153.0.4234.32
+[   0.635s] platform handle: null (-)
+[   0.635s] windows door: handleIsWebView2=False handleIsWebView1=False
+[   0.638s] WebResourceRequestedEventArgs public members: .ctor, Request
+[   0.638s] WebViewWebResourceRequest public members: .ctor, Headers, Method, ToString, Uri
+[   0.640s] ── stage 1: custom scheme + WebResourceRequested (the kill question) ──
+[   1.415s] nav started: sharpee-play://app/index-testing.html
+[   1.454s] nav completed: success=False uri=about:blank
+[   4.658s] custom scheme: navigationSucceeded=False webResourceRequestedFired=0 title="" href="about:blank"
+[   4.664s] ── stage 2: token-scoped loopback origin ──
+[   4.716s] origin: http://127.0.0.1:49700/<token>/  (token ac3d42dd…)
+[   4.767s] origin: untokened request → 403
+[   4.773s] nav started: http://127.0.0.1:49700/ac3d42dd6d7d466d9d1b7d3d8eb8adb3/sharpee-play/index-testing.html
+[   4.791s] WebResourceRequested #1: Avalonia.Controls.WebResourceRequestedEventArgs
+[   4.902s] nav completed: success=False uri=http://127.0.0.1:49700/ac3d42dd6d7d466d9d1b7d3d8eb8adb3/sharpee-play/index-testing.html
+[  16.774s]   origin ← -//not-the-token/sharpee-play/index.html → 403 (9 bytes)
+[  16.775s]   origin ← sharpee-play/index-testing.html → 404 (0 bytes)
+[  16.776s] testing pane: shim="null"
+[  16.776s] testing pane: boot="{\"session\":false,\"sessionDocChars\":0,\"surfaceIsReal\":false,\"surfaceKeys\":\"\",\"surfaceScriptTags\":\"inline,inline\",\"cards\":0,\"anchors\":0,\"input\":false}"
+[  16.777s] testing pane: 0 turn record(s), 0 surface post(s), document posted=False
+[  16.777s] host → page: type 'inventory' → null
+[  20.781s] after typed turn: 0 turn record(s), document posted=False
+[  20.790s] nav started: http://127.0.0.1:49700/ac3d42dd6d7d466d9d1b7d3d8eb8adb3/sharpee-play/index.html
+[  20.792s] WebResourceRequested #2: Avalonia.Controls.WebResourceRequestedEventArgs
+[  20.809s] nav completed: success=False uri=http://127.0.0.1:49700/ac3d42dd6d7d466d9d1b7d3d8eb8adb3/sharpee-play/index.html
+[  24.795s] play pane: anchors=0 localStorage across navigation=null
+[  24.800s] nav started: http://127.0.0.1:49700/ac3d42dd6d7d466d9d1b7d3d8eb8adb3/sharpee-docs/index.html
+[  24.802s] WebResourceRequested #3: Avalonia.Controls.WebResourceRequestedEventArgs
+[  24.898s] nav completed: success=True uri=http://127.0.0.1:49700/ac3d42dd6d7d466d9d1b7d3d8eb8adb3/sharpee-docs/index.html
+[  25.036s] pane ← docsTab: {"type":"shown","href":"/chord-writer"}
+[  25.037s] pane ← docsTab: {"type":"ready"}
+[  25.702s] pane ← docsTab: {"type":"loaded","title":"Sharpee — Documentation","navLinks":106,"version":"Chord 3.6.0"}
+[  30.799s] docs pane: 3 post(s)
+[  30.803s] origin served: - 403 × 2
+[  30.804s] origin served: sharpee-docs 200 × 5
+[  30.804s] origin served: sharpee-play 404 × 2
+[  30.804s] origin served: 9 request(s) total
+[  30.805s] probe: done
