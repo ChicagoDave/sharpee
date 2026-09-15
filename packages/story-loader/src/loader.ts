@@ -137,6 +137,9 @@ import {
   WearableTrait,
   WorldModel,
   type EventChainHandler,
+  registerLocationName,
+  clearLocationNames,
+  type LocationNameArm,
 } from '@sharpee/world-model';
 import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
@@ -688,6 +691,10 @@ export class ChordStory implements Story {
     // Z3b: gated `detail` blocks — shipped trait fields where the condition
     // matches them, a loader-owned state-clause provider for everything else.
     this.compileDetailChannels(world);
+
+    // The authored location heading: `room name` arms become live predicates in
+    // world-model's registry, never trait data (ADR-349 D16 contract 2).
+    this.compileLocationNames(world);
 
     // ADR-230 D3c / Phase 9a: stamp trait-config entity references (tools,
     // keys) now that every entity exists (forward references resolve here).
@@ -2441,6 +2448,53 @@ export class ChordStory implements Story {
    *
    * @param world the world being built (the provider closes over it)
    */
+  /**
+   * Register each entity's `room name` arms as live predicates (ADR-349 D15,
+   * D16 contract 2).
+   *
+   * The arms arrive as the analyzer's numbered phrase keys — `<id>.room-name`,
+   * `<id>.room-name.2`, … read until the first gap, exactly as `detail` keys are
+   * read. Each conditional arm becomes a closure over this loader's own
+   * evaluator, the same shape the snippet and slot-entry gates already use, so
+   * `world-model` never learns what an `IRCondition` is and nothing
+   * unserializable is ever asked to survive a save.
+   *
+   * Registration is keyed by WORLD entity id, because the projection resolves
+   * its contributors from the world. The registry is cleared first: a second
+   * story loaded into the same process reuses entity ids, and a stale arm would
+   * otherwise answer for an entity whose own story never declared one. An
+   * in-game RESTORE does not come through here, which is what leaves the live
+   * registrations in place (the lifecycle contract in
+   * `world-model/src/location-heading-registry.ts`).
+   *
+   * @param world the world being built — each conditional arm closes over it
+   */
+  private compileLocationNames(world: WorldModel): void {
+    clearLocationNames();
+    const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
+
+    for (const irEntity of this.ir.entities) {
+      const worldId = this.worldIds.get(irEntity.id);
+      if (!worldId) continue;
+
+      const arms: LocationNameArm[] = [];
+      for (let i = 1; ; i++) {
+        const key = i === 1 ? `${irEntity.id}.room-name` : `${irEntity.id}.room-name.${i}`;
+        const phrase = table[key];
+        if (!phrase) break;
+        const text = phrase.variants[0]?.text ?? '';
+        const condition = phrase.condition;
+        arms.push(
+          condition
+            ? { holds: () => this.evaluator.evalCondition(condition, { world }), text }
+            : { text },
+        );
+      }
+
+      if (arms.length > 0) registerLocationName(worldId, arms);
+    }
+  }
+
   private compileDetailChannels(world: WorldModel): void {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
     const providerSpecs = new Map<string, Array<{ irId: string; condition: IRCondition; text: string }>>();

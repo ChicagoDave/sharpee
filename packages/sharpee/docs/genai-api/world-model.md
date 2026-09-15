@@ -2366,6 +2366,72 @@ export declare function registerClauseContributor(traitType: string, fn: ClauseC
 export declare function getStateClauses(entity: IFEntity): string[];
 ```
 
+### location-heading-registry
+
+```typescript
+/**
+ * @file Registered location-heading arms (ADR-349 D16 contract 2).
+ *
+ * A `room name` block's arms are predicates plus prose. The predicate is a
+ * closure only the runtime that loaded the story can evaluate, so it is
+ * registered here per entity rather than stored on the entity: `IFEntity.toJSON`
+ * spreads every trait (`entities/if-entity.ts:433`) and `JSON.stringify` drops
+ * function-valued fields, while the trait rehydrator restores prototypes for
+ * registered core types and cannot reconstruct a per-instance closure. Arms on a
+ * trait would therefore come back from a save with every condition gone, leaving
+ * the first arm winning permanently — a serialization failure that reads as a
+ * story bug.
+ *
+ * Public interface: `registerLocationName`, `clearLocationNames` (loader and test
+ * lifecycle), `lookupLocationName` (the projection's read side), `LocationNameArm`.
+ *
+ * Owner context: `@sharpee/world-model` — the projection in
+ * `world/LocationHeadingBehavior.ts` is its one consumer. Modeled on the shape
+ * `state-clauses.ts` and stdlib's snippet-gate registry already use: Map-based,
+ * keyed, idempotent last-wins.
+ *
+ * LIFECYCLE CONTRACT: nothing here is serialized — an arm is a live closure and
+ * never touches a save file. The loader re-registers on every story load, so a
+ * fresh process's load rebuilds the registry and an in-game RESTORE reuses the
+ * registrations already in place. A story switch inside one process clears first.
+ */
+/**
+ * One arm of an entity's `room name` block: the prose, and the condition it
+ * renders under. A thunk, not a world-taking predicate — the registering runtime
+ * closes over its own world access and condition evaluator, so this package
+ * never learns what a story-language condition is.
+ */
+export interface LocationNameArm {
+    /** Absent on the unconditional fallback arm, which always holds. */
+    readonly holds?: () => boolean;
+    /** The arm's resolved prose, pre-decoration. */
+    readonly text: string;
+}
+/**
+ * Register (or replace) one entity's location-heading arms. Idempotent — the
+ * latest registration wins, so a loader re-registering on a fresh load replaces
+ * rather than stacking.
+ *
+ * @param entityId the room, enclosure, or region the arms belong to
+ * @param entityArms the arms in declaration order; the first whose condition
+ *   holds is the one that renders
+ */
+export declare function registerLocationName(entityId: string, entityArms: ReadonlyArray<LocationNameArm>): void;
+/**
+ * The projection's read side: one entity's registered arms, if any.
+ *
+ * @param entityId the entity being resolved
+ * @returns the arms, or undefined when the entity declared no `room name`
+ *   (the common case — most entities have none)
+ */
+export declare function lookupLocationName(entityId: string): ReadonlyArray<LocationNameArm> | undefined;
+/**
+ * Drop every registration. Called on a story switch inside one process, and
+ * between tests; never on an in-game RESTORE, which reuses what is registered.
+ */
+export declare function clearLocationNames(): void;
+```
+
 ### traits/identity/identityTrait
 
 ```typescript
@@ -8305,6 +8371,68 @@ export declare class ReachabilityBehavior extends Behavior {
      * @returns Array of entities that are physically reachable
      */
     static getReachable(observer: IFEntity, world: WorldModel): IFEntity[];
+}
+```
+
+### world/LocationHeadingBehavior
+
+```typescript
+/**
+ * @file The location heading, projected per turn (ADR-349 D3, D11, D16a).
+ *
+ * The heading a player reads above a room description, and the one the status
+ * line shows, are the same fact. This is the single function that computes it,
+ * and both surfaces call it — the room block in the engine's prose pipeline and
+ * the `location` channel producer in stdlib — so there is no second derivation
+ * for them to disagree with (D3). It lives here because `world-model` is the one
+ * package both can reach: engine depends on stdlib and not the reverse, and
+ * `getDescribableLocation`, whose answer this builds on, is already next door.
+ *
+ * It returns *parts*, never a joined string. Who joins them, and with what
+ * punctuation, is the locale's authority (D13 — the English Assembler), and a
+ * projection that pre-joined them would take that from the component the platform
+ * names as its owner.
+ *
+ * Public interface: `LocationHeadingBehavior.resolve`, `HeadingPart`.
+ * Owner context: `@sharpee/world-model` — world / projections.
+ */
+import { IFEntity } from '../entities/if-entity.js';
+import { WorldModel } from './WorldModel.js';
+/**
+ * One contributor's text for the current heading. A heading is an ordered list
+ * of these; an empty list means no contributor spoke (D16a), which is the
+ * consumer's signal to render what it renders today.
+ */
+export interface HeadingPart {
+    /** The entity that supplied this text — the place, the enclosure, or a region. */
+    readonly ownerId: string;
+    /** The winning arm's resolved prose, pre-decoration. */
+    readonly text: string;
+    readonly role: 'place' | 'enclosure' | 'region';
+}
+/**
+ * The location heading, as the ordered parts its contributors supplied.
+ *
+ * INVARIANT: the place is resolved through `getDescribableLocation` and never
+ * through `getContainingRoom` (D4a) — the latter walks past an opaque vehicle to
+ * the room around it, which is the divergence between the heading and the status
+ * line that this projection exists to end (GH #468).
+ */
+export declare class LocationHeadingBehavior {
+    /**
+     * Compute the observer's location heading for this turn.
+     *
+     * Contributors, in the order their parts are emitted (D16a): the place, then
+     * at most one enclosure, then the place's regions innermost-to-outermost. A
+     * contributor with no registered `room name`, or whose arms all fail, supplies
+     * nothing and is simply absent from the result.
+     *
+     * @param observer the entity whose location is being named — the player
+     * @param world the world to read the observer's location and regions from
+     * @returns the parts in emission order; empty when no contributor spoke, which
+     *   under D16a is when the consumer falls back to the entity's own name
+     */
+    static resolve(observer: IFEntity, world: WorldModel): ReadonlyArray<HeadingPart>;
 }
 ```
 

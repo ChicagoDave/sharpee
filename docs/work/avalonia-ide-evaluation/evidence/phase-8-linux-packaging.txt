@@ -1,0 +1,43 @@
+Phase 8 (Linux check), question 2 — vpk on Linux.
+Ubuntu 24.04.4 LTS, linux-arm64, .NET SDK 10.0.401, Velopack vpk 1.2.0,
+container image built from the phase's own Dockerfile (Xvfb, libwebkit2gtk-4.1 2.52.6,
+squashfs-tools, zstd). Subject: PaneHost, copied from the Phase 1-6 spike with the
+one packaging change vpk requires (VelopackApp.Build().Run() in Main) and nothing else.
+
+publish (self-contained, linux-arm64):  225 entries, 111 MB
+
+vpk pack, with zstd present:
+  [INF] Building new AppDir from pack directory contents
+  [INF] Compressing AppDir into squashfs filesystem
+  [INF] Creating AppImage with appimagekit-runtime-aarch64 runtime
+  pack 1.0.0                                    1,789 ms (vpk reports 1.22 s)
+  pack 1.0.1 (one-line source change)           1,737 ms (vpk reports 1.50 s)
+  [INF] Delta processed 0001 files. 0001 patched, 0000 unchanged, 0000 new, 0000 removed
+
+artifacts:
+  SharpeePaneHost.AppImage                 47,495,688   ELF 64-bit LSB pie, ARM aarch64, static-pie
+  SharpeePaneHost-1.0.0-linux-full.nupkg   46,789,339
+  SharpeePaneHost-1.0.1-linux-full.nupkg   46,789,379
+  SharpeePaneHost-1.0.1-linux-delta.nupkg     118,644
+  RELEASES-linux, releases.linux.json, assets.linux.json
+
+Two build-host prerequisites, both discovered by failing, both reported by the tool itself:
+
+  1. mksquashfs absent -> vpk aborts before producing anything:
+       [FTL] Could not find 'mksquashfs' binary on the system ...
+             'sudo apt install squashfs-tools'
+     An AppImage is a squashfs image, so this is structural, not incidental.
+
+  2. zstd absent -> vpk still succeeds, but silently degrades:
+       [ERR] Could not find 'zstd' binary on the system ...
+       [WRN] Zstd not available. Falling back to legacy bsdiff delta format.
+             This will be a lot slower and more prone to breaking.
+     Measured cost of the fallback on this same delta:
+       bsdiff fallback   122,949 bytes   12,848 ms
+       zstd              118,644 bytes    1,502 ms
+     The size difference is small; the time difference is 8.5x, and Velopack's own
+     wording about reliability is the reason this is recorded rather than ignored.
+
+Not established here: no signing (Linux has no equivalent of the Windows Trusted
+Signing step exercised in Phase 7, and none was attempted), the AppImage was not
+executed, and no update round trip was applied. x64 is Phase 8's remaining leg.

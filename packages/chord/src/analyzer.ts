@@ -3599,13 +3599,60 @@ export class Analyzer {
         });
       }
       let detailIndex = 0;
+      // ADR-349 D15: `room name` arms repeat under the same numbered-key
+      // convention `detail` uses, and are gated as an ordered SET — at most one
+      // unconditional arm, and nothing may follow it, because an arm after the
+      // unconditional one can never be reached. Only the three block kinds that
+      // can contribute to a heading may carry one (a room, an enterable
+      // enclosure, a region).
+      let roomNameIndex = 0;
+      let unconditionalRoomName = false;
+      let roomNameOwnerReported = false;
+      const composedAs = (name: string, asKind: boolean): boolean =>
+        e.decl.compositions.some(
+          (c) => Boolean(c.article) === asKind && c.words.join(' ').toLowerCase() === name,
+        );
+      const canCarryRoomName =
+        composedAs('room', true) || composedAs('region', true) || composedAs('enterable', false);
       for (const override of e.decl.phraseOverrides) {
         const isDetail = override.key === 'detail';
+        const isRoomName = override.key === 'room-name';
         if (isDetail) detailIndex++;
+        if (isRoomName) roomNameIndex++;
         // Z3b: multiple `detail` blocks per owner are legal (the one place a
         // key repeats) — later blocks get deterministic suffixed keys in
-        // declaration order.
-        const key = isDetail && detailIndex > 1 ? `${e.id}.detail.${detailIndex}` : `${e.id}.${override.key}`;
+        // declaration order. `room name` arms repeat the same way.
+        const repeatIndex = isDetail ? detailIndex : isRoomName ? roomNameIndex : 0;
+        const key =
+          repeatIndex > 1 ? `${e.id}.${override.key}.${repeatIndex}` : `${e.id}.${override.key}`;
+
+        if (isRoomName && !canCarryRoomName && !roomNameOwnerReported) {
+          roomNameOwnerReported = true;
+          this.diagnostics.error(
+            'analysis.room-name-owner',
+            '`room name` belongs on a room, on an `enterable` thing, or on a region — nothing else contributes to a location heading.',
+            override.span,
+          );
+        }
+        if (isRoomName && unconditionalRoomName) {
+          this.diagnostics.error(
+            override.condition ? 'analysis.room-name-dead-arm' : 'analysis.room-name-duplicate-unconditional',
+            override.condition
+              ? '`room name` arms are first-match-wins, so an arm after the unconditional one can never render — put the unconditional arm last.'
+              : 'A second unconditional `room name` arm can never render — there is one fallback arm per thing.',
+            override.span,
+          );
+        }
+        if (isRoomName && !override.condition) unconditionalRoomName = true;
+        if (isRoomName && (override.variants.length > 1 || override.strategy)) {
+          // The projection takes one arm's prose per turn; variety across turns
+          // is what the `while` arms are for.
+          this.diagnostics.error(
+            'analysis.room-name-variants',
+            '`room name` is one text per arm — write another `room name while …:` arm instead of `or`-separated variants.',
+            override.span,
+          );
+        }
 
         if (isDetail && !override.condition) {
           this.diagnostics.error(
@@ -3625,7 +3672,7 @@ export class Analyzer {
         // disappeared) and on ordinary overrides has no pinned semantics;
         // `present` gates ride the ADR-212 predicate seam, `detail` gates are
         // Z3b's whole point.
-        if (override.condition && !isDetail && override.key !== 'present') {
+        if (override.condition && !isDetail && !isRoomName && override.key !== 'present') {
           this.diagnostics.error(
             'analysis.override-gate',
             `\`while\` on \`phrase ${override.key}:\` has no defined semantics — only \`detail\` and \`present\` blocks take a gate.`,

@@ -1947,6 +1947,20 @@ class Parser {
       } else if (this.isMoveClauseHead(line)) {
         decl.moveClauses.push(this.parseMoveClause());
       } else if (
+        word === 'room' &&
+        cur.isWord('name', 1) &&
+        line.tokens.some((t) => t.kind === 'colon')
+      ) {
+        // ADR-349 D1/D15: the authored location heading. An arm rides the
+        // phrase-override mechanism under the reserved key `room-name`, so the
+        // analyzer numbers repeats exactly as it numbers `detail` (D15) and the
+        // IR gains no new shape. The colon requirement keeps this off a bare
+        // `room` composition line.
+        this.pos++;
+        decl.phraseOverrides.push(
+          this.parsePhraseOverride(line, { words: ['room', 'name'], key: 'room-name' }),
+        );
+      } else if (
         word === 'phrase' &&
         line.tokens[1]?.kind === 'word' &&
         line.tokens.some((t) => t.kind === 'colon')
@@ -3097,11 +3111,26 @@ class Parser {
     return settings;
   }
 
-  private parsePhraseOverride(line: Line): PhraseOverride {
+  /**
+   * Parse a phrase-override header and its indented body.
+   *
+   * @param line the header line, already validated by the caller
+   * @param head an alternate header spelling whose words are consumed in place
+   *   of `phrase <key>`, binding a reserved key — `room name` (ADR-349 D15).
+   *   Omitted for the ordinary `phrase <key>` form.
+   * @returns the override; diagnostics are reported, never thrown
+   */
+  private parsePhraseOverride(line: Line, head?: { words: string[]; key: string }): PhraseOverride {
     const c = new Cursor(line.tokens, line);
-    c.matchWord('phrase');
-    // Key word validated by the caller; phrase-key = WORD { "." WORD } (ADR-231 D1b).
-    const key = this.readLabelKey(c)!;
+    let key: string;
+    if (head) {
+      for (const w of head.words) c.matchWord(w);
+      key = head.key;
+    } else {
+      c.matchWord('phrase');
+      // Key word validated by the caller; phrase-key = WORD { "." WORD } (ADR-231 D1b).
+      key = this.readLabelKey(c)!;
+    }
 
     // CP3: optional `, <strategy>` (the Z5 adverb set, retired fix-its
     // included) — `phrase present, cycling:`.
@@ -3134,7 +3163,11 @@ class Parser {
     if (c.peek()?.kind === 'colon') {
       c.next();
     } else {
-      this.diagnostics.error('parse.phrase-override-colon', 'Expected `:` to end the `phrase` header.', c.restSpan());
+      this.diagnostics.error(
+        'parse.phrase-override-colon',
+        `Expected \`:\` to end the \`${head ? head.words.join(' ') : 'phrase'}\` header.`,
+        c.restSpan(),
+      );
     }
 
     const variants: TextValue[] = [];

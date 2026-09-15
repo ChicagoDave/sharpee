@@ -103,7 +103,11 @@ const PINNED = {
   // 2): `, one-way` on exit lines — ADR-234 D4's reservation wired, the
   // `[ "," "one-way" ]` tail added to the exit production. Additive; folds
   // into the unpublished 3.5.0 set under the same ruling.
-  ebnfSha256: '37a95d1b4ea4501a1a34904451eb6f0b94dfe957ca06f2399e912e80c1a69599',
+  // Re-pinned 2026-09-15 (session 3c9f76, ADR-349 Phase 2): the `room name`
+  // block — the authored location heading, with its arms numbered into the flat
+  // phrase table like repeating `detail` keys. Additive; folds into the
+  // unpublished 3.6.0 set under the same ruling (the number moves at publish).
+  ebnfSha256: '37c9fdb6e6861b73c511badcc0d0db78fa2866d57dbcc8554a45a4444c7799e2',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

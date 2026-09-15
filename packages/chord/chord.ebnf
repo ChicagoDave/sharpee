@@ -463,6 +463,8 @@ create-line  = "aka" alias { "," alias } NL
              | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
                                                            (* blocked exit *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
+             | room-name-block                             (* the authored location
+                                                              heading *)
              | "first" "time" NL >>> prose-paragraph       (* Z1: first-visit description;
                                                               rooms only *)
              | on-clause
@@ -865,6 +867,20 @@ phrase-override = "phrase" phrase-key
                      Reserved channel keys (present, entered, exited,
                      disappeared, detail) cannot be declared bare or pushed
                      via statements — analyzer gates. *)
+
+room-name-block = "room" "name" [ "while" condition ] ":" NL
+                  >>> prose-paragraph ;
+                  (* The location heading a player reads, authored apart from the
+                     entity's name. Repeating blocks are the ARMS, first-match-wins
+                     at runtime; the analyzer numbers them into the flat phrase
+                     table as `<id>.room-name`, `<id>.room-name.2`, … exactly as it
+                     numbers repeating `detail` keys, so the IR gains no new shape.
+                     Gates: at most one unconditional arm and nothing may follow it
+                     (analysis.room-name-duplicate-unconditional,
+                     analysis.room-name-dead-arm); one text per arm, no `or`
+                     variants (analysis.room-name-variants); legal only on a room,
+                     an `enterable` thing, or a region — the three kinds that can
+                     contribute to a heading (analysis.room-name-owner). *)
 
 composition  = [ ARTICLE ] WORD                            (* article => kind noun;
                                                               bare => trait *)

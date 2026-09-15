@@ -32,6 +32,14 @@ export {
   type ClauseContributor,
 } from './state-clauses.js';
 
+// Registered location-heading arms (ADR-349 D16 contract 2)
+export {
+  registerLocationName,
+  lookupLocationName,
+  clearLocationNames,
+  type LocationNameArm,
+} from './location-heading-registry.js';
+
 // Individual trait exports
 export * from './traits/identity/index.js';
 export * from './traits/container/index.js';
