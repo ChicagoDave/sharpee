@@ -166,7 +166,7 @@ The scope-narrowing choice that makes it tractable is worth naming now: Google's
 
 ## 8. What this phase did not prove
 
-**The folder adapter was not exercised at these call sites.** Phase 3 found the stored handle gone (`persisted: false`, the IndexedDB record vanished while the database survived — #460), and `showDirectoryPicker()` needs a user gesture, so a self-driving page cannot restore it. Every run in this phase therefore took the OPFS route, which is exactly what the plan asked for in *Safari and Firefox* and is a substitution in *Edge*.
+**The folder adapter was not exercised at these call sites.** Phase 3 found the stored handle gone (`persisted: false`, the IndexedDB record vanished while the database survived — #461), and `showDirectoryPicker()` needs a user gesture, so a self-driving page cannot restore it. Every run in this phase therefore took the OPFS route, which is exactly what the plan asked for in *Safari and Firefox* and is a substitution in *Edge*.
 
 The folder adapter is not unexercised code: Phases 1 and 2 read fernhill's real `.story` through that handle and Phase 1 wrote through it and verified the result from outside the browser (30,608 = 30,559 + 49 bytes). What has not happened is that route behind *this* interface at *these* call sites — `list`, `delete`, `watch` against a real directory, and an `externallyMutable: true` watch actually observing an edit made outside the browser, which is the one behavior OPFS can never demonstrate.
 

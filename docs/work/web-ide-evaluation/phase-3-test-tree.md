@@ -123,7 +123,7 @@ Platform changes require discussion first, so these are written down and filed r
 
 1. **The testing harness has no browser entry point** (§5). The logic is browser-clean; the barrels are not. Filed as **#463**.
 2. **The surface bundle and the play client both hard-code a WKWebView-shaped bridge.** `turn-events.ts` posts to `window.webkit.messageHandlers.turnEvents` and gates the world digest on its presence; the surface posts to `window.webkit.messageHandlers.testingSurface`. Any non-WKWebView host — this browser, and both prior spikes — must supply that object by name. Filed as **#464**.
-3. **A stored `FileSystemDirectoryHandle` did not survive the gap since Phase 2** (§7). This qualifies Phase 1's headline result and is added to **#460**.
+3. **A stored `FileSystemDirectoryHandle` did not survive the gap since Phase 2** (§7). This qualifies Phase 1's headline result and is added to **#461**.
 
 ## 7. What this phase did not prove, and why
 
