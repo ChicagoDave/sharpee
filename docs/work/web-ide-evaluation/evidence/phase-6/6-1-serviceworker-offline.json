@@ -1,0 +1,18 @@
+{
+  "step": "6-1-serviceworker-offline",
+  "at": "2026-09-15T02:47:18.149Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "serverReachable": false,
+  "supported": true,
+  "scope": "http://127.0.0.1:5180/",
+  "controllingThisPage": true,
+  "registrationMs": 1,
+  "precachedEntries": 16,
+  "precacheFailures": 0,
+  "failures": [],
+  "precachedBytes": 17283364,
+  "heavyAssets": {
+    "platform.zip": 2043666,
+    "esbuild.wasm": 13509049
+  }
+}

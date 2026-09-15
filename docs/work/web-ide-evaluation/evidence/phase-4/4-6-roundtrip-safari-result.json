@@ -1,0 +1,27 @@
+{
+  "step": "3-4-round-trip",
+  "at": "2026-09-15T02:14:51.131Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15",
+  "typedCommand": "inventory",
+  "typedMs": 101,
+  "cardsIn": 86,
+  "cardsOut": 87,
+  "cardsDelta": 1,
+  "topLevelIn": 31,
+  "topLevelOut": 32,
+  "newLastCard": {
+    "command": "inventory",
+    "skip": true,
+    "type": "turn"
+  },
+  "documentWrites": 1,
+  "documentWriteError": null,
+  "writtenBytes": 21414,
+  "writtenChars": 21412,
+  "seedPreserved": true,
+  "storyPreserved": true,
+  "readBackMatchesLastPost": true,
+  "writeRoute": "opfs",
+  "writeTarget": "the origin private file system copy — never branch-stories/fernhill",
+  "totalMs": 3463
+}

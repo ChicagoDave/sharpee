@@ -1,0 +1,35 @@
+{
+  "step": "5-7-hatched-build",
+  "at": "2026-09-15T02:35:44.223Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "storyId": "spike-hatch",
+  "hasHatches": true,
+  "hatches": [
+    {
+      "name": "weather",
+      "modulePath": "./spike-hatch.ts",
+      "hatchKind": "text",
+      "span": {
+        "line": 8,
+        "column": 1,
+        "endLine": 8,
+        "endColumn": 44
+      }
+    }
+  ],
+  "bindings": [
+    {
+      "mapKey": "./spike-hatch.ts",
+      "binding": "__hatch0",
+      "specifier": "./spike-hatch.ts"
+    }
+  ],
+  "built": true,
+  "error": null,
+  "gameJsBytes": 4213097,
+  "gameJsSha256": "60bc046bd492fbb4",
+  "carriesAuthorCode": true,
+  "hatchFunctionPresent": true,
+  "typescriptErased": true,
+  "warnings": 0
+}

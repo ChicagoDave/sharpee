@@ -1,0 +1,16 @@
+{
+  "step": "4-1-selection-firefox",
+  "at": "2026-09-15T02:13:37.845Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "requested": "(default)",
+  "chosen": "opfs",
+  "name": "fernhill (OPFS)",
+  "externallyMutable": false,
+  "reason": "unavailable — this browser has no showDirectoryPicker",
+  "considered": {
+    "folder": "unavailable — this browser has no showDirectoryPicker",
+    "opfs": "available — every browser tested exposes the full handle surface on the main thread"
+  },
+  "forced": false,
+  "storagePersisted": false
+}

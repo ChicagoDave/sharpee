@@ -1,0 +1,31 @@
+{
+  "step": "6-3-appearance-flip",
+  "at": "2026-09-15T02:47:50.292Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "token": "--rail-background (Theme.swift railBackground)",
+  "before": {
+    "token": "#DCE0E8",
+    "rendered": "rgb(220, 224, 232)"
+  },
+  "after": {
+    "token": "#16171D",
+    "rendered": "rgb(22, 23, 29)"
+  },
+  "changed": true,
+  "expected": {
+    "light": "rgb(220, 224, 232)",
+    "dark": "rgb(22, 23, 29)"
+  },
+  "matchesExpected": true,
+  "flipMsFirst": 0.16,
+  "flipMsMedian": 0.01,
+  "flipMsP90": 0.01,
+  "samples": 50,
+  "tokensPerFlip": 3,
+  "prefersColorSchemeDark": false,
+  "systemTracking": "matchMedia('(prefers-color-scheme: dark)') with a change listener",
+  "priorHosts": {
+    "openSilver": "Apply() took 0.9 ms — one SolidColorBrush property write per token",
+    "avalonia": "free — brush references, no re-record"
+  }
+}

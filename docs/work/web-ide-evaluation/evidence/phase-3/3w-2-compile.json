@@ -1,0 +1,9 @@
+{
+  "step": "3w-2-compile",
+  "at": "2026-09-15T01:54:19.546Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "ok": true,
+  "irBytes": 114170,
+  "hatchCount": 0,
+  "hatchNote": "pure IR — no hatch modules to resolve, so the browser tier covers this story"
+}

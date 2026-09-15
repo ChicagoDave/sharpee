@@ -1,0 +1,16 @@
+{
+  "step": "4-1-selection-safari",
+  "at": "2026-09-15T02:12:46.346Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15",
+  "requested": "(default)",
+  "chosen": "opfs",
+  "name": "fernhill (OPFS)",
+  "externallyMutable": false,
+  "reason": "unavailable — this browser has no showDirectoryPicker",
+  "considered": {
+    "folder": "unavailable — this browser has no showDirectoryPicker",
+    "opfs": "available — every browser tested exposes the full handle surface on the main thread"
+  },
+  "forced": false,
+  "storagePersisted": false
+}

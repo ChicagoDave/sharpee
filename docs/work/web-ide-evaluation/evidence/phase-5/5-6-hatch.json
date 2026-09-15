@@ -1,0 +1,34 @@
+{
+  "step": "5-6-hatch",
+  "at": "2026-09-15T02:35:43.637Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "hatchSourceChars": 1472,
+  "attempts": [
+    {
+      "options": "node-cjs (hatch-transpile.ts's own options)",
+      "ok": true,
+      "bytes": 4307,
+      "warnings": 0,
+      "mentionsChordNamespace": false,
+      "head": "var __defProp = Object.defineProperty;\nvar __getOwnPropDesc = Object.getOwnPropertyDescriptor;\nvar __getOwnPropNames = Object.getOwnPropertyNames;"
+    },
+    {
+      "options": "browser-esm (what a browser could actually load)",
+      "ok": true,
+      "bytes": 3207,
+      "warnings": 0,
+      "mentionsChordNamespace": false,
+      "head": "// vfs:story/spike-hatch.ts\nvar PHRASES = {\n  clear: \" nothing at all\","
+    }
+  ],
+  "evaluated": {
+    "attempted": true,
+    "imported": true,
+    "exportNames": [
+      "doubleIt",
+      "weather"
+    ],
+    "calledDoubleIt": 42
+  },
+  "nodePathForComparison": "packages/devkit/src/standalone/hatch-transpile.ts — esbuild.buildSync({ bundle, packages: external, platform: node, format: cjs, target: node18, minify: false, sourcemap: inline, write: false })"
+}

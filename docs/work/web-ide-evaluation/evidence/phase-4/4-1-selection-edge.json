@@ -1,0 +1,16 @@
+{
+  "step": "4-1-selection-edge",
+  "at": "2026-09-15T02:11:49.841Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "requested": "(default)",
+  "chosen": "opfs",
+  "name": "fernhill (OPFS)",
+  "externallyMutable": false,
+  "reason": "unavailable — no stored handle for this origin (a picker needs a user gesture)",
+  "considered": {
+    "folder": "unavailable — no stored handle for this origin (a picker needs a user gesture)",
+    "opfs": "available — every browser tested exposes the full handle surface on the main thread"
+  },
+  "forced": false,
+  "storagePersisted": false
+}

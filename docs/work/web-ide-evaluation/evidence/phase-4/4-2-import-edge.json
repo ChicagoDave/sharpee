@@ -1,0 +1,55 @@
+{
+  "step": "4-2-import-edge",
+  "at": "2026-09-15T02:11:49.873Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "route": "opfs",
+  "archiveBytes": 127511,
+  "archiveSha256": "e08c6624d240d0fd",
+  "entriesInArchive": 10,
+  "filesAfterImport": 10,
+  "importMs": 11,
+  "perFileIdentical": true,
+  "listed": [
+    {
+      "name": "chatgpt-review.md",
+      "size": 12781
+    },
+    {
+      "name": "fernhill.config.json",
+      "size": 69
+    },
+    {
+      "name": "fernhill.recipe.json",
+      "size": 1110
+    },
+    {
+      "name": "fernhill.story",
+      "size": 30559
+    },
+    {
+      "name": "fernhill.tests.json",
+      "size": 21329
+    },
+    {
+      "name": "fernhill.world-ignore.json",
+      "size": 161
+    },
+    {
+      "name": "measure-1755.story",
+      "size": 52036
+    },
+    {
+      "name": "spike-fragment.chord",
+      "size": 277
+    },
+    {
+      "name": "spike-import-probe.story",
+      "size": 435
+    },
+    {
+      "name": "WALKTHROUGH.txt",
+      "size": 7586
+    }
+  ],
+  "mismatches": []
+}

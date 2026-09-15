@@ -1,0 +1,10 @@
+{
+  "step": "3-0-folder",
+  "at": "2026-09-15T01:55:19.176Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "route": "opfs",
+  "name": "fernhill (OPFS)",
+  "seededFrom": "already present from a prior run",
+  "storagePersisted": false,
+  "note": "the origin private file system — the real-folder WRITE was proven in Phase 1 (30,608 bytes verified from outside the browser); this run's stored handle was gone, so the round trip below runs on the in-browser copy"
+}

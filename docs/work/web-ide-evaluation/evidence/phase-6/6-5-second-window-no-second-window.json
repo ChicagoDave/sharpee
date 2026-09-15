@@ -1,0 +1,21 @@
+{
+  "step": "6-5-second-window",
+  "at": "2026-09-15T02:45:22.280Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "windowOpen": {
+    "attempted": true,
+    "opened": false,
+    "blocked": true,
+    "error": null,
+    "note": "blocked — window.open needs transient user activation, which a self-driving page has none of"
+  },
+  "broadcastChannel": {
+    "channel": "sharpee-ide",
+    "nonce": "6r8t108y",
+    "secondWindowAnnouncedItself": false,
+    "echoReceived": false,
+    "echo": null,
+    "roundTripMs": null
+  },
+  "verdict": "the echo never arrived; see windowOpen above"
+}

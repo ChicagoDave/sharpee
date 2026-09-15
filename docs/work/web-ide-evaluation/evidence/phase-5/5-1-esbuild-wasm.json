@@ -1,0 +1,15 @@
+{
+  "step": "5-1-esbuild-wasm",
+  "at": "2026-09-15T02:35:42.738Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "version": "0.27.2",
+  "jsShimImportMs": 7.4,
+  "wasmBytes": 13509049,
+  "wasmMB": 12.88,
+  "wasmFetchMs": 10,
+  "wasmFetchNote": "cache: reload — a real first fetch, not a memory-cache hit, but over localhost, so this is transfer-free decode time, not network time",
+  "initializeMs": 21,
+  "coldStartMs": 38,
+  "optionsDocEstimate": "~10 MB",
+  "note": "cold start measured from a warm HTTP cache on localhost; the wire cost is the zipped/compressed size a real host would serve"
+}

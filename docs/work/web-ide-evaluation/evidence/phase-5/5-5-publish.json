@@ -1,0 +1,28 @@
+{
+  "step": "5-5-publish",
+  "at": "2026-09-15T02:35:43.614Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "storyId": "fernhill",
+  "route": "opfs",
+  "files": [
+    "index.html",
+    "game.js",
+    "base.css",
+    "engine.css",
+    "decorations.css"
+  ],
+  "fileBytes": {
+    "index.html": 6435,
+    "game.js": 1921850,
+    "base.css": 9030,
+    "engine.css": 10084,
+    "decorations.css": 4077
+  },
+  "zipBytes": 501803,
+  "zipKB": 490,
+  "zipSha256": "b0ea7a8b0a4c0c1f",
+  "writtenToStore": true,
+  "pageIsPlatformTemplate": true,
+  "pageNote": "the platform default page, not fernhill's own browser/index.html \u2014 so no themes and no story CSS; what is under test is whether an in-page bundle boots from file://, which the custom page would not change",
+  "zipBase64Note": "omitted to keep the record proportionate \u2014 the archive is 501,803 bytes, sha256 b0ea7a8b0a4c0c1f\u2026, and is reproducible from the inputs this phase records. Its extracted contents were loaded from file:// and are evidenced by file-play-dom.html and file-play.png beside this file."
+}

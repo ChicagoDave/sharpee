@@ -1,0 +1,20 @@
+{
+  "step": "6-6-settings-pass2",
+  "at": "2026-09-15T02:47:50.574Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "pass": "2",
+  "wroteThisPass": false,
+  "previousFound": true,
+  "previous": {
+    "lastProject": "fernhill (OPFS)",
+    "openDocuments": [
+      "fernhill.story",
+      "fernhill.tests.json"
+    ],
+    "activeTab": "Testing",
+    "writtenAt": "2026-09-15T02:45:22.293Z"
+  },
+  "survivedReload": true,
+  "matchesWhatPass1Wrote": true,
+  "mechanism": "localStorage — per origin, survives reload and browser restart, not shared with the folder route"
+}

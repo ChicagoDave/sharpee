@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="classic"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Folly at Fernhill</title>
+  <!-- Engine CSS from @sharpee/platform-browser (ADR-188): base (structural) →
+       engine (tokens + un-scoped component layer) → decorations (prose vocabulary). -->
+  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="engine.css">
+  <link rel="stylesheet" href="decorations.css">
+  <!-- THEME_LINKS: the build replaces this line with a <link> per wired
+       @sharpee/theme-* package — after the engine, before the author override
+       (ADR-188 Phase 4). -->
+  <!-- Author override: edit browser/fernhill.css. Loaded last so it wins the cascade. -->
+  <link rel="stylesheet" href="fernhill.css">
+</head>
+<body>
+  <div class="sharpee-window">
+    <div class="sharpee-window-title-bar">
+      <span id="menu-title" class="sharpee-window-title">The Folly at Fernhill</span>
+      <div class="sharpee-window-title-bar-controls" aria-hidden="true"></div>
+    </div>
+
+    <menu role="menubar" id="menu-bar" class="sharpee-menu-bar">
+      <li role="none" class="sharpee-menu-bar-item">
+        <button role="menuitem" id="file-menu-btn" class="sharpee-menu-bar-trigger" aria-haspopup="menu" aria-expanded="false">File</button>
+        <ul role="menu" id="file-menu" class="sharpee-menu-dropdown">
+          <li role="menuitem" id="menu-save" class="sharpee-menu-option">Save Game...</li>
+          <li role="menuitem" id="menu-restore" class="sharpee-menu-option">Restore Game...</li>
+          <li role="separator" class="sharpee-menu-separator"></li>
+          <li role="menuitem" id="menu-restart" class="sharpee-menu-option">Restart</li>
+          <li role="menuitem" id="menu-reset" class="sharpee-menu-option">Reset Story Data…</li>
+          <li role="menuitem" id="menu-quit" class="sharpee-menu-option">Quit</li>
+        </ul>
+      </li>
+      <li role="none" class="sharpee-menu-bar-item">
+        <button role="menuitem" id="settings-menu-btn" class="sharpee-menu-bar-trigger" aria-haspopup="menu" aria-expanded="false">Settings</button>
+        <ul role="menu" id="settings-menu" class="sharpee-menu-dropdown">
+          <li role="menuitem" class="sharpee-menu-option" aria-haspopup="menu">
+            <span>Theme</span>
+            <span class="sharpee-menu-submenu-indicator" aria-hidden="true">▸</span>
+            <ul role="menu" id="theme-menu" class="sharpee-menu-dropdown"><li role="menuitemradio" class="sharpee-menu-option sharpee-menu-option--checked" data-theme-choice="classic">Classic</li></ul>
+          </li>
+        </ul>
+      </li>
+      <li role="none" class="sharpee-menu-bar-item">
+        <button role="menuitem" id="help-menu-btn" class="sharpee-menu-bar-trigger" aria-haspopup="menu" aria-expanded="false">Help</button>
+        <ul role="menu" id="help-menu" class="sharpee-menu-dropdown">
+          <li role="menuitem" id="menu-help" class="sharpee-menu-option">Commands...</li>
+          <li role="separator" class="sharpee-menu-separator"></li>
+          <li role="menuitem" id="menu-about" class="sharpee-menu-option">About...</li>
+        </ul>
+      </li>
+    </menu>
+
+    <div id="status-line" class="sharpee-status-bar">
+      <span id="location-name">Iron Gates</span>
+      <span id="score-turns">Score: 0 | Turns: 1</span>
+    <span id="sharpee-status-turn" hidden=""></span></div>
+
+    <div id="main-window" class="sharpee-prose-pane">
+      <div id="sharpee-prologue"></div><div id="text-content"><p class="sharpee-banner-title" data-turn="1">The Folly at Fernhill</p><p class="sharpee-banner-story-version" data-turn="1">Story v0.3.0</p><p class="sharpee-banner-subtitle" data-turn="1">One cold winter night to find the deed that keeps Fernhill in the family.</p><p class="sharpee-banner-credit" data-turn="1">By The Sharpee Project</p><p class="main-entry prose-room-name main-entry--present" data-turn="1"><span class="sharpee-room">Iron Gates</span></p><p class="main-entry prose-room-description main-entry--tight main-entry--present" data-turn="1">The cab is already grinding away down the lane, its lamps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN.</p><p class="main-entry prose-action-result main-entry--present" data-turn="1">The wind comes off the downs and worries at the bare limes.</p></div>
+      <div class="sharpee-prose-overlay" aria-hidden="true"></div>
+    <aside id="sharpee-sidebar" hidden=""></aside><div id="sharpee-media" hidden="" style="position: relative;"></div><div id="sharpee-notify" hidden=""></div><div id="sharpee-meta" hidden="" data-title="The Folly at Fernhill" data-authors="The Sharpee Project" data-version="0.3.0" data-description="One cold winter night to find the deed that keeps Fernhill in the family." data-engine-version="5.4.1" data-client-version="0.0.0" data-ifid="8221EC69-3D96-4F60-A057-99D1FE72000F"></div></div>
+
+    <div id="input-area" class="sharpee-input-bar">
+      <span class="sharpee-input-prompt">&gt; </span>
+      <input id="command-input" class="sharpee-input-field" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" autofocus="">
+    </div>
+  </div>
+
+  <dialog id="save-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">SAVE GAME</h2>
+    <div class="sharpee-dialog-body">
+      <div class="save-input-row">
+        <label for="save-name-input">Save name:</label>
+        <input type="text" id="save-name-input" class="sharpee-input-field" maxlength="30" autocomplete="off" spellcheck="false">
+      </div>
+      <div class="saves-list-label">Existing saves (click to overwrite):</div>
+      <div id="save-slots-list" class="saves-list"></div>
+    </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="save-confirm-btn" class="sharpee-dialog-button">Save</button>
+      <button id="save-cancel-btn" class="sharpee-dialog-button">Cancel</button>
+    </div>
+  </dialog>
+
+  <dialog id="restore-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">RESTORE GAME</h2>
+    <div class="sharpee-dialog-body">
+      <div class="saves-list-label">Select a saved game:</div>
+      <div id="restore-slots-list" class="saves-list"></div>
+      <div id="no-saves-message" class="no-saves-message" hidden="">No saved games found.</div>
+    </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="restore-confirm-btn" class="sharpee-dialog-button" disabled="">Restore</button>
+      <button id="restore-cancel-btn" class="sharpee-dialog-button">Cancel</button>
+    </div>
+  </dialog>
+
+  <dialog id="startup-dialog" class="sharpee-dialog">
+    <h2 class="sharpee-dialog-title">CONTINUE GAME?</h2>
+    <div class="sharpee-dialog-body">
+      <p id="startup-save-info" class="startup-info"></p>
+      <p class="startup-question">Continue where you left off?</p>
+    </div>
+    <div class="sharpee-dialog-buttons">
+      <button id="startup-continue-btn" class="sharpee-dialog-button">Continue</button>
+      <button id="startup-new-btn" class="sharpee-dialog-button">New Game</button>
+    </div>
+  </dialog>
+
+  <script src="game.js"></script>
+
+
+</body></html>

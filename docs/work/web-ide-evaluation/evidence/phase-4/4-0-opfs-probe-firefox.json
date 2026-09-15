@@ -1,0 +1,25 @@
+{
+  "step": "4-opfs-probe-firefox",
+  "at": "2026-09-15T02:07:22.516Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "origin": "http://127.0.0.1:5180",
+  "crossOriginIsolated": true,
+  "showDirectoryPicker": false,
+  "storageGetDirectory": true,
+  "persisted": false,
+  "rootOk": true,
+  "hasCreateWritable": true,
+  "hasCreateSyncAccessHandle": false,
+  "hasRemoveEntry": true,
+  "hasAsyncIterator": true,
+  "writeMainThread": "ok",
+  "readBack": "hello opfs",
+  "listed": [
+    "t.txt"
+  ],
+  "removed": "ok",
+  "worker": {
+    "sync": "ok",
+    "size": 10
+  }
+}

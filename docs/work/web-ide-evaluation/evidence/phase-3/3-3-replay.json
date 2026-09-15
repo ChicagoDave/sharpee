@@ -1,0 +1,33 @@
+{
+  "step": "3-3-replay",
+  "at": "2026-09-15T01:55:21.622Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "settled": true,
+  "replayMs": 503,
+  "bootMs": 23,
+  "surfaceLoadMs": 1901,
+  "feedRecords": 274,
+  "turnRecords": 263,
+  "restartFences": 11,
+  "forkBoots": 11,
+  "surfacePosts": 13,
+  "documentPosts": 0,
+  "statePosts": 2,
+  "prediction": {
+    "lines": 11,
+    "bootLooks": 11,
+    "typed": 211,
+    "total": 222
+  },
+  "predictionDelta": {
+    "typedVsPredicted": 41,
+    "forkBootsVsLinesMinusMain": 1
+  },
+  "priorHosts": {
+    "openSilver": "31 turn records, 1 forkBoot",
+    "avalonia": "274 turn records, 12 forkBoots"
+  },
+  "surfaceConsoleLines": 0,
+  "surfaceConsole": [],
+  "cardsRenderedGuess": 0
+}

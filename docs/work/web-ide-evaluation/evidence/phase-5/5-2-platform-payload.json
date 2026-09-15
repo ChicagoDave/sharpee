@@ -1,0 +1,12 @@
+{
+  "step": "5-2-platform-payload",
+  "at": "2026-09-15T02:35:42.782Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "zipBytes": 2043666,
+  "zipMB": 1.95,
+  "zipSha256": "0a669e1ff7855d75",
+  "files": 1127,
+  "rawBytes": 6174855,
+  "unpackMs": 42,
+  "resolvedCondition": "require — the shipped browser build passes --conditions=require, so the payload carries each package's dist/ (CJS), not dist-esm/"
+}

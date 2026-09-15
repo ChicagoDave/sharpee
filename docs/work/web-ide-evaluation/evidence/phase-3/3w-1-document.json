@@ -1,0 +1,26 @@
+{
+  "step": "3w-1-document",
+  "at": "2026-09-15T01:54:19.533Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "seed": 42,
+  "story": "fernhill",
+  "lineCount": 11,
+  "defects": [],
+  "lineIds": [
+    "main",
+    "main/b1",
+    "main/b2",
+    "main/b1",
+    "main/b2",
+    "main/b1",
+    "main/b1",
+    "main/b1",
+    "main/b3",
+    "main/b4",
+    "main/b5"
+  ],
+  "channelsReferenced": [
+    "info"
+  ],
+  "nodeBaseline": "11 line(s), 86 cards passing, 104 assertions passing, 222 commands (85 authored + 137 replayed) — ./sharpee test branch-stories/fernhill/fernhill.story --tree, 2026-09-14"
+}

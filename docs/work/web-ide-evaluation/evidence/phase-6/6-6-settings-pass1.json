@@ -1,0 +1,12 @@
+{
+  "step": "6-6-settings-pass1",
+  "at": "2026-09-15T02:45:22.293Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "pass": "1",
+  "wroteThisPass": true,
+  "previousFound": false,
+  "previous": null,
+  "survivedReload": false,
+  "matchesWhatPass1Wrote": false,
+  "mechanism": "localStorage — per origin, survives reload and browser restart, not shared with the folder route"
+}

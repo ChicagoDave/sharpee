@@ -1,0 +1,37 @@
+{
+  "step": "4-3-interface-firefox",
+  "at": "2026-09-15T02:13:38.404Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "route": "opfs",
+  "externallyMutable": false,
+  "list": {
+    "before": 10,
+    "after": 10,
+    "unchanged": true
+  },
+  "write": {
+    "readBack": "one",
+    "ok": true
+  },
+  "watch": {
+    "fired": true,
+    "firedAfterMs": 150,
+    "changes": [
+      {
+        "name": "adapter-probe.txt",
+        "size": 27,
+        "lastModified": 1789438418237
+      }
+    ],
+    "readBackAfterChange": "two — changed by the page",
+    "ok": true,
+    "mechanism": "polling on size+lastModified — neither route has a change-notification API",
+    "meaning": "can only ever observe this page's own writes"
+  },
+  "delete": {
+    "deleted": true,
+    "deletedAgain": false,
+    "readBackAfterDelete": null,
+    "ok": true
+  }
+}

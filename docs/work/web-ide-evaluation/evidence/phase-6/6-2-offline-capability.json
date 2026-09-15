@@ -1,0 +1,32 @@
+{
+  "step": "6-2-offline-capability",
+  "at": "2026-09-15T02:47:18.221Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "serverReachable": false,
+  "composeFromCache": {
+    "ok": true,
+    "sourceChars": 30509,
+    "irBytes": 114170
+  },
+  "platformPayloadFromCache": {
+    "bytes": 2043666,
+    "files": 1127
+  },
+  "esbuildWasmFromCache": {
+    "bytes": 13509049
+  },
+  "settingsSurvived": true,
+  "settings": {
+    "lastProject": "fernhill (OPFS)",
+    "openDocuments": [
+      "fernhill.story",
+      "fernhill.tests.json"
+    ],
+    "activeTab": "Testing",
+    "writtenAt": "2026-09-15T02:45:22.293Z"
+  },
+  "storageReachable": {
+    "route": "opfs",
+    "files": 17
+  }
+}

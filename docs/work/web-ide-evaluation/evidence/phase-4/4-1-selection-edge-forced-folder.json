@@ -1,0 +1,8 @@
+{
+  "step": "4-1-selection-edge",
+  "at": "2026-09-15T02:17:02.799Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "requested": "folder",
+  "refused": "the folder route was required but is unavailable — no stored handle for this origin (a picker needs a user gesture)",
+  "note": "a forced route that is unreachable is refused, never silently substituted"
+}

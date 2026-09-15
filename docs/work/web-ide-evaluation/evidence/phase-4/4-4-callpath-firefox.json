@@ -1,0 +1,26 @@
+{
+  "step": "4-4-callpath-firefox",
+  "at": "2026-09-15T02:13:38.595Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "route": "opfs",
+  "compose": {
+    "ok": true,
+    "ms": 14.9,
+    "irBytes": 114170
+  },
+  "play": {
+    "entities": 66,
+    "lookOpensAtIronGates": true,
+    "outputChars": 225,
+    "tail": "mps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN."
+  },
+  "test": {
+    "lines": 11,
+    "passed": 11,
+    "failed": 0,
+    "executedCommands": 222,
+    "authoredCommands": 85,
+    "matchesNode": true
+  },
+  "nodeBaseline": "11 lines, 222 commands, 85 authored, all passing"
+}

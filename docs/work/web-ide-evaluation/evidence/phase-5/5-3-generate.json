@@ -1,0 +1,17 @@
+{
+  "step": "5-3-generate",
+  "at": "2026-09-15T02:35:42.799Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "storyId": "fernhill",
+  "title": "The Folly at Fernhill",
+  "hatches": 0,
+  "generated": [
+    "browser-entry.ts",
+    "story-ir.ts",
+    "version.ts",
+    "hatch-modules.ts"
+  ],
+  "entryChars": 8909,
+  "storyIrChars": 130950,
+  "vfsFiles": 1131
+}

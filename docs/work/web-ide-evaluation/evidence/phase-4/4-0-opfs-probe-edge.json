@@ -1,0 +1,25 @@
+{
+  "step": "4-opfs-probe-edge",
+  "at": "2026-09-15T02:07:04.325Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "origin": "http://127.0.0.1:5180",
+  "crossOriginIsolated": true,
+  "showDirectoryPicker": true,
+  "storageGetDirectory": true,
+  "persisted": false,
+  "rootOk": true,
+  "hasCreateWritable": true,
+  "hasCreateSyncAccessHandle": false,
+  "hasRemoveEntry": true,
+  "hasAsyncIterator": true,
+  "writeMainThread": "ok",
+  "readBack": "hello opfs",
+  "listed": [
+    "t.txt"
+  ],
+  "removed": "ok",
+  "worker": {
+    "sync": "ok",
+    "size": 10
+  }
+}

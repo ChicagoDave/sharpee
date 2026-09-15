@@ -1,0 +1,29 @@
+{
+  "step": "3-storage-diagnosis",
+  "at": "2026-09-15T01:52:23.968Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "origin": "http://127.0.0.1:5180",
+  "crossOriginIsolated": true,
+  "databases": [
+    {
+      "name": "phase1",
+      "version": 1
+    }
+  ],
+  "persisted": false,
+  "estimate": {
+    "quota": 10737420080,
+    "usage": 1840,
+    "usageDetails": {
+      "indexedDB": 1840
+    }
+  },
+  "localStorageKeys": [],
+  "phase1": {
+    "stores": [
+      "handles"
+    ],
+    "version": 1,
+    "keys": []
+  }
+}

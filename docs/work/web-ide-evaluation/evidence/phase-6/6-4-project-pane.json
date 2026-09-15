@@ -1,0 +1,72 @@
+{
+  "step": "6-4-project-pane",
+  "at": "2026-09-15T02:47:50.314Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "route": "opfs",
+  "filesInTree": 17,
+  "flatListCount": 13,
+  "groups": [
+    {
+      "title": "Story",
+      "count": 5,
+      "files": [
+        "fernhill.story",
+        "measure-1755.story",
+        "spike-fragment.chord",
+        "spike-hatch.story",
+        "spike-import-probe.story"
+      ]
+    },
+    {
+      "title": "Walkthroughs",
+      "count": 1,
+      "files": [
+        "walkthroughs/wt-01-gates.transcript"
+      ]
+    },
+    {
+      "title": "Transcript Tests",
+      "count": 1,
+      "files": [
+        "tests/transcripts/rug.transcript"
+      ]
+    },
+    {
+      "title": "Tree Tests",
+      "count": 1,
+      "files": [
+        "fernhill.tests.json"
+      ]
+    },
+    {
+      "title": "Assets",
+      "count": 1,
+      "files": [
+        "assets/cover.txt"
+      ]
+    },
+    {
+      "title": "Web Template",
+      "count": 1,
+      "files": [
+        "browser/index.html"
+      ]
+    },
+    {
+      "title": "Other",
+      "count": 7,
+      "files": [
+        "chatgpt-review.md",
+        "fernhill-web.zip",
+        "fernhill.config.json",
+        "fernhill.recipe.json",
+        "fernhill.world-ignore.json",
+        "spike-hatch.ts",
+        "WALKTHROUGH.txt"
+      ]
+    }
+  ],
+  "openNotStrict": true,
+  "renderedGroups": 7,
+  "note": "listTree() was added to the adapter for this — Phase 4 shipped list() flat and named the gap; a typed artifact view needs the whole tree"
+}

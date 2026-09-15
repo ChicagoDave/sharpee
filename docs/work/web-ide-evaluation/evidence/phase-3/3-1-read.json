@@ -1,0 +1,18 @@
+{
+  "step": "3-1-read",
+  "at": "2026-09-15T01:55:19.181Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "documentBytes": 21329,
+  "documentChars": 21327,
+  "storyId": "fernhill",
+  "documentSeed": 42,
+  "topLevelCards": 31,
+  "cardsIncludingBranches": 86,
+  "replayPrediction": {
+    "lines": 11,
+    "bootLooks": 11,
+    "typed": 211,
+    "total": 222
+  },
+  "predictionNote": "derived from the document alone: one boot look per line, plus each line's full prefix and own commands — what a complete replay must send"
+}

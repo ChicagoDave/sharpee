@@ -1,0 +1,37 @@
+{
+  "step": "4-5-export-firefox",
+  "at": "2026-09-15T02:13:38.603Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "route": "opfs",
+  "filesExported": 10,
+  "zipBytes": 127511,
+  "zipSha256": "103391cba447e558",
+  "exportMs": 1,
+  "reopensIdentical": true,
+  "sourceHashes": {
+    "chatgpt-review.md": "8b1e2f3e49111ba7",
+    "fernhill.config.json": "a2264711a5693cb5",
+    "fernhill.recipe.json": "549adad8d9007be3",
+    "fernhill.story": "c848f271acb70231",
+    "fernhill.tests.json": "069f424df29560fb",
+    "fernhill.world-ignore.json": "f54ed4fc1290afc0",
+    "measure-1755.story": "72cd60f02bde52fe",
+    "spike-fragment.chord": "da1b328deac88523",
+    "spike-import-probe.story": "853177cf66f3eaba",
+    "WALKTHROUGH.txt": "a7e8c149bac41701"
+  },
+  "reopenedHashes": {
+    "chatgpt-review.md": "8b1e2f3e49111ba7",
+    "fernhill.config.json": "a2264711a5693cb5",
+    "fernhill.recipe.json": "549adad8d9007be3",
+    "fernhill.story": "c848f271acb70231",
+    "fernhill.tests.json": "069f424df29560fb",
+    "fernhill.world-ignore.json": "f54ed4fc1290afc0",
+    "measure-1755.story": "72cd60f02bde52fe",
+    "spike-fragment.chord": "da1b328deac88523",
+    "spike-import-probe.story": "853177cf66f3eaba",
+    "WALKTHROUGH.txt": "a7e8c149bac41701"
+  },
+  "note": "a download would need a user gesture; the sink is the evidence path",
+  "zipBase64Note": "omitted \u2014 identical sha256 to the Edge export, which the record carries"
+}

@@ -1,0 +1,96 @@
+{
+  "step": "3w-3-run",
+  "at": "2026-09-15T01:54:19.679Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "elapsedMs": 128,
+  "engineBoots": 11,
+  "lines": [
+    {
+      "id": "main",
+      "label": "opening-iron-gates",
+      "status": "passed",
+      "turnCount": 29
+    },
+    {
+      "id": "main/b1",
+      "label": "gravel-drive · north",
+      "status": "passed",
+      "turnCount": 9
+    },
+    {
+      "id": "main/b2",
+      "label": "gravel-drive · north",
+      "status": "passed",
+      "turnCount": 30
+    },
+    {
+      "id": "main/b1",
+      "label": "boiler-shed · examine boiler",
+      "status": "passed",
+      "turnCount": 2
+    },
+    {
+      "id": "main/b2",
+      "label": "kitchen · north",
+      "status": "passed",
+      "turnCount": 1
+    },
+    {
+      "id": "main/b1",
+      "label": "entrance-hall · west",
+      "status": "passed",
+      "turnCount": 4
+    },
+    {
+      "id": "main/b1",
+      "label": "greenhouse · x vine",
+      "status": "passed",
+      "turnCount": 1
+    },
+    {
+      "id": "main/b1",
+      "label": "greenhouse · x vine",
+      "status": "passed",
+      "turnCount": 1
+    },
+    {
+      "id": "main/b3",
+      "label": "folly · open deed box with locket",
+      "status": "passed",
+      "turnCount": 2
+    },
+    {
+      "id": "main/b4",
+      "label": "folly · take the deed",
+      "status": "passed",
+      "turnCount": 2
+    },
+    {
+      "id": "main/b5",
+      "label": "folly · wait",
+      "status": "passed",
+      "turnCount": 3
+    }
+  ],
+  "lineCount": 11,
+  "passed": 11,
+  "failed": 0,
+  "blocked": 0,
+  "errored": 0,
+  "executedCommands": 222,
+  "authoredCommands": 85,
+  "passingCards": 86,
+  "assertions": 104,
+  "defects": [],
+  "nodeBaseline": {
+    "lines": 11,
+    "cardsPassing": 86,
+    "assertionsPassing": 104,
+    "commands": 222,
+    "authored": 85,
+    "replayed": 137,
+    "command": "./sharpee test branch-stories/fernhill/fernhill.story --tree"
+  },
+  "matchesNode": true,
+  "documentUnwritten": "the walker never writes — this page opened the folder read-only in effect"
+}

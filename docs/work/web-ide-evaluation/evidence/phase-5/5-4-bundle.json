@@ -1,0 +1,15 @@
+{
+  "step": "5-4-bundle",
+  "at": "2026-09-15T02:35:43.560Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "ok": true,
+  "buildMs": 759,
+  "gameJsBytes": 1921850,
+  "gameJsKB": 1877,
+  "gameJsSha256": "977a193969d763aa",
+  "warnings": 0,
+  "warningTexts": [],
+  "errors": 0,
+  "startsWithIife": "var SharpeeGame=(()=>{var MJ=Object.crea",
+  "optionsMirror": "bundle, platform=browser, target=es2020, format=iife, globalName=SharpeeGame, conditions=require, three process.env defines, minify"
+}

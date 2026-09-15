@@ -1,0 +1,26 @@
+{
+  "step": "4-4-callpath-safari",
+  "at": "2026-09-15T02:12:47.109Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15",
+  "route": "opfs",
+  "compose": {
+    "ok": true,
+    "ms": 17.4,
+    "irBytes": 114170
+  },
+  "play": {
+    "entities": 66,
+    "lookOpensAtIronGates": true,
+    "outputChars": 225,
+    "tail": "mps swallowed by the dark. An auction notice is nailed to the left-hand gate, ruffling in the wind: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE ESTATE, AT DAWN."
+  },
+  "test": {
+    "lines": 11,
+    "passed": 11,
+    "failed": 0,
+    "executedCommands": 222,
+    "authoredCommands": 85,
+    "matchesNode": true
+  },
+  "nodeBaseline": "11 lines, 222 commands, 85 authored, all passing"
+}
