@@ -16,16 +16,26 @@
 import type { ChannelRenderer } from '@sharpee/channel-service';
 
 /**
- * `location` channel — replace, text. Writes the room name into a
- * status-line element.
+ * `location` channel — replace, json `LocationHeadingValue` (ADR-349 D12).
+ *
+ * Writes the heading the locale already joined. A client that wants a narrower
+ * status bar reads `parts` and drops one — ADR-174's classes are how a part is
+ * shortened or hidden — rather than asking the engine for a different string;
+ * the two surfaces carry the same content by construction (D3a).
+ *
+ * The payload's shape changed from a bare `string` in the same one-shot cutover
+ * that changed the producer (D12), so a stale client fails loudly here rather
+ * than rendering half a heading.
  */
 export function createLocationChannelRenderer(
   el: HTMLElement,
 ): ChannelRenderer {
   return {
     onValue(value: unknown): void {
-      if (typeof value !== 'string') return;
-      el.textContent = value;
+      if (!value || typeof value !== 'object') return;
+      const heading = value as { text?: unknown };
+      if (typeof heading.text !== 'string') return;
+      el.textContent = heading.text;
     },
   };
 }

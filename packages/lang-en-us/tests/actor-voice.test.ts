@@ -13,6 +13,7 @@ import type { LocaleSettings, NounPhrase, RenderContext } from '@sharpee/if-doma
 import { ACTOR_PARAM_KEY } from '@sharpee/if-domain';
 import { EnglishLanguageProvider } from '../src/language-provider';
 import { expandActorPlaceholders } from '../src/perspective/placeholder-resolver';
+import { plainNode } from './test-utils/flatten';
 
 const PLAYER_ID = 'player-1';
 
@@ -38,7 +39,7 @@ function makeCtx(
 }
 
 function text(blocks: ReturnType<EnglishLanguageProvider['renderMessage']>): string {
-  return blocks.map((b) => b.content.map((c) => (typeof c === 'string' ? c : '')).join('')).join('\n');
+  return blocks.map((b) => b.content.map((c) => (typeof c === 'string' ? c : plainNode(c))).join('')).join('\n');
 }
 
 const lamp: NounPhrase = { kind: 'noun', name: 'lamp', number: 'singular', articleType: 'indefinite', referableId: 'lamp-1' };

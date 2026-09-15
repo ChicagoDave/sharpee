@@ -9,3 +9,4 @@
 export { EnglishAssembler, ASSEMBLER_DEFAULT_BLOCK_KEY, capitalizeSentenceStart, registerPronounSet } from './english-assembler.js';
 export type { PronounSetForms } from './english-assembler.js';
 export { PhraseNotImplementedError } from './errors.js';
+export { locationHeadingPhrase, realizeLocationHeading } from './location-heading.js';

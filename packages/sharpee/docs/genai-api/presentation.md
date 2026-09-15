@@ -292,6 +292,19 @@ export declare class BrowserClient implements BrowserClientInterface {
     private syncEndingFromWorld;
     private performSave;
     private getSaveContext;
+    /**
+     * Refresh the score and turn fields of the status line.
+     *
+     * The location field is deliberately not written here. ADR-349 D3a makes the
+     * status heading and the inline heading one value, projected per turn and
+     * delivered on the `location` channel, and its renderer owns that element
+     * (ADR-165, one renderer per channel). This method used to push
+     * `SaveManager.getCurrentLocation()` — the player's containing-entity name —
+     * into the same element on save, restore, and state change, which would now
+     * overwrite the composed heading with a raw entity name.
+     * `getCurrentLocation` keeps its other job, naming save slots, where the
+     * entity name is the right answer.
+     */
     private updateStatusLine;
     private syncScoreFromWorld;
 }

@@ -8,6 +8,7 @@ import type { IEntity } from '@sharpee/core';
 import type { NounPhrase, Phrase, RenderContext, RenderWorld } from '@sharpee/if-domain';
 import { parsePhraseTemplate } from '../../src/parser';
 import { EnglishAssembler } from '../../src/assembler';
+import { plainNode } from '../test-utils/flatten';
 
 const asm = new EnglishAssembler();
 
@@ -41,7 +42,7 @@ function makeCtx(params: Record<string, unknown>, world: RenderWorld): RenderCon
 
 function render(template: string, params: Record<string, unknown>, world: RenderWorld): string {
   const tree: Phrase = parsePhraseTemplate(template, params);
-  return asm.realize(tree, makeCtx(params, world)).flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : '')).join('');
+  return asm.realize(tree, makeCtx(params, world)).flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 }
 
 describe('Contents atom (ADR-194)', () => {

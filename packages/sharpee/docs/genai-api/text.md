@@ -29,7 +29,29 @@ Text blocks, decorations, rendering.
  *   content: ['brass lantern']
  * };
  */
-export type TextContent = string | IDecoration;
+export type TextContent = string | IDecoration | IChosen;
+/**
+ * A span whose text was *selected from alternatives* by consulting world state
+ * (ADR-353 D4) — a conditional `room name` arm, a presence-gated snippet, a
+ * state-derived detail clause, a slot's occupant contribution, a `Choice` pick.
+ *
+ * This is provenance, not presentation. It is deliberately NOT an `IDecoration`:
+ * a decoration is an author's CSS hook and a renderer styles it, while this says
+ * only "the world chose this text this turn" and every renderer passes through it
+ * transparently, exactly as though the span were bare. Conflating the two would
+ * give one type two reasons to change.
+ *
+ * Its consumer is auto-assertion (ADR-353 D4): a synthesized claim pins the
+ * spans that came out the same way regardless and skips these, so a test does
+ * not break when an NPC walks off or a gate flips. Nothing a player sees
+ * depends on it.
+ */
+export interface IChosen {
+    /** Discriminator — always `true`; its presence is the whole signal. */
+    readonly chosen: true;
+    /** The selected content. May nest decorations, which keep their meaning. */
+    readonly content: ReadonlyArray<TextContent>;
+}
 /**
  * Decorated content with a final, fully-resolved CSS class name.
  *
@@ -210,7 +232,7 @@ export declare const CORE_BLOCK_KEYS: {
  *
  * Utilities for safely working with TextContent, IDecoration, and ITextBlock.
  */
-import type { TextContent, IDecoration, ITextBlock } from './types.js';
+import type { TextContent, IDecoration, IChosen, ITextBlock } from './types.js';
 /**
  * Check if content is a decoration (not a plain string).
  *
@@ -221,6 +243,20 @@ import type { TextContent, IDecoration, ITextBlock } from './types.js';
  * }
  */
 export declare function isDecoration(content: TextContent): content is IDecoration;
+/**
+ * Check if content is a chosen span — text the world selected from alternatives
+ * this turn (ADR-353 D4).
+ *
+ * A renderer does not need this: `IChosen` carries no presentation and every
+ * renderer passes through it transparently. Auto-assertion needs it, to pin the
+ * spans around it and skip this one.
+ *
+ * @example
+ * if (isChosen(node)) {
+ *   // skip it when synthesizing a claim; render it normally
+ * }
+ */
+export declare function isChosen(content: TextContent): content is IChosen;
 /**
  * Check if a value is a valid TextBlock.
  *
@@ -281,10 +317,10 @@ export declare function extractPlainText(content: ReadonlyArray<TextContent>): s
  * @see ADR-096: Text Service Architecture
  * @see ADR-091: Text Decorations
  */
-export type { TextContent, IDecoration, ITextBlock } from './types.js';
+export type { TextContent, IDecoration, IChosen, ITextBlock } from './types.js';
 export { CORE_BLOCK_KEYS } from './types.js';
 export { CORE_BLOCK_KEYS as BLOCK_KEYS } from './types.js';
-export { isDecoration, isTextBlock, hasKeyPrefix, isStatusBlock, isRoomBlock, isActionBlock, extractPlainText, } from './guards.js';
+export { isDecoration, isChosen, isTextBlock, hasKeyPrefix, isStatusBlock, isRoomBlock, isActionBlock, extractPlainText, } from './guards.js';
 export declare const BLOCK_KEY_PREFIXES: {
     readonly STATUS: "status.";
     readonly ROOM: "room.";

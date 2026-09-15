@@ -2,6 +2,7 @@
 
 **Created**: 2026-09-15
 **Plan Status**: ACTIVE
+**Superseded by**: `docs/work/adr-353-pin-provenance/plan.md` (2026-09-15, session c35f3d) — **still live, not closed**. Phase 5 is BLOCKED on ADR-353 D4/D5 and Phase 6 is PENDING; both resume at exactly the phase they reached once the incoming plan lands. The incoming plan exists to unblock this one: ADR-353 AC-10 discharges this plan's AC-11, and Phase 5's deliverable is superseded by the general mechanism rather than by a heading-shaped refusal.
 **Overall scope**: Build the location-heading projection (`LocationHeadingBehavior.resolve` + the location-heading registry) in world-model, add the `room name` construct to Chord, wire story-loader's registration seam, cut the `location`/`room-name` wire over to the new projection (one-shot, D12), and add the auto-assertion refusal — discharging all 14 acceptance criteria of ADR-349.
 **Bounded contexts touched**: World Model (location/visibility projection), Chord Story Language (grammar/analyzer/IR), Story Loader (compilation and registration seam), Engine (prose pipeline / room block), stdlib (channels, looking-data), if-domain (channel wire contract), channel-service / platform-browser (rendering), lang-en-us (English Assembler realization), branch-tester + transcript-tester (the auto-assertion policy and the assertion core it actually lives in — see Phase 5's owed ADR amendment).
 **Key domain language**: location heading, `HeadingPart` (`place` / `enclosure` / `region` role), `LocationHeadingBehavior.resolve`, location-heading registry, the `room name` construct.
@@ -73,7 +74,57 @@ One evidence correction: the planner reported no matching open issues from `issu
 - **Entry state**: verified current state — `packages/engine/src/prose-pipeline/handlers/room.ts:69-90` builds the `room.name` block from `data.room?.nameId`/`data.roomName` (ADR-107 dual-mode), not from any projection; `packages/stdlib/src/channels/standard.ts:263-275` (`locationChannel`, `contentType: 'text'`, `mode: 'replace'`, `emit: 'always'`) calls `packages/stdlib/src/channels/world-helpers.ts:58-68` (`playerLocationName`, reading `world.getContainingRoom(player.id).name` — confirmed the `getContainingRoom` route D4a forbids); `packages/if-domain/src/channels/types.ts:287-297` (`ChannelProduceContext`, `world: unknown`, no language provider) confirmed as the shape `resolve`'s IR-registered-prose reliance (D11) must respect; `packages/channel-service/src/render-to-string.ts:260` (`renderStatusLine`) and `packages/platform-browser/src/channels/status.ts:22-31` (`createLocationChannelRenderer`, currently `typeof value !== 'string'` guard) confirmed as the two renderer call sites D12's Consequences section names; `packages/lang-en-us/src/assembler/english-assembler.ts:1-27` confirmed as the "SOLE authority" for cross-cutting realization (article, agreement, punctuation, whitespace, reference, case) that D13 assigns the parts-join to; `packages/stdlib/src/actions/standard/looking/looking-data.ts:67,148,327` confirmed as `inVehicle`'s only three writes, and a repo-wide grep confirmed zero reads.
 - **Deliverable**: `room.ts`'s room-name block and `standard.ts`'s `locationChannel` both derive every heading *part* from Phase 1's `LocationHeadingBehavior.resolve` and from no other route (D3 — one projection, two consumers). **ADR-107's `nameId` path survives, in the fallback and only there**: `room.ts:73-81` resolves `data.room?.nameId` through `context.languageProvider` today, and `resolve` cannot do that lookup because `world-model` holds no language provider (D11; ADR-107 Decision Driver 4, "world-model must not depend on language provider"). D16a already narrows the entity-name fallback to "no contributor produced a part at all", and ADR-107's localized name *is* that entity name in its localized form — so when `resolve` returns no parts each consumer falls back to exactly the path it uses today (the block's `nameId` → literal chain, the channel's room name), which is what D7's "renders exactly as it does today" promises. That fallback is not a second derivation of the heading, and AC-3's structural test is written to say so: neither consumer may obtain a heading *part* by any route but `resolve`, while the no-part fallback is left alone; `if-domain/src/channels/types.ts`'s `location` payload changes from `string` to a structured `HeadingPart[]`-derived shape with no compatibility form kept alongside (D12), **and `locationChannel`'s own declaration moves with it** — `packages/stdlib/src/channels/standard.ts:266-272` is an `IOChannel<string>` with `contentType: 'text'`, and ADR-163 §3 makes `contentType` the wire-level shape contract (`text` = plain string), so it becomes a `json` channel of the new payload type, the shape `scoreChannel` already uses for a structured status value; `mode: 'replace'` and `emit: 'always'` are unchanged; the English Assembler realizes the parts as a `Sequence` — positional, no conjunction ("Top of Well, in the bucket", never "...and the bucket") — per D13; `render-to-string.ts`'s `renderStatusLine` and `platform-browser/status.ts`'s `createLocationChannelRenderer` are updated to the new payload shape; `looking-data.ts`'s three `inVehicle` writes are removed (D8, superseded by the resolve-based path). An Integration Reality Statement (rule 13a) is produced before AC-4 is declared complete, since it is REAL-PATH: the bucket test is driven through an assembled engine turn, not a stubbed composer. Discharges **AC-2** (state-varying heading, no look required), **AC-3** (structural unit test asserting both call sites use `resolve` and nothing else), **AC-4** (the bucket, TypeScript REAL-PATH per ADR-350's note that no Chord vehicle surface exists yet), **AC-6** (`grep -rn "inVehicle" packages` returns nothing), **AC-7** (the opaque-vehicle regression for GH #468 — written first against today's `getContainingRoom`-based divergence so it fails, then made to pass by the cutover), **AC-8** (the three transition moments: entering, leaving, and the bucket moving between rooms with the enclosure part surviving unchanged), **AC-10** (assembler joining, Sequence not PhraseList).
 - **Exit state**: `pnpm --filter '@sharpee/world-model' test`, `pnpm --filter '@sharpee/stdlib' test`, `pnpm --filter '@sharpee/if-domain' test`, `pnpm --filter '@sharpee/engine' test`, `pnpm --filter '@sharpee/channel-service' test`, `pnpm --filter '@sharpee/platform-browser' test`, and `pnpm --filter '@sharpee/lang-en-us' test` all pass; `./repokit build` succeeds end-to-end with no package left on the old `string` payload.
-- **Status**: CURRENT (since 2026-09-15)
+- **Status**: **DONE 2026-09-15, session c35f3d.** Built, as one unit:
+  `HeadingPart` and the new `LocationHeadingValue` payload declared in
+  `packages/if-domain/src/channels/types.ts` and exported from its barrel —
+  `world-model` now imports `HeadingPart` from there and re-exports it rather
+  than declaring a second copy, since the projection's return shape and the wire
+  payload are the same shape in packages that cannot import each other (rule 8b).
+  `packages/lang-en-us/src/assembler/location-heading.ts` (new) holds
+  `locationHeadingPhrase` and `realizeLocationHeading`: a `Sequence` of
+  `Literal`s with an explicit `', '` separator node, realized through
+  `EnglishAssembler`, which keeps the punctuation decision in the component the
+  platform names as its owner (D13) and keeps it a Sequence rather than a
+  `PhraseList` (D13/AC-10). `locationChannel` is now `IOChannel<LocationHeadingValue>`
+  with `contentType: 'json'` (`mode`/`emit` unchanged), produced by
+  `playerLocationHeading`, which replaced `playerLocationName`; `room.ts`'s
+  heading half calls the same projection, with ADR-107's `nameId` chain kept as
+  the D16a fallback and only there. `createLocationChannelRenderer` reads the
+  structured payload. `inVehicle`'s three writes are gone and
+  `grep -rn "inVehicle" packages` returns nothing (**AC-6**).
+  Evidence: seven per-package suites green after the cutover — world-model 1540,
+  if-domain 102, lang-en-us 452, stdlib 1681, engine 821 (+7 skipped),
+  channel-service 121, platform-browser 158; `./repokit build` completes
+  end-to-end (bundle 4,454,444 bytes) and `wt-01-get-torch-early` still matches
+  its golden (34 passed).
+  Discharged: **AC-2**, **AC-3**, **AC-4**, **AC-6**, **AC-7** (GH #468),
+  **AC-8**, **AC-10** — the first, third and fourth through
+  `packages/engine/tests/integration/adr-349-heading-cutover.test.ts` (7 tests,
+  every one a real `GameEngine.executeTurn` reading the turn's own
+  `channel:packet` and `room.name` block — the Integration Reality Statement is
+  in the session record), AC-3 through
+  `packages/engine/tests/unit/adr-349-single-derivation.test.ts` (3 tests).
+  Load-bearing, probed three ways and each reverted: swapping the resolver to
+  `getContainingRoom` fails 4 of 7 including AC-7; changing the separator to
+  `" and "` fails 3 including AC-10; making `room.ts` bypass `resolve` fails
+  AC-3's spy test.
+  **Two findings the entry state did not predict, both recorded rather than
+  worked around.** `channel-service`'s `renderStatusLine` does **not** consume
+  the `location` channel: it filters `ITextBlock`s for `status.room`
+  (`render-to-string.ts:269`), a block key no in-repo producer emits — only its
+  own tests and `text-blocks`'s constant table mention it. It is a published API
+  surface over a block shape, not a second reader of this payload, so the
+  cutover does not reach it and no edit was invented for it. ADR-349's
+  Consequences and the Scope line both name it as "the second status-rendering
+  path"; that is the correction owed. And a **third writer to the same DOM
+  element** turned up in `platform-browser`: `BrowserClient.updateStatusLine`
+  pushed `SaveManager.getCurrentLocation()` — the player's containing-entity
+  name — into `statusLocation` on save, restore, and state change, the same
+  element `createLocationChannelRenderer` owns under ADR-165. Left alone it
+  would overwrite the composed heading with a raw entity name, so
+  `updateStatusLine` now refreshes score and turns only; `getCurrentLocation`
+  keeps its other job, naming save slots, where the entity name is right. That
+  file is outside ADR-349's Scope line — flagged for David.
 
 ### Phase 5: Branch-tester auto-assertion refusal for a varying heading
 - **Tier**: Small
@@ -82,7 +133,31 @@ One evidence correction: the planner reported no matching open issues from `issu
 - **Entry state**: `packages/branch-tester/src/auto-assertion.ts:34` confirmed `room-name-and-description` as the platform's effective default policy — but **the synthesis itself is not in that file**. ADR-340 D1 and Amendment A1 moved it into the assertion core: `synthesizePolicyAssertions` is defined at `packages/transcript-tester/src/assertion-core.ts:663` and only re-exported by `branch-tester/src/auto-assertion.ts:23`. Its signature is `(policy, actualOutput, channelValues)` — no world, no IR, no room identity — so it cannot see D14's static `while`-arm property without a new input. **Three writers pin a room name under a policy**, and the refusal must reach all three or the varying heading is pinned by whichever one the author used: `command-core.ts:574` (reached by the transcript world directly and by branch-tester's runner through `runCommand`, `branch-tester/src/runner.ts:245,259`), the IDE's record-time synthesis (`tools/ide/web/testing-surface/src/compose.ts:131`), and branch-tester's own boot-turn path (`synthesizeOpeningAssertions`, `auto-assertion.ts:132`, called at `runner.ts:276`). Phase 2's IR is where the static property comes from.
 - **Deliverable**: `synthesizePolicyAssertions` gains an input carrying which entities have a varying heading (the IR-derived set, supplied by each caller; absent = today's behavior) and refuses to synthesize the room-name assertion for one of them — the description half is unaffected. `synthesizeOpeningAssertions` takes the same input for the boot turn. The refusal has **one spelling**, in the core, which is what `auto-assertion.ts`'s own header requires ("Anything either writer records comes from HERE — a second spelling of the synthesis is drift"). An unconditional `room name`, or a room with none, is pinned exactly as today. **Owed before this phase starts**: ADR-349's Scope line names `packages/branch-tester/src/auto-assertion.ts` and not `packages/transcript-tester`, so the ADR needs a Scope amendment recording where the assertion core actually lives. That is David's call, not this plan's — the alternative, duplicating the refusal at each of the three call sites to keep transcript-tester out of scope, is the drift the core exists to prevent and is not proposed here.
 - **Exit state**: `pnpm --filter '@sharpee/transcript-tester' test` and `pnpm --filter '@sharpee/branch-tester' test` both pass, including both directions of **AC-11** — removing the refusal must pin the varying heading (proving the refusal is load-bearing), and over-applying it must not stop pinning the unconditional cases — and the transcript world's synthesis is unchanged when no varying-entity input is supplied, which is ADR-307's firewall restated as a test.
-- **Status**: PENDING
+- **Status**: **BLOCKED 2026-09-15, session c35f3d**, on **ADR-352 Q-3** (what an Element
+  carries besides its value), which is itself blocked on ADR-352 Q-1 (cardinality),
+  which David ruled seminal and owed its own ADR and discussion.
+  **Why this phase could not be built as written.** The deliverable says
+  `synthesizePolicyAssertions` gains an input carrying the IR-derived set of
+  entities with a varying heading, "supplied by each caller". Two callers can
+  supply it — `command-core.ts:574` holds `engine.world`, and the branch-tester
+  runner reaches the same function through `runCommand` (`runner.ts:245,259`).
+  The third cannot: `tools/ide/web/testing-surface/src/compose.ts:131` runs in a
+  web bundle whose only input is a `FeedRecord` (`main.ts:60-68`) — turn,
+  command, output, channel captures, events, and a world digest of
+  `{kind, id, name, token, location}`. No IR, no heading metadata, nothing to
+  derive the set from. Built as written, the IDE's recording path would have gone
+  on auto-pinning varying headings, which is the failure D14 exists to prevent.
+  The two ways out were a `varies` boolean on the `location` payload or a new
+  field on the IDE's feed wire — the same per-case annotation at two addresses,
+  for a fact that belongs to a category. That is what raised ADR-352.
+  **One entry-state correction, verified**: this phase named
+  `synthesizeOpeningAssertions` as the third of "three writers [that] pin a room
+  name under a policy". It is not one — it synthesizes the prologue and the
+  `info` channel's title and description (`auto-assertion.ts:132-175`) and
+  carries no room-name claim anywhere. There are two writers, both reaching
+  `assertion-core.ts:663`. Nothing was built against the false third.
+  **Nothing was written this phase** — no partial refusal, no parameter added and
+  left unused. AC-11 stays undischarged.
 
 ### Phase 6: End-to-end acceptance sweep — the maze, and no regression
 - **Tier**: Small

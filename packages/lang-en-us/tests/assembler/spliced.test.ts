@@ -25,6 +25,7 @@ import type {
   TextStateStore,
 } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
+import { plainNode } from '../test-utils/flatten';
 
 // --- harness (matches snippet-splice.test.ts conventions) -------------------
 
@@ -53,7 +54,7 @@ const asm = new EnglishAssembler();
 function renderWith(tree: Phrase, ctx: RenderContext = makeCtx()): string {
   const blocks = asm.realize(tree, ctx);
   if (blocks.length === 0) return '';
-  return blocks[0].content.map((c) => (typeof c === 'string' ? c : '')).join('');
+  return blocks[0].content.map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 }
 
 const verbatim = (text: string): Verbatim => ({ kind: 'verbatim', text });

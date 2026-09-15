@@ -93,6 +93,19 @@ interface Run {
   quoteClose?: boolean;
   /** Terminal punctuation this run owns; materialized by the reconciliation pass. */
   ownsTrailingPunct?: '.' | '?' | '!';
+  /**
+   * This run's text was SELECTED FROM ALTERNATIVES by consulting world state
+   * (ADR-353 D4). Set by the four combinators that make such a choice while
+   * realizing — `Slot`, `Contents`, `Choice`, `Optional` — and inherited by
+   * whatever they realize. `Sequence` and `PhraseList` need no code for it:
+   * they only compose already-realized children, so each child's own flag
+   * survives untouched.
+   *
+   * It reaches the wire as an `IChosen` span and its only consumer is
+   * auto-assertion, which pins the spans that came out the same way regardless
+   * and skips these. Nothing a player sees depends on it.
+   */
+  chosen?: boolean;
 }
 
 // ===========================================================================
@@ -697,6 +710,16 @@ function markLastTrailingTerminal(runs: Run[], terminal: '.' | '?' | '!'): Run[]
 }
 
 /** Realize a phrase to flat runs, threading the decoration stack through composition. */
+/**
+ * Mark every run a world-state-dependent combinator produced (ADR-353 D4).
+ *
+ * @param runs the realized child runs
+ * @returns the same runs, each flagged chosen
+ */
+function markChosen(runs: Run[]): Run[] {
+  return runs.map((run) => (run.chosen ? run : { ...run, chosen: true }));
+}
+
 function realizeToRuns(
   phrase: Phrase,
   ctx: RenderContext,
@@ -756,7 +779,8 @@ function realizeToRuns(
   if (isContents(phrase)) {
     // Contents (ADR-194): the container's live contents as a grouped list.
     const own = extendDeco(deco, phrase.decorations);
-    return [{ text: renderContents(phrase, ctx), verbatim: false, deco: own }];
+    // ADR-353 D4: the container's live contents decide this text.
+    return [{ text: renderContents(phrase, ctx), verbatim: false, deco: own, chosen: true }];
   }
 
   if (isSlot(phrase)) {
@@ -764,7 +788,8 @@ function realizeToRuns(
     // slot-owned connective grammar. Zero survivors → no run (absorbed as Empty).
     const own = extendDeco(deco, phrase.decorations);
     const text = renderSlot(phrase, ctx);
-    return text ? [{ text, verbatim: false, deco: own }] : [];
+    // ADR-353 D4: a slot's text is whatever was contributed this turn.
+    return text ? [{ text, verbatim: false, deco: own, chosen: true }] : [];
   }
 
   if (isSequence(phrase)) {
@@ -776,7 +801,8 @@ function realizeToRuns(
     // Optional (ADR-196 §1): the producer resolved `present`; realize the child or
     // nothing. Absent → no runs, absorbed by the enclosing combinator like Empty.
     const own = extendDeco(deco, phrase.decorations);
-    return phrase.present ? realizeToRuns(phrase.child, ctx, own) : [];
+    // ADR-353 D4: the producer resolved `present` from world state.
+    return phrase.present ? markChosen(realizeToRuns(phrase.child, ctx, own)) : [];
   }
 
   if (isChoice(phrase)) {
@@ -784,7 +810,8 @@ function realizeToRuns(
     // advance the counter, and realize the winner. A winner that realizes to
     // Empty leaves no runs (once-only text).
     const own = extendDeco(deco, phrase.decorations);
-    return realizeToRuns(selectChoice(phrase, ctx), ctx, own);
+    // ADR-353 D4: the pick is made from persisted state at realize time.
+    return markChosen(realizeToRuns(selectChoice(phrase, ctx), ctx, own));
   }
 
   if (isSpliced(phrase)) {
@@ -869,12 +896,21 @@ function renderToString(phrase: Phrase, ctx: RenderContext): string {
     .join('');
 }
 
-/** Build text content from collapsed runs, nesting decorations where present. */
+/**
+ * Build text content from collapsed runs, nesting decorations where present and
+ * wrapping world-chosen runs in an `IChosen` span (ADR-353 D4).
+ *
+ * A chosen run breaks the plain-string buffer exactly as a decorated one does,
+ * so the stable text around it stays its own node and auto-assertion can pin it.
+ * Where a run is both chosen and decorated the decoration nests INSIDE: the
+ * decoration is the author's presentation of that text, and the provenance is a
+ * statement about the whole span.
+ */
 function runsToContent(runs: Run[]): TextContent[] {
   const content: TextContent[] = [];
   let buffer = '';
   for (const run of runs) {
-    if (run.deco.length === 0) {
+    if (run.deco.length === 0 && !run.chosen) {
       buffer += run.text;
       continue;
     }
@@ -882,7 +918,9 @@ function runsToContent(runs: Run[]): TextContent[] {
       content.push(buffer);
       buffer = '';
     }
-    content.push(wrapDecorations(run.text, run.deco));
+    const node: TextContent =
+      run.deco.length > 0 ? wrapDecorations(run.text, run.deco) : run.text;
+    content.push(run.chosen ? { chosen: true, content: [node] } : node);
   }
   if (buffer) content.push(buffer);
   if (content.length === 0) content.push('');

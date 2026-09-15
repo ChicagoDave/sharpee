@@ -31,7 +31,7 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
 ): Record<string, unknown> => {
   const actor = context.actor;
   // Use visibility logic to determine what location to describe
-  const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
+  const { location } = VisibilityBehavior.getDescribableLocation(
     actor,
     context.world
   );
@@ -64,7 +64,6 @@ export const buildLookingEventData: ActionDataBuilder<Record<string, unknown>> =
     locationNameId: identity?.nameId,
     locationDescriptionId: identity?.descriptionId,
     isDark: isDark,
-    inVehicle: immediateContainer?.name || null,
     contents: visible.map(entity => ({
       id: entity.id,
       name: entity.name,
@@ -83,7 +82,7 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
   postState?: WorldModel
 ): Record<string, unknown> => {
   // Use visibility logic to determine what location to describe
-  const { location, immediateContainer } = VisibilityBehavior.getDescribableLocation(
+  const { location } = VisibilityBehavior.getDescribableLocation(
     context.actor,
     context.world
   );
@@ -145,7 +144,6 @@ export const buildRoomDescriptionData: ActionDataBuilder<Record<string, unknown>
     ...(roomTrait?.snippets ? { roomSnippets: roomTrait.snippets } : {}),
     includeContents: true,
     verbose: isVerbose,
-    inVehicle: immediateContainer?.name || null,
     contents: visible.map(entity => ({
       id: entity.id,
       name: entity.name,
@@ -321,11 +319,6 @@ export function determineLookingMessage(
     ? roomTrait.initialDescription
     : location.description;
   params.location = location.name;
-
-  // If we're in an immediate container (but can see the room), note it
-  if (immediateContainer) {
-    params.inVehicle = immediateContainer.name;
-  }
 
   // Check if we're in a closed container/vehicle (can't see the room)
   // This only happens when getDescribableLocation returns the container itself

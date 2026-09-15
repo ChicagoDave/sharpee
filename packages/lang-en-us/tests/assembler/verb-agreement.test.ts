@@ -12,6 +12,7 @@
 import { describe, it, expect } from 'vitest';
 import type { NarrativeAgreement, NounPhrase, Phrase, PhraseList, RenderContext, Verb } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
+import { markedNode } from '../test-utils/flatten';
 
 // --- harness ---------------------------------------------------------------
 
@@ -33,7 +34,7 @@ const asm = new EnglishAssembler();
 /** Realize a tree and return its single block's flattened text. */
 function render(tree: Phrase, params?: Record<string, unknown>, narrative?: NarrativeAgreement): string {
   const blocks = asm.realize(tree, makeCtx(params, narrative));
-  return blocks[0].content.map((c) => (typeof c === 'string' ? c : '⟦deco⟧')).join('');
+  return blocks[0].content.map((c) => (typeof c === 'string' ? c : markedNode(c))).join('');
 }
 
 const verb = (lemma: string, subjectRef: string, person?: Verb['person']): Verb =>

@@ -8396,20 +8396,20 @@ export declare class ReachabilityBehavior extends Behavior {
  * Public interface: `LocationHeadingBehavior.resolve`, `HeadingPart`.
  * Owner context: `@sharpee/world-model` — world / projections.
  */
+import type { HeadingPart } from '@sharpee/if-domain';
 import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from './WorldModel.js';
 /**
  * One contributor's text for the current heading. A heading is an ordered list
  * of these; an empty list means no contributor spoke (D16a), which is the
  * consumer's signal to render what it renders today.
+ *
+ * Declared in `@sharpee/if-domain` and re-exported here, not re-declared: it is
+ * both this projection's return shape and the `location` channel's wire payload,
+ * and those two sit in packages that cannot import each other. A mirrored
+ * interface would let the projection and the wire drift apart silently.
  */
-export interface HeadingPart {
-    /** The entity that supplied this text — the place, the enclosure, or a region. */
-    readonly ownerId: string;
-    /** The winning arm's resolved prose, pre-decoration. */
-    readonly text: string;
-    readonly role: 'place' | 'enclosure' | 'region';
-}
+export type { HeadingPart };
 /**
  * The location heading, as the ordered parts its contributors supplied.
  *

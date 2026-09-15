@@ -16,11 +16,14 @@
  *  - `asWorld(ctx)` — narrow `ctx.world` to `IWorldModel` or
  *    `undefined`.
  *  - `readCapability<T>(ctx, name)` — typed capability lookup.
- *  - `playerLocationName(ctx)` — current room display name.
+ *  - `playerLocationHeading(ctx)` — the composed location heading
+ *    (ADR-349 D3) the `location` channel carries.
  */
 
-import type { ChannelProduceContext } from '@sharpee/if-domain';
-import type { IWorldModel, ICapabilityData } from '@sharpee/world-model';
+import type { ChannelProduceContext, LocationHeadingValue } from '@sharpee/if-domain';
+import type { IWorldModel, ICapabilityData, WorldModel } from '@sharpee/world-model';
+import { LocationHeadingBehavior, VisibilityBehavior } from '@sharpee/world-model';
+import { realizeLocationHeading } from '@sharpee/lang-en-us';
 
 /**
  * Return the context's world cast as an `IWorldModel`, or `undefined`
@@ -50,19 +53,49 @@ export function readCapability<T extends ICapabilityData = ICapabilityData>(
 }
 
 /**
- * Resolve the player's current room display name, or `undefined` if
- * the world has no player, no containing room, or the room lacks a
- * display name. Used by `locationChannel` to populate the status-line
- * location field.
+ * The player's location heading for this turn — the `location` channel's whole
+ * payload (ADR-349 D3, D12).
+ *
+ * Every *part* comes from `LocationHeadingBehavior.resolve` and from no other
+ * route, which is the property that makes the status line and the inline
+ * heading incapable of disagreeing (D3a). When no contributor spoke, D16a's
+ * fallback is the place's own entity name — resolved through
+ * `getDescribableLocation`, never through `getContainingRoom`, which walks past
+ * an opaque vehicle to the room around it and is the divergence this projection
+ * exists to end (D4a, GH #468).
+ *
+ * @param ctx the channel produce context for the turn just executed
+ * @returns the heading, or `undefined` when the world has no player (the channel
+ *   then re-emits its previous value)
  */
-export function playerLocationName(ctx: ChannelProduceContext): string | undefined {
+export function playerLocationHeading(
+  ctx: ChannelProduceContext,
+): LocationHeadingValue | undefined {
   const world = asWorld(ctx);
   if (!world) return undefined;
   const player = world.getPlayer?.();
   if (!player) return undefined;
-  const room = world.getContainingRoom?.(player.id);
-  if (!room) return undefined;
-  const name = (room as { name?: string }).name;
+
+  // The channel context types its world `unknown` to keep if-domain free of a
+  // world-model dependency; in production it IS the live `WorldModel`, which is
+  // what both projections below require.
+  const model = world as unknown as WorldModel;
+
+  let parts;
+  try {
+    parts = LocationHeadingBehavior.resolve(player, model);
+  } catch {
+    // A partial world (test stub, mid-teardown) resolves to nothing rather than
+    // throwing through the channel service — the channel degrades to silence.
+    return undefined;
+  }
+
+  if (parts.length > 0) {
+    return { text: realizeLocationHeading(parts), parts };
+  }
+
+  const place = VisibilityBehavior.getDescribableLocation(player, model).location;
+  const name = place?.name;
   if (typeof name !== 'string' || name.length === 0) return undefined;
-  return name;
+  return { text: name, parts: [] };
 }

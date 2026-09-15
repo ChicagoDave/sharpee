@@ -15,7 +15,7 @@
  * unchanged so stories own their own CSS.
  */
 
-import type { TextContent, IDecoration } from '@sharpee/text-blocks';
+import type { TextContent, IDecoration, IChosen } from '@sharpee/text-blocks';
 
 /**
  * Render a `TextContent[]` array into a `DocumentFragment`. String
@@ -37,6 +37,12 @@ export function renderTextContent(
 function renderNode(doc: Document, node: TextContent): Node {
   if (typeof node === 'string') {
     return doc.createTextNode(node);
+  }
+  if ('chosen' in node) {
+    // ADR-353 D4: an `IChosen` span carries test provenance, never
+    // presentation. Render its content with no wrapper of any kind, so the
+    // player's view is byte-identical to the same prose without it.
+    return renderTextContent(doc, (node as IChosen).content);
   }
   return renderDecoration(doc, node);
 }

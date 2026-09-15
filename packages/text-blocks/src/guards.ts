@@ -4,7 +4,7 @@
  * Utilities for safely working with TextContent, IDecoration, and ITextBlock.
  */
 
-import type { TextContent, IDecoration, ITextBlock } from './types.js';
+import type { TextContent, IDecoration, IChosen, ITextBlock } from './types.js';
 
 /**
  * Check if content is a decoration (not a plain string).
@@ -17,6 +17,23 @@ import type { TextContent, IDecoration, ITextBlock } from './types.js';
  */
 export function isDecoration(content: TextContent): content is IDecoration {
   return typeof content === 'object' && content !== null && 'className' in content && 'content' in content;
+}
+
+/**
+ * Check if content is a chosen span — text the world selected from alternatives
+ * this turn (ADR-353 D4).
+ *
+ * A renderer does not need this: `IChosen` carries no presentation and every
+ * renderer passes through it transparently. Auto-assertion needs it, to pin the
+ * spans around it and skip this one.
+ *
+ * @example
+ * if (isChosen(node)) {
+ *   // skip it when synthesizing a claim; render it normally
+ * }
+ */
+export function isChosen(content: TextContent): content is IChosen {
+  return typeof content === 'object' && content !== null && 'chosen' in content;
 }
 
 /**

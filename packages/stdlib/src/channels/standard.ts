@@ -24,13 +24,13 @@
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
 
-import type { IOChannel, ProseEntry, ProseChannelId, IStoryEnding } from '@sharpee/if-domain';
+import type { IOChannel, ProseEntry, ProseChannelId, IStoryEnding, LocationHeadingValue } from '@sharpee/if-domain';
 import { PREFERRED_LAYOUT_CHANNEL } from '@sharpee/if-domain';
 import type { TextContent } from '@sharpee/text-blocks';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
 import { PLAYER_DIED_EVENT } from '../death/index.js';
 import { PROSE_CHANNEL_BY_BLOCK_KEY, BANNER_KEYS } from './keys.js';
-import { playerLocationName, readCapability } from './world-helpers.js';
+import { playerLocationHeading, readCapability } from './world-helpers.js';
 import { characterAuthorChannel } from './character-author.js';
 import { sceneChannel, exchangeAffordancesChannel, threadAffordancesChannel } from './scene.js';
 import { ENGINE_VERSION } from '../actions/standard/version/engine-version.js';
@@ -261,17 +261,28 @@ export const promptChannel: IOChannel<string> = {
 };
 
 /**
- * `location` — replace-mode status-line location name. Closure reads
- * the player's containing room from the world and returns its display
- * name. Returns `undefined` (the channel re-emits its prevValue) if
- * the world has no player or the room cannot be resolved.
+ * `location` — replace-mode location heading (ADR-349 D3, D12).
+ *
+ * One of the two consumers of `LocationHeadingBehavior.resolve`; the other is
+ * the engine's room-name block. Neither derives a heading part any other way,
+ * which is what makes the status line and the inline heading incapable of
+ * disagreeing (D3a).
+ *
+ * `json`, not `text`: the payload is `LocationHeadingValue` — the realized
+ * heading plus the parts it was realized from, so a client with a narrow status
+ * bar can drop a part instead of receiving a different string. ADR-163 §3 makes
+ * `contentType` the wire-level shape contract, so it moves with the payload.
+ * This is D12's one-shot cutover; no `string` form is kept alongside.
+ *
+ * Returns `undefined` (the channel re-emits its prevValue) when the world has
+ * no player or no place can be resolved.
  */
-export const locationChannel: IOChannel<string> = {
+export const locationChannel: IOChannel<LocationHeadingValue> = {
   id: 'location',
-  contentType: 'text',
+  contentType: 'json',
   mode: 'replace',
   emit: 'always',
-  produce: (ctx) => playerLocationName(ctx),
+  produce: (ctx) => playerLocationHeading(ctx),
 };
 
 /**

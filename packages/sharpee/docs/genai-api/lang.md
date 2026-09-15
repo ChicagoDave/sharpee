@@ -2257,6 +2257,52 @@ export declare class PhraseNotImplementedError extends Error {
 }
 ```
 
+### assembler/location-heading
+
+```typescript
+/**
+ * @file English realization of the location heading's parts (ADR-349 D13).
+ *
+ * The projection in `@sharpee/world-model` returns the heading as ordered parts
+ * and never as a joined string, because who joins them — and with what
+ * punctuation and whitespace — is the locale's authority, and the English
+ * Assembler holds it by written contract: "the SOLE authority for every
+ * cross-cutting correctness concern — article, agreement, punctuation,
+ * whitespace, reference, and case" (`english-assembler.ts:4-7`). This file is
+ * where English exercises that authority over this particular join.
+ *
+ * The parts are positional and take no conjunction — "Top of Well, in the
+ * bucket", never "Top of Well and the bucket". That is why the tree is a
+ * `Sequence` and not a `PhraseList`: a list would impose ADR-190's
+ * comma-and-`and` semantics, which reads an enclosure as a second item in a list
+ * of places.
+ *
+ * Public interface: `locationHeadingPhrase`, `realizeLocationHeading`.
+ * Owner context: `@sharpee/lang-en-us` — English realization.
+ */
+import type { HeadingPart, Phrase } from '@sharpee/if-domain';
+/**
+ * Build the phrase tree for a heading.
+ *
+ * INVARIANT: every node is a `Literal` or the enclosing `Sequence`. Neither reads
+ * the render context while realizing (`english-assembler.ts` — the `Literal` and
+ * `Sequence` cases take `ctx` and never touch it), which is what lets
+ * `realizeLocationHeading` realize without a live world.
+ *
+ * @param parts the heading's parts in emission order; blank texts are dropped
+ * @returns a `Sequence` of the parts with separators between them, or `Empty`
+ *   when no part carries text
+ */
+export declare function locationHeadingPhrase(parts: ReadonlyArray<Pick<HeadingPart, 'text'>>): Phrase;
+/**
+ * Realize a heading's parts to the text the player reads.
+ *
+ * @param parts the heading's parts in emission order
+ * @returns the joined heading, or `''` when no part carries text
+ */
+export declare function realizeLocationHeading(parts: ReadonlyArray<Pick<HeadingPart, 'text'>>): string;
+```
+
 ### parser/parse-phrase-template
 
 ```typescript

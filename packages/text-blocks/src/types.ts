@@ -21,7 +21,30 @@
  *   content: ['brass lantern']
  * };
  */
-export type TextContent = string | IDecoration;
+export type TextContent = string | IDecoration | IChosen;
+
+/**
+ * A span whose text was *selected from alternatives* by consulting world state
+ * (ADR-353 D4) — a conditional `room name` arm, a presence-gated snippet, a
+ * state-derived detail clause, a slot's occupant contribution, a `Choice` pick.
+ *
+ * This is provenance, not presentation. It is deliberately NOT an `IDecoration`:
+ * a decoration is an author's CSS hook and a renderer styles it, while this says
+ * only "the world chose this text this turn" and every renderer passes through it
+ * transparently, exactly as though the span were bare. Conflating the two would
+ * give one type two reasons to change.
+ *
+ * Its consumer is auto-assertion (ADR-353 D4): a synthesized claim pins the
+ * spans that came out the same way regardless and skips these, so a test does
+ * not break when an NPC walks off or a gate flips. Nothing a player sees
+ * depends on it.
+ */
+export interface IChosen {
+  /** Discriminator — always `true`; its presence is the whole signal. */
+  readonly chosen: true;
+  /** The selected content. May nest decorations, which keep their meaning. */
+  readonly content: ReadonlyArray<TextContent>;
+}
 
 /**
  * Decorated content with a final, fully-resolved CSS class name.

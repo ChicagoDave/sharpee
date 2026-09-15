@@ -13,6 +13,8 @@
  *   configuration enums (§3, §4, §5).
  * - `ClientCapabilities`, `CapabilityFlag` — capability declaration and
  *   the gating discriminator (§2, §6).
+ * - `HeadingPart`, `LocationHeadingValue` — the `location` channel's
+ *   structured payload (ADR-349 D11, D12).
  * - `ChannelDefinition`, `HelloPacket`, `CmgtPacket`, `TurnPacket`,
  *   `CommandPacket`, `WirePacket` — wire-protocol packets (§1, §11).
  *
@@ -31,6 +33,8 @@ export type {
   ProseEntry,
   PreferredLayout,
   ProseChannelId,
+  HeadingPart,
+  LocationHeadingValue,
 } from './types.js';
 
 export { PREFERRED_LAYOUT_CHANNEL, PROSE_CHANNEL_IDS } from './types.js';

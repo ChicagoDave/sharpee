@@ -4154,7 +4154,7 @@ export declare const channelRegistry: IChannelRegistry;
  *
  * @see ADR-163 — Channel-Service Platform — §4, §5, §6
  */
-import type { IOChannel, ProseEntry, IStoryEnding } from '@sharpee/if-domain';
+import type { IOChannel, ProseEntry, IStoryEnding, LocationHeadingValue } from '@sharpee/if-domain';
 /**
  * Event types the standard channels listen for. Stories or extensions
  * that want to populate `death`, `endgame`, or `score_notify` emit
@@ -4230,12 +4230,23 @@ export declare const preferredLayoutChannel: IOChannel<string[]>;
  */
 export declare const promptChannel: IOChannel<string>;
 /**
- * `location` — replace-mode status-line location name. Closure reads
- * the player's containing room from the world and returns its display
- * name. Returns `undefined` (the channel re-emits its prevValue) if
- * the world has no player or the room cannot be resolved.
+ * `location` — replace-mode location heading (ADR-349 D3, D12).
+ *
+ * One of the two consumers of `LocationHeadingBehavior.resolve`; the other is
+ * the engine's room-name block. Neither derives a heading part any other way,
+ * which is what makes the status line and the inline heading incapable of
+ * disagreeing (D3a).
+ *
+ * `json`, not `text`: the payload is `LocationHeadingValue` — the realized
+ * heading plus the parts it was realized from, so a client with a narrow status
+ * bar can drop a part instead of receiving a different string. ADR-163 §3 makes
+ * `contentType` the wire-level shape contract, so it moves with the payload.
+ * This is D12's one-shot cutover; no `string` form is kept alongside.
+ *
+ * Returns `undefined` (the channel re-emits its prevValue) when the world has
+ * no player or no place can be resolved.
  */
-export declare const locationChannel: IOChannel<string>;
+export declare const locationChannel: IOChannel<LocationHeadingValue>;
 /**
  * `score` — replace-mode `{current, max}` payload.
  *

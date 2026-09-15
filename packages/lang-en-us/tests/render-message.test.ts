@@ -8,6 +8,7 @@
 import { EnglishLanguageProvider } from '../src/language-provider';
 import { PhraseParseError } from '../src/parser';
 import type { LocaleSettings, RenderContext } from '@sharpee/if-domain';
+import { markedNode } from './test-utils/flatten';
 
 /** Minimal inert render context (seams are placeholders in W2). */
 function makeCtx(settings: LocaleSettings = { serialComma: true }): RenderContext {
@@ -26,7 +27,7 @@ function makeCtx(settings: LocaleSettings = { serialComma: true }): RenderContex
 function text(blocks: ReturnType<EnglishLanguageProvider['renderMessage']>): string {
   return blocks
     .flatMap((b) => b.content)
-    .map((c) => (typeof c === 'string' ? c : '⟦deco⟧'))
+    .map((c) => (typeof c === 'string' ? c : markedNode(c)))
     .join('');
 }
 

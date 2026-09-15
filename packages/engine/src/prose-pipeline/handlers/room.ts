@@ -2,10 +2,17 @@
  * Room description event handler.
  *
  * Handles `if.event.room.description` (canonical form) and
- * `if.event.room_description` (legacy alternate). Resolves the
- * room name and description through the language provider when a
- * message id is present (ADR-107 dual-mode), falling back to literal
- * text otherwise.
+ * `if.event.room_description` (legacy alternate).
+ *
+ * The heading above the description comes from `LocationHeadingBehavior.resolve`
+ * and from no other route (ADR-349 D3) — this handler and stdlib's `location`
+ * channel are its two consumers, which is what makes the inline heading and the
+ * status line incapable of disagreeing (D3a). When no contributor supplied a
+ * part, D16a's fallback applies and the handler resolves the room's name exactly
+ * as it always has: the ADR-107 message id if one is present, then the literal.
+ *
+ * The description is resolved through the language provider when a message id is
+ * present (ADR-107 dual-mode), falling back to literal text otherwise.
  *
  * Public interface: `handleRoomDescription`. Used by the pipeline's
  * event-type dispatch.
@@ -21,7 +28,13 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { SnippetMap } from '@sharpee/if-domain';
 import { resolveSnippetDescription } from '@sharpee/stdlib';
-import { getStateClauses, type IFEntity } from '@sharpee/world-model';
+import {
+  getStateClauses,
+  LocationHeadingBehavior,
+  type IFEntity,
+  type WorldModel,
+} from '@sharpee/world-model';
+import { realizeLocationHeading } from '@sharpee/lang-en-us';
 import type { HandlerContext } from './types.js';
 import { createBlock, createBlocks, extractValue } from '../assemble.js';
 import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
@@ -59,6 +72,28 @@ interface RoomDescriptionData {
 }
 
 /**
+ * The current location heading's parts, or an empty list when the pipeline has
+ * no world to project against (the legacy world-less construction some unit
+ * tests still use) or no player is installed.
+ *
+ * The pipeline holds the minimal `WorldModelLike` surface; in production it IS
+ * the live `WorldModel` the projection requires, which is the same narrowing the
+ * slot-entry gate path already makes (`pipeline.ts:193-196`).
+ *
+ * @param context the handler context for this turn
+ * @returns the heading's parts in emission order; empty triggers the D16a fallback
+ */
+function resolveHeadingParts(
+  context: HandlerContext,
+): ReturnType<typeof LocationHeadingBehavior.resolve> {
+  const world = context.world;
+  if (!world) return [];
+  const player = world.getPlayer();
+  if (!player) return [];
+  return LocationHeadingBehavior.resolve(player as IFEntity, world as unknown as WorldModel);
+}
+
+/**
  * Handle room description events.
  */
 export function handleRoomDescription(
@@ -72,12 +107,26 @@ export function handleRoomDescription(
   if (data.verbose) {
     let name: string | undefined;
 
-    // ADR-107: message ID takes precedence.
-    const nameId = data.roomNameId ?? data.room?.nameId;
-    if (nameId && context.languageProvider) {
-      const resolved = context.languageProvider.getMessage(nameId, {});
-      if (resolved && resolved !== nameId) {
-        name = resolved;
+    // ADR-349 D3: the authored heading, when any contributor spoke. Parts come
+    // from the projection and are joined by the locale (D13); this handler
+    // composes nothing itself.
+    const parts = resolveHeadingParts(context);
+    if (parts.length > 0) {
+      name = realizeLocationHeading(parts);
+    }
+
+    // ADR-349 D16a: no contributor produced a part, so the heading falls back to
+    // the room's own name — the path below, unchanged. ADR-107's message id
+    // still takes precedence over the literal here, and must: the projection
+    // cannot make that lookup, because `world-model` holds no language provider.
+    if (!name) {
+      // ADR-107: message ID takes precedence.
+      const nameId = data.roomNameId ?? data.room?.nameId;
+      if (nameId && context.languageProvider) {
+        const resolved = context.languageProvider.getMessage(nameId, {});
+        if (resolved && resolved !== nameId) {
+          name = resolved;
+        }
       }
     }
 

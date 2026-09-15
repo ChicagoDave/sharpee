@@ -31,7 +31,7 @@
  */
 
 import type { ITextBlock, TextContent, IDecoration } from '@sharpee/text-blocks';
-import { isStatusBlock } from '@sharpee/text-blocks';
+import { isChosen, isStatusBlock } from '@sharpee/text-blocks';
 
 /**
  * CLI render options
@@ -138,6 +138,12 @@ function renderContent(
     .map((item) => {
       if (typeof item === 'string') {
         return item;
+      }
+
+      // ADR-353 D4: an `IChosen` span is test provenance, not presentation —
+      // render straight through it, exactly as though the span were bare.
+      if (isChosen(item)) {
+        return renderContent(item.content, options);
       }
 
       // IDecoration

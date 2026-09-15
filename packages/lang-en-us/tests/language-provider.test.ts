@@ -11,6 +11,7 @@ import type {
   LanguageGrammarPattern,
   RenderContext
 } from '@sharpee/if-domain';
+import { plainNode } from './test-utils/flatten';
 
 describe('EnglishLanguageProvider', () => {
   let provider: EnglishLanguageProvider;
@@ -388,7 +389,7 @@ describe('EnglishLanguageProvider', () => {
       const blocks = provider.renderMessage('scope.not_reachable', { item }, makeCtx());
       const rendered = blocks
         .flatMap(b => b.content)
-        .map(c => (typeof c === 'string' ? c : ''))
+        .map(c => (typeof c === 'string' ? c : plainNode(c)))
         .join('');
 
       expect(rendered).toContain('ruby gem');

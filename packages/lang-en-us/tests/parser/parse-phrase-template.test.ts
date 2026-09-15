@@ -11,6 +11,7 @@ import { describe, it, expect } from 'vitest';
 import type { Phrase, NounPhrase, Sequence, RenderContext, LocaleSettings } from '@sharpee/if-domain';
 import { parsePhraseTemplate, PhraseParseError } from '../../src/parser';
 import { EnglishAssembler } from '../../src/assembler';
+import { markedNode } from '../test-utils/flatten';
 
 function makeCtx(settings: LocaleSettings = {}): RenderContext {
   return {
@@ -26,7 +27,7 @@ function makeCtx(settings: LocaleSettings = {}): RenderContext {
 
 const asm = new EnglishAssembler();
 const realize = (tree: Phrase): string =>
-  asm.realize(tree, makeCtx())[0].content.map((c) => (typeof c === 'string' ? c : '⟦deco⟧')).join('');
+  asm.realize(tree, makeCtx())[0].content.map((c) => (typeof c === 'string' ? c : markedNode(c))).join('');
 
 // --- bare / hinted NounPhrase parsing --------------------------------------
 

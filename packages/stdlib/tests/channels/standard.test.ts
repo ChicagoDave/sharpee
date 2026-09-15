@@ -6,9 +6,17 @@
  * engine, no real story — pure unit tests.
  */
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import type { ChannelProduceContext } from '@sharpee/if-domain';
 import { CORE_BLOCK_KEYS } from '@sharpee/text-blocks';
+import {
+  WorldModel,
+  EntityType,
+  RoomTrait,
+  ActorTrait,
+  registerLocationName,
+  clearLocationNames,
+} from '@sharpee/world-model';
 import { ENGINE_VERSION } from '../../src/actions/standard/version/engine-version';
 import {
   roomNameChannel,
@@ -332,16 +340,48 @@ describe('promptChannel.produce', () => {
 // ────────────────────────────────────────────────────────────────────
 
 describe('locationChannel.produce', () => {
-  it('returns the player room name from the world', () => {
-    const world = makeWorldStub({
-      player: { id: 'p1' },
-      room: { id: 'r1', name: 'Forest Clearing' },
+  // ADR-349 D12: the channel derives its payload from a real projection over a
+  // real world, so these drive a `WorldModel` rather than a world stub — a stub
+  // shaped to the producer's calls would only assert the shape of the stub.
+  function placePlayerInRoom(roomName: string) {
+    const world = new WorldModel();
+    const room = world.createEntity(roomName, EntityType.ROOM);
+    room.add(new RoomTrait());
+    const player = world.createEntity('yourself', EntityType.ACTOR);
+    player.add(new ActorTrait({ isPlayer: true }));
+    world.setPlayer(player.id);
+    world.moveEntity(player.id, room.id);
+    return { world, room, player };
+  }
+
+  beforeEach(() => clearLocationNames());
+  afterEach(() => clearLocationNames());
+
+  it('falls back to the place entity name when no contributor spoke (D16a)', () => {
+    const { world } = placePlayerInRoom('Forest Clearing');
+    expect(locationChannel.produce(makeCtx({ world }))).toEqual({
+      text: 'Forest Clearing',
+      parts: [],
     });
-    expect(locationChannel.produce(makeCtx({ world }))).toBe('Forest Clearing');
+  });
+
+  it('carries the authored heading and its parts when a contributor spoke', () => {
+    const { world, room } = placePlayerInRoom('maze-1');
+    registerLocationName(room.id, [{ text: 'Maze of twisty little passages' }]);
+    expect(locationChannel.produce(makeCtx({ world }))).toEqual({
+      text: 'Maze of twisty little passages',
+      parts: [{ ownerId: room.id, text: 'Maze of twisty little passages', role: 'place' }],
+    });
+  });
+
+  it('declares the wire shape the renderers read', () => {
+    expect(locationChannel.contentType).toBe('json');
+    expect(locationChannel.mode).toBe('replace');
+    expect(locationChannel.emit).toBe('always');
   });
 
   it('returns undefined when there is no player', () => {
-    const world = makeWorldStub();
+    const world = new WorldModel();
     expect(locationChannel.produce(makeCtx({ world }))).toBeUndefined();
   });
 

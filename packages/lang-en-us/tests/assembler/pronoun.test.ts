@@ -6,6 +6,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Mentioned, NounPhrase, Phrase, Pronoun, RenderContext } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
+import { plainNode } from '../test-utils/flatten';
 
 const asm = new EnglishAssembler();
 
@@ -24,7 +25,7 @@ function makeCtx(): RenderContext {
 }
 
 const render = (tree: Phrase): string =>
-  asm.realize(tree, makeCtx()).flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : '')).join('');
+  asm.realize(tree, makeCtx()).flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 
 const noun = (name: string, over: Partial<NounPhrase> = {}): NounPhrase => ({
   kind: 'noun', name, number: 'singular', articleType: 'definite', referableId: name, ...over,

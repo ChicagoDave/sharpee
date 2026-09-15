@@ -148,6 +148,62 @@ export const PROSE_CHANNEL_IDS = [
 export type ProseChannelId = (typeof PROSE_CHANNEL_IDS)[number];
 
 /**
+ * One contributor's text for the current location heading (ADR-349 D11).
+ *
+ * A heading is an ordered list of these, emitted place-then-enclosure-then-
+ * regions-innermost-to-outermost (D16a). The projection that builds them lives
+ * in `@sharpee/world-model` (`LocationHeadingBehavior.resolve`); the type lives
+ * here because the projection's producer and the wire's consumers are in
+ * different packages and must share the shape by import, never by mirroring.
+ */
+export interface HeadingPart {
+  /** The entity that supplied this text — the place, the enclosure, or a region. */
+  readonly ownerId: string;
+  /** The winning arm's resolved prose, pre-decoration. */
+  readonly text: string;
+  readonly role: 'place' | 'enclosure' | 'region';
+  /**
+   * This contributor declared at least one conditional arm, so its text was
+   * chosen by consulting the world (ADR-353 D4; amends ADR-349 D11).
+   *
+   * Static, not a report of what happened this turn: it is true whenever any
+   * arm carries a condition, whether or not that arm won, because a heading
+   * that *can* vary is the thing auto-assertion must not pin (ADR-349 D14).
+   *
+   * **Its reader is `@sharpee/lang-en-us`**, which wraps a variable part so the
+   * realized run carries provenance to the wire. It rides `HeadingPart` because
+   * that is the only channel from the projection to the locale — and because
+   * `HeadingPart` is also the `location` channel's payload, it reaches clients
+   * too, where nothing reads it. That double duty is ADR-349's design, recorded
+   * here rather than left to be rediscovered.
+   */
+  readonly variable?: boolean;
+}
+
+/**
+ * Wire value of the `location` channel (ADR-349 D12).
+ *
+ * Structured, not a bare string: a client that wants to style or drop a part
+ * needs the parts, and a client that just writes a status field needs the
+ * realized text. Both ride together so neither consumer re-derives the other.
+ *
+ * `text` is the locale's realization of `parts` — the English Assembler joins
+ * them as a `Sequence` under its punctuation authority (D13), so a client
+ * displays it verbatim and never re-joins.
+ *
+ * `parts` is empty when no contributor declared a `room name` and every
+ * contributor's arms failed. In that case `text` carries the place entity's own
+ * name, which is D16a's fallback: the entity name appears only when the whole
+ * heading would otherwise be empty.
+ */
+export interface LocationHeadingValue {
+  /** The heading as the player reads it, already joined by the locale. */
+  readonly text: string;
+  /** The parts it was realized from, in emission order. Empty on the fallback. */
+  readonly parts: ReadonlyArray<HeadingPart>;
+}
+
+/**
  * Channel update modes (ADR-163 §4).
  *
  * - `replace` — newest value supersedes prior values. Persistent: a
