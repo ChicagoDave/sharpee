@@ -1,0 +1,24 @@
+Phase 8 deliverable (4) — the packaged AppImage, executed.
+host: Ubuntu 24.04.5 LTS x86_64, WSL2 kernel 6.18.33.2-microsoft-standard-WSL2
+artifact: SharpeePaneHost.AppImage  49801720 bytes
+display: Xvfb :99 1280x900x24   FUSE: present
+invocation: ./SharpeePaneHost.AppImage   (direct, FUSE-mounted; no extraction)
+---
+[   0.168s] environment requested: args=Avalonia.Platform.GtkWebViewEnvironmentRequestedEventArgs
+[   0.396s] ── stage 0: backend ──
+[   0.397s] adapter: type=WebKitGtk engine=WebKit version=2.52.6
+[   0.398s] platform handle: GtkX11WebViewAdapter (XID)
+[   0.398s] windows door: handleIsWebView2=False handleIsWebView1=False
+[   0.399s] WebResourceRequestedEventArgs public members: .ctor, Request
+[   0.399s] WebViewWebResourceRequest public members: .ctor, Headers, Method, ToString, Uri
+[   0.400s] ── stage 1: custom scheme + WebResourceRequested (the kill question) ──
+libEGL warning: DRI3 error: Could not get DRI3 device
+libEGL warning: Ensure your X server supports DRI3 to get accelerated rendering
+[   0.987s] nav started: sharpee-play://app/index-testing.html
+[   1.006s] WebResourceRequested #1: Avalonia.Controls.WebResourceRequestedEventArgs
+[   1.012s] WebResourceRequested #2: Avalonia.Controls.WebResourceRequestedEventArgs
+[   1.014s] nav completed: success=True uri=sharpee-play://app/index-testing.html
+[   4.412s] custom scheme: navigationSucceeded=True webResourceRequestedFired=2 title= href=about:blank
+[   4.421s] ── stage 2: token-scoped loopback origin ──
+[   4.422s] probe: FAILED with DirectoryNotFoundException: Could not find a part of the path '/Users/david/repos/sharpee/branch-stories/fernhill/fernhill.tests.json'.
+--- exit: 0 (SIGTERM from timeout is expected: the shell has no exit path) ---

@@ -1,0 +1,90 @@
+Phase 8 deliverable (4), question 2 — vpk on Linux, the x64 record run.
+
+Ubuntu 24.04.5 LTS, linux-x64, .NET SDK 10.0.401, Velopack vpk 1.2.0,
+WebKitGTK libwebkit2gtk-4.1 2.52.6, mksquashfs 4.6.1, zstd 1.5.5.
+Host is WSL2 (kernel 6.18.33.2-microsoft-standard-WSL2), NOT a container — Docker is
+not installed on this PC, so the plan's "Docker Desktop/WSL2" entry state was met by
+the WSL2 half. Stated rather than blurred; see the x64/arm64 comparison at the end.
+
+Subject: PaneHost, the same Phase 1-6 spike the arm64 leg packed, copied from the PC's
+own tree at C:\Users\David\spikes\avalonia-ide\pane\PaneHost with bin/ and obj/ excluded
+and NOTHING else changed. It already carried the one packaging change vpk requires
+(Velopack.VelopackApp.Build().Run() in Main), so no source edit was needed to pack it.
+
+A porting cost that did not materialise: the project carries <ApplicationManifest>
+app.manifest</ApplicationManifest>, a Windows-only artifact. Publishing for linux-x64
+ignores it silently — no warning, no error, no csproj edit required.
+
+publish (self-contained, linux-x64):  225 entries, 110,160,725 bytes (106 MiB)
+  wall 7.06 s, 0 warnings, 0 errors
+  (the arm64 leg published 225 entries / 111 MB — the same entry count)
+
+vpk pack, with zstd present:
+  [INF] Building new AppDir from pack directory contents
+  [INF] Compressing AppDir into squashfs filesystem
+  [INF] Creating AppImage with appimagekit-runtime-x86_64 runtime
+  pack 1.0.0                                    vpk 2.20 s   (wall 3,041 ms)
+  pack 1.0.1 (one-line source change)           vpk 2.83 s   (wall 3,464 ms)
+  pack 1.0.1 (repack, same inputs)              vpk 2.93 s   (wall 3,720 ms)
+  [INF] Delta processed 0001 files. 0001 patched, 0000 unchanged, 0000 new, 0000 removed
+
+The one-line change was a single Trace.WriteLine added to Program.cs, confined to
+PaneHost.dll — which is why the delta reports exactly one patched file.
+
+artifacts (final zstd repack):
+  SharpeePaneHost.AppImage                 49,801,720   ELF 64-bit LSB pie, x86-64,
+                                                        static-pie, stripped
+  SharpeePaneHost-1.0.0-linux-full.nupkg   49,119,915
+  SharpeePaneHost-1.0.1-linux-full.nupkg   49,119,985
+  SharpeePaneHost-1.0.1-linux-delta.nupkg     106,944
+  RELEASES-linux, releases.linux.json, assets.linux.json
+
+The delta is a band, not a pinned number. Two zstd packs of the same source produced
+110,050 and 106,944 bytes, because the 1.0.1 full nupkg itself differed between runs
+(49,119,951 vs 49,119,985) — ordinary build non-determinism. Read the Linux delta as
+"~107-110 KB on a one-line change", not as a figure to diff against later.
+
+The zstd prerequisite, reproduced on x64:
+
+  zstd absent -> vpk still succeeds, and still degrades silently:
+    [ERR] Could not find 'zstd' binary on the system ...
+    [WRN] Zstd not available. Falling back to legacy bsdiff delta format.
+          This will be a lot slower and more prone to breaking.
+  Measured on this same delta:
+    bsdiff fallback   110,951 bytes   pack total 24.11 s
+    zstd              110,050 bytes   pack total  2.83 s
+  Size difference negligible; time cost 8.5x — the same multiple the arm64 leg
+  measured (12,848 ms against 1,502 ms). The finding ports to x64 unchanged.
+
+  mksquashfs was present on this host from the start, so the arm64 leg's structural
+  finding (absent -> vpk aborts outright) was NOT re-derived here. It is carried from
+  the arm64 record rather than re-measured.
+
+Three platforms, packaging side by side:
+
+                     macOS (Ph.5)      Windows (Ph.7)     Linux arm64      Linux x64
+  Full package       99.8 MB           51,984,680 B       46,789,339 B     49,119,915 B
+  Delta, 1-line      8.11 MB           72,533 B           118,644 B        106,944 B
+  Pack time          34.5 s            8.4 s              1.5 s            2.2 s
+  Artifact           .pkg + zip        Setup.exe + zip    .AppImage        .AppImage
+  Runtime            -                 -                  aarch64          x86_64
+  Signable           no                flag, unexercised  not attempted    not attempted
+  Artifact executed  -                 no                 no               YES (below)
+
+Read the sizes with the same care the arm64 record asked for: the macOS package carried
+the 175 MB vendored toolchain and the other three carry none, because no Windows or Linux
+Node asset exists to vendor (question 3). The two Linux columns ARE like-for-like with
+each other — same distro major, same WebKitGTK, same SDK, same vpk, same 225-entry
+publish — so the x64/arm64 difference is architecture and nothing else.
+
+NEW, and not established by either prior leg: the AppImage was executed.
+See phase-8-linux-appimage-run-x64.txt. It runs directly off FUSE with no extraction,
+reaches WebKitGTK 2.52.6 through GtkX11WebViewAdapter, and completes its own Phase 1
+probe sequence. It fails at the probe's stage 2 on a DirectoryNotFoundException for
+/Users/david/repos/sharpee/... — SpikePaths branches Windows vs non-Windows and hands
+Linux the macOS path. That is a spike-path defect, not a platform finding, and it sits
+downstream of nothing this phase decides.
+
+Still not established: no signing (Linux has no equivalent of the Windows Trusted
+Signing step, and none was attempted), no update round trip applied, and the real
+docs-tab / testing-surface panes were never loaded over the scheme.
