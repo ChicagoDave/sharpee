@@ -1,0 +1,18 @@
+{
+  "step": "2-1-compose",
+  "at": "2026-09-15T00:37:18.175Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "sourceChars": 30509,
+  "importsFound": 0,
+  "importsResolved": 0,
+  "importOrder": [],
+  "ok": true,
+  "composeMs": 11.6,
+  "diagnosticCount": 0,
+  "errorCount": 0,
+  "diagnostics": [],
+  "irTitle": "The Folly at Fernhill",
+  "irId": "fernhill",
+  "hasHatches": false,
+  "irBytes": 114170
+}

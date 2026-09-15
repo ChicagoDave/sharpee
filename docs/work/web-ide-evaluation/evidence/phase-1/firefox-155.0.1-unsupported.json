@@ -1,0 +1,19 @@
+{
+  "step": "1-pick-unsupported",
+  "at": "2026-09-14T23:55:04.718Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0",
+  "supported": false,
+  "typeofShowDirectoryPicker": "undefined",
+  "typeofShowOpenFilePicker": "undefined",
+  "showDirectoryPickerThrew": {
+    "name": "TypeError",
+    "message": "window.showDirectoryPicker is not a function",
+    "constructor": "TypeError"
+  },
+  "showOpenFilePickerThrew": {
+    "name": "TypeError",
+    "message": "window.showOpenFilePicker is not a function"
+  },
+  "opfsAvailable": true,
+  "reading": "clean absence, not a partial implementation — the O1 folder route is unavailable and the O2 route is"
+}

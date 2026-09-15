@@ -1,0 +1,19 @@
+{
+  "step": "1-pick-unsupported",
+  "at": "2026-09-14T23:54:58.807Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.6.2 Safari/605.1.15",
+  "supported": false,
+  "typeofShowDirectoryPicker": "undefined",
+  "typeofShowOpenFilePicker": "undefined",
+  "showDirectoryPickerThrew": {
+    "name": "TypeError",
+    "message": "window.showDirectoryPicker is not a function. (In 'window.showDirectoryPicker({ mode: 'readwrite' })', 'window.showDirectoryPicker' is undefined)",
+    "constructor": "TypeError"
+  },
+  "showOpenFilePickerThrew": {
+    "name": "TypeError",
+    "message": "window.showOpenFilePicker is not a function. (In 'window.showOpenFilePicker()', 'window.showOpenFilePicker' is undefined)"
+  },
+  "opfsAvailable": true,
+  "reading": "clean absence, not a partial implementation — the O1 folder route is unavailable and the O2 route is"
+}

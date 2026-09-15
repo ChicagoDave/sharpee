@@ -1,0 +1,47 @@
+{
+  "step": "2-3-editor-fernhill-story",
+  "at": "2026-09-15T00:37:18.329Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "file": "fernhill.story",
+  "docLines": 1180,
+  "docLength": 30509,
+  "tokens": 5279,
+  "stylePass": {
+    "samples": 50,
+    "totalMin": 0.42,
+    "totalMedian": 0.52,
+    "totalP90": 0.71,
+    "totalMax": 1.35,
+    "lexMedian": 0.29,
+    "buildMedian": 0.24,
+    "tokens": 5279,
+    "docLines": 1180,
+    "docLength": 30509
+  },
+  "typing": {
+    "perCharMs": 0.55,
+    "samples": 200,
+    "totalMin": 0.4,
+    "totalMedian": 0.45,
+    "totalP90": 0.61,
+    "totalMax": 0.87,
+    "lexMedian": 0.26,
+    "buildMedian": 0.19,
+    "tokens": 5280,
+    "docLines": 1180,
+    "docLength": 30709
+  },
+  "undoRoundTrip": {
+    "lengthBefore": 30509,
+    "lengthAfterEdit": 30507,
+    "lengthAfterUndo": 30509,
+    "hashBefore": "561c4634",
+    "hashAfterUndo": "561c4634",
+    "restored": true
+  },
+  "comparison": {
+    "openSilverCodeMirror": "0.92 ms / 1.09 ms per char (on measure-1755.story)",
+    "avaloniaAvaloniaEdit": "7.96 ms / 7.41 ms (on measure-1755.story)",
+    "wpfTreeSitter": "14.8-15.9 ms (on measure-1755.story)"
+  }
+}

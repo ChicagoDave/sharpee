@@ -1,0 +1,15 @@
+{
+  "origin": "http://127.0.0.1:5180",
+  "secure context": true,
+  "showDirectoryPicker (File System Access)": false,
+  "showOpenFilePicker": false,
+  "navigator.storage.getDirectory (OPFS)": true,
+  "FileSystemWritableFileStream": true,
+  "createSyncAccessHandle (OPFS sync)": false,
+  "IndexedDB": true,
+  "serviceWorker": true,
+  "BroadcastChannel": true,
+  "SharedArrayBuffer (esbuild-wasm threads)": true,
+  "crossOriginIsolated": true,
+  "userAgent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:155.0) Gecko/20100101 Firefox/155.0"
+}

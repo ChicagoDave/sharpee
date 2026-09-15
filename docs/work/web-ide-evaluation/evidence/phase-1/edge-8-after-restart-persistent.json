@@ -1,0 +1,11 @@
+{
+  "step": "3-after-reload",
+  "at": "2026-09-15T00:23:39.127Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "supported": true,
+  "storedHandle": true,
+  "name": "fernhill",
+  "permissionWithoutPrompting": "granted",
+  "ms": 1.6,
+  "reading": "silent reacquire — the grant survived"
+}

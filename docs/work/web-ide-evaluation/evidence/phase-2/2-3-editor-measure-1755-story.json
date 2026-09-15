@@ -1,0 +1,47 @@
+{
+  "step": "2-3-editor-measure-1755-story",
+  "at": "2026-09-15T00:37:18.547Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "file": "measure-1755.story",
+  "docLines": 1756,
+  "docLength": 51984,
+  "tokens": 8545,
+  "stylePass": {
+    "samples": 50,
+    "totalMin": 0.73,
+    "totalMedian": 0.82,
+    "totalP90": 0.95,
+    "totalMax": 1.27,
+    "lexMedian": 0.46,
+    "buildMedian": 0.35,
+    "tokens": 8545,
+    "docLines": 1756,
+    "docLength": 51984
+  },
+  "typing": {
+    "perCharMs": 0.83,
+    "samples": 200,
+    "totalMin": 0.7,
+    "totalMedian": 0.75,
+    "totalP90": 0.87,
+    "totalMax": 1.21,
+    "lexMedian": 0.42,
+    "buildMedian": 0.33,
+    "tokens": 8546,
+    "docLines": 1756,
+    "docLength": 52184
+  },
+  "undoRoundTrip": {
+    "lengthBefore": 51984,
+    "lengthAfterEdit": 51982,
+    "lengthAfterUndo": 51984,
+    "hashBefore": "4eb5b75a",
+    "hashAfterUndo": "4eb5b75a",
+    "restored": true
+  },
+  "comparison": {
+    "openSilverCodeMirror": "0.92 ms / 1.09 ms per char (on measure-1755.story)",
+    "avaloniaAvaloniaEdit": "7.96 ms / 7.41 ms (on measure-1755.story)",
+    "wpfTreeSitter": "14.8-15.9 ms (on measure-1755.story)"
+  }
+}

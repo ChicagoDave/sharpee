@@ -1,0 +1,12 @@
+{
+  "step": "5-write",
+  "at": "2026-09-15T00:09:20.732Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "file": "fernhill.story",
+  "bytesBefore": 30509,
+  "bytesAfter": 30558,
+  "appended": 49,
+  "readBackMatches": true,
+  "marker": "## phase-1 write probe 2026-09-15T00:09:20.675Z",
+  "independentRead": "fresh getFileHandle from the directory handle, not the written handle"
+}

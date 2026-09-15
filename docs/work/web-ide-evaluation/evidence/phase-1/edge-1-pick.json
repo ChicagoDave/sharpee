@@ -1,0 +1,26 @@
+{
+  "step": "1-pick",
+  "at": "2026-09-15T00:09:06.593Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "supported": true,
+  "granted": true,
+  "name": "fernhill",
+  "kind": "directory",
+  "permissionAfterPick": "granted",
+  "entryCount": 11,
+  "entries": [
+    ".DS_Store",
+    "WALKTHROUGH.txt",
+    "assets/",
+    "browser/",
+    "chatgpt-review.md",
+    "dist/",
+    "fernhill.config.json",
+    "fernhill.recipe.json",
+    "fernhill.story",
+    "fernhill.tests.json",
+    "fernhill.world-ignore.json"
+  ],
+  "persistedToIndexedDB": true,
+  "handleSurvivesStructuredClone": true
+}

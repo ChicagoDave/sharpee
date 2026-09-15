@@ -1,0 +1,19 @@
+{
+  "step": "2-1b-import-resolver",
+  "at": "2026-09-15T00:37:18.179Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "importsFound": [
+    "spike-fragment.chord"
+  ],
+  "importsResolved": 1,
+  "ok": true,
+  "errorCount": 0,
+  "diagnostics": [],
+  "entitiesInIR": [
+    "Fragment Room",
+    "Entry Hall",
+    "Walker"
+  ],
+  "fragmentRoomPresent": true,
+  "note": "a fragment read through the folder handle and spliced by the compiler at the import site"
+}

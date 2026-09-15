@@ -1,0 +1,9 @@
+{
+  "step": "4-reacquire",
+  "at": "2026-09-15T00:22:26.601Z",
+  "ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/153.0.0.0 Safari/537.36 Edg/153.0.0.0",
+  "permissionBefore": "prompt",
+  "permissionAfter": "granted",
+  "ms": 63604.9,
+  "interpretation": "slow enough that a dialog was almost certainly shown and answered"
+}
