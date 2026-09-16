@@ -53,8 +53,8 @@ final class SplitDividerTests: XCTestCase {
             actions: (1...9).map { ComposeStoryIR.ActionDef(name: "action-\($0)",
                                                             span: DiagnosticSpan(line: $0, column: 1, endLine: $0, endColumn: 5)) },
             phrases: .init(defaultLocale: "en-US", locales: [
-                "en-US": .init(names: (1...40).map {
-                    .init(key: "phrase-key-number-\($0)", span: nil)
+                "en-US": Dictionary(uniqueKeysWithValues: (1...40).map {
+                    ("phrase-key-number-\($0)", ComposeStoryIR.PhraseEntry(span: nil))
                 }),
             ]),
             hatches: [.init(name: "weather", modulePath: "./weather.ts", span: nil)])

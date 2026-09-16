@@ -35,6 +35,9 @@ dotnet build tools/ide/PaneHost.sln
 dotnet test  tools/ide/PaneHost.Tests/PaneHost.Tests.csproj
 ```
 
+The generated protocol types below ride a **third** gate, which is not local to this project:
+`repokit protocol --check`, run by `repokit verify`.
+
 `DOTNET_ROOT` is **not** set in a fresh shell on this machine. Without it, `dotnet` fails with
 `You must install .NET to run this application` — a misleading error, since .NET 10.0.300 is
 installed at `/opt/homebrew/bin/dotnet`.
@@ -75,14 +78,27 @@ real-path test reports green without exercising anything, which is the GH #435 p
 13a applies here in full: these drive the real vendored `sharpee` shim, the real vendored
 `node`, a real Documents folder and real processes, with nothing stubbed.
 
+## Generated protocol types
+
+`Generated/SharpeeProtocol.cs` is **generated, never edited** (ADR-341 D5). It is emitted by
+`repokit protocol` from the TypeScript wire contract in `@sharpee/ide-protocol` plus the IDE's
+declared Story IR projection, and the Swift shell's copy is emitted from the same model in the
+same run — one definition, two targets, so the two shells cannot drift from each other or from
+the platform.
+
+```bash
+node tools/repokit/dist/cli.js protocol           # regenerate both targets
+node tools/repokit/dist/cli.js protocol --check   # the freshness gate; `repokit verify` runs it
+```
+
+Two things belong elsewhere, deliberately. Schema-version gates and reading conveniences go in
+hand-written code beside the generated file, so the wire half regenerates without touching a
+call site. And the C# emission **flattens** nesting the Swift emission keeps
+(`ComposeStoryIRMeta`, not `ComposeStoryIR.Meta`), because C# forbids a nested type and a
+property sharing a name and most of these shapes are named after the property that carries them.
+
 ## What is not here yet
 
-- **Generated C# protocol types.** ADR-341 D5 requires the `@sharpee/ide-protocol` types to be
-  emitted by a generator rather than hand-mirrored, and that generator **does not exist yet** —
-  its first target is Swift and its first consumer is `SharpeeIDE`, which D5 sequences before
-  any second-shell code. This project therefore references no protocol types at all, which is
-  the correct state: a hand-written C# mirror is the defect DevArch rule 8b exists to prevent,
-  not a shortcut to take while waiting. See the plan's Phase 2 note.
 - Everything from the plan's Phase 3 onward: the Windows and Linux toolchain assets, the
   per-platform pane door as a contract module, the macOS relocation recipe in real release
   tooling, and shell parity with the Swift app.

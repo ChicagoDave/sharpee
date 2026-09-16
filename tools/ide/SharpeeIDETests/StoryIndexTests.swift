@@ -48,12 +48,12 @@ final class StoryIndexTests: XCTestCase {
         ],
         actions: [ComposeStoryIR.ActionDef(name: "polishing", span: span(40))],
         phrases: .init(defaultLocale: "en-US", locales: [
-            "en-US": .init(names: [
-                .init(key: "cellar.description", span: nil), // platform-synthesized
-                .init(key: "cold-returns", span: span(50)),
-                .init(key: "night-wind", span: span(51)),
-                .init(key: "player.description", span: nil), // platform-synthesized
-            ]),
+            "en-US": [
+                "cellar.description": .init(span: nil), // platform-synthesized
+                "cold-returns": .init(span: span(50)),
+                "night-wind": .init(span: span(51)),
+                "player.description": .init(span: nil), // platform-synthesized
+            ],
         ]),
         hatches: [.init(name: "weather", modulePath: "./weather.ts", span: span(60))])
     }

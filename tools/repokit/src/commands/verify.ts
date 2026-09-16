@@ -14,6 +14,7 @@ import { findControlBytes, formatControlByteFailure } from './control-bytes';
 import { checkAliasCatalogModule } from './aliases';
 import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
 import { checkManifestModule } from './manifest';
+import { checkProtocolTypes } from './protocol';
 import { checkRandomGate, formatRandomGateFailure } from './random-gate';
 import { join } from 'node:path';
 
@@ -57,6 +58,18 @@ export class VerifyCommand implements Command {
     if (!checkAliasCatalogModule(root)) {
       console.error(
         'verify: chord/src/message-alias-catalog.ts is STALE against story-loader/src/message-alias-map.ts — run `repokit aliases` and commit.',
+      );
+      return 1;
+    }
+
+    // ADR-341 D5: the native shells' protocol types are generated from the
+    // TypeScript wire contract; a stale emission is a build error, never a
+    // decoder that drifts silently across the language boundary.
+    const staleProtocol = checkProtocolTypes(root);
+    if (staleProtocol.length > 0) {
+      console.error(
+        `verify: ${staleProtocol.join(', ')} is STALE against @sharpee/ide-protocol — ` +
+          'run `repokit protocol` and commit.',
       );
       return 1;
     }

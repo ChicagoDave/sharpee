@@ -44,7 +44,18 @@
 - **Deliverable**: Build the generator D5 specifies: it reads the TypeScript source of `packages/ide-protocol` and emits native types, with a freshness check folded into the same local gate the grammar and ADR-276 manifest checks use. **Swift is target one and `SharpeeIDE` is consumer one, per D5's resolved Q-5 ("now, the generator needs a real consumer first") — C# is target two.** AC-6 applies unchanged: `SharpeeIDETests` passes after the migration with no test change beyond the type source. Then point it at `PaneHost` and delete nothing by hand.
 - **David's sign-off needed before starting**: the generator reads `packages/ide-protocol`, which ADR-341's Scope permits ("no `packages/` change beyond the generator's read of `ide-protocol`") but CLAUDE.md's platform-change rule still makes a discuss-first item. The Swift migration also touches the shipping app's type source.
 - **Exit state**: One generator, two emitted targets, no hand-written mirror on either side, and a red gate when either drifts from the protocol. The memory *IDE decoder follows IR fields* — an IR rename breaking `ComposeDiagnostics.swift` silently — stops being true.
-- **Status**: PENDING
+- **Status**: **DONE (2026-09-16, session 33ba00)** — `repokit protocol` emits both targets from
+  one model: `tools/ide/SharpeeIDE/Generated/SharpeeProtocol.swift` (245 lines) and
+  `tools/ide/PaneHost/Generated/SharpeeProtocol.cs` (426 lines), with `protocol --check` wired into
+  `repokit verify`. Swift went first and `SharpeeIDE` is consumer one: its two hand-written mirrors
+  are now extensions holding only the decode gates and reading conveniences, and the suite is
+  **593 tests, 0 failures** — unchanged in count. `dotnet build` clean at 0 warnings;
+  `ProtocolTypeTests` 4/4 decode the same fixture bytes the Swift suite decodes. The IR projection
+  lives in `tools/repokit`, NOT `packages/ide-protocol` — no platform code produces or consumes it —
+  so ADR-341's Scope holds as written and no `packages/` source changed. The drift guarantee was
+  demonstrated, not asserted: renaming a projected field fails `tsc`. **AC-6 deviation**: two test
+  sites needed a change (the phrasebook is now the wire's map, so the phrase key is the dictionary
+  key), approved by David before the edit. Record: `evidence/phase-2a-protocol-generator.md`.
 
 ### Phase 3: Toolchain portability — Windows and Linux Node vendoring, the launcher, GH #448, GH #457
 - **Tier**: Large

@@ -27,6 +27,7 @@ import { PlayCommand } from './commands/play';
 import { GrammarCommand } from './commands/grammar';
 import { AliasesCommand } from './commands/aliases';
 import { ManifestCommand } from './commands/manifest';
+import { ProtocolCommand } from './commands/protocol';
 
 /**
  * Registered commands — each is its own class file (ADR-187 R1), ported from
@@ -42,6 +43,7 @@ const COMMANDS: Command[] = [
   new GrammarCommand(),
   new AliasesCommand(),
   new ManifestCommand(),
+  new ProtocolCommand(),
   new TestCommand(),
   new PlayCommand(),
   new IntrospectCommand(),

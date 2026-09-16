@@ -1,30 +1,20 @@
 // ProjectManifest.swift
-// Swift mirror of the @sharpee/ide-protocol wire types (ADR-184): the project
-// manifest emitted by `sharpee --introspect` (and, later, the Play bridge) and
-// rendered as the Sharpee-aware project tree. The TS↔Swift language boundary
-// precludes a direct import, so this Codable mirror is the single Swift decoder;
-// the shared TS file in @sharpee/ide-protocol is the source of truth.
-// Public interface: ProjectManifest.decode(from:), EntityNode, EntityCategory.
+// The IDE's reading of the @sharpee/ide-protocol project manifest (ADR-184):
+// the schema-version gate and the decode entry point. The wire SHAPE is not
+// here — it is generated from the TypeScript contract into
+// Generated/SharpeeProtocol.swift (ADR-341 D5), so a field added or renamed in
+// the protocol arrives by regeneration rather than by hand.
+// What stays here is what the app decides, not what the wire says: which schema
+// version this build understands, and that an unknown one is refused loudly.
+// Public interface: ProjectManifest.decode(from:), ProjectManifest.DecodeError.
 // Owner context: tools/ide — Project.
 
 import Foundation
 
-/// The Sharpee-aware project tree: a flat entity list plus a build-status header.
-/// The IDE buckets into categories client-side from `EntityNode.category`.
-struct ProjectManifest: Codable, Equatable {
-    /// The schema version this Swift mirror is written against. Decoding rejects
-    /// any manifest whose `schemaVersion` differs (the wire-contract gate).
+extension ProjectManifest {
+    /// The schema version this build is written against. Decoding rejects any
+    /// manifest whose `schemaVersion` differs (the wire-contract gate).
     static let currentSchemaVersion = 1
-
-    let schemaVersion: Int
-    let story: String
-    let generatedFrom: GeneratedFrom
-    let entities: [EntityNode]
-
-    enum GeneratedFrom: String, Codable, Equatable {
-        case cli
-        case bridge
-    }
 
     /// A manifest rejected at decode time.
     enum DecodeError: Error, Equatable {
@@ -42,62 +32,5 @@ struct ProjectManifest: Codable, Equatable {
                                                     expected: currentSchemaVersion)
         }
         return manifest
-    }
-}
-
-/// Top-level project-tree categories. Doors/exits are not categories — they
-/// surface under a room's `exits`.
-enum EntityCategory: String, Codable, Equatable {
-    case room
-    case object
-    case npc
-    case region
-}
-
-/// One introspected world entity.
-struct EntityNode: Codable, Equatable {
-    let id: String
-    let displayName: String
-    let category: EntityCategory
-    let traits: TraitSummary
-    /// file:line from the tree-sitter name index; nil when unresolved or CLI-emitted.
-    let source: SourceRef?
-}
-
-/// A resolved source location for an entity's creation site.
-struct SourceRef: Codable, Equatable {
-    let file: String
-    let line: Int
-    let resolution: Resolution
-
-    /// `.scope` = fell back to the enclosing function (non-unique name).
-    enum Resolution: String, Codable, Equatable {
-        case exact
-        case scope
-    }
-}
-
-/// The IDE-relevant fields projected from an entity's traits, keyed by trait type.
-/// Sparse: a field is nil when the entity does not carry that trait. Unknown traits
-/// on the wire (the protocol's forward-compatible index signature) are ignored by
-/// the synthesized decoder rather than failing the decode.
-struct TraitSummary: Codable, Equatable {
-    let identity: Identity?
-    let room: Room?
-    let container: Container?
-
-    struct Identity: Codable, Equatable {
-        let description: String?
-    }
-
-    /// Exit directions present — drives the "room with no exits" lint.
-    struct Room: Codable, Equatable {
-        let exits: [String]
-    }
-
-    /// Co-trait lint inputs (e.g. "lockable without openable").
-    struct Container: Codable, Equatable {
-        let openable: Bool
-        let lockable: Bool
     }
 }

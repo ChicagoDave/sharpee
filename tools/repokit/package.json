@@ -18,12 +18,13 @@
   },
   "dependencies": {
     "@sharpee/bootstrap": "workspace:*",
+    "@sharpee/chord": "workspace:*",
     "@sharpee/core": "workspace:*",
-    "@sharpee/devkit": "workspace:*"
+    "@sharpee/devkit": "workspace:*",
+    "typescript": "^5.3.3"
   },
   "devDependencies": {
     "@types/node": "^20.11.19",
-    "typescript": "^5.3.3",
     "rimraf": "^5.0.5",
     "vitest": "^1.6.0"
   },
