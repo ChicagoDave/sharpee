@@ -1,0 +1,48 @@
+# Phase 3 — Developer ID signing of the relocated Velopack bundle (pre-notarization)
+
+Packed with: vpk pack ... --signAppIdentity "Developer ID Application: David Cornelson (RSNGKW5LNH)"
+vpk's own 'Code signing application bundle recursively (with --deep)' step SUCCEEDED in 2s.
+This is Phase 5 route (a), which previously failed with:
+  bundle format unrecognized, invalid, or unsuitable
+  In subcomponent: .../Contents/MacOS/toolchain/devkit/node_modules/.pnpm
+
+## Bundle
+Identifier=com.The_Sharpee_Project.ChordWriterAvaloniaSpike
+CodeDirectory v=20500 size=636 flags=0x10000(runtime) hashes=8+7 location=embedded
+Authority=Developer ID Application: David Cornelson (RSNGKW5LNH)
+Authority=Developer ID Certification Authority
+Authority=Apple Root CA
+TeamIdentifier=RSNGKW5LNH
+Sealed Resources version=2 rules=13 files=9985
+
+## codesign --verify --deep --strict --verbose=2
+/Users/david/repos/spikes/avalonia-ide/out/signed-verify/ChordWriterAvaloniaSpike.app: valid on disk
+/Users/david/repos/spikes/avalonia-ide/out/signed-verify/ChordWriterAvaloniaSpike.app: satisfies its Designated Requirement
+(exit 0)
+
+## spctl --assess --type execute -vv
+/Users/david/repos/spikes/avalonia-ide/out/signed-verify/ChordWriterAvaloniaSpike.app: rejected
+source=Unnotarized Developer ID
+origin=Developer ID Application: David Cornelson (RSNGKW5LNH)
+-> rejected ONLY for 'Unnotarized Developer ID'. This is the correct
+   pre-notarization state, not a layout or signing failure.
+
+## Every Mach-O in the bundle
+Mach-O total: 20 | Developer-ID signed: 20 | not signed: 0 | missing hardened runtime: 0
+(AppHost, UpdateMac, 16 .NET dylibs, vendored node, esbuild)
+The 202 managed .dll are PE, not Mach-O, and are sealed as resources.
+
+## Vendored node entitlements (assert_node_entitlements equivalent)
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "https://www.apple.com/DTDs/PropertyList-1.0.dtd"><plist version="1.0"><dict><key>com.apple.security.cs.allow-dyld-environment-variables</key><true/><key>com.apple.security.cs.allow-jit</key><true/><key>com.apple.security.cs.allow-unsigned-executable-memory</key><true/><key>com.apple.security.cs.disable-executable-page-protection</key><true/><key>com.apple.security.cs.disable-library-validation</key><true/></dict></plist>
+-> allow-jit PRESENT, get-task-allow ABSENT. Identical to the five keys in
+   tools/ide/bundled-node.entitlements: vpk's .NET default set matches it exactly,
+   so no separate per-binary signing pass was needed.
+
+## Runtime after signing
+PaneHost --shell -> 'shell: done', exit 0
+Contents/Resources/toolchain/bin/sharpee --version -> Sharpee 5.4.1 · Chord 3.6.0
+
+## Submission artifact prepared (NOT yet submitted)
+ditto -c -k --sequesterRsrc --keepParent <app> ChordWriterAvaloniaSpike-app-arm64.zip
+101786359 /Users/david/repos/spikes/avalonia-ide/out/signed-releases/ChordWriterAvaloniaSpike-app-arm64.zip
+ded84ab02a90c4c5c57446e147f6c308fa857898218af1700236f1dd4e588ae2  /Users/david/repos/spikes/avalonia-ide/out/signed-releases/ChordWriterAvaloniaSpike-app-arm64.zip

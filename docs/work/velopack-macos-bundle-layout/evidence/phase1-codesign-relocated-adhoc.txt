@@ -1,0 +1,18 @@
+# codesign state of the relocated bundle (ad-hoc identity, Phase 1)
+
+$ codesign -dvv <app>
+Executable=/Users/david/repos/spikes/avalonia-ide/out/relocate/Chord Writer (Avalonia spike).app/Contents/MacOS/PaneHost
+Identifier=com.The_Sharpee_Project.ChordWriterAvaloniaSpike
+Format=app bundle with Mach-O thin (arm64)
+CodeDirectory v=20400 size=489 flags=0x2(adhoc) hashes=8+3 location=embedded
+Signature=adhoc
+Info.plist entries=10
+TeamIdentifier=not set
+Sealed Resources version=2 rules=13 files=9984
+Internal requirements count=0 size=12
+
+$ codesign --verify --deep --strict --verbose=2 <app>
+--prepared:/Users/david/repos/spikes/avalonia-ide/out/relocate/Chord Writer (Avalonia spike).app/Contents/MacOS/UpdateMac
+--validated:/Users/david/repos/spikes/avalonia-ide/out/relocate/Chord Writer (Avalonia spike).app/Contents/MacOS/UpdateMac
+/Users/david/repos/spikes/avalonia-ide/out/relocate/Chord Writer (Avalonia spike).app: valid on disk
+/Users/david/repos/spikes/avalonia-ide/out/relocate/Chord Writer (Avalonia spike).app: satisfies its Designated Requirement

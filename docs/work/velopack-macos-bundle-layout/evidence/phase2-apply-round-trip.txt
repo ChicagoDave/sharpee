@@ -1,0 +1,30 @@
+# Phase 2 — update-apply round trip against the relocated layout
+
+## Artifacts produced (out/relocate-releases)
+-rw-r--r--   1 david  staff   99908968 Sep 16 01:59 ChordWriterAvaloniaSpike-1.0.0-osx-full.nupkg
+-rw-r--r--   1 david  staff    8274247 Sep 16 02:01 ChordWriterAvaloniaSpike-1.0.1-osx-delta.nupkg
+-rw-r--r--   1 david  staff   99909165 Sep 16 02:01 ChordWriterAvaloniaSpike-1.0.1-osx-full.nupkg
+-rw-r--r--   1 david  staff    8971348 Sep 16 02:04 ChordWriterAvaloniaSpike-1.0.2-osx-delta.nupkg
+-rw-r--r--   1 david  staff  100594883 Sep 16 02:04 ChordWriterAvaloniaSpike-1.0.2-osx-full.nupkg
+-rw-r--r--   1 david  staff  102919257 Sep 16 02:03 ChordWriterAvaloniaSpike-osx-Portable.zip
+-rw-r--r--   1 david  staff   96064693 Sep 16 02:04 ChordWriterAvaloniaSpike-osx-Setup.pkg
+
+## Post-apply layout of the installed bundle (applied 1.0.2, a SIGNED package)
+$ ls Contents/MacOS
+PaneHost
+sq.version
+UpdateMac
+Contents/Resources entries: 225
+
+## Seal after applying a signed package
+$ codesign --verify --deep --strict <app>
+exit 0 (no output above means PASS)
+$ codesign -dvv <app>
+Identifier=com.The_Sharpee_Project.ChordWriterAvaloniaSpike
+Signature=adhoc
+TeamIdentifier=not set
+Sealed Resources version=2 rules=13 files=9985
+
+## Fresh install from the signed 1.0.2 portable zip, for comparison
+Signature=adhoc
+Sealed Resources version=2 rules=13 files=9985
