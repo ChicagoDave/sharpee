@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edit="using:AvaloniaEdit"
+        x:Class="PaneHost.Editor.EditorWindow"
+        Width="1200" Height="820"
+        Background="#1E1F26"
+        Title="Avalonia editor — Phase 3">
+    <!-- AvaloniaEdit driven by the real Chord lexer. Dark palette from Theme.swift
+         so the surface can be compared with the shipping editor by eye. -->
+    <Grid RowDefinitions="Auto,*">
+        <TextBlock x:Name="Status" Grid.Row="0" Margin="10,6"
+                   Foreground="#D8D9E0" FontFamily="Menlo" FontSize="11"
+                   Text="starting…" TextWrapping="Wrap" />
+        <edit:TextEditor x:Name="Editor" Grid.Row="1"
+                         ShowLineNumbers="True"
+                         WordWrap="False"
+                         FontFamily="Menlo"
+                         FontSize="13"
+                         Background="#1E1F26"
+                         Foreground="#D8D9E0" />
+    </Grid>
+</Window>

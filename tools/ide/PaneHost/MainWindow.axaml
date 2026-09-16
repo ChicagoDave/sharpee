@@ -1,0 +1,13 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="PaneHost.MainWindow"
+        Width="1200" Height="800"
+        Title="Avalonia pane host — Phase 1">
+    <!-- One full-bleed NativeWebView. Phase 1 asks only whether the panes can be
+         hosted and driven at all; chrome around them is Phase 4's question. -->
+    <Grid RowDefinitions="Auto,*">
+        <TextBlock x:Name="Status" Grid.Row="0" Margin="10,6" FontFamily="Menlo" FontSize="11"
+                   Text="starting…" TextWrapping="Wrap" />
+        <NativeWebView x:Name="Web" Grid.Row="1" />
+    </Grid>
+</Window>

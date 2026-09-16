@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:edit="using:AvaloniaEdit"
+        xmlns:shell="using:PaneHost.Shell"
+        x:Class="PaneHost.Shell.ShellWindow"
+        Width="1400" Height="900"
+        Title="Chord Writer (Avalonia spike)">
+    <!--
+      MainWindow.swift's shell: a 28 px chrome band, a 40 px rail, the project
+      pane, the editor over its tab bar, a right panel with the real web panes,
+      a bottom panel, and a 22 px status bar. Every custom surface below is a
+      DrawnSurface — Render(DrawingContext), not a composed element tree.
+    -->
+    <Window.Resources>
+        <x:Double x:Key="ChromeHeight">28</x:Double>
+    </Window.Resources>
+
+    <Grid RowDefinitions="28,*,22">
+
+        <!-- chrome band -->
+        <Grid x:Name="Chrome" Grid.Row="0" ColumnDefinitions="Auto,*,Auto">
+            <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="10,0" Spacing="10">
+                <Button x:Name="BuildButton" Content="Build" Padding="8,1" FontSize="11" />
+                <Button x:Name="ComposeButton" Content="Compose" Padding="8,1" FontSize="11" />
+            </StackPanel>
+            <TextBlock x:Name="StoryTitle" Grid.Column="1" Text="—"
+                       HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="11.5" />
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Margin="10,0" Spacing="6">
+                <Button x:Name="LightButton" Content="Light" Padding="8,1" FontSize="11" />
+                <Button x:Name="DarkButton" Content="Dark" Padding="8,1" FontSize="11" />
+            </StackPanel>
+        </Grid>
+
+        <!-- body -->
+        <Grid Grid.Row="1" ColumnDefinitions="40,220,4,*,4,440">
+            <StackPanel x:Name="Rail" Grid.Column="0" Orientation="Vertical" Spacing="8" Margin="0,8">
+                <Button x:Name="ProjectToggle" Content="▤" FontSize="16" Width="40" Height="32" Background="Transparent" />
+                <Button x:Name="BottomToggle" Content="⚒" FontSize="16" Width="40" Height="32" Background="Transparent" />
+            </StackPanel>
+
+            <shell:ProjectPaneView x:Name="ProjectPane" Grid.Column="1" />
+            <GridSplitter Grid.Column="2" Background="Transparent" />
+
+            <Grid Grid.Column="3" RowDefinitions="28,*,4,Auto">
+                <shell:EditorTabBarView x:Name="EditorTabs" Grid.Row="0" />
+                <edit:TextEditor x:Name="Editor" Grid.Row="1"
+                                 ShowLineNumbers="True" FontFamily="Menlo" FontSize="13" />
+                <GridSplitter Grid.Row="2" Background="Transparent" />
+                <Grid x:Name="BottomPanel" Grid.Row="3" Height="200" IsVisible="False"
+                      RowDefinitions="30,*">
+                    <shell:TabStripView x:Name="BottomTabs" Grid.Row="0" />
+                    <TextBox x:Name="BottomText" Grid.Row="1" AcceptsReturn="True" IsReadOnly="True"
+                             FontFamily="Menlo" FontSize="11" BorderThickness="0" />
+                </Grid>
+            </Grid>
+
+            <GridSplitter Grid.Column="4" Background="Transparent" />
+
+            <Grid Grid.Column="5" RowDefinitions="30,*">
+                <shell:TabStripView x:Name="RightTabs" Grid.Row="0" />
+                <Panel Grid.Row="1">
+                    <NativeWebView x:Name="Web" />
+                    <ScrollViewer x:Name="WorldScroll" IsVisible="False"
+                                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                        <shell:WorldMapView x:Name="WorldMap" />
+                    </ScrollViewer>
+                </Panel>
+            </Grid>
+        </Grid>
+
+        <!-- status bar -->
+        <Grid x:Name="StatusBar" Grid.Row="2" ColumnDefinitions="Auto,*,Auto">
+            <TextBlock x:Name="BuildPill" Grid.Column="0" Margin="10,0" VerticalAlignment="Center" FontSize="10.5" Text="idle" />
+            <TextBlock x:Name="StatusText" Grid.Column="2" Margin="10,0" VerticalAlignment="Center" FontSize="10.5" Text="" />
+        </Grid>
+    </Grid>
+</Window>

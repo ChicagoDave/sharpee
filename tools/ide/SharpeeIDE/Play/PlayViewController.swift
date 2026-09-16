@@ -71,7 +71,11 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     ///    Play header — sets `data-theme` and keeps it set. The observer is
     ///    the load-bearing part: the client's own boot applies ITS saved/default
     ///    theme after this script ran, and would silently undo the picker.
-    ///    With no pick (Story Default) the chrome never touches `data-theme`.
+    ///    With no pick (Story Default) the chrome applies
+    ///    `storyDefaultFallbackThemeId` only where the page has no theme of its
+    ///    own — attribute absent, or `classic`, the engine's white-on-blue
+    ///    `:root` baseline. A story that ships a theme keeps it; what the
+    ///    fallback replaces is the case where classic would show.
     private static func playSurfaceScript(themeChoice: String?, themeStylesheets: [String]) -> String {
         """
         (function () {
@@ -81,7 +85,10 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
           style.textContent = '#menu-bar { display: none !important; }';
           document.documentElement.appendChild(style);
 
-          var chrome = { choice: \(Self.javascriptString(themeChoice)) };
+          var chrome = {
+            choice: \(Self.javascriptString(themeChoice)),
+            fallback: \(Self.javascriptString(Self.storyDefaultFallbackThemeId))
+          };
           window.__sharpeePlayThemeChrome = chrome;
           \(Self.javascriptStringArray(themeStylesheets)).forEach(function (href) {
             var file = href.split('/').pop();
@@ -93,9 +100,13 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
             }
           });
           function enforce() {
-            if (chrome.choice &&
-                document.documentElement.getAttribute('data-theme') !== chrome.choice) {
-              document.documentElement.setAttribute('data-theme', chrome.choice);
+            var current = document.documentElement.getAttribute('data-theme');
+            if (chrome.choice) {
+              if (current !== chrome.choice) {
+                document.documentElement.setAttribute('data-theme', chrome.choice);
+              }
+            } else if (!current || current === 'classic') {
+              document.documentElement.setAttribute('data-theme', chrome.fallback);
             }
           }
           enforce();
@@ -124,6 +135,12 @@ final class PlayViewController: NSViewController, WKScriptMessageHandler {
     private var webView: WKWebView!
     private let header = PlayHeaderView()
     private let placeholder = NSTextField(labelWithString: "Build (⌘B) to play the story")
+
+    /// What Story Default falls back to when the story ships no theme of its
+    /// own. Never `classic`: that is the engine's white-on-blue `:root`
+    /// baseline, and it is not what the IDE should show a story in. `system-6`
+    /// is the other candidate and is a one-word change here.
+    static let storyDefaultFallbackThemeId = "paper"
 
     /// UserDefaults key for the picked play-surface theme id. Absent = Story
     /// Default. Deliberately NOT the page's localStorage: every boot wipes the

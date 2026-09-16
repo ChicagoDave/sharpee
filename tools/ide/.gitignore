@@ -36,3 +36,15 @@ test-fixtures/.compose-scratch-*/
 
 # macOS
 .DS_Store
+
+# .NET build output from the Avalonia desktop head (PaneHost, PaneHost.Tests).
+# `dotnet build`/`dotnet test` is a documented LOCAL gate, not CI — see
+# PaneHost/README.md — so these are always developer-local.
+PaneHost/bin/
+PaneHost/obj/
+PaneHost.Tests/bin/
+PaneHost.Tests/obj/
+
+# The editor's lexer bridge is bundled from packages/chord/src by its own
+# build.mjs. Built, not authored.
+editor-bridge/dist/

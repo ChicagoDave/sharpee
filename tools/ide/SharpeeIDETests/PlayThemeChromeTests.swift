@@ -33,6 +33,20 @@ final class PlayThemeChromeTests: XCTestCase {
     </body></html>
     """
 
+    /// A story that ships NO theme: the client boots and applies `classic`, the
+    /// engine's white-on-blue `:root` baseline. This is the case Story Default
+    /// used to leave alone and now backfills.
+    private static let classicFixtureHTML = """
+    <html><body>
+    <p>The den is quiet.</p>
+    <script>
+    document.documentElement.setAttribute('data-theme', 'classic');
+    window.sessionMarker = 'alive';
+    window.bootProbeReady = true;
+    </script>
+    </body></html>
+    """
+
     override func setUpWithError() throws {
         super.setUp()
         UserDefaults.standard.removeObject(forKey: PlayViewController.themeChoiceDefaultsKey)
@@ -117,14 +131,17 @@ final class PlayThemeChromeTests: XCTestCase {
 
     // MARK: - REJECTS WHEN: no pick — the story's own theme stands
 
-    func testStoryDefaultNeverTouchesTheClientsTheme() async throws {
+    func testStoryDefaultLeavesAStorysOwnThemeAlone() async throws {
+        // The fixture's client applies `story-default` — a real theme, so the
+        // Story Default backfill must NOT fire. It fires only where the page has
+        // no theme of its own; that case is its own test below.
         try await boot()
         // Give the observer every chance to misbehave before asserting.
         try await Task.sleep(nanoseconds: 200_000_000)
         let theme = try await play.evaluateInPlaySurface(
             "document.documentElement.getAttribute('data-theme')") as? String
         XCTAssertEqual(theme, "story-default",
-                       "with no pick, the client's own boot apply must stand")
+                       "with no pick and a story that ships a theme, the client's own boot apply must stand")
     }
 
     // MARK: - DOES: a live pick restyles the running page and persists
@@ -167,6 +184,20 @@ final class PlayThemeChromeTests: XCTestCase {
         try await waitForTheme("story-default")
         XCTAssertNil(UserDefaults.standard.string(forKey: PlayViewController.themeChoiceDefaultsKey),
                      "Story Default removes the persisted pick entirely")
+    }
+
+    // MARK: - DOES: Story Default never shows the engine's white-on-blue classic
+
+    func testStoryDefaultBackfillsPaperWhenTheStoryShipsNoTheme() async throws {
+        // No pick stored: Story Default is in effect.
+        try Data(Self.classicFixtureHTML.utf8)
+            .write(to: bundleDir.appendingPathComponent("index.html"))
+        try await boot()
+
+        // The client applied `classic` after the chrome ran — the chrome wins.
+        try await waitForTheme(PlayViewController.storyDefaultFallbackThemeId)
+        XCTAssertNil(UserDefaults.standard.string(forKey: PlayViewController.themeChoiceDefaultsKey),
+                     "the backfill is a display fallback, not a persisted pick")
     }
 
     // MARK: - The catalog reads the real mirror
