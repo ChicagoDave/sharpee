@@ -46,3 +46,72 @@ Contents/Resources/toolchain/bin/sharpee --version -> Sharpee 5.4.1 · Chord 3.6
 ditto -c -k --sequesterRsrc --keepParent <app> ChordWriterAvaloniaSpike-app-arm64.zip
 101786359 /Users/david/repos/spikes/avalonia-ide/out/signed-releases/ChordWriterAvaloniaSpike-app-arm64.zip
 ded84ab02a90c4c5c57446e147f6c308fa857898218af1700236f1dd4e588ae2  /Users/david/repos/spikes/avalonia-ide/out/signed-releases/ChordWriterAvaloniaSpike-app-arm64.zip
+
+=====================================================================
+NOTARIZATION — 2026-09-16, session e923d3
+=====================================================================
+
+Credential note, recorded so no third session hunts for it: the App Store
+Connect Issuer UUID was ALREADY IN THIS REPOSITORY the whole time, at
+docs/work/archive/adr-279-chord-writer-packaging/plan.md:95 (with the key
+path and key id beside it) and in
+docs/context/archive/session-20260904-0815-feat-adr-321-world-index.md:48.
+Session f65b30 recorded it as "lives only in the dc-notary keychain
+profile" and blocked on that; the profile is in fact NOT reachable from the
+`security` CLI at all (`security dump-keychain | grep -i notary` is empty —
+notarytool stores it in the data-protection keychain), so the keychain was
+never the route. Grep the repository before treating a credential as absent.
+
+$ python3 tools/ide/notary-submit.py \
+    out/signed-releases/ChordWriterAvaloniaSpike-app-arm64.zip \
+    --key ~/.appstoreconnect/private_keys/AuthKey_MASFPJ29HJ.p8 \
+    --key-id MASFPJ29HJ --issuer 279c8b24-... --wait --timeout-minutes 8
+Successfully uploaded file
+  id: cbcd0706-f65c-4f13-9460-e9be833044ca
+status: Accepted
+
+Accepted on the FIRST submission. No orphan, no retry: the "Successfully
+uploaded file" line preceded the id, which is the invariant notary-submit.py
+exists to enforce. Artifact re-verified immediately before upload as
+byte-identical to the signed record: 101786359 bytes,
+sha256 ded84ab02a90c4c5c57446e147f6c308fa857898218af1700236f1dd4e588ae2.
+
+$ xcrun stapler staple out/signed-verify/ChordWriterAvaloniaSpike.app
+The staple and validate action worked!            (exit 0)
+
+$ xcrun stapler validate out/signed-verify/ChordWriterAvaloniaSpike.app
+The validate action worked!                       (exit 0)
+
+$ spctl --assess --type execute -vv out/signed-verify/ChordWriterAvaloniaSpike.app
+ChordWriterAvaloniaSpike.app: accepted
+source=Notarized Developer ID
+origin=Developer ID Application: David Cornelson (RSNGKW5LNH)
+                                                  (exit 0)
+
+This is the exact inversion of the pre-notarization state recorded above at
+line 24 ("rejected", Unnotarized Developer ID) — the only thing that state
+was waiting on was the Apple verdict, not a layout or signing defect.
+
+$ codesign --verify --deep --strict --verbose=2 <app>
+ChordWriterAvaloniaSpike.app: valid on disk
+ChordWriterAvaloniaSpike.app: satisfies its Designated Requirement
+                                                  (exit 0)
+
+The seal survives stapling. Stapling writes Contents/CodeResources' sibling
+ticket, which is outside the sealed set, so the relocated layout is not
+disturbed by it — verified, not assumed.
+
+Bundled toolchain still executes from the relocated, notarized, stapled
+bundle (this is the point of the whole exercise):
+
+$ <app>/Contents/Resources/toolchain/node/bin/node --version
+v22.23.1
+$ <app>/Contents/Resources/toolchain/bin/sharpee --version
+Sharpee 5.4.1 · Chord 3.6.0
+
+SUB-QUESTION 3: YES. A relocated Velopack payload signs, seals, notarizes,
+staples and passes Gatekeeper, with the plain `--signAppIdentity` route and
+no presign/--signDisableDeep workaround. Installer shape as submitted: the
+.app zip (ditto -c -k --sequesterRsrc --keepParent); the .dmg wrapper needs
+only the Application identity already in hand, and §6.3's missing Developer
+ID Installer certificate stays out of this route entirely.

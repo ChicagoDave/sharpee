@@ -76,11 +76,13 @@ Three things follow, and they should not be blurred together.
 
 ## 5. Packaging: the best row and the worst row are the same row
 
+> **Superseded in part by §13 (2026-09-16).** The worst row is gone: the bundle seals, signs, notarizes and staples, and Apple accepted it. The diagnosis below is intact — the verdict, the unpriced cost, and the open notarization question are not. Read §13 before quoting this section.
+
 Velopack's delta channel is the concrete D7 answer this track has been missing. An 8.11 MB delta against a 99.8 MB application means a story-language fix ships as an 8 MB download for an app whose weight is a vendored Node toolchain that changes only when it is re-vendored. One channel, three OSes, deltas, and Azure Trusted Signing by flag on Windows (D7's signing ruling) — untested there, but that is what D7 asked for.
 
 And it cannot sign the macOS bundle. Not for want of a flag: `vpk`'s bundler puts all 225 entries of the publish output — `PaneHost.deps.json`, `runtimeconfig.json`, satellite cultures, and the 175 MB `toolchain/` — flat into `Contents/MacOS/`, where Apple's rule says only the executable and code belong. `codesign` treats each as a nested code object, finds them unsignable, and refuses to seal. `--deep` dies in the vendored devkit's pnpm store (72 entries, 235 symlinks); `--signDisableDeep` wants a pre-signed payload; pre-signing 221 files still dies on `runtimeconfig.json`; hand-signing the packed bundle bottom-up dies in the same place. The end state is an executable carrying a valid Developer ID signature inside a bundle with no seal — signed-looking, not signed, and rejected by Gatekeeper.
 
-**The honest cost to put against O6's packaging row is a bundle post-processing step Velopack does not provide**: move data and `toolchain/` to `Contents/Resources` (the layout the shipping IDE already uses and `bundled-node.entitlements` already names), fix the executable's probing paths, then sign per-binary so the vendored toolchain keeps the seal `vendor-toolchain.sh` gave it and `node` keeps its own entitlements. That is real work of unknown size, and it sits between this evaluation and a shippable macOS artifact. Because nothing could be sealed, **the notarization question the plan carried explicitly — `vpk --notaryProfile` versus this project's `notary-submit.py` REST route — is still open, and nothing was submitted to Apple.**
+**The honest cost to put against O6's packaging row is a bundle post-processing step Velopack does not provide**: move data and `toolchain/` to `Contents/Resources` (the layout the shipping IDE already uses and `bundled-node.entitlements` already names), fix the executable's probing paths, then sign per-binary so the vendored toolchain keeps the seal `vendor-toolchain.sh` gave it and `node` keeps its own entitlements. That is real work of unknown size, and it sits between this evaluation and a shippable macOS artifact. Because nothing could be sealed, **the notarization question the plan carried explicitly — `vpk --notaryProfile` versus this project's `notary-submit.py` REST route — is still open, and nothing was submitted to Apple.** — *Both clauses are now closed (§13): the route is `notary-submit.py`, and submission `cbcd0706-f65c-4f13-9460-e9be833044ca` was Accepted on the first attempt. The per-binary signing this paragraph prices turned out to be unnecessary.*
 
 ## 6. The four-way frame, filled
 
@@ -114,7 +116,7 @@ Grounds, in order of weight:
 4. **Velopack gives D7 a real answer on three OSes at once.** An 8.11 MB delta against a 99.8 MB app, one channel, Azure Trusted Signing by flag on Windows. D7's open choice was MSIX-with-appinstaller versus a conventional installer plus an updater; this is the second option, measured, and on macOS it would replace Sparkle.
 5. **Dependency health is the best of the three shapes.** Avalonia 31,501★ MIT pushed within hours of the check; AvaloniaEdit MIT with a `net10.0` NuGet package that builds clean against 12.1.2 (the release-tag lag was an artifact); Velopack 2,328★ MIT pushed the day before. Against OpenSilver's chain, whose thinnest link (`photino.Native`, 181★) had been quiet six months.
 
-**The conditions, stated as conditions.** Windows is the target platform and has not run — the WebView2 backend, `Setup.exe` with Trusted Signing, and the vendored toolchain's Windows launcher (the shim is a POSIX script) are all untested, and a Windows-only response-supply door would split D3's answer by platform. The macOS bundle cannot currently be sealed or notarized, and the fix is unpriced work outside Velopack. And the felt comparison is not a nicety here: Avalonia's value is one codebase, which means the AppKit app is rewritten from day one, so "does a Skia-rendered Chord Writer feel right on this Mac" is load-bearing in a way it was not for a Windows-only shape.
+**The conditions, stated as conditions.** Windows is the target platform and has not run — the WebView2 backend, `Setup.exe` with Trusted Signing, and the vendored toolchain's Windows launcher (the shim is a POSIX script) are all untested, and a Windows-only response-supply door would split D3's answer by platform. The macOS bundle cannot currently be sealed or notarized, and the fix is unpriced work outside Velopack. *(Both conditions have since been discharged: Windows in §12, the bundle layout in §13. **The felt comparison is the only one of the three still outstanding.**)* And the felt comparison is not a nicety here: Avalonia's value is one codebase, which means the AppKit app is rewritten from day one, so "does a Skia-rendered Chord Writer feel right on this Mac" is load-bearing in a way it was not for a Windows-only shape.
 
 ## 8. The strongest case against that recommendation
 
@@ -152,8 +154,8 @@ Grounds, in order of weight:
 
 ## 11. Owed regardless of the ruling
 
-- **Phase 7** — the Windows run, for this shape and in principle for all of them; its addendum folds back into this record.
-- **The macOS bundle layout** — the post-processing step §5 describes, before any O6 artifact can be notarized. Unpriced.
+- **Phase 7** — the Windows run, for this shape and in principle for all of them; its addendum folds back into this record. **DONE — §12.**
+- **The macOS bundle layout** — the post-processing step §5 describes, before any O6 artifact can be notarized. Unpriced. **DONE and priced — §13**: two scripts, 45 lines, one ordering constraint, and a notarized artifact Apple accepted. What replaces it on this list is narrower: the `tools/ide/` integration, the x86_64 slice, and GH #474.
 - **The replay over-run** (Phase 1 §5) — first thing to resume on if Phase 1 reopens.
 - **The editor's light palette** — `ChordColorizer` should read `ThemeTokens` rather than its own brush constants. One edit, and the light screenshot shows why.
 - **`localStorage` across an app restart** — asked for by the plan, not exercised; the probe closes its window and does not relaunch.
@@ -215,3 +217,100 @@ the critical path, and would be identical under WPF — it is not an Avalonia co
 been built on this clone, which is entangled with the toolchain gap above — the docs pane
 did complete its round trip, 200 with 106 nav links and 3 posts), a signed installer, and any
 install run.
+
+---
+
+## 13. Packaging addendum — the macOS bundle is sealed, signed, notarized and accepted
+
+**Added 2026-09-16, session e923d3.** Full record: `docs/work/velopack-macos-bundle-layout/decision.md`,
+over `evidence/phase-1-apphost-relocation.md`, `evidence/phase-2-update-apply.md` and
+`evidence/phase3-signing-pre-notarization.txt` in that directory. This addendum exists because
+**§5 and §11 of this record are now wrong in the reader's hands**: §5 concludes signing FAIL with
+notarization unreachable, and §11 carries the bundle layout as "Unpriced." Both were accurate when
+written and neither is accurate now.
+
+**§5's diagnosis was right and its verdict is superseded.** The cause it identified — Velopack's
+macOS bundler puts all 225 publish entries, the 175 MB toolchain included, flat into
+`Contents/MacOS/`, and no `vpk` flag moves them — held up under direct re-test, and so did the
+finding that no `vpk` version has grown a layout option (1.2.0 and prerelease 1.2.110-ge826545
+carry identical `bundle`/`pack` option sets, with no upstream issue asking for one). What §5 was
+missing was not a flag but a **fifth route**: the four it tried all patch `vpk`'s finished output,
+and the one that works rearranges the payload **before** `vpk pack`.
+
+**The recipe, in full.** `relocate.sh` (20 lines) moves the payload to `Contents/Resources`,
+leaving `Contents/MacOS` holding only `PaneHost`, `UpdateMac` and the `sq.version` symlink that
+upstream velopack/velopack#705 already puts there. `patch-apphost.py` (25 lines) rewrites the
+AppHost's embedded app-path field — a fixed offset in the binary, 66088 in this one — from
+`PaneHost.dll` to `../Resources/PaneHost.dll`. Then `vpk pack --packDir <the relocated .app>
+--signAppIdentity <identity>`. The ordering is the load-bearing part: `vpk pack` accepts a
+pre-built `.app` and passes its `Contents/` tree through unchanged, so the `.nupkg` carries the
+relocated layout natively and no post-apply hook is needed, whereas feeding it an already-packed
+relocated bundle collides on `sq.version` inside `OsxPackCommandRunner.PreprocessPackDir`, which
+creates that symlink with `overwrite: false`.
+
+Phase 1 also proved the harder version — post-processing `vpk`'s own finished output — works, with
+a negative control that makes the AppHost patch load-bearing rather than incidental: the unpatched
+binary on the relocated layout fails with `The application to execute does not exist:
+…/Contents/MacOS/PaneHost.dll`.
+
+**The seal holds without `--deep`**, which is the specific thing §5 could not get: `Sealed
+Resources version=2 rules=13 files=9984` on the ad-hoc pass, `codesign --verify --deep --strict
+--verbose=2` reporting `valid on disk` and `satisfies its Designated Requirement`. §5's terminal
+error — *"code has no resources but signature indicates they must be present"* — does not recur.
+
+**Velopack's update path survives the relocation at no measurable cost.** A full round trip
+through the real `UpdateMac apply`: delta reconstruction in 4.45 s, 235 symlinks recreated, layout
+intact, seal scan clean, app and bundled toolchain both running afterwards. Full package
+99,908,968 bytes and delta 8,274,247 at 28.4 s pack time, against §5's flat-layout baseline of
+99,829,165 / 8,114,592 at 34.5 s. One condition found and closed: applying a package built from an
+**unsigned** app destroys the seal, which reproduces §5's failure exactly; packing with
+`--signAppIdentity` puts `_CodeSignature` inside the `.nupkg` and the installed bundle stays
+sealed, verified both post-apply and on a fresh install from the same package.
+
+**The signing surprise is that the expensive plan was unnecessary.** The work budgeted for
+reproducing `tools/ide/package.sh`'s per-binary approach (`sign_macho`, `assert_hardened`,
+`assert_node_entitlements`) against the relocated payload. It was not needed: `vpk`'s own recursive
+`codesign --deep` step finished in **2 seconds** on the relocated payload — precisely the route
+that failed on the pnpm store in §5 — so there is no presign pass, no `--signDisableDeep`, and no
+per-binary loop in the recipe. Developer ID Application: David Cornelson (RSNGKW5LNH), hardened
+runtime on the bundle and all 20 Mach-O binaries, 20/20 Developer-ID signed. `vpk`'s default .NET
+entitlement set also turns out to be byte-for-byte the five keys in
+`tools/ide/bundled-node.entitlements`, so the app-versus-node entitlement split `package.sh` exists
+to express is not needed for this bundle.
+
+**Apple accepted it on the first submission.** Submitted through `tools/ide/notary-submit.py`
+(the REST single-PUT route; `notarytool` crashes on upload on this machine): `Successfully uploaded
+file`, id `cbcd0706-f65c-4f13-9460-e9be833044ca`, **Accepted**. Stapled, `stapler validate` clean,
+and `spctl --assess --type execute -vv` reporting `accepted` / `source=Notarized Developer ID` /
+`origin=Developer ID Application: David Cornelson (RSNGKW5LNH)` — against the pre-notarization
+`rejected` / `Unnotarized Developer ID`, which was the correct state to be in at that moment. The
+seal survives stapling and the bundled toolchain still answers `Sharpee 5.4.1 · Chord 3.6.0` from
+inside the notarized bundle. Artifact shape: the `.app` zip, so §5's missing Developer ID Installer
+certificate never became a dependency — the `.pkg` path is not on this route.
+
+**So R15 is the row that moved.** §5's own framing was that packaging held the best row and the
+worst row simultaneously; the worst half is gone. ADR-351's D2 had three conditions and this
+discharges the second, leaving only the felt comparison. **The R15 score of 2 is David's and is
+left as he set it** — this addendum reports that the evidence under it changed and says nothing
+about what the cell should read, the same treatment the Phase 8 Linux evidence gets against R22.
+
+**Still owed, and the list is shorter but not empty:**
+
+- **The shipping integration is unpriced.** Everything above ran against `ChordWriterAvaloniaSpike`,
+  a spike bundle. Folding the recipe into `tools/ide/` is real work that has not been scoped.
+- **The x86_64 slice is unexercised.** Past releases signed and notarized it separately; nothing
+  here touches it.
+- **GH #474** — the Phase 4 shell probe reads every asset from absolute paths outside the bundle
+  (`pane/PaneHost/Shell/ShellWindow.axaml.cs:34-38`), so it is a launch check and not evidence
+  about the bundled toolchain. Filed during this work; Phase 1 wrote its own check rather than
+  trusting it.
+- **This record still has no Phase 8 addendum.** §12 folded Windows back in; the Linux check
+  (2026-09-15, both architectures) never got the same treatment, and its evidence lives only in
+  `phase-8-linux-check.md` and ADR-351's Consequences. Naming that here rather than filling it
+  silently — a Linux addendum is a separate piece of writing with its own record to read.
+- **A process finding that cost a session.** Phase 3 blocked on the App Store Connect Issuer UUID,
+  recorded as living "only in the `dc-notary` keychain profile." It was committed in this
+  repository the whole time, at `docs/work/archive/adr-279-chord-writer-packaging/plan.md:95`, and
+  the keychain was never the route at all: notarytool stores that profile in the data-protection
+  keychain, which the `security` CLI cannot read. Grep the repository before recording a credential
+  as absent.
