@@ -15,6 +15,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 import { stampVersion } from './version-stamp.js';
+import { resolveEsbuild } from './esbuild-bin.js';
 import { findStoryFile } from './author-game.js';
 import { StoryConfigError, configPathFor, reconcileHeader } from './story-config.js';
 import {
@@ -228,7 +229,6 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
   // the CJS branch of the platform packages' exports maps (matches the monorepo build).
   console.log('  Bundling game.js...');
   const esbuildArgs = [
-    'esbuild',
     browserEntryPath,
     '--bundle',
     '--platform=browser',
@@ -245,7 +245,15 @@ export async function runBuildBrowserCommand(args: string[], targetArg?: string)
   if (sourcemap) esbuildArgs.push('--sourcemap');
 
   try {
-    execFileSync('npx', esbuildArgs, { cwd: projectDir, stdio: 'pipe' });
+    // devkit's own esbuild, not `npx esbuild`: execFileSync spawns without a
+    // shell, so 'npx' is ENOENT on Windows, and npm 7+ makes `npx esbuild`
+    // DOWNLOAD an unpinned copy rather than run the installed one. Same seam
+    // the .story path already uses through browser-core.ts.
+    const esbuild = resolveEsbuild();
+    execFileSync(esbuild.command, [...esbuild.prefixArgs, ...esbuildArgs], {
+      cwd: projectDir,
+      stdio: 'pipe',
+    });
     console.log('  ✓ Built game.js');
   } catch (error: any) {
     console.error('  ✗ Build failed');

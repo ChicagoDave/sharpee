@@ -57,22 +57,81 @@
   sites needed a change (the phrasebook is now the wire's map, so the phrase key is the dictionary
   key), approved by David before the edit. Record: `evidence/phase-2a-protocol-generator.md`.
 
-### Phase 3: Toolchain portability — Windows and Linux Node vendoring, the launcher, GH #448, GH #457
+### Phase 3a: Toolchain correctness — GH #457, GH #448
+- **Tier**: Small
+- **Budget**: 120
+- **Focus**: The half of the original Phase 3 that needs no vendored bytes and no
+  Windows or Linux machine time. GH #457 is the urgent one — it stops the shipped
+  toolchain building any Chord story, on macOS, today.
+- **Entry state**: Phase 2a done. The estimate (Phase 3's own deliverable 1) exists at
+  `evidence/phase-3-estimate.md` and David approved the split and the `packages/` edits
+  on 2026-09-16, which is the platform-change discussion CLAUDE.md requires.
+- **Deliverable**: GH #457's manifest edits and GH #448's two subprocess sites.
+- **Exit state — rule 13a Integration Reality Statement required**: OWNED = the
+  `pnpm deploy` closure `vendor-toolchain.sh` assembles, devkit's own esbuild subprocess,
+  the `bin/sharpee` shim. REAL-PATH TEST: the issue's own reproduce — assemble a toolchain,
+  build a Chord `.story` through the sealed shim — plus a test that actually drives the
+  TypeScript browser branch, which no existing test does.
+- **Status**: **DONE (2026-09-16, session 9f9266).** Five manifests: `dist-esm` added to
+  `files` in `character`/`bootstrap`/`sharpee`; `module` and `exports["."].import` dropped
+  from `bridge`/`runtime` (David's ruling — neither had a `dist-esm` directory at all, and
+  nothing in the repo depends on either package). Two subprocess sites: `build-browser.ts`'s
+  TypeScript branch now spawns devkit's own esbuild through `resolveEsbuild()`;
+  `consumer-gen.ts` names `npm.cmd` on win32. A third candidate (`build.ts:122`, `npx tsc`)
+  was **ruled out, not fixed** — the TS story template ships `typescript` as a devDependency
+  and the Chord path returns thirty lines earlier; no `typescript` dependency was added to
+  devkit. Results: devkit typecheck clean, **183 passed / 1 skipped / 0 failures**,
+  `tsf validate --publish` exit 0 across 34 packages. Both real-path tests carry a negative
+  control: hiding `dist-esm` in the sealed copy reproduces #457's exact error, and breaking
+  the esbuild spawn turns the new test red. Record:
+  `evidence/phase-3a-toolchain-correctness.md`.
+
+### Phase 3b: Toolchain portability — Windows and Linux Node vendoring, the launcher
 - **Tier**: Large
-- **Budget**: 400 (this is the largest unpriced item named in the goal; if the estimate below reveals a cost this budget can't cover, split at that point rather than padding the estimate to fit)
-- **Focus**: The single largest blocker to any non-macOS artifact. Everything downstream of this phase (Phases 4, 6, 7, and any real-path test on Windows or Linux) depends on its exit state.
-- **Entry state**: Phase 2 done. Confirmed with David before any `packages/devkit` edit begins (CLAUDE.md: "Platform changes require discussion first... Any changes to `packages/` must be discussed with the user before implementation" — `packages/devkit/src/consumer-gen.ts:247`, `packages/devkit/src/standalone/build-browser.ts:248` are exactly the `execFileSync('npm'/'npx', ...)` calls GH #448 names as ENOENT on Windows).
-- **Deliverable, in order — the first is the estimate, not code**:
-  1. **Estimate**: for each of Windows and Linux, name the Node asset to vendor (which arch tarball/zip — Windows has no equivalent asset today; `tools/ide/vendor/node/` ships only `darwin-arm64` and `darwin-x64`, per `README.md` and `SHASUMS256.txt` in that directory), the shape of the launcher rewrite (`tools/ide/vendor-toolchain.sh:298` writes a POSIX `#!/bin/sh` `bin/sharpee`; `:311` requires `$root/node/bin/node`, a layout Windows Node does not use, but which Linux Node already satisfies — so Linux needs only a new tarball, Windows needs a new launcher shape too, e.g. `bin/sharpee.cmd` or a `.ps1`), and the size/scope of GH #448's fix in `packages/devkit`. Also scope **GH #457** here (vendored toolchain fails to build any out-of-repo Chord story — a `dist-esm` files-list mismatch across seven packages) since it blocks the same real-path tests this phase's exit state needs, on every platform including macOS.
-  2. **Implementation**: vendor Windows (`win32-x64`) and Linux (`linux-x64`; `linux-arm64` if the estimate says it's cheap given Phase 8's arm64 spike leg already ran) Node assets into `tools/ide/vendor/node/`; extend `vendor-toolchain.sh` to emit the Windows launcher shape decided above and confirm the existing POSIX shim needs no change for Linux; fix GH #448 in `packages/devkit`; fix GH #457.
-- **Exit state — rule 13a Integration Reality Statement required, this is exactly the "runtime, subprocess" phase class it names**: OWNED = the vendored Node runtime, the `bin/sharpee` launcher, `packages/devkit`'s subprocess calls. REAL-PATH TEST required on both Windows and Linux machines (needs David's machine time on both, named up front — this cannot be inferred or stubbed per rule 13a and the GH #435 recurrence risk the goal names): `compose`/`build` executed from the vendored, network-free toolchain, the same three checks Phase 7/8 ran on macOS (`node --version`, `compose --json` exit 0, a streamed `build`).
+- **Budget**: 400 (unchanged from the original Phase 3; the estimate found the job larger
+  than the plan assumed, not smaller — split at that point rather than padding, per the
+  budget note this phase inherited)
+- **Focus**: The single largest blocker to any non-macOS artifact. Everything downstream of
+  this phase (Phases 4, 6, 7, and any real-path test on Windows or Linux) depends on its
+  exit state.
+- **Entry state**: Phase 3a done. **Needs a decision from David before implementation
+  begins**: where the Windows assembler runs — natively on Windows as a `.ps1`/`.cmd` peer,
+  or cross-assembled from macOS with signing deferred to the Windows build box.
+- **What the estimate found** (`evidence/phase-3-estimate.md`, 2026-09-16), and why this is
+  not the "launcher rewrite" the original phase priced: **`vendor-toolchain.sh` cannot be
+  extended to Windows.** Its own header says it is "Mac-only by nature"
+  (`tools/ide/vendor-toolchain.sh:6`), and four mechanisms make that structural rather than
+  incidental — step 4.6 codesigns Mach-O binaries against `EXPECTED_TEAM`; the esbuild graft
+  (`:200–285`) rewrites pnpm store entries and re-points consumer **symlinks** with `ln -s`,
+  asserting arch by grepping `file`'s output for `x86_64`; the seal enforcement (`:345–420`)
+  is a symlink-escape scan, and pnpm on Windows uses junctions (Node reports those through
+  `isSymbolicLink()`, so this *may* survive — a probe, not an assumption); and only the
+  fourth, the `#!/bin/sh` launcher at `:298` requiring `$root/node/bin/node` at `:311`, is
+  what the original phase priced. Windows therefore needs a **second assembler**. Linux is
+  genuinely cheap by comparison: the POSIX shim and `node/bin/node` layout both hold, so it
+  needs the tarball, an `ESBUILD_PKG` case for `@esbuild/linux-x64`, a non-Mach-O path around
+  step 4.6, and a replacement for the `file | grep x86_64` arch assertion.
+- **Deliverable**: vendor `win-x64` and `linux-x64` Node assets into `tools/ide/vendor/node/`
+  (~+55 MB of permanent git history; the directory holds 25.9 MB + 27.5 MB today).
+  **`linux-arm64` is out of this pass — David, 2026-09-16.** Build the Windows assembler in
+  the shape decided at entry; extend the existing script for Linux. Give PaneHost a
+  platform-shaped toolchain resolution: `tools/ide/PaneHost/Hosting/NativeHostServices.cs:39,41`
+  hard-code `bin/sharpee` and `node/bin/node`, which Windows spells `bin\sharpee.cmd` and
+  `node\node.exe` — a fourth site the original phase did not name.
+- **Exit state — rule 13a Integration Reality Statement required, this is exactly the
+  "runtime, subprocess" phase class it names**: OWNED = the vendored Node runtime, the
+  launchers, PaneHost's toolchain resolution. REAL-PATH TEST required on both Windows and
+  Linux machines (**needs David's machine time on both, named up front** — this cannot be
+  inferred or stubbed per rule 13a and the GH #435 recurrence risk the goal names):
+  `compose`/`build` executed from the vendored, network-free toolchain, the same three checks
+  Phase 7/8 ran on macOS (`node --version`, `compose --json` exit 0, a streamed `build`).
 - **Status**: PENDING
 
 ### Phase 4: The pane door — D3's per-platform contract module, GH #464
 - **Tier**: Large
 - **Budget**: 350
 - **Focus**: D3 exists to prevent the outcome it just produced — the pane door answers differently on each platform (macOS: no door, token-scoped loopback; Windows: `ICoreWebView2_3::SetVirtualHostNameToFolderMapping`, real, `hr=0x0`; Linux: `webkit_web_context_register_uri_scheme`, P/Invoked, and per ADR-351's Consequences this is *the mechanism ADR-341 D3 actually specifies*). This phase is where that split gets a single seam instead of three ad-hoc implementations.
-- **Entry state**: Phase 2 done (Phase 3 not required — this phase can proceed on macOS alone and add the other two backends once Phase 3's toolchain lands, since the door itself doesn't need the toolchain to exist, only the panes it serves do).
+- **Entry state**: Phase 2 done (Phase 3b not required — this phase can proceed on macOS alone and add the other two backends once Phase 3b's toolchain lands, since the door itself doesn't need the toolchain to exist, only the panes it serves do).
 - **Deliverable**: One C# contract (a single interface `PaneHost` code depends on) with three concrete backends, each ported from its already-proven spike code rather than re-derived: macOS's token-scoped `HttpListener` loopback origin (proven, keep as-is — no equivalent Windows/Linux mechanism exists per D3's Consequences); Windows's `IWindowsWebView2PlatformHandle` → `ICoreWebView2_3` virtual-host mapping (proven in Phase 7 of the spike, `hr=0x0`); Linux's `IGtkWebViewPlatformHandle` → `webkit_web_context_register_uri_scheme` P/Invoke (proven in Phase 8). This module also owns **GH #464**'s fix — the testing surface and play client currently hard-code a WKWebView-shaped bridge (`window.webkit.messageHandlers`), which ADR-351 D6 explicitly assigns to "D3's contract module... in #464's place": the contract module supplies whatever post-door primitive each backend needs (real WebKit handler on macOS, `CoreWebView2.PostWebMessageAsString` on Windows, the GTK equivalent on Linux) behind one API the panes call without naming any of the three.
 - **Exit state — rule 13a applies (this phase is squarely "runtime" class)**: OWNED = the three pane-door backends. REAL-PATH TEST per platform: the real, unmodified Docs/Play/Testing panes (`tools/ide/web/{docs-tab,testing-tab,testing-surface}`) served over each platform's real door — not the loopback fallback on Windows/Linux, where a real door exists — with both messaging directions proven (page → host, host → page) the way the macOS loopback origin already proved them.
 - **Status**: PENDING
@@ -90,7 +149,7 @@
 - **Tier**: Small
 - **Budget**: 150
 - **Focus**: AC-7-equivalent for Windows — closing the one thing Phase 7 of the spike explicitly left owed.
-- **Entry state**: Phases 3 and 4's Windows backends done. **Needs David's Azure Trusted Signing identity and his Windows machine** — this is the single most keyboard-time-bound phase in the plan besides Phase 1; name it up front rather than discovering it at the wall. `vpk` 1.2.0's `--azureTrustedSignFile` flag exists and the code-sign step already runs as its own phase (proven in Phase 7 of the spike, unsigned).
+- **Entry state**: Phases 3b and 4's Windows backends done. **Needs David's Azure Trusted Signing identity and his Windows machine** — this is the single most keyboard-time-bound phase in the plan besides Phase 1; name it up front rather than discovering it at the wall. `vpk` 1.2.0's `--azureTrustedSignFile` flag exists and the code-sign step already runs as its own phase (proven in Phase 7 of the spike, unsigned).
 - **Deliverable**: A signed `Setup.exe` built with `--azureTrustedSignFile` against David's identity, installed on a clean Windows machine (not the dev box that built it), and a parity check in the AC-4 shape — a story created and saved on macOS opens, composes, and plays unchanged on the installed Windows app.
 - **Exit state — rule 13a applies ("deploy" class)**: OWNED = the Windows signing and install path. REAL-PATH TEST: the actual signed installer, actually run on a clean machine — not a dry-run pack, per the GH #435 recurrence risk the goal names.
 - **Status**: PENDING
@@ -99,7 +158,7 @@
 - **Tier**: Medium
 - **Budget**: 220
 - **Focus**: Linux is checked but not proven end-to-end. Phase 8 of the spike built and ran the AppImage; nothing beyond that.
-- **Entry state**: Phases 3 and 4's Linux backends done.
+- **Entry state**: Phases 3b and 4's Linux backends done.
 - **Deliverable**: Decide with David whether Linux needs a signing identity at all (AppImages commonly ship unsigned with a detached GPG signature as the convention, unlike Windows/macOS's OS-enforced code signing) — this is a real open scoping question, not a default to assume either way. Prove the Velopack delta-update round trip on Linux the way Phase 2 of the velopack-macos-bundle-layout plan proved it on macOS (apply a delta, verify the result runs). Serve the real, unmodified Docs/Play/Testing panes over the Phase 4 Linux door end-to-end (Phase 8 of the spike only proved the AppImage executed, not that the panes worked over the scheme).
 - **Exit state — rule 13a applies ("deploy," "runtime" class)**: OWNED = the Linux packaging, update, and pane-serving path. REAL-PATH TEST: a real AppImage, a real delta apply, and the real panes served and exercised (not launched-and-quit) over the custom URI scheme.
 - **Status**: PENDING
@@ -108,7 +167,7 @@
 - **Tier**: Medium
 - **Budget**: 200
 - **Focus**: The editor already answers D4 (native control, compiler's own lexer, no C# grammar port). This phase closes the two costs the spike deliberately left naive so the 7.41 ms/keystroke number would be attributable, plus the one visible defect.
-- **Entry state**: Phase 2 done (does not depend on Phase 3/4 — this is shell-only work).
+- **Entry state**: Phase 2 done (does not depend on Phase 3b/4 — this is shell-only work).
 - **Deliverable**: **GH #462 item (3)** — `ChordColorizer` currently holds its own brush constants instead of reading `ThemeTokens` (per `project_ide_decoder_follows_ir_fields` and ADR-297's token model), so the light palette's syntax colors don't flip; fix is named in the spike record as a one-edit change. Attack the two costs the 7.41 ms/keystroke figure attributed away from rendering: the unoptimized JSON-over-pipe transport to the vendored-Node lexer bridge (3.93 ms of the 7.41 ms) — move to a binary/length-prefixed frame instead of line-delimited JSON; the unoptimized whole-document C# index rebuild (3.86 ms, walking all 8,545 tokens on every keystroke) — rebuild only the changed line range. Target: get materially closer to the lexer's own 0.49 ms cost, not a specific number (this is optimization, not a scenario with a pass/fail bar).
 - **Exit state**: Light palette flips correctly (screenshot evidence, mirroring `phase-4-shell-light.png`'s dark counterpart). Style-pass timing re-measured on the same 1755-line file used throughout this evaluation, with the new number and its attribution recorded the same way the original 7.96 ms/7.41 ms were.
 - **Status**: PENDING
@@ -152,9 +211,9 @@
 ## Sequencing notes
 
 - **Phase 1 is the only true hard gate.** Every other phase's PENDING status assumes Phase 1 resolved YES; if it doesn't, stop there and do not execute Phases 2–12.
-- **Phases 3 and 4 are independent of each other but both gate everything downstream of them.** Phase 3 (toolchain) blocks Phases 6, 7, and any Windows/Linux real-path test. Phase 4 (pane door) blocks the "real panes served" deliverables in Phases 6, 7, and 9's testing-harness fix. They can run in either order or interleaved; neither blocks the other's start.
+- **Phases 3b and 4 are independent of each other but both gate everything downstream of them.** Phase 3b (toolchain portability) blocks Phases 6, 7, and any Windows/Linux real-path test. Phase 4 (pane door) blocks the "real panes served" deliverables in Phases 6, 7, and 9's testing-harness fix. They can run in either order or interleaved; neither blocks the other's start. Phase 3a gated neither — it was split out precisely because it needed no machine David does not already have in front of him, and it is DONE.
 - **Phases 5, 6, 7 are platform-parallel and each carries its own named keyboard-time cost for David** (macOS: Developer ID + notarization; Windows: Azure Trusted Signing + a clean install machine; Linux: a scoping decision on whether signing applies at all). None blocks another.
 - **Phase 8 is shell-only and can run any time after Phase 2.**
-- **Phase 9 needs David's sign-off before it starts**, same as Phase 3, for the same CLAUDE.md reason (`packages/` edits).
+- **Phase 9 needs David's sign-off before it starts**, same as Phase 3a did, for the same CLAUDE.md reason (`packages/` edits).
 - **Phase 10 is deliberately the last phase before this plan runs out of detail.** It exists so Phases 11+ get planned from an inventory instead of a guess.
 - **ADR-341's Consequences still say "Linux is not addressed... under this ADR, Linux waits for its own decision."** That line is superseded by ADR-351 D2's ruling to cover Linux, but ADR-341 is deliberately left unedited while ADR-351 is DRAFT (both ADRs say so). This plan proceeds on ADR-351's ruling; the stale line in ADR-341 gets its cross-reference once ADR-351 leaves DRAFT (after Phase 1), not before — do not fix it mid-plan.

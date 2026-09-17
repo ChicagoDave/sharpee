@@ -30,6 +30,15 @@ import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
+/**
+ * npm's executable name for this platform.
+ *
+ * Windows ships npm as `npm.cmd`, and execFileSync spawns WITHOUT a shell, so
+ * the bare name is ENOENT there (GH #448). Naming the launcher is preferable to
+ * `shell: true`, which would put every argument back through cmd.exe's quoting.
+ */
+const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+
 const SHARPEE = '@sharpee/';
 /**
  * devkit supplies the `sharpee` bin (dev-only), whose `test` subcommand runs a
@@ -245,7 +254,7 @@ export function generateConsumer(opts: GenerateConsumerOptions): GenerateConsume
       if (cached !== undefined) return cached;
       const dir = join(opts.stagingDir, staging[name]);
       const out = execFileSync(
-        'npm',
+        NPM,
         ['pack', dir, '--pack-destination', vendorDir, '--ignore-scripts', '--json'],
         { encoding: 'utf8' },
       );
