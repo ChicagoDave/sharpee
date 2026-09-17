@@ -3,26 +3,49 @@
 # vendor-toolchain.sh — assemble the self-contained Sharpee toolchain that
 # Chord Writer ships inside its own app bundle (ADR-279 D4).
 #
-# Owner context: tools/ide — packaging. Mac-only by nature, which is why it
-# lives beside the Xcode project rather than in repokit (ADR-187/ADR-279 D3:
-# repokit stays Node-only and IDE-ignorant).
+# Owner context: tools/ide — packaging. It RUNS on macOS only (it is bash, and
+# the darwin targets codesign), which is why it lives beside the Xcode project
+# rather than in repokit (ADR-187/ADR-279 D3: repokit stays Node-only and
+# IDE-ignorant). It ASSEMBLES for macOS, Windows, and Linux alike: the Windows
+# and Linux toolchains are cross-assembled here on the macOS build host, and
+# Authenticode signing is deferred to the Windows box (David, 2026-09-16).
 #
 # Public interface:
-#   vendor-toolchain.sh <resources-dir> [--force]
+#   vendor-toolchain.sh <resources-dir> [--target darwin|win32|linux]
+#                                       [--arch arm64|x86_64] [--force]
 #     <resources-dir>  the app bundle's Contents/Resources (or any staging dir)
+#     --target         which platform the assembled toolchain is FOR (default:
+#                      darwin — the in-repo dev loop is unchanged by this flag)
+#     --arch           which arch, for targets that have more than one
 #     --force          re-assemble even when the stamp says it is current
 #
 # Produces, under <resources-dir>/toolchain/:
 #   bin/sharpee          POSIX shim — the executable the IDE resolves (tier 3)
-#   node/bin/node        the vendored Node runtime (arm64, from tools/ide/vendor)
+#   bin/sharpee.cmd      its Windows peer, on --target win32 (instead of, not
+#                        beside: one launcher per toolchain, never a choice)
+#   node/bin/node        the vendored Node runtime (node.exe on win32)
 #   devkit/              @sharpee/devkit + its dependency closure, sealed
 #   .stamp               fingerprint enabling the incremental skip
+#
+# ONE LAYOUT, PLATFORM-SPECIFIC LEAF. node lands at node/bin/node.exe on Windows
+# even though the official zip puts node.exe at the distribution root, so the
+# launcher, the seal scan, and PaneHost's resolution each differ by a FILENAME
+# rather than by a path shape.
 #
 # INVARIANT — the toolchain is SEALED: once assembled it must resolve every
 # module, binary, and asset from inside itself. It never consults the author's
 # project, a global install, or the network. The shim enforces this with
 # NODE_PATH; this script enforces it by shipping the full closure AND by
 # mechanically proving no symlink escapes the toolchain root (step 4.5).
+#
+# On --target win32 the seal is stronger and simpler: the closure is deployed
+# with pnpm's hoisted node-linker, so it contains NO symlinks at all and the
+# scan asserts exactly that. Windows cannot be relied on to materialise POSIX
+# symlinks out of an installer payload, and dereferencing the ordinary
+# symlinked closure is not the alternative it looks like — measured 2026-09-16,
+# `cp -RL` turned 69 MB into 523 MB, because pnpm keeps one real copy per
+# package and every consumer link duplicates it. The hoisted linker gives a
+# flat, symlink-free closure at the SAME 69 MB.
 #
 # That proof is not ceremony. `pnpm deploy` leaves workspace-source symlinks
 # behind, and grafting platform-browser in re-parents its nested ones to the
@@ -65,38 +88,100 @@ die() { echo "vendor-toolchain: $*" >&2; exit 1; }
 step() { echo "  → $*"; }
 
 # --- Arguments -----------------------------------------------------
-readonly USAGE="usage: vendor-toolchain.sh <resources-dir> [--arch arm64|x86_64] [--force]"
+readonly USAGE="usage: vendor-toolchain.sh <resources-dir> [--target darwin|win32|linux] [--arch arm64|x86_64] [--force]"
 FORCE=0
 RESOURCES=""
 ARCH=""
-expect_arch=0
+TARGET=""
+expect=""
 for arg in "$@"; do
-  if [ "$expect_arch" -eq 1 ]; then
-    ARCH="$arg"; expect_arch=0; continue
+  if [ -n "$expect" ]; then
+    case "$expect" in arch) ARCH="$arg" ;; target) TARGET="$arg" ;; esac
+    expect=""; continue
   fi
   case "$arg" in
     --force) FORCE=1 ;;
-    --arch) expect_arch=1 ;;
+    --arch) expect=arch ;;
     --arch=*) ARCH="${arg#--arch=}" ;;
+    --target) expect=target ;;
+    --target=*) TARGET="${arg#--target=}" ;;
     -*) die "unknown flag '$arg' ($USAGE)" ;;
     *) [ -n "$RESOURCES" ] && die "unexpected extra argument '$arg'"; RESOURCES="$arg" ;;
   esac
 done
-[ "$expect_arch" -eq 0 ] || die "--arch needs a value ($USAGE)"
+[ -z "$expect" ] || die "--$expect needs a value ($USAGE)"
 [ -n "$RESOURCES" ] || die "missing <resources-dir> ($USAGE)"
+
+# Cross-assembly runs here, on macOS. Refusing elsewhere is not portability
+# theatre: steps 4.6 (codesign) and the `file`-based arch assertions are macOS
+# tools, and a half-assembled toolchain must never look like success.
+[ "$(uname -s)" = "Darwin" ] || die "this assembler runs on macOS only (found $(uname -s)).
+  Windows and Linux toolchains are CROSS-assembled here, on the macOS build host."
+
+[ -n "$TARGET" ] || TARGET="darwin"
 
 # Default to the build host's own arch so the in-repo dev loop is unchanged by
 # the addition of per-arch builds. Release packaging always passes --arch
 # explicitly (package.sh), because the host and the target are routinely
-# different — an x86_64 installer is built on an Apple silicon Mac.
+# different — an x86_64 installer is built on an Apple silicon Mac, and every
+# non-darwin target is cross-assembled here by definition.
 [ -n "$ARCH" ] || ARCH="$(uname -m)"
-case "$ARCH" in
-  arm64|aarch64) readonly NODE_ARCH="darwin-arm64" ESBUILD_PKG="@esbuild/darwin-arm64" ;;
-  x86_64|x64)    readonly NODE_ARCH="darwin-x64"   ESBUILD_PKG="@esbuild/darwin-x64" ;;
-  *) die "unsupported --arch '$ARCH' — expected arm64 or x86_64." ;;
+case "$ARCH" in aarch64) ARCH="arm64" ;; x64) ARCH="x86_64" ;; esac
+
+# --- The target table ----------------------------------------------
+# Everything that varies by platform is decided HERE, once, and read as a
+# variable everywhere below. The alternative — a per-platform `if` at each of
+# the eight sites that differ — is how the darwin assumptions got baked in the
+# first place (the estimate found four of them, each one incidental-looking).
+#
+#   NODE_ARCHIVE    the vendored archive's basename
+#   NODE_MEMBER     the runtime's path INSIDE the archive's dist directory
+#   NODE_LEAF       what it is called once installed at node/bin/<leaf>
+#   ESBUILD_MEMBER  the native binary's path inside the @esbuild/* package
+#   ESBUILD_SIG     what `file -b` must say about it — the proof we grafted the
+#                   TARGET's binary and not the host's
+#   NODE_LINKER     pnpm deploy's node-linker; hoisted means symlink-free
+#   DO_SIGN         codesign (step 4.6) applies only where Mach-O does
+#   LAUNCHER        which shim shape step 3 writes
+case "$TARGET" in
+  darwin)
+    case "$ARCH" in
+      arm64)  NODE_ARCH="darwin-arm64" ESBUILD_PKG="@esbuild/darwin-arm64" ESBUILD_SIG="arm64" ;;
+      x86_64) NODE_ARCH="darwin-x64"   ESBUILD_PKG="@esbuild/darwin-x64"   ESBUILD_SIG="x86_64" ;;
+      *) die "unsupported --arch '$ARCH' for --target darwin — expected arm64 or x86_64." ;;
+    esac
+    NODE_ARCHIVE="node-v${NODE_VERSION}-${NODE_ARCH}.tar.xz"
+    NODE_MEMBER="bin/node" NODE_LEAF="node"
+    ESBUILD_MEMBER="bin/esbuild" NODE_LINKER="" DO_SIGN=1 LAUNCHER="sh" LAUNCHER_FILE="sharpee"
+    ;;
+  linux)
+    [ "$ARCH" = "x86_64" ] || die "unsupported --arch '$ARCH' for --target linux — only
+  x86_64 is vendored. linux-arm64 is deliberately out of scope (David, 2026-09-16);
+  adding it means one more archive in tools/ide/vendor/node and one more case here."
+    NODE_ARCH="linux-x64" NODE_ARCHIVE="node-v${NODE_VERSION}-linux-x64.tar.xz"
+    NODE_MEMBER="bin/node" NODE_LEAF="node"
+    ESBUILD_PKG="@esbuild/linux-x64" ESBUILD_MEMBER="bin/esbuild" ESBUILD_SIG="ELF 64-bit"
+    NODE_LINKER="" DO_SIGN=0 LAUNCHER="sh" LAUNCHER_FILE="sharpee"
+    ;;
+  win32)
+    [ "$ARCH" = "x86_64" ] || die "unsupported --arch '$ARCH' for --target win32 — only
+  x86_64 is vendored."
+    NODE_ARCH="win-x64" NODE_ARCHIVE="node-v${NODE_VERSION}-win-x64.zip"
+    # node.exe sits at the dist ROOT in the official zip, not under bin/.
+    NODE_MEMBER="node.exe" NODE_LEAF="node.exe"
+    # @esbuild/win32-x64 ships esbuild.exe at the PACKAGE root, with no bin/ at
+    # all — esbuild resolves it as require.resolve('@esbuild/win32-x64/esbuild.exe')
+    # (its lib/main.js). The unixlike packages keep bin/esbuild.
+    ESBUILD_PKG="@esbuild/win32-x64" ESBUILD_MEMBER="esbuild.exe" ESBUILD_SIG="PE32+"
+    NODE_LINKER="hoisted" DO_SIGN=0 LAUNCHER="cmd" LAUNCHER_FILE="sharpee.cmd"
+    ;;
+  *) die "unsupported --target '$TARGET' — expected darwin, win32, or linux." ;;
 esac
+readonly TARGET ARCH NODE_ARCH NODE_ARCHIVE NODE_MEMBER NODE_LEAF
+readonly ESBUILD_MEMBER ESBUILD_SIG NODE_LINKER DO_SIGN LAUNCHER LAUNCHER_FILE
+
 readonly NODE_DIST="node-v${NODE_VERSION}-${NODE_ARCH}"
-readonly NODE_TARBALL="${VENDOR_DIR}/${NODE_DIST}.tar.xz"
+readonly NODE_TARBALL="${VENDOR_DIR}/${NODE_ARCHIVE}"
 
 readonly TOOLCHAIN="${RESOURCES%/}/toolchain"
 readonly STAMP="$TOOLCHAIN/.stamp"
@@ -105,7 +190,7 @@ readonly STAMP="$TOOLCHAIN/.stamp"
 # Every one of these is a hard stop. The alternative — proceeding and emitting
 # a partial toolchain — is the failure mode this script exists to prevent.
 [ -f "$NODE_TARBALL" ] || die "vendored Node runtime missing: $NODE_TARBALL
-  Re-download it from https://nodejs.org/dist/v${NODE_VERSION}/${NODE_DIST}.tar.xz
+  Re-download it from https://nodejs.org/dist/v${NODE_VERSION}/${NODE_ARCHIVE}
   and verify it against tools/ide/vendor/node/SHASUMS256.txt."
 command -v pnpm >/dev/null || die "pnpm is required to assemble the devkit closure."
 [ -f "$REPO_ROOT/packages/devkit/dist/cli.js" ] || die "packages/devkit is not built.
@@ -120,7 +205,7 @@ DEVKIT_VERSION="$(node -p "require('$REPO_ROOT/packages/devkit/package.json').ve
 # Fingerprint = the inputs that change what gets assembled. The mtime sweep
 # below catches a platform rebuild that leaves versions untouched, which a
 # version-only fingerprint would miss (and ship a stale toolchain for).
-readonly FINGERPRINT="node=${NODE_VERSION}-${NODE_ARCH} devkit=${DEVKIT_VERSION}"
+readonly FINGERPRINT="target=${TARGET} node=${NODE_VERSION}-${NODE_ARCH} devkit=${DEVKIT_VERSION}"
 if [ "$FORCE" -eq 0 ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$FINGERPRINT" ]; then
   if [ -z "$(find "$REPO_ROOT/packages" -path '*/dist/*' -newer "$STAMP" -print -quit 2>/dev/null)" ]; then
     echo "vendor-toolchain: up to date ($FINGERPRINT)"
@@ -129,7 +214,7 @@ if [ "$FORCE" -eq 0 ] && [ -f "$STAMP" ] && [ "$(cat "$STAMP")" = "$FINGERPRINT"
 fi
 
 echo "=== Vendoring Chord Writer toolchain (ADR-279 D4) ==="
-echo "    Node ${NODE_VERSION} ${NODE_ARCH} · devkit ${DEVKIT_VERSION}"
+echo "    target ${TARGET} · Node ${NODE_VERSION} ${NODE_ARCH} · devkit ${DEVKIT_VERSION}"
 echo "    → $TOOLCHAIN"
 
 STAGING="$(mktemp -d)"
@@ -140,24 +225,50 @@ trap 'rm -rf "$STAGING"' EXIT
 # vendoring time: the bytes that end up signed and notarized are the bytes
 # nodejs.org published, and a corrupted or swapped tarball fails here rather
 # than shipping.
-step "Verifying ${NODE_DIST}.tar.xz against SHASUMS256.txt"
-( cd "$VENDOR_DIR" && shasum -a 256 -c SHASUMS256.txt >/dev/null ) \
+# Only the target's own line is checked, not the whole file: SHASUMS256.txt
+# carries a line per vendored platform, and `-c` over all of them would fail
+# because a sibling archive is absent rather than because ours is wrong.
+step "Verifying ${NODE_ARCHIVE} against SHASUMS256.txt"
+grep -F " ${NODE_ARCHIVE}" "$VENDOR_DIR/SHASUMS256.txt" > "$STAGING/expected.sha256" \
+  || die "SHASUMS256.txt has no line for ${NODE_ARCHIVE} — refusing to bundle an
+  unverifiable runtime. Copy the line verbatim from nodejs.org."
+( cd "$VENDOR_DIR" && shasum -a 256 -c "$STAGING/expected.sha256" >/dev/null ) \
   || die "checksum mismatch for $NODE_TARBALL — refusing to bundle an unverified runtime."
 
-step "Extracting bin/node"
+step "Extracting ${NODE_MEMBER}"
 # Only the executable: npm/npx/corepack are deliberately NOT shipped. The
 # sealed toolchain resolves esbuild from its own node_modules and must never
 # reach a package manager (which would mean the network).
-tar -xf "$NODE_TARBALL" -C "$STAGING" "${NODE_DIST}/bin/node" \
-  || die "failed to extract ${NODE_DIST}/bin/node from the vendored tarball."
-[ -x "$STAGING/${NODE_DIST}/bin/node" ] || die "extracted node is missing or not executable."
+case "$NODE_ARCHIVE" in
+  *.zip)
+    # -j would flatten, but the member is already at the dist root on the one
+    # target that ships a zip; keep the path so the assertion below is exact.
+    unzip -q -o "$NODE_TARBALL" "${NODE_DIST}/${NODE_MEMBER}" -d "$STAGING" \
+      || die "failed to extract ${NODE_DIST}/${NODE_MEMBER} from the vendored zip." ;;
+  *)
+    tar -xf "$NODE_TARBALL" -C "$STAGING" "${NODE_DIST}/${NODE_MEMBER}" \
+      || die "failed to extract ${NODE_DIST}/${NODE_MEMBER} from the vendored tarball." ;;
+esac
+# Size, not the executable bit: a Windows zip records no POSIX mode, so the
+# extracted node.exe is not -x and never will be on this host. chmod anyway so
+# the shipped tree is uniform regardless of which target produced it.
+[ -s "$STAGING/${NODE_DIST}/${NODE_MEMBER}" ] || die "extracted node is missing or empty."
+chmod +x "$STAGING/${NODE_DIST}/${NODE_MEMBER}"
 
 # --- 2. devkit closure ----------------------------------------------
 # `pnpm deploy` resolves the workspace closure into a self-contained directory
 # (its .pnpm store lives inside the deploy root, and the symlinks into it are
 # relative — so the tree survives being copied into the app bundle).
-step "Deploying @sharpee/devkit closure"
-pnpm --filter @sharpee/devkit deploy --prod --legacy "$STAGING/devkit" >/dev/null 2>&1 \
+# On win32 the closure is deployed HOISTED — flat, with no symlinks — because
+# Windows cannot be relied on to materialise POSIX symlinks out of an installer
+# payload. Deliberately unquoted: it word-splits to nothing on the targets that
+# keep pnpm's default symlinked layout, and this host runs bash 3.2, where an
+# empty array expansion under `set -u` is an unbound-variable error.
+LINKER_FLAG=""
+[ -n "$NODE_LINKER" ] && LINKER_FLAG="--config.node-linker=$NODE_LINKER"
+
+step "Deploying @sharpee/devkit closure${NODE_LINKER:+ (${NODE_LINKER} linker)}"
+pnpm --filter @sharpee/devkit deploy --prod --legacy $LINKER_FLAG "$STAGING/devkit" >/dev/null 2>&1 \
   || die "pnpm deploy of @sharpee/devkit failed."
 [ -f "$STAGING/devkit/dist/cli.js" ] || die "deployed devkit has no dist/cli.js."
 [ -d "$STAGING/devkit/templates/story-chord" ] || die "deployed devkit has no templates/story-chord."
@@ -168,7 +279,7 @@ pnpm --filter @sharpee/devkit deploy --prod --legacy "$STAGING/devkit" >/dev/nul
 # the generated entry. Deployed separately and grafted in, so the sealed root
 # can answer both lookups.
 step "Deploying @sharpee/platform-browser into the sealed node_modules"
-pnpm --filter @sharpee/platform-browser deploy --prod --legacy "$STAGING/platform-browser" >/dev/null 2>&1 \
+pnpm --filter @sharpee/platform-browser deploy --prod --legacy $LINKER_FLAG "$STAGING/platform-browser" >/dev/null 2>&1 \
   || die "pnpm deploy of @sharpee/platform-browser failed."
 [ -f "$STAGING/platform-browser/styles/engine.css" ] \
   || die "deployed platform-browser has no styles/engine.css (resolveEngineStylesDir would throw)."
@@ -231,8 +342,29 @@ if [ "$ESBUILD_PKG" != "$host_esbuild" ]; then
   Refusing to bundle a binary that does not match the lockfile."
 
   tar -xzf "$tgz" -C "$fetch_dir" || die "failed to unpack ${ESBUILD_PKG}."
-  [ -x "$fetch_dir/package/bin/esbuild" ] || die "${ESBUILD_PKG} has no executable bin/esbuild."
+  # The member differs by platform: the unixlike packages ship bin/esbuild, and
+  # @esbuild/win32-x64 ships esbuild.exe at the package ROOT with no bin/ at all.
+  [ -s "$fetch_dir/package/${ESBUILD_MEMBER}" ] \
+    || die "${ESBUILD_PKG} has no ${ESBUILD_MEMBER} — its package layout changed."
+  chmod +x "$fetch_dir/package/${ESBUILD_MEMBER}"
 
+  esb_root="$STAGING/devkit/node_modules"
+  want_short="${ESBUILD_PKG#@esbuild/}"      # win32-x64 / linux-x64 / darwin-x64
+  host_short="${host_esbuild#@esbuild/}"     # darwin-arm64 or darwin-x64
+
+if [ "$NODE_LINKER" = "hoisted" ]; then
+  # The hoisted closure is FLAT: @esbuild/<platform> is a real directory under
+  # node_modules with no store entry and no consumer links pointing at it. So
+  # the graft is a replace, and the elaborate re-pointing the symlinked layout
+  # needs below has nothing to re-point.
+  rm -rf "$esb_root/@esbuild/$host_short"
+  mkdir -p "$esb_root/@esbuild/$want_short"
+  cp -R "$fetch_dir/package/." "$esb_root/@esbuild/$want_short/"
+  [ ! -d "$esb_root/@esbuild/$host_short" ] \
+    || die "host-arch @esbuild/$host_short survived the graft — the sealed toolchain
+  would carry two compilers and pick by accident."
+  echo "    replaced @esbuild/${host_short} with @esbuild/${want_short} (flat layout)"
+else
   # Mirror pnpm's own layout rather than dropping a directory in. The package
   # exists ONCE under .pnpm/<name>@<version>/node_modules/... and every consumer
   # reaches it by a RELATIVE symlink; replacing the real directory in place
@@ -242,10 +374,6 @@ if [ "$ESBUILD_PKG" != "$host_esbuild" ]; then
   # So: build the target's store entry, then re-point each consumer link by
   # rewriting its existing target string. Deriving the new link from the old one
   # preserves relativity for free, which hand-computing `../` depth would not.
-  esb_root="$STAGING/devkit/node_modules"
-  host_short="${host_esbuild#@esbuild/}"     # darwin-arm64
-  want_short="${ESBUILD_PKG#@esbuild/}"      # darwin-x64
-
   store_src="$(find "$esb_root/.pnpm" -maxdepth 4 -type d \
     -path "*/@esbuild+${host_short}@${esbuild_version}/node_modules/@esbuild/${host_short}" \
     2>/dev/null | head -1)"
@@ -275,11 +403,16 @@ EOF
 
   rm -rf "$(printf '%s' "$store_src" | sed "s#\(/@esbuild+${host_short}@${esbuild_version}\)/.*#\1#")"
   echo "    store entry + $relinked consumer link(s) re-pointed to ${want_short}"
+fi
 
-  grafted="$(find "$esb_root" -type f -path "*/@esbuild/*/bin/esbuild" | head -1)"
-  [ -n "$grafted" ] || die "graft produced no @esbuild/*/bin/esbuild."
-  file "$grafted" | grep -q "x86_64" || [ "$ESBUILD_PKG" = "@esbuild/darwin-arm64" ] \
-    || die "grafted esbuild is not x86_64: $(file -b "$grafted")"
+  # Prove we grafted the TARGET's binary and not the host's. `file -b` names a
+  # different thing on each platform — Mach-O says x86_64/arm64, PE32+ and ELF
+  # say x86-64 with a hyphen — so the expected signature comes from the target
+  # table rather than being spelled here.
+  grafted="$(find "$esb_root" -type f -path "*/@esbuild/*/${ESBUILD_MEMBER}" | head -1)"
+  [ -n "$grafted" ] || die "graft produced no @esbuild/*/${ESBUILD_MEMBER}."
+  file -b "$grafted" | grep -q "$ESBUILD_SIG" \
+    || die "grafted esbuild is not ${ESBUILD_SIG}: $(file -b "$grafted")"
   rm -rf "$fetch_dir"
   echo "    grafted $ESBUILD_PKG, integrity verified against pnpm-lock.yaml"
 fi
@@ -293,8 +426,47 @@ fi
 #                and esbuild honours it for bundle resolution).
 #   PATH       — the bundled node comes first, so esbuild's `#!/usr/bin/env
 #                node` shim resolves to OUR runtime on a machine with none.
-step "Writing bin/sharpee"
+step "Writing bin/${LAUNCHER_FILE}"
 mkdir -p "$STAGING/bin"
+
+if [ "$LAUNCHER" = "cmd" ]; then
+  # The Windows peer. Same three jobs as the POSIX shim — assert the runtime is
+  # there, seal NODE_PATH and PATH to the toolchain, exec the CLI — spelled in
+  # batch. `%~dp0` already ends in a backslash, so `%~dp0..` is the root.
+  #
+  # Written with CRLF deliberately: cmd.exe is unreliable on LF-only batch
+  # files, and this one is generated on macOS where nothing would add them.
+  cat > "$STAGING/bin/sharpee.cmd" <<'CMDSHIM'
+@echo off
+rem Chord Writer's bundled Sharpee toolchain (ADR-279 D4).
+rem Generated by tools/ide/vendor-toolchain.sh — do not edit inside the bundle.
+rem
+rem Seals the CLI to the toolchain shipped alongside it: no global install, no
+rem author-project node_modules, no network. Argument-transparent — everything
+rem after the program name is the ordinary `sharpee` command line.
+setlocal
+set "root=%~dp0.."
+set "devkit=%root%\devkit"
+
+if not exist "%root%\node\bin\node.exe" (
+  echo sharpee: bundled Node runtime missing from %root%\node\bin\node.exe 1>&2
+  exit /b 127
+)
+
+if defined NODE_PATH (
+  set "NODE_PATH=%devkit%\node_modules;%NODE_PATH%"
+) else (
+  set "NODE_PATH=%devkit%\node_modules"
+)
+set "PATH=%root%\node\bin;%devkit%\node_modules\.bin;%PATH%"
+
+"%root%\node\bin\node.exe" "%devkit%\dist\cli.js" %*
+exit /b %ERRORLEVEL%
+CMDSHIM
+  # LF -> CRLF, in place.
+  perl -pi -e 's/\n/\r\n/' "$STAGING/bin/sharpee.cmd"
+  chmod +x "$STAGING/bin/sharpee.cmd"
+else
 cat > "$STAGING/bin/sharpee" <<'SHIM'
 #!/bin/sh
 # Chord Writer's bundled Sharpee toolchain (ADR-279 D4).
@@ -320,6 +492,7 @@ export NODE_PATH PATH
 exec "$root/node/bin/node" "$devkit/dist/cli.js" "$@"
 SHIM
 chmod +x "$STAGING/bin/sharpee"
+fi
 
 # --- 4. Install atomically ------------------------------------------
 # Assembled in staging and swapped in, so an interrupted run leaves the
@@ -327,8 +500,12 @@ chmod +x "$STAGING/bin/sharpee"
 step "Installing into $TOOLCHAIN"
 mkdir -p "$(dirname "$TOOLCHAIN")"
 rm -rf "$TOOLCHAIN.incoming" "$TOOLCHAIN.outgoing"
-mkdir -p "$TOOLCHAIN.incoming/node"
-cp -R "$STAGING/${NODE_DIST}/bin" "$TOOLCHAIN.incoming/node/bin"
+# ONE LAYOUT, PLATFORM-SPECIFIC LEAF: the runtime always lands at
+# node/bin/<leaf>, whatever shape the official archive had. Copying the file
+# rather than the archive's bin/ directory is what makes the win32 case — where
+# node.exe sits at the dist root and there is no bin/ — the same line of code.
+mkdir -p "$TOOLCHAIN.incoming/node/bin"
+cp "$STAGING/${NODE_DIST}/${NODE_MEMBER}" "$TOOLCHAIN.incoming/node/bin/${NODE_LEAF}"
 cp -R "$STAGING/devkit" "$TOOLCHAIN.incoming/devkit"
 cp -R "$STAGING/bin" "$TOOLCHAIN.incoming/bin"
 echo "$FINGERPRINT" > "$TOOLCHAIN.incoming/.stamp"
@@ -426,6 +603,33 @@ JS
 $residue"
 echo "    seal verified — every symlink resolves inside the toolchain"
 
+if [ "$NODE_LINKER" = "hoisted" ]; then
+  # Windows gets a STRONGER seal than "nothing escapes": nothing is a symlink
+  # at all. A POSIX symlink cannot be relied on to survive an installer payload
+  # onto Windows, so one left here is a file that silently goes missing on the
+  # author's machine rather than a link that resolves somewhere wrong.
+  #
+  # The hoisted linker leaves only node_modules/.bin, and those are pruned
+  # rather than materialised: they are PATH conveniences, and nothing on the
+  # Chord build path spawns through them — resolveEsbuild() (devkit's
+  # esbuild-bin.ts) resolves esbuild/package.json as a MODULE and spawns the
+  # binary by absolute path. Copying them would ship LF shell scripts Windows
+  # cannot run anyway; it needs .cmd shims, which nothing asks for.
+  step "Removing POSIX .bin shims (win32 seal: no symlinks at all)"
+  pruned_bin=0
+  while IFS= read -r link; do
+    [ -n "$link" ] || continue
+    rm -f "$link"
+    pruned_bin=$(( pruned_bin + 1 ))
+  done <<EOF
+$(find "$TOOLCHAIN.incoming" -type l 2>/dev/null)
+EOF
+  remaining="$(find "$TOOLCHAIN.incoming" -type l 2>/dev/null | head -5)"
+  [ -z "$remaining" ] || die "symlinks survive in a win32 toolchain:
+$remaining"
+  echo "    $pruned_bin removed — zero symlinks remain"
+fi
+
 # --- 4.6 Sign the vendored Mach-O binaries --------------------------
 # WHY HERE AND NOT ONLY IN package.sh. package.sh has its own nested-signing
 # loop, but it runs only in package.sh's OWN build path. The recorded release
@@ -444,6 +648,13 @@ echo "    seal verified — every symlink resolves inside the toolchain"
 # Xcode post-build phase (project.yml), so nested code is signed BEFORE the
 # outer bundle, which is the only order that leaves the app's seal intact.
 # package.sh re-signing later is idempotent and harmless.
+# Darwin only, and that is a ruling rather than a limitation: Windows
+# Authenticode signing is DEFERRED to the Windows box (David, 2026-09-16), which
+# is where the Azure Trusted Signing identity lives and where Phase 6 does it.
+# Linux ships unsigned by convention. Neither target has Mach-O to sign, so the
+# loop below would find nothing and its own no-silent-✓ gate would then fail the
+# build for the wrong reason — hence the gate, not an empty pass.
+if [ "$DO_SIGN" -eq 1 ]; then
 step "Signing vendored binaries"
 
 if [ -z "${SIGN_IDENTITY:-}" ]; then
@@ -492,6 +703,10 @@ unhardened="$(find "$TOOLCHAIN.incoming" -type f -perm -u+x -exec sh -c '
 $unhardened"
 
 echo "    $signed signed (Developer ID, hardened runtime, timestamped)"
+else
+  step "Skipping code signing (--target $TARGET)"
+  echo "    no Mach-O in this toolchain; Windows Authenticode is deferred to the Windows box"
+fi
 
 [ -d "$TOOLCHAIN" ] && mv "$TOOLCHAIN" "$TOOLCHAIN.outgoing"
 mv "$TOOLCHAIN.incoming" "$TOOLCHAIN"
@@ -500,10 +715,12 @@ rm -rf "$TOOLCHAIN.outgoing"
 # --- 5. Post-conditions ---------------------------------------------
 # The no-silent-✓ gate: assert the artifacts the app depends on are present
 # and executable before reporting success.
-[ -x "$TOOLCHAIN/bin/sharpee" ] || die "assembled toolchain has no executable bin/sharpee."
-[ -x "$TOOLCHAIN/node/bin/node" ] || die "assembled toolchain has no executable node/bin/node."
+[ -x "$TOOLCHAIN/bin/${LAUNCHER_FILE}" ] \
+  || die "assembled toolchain has no executable bin/${LAUNCHER_FILE}."
+[ -s "$TOOLCHAIN/node/bin/${NODE_LEAF}" ] \
+  || die "assembled toolchain has no node/bin/${NODE_LEAF}."
 [ -f "$TOOLCHAIN/devkit/dist/cli.js" ] || die "assembled toolchain has no devkit/dist/cli.js."
 [ -f "$TOOLCHAIN/devkit/node_modules/@sharpee/platform-browser/styles/engine.css" ] \
   || die "assembled toolchain has no platform-browser styles."
 
-echo "vendor-toolchain: OK — $(du -sh "$TOOLCHAIN" | cut -f1) at $TOOLCHAIN"
+echo "vendor-toolchain: OK ($TARGET/$ARCH) — $(du -sh "$TOOLCHAIN" | cut -f1) at $TOOLCHAIN"

@@ -94,9 +94,42 @@
 - **Focus**: The single largest blocker to any non-macOS artifact. Everything downstream of
   this phase (Phases 4, 6, 7, and any real-path test on Windows or Linux) depends on its
   exit state.
-- **Entry state**: Phase 3a done. **Needs a decision from David before implementation
-  begins**: where the Windows assembler runs — natively on Windows as a `.ps1`/`.cmd` peer,
-  or cross-assembled from macOS with signing deferred to the Windows build box.
+- **Entry state**: Phase 3a done. **RULED, David 2026-09-16: cross-assemble from macOS,
+  defer signing to the Windows box.** The Windows toolchain is assembled by the same bash
+  running on the macOS build host; Authenticode signing is not this phase's problem and
+  happens on the Windows box in Phase 6.
+- **Shape this ruling produced** (probed against the real closure 2026-09-16, not inferred —
+  each claim below was measured):
+  - **One target-aware assembler, not a second script.** The estimate's "second assembler"
+    conclusion was premised on the assembler running *on Windows*; the ruling removes that
+    premise, so steps 1, 2, 2.5, 4 and 4.5 stay shared and only the target-varying parts
+    branch. A copied script would duplicate the devkit-closure assembly, which is the part
+    most likely to change (rule 7: one reason to change).
+  - **esbuild is the only native binary in the whole closure** — verified by scanning the
+    deployed tree: 1 Mach-O, 0 `.node` files, all other deps pure JS (`fflate` plus
+    workspace packages). Cross-assembly risk is bounded to node + esbuild.
+  - **`@esbuild/win32-x64` ships `esbuild.exe` at the package ROOT, no `bin/`** (verified by
+    unpacking 0.27.2); `@esbuild/linux-x64` keeps `bin/esbuild`. esbuild resolves it at
+    `lib/main.js:1641-1642` as `require.resolve('@esbuild/win32-x64/esbuild.exe')`. The
+    existing graft's `[ -x .../package/bin/esbuild ]` precondition and its
+    `file | grep x86_64` assertion are both darwin-shaped and fail on Windows for two
+    different reasons (`PE32+ … x86-64`, hyphen not underscore; ELF likewise).
+  - **Windows cannot ship the symlinked closure**, and naive dereferencing is not the fix:
+    `cp -RL` of the pruned closure measured **523 MB against the symlinked 69 MB**, because
+    pnpm keeps one real copy per package and every consumer link duplicates it. The fix is
+    pnpm's own `--config.node-linker=hoisted`, which produced a flat closure at **69 MB with
+    3 symlinks** (all in `node_modules/.bin`, all internal). This also *simplifies* the
+    graft: the hoisted layout is flat, so the `.pnpm`-store surgery and consumer-link
+    re-pointing the darwin path needs collapses to one `rm -rf` plus one `cp -R`.
+  - **Ordering is load-bearing.** The deploy root's `@sharpee/devkit` self-link points into
+    the live checkout (`…/Users/david/repos/sharpee/packages/devkit`, read directly). It
+    must be pruned by the seal step BEFORE any dereference or hoist, or the shipped
+    toolchain silently absorbs the developer's working tree — the exact failure the script
+    header says step 4.5 exists to prevent.
+  - **One layout across platforms**, platform-specific leaf only: `node/bin/node` on POSIX,
+    `node/bin/node.exe` on Windows — even though the official win zip puts `node.exe` at the
+    dist root. Keeping the shape identical means the launcher, the seal, and PaneHost each
+    differ by a filename rather than by a path structure.
 - **What the estimate found** (`evidence/phase-3-estimate.md`, 2026-09-16), and why this is
   not the "launcher rewrite" the original phase priced: **`vendor-toolchain.sh` cannot be
   extended to Windows.** Its own header says it is "Mac-only by nature"
@@ -125,7 +158,7 @@
   inferred or stubbed per rule 13a and the GH #435 recurrence risk the goal names):
   `compose`/`build` executed from the vendored, network-free toolchain, the same three checks
   Phase 7/8 ran on macOS (`node --version`, `compose --json` exit 0, a streamed `build`).
-- **Status**: PENDING
+- **Status**: CURRENT
 
 ### Phase 4: The pane door — D3's per-platform contract module, GH #464
 - **Tier**: Large
