@@ -1,5 +1,10 @@
 // Real-path tests for the Avalonia desktop head's host capabilities (rule 13a).
 //
+// Platform-shaped, not macOS-shaped: the toolchain named by SHARPEE_IDE_TOOLCHAIN is
+// whichever target vendor-toolchain.sh assembled for THIS machine, so the shim and
+// runtime are asserted by their platform leaf. Running these on Windows is what
+// exercises the batch-shim spawn path in NativeHostServices; no other test does.
+//
 // Nothing is stubbed: the real vendored `sharpee` shim, the real vendored `node`,
 // a real Documents story folder, real processes. Two of those dependencies cannot
 // live in the repository — a 175 MB staged toolchain and a Documents fixture — so
@@ -27,6 +32,12 @@ internal static class CapabilityPaths
     /// <c>SHARPEE_IDE_TOOLCHAIN</c>. Not vendored into the repository and not re-staged per run.
     /// </summary>
     public static string ToolchainRoot => Required("SHARPEE_IDE_TOOLCHAIN");
+
+    /// <summary>The shim's filename on the platform running the tests (vendor-toolchain.sh:24-31).</summary>
+    public static string ShimLeaf => OperatingSystem.IsWindows() ? "sharpee.cmd" : "sharpee";
+
+    /// <summary>The vendored runtime's filename on the platform running the tests.</summary>
+    public static string NodeLeaf => OperatingSystem.IsWindows() ? "node.exe" : "node";
 
     /// <summary>
     /// A dedicated Documents story folder, named by <c>SHARPEE_IDE_CAPABILITY_FIXTURE</c>.
@@ -63,8 +74,12 @@ public class ToolchainResolutionTests
         var missing = new NativeHostServices("/no/such/toolchain");
         var none = new NativeHostServices(null);
 
-        Assert.Equal(Path.Combine(CapabilityPaths.ToolchainRoot, "bin", "sharpee"), real.ToolchainShim);
-        Assert.Equal(Path.Combine(CapabilityPaths.ToolchainRoot, "node", "bin", "node"), real.ToolchainNode);
+        Assert.Equal(
+            Path.Combine(CapabilityPaths.ToolchainRoot, "bin", CapabilityPaths.ShimLeaf),
+            real.ToolchainShim);
+        Assert.Equal(
+            Path.Combine(CapabilityPaths.ToolchainRoot, "node", "bin", CapabilityPaths.NodeLeaf),
+            real.ToolchainNode);
         Assert.True(File.Exists(real.ToolchainShim));
         Assert.True(File.Exists(real.ToolchainNode));
 

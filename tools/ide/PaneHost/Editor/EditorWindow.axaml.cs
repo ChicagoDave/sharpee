@@ -26,7 +26,8 @@ public partial class EditorWindow : Window
 {
     // The spike measured against a generated 1755-line file outside the repository.
     // In-repo the editor opens fernhill's own source, which is checked in.
-    private static string MeasureFile => RepoPaths.FernhillStory;
+    private static string MeasureFile =>
+        RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillStory, "fernhill.story");
     private static string LexerServer => RepoPaths.EditorBridge;
     private static string VendoredNode => RepoPaths.Node;
 

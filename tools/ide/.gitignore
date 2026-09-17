@@ -17,6 +17,11 @@ xcuserdata/
 # build output, not a source. Distribution happens off a release page, not the repo.
 release/
 
+# Release artifacts from package-avalonia.sh — the Avalonia desktop head's
+# slices. Same reasoning as release/ above: the portable zip alone is ~104MB,
+# past GitHub's per-file limit, and it is a build output.
+release-avalonia/
+
 # Signing material must never be committed. package.sh reads the identity from
 # the keychain and the notary credential from a notarytool profile, so nothing
 # here should ever appear — this is the backstop for a stray manual copy.

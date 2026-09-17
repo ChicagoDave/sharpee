@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  dotnet-payload.entitlements — entitlements for the .NET/Avalonia payload that
+  the desktop head ships inside Contents/Resources.
+
+  Owner context: tools/ide — packaging. Applied by presign-payload.sh.
+
+  SEPARATE FROM bundled-node.entitlements ON PURPOSE. The two lists are
+  identical today, which is exactly why they must not be one file: they are
+  granted to different binaries for different reasons, by different scripts, and
+  either could need a key the other must not have. Sharing the file would make
+  the next divergence a silent widening of one binary's privileges.
+
+  Every key below is one the CoreCLR payload genuinely needs. get-task-allow is
+  the one deliberately absent — it is a debug entitlement Apple's notary service
+  rejects outright, and .NET's publish output carries it in the ad-hoc signature
+  this file's signing pass replaces.
+-->
+<plist version="1.0">
+<dict>
+	<!-- RyuJIT compiles IL to native code at runtime; without this the runtime
+	     dies on the first mmap of executable memory. -->
+	<key>com.apple.security.cs.allow-jit</key>
+	<true/>
+
+	<!-- CoreCLR writes to pages not covered by the MAP_JIT allowance above,
+	     including its own code cache and stub heaps. -->
+	<key>com.apple.security.cs.allow-unsigned-executable-memory</key>
+	<true/>
+
+	<!-- Avalonia's native libraries (libSkiaSharp, libHarfBuzzSharp) ship
+	     signed by Microsoft, not by our team. Library validation refuses a
+	     mixed-team load without this. -->
+	<key>com.apple.security.cs.disable-library-validation</key>
+	<true/>
+
+	<!-- The host reads DOTNET_* and DYLD_* variables during startup probing. -->
+	<key>com.apple.security.cs.allow-dyld-environment-variables</key>
+	<true/>
+
+	<!-- W^X page-protection relaxation the CLR depends on for its code cache. -->
+	<key>com.apple.security.cs.disable-executable-page-protection</key>
+	<true/>
+</dict>
+</plist>

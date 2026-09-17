@@ -238,7 +238,7 @@ public partial class MainWindow : Window
     {
         _log.Line("── stage 2: token-scoped loopback origin ──");
 
-        var document = File.ReadAllText(RepoPaths.FernhillTests);
+        var document = File.ReadAllText(RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillTests, "fernhill.tests.json"));
         var session = new JsonObject
         {
             ["story"] = "fernhill",
@@ -247,7 +247,7 @@ public partial class MainWindow : Window
             ["mode"] = "replay",
         };
         var panes = new PaneServer(
-            RepoPaths.FernhillBundle,
+            RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillBundle, "fernhill's browser bundle"),
             RepoPaths.TestingSurface,
             RepoPaths.DocsTab,
             session.ToJsonString());

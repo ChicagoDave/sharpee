@@ -25,10 +25,16 @@ public interface IHostServices
     /// <summary>The author's Documents directory (ADR-280 D6 root), or null in the browser.</summary>
     string? DocumentsDirectory { get; }
 
-    /// <summary>The vendored `toolchain/bin/sharpee` shim, or null when this host carries none.</summary>
+    /// <summary>
+    /// The vendored `toolchain/bin/sharpee` shim (`sharpee.cmd` on Windows), or null when
+    /// this host carries none.
+    /// </summary>
     string? ToolchainShim { get; }
 
-    /// <summary>The vendored `toolchain/node/bin/node` runtime, or null when this host carries none.</summary>
+    /// <summary>
+    /// The vendored `toolchain/node/bin/node` runtime (`node.exe` on Windows), or null when
+    /// this host carries none.
+    /// </summary>
     string? ToolchainNode { get; }
 
     /// <summary>

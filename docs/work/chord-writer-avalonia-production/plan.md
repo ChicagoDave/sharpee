@@ -14,6 +14,44 @@
 - `docs/context/project-profile.md` — pnpm workspace with `packages/devkit` as the author-tool package this plan's Phase 3 must touch (GH #448) under CLAUDE.md's platform-change discussion rule; no CI gates for Sharpee (`pnpm exec turbo run test:ci` plus `pnpm typecheck` are the mandatory local legs, not CI); TypeScript strict mode and the layer-separation convention (`lang-en-us` owns user-facing text) apply to any `packages/` edit this plan makes.
 - `docs/context/session-20260916-0228-main.md` — most recent session's Open Items: GH #462 items (2)/(3)/(4) and GH #474 are untouched and explicitly named as this-plan's-scope by the goal; also notes `pre-session-audit` mis-reported the `.current-plan` pointer once this session, worth knowing but not load-bearing for this plan.
 
+## Slice ordering (David, 2026-09-16 — supersedes the phase numbering below)
+
+**We build one platform slice at a time, end to end: macOS, then Linux, then Windows.**
+A slice is done when that platform has an application a person can install, open and use —
+shell, panes, toolchain, installer, signing — not when one concern is finished across three
+platforms.
+
+The phase numbering below predates this ruling and cuts the other way: Phase 4 builds one
+pane-door contract with all three backends at once, and Phases 5/6/7 then package three
+platforms separately. **Read the numbers as a work inventory, not as an order.** The order is:
+
+| Slice | Phases drawn on | Done when |
+|---|---|---|
+| **1. macOS** | 4 (contract + macOS loopback backend, shell entry point, GH #474), 5 (relocate, sign, notarize, x86_64), 8 (editor), 9 (platform findings), 10 (parity audit vs the Swift app) | a notarized macOS app that installs, opens, and edits a story |
+| **2. Linux** | 3b (Linux half — vendoring DONE, real-path test owed), 4 (Linux WebKitGTK backend), 7 (packaging, signing, update round trip) | the same, on Linux |
+| **3. Windows** | 3b (Windows half — vendoring DONE, real-path test owed), 4 (Windows virtual-host backend), 6 (Azure Trusted Signing, installer, clean-machine install) | the same, on Windows |
+| **terminal** | 12 | the Q-4 recommendation, after all three slices |
+
+**Phase 4 splits across slices.** Its deliverable — one contract, three backends — is built
+contract-plus-one-backend in the macOS slice, and each later slice adds its own backend
+behind the contract already standing. Building all three before any platform is usable is
+what this ordering exists to prevent.
+
+**What this ruling reorders, and why it was wrong before.** Two orderings were corrected on
+2026-09-16, in this order. First, the app was behind the installer: Phases 5-7 shipped signed
+installers while "is it an application" waited for Phases 10-11. Signing proves nothing about
+a payload that is not the product and must be redone when the payload changes — and the
+question it would answer was already closed by ADR-351 Q-5 on a real bundle
+(`cbcd0706-f65c-4f13-9460-e9be833044ca`, Accepted, stapled). Second, and the deeper one, the
+plan was sliced by concern rather than by platform, so no single platform would have reached
+"usable" until nearly every phase was done. Slice ordering fixes both: within a slice the app
+necessarily precedes its installer, because the slice is not done until someone can open it.
+
+**3b is already out of order and that is fine.** The Windows and Linux Node vendoring was
+built before the macOS slice is complete. The work is banked and verified; it simply should
+not have been next, and its owed real-path tests now belong to their own slices rather than to
+a phase of their own.
+
 ## Phases
 
 ### Phase 1: The Q-3 gate — David's felt comparison, recorded
@@ -150,7 +188,9 @@
   the shape decided at entry; extend the existing script for Linux. Give PaneHost a
   platform-shaped toolchain resolution: `tools/ide/PaneHost/Hosting/NativeHostServices.cs:39,41`
   hard-code `bin/sharpee` and `node/bin/node`, which Windows spells `bin\sharpee.cmd` and
-  `node\node.exe` — a fourth site the original phase did not name.
+  `node\bin\node.exe` — a fourth site the original phase did not name. (This line said
+  `node\node.exe` until 2026-09-16; that predates the one-layout ruling above and the
+  assembler, both of which put the Windows runtime at `node/bin/node.exe`.)
 - **Exit state — rule 13a Integration Reality Statement required, this is exactly the
   "runtime, subprocess" phase class it names**: OWNED = the vendored Node runtime, the
   launchers, PaneHost's toolchain resolution. REAL-PATH TEST required on both Windows and
@@ -158,7 +198,20 @@
   inferred or stubbed per rule 13a and the GH #435 recurrence risk the goal names):
   `compose`/`build` executed from the vendored, network-free toolchain, the same three checks
   Phase 7/8 ran on macOS (`node --version`, `compose --json` exit 0, a streamed `build`).
-- **Status**: CURRENT
+- **Progress, 2026-09-16 (session 9dd6ac)**: PaneHost resolution is platform-shaped and the
+  darwin regression run is DONE — `vendor-toolchain.sh` darwin/arm64 exit 0 at 177M, 2
+  binaries signed, seal verified; `dotnet test PaneHost.Tests` against that staged toolchain
+  passed 24 of 24 with nothing stubbed. Still open: the Windows and Linux REAL-PATH TESTS,
+  which have never executed, and PaneHost's batch-shim spawn path, which is unreachable
+  outside Windows. Record: `evidence/phase-3b-toolchain-portability.md`.
+- **Status**: **BLOCKED (2026-09-16, session 9dd6ac) — hardware, not design.** Everything
+  authorable on the macOS build host is done and verified; what remains is the exit state's
+  REAL-PATH TEST, which needs a physical Windows machine and a physical Linux machine. David
+  is out of town and has neither in hand. Resume the moment he does — the resume point is one
+  `compose`/`build` run per platform from the assembled toolchain, plus whatever the
+  batch-shim spawn path reveals on its first real Windows run. Nothing in this plan's macOS
+  work depends on it (Sequencing notes: 3b blocks only Phases 6, 7, and Windows/Linux
+  real-path tests).
 
 ### Phase 4: The pane door — D3's per-platform contract module, GH #464
 - **Tier**: Large
@@ -167,7 +220,54 @@
 - **Entry state**: Phase 2 done (Phase 3b not required — this phase can proceed on macOS alone and add the other two backends once Phase 3b's toolchain lands, since the door itself doesn't need the toolchain to exist, only the panes it serves do).
 - **Deliverable**: One C# contract (a single interface `PaneHost` code depends on) with three concrete backends, each ported from its already-proven spike code rather than re-derived: macOS's token-scoped `HttpListener` loopback origin (proven, keep as-is — no equivalent Windows/Linux mechanism exists per D3's Consequences); Windows's `IWindowsWebView2PlatformHandle` → `ICoreWebView2_3` virtual-host mapping (proven in Phase 7 of the spike, `hr=0x0`); Linux's `IGtkWebViewPlatformHandle` → `webkit_web_context_register_uri_scheme` P/Invoke (proven in Phase 8). This module also owns **GH #464**'s fix — the testing surface and play client currently hard-code a WKWebView-shaped bridge (`window.webkit.messageHandlers`), which ADR-351 D6 explicitly assigns to "D3's contract module... in #464's place": the contract module supplies whatever post-door primitive each backend needs (real WebKit handler on macOS, `CoreWebView2.PostWebMessageAsString` on Windows, the GTK equivalent on Linux) behind one API the panes call without naming any of the three.
 - **Exit state — rule 13a applies (this phase is squarely "runtime" class)**: OWNED = the three pane-door backends. REAL-PATH TEST per platform: the real, unmodified Docs/Play/Testing panes (`tools/ide/web/{docs-tab,testing-tab,testing-surface}`) served over each platform's real door — not the loopback fallback on Windows/Linux, where a real door exists — with both messaging directions proven (page → host, host → page) the way the macOS loopback origin already proved them.
-- **Status**: PENDING
+- **Also in this phase, added 2026-09-16 (session 9dd6ac)**: make the app an app. `App.axaml.cs`
+  starts `MainWindow` — the Phase 1 *probe driver*, by its own header — unless `--shell` is
+  passed, so an installed bundle opens a probe that runs four seconds and exits. Make the
+  shell the default entry point, and fix `RepoPaths` (GH #474) to resolve bundle-relative
+  when no checkout sits above the running assembly, instead of throwing
+  `DirectoryNotFoundException` for a missing `pnpm-workspace.yaml`. Both belong here rather
+  than in Phase 5: they are what makes the thing openable, and the pane door is what makes
+  it worth opening.
+- **Sliced 2026-09-16 (session 9dd6ac)**: this phase no longer runs as one unit. The macOS
+  slice builds the contract plus the **macOS loopback backend only**, together with the shell
+  entry point and GH #474 above. The Windows virtual-host backend and the Linux WebKitGTK
+  backend are deferred to their own slices, each added behind the contract already standing.
+  The macOS half is a port of already-proven spike code, not a discovery — D3 records that no
+  custom-scheme mechanism exists on this backend, so the `navigationSucceeded=False` the probe
+  reports for `sharpee-play://` is the expected answer, not a defect.
+- **Progress, 2026-09-16 (session 9dd6ac) — the app opens**: entry point inverted in
+  `App.axaml.cs` (the shell is the default; `--pane-probe`, `--shell-probe` and `--editor`
+  select the harnesses), and `ShellWindow` now holds the window instead of closing itself
+  after its scripted pass. `RepoPaths` is bundle-aware: product assets (testing-surface,
+  docs-tab, editor-bridge, toolchain) resolve at `Contents/Resources/<name>` when bundled,
+  the development story is nullable and null whenever bundled — so an .app staged inside a
+  working tree still refuses to load fernhill — and every story-dependent surface opens empty
+  rather than throwing. `package-avalonia.sh` stages the product assets; fernhill deliberately
+  is not among them. **GH #474 closed.** Verified: the packaged bundle, extracted OUTSIDE any
+  checkout, opens and holds — log reads `project pane: no development story in this build`,
+  `panes: … not started`, `shell: open` — where it previously died on
+  `DirectoryNotFoundException`. `dotnet build` clean at 0 warnings; `dotnet test` 24 of 24.
+  **The contract module now exists**: `IPaneDoor` (Mechanism, Configure, Open, PaneUri,
+  MessageReceived, EvaluateAsync) with `LoopbackPaneDoor` as the macOS backend, and
+  `ShellWindow` depends only on the interface — it names no mechanism and holds no
+  `LocalOrigin`. Linux and Windows each add one implementation behind it in their own slice.
+  Four real-path door tests added (real HttpListener, real bundle, no stubs); suite 28 of 28.
+  **Still open in this phase**:
+  - **The exit-state run.** `Configure` and the messaging pair it wires are untested — both
+    need a constructed Avalonia view, so they belong to the exit-state run (real panes in a
+    real view, both directions proven), not to a headless suite. A fake view would assert
+    that a stand-in works, which rule 13a forbids. Until that run, "the panes load in the
+    shell" is unproven.
+  - **GH #464 is only half closed.** `PaneServer.HostShimScript` already probes
+    `webkit.messageHandlers` then `chrome.webview` and records which took, so the panes work
+    across backends today. But the door they *call* is still spelled
+    `window.webkit.messageHandlers` in `tools/ide/web/{docs-tab,testing-surface}/src/main.ts`
+    and their built outputs — a WebKit name serving as the neutral API. Renaming it touches
+    assets **shared with the shipping Swift app**, which would need the same shim, so it is a
+    cross-app change and David's call rather than a cleanup to slip in here.
+- **Open product question, not decided here**: an installed app opens empty. What it *should*
+  open — a welcome state, the last document, a Documents folder per ADR-280 D6 — is David's.
+- **Status**: CURRENT (2026-09-16, session 9dd6ac) — macOS portion only; see Slice ordering.
 
 ### Phase 5: macOS shipping integration — the relocation recipe, the x86_64 slice, GH #474
 - **Tier**: Medium
@@ -176,7 +276,30 @@
 - **Entry state**: Phase 2 done. **Needs David at the keyboard** for the signing/notarization steps — Developer ID Application (RSNGKW5LNH), the App Store Connect API key, and `notary-submit.py`'s REST route (the same identity and route Phase 3 of the velopack-macos-bundle-layout plan used; `notarytool` crashes on upload on this machine — use `notary-submit.py`, not `notarytool`).
 - **Deliverable**: Fold `relocate.sh` (payload → `Contents/Resources`) and `patch-apphost.py` (AppHost app-path patch, offset 66088 in the spike binary — re-verify the offset against the production binary rather than assuming it's stable) into real `tools/ide/` release tooling, applied **before** `vpk pack` per the load-bearing ordering constraint the decision record names (packing a pre-relocated `.app` lets `vpk pack --packDir` pass the tree through unchanged; post-processing `vpk`'s own output collides on `sq.version`). Extend to the **x86_64 slice**, unexercised by every prior phase. Fix **GH #474** (the Phase 4 shell probe reads assets from absolute paths outside the bundle, `pane/PaneHost/Shell/ShellWindow.axaml.cs:34-38` in the spike — the production port must read from the bundle-relative, relocated path instead, so the probe becomes evidence about the shipped launch path rather than a host-machine launch path).
 - **Exit state — rule 13a applies ("packaging," "deploy" class)**: OWNED = the relocation recipe, the signing/notarization pipeline. REAL-PATH TEST: a production (not spike) `.app`, both `arm64` and `x86_64`, signed with Developer ID, submitted through `notary-submit.py`, Accepted, stapled, `spctl --assess --type execute` reporting `accepted`/`source=Notarized Developer ID`, and the bundled toolchain still answering from inside the notarized bundle.
-- **Status**: PENDING
+- **Exit state, amended 2026-09-16 (session 9dd6ac)**: add a launch check ahead of the
+  signing checks — the installed app opens, its window stays up, and the bundled toolchain
+  answers from inside it. The original exit state was entirely bytes, signatures and a
+  subprocess; an app that exits after four seconds satisfies every one of those, which is
+  how this phase ran a full evening green while the artifact was unopenable. That is GH
+  #435's shape (green without exercising the real thing), applied to the app instead of the
+  toolchain.
+- **Status**: **STOPPED (2026-09-16, session 9dd6ac) — deliberately unfinished, nothing
+  notarized.** Built and kept: `package-avalonia.sh` (publish → vendor toolchain → icns →
+  Info.plist → relocate → presign → `vpk pack --signAppIdentity`), `build-relocated-app.sh`,
+  `patch-apphost.py`, `presign-payload.sh`, `dotnet-payload.entitlements`. Verified: the
+  AppHost app-path field on the production binary (one occurrence, 13 bytes clear padding);
+  a signed, sealed arm64 bundle whose `Contents/MacOS` is native-only and whose bundled
+  toolchain answers `v22.23.1` / `Sharpee 5.4.1 · Chord 3.6.0` from inside it. Found: **`vpk
+  pack --signAppIdentity` does not sign the relocated payload** — of 20 Mach-O files only 4
+  carried our Developer ID; 16 .NET native libraries were still ad-hoc (`flags=0x2`) and
+  libSkiaSharp/libHarfBuzzSharp still carried Microsoft's signature with no hardened runtime.
+  `presign-payload.sh` closes that and is the durable value of this pass.
+  **Not done, on purpose**: notarization, stapling, `spctl`, and the x86_64 slice. ADR-351
+  Q-5 already proved the macOS bundle notarizes — submission
+  `cbcd0706-f65c-4f13-9460-e9be833044ca`, Accepted first submission, stapled, `spctl`
+  accepted (`docs/work/velopack-macos-bundle-layout/decision.md` §2). Re-proving it against a
+  payload that is not the product buys nothing and must be redone once the payload is real.
+  Resume after Phase 4, against an app that opens.
 
 ### Phase 6: Windows signed installer and install run
 - **Tier**: Small
@@ -244,7 +367,22 @@
 ## Sequencing notes
 
 - **Phase 1 is the only true hard gate.** Every other phase's PENDING status assumes Phase 1 resolved YES; if it doesn't, stop there and do not execute Phases 2–12.
+> **The four bullets below predate the Slice ordering section above and are superseded by it
+> wherever they disagree.** They are kept because each records a real dependency that still
+> holds *within* a slice; they are wrong only about what runs next. Read them as constraints,
+> not as an order.
+
 - **Phases 3b and 4 are independent of each other but both gate everything downstream of them.** Phase 3b (toolchain portability) blocks Phases 6, 7, and any Windows/Linux real-path test. Phase 4 (pane door) blocks the "real panes served" deliverables in Phases 6, 7, and 9's testing-harness fix. They can run in either order or interleaved; neither blocks the other's start. Phase 3a gated neither — it was split out precisely because it needed no machine David does not already have in front of him, and it is DONE.
+- **The app comes before the installer (added 2026-09-16, session 9dd6ac).** As written, this
+  plan shipped signed installers in Phases 5-7 and only asked whether the thing inside them
+  was an application in Phase 10 ("Shell parity audit") and Phase 11+ ("intentionally
+  unscoped"). That ordering is backwards, and it showed: Phase 5 ran a full evening against
+  its own exit state while the artifact it produced opened a probe that exited after four
+  seconds. **Signing proves nothing about a payload that is not the product, and has to be
+  redone when the payload changes** — and the question it would answer was already closed by
+  ADR-351 Q-5 on a real bundle. So Phase 4 now precedes Phase 5, and carries the entry-point
+  and GH #474 fixes that make the app openable. Phases 6 and 7 inherit this: do not build a
+  Windows or Linux installer for a payload that is not yet an application.
 - **Phases 5, 6, 7 are platform-parallel and each carries its own named keyboard-time cost for David** (macOS: Developer ID + notarization; Windows: Azure Trusted Signing + a clean install machine; Linux: a scoping decision on whether signing applies at all). None blocks another.
 - **Phase 8 is shell-only and can run any time after Phase 2.**
 - **Phase 9 needs David's sign-off before it starts**, same as Phase 3a did, for the same CLAUDE.md reason (`packages/` edits).

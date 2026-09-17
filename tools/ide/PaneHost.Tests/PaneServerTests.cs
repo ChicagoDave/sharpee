@@ -17,7 +17,7 @@ namespace PaneHost.Tests;
 public class PaneServerTests
 {
     private static PaneServer Build() => new(
-        RepoPaths.FernhillBundle,
+        RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillBundle, "fernhill's browser bundle"),
         RepoPaths.TestingSurface,
         RepoPaths.DocsTab,
         """{"story":"fernhill","seed":42,"document":"{}","mode":"replay"}""");
@@ -105,7 +105,7 @@ public class PaneServerTests
 public class LocalOriginTests
 {
     private static PaneServer Panes() => new(
-        RepoPaths.FernhillBundle,
+        RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillBundle, "fernhill's browser bundle"),
         RepoPaths.TestingSurface,
         RepoPaths.DocsTab,
         """{"story":"fernhill","seed":42,"document":"{}","mode":"replay"}""");

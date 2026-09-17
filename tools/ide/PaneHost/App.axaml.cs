@@ -15,12 +15,16 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
-            // --editor runs Phase 3's editor harness; the default is Phase 1's pane probe.
+            // THE DEFAULT IS THE APP. Every window below except the shell is an
+            // evaluation harness: it runs a scripted sequence and exits. That used to be
+            // the default, so an installed bundle opened a probe, ran four seconds and
+            // quit — which is what a person double-clicking it actually saw. The harnesses
+            // are still reachable, by name, for the evidence they produce.
             desktop.MainWindow = desktop.Args switch
             {
-                { } args when args.Contains("--shell") => new Shell.ShellWindow(),
+                { } args when args.Contains("--pane-probe") => new MainWindow(),
                 { } args when args.Contains("--editor") => new Editor.EditorWindow(),
-                _ => new MainWindow(),
+                _ => new Shell.ShellWindow(),
             };
         }
 

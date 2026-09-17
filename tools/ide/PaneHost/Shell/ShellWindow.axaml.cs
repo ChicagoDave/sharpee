@@ -1,4 +1,15 @@
-// The shell, and Phase 4's two probes.
+// The shell — the window an installed Chord Writer opens — and, under --shell-probe,
+// Phase 4's two evaluation probes.
+//
+// IT STAYS OPEN. Until 2026-09-16 this ran its scripted sequence and then closed itself
+// unless --hold was passed, which is correct for an evaluation harness and wrong for an
+// application. The probes are now opt-in and the window holds by default; --shell-probe
+// restores the old scripted-and-exit behaviour for evidence runs.
+//
+// IT OPENS WITHOUT A STORY. fernhill is a development story and does not ship in a
+// bundle (RepoPaths), so every story-dependent step below is guarded and the shell opens
+// empty rather than failing. What an installed app opens instead is product design and is
+// not decided here.
 //
 // It mirrors MainWindow.swift closely enough for a felt comparison — chrome
 // band, rail, project pane, editor over its tab bar, right panel carrying the
@@ -12,7 +23,7 @@
 //      or retained composition wearing the name" is answered by observation.
 //   2. ADR-297's live flip, timed, with the token values read back after.
 //
-// Public interface: ShellWindow, constructed by App when --shell is passed.
+// Public interface: ShellWindow, constructed by App as the default window.
 // Owner context: tools/ide — the Avalonia desktop head. Ported from the O6
 // evaluation spike 2026-09-16; the evidence for its shape is that evaluation's record.
 
@@ -32,8 +43,11 @@ namespace PaneHost.Shell;
 
 public partial class ShellWindow : Window
 {
-    private static string StoryFolder => RepoPaths.FernhillFolder;
-    private static string StoryFile => RepoPaths.FernhillStory;
+    private static string? StoryFolder => RepoPaths.FernhillFolder;
+    private static string? StoryFile => RepoPaths.FernhillStory;
+
+    /// <summary>True when this run is the scripted evaluation pass rather than an app session.</summary>
+    private static bool IsProbeRun => Environment.GetCommandLineArgs().Contains("--shell-probe");
     private static string? WorldIndex => RepoPaths.WorldIndex;
     private static string LexerServer => RepoPaths.EditorBridge;
     private static string VendoredNode => RepoPaths.Node;
@@ -41,13 +55,22 @@ public partial class ShellWindow : Window
     private readonly ProbeLog _log = new(Path.Combine(RepoPaths.DevOut, "shell-log.txt"));
     private readonly ChordColorizer _colorizer = new();
     private ChordLexerService? _lexer;
-    private LocalOrigin? _origin;
+
+    // The shell names a door, never a mechanism. Which door this is belongs to the
+    // platform slice that supplies it (ADR-341 D3); everything below works the same
+    // whether it is loopback, a virtual-host mapping, or a registered URI scheme.
+    private readonly IPaneDoor _door = new LoopbackPaneDoor();
 
     public ShellWindow()
     {
         InitializeComponent();
 
         Editor.TextArea.TextView.LineTransformers.Add(_colorizer);
+
+        // Before the underlying web view is created: some doors must name their
+        // script-message handler at this moment and cannot do it later.
+        _door.Configure(Web);
+        _door.MessageReceived += (_, message) => _log.Line($"pane message: {message.Handler}");
 
         RightTabs.Tabs = new[] { "Play", "Testing", "Docs", "World" };
         BottomTabs.Tabs = new[] { "Problems", "Game Errors", "Log" };
@@ -117,8 +140,15 @@ public partial class ShellWindow : Window
         {
             ThemeTokens.Apply(dark: true);
 
-            ProjectPane.Load(StoryFolder);
-            _log.Line($"project pane: {ProjectPane.FileCount} file(s) from the real story folder");
+            if (StoryFolder is { } storyFolder && Directory.Exists(storyFolder))
+            {
+                ProjectPane.Load(storyFolder);
+                _log.Line($"project pane: {ProjectPane.FileCount} file(s) from the real story folder");
+            }
+            else
+            {
+                _log.Line("project pane: no development story in this build — opening empty");
+            }
 
             // The world index is a machine-local artifact (SHARPEE_IDE_WORLD_INDEX), not
             // checked in. Absent, the map draws empty and says so rather than failing.
@@ -140,36 +170,57 @@ public partial class ShellWindow : Window
             await StartEditorAsync();
             await StartPanesAsync();
 
-            await ProbeDrawingModelAsync();
-            await ProbeLiveFlipAsync();
-            ReportMenu();
-
-            _log.Line("shell: done");
+            if (IsProbeRun)
+            {
+                await ProbeDrawingModelAsync();
+                await ProbeLiveFlipAsync();
+                ReportMenu();
+                _log.Line("shell: done");
+            }
         }
         catch (Exception ex)
         {
+            // An app does not exit because one surface failed to start. The window stays
+            // up with whatever did start, and the failure is named in the log.
             _log.Line($"shell: FAILED with {ex.GetType().Name}: {ex.Message}");
         }
 
-        if (Environment.GetCommandLineArgs().Contains("--hold"))
+        if (!IsProbeRun)
         {
             // --light leaves the shell in the light palette, so the flip has a
             // second screenshot rather than only a pixel value.
             if (Environment.GetCommandLineArgs().Contains("--light")) ThemeTokens.Apply(dark: false);
-            _log.Line($"shell: holding the window open (--hold), IsDark={ThemeTokens.IsDark}");
+            _log.Line($"shell: open, IsDark={ThemeTokens.IsDark}");
             return;
         }
         _lexer?.Dispose();
-        _origin?.Stop();
+        _door.Dispose();
         await Task.Delay(400);
         Dispatcher.UIThread.Post(Close);
     }
 
     private async Task StartEditorAsync()
     {
-        _lexer = new ChordLexerService(VendoredNode, LexerServer);
-        await _lexer.StartAsync();
-        await OpenAsync(StoryFile);
+        if (!File.Exists(LexerServer))
+        {
+            _log.Line($"editor: no lexer bridge at {LexerServer} — opening without highlighting");
+        }
+        else
+        {
+            _lexer = new ChordLexerService(VendoredNode, LexerServer);
+            await _lexer.StartAsync();
+        }
+
+        if (StoryFile is not { } story || !File.Exists(story))
+        {
+            StoryTitle.Text = "No story open";
+            StatusText.Text = RepoPaths.IsBundled ? "sharpee (bundled toolchain)" : "sharpee (vendored)";
+            BuildPill.Text = "—";
+            _log.Line("editor: no development story in this build — opening empty");
+            return;
+        }
+
+        await OpenAsync(story);
         StoryTitle.Text = "The Folly at Fernhill";
         StatusText.Text = "sharpee 3.6.0 (vendored)";
         BuildPill.Text = "gate-clean";
@@ -178,28 +229,41 @@ public partial class ShellWindow : Window
     private async Task OpenAsync(string path)
     {
         Editor.Document = new TextDocument(await File.ReadAllTextAsync(path));
-        var lex = await _lexer!.LexAsync(Editor.Document.Text);
-        _colorizer.Apply(lex, _lexer.Kinds, Editor.Document);
+        var tokens = "no highlighting";
+        if (_lexer is { } lexer)
+        {
+            var lex = await lexer.LexAsync(Editor.Document.Text);
+            _colorizer.Apply(lex, lexer.Kinds, Editor.Document);
+            tokens = $"{lex.TokenCount} tokens";
+        }
         Editor.TextArea.TextView.Redraw();
         EditorTabs.Documents = new[] { Path.GetFileName(path) };
         EditorTabs.InvalidateVisual();
-        _log.Line($"editor: {Path.GetFileName(path)} — {Editor.Document.LineCount} lines, {lex.TokenCount} tokens");
+        _log.Line($"editor: {Path.GetFileName(path)} — {Editor.Document.LineCount} lines, {tokens}");
     }
 
     private async Task StartPanesAsync()
     {
-        var document = await File.ReadAllTextAsync(RepoPaths.FernhillTests);
+        if (RepoPaths.FernhillTests is not { } testsPath
+            || RepoPaths.FernhillBundle is not { } storyBundle
+            || !File.Exists(testsPath))
+        {
+            _log.Line("panes: no development story in this build — the pane server is not started");
+            return;
+        }
+
+        var document = await File.ReadAllTextAsync(testsPath);
         var session = System.Text.Json.Nodes.JsonNode.Parse("{}")!.AsObject();
         session["story"] = "fernhill";
         session["seed"] = 42;
         session["document"] = document;
 
-        _origin = new LocalOrigin(new PaneServer(
-            RepoPaths.FernhillBundle,
+        _door.Open(new PaneServer(
+            storyBundle,
             RepoPaths.TestingSurface,
             RepoPaths.DocsTab,
             session.ToJsonString()));
-        _origin.Start();
+        _log.Line($"panes: door open — {_door.Mechanism}");
         await ShowRightTabAsync(0);
     }
 
@@ -207,15 +271,15 @@ public partial class ShellWindow : Window
     {
         WorldScroll.IsVisible = index == 3;
         Web.IsVisible = index != 3;
-        if (index == 3 || _origin is null) return;
+        if (index == 3 || !_door.IsOpen) return;
 
         var uri = index switch
         {
-            1 => _origin.BaseUri(PaneServer.PlayScheme) + "index-testing.html",
-            2 => _origin.BaseUri(PaneServer.DocsScheme) + "index.html",
-            _ => _origin.BaseUri(PaneServer.PlayScheme) + "index.html",
+            1 => _door.PaneUri(PaneServer.PlayScheme, "index-testing.html"),
+            2 => _door.PaneUri(PaneServer.DocsScheme, "index.html"),
+            _ => _door.PaneUri(PaneServer.PlayScheme, "index.html"),
         };
-        Web.Navigate(new Uri(uri));
+        Web.Navigate(uri);
         await Task.Delay(1200);
     }
 
