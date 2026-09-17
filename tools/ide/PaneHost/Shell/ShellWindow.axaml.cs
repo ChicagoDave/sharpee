@@ -57,8 +57,28 @@ public partial class ShellWindow : Window
     /// <summary>The story this window has open, or null when none is.</summary>
     private StoryProject? _project;
 
-    /// <summary>The file shown in the editor — the story, or another file picked in the project pane.</summary>
-    private string? _openFile;
+    /// <summary>
+    /// One open document: its file, its text, where the caret was, and whether it has
+    /// unsaved changes. The editor used to hold exactly one file and replace it on every
+    /// open, so a second file cost you the first (GH #489).
+    /// </summary>
+    private sealed class OpenDocument
+    {
+        public required string Path { get; init; }
+        public required TextDocument Document { get; init; }
+        public int CaretOffset { get; set; }
+        public bool Dirty { get; set; }
+    }
+
+    /// <summary>Every open document, in tab order.</summary>
+    private readonly List<OpenDocument> _documents = new();
+
+    /// <summary>Index into <see cref="_documents"/>, or -1 when nothing is open.</summary>
+    private int _activeDocument = -1;
+
+    /// <summary>The file shown in the editor, or null when nothing is open.</summary>
+    private string? _openFile =>
+        _activeDocument >= 0 && _activeDocument < _documents.Count ? _documents[_activeDocument].Path : null;
 
     /// <summary>True while a toolchain command is running, so a second one cannot start on top of it.</summary>
     private bool _running;
@@ -137,6 +157,8 @@ public partial class ShellWindow : Window
         RightTabs.Selected += index => _ = ShowRightTabAsync(index);
         BottomTabs.Selected += _ => { };
         ProjectPane.FileSelected += path => _ = OpenAsync(path);
+        EditorTabs.Selected += SwitchToDocument;
+        EditorTabs.Closed += index => _ = CloseDocumentAsync(index);
 
         LightButton.Click += (_, _) => Flip(dark: false);
         DarkButton.Click += (_, _) => Flip(dark: true);
@@ -441,11 +463,11 @@ public partial class ShellWindow : Window
     private void ShowEmptyState()
     {
         _project = null;
-        _openFile = null;
-        StoryTitle.Text = "No story open — File ▸ Open Story…";
+        _documents.Clear();
+        _activeDocument = -1;
+        StoryTitle.Text = "No story open — File ▸ Open Project…";
         BuildPill.Text = "—";
-        EditorTabs.Documents = Array.Empty<string>();
-        EditorTabs.InvalidateVisual();
+        RefreshEditorTabs();
         Editor.Document = new TextDocument(string.Empty);
         ProjectPane.Load(string.Empty);
         RightTabs.Badges = new Dictionary<int, int>();
@@ -459,6 +481,8 @@ public partial class ShellWindow : Window
     private async Task OpenProjectAsync(StoryProject project)
     {
         _project = project;
+        _documents.Clear();
+        _activeDocument = -1;
         ProjectPane.Load(project.Folder);
         _log.Line($"project pane: {ProjectPane.FileCount} file(s) from {project.Folder}");
 
@@ -526,34 +550,138 @@ public partial class ShellWindow : Window
         await OpenProjectAsync(project);
     }
 
+    /// <summary>
+    /// Opens a file in the editor, or switches to it when it is already open. Each document
+    /// keeps its own text, caret and dirty state; opening a second file no longer discards
+    /// the first.
+    /// </summary>
+    /// <param name="path">The absolute path of the file to open.</param>
     private async Task OpenAsync(string path)
     {
-        Editor.Document = new TextDocument(await File.ReadAllTextAsync(path));
-        _openFile = path;
-        var tokens = "no highlighting";
-        if (_lexer is { } lexer)
+        var already = _documents.FindIndex(d => string.Equals(d.Path, path, StringComparison.Ordinal));
+        if (already >= 0)
         {
-            var lex = await lexer.LexAsync(Editor.Document.Text);
-            _colorizer.Apply(lex, lexer.Kinds, Editor.Document);
-            tokens = $"{lex.TokenCount} tokens";
+            SwitchToDocument(already);
+            return;
         }
-        Editor.TextArea.TextView.Redraw();
-        EditorTabs.Documents = new[] { Path.GetFileName(path) };
+
+        var document = new TextDocument(await File.ReadAllTextAsync(path));
+        var opened = new OpenDocument { Path = path, Document = document };
+        document.TextChanged += (_, _) => MarkDirty(opened);
+
+        _documents.Add(opened);
+        SwitchToDocument(_documents.Count - 1);
+
+        var tokens = await HighlightAsync();
+        _log.Line($"editor: {Path.GetFileName(path)} — {document.LineCount} lines, {tokens}; "
+                  + $"{_documents.Count} document(s) open");
+    }
+
+    /// <summary>Shows one open document, keeping the caret of the one being left.</summary>
+    /// <param name="index">Index into the open documents.</param>
+    private void SwitchToDocument(int index)
+    {
+        if (index < 0 || index >= _documents.Count) return;
+
+        if (_activeDocument >= 0 && _activeDocument < _documents.Count)
+            _documents[_activeDocument].CaretOffset = Editor.CaretOffset;
+
+        _activeDocument = index;
+        var document = _documents[index];
+        Editor.Document = document.Document;
+        Editor.CaretOffset = Math.Min(document.CaretOffset, document.Document.TextLength);
+
+        RefreshEditorTabs();
+        _ = HighlightAsync();
+    }
+
+    /// <summary>
+    /// Closes one open document. A dirty document is saved first rather than dropped —
+    /// this shell has no "do you want to save" dialog yet, and losing an author's edits to
+    /// a stray click on a close glyph is the worse of the two answers.
+    /// </summary>
+    /// <param name="index">Index into the open documents.</param>
+    private async Task CloseDocumentAsync(int index)
+    {
+        if (index < 0 || index >= _documents.Count) return;
+
+        var document = _documents[index];
+        if (document.Dirty)
+        {
+            await File.WriteAllTextAsync(document.Path, document.Document.Text);
+            Report($"closed {Path.GetFileName(document.Path)} — saved first");
+        }
+
+        _documents.RemoveAt(index);
+
+        if (_documents.Count == 0)
+        {
+            _activeDocument = -1;
+            Editor.Document = new TextDocument(string.Empty);
+            RefreshEditorTabs();
+            _log.Line("editor: no documents open");
+            return;
+        }
+
+        _activeDocument = -1;
+        SwitchToDocument(Math.Min(index, _documents.Count - 1));
+    }
+
+    /// <summary>Marks a document dirty and shows it on its tab.</summary>
+    private void MarkDirty(OpenDocument document)
+    {
+        if (document.Dirty) return;
+        document.Dirty = true;
+        RefreshEditorTabs();
+    }
+
+    /// <summary>Repaints the tab bar from the open documents.</summary>
+    private void RefreshEditorTabs()
+    {
+        EditorTabs.Documents = _documents.Select(d => Path.GetFileName(d.Path)).ToArray();
+        EditorTabs.ActiveIndex = _activeDocument;
+        for (var i = 0; i < _documents.Count; i++) EditorTabs.SetDirty(i, _documents[i].Dirty);
         EditorTabs.InvalidateVisual();
-        _log.Line($"editor: {Path.GetFileName(path)} — {Editor.Document.LineCount} lines, {tokens}");
+    }
+
+    /// <summary>
+    /// Re-colours the active document, answering how many tokens the lexer found.
+    /// Only Chord sources are lexed: running the Chord lexer over a project's JSON coloured
+    /// it as if it were a story, which is confidently wrong rather than merely plain.
+    /// </summary>
+    private async Task<string> HighlightAsync()
+    {
+        if (_lexer is not { } lexer || Editor.Document is not { } document) return "no highlighting";
+
+        var extension = Path.GetExtension(_openFile ?? string.Empty).ToLowerInvariant();
+        if (extension is not (".story" or ".chord"))
+        {
+            _colorizer.Clear();
+            Editor.TextArea.TextView.Redraw();
+            return "not a Chord source — no highlighting";
+        }
+
+        var lex = await lexer.LexAsync(document.Text);
+        _colorizer.Apply(lex, lexer.Kinds, document);
+        Editor.TextArea.TextView.Redraw();
+        return $"{lex.TokenCount} tokens";
     }
 
     /// <summary>Writes the editor's buffer back to the file it came from.</summary>
     private async Task SaveAsync()
     {
-        if (_openFile is not { } path)
+        if (_activeDocument < 0 || _activeDocument >= _documents.Count)
         {
             Report("save: nothing is open.");
             return;
         }
 
-        await File.WriteAllTextAsync(path, Editor.Document.Text);
-        Report($"saved {Path.GetFileName(path)} — {Editor.Document.LineCount} lines");
+        var document = _documents[_activeDocument];
+        var path = document.Path;
+        await File.WriteAllTextAsync(path, document.Document.Text);
+        document.Dirty = false;
+        RefreshEditorTabs();
+        Report($"saved {Path.GetFileName(path)} — {document.Document.LineCount} lines");
         // A saved story is a story whose built output is now behind its source.
         if (_project is not null && string.Equals(path, _project.StoryFile, StringComparison.Ordinal))
             BuildPill.Text = "unbuilt changes";
@@ -960,6 +1088,28 @@ public partial class ShellWindow : Window
             _log.Line("  panes: door not open after build — the loop stops here.");
         }
 
+        // 2a. Several documents at once: open a second file, switch, close. The editor held
+        // exactly one file until 2026-09-17, and its close glyph did nothing.
+        var second = Directory.GetFiles(project.Folder)
+            .FirstOrDefault(f => !string.Equals(f, project.StoryFile, StringComparison.Ordinal)
+                                 && !Path.GetFileName(f).StartsWith('.'));
+        if (second is not null)
+        {
+            await OpenAsync(second);
+            var opened = _documents.Count;
+            var activeAfterOpen = Path.GetFileName(_openFile ?? "<none>");
+
+            SwitchToDocument(0);
+            var activeAfterSwitch = Path.GetFileName(_openFile ?? "<none>");
+
+            await CloseDocumentAsync(1);
+            var afterClose = _documents.Count;
+
+            _log.Line($"  documents: opened a second file → {opened} open, active {activeAfterOpen}; "
+                      + $"switched to tab 0 → active {activeAfterSwitch}; closed tab 1 → {afterClose} open, "
+                      + $"active {Path.GetFileName(_openFile ?? "<none>")}");
+        }
+
         // 3a. The World tab, which was empty in every build before this one.
         _log.Line($"  world map: {WorldMap.RoomCount} room(s), {WorldMap.ConnectionCount} connection(s), "
                   + $"{WorldMap.LevelCount} level(s)");
@@ -987,8 +1137,7 @@ public partial class ShellWindow : Window
         var storyFile = project.StoryFile;
         var before = await File.ReadAllTextAsync(storyFile);
         var marker = "// app exit state " + DateTime.UtcNow.ToString("O");
-        Editor.Document = new AvaloniaEdit.Document.TextDocument(before.TrimEnd() + "\n" + marker + "\n");
-        _openFile = storyFile;
+        Editor.Document.Text = before.TrimEnd() + "\n" + marker + "\n";
         await SaveAsync();
         var after = await File.ReadAllTextAsync(storyFile);
         _log.Line($"  save: file changed on disk={!string.Equals(before, after, StringComparison.Ordinal)}, "

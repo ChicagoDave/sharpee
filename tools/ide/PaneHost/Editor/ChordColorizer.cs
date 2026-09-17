@@ -63,6 +63,18 @@ public sealed class ChordColorizer : DocumentColorizingTransformer
     public int RunCount { get; private set; }
 
     /// <summary>
+    /// Drops all styling, so a document that is not a Chord source is drawn plain rather
+    /// than wearing the colours of whatever was open before it.
+    /// </summary>
+    public void Clear()
+    {
+        _runsByLine = new Dictionary<int, List<StyledRun>>();
+        _commentLines = new HashSet<int>();
+        TokenCount = 0;
+        RunCount = 0;
+    }
+
+    /// <summary>
     /// Rebuilds the whole styling index from a lex result. The document is read
     /// for token text because the service sends spans only, not text.
     /// </summary>

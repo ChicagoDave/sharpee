@@ -27,15 +27,24 @@ public sealed class ProjectPaneView : DrawnSurface
 
     private readonly List<PaneRow> _rows = new();
 
+    /// <summary>The row a single click selected, drawn highlighted; -1 when none.</summary>
+    private int _selected = -1;
+
     public int FileCount => _rows.Count(r => !r.IsHeader);
 
-    /// <summary>Raised with the absolute path when a file row is clicked.</summary>
+    /// <summary>
+    /// Raised with the absolute path when a file row is DOUBLE-clicked, which is how the
+    /// shipping app's project tree opens a file (`outlineView.doubleAction`). A single click
+    /// selects the row and nothing more: opening on every click meant a stray click in the
+    /// tree replaced what you were editing (GH #489).
+    /// </summary>
     public event Action<string>? FileSelected;
 
     /// <summary>Groups a story folder the way ProjectArtifacts.swift groups it. Read-only.</summary>
     public void Load(string storyFolder)
     {
         _rows.Clear();
+        _selected = -1;
 
         void Group(string title, IEnumerable<string> paths)
         {
@@ -70,8 +79,12 @@ public sealed class ProjectPaneView : DrawnSurface
         context.FillRectangle(ThemeTokens.ProjectBackground, new Rect(Bounds.Size));
 
         var y = Pad / 2;
-        foreach (var row in _rows)
+        for (var i = 0; i < _rows.Count; i++)
         {
+            var row = _rows[i];
+            if (i == _selected)
+                context.FillRectangle(ThemeTokens.Border, new Rect(0, y, Bounds.Width, RowHeight));
+
             var brush = row.IsHeader ? ThemeTokens.ForegroundFaint : ThemeTokens.Foreground;
             var text = Text(row.Label, row.IsHeader ? 10 : 11.5, brush, bold: row.IsHeader);
             context.DrawText(text, new Point(Pad + row.Level * Indent, y + (RowHeight - text.Height) / 2));
@@ -79,11 +92,20 @@ public sealed class ProjectPaneView : DrawnSurface
         }
     }
 
+    /// <summary>
+    /// One click selects the row; two open the file. The shipping app's tree behaves this
+    /// way, and it is the difference between glancing at the project and losing the
+    /// document you were editing to a stray click.
+    /// </summary>
     protected override void OnPointerPressed(PointerPressedEventArgs e)
     {
         base.OnPointerPressed(e);
         var index = (int)((e.GetPosition(this).Y - Pad / 2) / RowHeight);
         if (index < 0 || index >= _rows.Count) return;
-        if (_rows[index].Path is { } path) FileSelected?.Invoke(path);
+        if (_rows[index].Path is not { } path) return;
+
+        _selected = index;
+        InvalidateVisual();
+        if (e.ClickCount >= 2) FileSelected?.Invoke(path);
     }
 }
