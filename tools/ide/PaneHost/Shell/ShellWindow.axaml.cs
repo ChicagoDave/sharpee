@@ -63,6 +63,9 @@ public partial class ShellWindow : Window
     /// <summary>True while a toolchain command is running, so a second one cannot start on top of it.</summary>
     private bool _running;
 
+    /// <summary>Cancels the running toolchain command; null when none is running.</summary>
+    private CancellationTokenSource? _commandCts;
+
     /// <summary>True when this run is the scripted evaluation pass rather than an app session.</summary>
     private static bool IsProbeRun => Environment.GetCommandLineArgs().Contains("--shell-probe");
 
@@ -127,7 +130,7 @@ public partial class ShellWindow : Window
         _relay = new PaneRelay(script => _door.EvaluateAsync(TestingWeb, script), _log.Line);
         _door.MessageReceived += OnPaneMessage;
 
-        RightTabs.Tabs = new[] { "Play", "Testing", "Docs", "World" };
+        RightTabs.Tabs = new[] { "Build", "Play", "Testing", "Documentation", "World" };
         BottomTabs.Tabs = new[] { "Problems", "Game Errors", "Log" };
         EditorTabs.Documents = Array.Empty<string>();
 
@@ -148,29 +151,84 @@ public partial class ShellWindow : Window
     }
 
     /// <summary>
-    /// The macOS menu bar. The OpenSilver spike could not do this — OpenSilver has
-    /// no native Menu control — so it is one of the rows where O6 differs outright.
+    /// The macOS menu bar, mirroring the shipping Chord Writer's own
+    /// (tools/ide/SharpeeIDE/Menus/MenuBuilder.swift): App, File, Edit, View, Build, Test,
+    /// Window, with the same items, order and key equivalents.
+    ///
+    /// WHERE THIS HEAD CANNOT YET DO SOMETHING, THE ITEM IS DISABLED RATHER THAN ABSENT OR
+    /// LYING. An item that renders and does nothing is the defect that started this
+    /// (GH #482); an item quietly dropped hides how far the port actually is. A greyed item
+    /// says both things honestly: the shipping app has this, and this head does not yet.
+    /// The gaps are listed in GH #488.
     /// </summary>
     private void InstallMenu()
     {
-        // Every item here carries a Click handler. An item that renders, takes a key
-        // gesture and does nothing is worse than an absent one: it tells a person the app
-        // can do something it cannot (GH #482).
-        var file = new NativeMenuItem("File") { Menu = new NativeMenu() };
-        file.Menu!.Add(Item("New Story…", "Cmd+N", () => _ = NewStoryAsync()));
-        file.Menu.Add(Item("Open Story…", "Cmd+O", () => _ = OpenStoryDialogAsync()));
-        file.Menu.Add(new NativeMenuItemSeparator());
-        file.Menu.Add(Item("Save", "Cmd+S", () => _ = SaveAsync()));
-        file.Menu.Add(Item("Reveal in Finder", "Cmd+Shift+R", RevealInFinder));
+        var file = Menu("File",
+            Item("New Story…", "Cmd+N", () => _ = NewStoryAsync()),
+            NotYet("New Import…", "Cmd+Shift+N"),
+            Item("Open Project…", "Cmd+O", () => _ = OpenProjectDialogAsync()),
+            Recent(),
+            Separator(),
+            Item("Save", "Cmd+S", () => _ = SaveAsync()),
+            Separator(),
+            Item("Close", "Cmd+W", Close));
 
-        var story = new NativeMenuItem("Story") { Menu = new NativeMenu() };
-        story.Menu!.Add(Item("Build", "Cmd+B", () => _ = BuildAsync()));
-        story.Menu.Add(Item("Check (Compose)", "Cmd+K", () => _ = ComposeAsync()));
-        story.Menu.Add(Item("Run Tests", "Cmd+U", () => _ = RunTestsAsync()));
+        var edit = Menu("Edit",
+            Item("Undo", "Cmd+Z", () => Editor.Undo()),
+            Item("Redo", "Cmd+Shift+Z", () => Editor.Redo()),
+            Separator(),
+            Item("Cut", "Cmd+X", () => Editor.Cut()),
+            Item("Copy", "Cmd+C", () => Editor.Copy()),
+            Item("Paste", "Cmd+V", () => Editor.Paste()),
+            Item("Select All", "Cmd+A", () => Editor.SelectAll()),
+            Separator(),
+            NotYet("Extract Selection to Import…", null));
+
+        var view = Menu("View",
+            Item("Project Pane", "Cmd+1", () => ProjectPane.IsVisible = !ProjectPane.IsVisible),
+            Separator(),
+            Item("Word Wrap", null, () => Editor.WordWrap = !Editor.WordWrap),
+            Separator(),
+            Submenu("Font",
+                Item("Courier", null, () => SetEditorFont("Courier New")),
+                Item("SF Mono", null, () => SetEditorFont("SF Mono")),
+                Item("Menlo", null, () => SetEditorFont("Menlo")),
+                Item("Georgia", null, () => SetEditorFont("Georgia")),
+                Separator(),
+                Item("Small", null, () => SetEditorFontSize(11)),
+                Item("Medium", null, () => SetEditorFontSize(13)),
+                Item("Large", null, () => SetEditorFontSize(15)),
+                Item("Extra Large", null, () => SetEditorFontSize(18))),
+            Submenu("Appearance",
+                Item("System", null, () => ThemeTokens.Apply(dark: IsSystemDark())),
+                Item("Light", null, () => Flip(dark: false)),
+                Item("Dark", null, () => Flip(dark: true))));
+
+        var build = Menu("Build",
+            Item("Build", "Cmd+B", () => _ = BuildAsync()),
+            Separator(),
+            Item("Cancel Build", "Cmd+.", CancelCommand),
+            Separator(),
+            NotYet("Shipped Themes", null),
+            Separator(),
+            Item("Publish…", null, () => _ = PublishAsync()));
+
+        var test = Menu("Test",
+            Item("Run Tests", "Cmd+U", () => _ = RunTestsAsync()),
+            Item("Testing Play Surface", "Cmd+Alt+U", () => { RightTabs.ActiveIndex = 2; _ = ShowRightTabAsync(2); }),
+            Separator(),
+            NotYet("Auto-Assertion", null),
+            Separator(),
+            Item("Cancel Test Run", null, CancelCommand));
+
+        var window = Menu("Window",
+            Item("Minimize", "Cmd+M", () => WindowState = WindowState.Minimized),
+            Item("Zoom", null, () => WindowState = WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized));
 
         var menu = new NativeMenu();
-        menu.Add(file);
-        menu.Add(story);
+        foreach (var top in new[] { file, edit, view, build, test, window }) menu.Add(top);
 
         // THE MENU BELONGS TO THE APPLICATION ON macOS. Setting it on the window alone
         // left the menu bar with only the system-supplied items — no File, no Story — so
@@ -179,6 +237,77 @@ public partial class ShellWindow : Window
         // global-menu Linux desktop exports.
         if (Application.Current is { } app) NativeMenu.SetMenu(app, menu);
         NativeMenu.SetMenu(this, menu);
+    }
+
+    /// <summary>The File ▸ Open Recent submenu, rebuilt from what the shell remembers.</summary>
+    private NativeMenuItem Recent()
+    {
+        var recent = new NativeMenuItem("Open Recent") { Menu = new NativeMenu() };
+        foreach (var path in ShellState.Recent)
+        {
+            var item = new NativeMenuItem(Path.GetFileNameWithoutExtension(path));
+            item.Click += (_, _) =>
+            {
+                if (StoryProject.Resolve(path) is { } project) _ = OpenProjectAsync(project);
+                else Report($"open recent: {path} is no longer a story this shell can open.");
+            };
+            recent.Menu!.Add(item);
+        }
+        if (ShellState.Recent.Count == 0)
+            recent.Menu!.Add(new NativeMenuItem("No Recent Stories") { IsEnabled = false });
+        return recent;
+    }
+
+    // ── menu construction ────────────────────────────────────────────────────
+
+    /// <summary>A top-level menu holding the given items.</summary>
+    private static NativeMenuItem Menu(string header, params NativeMenuItemBase[] items)
+    {
+        var top = new NativeMenuItem(header) { Menu = new NativeMenu() };
+        foreach (var item in items) top.Menu!.Add(item);
+        return top;
+    }
+
+    /// <summary>A submenu holding the given items.</summary>
+    private static NativeMenuItem Submenu(string header, params NativeMenuItemBase[] items) =>
+        Menu(header, items);
+
+    private static NativeMenuItemBase Separator() => new NativeMenuItemSeparator();
+
+    /// <summary>A menu item that actually does something when chosen.</summary>
+    private static NativeMenuItem Item(string header, string? gesture, Action onClick)
+    {
+        var item = new NativeMenuItem(header);
+        if (gesture is not null) item.Gesture = Avalonia.Input.KeyGesture.Parse(gesture);
+        item.Click += (_, _) => onClick();
+        return item;
+    }
+
+    /// <summary>
+    /// An item the shipping app has and this head does not yet: shown, greyed, inert.
+    /// It is a visible admission of a gap rather than a promise the app cannot keep.
+    /// </summary>
+    private static NativeMenuItem NotYet(string header, string? gesture)
+    {
+        var item = new NativeMenuItem(header) { IsEnabled = false };
+        if (gesture is not null) item.Gesture = Avalonia.Input.KeyGesture.Parse(gesture);
+        return item;
+    }
+
+    /// <summary>True when macOS is currently in its dark appearance.</summary>
+    private bool IsSystemDark() =>
+        ActualThemeVariant == Avalonia.Styling.ThemeVariant.Dark;
+
+    private void SetEditorFont(string family)
+    {
+        Editor.FontFamily = new Avalonia.Media.FontFamily(family);
+        _log.Line($"editor font: {family}");
+    }
+
+    private void SetEditorFontSize(double size)
+    {
+        Editor.FontSize = size;
+        _log.Line($"editor font size: {size}");
     }
 
     /// <summary>Repaints the parts of the chrome that are plain controls rather than drawn surfaces.</summary>
@@ -372,17 +501,17 @@ public partial class ShellWindow : Window
         await OpenProjectAsync(project);
     }
 
-    /// <summary>Asks the person for a `.story` file and opens the project around it.</summary>
-    private async Task OpenStoryDialogAsync()
+    /// <summary>
+    /// Asks for a project folder and opens the story inside it, as File ▸ Open Project…
+    /// does in the shipping app. A folder with no single unambiguous `.story` is reported
+    /// rather than half-opened.
+    /// </summary>
+    private async Task OpenProjectDialogAsync()
     {
-        var picked = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        var picked = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
         {
-            Title = "Open a Chord story",
+            Title = "Open a Chord project",
             AllowMultiple = false,
-            FileTypeFilter = new[]
-            {
-                new FilePickerFileType("Chord story") { Patterns = new[] { "*.story" } },
-            },
         });
 
         var path = picked.Count > 0 ? picked[0].TryGetLocalPath() : null;
@@ -391,7 +520,7 @@ public partial class ShellWindow : Window
         var project = StoryProject.Resolve(path);
         if (project is null)
         {
-            Report($"open: {Path.GetFileName(path)} is not a story this shell can open.");
+            Report($"open: {Path.GetFileName(path)} holds no single .story this shell can open.");
             return;
         }
         await OpenProjectAsync(project);
@@ -471,8 +600,8 @@ public partial class ShellWindow : Window
                 Report($"{_project.Id} is not built yet. Story ▸ Build (Cmd+B) builds it.");
 
             await NavigateAsync(DocsWeb, _door.PaneUri(PaneServer.DocsScheme, "index.html"), TimeSpan.FromSeconds(15));
-            RightTabs.ActiveIndex = 2;
-            await ShowRightTabAsync(2);
+            RightTabs.ActiveIndex = 3;
+            await ShowRightTabAsync(3);
             return;
         }
 
@@ -501,8 +630,8 @@ public partial class ShellWindow : Window
         var testing = await NavigateAsync(TestingWeb, _door.PaneUri(PaneServer.PlayScheme, "index-testing.html"), TimeSpan.FromSeconds(20));
         _log.Line($"panes: loaded — play={play}, docs={docs}, testing={testing}");
 
-        RightTabs.ActiveIndex = 0;
-        await ShowRightTabAsync(0);
+        RightTabs.ActiveIndex = 1;
+        await ShowRightTabAsync(1);
     }
 
     // ── The toolchain commands ───────────────────────────────────────────────
@@ -581,6 +710,23 @@ public partial class ShellWindow : Window
         BuildPill.Text = exit == 0 ? "gate-clean" : "gate errors";
     }
 
+    /// <summary>Builds and zips a distributable browser app (ADR-284), as Build ▸ Publish… does.</summary>
+    private async Task PublishAsync()
+    {
+        if (_project is not { } project) { Report("publish: nothing is open."); return; }
+
+        var exit = await RunToolchainAsync("publish", new[] { "publish", project.StoryFile }, project.Folder);
+        if (exit == 0) Report("publish: the distributable is in the story's dist/ folder.");
+    }
+
+    /// <summary>Cancels the toolchain command now running, if any — Build ▸ Cancel Build, Test ▸ Cancel Test Run.</summary>
+    private void CancelCommand()
+    {
+        if (!_running || _commandCts is null) { Report("cancel: nothing is running."); return; }
+        _commandCts.Cancel();
+        Report("cancel: requested.");
+    }
+
     /// <summary>Runs the story's own test suite through the vendored toolchain.</summary>
     private async Task RunTestsAsync()
     {
@@ -613,6 +759,7 @@ public partial class ShellWindow : Window
         }
 
         _running = true;
+        _commandCts = new CancellationTokenSource();
         BottomPanel.IsVisible = true;
         Report($"$ sharpee {string.Join(' ', arguments)}");
         StatusText.Text = $"{label}…";
@@ -624,11 +771,17 @@ public partial class ShellWindow : Window
                 shim, arguments, workingDirectory,
                 line => Dispatcher.UIThread.Post(() => Report(line)),
                 line => Dispatcher.UIThread.Post(() => Report(line)),
-                CancellationToken.None);
+                _commandCts.Token);
 
             Report($"— {label} exited {exit}");
             StatusText.Text = exit == 0 ? $"{label} ok" : $"{label} failed ({exit})";
             return exit;
+        }
+        catch (OperationCanceledException)
+        {
+            Report($"— {label} cancelled");
+            StatusText.Text = $"{label} cancelled";
+            return -1;
         }
         catch (Exception ex)
         {
@@ -639,23 +792,23 @@ public partial class ShellWindow : Window
         finally
         {
             _running = false;
+            _commandCts?.Dispose();
+            _commandCts = null;
         }
     }
 
-    /// <summary>Appends one line to the bottom panel and the run log, and scrolls to it.</summary>
+    /// <summary>
+    /// Appends one line to the bottom panel, the Build tab and the run log, and scrolls both
+    /// to it. The Build tab is the shipping app's home for this output; the bottom panel is
+    /// this shell's, and both show the same stream rather than two partial ones.
+    /// </summary>
     private void Report(string line)
     {
         BottomText.Text = BottomText.Text is { Length: > 0 } existing ? existing + "\n" + line : line;
         BottomText.CaretIndex = BottomText.Text.Length;
+        BuildLog.Text = BuildLog.Text is { Length: > 0 } log ? log + "\n" + line : line;
+        BuildLog.CaretIndex = BuildLog.Text.Length;
         _log.Line(line);
-    }
-
-    /// <summary>A native menu item that actually does something when chosen.</summary>
-    private static NativeMenuItem Item(string header, string gesture, Action onClick)
-    {
-        var item = new NativeMenuItem(header) { Gesture = Avalonia.Input.KeyGesture.Parse(gesture) };
-        item.Click += (_, _) => onClick();
-        return item;
     }
 
     /// <summary>
@@ -699,22 +852,29 @@ public partial class ShellWindow : Window
     /// changes which view is visible — it does not reload anything. Reloading on every
     /// tab switch cost the testing pane its entire replay each time it was reopened.
     /// </summary>
-    /// <param name="index">0 Play, 1 Testing, 2 Docs, 3 World.</param>
+    /// <param name="index">0 Build, 1 Play, 2 Testing, 3 Documentation, 4 World.</param>
+    /// <remarks>
+    /// The shipping app's right panel carries eight tabs — Build, Play, Testing, Index,
+    /// Diagnosis, Documentation, Publish, World. This head has five of them; Index,
+    /// Diagnosis and Publish are tracked in GH #488 rather than shown as tabs that do
+    /// nothing.
+    /// </remarks>
     private Task ShowRightTabAsync(int index)
     {
-        PlayWeb.IsVisible = index == 0;
-        TestingWeb.IsVisible = index == 1;
-        DocsWeb.IsVisible = index == 2;
-        WorldScroll.IsVisible = index == 3;
+        BuildLog.IsVisible = index == 0;
+        PlayWeb.IsVisible = index == 1;
+        TestingWeb.IsVisible = index == 2;
+        DocsWeb.IsVisible = index == 3;
+        WorldScroll.IsVisible = index == 4;
         return Task.CompletedTask;
     }
 
-    /// <summary>The view a pane index is shown in, or null for the World tab, which is drawn.</summary>
+    /// <summary>The view a tab is shown in, or null for the tabs that are not web panes.</summary>
     private NativeWebView? ViewFor(int index) => index switch
     {
-        0 => PlayWeb,
-        1 => TestingWeb,
-        2 => DocsWeb,
+        1 => PlayWeb,
+        2 => TestingWeb,
+        3 => DocsWeb,
         _ => null,
     };
 
@@ -767,6 +927,7 @@ public partial class ShellWindow : Window
         _log.Line($"  host: {HostServices.Current.Describe()}");
         _log.Line($"  toolchain: {HostServices.Current.ToolchainShim ?? "<none>"}");
         _log.Line($"  bundled: {RepoPaths.IsBundled}");
+        ReportMenu();
 
         var project = StoryProject.Resolve(path);
         if (project is null)
@@ -807,14 +968,14 @@ public partial class ShellWindow : Window
         // the expensive thing a reload throws away, so it is what gets checked.
         var cardsBefore = await EvaluateAsync(TestingWeb, "document.querySelectorAll('[class*=card]').length");
         var recordsBefore = _paneMessages.GetValueOrDefault("turnEvents");
-        RightTabs.ActiveIndex = 0;
-        await ShowRightTabAsync(0);
+        RightTabs.ActiveIndex = 1;
+        await ShowRightTabAsync(1);
+        await Task.Delay(300);
+        RightTabs.ActiveIndex = 3;
+        await ShowRightTabAsync(3);
         await Task.Delay(300);
         RightTabs.ActiveIndex = 2;
         await ShowRightTabAsync(2);
-        await Task.Delay(300);
-        RightTabs.ActiveIndex = 1;
-        await ShowRightTabAsync(1);
         await Task.Delay(1500);
         var cardsAfter = await EvaluateAsync(TestingWeb, "document.querySelectorAll('[class*=card]').length");
         var recordsAfter = _paneMessages.GetValueOrDefault("turnEvents");
@@ -866,7 +1027,7 @@ public partial class ShellWindow : Window
         // Testing goes last and stays loaded: the round trip below continues on this
         // load rather than navigating again, so no record from an earlier load can be
         // delivered into a page that booted after it was posted.
-        foreach (var (name, index) in new[] { ("Play", 0), ("Docs", 2), ("Testing", 1) })
+        foreach (var (name, index) in new[] { ("Play", 1), ("Docs", 3), ("Testing", 2) })
         {
             RightTabs.ActiveIndex = index;
             await ShowRightTabAsync(index);
@@ -1122,12 +1283,32 @@ public partial class ShellWindow : Window
         return $"#{buffer[offset]:X2}{buffer[offset + 1]:X2}{buffer[offset + 2]:X2}";
     }
 
+    /// <summary>
+    /// Walks the menu macOS actually renders — the application's — and logs every item with
+    /// whether it is enabled. It reports the menu the platform was handed, not the object
+    /// this window built: an earlier version read back the window menu it had just set and
+    /// pronounced the menu bar fine while the bar showed nothing (GH #485).
+    /// </summary>
     private void ReportMenu()
     {
-        var menu = NativeMenu.GetMenu(this);
-        var items = menu?.Items.OfType<NativeMenuItem>().ToList() ?? new List<NativeMenuItem>();
-        _log.Line($"native menu: {items.Count} top-level item(s) — "
-                  + string.Join(", ", items.Select(i => $"{i.Header} ({i.Menu?.Items.Count ?? 0})")));
+        var menu = Application.Current is { } app ? NativeMenu.GetMenu(app) : null;
+        if (menu is null) { _log.Line("native menu: the application carries none"); return; }
+
+        var enabled = 0;
+        var disabled = 0;
+        var lines = new List<string>();
+        foreach (var top in menu.Items.OfType<NativeMenuItem>())
+        {
+            var items = top.Menu?.Items.OfType<NativeMenuItem>().ToList() ?? new List<NativeMenuItem>();
+            foreach (var item in items)
+            {
+                if (item.IsEnabled) enabled++; else disabled++;
+            }
+            lines.Add($"{top.Header} ({items.Count}: "
+                      + string.Join(", ", items.Select(i => i.Header + (i.IsEnabled ? "" : " [disabled]"))) + ")");
+        }
+        _log.Line($"native menu: {menu.Items.Count} top-level, {enabled} enabled, {disabled} disabled");
+        foreach (var line in lines) _log.Line("  " + line);
     }
 
     private void Flip(bool dark)

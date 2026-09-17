@@ -22,6 +22,37 @@ public static class ShellState
 {
     private const string FileName = "shell-state.json";
 
+    /// <summary>How many stories File ▸ Open Recent remembers.</summary>
+    private const int RecentLimit = 8;
+
+    /// <summary>
+    /// The stories opened most recently, newest first, skipping any that have since been
+    /// moved or deleted. What File ▸ Open Recent lists.
+    /// </summary>
+    public static IReadOnlyList<string> Recent
+    {
+        get
+        {
+            try
+            {
+                var path = StatePath();
+                if (!File.Exists(path)) return Array.Empty<string>();
+                var stored = JsonNode.Parse(File.ReadAllText(path))?["recent"]?.AsArray();
+                if (stored is null) return Array.Empty<string>();
+                return stored
+                    .Select(node => node?.GetValue<string>())
+                    .OfType<string>()
+                    .Where(File.Exists)
+                    .Take(RecentLimit)
+                    .ToList();
+            }
+            catch
+            {
+                return Array.Empty<string>();
+            }
+        }
+    }
+
     /// <summary>
     /// The `.story` path open when the app last closed, or null when there is none or the
     /// stored one no longer exists on disk.
@@ -49,7 +80,19 @@ public static class ShellState
             {
                 var path = StatePath();
                 Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-                var json = new JsonObject { ["lastStoryFile"] = value };
+
+                // Opening a story is also what makes it recent, so the two are written
+                // together — a recent list maintained separately drifts from what was
+                // actually opened.
+                var recent = new List<string>();
+                if (value is not null) recent.Add(value);
+                recent.AddRange(Recent.Where(p => !string.Equals(p, value, StringComparison.Ordinal)));
+
+                var json = new JsonObject
+                {
+                    ["lastStoryFile"] = value,
+                    ["recent"] = new JsonArray(recent.Take(RecentLimit).Select(p => (JsonNode)p!).ToArray()),
+                };
                 File.WriteAllText(path, json.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
             }
             catch

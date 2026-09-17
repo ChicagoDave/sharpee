@@ -66,7 +66,10 @@
                   its own state; switching tabs only changes which one is visible.
                 -->
                 <Panel Grid.Row="1">
-                    <NativeWebView x:Name="PlayWeb" />
+                    <!-- The build log, which the shipping app shows in its own Build tab. -->
+                    <TextBox x:Name="BuildLog" IsVisible="False" AcceptsReturn="True" IsReadOnly="True"
+                             FontFamily="Menlo" FontSize="11" BorderThickness="0" />
+                    <NativeWebView x:Name="PlayWeb" IsVisible="False" />
                     <NativeWebView x:Name="TestingWeb" IsVisible="False" />
                     <NativeWebView x:Name="DocsWeb" IsVisible="False" />
                     <ScrollViewer x:Name="WorldScroll" IsVisible="False"
