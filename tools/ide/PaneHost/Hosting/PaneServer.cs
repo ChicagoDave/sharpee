@@ -28,16 +28,16 @@ public sealed class PaneServer
     /// <summary>Reserved prefix the testing surface's own assets load under — IDE files, never story files.</summary>
     public const string TestingSurfacePrefix = "ide-testing-surface/";
 
-    private readonly string _bundleRoot;
+    private readonly string? _bundleRoot;
     private readonly string? _testingSurfaceRoot;
     private readonly string? _docsRoot;
     private readonly string _sessionJson;
 
-    /// <param name="bundleRoot">The story's dist/web/&lt;id&gt;/ directory.</param>
+    /// <param name="bundleRoot">The story's dist/web/&lt;id&gt;/ directory, or null when no story is open — the docs pane needs none.</param>
     /// <param name="testingSurfaceRoot">Directory holding surface.js and surface.css, or null.</param>
     /// <param name="docsRoot">The docs tab's web root, or null.</param>
     /// <param name="sessionJson">The testing session payload (story, seed, document, …) as JSON.</param>
-    public PaneServer(string bundleRoot, string? testingSurfaceRoot, string? docsRoot, string sessionJson)
+    public PaneServer(string? bundleRoot, string? testingSurfaceRoot, string? docsRoot, string sessionJson)
     {
         _bundleRoot = bundleRoot;
         _testingSurfaceRoot = testingSurfaceRoot;

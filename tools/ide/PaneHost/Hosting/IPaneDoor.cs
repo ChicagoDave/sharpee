@@ -50,6 +50,14 @@ public interface IPaneDoor : IDisposable
     /// <exception cref="InvalidOperationException">The door is already open.</exception>
     void Open(PaneServer panes);
 
+    /// <summary>
+    /// Stops serving, leaving the door wired to its view so it can be opened again for a
+    /// different story. Opening a second story is an ordinary thing for an app to do, so
+    /// this is not the same as <see cref="IDisposable.Dispose"/>, which also unwires.
+    /// Closing an already-closed door does nothing.
+    /// </summary>
+    void Close();
+
     /// <summary>Where a pane lives once the door is open.</summary>
     /// <param name="scheme">A <see cref="PaneServer"/> scheme constant.</param>
     /// <param name="page">The page within that scheme, e.g. "index.html".</param>

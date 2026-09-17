@@ -252,12 +252,34 @@ a phase of their own.
   `ShellWindow` depends only on the interface — it names no mechanism and holds no
   `LocalOrigin`. Linux and Windows each add one implementation behind it in their own slice.
   Four real-path door tests added (real HttpListener, real bundle, no stubs); suite 28 of 28.
+- **Progress, 2026-09-16 (session 374402) — the exit-state run passes; the panes are wired
+  into the shell.** `ShellWindow` now navigates each pane through the door and waits for the
+  view's own `NavigationCompleted` rather than a fixed sleep, routes every page→host message
+  through `OnPaneMessage`, and hands each turn record back to the testing surface through a
+  new `PaneRelay` (`tools/ide/PaneHost/Hosting/PaneRelay.cs`) — one delivery at a time, in
+  arrival order, because the surface forks a fresh boot when the sequence does not match.
+  Without that relay the panes loaded and sat inert. `--pane-exit-state` runs Phase 4's exit
+  state over exactly that wiring and exits.
+
+  **Evidence** — `dotnet run --project PaneHost/PaneHost.csproj -- --pane-exit-state`,
+  2026-09-16, log at `~/Library/Caches/net.sharpee.panehost/dev/shell-log.txt`. All three
+  real panes loaded in the real `ShellWindow` over the real door
+  (`token-scoped loopback origin`): Play and Testing `readyState=complete`,
+  `title=The Folly at Fernhill`; Docs `title=Sharpee — Documentation`. Both directions
+  proven on each pane — host→page read the shim back from the live page
+  (`{"via":"webkit.messageHandlers.sharpeeAvaloniaHost","strategy":"assign","installed":true}`),
+  page→host delivered a ping posted through the shim's own handler on all three. The full
+  round trip on the testing pane: boot replay posted 270 turn records, the relay delivered
+  every one, `window.__sharpeeHost({type:'type',command:'inventory'})` → `typed` produced one
+  further record, no delivery errors; the surface ended at 179 cards / 1007 anchors. Build
+  clean at 0 warnings; door, server and protocol suites 16 of 16.
+
   **Still open in this phase**:
-  - **The exit-state run.** `Configure` and the messaging pair it wires are untested — both
-    need a constructed Avalonia view, so they belong to the exit-state run (real panes in a
-    real view, both directions proven), not to a headless suite. A fake view would assert
-    that a stand-in works, which rule 13a forbids. Until that run, "the panes load in the
-    shell" is unproven.
+  - **The capability suite did not run this session.** 8 of 28 tests refuse to run without
+    `SHARPEE_IDE_TOOLCHAIN` and `SHARPEE_IDE_CAPABILITY_FIXTURE` (they fail loudly rather
+    than skip, by design — README lines 64-79), and no staged toolchain was found on this
+    machine. The other 20 pass. Re-staging is `vendor-toolchain.sh` (~175 MB) and is
+    David's call, not something to work around.
   - **GH #464 is only half closed.** `PaneServer.HostShimScript` already probes
     `webkit.messageHandlers` then `chrome.webview` and records which took, so the panes work
     across backends today. But the door they *call* is still spelled
@@ -283,7 +305,105 @@ a phase of their own.
   how this phase ran a full evening green while the artifact was unopenable. That is GH
   #435's shape (green without exercising the real thing), applied to the app instead of the
   toolchain.
-- **Status**: **STOPPED (2026-09-16, session 9dd6ac) — deliberately unfinished, nothing
+- **Progress, 2026-09-17 (session 374402) — the arm64 slice is done; x86_64 is blocked at the
+  launch check.** Run against an app that opens, per the resume condition: the exit state's
+  launch check ran first and passed, then the signing checks.
+
+  **arm64 — complete, every exit-state line met.** Packaged with `package-avalonia.sh --arch
+  arm64` (1.4.0, `ChordWriterAvalonia`). Launch check, from the portable zip extracted OUTSIDE
+  any checkout: the app opens and **holds** (killed at 20 s by the timer, exit 124, not by
+  itself), log reads `panes: no development story in this build — the pane server is not
+  started`, `shell: open`; the bundled toolchain answers from inside the bundle — `node
+  v22.23.1`, `Sharpee 5.4.1 · Chord 3.6.0`. Payload census: **20 of 20** Mach-O files carry
+  `Developer ID Application: David Cornelson (RSNGKW5LNH)` with `flags=0x10000(runtime)` —
+  `presign-payload.sh` holds through `vpk pack`, where the pre-fix census was 4 of 20.
+  `codesign --verify --deep --strict`: valid on disk, satisfies its Designated Requirement.
+  **Notarized: submission `85f97a6e-3540-4894-ae87-128f4af495d4`, Accepted, first submission**
+  (via `notary-submit.py`, with the `Successfully uploaded file` marker that distinguishes a
+  live submission from an orphan). Stapled, `stapler validate` worked, `spctl --assess --type
+  execute` → `accepted` / `source=Notarized Developer ID`. Relaunched after stapling: opens
+  and holds again.
+
+  **x86_64 — packaged and signed, launch unproven, deliberately NOT notarized (GH #481).**
+  The slice builds: `Contents/MacOS/PaneHost` is a real `Mach-O 64-bit executable x86_64`, the
+  vendored node is x86_64 and answers `v22.23.1` / `Sharpee 5.4.1 · Chord 3.6.0` under
+  Rosetta. But the app itself dies at launch with **exit 132 (SIGILL)** — silent, no window,
+  no stdout/stderr, no `.ips` crash report. Rosetta is working for at least one x86_64 Mach-O
+  in that same payload, so this is specific to the .NET app. What it establishes is that the
+  launch check cannot be satisfied on this Apple Silicon machine; it does **not** establish
+  failure on real Intel hardware, which needs an Intel Mac or a targeted probe. Notarizing it
+  now would be exactly what Key Decision 1 rules out, so it was not submitted.
+- **Correction, 2026-09-17 (David ran the installed arm64 build) — the pipeline is done, the
+  macOS slice is not.** Everything above is true and none of it adds up to an application.
+  The installed app has **no way to open a story**: the File and Story menus and the Build and
+  Compose buttons carry no handlers, there is no file or folder picker anywhere in PaneHost,
+  and `StartPanesAsync` only ever looks at fernhill — null in a bundle — so the right panel
+  stays blank. Working controls: theme flip and the two panel toggles. **GH #482.**
+  Every evidence run before this one was made from a checkout, where `RepoPaths` auto-loads
+  fernhill and the shell looks alive; that path exercises the installed app's story-opening
+  path not at all, because it has none. The amended launch check ("opens, holds, toolchain
+  answers") is satisfied by this build and was never sufficient — the slice-ordering rule's
+  bar is "install, open **and use**", and only the first two are met. Reporting "every
+  exit-state line met" against a checklist that stops short of *use* is the same shape as the
+  failure the amendment was added to prevent, one level up.
+- **Progress, 2026-09-17 (session 374402, overnight) — the app is an app, and it is
+  notarized.** David: "finish the macos app". What GH #482 named is closed:
+  - **A story is a parameter, not a constant.** `StoryProject` resolves a chosen `.story`
+    file or folder to its id, its built bundle and its tree document; `ShellWindow` holds one
+    and every surface follows it. The hard-coded development story is gone from the shell.
+  - **Every menu item and button does something.** File ▸ New Story… (folder picker + name
+    prompt → `sharpee init` → opens it), Open Story… (file picker), Save (buffer → disk),
+    Reveal in Finder; Story ▸ Build, Check (Compose), Run Tests; the Build and Compose
+    buttons in the chrome band. All run the **vendored toolchain** — `HostServices.Current`
+    is now wired to `RepoPaths.ToolchainRoot`, which it never was, so `ToolchainShim` was
+    null in every build ever shipped. Output streams into the bottom panel as it arrives.
+    `Item(header, gesture, action)` is the only way the menu is built, so an unwired item
+    cannot be constructed.
+  - **The panes follow the open story**, and are served from its own `dist/web/<id>`. The
+    door gained `Close()` so a second story can be opened. With no story — or one not built
+    yet — the door opens on the **docs pane alone**, so the empty state has something in it.
+  - **The last story reopens on launch** (`ShellState`). That is the smallest answer to
+    GH #479 that invents no product surface; the larger question stays open.
+  - **GH #483, found and fixed: the packaged app stalled 35 seconds on every story open.**
+    `HttpListener.Start()` resolves this machine's hostname internally, and inside a bundle
+    that mDNS lookup needs Local Network Access: measured from inside the app,
+    `Dns.GetHostEntry("MacBook-Pro.local")` took **35,011 ms and threw**, against ~1 ms for
+    the same call in the same binary run outside a bundle. `LocalOrigin` no longer uses
+    `HttpListener` — it binds `IPAddress.Loopback` with a `TcpListener` and speaks the HTTP
+    the panes need (GET/HEAD, one request per connection, single byte ranges, 403 without
+    the token, 404 for missing). Nothing resolves a name. Door open is now **0.25 s**.
+
+  **Evidence — the authoring loop, run INSIDE the notarized bundle** (`--app-exit-state`,
+  which drives the same methods the menu items call; log at
+  `~/Library/Caches/net.sharpee.panehost/dev/shell-log.txt`), against a story copied
+  **outside the repository** and stripped of its build output:
+  - opened an unbuilt story: id `fernhill`, 8 files in the project pane, 1180 lines in the
+    editor, `built=False`;
+  - **Build** through the vendored shim: exit 0, `gate-clean`, emitted `dist/web/fernhill`;
+    door opened on it 0.25 s later;
+  - all three panes loaded with both directions proven (shim read back from each live page;
+    a ping posted through the shim arrived at the host from each); testing round trip
+    replayed **268 turn records, every one relayed back**, `type 'inventory'` → `typed`,
+    no delivery errors, surface at 179 cards / 1007 anchors;
+  - **Save**: file changed on disk, marker present, source restored;
+  - **Check**: `gate-clean`; **Run Tests**: exit 0, **86 cards passing, 104 assertions**.
+  - First run with nothing remembered: opens in 0.44 s on the Docs pane, which loads and
+    reports ready, and the window holds.
+  - `dotnet build` clean, 0 warnings. Tests **48 passing, 0 failures** (door, origin HTTP,
+    pane server, protocol, story project). The 8 capability tests still refuse to run
+    without `SHARPEE_IDE_TOOLCHAIN`/`SHARPEE_IDE_CAPABILITY_FIXTURE`.
+  - **Notarized: submission `4d9ce630-973b-4eb6-bf55-351c9042fb41`, Accepted**, stapled,
+    `stapler validate` worked, `spctl --assess --type execute` → `accepted` /
+    `source=Notarized Developer ID`. Payload census 20 of 20 at Developer ID with hardened
+    runtime. The stapled app is at `tools/ide/release-avalonia/arm64/Chord Writer
+    (Avalonia).app`; the copy in `/Applications` is root-owned from the installer and was
+    left untouched.
+- **Status**: **macOS slice: the app is usable and notarized (2026-09-17, session 374402).**
+  Open: x86_64 BLOCKED (GH #481), GH #464 (the WebKit-shaped pane API, David's cross-app
+  call), GH #479 (what a first run should show beyond the docs pane), GH #480 (bundle
+  identity), and the installer `.pkg` is still unsigned and un-notarized (vpk warns; needs
+  `--signInstallIdentity`, David's call).
+  Superseded status, for the record: **STOPPED (2026-09-16, session 9dd6ac) — deliberately unfinished, nothing
   notarized.** Built and kept: `package-avalonia.sh` (publish → vendor toolchain → icns →
   Info.plist → relocate → presign → `vpk pack --signAppIdentity`), `build-relocated-app.sh`,
   `patch-apphost.py`, `presign-payload.sh`, `dotnet-payload.entitlements`. Verified: the

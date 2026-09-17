@@ -72,6 +72,37 @@ public class PaneDoorTests
     }
 
     [Fact]
+    public async Task a_closed_door_can_be_opened_again_for_a_different_story()
+    {
+        // Opening a second story is ordinary for an app, and until Close existed the door
+        // could only ever serve the first one it was given.
+        using var door = new LoopbackPaneDoor();
+        door.Open(Panes());
+        var first = door.PaneUri(PaneServer.PlayScheme, "index.html");
+
+        door.Close();
+        Assert.False(door.IsOpen);
+
+        door.Open(Panes());
+        Assert.True(door.IsOpen);
+        var second = door.PaneUri(PaneServer.PlayScheme, "index.html");
+        Assert.NotEqual(first, second);
+
+        using var http = new HttpClient();
+        var served = await http.GetAsync(second);
+        Assert.Equal(HttpStatusCode.OK, served.StatusCode);
+    }
+
+    [Fact]
+    public void closing_a_closed_door_is_not_an_error()
+    {
+        using var door = new LoopbackPaneDoor();
+        door.Close();
+        door.Close();
+        Assert.False(door.IsOpen);
+    }
+
+    [Fact]
     public async Task disposing_the_door_stops_serving()
     {
         var door = new LoopbackPaneDoor();

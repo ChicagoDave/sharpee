@@ -45,6 +45,12 @@ public sealed class LoopbackPaneDoor : IPaneDoor
         _origin = origin;
     }
 
+    public void Close()
+    {
+        _origin?.Stop();
+        _origin = null;
+    }
+
     public Uri PaneUri(string scheme, string page)
     {
         var origin = _origin
@@ -99,7 +105,6 @@ public sealed class LoopbackPaneDoor : IPaneDoor
             web.WebMessageReceived -= OnWebMessageReceived;
             _web = null;
         }
-        _origin?.Stop();
-        _origin = null;
+        Close();
     }
 }

@@ -8,6 +8,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- The test project reaches two seams that are internal on purpose: the state
+         file's directory (so a test cannot overwrite the author's own remembered
+         story) and the relay's scheduler (so delivery order can be asserted without
+         a running UI thread). Neither belongs in the public surface. -->
+    <InternalsVisibleTo Include="PaneHost.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="12.1.2" />
     <PackageReference Include="Avalonia.AvaloniaEdit" Version="12.0.0" />
     <PackageReference Include="Avalonia.Controls.WebView" Version="12.1.0" />

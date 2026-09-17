@@ -15,6 +15,13 @@ public partial class App : Application
     {
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
+            // The host the shell runs its toolchain commands through. Without this the
+            // default host carries no toolchain root, so `ToolchainShim` is null and Build,
+            // Check and Run Tests can only report that they cannot run — which is what an
+            // installed app did until 2026-09-17 (GH #482). In a bundle the root is
+            // Contents/Resources/toolchain; in a checkout it is SHARPEE_IDE_TOOLCHAIN.
+            Hosting.HostServices.Current = new Hosting.NativeHostServices(Hosting.RepoPaths.ToolchainRoot);
+
             // THE DEFAULT IS THE APP. Every window below except the shell is an
             // evaluation harness: it runs a scripted sequence and exits. That used to be
             // the default, so an installed bundle opened a probe, ran four seconds and

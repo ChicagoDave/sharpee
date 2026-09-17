@@ -6,16 +6,26 @@
 // application. The probes are now opt-in and the window holds by default; --shell-probe
 // restores the old scripted-and-exit behaviour for evidence runs.
 //
-// IT OPENS WITHOUT A STORY. fernhill is a development story and does not ship in a
-// bundle (RepoPaths), so every story-dependent step below is guarded and the shell opens
-// empty rather than failing. What an installed app opens instead is product design and is
-// not decided here.
+// IT OPENS A STORY THE PERSON CHOOSES. Until 2026-09-17 the only story this shell could
+// ever open was the development one RepoPaths named — null in a bundle — so an installed
+// app had no way to open anything at all (GH #482). A story is now a parameter
+// (StoryProject): File ▸ Open Story… picks one, New Story scaffolds one through the
+// vendored toolchain, and Build, Check and Run Tests run against whichever is open. The
+// last story is remembered across launches (ShellState); with none, the shell opens on the
+// Docs pane, which is the one pane that needs no story. What a first-run app should show
+// instead is GH #479, and is product design not decided here.
 //
 // It mirrors MainWindow.swift closely enough for a felt comparison — chrome
 // band, rail, project pane, editor over its tab bar, right panel carrying the
 // real web panes and the World map, bottom panel, status bar — and mounts
 // Phase 1's pane hosting and Phase 3's editor inside it, so the thing being
 // judged is a shell rather than a harness.
+//
+// IT CARRIES THE PANES, NOT JUST A VIEW OF THEM. The right panel's Play, Testing and
+// Docs tabs navigate through the door, and the host relays each turn record the client
+// posts back into the testing surface (PaneRelay) — without that relay the panes load
+// and then sit inert, because the surface advances only on records handed to it.
+// `--pane-exit-state` runs Phase 4's exit state over exactly that wiring and exits.
 //
 // The two probes it runs:
 //   1. The drawing model. Every custom surface counts its Render calls, so the
@@ -33,6 +43,7 @@ using Avalonia.Interactivity;
 using Avalonia;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
+using Avalonia.Platform.Storage;
 using Avalonia.Threading;
 using AvaloniaEdit.Document;
 using PaneHost.Editor;
@@ -43,11 +54,40 @@ namespace PaneHost.Shell;
 
 public partial class ShellWindow : Window
 {
-    private static string? StoryFolder => RepoPaths.FernhillFolder;
-    private static string? StoryFile => RepoPaths.FernhillStory;
+    /// <summary>The story this window has open, or null when none is.</summary>
+    private StoryProject? _project;
+
+    /// <summary>The file shown in the editor — the story, or another file picked in the project pane.</summary>
+    private string? _openFile;
+
+    /// <summary>True while a toolchain command is running, so a second one cannot start on top of it.</summary>
+    private bool _running;
 
     /// <summary>True when this run is the scripted evaluation pass rather than an app session.</summary>
     private static bool IsProbeRun => Environment.GetCommandLineArgs().Contains("--shell-probe");
+
+    /// <summary>True when this run is Phase 4's exit-state run: the real panes, both directions, then exit.</summary>
+    private static bool IsPaneExitStateRun => Environment.GetCommandLineArgs().Contains("--pane-exit-state");
+
+    /// <summary>
+    /// The story path given to `--app-exit-state &lt;path&gt;`, or null when this is not that run.
+    ///
+    /// That run drives the same methods the File and Story menus invoke — open, build,
+    /// save, check, run tests — against a story the run names, so an INSTALLED bundle can
+    /// be put through the whole authoring loop without a person clicking. It is the
+    /// real-path test for GH #482: nothing about the toolchain, the filesystem or the panes
+    /// is stubbed, and the only thing it does not exercise is the click plumbing itself,
+    /// which cannot construct an unwired item (see <c>Item</c>).
+    /// </summary>
+    private static string? AppExitStateStory
+    {
+        get
+        {
+            var args = Environment.GetCommandLineArgs();
+            var at = Array.IndexOf(args, "--app-exit-state");
+            return at >= 0 && at + 1 < args.Length ? args[at + 1] : null;
+        }
+    }
     private static string? WorldIndex => RepoPaths.WorldIndex;
     private static string LexerServer => RepoPaths.EditorBridge;
     private static string VendoredNode => RepoPaths.Node;
@@ -61,6 +101,15 @@ public partial class ShellWindow : Window
     // whether it is loopback, a virtual-host mapping, or a registered URI scheme.
     private readonly IPaneDoor _door = new LoopbackPaneDoor();
 
+    /// <summary>The host→page half of the testing round trip; see <see cref="PaneRelay"/>.</summary>
+    private readonly PaneRelay _relay;
+
+    /// <summary>How many messages each shim handler has posted to the host this run.</summary>
+    private readonly Dictionary<string, int> _paneMessages = new();
+
+    /// <summary>The most recent body posted under each handler other than turnEvents.</summary>
+    private readonly Dictionary<string, string> _lastPost = new();
+
     public ShellWindow()
     {
         InitializeComponent();
@@ -70,11 +119,12 @@ public partial class ShellWindow : Window
         // Before the underlying web view is created: some doors must name their
         // script-message handler at this moment and cannot do it later.
         _door.Configure(Web);
-        _door.MessageReceived += (_, message) => _log.Line($"pane message: {message.Handler}");
+        _relay = new PaneRelay(_door, _log.Line);
+        _door.MessageReceived += OnPaneMessage;
 
         RightTabs.Tabs = new[] { "Play", "Testing", "Docs", "World" };
         BottomTabs.Tabs = new[] { "Problems", "Game Errors", "Log" };
-        EditorTabs.Documents = new[] { "fernhill.story" };
+        EditorTabs.Documents = Array.Empty<string>();
 
         RightTabs.Selected += index => _ = ShowRightTabAsync(index);
         BottomTabs.Selected += _ => { };
@@ -84,6 +134,8 @@ public partial class ShellWindow : Window
         DarkButton.Click += (_, _) => Flip(dark: true);
         ProjectToggle.Click += (_, _) => ProjectPane.IsVisible = !ProjectPane.IsVisible;
         BottomToggle.Click += (_, _) => BottomPanel.IsVisible = !BottomPanel.IsVisible;
+        BuildButton.Click += (_, _) => _ = BuildAsync();
+        ComposeButton.Click += (_, _) => _ = ComposeAsync();
 
         InstallMenu();
         PaintChrome();
@@ -96,15 +148,20 @@ public partial class ShellWindow : Window
     /// </summary>
     private void InstallMenu()
     {
+        // Every item here carries a Click handler. An item that renders, takes a key
+        // gesture and does nothing is worse than an absent one: it tells a person the app
+        // can do something it cannot (GH #482).
         var file = new NativeMenuItem("File") { Menu = new NativeMenu() };
-        file.Menu!.Add(new NativeMenuItem("New Story") { Gesture = Avalonia.Input.KeyGesture.Parse("Cmd+N") });
-        file.Menu.Add(new NativeMenuItem("Open…") { Gesture = Avalonia.Input.KeyGesture.Parse("Cmd+O") });
+        file.Menu!.Add(Item("New Story…", "Cmd+N", () => _ = NewStoryAsync()));
+        file.Menu.Add(Item("Open Story…", "Cmd+O", () => _ = OpenStoryDialogAsync()));
         file.Menu.Add(new NativeMenuItemSeparator());
-        file.Menu.Add(new NativeMenuItem("Save") { Gesture = Avalonia.Input.KeyGesture.Parse("Cmd+S") });
+        file.Menu.Add(Item("Save", "Cmd+S", () => _ = SaveAsync()));
+        file.Menu.Add(Item("Reveal in Finder", "Cmd+Shift+R", RevealInFinder));
 
         var story = new NativeMenuItem("Story") { Menu = new NativeMenu() };
-        story.Menu!.Add(new NativeMenuItem("Build") { Gesture = Avalonia.Input.KeyGesture.Parse("Cmd+B") });
-        story.Menu.Add(new NativeMenuItem("Run Tests") { Gesture = Avalonia.Input.KeyGesture.Parse("Cmd+U") });
+        story.Menu!.Add(Item("Build", "Cmd+B", () => _ = BuildAsync()));
+        story.Menu.Add(Item("Check (Compose)", "Cmd+K", () => _ = ComposeAsync()));
+        story.Menu.Add(Item("Run Tests", "Cmd+U", () => _ = RunTestsAsync()));
 
         var menu = new NativeMenu();
         menu.Add(file);
@@ -140,16 +197,6 @@ public partial class ShellWindow : Window
         {
             ThemeTokens.Apply(dark: true);
 
-            if (StoryFolder is { } storyFolder && Directory.Exists(storyFolder))
-            {
-                ProjectPane.Load(storyFolder);
-                _log.Line($"project pane: {ProjectPane.FileCount} file(s) from the real story folder");
-            }
-            else
-            {
-                _log.Line("project pane: no development story in this build — opening empty");
-            }
-
             // The world index is a machine-local artifact (SHARPEE_IDE_WORLD_INDEX), not
             // checked in. Absent, the map draws empty and says so rather than failing.
             if (WorldIndex is { } worldIndex)
@@ -164,11 +211,14 @@ public partial class ShellWindow : Window
                 _log.Line("world map: no world index configured (SHARPEE_IDE_WORLD_INDEX unset) — drawing empty");
             }
 
-            RightTabs.Badges = new Dictionary<int, int> { [1] = 31 };
             BottomTabs.Badges = new Dictionary<int, int> { [0] = 0 };
 
             await StartEditorAsync();
-            await StartPanesAsync();
+
+            if (AppExitStateStory is not null) await RunAppExitStateAsync();
+            else await OpenStartupStoryAsync();
+
+            if (IsPaneExitStateRun) await RunPaneExitStateAsync();
 
             if (IsProbeRun)
             {
@@ -185,7 +235,7 @@ public partial class ShellWindow : Window
             _log.Line($"shell: FAILED with {ex.GetType().Name}: {ex.Message}");
         }
 
-        if (!IsProbeRun)
+        if (!IsProbeRun && !IsPaneExitStateRun && AppExitStateStory is null)
         {
             // --light leaves the shell in the light palette, so the flip has a
             // second screenshot rather than only a pixel value.
@@ -211,24 +261,133 @@ public partial class ShellWindow : Window
             await _lexer.StartAsync();
         }
 
-        if (StoryFile is not { } story || !File.Exists(story))
+        StatusText.Text = RepoPaths.IsBundled ? "sharpee (bundled toolchain)" : "sharpee (vendored)";
+    }
+
+    /// <summary>
+    /// Opens whatever this launch should start with: the story open when the app last
+    /// closed, else the development story when running from a checkout, else nothing.
+    ///
+    /// A bundle never reaches the second case — `RepoPaths` returns null for the
+    /// development story once bundled — so a shipped app either restores the author's own
+    /// last story or opens empty on the Docs pane, which is the one pane that needs no
+    /// story. What a first-run app should show instead is GH #479, still open.
+    /// </summary>
+    private async Task OpenStartupStoryAsync()
+    {
+        var remembered = StoryProject.Resolve(ShellState.LastStoryFile);
+        if (remembered is not null)
         {
-            StoryTitle.Text = "No story open";
-            StatusText.Text = RepoPaths.IsBundled ? "sharpee (bundled toolchain)" : "sharpee (vendored)";
-            BuildPill.Text = "—";
-            _log.Line("editor: no development story in this build — opening empty");
+            _log.Line($"startup: reopening the last story — {remembered.Id}");
+            await OpenProjectAsync(remembered);
             return;
         }
 
-        await OpenAsync(story);
-        StoryTitle.Text = "The Folly at Fernhill";
-        StatusText.Text = "sharpee 3.6.0 (vendored)";
-        BuildPill.Text = "gate-clean";
+        var development = StoryProject.Resolve(RepoPaths.FernhillStory);
+        if (development is not null)
+        {
+            _log.Line($"startup: development story from the checkout — {development.Id}");
+            await OpenProjectAsync(development);
+            return;
+        }
+
+        _log.Line("startup: no story to open — the docs pane, and an empty shell");
+        ShowEmptyState();
+        await StartPanesAsync();
+    }
+
+    /// <summary>Puts the chrome in its nothing-is-open state without pretending a story is there.</summary>
+    private void ShowEmptyState()
+    {
+        _project = null;
+        _openFile = null;
+        StoryTitle.Text = "No story open — File ▸ Open Story…";
+        BuildPill.Text = "—";
+        EditorTabs.Documents = Array.Empty<string>();
+        EditorTabs.InvalidateVisual();
+        Editor.Document = new TextDocument(string.Empty);
+        ProjectPane.Load(string.Empty);
+        RightTabs.Badges = new Dictionary<int, int>();
+    }
+
+    /// <summary>
+    /// Makes <paramref name="project"/> the open story: project pane, editor, panes, title,
+    /// and the memory of it for the next launch.
+    /// </summary>
+    /// <param name="project">The story to open; already resolved from a path.</param>
+    private async Task OpenProjectAsync(StoryProject project)
+    {
+        _project = project;
+        ProjectPane.Load(project.Folder);
+        _log.Line($"project pane: {ProjectPane.FileCount} file(s) from {project.Folder}");
+
+        StoryTitle.Text = project.Id;
+        BuildPill.Text = project.IsBuilt ? "built" : "not built";
+        ShellState.LastStoryFile = project.StoryFile;
+
+        await OpenAsync(project.StoryFile);
+        await StartPanesAsync();
+    }
+
+    /// <summary>
+    /// Scaffolds a new story with the vendored toolchain and opens it: a folder to put it
+    /// in, a name for it, `sharpee init`, then the same open path every other story takes.
+    /// </summary>
+    private async Task NewStoryAsync()
+    {
+        var folders = await StorageProvider.OpenFolderPickerAsync(new FolderPickerOpenOptions
+        {
+            Title = "Where should the new story live?",
+            AllowMultiple = false,
+        });
+
+        var parent = folders.Count > 0 ? folders[0].TryGetLocalPath() : null;
+        if (parent is null) return;
+
+        var name = await NameDialog.AskAsync(this, "New Story", "Name for the new story:", "my-story");
+        if (name is null) return;
+
+        var exit = await RunToolchainAsync("new story", new[] { "init", name }, parent);
+        if (exit != 0) return;
+
+        var project = StoryProject.Resolve(Path.Combine(parent, name));
+        if (project is null)
+        {
+            Report($"new story: `sharpee init` succeeded but no story was found in {Path.Combine(parent, name)}.");
+            return;
+        }
+        await OpenProjectAsync(project);
+    }
+
+    /// <summary>Asks the person for a `.story` file and opens the project around it.</summary>
+    private async Task OpenStoryDialogAsync()
+    {
+        var picked = await StorageProvider.OpenFilePickerAsync(new FilePickerOpenOptions
+        {
+            Title = "Open a Chord story",
+            AllowMultiple = false,
+            FileTypeFilter = new[]
+            {
+                new FilePickerFileType("Chord story") { Patterns = new[] { "*.story" } },
+            },
+        });
+
+        var path = picked.Count > 0 ? picked[0].TryGetLocalPath() : null;
+        if (path is null) return;
+
+        var project = StoryProject.Resolve(path);
+        if (project is null)
+        {
+            Report($"open: {Path.GetFileName(path)} is not a story this shell can open.");
+            return;
+        }
+        await OpenProjectAsync(project);
     }
 
     private async Task OpenAsync(string path)
     {
         Editor.Document = new TextDocument(await File.ReadAllTextAsync(path));
+        _openFile = path;
         var tokens = "no highlighting";
         if (_lexer is { } lexer)
         {
@@ -242,30 +401,216 @@ public partial class ShellWindow : Window
         _log.Line($"editor: {Path.GetFileName(path)} — {Editor.Document.LineCount} lines, {tokens}");
     }
 
-    private async Task StartPanesAsync()
+    /// <summary>Writes the editor's buffer back to the file it came from.</summary>
+    private async Task SaveAsync()
     {
-        if (RepoPaths.FernhillTests is not { } testsPath
-            || RepoPaths.FernhillBundle is not { } storyBundle
-            || !File.Exists(testsPath))
+        if (_openFile is not { } path)
         {
-            _log.Line("panes: no development story in this build — the pane server is not started");
+            Report("save: nothing is open.");
             return;
         }
 
-        var document = await File.ReadAllTextAsync(testsPath);
-        var session = System.Text.Json.Nodes.JsonNode.Parse("{}")!.AsObject();
-        session["story"] = "fernhill";
-        session["seed"] = 42;
-        session["document"] = document;
+        await File.WriteAllTextAsync(path, Editor.Document.Text);
+        Report($"saved {Path.GetFileName(path)} — {Editor.Document.LineCount} lines");
+        // A saved story is a story whose built output is now behind its source.
+        if (_project is not null && string.Equals(path, _project.StoryFile, StringComparison.Ordinal))
+            BuildPill.Text = "unbuilt changes";
+    }
 
-        _door.Open(new PaneServer(
-            storyBundle,
-            RepoPaths.TestingSurface,
-            RepoPaths.DocsTab,
-            session.ToJsonString()));
-        _log.Line($"panes: door open — {_door.Mechanism}");
+    /// <summary>Shows the open story's folder in Finder, so the author can reach their own files.</summary>
+    private void RevealInFinder()
+    {
+        if (_project is not { } project)
+        {
+            Report("reveal: nothing is open.");
+            return;
+        }
+        try
+        {
+            using var _ = System.Diagnostics.Process.Start("open", new[] { project.Folder });
+        }
+        catch (Exception ex)
+        {
+            Report($"reveal failed: {ex.GetType().Name}: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Serves the open story's built bundle through the door, replacing whatever the door
+    /// was serving before. A story that has not been built yet is reported rather than
+    /// served: the Play and Testing panes have nothing to show until `sharpee build` runs.
+    /// </summary>
+    private async Task StartPanesAsync()
+    {
+        _door.Close();
+
+        // With no story — and with one that is not built yet — the door still opens, on the
+        // docs alone. Docs is the one pane that needs no story, and a person with nothing
+        // open should have something to read rather than a blank panel.
+        if (_project is not { } project)
+        {
+            _door.Open(new PaneServer(null, RepoPaths.TestingSurface, RepoPaths.DocsTab, "{}"));
+            _log.Line("panes: no story open — serving the docs pane only");
+            await ShowRightTabAsync(2);
+            return;
+        }
+
+        if (project.WebBundle is null)
+        {
+            _door.Open(new PaneServer(null, RepoPaths.TestingSurface, RepoPaths.DocsTab, "{}"));
+            _log.Line($"panes: {project.Id} is not built — serving the docs pane only until it is");
+            Report($"{project.Id} is not built yet. Story ▸ Build (Cmd+B) builds it.");
+            await ShowRightTabAsync(2);
+            return;
+        }
+
+        var bundle = project.WebBundle;
+
+        // The testing pane replays a tree document; a story without one still plays, so the
+        // session carries an empty document rather than refusing to open the panes.
+        var document = project.TestsDocument is { } testsPath && File.Exists(testsPath)
+            ? await File.ReadAllTextAsync(testsPath)
+            : "{}";
+
+        var session = new System.Text.Json.Nodes.JsonObject
+        {
+            ["story"] = project.Id,
+            ["seed"] = 42,
+            ["document"] = document,
+        };
+
+        _door.Open(new PaneServer(bundle, RepoPaths.TestingSurface, RepoPaths.DocsTab, session.ToJsonString()));
+        _log.Line($"panes: door open for {project.Id} — {_door.Mechanism}");
         await ShowRightTabAsync(0);
     }
+
+    // ── The toolchain commands ───────────────────────────────────────────────
+    //
+    // All three run the vendored `sharpee` shim the bundle ships, stream both pipes into
+    // the bottom panel as they arrive, and leave the exit code in the status bar. They are
+    // the reason an installed app can do anything to a story at all.
+
+    /// <summary>Builds the open story to a browser app, then serves the fresh bundle.</summary>
+    private async Task BuildAsync()
+    {
+        if (_project is not { } project) { Report("build: nothing is open."); return; }
+
+        var exit = await RunToolchainAsync("build", new[] { "build", project.StoryFile }, project.Folder);
+        if (exit != 0) { BuildPill.Text = "build failed"; return; }
+
+        BuildPill.Text = "built";
+        // Re-resolve rather than trust the pre-build answer: the bundle exists now.
+        await StartPanesAsync();
+    }
+
+    /// <summary>Runs the load-time gates over the open story without emitting IR.</summary>
+    private async Task ComposeAsync()
+    {
+        if (_project is not { } project) { Report("check: nothing is open."); return; }
+
+        var exit = await RunToolchainAsync("check", new[] { "compose", project.StoryFile, "--check" }, project.Folder);
+        BuildPill.Text = exit == 0 ? "gate-clean" : "gate errors";
+    }
+
+    /// <summary>Runs the story's own test suite through the vendored toolchain.</summary>
+    private async Task RunTestsAsync()
+    {
+        if (_project is not { } project) { Report("tests: nothing is open."); return; }
+
+        var exit = await RunToolchainAsync("test", new[] { "test", project.Folder }, project.Folder);
+        StatusText.Text = exit == 0 ? "tests passed" : "tests failed";
+    }
+
+    /// <summary>
+    /// Runs one vendored-toolchain command, streaming its output into the bottom panel.
+    /// </summary>
+    /// <param name="label">What to call this command in the log and status bar.</param>
+    /// <param name="arguments">Arguments for the `sharpee` shim.</param>
+    /// <param name="workingDirectory">Where to run it — the story's folder.</param>
+    /// <returns>The process exit code, or -1 when no toolchain is available or it could not start.</returns>
+    private async Task<int> RunToolchainAsync(string label, IReadOnlyList<string> arguments, string workingDirectory)
+    {
+        if (_running)
+        {
+            Report($"{label}: another command is already running.");
+            return -1;
+        }
+
+        var shim = HostServices.Current.ToolchainShim;
+        if (shim is null)
+        {
+            Report($"{label}: this build carries no toolchain, so it cannot run `sharpee`.");
+            return -1;
+        }
+
+        _running = true;
+        BottomPanel.IsVisible = true;
+        Report($"$ sharpee {string.Join(' ', arguments)}");
+        StatusText.Text = $"{label}…";
+        BuildPill.Text = label + "…";
+
+        try
+        {
+            var exit = await HostServices.Current.RunAsync(
+                shim, arguments, workingDirectory,
+                line => Dispatcher.UIThread.Post(() => Report(line)),
+                line => Dispatcher.UIThread.Post(() => Report(line)),
+                CancellationToken.None);
+
+            Report($"— {label} exited {exit}");
+            StatusText.Text = exit == 0 ? $"{label} ok" : $"{label} failed ({exit})";
+            return exit;
+        }
+        catch (Exception ex)
+        {
+            Report($"{label} could not run: {ex.GetType().Name}: {ex.Message}");
+            StatusText.Text = $"{label} failed";
+            return -1;
+        }
+        finally
+        {
+            _running = false;
+        }
+    }
+
+    /// <summary>Appends one line to the bottom panel and the run log, and scrolls to it.</summary>
+    private void Report(string line)
+    {
+        BottomText.Text = BottomText.Text is { Length: > 0 } existing ? existing + "\n" + line : line;
+        BottomText.CaretIndex = BottomText.Text.Length;
+        _log.Line(line);
+    }
+
+    /// <summary>A native menu item that actually does something when chosen.</summary>
+    private static NativeMenuItem Item(string header, string gesture, Action onClick)
+    {
+        var item = new NativeMenuItem(header) { Gesture = Avalonia.Input.KeyGesture.Parse(gesture) };
+        item.Click += (_, _) => onClick();
+        return item;
+    }
+
+    /// <summary>
+    /// Routes one page→host message. A turn record goes straight back into the testing
+    /// surface through the relay — the surface advances only when the host hands it the
+    /// record the client just posted — and every handler's arrivals are counted so the
+    /// exit-state run can report traffic it observed rather than traffic it assumed.
+    /// </summary>
+    private void OnPaneMessage(object? sender, PaneMessage message)
+    {
+        var count = _paneMessages[message.Handler] = _paneMessages.GetValueOrDefault(message.Handler) + 1;
+
+        if (message.Handler == "turnEvents") _relay.Enqueue(message.Body);
+        else _lastPost[message.Handler] = message.Body;
+
+        // A replayed tree posts hundreds of records; the log wants the shape, not each one.
+        if (count <= 2 || count % 25 == 0)
+            _log.Line($"pane → host: {message.Handler} #{count}: {Trim(message.Body, 120)}");
+    }
+
+    /// <summary>Total page→host messages received this run, across all handlers.</summary>
+    private int PaneMessageCount => _paneMessages.Values.Sum();
+
+    private static string Trim(string s, int n) => s.Length <= n ? s : s.Substring(0, n) + " …";
 
     private async Task ShowRightTabAsync(int index)
     {
@@ -273,14 +618,239 @@ public partial class ShellWindow : Window
         Web.IsVisible = index != 3;
         if (index == 3 || !_door.IsOpen) return;
 
-        var uri = index switch
+        var (scheme, page) = index switch
         {
-            1 => _door.PaneUri(PaneServer.PlayScheme, "index-testing.html"),
-            2 => _door.PaneUri(PaneServer.DocsScheme, "index.html"),
-            _ => _door.PaneUri(PaneServer.PlayScheme, "index.html"),
+            1 => (PaneServer.PlayScheme, "index-testing.html"),
+            2 => (PaneServer.DocsScheme, "index.html"),
+            _ => (PaneServer.PlayScheme, "index.html"),
         };
-        Web.Navigate(uri);
-        await Task.Delay(1200);
+
+        var loaded = await NavigateAsync(_door.PaneUri(scheme, page), TimeSpan.FromSeconds(15));
+        _log.Line($"pane: {scheme}/{page} — {(loaded ? "loaded" : "did NOT complete")}");
+    }
+
+    /// <summary>
+    /// Navigates the pane view and waits for the view's own navigation-completed signal
+    /// rather than a fixed sleep, so "the pane loaded" is the platform's answer and a
+    /// failure to load is visible instead of being slept through.
+    /// </summary>
+    /// <param name="uri">Where to navigate — a Uri the door supplied.</param>
+    /// <param name="timeout">How long to wait for the signal before giving up.</param>
+    /// <returns>True when navigation completed successfully within the timeout.</returns>
+    private async Task<bool> NavigateAsync(Uri uri, TimeSpan timeout)
+    {
+        var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        void OnCompleted(object? sender, WebViewNavigationCompletedEventArgs e) => completed.TrySetResult(e.IsSuccess);
+
+        Web.NavigationCompleted += OnCompleted;
+        try
+        {
+            Web.Navigate(uri);
+            var first = await Task.WhenAny(completed.Task, Task.Delay(timeout));
+            return first == completed.Task && completed.Task.Result;
+        }
+        finally
+        {
+            Web.NavigationCompleted -= OnCompleted;
+        }
+    }
+
+    /// <summary>Runs script in the open pane, answering with its result or the failure text.</summary>
+    private async Task<string> EvaluateAsync(string script)
+    {
+        try { return await _door.EvaluateAsync(script) ?? "null"; }
+        catch (Exception ex) { return $"<{ex.GetType().Name}: {ex.Message}>"; }
+    }
+
+    /// <summary>
+    /// The authoring loop, driven end to end against the story `--app-exit-state` names:
+    /// open it, build it with the vendored toolchain, serve the built bundle to the panes,
+    /// edit and save the source, check it, and run its tests — every step through the same
+    /// method the corresponding menu item calls.
+    ///
+    /// Run inside an installed bundle this answers the question "is this an app a person
+    /// can use", which "it opens and holds" never did (GH #482).
+    /// </summary>
+    private async Task RunAppExitStateAsync()
+    {
+        var path = AppExitStateStory!;
+        _log.Line("── app exit state: the authoring loop, on a real story ──");
+        _log.Line($"  host: {HostServices.Current.Describe()}");
+        _log.Line($"  toolchain: {HostServices.Current.ToolchainShim ?? "<none>"}");
+        _log.Line($"  bundled: {RepoPaths.IsBundled}");
+
+        var project = StoryProject.Resolve(path);
+        if (project is null)
+        {
+            _log.Line($"  FAILED: {path} does not resolve to a story.");
+            return;
+        }
+
+        // 1. Open — the step an installed app had no way to perform at all.
+        await OpenProjectAsync(project);
+        _log.Line($"  opened: id={project.Id}, {ProjectPane.FileCount} file(s) in the pane, "
+                  + $"editor {Editor.Document.LineCount} lines, built={project.IsBuilt}");
+
+        // 2. Build, through the vendored toolchain, and serve what it produced.
+        if (!project.IsBuilt)
+        {
+            _log.Line("  building (the story arrived unbuilt, which is the interesting case)…");
+            await BuildAsync();
+            _log.Line($"  after build: built={_project?.IsBuilt}, bundle={_project?.WebBundle ?? "<none>"}, "
+                      + $"door open={_door.IsOpen}");
+        }
+
+        // 3. The panes, on this story's own bundle.
+        if (_door.IsOpen)
+        {
+            await RunPaneExitStateAsync();
+        }
+        else
+        {
+            _log.Line("  panes: door not open after build — the loop stops here.");
+        }
+
+        // 4. Edit and save: the buffer must reach the disk.
+        var storyFile = project.StoryFile;
+        var before = await File.ReadAllTextAsync(storyFile);
+        var marker = "// app exit state " + DateTime.UtcNow.ToString("O");
+        Editor.Document = new AvaloniaEdit.Document.TextDocument(before.TrimEnd() + "\n" + marker + "\n");
+        _openFile = storyFile;
+        await SaveAsync();
+        var after = await File.ReadAllTextAsync(storyFile);
+        _log.Line($"  save: file changed on disk={!string.Equals(before, after, StringComparison.Ordinal)}, "
+                  + $"marker present={after.Contains(marker, StringComparison.Ordinal)}");
+        await File.WriteAllTextAsync(storyFile, before);
+        _log.Line("  save: source restored to its original bytes");
+
+        // 5. Check and test, through the toolchain again.
+        await ComposeAsync();
+        _log.Line($"  check: pill={BuildPill.Text}");
+        await RunTestsAsync();
+        _log.Line($"  tests: status={StatusText.Text}");
+
+        _log.Line("app exit state: done");
+    }
+
+    /// <summary>
+    /// Phase 4's exit-state run: the three real panes loaded in this real shell window,
+    /// through the real door, with both message directions exercised on each one.
+    ///
+    /// Everything it reports is read back from the live page — the shim's own record of
+    /// which native post door it found, the pane's readyState, and messages the host
+    /// actually received — so no line here is satisfied by the run merely not throwing.
+    /// </summary>
+    private async Task RunPaneExitStateAsync()
+    {
+        _log.Line("── Phase 4 exit state: the real panes in the real shell ──");
+
+        if (!_door.IsOpen)
+        {
+            _log.Line("  FAILED: the door is not open — this build carries no development story to serve.");
+            return;
+        }
+        _log.Line($"  door: {_door.Mechanism}");
+
+        // Testing goes last and stays loaded: the round trip below continues on this
+        // load rather than navigating again, so no record from an earlier load can be
+        // delivered into a page that booted after it was posted.
+        foreach (var (name, index) in new[] { ("Play", 0), ("Docs", 2), ("Testing", 1) })
+        {
+            RightTabs.ActiveIndex = index;
+            await ShowRightTabAsync(index);
+
+            // Host → page, on the real view. The shim records which native post door it
+            // found at boot, so reading that back proves Configure wired one — where a
+            // bare "EvaluateAsync returned" would prove only that script ran.
+            var ready = await EvaluateAsync("document.readyState");
+            var title = await EvaluateAsync("document.title");
+            var shim = await EvaluateAsync("JSON.stringify(window.__sharpeeShim||null)");
+            _log.Line($"  {name}: readyState={ready}, title={Trim(title, 60)}");
+            _log.Line($"  {name}: host → page, shim={shim}");
+
+            // Page → host, on the real view: the page posts through the shim's own
+            // handler and the host counts the arrival at the other end of the door.
+            var before = _paneMessages.GetValueOrDefault("testingConsole");
+            await EvaluateAsync("window.webkit.messageHandlers.testingConsole.postMessage('exit-state:" + name + "')");
+            var arrived = await WaitForAsync(
+                () => _paneMessages.GetValueOrDefault("testingConsole") > before,
+                TimeSpan.FromSeconds(5));
+            var lastConsole = Trim(_lastPost.GetValueOrDefault("testingConsole", ""), 60);
+            _log.Line($"  {name}: page → host, ping {(arrived ? "arrived — " + lastConsole : "DID NOT arrive")}");
+        }
+
+        // The testing pane needs both directions at once: the client posts each turn
+        // record out, the relay hands it back in, and the surface advances only on
+        // records it was handed. One typed command exercises the whole loop, after the
+        // boot replay has gone quiet, so the counts bracket the command and not the boot.
+        var recordsBefore = _paneMessages.GetValueOrDefault("turnEvents");
+        var relayedBefore = _relay.Delivered;
+
+        var afterBoot = await SettledCountAsync("turnEvents", TimeSpan.FromSeconds(20));
+        var relayedAtBoot = _relay.Delivered - relayedBefore;
+
+        var typed = await EvaluateAsync("window.__sharpeeHost({type:'type',command:'inventory'})");
+        var afterCommand = await SettledCountAsync("turnEvents", TimeSpan.FromSeconds(15));
+        var relayNote = _relay.LastError is { } error ? "last error " + error : "no delivery errors";
+
+        _log.Line($"  round trip: boot replay posted {afterBoot - recordsBefore} turn record(s), relay delivered "
+                  + $"{relayedAtBoot} of them; type 'inventory' → {typed}; {afterCommand - afterBoot} further "
+                  + $"record(s) posted, {_relay.Delivered - relayedBefore} delivered here in total, {relayNote}");
+
+        var surface = await EvaluateAsync(
+            "JSON.stringify({cards:document.querySelectorAll('[class*=card]').length,"
+            + "anchors:document.querySelectorAll('[data-turn]').length})");
+        var totals = string.Join(", ", _paneMessages.OrderBy(p => p.Key).Select(p => p.Key + " " + p.Value));
+        _log.Line($"  testing surface after the round trip: {surface}");
+        _log.Line($"  page → host totals: {totals} ({PaneMessageCount} message(s))");
+        _log.Line("exit state: done");
+    }
+
+    /// <summary>
+    /// Waits until a handler stops receiving messages, and answers with its count then.
+    /// A replay posts records in a burst, so "how many did this load produce" is only
+    /// answerable once the burst has gone quiet — a fixed sleep either cuts it short or
+    /// pads every run by the worst case.
+    /// </summary>
+    /// <param name="handler">The shim handler whose arrivals to watch.</param>
+    /// <param name="timeout">The longest to wait for quiet before answering anyway.</param>
+    /// <returns>The handler's message count once it has been still for a beat.</returns>
+    private async Task<int> SettledCountAsync(string handler, TimeSpan timeout)
+    {
+        var quietFor = TimeSpan.FromMilliseconds(750);
+        var deadline = DateTime.UtcNow + timeout;
+        var count = _paneMessages.GetValueOrDefault(handler);
+        var lastChange = DateTime.UtcNow;
+
+        while (DateTime.UtcNow < deadline)
+        {
+            await Task.Delay(100);
+            var now = _paneMessages.GetValueOrDefault(handler);
+            if (now != count)
+            {
+                count = now;
+                lastChange = DateTime.UtcNow;
+            }
+            else if (DateTime.UtcNow - lastChange > quietFor)
+            {
+                break;
+            }
+        }
+        return _paneMessages.GetValueOrDefault(handler);
+    }
+
+    /// <summary>Waits for a condition to hold, polling while the UI thread pumps; false on timeout.</summary>
+    /// <param name="condition">Re-evaluated until true or the timeout elapses.</param>
+    /// <param name="timeout">How long to keep waiting.</param>
+    private static async Task<bool> WaitForAsync(Func<bool> condition, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            if (condition()) return true;
+            await Task.Delay(100);
+        }
+        return condition();
     }
 
     /// <summary>
