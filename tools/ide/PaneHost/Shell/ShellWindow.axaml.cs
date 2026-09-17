@@ -110,6 +110,9 @@ public partial class ShellWindow : Window
     /// <summary>The most recent body posted under each handler other than turnEvents.</summary>
     private readonly Dictionary<string, string> _lastPost = new();
 
+    /// <summary>Turn records posted by the TESTING pane alone, which is what the relay carries.</summary>
+    private int _testingRecords;
+
     public ShellWindow()
     {
         InitializeComponent();
@@ -118,8 +121,10 @@ public partial class ShellWindow : Window
 
         // Before the underlying web view is created: some doors must name their
         // script-message handler at this moment and cannot do it later.
-        _door.Configure(Web);
-        _relay = new PaneRelay(_door, _log.Line);
+        _door.Configure(PlayWeb);
+        _door.Configure(TestingWeb);
+        _door.Configure(DocsWeb);
+        _relay = new PaneRelay(script => _door.EvaluateAsync(TestingWeb, script), _log.Line);
         _door.MessageReceived += OnPaneMessage;
 
         RightTabs.Tabs = new[] { "Play", "Testing", "Docs", "World" };
@@ -166,6 +171,13 @@ public partial class ShellWindow : Window
         var menu = new NativeMenu();
         menu.Add(file);
         menu.Add(story);
+
+        // THE MENU BELONGS TO THE APPLICATION ON macOS. Setting it on the window alone
+        // left the menu bar with only the system-supplied items — no File, no Story — so
+        // every command in it was unreachable and Cmd+U did nothing (GH #485). Both are
+        // set: the application menu is what macOS renders, the window menu is what a
+        // global-menu Linux desktop exports.
+        if (Application.Current is { } app) NativeMenu.SetMenu(app, menu);
         NativeMenu.SetMenu(this, menu);
     }
 
@@ -327,6 +339,7 @@ public partial class ShellWindow : Window
 
         await OpenAsync(project.StoryFile);
         await StartPanesAsync();
+        if (project.IsBuilt) await LoadWorldMapAsync(project);
     }
 
     /// <summary>
@@ -447,24 +460,23 @@ public partial class ShellWindow : Window
         // With no story — and with one that is not built yet — the door still opens, on the
         // docs alone. Docs is the one pane that needs no story, and a person with nothing
         // open should have something to read rather than a blank panel.
-        if (_project is not { } project)
+        var built = _project?.WebBundle;
+        if (_project is null || built is null)
         {
             _door.Open(new PaneServer(null, RepoPaths.TestingSurface, RepoPaths.DocsTab, "{}"));
-            _log.Line("panes: no story open — serving the docs pane only");
+            _log.Line(_project is null
+                ? "panes: no story open — serving the docs pane only"
+                : $"panes: {_project.Id} is not built — serving the docs pane only until it is");
+            if (_project is not null)
+                Report($"{_project.Id} is not built yet. Story ▸ Build (Cmd+B) builds it.");
+
+            await NavigateAsync(DocsWeb, _door.PaneUri(PaneServer.DocsScheme, "index.html"), TimeSpan.FromSeconds(15));
+            RightTabs.ActiveIndex = 2;
             await ShowRightTabAsync(2);
             return;
         }
 
-        if (project.WebBundle is null)
-        {
-            _door.Open(new PaneServer(null, RepoPaths.TestingSurface, RepoPaths.DocsTab, "{}"));
-            _log.Line($"panes: {project.Id} is not built — serving the docs pane only until it is");
-            Report($"{project.Id} is not built yet. Story ▸ Build (Cmd+B) builds it.");
-            await ShowRightTabAsync(2);
-            return;
-        }
-
-        var bundle = project.WebBundle;
+        var project = _project;
 
         // The testing pane replays a tree document; a story without one still plays, so the
         // session carries an empty document rather than refusing to open the panes.
@@ -479,8 +491,17 @@ public partial class ShellWindow : Window
             ["document"] = document,
         };
 
-        _door.Open(new PaneServer(bundle, RepoPaths.TestingSurface, RepoPaths.DocsTab, session.ToJsonString()));
+        _door.Open(new PaneServer(built, RepoPaths.TestingSurface, RepoPaths.DocsTab, session.ToJsonString()));
         _log.Line($"panes: door open for {project.Id} — {_door.Mechanism}");
+
+        // Each pane is loaded ONCE, here. Switching tabs afterwards only changes which view
+        // is visible, so the testing pane keeps its replay instead of redoing it.
+        var play = await NavigateAsync(PlayWeb, _door.PaneUri(PaneServer.PlayScheme, "index.html"), TimeSpan.FromSeconds(15));
+        var docs = await NavigateAsync(DocsWeb, _door.PaneUri(PaneServer.DocsScheme, "index.html"), TimeSpan.FromSeconds(15));
+        var testing = await NavigateAsync(TestingWeb, _door.PaneUri(PaneServer.PlayScheme, "index-testing.html"), TimeSpan.FromSeconds(20));
+        _log.Line($"panes: loaded — play={play}, docs={docs}, testing={testing}");
+
+        RightTabs.ActiveIndex = 0;
         await ShowRightTabAsync(0);
     }
 
@@ -501,6 +522,54 @@ public partial class ShellWindow : Window
         BuildPill.Text = "built";
         // Re-resolve rather than trust the pre-build answer: the bundle exists now.
         await StartPanesAsync();
+        await LoadWorldMapAsync(project);
+    }
+
+    /// <summary>
+    /// Derives the story's map from the IR the build just emitted and draws it.
+    ///
+    /// The World tab was empty in every build until now because the map only ever loaded
+    /// from SHARPEE_IDE_WORLD_INDEX — a machine-local variable an author has no reason to
+    /// set — and nothing generated an index for the open story (GH #486). `sharpee
+    /// world-index` writes its JSON to stdout, so it is captured here and kept beside the
+    /// other per-run output rather than written into the author's story folder.
+    /// </summary>
+    /// <param name="project">The story whose IR to analyse; it must have been built.</param>
+    private async Task LoadWorldMapAsync(StoryProject project)
+    {
+        var ir = Path.Combine(project.Folder, "dist", project.Id + ".ir.json");
+        if (!File.Exists(ir))
+        {
+            _log.Line($"world map: no IR at {ir} — nothing to draw");
+            return;
+        }
+
+        var json = new System.Text.StringBuilder();
+        var shim = HostServices.Current.ToolchainShim;
+        if (shim is null) { _log.Line("world map: no toolchain in this build"); return; }
+
+        try
+        {
+            var exit = await HostServices.Current.RunAsync(
+                shim, new[] { "world-index", ir }, project.Folder,
+                line => json.AppendLine(line),
+                line => _log.Line($"world map: {line}"),
+                CancellationToken.None);
+            if (exit != 0) { _log.Line($"world map: world-index exited {exit}"); return; }
+
+            Directory.CreateDirectory(RepoPaths.DevOut);
+            var path = Path.Combine(RepoPaths.DevOut, project.Id + ".world-index.json");
+            await File.WriteAllTextAsync(path, json.ToString());
+
+            WorldMap.Load(path);
+            _log.Line($"world map: {WorldMap.RoomCount} rooms, {WorldMap.ConnectionCount} connections "
+                      + $"({WorldMap.DoorCount} with doors), {WorldMap.LevelCount} level(s), "
+                      + $"{WorldMap.DisplacedCount} displaced — from {project.Id}'s own IR");
+        }
+        catch (Exception ex)
+        {
+            _log.Line($"world map: could not derive the index — {ex.GetType().Name}: {ex.Message}");
+        }
     }
 
     /// <summary>Runs the load-time gates over the open story without emitting IR.</summary>
@@ -599,8 +668,21 @@ public partial class ShellWindow : Window
     {
         var count = _paneMessages[message.Handler] = _paneMessages.GetValueOrDefault(message.Handler) + 1;
 
-        if (message.Handler == "turnEvents") _relay.Enqueue(message.Body);
-        else _lastPost[message.Handler] = message.Body;
+        // Only the TESTING pane's records go to the relay. The Play pane runs the same
+        // client and posts under the same handler, and feeding its records to the testing
+        // surface makes the surface fork a boot it was never asked for.
+        if (message.Handler == "turnEvents")
+        {
+            if (ReferenceEquals(message.View, TestingWeb))
+            {
+                _testingRecords++;
+                _relay.Enqueue(message.Body);
+            }
+        }
+        else
+        {
+            _lastPost[message.Handler] = message.Body;
+        }
 
         // A replayed tree posts hundreds of records; the log wants the shape, not each one.
         if (count <= 2 || count % 25 == 0)
@@ -612,22 +694,29 @@ public partial class ShellWindow : Window
 
     private static string Trim(string s, int n) => s.Length <= n ? s : s.Substring(0, n) + " …";
 
-    private async Task ShowRightTabAsync(int index)
+    /// <summary>
+    /// Shows one pane. Each pane keeps its own view and its own state, so this only
+    /// changes which view is visible — it does not reload anything. Reloading on every
+    /// tab switch cost the testing pane its entire replay each time it was reopened.
+    /// </summary>
+    /// <param name="index">0 Play, 1 Testing, 2 Docs, 3 World.</param>
+    private Task ShowRightTabAsync(int index)
     {
+        PlayWeb.IsVisible = index == 0;
+        TestingWeb.IsVisible = index == 1;
+        DocsWeb.IsVisible = index == 2;
         WorldScroll.IsVisible = index == 3;
-        Web.IsVisible = index != 3;
-        if (index == 3 || !_door.IsOpen) return;
-
-        var (scheme, page) = index switch
-        {
-            1 => (PaneServer.PlayScheme, "index-testing.html"),
-            2 => (PaneServer.DocsScheme, "index.html"),
-            _ => (PaneServer.PlayScheme, "index.html"),
-        };
-
-        var loaded = await NavigateAsync(_door.PaneUri(scheme, page), TimeSpan.FromSeconds(15));
-        _log.Line($"pane: {scheme}/{page} — {(loaded ? "loaded" : "did NOT complete")}");
+        return Task.CompletedTask;
     }
+
+    /// <summary>The view a pane index is shown in, or null for the World tab, which is drawn.</summary>
+    private NativeWebView? ViewFor(int index) => index switch
+    {
+        0 => PlayWeb,
+        1 => TestingWeb,
+        2 => DocsWeb,
+        _ => null,
+    };
 
     /// <summary>
     /// Navigates the pane view and waits for the view's own navigation-completed signal
@@ -637,28 +726,28 @@ public partial class ShellWindow : Window
     /// <param name="uri">Where to navigate — a Uri the door supplied.</param>
     /// <param name="timeout">How long to wait for the signal before giving up.</param>
     /// <returns>True when navigation completed successfully within the timeout.</returns>
-    private async Task<bool> NavigateAsync(Uri uri, TimeSpan timeout)
+    private async Task<bool> NavigateAsync(NativeWebView view, Uri uri, TimeSpan timeout)
     {
         var completed = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         void OnCompleted(object? sender, WebViewNavigationCompletedEventArgs e) => completed.TrySetResult(e.IsSuccess);
 
-        Web.NavigationCompleted += OnCompleted;
+        view.NavigationCompleted += OnCompleted;
         try
         {
-            Web.Navigate(uri);
+            view.Navigate(uri);
             var first = await Task.WhenAny(completed.Task, Task.Delay(timeout));
             return first == completed.Task && completed.Task.Result;
         }
         finally
         {
-            Web.NavigationCompleted -= OnCompleted;
+            view.NavigationCompleted -= OnCompleted;
         }
     }
 
-    /// <summary>Runs script in the open pane, answering with its result or the failure text.</summary>
-    private async Task<string> EvaluateAsync(string script)
+    /// <summary>Runs script in one pane's view, answering with its result or the failure text.</summary>
+    private async Task<string> EvaluateAsync(NativeWebView view, string script)
     {
-        try { return await _door.EvaluateAsync(script) ?? "null"; }
+        try { return await _door.EvaluateAsync(view, script) ?? "null"; }
         catch (Exception ex) { return $"<{ex.GetType().Name}: {ex.Message}>"; }
     }
 
@@ -710,6 +799,29 @@ public partial class ShellWindow : Window
             _log.Line("  panes: door not open after build — the loop stops here.");
         }
 
+        // 3a. The World tab, which was empty in every build before this one.
+        _log.Line($"  world map: {WorldMap.RoomCount} room(s), {WorldMap.ConnectionCount} connection(s), "
+                  + $"{WorldMap.LevelCount} level(s)");
+
+        // 3b. Switching tabs must SHOW a pane, not reload it. The testing pane's replay is
+        // the expensive thing a reload throws away, so it is what gets checked.
+        var cardsBefore = await EvaluateAsync(TestingWeb, "document.querySelectorAll('[class*=card]').length");
+        var recordsBefore = _paneMessages.GetValueOrDefault("turnEvents");
+        RightTabs.ActiveIndex = 0;
+        await ShowRightTabAsync(0);
+        await Task.Delay(300);
+        RightTabs.ActiveIndex = 2;
+        await ShowRightTabAsync(2);
+        await Task.Delay(300);
+        RightTabs.ActiveIndex = 1;
+        await ShowRightTabAsync(1);
+        await Task.Delay(1500);
+        var cardsAfter = await EvaluateAsync(TestingWeb, "document.querySelectorAll('[class*=card]').length");
+        var recordsAfter = _paneMessages.GetValueOrDefault("turnEvents");
+        _log.Line($"  tab switch Testing→Play→Docs→Testing: cards {cardsBefore} → {cardsAfter}, "
+                  + $"turn records {recordsBefore} → {recordsAfter} "
+                  + $"({(recordsAfter == recordsBefore ? "no replay — the pane was shown, not reloaded" : "REPLAYED")})");
+
         // 4. Edit and save: the buffer must reach the disk.
         var storyFile = project.StoryFile;
         var before = await File.ReadAllTextAsync(storyFile);
@@ -758,46 +870,91 @@ public partial class ShellWindow : Window
         {
             RightTabs.ActiveIndex = index;
             await ShowRightTabAsync(index);
+            var view = ViewFor(index)!;
 
             // Host → page, on the real view. The shim records which native post door it
             // found at boot, so reading that back proves Configure wired one — where a
             // bare "EvaluateAsync returned" would prove only that script ran.
-            var ready = await EvaluateAsync("document.readyState");
-            var title = await EvaluateAsync("document.title");
-            var shim = await EvaluateAsync("JSON.stringify(window.__sharpeeShim||null)");
+            var ready = await EvaluateAsync(view, "document.readyState");
+            var title = await EvaluateAsync(view, "document.title");
+            var shim = await EvaluateAsync(view, "JSON.stringify(window.__sharpeeShim||null)");
             _log.Line($"  {name}: readyState={ready}, title={Trim(title, 60)}");
             _log.Line($"  {name}: host → page, shim={shim}");
 
             // Page → host, on the real view: the page posts through the shim's own
             // handler and the host counts the arrival at the other end of the door.
             var before = _paneMessages.GetValueOrDefault("testingConsole");
-            await EvaluateAsync("window.webkit.messageHandlers.testingConsole.postMessage('exit-state:" + name + "')");
+            await EvaluateAsync(view, "window.webkit.messageHandlers.testingConsole.postMessage('exit-state:" + name + "')");
             var arrived = await WaitForAsync(
                 () => _paneMessages.GetValueOrDefault("testingConsole") > before,
                 TimeSpan.FromSeconds(5));
             var lastConsole = Trim(_lastPost.GetValueOrDefault("testingConsole", ""), 60);
             _log.Line($"  {name}: page → host, ping {(arrived ? "arrived — " + lastConsole : "DID NOT arrive")}");
+
+            // What the pane actually rendered, not merely that it loaded. A pane can report
+            // readyState=complete with an empty index, which is exactly what was shipped.
+            if (name == "Docs")
+            {
+                // The index arrives by fetch, so give it real time before concluding it is
+                // empty — an empty-because-too-early reading would be a false finding.
+                for (var wait = 0; wait < 30; wait++)
+                {
+                    var links = await EvaluateAsync(view, "document.querySelectorAll('#nav a').length");
+                    if (links != "0" && links != "null") break;
+                    await Task.Delay(100);
+                }
+                var docs = await EvaluateAsync(DocsWeb,
+                    "JSON.stringify({navLinks:document.querySelectorAll('#nav a').length,"
+                    + "navGroups:document.querySelectorAll('#nav .group,#nav details,#nav section').length,"
+                    + "article:(document.querySelector('#page,#content,article')||{}).childElementCount||0,"
+                    + "firstLinks:Array.from(document.querySelectorAll('#nav a')).slice(0,3).map(function(a){return a.getAttribute('href')}).join('|'),"
+                    + "bodyChars:document.body.innerText.length})");
+                _log.Line($"  Docs: rendered {docs}");
+
+                // Clicking is the thing a person does and a scripted run never did.
+                var clicked = await EvaluateAsync(DocsWeb,
+                    "(function(){var a=document.querySelectorAll('#nav a');"
+                    + "if(a.length<3) return 'no-links';"
+                    + "var before=(document.querySelector('#page,#content,article')||{}).innerText||'';"
+                    + "a[2].click();"
+                    + "return JSON.stringify({clickedHref:a[2].getAttribute('href'),beforeChars:before.length});})()");
+                await Task.Delay(1200);
+                var after = await EvaluateAsync(DocsWeb,
+                    "JSON.stringify({href:location.href,navLinks:document.querySelectorAll('#nav a').length,"
+                    + "article:((document.querySelector('#page,#content,article')||{}).innerText||'').slice(0,60),"
+                    + "bodyChars:document.body.innerText.length})");
+                var geometry = await EvaluateAsync(DocsWeb,
+                    "(function(){function r(s){var e=document.querySelector(s);if(!e)return 'missing';"
+                    + "var b=e.getBoundingClientRect();return Math.round(b.x)+','+Math.round(b.y)+' '+Math.round(b.width)+'x'+Math.round(b.height);}"
+                    + "return JSON.stringify({view:window.innerWidth+'x'+window.innerHeight,nav:r('#nav'),"
+                    + "article:r('#page')||r('article'),toolbar:r('.toolbar'),"
+                    + "navVisible:(function(){var n=document.querySelector('#nav');if(!n)return false;"
+                    + "var s=getComputedStyle(n);return s.display!=='none'&&s.visibility!=='hidden'&&n.getBoundingClientRect().width>0;})()});})()");
+                _log.Line($"  Docs: geometry {geometry}");
+                _log.Line($"  Docs: click → {clicked}");
+                _log.Line($"  Docs: after click → {after}");
+            }
         }
 
         // The testing pane needs both directions at once: the client posts each turn
         // record out, the relay hands it back in, and the surface advances only on
         // records it was handed. One typed command exercises the whole loop, after the
         // boot replay has gone quiet, so the counts bracket the command and not the boot.
-        var recordsBefore = _paneMessages.GetValueOrDefault("turnEvents");
+        var recordsBefore = _testingRecords;
         var relayedBefore = _relay.Delivered;
 
         var afterBoot = await SettledCountAsync("turnEvents", TimeSpan.FromSeconds(20));
         var relayedAtBoot = _relay.Delivered - relayedBefore;
 
-        var typed = await EvaluateAsync("window.__sharpeeHost({type:'type',command:'inventory'})");
+        var typed = await EvaluateAsync(TestingWeb, "window.__sharpeeHost({type:'type',command:'inventory'})");
         var afterCommand = await SettledCountAsync("turnEvents", TimeSpan.FromSeconds(15));
         var relayNote = _relay.LastError is { } error ? "last error " + error : "no delivery errors";
 
-        _log.Line($"  round trip: boot replay posted {afterBoot - recordsBefore} turn record(s), relay delivered "
-                  + $"{relayedAtBoot} of them; type 'inventory' → {typed}; {afterCommand - afterBoot} further "
-                  + $"record(s) posted, {_relay.Delivered - relayedBefore} delivered here in total, {relayNote}");
+        _log.Line($"  round trip (testing pane only): boot replay posted {_testingRecords - recordsBefore} turn "
+                  + $"record(s), relay delivered {relayedAtBoot} of them; type 'inventory' → {typed}; "
+                  + $"{_relay.Delivered - relayedBefore} delivered here in total, {relayNote}");
 
-        var surface = await EvaluateAsync(
+        var surface = await EvaluateAsync(TestingWeb,
             "JSON.stringify({cards:document.querySelectorAll('[class*=card]').length,"
             + "anchors:document.querySelectorAll('[data-turn]').length})");
         var totals = string.Join(", ", _paneMessages.OrderBy(p => p.Key).Select(p => p.Key + " " + p.Value));
@@ -866,7 +1023,9 @@ public partial class ShellWindow : Window
         // so a counter read synchronously after an invalidation reads the frame
         // that has not happened yet. Each step below waits for real frames.
         WorldScroll.IsVisible = true;
-        Web.IsVisible = false;
+        PlayWeb.IsVisible = false;
+        TestingWeb.IsVisible = false;
+        DocsWeb.IsVisible = false;
         BottomPanel.IsVisible = true;
         await Frames();
         foreach (var (name, surface) in Surfaces())

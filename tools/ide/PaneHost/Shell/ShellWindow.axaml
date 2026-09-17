@@ -4,7 +4,7 @@
         xmlns:shell="using:PaneHost.Shell"
         x:Class="PaneHost.Shell.ShellWindow"
         Width="1400" Height="900"
-        Title="Chord Writer (Avalonia spike)">
+        Title="Chord Writer (Avalonia)">
     <!--
       MainWindow.swift's shell: a 28 px chrome band, a 40 px rail, the project
       pane, the editor over its tab bar, a right panel with the real web panes,
@@ -58,8 +58,17 @@
 
             <Grid Grid.Column="5" RowDefinitions="30,*">
                 <shell:TabStripView x:Name="RightTabs" Grid.Row="0" />
+                <!--
+                  ONE VIEW PER PANE, not one view re-navigated. Switching tabs used to
+                  navigate a single web view, so coming back to Testing reloaded the page
+                  and replayed the whole tree again — seconds of work to see something that
+                  was already on screen a moment ago (GH #487). Each pane now keeps its own view and
+                  its own state; switching tabs only changes which one is visible.
+                -->
                 <Panel Grid.Row="1">
-                    <NativeWebView x:Name="Web" />
+                    <NativeWebView x:Name="PlayWeb" />
+                    <NativeWebView x:Name="TestingWeb" IsVisible="False" />
+                    <NativeWebView x:Name="DocsWeb" IsVisible="False" />
                     <ScrollViewer x:Name="WorldScroll" IsVisible="False"
                                   HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
                         <shell:WorldMapView x:Name="WorldMap" />

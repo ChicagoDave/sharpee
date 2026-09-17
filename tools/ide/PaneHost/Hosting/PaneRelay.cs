@@ -6,8 +6,10 @@
 // it replay the tree from the start — the defect the Phase 1 probe hit and fixed with
 // this same queue. Every delivery therefore waits for the previous round trip to return.
 //
-// IT NAMES NO MECHANISM. Delivery goes through IPaneDoor.EvaluateAsync, so the relay is
-// the same on every platform slice; only the door underneath it differs.
+// IT NAMES NO MECHANISM AND NO VIEW. Delivery is a delegate the shell supplies — in
+// practice the door evaluating script in the testing pane's own view — so the relay is the
+// same on every platform slice, and it does not care that the shell now keeps one view per
+// pane rather than re-navigating a single one.
 //
 // Public interface: PaneRelay — Enqueue, Delivered, LastError.
 // Owner context: tools/ide — the Avalonia desktop head's host layer.
@@ -22,31 +24,31 @@ namespace PaneHost.Hosting;
 /// </summary>
 public sealed class PaneRelay
 {
-    private readonly IPaneDoor _door;
+    private readonly Func<string, Task<string?>> _deliver;
     private readonly Action<string>? _log;
     private readonly Action<Func<Task>> _schedule;
     private readonly Queue<string> _queue = new();
     private readonly object _gate = new();
     private bool _draining;
 
-    /// <param name="door">The open door to evaluate the delivery script through.</param>
+    /// <param name="deliver">Runs one script in the testing pane and answers when it returns.</param>
     /// <param name="log">Optional sink for delivery failures; nothing is logged per record.</param>
     /// <param name="schedule">
     /// How to start draining. The default posts to the UI thread, because evaluating script
     /// in a web view is a UI-thread operation on every backend; a test supplies an inline
     /// scheduler so ordering can be asserted without a running dispatcher.
     /// </param>
-    internal PaneRelay(IPaneDoor door, Action<string>? log, Action<Func<Task>> schedule)
+    internal PaneRelay(Func<string, Task<string?>> deliver, Action<string>? log, Action<Func<Task>> schedule)
     {
-        _door = door;
+        _deliver = deliver;
         _log = log;
         _schedule = schedule;
     }
 
-    /// <param name="door">The open door to evaluate the delivery script through.</param>
+    /// <param name="deliver">Runs one script in the testing pane and answers when it returns.</param>
     /// <param name="log">Optional sink for delivery failures; nothing is logged per record.</param>
-    public PaneRelay(IPaneDoor door, Action<string>? log = null)
-        : this(door, log, work => Dispatcher.UIThread.Post(async () => await work()))
+    public PaneRelay(Func<string, Task<string?>> deliver, Action<string>? log = null)
+        : this(deliver, log, work => Dispatcher.UIThread.Post(async () => await work()))
     {
     }
 
@@ -95,7 +97,7 @@ public sealed class PaneRelay
 
             try
             {
-                await _door.EvaluateAsync("window.__sharpeeHost({type:'deliver',record:" + next + "})");
+                await _deliver("window.__sharpeeHost({type:'deliver',record:" + next + "})");
                 Delivered++;
             }
             catch (Exception ex)

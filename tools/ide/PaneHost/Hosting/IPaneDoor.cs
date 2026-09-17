@@ -23,7 +23,13 @@ namespace PaneHost.Hosting;
 /// <summary>One message from a pane, as the injected host shim addressed it.</summary>
 /// <param name="Handler">The shim handler name — turnEvents, testingSurface, testingConsole, docsTab.</param>
 /// <param name="Body">The payload the pane posted, still as text.</param>
-public readonly record struct PaneMessage(string Handler, string Body);
+/// <param name="View">
+/// The view that posted it, or null when the backend cannot say. Several panes run the
+/// same client and post under the same handler names — the Play and Testing panes both
+/// post turnEvents — so a host that cannot tell them apart will feed one pane's records
+/// into the other. It did, before this carried the source.
+/// </param>
+public readonly record struct PaneMessage(string Handler, string Body, NativeWebView? View);
 
 /// <summary>
 /// A platform's way of serving the panes to a native web view and exchanging messages
@@ -38,12 +44,16 @@ public interface IPaneDoor : IDisposable
     bool IsOpen { get; }
 
     /// <summary>
-    /// Wires the door to the view, before the view's underlying web view is created.
+    /// Wires the door to one view, before that view's underlying web view is created.
     /// Some backends must name their script-message handler at that moment and cannot
     /// do it afterwards, which is why this is separate from <see cref="Open"/>.
+    ///
+    /// Call it once per view. The shell gives each pane its own view so that switching
+    /// tabs shows a pane rather than reloading it — a reload costs the testing pane its
+    /// whole replay — so a door wires several views and must not assume one.
     /// </summary>
-    /// <param name="web">The view the panes will be shown in.</param>
-    void Configure(NativeWebView web);
+    /// <param name="view">A view a pane will be shown in.</param>
+    void Configure(NativeWebView view);
 
     /// <summary>Starts serving <paramref name="panes"/>.</summary>
     /// <param name="panes">Resolves a pane path to bytes; platform-neutral.</param>
@@ -68,8 +78,9 @@ public interface IPaneDoor : IDisposable
     /// <summary>Raised for each message a pane posts through the injected shim.</summary>
     event EventHandler<PaneMessage>? MessageReceived;
 
-    /// <summary>Runs script in the open pane — the host-to-page direction.</summary>
+    /// <summary>Runs script in one pane's view — the host-to-page direction.</summary>
+    /// <param name="view">The view to run it in; one the door was configured with.</param>
     /// <param name="script">JavaScript to evaluate.</param>
-    /// <returns>The result as text, or null.</returns>
-    Task<string?> EvaluateAsync(string script);
+    /// <returns>The result as text, or null when that view cannot answer.</returns>
+    Task<string?> EvaluateAsync(NativeWebView view, string script);
 }

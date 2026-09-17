@@ -20,7 +20,7 @@ namespace PaneHost.Hosting;
 public sealed class LoopbackPaneDoor : IPaneDoor
 {
     private LocalOrigin? _origin;
-    private NativeWebView? _web;
+    private readonly List<NativeWebView> _views = new();
 
     public string Mechanism => "token-scoped loopback origin (127.0.0.1, per-run token)";
 
@@ -28,11 +28,12 @@ public sealed class LoopbackPaneDoor : IPaneDoor
 
     public event EventHandler<PaneMessage>? MessageReceived;
 
-    public void Configure(NativeWebView web)
+    public void Configure(NativeWebView view)
     {
-        _web = web;
-        web.EnvironmentRequested += OnEnvironmentRequested;
-        web.WebMessageReceived += OnWebMessageReceived;
+        if (_views.Contains(view)) return;
+        _views.Add(view);
+        view.EnvironmentRequested += OnEnvironmentRequested;
+        view.WebMessageReceived += OnWebMessageReceived;
     }
 
     public void Open(PaneServer panes)
@@ -58,9 +59,9 @@ public sealed class LoopbackPaneDoor : IPaneDoor
         return new Uri(origin.BaseUri(scheme) + page);
     }
 
-    public Task<string?> EvaluateAsync(string script) =>
-        _web is { } web
-            ? web.InvokeScript(script).ContinueWith(t => t.Result?.ToString())
+    public Task<string?> EvaluateAsync(NativeWebView view, string script) =>
+        _views.Contains(view)
+            ? view.InvokeScript(script).ContinueWith(t => t.Result?.ToString())
             : Task.FromResult<string?>(null);
 
     /// <summary>
@@ -94,17 +95,17 @@ public sealed class LoopbackPaneDoor : IPaneDoor
         }
         catch { /* not our envelope; surface it raw */ }
 
-        MessageReceived?.Invoke(this, new PaneMessage(handler, inner));
+        MessageReceived?.Invoke(this, new PaneMessage(handler, inner, sender as NativeWebView));
     }
 
     public void Dispose()
     {
-        if (_web is { } web)
+        foreach (var view in _views)
         {
-            web.EnvironmentRequested -= OnEnvironmentRequested;
-            web.WebMessageReceived -= OnWebMessageReceived;
-            _web = null;
+            view.EnvironmentRequested -= OnEnvironmentRequested;
+            view.WebMessageReceived -= OnWebMessageReceived;
         }
+        _views.Clear();
         Close();
     }
 }

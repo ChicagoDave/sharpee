@@ -1,7 +1,15 @@
 <Application xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="PaneHost.App"
+             Name="Chord Writer (Avalonia)"
              RequestedThemeVariant="Default">
+             <!--
+               Name is what macOS puts at the left of the menu bar, next to the Apple
+               logo. Without it Avalonia supplies its own default and the bar read
+               "Avalonia Application" — the toolkit's name where the product's belongs.
+               The final product name is GH #480, David's to rule on; this matches the
+               provisional bundle name rather than inventing a second one.
+             -->
              <!-- "Default" ThemeVariant follows system theme variant. "Dark" or "Light" are other available options. -->
 
     <Application.Styles>
