@@ -65,6 +65,23 @@
     return assertions;
   }
 
+  // tools/ide/web/testing-surface/src/ending.ts
+  function endingOf(captures) {
+    const capture = (captures ?? []).find((c) => c.channel === "story-ending");
+    if (!capture) return void 0;
+    const value = capture.values.at(-1);
+    if (value === null) return "live";
+    if (typeof value === "object" && value !== void 0) {
+      const kind = value.kind;
+      if (kind === "victory" || kind === "defeat") return "ended";
+    }
+    return void 0;
+  }
+  function blocksCommand(command) {
+    const meta = /* @__PURE__ */ new Set(["restart", "restore", "quit", "undo"]);
+    return !meta.has(command.trim().toLowerCase());
+  }
+
   // packages/branch-tester/src/tree-document.ts
   var TREE_DOCUMENT_VERSION = 1;
   function emptyTreeDocument(story, seed2) {
@@ -2379,6 +2396,7 @@
   var armedOutcomeKey = null;
   var documentWriteLocked = false;
   var lastDocumentText = "";
+  var storyEnded = false;
   function turnSource(ordinal) {
     const record = records.get(ordinal);
     if (!record || typeof record.output !== "string") return void 0;
@@ -2559,6 +2577,12 @@
     finishRun(runState, ok, note);
     cards.render();
   }
+  function trace(what) {
+    try {
+      window.webkit?.messageHandlers?.testingConsole?.postMessage("driver: " + what);
+    } catch {
+    }
+  }
   function postToBridge(payload) {
     try {
       window.webkit?.messageHandlers?.testingSurface?.postMessage(JSON.stringify(payload));
@@ -2655,7 +2679,16 @@
   function deliver(raw) {
     const record = raw;
     if (!record || typeof record.turn !== "number") return;
+    const ending = endingOf(record.captures);
+    if (ending === "ended" && !storyEnded) {
+      storyEnded = true;
+      trace(`story ended at turn ${record.turn}`);
+    } else if (ending === "live" && storyEnded) {
+      storyEnded = false;
+      trace(`story live again at turn ${record.turn}`);
+    }
     if (record.restart === true) {
+      storyEnded = false;
       dropBeforeFence = false;
       if (expectDriverFence) {
         expectDriverFence = false;
@@ -2739,6 +2772,7 @@
     });
   });
   function typeCommand(command) {
+    if (storyEnded && blocksCommand(command)) return;
     const input = document.getElementById("command-input");
     if (!input) return;
     input.value = command;
@@ -2763,6 +2797,7 @@
   }
   async function driveFreshBoot(line, replay, live) {
     const wasBusy = driverBusy;
+    trace(`boot line ${line}: ${replay.length} replayed + ${live.length} live step(s)`);
     driverBusy = true;
     replayActive = true;
     setInputHeld(true, "replaying\u2026");
@@ -2772,27 +2807,48 @@
       expectDriverFence = true;
       postToBridge({ forkBoot: true });
       typeCommand("restart");
-      if (!await awaitFence(15e3)) return false;
+      if (!await awaitFence(15e3)) {
+        trace(`boot line ${line}: no restart fence in 15s`);
+        return "failed";
+      }
       suppressDelivery = true;
-      if (!await awaitNextTurn(15e3)) return false;
+      if (!await awaitNextTurn(15e3)) {
+        trace(`boot line ${line}: no boot look in 15s`);
+        return "failed";
+      }
       for (const step of replay) {
+        if (storyEnded) {
+          trace(`boot line ${line}: ended during its prefix`);
+          return "ended";
+        }
         armedOutcomeKey = step.key;
         typeCommand(step.command);
         const landed = await awaitNextTurn(15e3);
         armedOutcomeKey = null;
-        if (!landed) return false;
+        if (!landed) {
+          trace(`boot line ${line}: prefix step "${step.command}" never landed`);
+          return "failed";
+        }
       }
       suppressDelivery = false;
       currentLine = line;
       model.activateLine(line);
       for (const step of live) {
+        if (storyEnded) {
+          trace(`boot line ${line}: ended on its own cards`);
+          return "ended";
+        }
         armedOutcomeKey = step.key;
         typeCommand(step.command);
         const landed = await awaitNextTurn(15e3);
         armedOutcomeKey = null;
-        if (!landed) return false;
+        if (!landed) {
+          trace(`boot line ${line}: step "${step.command}" never landed`);
+          return "failed";
+        }
       }
-      return true;
+      trace(`boot line ${line}: ok`);
+      return "ok";
     } finally {
       dropBeforeFence = false;
       expectDriverFence = false;
@@ -2813,13 +2869,20 @@
     update();
     await driveFreshBoot(id, prefixSteps(id), [{ command, key: `${id}:0` }]);
   }
+  async function visitLine(lineId) {
+    const ownSteps = model.ownCommandsOf(lineId).map((command, index) => ({
+      command,
+      key: `${lineId}:${index}`
+    }));
+    return driveFreshBoot(lineId, prefixSteps(lineId), ownSteps);
+  }
   async function selectLine(lineId) {
     if (replayActive || driverBusy || lineId === model.activeLine) return;
     if (!model.activateLine(lineId)) return;
     clearUndo();
     currentLine = lineId;
     update();
-    await driveFreshBoot(lineId, pathSteps(lineId), []);
+    await visitLine(lineId);
   }
   async function performDeleteBranch(lineId) {
     if (replayActive || driverBusy) return;
@@ -2852,31 +2915,26 @@
       let intact = true;
       const mainCommands = model.ownCommandsOf(MAIN_LINE);
       for (const [index, command] of mainCommands.entries()) {
+        if (storyEnded) {
+          trace(`main line: ended after ${index} of ${mainCommands.length} command(s)`);
+          intact = false;
+          break;
+        }
         armedOutcomeKey = `${MAIN_LINE}:${index}`;
         typeCommand(command);
         const landed = await awaitNextTurn(15e3);
         armedOutcomeKey = null;
         if (!landed) {
+          trace(`main line: "${command}" never landed (${index} of ${mainCommands.length})`);
           intact = false;
           break;
         }
       }
+      trace(`main line: replayed ${mainCommands.length} command(s), intact=${intact}`);
       replayActive = false;
-      if (intact) {
-        for (const lineId of model.lineIds()) {
-          if (lineId === MAIN_LINE) continue;
-          const own = model.ownCommandsOf(lineId);
-          if (own.length === 0) continue;
-          const ownSteps = own.map((command, index) => ({
-            command,
-            key: `${lineId}:${index}`
-          }));
-          if (!await driveFreshBoot(lineId, prefixSteps(lineId), ownSteps)) break;
-        }
-        if (model.lineIds().includes(activeTarget) && activeTarget !== currentLine) {
-          model.activateLine(activeTarget);
-          await driveFreshBoot(activeTarget, pathSteps(activeTarget), []);
-        }
+      if (intact && model.lineIds().includes(activeTarget) && activeTarget !== currentLine) {
+        model.activateLine(activeTarget);
+        await visitLine(activeTarget);
       }
     } finally {
       replayActive = false;

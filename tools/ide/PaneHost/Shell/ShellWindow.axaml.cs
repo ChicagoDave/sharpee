@@ -1125,7 +1125,11 @@ public partial class ShellWindow : Window
         }
 
         // A replayed tree posts hundreds of records; the log wants the shape, not each one.
-        if (count <= 2 || count % 25 == 0)
+        // SHARPEE_IDE_LOG_EVERY_RECORD turns the sampling off, for the case the sampling
+        // itself is the problem: "no records arrived" and "fewer than 25 arrived" look
+        // identical at 1-in-25, and they are different diagnoses.
+        var logEvery = Environment.GetEnvironmentVariable("SHARPEE_IDE_LOG_EVERY_RECORD") is { Length: > 0 };
+        if (logEvery || count <= 2 || count % 25 == 0)
             _log.Line($"pane → host: {message.Handler} #{count}: {Trim(message.Body, 120)}");
     }
 

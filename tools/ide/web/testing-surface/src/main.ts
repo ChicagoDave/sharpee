@@ -32,6 +32,7 @@
  */
 
 import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
+import { endingOf, blocksCommand } from './ending.js';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
 import { CardsView } from './cards';
@@ -160,6 +161,18 @@ let armedOutcomeKey: string | null = null;
 let documentWriteLocked = false;
 /** The last document text this session posted (or adopted at load). */
 let lastDocumentText = '';
+
+/**
+ * The story has reached an Ending and the engine is in the `stopped` phase
+ * (ADR-347). Set from the `story-ending` channel's STATE, never from prose:
+ * the engine refuses every command once stopped and still returns a completed
+ * turn record carrying its refusal, so a driver that reads only "did a turn
+ * land" counts each refusal as a step and walks on. That is how a replay of a
+ * tree whose prefix dies produced thousands of identical
+ * "the engine is in the 'stopped' phase" turns, every assertion failing.
+ */
+let storyEnded = false;
+
 
 /** Per-ordinal synthesis source for compose. */
 function turnSource(ordinal: number): TurnSource | undefined {
@@ -397,6 +410,24 @@ function deliverRunExit(ok: boolean, note?: string): void {
   cards.render();
 }
 
+/**
+ * Says what the driver is doing, on the channel the host already logs.
+ *
+ * The replay is a long operation with one visible state ("replaying…") and
+ * several ways to end, so from outside the page a stall, a finished line and a
+ * line that ended look identical. Each of those is a different diagnosis, and
+ * guessing between them from a card count has cost this project a night.
+ */
+function trace(what: string): void {
+  try {
+    (window as unknown as {
+      webkit?: { messageHandlers?: { testingConsole?: { postMessage(b: string): void } } };
+    }).webkit?.messageHandlers?.testingConsole?.postMessage('driver: ' + what);
+  } catch {
+    // Observation only.
+  }
+}
+
 function postToBridge(payload: Record<string, unknown>): void {
   try {
     (window as unknown as {
@@ -537,7 +568,22 @@ function deliver(raw: unknown): void {
   const record = raw as FeedRecord;
   if (!record || typeof record.turn !== 'number') return;
 
+  // Read the Ending before anything else folds: whether the driver may type
+  // another command is decided by this, not by whether the last turn landed.
+  const ending = endingOf(record.captures);
+  if (ending === 'ended' && !storyEnded) {
+    storyEnded = true;
+    trace(`story ended at turn ${record.turn}`);
+  } else if (ending === 'live' && storyEnded) {
+    storyEnded = false;
+    trace(`story live again at turn ${record.turn}`);
+  }
+
   if (record.restart === true) {
+    // A fence boots a fresh engine, so whatever ended belongs to the dead
+    // lineage. Cleared here as well as from the channel, because the new boot
+    // has no previous value to send `null` from.
+    storyEnded = false;
     dropBeforeFence = false;
     if (expectDriverFence) {
       // A driver fork/switch boot — a fresh line, never a dead session.
@@ -643,6 +689,11 @@ const awaitFence = (timeoutMs: number): Promise<boolean> =>
 /** Types one command into the client's real input — the same door the
  *  author uses, so replayed turns arrive over the same feed as any turn. */
 function typeCommand(command: string): void {
+  // The engine refuses everything but the meta commands once it has stopped,
+  // and returns each refusal as a completed turn. Typing anyway is what turned
+  // one dead prefix into thousands of error turns, so the last line of defence
+  // is here, whatever the caller believed.
+  if (storyEnded && blocksCommand(command)) return;
   const input = document.getElementById('command-input') as HTMLInputElement | null;
   if (!input) return;
   input.value = command;
@@ -680,12 +731,21 @@ function prefixSteps(lineId: number): ReplayStep[] {
  * false when a turn never arrived — the caller's state stays honest
  * (degraded, never an error).
  */
+/**
+ * How a fresh boot finished. `ended` and `failed` are deliberately different:
+ * a line whose prefix reaches an Ending is FINISHED, and says nothing about
+ * the lines after it, while a step that never landed means the driver lost
+ * the feed and nothing further can be trusted.
+ */
+type BootOutcome = 'ok' | 'ended' | 'failed';
+
 async function driveFreshBoot(
   line: number,
   replay: ReplayStep[],
   live: ReplayStep[],
-): Promise<boolean> {
+): Promise<BootOutcome> {
   const wasBusy = driverBusy;
+  trace(`boot line ${line}: ${replay.length} replayed + ${live.length} live step(s)`);
   driverBusy = true;
   replayActive = true;
   setInputHeld(true, 'replaying…');
@@ -697,27 +757,33 @@ async function driveFreshBoot(
     // so its own bookkeeping never mistakes it for an author restart.
     postToBridge({ forkBoot: true });
     typeCommand('restart');
-    if (!(await awaitFence(15_000))) return false;
+    if (!(await awaitFence(15_000))) { trace(`boot line ${line}: no restart fence in 15s`); return 'failed'; }
     suppressDelivery = true;
-    if (!(await awaitNextTurn(15_000))) return false;   // the boot look
+    if (!(await awaitNextTurn(15_000))) { trace(`boot line ${line}: no boot look in 15s`); return 'failed'; }
     for (const step of replay) {
+      // A prefix that reaches an Ending cannot be walked any further: the
+      // engine is stopped and every command from here returns a refusal that
+      // still looks like a landed turn.
+      if (storyEnded) { trace(`boot line ${line}: ended during its prefix`); return 'ended'; }
       armedOutcomeKey = step.key;
       typeCommand(step.command);
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
-      if (!landed) return false;
+      if (!landed) { trace(`boot line ${line}: prefix step "${step.command}" never landed`); return 'failed'; }
     }
     suppressDelivery = false;
     currentLine = line;
     model.activateLine(line);
     for (const step of live) {
+      if (storyEnded) { trace(`boot line ${line}: ended on its own cards`); return 'ended'; }
       armedOutcomeKey = step.key;
       typeCommand(step.command);
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
-      if (!landed) return false;
+      if (!landed) { trace(`boot line ${line}: step "${step.command}" never landed`); return 'failed'; }
     }
-    return true;
+    trace(`boot line ${line}: ok`);
+    return 'ok';
   } finally {
     dropBeforeFence = false;
     expectDriverFence = false;
@@ -745,13 +811,32 @@ async function performBranch(ordinal: number, command: string): Promise<void> {
 
 /** Chip selection: the viewed line is always the live line — replay the
  *  sibling live (all suppressed — its cards are retained), then show. */
+/**
+ * Visits one line: its prefix replayed suppressed (those cards belong to the
+ * lines above and already exist), then its OWN cards typed live so they bind
+ * to the turns that just happened.
+ *
+ * The distinction is the whole of it. Handing the full path in as suppressed
+ * replay — which is what this did while the eager walk existed to bind every
+ * line up front — positions the engine correctly and binds nothing, so the
+ * line shows a fresh boot card and no results. With ADR-353 D1 there is no
+ * eager walk any more, so visiting a line is the only thing that ever binds it.
+ */
+async function visitLine(lineId: number): Promise<BootOutcome> {
+  const ownSteps = model.ownCommandsOf(lineId).map((command, index) => ({
+    command,
+    key: `${lineId}:${index}`,
+  }));
+  return driveFreshBoot(lineId, prefixSteps(lineId), ownSteps);
+}
+
 async function selectLine(lineId: number): Promise<void> {
   if (replayActive || driverBusy || lineId === model.activeLine) return;
   if (!model.activateLine(lineId)) return;
   clearUndo();
   currentLine = lineId;
   update();                     // the view switches on retained cards
-  await driveFreshBoot(lineId, pathSteps(lineId), []);
+  await visitLine(lineId);
 }
 
 /** Chip ✕: the branch, its descendants, and their cards go. Deleting the
@@ -805,31 +890,28 @@ async function replayTree(activeTarget: number): Promise<void> {
     let intact = true;
     const mainCommands = model.ownCommandsOf(MAIN_LINE);
     for (const [index, command] of mainCommands.entries()) {
+      if (storyEnded) { trace(`main line: ended after ${index} of ${mainCommands.length} command(s)`); intact = false; break; }
       armedOutcomeKey = `${MAIN_LINE}:${index}`;
       typeCommand(command);
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
-      if (!landed) { intact = false; break; }
+      if (!landed) { trace(`main line: "${command}" never landed (${index} of ${mainCommands.length})`); intact = false; break; }
     }
+    trace(`main line: replayed ${mainCommands.length} command(s), intact=${intact}`);
     replayActive = false;
 
-    if (intact) {
-      for (const lineId of model.lineIds()) {
-        if (lineId === MAIN_LINE) continue;
-        const own = model.ownCommandsOf(lineId);
-        if (own.length === 0) continue;
-        const ownSteps = own.map((command, index) => ({
-          command,
-          key: `${lineId}:${index}`,
-        }));
-        if (!(await driveFreshBoot(lineId, prefixSteps(lineId), ownSteps))) break;
-      }
-
-      // The active line replays last — view is live.
-      if (model.lineIds().includes(activeTarget) && activeTarget !== currentLine) {
-        model.activateLine(activeTarget);
-        await driveFreshBoot(activeTarget, pathSteps(activeTarget), []);
-      }
+    // ADR-353 D1: ONE LINE, NOT THE TREE. This used to continue here by
+    // walking every other line — each a fresh boot plus a replay of its whole
+    // prefix from the root — and then replaying the active line once more. The
+    // cost was the sum of every line's prefix rather than the length of the
+    // one being read: secret-letter's 565 authored commands became 3,854
+    // executed, minutes of retyping to bind cards for branches nobody had
+    // opened. An unvisited line is not unknown, either — the run column already
+    // folds `test --tree --json` per line, which is where its verdict comes
+    // from. So the walk is gone, and a line is visited when it is asked for.
+    if (intact && model.lineIds().includes(activeTarget) && activeTarget !== currentLine) {
+      model.activateLine(activeTarget);
+      await visitLine(activeTarget);
     }
   } finally {
     replayActive = false;

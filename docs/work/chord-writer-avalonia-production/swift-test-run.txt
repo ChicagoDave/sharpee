@@ -1,0 +1,1125 @@
+TEST RUN
+Run
+PASS
+opening-northwest-junction
+(opening)
+✓ channel info.title is "Jack Toresal and The Secret Letter"
+✓ channel info.description is "Grubber's Market, a stolen apple, and a girl the whole city is about to start looking for."
+> look
+✓ contains "Northwest Junction"
+✓ contains "This is the northwest corner of Grubber's Market."
+> north
+✓ contains "your stomach is telling you to find a bite to eat"
+✓ not contains "You can't go that way."
+✓ state player.location = Northwest Junction
+> ne
+✓ contains "Grocery Stall"
+> se
+✓ contains "Fruit Stall"
+> s
+✓ contains "Eastern Junction"
+> s
+✓ contains "Hat Stall"
+> sw
+✓ contains "Leather Stall"
+> w
+✓ contains "Weaponsmith's Stall"
+> nw
+✓ contains "Exotic Gems Stall"
+> n
+✓ contains "Herb Stall"
+> e
+✓ contains "Rope Stall"
+> ne
+✓ contains "Candlemaker's Stall"
+> se
+✓ contains "Pottery Stall"
+> sw
+✓ contains "Outside the Silk Tent"
+> n
+✓ contains "Inside the Silk Tent"
+> n
+✓ contains "Base of the Center Post"
+> u
+✓ contains "Top of the Post"
+> d
+✓ contains "Base of the Center Post"
+> s
+✓ contains "Inside the Silk Tent"
+> s
+✓ contains "Outside the Silk Tent"
+> nw
+✓ contains "Rope Stall"
+> nw
+✓ contains "Northwest Junction"
+> nw
+✓ contains "Alley"
+> se
+✓ contains "Northwest Junction"
+> peer se
+✓ contains "rope"
+> peer s
+✓ contains "herb"
+> peer e
+✓ contains "candle"
+> se
+✓ contains "Rope Stall"
+> se
+✓ contains "Outside the Silk Tent"
+> n
+✓ contains "Inside the Silk Tent"
+> x teisha
+✓ contains "a smile as warm as her tumbling red curls"
+> ask teisha about the monkey
+✓ contains "The little rodent loves bananas."
+> ask teisha about the monkey
+✓ contains "'I already told you,' says Teisha,"
+> ask teisha about the tent
+✓ contains "the central pole holding up the big awning"
+> ask teisha about the clothes
+✓ contains "rent a shop on Commerce Street"
+> ask teisha about fossville
+✓ contains "I don't like his high taxes"
+> s
+✓ contains "Outside the Silk Tent"
+> ne
+✓ contains "Pottery Stall"
+> talk to stallkeeper
+✓ contains "What do you want?"
+> ask stallkeeper about the mercenaries
+✓ contains "Only that they're bad for business"
+> ask stallkeeper about the wares
+✓ contains "what are you selling today"
+✓ contains "You have any coin?"
+> yes
+✓ contains "I'll sell my stall to the monkey"
+> ne
+✓ contains "Fruit Stall"
+> x apples
+✓ contains "These don't look half bad."
+> x bananas
+✓ contains "You rarely see bananas this far north."
+> x kello
+✓ contains "Normally you'd kill for a slice of kello"
+> x brambleberries
+✓ contains "The thumb-sized clusters are shiny and bluish-black."
+> x pears
+✓ contains "thick, twisty stems"
+> look
+✓ contains "tentpole wire stretching overhead"
+✓ contains "The bushel of bananas is currently blocked by the stallkeeper."
+> take banana
+✓ contains "too close to the stallkeeper to make a move"
+✓ not contains "Taken."
+> talk to stallkeeper
+✓ contains "What do you want?"
+> take apple
+✓ state apple.location = player
+> eat apple
+✓ contains "Refused in the open"
+✓ state apple.location = player
+✓ state story.state = calm
+> nw
+✓ contains "Grocery Stall"
+> sw
+✓ contains "Northwest Junction"
+> look toward northwest
+✓ contains "The entrance to a narrow alley lies northwest."
+> nw
+✓ contains "Alley"
+> x crates
+✓ contains "Just ordinary wooden crates"
+> eat apple
+✓ contains "The first bite, taken in the Alley"
+✓ state story.state = calm
+✓ state apple.location = player
+> u
+✓ contains "Outer Market Roof"
+✓ contains "You nimbly hop up on top of the crates"
+✓ contains "spread out quick, cover all streets from the square"
+✓ state player.location = Outer Market Roof
+✓ state story.state = calm
+> x mercenaries
+✓ contains "They're not Lord's Guards, that's for sure"
+✓ contains "So what are they doing here, you wonder?"
+✓ contains "keep your tempers and your swords sheathed"
+> x captain
+✓ contains "a bit older and a bit more grizzled than the rest"
+✓ contains "turns into a cold, hard chunk in your belly"
+> listen to mercenaries
+✓ contains "You listen carefully to what the mercenaries are saying"
+✓ contains "Usually wears a hat and a gray cloak"
+> wait
+✓ contains "'Okay, go!' barks the leader"
+✓ contains "start shoving them closed"
+✓ contains "Your heart sinks"
+✓ state story.state = hunted
+> d
+✓ contains "one of them wobbles and your foot slips"
+✓ contains "'What was that? Check the alley!'"
+✓ contains "They approach warily"
+✓ not contains "You dash away into the crowd"
+✓ state player.location = Alley
+> se
+✓ contains "Northwest Junction"
+> se
+✓ contains "Rope Stall"
+> ne
+✓ contains "Candlemaker's Stall"
+> se
+✓ contains "Pottery Stall"
+> talk to stallkeeper
+✓ contains "Didn't I tell you to take it somewhere else?"
+> ask stallkeeper about buying
+✓ contains "I'd like one of those, please"
+✓ contains "You have any coin?"
+> never mind
+✓ contains "'Whatever,' the stallkeeper mutters"
+> ask stallkeeper about the wares
+✓ contains "You have any coin?"
+> no
+✓ contains "Beat it, kid"
+PASS
+northwest-junction · x post
+> x post
+✓ contains "The big central support post rises up from the middle of the market, holding up the canvas awnings that shade the square."
+> push post
+✓ contains "You need to find a way behind the stalls to get to the post."
+> se
+✓ contains "Rope Stall"
+✓ contains "tall wooden post"
+> x post
+✓ contains "It rises from the midst of a cluster of stalls in the middle of the market, to a height of about fifty feet."
+> climb post
+✓ contains "You need to find a way behind the stalls to get to the post."
+> se
+✓ contains "Outside the Silk Tent"
+✓ contains "tall wooden post"
+✓ contains "the tent"
+> x tent
+✓ contains "Teisha's tent is bright blue, though now it's somewhat faded and covered with market dust. You can enter to the north."
+> x post
+✓ contains "Thick, taut support wires stretch from the top of the post"
+> take post
+✓ contains "You need to find a way behind the stalls to get to the post."
+PASS
+grocery-stall · x baskets
+> x baskets
+✓ contains "There are baskets bristling with loaves of bread"
+> x loaves
+✓ contains "The loaves are dark and grainy and look rock-hard."
+✓ contains "On the display of loaves you see a loaf."
+> x bread
+✓ contains "The loaf is dark and grainy and looks rock-hard."
+> smell bread
+✓ contains "The food smells tasty!"
+> touch loaves
+✓ contains "'Keep your sticky fingers away from the goods.'"
+> push loaves
+✓ contains "'Keep your sticky fingers away from the goods.'"
+> search loaves
+✓ contains "'Keep your sticky fingers away from the goods.'"
+> eat bread
+✓ contains "You don't have time for breakfast now!"
+> take loaf
+✓ contains "A quiet lift of"
+✓ contains "the loaf from its display"
+✓ not contains "Taken."
+✓ not contains "something you know how to do, at least"
+✓ state loaf.location = player
+✓ state story.state = calm
+> drop loaf
+✓ state loaf.location = Grocery Stall
+> take loaf
+✓ contains "Taken."
+✓ not contains "A quiet lift of"
+✓ state loaf.location = player
+> x loaves
+✓ contains "The loaves are dark and grainy"
+✓ not contains "you see a loaf"
+> eat loaf
+✓ contains "You don't have time for breakfast now!"
+✓ state loaf.location = player
+> take cheese
+✓ contains "A quiet lift of"
+✓ contains "the cheese from its display"
+✓ state cheese.location = player
+> take jerky
+✓ contains "A quiet lift of"
+✓ contains "the strip of beef jerky from its display"
+> x jerky
+✓ contains "It's a twisted, shriveled strip of dried salt-beef. Yum."
+> take baskets
+✓ contains "'Keep your sticky fingers away from the goods.'"
+> s
+✓ contains "Candlemaker's Stall"
+> x candles
+✓ contains "The candles hang in pairs, connected to each other by a common wick."
+> x tallow candles
+✓ contains "The tallow candles are yellow and slightly lumpy."
+✓ contains "On the tallow candles you see a tallow candle."
+> take tallow candle
+✓ contains "A quiet lift of"
+✓ contains "the tallow candle from its display"
+> x wax candles
+✓ contains "The wax candles are smooth and straight, and come in several colors."
+> take red candle
+✓ contains "A quiet lift of"
+✓ contains "the red wax candle from its display"
+> take wax candle
+✓ contains "Which do you mean: the red wax candle, the blue wax candle, the green wax candle, or the white wax candle?"
+> x pots
+✓ contains "The yellow, bubbling goop is kept at a constant boil."
+> touch pots
+✓ contains "'Hey,' snaps the stallkeeper, 'stay out of my tallow pots!'"
+> take pots
+✓ contains "'stay out of my tallow pots!'"
+> smell pots
+✓ contains "The fumes from the boiling tallow make your eyes water."
+> smell fumes
+✓ contains "The fumes from the boiling tallow make your eyes water."
+> take fumes
+✓ contains "They're just insubstantial fumes."
+> x dowels
+✓ contains "The long, wooden dowels run the width of the stall."
+> se
+✓ contains "Pottery Stall"
+> x pottery
+✓ contains "From tall, narrow, precariously balanced urns to round, gourd-like jars to shallow bowls"
+> take pottery
+✓ contains "'Keep your sticky fingers away from the goods.'"
+> x urns
+✓ contains "The urns are mostly decorative, for putting flowers or rushes in."
+✓ contains "On the urns you see a clay urn."
+> take urn
+✓ contains "A quiet lift of"
+✓ contains "the clay urn from its display"
+✓ state urn.location = player
+> put loaf in urn
+✓ contains "It's really too small to conveniently hold things while you're carrying it."
+✓ state loaf.location = player
+> take bowl
+✓ contains "A quiet lift of"
+✓ contains "the clay bowl from its display"
+✓ state bowl.location = player
+> take pot
+✓ contains "A quiet lift of"
+✓ contains "the clay pot from its display"
+> look
+✓ contains "Pottery Stall"
+✓ contains "On the clay jars you see a clay jar."
+✓ not contains "you see a clay urn"
+✓ not contains "you see a clay bowl"
+> i
+✓ contains "clay urn"
+✓ contains "clay bowl"
+✓ contains "clay pot"
+✓ contains "tallow candle"
+✓ contains "red wax candle"
+✓ contains "loaf"
+✓ contains "cheese"
+✓ contains "strip of beef jerky"
+PASS
+grocery-stall · se
+> se
+✓ contains "Fruit Stall"
+> s
+✓ contains "Eastern Junction"
+> s
+✓ contains "Hat Stall"
+> x hats
+✓ contains "If you can wear it on your head, it's sold here."
+> take hats
+✓ contains "You already have a perfectly serviceable hat."
+> x sappans
+✓ contains "is a wide, round hat made of woven straw, pointy at the top."
+> take sappan
+✓ contains "You already have a perfectly serviceable hat."
+> x pegs
+✓ contains "There's nothing special about the wooden pegs; they're just there to hold the hats up."
+> take bonnets
+✓ contains "You already have a perfectly serviceable hat."
+> sw
+✓ contains "Leather Stall"
+> x leather goods
+✓ contains "This merchant mostly deals in riding equipment"
+> smell leather goods
+✓ contains "The smell of leather always makes you think of traveling in distant, dangerous lands."
+> take leather goods
+✓ contains "'Keep your sticky fingers away from the goods.'"
+> x saddle
+✓ contains "The saddle is made of many layers of leather"
+> take saddle
+✓ contains "The saddle is way too huge for you to nick. Anyway, horses make you nervous."
+> take reins
+✓ contains "A quiet lift of"
+✓ contains "the riding reins from its display"
+> x reins
+✓ contains "They're ordinary riding reins, used for steering horses. What use they are to you without a horse, you're not sure yet."
+> take belt
+✓ contains "A quiet lift of"
+✓ contains "the belt from its display"
+✓ state belt.location = player
+> wear belt
+✓ contains "You put on the belt."
+> take scabbard
+✓ contains "A quiet lift of"
+✓ contains "the plain scabbard from its display"
+> wear scabbard
+✓ contains "You need a belt in order to wear this thing."
+> take harness
+✓ contains "A quiet lift of"
+✓ contains "the harness from its display"
+✓ state harness.location = player
+> take stirrup
+✓ contains "A quiet lift of"
+✓ contains "the stirrup from its display"
+✓ state stirrup.location = player
+> w
+✓ contains "Weaponsmith's Stall"
+> x weaponry
+✓ contains "Swords and knives, mostly. Nothing fancy — just sharp, practical, and deadly."
+> x swords
+✓ contains "The swords vary from three to four feet long."
+> take swords
+✓ contains "The swords are too big for you to nick."
+> x knives
+✓ contains "The knives are just your speed: short and wicked sharp."
+✓ contains "On the knives you see a knife."
+> take knife
+✓ contains "A quiet lift of"
+✓ contains "the knife from its display"
+✓ state knife.location = player
+> nw
+✓ contains "Exotic Gems Stall"
+> x gems
+✓ contains "Some of them are loose stones; others are set in finely wrought rings and necklaces."
+> take gems
+✓ contains "The angry stallkeeper is constantly glaring at you"
+> x stones
+✓ contains "Most of the loose stones are tiny, some no bigger than your little fingernail."
+> take stones
+✓ contains "The angry stallkeeper is constantly glaring at you"
+> take jewelry
+✓ contains "The angry stallkeeper is constantly glaring at you"
+> n
+✓ contains "Herb Stall"
+> x jars
+✓ contains "The dozens of tiny jars are filled with dried and crushed bits of leaves"
+> smell jars
+✓ contains "Phew, strong stuff."
+> x herbs
+✓ contains "All of this herb stuff looks pretty much the same to you."
+✓ contains "On the collective herbs you see a herb jar."
+> take jar
+✓ contains "A quiet lift of"
+✓ contains "the herb jar from its display"
+> x jar
+✓ contains "It's a little glass jar containing a few crumbling, dried weeds."
+✓ contains "In the herb jar you see dried weeds."
+> open jar
+✓ contains "You check the jar: yep, the weeds are still in there."
+> close jar
+✓ contains "The jar is closed; those weeds aren't going anywhere."
+> search jar
+✓ contains "You check the jar: yep, the weeds are still in there."
+> x weeds
+✓ contains "The stuff is dark and pungent."
+> take weeds
+✓ contains "They'd just spill everywhere."
+> smell weeds
+✓ contains "Phew, strong stuff."
+> put knife in jar
+✓ contains "You can't put that in the jar; you keep your weed in there."
+✓ state knife.location = player
+> e
+✓ contains "Rope Stall"
+> x rope
+✓ contains "The piece of rope is about five feet long, stiff and scratchy."
+> x pegs
+✓ contains "they're just there to hold the lengths of rope up."
+> take rope
+✓ contains "A quiet lift of"
+✓ contains "the length of rope from its display"
+> i
+✓ contains "riding reins"
+✓ contains "plain scabbard"
+✓ contains "harness"
+✓ contains "stirrup"
+✓ contains "knife"
+✓ contains "herb jar"
+✓ contains "length of rope"
+✓ contains "belt (worn)"
+PASS
+grocery-stall · x crowd
+> x crowd
+✓ contains "The crowd is thick with shoppers and merchants alike"
+✓ not contains "wider berth"
+> smell crowd
+✓ contains "not exactly the most pleasant thing your nose has encountered"
+> listen to crowd
+✓ contains "difficult to make out anything specific"
+> talk to crowd
+✓ contains "no one seems interested in having a conversation with a common street urchin"
+> talk to crowd
+✓ contains "It's no use; these people just want to get on with their business"
+> take crowd
+✓ contains "The shopper roughly shoulders you aside."
+✓ state shoppers.location = Grocery Stall
+> x wall
+✓ contains "The walls surrounding Grubber's are high and made of smooth, pale stone."
+> climb wall
+✓ contains "The walls are too high, and you cannot get a handhold."
+> x stalls
+✓ contains "The stalls are simple constructions of wood and canvas."
+> push stalls
+✓ contains "The stalls are too heavy to tip over."
+> x awnings
+✓ contains "providing shade for the merchants and customers below"
+> take awnings
+✓ contains "The awnings are high out of your reach."
+> x market
+✓ contains "The market is bustling this morning."
+> smell
+✓ contains "The market smells of a mixture of all sorts of odors"
+✓ not contains "tasty"
+> listen
+✓ contains "The market is a cacophony of sounds"
+> se
+✓ contains "Fruit Stall"
+> smell
+✓ contains "It smells delicious here."
+> s
+✓ contains "Eastern Junction"
+> x stalls
+✓ contains "relatively clear part of the market"
+> s
+✓ contains "Hat Stall"
+> w
+✓ contains "Outside the Silk Tent"
+> x stalls
+✓ contains "reserved for Teisha's tent"
+> n
+✓ contains "Inside the Silk Tent"
+> x stalls
+✓ contains "There aren't any stalls here inside Teisha's tent."
+> x market
+✓ contains "You can't see the market from inside Teisha's tent."
+> x crowd
+✓ contains "just you and Teisha in here"
+> smell
+✓ contains "warm, dusty fabric"
+> listen
+✓ contains "The sounds of the market are muffled in here."
+> n
+✓ contains "Base of the Center Post"
+> x wires
+✓ contains "Looking straight up, you can see four support wires"
+✓ state wires.location = Base of the Center Post
+> x stalls
+✓ contains "can't really see much of the stalls from back here"
+> x market
+✓ contains "You can't see much of the market from back here behind the stalls."
+> smell
+✓ contains "The market smells of a mixture of all sorts of odors"
+> listen
+✓ contains "The market is a cacophony of sounds"
+> u
+✓ contains "Top of the Post"
+✓ state shoppers.location = Top of the Post
+✓ state awnings.location = Outside the Silk Tent
+✓ state wires.location = Base of the Center Post
+> x crowd
+✓ contains "The crowd is far below you."
+> x market
+✓ contains "The market spreads out beneath you in all directions."
+> x stalls
+✓ contains "The stalls are spread throughout the market below."
+> smell
+✓ contains "The air is fresh up here"
+> listen
+✓ contains "relatively quiet and peaceful up here"
+> d
+✓ contains "Base of the Center Post"
+> s
+✓ contains "Inside the Silk Tent"
+> s
+✓ contains "Outside the Silk Tent"
+> w
+✓ contains "Exotic Gems Stall"
+> n
+✓ contains "Herb Stall"
+> n
+✓ contains "Northwest Junction"
+> nw
+✓ contains "Alley"
+> x crowd
+✓ contains "Nobody comes back here."
+✓ state shoppers.location = Alley
+> x market
+✓ contains "You can't see the market from back here in the alley."
+> x stalls
+✓ contains "There aren't any stalls back here in the alley."
+> smell
+✓ contains "It smells pretty ripe back here."
+> x garbage
+✓ contains "Little piles of garbage litter the alley."
+> smell garbage
+✓ contains "The garbage smells pretty ripe."
+> take garbage
+✓ contains "You don't feel much like digging through garbage."
+> x awnings
+✓ contains "providing shade for the merchants"
+> x wires
+✓ contains "The wires anchor the support posts"
+PASS
+grocery-stall · enter stall
+> enter stall
+✓ contains "The stallkeeper shoos you away. 'Customers on the outside!' he shouts."
+✓ state player.location = Grocery Stall
+> sw
+✓ contains "Northwest Junction"
+> enter market
+✓ contains "You're already in the market."
+✓ state player.location = Northwest Junction
+> nw
+✓ contains "Alley"
+> enter market
+✓ contains "You get into Grubber's Market."
+✓ not contains "the Grubber"
+✓ state player.location = Northwest Junction
+> e
+✓ contains "Candlemaker's Stall"
+> se
+✓ contains "Pottery Stall"
+> sw
+✓ contains "Outside the Silk Tent"
+> n
+✓ contains "Inside the Silk Tent"
+> enter market
+✓ contains "You get into Grubber's Market."
+✓ state player.location = Outside the Silk Tent
+> n
+✓ contains "Inside the Silk Tent"
+> n
+✓ contains "Base of the Center Post"
+> enter market
+✓ contains "You'll have to get out from behind Teisha's tent first."
+✓ state player.location = Base of the Center Post
+> u
+✓ contains "Top of the Post"
+> enter market
+✓ contains "You'll have to get down first."
+✓ state player.location = Top of the Post
+> take market
+✓ contains "Grubber"
+✓ not contains "the Grubber"
+PASS
+fruit-stall · s
+> s
+✓ contains "Eastern Junction"
+> e
+✓ contains "The calm walk does not leave the market east"
+✓ state player.location = Eastern Junction
+PASS
+fruit-stall · ne
+> ne
+✓ contains "You can't go that way."
+✓ state player.location = Fruit Stall
+PASS
+base-of-the-center-post · x post
+> x post
+✓ contains "It's huge, almost too big to put your arms around. Way up at the top, you can see wires stretching out in each of the cardinal directions."
+> turn post
+✓ contains "The enormous post does not budge."
+> pull post
+✓ contains "The enormous post does not budge."
+> x canvas tent
+✓ contains "The canvas wall of the tent is tough and stretched tight."
+> climb canvas tent
+✓ contains "You can't climb up the smooth, tight canvas."
+> x silk tent
+✓ contains "Teisha's tent is bright blue, though now it's somewhat faded and covered with market dust. You can enter to the south."
+> climb post
+✓ contains "You're totally hidden back here, so there's no one to stop you from climbing."
+✓ contains "After a minute or so of grunting and sweating, you reach the top."
+✓ state player.location = Top of the Post
+> x view
+✓ contains "The view is spectacular, but you don't have time to waste gawking."
+> touch view
+✓ contains "It's all too far away for you to do more than look at it."
+> d
+✓ contains "Base of the Center Post"
+> climb post
+✓ contains "After a minute or so of grunting and sweating, you reach the top."
+✓ not contains "You're totally hidden back here"
+✓ state player.location = Top of the Post
+PASS
+top-of-the-post · slide down northeast cable
+> slide down northeast cable
+✓ contains "kick off into space"
+> let go
+✓ contains "dropping hard to a small space behind the fruit stall"
+✓ state player.location = Behind Fruit Stall
+✓ state cloak.location = Behind Fruit Stall
+> sw
+✓ contains "Fruit Stall"
+✓ state player.location = Fruit Stall
+> w
+✓ contains "Candlemaker's Stall"
+> w
+✓ contains "Northwest Junction"
+> se
+✓ contains "Rope Stall"
+> se
+✓ contains "Outside the Silk Tent"
+> n
+✓ contains "Inside the Silk Tent"
+> n
+✓ contains "Base of the Center Post"
+> u
+✓ contains "Top of the Post"
+> slide down northeast cable
+✓ contains "something you could loop over the cable"
+✓ state player.location = Top of the Post
+PASS
+top-of-the-post · slide northeast cable
+> slide northeast cable
+✓ contains "kick off into space"
+> wait
+✓ contains "knocking over a couple of shoppers"
+✓ contains "Caught on the ride-out landing and killed"
+✓ state player.location = Fruit Stall
+✓ state cloak.location = Fruit Stall
+PASS
+top-of-the-post · x satchel
+> x satchel
+✓ contains "Your trusty cloth satchel: big enough to hold the things you nick"
+> x boots
+✓ contains "Leather, floppy, from a pile in Maiden House."
+✓ state boots.location = player
+> take off cap
+✓ contains "You're always fiddling with your clothes, but outfit changes are rare."
+✓ state cap.location = player
+> take off cloak
+✓ contains "You're always fiddling with your clothes, but outfit changes are rare."
+✓ state cloak.location = player
+PASS
+top-of-the-post · x cables
+> x cables
+✓ contains "There are four cables, each made of thick, braided wire."
+> x northeast cable
+✓ contains "attached to the ground at the northeast corner of the market"
+> x se cable
+✓ contains "attached to the ground at the southeast corner of the market"
+✓ not contains "The monkey balances easily on the cable"
+> climb cable
+✓ contains "The cable is too steep for you to climb down"
+✓ state player.location = Top of the Post
+> cut cable
+✓ contains "The cables are far too thick and tough for you to cut."
+> pull cable
+✓ contains "The cables are so thick and so taut, they don't even budge."
+✓ not contains "The monkey chatters"
+> push nw cable
+✓ contains "The cables are so thick and so taut, they don't even budge."
+> ne
+✓ contains "something you could loop over the cable"
+✓ state player.location = Top of the Post
+> slide down southwest cable
+✓ contains "kick off into space"
+✓ contains "The wind is exhilarating as you zip down the line."
+✓ contains "knocking over a couple of shoppers"
+✓ not contains "Shouts ring out and fingers point"
+✓ not contains "The monkey sees you coming and leaps over you"
+✓ not contains "You hear shouting coming from all quarters of the market."
+✓ state player.location = Exotic Gems Stall
+✓ state cloak.location = Exotic Gems Stall
+> look
+✓ contains "Exotic Gems Stall"
+✓ contains "an old gray cloak here"
+> take cloak
+✓ contains "Taken."
+✓ state cloak.location = player
+> e
+✓ contains "Outside the Silk Tent"
+> n
+✓ contains "Inside the Silk Tent"
+> n
+✓ contains "Base of the Center Post"
+> u
+✓ contains "Top of the Post"
+> slide down northeast cable
+✓ contains "kick off into space"
+✓ contains "coming up behind the fruit stall"
+✓ not contains "You take a deep breath."
+✓ state player.location = On the Wire
+> let go
+✓ state player.location = Behind Fruit Stall
+✓ state cloak.location = Behind Fruit Stall
+PASS
+top-of-the-post · slide down northwest cable
+> slide down northwest cable
+✓ contains "kick off into space"
+✓ contains "Shouts ring out and fingers point"
+✓ contains "knocking over a couple of shoppers"
+✓ contains "You hear shouting coming from all quarters of the market."
+✓ state player.location = Northwest Junction
+✓ state cloak.location = Northwest Junction
+> n
+✓ contains "No good — the mercenaries have closed the north gates"
+✓ contains "The shouts are getting closer."
+✓ state player.location = Northwest Junction
+> nw
+✓ contains "Not that way — the alley is a dead end!"
+✓ contains "They're closing in!"
+✓ state player.location = Northwest Junction
+PASS
+top-of-the-post · slide down cables
+> slide down cables
+✓ contains "kick off into space"
+✓ contains "The wind is exhilarating as you zip down the line."
+✓ contains "knocking over a couple of shoppers"
+✓ not contains "Shouts ring out and fingers point"
+✓ not contains "The monkey sees you coming and leaps over you"
+✓ not contains "You hear shouting coming from all quarters of the market."
+✓ not contains "coming up behind the fruit stall"
+✓ state player.location = Hat Stall
+✓ state cloak.location = Hat Stall
+PASS
+top-of-the-post · slide down northeast cable with cloak
+> slide down northeast cable with cloak
+✓ contains "kick off into space"
+✓ contains "coming up behind the fruit stall"
+✓ state player.location = On the Wire
+> let go
+✓ contains "dropping hard to a small space behind the fruit stall"
+✓ state player.location = Behind Fruit Stall
+✓ state cloak.location = Behind Fruit Stall
+PASS
+inside-the-silk-tent · x silks
+> x silks
+✓ contains "Gowns, robes, capes, cloaks, and shawls"
+✓ contains "makes you yearn for something a little bit more... elegant."
+> x gowns
+✓ contains "The gowns are simple designs"
+✓ contains "Just elegant and beautiful."
+> take gowns
+✓ contains "You'd sooner go hungry than steal from Teisha. She's your friend."
+> buy gowns
+✓ contains "You'd love to, but you haven't any money."
+> buy silks
+✓ contains "You'd love to, but you haven't any money."
+✓ state story.state = calm
+> x cloaks
+✓ contains "The cloaks are long and voluminous."
+✓ contains "You realize suddenly that this is exactly what you need: the perfect disguise!"
+> x cloaks
+✓ contains "The cloaks are long and voluminous."
+✓ contains "The perfect disguise, if only you could afford one."
+✓ not contains "You realize suddenly"
+> x capes
+✓ contains "different-colored inner linings that complement the outer fabric."
+> x shawls
+✓ contains "just simple wraps of brightly colored silk"
+> x robes
+✓ contains "The robes are long-sleeved, with ties in the front."
+> take silks
+✓ contains "You'd sooner go hungry than steal from Teisha."
+> buy tent
+✓ contains "Nothing is on sale."
+PASS
+alley · x storehouse wall
+> x storehouse wall
+✓ contains "The wall of the storehouse is too high and too smooth to climb."
+> climb storehouse
+✓ contains "The wall of the storehouse is too high and too smooth to climb."
+> x canvas tent
+✓ contains "The canvas wall of the tent is tough and stretched tight."
+> x nails
+✓ contains "The nails are just nails."
+> open crates
+✓ contains "The crates are all nailed shut."
+> search crates
+✓ contains "The crates are all nailed shut."
+> take crates
+✓ contains "Oof! What's in these things, gold bricks? At any rate, the crates are far too heavy for you to move."
+> push crates
+✓ contains "far too heavy for you to move"
+PASS
+alley · kick me
+> kick me
+✓ contains "Not so hard really, was it?"
+> x cap
+✓ contains "Your woolen cap is patchy and stained"
+> take off cap
+✓ contains "You're always fiddling with your clothes, but outfit changes are rare."
+✓ state cap.location = player
+> kick crates
+✓ contains "You can't do that."
+> u
+✓ contains "Outer Market Roof"
+✓ contains "You nimbly hop up on top of the crates"
+✓ not contains "spread out quick"
+✓ state player.location = Outer Market Roof
+✓ state story.state = calm
+> x tiles
+✓ contains "The roof tiles are warm under the morning sun."
+> d
+✓ contains "Alley"
+✓ not contains "Check the alley!"
+✓ not contains "You dash away"
+✓ state player.location = Alley
+PASS
+alley · look
+> look
+✓ contains "A group of people have gathered just outside the alley"
+✓ contains "grim, ugly tone"
+> listen to voices
+✓ contains "You strain to hear what the men are saying"
+✓ contains "Maybe if you got some elevation"
+> x men
+✓ contains "You'd have to poke your head out of the alley"
+> se
+✓ contains "Those men are still talking right outside the alley"
+✓ contains "Something — an intuition?"
+✓ state player.location = Alley
+> se
+✓ contains "Better stay out of sight until they leave"
+✓ state player.location = Alley
+> x apple
+✓ contains "There is a big bite taken out of one side"
+> eat apple
+✓ contains "There's nothing left of the apple to eat."
+> peer u
+✓ contains "You cannot see up to the roof from down here"
+PASS
+alley · listen
+> listen
+✓ contains "You strain to hear what the men are saying"
+> smell
+✓ contains "It smells pretty ripe back here."
+PASS
+outer-market-roof · listen
+> listen
+✓ contains "You listen carefully to what the mercenaries are saying"
+> x crowd
+✓ contains "Nobody ever climbs up here (except you)."
+> x market
+✓ contains "You can see the northwest corner of the market from up here."
+> smell
+✓ contains "The market smells of a mixture of all sorts of odors"
+PASS
+outer-market-roof · enter market
+> enter market
+✓ contains "You'll have to get down first."
+✓ state player.location = Outer Market Roof
+PASS
+outer-market-roof · x mercenaries
+> x mercenaries
+✓ contains "You can't see any such thing"
+> peer se
+✓ contains "The junction is a relatively open space"
+> peer n
+✓ contains "Off to the north you can see Lord's Road"
+> peer d
+✓ contains "You can climb back down the crates to the alley below"
+> n
+✓ contains "The rooftop is steep and slick"
+✓ state player.location = Outer Market Roof
+PASS
+alley · u
+> u
+✓ contains "grabs your ankle and drags you back down"
+✓ contains "'Gotcha!' the mercenary yells"
+✓ state player.location = Alley
+> se
+✓ contains "but the man is just too strong"
+✓ state player.location = Alley
+> wait
+✓ contains "The captain soon arrives"
+✓ contains "you never awake to find out"
+PASS
+alley · se
+> se
+✓ contains "Northwest Junction"
+> ne
+✓ contains "Grocery Stall"
+> se
+✓ contains "Fruit Stall"
+> s
+✓ contains "Eastern Junction"
+> e
+✓ contains "The captain watches the Commerce Street"
+✓ state player.location = Eastern Junction
+PASS
+northwest-junction · take sword
+> take sword
+✓ contains "Even if you did manage to nick one of those swords"
+✓ state sword.location != player
+PASS
+top-of-the-post · take necklace
+> take necklace
+✓ contains "The monkey"
+✓ not contains "You can't see any such thing"
+✓ state necklace.location = monkey
+PASS
+top-of-the-post · x se cable
+> x se cable
+✓ contains "The monkey balances easily on the cable"
+> pull se cable
+✓ contains "The cables are so thick and so taut, they don't even budge."
+✓ contains "The monkey chatters happily at your fruitless efforts to dislodge it."
+✓ contains "'There he is!'"
+> push nw cable
+✓ contains "The cables are so thick and so taut, they don't even budge."
+✓ contains "'Gotcha!'"
+✓ not contains "The monkey chatters"
+> slide down southeast cable
+✓ not contains "kick off into space"
+✓ state player.location = Top of the Post
+✓ state cloak.location = player
+PASS
+top-of-the-post · d
+> d
+✓ contains "Base of the Center Post"
+> s
+✓ contains "Inside the Silk Tent"
+> buy silks
+✓ contains "You'd love to, but you haven't any money."
+✓ not contains "TE20: the necklace for the dress"
+✓ state story.state = hunted
+> give necklace to teisha
+✓ contains "TE20: the necklace for the dress and the fashionable hat"
+✓ contains "'Hurry, Jack!' she hisses"
+✓ contains "Teisha gives the dress to Jack"
+✓ state dress.location = cloth satchel
+✓ state bonnet.location = cloth satchel
+✓ state story.state = chase
+PASS
+base-of-the-center-post · climb post
+> climb post
+✓ contains "With speed borne of panic, you scamper up the wooden post."
+✓ state player.location = Top of the Post
+PASS
+top-of-the-post · slide down southeast cable
+> slide down southeast cable
+✓ contains "You hear shouting coming from all quarters of the market."
+✓ state player.location = Hat Stall
+✓ state story.state = chase
+> sw
+✓ contains "Leather Stall"
+✓ contains "The shouts are getting closer."
+> take belt
+✓ contains "There's no time for that! You've got to run!"
+✓ not contains "stuffing"
+✓ not contains "A quiet lift of"
+✓ state belt.location = rack of belts
+> take reins
+✓ contains "There's no time for that! You've got to run!"
+✓ contains "Someone yells, 'There! I see him!'"
+✓ not contains "stuffing"
+PASS
+behind-fruit-stall · x me
+> x me
+✓ contains "Jack Toresal, who has been a boy in this market"
+✓ contains "boots underneath"
+PASS
+behind-fruit-stall · take cap from satchel
+> take cap from satchel
+✓ contains "outfit changes are rare"
+✓ not contains "You can't see any such thing"
+✓ state cap.location = cloth satchel
+PASS
+northwest-junction · ne
+> ne
+✓ contains "Grocery Stall"
+> take cheese
+✓ contains "something you know how to do, at least"
+✓ contains "pluck the cheese from its shelf"
+✓ state cheese.location = cloth satchel
+> look
+✓ contains "Northwest Junction"
+> x crowd
+✓ contains "Some of them try to give the mercenaries a slightly wider berth"
+✓ state shoppers.location = Northwest Junction
+PASS
+northwest-junction · x crowd
+> x crowd
+✓ contains "Staying out of sight should be easy"
+✓ not contains "wider berth"
+> wait
+✓ contains "Time passes"
+> x crowd
+✓ contains "Some of them try to give the mercenaries a slightly wider berth"
+✓ state shoppers.location = Northwest Junction
+✓ state story.state = hunted
+PASS
+northwest-junction · enter gates
+> enter gates
+✓ contains "The mercenaries have locked the gates. You're not getting out this way."
+✓ state player.location = Northwest Junction
+✓ state story.state = hunted
+> enter market
+✓ contains "You're already in the market."
+—
+alley · take sword
+not run yet
+—
+alley · take necklace
+not run yet
+—
+alley · x se cable
+not run yet
+—
+alley · x se cable
+not run yet
+—
+alley · d
+not run yet
+—
+alley · climb post
+not run yet
+—
+alley · slide down southeast cable
+not run yet
+—
+alley · slide down northwest cable
+not run yet
+—
+alley · slide down southeast cable
+not run yet
+—
+alley · x me
+not run yet
+—
+alley · take cap from satchel
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+—
+alley · d
+not run yet
+385 cards passing, 603 assertions passing

@@ -618,6 +618,12 @@ actually independent.
 - **Status**: PENDING
 
 ### Phase 17: Testing pane — parallel branch replay, dead-player and failed-card handling
+- **Status**: SUPERSEDED by ADR-353 D8 (2026-09-19, session 04d4dd). This phase existed to make an
+  eager whole-tree replay affordable by running branches concurrently. ADR-353 D1 removes the eager
+  replay instead — the pane visits one line — so there is nothing left to parallelize, no
+  per-branch seed isolation to preserve under concurrency, and no cross-branch failure
+  coordination to design. Its replacement work is ADR-353 D1-D4, unplanned as yet. Phase 16 is
+  NOT superseded: a branch entered by click can still reach an ending mid-prefix.
 - **Tier**: Large
 - **Budget**: 400 (provisional — re-estimate once Phase 16 rules, especially if it rules direction
   (b); the shape of "handle a dead player" is not knowable before that ruling)
