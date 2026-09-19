@@ -13,6 +13,10 @@
 - `docs/work/velopack-macos-bundle-layout/decision.md` — the macOS relocation recipe (`relocate.sh`, `patch-apphost.py`, pre-`vpk pack` ordering) this plan folds into shipping tooling in Phase 5; its own "still owed" list (shipping integration, x86_64 slice, GH #474) is this plan's Phase 5 deliverable list almost verbatim.
 - `docs/context/project-profile.md` — pnpm workspace with `packages/devkit` as the author-tool package this plan's Phase 3 must touch (GH #448) under CLAUDE.md's platform-change discussion rule; no CI gates for Sharpee (`pnpm exec turbo run test:ci` plus `pnpm typecheck` are the mandatory local legs, not CI); TypeScript strict mode and the layer-separation convention (`lang-en-us` owns user-facing text) apply to any `packages/` edit this plan makes.
 - `docs/context/session-20260916-0228-main.md` — most recent session's Open Items: GH #462 items (2)/(3)/(4) and GH #474 are untouched and explicitly named as this-plan's-scope by the goal; also notes `pre-session-audit` mis-reported the `.current-plan` pointer once this session, worth knowing but not load-bearing for this plan.
+- `docs/architecture/adrs/adr-307-testing-tree-model-v2.md` — D1/D2: the tree is the model, one JSON document `<story-id>.tests.json` holds the branch hierarchy, per-turn claims, fork structure, sibling order and the pinned seed; Consequences state the replay driver and its determinism contract "survive intact" through the v1→v2 rewrite — Phase 17's parallel-replay design must extend this coordination structure, not stand up a second one.
+- `docs/architecture/adrs/adr-293-choice-points-per-point-streams.md` — one master seed governs a run, per-stream derivation is a frozen versioned hash mix, and "two engine instances in one process stop perturbing each other" is already proven — Phase 17's concurrent branches must preserve that same isolation per branch, not assume it.
+- `docs/architecture/adrs/adr-347-the-ending-is-an-explicit-concept.md` — the Ending is a `WorldModel`-queryable concept, not an event to subscribe to, precisely because "the client's own design forbids event-subscription-based ending checks" — this is the constraint both options in Phase 16 must be framed against.
+- `docs/context/session-20260918-1730-main.md` — most recent session's Open Items (3) files today, verbatim, the seam this goal calls CRITICAL: the testing surface's driver writes into a `command-input` the platform deliberately disabled past an ending, burning a 15s timeout, and `setInputHeld(false)` then re-enables what the platform disabled — filed as "reported, not fixed; David's call," which Phase 16 exists to resolve.
 
 ## Slice ordering (David, 2026-09-16 — supersedes the phase numbering below)
 
@@ -483,6 +487,169 @@ a phase of their own.
 - **Deliverable**: Assemble the parity table (Phase 10, updated), the felt-comparison evidence (Phase 1), the cost actually spent across Phases 2–11, and every AC-4-shaped cross-platform check this plan ran (Phases 6, 7) into one record. Present it to David as the evidence for **Q-4** — when the macOS Swift app retires, and how ADR-341's D1 ("mirror") and D4 (editor) get amended in place versus superseded. State a recommendation; do not decide it.
 - **Exit state**: David rules on Q-4. This plan ends here regardless of which way he rules — the retirement itself, if ordered, is its own plan.
 - **Status**: PENDING
+
+## Phases 13-17 — added 2026-09-18 (session 04d4dd): Index tab, World sub-panes, testing-pane concurrency
+
+David commissioned these five phases directly, ahead of Phase 10's shell-parity audit, covering three
+specific gaps that audit would otherwise have surfaced later (no Index tab, no Reach/Incomplete
+World sub-panes) plus a design problem in the testing pane (serial-only branch replay, and the
+"dead player past an ending" seam this session's own Open Items already filed as item (3)). This
+extends the **same** plan rather than starting a new one — same feature, same `tools/ide/PaneHost`
+codebase, and Phase 11 already reserves an "onward" placeholder for exactly this class of work.
+When Phase 10 eventually runs, it should record Index/Reach/Incomplete as already addressed by
+Phases 13-15 rather than re-listing them as open gaps. Phase 4 remains CURRENT — these phases are
+queued behind it, not ahead of it; see the ordering note at the end of this section for what is
+actually independent.
+
+### Phase 13: Index tab — StoryIndex sections from StoryBuildReport
+- **Tier**: Medium
+- **Budget**: 250
+- **Focus**: The right panel's missing Index tab. Parity target is the Swift `StoryIndex.swift`'s
+  `sections(of:)`: seven `IndexSectionKind` cases (rooms, regions, things, people, actions, phrases,
+  hatches), each row carrying a title, an optional dim detail, an `isCode` flag, and an optional
+  authored `span` for navigate-to-source (D6 navigation).
+- **Entry state**: `StoryBuildReport.cs` exists today (uncommitted) and already parses
+  `dist/<id>.ir.json`, matching the Swift counts exactly for the build banner. The right panel
+  already hosts multiple tabs (four, per Phase 4's progress notes) that a new tab can join.
+- **Deliverable**: Extend `StoryBuildReport` (or a sibling type) to emit per-item rows for each of
+  the seven sections — not just counts — carrying title, optional detail, and the IR's source span.
+  Add the Index tab to the right panel rendering the seven sections with counts in their headers;
+  selecting a row navigates the editor to the row's source span, mirroring the Swift
+  `IndexRow.span` → editor-jump behavior.
+- **Exit state**: For a reference story (fernhill), the Index tab's section counts match
+  `StoryBuildReport`'s existing (already-proven-correct) banner counts, and clicking a row in each
+  of the seven sections navigates to the right source location. `PaneHost.Tests` gains real-path
+  tests asserting on the emitted section/row data against a real IR fixture — not a mock.
+- **Status**: DONE (2026-09-18, session 04d4dd)
+- **Progress**: `Shell/StoryIndex.cs` reads the IR into sections and rows; `StoryBuildReport` was
+  rewritten to count *those rows* rather than walk the IR a second time, so the tab and the build
+  banner cannot report different numbers for one story. `Shell/IndexPaneView.cs` draws the sections
+  with counts in their headers; double-click reveals through `ShellWindow.RevealAsync`. The right
+  panel's tab integers became a named `RightTab` enum on the way — inserting a tab was a
+  renumbering hunt across a dozen call sites, and GH #488 has three more tabs to come.
+  - **A single-file story's spans carry no `file` at all.** The first reader treated that as "no
+    location" and discarded it, which cost fernhill — the reference story — navigation on every
+    row. `IndexSpan.File` is now nullable and means "the story's own file".
+  - Evidence, `--app-exit-state` inside the packaged bundle against secret-letter, 2026-09-18:
+    `index: 390 declaration(s) listed, visible=True`;
+    `index sections: Rooms 21, Regions 2, Things 121, People 14, Actions 9, Phrases 223` — the
+    same six numbers as the build banner; `index reveal: "Alley" → grubbers-market.chord:45
+    (span said grubbers-market.chord:45)`. Nine tests run against fernhill's real IR.
+
+### Phase 14: World pane — Map and Reach sub-panes, segmented control
+- **Tier**: Medium
+- **Budget**: 250
+- **Focus**: The de-risked half of World-pane parity. `sharpee world-index` already emits top-level
+  `map` and `reach` JSON sections — the data exists; only the views are missing. Swift reference:
+  `WorldMapView.swift` (299 lines) and `WorldReachView.swift` (181 lines) under `WorldView.swift`'s
+  segmented control (225 lines), labeled "Map · n", "Reach · n", "Incomplete · n".
+- **Entry state**: Avalonia's existing `WorldMapView.cs` (175 lines) is the only World view today —
+  no segmented control, no Reach view, no Incomplete view.
+- **Deliverable**: A segmented-control container mirroring `WorldView.swift`'s three-way switch,
+  hosting Map, Reach, and a placeholder Incomplete tab (built out in Phase 15). Port/adapt the
+  existing `WorldMapView.cs` under the new container. Build `WorldReachView.cs` reading the
+  world-index JSON's `reach` section, sized to the Swift reference (181 lines).
+- **Exit state**: The segmented control shows correct "Map · n" / "Reach · n" counts sourced from
+  the same `sharpee world-index` JSON already generated; both views render real data for a
+  reference story; switching sub-panes preserves each view's own state.
+- **Status**: DONE (2026-09-18, session 04d4dd)
+- **Progress**: The World tab is a `TabStripView` over three sub-panes, Incomplete being a
+  placeholder that says so rather than an absent tab. `Shell/WorldReachView.cs` ports the Swift
+  view's derivation verbatim — headline wording, section order, first-match tinting — so an author
+  reading the two heads is not told one finding two ways. `LoadWorldViews` is the single load site
+  for all three, because two would eventually show one story's map beside another's findings.
+  - **Both new drawn views crashed the window on first real run**: `MeasureOverride` clamped to
+    `availableSize.Height`, which is infinity inside a `ScrollViewer`, and Avalonia refuses an
+    infinite measure with `Invalid size returned for Measure` (exit 134). `ProjectPaneView` has the
+    same shape and is safe only because it is not in a scroller.
+  - Evidence, same run: `world tabs: Map · 20 | Reach · 3 | Incomplete · 400`; each sub-pane shows
+    exclusively; `world reach: 21 rooms · from northwest-junction · 3 findings`; after switching
+    away and back, `3 finding(s), map still holds 20 room(s)`. Ten tests pin the headline and row
+    derivation against analyzer-shaped output.
+
+### Phase 15: World pane — Incomplete sub-pane and inline fix workflow
+- **Tier**: Large
+- **Budget**: 400
+- **Focus**: The larger, interactive half of World-pane parity. Swift's Incomplete surface is not a
+  passive list — `WorldIncompleteView.swift` (552 lines) is backed by `WorldFindingTable.swift`
+  (479), `WorldCandidateCard.swift` (178), `WorldIgnoreStore.swift` (104), `WorldPhraseLocator.swift`
+  (84), `WorldProseChunker.swift` (270), and `WorldSourceEdit.swift` (245) — roughly 1,912 of the
+  reference's 3,717 total World lines. It is an inline author workflow (find a gap, see candidate
+  fixes, apply or ignore, edit source in place), not a report.
+- **Entry state**: Phase 14 done — the segmented control and its placeholder Incomplete tab exist.
+  The world-index JSON's `incomplete` top-level section is already generated.
+- **David's sign-off needed before starting on scope**: the goal's wording ("Map / Reach /
+  Incomplete sub-panes, as the shipping app has") is consistent with either a passive findings list
+  or the full interactive fix workflow, and the two are very different sizes. Absent a narrower
+  instruction this phase is scoped to full parity, below.
+- **Deliverable**: A findings table over the `incomplete` JSON section, candidate-fix cards per
+  finding, a per-story-persisted ignore store, and inline source editing routed through the same
+  editor/span mechanism Phase 13 builds for Index navigation.
+- **Exit state**: The Incomplete sub-pane lists real findings for a reference story with a nonzero
+  incomplete count; supports viewing candidate fixes; applying or ignoring a finding, with the
+  ignore persisted across a reload; and jumping to the source location of a finding.
+- **Status**: PENDING
+
+### Phase 16: Testing pane — resolve the story-ending seam (design decision)
+- **Tier**: Small
+- **Budget**: 150
+- **Focus**: The CRITICAL open item this goal names — already filed today as this session's Open
+  Item (3): the testing surface is not a `story-ending` channel consumer (zero references in
+  `tools/ide/web/testing-surface/src`). `platform-browser`'s `story-ending` renderer disables
+  `command-input` and stamps `data-story-ended` once an ending fires; the driver's `typeCommand`
+  writes into that element without checking `disabled`, so every replay step past an ending burns a
+  15s `awaitNextTurn`/`awaitFence` timeout, and `setInputHeld(false)` then re-enables the box the
+  platform deliberately disabled. The only live route past an ending is the client's menu,
+  unreachable by the driver. This is a design question, not a port, and touches three ADRs: ADR-347
+  (the Ending is queryable state, not an event to subscribe to — the client's own design forbids
+  event-subscription-based ending checks), ADR-307 (the tree document and its replay
+  driver/determinism contract "survive intact" and must not be disturbed), and ADR-293 (seed
+  determinism — whatever detection mechanism is added must not perturb the pinned-seed replay).
+- **Entry state**: None — analysis, not implementation. Independent of Phases 13-15.
+- **Deliverable**: Present David at least two concrete options: (a) the surface treats an ending as
+  terminal for that replay line — detect the disabled `command-input`/`data-story-ended` state and
+  stop the branch cleanly instead of timing out; (b) the client grows a host-reachable route through
+  the end-game prompt (a programmatic menu-equivalent the driver can invoke) so replay can continue
+  past an ending. Name the cost and ADR-347/307/293 consequence of each. This is ADR-worthy by
+  rule 11's own bar (it constrains future sessions); ask David whether to write it as an ADR before
+  resolving it, per rule 11a.
+- **Exit state**: David has ruled which direction to take, recorded as an ADR (or amendment) if he
+  asks for one, or as a plan note otherwise. This ruling is Phase 17's entry condition.
+- **Status**: PENDING
+
+### Phase 17: Testing pane — parallel branch replay, dead-player and failed-card handling
+- **Tier**: Large
+- **Budget**: 400 (provisional — re-estimate once Phase 16 rules, especially if it rules direction
+  (b); the shape of "handle a dead player" is not knowable before that ruling)
+- **Focus**: Today's testing surface (`tools/ide/web/testing-surface/src/main.ts`, `driveFreshBoot`/
+  `replayTree`) replays every branch serially through one driver typing into one play client. This
+  phase makes branch replay concurrent and applies Phase 16's ruling so a branch that dies (story
+  ending) or fails a card does not stall the whole run.
+- **Entry state**: Phase 16's ruling recorded. Today's serial replay — proven in Phase 4's progress
+  notes at "270 turn records, every one relayed back" — is the regression baseline; parallelizing
+  must not break it.
+- **Deliverable**: Redesign branch replay to run multiple branches concurrently, each with its own
+  play-client/driver instance, while preserving ADR-293's per-branch seed isolation (the same
+  isolation already proven between two engine instances in one process) and ADR-307's tree document
+  as the single coordination structure (no second source of truth for branch state). Apply Phase
+  16's chosen ending-seam handling so a branch hitting an ending, or a branch whose card fails, is
+  detected directly and reported rather than timing out.
+- **Exit state — rule 13a Integration Reality Statement required (this is the "runtime" phase
+  class: concurrent subprocess/play-client instances)**: OWNED = the branch-replay driver, the
+  play-client instances it spawns, the tree-document coordination. REAL-PATH TEST: a real
+  multi-branch tree replayed with genuine concurrency (not simulated), at least one branch
+  deliberately ending and one deliberately failing a card, both handled without a fixed timeout, and
+  the full run byte-identical at the pinned seed across repeated executions — verify the project's
+  "one run is enough" determinism convention still holds for the new concurrent path before relying
+  on it, since that convention was established against today's serial driver.
+- **Status**: PENDING
+
+**Ordering within Phases 13-17**: Phase 13 (Index) and Phase 14 (World Map/Reach) are independent
+of each other and of Phase 16 — any of the three can start next, in any order, alongside or after
+Phase 4. Phase 15 depends on Phase 14 (needs the segmented-control scaffold). Phase 16 is pure
+design work and should run early regardless of implementation order, since Phase 17 cannot be
+scoped or started until it resolves. Phase 17 depends on Phase 16; its budget is explicitly
+provisional pending that ruling.
 
 ## Sequencing notes
 

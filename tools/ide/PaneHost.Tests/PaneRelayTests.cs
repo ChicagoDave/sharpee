@@ -1,5 +1,6 @@
 // Tests for the relay's contract: records reach the page in the order they were posted,
-// one at a time, and a refused delivery does not strand the ones behind it.
+// everything queued at drain time rides one round trip, and a refused delivery does not
+// strand the ones behind it.
 //
 // STUB JUSTIFICATION (rule 13a). Delivery here is a recording delegate rather than the real
 // door evaluating script in a real view, because that needs a constructed Avalonia view and
@@ -49,6 +50,24 @@ public sealed class PaneRelayTests
     /// <summary>Runs the drain inline and waits for it, so a test asserts on a settled relay.</summary>
     private static PaneRelay Relay(RecordingPane pane, List<string>? log = null) =>
         new(pane.DeliverAsync, log is null ? null : log.Add, work => work().GetAwaiter().GetResult());
+
+    /// <summary>
+    /// Holds the drain until the test releases it, so records accumulate in the queue the
+    /// way they do when the client posts a boot replay faster than a round trip returns.
+    /// </summary>
+    private sealed class HeldScheduler
+    {
+        private readonly List<Func<Task>> _pending = new();
+
+        public void Schedule(Func<Task> work) => _pending.Add(work);
+
+        public void Release()
+        {
+            var work = _pending.ToArray();
+            _pending.Clear();
+            foreach (var item in work) item().GetAwaiter().GetResult();
+        }
+    }
 
     [Fact]
     public void records_reach_the_page_in_the_order_they_were_posted()
@@ -116,7 +135,36 @@ public sealed class PaneRelayTests
         Assert.Equal(2, relay.Delivered);
         Assert.NotNull(relay.LastError);
         Assert.Contains("the page refused it", relay.LastError!);
-        Assert.Contains(log, line => line.StartsWith("relay failed:", StringComparison.Ordinal));
+        Assert.Contains(log, line => line.StartsWith("relay failed (", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void everything_queued_at_drain_time_rides_one_round_trip()
+    {
+        // A boot replay posts hundreds of records faster than a round trip returns. One
+        // delivery per record gave each its own dispatcher turn and its own paint, so the
+        // surface built itself in visible steps instead of appearing at once.
+        var pane = new RecordingPane();
+        var held = new HeldScheduler();
+        var relay = new PaneRelay(pane.DeliverAsync, null, held.Schedule);
+
+        relay.Enqueue("""{"turn":1}""");
+        relay.Enqueue("""{"turn":2}""");
+        relay.Enqueue("""{"turn":3}""");
+        Assert.Empty(pane.Delivered);
+
+        held.Release();
+
+        Assert.Single(pane.Delivered);
+        Assert.Equal(3, relay.Delivered);
+
+        // Order within the batch is still the contract — the surface folds by ordinal.
+        var script = pane.Delivered[0];
+        Assert.True(script.IndexOf("""{"turn":1}""", StringComparison.Ordinal)
+            < script.IndexOf("""{"turn":2}""", StringComparison.Ordinal));
+        Assert.True(script.IndexOf("""{"turn":2}""", StringComparison.Ordinal)
+            < script.IndexOf("""{"turn":3}""", StringComparison.Ordinal));
+        Assert.Contains("__sharpeeHost({type:'deliver'", script);
     }
 
     [Fact]

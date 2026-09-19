@@ -127,6 +127,9 @@ public partial class ShellWindow : Window
     /// <summary>The host→page half of the testing round trip; see <see cref="PaneRelay"/>.</summary>
     private readonly PaneRelay _relay;
 
+    /// <summary>The run column's own delivery queue — same ordering problem, different entry point.</summary>
+    private readonly PaneRelay _runRelay;
+
     /// <summary>How many messages each shim handler has posted to the host this run.</summary>
     private readonly Dictionary<string, int> _paneMessages = new();
 
@@ -148,13 +151,20 @@ public partial class ShellWindow : Window
         _door.Configure(TestingWeb);
         _door.Configure(DocsWeb);
         _relay = new PaneRelay(script => _door.EvaluateAsync(TestingWeb, script), _log.Line);
+        _runRelay = new PaneRelay(
+            script => _door.EvaluateAsync(TestingWeb, script), _log.Line, RunLineBatch);
         _door.MessageReceived += OnPaneMessage;
 
-        RightTabs.Tabs = new[] { "Build", "Play", "Testing", "Documentation", "World" };
+        RightTabs.Tabs = new[] { "Build", "Play", "Testing", "Index", "Documentation", "World" };
         BottomTabs.Tabs = new[] { "Problems", "Game Errors", "Log" };
         EditorTabs.Documents = Array.Empty<string>();
 
-        RightTabs.Selected += index => _ = ShowRightTabAsync(index);
+        RightTabs.Selected += index => _ = ShowRightTabAsync((RightTab)index);
+
+        WorldTabs.Tabs = new[] { "Map", "Reach", "Incomplete" };
+        WorldTabs.Selected += ShowWorldSubPane;
+        WorldReach.FindingActivated += line => _ = RevealAsync(new IndexSpan(null, line, 1));
+        IndexPane.RowActivated += span => _ = RevealAsync(span);
         BottomTabs.Selected += _ => { };
         ProjectPane.FileSelected += path => _ = OpenAsync(path);
         EditorTabs.Selected += SwitchToDocument;
@@ -162,8 +172,8 @@ public partial class ShellWindow : Window
 
         LightButton.Click += (_, _) => Flip(dark: false);
         DarkButton.Click += (_, _) => Flip(dark: true);
-        ProjectToggle.Click += (_, _) => ProjectPane.IsVisible = !ProjectPane.IsVisible;
-        BottomToggle.Click += (_, _) => BottomPanel.IsVisible = !BottomPanel.IsVisible;
+        ProjectToggle.Click += (_, _) => SetProjectPaneVisible(!ProjectPane.IsVisible);
+        BottomToggle.Click += (_, _) => SetBottomPanelVisible(!BottomPanel.IsVisible);
         BuildButton.Click += (_, _) => _ = BuildAsync();
         ComposeButton.Click += (_, _) => _ = ComposeAsync();
 
@@ -207,7 +217,7 @@ public partial class ShellWindow : Window
             NotYet("Extract Selection to Import…", null));
 
         var view = Menu("View",
-            Item("Project Pane", "Cmd+1", () => ProjectPane.IsVisible = !ProjectPane.IsVisible),
+            Item("Project Pane", "Cmd+1", () => SetProjectPaneVisible(!ProjectPane.IsVisible)),
             Separator(),
             Item("Word Wrap", null, () => Editor.WordWrap = !Editor.WordWrap),
             Separator(),
@@ -237,7 +247,7 @@ public partial class ShellWindow : Window
 
         var test = Menu("Test",
             Item("Run Tests", "Cmd+U", () => _ = RunTestsAsync()),
-            Item("Testing Play Surface", "Cmd+Alt+U", () => { RightTabs.ActiveIndex = 2; _ = ShowRightTabAsync(2); }),
+            Item("Testing Play Surface", "Cmd+Alt+U", () => { RightTabs.ActiveIndex = (int)RightTab.Testing; _ = ShowRightTabAsync(RightTab.Testing); }),
             Separator(),
             NotYet("Auto-Assertion", null),
             Separator(),
@@ -338,6 +348,10 @@ public partial class ShellWindow : Window
         Background = ThemeTokens.EditorBackground;
         Chrome.Background = ThemeTokens.RailBackground;
         Rail.Background = ThemeTokens.RailBackground;
+        // The rail's two glyphs are plain Buttons, so without this they keep
+        // FluentTheme's own foreground — near-black ink on the 0x16171D dark rail.
+        ProjectToggle.Foreground = ThemeTokens.Foreground;
+        BottomToggle.Foreground = ThemeTokens.Foreground;
         StatusBar.Background = ThemeTokens.Accent;
         BuildPill.Foreground = ThemeTokens.StatusBarText;
         StatusText.Foreground = ThemeTokens.StatusBarText;
@@ -346,6 +360,44 @@ public partial class ShellWindow : Window
         Editor.Foreground = ThemeTokens.Foreground;
         BottomText.Background = ThemeTokens.EditorBackground;
         BottomText.Foreground = ThemeTokens.Foreground;
+    }
+
+    /// <summary>The project column's width before a collapse, restored when the pane reopens.</summary>
+    private double _projectWidth = 220;
+
+    /// <summary>
+    /// Shows or hides the project pane by moving the grid's project column to zero,
+    /// not merely by hiding its child. The column is a fixed track, so a hidden child
+    /// leaves its 220 px standing and the pane reads as blank rather than closed.
+    /// The shipping app hides the same way, by driving the divider to the rail
+    /// (tools/ide/SharpeeIDE/MainWindow.swift, applyProjectPaneVisible).
+    /// </summary>
+    /// <param name="visible">true to show the pane at its last width, false to collapse it.</param>
+    private void SetProjectPaneVisible(bool visible)
+    {
+        if (visible == ProjectPane.IsVisible) return;
+
+        // The decision — which widths, and what to reopen at — is ProjectPaneLayoutRules';
+        // this method only binds the answer to the grid.
+        var layout = ProjectPaneLayoutRules.For(visible, _projectWidth, Body.ColumnDefinitions[1].ActualWidth);
+        _projectWidth = layout.RememberedWidth;
+
+        ProjectPane.IsVisible = visible;
+        ProjectSplitter.IsVisible = visible;
+        Body.ColumnDefinitions[1].Width = new GridLength(layout.PaneWidth, GridUnitType.Pixel);
+        Body.ColumnDefinitions[2].Width = new GridLength(layout.SplitterWidth, GridUnitType.Pixel);
+        _log.Line($"project pane: {(visible ? $"shown at {_projectWidth:0}px" : "collapsed")}");
+    }
+
+    /// <summary>
+    /// Shows or hides the bottom panel and the splitter that resizes it together, so the
+    /// grip never overhangs the editor while there is nothing below it to drag.
+    /// </summary>
+    /// <param name="visible">true to show the panel and its splitter, false to hide both.</param>
+    private void SetBottomPanelVisible(bool visible)
+    {
+        BottomPanel.IsVisible = visible;
+        BottomSplitter.IsVisible = visible;
     }
 
     protected override void OnLoaded(RoutedEventArgs e)
@@ -364,7 +416,7 @@ public partial class ShellWindow : Window
             // checked in. Absent, the map draws empty and says so rather than failing.
             if (WorldIndex is { } worldIndex)
             {
-                WorldMap.Load(worldIndex);
+                LoadWorldViews(worldIndex);
                 _log.Line($"world map: {WorldMap.RoomCount} rooms, {WorldMap.ConnectionCount} connections "
                           + $"({WorldMap.DoorCount} with doors), {WorldMap.LevelCount} levels, "
                           + $"{WorldMap.DisplacedCount} displaced — from the real world-index output");
@@ -387,6 +439,7 @@ public partial class ShellWindow : Window
             {
                 await ProbeDrawingModelAsync();
                 await ProbeLiveFlipAsync();
+                await ProbeReportedDefectsAsync();
                 ReportMenu();
                 _log.Line("shell: done");
             }
@@ -484,6 +537,7 @@ public partial class ShellWindow : Window
         _documents.Clear();
         _activeDocument = -1;
         ProjectPane.Load(project.Folder);
+        LoadIndex(project);
         _log.Line($"project pane: {ProjectPane.FileCount} file(s) from {project.Folder}");
 
         StoryTitle.Text = project.Id;
@@ -556,6 +610,74 @@ public partial class ShellWindow : Window
     /// the first.
     /// </summary>
     /// <param name="path">The absolute path of the file to open.</param>
+    /// <summary>
+    /// Loads the Index tab from the story's IR, or empties it when there is no built IR
+    /// to read. Called after a build and when a story is opened, so the tab reflects the
+    /// story in front of the author rather than whichever one was open first.
+    /// </summary>
+    /// <param name="project">The open story, or null when none is.</param>
+    private void LoadIndex(StoryProject? project)
+    {
+        if (project?.StoryIr is not { } irPath)
+        {
+            IndexPane.Clear();
+            return;
+        }
+
+        try
+        {
+            if (StoryIndex.Read(File.ReadAllText(irPath)) is { } index)
+            {
+                IndexPane.Load(index);
+                _log.Line($"index: {IndexPane.RowCount} declaration(s) in {index.Sections.Count} section(s)");
+                return;
+            }
+            _log.Line("index: the IR could not be read");
+        }
+        catch (Exception ex)
+        {
+            _log.Line($"index unavailable: {ex.GetType().Name}: {ex.Message}");
+        }
+        IndexPane.Clear();
+    }
+
+    /// <summary>
+    /// Opens the file a declaration was written in and puts the caret on it — what makes
+    /// the Index an index rather than a list. The IR names a span's file relative to the
+    /// story folder, so it is resolved against that rather than the process's directory.
+    /// </summary>
+    /// <param name="span">Where the selected declaration was written.</param>
+    private async Task RevealAsync(IndexSpan span)
+    {
+        if (_project is not { } project) return;
+
+        // No file on the span means the story's own file — a single-file story's spans
+        // carry no `file` at all.
+        var path = span.File switch
+        {
+            null => project.StoryFile,
+            var f when Path.IsPathRooted(f) => f,
+            var f => Path.Combine(project.Folder, f),
+        };
+        if (!File.Exists(path))
+        {
+            _log.Line($"index: {span.File} is not beside the story — nothing to reveal");
+            return;
+        }
+
+        await OpenAsync(path);
+
+        // A span from an older build can name a line the file no longer has; the document
+        // is still the right one to have opened, so the caret simply stays put.
+        var line = Math.Clamp(span.Line, 1, Editor.Document.LineCount);
+        var offset = Editor.Document.GetLineByNumber(line).Offset
+                     + Math.Max(0, Math.Min(span.Column - 1, Editor.Document.GetLineByNumber(line).Length));
+        Editor.CaretOffset = offset;
+        Editor.ScrollToLine(line);
+        Editor.Focus();
+        _log.Line($"index: revealed {Path.GetFileName(path)}:{line}:{span.Column}");
+    }
+
     private async Task OpenAsync(string path)
     {
         var already = _documents.FindIndex(d => string.Equals(d.Path, path, StringComparison.Ordinal));
@@ -728,8 +850,8 @@ public partial class ShellWindow : Window
                 Report($"{_project.Id} is not built yet. Story ▸ Build (Cmd+B) builds it.");
 
             await NavigateAsync(DocsWeb, _door.PaneUri(PaneServer.DocsScheme, "index.html"), TimeSpan.FromSeconds(15));
-            RightTabs.ActiveIndex = 3;
-            await ShowRightTabAsync(3);
+            RightTabs.ActiveIndex = (int)RightTab.Documentation;
+            await ShowRightTabAsync(RightTab.Documentation);
             return;
         }
 
@@ -758,8 +880,8 @@ public partial class ShellWindow : Window
         var testing = await NavigateAsync(TestingWeb, _door.PaneUri(PaneServer.PlayScheme, "index-testing.html"), TimeSpan.FromSeconds(20));
         _log.Line($"panes: loaded — play={play}, docs={docs}, testing={testing}");
 
-        RightTabs.ActiveIndex = 1;
-        await ShowRightTabAsync(1);
+        RightTabs.ActiveIndex = (int)RightTab.Play;
+        await ShowRightTabAsync(RightTab.Play);
     }
 
     // ── The toolchain commands ───────────────────────────────────────────────
@@ -777,6 +899,33 @@ public partial class ShellWindow : Window
         if (exit != 0) { BuildPill.Text = "build failed"; return; }
 
         BuildPill.Text = "built";
+
+        // The CLI's last lines are still in flight when the process exits — output reaches
+        // the panel through Dispatcher.Post — so drain the queue before appending, or the
+        // report lands in the middle of the build's own tail.
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Background);
+
+        // The build panel's closing report — the story's name in lights and its numbers,
+        // as the shipping app prints them. The CLI stops at "npx serve"; this is the part
+        // the app adds, and without it the Build tab ends on a shell hint.
+        Report("");
+        Report("✓ Build succeeded.");
+        if (project.StoryIr is { } irPath)
+        {
+            try
+            {
+                if (StoryBuildReport.From(await File.ReadAllTextAsync(irPath)) is { } report)
+                    foreach (var line in report.TrimEnd('\n').Split('\n')) Report(line);
+            }
+            catch (Exception ex)
+            {
+                // A report is a courtesy; a build that succeeded did succeed.
+                _log.Line($"build report unavailable: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        LoadIndex(project);
+
         // Re-resolve rather than trust the pre-build answer: the bundle exists now.
         await StartPanesAsync();
         await LoadWorldMapAsync(project);
@@ -818,7 +967,7 @@ public partial class ShellWindow : Window
             var path = Path.Combine(RepoPaths.DevOut, project.Id + ".world-index.json");
             await File.WriteAllTextAsync(path, json.ToString());
 
-            WorldMap.Load(path);
+            LoadWorldViews(path);
             _log.Line($"world map: {WorldMap.RoomCount} rooms, {WorldMap.ConnectionCount} connections "
                       + $"({WorldMap.DoorCount} with doors), {WorldMap.LevelCount} level(s), "
                       + $"{WorldMap.DisplacedCount} displaced — from {project.Id}'s own IR");
@@ -888,7 +1037,7 @@ public partial class ShellWindow : Window
 
         _running = true;
         _commandCts = new CancellationTokenSource();
-        BottomPanel.IsVisible = true;
+        SetBottomPanelVisible(true);
         Report($"$ sharpee {string.Join(' ', arguments)}");
         StatusText.Text = $"{label}…";
         BuildPill.Text = label + "…";
@@ -963,12 +1112,198 @@ public partial class ShellWindow : Window
         else
         {
             _lastPost[message.Handler] = message.Body;
+
+            // The surface's Run button. Its post had no handler here at all, so the button
+            // could only sit at "Running…" — the shipping app answers it in
+            // TestingSurfaceViewController.startRun.
+            if (message.Handler == "testingSurface"
+                && ReferenceEquals(message.View, TestingWeb)
+                && LooksLikeRunRequest(message.Body))
+            {
+                _ = RunTreeTestsForSurfaceAsync();
+            }
         }
 
         // A replayed tree posts hundreds of records; the log wants the shape, not each one.
         if (count <= 2 || count % 25 == 0)
             _log.Line($"pane → host: {message.Handler} #{count}: {Trim(message.Body, 120)}");
     }
+
+    /// <summary>
+    /// True when a `testingSurface` post is the run column's request. The surface posts
+    /// `{run:true}`; every other post on this handler is view state.
+    /// </summary>
+    /// <param name="body">The raw JSON the page posted.</param>
+    private static bool LooksLikeRunRequest(string body)
+    {
+        try
+        {
+            return System.Text.Json.Nodes.JsonNode.Parse(body)?["run"]?.GetValue<bool>() == true;
+        }
+        catch
+        {
+            // A post this host cannot parse is not a run request; view state is not our business.
+            return false;
+        }
+    }
+
+    /// <summary>One batch of NDJSON run lines, folded into the run column in arrival order.</summary>
+    /// <param name="batch">Raw NDJSON lines, each already a JSON string literal.</param>
+    private static string RunLineBatch(IReadOnlyList<string> batch) =>
+        "for (var l of [" + string.Join(",", batch) + "])"
+        + " window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runLine"
+        + " && window.__sharpeeTestingSurface.runLine(l)";
+
+    /// <summary>Ends the run column, so the Run button leaves "Running…" whatever happened.</summary>
+    /// <param name="ok">True when the run finished and passed.</param>
+    /// <param name="note">Why it did not start or did not pass, or null.</param>
+    private Task FinishSurfaceRunAsync(bool ok, string? note = null)
+    {
+        var arguments = ok ? "true" : "false";
+        if (note is not null) arguments += ", " + System.Text.Json.JsonSerializer.Serialize(note);
+        return _door.EvaluateAsync(TestingWeb,
+            "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runExit"
+            + $" && window.__sharpeeTestingSurface.runExit({arguments})");
+    }
+
+    /// <summary>
+    /// Runs the story's tree document for the testing surface's own Run button, streaming
+    /// the CLI's NDJSON into the run column line by line.
+    ///
+    /// The arguments are the shipping app's (Test/TestRunner.swift, treeRunArguments):
+    /// `--capture-output` is what puts the story's words on a passing turn, and
+    /// `--capture-world` is what fills the inherited-state header. Dropping either leaves
+    /// a column that still renders and quietly says less.
+    /// </summary>
+    private async Task RunTreeTestsForSurfaceAsync()
+    {
+        if (_project is not { } project)
+        {
+            await FinishSurfaceRunAsync(false, "No story is open, so the run did not start.");
+            return;
+        }
+        var shim = HostServices.Current.ToolchainShim;
+        if (shim is null)
+        {
+            await FinishSurfaceRunAsync(false, "This build carries no toolchain, so it cannot run tests.");
+            return;
+        }
+        if (_running)
+        {
+            await FinishSurfaceRunAsync(false, "Another command is already running.");
+            return;
+        }
+
+        // The run reads disk, so unsaved edits would test stale source.
+        await SaveAsync();
+
+        _running = true;
+        _commandCts = new CancellationTokenSource();
+        StatusText.Text = "running tests…";
+        BuildPill.Text = "test…";
+        try
+        {
+            var exit = await HostServices.Current.RunAsync(
+                shim,
+                new[] { "test", project.StoryFile, "--tree", "--capture-output", "--capture-world", "--json" },
+                project.Folder,
+                line => _runRelay.Enqueue(System.Text.Json.JsonSerializer.Serialize(line)),
+                line => Dispatcher.UIThread.Post(() => Report(line)),
+                _commandCts.Token);
+
+            StatusText.Text = exit == 0 ? "tests passed" : "tests failed";
+            BuildPill.Text = exit == 0 ? "tests passed" : "tests failed";
+            await FinishSurfaceRunAsync(exit == 0);
+        }
+        catch (OperationCanceledException)
+        {
+            StatusText.Text = "test run cancelled";
+            await FinishSurfaceRunAsync(false, "The run was cancelled.");
+        }
+        catch (Exception ex)
+        {
+            StatusText.Text = "tests failed";
+            await FinishSurfaceRunAsync(false, $"{ex.GetType().Name}: {ex.Message}");
+        }
+        finally
+        {
+            _running = false;
+            _commandCts?.Dispose();
+            _commandCts = null;
+        }
+    }
+
+    /// <summary>
+    /// Points every World sub-pane at one world index and relabels the strip. One call
+    /// site, because a map showing one story's rooms beside another story's findings is
+    /// the failure two load calls eventually produce.
+    /// </summary>
+    /// <param name="worldIndexPath">The JSON `sharpee world-index` wrote.</param>
+    private void LoadWorldViews(string worldIndexPath)
+    {
+        WorldMap.Load(worldIndexPath);
+        WorldReach.Load(worldIndexPath);
+        LabelWorldSubPanes(worldIndexPath);
+        _log.Line($"world reach: {WorldReach.Headline}; {WorldReach.RowCount} finding row(s)");
+    }
+
+    /// <summary>The World pane's sub-panes, in the order they are shown.</summary>
+    private enum WorldSubPane { Map, Reach, Incomplete }
+
+    /// <summary>
+    /// Shows one World sub-pane. Each keeps its own view and its own scroll position, so
+    /// switching between them costs nothing and loses nothing.
+    /// </summary>
+    /// <param name="index">The sub-pane's index in the strip.</param>
+    private void ShowWorldSubPane(int index)
+    {
+        var pane = (WorldSubPane)index;
+        WorldScroll.IsVisible = pane == WorldSubPane.Map;
+        WorldReachScroll.IsVisible = pane == WorldSubPane.Reach;
+        WorldIncomplete.IsVisible = pane == WorldSubPane.Incomplete;
+    }
+
+    /// <summary>
+    /// Relabels the sub-pane strip with what each view holds — the map's room count, the
+    /// analyzer's finding count, and the candidates the Incomplete view would carry. The
+    /// counts are the author's reason to open one of them, so they belong on the tab
+    /// rather than inside it.
+    /// </summary>
+    /// <param name="worldIndexPath">The JSON `sharpee world-index` wrote, or null.</param>
+    private void LabelWorldSubPanes(string? worldIndexPath)
+    {
+        var findings = 0;
+        var candidates = 0;
+        if (worldIndexPath is not null)
+        {
+            try
+            {
+                var index = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(worldIndexPath));
+                findings = index?["reach"]?["findingCount"]?.GetValue<int>() ?? 0;
+                if (index?["incomplete"]?["counts"] is System.Text.Json.Nodes.JsonObject counts)
+                    candidates = counts.Sum(c => c.Value?.GetValue<int>() ?? 0);
+            }
+            catch (Exception ex)
+            {
+                _log.Line($"world sub-pane counts unavailable: {ex.GetType().Name}: {ex.Message}");
+            }
+        }
+
+        WorldTabs.Tabs = new[]
+        {
+            $"Map · {WorldMap.RoomCount}",
+            $"Reach · {findings}",
+            $"Incomplete · {candidates}",
+        };
+        WorldTabs.InvalidateVisual();
+    }
+
+    /// <summary>
+    /// The right panel's tabs, in the order they are shown. Named because they used to be
+    /// bare integers in a dozen call sites, which is a renumbering hunt every time a tab is
+    /// inserted — and the shipping app has three more to come (GH #488).
+    /// </summary>
+    private enum RightTab { Build, Play, Testing, Index, Documentation, World }
 
     /// <summary>Total page→host messages received this run, across all handlers.</summary>
     private int PaneMessageCount => _paneMessages.Values.Sum();
@@ -987,22 +1322,23 @@ public partial class ShellWindow : Window
     /// Diagnosis and Publish are tracked in GH #488 rather than shown as tabs that do
     /// nothing.
     /// </remarks>
-    private Task ShowRightTabAsync(int index)
+    private Task ShowRightTabAsync(RightTab tab)
     {
-        BuildLog.IsVisible = index == 0;
-        PlayWeb.IsVisible = index == 1;
-        TestingWeb.IsVisible = index == 2;
-        DocsWeb.IsVisible = index == 3;
-        WorldScroll.IsVisible = index == 4;
+        BuildLog.IsVisible = tab == RightTab.Build;
+        PlayWeb.IsVisible = tab == RightTab.Play;
+        TestingWeb.IsVisible = tab == RightTab.Testing;
+        IndexScroll.IsVisible = tab == RightTab.Index;
+        DocsWeb.IsVisible = tab == RightTab.Documentation;
+        WorldPane.IsVisible = tab == RightTab.World;
         return Task.CompletedTask;
     }
 
     /// <summary>The view a tab is shown in, or null for the tabs that are not web panes.</summary>
-    private NativeWebView? ViewFor(int index) => index switch
+    private NativeWebView? ViewFor(RightTab tab) => tab switch
     {
-        1 => PlayWeb,
-        2 => TestingWeb,
-        3 => DocsWeb,
+        RightTab.Play => PlayWeb,
+        RightTab.Testing => TestingWeb,
+        RightTab.Documentation => DocsWeb,
         _ => null,
     };
 
@@ -1118,14 +1454,14 @@ public partial class ShellWindow : Window
         // the expensive thing a reload throws away, so it is what gets checked.
         var cardsBefore = await EvaluateAsync(TestingWeb, "document.querySelectorAll('[class*=card]').length");
         var recordsBefore = _paneMessages.GetValueOrDefault("turnEvents");
-        RightTabs.ActiveIndex = 1;
-        await ShowRightTabAsync(1);
+        RightTabs.ActiveIndex = (int)RightTab.Play;
+        await ShowRightTabAsync(RightTab.Play);
         await Task.Delay(300);
-        RightTabs.ActiveIndex = 3;
-        await ShowRightTabAsync(3);
+        RightTabs.ActiveIndex = (int)RightTab.Documentation;
+        await ShowRightTabAsync(RightTab.Documentation);
         await Task.Delay(300);
-        RightTabs.ActiveIndex = 2;
-        await ShowRightTabAsync(2);
+        RightTabs.ActiveIndex = (int)RightTab.Testing;
+        await ShowRightTabAsync(RightTab.Testing);
         await Task.Delay(1500);
         var cardsAfter = await EvaluateAsync(TestingWeb, "document.querySelectorAll('[class*=card]').length");
         var recordsAfter = _paneMessages.GetValueOrDefault("turnEvents");
@@ -1136,20 +1472,111 @@ public partial class ShellWindow : Window
         // 4. Edit and save: the buffer must reach the disk.
         var storyFile = project.StoryFile;
         var before = await File.ReadAllTextAsync(storyFile);
-        var marker = "// app exit state " + DateTime.UtcNow.ToString("O");
-        Editor.Document.Text = before.TrimEnd() + "\n" + marker + "\n";
+        // `##` is Chord's comment (ADR-249), not `//`. The old marker parsed as an unknown
+        // declaration, so every step after the save ran against a story that no longer built.
+        var marker = "## app exit state " + DateTime.UtcNow.ToString("O");
+        // A `##` comment needs a blank line either side of it (lex.comment-blank-lines).
+        Editor.Document.Text = before.TrimEnd() + "\n\n" + marker + "\n\n";
         await SaveAsync();
         var after = await File.ReadAllTextAsync(storyFile);
         _log.Line($"  save: file changed on disk={!string.Equals(before, after, StringComparison.Ordinal)}, "
                   + $"marker present={after.Contains(marker, StringComparison.Ordinal)}");
         await File.WriteAllTextAsync(storyFile, before);
-        _log.Line("  save: source restored to its original bytes");
+        // The BUFFER has to be restored too, not just the file: anything that saves after
+        // this — the run button's own save, say — would otherwise write the marker back.
+        Editor.Document.Text = before;
+        _log.Line("  save: source restored to its original bytes, buffer included");
 
         // 5. Check and test, through the toolchain again.
         await ComposeAsync();
         _log.Line($"  check: pill={BuildPill.Text}");
         await RunTestsAsync();
         _log.Line($"  tests: status={StatusText.Text}");
+
+        // The INDEX TAB, shown and navigated — the tab is only an index if a row takes you
+        // to the declaration, so a row is actually activated and the editor read back.
+        RightTabs.ActiveIndex = (int)RightTab.Index;
+        await ShowRightTabAsync(RightTab.Index);
+        await Frames();
+        _log.Line($"  index: {IndexPane.RowCount} declaration(s) listed, visible={IndexScroll.IsVisible}");
+
+        if (StoryIndex.Read(await File.ReadAllTextAsync(project.StoryIr!)) is { } indexDoc)
+        {
+            _log.Line("  index sections: "
+                      + string.Join(", ", indexDoc.Sections.Select(x => $"{x.Title} {x.Rows.Count}")));
+
+            var target = indexDoc.Sections
+                .SelectMany(x => x.Rows)
+                .FirstOrDefault(r => r.Span is not null);
+            if (target?.Span is { } span)
+            {
+                await RevealAsync(span);
+                await Frames();
+                var caretLine = Editor.Document.GetLineByOffset(Editor.CaretOffset).LineNumber;
+                _log.Line($"  index reveal: \"{target.Title}\" → {Path.GetFileName(_documents[_activeDocument].Path)}"
+                          + $":{caretLine} (span said {span.File ?? "the story file"}:{span.Line})");
+            }
+        }
+
+        // The WORLD PANE's three sub-panes, switched in the real window.
+        RightTabs.ActiveIndex = (int)RightTab.World;
+        await ShowRightTabAsync(RightTab.World);
+        await Frames();
+        _log.Line($"  world tabs: {string.Join(" | ", WorldTabs.Tabs)}");
+        foreach (var pane in new[] { WorldSubPane.Map, WorldSubPane.Reach, WorldSubPane.Incomplete })
+        {
+            WorldTabs.ActiveIndex = (int)pane;
+            ShowWorldSubPane((int)pane);
+            await Frames();
+            _log.Line($"  world sub-pane {pane}: map={WorldScroll.IsVisible}, "
+                      + $"reach={WorldReachScroll.IsVisible}, incomplete={WorldIncomplete.IsVisible}");
+        }
+        _log.Line($"  world reach: {WorldReach.Headline}");
+        _log.Line($"  world reach rows: {WorldReach.RowCount} finding(s) listed");
+
+        // Switching away and back must not cost either view its state.
+        ShowWorldSubPane((int)WorldSubPane.Map);
+        await Frames();
+        ShowWorldSubPane((int)WorldSubPane.Reach);
+        await Frames();
+        _log.Line($"  world reach after a round trip: {WorldReach.RowCount} finding(s), "
+                  + $"map still holds {WorldMap.RoomCount} room(s)");
+
+        // The RUN BUTTON, clicked in the page — the path the menu item never exercises.
+        // Its post had no handler at all until 2026-09-18, so the button could only sit at
+        // "Running…"; this clicks the real element and reads the real button back.
+        await ShowRightTabAsync(RightTab.Testing);
+        var beforeLabel = await EvaluateAsync(TestingWeb,
+            "(document.getElementById('ts-run-btn')||{}).textContent");
+        // The surface declines a run while its own driver is replaying (onRun bails on
+        // driverBusy/replayActive), so the click is retried until it takes rather than
+        // reported as a refusal the host caused.
+        var clicked = "not-attempted";
+        for (var attempt = 0; attempt < 60; attempt++)
+        {
+            clicked = await EvaluateAsync(TestingWeb,
+                "(function(){var b=document.getElementById('ts-run-btn');"
+                + "if(!b) return 'no-button'; b.click(); return b.textContent;})()") ?? "null";
+            if (clicked.Contains("Running", StringComparison.Ordinal)) break;
+            await Task.Delay(500);
+        }
+        _log.Line($"  run button: before={beforeLabel}, on click={clicked}");
+
+        var settled = false;
+        for (var wait = 0; wait < 600 && !settled; wait++)
+        {
+            var label = await EvaluateAsync(TestingWeb,
+                "(document.getElementById('ts-run-btn')||{}).textContent");
+            settled = label is not null && !label.Contains("Running", StringComparison.Ordinal);
+            if (!settled) await Task.Delay(200);
+        }
+        var afterLabel = await EvaluateAsync(TestingWeb,
+            "(document.getElementById('ts-run-btn')||{}).textContent");
+        var column = await EvaluateAsync(TestingWeb,
+            "JSON.stringify({rows:document.querySelectorAll('#ts-run-results *').length,"
+            + "text:(document.getElementById('ts-run-results')||{}).innerText||''})");
+        _log.Line($"  run button: settled={settled}, after={afterLabel}, relayed={_runRelay.Delivered} line(s)");
+        _log.Line($"  run column: {Trim(column, 200)}");
 
         _log.Line("app exit state: done");
     }
@@ -1176,11 +1603,16 @@ public partial class ShellWindow : Window
         // Testing goes last and stays loaded: the round trip below continues on this
         // load rather than navigating again, so no record from an earlier load can be
         // delivered into a page that booted after it was posted.
-        foreach (var (name, index) in new[] { ("Play", 1), ("Docs", 3), ("Testing", 2) })
+        foreach (var (name, tab) in new[]
+                 {
+                     ("Play", RightTab.Play),
+                     ("Docs", RightTab.Documentation),
+                     ("Testing", RightTab.Testing),
+                 })
         {
-            RightTabs.ActiveIndex = index;
-            await ShowRightTabAsync(index);
-            var view = ViewFor(index)!;
+            RightTabs.ActiveIndex = (int)tab;
+            await ShowRightTabAsync(tab);
+            var view = ViewFor(tab)!;
 
             // Host → page, on the real view. The shim records which native post door it
             // found at boot, so reading that back proves Configure wired one — where a
@@ -1332,11 +1764,11 @@ public partial class ShellWindow : Window
         // before any count means anything: Avalonia renders on the render thread,
         // so a counter read synchronously after an invalidation reads the frame
         // that has not happened yet. Each step below waits for real frames.
-        WorldScroll.IsVisible = true;
+        WorldPane.IsVisible = true;
         PlayWeb.IsVisible = false;
         TestingWeb.IsVisible = false;
         DocsWeb.IsVisible = false;
-        BottomPanel.IsVisible = true;
+        SetBottomPanelVisible(true);
         await Frames();
         foreach (var (name, surface) in Surfaces())
             _log.Line($"  {name}: {surface.RenderCount} Render(DrawingContext) call(s) after first layout");
@@ -1403,6 +1835,87 @@ public partial class ShellWindow : Window
         _log.Line("  note: the brushes are shared instances. Zero Render calls with changed pixels means the "
                   + "recorded draw operations hold the brush by reference and the compositor re-reads its colour "
                   + "— the flip costs no re-record at all.");
+    }
+
+    /// <summary>
+    /// The two shell defects reported 2026-09-18, each read back off the live window:
+    /// the rail glyphs' ink in both palettes, and the project column's measured width
+    /// across a collapse. Both are answers the window gives, not values we just set.
+    /// </summary>
+    private async Task ProbeReportedDefectsAsync()
+    {
+        _log.Line("── reported defects (2026-09-18) ──");
+
+        // 1. The rail glyphs. A glyph invisible in dark is ink that matches the rail it
+        // sits on, so both are sampled and compared rather than asserted from the token.
+        foreach (var dark in new[] { false, true })
+        {
+            ThemeTokens.Apply(dark);
+            await Frames();
+            var ink = (ProjectToggle.Foreground as ISolidColorBrush)?.Color;
+            var rail = (Rail.Background as ISolidColorBrush)?.Color;
+            var readable = ink is { } i && rail is { } r
+                && (Math.Abs(i.R - r.R) + Math.Abs(i.G - r.G) + Math.Abs(i.B - r.B)) > 90;
+            _log.Line($"  rail glyphs, {(dark ? "dark" : "light")}: ink=#{ink?.R:X2}{ink?.G:X2}{ink?.B:X2}, "
+                      + $"rail=#{rail?.R:X2}{rail?.G:X2}{rail?.B:X2} — {(readable ? "READABLE" : "INVISIBLE")}");
+        }
+
+        // 2. The project pane's collapse, measured on the grid rather than on IsVisible:
+        // hiding the child alone left the column's 220 px standing, which is the defect.
+        await Frames();
+        var shownWidth = Body.ColumnDefinitions[1].ActualWidth;
+        var editorShown = Body.ColumnDefinitions[3].ActualWidth;
+        SetProjectPaneVisible(false);
+        await Frames();
+        var collapsedWidth = Body.ColumnDefinitions[1].ActualWidth;
+        var editorCollapsed = Body.ColumnDefinitions[3].ActualWidth;
+        SetProjectPaneVisible(true);
+        await Frames();
+        var reopenedWidth = Body.ColumnDefinitions[1].ActualWidth;
+
+        _log.Line($"  project column: shown={shownWidth:0}px, collapsed={collapsedWidth:0}px, "
+                  + $"reopened={reopenedWidth:0}px — {(collapsedWidth == 0 ? "COLLAPSES" : "LEAVES A HOLE")}");
+        _log.Line($"  editor column took the space: {editorShown:0}px → {editorCollapsed:0}px "
+                  + $"(+{editorCollapsed - editorShown:0}px)");
+
+        // 3. The splitter grips. What matters is the bounds the splitter is hit-tested
+        // across, not the gap it sits in, so both are read and reported together.
+        await Frames();
+        foreach (var (name, splitter, gap) in new (string, GridSplitter, double)[]
+                 {
+                     ("project", ProjectSplitter, Body.ColumnDefinitions[2].ActualWidth),
+                     ("right panel", RightSplitter, Body.ColumnDefinitions[4].ActualWidth),
+                     ("bottom panel", BottomSplitter, EditorColumn.RowDefinitions[2].ActualHeight),
+                 })
+        {
+            var grip = name == "bottom panel" ? splitter.Bounds.Height : splitter.Bounds.Width;
+            _log.Line($"  {name} splitter: gap {gap:0}px, grip {grip:0}px, cursor {splitter.Cursor}");
+        }
+
+        // 4. Can each resizable column actually move BOTH ways? A drag is a width write, so
+        // writing the widths a drag would write answers whether the grid refuses one
+        // direction — which is what "it moves right but not left" would mean.
+        foreach (var (name, index) in new[] { ("project", 1), ("right panel", 5) })
+        {
+            var original = Body.ColumnDefinitions[index].Width;
+            var start = Body.ColumnDefinitions[index].ActualWidth;
+
+            Body.ColumnDefinitions[index].Width = new GridLength(start - 60, GridUnitType.Pixel);
+            await Frames();
+            var narrower = Body.ColumnDefinitions[index].ActualWidth;
+
+            Body.ColumnDefinitions[index].Width = new GridLength(start + 60, GridUnitType.Pixel);
+            await Frames();
+            var wider = Body.ColumnDefinitions[index].ActualWidth;
+
+            Body.ColumnDefinitions[index].Width = original;
+            await Frames();
+
+            var shrinks = Math.Abs(narrower - (start - 60)) < 1;
+            var grows = Math.Abs(wider - (start + 60)) < 1;
+            _log.Line($"  {name} column from {start:0}px: −60 → {narrower:0}px {(shrinks ? "OK" : "REFUSED")}, "
+                      + $"+60 → {wider:0}px {(grows ? "OK" : "REFUSED")}");
+        }
     }
 
     /// <summary>

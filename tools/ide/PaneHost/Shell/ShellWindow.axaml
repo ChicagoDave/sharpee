@@ -15,6 +15,34 @@
         <x:Double x:Key="ChromeHeight">28</x:Double>
     </Window.Resources>
 
+    <!--
+      THE GRIP IS THE COLUMN. A GridSplitter is hit-testable only across its own bounds,
+      so the 4 px track it used to sit in gave a 4 px target that was nearly uncatchable.
+      The track is 10 px now.
+
+      An earlier attempt kept the 4 px track and reached past it with a negative margin.
+      Do not bring that back: a negative margin moves where the Grid arranges the splitter,
+      so every drag started from an offset position and the pane jumped before it tracked
+      the pointer. Widening the track costs 6 px of seam and nothing else.
+
+      ResizeDirection is stated rather than inferred. Auto reads the splitter's own bounds
+      to guess an axis, which is a guess that changes whenever the track's size changes.
+    -->
+    <Window.Styles>
+        <Style Selector="GridSplitter">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="ResizeBehavior" Value="PreviousAndNext" />
+        </Style>
+        <Style Selector="GridSplitter.vertical">
+            <Setter Property="ResizeDirection" Value="Columns" />
+            <Setter Property="Cursor" Value="SizeWestEast" />
+        </Style>
+        <Style Selector="GridSplitter.horizontal">
+            <Setter Property="ResizeDirection" Value="Rows" />
+            <Setter Property="Cursor" Value="SizeNorthSouth" />
+        </Style>
+    </Window.Styles>
+
     <Grid RowDefinitions="28,*,22">
 
         <!-- chrome band -->
@@ -32,20 +60,25 @@
         </Grid>
 
         <!-- body -->
-        <Grid Grid.Row="1" ColumnDefinitions="40,220,4,*,4,440">
+        <Grid x:Name="Body" Grid.Row="1" ColumnDefinitions="40,220,10,*,10,440">
             <StackPanel x:Name="Rail" Grid.Column="0" Orientation="Vertical" Spacing="8" Margin="0,8">
                 <Button x:Name="ProjectToggle" Content="▤" FontSize="16" Width="40" Height="32" Background="Transparent" />
                 <Button x:Name="BottomToggle" Content="⚒" FontSize="16" Width="40" Height="32" Background="Transparent" />
             </StackPanel>
 
             <shell:ProjectPaneView x:Name="ProjectPane" Grid.Column="1" />
-            <GridSplitter Grid.Column="2" Background="Transparent" />
+            <GridSplitter x:Name="ProjectSplitter" Grid.Column="2" Classes="vertical" />
 
-            <Grid Grid.Column="3" RowDefinitions="28,*,4,Auto">
+            <Grid x:Name="EditorColumn" Grid.Column="3" RowDefinitions="28,*,10,Auto">
                 <shell:EditorTabBarView x:Name="EditorTabs" Grid.Row="0" />
-                <edit:TextEditor x:Name="Editor" Grid.Row="1"
+                    <!-- Word wrap on by default: a story's prose lines run long, and the
+                     alternative is horizontal scrolling to read a sentence. View ▸ Word Wrap
+                     turns it off. -->
+                <edit:TextEditor x:Name="Editor" Grid.Row="1" WordWrap="True"
                                  ShowLineNumbers="True" FontFamily="Menlo" FontSize="13" />
-                <GridSplitter Grid.Row="2" Background="Transparent" />
+                <!-- Hidden with the panel it resizes: a live grip over a closed panel is
+                     12 px of the editor's bottom edge that does not answer to clicks. -->
+                <GridSplitter x:Name="BottomSplitter" Grid.Row="2" Classes="horizontal" IsVisible="False" />
                 <Grid x:Name="BottomPanel" Grid.Row="3" Height="200" IsVisible="False"
                       RowDefinitions="30,*">
                     <shell:TabStripView x:Name="BottomTabs" Grid.Row="0" />
@@ -54,7 +87,7 @@
                 </Grid>
             </Grid>
 
-            <GridSplitter Grid.Column="4" Background="Transparent" />
+            <GridSplitter x:Name="RightSplitter" Grid.Column="4" Classes="vertical" />
 
             <Grid Grid.Column="5" RowDefinitions="30,*">
                 <shell:TabStripView x:Name="RightTabs" Grid.Row="0" />
@@ -71,11 +104,34 @@
                              FontFamily="Menlo" FontSize="11" BorderThickness="0" />
                     <NativeWebView x:Name="PlayWeb" IsVisible="False" />
                     <NativeWebView x:Name="TestingWeb" IsVisible="False" />
-                    <NativeWebView x:Name="DocsWeb" IsVisible="False" />
-                    <ScrollViewer x:Name="WorldScroll" IsVisible="False"
-                                  HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <shell:WorldMapView x:Name="WorldMap" />
+                    <ScrollViewer x:Name="IndexScroll" IsVisible="False"
+                                  HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                        <shell:IndexPaneView x:Name="IndexPane" />
                     </ScrollViewer>
+                    <NativeWebView x:Name="DocsWeb" IsVisible="False" />
+                    <!--
+                      The World tab's three sub-panes, as the shipping app segments them
+                      (SharpeeIDE/World/WorldView.swift): Map, Reach, Incomplete. Incomplete
+                      is a placeholder here until Phase 15 builds its fix workflow — shown
+                      as a tab that says so rather than omitted, so the shape of the pane
+                      matches what an author sees in the other head.
+                    -->
+                    <Grid x:Name="WorldPane" IsVisible="False" RowDefinitions="30,*">
+                        <shell:TabStripView x:Name="WorldTabs" Grid.Row="0" />
+                        <Panel Grid.Row="1">
+                            <ScrollViewer x:Name="WorldScroll"
+                                          HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                                <shell:WorldMapView x:Name="WorldMap" />
+                            </ScrollViewer>
+                            <ScrollViewer x:Name="WorldReachScroll" IsVisible="False"
+                                          HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
+                                <shell:WorldReachView x:Name="WorldReach" />
+                            </ScrollViewer>
+                            <TextBlock x:Name="WorldIncomplete" IsVisible="False" Margin="10" FontSize="11.5"
+                                       TextWrapping="Wrap"
+                                       Text="The Incomplete view is not built in this head yet — the analysis is there, the fix workflow is not." />
+                        </Panel>
+                    </Grid>
                 </Panel>
             </Grid>
         </Grid>

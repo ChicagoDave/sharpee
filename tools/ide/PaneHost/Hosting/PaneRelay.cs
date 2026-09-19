@@ -1,10 +1,17 @@
-// The host half of the testing round trip: hands each turn record the play client
-// posts back into the testing surface, one at a time and in arrival order.
+// The host half of the testing round trip: hands the turn records the play client
+// posts back into the testing surface, in arrival order.
 //
 // ORDER IS THE CONTRACT, not a nicety. The surface folds records by ordinal and forks a
 // fresh boot when the sequence does not match, so two deliveries in flight at once make
 // it replay the tree from the start — the defect the Phase 1 probe hit and fixed with
-// this same queue. Every delivery therefore waits for the previous round trip to return.
+// this same queue. Only one delivery is ever in flight.
+//
+// WHAT IS IN FLIGHT IS A BATCH, NOT A RECORD. Awaiting a round trip per record gave each
+// one its own dispatcher turn and its own paint, so a boot replay's 268 records arrived
+// as 268 visible steps instead of the burst the shipping app produces — it posts each
+// record without awaiting and WebKit coalesces them (SharpeeIDE/TestingSurface/
+// TestingSurfaceViewController.swift, forwardToSurface). Draining the whole queue into a
+// single script keeps the order the surface requires and restores the one paint.
 //
 // IT NAMES NO MECHANISM AND NO VIEW. Delivery is a delegate the shell supplies — in
 // practice the door evaluating script in the testing pane's own view — so the relay is the
@@ -27,6 +34,7 @@ public sealed class PaneRelay
     private readonly Func<string, Task<string?>> _deliver;
     private readonly Action<string>? _log;
     private readonly Action<Func<Task>> _schedule;
+    private readonly Func<IReadOnlyList<string>, string> _script;
     private readonly Queue<string> _queue = new();
     private readonly object _gate = new();
     private bool _draining;
@@ -38,17 +46,38 @@ public sealed class PaneRelay
     /// in a web view is a UI-thread operation on every backend; a test supplies an inline
     /// scheduler so ordering can be asserted without a running dispatcher.
     /// </param>
-    internal PaneRelay(Func<string, Task<string?>> deliver, Action<string>? log, Action<Func<Task>> schedule)
+    internal PaneRelay(
+        Func<string, Task<string?>> deliver,
+        Action<string>? log,
+        Action<Func<Task>> schedule,
+        Func<IReadOnlyList<string>, string>? script = null)
     {
         _deliver = deliver;
         _log = log;
         _schedule = schedule;
+        _script = script ?? TurnRecordBatch;
     }
+
+    /// <summary>
+    /// The default payload: a batch of turn records folded into the testing surface.
+    /// </summary>
+    /// <param name="batch">Turn records as the pane posted them — each one JSON text.</param>
+    public static string TurnRecordBatch(IReadOnlyList<string> batch) =>
+        "for (var r of [" + string.Join(",", batch) + "])"
+        + " window.__sharpeeHost({type:'deliver',record:r})";
 
     /// <param name="deliver">Runs one script in the testing pane and answers when it returns.</param>
     /// <param name="log">Optional sink for delivery failures; nothing is logged per record.</param>
-    public PaneRelay(Func<string, Task<string?>> deliver, Action<string>? log = null)
-        : this(deliver, log, work => Dispatcher.UIThread.Post(async () => await work()))
+    /// <param name="script">
+    /// Builds the one script a batch is delivered as. Defaults to <see cref="TurnRecordBatch"/>;
+    /// the run column's NDJSON stream supplies its own, because it is the same ordering and
+    /// batching problem against a different page entry point.
+    /// </param>
+    public PaneRelay(
+        Func<string, Task<string?>> deliver,
+        Action<string>? log = null,
+        Func<IReadOnlyList<string>, string>? script = null)
+        : this(deliver, log, work => Dispatcher.UIThread.Post(async () => await work()), script)
     {
     }
 
@@ -76,15 +105,19 @@ public sealed class PaneRelay
     }
 
     /// <summary>
-    /// Delivers queued records one at a time, awaiting each round trip before dequeuing
-    /// the next. A failed delivery is recorded and the queue continues: one record the
-    /// page refused must not strand every record behind it.
+    /// Delivers everything queued in one round trip, then whatever arrived while that
+    /// trip was in flight, and so on until the queue is empty. Records within a batch
+    /// run in one script execution, so the page cannot paint between them and the order
+    /// the client posted them in is the order the surface folds them in.
+    ///
+    /// A failed batch is recorded and the queue continues: records the page refused must
+    /// not strand every record behind them.
     /// </summary>
     private async Task DrainAsync()
     {
         while (true)
         {
-            string next;
+            string[] batch;
             lock (_gate)
             {
                 if (_queue.Count == 0)
@@ -92,18 +125,19 @@ public sealed class PaneRelay
                     _draining = false;
                     return;
                 }
-                next = _queue.Dequeue();
+                batch = _queue.ToArray();
+                _queue.Clear();
             }
 
             try
             {
-                await _deliver("window.__sharpeeHost({type:'deliver',record:" + next + "})");
-                Delivered++;
+                await _deliver(_script(batch));
+                Delivered += batch.Length;
             }
             catch (Exception ex)
             {
                 LastError = $"{ex.GetType().Name}: {ex.Message}";
-                _log?.Invoke($"relay failed: {LastError}");
+                _log?.Invoke($"relay failed ({batch.Length} record(s)): {LastError}");
             }
         }
     }

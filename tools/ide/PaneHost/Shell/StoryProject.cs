@@ -11,7 +11,7 @@
 // development story RepoPaths named, which is null in a bundle — so an installed app had
 // no way to open anything (GH #482). This is the type that made a story a parameter.
 //
-// Public interface: StoryProject — Resolve, Folder, StoryFile, Id, WebBundle,
+// Public interface: StoryProject — Resolve, Folder, StoryFile, Id, WebBundle, StoryIr,
 // TestsDocument, IsBuilt.
 // Owner context: tools/ide — the Avalonia desktop head's shell.
 
@@ -91,6 +91,16 @@ public sealed record StoryProject(string Folder, string StoryFile, string Id)
     }
 
     /// <summary>True when the story has been built and the panes have something to serve.</summary>
+    /// <summary>The story IR a successful build emits, or null before one has run.</summary>
+    public string? StoryIr
+    {
+        get
+        {
+            var path = Path.Combine(Folder, "dist", Id + ".ir.json");
+            return File.Exists(path) ? path : null;
+        }
+    }
+
     public bool IsBuilt => WebBundle is not null;
 
     private static string Stem(string path) => Path.GetFileNameWithoutExtension(path);
