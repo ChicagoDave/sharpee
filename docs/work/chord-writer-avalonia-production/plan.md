@@ -648,14 +648,17 @@ actually independent.
   the full run byte-identical at the pinned seed across repeated executions — verify the project's
   "one run is enough" determinism convention still holds for the new concurrent path before relying
   on it, since that convention was established against today's serial driver.
-- **Status**: PENDING
+- *(Everything from Tier down is the phase as written before ADR-353 D8 superseded it, kept for the
+  record. The Status is the SUPERSEDED line above; the trailing `**Status**: PENDING` this section
+  also carried was removed 2026-09-20, session 1bd093 — two status lines in one phase is a phase
+  with no status.)*
 
 **Ordering within Phases 13-17**: Phase 13 (Index) and Phase 14 (World Map/Reach) are independent
 of each other and of Phase 16 — any of the three can start next, in any order, alongside or after
 Phase 4. Phase 15 depends on Phase 14 (needs the segmented-control scaffold). Phase 16 is pure
-design work and should run early regardless of implementation order, since Phase 17 cannot be
-scoped or started until it resolves. Phase 17 depends on Phase 16; its budget is explicitly
-provisional pending that ruling.
+design work and should run early regardless of implementation order. *(Amended 2026-09-20, session
+1bd093: this sentence also said Phase 17 could not be scoped until Phase 16 resolved. Phase 17 is
+SUPERSEDED by ADR-353 D8 and depends on nothing now.)*
 
 ## Sequencing notes
 

@@ -531,3 +531,82 @@ body.ts-active .sharpee-window { display: none; }
   border: 1px solid var(--ts-fail);
   border-radius: 4px;
 }
+
+/* ── left: the outline column — the tree's fork points (ADR-353) ──────── */
+
+.ts-outline-col {
+  flex: 0 0 258px;
+  border-right: 1px solid var(--ts-border);
+  background: var(--ts-block-bg);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#ts-outline { flex: 1; overflow-y: auto; padding: 8px 10px 14px; }
+.ts-outline-summary {
+  font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-faint);
+  padding: 2px 4px 9px;
+}
+.ts-outline-pill {
+  display: flex;
+  width: 100%;
+  box-sizing: border-box;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 4px;
+  padding: 7px 10px;
+  border: none;
+  border-radius: 9px;
+  background: var(--ts-play-bg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.ts-outline-pill:hover { filter: brightness(1.12); }
+.ts-outline-fork { background: var(--ts-border); font-weight: 600; }
+.ts-outline-line { flex-direction: column; align-items: stretch; gap: 3px; }
+.ts-outline-here { outline: 1px solid var(--ts-accent); }
+.ts-outline-row { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.ts-outline-sub { font-size: 10.5px; }
+.ts-outline-twisty { font-size: 9px; color: var(--ts-fg-faint); flex: 0 0 auto; }
+.ts-outline-name { font-size: 12px; font-weight: 700; }
+.ts-outline-cmd {
+  font: 11.5px ui-monospace, "SF Mono", Menlo, monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-outline-arrow { color: var(--ts-fg-faint); font-size: 10.5px; flex: 0 0 auto; }
+.ts-outline-loc {
+  font-size: 10.5px;
+  color: var(--ts-fg-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-outline-unasserted { opacity: 0.66; }
+.ts-outline-spacer { flex: 1 1 auto; }
+.ts-outline-turns {
+  font-size: 10.5px;
+  color: var(--ts-fg-faint);
+  font-variant-numeric: tabular-nums;
+  flex: 0 0 auto;
+}
+.ts-outline-shared {
+  font: 10px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-faint);
+  background: var(--ts-border);
+  border-radius: 5px;
+  padding: 1px 4px;
+  flex: 0 0 auto;
+}
+.ts-outline-tail {
+  font: 10.5px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-faint);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ts-outline-shape { opacity: 0.8; font-style: italic; }

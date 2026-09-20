@@ -171,6 +171,10 @@ export class CardsView {
     const root = document.createElement('div');
     root.id = 'ts-root';
     root.innerHTML = `
+      <div class="ts-outline-col">
+        <div class="ts-col-head"><span>lines</span></div>
+        <div id="ts-outline"></div>
+      </div>
       <div class="ts-left">
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>

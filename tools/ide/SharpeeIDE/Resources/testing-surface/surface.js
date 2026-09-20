@@ -82,6 +82,225 @@
     return !meta.has(command.trim().toLowerCase());
   }
 
+  // tools/ide/web/testing-surface/src/visit.ts
+  function visitPlanOf(path, prefixLength) {
+    const cut = Math.max(0, Math.min(prefixLength, path.length));
+    const step = (s) => ({
+      command: s.command,
+      key: `${s.lineId}:${s.index}`
+    });
+    return {
+      replay: path.slice(0, cut).map(step),
+      live: path.slice(cut).map(step)
+    };
+  }
+
+  // tools/ide/web/testing-surface/src/outline.ts
+  var PLAYER_LOCATION = /^\s*player\.location\s*=\s*(.+?)\s*$/;
+  var DISTINCTIVE_SHARE = 1 / 3;
+  var SHAPE_RUNS = 5;
+  function assertedLocation(card) {
+    for (const state of card.assertions?.states ?? []) {
+      const match = PLAYER_LOCATION.exec(state);
+      if (match) return match[1];
+    }
+    return void 0;
+  }
+  function turnsOf(cards2) {
+    return cards2.filter((card) => card.type === "turn");
+  }
+  function shapeOf(commands) {
+    const runs = [];
+    for (let i = 0; i < commands.length; ) {
+      let j = i;
+      while (j < commands.length && commands[j] === commands[i]) j += 1;
+      runs.push(j - i === 1 ? commands[i] : `${commands[i]} \xD7${j - i}`);
+      i = j;
+    }
+    return runs.slice(0, SHAPE_RUNS).join(" \u203A ") + (runs.length > SHAPE_RUNS ? " \u2026" : "");
+  }
+  function nameOf(own, siblings) {
+    if (own.length === 0) return { name: "(no turns yet)", nameKind: "empty" };
+    if (siblings.length === 0) return { name: own[0], nameKind: "distinctive" };
+    const share = /* @__PURE__ */ new Map();
+    for (const command of new Set(own)) {
+      share.set(command, siblings.filter((sibling) => sibling.includes(command)).length);
+    }
+    const rarest = Math.min(...share.values());
+    if (rarest <= siblings.length * DISTINCTIVE_SHARE) {
+      const candidates = own.filter((command) => share.get(command) === rarest);
+      return { name: candidates[candidates.length - 1], nameKind: "distinctive" };
+    }
+    return { name: shapeOf(own), nameKind: "shape" };
+  }
+  function lineOf(cards2, lineId, siblings) {
+    const turns = turnsOf(cards2);
+    const commands = turns.map((turn) => turn.command ?? "");
+    let destination;
+    for (const card of turns) {
+      const here = assertedLocation(card);
+      if (here !== void 0) destination = here;
+    }
+    const { name, nameKind } = nameOf(commands, siblings);
+    const line = { lineId, name, nameKind, turns: turns.length };
+    if (turns.length > 0) {
+      line.start = commands[0];
+      line.end = commands[commands.length - 1];
+    }
+    if (destination !== void 0) line.destination = destination;
+    return line;
+  }
+  function outlineOf(doc) {
+    const forks = [];
+    const walk = (cards2, depth, entering) => {
+      let here = entering;
+      for (const card of cards2) {
+        const asserted = assertedLocation(card);
+        if (asserted !== void 0) here = asserted;
+        const branches = card.branches ?? [];
+        if (branches.length === 0) continue;
+        const sequences = branches.map((branch) => turnsOf(branch.cards).map((turn) => turn.command ?? ""));
+        const fork = {
+          depth,
+          locationAsserted: asserted !== void 0,
+          lines: branches.map((branch, index) => lineOf(branch.cards, branch.branch, sequences.filter((_, i) => i !== index)))
+        };
+        if (card.command !== void 0) fork.command = card.command;
+        if (here !== void 0) fork.location = here;
+        forks.push(fork);
+        for (const branch of branches) walk(branch.cards, depth + 1, here);
+      }
+    };
+    const root = lineOf(doc.cards, 0, []);
+    walk(doc.cards, 0, void 0);
+    const lineCount = 1 + forks.reduce((total, fork) => total + fork.lines.length, 0);
+    return { root, forks, lineCount };
+  }
+
+  // tools/ide/web/testing-surface/src/outline-view.ts
+  var OutlineView = class {
+    constructor(delegate) {
+      this.delegate = delegate;
+    }
+    host = null;
+    /** Fork points the author has opened, keyed by position in the outline. */
+    expanded = /* @__PURE__ */ new Set();
+    /** Adopt the column element `CardsView.ensureLayout` built. */
+    attach(host) {
+      this.host = host;
+    }
+    /**
+     * Redraw the column.
+     *
+     * @param outline    the manifest, derived fresh from the document
+     * @param activeLine the line the session is on
+     */
+    render(outline2, activeLine) {
+      if (!this.host) return;
+      this.host.replaceChildren();
+      this.host.appendChild(this.summary(outline2));
+      this.host.appendChild(this.rootPill(outline2.root, activeLine));
+      outline2.forks.forEach((fork, index) => {
+        const open = this.expanded.has(index);
+        this.host.appendChild(this.forkPill(fork, index, open));
+        if (!open) return;
+        for (const line of fork.lines) {
+          this.host.appendChild(this.linePill(line, fork.depth + 1, activeLine));
+        }
+      });
+    }
+    /** One line of counts — what the tree is, before anything is run. */
+    summary(outline2) {
+      const el = document.createElement("div");
+      el.className = "ts-outline-summary";
+      const forks = outline2.forks.length;
+      el.textContent = `${outline2.lineCount} line${outline2.lineCount === 1 ? "" : "s"} \xB7 ${forks} fork point${forks === 1 ? "" : "s"}`;
+      return el;
+    }
+    rootPill(root, activeLine) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ts-outline-pill ts-outline-root";
+      if (activeLine === 0) button.classList.add("ts-outline-here");
+      button.append(
+        span("ts-outline-name", "root"),
+        span("ts-outline-cmd", `${root.start ?? "\u2014"} \u2192 ${root.end ?? "\u2014"}`),
+        span("ts-outline-spacer", ""),
+        span("ts-outline-turns", String(root.turns))
+      );
+      button.addEventListener("click", () => this.delegate.onSelectLine(0));
+      return button;
+    }
+    forkPill(fork, index, open) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ts-outline-pill ts-outline-fork";
+      button.style.marginLeft = `${fork.depth * 16}px`;
+      button.setAttribute("aria-expanded", String(open));
+      const count = fork.lines.length;
+      button.append(
+        span("ts-outline-twisty", open ? "\u25BE" : "\u25B8"),
+        span("ts-outline-cmd", fork.command ?? "\u2014"),
+        locationSpan(fork.location, fork.locationAsserted),
+        span("ts-outline-spacer", ""),
+        span("ts-outline-turns", String(count))
+      );
+      button.addEventListener("click", () => {
+        if (this.expanded.has(index)) this.expanded.delete(index);
+        else this.expanded.add(index);
+        button.dispatchEvent(new CustomEvent("ts-outline-toggle", { bubbles: true }));
+      });
+      return button;
+    }
+    linePill(line, depth, activeLine) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "ts-outline-pill ts-outline-line";
+      button.style.marginLeft = `${depth * 16}px`;
+      if (line.lineId === activeLine) button.classList.add("ts-outline-here");
+      const top = document.createElement("span");
+      top.className = "ts-outline-row";
+      const name = span("ts-outline-cmd", line.name);
+      if (line.nameKind === "shape") {
+        name.classList.add("ts-outline-shape");
+        name.title = "nothing in this line is rare among its siblings \u2014 this is its shape";
+      }
+      if (line.nameKind === "empty") name.classList.add("ts-outline-unasserted");
+      top.append(name);
+      const bottom = document.createElement("span");
+      bottom.className = "ts-outline-row ts-outline-sub";
+      if (line.destination !== void 0) {
+        bottom.append(span("ts-outline-loc", line.destination));
+      } else if (line.turns > 0) {
+        const silent = span("ts-outline-loc ts-outline-unasserted", "no location asserted");
+        silent.title = "this line never asserts where it ends";
+        bottom.append(silent);
+      }
+      bottom.append(
+        span("ts-outline-spacer", ""),
+        span("ts-outline-turns", `${line.turns} turn${line.turns === 1 ? "" : "s"}`)
+      );
+      button.append(top, bottom);
+      button.addEventListener("click", () => this.delegate.onSelectLine(line.lineId));
+      return button;
+    }
+  };
+  function span(className, text3) {
+    const el = document.createElement("span");
+    el.className = className;
+    el.textContent = text3;
+    return el;
+  }
+  function locationSpan(location, asserted, absent = "\u2014") {
+    const el = span("ts-outline-loc", location ?? absent);
+    if (!asserted) {
+      el.classList.add("ts-outline-unasserted");
+      el.title = "inherited from the fork \u2014 this line asserts no location";
+      el.textContent = `${location ?? absent} \u2301`;
+    }
+    return el;
+  }
+
   // packages/branch-tester/src/tree-document.ts
   var TREE_DOCUMENT_VERSION = 1;
   function emptyTreeDocument(story, seed2) {
@@ -326,6 +545,10 @@
       const root = document.createElement("div");
       root.id = "ts-root";
       root.innerHTML = `
+      <div class="ts-outline-col">
+        <div class="ts-col-head"><span>lines</span></div>
+        <div id="ts-outline"></div>
+      </div>
       <div class="ts-left">
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>
@@ -815,12 +1038,12 @@
       for (const sibling of point.siblings) {
         const pending = this.model.isPending(sibling);
         const firstCommand = this.model.ownCommandsOf(sibling)[0] ?? this.model.labelOf(sibling).split(" \xB7 ").at(-1) ?? "";
-        const span = pending ? `&gt; ${escapeHtml(firstCommand)} \xB7 replay pending` : `&gt; ${escapeHtml(firstCommand)}`;
+        const span2 = pending ? `&gt; ${escapeHtml(firstCommand)} \xB7 replay pending` : `&gt; ${escapeHtml(firstCommand)}`;
         const chip = document.createElement("div");
         chip.className = "ts-branch-chip" + (selectedSibling === sibling ? " ts-chip-selected" : "");
         chip.innerHTML = `<div class="ts-meta">branch</div>
          <div class="ts-chip-title">${escapeHtml(this.model.labelOf(sibling))}</div>
-         <div class="ts-chip-span">${span}</div>`;
+         <div class="ts-chip-span">${span2}</div>`;
         chip.addEventListener("click", () => this.delegate.onSelectLine(sibling));
         const remove = document.createElement("button");
         remove.className = "ts-chip-delete";
@@ -1061,7 +1284,7 @@
       return "{}";
     }
   }
-  function lineOf(row, who) {
+  function lineOf2(row, who) {
     const describe = DESCRIBERS[row.kind];
     const tail = row.kind.replace(/^character\.author\.|^npc\.character\./, "");
     return {
@@ -1072,21 +1295,21 @@
       claimChannel: "character"
     };
   }
-  function explainGroups(rows, nameOf) {
+  function explainGroups(rows, nameOf2) {
     const who = (value) => {
       const id = text(value);
-      return nameOf(id) ?? "the player";
+      return nameOf2(id) ?? "the player";
     };
     const groups = /* @__PURE__ */ new Map();
     for (const row of rows) {
       const key = row.npcId ?? "";
       let group = groups.get(key);
       if (!group) {
-        const npcLabel = row.npcId === void 0 ? "story" : nameOf(row.npcId) ?? row.npcId;
+        const npcLabel = row.npcId === void 0 ? "story" : nameOf2(row.npcId) ?? row.npcId;
         group = { npcLabel, lines: [] };
         groups.set(key, group);
       }
-      group.lines.push(lineOf(row, who));
+      group.lines.push(lineOf2(row, who));
     }
     return [...groups.values()];
   }
@@ -1163,7 +1386,7 @@
       return "{}";
     }
   }
-  function lineOf2(row, who) {
+  function lineOf3(row, who) {
     const describe = DESCRIBERS2[row.kind];
     const tail = row.kind.replace(/^character\.scene\.|^character\.exchange\./, "");
     return {
@@ -1177,10 +1400,10 @@
       claimChannel: "scene"
     };
   }
-  function sceneExplainGroups(rows, nameOf) {
+  function sceneExplainGroups(rows, nameOf2) {
     const who = (value) => {
       const id = text2(value);
-      return nameOf(id) ?? "the player";
+      return nameOf2(id) ?? "the player";
     };
     const groups = /* @__PURE__ */ new Map();
     for (const row of rows) {
@@ -1190,7 +1413,7 @@
         group = { npcLabel: key, lines: [] };
         groups.set(key, group);
       }
-      group.lines.push(lineOf2(row, who));
+      group.lines.push(lineOf3(row, who));
     }
     return [...groups.values()];
   }
@@ -1214,10 +1437,10 @@
       ...frag2("actionId", response.actionId)
     ];
   }
-  function affordanceGroupsOf(channelValues, nameOf) {
+  function affordanceGroupsOf(channelValues, nameOf2) {
     const who = (value) => {
       const id = text2(value);
-      return nameOf(id) ?? "the player";
+      return nameOf2(id) ?? "the player";
     };
     const groups = [];
     for (const value of channelValues?.["exchange-affordances"] ?? []) {
@@ -1242,10 +1465,10 @@
     }
     return groups;
   }
-  function threadAffordanceGroupsOf(channelValues, nameOf) {
+  function threadAffordanceGroupsOf(channelValues, nameOf2) {
     const who = (value) => {
       const id = text2(value);
-      return nameOf(id) ?? "the player";
+      return nameOf2(id) ?? "the player";
     };
     const groups = [];
     for (const value of channelValues?.["thread-affordances"] ?? []) {
@@ -2417,12 +2640,12 @@
     for (const entity of source.world?.entities ?? []) {
       if (entity.id !== void 0) names.set(entity.id, entity.name);
     }
-    const nameOf = (id) => names.get(id);
+    const nameOf2 = (id) => names.get(id);
     return [
-      ...explainGroups(characterRowsOf(captures), nameOf),
-      ...sceneExplainGroups(sceneRowsOf(captures), nameOf),
-      ...affordanceGroupsOf(captures, nameOf),
-      ...threadAffordanceGroupsOf(captures, nameOf)
+      ...explainGroups(characterRowsOf(captures), nameOf2),
+      ...sceneExplainGroups(sceneRowsOf(captures), nameOf2),
+      ...affordanceGroupsOf(captures, nameOf2),
+      ...threadAffordanceGroupsOf(captures, nameOf2)
     ];
   }
   function removeAssertion(del) {
@@ -2462,6 +2685,19 @@
     if (!memento) return;
     model.restoreAuthoring(memento);
     update();
+  }
+  var outline = new OutlineView({
+    onSelectLine(lineId) {
+      void selectLine(lineId);
+    }
+  });
+  document.addEventListener("ts-outline-toggle", () => renderOutline());
+  function attachOutline() {
+    const host = document.getElementById("ts-outline");
+    if (host) outline.attach(host);
+  }
+  function renderOutline() {
+    outline.render(outlineOf(model.document), model.activeLine);
   }
   var cards = new CardsView(model, {
     onTailCut(ordinal) {
@@ -2598,9 +2834,11 @@
         if (!runState.inFlight) resetRun(runState);
       }
       cards.render();
+      renderOutline();
       postState();
     } else {
       cards.render();
+      renderOutline();
     }
   }
   function postState() {
@@ -2726,6 +2964,7 @@
       return;
     }
     cards.ensureLayout();
+    attachOutline();
     records.set(record.turn, record);
     lastDeliveredOrdinal = record.turn;
     if (boot && currentLine === MAIN_LINE) {
@@ -2785,15 +3024,15 @@
     input.placeholder = placeholder;
     if (!held) input.focus();
   }
+  function visitPlan(lineId) {
+    return visitPlanOf(model.pathStepsOf(lineId), model.prefixCommandsOf(lineId).length);
+  }
   function pathSteps(lineId) {
-    return model.pathStepsOf(lineId).map((step) => ({
-      command: step.command,
-      key: `${step.lineId}:${step.index}`
-    }));
+    const plan = visitPlan(lineId);
+    return [...plan.replay, ...plan.live];
   }
   function prefixSteps(lineId) {
-    const prefixLength = model.prefixCommandsOf(lineId).length;
-    return pathSteps(lineId).slice(0, prefixLength);
+    return visitPlan(lineId).replay;
   }
   async function driveFreshBoot(line, replay, live) {
     const wasBusy = driverBusy;
@@ -2870,11 +3109,8 @@
     await driveFreshBoot(id, prefixSteps(id), [{ command, key: `${id}:0` }]);
   }
   async function visitLine(lineId) {
-    const ownSteps = model.ownCommandsOf(lineId).map((command, index) => ({
-      command,
-      key: `${lineId}:${index}`
-    }));
-    return driveFreshBoot(lineId, prefixSteps(lineId), ownSteps);
+    const plan = visitPlan(lineId);
+    return driveFreshBoot(lineId, plan.replay, plan.live);
   }
   async function selectLine(lineId) {
     if (replayActive || driverBusy || lineId === model.activeLine) return;
@@ -2951,6 +3187,7 @@
     runExit: deliverRunExit
   };
   cards.ensureLayout();
+  attachOutline();
   installDialogHooks();
   document.addEventListener("keydown", (event) => {
     if (!(event.metaKey || event.ctrlKey) || event.key !== "z" || event.shiftKey) return;

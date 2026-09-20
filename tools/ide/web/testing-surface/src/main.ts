@@ -33,6 +33,9 @@
 
 import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import { endingOf, blocksCommand } from './ending.js';
+import { visitPlanOf, type LineVisit, type ReplayStep } from './visit.js';
+import { outlineOf } from './outline.js';
+import { OutlineView } from './outline-view.js';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
 import { CardsView } from './cards';
@@ -105,9 +108,6 @@ interface DeliverShim {
   /** The run process exited; `ok` false with no run-end is a pipeline death. */
   runExit?(ok: boolean, note?: string): void;
 }
-
-/** A command to type during replay, keyed for dialog outcome lookup. */
-interface ReplayStep { command: string; key: string }
 
 const surfaceWindow = window as unknown as {
   __sharpeeTestingSurface?: DeliverShim;
@@ -258,6 +258,27 @@ function performUndo(): void {
   if (!memento) return;
   model.restoreAuthoring(memento);
   update();
+}
+
+const outline = new OutlineView({
+  onSelectLine(lineId) {
+    void selectLine(lineId);
+  },
+});
+
+// Expanding a fork point is view state, so the column asks for a redraw
+// rather than touching the model — nothing about the document changed.
+document.addEventListener('ts-outline-toggle', () => renderOutline());
+
+/** Adopt the outline column once the layout exists; idempotent. */
+function attachOutline(): void {
+  const host = document.getElementById('ts-outline');
+  if (host) outline.attach(host);
+}
+
+/** Redraw the outline from the document as it stands right now. */
+function renderOutline(): void {
+  outline.render(outlineOf(model.document), model.activeLine);
 }
 
 const cards = new CardsView(model, {
@@ -454,9 +475,11 @@ function update(): void {
       if (!runState.inFlight) resetRun(runState);
     }
     cards.render();
+    renderOutline();
     postState();
   } else {
     cards.render();
+    renderOutline();
   }
 }
 
@@ -632,6 +655,7 @@ function deliver(raw: unknown): void {
   }
 
   cards.ensureLayout();
+  attachOutline();
   records.set(record.turn, record);
   lastDeliveredOrdinal = record.turn;
   if (boot && currentLine === MAIN_LINE) {
@@ -708,19 +732,23 @@ function setInputHeld(held: boolean, placeholder = ''): void {
   if (!held) input.focus();
 }
 
+/** How line `lineId` divides for a visit: prefix to replay, own cards to
+ *  type live. The one derivation every replay path shares (`visit.ts`), so a
+ *  step cannot be keyed one way here and another way there. */
+function visitPlan(lineId: number): LineVisit {
+  return visitPlanOf(model.pathStepsOf(lineId), model.prefixCommandsOf(lineId).length);
+}
+
 /** A line's full path as replay steps, keyed `line:turnIndex` so recorded
  *  dialog outcomes re-apply wherever their command replays. */
 function pathSteps(lineId: number): ReplayStep[] {
-  return model.pathStepsOf(lineId).map(step => ({
-    command: step.command,
-    key: `${step.lineId}:${step.index}`,
-  }));
+  const plan = visitPlan(lineId);
+  return [...plan.replay, ...plan.live];
 }
 
 /** The path steps BEFORE the line's own cards — a branch replay's prefix. */
 function prefixSteps(lineId: number): ReplayStep[] {
-  const prefixLength = model.prefixCommandsOf(lineId).length;
-  return pathSteps(lineId).slice(0, prefixLength);
+  return visitPlan(lineId).replay;
 }
 
 /**
@@ -823,11 +851,8 @@ async function performBranch(ordinal: number, command: string): Promise<void> {
  * eager walk any more, so visiting a line is the only thing that ever binds it.
  */
 async function visitLine(lineId: number): Promise<BootOutcome> {
-  const ownSteps = model.ownCommandsOf(lineId).map((command, index) => ({
-    command,
-    key: `${lineId}:${index}`,
-  }));
-  return driveFreshBoot(lineId, prefixSteps(lineId), ownSteps);
+  const plan = visitPlan(lineId);
+  return driveFreshBoot(lineId, plan.replay, plan.live);
 }
 
 async function selectLine(lineId: number): Promise<void> {
@@ -871,11 +896,16 @@ async function performTailCut(ordinal: number): Promise<void> {
 // ── restore on boot / after an author restart ─────────────────────────────
 
 /**
- * Replays the whole tree onto a booting engine: the main line types live
- * (delivered turns bind to the document's cards), each branch line
- * fresh-boots with its prefix suppressed and its own cards typed live, and
- * the target active line replays last so it ends up live. Any step that
- * fails leaves what landed — degraded, never an error.
+ * Replays ONE line onto a booting engine (ADR-353 D1): the main line's own
+ * commands type live, so delivered turns bind to the document's cards, and
+ * then — only if the main line came through intact and the session was left
+ * somewhere else — the active line is visited. Every other line is left
+ * unvisited until someone asks for it; its verdict is the run column's job,
+ * not this driver's. Any step that fails leaves what landed — degraded,
+ * never an error.
+ *
+ * The name is older than the behavior: this replayed the whole tree until
+ * the walk was deleted, and the boot path still calls it by that name.
  */
 async function replayTree(activeTarget: number): Promise<void> {
   driverBusy = true;
@@ -932,6 +962,7 @@ surfaceWindow.__sharpeeTestingSurface = {
 };
 
 cards.ensureLayout();
+attachOutline();
 installDialogHooks();
 // ⌘Z — undo the last authoring gesture (never inside a text field, where
 // the field's own undo belongs to the field).

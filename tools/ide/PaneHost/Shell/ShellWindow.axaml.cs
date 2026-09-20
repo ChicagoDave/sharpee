@@ -1706,7 +1706,169 @@ public partial class ShellWindow : Window
         var totals = string.Join(", ", _paneMessages.OrderBy(p => p.Key).Select(p => p.Key + " " + p.Value));
         _log.Line($"  testing surface after the round trip: {surface}");
         _log.Line($"  page → host totals: {totals} ({PaneMessageCount} message(s))");
+
+        await MeasureBranchVisitAsync();
         _log.Line("exit state: done");
+    }
+
+    /// <summary>
+    /// Times one branch visit end to end: click a branch chip, wait for the driver to
+    /// take the input, then wait for it to give the input back, and report the elapsed
+    /// wall time with the turn records the visit produced.
+    ///
+    /// This exists to decide ADR-353 D4. D4's premise — that restoring a saved image of
+    /// a branch's parent beats retyping its prefix — was formed while the pane replayed
+    /// the WHOLE tree on every load. D1 shipped and deleted that walk, so a visit now
+    /// costs one line's prefix, and whether an image cache is worth its invalidation
+    /// rule and its platform change turns on a number nobody had measured after D1.
+    ///
+    /// Reads nothing and changes nothing: the pane is left on whichever line it visited.
+    /// </summary>
+    private async Task MeasureBranchVisitAsync()
+    {
+        _log.Line("── ADR-353 D4: what one branch visit costs, measured after D1 ──");
+
+        var outline = await EvaluateAsync(TestingWeb,
+            "JSON.stringify({col:!!document.getElementById('ts-outline'),"
+            + "forks:document.querySelectorAll('.ts-outline-fork').length,"
+            + "lines:document.querySelectorAll('.ts-outline-line').length,"
+            + "summary:(document.querySelector('.ts-outline-summary')||{}).textContent||'',"
+            + "firstForks:Array.from(document.querySelectorAll('.ts-outline-fork')).slice(0,3)"
+            + ".map(function(b){return b.innerText.replace(/\\s+/g,' ').trim();})})");
+        _log.Line($"  outline column: {outline}");
+
+        var chips = await EvaluateAsync(TestingWeb,
+            "JSON.stringify({total:document.querySelectorAll('.ts-branch-chip').length,"
+            + "branches:Array.from(document.querySelectorAll('.ts-branch-chip')).filter(function(c){"
+            + "var m=c.querySelector('.ts-meta');return m&&m.textContent==='branch';}).length})");
+        _log.Line($"  chips on the active path: {chips}");
+
+        // ONE visit, and the driver's own trace is what says it finished.
+        // Two earlier attempts got this wrong in instructive ways. Polling the
+        // input's `disabled` flag from here at 100ms missed the window entirely;
+        // observing the attribute from inside the page caught a release 25ms in,
+        // which is a re-render freeing the input while the driver is still waiting
+        // on a fence — not the end of anything. The driver traces its own outcome
+        // (`ok` / `ended` / a named failure), so that is the signal, and clicking a
+        // second chip before it arrives only starts a second visit on top of the first.
+        // Isolation: an AUTHOR restart, typed straight into the client with no
+        // driver preamble — no storage clear, no forkBoot, no suppression. If
+        // this reboots and a chip click does not, the fault is the driver's; if
+        // neither does, the reboot path itself is broken in this head.
+        var plainBefore = _paneMessages.GetValueOrDefault("turnEvents");
+        var cleared = await EvaluateAsync(TestingWeb,
+            "(function(){try{var n=localStorage.length;localStorage.clear();"
+            + "return 'cleared '+n+' key(s)';}catch(e){return 'throw: '+e.name;}})()");
+        _log.Line($"    storage before the author restart: {cleared}");
+        await EvaluateAsync(TestingWeb, "window.__sharpeeHost({type:'type',command:'restart'})");
+        for (var sample = 1; sample <= 4; sample++)
+        {
+            await Task.Delay(2000);
+            var tail = await EvaluateAsync(TestingWeb,
+                "(function(){var t=document.getElementById('text-content');"
+                + "return JSON.stringify({tail:(t?t.innerText:'').slice(-90).replace(/\\s+/g,' ')});})()");
+            _log.Line($"    author restart t+{sample * 2}s: {tail}");
+        }
+        _log.Line($"  author restart produced {_paneMessages.GetValueOrDefault("turnEvents") - plainBefore} turn record(s)");
+
+        var consoleBefore = _paneMessages.GetValueOrDefault("testingConsole");
+        var recordsBefore = _paneMessages.GetValueOrDefault("turnEvents");
+        var startedAt = DateTime.UtcNow;
+
+        // The surface forwards window 'error' to the host but nothing forwards a
+        // rejected promise, and the reboot is awaited — so a rejection inside it
+        // would leave exactly the silence being investigated.
+        await EvaluateAsync(TestingWeb,
+            "(function(){window.__rejections=[];window.__errors=[];"
+            + "window.addEventListener('unhandledrejection',function(e){"
+            + "window.__rejections.push(String((e.reason&&(e.reason.stack||e.reason.message))||e.reason));});"
+            + "var ce=console.error;console.error=function(){"
+            + "try{window.__errors.push(Array.prototype.slice.call(arguments).map(String).join(' '));}catch(x){}"
+            + "return ce.apply(console,arguments);};return 'armed';})()");
+
+        var clicked = await EvaluateAsync(TestingWeb,
+            "(function(){"
+            + "var chips=Array.from(document.querySelectorAll('.ts-branch-chip'))"
+            + ".filter(function(c){var m=c.querySelector('.ts-meta');"
+            + "return m&&m.textContent==='branch'&&!c.classList.contains('ts-chip-selected');});"
+            + "if(!chips.length) return 'no-unselected-branch-chip';"
+            + "var t=chips[0].querySelector('.ts-chip-title');"
+            + "window.__visitT0=performance.now();"
+            + "chips[0].click();"
+            + "return JSON.stringify({label:t?t.textContent:'<none>',candidates:chips.length});})()");
+        _log.Line($"  clicked: {clicked}");
+        if (clicked.Contains("no-unselected-branch-chip")) return;
+
+        // The entry trace ("boot line N: X replayed + Y live") comes first; the
+        // outcome trace is the one after it.
+        var sawEntry = await WaitForAsync(
+            () => _paneMessages.GetValueOrDefault("testingConsole") > consoleBefore,
+            TimeSpan.FromSeconds(10));
+        var entry = Trim(_lastPost.GetValueOrDefault("testingConsole", ""), 90);
+        var entryCount = _paneMessages.GetValueOrDefault("testingConsole");
+        _log.Line($"  driver started: {(sawEntry ? entry : "NO ENTRY TRACE — the click started no visit")}");
+        if (!sawEntry) return;
+
+        // What the reboot actually did. The fence arrives and then nothing does,
+        // so the question is which branch `BrowserClient.start()` took: a found
+        // autosave (which displays "[Session restored]" and runs NO opening look)
+        // or a clean boot (which runs one). The transcript tail says which.
+        for (var sample = 1; sample <= 6; sample++)
+        {
+            await Task.Delay(2000);
+            var state = await EvaluateAsync(TestingWeb,
+                "(function(){var t=document.getElementById('text-content');"
+                + "var txt=t?t.innerText:'<no text-content>';"
+                + "var keys=[];try{for(var i=0;i<localStorage.length;i++)keys.push(localStorage.key(i));}"
+                + "catch(e){keys=['<throw: '+e.name+'>'];}"
+                + "var dlgs=Array.from(document.querySelectorAll('.sharpee-dialog,dialog,[role=dialog]'));"
+                + "var open=dlgs.filter(function(d){var s=getComputedStyle(d);"
+                + "return s.display!=='none'&&s.visibility!=='hidden'&&d.getBoundingClientRect().height>0;});"
+                + "return JSON.stringify({storageCount:keys.length,"
+                + "dialogs:dlgs.length,dialogsOpen:open.length,"
+                + "dialogText:open.length?open[0].innerText.slice(0,120).replace(/\\s+/g,' '):'',"
+                + "tail:txt.slice(-90).replace(/\\s+/g,' ')});})()");
+            _log.Line($"    t+{sample * 2}s: {state}");
+        }
+
+        var caught = await EvaluateAsync(TestingWeb,
+            "JSON.stringify({rejections:(window.__rejections||[]).slice(0,3),"
+            + "errors:(window.__errors||[]).slice(0,3)})");
+        _log.Line($"    caught while the reboot hung: {Trim(caught, 600)}");
+
+        var settled = await WaitForAsync(
+            () => _paneMessages.GetValueOrDefault("testingConsole") > entryCount,
+            TimeSpan.FromSeconds(90));
+        var elapsed = DateTime.UtcNow - startedAt;
+        var outcome = Trim(_lastPost.GetValueOrDefault("testingConsole", ""), 120);
+        var produced = _paneMessages.GetValueOrDefault("turnEvents") - recordsBefore;
+        var rendered = await EvaluateAsync(TestingWeb,
+            "JSON.stringify({cards:document.querySelectorAll('[class*=card]').length,"
+            + "anchors:document.querySelectorAll('[data-turn]').length})");
+
+        _log.Line($"  outcome after {elapsed.TotalSeconds:F1}s: "
+                  + $"{(settled ? outcome : "NO OUTCOME TRACE inside 90s — the visit never finished")}");
+        _log.Line($"  the visit produced {produced} turn record(s); surface now {rendered}");
+    }
+
+    /// <summary>Polls a script in the testing pane until it answers non-empty, or times out.</summary>
+    /// <param name="script">Evaluated repeatedly; any non-empty answer ends the wait.</param>
+    /// <param name="timeout">How long to keep polling.</param>
+    /// <returns>True when the script answered; false on timeout.</returns>
+    private async Task<bool> WaitForScriptAsync(string script, TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        while (DateTime.UtcNow < deadline)
+        {
+            var answer = await EvaluateAsync(TestingWeb, script);
+            if (!string.IsNullOrEmpty(answer)
+                && answer != "\"\"" && answer != "null" && answer != "undefined")
+            {
+                return true;
+            }
+            await Task.Delay(100);
+        }
+        return false;
     }
 
     /// <summary>
