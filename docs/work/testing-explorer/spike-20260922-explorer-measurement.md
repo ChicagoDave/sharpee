@@ -288,6 +288,114 @@ runtime softlocks need execution. So the shape is two instruments: planning for
 here is adequate for the second and was never going to be adequate for the
 first.
 
+## Finding 9 — the planner: tractable, incomplete, and it found two real bugs
+
+`tools/explorer-probe/plan.js` searches the story's DECLARED causality instead
+of executed states. It compiles the IR into operators and runs breadth-first
+over an abstract state (where the player is, what they hold, what is open,
+each entity's declared state, each machine's state, the story state).
+
+**The approach is validated on cost.** 122,880-325,368 abstract states in
+17-42 seconds, against 23,163 executed states in 900 seconds that never came
+near the goal. The goal is identified automatically from the IR:
+`fernhill-saved`, reached by `entering iron-gates` under `player has deed`.
+
+**The MODEL is complete; the SEARCH is not.** Every causal link in fernhill
+now fires: `tobias=shaken`, the boiler machine through `filled` / `primed` /
+`running` (which is `turn stopcock` / `push plunger` / `switch on boiler`
+solved from the declared state machine), `vine=flowering` then `fruiting`,
+`open folly-door`, `at folly`, `fuse=cut`, `has deed` (27,293 times), and all
+13 rooms.
+
+**It still does not emit the plan, and must not be reported as if it did.**
+Blind breadth-first runs out of budget walking the deed back out of the folly.
+A goal-directed heuristic — unmet goal conditions plus room-graph distance —
+did not help, for a principled reason: every state *without* the deed scores
+identically, so the search degenerates to breadth-first until the deed appears
+around depth 25. What is needed is a relaxed-plan or landmark heuristic. That
+is classical planning with known solutions, not a mystery, and it is the
+recorded stopping point (GH #507).
+
+### Four modelling bugs, every one found by the search stalling
+
+1. **Placement is on the entity, not the room.** The IR carries
+   `placement:{relation,place}` per entity; `containing` on a room holds only
+   region membership. Reading the wrong one left every object nowhere and the
+   search died at 10 states.
+2. **`refuse-when` carries its own condition.** Treating every refusal in a
+   body as unconditional made `switch on boiler` permanently unavailable — the
+   boiler refuses `switching_on` only while cold or filled, and is switchable
+   once primed. One wrong line silently made the ending unreachable in the
+   model, which is the same failure mode as the unsound state identity in
+   Finding 7: the model does not complain, it just quietly loses the story.
+3. **`move` names a destination.** `move the silver locket to the Greenhouse`
+   carries `place:{kind:'entity',id}`; defaulting to the player's room put the
+   locket where it never was.
+4. **A door named only by `exits[].via` has no placement AND often no traits.**
+   fernhill's `folly-door` has both empty — it exists solely as an exit
+   reference. A model built from placement never sees it, never opens it, and
+   silently loses every room behind it. This is the third time in one session
+   that the same shape cost a room (the Pantry on the executed walk, the
+   instrument placement, and now this), which is the argument for reporting
+   room and ending counts as the standing external check on any identity or
+   model rule.
+
+### A real story finding, static and without running anything
+
+**`fruiting` appears exactly once in the whole compiled IR** — as the
+condition of the vine's `on pruning when vine is fruiting` clause. No machine,
+sequence or entity rule in the IR ever sets it.
+
+That turned out to be half a bug and half this model's own gap — the
+assignment lives in a trait definition, which the model did not then read. But
+the shape of the check is
+worth keeping — *a declared state that no rule ever assigns* is a static,
+zero-execution finding, and it is exactly the kind of thing the map UX should
+put in front of an author.
+
+### The fifth causal surface — found, then modelled
+
+The vine's ripening is in a **custom trait definition**, which the first
+version of the model never read:
+
+```
+define trait prunable
+  on the player pruning
+    the player must hold the garden shears: need-shears
+    select on its state
+      when flowering
+        change it to fruiting
+        move the silver locket to the Greenhouse
+```
+
+So the complete set of surfaces a planner must consume is five, not four:
+`machines`, `entity.onClauses`, `entity.topics`, `actions`, and
+**`traits[]` — trait-defined `on` clauses, with `must` preconditions and
+`select on its state` dispatch**, applied to every entity carrying the trait.
+That is also where fernhill states the shears requirement, which Finding 8 had
+to infer from a `cuttable` config.
+
+Trait clauses are written against `it`, because one definition serves every
+entity carrying the trait — so the model binds `it` to the entity the clause
+fires on, and `select on its state` dispatches on that entity's declared
+state. Both are now implemented, and `vine=fruiting` is reached.
+
+### Status
+
+The planner consumes all five surfaces, models fernhill's causality
+completely, and demonstrates the cost argument. It is not yet an answer to
+"is this ending reachable": what remains is a relaxed-plan or landmark
+heuristic (GH #507), and then `--verify` replaying the plan through the real
+engine — the step that keeps ADR-293 D12 intact, since only an executed plan
+proves anything.
+
+**Direction taken at the end of the session** (David, 2026-09-22): stop
+testing everything at once and pick specific scopes. The session's own record
+supports it — every useful finding came from a narrow lens (the
+`stall-lift-quietly` unbound param, 27 of 40 dimensions inert, `fruiting`
+never assigned), while the exhaustive approaches spent 715,903 commands and
+produced nothing. Tracked as GH #508.
+
 ## What this says about the product
 
 An explorer is viable, but not as *exhaustive* play. The reachable-state count
