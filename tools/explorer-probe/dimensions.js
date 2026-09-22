@@ -106,6 +106,7 @@ function emptyRefs() {
     placementRead: new Set(),
     stateWritten: new Set(),
     gatingDoors: new Set(),
+    requiredInstruments: new Set(),
     storyStateRead: false,
   };
 }
@@ -147,6 +148,26 @@ function deriveDimensions(ir) {
     }
   }
 
+  // Required instruments: resolve the NAME a trait config gives to the entity
+  // it refers to, and make that entity's placement load-bearing.
+  const idByName = new Map();
+  for (const entity of ir.entities || []) {
+    if (typeof entity.name === 'string') idByName.set(entity.name.toLowerCase(), entity.id);
+    idByName.set(String(entity.id).replace(/-/g, ' ').toLowerCase(), entity.id);
+  }
+  for (const entity of ir.entities || []) {
+    for (const trait of entity.traits || []) {
+      for (const cfg of trait.config || []) {
+        if (!cfg || cfg.valueKind !== 'name' || typeof cfg.value !== 'string') continue;
+        const resolved = idByName.get(cfg.value.toLowerCase());
+        if (resolved) {
+          refs.placementRead.add(resolved);
+          refs.requiredInstruments.add(resolved);
+        }
+      }
+    }
+  }
+
   const declared = [];
   for (const entity of ir.entities || []) {
     if (!Array.isArray(entity.states) || entity.states.length < 2) continue;
@@ -175,6 +196,7 @@ function deriveDimensions(ir) {
     dimensionsLoadBearing: loadBearing.length,
     placementLoadBearing: refs.placementRead.size,
     gatingDoors: [...refs.gatingDoors].sort(),
+    requiredInstruments: [...refs.requiredInstruments].sort(),
     fullProduct: product(declared) * Math.max(storyStates.length, 1),
     loadBearingProduct: product(loadBearing) * storyFactor,
     loadBearingDimensions: loadBearing,
@@ -208,3 +230,120 @@ if (require.main === module) {
   if (report.inertDimensions.length > 25) console.log('  ...and ' + (report.inertDimensions.length - 25) + ' more');
   console.log('');
 }
+
+/**
+ * Derive the story's own declared command vocabulary from its IR.
+ *
+ * The trait-implied verbs (open, take, push) cover the platform's standard
+ * actions, but a story's endings routinely depend on verbs and conversation
+ * the story itself declares. fernhill's winning walkthrough needs
+ * `prune vine` (a declared `pruning` action) and `ask tobias about the folly`
+ * (a declared topic) — neither is derivable from traits, and without them the
+ * walk reaches every room and no ending.
+ *
+ * Measured IR shapes (fernhill, 2026-09-22):
+ *   action   {name, patterns:[{parts:[{kind:'word',word}|{kind:'slot',word}]}],
+ *             constraints:[{slot, requirement:'reachable'}]}
+ *   topic    entity.topics[] with filter {kind:'entity',id}
+ *                            or filter {kind:'text',primary,aliases[]}
+ *
+ * Only single-slot action patterns are emitted; multi-slot patterns would
+ * cross the vocabulary with itself, which is the combinatorial blow-up this
+ * whole spike exists to avoid.
+ *
+ * @param ir the parsed Story IR
+ * @returns {{actions: Array, topics: Object}} templates and per-NPC topics
+ */
+function deriveCommandVocabulary(ir) {
+  const actions = [];
+  for (const action of ir.actions || []) {
+    for (const pattern of action.patterns || []) {
+      const parts = pattern.parts || [];
+      if (parts.filter((p) => p && p.kind === 'slot').length !== 1) continue;
+      actions.push({ name: action.name, parts });
+    }
+  }
+
+  const topics = {};
+  for (const entity of ir.entities || []) {
+    if (!Array.isArray(entity.topics) || entity.topics.length === 0) continue;
+    const list = [];
+    for (const topic of entity.topics) {
+      const filter = topic && topic.filter;
+      if (!filter) continue;
+      if (filter.kind === 'entity' && typeof filter.id === 'string') {
+        list.push({ kind: 'entity', id: filter.id });
+      } else if (filter.kind === 'text' && typeof filter.primary === 'string') {
+        list.push({ kind: 'text', text: filter.primary });
+      }
+    }
+    if (list.length) topics[entity.id] = list;
+  }
+
+  // An entity's `on <action>` clauses name the actions it responds to — the
+  // story's own affordance declaration, which trait inference cannot see.
+  const entityActions = {};
+  const openWith = {};
+  for (const entity of ir.entities || []) {
+    const names = new Set();
+    for (const clause of entity.onClauses || []) {
+      if (clause && typeof clause.action === 'string') names.add(clause.action);
+    }
+    if (names.size) entityActions[entity.id] = [...names];
+
+    // A trait config that NAMES an entity declares a required instrument:
+    // `openable "silver locket"`, `cuttable "garden shears"`. The story is
+    // stating the tool the action needs, and the tool must be carried — so
+    // its placement is load-bearing even though no condition reads it.
+    // Without this, fernhill reaches the Folly and only ever dies to the
+    // fuse: holding the shears hashed the same as not holding them.
+    for (const trait of entity.traits || []) {
+      if (!trait || !Array.isArray(trait.config)) continue;
+      for (const cfg of trait.config) {
+        if (cfg && cfg.valueKind === 'name' && typeof cfg.value === 'string') {
+          (openWith[entity.id] || (openWith[entity.id] = []))
+            .push({ trait: trait.name, instrument: cfg.value });
+        }
+      }
+    }
+  }
+
+  return { actions, topics, entityActions, openWith };
+}
+
+module.exports.deriveCommandVocabulary = deriveCommandVocabulary;
+
+/**
+ * Map a Chord action name to a surface command template.
+ *
+ * An entity's `onClauses[].action` is the story stating, directly, which
+ * action that entity responds to — a better affordance signal than trait
+ * inference, because an entity can respond to an action without carrying the
+ * trait that would imply it. fernhill's stopcock is declared only `scenery`
+ * yet carries `on turning`, so no trait-derived verb can ever reach it, and
+ * `turn stopcock` is on the winning path.
+ *
+ * Verbs come from `@sharpee/lang-en-us`, which owns every user-facing word
+ * (each action exports `{actionId, patterns:['turn [something]', ...]}`).
+ * Deriving "turn" from "turning" by string surgery would be guesswork the
+ * language layer already answers.
+ *
+ * @returns Map from Chord action name (e.g. 'turning') to a template whose
+ *   `[something]` slot takes an entity name
+ */
+function actionVerbTemplates(langModule) {
+  const byAction = new Map();
+  for (const value of Object.values(langModule || {})) {
+    if (!value || typeof value !== 'object') continue;
+    const { actionId, patterns } = value;
+    if (typeof actionId !== 'string' || !Array.isArray(patterns)) continue;
+    const pattern = patterns.find((p) => typeof p === 'string' && p.includes('[something]'));
+    if (!pattern) continue;
+    // 'if.action.turning' -> 'turning', the name Chord's onClauses use.
+    const chordName = actionId.split('.').pop();
+    if (chordName && !byAction.has(chordName)) byAction.set(chordName, pattern);
+  }
+  return byAction;
+}
+
+module.exports.actionVerbTemplates = actionVerbTemplates;

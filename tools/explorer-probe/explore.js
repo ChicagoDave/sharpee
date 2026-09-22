@@ -26,7 +26,7 @@ const crypto = require('node:crypto');
 const REPO = path.resolve(__dirname, '..', '..');
 const { loadAuthorGame } = require(path.join(REPO, 'packages/devkit/dist/standalone/author-game.js'));
 const wm = require(path.join(REPO, 'packages/world-model/dist/index.js'));
-const { loadStoryIR, deriveDimensions } = require('./dimensions.js');
+const { loadStoryIR, deriveDimensions, deriveCommandVocabulary, actionVerbTemplates } = require('./dimensions.js');
 
 const T = wm.TraitType;
 
@@ -38,6 +38,14 @@ const CHORD_IR_ID_ATTRIBUTE = 'chordIrId';
 // ---------------------------------------------------------------------------
 // Candidate generation — the "likely commands" heuristic
 // ---------------------------------------------------------------------------
+
+/**
+ * The verb that consumes a trait's declared instrument. `feedable "kipper"`
+ * means `feed <target> with kipper`, and so on — the trait names the action.
+ */
+const INSTRUMENT_VERBS = {
+  openable: 'open', lockable: 'unlock', cuttable: 'cut', feedable: 'feed',
+};
 
 /** Directions a room's exits declare, lowercased to command words. */
 function exitCommands(world, room) {
@@ -64,7 +72,7 @@ function isPortable(entity) {
  *                combinatorial put-in/put-on and lock/unlock pairs)
  * @returns command strings, deduplicated, in a stable order
  */
-function candidates(world, breadth) {
+function candidates(world, breadth, vocab, nameByIrId) {
   const player = world.getPlayer();
   const room = world.getContainingRoom(player.id);
   const out = [];
@@ -105,13 +113,60 @@ function candidates(world, breadth) {
     if (carried) out.push('drop ' + n);
     else if (isPortable(e)) out.push('take ' + n);
 
-    if (breadth === 'full') {
-      if (e.has(T.LOCKABLE)) {
-        for (const key of carriedIds) {
-          const k = world.getEntity(key);
-          if (k) out.push('unlock ' + n + ' with ' + k.name);
-        }
+    // Instrument verbs, bounded by the carried set (small) and by the trait
+    // that makes the verb meaningful. fernhill's ending needs two of these —
+    // `cut fuse with shears` and `open deed box with locket` — and no
+    // trait-implied single-object verb can reach either.
+    if (e.has(T.CUTTABLE)) {
+      for (const key of carriedIds) {
+        const k = world.getEntity(key);
+        if (k) out.push('cut ' + n + ' with ' + k.name);
       }
+    }
+    if (e.has(T.LOCKABLE)) {
+      for (const key of carriedIds) {
+        const k = world.getEntity(key);
+        if (!k) continue;
+        out.push('unlock ' + n + ' with ' + k.name);
+        out.push('open ' + n + ' with ' + k.name);
+      }
+    }
+    if (e.has(T.ACTOR)) {
+      for (const key of carriedIds) {
+        const k = world.getEntity(key);
+        if (k) out.push('give ' + k.name + ' to ' + n);
+      }
+    }
+
+    // Conversation the story itself declares: `ask <npc> about <topic>`.
+    const irId = e.attributes && e.attributes[CHORD_IR_ID_ATTRIBUTE];
+    for (const topic of (vocab && irId && vocab.topics[irId]) || []) {
+      const about = topic.kind === 'text' ? topic.text : nameByIrId.get(topic.id);
+      if (about) out.push('ask ' + n + ' about ' + about);
+    }
+
+    // Story-declared action patterns (`prune <target>`, `wind up <target>`).
+    for (const action of (vocab && vocab.actions) || []) {
+      out.push(action.parts.map((p) => (p.kind === 'word' ? p.word : n)).join(' '));
+    }
+
+    // Actions this entity's own `on` clauses declare it responds to. This is
+    // the story naming its affordances directly, and it reaches entities no
+    // trait implies: fernhill's stopcock is only `scenery` but carries
+    // `on turning`, and `turn stopcock` is on the winning path.
+    for (const actionName of (vocab && irId && vocab.entityActions[irId]) || []) {
+      const template = vocab.verbTemplates.get(actionName);
+      if (template) out.push(template.replace('[something]', n));
+    }
+
+    // A trait config naming an instrument (`cuttable "garden shears"`,
+    // `openable "silver locket"`) gives the exact command the story expects.
+    for (const req of (vocab && irId && vocab.openWith[irId]) || []) {
+      const verb = INSTRUMENT_VERBS[req.trait];
+      if (verb) out.push(verb + ' ' + n + ' with ' + req.instrument);
+    }
+
+    if (breadth === 'full') {
       if (e.has(T.CONTAINER) && !carried) {
         for (const key of carriedIds) {
           const k = world.getEntity(key);
@@ -400,8 +455,18 @@ async function explore(storyPath, opts) {
   // from the compiled IR beside the .story file.
   let sig = { placement: new Set(), state: new Set() };
   let dims = null;
-  if (opts.hash === 'declared') {
-    dims = deriveDimensions(loadStoryIR(storyPath));
+  let vocab = null;
+  const nameByIrId = new Map();
+  if (opts.hash === 'declared' || opts.declaredVocab) {
+    const ir = loadStoryIR(storyPath);
+    vocab = deriveCommandVocabulary(ir);
+    vocab.verbTemplates = actionVerbTemplates(
+      require(path.join(REPO, 'packages/lang-en-us/dist/index.js')));
+    for (const e of world.getAllEntities() || []) {
+      const irId = e.attributes && e.attributes[CHORD_IR_ID_ATTRIBUTE];
+      if (irId) nameByIrId.set(irId, e.name);
+    }
+    dims = deriveDimensions(ir);
     sig = {
       placement: new Set(dims.placementEntityIds),
       state: new Set(dims.loadBearingDimensions.map((d) => d.id)),
@@ -431,7 +496,7 @@ async function explore(storyPath, opts) {
 
     await restoreSave(platform, node.save);
     restores++;
-    const cmds = candidates(world, opts.breadth);
+    const cmds = candidates(world, opts.breadth, vocab, nameByIrId);
     if (cmds.length === 0) deadEnds++;
 
     for (const cmd of cmds) {
@@ -514,6 +579,7 @@ function parseArgs(argv) {
     else if (a === '--max-depth') opts.maxDepth = Number(argv[++i]);
     else if (a === '--json') opts.json = true;
     else if (a === '--profile') opts.profile = true;
+    else if (a === '--declared-vocab') opts.declaredVocab = true;
     else if (!opts.story) opts.story = a;
   }
   return opts;
@@ -546,4 +612,8 @@ async function main() {
   console.log('');
 }
 
-main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });
+module.exports.__candidates = candidates;
+
+if (require.main === module) {
+  main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });
+}

@@ -219,6 +219,75 @@ otherwise unfalsifiable from the inside.
 It is also the reason the derivation errs toward inclusion: a spurious
 dimension costs states, a missed one costs truth.
 
+## Finding 8 — brute force cannot answer reachability, and this is the number that proves it
+
+The zero-endings result had two candidate causes: broken ending detection, or a
+command generator that cannot express what endings need. Detection was fine —
+replaying fernhill's `WALKTHROUGH.txt` gives
+`world.storyEnding = {kind:"victory",turn:30,messageId:"fernhill-saved"}`.
+
+The generator was the gap, and closing it took three more derivations, each one
+found by a walk silently failing:
+
+| Missing | Symptom | Derivation added |
+|---|---|---|
+| exit gates | the Pantry disappeared | `exits[].via` names a door whose open state gates a room |
+| declared verbs / topics | no ending at all | `ir.actions` patterns; `entity.topics` filters; `onClauses[].action` (fernhill's stopcock is only `scenery` yet carries `on turning`) |
+| required instruments | only ever died to the fuse | a trait config naming an entity (`cuttable "garden shears"`, `openable "silver locket"`) declares a needed tool, whose PLACEMENT is load-bearing |
+
+Each fix was correct. Each made the space bigger:
+
+| fernhill, factored identity | states | time | outcome |
+|---|---:|---:|---|
+| initial | 174 | 2.6s | exhausted, 9 rooms |
+| + exit gates | 325 | 3.9s | exhausted, 9 rooms |
+| + declared verbs and topics | 864 | 32.6s | exhausted, 10 rooms |
+| + declared instruments | 5,715 | 217s | exhausted, 12 rooms, defeat only |
+| + instrument placement | **23,163** | **900s** | **budget exhausted**, 5,561 queued, defeat only |
+
+**715,903 commands, fifteen minutes, and it never found a 29-command winning
+path that is written down in the repository.** The sound version of brute force
+costs what the naive version cost, and still cannot answer the one question the
+whole idea rests on.
+
+The reason is structural, not a budget problem. Breadth-first search reaches
+depth *d* only after enumerating everything shallower, and fernhill's victory
+sits at depth 29 behind a branching factor of roughly 5-10 once the generator
+is complete enough to express the solution. No hardware and no parallelism
+reaches depth 29 that way. **Ending reachability is not a search-budget
+problem; it is the wrong algorithm.**
+
+### What this implies (raised by David from Claude Desktop, 2026-09-22)
+
+Reachability is a planning problem: export preconditions and effects, run
+BFS/A* or a real planner, and ask "is there a path to ending E", getting a
+yes/no and a witness trace without enumerating the verb x object x room
+product at all.
+
+One premise needs correcting, and the correction is favourable. Sharpee's
+standard actions are NOT declarative — `validate()` is arbitrary TypeScript, so
+no STRIPS operator can be lifted out of stdlib. But **the Chord layer is**, and
+that is where the interesting preconditions live: the IR carries condition
+trees as literal predicates and rule bodies as effect statements
+(`change` / `move` / `win`). The missing piece is a one-time effect table for
+the ~57 standard actions — platform semantics, stable across stories.
+
+**The tension to respect**: ADR-293 D12 superseded ADR-292 partly on the
+grounds that search "executes the real engine rather than modelling it", and a
+STRIPS export is exactly a model of the engine. The resolution that keeps D12
+intact: **plan against the model, verify against the engine.** The planner only
+proposes; replaying its witness trace through the real engine is what makes the
+answer true, and a plan the engine refuses is itself a finding — the model and
+the engine disagree, and one of them is wrong.
+
+**What planning will not give you.** GH #504 — a phrase that fails to render
+with an unbound param — was found by executing 10,021 paths, and no
+precondition model would ever surface it. Crashes, unhandled error events and
+runtime softlocks need execution. So the shape is two instruments: planning for
+"can you get there", execution for "what breaks on the way". The walk built
+here is adequate for the second and was never going to be adequate for the
+first.
+
 ## What this says about the product
 
 An explorer is viable, but not as *exhaustive* play. The reachable-state count
