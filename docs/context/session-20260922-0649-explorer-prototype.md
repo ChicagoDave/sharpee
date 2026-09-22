@@ -144,3 +144,63 @@ Both exhaustive approaches tried this session (derived-BFS and IR-planning) eith
 ---
 
 **Progressive update**: Session completed 2026-09-22 15:40 CDT
+
+## Activity Log (auto-captured)
+```
+[11:50:42] BUILD: Build passed — npx tsc --noEmit > /tmp/tsc_out.txt 2>&1; echo "EXIT:$?"; wc -l /tmp/tsc_out.txt
+[13:38:14] EDIT: File changed via Bash — tools/explorer-probe/explore.js
+[13:39:34] EDIT: File edited — tools/explorer-probe/explore.js
+[13:40:30] EDIT: File edited — tools/explorer-probe/explore.js
+[13:40:37] EDIT: File edited — tools/explorer-probe/explore.js
+[13:46:06] EDIT: File edited — tools/explorer-probe/explore.js
+[13:46:18] EDIT: File edited — tools/explorer-probe/explore.js
+[13:53:08] EDIT: File edited — tools/explorer-probe/explore.js
+[13:56:33] EDIT: File changed via Bash — docs/work/testing-explorer/spike-20260922-explorer-measurement.md
+[14:00:52] EDIT: File edited — tools/explorer-probe/explore.js
+[14:12:09] EDIT: File changed via Bash — tools/explorer-probe/dimensions.js
+[14:13:05] EDIT: File edited — tools/explorer-probe/dimensions.js
+[14:13:13] EDIT: File edited — tools/explorer-probe/dimensions.js
+[14:13:29] EDIT: File edited — tools/explorer-probe/dimensions.js
+[14:14:08] EDIT: File edited — tools/explorer-probe/explore.js
+[14:14:17] EDIT: File written — docs/context/session-20260922-0649-explorer-prototype.md
+[14:14:18] EDIT: File edited — tools/explorer-probe/explore.js
+[14:14:25] EDIT: File changed via Bash — docs/context/session-20260922-0649-explorer-prototype.md
+[14:15:14] EDIT: File edited — tools/explorer-probe/explore.js
+[14:16:16] EDIT: File edited — tools/explorer-probe/dimensions.js
+[14:19:14] TEST: Tests passed — 12 passed 121 passed
+[14:19:32] EDIT: File written — .commit-files
+[14:19:41] EDIT: File written — .commit-msg
+[14:19:43] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh
+[14:20:27] GIT: Git operation — git log -1 --format=%B | sed 's/Co-Authored-By: Claude Sonnet 5 <noreply@anthrop
+[14:25:19] EDIT: File changed via Bash — tools/explorer-probe/dimensions.js
+[14:25:35] EDIT: File edited — tools/explorer-probe/explore.js
+[14:26:23] EDIT: File changed via Bash — tools/explorer-probe/explore.js
+[14:29:18] EDIT: File edited — tools/explorer-probe/explore.js
+[14:34:37] EDIT: File edited — tools/explorer-probe/explore.js
+[14:50:37] EDIT: File changed via Bash — docs/work/testing-explorer/spike-20260922-explorer-measurement.md
+[14:54:14] TEST: Tests passed — 12 passed 121 passed
+[14:54:27] EDIT: File written — .commit-files
+[14:54:27] EDIT: File written — .commit-msg
+[14:54:29] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh
+[14:55:54] EDIT: File written — tools/explorer-probe/plan.js
+[14:56:01] EDIT: File changed via Bash — tools/explorer-probe/plan.js
+[14:56:25] EDIT: File edited — tools/explorer-probe/plan.js
+[14:56:32] EDIT: File edited — tools/explorer-probe/plan.js
+[15:00:14] EDIT: File edited — tools/explorer-probe/plan.js
+[15:02:17] EDIT: File changed via Bash — docs/work/testing-explorer/spike-20260922-explorer-measurement.md
+[15:32:03] EDIT: File edited — tools/explorer-probe/plan.js
+[15:32:15] EDIT: File edited — tools/explorer-probe/plan.js
+[15:32:28] EDIT: File edited — tools/explorer-probe/plan.js
+[15:33:55] EDIT: File edited — tools/explorer-probe/plan.js
+[15:35:57] EDIT: File edited — tools/explorer-probe/plan.js
+[15:43:18] EDIT: File edited — docs/context/session-20260922-0649-explorer-prototype.md
+[15:43:48] EDIT: File edited — docs/context/session-20260922-0649-explorer-prototype.md
+[15:44:04] EDIT: File edited — docs/context/session-20260922-0649-explorer-prototype.md
+[15:44:27] EDIT: File edited — docs/context/session-20260922-0649-explorer-prototype.md
+[15:44:56] EDIT: File edited — docs/context/session-20260922-0649-explorer-prototype.md
+[15:45:24] EDIT: File changed via Bash — docs/context/session-20260922-0649-explorer-prototype.md
+[15:48:53] TEST: Tests passed — 12 passed 121 passed
+[15:49:07] EDIT: File written — .commit-files
+[15:49:07] EDIT: File written — .commit-msg
+[15:49:11] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```
