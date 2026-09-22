@@ -1,5 +1,14 @@
 # ADR-330: Chapters in Chord — a `use chapters` extension of declared events, not statements
 
+> **Downstream note (2026-09-22, session 32d678)**: [ADR-354](adr-354-the-page-an-author-lays-out.md) D7 gives a chapter an
+> optional **presentation** consequence — a chapter may name a page template,
+> and the active template is *derived* from the current chapter rather than
+> commanded. Nothing in this ADR changes; the `story.chapter` channel and the
+> chapters plugin are the mechanism ADR-354 reads. One property of this ADR is
+> load-bearing there and worth not losing: the current chapter is world state,
+> so save/restore and undo carry it, which is why a derived template needs no
+> save-format field of its own.
+
 **Status**: **ACCEPTED** (David, 2026-08-29 — "accept and start"). David's syntax and semantics,
 2026-08-29, session after eec23b — "chapters are events"; ruled an **extension**, not core
 language, the same day ("extension"); reshaped to a `define chapters` block the same day. All

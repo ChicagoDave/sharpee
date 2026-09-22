@@ -1,5 +1,13 @@
 # ADR-347: The ending is an explicit concept
 
+> **Downstream note (2026-09-22, session 32d678)**: [ADR-354](adr-354-the-page-an-author-lays-out.md) D7 gives the Ending a
+> **presentation** consequence — an ending may name a page template, rendered
+> on the ending turn. Nothing in this ADR changes: the `story-ending` channel
+> and its renderer stay exactly as shipped, and disabling the input remains
+> their job. What ADR-354 adds sits beside that, reading the same state. The
+> Ending being queryable state rather than prose is precisely what makes a
+> derived ending template possible.
+
 **Status**: **ACCEPTED** (David, 2026-09-11, session aceb2e — "accept". Written the same session on `main` at his "yes, write it". Raised during GH #414's Phase 1 when `mutation-verification` found that a RESTORE at an end-game prompt loaded a live save into an engine that still refused every command — and the fix for that was a patch reconciling two records of one fact. The framing is Evans, *Domain-Driven Design* ch. 9: do not leave implicit what should be explicit.
 
 **Amended 2026-09-11 (session c3f995) — D2d's `turn` contract reconciled.** Implementing Phase 2 found D2d internally inconsistent: it required `IStoryEnding.turn` while giving `endStory` no way to supply it. The session shipped `turn?` under a stated deviation and reported it; David ruled `turn` stays required and `opts` becomes required to carry it. D2d now states the reconciled contract. Nothing else in the decision changed.

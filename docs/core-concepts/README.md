@@ -80,7 +80,7 @@ Thirty-one packages under `packages/`. Grouped by what they are for, not by depe
 
 ### Channels and clients
 
-**`@sharpee/channel-service`** — The channel-I/O wire producer (ADR-163), the universal surface carrying every story→UI signal: prose, status, media, layout. It runs in-process wherever the engine runs — Node CLI, browser clients, the IDE's Play and Testing surfaces.
+**`@sharpee/channel-service`** — The channel-I/O wire producer (ADR-163), the universal surface carrying every story→UI signal: prose, status, media, layout. It runs in-process wherever the engine runs — Node CLI, browser clients, the IDE's Play and Testing surfaces. The full guide — the three packets, channel modes and emit policy, the shipped inventory, why the prose is seven channels, and how a story declares its own — is [`channel-io.md`](./channel-io.md), beside this file.
 
 **`@sharpee/platform-browser`** — Browser client infrastructure: `BrowserClient`, a renderer per channel, and managers for save/restore, themes, menus, dialogs, input, and display. Framework-free, with `lz-string` as its only runtime dependency.
 

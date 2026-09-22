@@ -38,8 +38,10 @@ directory listing:
 - **Transcript Tests** — `tests/transcripts/`
 - **Assets** — `assets/`
 - **Web Template** — the story's `<storyId>.templates` layout file
-  (ADR-286's template DSL), plus the `browser/` escape hatches (the
-  `<storyId>.css` styling override; raw `index.html` under `use html`).
+  (the template DSL — ADR-286 retired unimplemented 2026-09-22 and replaced
+  by [ADR-354](adr-354-the-page-an-author-lays-out.md)), plus the `browser/` escape hatches (the `<storyId>.css` styling
+  override; raw `index.html`, selected by the absence of a `template:` header
+  field per ADR-354 D4 rather than by `use html`).
   The group shows these **wherever they sit on disk** — the `.templates`
   file lives beside the `.story` file, the escapes in `browser/`: groups
   are typed lenses, not folder mirrors.

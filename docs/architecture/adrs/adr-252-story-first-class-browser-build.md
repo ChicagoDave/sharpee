@@ -7,6 +7,14 @@
 > output target and the `<storyId>.templates` file; this ADR's
 > template-channel validation semantics are absorbed by ADR-286's
 > transform diagnostics. `theme:` is unaffected.
+>
+> **Updated 2026-09-22 (session 32d678)**: ADR-286 is itself retired
+> unimplemented and replaced by [ADR-354](adr-354-the-page-an-author-lays-out.md), which is the live answer for layout.
+> Two things change for this ADR's readers. The `use templates` / `use html`
+> output target named above is **dropped** — ADR-354 D4 rules that the target
+> rides this ADR's own `template:` header field, which is therefore **revived,
+> not superseded**: it becomes the declaration rather than a retired one.
+> `theme:` remains unaffected.
 
 ## Status: ACCEPTED (2026-07-22 — all decisions ruled by David directly, session 74219a. Shape: a bare `.story` builds to a browser app with no flag and no `package.json`; all metadata from the compiled Story IR; client config as `story`-header `key:` lines; one build core across devkit + repokit; generated browser entry with a hand-written escape hatch retired by ADR-253. Open-questions interview complete (same session): no build flag / browser default / `client:` field for non-default clients; TS and `.story` are distinct mutually-exclusive project kinds; omitted `default-theme` → `classic` always. No Open Questions remain. adr-review same session: 12/15 clean → four minor edits folded before the flip (D3 grammar hedge resolved to confirmed no-change + unknown-key warning; rejection-cases list added; byte-equivalent AC softened to identical-modulo-build-stamp; `--browser` migration surface enumerated). **Amended 2026-07-22 (same session):** D3 gains `theme:` and `template:` header fields — Chord-native declaration of the theme and template/layout *packages*, reconciling pre-Chord ADR-188 (which declared them via `package.json`) into the package.json-free `.story` world; the build validates a declared `template:` against the story's channels (error on a channel the template requires but the story lacks; warn on a story channel the template does not place); `default-theme:` now defaults to a declared `theme:` before `classic`. Not implemented.)
 

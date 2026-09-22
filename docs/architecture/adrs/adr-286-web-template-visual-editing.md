@@ -1,6 +1,25 @@
 # ADR-286: The Web Template — a simple layout syntax, transformed into the page
 
-## Status: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; Q-5 label delivery deferred as non-blocking, ruled at implementation)
+> **RETIRED UNIMPLEMENTED (2026-09-22, session 32d678), at David's direction.**
+> Closed and rewritten as
+> [ADR-354: The page an author lays out](adr-354-the-page-an-author-lays-out.md),
+> which is DRAFT and carries the open questions this ADR left. Do not implement
+> anything below.
+>
+> **Why it was closed rather than amended.** Its central slot, `main-text`, no
+> longer exists — ADR-300 D8 dissolved `main` into seven addressable prose
+> channels on 2026-08-05. Its Q-5 is filed as "non-blocking" and is not: the
+> grammar freeze draft found it blocks D2's status-row emission and half of D1.
+> Its `compass` slot turned out to mean a clickable rose, which is Web
+> Extensions (GH #197, undesigned), not layout. And the freeze draft already
+> owed this text four factual corrections about the shipped client. ADR-354's
+> Context section carries the full survey.
+>
+> **What survives**: `docs/design/template-dsl/design.md` (David's sketch) and
+> `docs/design/template-dsl/grammar-freeze-draft.md` are retained — the draft's
+> §1 grounding and §12 corrections outlive this ADR.
+
+## Status: RETIRED UNIMPLEMENTED (2026-09-22) — superseded by ADR-354. Original accept: ACCEPTED (2026-07-28, session fda0f0 — David's accept-all after the full-family review; Q-5 label delivery deferred as non-blocking, ruled at implementation)
 
 *(Filename note: `adr-286-web-template-visual-editing.md` predates the reshape — kept for link stability; the visual-editing concern dissolved into the DSL.)*
 

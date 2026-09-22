@@ -62,9 +62,12 @@ root). Further targets are Q-1.
 
 - Publish invokes the resolved toolchain (ADR-279 D4), so it works on a
   fresh install with the bundled devkit.
-- The ADR-286 transform becomes load-bearing: what it emits, Publish
+- The template transform becomes load-bearing: what it emits, Publish
   delivers to strangers' browsers; validation is the transform's own
-  diagnostics plus the `use html` escape hatch's warnings.
+  diagnostics plus the custom-page escape hatch's warnings. *(Written as
+  "the ADR-286 transform"; ADR-286 was retired unimplemented 2026-09-22 and
+  replaced by [ADR-354](adr-354-the-page-an-author-lays-out.md). Amendment A1 below already routes Acceptance 1 around the
+  missing DSL, so nothing in this ADR's shipped behaviour depends on it.)*
 
 ## Deferred questions (non-blocking, ruled at implementation)
 

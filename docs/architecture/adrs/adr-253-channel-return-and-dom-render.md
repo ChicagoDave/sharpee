@@ -8,6 +8,15 @@
 > escape hatch. The channel `return` construct, `#<channel>` DOM-name
 > convention, and D4's generic-panel fallback are unaffected (ADR-286
 > builds on all three).
+>
+> **Updated 2026-09-22 (session 32d678)**: ADR-286 is itself retired
+> unimplemented and replaced by [ADR-354](adr-354-the-page-an-author-lays-out.md). The `use html` spelling named above is
+> dropped (ADR-354 D4 uses the `template:` header field instead); the
+> story-local `browser/index.html` escape it named **remains**, unchanged.
+> This ADR's D1, D2 and D4 are not merely unaffected but load-bearing in the
+> successor: ADR-354 D3 derives its placeable vocabulary on top of the
+> `#<channel>` convention, and ADR-354's D8 seam is about who creates those
+> elements.
 
 ## Status: ACCEPTED (2026-07-22, session 74219a — design ruled by David directly. Pivot from the original "declarative renderers in Chord" stub: there is NO render construct. A channel `return`s any construct (a field, a text template, or a phrase); its value renders into a DOM element named for the channel, and an author customizes placement via a theme/layout package (ADR-188, extended from CSS-only to DOM-contributing) — no Chord render syntax, no TypeScript. `take` + `from event` collapse into one `return <construct> from <event>` line; `take` is removed. All prior open questions dissolved by the pivot. adr-review same session: found a seam (D3 leaned on an unspecified ADR-252 template capability); resolved by David to the theme/plugin placement path, and the D2 non-string rendering contract clarified — both folded before this flip. No Open Questions remain. Not implemented.)
 
