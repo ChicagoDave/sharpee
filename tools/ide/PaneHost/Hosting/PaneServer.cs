@@ -143,12 +143,19 @@ public sealed class PaneServer
     public const string HostHandlerName = "sharpeeAvaloniaHost";
 
     /// <summary>
-    /// The host shim. The client and the surface post to
-    /// window.webkit.messageHandlers.&lt;name&gt;.postMessage — the WebKit-shaped door
-    /// ADR-341 D3's contract will formalize. Here each post is forwarded to
-    /// Avalonia's own web-message bridge, whichever of the candidate shapes this
-    /// backend provides; the one that took is recorded on window.__sharpeeShim so
-    /// the probe can read it back rather than the host assuming it.
+    /// The host shim. The client and the surface post through
+    /// window.sharpeeHost.postMessage(channel, body) — the neutral door
+    /// platform-browser's host-bridge resolves (GH #464). This host installs it
+    /// directly and forwards each post to Avalonia's own web-message bridge,
+    /// whichever of the candidate shapes this backend provides; the one that took
+    /// is recorded on window.__sharpeeShim so the probe can read it back rather
+    /// than the host assuming it.
+    ///
+    /// It no longer counterfeits window.webkit. Impersonating Safari was the only
+    /// way to be heard before the pages had a neutral name to call, and it cost
+    /// every non-WebKit host the same ~25 lines. The pages still fall back to the
+    /// WebKit address, which is what keeps the macOS app working unchanged — but
+    /// that fallback is for the host that really is WKWebView, not for this one.
     /// </summary>
     public const string HostShimScript = @"
 (function () {
@@ -181,34 +188,28 @@ public sealed class PaneServer
   }
   if (!native) { native = function () {}; via = 'missing'; }
 
-  function post(handler, body) {
-    var text = (typeof body === 'string') ? body : JSON.stringify(body);
-    native(JSON.stringify({ handler: handler, body: text }));
-  }
-  function shim(name) { return { postMessage: function (body) { post(name, body); } }; }
-
-  var handlers = {
-    turnEvents: shim('turnEvents'),
-    testingSurface: shim('testingSurface'),
-    testingConsole: shim('testingConsole'),
-    docsTab: shim('docsTab')
+  // The neutral door (GH #464). The page names the channel; this host stringifies
+  // on its own side, because its native transport carries text and the page's
+  // bodies deliberately do not all start as strings.
+  var host = {
+    postMessage: function (channel, body) {
+      var text = (typeof body === 'string') ? body : JSON.stringify(body);
+      native(JSON.stringify({ handler: channel, body: text }));
+    }
   };
 
-  // In a WKWebView the native window.webkit.messageHandlers is read-only, so the
-  // whole window.webkit object is replaced. The native handler was captured above,
-  // before the replacement, which is why the post door survives it.
   var strategy = 'none';
   try {
-    Object.defineProperty(window, 'webkit', { value: { messageHandlers: handlers }, configurable: true, writable: true });
+    Object.defineProperty(window, 'sharpeeHost', { value: host, configurable: true, writable: true });
     strategy = 'defineProperty';
   } catch (e1) {
-    try { window.webkit = { messageHandlers: handlers }; strategy = 'assign'; } catch (e2) {}
+    try { window.sharpeeHost = host; strategy = 'assign'; } catch (e2) {}
   }
 
   window.__sharpeeShim = {
     via: via,
     strategy: strategy,
-    installed: !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.turnEvents === handlers.turnEvents)
+    installed: window.sharpeeHost === host
   };
 
   // The one door in. The host calls this from InvokeScript; there is no parent

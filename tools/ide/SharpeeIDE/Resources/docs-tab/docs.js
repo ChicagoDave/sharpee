@@ -1,6 +1,31 @@
 (() => {
+  // packages/platform-browser/src/host-bridge.ts
+  function hostChannel(channel) {
+    try {
+      const host2 = window.sharpeeHost;
+      if (host2 && typeof host2.postMessage === "function") {
+        return { postMessage: (body) => host2.postMessage(channel, body) };
+      }
+    } catch {
+    }
+    try {
+      const handler = window.webkit?.messageHandlers?.[channel];
+      if (handler && typeof handler.postMessage === "function") return handler;
+    } catch {
+    }
+    return null;
+  }
+  function postToHost(channel, body) {
+    const handler = hostChannel(channel);
+    if (!handler) return;
+    try {
+      handler.postMessage(body);
+    } catch {
+    }
+  }
+
   // tools/ide/web/docs-tab/src/main.ts
-  var host = (body) => window.webkit?.messageHandlers?.docsTab?.postMessage(body);
+  var host = (body) => postToHost("docsTab", body);
   var index = { chordLanguageVersion: "", nav: [], pages: [] };
   var current = "";
   var stepsBySection = /* @__PURE__ */ new Map();

@@ -32,6 +32,11 @@
       "types": "./dist/channels/status.d.ts",
       "import": "./dist-esm/channels/status.js",
       "require": "./dist/channels/status.js"
+    },
+    "./host-bridge": {
+      "types": "./dist/host-bridge.d.ts",
+      "import": "./dist-esm/host-bridge.js",
+      "require": "./dist/host-bridge.js"
     }
   },
   "files": [

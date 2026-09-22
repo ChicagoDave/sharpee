@@ -278,22 +278,88 @@ a phase of their own.
   further record, no delivery errors; the surface ended at 179 cards / 1007 anchors. Build
   clean at 0 warnings; door, server and protocol suites 16 of 16.
 
-  **Still open in this phase**:
-  - **The capability suite did not run this session.** 8 of 28 tests refuse to run without
-    `SHARPEE_IDE_TOOLCHAIN` and `SHARPEE_IDE_CAPABILITY_FIXTURE` (they fail loudly rather
-    than skip, by design — README lines 64-79), and no staged toolchain was found on this
-    machine. The other 20 pass. Re-staging is `vendor-toolchain.sh` (~175 MB) and is
-    David's call, not something to work around.
-  - **GH #464 is only half closed.** `PaneServer.HostShimScript` already probes
-    `webkit.messageHandlers` then `chrome.webview` and records which took, so the panes work
-    across backends today. But the door they *call* is still spelled
-    `window.webkit.messageHandlers` in `tools/ide/web/{docs-tab,testing-surface}/src/main.ts`
-    and their built outputs — a WebKit name serving as the neutral API. Renaming it touches
-    assets **shared with the shipping Swift app**, which would need the same shim, so it is a
-    cross-app change and David's call rather than a cleanup to slip in here.
+- **Progress, 2026-09-22 (session 0b21a9) — the capability suite runs; the exit state is
+  fully discharged.** The toolchain was staged (`vendor-toolchain.sh` →
+  `~/Library/Caches/net.sharpee.panehost/stage/toolchain`, 177 MB, sealed and signed, 2
+  binaries Developer ID + hardened runtime + timestamped) and a dedicated Documents fixture
+  written — `~/Documents/Sharpee Capability Fixture/capability-fixture.story`, trivial by
+  design and never a real story. Writing it cost two removed-grammar errors that nothing in
+  the repository warned about (inline `story "T" by "A"`, and `create the player`), so the
+  fixture recipe now lives in `tools/ide/PaneHost/README.md` beside the variables it
+  satisfies rather than only in this note.
+
+  **Evidence** — `dotnet test PaneHost.Tests/PaneHost.Tests.csproj` with all three variables
+  set, 2026-09-22: **88 passed, 0 failed, 0 skipped**. The nine capability tests named
+  individually: real vendored node reports `v22.23.1`; `compose --json` through the sealed
+  shim returns `schemaVersion` 2 with zero diagnostics and a non-blank title; a missing story
+  exits nonzero on stderr; stdout lines spread ≥600 ms across the run, so they are not
+  batched at exit; cancellation kills the process and the sentinel is absent from `ps`; the
+  Documents write-then-read round trip holds and a missing subdirectory is refused.
+
+  **The falsification check, which is the point.** Re-run with `SHARPEE_IDE_TOOLCHAIN`
+  unset: 5 failed, 0 passed, 0 skipped, each failure naming the missing variable from
+  `CapabilityPaths.Required`. The suite therefore cannot report green without exercising the
+  real dependency — the GH #435 pattern is excluded by construction here, not by assertion.
+
+- **Progress, 2026-09-22 (session 0b21a9) — GH #464 closed; the macOS slice of this phase is
+  complete.** David ruled on the cross-app change. The page now addresses its host through
+  one module, `packages/platform-browser/src/host-bridge.ts`: `window.sharpeeHost` first,
+  `window.webkit.messageHandlers[channel]` as the fallback. All four call sites go through it
+  — the play client's `turnEvents` (`turn-events.ts`), the surface's `testingSurface` and
+  `testingConsole`, the docs tab's `docsTab` — and each built bundle now carries exactly one
+  neutral reference and one fallback reference instead of its own spelling.
+
+  **The macOS app changed by zero lines.** It registers real `WKScriptMessageHandler`s
+  (`DocsTabViewController.swift:45` and siblings), so it is served by the fallback exactly as
+  before. That is the whole reason the fallback exists; it is for the host that really is
+  WKWebView, not for the two that were impersonating one.
+
+  **The Avalonia host stopped impersonating Safari.** `PaneServer.HostShimScript` installed a
+  counterfeit `window.webkit` — it replaced the entire object, because WKWebView's real one is
+  read-only — so that pages calling a WebKit name would reach a non-WebKit transport. It now
+  installs `window.sharpeeHost` and that block is gone.
+
+  **One correction caught before it shipped.** The first pass serialized every body at the
+  bridge. The channels do not agree on payload type: the three testing channels carry strings,
+  but `docsTab` carries an object WKWebView bridges to `[String: Any]`, which
+  `DocsTabViewController` reads with `guard let body = message.body as? [String: Any]`. A
+  stringified body would have failed that guard silently and the docs tab would simply have
+  gone quiet. The bridge now passes bodies through untouched, and that is an invariant in its
+  header, not a convention.
+
+  **Evidence** — three real-path runs, nothing stubbed:
+  - `--pane-exit-state` on the real shell over the real door, fernhill: all four channels live
+    (`docsTab` 3, `testingConsole` 5, `testingSurface` 3, `turnEvents` 32 — 43 messages),
+    69 cards / 118 anchors, no delivery errors.
+  - `xcodebuild test -only-testing:SharpeeIDETests/TestingSurfaceRealPathTests`: **17 of 17**,
+    a real WKWebView booting the real committed surface bundle against the Swift app's real
+    handlers — the shipping app's own path, proven after the rename.
+  - `host-bridge.test.ts`: **11 of 11** (both addresses, neutral-preferred, late install,
+    object body unserialized, no-host no-op, throwing host swallowed).
+  - Regression gates: platform-browser **168 of 168**, PaneHost **88 of 88**, testing-surface
+    **131 of 131**, `npx tsc --noEmit` exit 0, `dotnet build` 0 warnings.
+
+  **The comparison that makes the above evidence rather than a green light.** The rewire was
+  stashed, every artifact rebuilt identically, and the same probe re-run: baseline and rewired
+  agree to the record — `turnEvents 32, cards 69, anchors 118`. The drop from the 270 records
+  of 2026-09-16 is real and is NOT this change; it predates it, in `f38e47b7d` (the pane stops
+  at an ending) and `de5b2ff34`.
+
+  **Known unrelated failure, left alone:** `tools/ide/web/docs-tab`'s vitest suite fails 3 of
+  43 on `Failed to resolve module specifier "./versions.json"` in `loadNav`'s data-URL import.
+  Verified identical with the change stashed, so it predates this work. `node build.mjs`
+  itself succeeds; only the test harness path fails.
+
+  **Nothing is still open in the macOS portion.** Both gaps this phase carried since
+  2026-09-16 — the unrun capability suite and the half-closed GH #464 — are discharged with
+  evidence above. What remains of Phase 4 is by design in other slices: the Windows
+  virtual-host backend and the Linux WebKitGTK backend, each one implementation behind the
+  `IPaneDoor` contract that now stands.
 - **Open product question, not decided here**: an installed app opens empty. What it *should*
   open — a welcome state, the last document, a Documents folder per ADR-280 D6 — is David's.
-- **Status**: CURRENT (2026-09-16, session 9dd6ac) — macOS portion only; see Slice ordering.
+- **Status**: macOS portion **DONE** (2026-09-22, session 0b21a9). The phase stays open for the
+  Windows and Linux backends, which belong to slices 3 and 2 respectively — see Slice ordering.
+  The macOS slice's next phase is Phase 5.
 
 ### Phase 5: macOS shipping integration — the relocation recipe, the x86_64 slice, GH #474
 - **Tier**: Medium

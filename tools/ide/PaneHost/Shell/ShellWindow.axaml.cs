@@ -1627,10 +1627,10 @@ public partial class ShellWindow : Window
             _log.Line($"  {name}: readyState={ready}, title={Trim(title, 60)}");
             _log.Line($"  {name}: host → page, shim={shim}");
 
-            // Page → host, on the real view: the page posts through the shim's own
-            // handler and the host counts the arrival at the other end of the door.
+            // Page → host, on the real view: the page posts through the neutral door
+            // this host installed and the host counts the arrival at the other end.
             var before = _paneMessages.GetValueOrDefault("testingConsole");
-            await EvaluateAsync(view, "window.webkit.messageHandlers.testingConsole.postMessage('exit-state:" + name + "')");
+            await EvaluateAsync(view, "window.sharpeeHost.postMessage('testingConsole','exit-state:" + name + "')");
             var arrived = await WaitForAsync(
                 () => _paneMessages.GetValueOrDefault("testingConsole") > before,
                 TimeSpan.FromSeconds(5));

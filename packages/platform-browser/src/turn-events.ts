@@ -4,12 +4,13 @@
  *
  * Purpose: after a turn fully renders, post its record — monotonic ordinal,
  * typed command, engine-composed output, structured channel captures — to the
- * embedding WKWebView's `turnEvents` message handler, so the Sharpee IDE can
+ * posting them down the host's `turnEvents` channel, so the Sharpee IDE can
  * promote played turns into a `.transcript` (ADR-305). A restart posts a
  * fence record instead: everything before it is dead lineage (ADR-305 D3).
  * This ships in the same client bundle authors' players use, so outside the
- * IDE (no `window.webkit`) every export MUST be a true no-op — never a
- * throw, never a behavior difference.
+ * IDE (no host at all) every export MUST be a true no-op — never a throw,
+ * never a behavior difference. Which host, and how it is addressed, is
+ * `host-bridge.ts`'s business and not this module's (GH #464).
  *
  * The ordinal counter is module state, not client state: an in-page restart
  * boots a NEW BrowserClient but the anchors' one invariant is page-lifetime
@@ -30,6 +31,11 @@
  * RestartEventPayload, TurnEventRecord.
  * Owner context: @sharpee/platform-browser (browser player client).
  */
+
+import { hostChannelActive, postToHost } from './host-bridge.js';
+
+/** The host channel this module posts every record down. */
+const TURN_EVENTS_CHANNEL = 'turnEvents';
 
 /** One channel's captured values for a single turn, structure preserved. */
 export interface TurnCapture {
@@ -150,13 +156,11 @@ export function currentPlayLineage(): number {
 }
 
 /**
- * Whether the IDE's `turnEvents` bridge is present. Callers use this to skip
- * work that only feeds the bridge (the world digest) in published players.
+ * Whether a host is listening on the `turnEvents` channel. Callers use this to
+ * skip work that only feeds the host (the world digest) in published players.
  */
 export function turnEventsBridgeActive(): boolean {
-  return !!(window as unknown as {
-    webkit?: { messageHandlers?: { turnEvents?: unknown } };
-  }).webkit?.messageHandlers?.turnEvents;
+  return hostChannelActive(TURN_EVENTS_CHANNEL);
 }
 
 /**
@@ -220,13 +224,5 @@ export function emitRestartEvent(): void {
 
 /** Shared best-effort post — play must never break on the bridge. */
 function post(payload: TurnEventRecord | RestartEventPayload): void {
-  const handler = (window as unknown as {
-    webkit?: { messageHandlers?: { turnEvents?: { postMessage(body: string): void } } };
-  }).webkit?.messageHandlers?.turnEvents;
-  if (!handler) return;
-  try {
-    handler.postMessage(JSON.stringify(payload));
-  } catch {
-    // The bridge is best-effort observation — play must never break on it.
-  }
+  postToHost(TURN_EVENTS_CHANNEL, JSON.stringify(payload));
 }

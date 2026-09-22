@@ -32,6 +32,7 @@
  */
 
 import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
+import { postToHost } from '@sharpee/platform-browser/host-bridge';
 import { endingOf, blocksCommand } from './ending.js';
 import { visitPlanOf, type LineVisit, type ReplayStep } from './visit.js';
 import { outlineOf } from './outline.js';
@@ -440,23 +441,11 @@ function deliverRunExit(ok: boolean, note?: string): void {
  * guessing between them from a card count has cost this project a night.
  */
 function trace(what: string): void {
-  try {
-    (window as unknown as {
-      webkit?: { messageHandlers?: { testingConsole?: { postMessage(b: string): void } } };
-    }).webkit?.messageHandlers?.testingConsole?.postMessage('driver: ' + what);
-  } catch {
-    // Observation only.
-  }
+  postToHost('testingConsole', 'driver: ' + what);
 }
 
 function postToBridge(payload: Record<string, unknown>): void {
-  try {
-    (window as unknown as {
-      webkit?: { messageHandlers?: { testingSurface?: { postMessage(b: string): void } } };
-    }).webkit?.messageHandlers?.testingSurface?.postMessage(JSON.stringify(payload));
-  } catch {
-    // Observation only — the surface must keep working without the bridge.
-  }
+  postToHost('testingSurface', JSON.stringify(payload));
 }
 
 /**

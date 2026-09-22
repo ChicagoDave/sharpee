@@ -291,6 +291,14 @@ writeFileSync(
 await esbuild.build({
   entryPoints: [resolve(here, 'src/main.ts')],
   outfile: join(stageDir, 'docs.js'),
+  // The host bridge (GH #464) from source, the way the testing surface bundles
+  // its shared modules: this tab and the play client must resolve the same file
+  // or they can disagree about where the host lives.
+  alias: {
+    '@sharpee/platform-browser/host-bridge': resolve(
+      repoRoot, 'packages/platform-browser/src/host-bridge.ts',
+    ),
+  },
   // Pinned, and load-bearing: esbuild renders its per-module comment banners
   // RELATIVE to absWorkingDir, which defaults to process.cwd(). Xcode's pre-build
   // phase runs this from tools/ide while a hand run starts at the repo root, so

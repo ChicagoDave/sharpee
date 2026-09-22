@@ -65,6 +65,31 @@
     return assertions;
   }
 
+  // packages/platform-browser/src/host-bridge.ts
+  function hostChannel(channel) {
+    try {
+      const host = window.sharpeeHost;
+      if (host && typeof host.postMessage === "function") {
+        return { postMessage: (body) => host.postMessage(channel, body) };
+      }
+    } catch {
+    }
+    try {
+      const handler = window.webkit?.messageHandlers?.[channel];
+      if (handler && typeof handler.postMessage === "function") return handler;
+    } catch {
+    }
+    return null;
+  }
+  function postToHost(channel, body) {
+    const handler = hostChannel(channel);
+    if (!handler) return;
+    try {
+      handler.postMessage(body);
+    } catch {
+    }
+  }
+
   // tools/ide/web/testing-surface/src/ending.ts
   function endingOf(captures) {
     const capture = (captures ?? []).find((c) => c.channel === "story-ending");
@@ -2814,16 +2839,10 @@
     cards.render();
   }
   function trace(what) {
-    try {
-      window.webkit?.messageHandlers?.testingConsole?.postMessage("driver: " + what);
-    } catch {
-    }
+    postToHost("testingConsole", "driver: " + what);
   }
   function postToBridge(payload) {
-    try {
-      window.webkit?.messageHandlers?.testingSurface?.postMessage(JSON.stringify(payload));
-    } catch {
-    }
+    postToHost("testingSurface", JSON.stringify(payload));
   }
   function update() {
     if (!driverBusy) {

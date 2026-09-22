@@ -49,6 +49,13 @@ export {
   type WorldDigestMachine
 } from './turn-events.js';
 export { buildWorldDigest } from './world-digest.js';
+export {
+  hostChannel,
+  hostChannelActive,
+  postToHost,
+  type HostChannel,
+  type SharpeeHost
+} from './host-bridge.js';
 
 // Display components
 export { TextDisplay } from './display/TextDisplay.js';

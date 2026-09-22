@@ -31,6 +31,11 @@ const btTreeDocument = resolve(repoRoot, 'packages/branch-tester/src/tree-docume
 // The assertion core the synthesis module re-exports from (ADR-340 D1) —
 // browser-safe by construction, and from source for the same reason.
 const assertionCore = resolve(repoRoot, 'packages/transcript-tester/src/assertion-core.ts');
+// The host bridge (GH #464), from source for the same reason. It is the one
+// module that decides how this page addresses whichever host embedded it, and
+// the play client resolves the SAME file — a second copy would let the two
+// disagree about where the host lives.
+const hostBridge = resolve(repoRoot, 'packages/platform-browser/src/host-bridge.ts');
 
 /** esbuild options shared by the one-shot and watch paths. */
 const options = {
@@ -48,6 +53,7 @@ const options = {
     '@sharpee/branch-tester/tree-document': btTreeDocument,
     '@sharpee/transcript-tester/assertion-core': assertionCore,
     '@sharpee/ide-protocol/run-events': runEvents,
+    '@sharpee/platform-browser/host-bridge': hostBridge,
   },
   bundle: true,
   format: 'iife',

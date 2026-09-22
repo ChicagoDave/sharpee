@@ -78,6 +78,54 @@ real-path test reports green without exercising anything, which is the GH #435 p
 13a applies here in full: these drive the real vendored `sharpee` shim, the real vendored
 `node`, a real Documents folder and real processes, with nothing stubbed.
 
+### Staging them on a fresh machine
+
+The toolchain comes from the vendoring script; point the variable at the `toolchain/`
+directory it reports, not at the staging root you passed it:
+
+```bash
+bash tools/ide/vendor-toolchain.sh ~/Library/Caches/net.sharpee.panehost/stage
+export SHARPEE_IDE_TOOLCHAIN=~/Library/Caches/net.sharpee.panehost/stage/toolchain
+```
+
+The fixture is a story you write once, in a Documents folder of its own. Make it trivial and
+make it obviously not a sample — the tests write files beside it. Two forms that appear in
+older stories no longer compile, and both fail the compose assertion rather than the parse:
+the inline `story "Title" by "Author"` header was removed (use the fielded form), and
+`create the player` was removed (name a `playable` character and assign the role in a
+`before the game starts` block).
+
+```
+story
+  title: Capability Fixture
+  authors:
+    Sharpee
+  id: pane-host-capability-fixture
+  story-version: 1.0.0
+  description: Trivial by design — the host's capability tests compose it and write beside it.
+
+create the Fixture Room
+  a room
+
+  A bare room with nothing in it but the fact that it loaded.
+
+create Fixture
+  a person
+  playable
+  starts in the Fixture Room
+
+before the game starts
+  change the player to Fixture
+end before
+```
+
+Verify it before running the suite; the test asserts exactly this much — exit 0, one line of
+stdout, `schemaVersion` 2, no diagnostics, and a non-blank `ir.meta.title`:
+
+```bash
+"$SHARPEE_IDE_TOOLCHAIN/bin/sharpee" compose "$SHARPEE_IDE_CAPABILITY_STORY" --json
+```
+
 ## Generated protocol types
 
 `Generated/SharpeeProtocol.cs` is **generated, never edited** (ADR-341 D5). It is emitted by

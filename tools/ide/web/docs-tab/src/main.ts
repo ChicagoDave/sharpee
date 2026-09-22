@@ -15,6 +15,8 @@
  * Owner context: tools/ide — the Documentation tab's web bundle.
  */
 
+import { postToHost } from '@sharpee/platform-browser/host-bridge';
+
 interface DocPage {
   href: string;
   slug: string;
@@ -64,11 +66,11 @@ declare global {
       setToolchainVersion(version: string): void;
       showPage(href: string): void;
     };
-    webkit?: { messageHandlers?: Record<string, { postMessage(body: unknown): void }> };
   }
 }
 
-const host = (body: unknown) => window.webkit?.messageHandlers?.docsTab?.postMessage(body);
+/** Posts to the host's `docsTab` channel, by whatever route this host offers. */
+const host = (body: unknown) => postToHost('docsTab', body);
 
 let index: DocsIndex = { chordLanguageVersion: '', nav: [], pages: [] };
 let current = '';
