@@ -366,8 +366,8 @@ a phase of their own.
 - **Budget**: 250
 - **Focus**: The macOS bundle-layout recipe is proven on a spike bundle, not on a shipping one. This phase is exactly the gap `docs/work/velopack-macos-bundle-layout/decision.md` names as still owed.
 - **Entry state**: Phase 2 done. **Needs David at the keyboard** for the signing/notarization steps — Developer ID Application (RSNGKW5LNH), the App Store Connect API key, and `notary-submit.py`'s REST route (the same identity and route Phase 3 of the velopack-macos-bundle-layout plan used; `notarytool` crashes on upload on this machine — use `notary-submit.py`, not `notarytool`).
-- **Deliverable**: Fold `relocate.sh` (payload → `Contents/Resources`) and `patch-apphost.py` (AppHost app-path patch, offset 66088 in the spike binary — re-verify the offset against the production binary rather than assuming it's stable) into real `tools/ide/` release tooling, applied **before** `vpk pack` per the load-bearing ordering constraint the decision record names (packing a pre-relocated `.app` lets `vpk pack --packDir` pass the tree through unchanged; post-processing `vpk`'s own output collides on `sq.version`). Extend to the **x86_64 slice**, unexercised by every prior phase. Fix **GH #474** (the Phase 4 shell probe reads assets from absolute paths outside the bundle, `pane/PaneHost/Shell/ShellWindow.axaml.cs:34-38` in the spike — the production port must read from the bundle-relative, relocated path instead, so the probe becomes evidence about the shipped launch path rather than a host-machine launch path).
-- **Exit state — rule 13a applies ("packaging," "deploy" class)**: OWNED = the relocation recipe, the signing/notarization pipeline. REAL-PATH TEST: a production (not spike) `.app`, both `arm64` and `x86_64`, signed with Developer ID, submitted through `notary-submit.py`, Accepted, stapled, `spctl --assess --type execute` reporting `accepted`/`source=Notarized Developer ID`, and the bundled toolchain still answering from inside the notarized bundle.
+- **Deliverable**: Fold `relocate.sh` (payload → `Contents/Resources`) and `patch-apphost.py` (AppHost app-path patch, offset 66088 in the spike binary — re-verify the offset against the production binary rather than assuming it's stable) into real `tools/ide/` release tooling, applied **before** `vpk pack` per the load-bearing ordering constraint the decision record names (packing a pre-relocated `.app` lets `vpk pack --packDir` pass the tree through unchanged; post-processing `vpk`'s own output collides on `sq.version`). ~~Extend to the **x86_64 slice**, unexercised by every prior phase.~~ **WITHDRAWN 2026-09-22 (David): the Avalonia head ships arm64 only.** See the Intel ruling under Status. Fix **GH #474** (the Phase 4 shell probe reads assets from absolute paths outside the bundle, `pane/PaneHost/Shell/ShellWindow.axaml.cs:34-38` in the spike — the production port must read from the bundle-relative, relocated path instead, so the probe becomes evidence about the shipped launch path rather than a host-machine launch path).
+- **Exit state — rule 13a applies ("packaging," "deploy" class)**: OWNED = the relocation recipe, the signing/notarization pipeline. REAL-PATH TEST: a production (not spike) `.app`, `arm64` (~~and `x86_64`~~ — withdrawn 2026-09-22, see Status), signed with Developer ID, submitted through `notary-submit.py`, Accepted, stapled, `spctl --assess --type execute` reporting `accepted`/`source=Notarized Developer ID`, and the bundled toolchain still answering from inside the notarized bundle.
 - **Exit state, amended 2026-09-16 (session 9dd6ac)**: add a launch check ahead of the
   signing checks — the installed app opens, its window stays up, and the bundled toolchain
   answers from inside it. The original exit state was entirely bytes, signatures and a
@@ -468,11 +468,77 @@ a phase of their own.
     runtime. The stapled app is at `tools/ide/release-avalonia/arm64/Chord Writer
     (Avalonia).app`; the copy in `/Applications` is root-owned from the installer and was
     left untouched.
-- **Status**: **macOS slice: the app is usable and notarized (2026-09-17, session 374402).**
-  Open: x86_64 BLOCKED (GH #481), GH #464 (the WebKit-shaped pane API, David's cross-app
-  call), GH #479 (what a first run should show beyond the docs pane), GH #480 (bundle
-  identity), and the installer `.pkg` is still unsigned and un-notarized (vpk warns; needs
-  `--signInstallIdentity`, David's call).
+- **Progress, 2026-09-22 (session a5d716) — GH #481 re-diagnosed; it is not a runtime
+  fault.** The blocker was recorded as a translation-level SIGILL in JIT or ReadyToRun code,
+  with "disable R2R" named as the probe that would tell Rosetta from a real Intel failure.
+  That probe was run, with five others, and the diagnosis does not hold. Six conditions on the
+  same binary all exit 132: baseline; `DOTNET_ReadyToRun=0`; `DOTNET_TieredCompilation=0`;
+  R2R + tiered + AVX all off; `DOTNET_EnableHWIntrinsic=0`; and — the load-bearing one — the
+  **unbundled `dotnet publish` output**, which `relocate.sh`, `patch-apphost.py` and
+  `presign-payload.sh` have never touched. The packaging recipe is exonerated, and so are the
+  JIT, the precompiled code and the vector intrinsics.
+
+  Under `lldb` the fault is a deliberate `ud2` in AppKit's own geometry validator, reached
+  from WebKit: `_NSViewValidateGeometry` ← `NSViewValidateRect` ← `-[NSView initWithFrame:]`
+  ← `-[WKWebView initWithFrame:configuration:]` ← managed frames. The slice gets through
+  dyld, hostfxr, coreclr, the JIT, Avalonia startup and window creation, and dies building the
+  **first `NativeWebView`** — `ShellWindow.axaml` declares three, all `IsVisible="False"`.
+  `_NSViewValidateGeometry` is the abort path for a non-finite frame rect, which is also why
+  no `.ips` is written: an intentional framework assertion, not a collected crash.
+
+  One x86_64-only signal precedes it every run — `CurrentVBLDelta returned 200000 for display
+  1 -- ignoring unreasonable value`, then `Bad CurrentVBLDelta for display 1 is zero`. The
+  arm64 slice on the same machine and display writes **nothing to stderr at all**, opens,
+  holds to the timer and loads all three panes. So the display subsystem reports nonsense to
+  the translated process and not to the native one. That is a correlation and is stated as
+  one: `CurrentVBLDelta` is refresh rate, not geometry.
+
+  **What this does not settle is unchanged: real Intel hardware.** It is now better bounded —
+  the fault is in a path that consumes display information, and the one visible x86_64-only
+  input is wrong under translation — but no run on an Apple Silicon machine can decide it.
+  Two routes: an Intel Mac, or a one-shot `macos-13` GitHub Actions runner (x86_64 native)
+  that launches the slice and reads the same three lines. The second is cheap and definitive
+  but this repository runs no macOS CI today (both workflows are `ubuntu-latest`) and standing
+  policy is no CI gates for Sharpee — a diagnostic run is not a gate, but it is a new CI
+  surface and David's call.
+- **Status**: **DONE (2026-09-22, session a5d716).** Every exit-state condition is met, with
+  the `x86_64` half withdrawn by David's ruling rather than waived: a production (not spike)
+  arm64 `.app`, Developer ID signed with a 20-of-20 payload census at hardened runtime,
+  notarized (submission `4d9ce630-973b-4eb6-bf55-351c9042fb41`, Accepted), stapled,
+  `stapler validate` worked, `spctl --assess --type execute` → `accepted` /
+  `source=Notarized Developer ID`, the bundled toolchain answering `v22.23.1` /
+  `Sharpee 5.4.1 · Chord 3.6.0` from inside the notarized bundle, and the amended
+  launch-and-use check satisfied — the authoring loop (open, Build, Save, Check, Run Tests,
+  all three panes) run INSIDE the notarized bundle against a story outside the repository,
+  2026-09-17, session 374402.
+
+  **Three open items survive the phase and do not gate it**, because none was ever an
+  exit-state condition: GH #479 (what a first run should show beyond the docs pane),
+  GH #480 (bundle identity), and the installer `.pkg`, still unsigned and un-notarized —
+  `vpk` warns, and it needs `--signInstallIdentity`, David's call. They are carried forward,
+  not closed by this phase going DONE.
+
+  **This does not close the macOS slice.** Under Slice ordering the macOS slice also draws on
+  Phases 8 (editor productionization), 9 (platform findings GH #463/#465/#462) and 10 (shell
+  parity audit), all PENDING. Phase 5 is the packaging and shipping leg of that slice, and it
+  is the leg that is finished.
+
+  Prior status, for the record: **macOS slice: the app is usable and notarized (2026-09-17, session 374402).**
+  **Intel dropped — David's ruling, 2026-09-22: "drop the mac intel slice."** The Avalonia
+  head ships **arm64 only**; the x86_64 slice leaves this phase's scope and GH #481 is closed
+  as not planned. The defect is unresolved, not fixed — settling it would cost an Intel Mac or
+  a new macOS CI surface, for a target macOS itself is sunsetting. The diagnosis keeps its
+  value regardless: the unbundled `dotnet publish` output fails identically to the relocated,
+  patched and signed bundle, so `relocate.sh`, `patch-apphost.py` and `presign-payload.sh` are
+  exonerated. **Scope of the ruling: the Avalonia head only.** The shipping Swift Chord
+  Writer's Intel installer is a separate live surface under ADR-279 D4 (its own per-arch DMG
+  and `appcast-x86_64.xml`) and is untouched. `package-avalonia.sh`'s `--arch x86_64` path and
+  `vendor-toolchain.sh`'s darwin/x86_64 vendoring stay as they are — unused by the arm64
+  route, shared with tooling the Swift app uses, and not this ruling's to remove.
+  Open: GH #479 (what a first run should show beyond the docs pane),
+  GH #480 (bundle identity), and the installer `.pkg` is still unsigned and un-notarized (vpk
+  warns; needs `--signInstallIdentity`, David's call). **GH #464 closed 2026-09-22** (session
+  0b21a9, Phase 4's macOS portion) and is no longer an open item of this phase.
   Superseded status, for the record: **STOPPED (2026-09-16, session 9dd6ac) — deliberately unfinished, nothing
   notarized.** Built and kept: `package-avalonia.sh` (publish → vendor toolchain → icns →
   Info.plist → relocate → presign → `vpk pack --signAppIdentity`), `build-relocated-app.sh`,
