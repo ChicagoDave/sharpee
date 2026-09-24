@@ -1,7 +1,7 @@
 # Session Plan: mentioned-but-not-examinable — the first testing-explorer lens
 
 **Created**: 2026-09-22
-**Plan Status**: ACTIVE
+**Plan Status**: DONE (2026-09-23, session 97dd17 — all four phases complete)
 **Overall scope**: Build and ship the first scoped lens for the testing-explorer (issue #508's decision): for every reachable room in a Chord story, extract noun phrases from the room's rendered description and each in-scope entity's description, hand each phrase to the real parser/engine as `examine <phrase>`, and report every phrase that fails to resolve in scope or resolves to the default examine response — grouped by room, folded by phrase. Real-path only (parser + engine decide; no vocabulary-match heuristic stands in for the verdict). Nothing under `packages/` changes; anything that looks like it needs a platform change is named as a discussion item, not built.
 **Bounded contexts touched**: N/A — infrastructure/tooling. This is a testing lens under `tools/explorer-probe/`, consumed by story authors and future IDE surfaces; it changes no domain behavior of the platform or of Chord stories.
 **Key domain language**: N/A (see above). The lens's own vocabulary — "phrase," "in scope," "default examine response," "fold by phrase" — is testing-tool language already fixed by issue #508's decision comment, not new domain modeling.
@@ -64,7 +64,8 @@
   - Add a corpus-style regression test under `tools/explorer-probe/tests/` (new directory — name and shape it following this repo's existing convention of pinning a heuristic extractor with expected findings, as `@sharpee/world-index`'s `tests/incomplete.test.ts` already does for the sibling check) so a prose edit that silently changes findings shows up in a diff rather than going unnoticed.
   - Write the tool's own short usage doc (header comment is sufficient; no new `.md` unless the header proves insufficient) covering invocation, the classification categories, and the resolved design-question record from Phase 1.
 - **Exit state**: The lens is committed, documented, and regression-pinned; its output format is stable enough for the next lens or a future IDE consumer to build against.
-- **Status**: CURRENT (since 2026-09-23)
+- **Status**: DONE (2026-09-23, session 97dd17)
+- **Outcome**: **Report shape**: the JSON carries `lens: "examinable"`, `format: 1`, and a new top-level `findings` array folded across rooms by (phrase, kind, detail), most-rooms first, each entry naming the rooms it recurs in and the union of its sources; `rooms` stays the full per-room record in discovery order. The console form prints the recurring findings once under "seen in more than one room", then each room with only the findings unique to it and a count of what was folded away; on fernhill that takes `house` from five listings to one and the carried letter's phrase from eleven to one hidden row. **Regression pin**: `tools/explorer-probe/tests/lens-examinable.test.js` (plain `node:test`, no package or config added — run with `node --test 'tools/explorer-probe/tests/*.test.js'`) pins the classifier on the engine's measured event shapes, the fold and console form on synthetic rows, the one-room fixture through the real engine (compiled from source in the test, as `world-index`'s corpus tests do), and fernhill at seed 1209 / 600 states: 11 of 13 rooms, 119 phrases, 92 not-in-scope / 27 described, and the full folded finding list as the specification. 25 tests, 0 failures, 13.5s; the state budget rather than a seconds budget is what makes it deterministic (600 and 1500 states reach the same rooms with the same counts, measured this session). **Usage doc**: the lens header now carries invocation and flags, the five classes with what decides each, the format-1 JSON shape, and the test command; no separate `.md` was needed. Nothing under `packages/` touched. Not committed in this session — the commit is David's call.
 
 ### Phase 4: Close the loop — ADR amendment and the next lens
 - **Tier**: Small
@@ -77,7 +78,8 @@
   - File a follow-on issue for the next candidate lens, per the #508 decision's own ordering: declared states nothing assigns (the `fruiting` finding, zero execution) is named as the most immediately reachable next candidate, having already been found by hand this session.
   - Update issue #508 to record the pivot as executed, not just decided.
 - **Exit state**: ADR-294 reflects the shipped lens; the next lens is tracked as an issue, not lost; #508 reflects completed work.
-- **Status**: PENDING
+- **Status**: DONE (2026-09-23, session 97dd17)
+- **Outcome**: ADR-294 gains Amendment 2 / **D23** ("the explorer is a family of scoped lenses; D20's enumeration is retired"), with the measured numbers that retired D20, the three D20 commitments that carry forward (soundness contract, real path only, the walker as shared substrate), the shipped lens cited by path with its filed defects, and the relationship named — not merged — to `state-space-analysis.md` §4C (the executed, state-relative check in the same family, running the opposite direction) and ADR-321 D13 (the adjacent static, story-wide check, whose inverse D5 is this lens's static twin). D22 stands. Sign-off: David's "phase 4" on a phase whose deliverable is the amendment, on top of #508's own decision text ("The ADR gets amended to say so once the first lens exists to cite"). Follow-on lens filed as **#515** (declared states nothing assigns), carrying the spike's lesson that `fruiting` was half a false positive because trait-defined clauses assign state too, so the write side must read all five IR surfaces. #508 commented with the executed record; left open for David to close with the commit. No `packages/` change.
 
 ## Pointer record
 

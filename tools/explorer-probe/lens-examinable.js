@@ -65,9 +65,69 @@
  * `stopReason` and rooms reached against rooms declared, and never claims
  * to have seen everything.
  *
- * Public interface: CLI —
- *   node tools/explorer-probe/lens-examinable.js <story.story> [--seed N]
- *     [--max-seconds N] [--max-states N] [--all] [--json]
+ * USAGE
+ *
+ *   node tools/explorer-probe/lens-examinable.js <story.story>
+ *       [--seed N] [--max-states N] [--max-seconds N] [--max-depth N]
+ *       [--all] [--json]
+ *
+ * The story must be compiled first (`<dir>/dist/<stem>.ir.json` beside the
+ * `.story` file, as `./sharpee compose <story> -o <that path>` writes it).
+ * `--all` also prints described resolutions and the rows `readsAsThing`
+ * hid. `--json` prints the report below instead of the console form. The
+ * walk budgets default to the walker's (seed 1209, 5000 states, 120s,
+ * depth 40); a run meant to be repeatable should bound by `--max-states`,
+ * not seconds, because states are deterministic at a seed and seconds are
+ * not.
+ *
+ * CLASSES — one per executed phrase, decided by the engine's events:
+ *
+ *   resolved-described  `if.event.examined` with an authored description
+ *                       (any examining id but the three below, or a Chord
+ *                       phrase id from an `on examining` clause)
+ *   resolved-default    `if.event.examined` whose id ends `default_description`,
+ *                       `default_description_self` or `nothing_special` —
+ *                       the object exists but the author wrote nothing
+ *   not-in-scope        no entity answered to the phrase here: the validator's
+ *                       `ENTITY_NOT_FOUND` (as `command.failed`), or a
+ *                       blocked `if.event.examined` (in scope, not visible)
+ *   ambiguous           a `client.query` — several entities answer to the
+ *                       phrase; a naming collision, reported apart
+ *   unclassified        none of the above — a lens defect, never dropped
+ *
+ * Every class but resolved-described is a finding. A not-in-scope finding
+ * whose head noun `readsAsThing` rejects is kept in the data with
+ * `thing: false` and hidden from the console unless `--all`.
+ *
+ * REPORT (`--json`, format 1) — the shape a future consumer builds against:
+ *
+ *   {
+ *     lens: 'examinable', format: 1,
+ *     story, seed,
+ *     walk: { stopReason, roomsReached, roomsDeclared, statesDiscovered, walkMs },
+ *     phrasesExecuted,
+ *     counts: { <class>: n, ... },
+ *     findings: [ { phrase, kind, detail, target?, thing, sources: [..],
+ *                   rooms: [ { roomId, room }, .. ] }, .. ],
+ *     rooms:    [ { roomId, room, path: [..commands], ended?, prose: [..],
+ *                   rows: [ { phrase, kind, detail, target?, sources, thing }, .. ] }, .. ]
+ *   }
+ *
+ * `rooms` is the full record in discovery order, every row included.
+ * `findings` folds the finding rows across rooms by (phrase, kind, detail),
+ * most-rooms first, so a carried item's phrases — which recur in every room
+ * the player carries it through — read once with a room count instead of
+ * once per room. The console form prints that folded section first, then
+ * each room with only the findings unique to it. Everything but `walkMs`
+ * is deterministic at a seed and a state budget.
+ *
+ * REGRESSION PIN — `node --test 'tools/explorer-probe/tests/*.test.js'` pins the
+ * classifier, the fixture story under `fixtures/lens-fixture/`, and
+ * fernhill's findings at seed 1209 / 600 states, so a prose or extractor
+ * change that moves a finding shows up as a diff, not silently.
+ *
+ * Public interface: CLI as above; module — `runLens(storyPath, opts)`,
+ * `classify(events, result, error)`, `foldFindings(rooms)`, `isFinding(row)`.
  * Owner context: tools/ — the testing-explorer, outside the published packages.
  */
 
@@ -222,6 +282,41 @@ async function examineRoom(ctx, tally) {
 }
 
 // ---------------------------------------------------------------------------
+// Folding — one line per finding, however many rooms it recurs in
+// ---------------------------------------------------------------------------
+
+/** A finding row is anything that is not a described resolution. */
+function isFinding(row) {
+  return row.kind !== 'resolved-described';
+}
+
+/**
+ * Fold the finding rows of every room by (phrase, kind, detail).
+ *
+ * @param rooms the per-room report rows, in discovery order
+ * @returns findings sorted most-rooms first, then by phrase; each carries
+ *   the rooms it was seen in (discovery order) and the union of its sources
+ */
+function foldFindings(rooms) {
+  const byKey = new Map();
+  for (const r of rooms) {
+    for (const row of r.rows) {
+      if (!isFinding(row)) continue;
+      const key = JSON.stringify([row.phrase, row.kind, row.detail]);
+      let f = byKey.get(key);
+      if (!f) {
+        f = { phrase: row.phrase, kind: row.kind, detail: row.detail, thing: row.thing, sources: [], rooms: [] };
+        if (row.target !== undefined) f.target = row.target;
+        byKey.set(key, f);
+      }
+      for (const s of row.sources) if (!f.sources.includes(s)) f.sources.push(s);
+      f.rooms.push({ roomId: r.roomId, room: r.room });
+    }
+  }
+  return [...byKey.values()].sort((a, b) => b.rooms.length - a.rooms.length || (a.phrase < b.phrase ? -1 : a.phrase > b.phrase ? 1 : 0));
+}
+
+// ---------------------------------------------------------------------------
 // The lens
 // ---------------------------------------------------------------------------
 
@@ -230,7 +325,8 @@ async function examineRoom(ctx, tally) {
  *
  * @param storyPath absolute path to the `.story` file
  * @param opts.seed / maxSeconds / maxStates / maxDepth — walk budgets
- * @returns the lens report: per-room rows plus the walk's soundness facts
+ * @returns the lens report (format 1 — see the header): the walk's
+ *   soundness facts, the folded findings, and every room's rows
  */
 async function runLens(storyPath, opts) {
   const rooms = [];
@@ -250,6 +346,8 @@ async function runLens(storyPath, opts) {
   for (const r of rooms) for (const row of r.rows) counts[row.kind] = (counts[row.kind] || 0) + 1;
 
   return {
+    lens: 'examinable',
+    format: 1,
     story: path.basename(storyPath),
     seed: walk.seed,
     walk: {
@@ -261,6 +359,7 @@ async function runLens(storyPath, opts) {
     },
     phrasesExecuted: tally.executed,
     counts,
+    findings: foldFindings(rooms),
     rooms,
   };
 }
@@ -284,41 +383,63 @@ function parseArgs(argv) {
   return opts;
 }
 
-/** A finding row is anything that is not a described resolution. */
-function isFinding(row) {
-  return row.kind !== 'resolved-described';
+/** The two console lines for one row or folded finding. */
+function printRow(row, out) {
+  const tgt = row.target ? '  -> ' + row.target : '';
+  const flag = row.thing ? '' : '  (not-a-thing)';
+  out('   ' + row.kind.padEnd(19) + ' ' + JSON.stringify(row.phrase) + tgt + flag);
+  out('   ' + ''.padEnd(19) + '   from: ' + row.sources.join(', ') + '   [' + row.detail + ']');
 }
 
-function printReport(report, opts) {
+/**
+ * Print the console form of a report: header, the findings that recur in
+ * more than one room, then each room with only the findings unique to it.
+ *
+ * @param report a `runLens` report
+ * @param opts.all show described resolutions and not-a-thing rows too
+ * @param out     line sink (default `console.log`); tests capture it
+ */
+function printReport(report, opts, out = console.log) {
   const w = report.walk;
-  console.log('');
-  console.log('story             ' + report.story + '  (seed ' + report.seed + ')');
-  console.log('rooms reached     ' + w.roomsReached + (w.roomsDeclared !== undefined ? ' of ' + w.roomsDeclared + ' declared' : ''));
-  console.log('walk stopped      ' + w.stopReason + '  (' + (w.walkMs / 1000).toFixed(1) + 's, ' + w.statesDiscovered + ' states)');
-  console.log('phrases examined  ' + report.phrasesExecuted);
-  console.log('by class          ' + Object.entries(report.counts).map(([k, v]) => k + ' ' + v).join(', '));
-  console.log('');
+  const visible = (row) => opts.all || row.thing;
+  out('');
+  out('story             ' + report.story + '  (seed ' + report.seed + ')');
+  out('rooms reached     ' + w.roomsReached + (w.roomsDeclared !== undefined ? ' of ' + w.roomsDeclared + ' declared' : ''));
+  out('walk stopped      ' + w.stopReason + '  (' + (w.walkMs / 1000).toFixed(1) + 's, ' + w.statesDiscovered + ' states)');
+  out('phrases examined  ' + report.phrasesExecuted);
+  out('by class          ' + Object.entries(report.counts).map(([k, v]) => k + ' ' + v).join(', '));
+  out('');
 
-  for (const r of report.rooms) {
-    const shown = r.rows.filter((row) => opts.all || (isFinding(row) && row.thing));
-    const hidden = r.rows.filter((row) => !opts.all && isFinding(row) && !row.thing).length;
-    console.log('== ' + r.room + '  [' + (r.path.length ? r.path.join(', ') : 'start') + ']');
-    if (r.ended) { console.log('   (the game has ended in this state; nothing examined)'); console.log(''); continue; }
-    if (shown.length === 0) console.log('   (no findings' + (hidden ? '; ' + hidden + ' hidden as not-a-thing' : '') + ')');
-    for (const row of shown) {
-      const tgt = row.target ? '  -> ' + row.target : '';
-      const flag = row.thing ? '' : '  (not-a-thing)';
-      console.log('   ' + row.kind.padEnd(19) + ' ' + JSON.stringify(row.phrase) + tgt + flag);
-      console.log('   ' + ''.padEnd(19) + '   from: ' + row.sources.join(', ') + '   [' + row.detail + ']');
+  const recurring = report.findings.filter((f) => f.rooms.length > 1);
+  const recurringKeys = new Set(recurring.map((f) => JSON.stringify([f.phrase, f.kind, f.detail])));
+  const recurringShown = recurring.filter(visible);
+  if (recurringShown.length) {
+    out('== seen in more than one room  (' + recurringShown.length + ' findings)');
+    for (const f of recurringShown) {
+      printRow(f, out);
+      out('   ' + ''.padEnd(19) + '   in ' + f.rooms.length + ' rooms: ' + f.rooms.map((r) => r.room).join(', '));
     }
-    if (hidden && shown.length) console.log('   (' + hidden + ' more hidden as not-a-thing; --all shows them)');
-    console.log('');
+    out('');
   }
 
-  console.log('Findings are real: each phrase was executed through the engine in the state');
-  console.log('the walk first reached its room. Absence is not proof: rooms the walk did not');
-  console.log('reach, and prose only shown in other states, were not examined.');
-  console.log('');
+  for (const r of report.rooms) {
+    const unique = (row) => !recurringKeys.has(JSON.stringify([row.phrase, row.kind, row.detail]));
+    const shown = r.rows.filter((row) => (opts.all || isFinding(row)) && visible(row) && unique(row));
+    const hidden = r.rows.filter((row) => isFinding(row) && !visible(row)).length;
+    const folded = r.rows.filter((row) => isFinding(row) && visible(row) && !unique(row)).length;
+    out('== ' + r.room + '  [' + (r.path.length ? r.path.join(', ') : 'start') + ']');
+    if (r.ended) { out('   (the game has ended in this state; nothing examined)'); out(''); continue; }
+    if (shown.length === 0) out('   (no findings unique to this room' + (hidden ? '; ' + hidden + ' hidden as not-a-thing' : '') + ')');
+    for (const row of shown) printRow(row, out);
+    if (hidden && shown.length) out('   (' + hidden + ' more hidden as not-a-thing; --all shows them)');
+    if (folded) out('   (' + folded + ' listed above under "seen in more than one room")');
+    out('');
+  }
+
+  out('Findings are real: each phrase was executed through the engine in the state');
+  out('the walk first reached its room. Absence is not proof: rooms the walk did not');
+  out('reach, and prose only shown in other states, were not examined.');
+  out('');
 }
 
 async function main() {
@@ -332,7 +453,7 @@ async function main() {
   printReport(report, opts);
 }
 
-module.exports = { runLens, classify };
+module.exports = { runLens, classify, foldFindings, isFinding, printReport };
 
 if (require.main === module) {
   main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });

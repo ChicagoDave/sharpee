@@ -112,3 +112,29 @@ Possessive-determiner anchoring belongs in `@sharpee/world-index` (shared by thi
 ---
 
 **Progressive update**: Session completed 2026-09-23 03:40
+
+## Activity Log (auto-captured)
+```
+[07:02:38] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[07:04:18] EDIT: File changed via Bash — docs/context/session-20260923-0203-explorer-prototype.md
+[07:08:56] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:48] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:48] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:48] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:48] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:49] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:49] EDIT: File edited — tools/explorer-probe/explore.js
+[07:09:49] EDIT: File edited — tools/explorer-probe/explore.js
+[07:11:00] EDIT: File edited — tools/explorer-probe/explore.js
+[07:11:01] EDIT: File changed via Bash — tools/explorer-probe/explore.js
+[07:11:01] EDIT: File changed via Bash — tools/explorer-probe/lens-examinable.js
+[07:16:30] EDIT: File changed via Bash — tools/explorer-probe/fixtures/lens-fixture/lens-fixture.story
+[07:16:30] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[08:15:45] EDIT: File changed via Bash — docs/context/session-20260923-0201-explorer-prototype.md
+[08:18:10] EDIT: File written — docs/context/session-20260923-0201-explorer-prototype.md
+[08:19:02] EDIT: File changed via Bash — docs/context/pattern-recurrence-baseline.json
+[05:19:34] TEST: Tests passed — 12 passed 121 passed
+[05:19:49] EDIT: File written — .commit-files
+[05:19:56] EDIT: File written — .commit-msg
+[05:20:04] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

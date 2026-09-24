@@ -7,6 +7,11 @@
 > specified, and D20 is superseded by `docs/proposals/state-space-analysis.md`.
 > See Amendment 1.
 
+> **Amended 2026-09-23** (session 97dd17): **D23** — the explorer is a family of scoped
+> lenses over the walker's room reachability; D20's enumeration is retired as the
+> mechanism, and the first lens (mentioned-but-not-examinable) has shipped under
+> `tools/explorer-probe/`. See Amendment 2.
+
 > **D15 superseded in part** by [ADR-300 D11](adr-300-addressable-channels-and-canonical-transcript.md) (2026-08-04): golden recordings still capture declared channels exactly as D15 says, but recordings are no longer the only consumer — the assertion tier reads channels too, via `[CHANNEL: <id>, contains "…"]`.
 
 > **D1 scoped** by [ADR-306 D3](adr-306-testing-play-surface-revamp.md) (2026-08-09): "golden
@@ -227,6 +232,74 @@ platform work is authorized by it or by this note.
 
 *Nothing here shipped — no explorer package exists — so this is a design supersession, not
 a retirement of running code.*
+
+---
+
+## Amendment 2 (2026-09-23, session 97dd17)
+
+One addition, recording a pivot decided on issue #508 (2026-09-22) once the first
+instance existed to cite, as that decision said it would.
+
+### D23. The explorer is a family of scoped lenses; D20's enumeration is retired
+
+D20 named the mechanism "bounded exhaustive play." It was measured before it was
+retired. On fernhill, a breadth-first walk over the real engine discovered 23,163
+states through 715,903 commands in 900 seconds and never found the 29-command
+winning path; a planner over the compiled IR modelled the story's causality
+completely and stalled for want of a landmark heuristic (#507). Neither produced a
+finding. Every finding that did land during that work came from a narrow check
+applied along the way: an unbound parameter in one action, 27 of secret-letter's
+40 declared state dimensions never read by any rule, a declared state seemingly
+never assigned.
+
+**The explorer is therefore a family of lenses.** Each lens answers one question
+about the story, over the rooms the walker can already reach. Three of D20's
+commitments carry forward unchanged, and the rest is retired:
+
+- **The soundness contract** (D20, ADR-322 D7): a finding is real, absence is not
+  proof, and the budget is part of the report. A lens report names the walk's stop
+  reason and rooms reached against rooms declared, and never claims exhaustiveness.
+- **Real path only.** A lens hands each candidate to the real parser and the real
+  engine and reports what the engine did. No vocabulary match or heuristic stands
+  in for the verdict; heuristics may generate candidates, never decide them.
+- **The walker's room reachability is the shared substrate.** Lenses borrow it
+  through the walk's `onRoomFirstSeen` hook; none re-derives it.
+
+**The first lens has shipped**: mentioned-but-not-examinable,
+`tools/explorer-probe/lens-examinable.js` (2026-09-23). For every reachable room it
+extracts noun phrases from the prose the player sees there with
+`@sharpee/world-index`'s `extractNounPhrases` (ADR-321 D6b, consumed not rebuilt
+per ADR-322 D8), executes `examine <phrase>` through the engine in the state the
+room was first reached, and classifies the engine's answer by event and message
+id. Its report is grouped by room and folded by phrase, in a stable JSON format
+pinned by `tools/explorer-probe/tests/`. Run on fernhill and secret-letter it
+produced six filed defects (#509 through #513) and one platform discussion item
+(#514). Nothing under `packages/` changed.
+
+**Where this lens sits among the existing designs** — named, not merged:
+
+- `docs/proposals/state-space-analysis.md` §4C's "undeclared referent, forward
+  direction" is the closest design. That check is explicitly **state-relative**
+  ("only the sweep supplies 'by that point'"). This lens is the executed,
+  state-relative check in that same family, running in the opposite direction: §4C
+  asks whether a noun the mechanics need was printed by the time the player needs
+  it; this lens asks whether a noun the prose printed is something the engine
+  answers to. Both are positional and both need the walk.
+- ADR-321 D13's unnamed-tool finding is the adjacent **static, story-wide** check:
+  a thing the mechanics need that no prose names, derived from the IR without
+  running anything. D13's own inverse, ADR-321 D5's Incomplete, is the static twin
+  of this lens. The lens adds what the static check cannot: the engine's actual
+  resolution in an actual reached state, so an object's own description using
+  adjectives the object does not answer to (#513's class) is caught by execution
+  rather than by vocabulary inspection.
+
+D22 stands. The proposal remains the live analysis design; lenses are the
+execution vehicle for the checks in it that need the walk, built one at a time
+under `tools/` until one earns a package. The next candidate is tracked as #515,
+per #508's ordering: declared states nothing assigns.
+
+*This is a tool under `tools/`, outside the published packages; no platform work is
+authorized by this amendment.*
 
 
 ## Acceptance
