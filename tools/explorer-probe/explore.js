@@ -16,7 +16,12 @@
  * commands beyond a capped put-in/put-on. Each of those makes the space
  * larger, so every number here is a LOWER bound on the real walk.
  *
- * Public interface: CLI only — `node tools/explorer-probe/explore.js <story> [opts]`.
+ * Since issue #508 the walk is also the shared room-reachability substrate
+ * for the testing-explorer's lenses: `explore()` is exported and takes an
+ * `onRoomFirstSeen` hook (see its doc comment). The CLI is unchanged.
+ *
+ * Public interface: CLI — `node tools/explorer-probe/explore.js <story> [opts]`;
+ * module — `explore(storyPath, opts)`.
  * Owner context: tools/ — a spike, outside the published packages.
  */
 
@@ -423,10 +428,45 @@ async function restoreSave(platform, payload) {
   return platform.restore();
 }
 
+/**
+ * How many rooms the story declares. Measured IR shape (fernhill,
+ * 2026-09-23): `entity.kinds[]` is a list of `{name, config, condition}`
+ * records and a room is the entity whose kinds include `room`.
+ */
+function countDeclaredRooms(ir) {
+  let n = 0;
+  for (const entity of ir.entities || []) {
+    if ((entity.kinds || []).some((k) => k && k.name === 'room')) n++;
+  }
+  return n;
+}
+
 // ---------------------------------------------------------------------------
 // The walk
 // ---------------------------------------------------------------------------
 
+/**
+ * Walk a story's reachable state space breadth-first.
+ *
+ * Also the shared room-reachability substrate for the testing-explorer's
+ * lenses (issue #508): a lens passes `opts.onRoomFirstSeen` and is called
+ * once per room, the first time the walk discovers it, with the world in the
+ * state the walk arrived in. The hook may run commands freely — the walk
+ * restores its own save before every command it issues, so nothing the hook
+ * does leaks into the walk's identity or frontier.
+ *
+ * @param storyPath absolute path to the `.story` file
+ * @param opts.seed / hash / breadth / maxStates / maxSeconds / maxDepth /
+ *   profile / declaredVocab — the CLI flags of the same names
+ * @param opts.onRoomFirstSeen optional `async ({ game, world, room, save,
+ *   restore, path }) => void`; `restore()` puts the world back to the state
+ *   the room was first seen in, `path` is the command list that reached it
+ * @param opts.stopWhenAllRoomsSeen stop with reason `all-rooms-reached` once
+ *   every room the IR declares has been seen (declared mode only — the count
+ *   comes from the IR)
+ * @returns the walk report; `roomsDeclared` is present in declared mode so a
+ *   reader can compare rooms reached against the total
+ */
 async function explore(storyPath, opts) {
   const started = Date.now();
   const game = await loadAuthorGame(storyPath, { seed: opts.seed });
@@ -438,24 +478,41 @@ async function explore(storyPath, opts) {
 
   const roomsSeen = new Set();
   const endings = new Set();
+  /** Records the player's room and any ending; returns the room if newly seen. */
   const noteFacts = () => {
     const p = world.getPlayer();
-    if (!p) return;
+    if (!p) return null;
     const r = world.getContainingRoom(p.id);
-    if (r) roomsSeen.add(r.id + ':' + r.name);
+    let firstSeen = null;
+    if (r) {
+      const key = r.id + ':' + r.name;
+      if (!roomsSeen.has(key)) { roomsSeen.add(key); firstSeen = r; }
+    }
     const ending = world.storyEnding || (world.getStoryEnding && world.getStoryEnding());
     if (ending) endings.add(typeof ending === 'string' ? ending : JSON.stringify(ending));
+    return firstSeen;
   };
-  noteFacts();
+  const rootRoom = noteFacts();
 
   const rootSave = await captureSave(platform);
   const profile = opts.profile ? {} : null;
+
+  const hook = typeof opts.onRoomFirstSeen === 'function' ? opts.onRoomFirstSeen : null;
+  const fireHook = async (room, save, cmdPath) => {
+    if (!hook || !room) return;
+    const restore = () => restoreSave(platform, save);
+    await hook({ game, world, room, save, restore, path: cmdPath });
+  };
+  await fireHook(rootRoom, rootSave, []);
+  // The root identity is hashed below; undo anything the hook did first.
+  if (hook) await restoreSave(platform, rootSave);
 
   // The factored identity needs the story's own declarations. Derived once,
   // from the compiled IR beside the .story file.
   let sig = { placement: new Set(), state: new Set() };
   let dims = null;
   let vocab = null;
+  let roomsDeclared = null;
   const nameByIrId = new Map();
   if (opts.hash === 'declared' || opts.declaredVocab) {
     const ir = loadStoryIR(storyPath);
@@ -471,9 +528,14 @@ async function explore(storyPath, opts) {
       placement: new Set(dims.placementEntityIds),
       state: new Set(dims.loadBearingDimensions.map((d) => d.id)),
     };
+    // Rooms the story declares, so "rooms reached" can be read against a
+    // total (ADR-322 D7: a report never implies exhaustiveness).
+    roomsDeclared = countDeclaredRooms(ir);
   }
 
   const rootHash = stateHash(world, opts.hash, profile, sig);
+  const allRoomsSeen = () =>
+    opts.stopWhenAllRoomsSeen && roomsDeclared !== null && roomsSeen.size >= roomsDeclared;
 
   const seen = new Set([rootHash]);
   let queue = [{ save: rootSave, path: [], depth: 0 }];
@@ -485,6 +547,8 @@ async function explore(storyPath, opts) {
   const frontierByDepth = { 0: 1 };
   const walkStart = Date.now();
   let stopReason = 'frontier-exhausted';
+
+  if (allRoomsSeen()) { stopReason = 'all-rooms-reached'; queue = []; }
 
   while (queue.length > 0) {
     const elapsed = (Date.now() - walkStart) / 1000;
@@ -511,16 +575,28 @@ async function explore(storyPath, opts) {
         // A refused turn is information, not a crash of the walk.
       }
       commandsExecuted++;
-      noteFacts();
+      const newRoom = noteFacts();
 
       const h = stateHash(world, opts.hash, profile, sig);
+      let save = null;
       if (!seen.has(h)) {
         seen.add(h);
-        const save = await captureSave(platform);
+        save = await captureSave(platform);
         saves++;
         const depth = node.depth + 1;
         frontierByDepth[depth] = (frontierByDepth[depth] || 0) + 1;
         queue.push({ save, path: [...node.path, cmd], depth });
+      }
+
+      // The hook runs AFTER the new state's save is in the queue, so whatever
+      // it does to the world cannot reach the frontier; the next iteration
+      // restores `node.save` regardless. A new room always means a new state
+      // (the player's containment is in every identity), but the fallback
+      // capture keeps the hook honest if that ever stops being true.
+      if (newRoom && hook) {
+        if (!save) { save = await captureSave(platform); saves++; }
+        await fireHook(newRoom, save, [...node.path, cmd]);
+        if (allRoomsSeen()) { stopReason = 'all-rooms-reached'; queue = []; break; }
       }
     }
   }
@@ -544,6 +620,7 @@ async function explore(storyPath, opts) {
     commandsPerSecond: Math.round(commandsExecuted / (walkMs / 1000)),
     newStatesPerCommand: +(seen.size / Math.max(commandsExecuted, 1)).toFixed(4),
     roomsReached: roomsSeen.size,
+    ...(roomsDeclared !== null ? { roomsDeclared } : {}),
     rooms: [...roomsSeen].sort(),
     endingsReached: [...endings],
     frontierByDepth,
@@ -613,6 +690,7 @@ async function main() {
 }
 
 module.exports.__candidates = candidates;
+module.exports.explore = explore;
 
 if (require.main === module) {
   main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });

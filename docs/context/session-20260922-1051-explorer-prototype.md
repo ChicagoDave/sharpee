@@ -109,3 +109,50 @@ Both the #508 decision and the new plan's Phase 1 design fix this as non-negotia
 ---
 
 **Progressive update**: Session completed 2026-09-22 14:32 CDT (approximate, from the last recorded session event)
+
+## Activity Log (auto-captured)
+```
+[15:53:18] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[15:54:17] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/75422cfb-22dc-43ba-a366-cbe9dd9f0b8c/scratchpad/508-decision.md
+[19:09:27] EDIT: File written — docs/context/session-20260922-1600-explorer-prototype.md
+[19:09:28] EDIT: File changed via Bash — docs/context/session-20260922-1600-explorer-prototype.md
+[19:10:48] EDIT: File edited — docs/context/session-20260922-1600-explorer-prototype.md
+[19:15:58] EDIT: File written — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[19:16:02] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[19:21:25] EDIT: File edited — docs/work/chord-writer-avalonia-production/plan.md
+[19:21:29] EDIT: File changed via Bash — docs/context/.current-plan
+[19:21:29] EDIT: File changed via Bash — docs/work/chord-writer-avalonia-production/plan.md
+[19:21:39] EDIT: File edited — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[19:32:15] EDIT: File changed via Bash — docs/context/session-20260922-1051-explorer-prototype.md
+[19:32:21] EDIT: File edited — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[19:35:14] EDIT: File written — docs/context/session-20260922-1051-explorer-prototype.md
+[19:37:35] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/.gitignore
+[19:37:35] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/README.md
+[19:37:35] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/assets/.gitkeep
+[19:37:35] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/browser/my-story.css
+[19:37:35] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/feelies/.gitkeep
+[19:37:35] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/package.json
+[19:37:36] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/src/browser-entry.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/src/index.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/src/version.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/tsconfig.json
+[19:37:36] EDIT: File changed via Bash — .tmp-browser-verify-KHkYOZ/my-story/walkthroughs/.gitkeep
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/.gitignore
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/README.md
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/assets/.gitkeep
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/browser/first-light.css
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/first-light.config.json
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/first-light.story
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/package.json
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/src/browser-entry.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/src/hatch-modules.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/src/story-ir.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/src/version.ts
+[19:37:36] EDIT: File changed via Bash — .tmp-chord-verify-u8I3gk/first-light/walkthroughs/.gitkeep
+[19:37:36] EDIT: File changed via Bash — .tmp-core-custompage-p3yJXM/browser/index.html
+[19:37:36] EDIT: File changed via Bash — .tmp-core-custompage-p3yJXM/ch.story
+[19:37:45] TEST: Tests passed — 12 passed 121 passed
+[19:37:53] EDIT: File written — .commit-files
+[19:37:53] EDIT: File written — .commit-msg
+[19:37:57] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```
