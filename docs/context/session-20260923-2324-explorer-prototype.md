@@ -184,3 +184,79 @@ Both plans are complete — all eight phases across the two plans are DONE, and 
 ---
 
 **Progressive update**: Session completed 2026-09-24 (second block, folded into this template on request; exact end timestamp not separately logged)
+
+## Activity Log (auto-captured)
+```
+[05:30:43] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[05:33:03] EDIT: File written — docs/context/session-20260923-2330-explorer-prototype.md
+[05:34:37] EDIT: File changed via Bash — docs/context/session-20260923-2330-explorer-prototype.md
+[05:34:37] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:34:37] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:34:38] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:34:38] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:34:38] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:34:38] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:35:01] EDIT: File changed via Bash — tools/explorer-probe/lens-examinable.js
+[05:35:40] EDIT: File edited — tools/explorer-probe/lens-examinable.js
+[05:37:18] EDIT: File written — tools/explorer-probe/tests/lens-examinable.test.js
+[05:38:19] EDIT: File changed via Bash — tools/explorer-probe/tests/lens-examinable.test.js
+[05:39:03] EDIT: File edited — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[05:39:03] EDIT: File edited — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[05:39:03] EDIT: File written — docs/context/session-20260923-2330-explorer-prototype.md
+[05:40:30] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[05:41:31] EDIT: File edited — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[05:41:31] EDIT: File edited — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[05:41:31] EDIT: File changed via Bash — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[05:42:27] EDIT: File edited — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[05:42:29] EDIT: File edited — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[05:42:29] EDIT: File edited — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[05:52:15] EDIT: File changed via Bash — docs/context/session-20260923-2324-explorer-prototype.md
+[05:55:59] EDIT: File written — docs/context/session-20260923-2324-explorer-prototype.md
+[06:14:54] EDIT: File written — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:14:58] EDIT: File changed via Bash — docs/context/.current-plan
+[06:14:58] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:18:21] TEST: Tests passed — 12 passed 121 passed
+[06:18:27] EDIT: File written — .commit-files
+[06:18:32] EDIT: File written — .commit-msg
+[06:18:36] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+[06:28:14] EDIT: File written — tools/explorer-probe/lens-declared-state.js
+[06:28:14] EDIT: File changed via Bash — tools/explorer-probe/lens-declared-state.js
+[06:30:09] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:30:09] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:30:09] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:30:10] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:31:39] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:31:39] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:31:39] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:31:40] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:31:40] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:32:01] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:33:18] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:33:18] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:34:25] EDIT: File edited — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:34:26] EDIT: File edited — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:34:26] EDIT: File changed via Bash — docs/context/session-20260923-2324-explorer-prototype.md
+[06:34:26] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:39:47] EDIT: File written — tools/explorer-probe/fixtures/declared-state-fixture/declared-state-fixture.story
+[06:40:50] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:40:50] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:40:51] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:40:51] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:40:51] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:41:04] EDIT: File changed via Bash — tools/explorer-probe/fixtures/declared-state-fixture/declared-state-fixture.story
+[06:42:13] EDIT: File written — tools/explorer-probe/tests/lens-declared-state.test.js
+[06:42:14] EDIT: File changed via Bash — tools/explorer-probe/tests/lens-declared-state.test.js
+[06:46:10] EDIT: File edited — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:46:10] EDIT: File edited — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:57:11] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:57:12] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[06:57:55] EDIT: File edited — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[06:57:55] EDIT: File edited — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[07:17:44] EDIT: File edited — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[07:17:44] EDIT: File changed via Bash — docs/architecture/adrs/adr-294-golden-transcripts-tester-rebuild.md
+[07:24:25] EDIT: File written — docs/context/session-20260923-2324-explorer-prototype.md
+[07:28:09] TEST: Tests passed — 12 passed 121 passed
+[07:28:18] EDIT: File written — .commit-files
+[07:28:18] EDIT: File written — .commit-msg
+[07:28:23] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

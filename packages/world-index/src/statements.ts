@@ -7,15 +7,38 @@
  * need the same thing the trees do not carry on their own: the context a
  * statement sits in, which decides whether the player can ever fire it.
  *
+ * The walk is total. `collectStateWriters` visits every statement-bearing
+ * root in the IR rather than a chosen list of surfaces: each entity whole
+ * except its `states` list, each trait whole once per composing entity, each
+ * machine whole, and every remaining top-level `StoryIR` key. An allowlist of
+ * fields is the shape that failed here: the walk once named five entity
+ * fields by hand and missed `timerClauses`, `moveClauses`, `exchanges`,
+ * `greetings`, `initiative`, `conversations`, and most of the story-level
+ * surface — and a missed writer reads as "this gate never opens" when it does.
+ *
+ * A `when <timer> expires` or `when <entity> moves` clause is attributed to
+ * the entity whose block declares it, the same owner a plain `onClauses`
+ * write gets — never to whatever starts the timer or causes the move. This is
+ * conservative on purpose: the true trigger can be more specific, so the
+ * holder can make a gate look openable one reachability step earlier than it
+ * is. A distinct `timer` owner kind carrying the real trigger is built only
+ * if measurement shows a false "reachable" from this approximation.
+ *
  * Public interface: collectStateWriters, entitiesMovedIntoPlay, StateWriter,
  * WriterOwner.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
  * contract.
  *
+ * References:
+ * - ADR-321 D4: a gate opens only when a `change` moves the entity out of the
+ *   blocking state and that statement is itself triggerable.
+ * - GH #517: the allowlist gap — 8 timer-clause, 1 move-clause and 1 exchange
+ *   write across secret-letter and ides-of-march invisible to the old walk,
+ *   measured by `tools/explorer-probe/lens-declared-state.js`'s `platformGap`.
+ * - GH #518: the read-side counterpart, which reuses `forEachStatementRoot`.
+ *
  * @packageDocumentation
- * @see ADR-321 D4: a gate opens only when a `change` moves the entity out of the
- *   blocking state and that statement is itself triggerable
  */
 
 import type { IREntity, StoryIR } from '@sharpee/chord';
@@ -112,13 +135,67 @@ function composersOf(ir: StoryIR, traitName: string): IREntity[] {
 }
 
 /**
+ * Visit every statement-bearing root in a story IR, with the owner and `it`
+ * binding that decides whether the player can trigger what is inside it.
+ *
+ * This is the shared substrate `collectStateWriters` walks below, and the one
+ * a future `collectStateReaders` reuses rather than re-deriving —
+ * both need the same roots, owners and `it` bindings; only what they match at
+ * each node differs. Module-internal: nothing outside this file needs the
+ * walk itself, only what a visitor collects from it.
+ *
+ * The sweep is total, not a chosen list, because a chosen list is the
+ * shape that missed surfaces here: an entity whole except its `states` list
+ * (declared state names, never statement nodes); a trait whole, once per
+ * composing entity, because that is what `it` means there and what the
+ * player has to reach to fire it; a machine whole, since its transition is
+ * driven by acting on a role entity rather than on whatever the statement
+ * writes (`it` is left unbound — a machine clause never has one); and every
+ * remaining top-level `StoryIR` key, owned by the story itself, on the
+ * story's own schedule.
+ *
+ * @param ir the story IR
+ * @param visit called once per root with the subtree, its owner, and the
+ *   entity `it` is bound to there (`undefined` where nothing binds it)
+ */
+function forEachStatementRoot(
+  ir: StoryIR,
+  visit: (root: unknown, owner: WriterOwner, itBinding: string | undefined) => void,
+): void {
+  for (const entity of ir.entities) {
+    // `states` holds declared state names, never statement nodes — excluded
+    // so the walk cannot mistake a value word for a target it never wrote.
+    const { states: _states, ...rest } = entity;
+    visit(rest, { kind: 'entity', id: entity.id }, entity.id);
+  }
+
+  for (const trait of ir.traits ?? []) {
+    for (const composer of composersOf(ir, trait.name)) {
+      visit(trait, { kind: 'entity', id: composer.id }, composer.id);
+    }
+  }
+
+  for (const machine of ir.machines ?? []) {
+    const roles = machine.roles.map((role) => role.entity);
+    visit(machine, { kind: 'machine', name: machine.name, roles }, undefined);
+  }
+
+  const story: WriterOwner = { kind: 'story' };
+  const record = ir as unknown as IRNode;
+  for (const key of Object.keys(record)) {
+    if (key === 'entities' || key === 'traits' || key === 'machines') continue;
+    visit(record[key], story, undefined);
+  }
+}
+
+/**
  * Every `change` statement in the story, resolved to a target entity and the
  * context that can fire it.
  *
- * A trait's clause is expanded once per composing entity, because that is what
- * `it` means there and what the player has to reach to fire it. A machine's
- * clause keeps the machine's own role bindings, since the transition is driven
- * by acting on a role entity rather than on whatever the statement writes.
+ * Walks every statement-bearing root (`forEachStatementRoot`) rather than a
+ * chosen list of entity/trait/machine fields — GH #517: the old allowlist
+ * missed `timerClauses`, `moveClauses`, `exchanges`, `greetings`,
+ * `initiative`, `conversations`, and most of the story-level surface.
  *
  * @param ir the story IR
  * @returns every resolvable state write; statements whose `it` cannot be bound
@@ -126,36 +203,7 @@ function composersOf(ir: StoryIR, traitName: string): IREntity[] {
  */
 export function collectStateWriters(ir: StoryIR): StateWriter[] {
   const writers: StateWriter[] = [];
-
-  for (const entity of ir.entities) {
-    const owner: WriterOwner = { kind: 'entity', id: entity.id };
-    walkForWriters(entity.onClauses, owner, entity.id, writers);
-    walkForWriters(entity.topics, owner, entity.id, writers);
-    walkForWriters(entity.manner, owner, entity.id, writers);
-  }
-
-  for (const trait of ir.traits ?? []) {
-    for (const composer of composersOf(ir, trait.name)) {
-      walkForWriters(
-        trait.onClauses,
-        { kind: 'entity', id: composer.id },
-        composer.id,
-        writers,
-      );
-    }
-  }
-
-  for (const machine of ir.machines ?? []) {
-    const roles = machine.roles.map((role) => role.entity);
-    walkForWriters(machine.states, { kind: 'machine', name: machine.name, roles }, undefined, writers);
-  }
-
-  const story: WriterOwner = { kind: 'story' };
-  walkForWriters(ir.story?.onClauses, story, undefined, writers);
-  walkForWriters(ir.sequences, story, undefined, writers);
-  walkForWriters(ir.actions, story, undefined, writers);
-  walkForWriters(ir.hatches, story, undefined, writers);
-
+  forEachStatementRoot(ir, (root, owner, itBinding) => walkForWriters(root, owner, itBinding, writers));
   return writers;
 }
 

@@ -11,8 +11,12 @@
  *      from source so a stale artifact never pins yesterday's compiler, with
  *      every surface and every direction pinned exactly;
  *   3. the corpus — fernhill and secret-letter's compiled IR — pinned to
- *      zero findings and to the exact writers world-index's walk misses
- *      (`platformGap`, issue #517), so the gap closing upstream shows here.
+ *      zero findings and to an empty `platformGap` (issue #517, fixed
+ *      2026-09-24: world-index's `collectStateWriters` now walks every
+ *      statement-bearing root, so the sweep this lens also runs finds
+ *      nothing the platform walk missed). `platformGap` stays pinned empty
+ *      as a regression detector, not deleted — a future surface either walk
+ *      misses would reappear here.
  *
  * No seed and no budget: this lens executes nothing, and a compiled IR is a
  * fixed fact. The corpus IRs must exist (`branch-stories/<story>/dist/
@@ -171,18 +175,18 @@ describe('the fixture', () => {
     assert.deepEqual([Object.keys(d('story').written), Object.keys(d('story').read)], [['dusk'], ['dusk']]);
   });
 
-  test('the timer-clause write is the one world-index misses (#517)', () => {
-    assert.deepEqual(report.platformGap.map((w) => [w.target, w.state, w.owner]), [['tap', 'dripping', 'entity:tap']]);
+  test('#517 fixed 2026-09-24: the timer-clause write world-index used to miss is now seen upstream', () => {
+    assert.deepEqual(report.platformGap, []);
   });
 
-  test('the console form lists each direction once with its rows and the gap section', () => {
+  test('the console form lists each direction once with its rows, and no gap section (the gap is empty)', () => {
     const out = [];
     printReport(report, { all: false }, (l) => out.push(l));
     assert.ok(out.includes('== never-assigned  (1)'));
     assert.ok(out.includes('   lamp is broken'));
     assert.ok(out.includes('== never-read  (2)'));
     assert.ok(out.some((l) => l.includes('written at: machine:the pump works:')));
-    assert.ok(out.some((l) => l.startsWith("== writes world-index's collectStateWriters does not see  (1)")));
+    assert.ok(out.every((l) => !l.startsWith("== writes world-index's collectStateWriters does not see")));
   });
 });
 
@@ -226,17 +230,7 @@ describe('secret-letter — the corpus pin', () => {
     assert.deepEqual(report.findings, []);
   });
 
-  test('the nine timer- and move-clause writes world-index misses (#517)', () => {
-    assert.deepEqual(report.platformGap.map((w) => [w.target, w.state, w.line]), [
-      ['wandering-mercenaries', 'oblivious', 149],
-      ['wandering-mercenaries', 'approaching', 155],
-      ['wandering-mercenaries', 'aggressive', 161],
-      ['jack', 'identified', 191],
-      ['wandering-mercenaries', 'approaching', 193],
-      ['wandering-mercenaries', 'aggressive', 200],
-      ['wandering-mercenaries', 'aggressive', 219],
-      ['wandering-mercenaries', 'oblivious', 245],
-      ['behind-fruit-stall', 'watched', 395],
-    ]);
+  test('#517 fixed 2026-09-24: the nine timer- and move-clause writes world-index used to miss are now seen upstream', () => {
+    assert.deepEqual(report.platformGap, []);
   });
 });

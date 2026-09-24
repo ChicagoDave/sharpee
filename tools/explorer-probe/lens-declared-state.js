@@ -38,19 +38,23 @@
  * ships, and a compiler gate is the strongest form of shipped.
  *
  * SURFACES. The assigned side is `@sharpee/world-index`'s `collectStateWriters`
- * (ADR-322 D8: consume ADR-321's derivations, never rebuild them). It walks
- * entity `onClauses`, `topics` and `manner`, trait `onClauses` expanded once
- * per composing entity with `it` bound to that entity (the trait-owned
- * `change it to fruiting` the measurement spike first misread as never
- * assigned), machine states' `onEnter`/`onExit`, and the story-level roots.
- * It does NOT walk entity `timerClauses`, `moveClauses` or `exchanges`
- * (issue #517 — measured 2026-09-24: 8 + 1 writes in secret-letter, 1 in
- * ides-of-march, which made three of secret-letter's states look never
- * assigned), and it omits story-state writes (`change` whose entity is
- * `{kind:'story'}`). So the lens unions the platform walk with a whole-IR
- * sweep of the same shape (`collectAllStateWriters`) and reports every writer
- * only the sweep found as `platformGap`; when #517 closes, that list empties
- * and the pin says so.
+ * (ADR-322 D8: consume ADR-321's derivations, never rebuild them). Since
+ * the #517 fix (2026-09-24) it walks every statement-bearing root in the
+ * IR — each entity whole except its `states` list, each trait whole per
+ * composing entity with `it` bound, each machine whole, and every remaining
+ * top-level `StoryIR` key — so `timerClauses`, `moveClauses`, `exchanges`,
+ * `greetings`, `initiative` and `conversations` are covered along with the
+ * `onClauses`/`topics`/`manner` surfaces it always had. It still omits
+ * story-state writes (`change` whose entity is `{kind:'story'}`) — that
+ * target is never resolved by world-index's walk, fix or no fix — so the
+ * lens still unions the platform walk with a whole-IR sweep of the same
+ * shape (`collectAllStateWriters`) and reports every writer only the sweep
+ * found as `platformGap`. Before #517, that list carried 8 timer-clause
+ * writes, 1 move-clause write and 1 exchange write in secret-letter (which
+ * made three of its states look never-assigned) and 1 write in ides-of-march;
+ * measured empty on the corpus after the fix (2026-09-24), and kept as a
+ * regression detector — a future surface the platform walk misses would
+ * reappear here, not disappear silently.
  *
  * The read side has no platform derivation to consume (verified: world-index's
  * `conditions.ts` evaluates reachability gates, it does not enumerate reads;
@@ -246,17 +250,23 @@ function walkForWriters(root, owner, itBinding, into) {
 /**
  * Every entity state write in the story: world-index's `collectStateWriters`
  * (ADR-322 D8 — consumed, not rebuilt) plus a whole-IR sweep of the same
- * shape, because the platform walk roots at a chosen list of surfaces and
- * the sweep found writes it misses. Measured 2026-09-24 over every `change`
- * in the four compiled stories: the platform walk sees entity `onClauses`,
- * `topics`, `manner`, traits, machines and the story roots, and misses three
- * entity surfaces — `timerClauses` (`when <timer> expires`, 8 writes in
- * secret-letter), `moveClauses` (1 in secret-letter) and `exchanges` (1 in
- * ides-of-march). That made all three of secret-letter's never-assigned rows
- * false. A missed writer is a false finding, so the union is used and the
- * difference is reported as `platformGap` — the evidence for closing the
- * gap upstream, where Reach's gate-opening check (ADR-321 D4) has the same
- * blind spot.
+ * shape, unioned and diffed as `platformGap`.
+ *
+ * Before the #517 fix (2026-09-24) the platform walk rooted at a chosen
+ * list of surfaces — entity `onClauses`, `topics`, `manner`, traits, machines
+ * and four story-level keys — and missed three entity surfaces:
+ * `timerClauses` (`when <timer> expires`, 8 writes in secret-letter),
+ * `moveClauses` (1 in secret-letter) and `exchanges` (1 in ides-of-march).
+ * That made all three of secret-letter's never-assigned rows false, and was
+ * the evidence that filed #517. `collectStateWriters` now walks every
+ * statement-bearing root the same way this sweep does (world-index's
+ * `forEachStatementRoot` and this function's loop below derive the same shape
+ * independently, and the sweep stays independent on purpose — a shared
+ * implementation could not catch the other one drifting), so
+ * `platformGap` measures empty on the corpus (2026-09-24). The union and the
+ * diff stay: this function is now a regression detector rather than a
+ * gap-measurer, and a future surface either walk misses reappears here
+ * rather than vanishing silently.
  *
  * @returns { writers, platformGap } — every write, and the ones only the sweep found
  */
