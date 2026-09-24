@@ -259,9 +259,14 @@ commitments carry forward unchanged, and the rest is retired:
 - **The soundness contract** (D20, ADR-322 D7): a finding is real, absence is not
   proof, and the budget is part of the report. A lens report names the walk's stop
   reason and rooms reached against rooms declared, and never claims exhaustiveness.
-- **Real path only.** A lens hands each candidate to the real parser and the real
-  engine and reports what the engine did. No vocabulary match or heuristic stands
-  in for the verdict; heuristics may generate candidates, never decide them.
+- **Real path only.** A lens's verdict comes from the platform's own artifact: for
+  an executed lens, the real parser and the real engine, reporting what the engine
+  did; for a static lens, the compiled IR the loader actually runs, never Chord
+  source text. No vocabulary match or heuristic stands in for the verdict;
+  heuristics may generate candidates, never decide them. *(Tightened 2026-09-24,
+  session 97dd17, when the second lens — declared states nothing assigns,
+  `tools/explorer-probe/lens-declared-state.js` — shipped as a static check that
+  runs nothing; the original wording covered only the executed case.)*
 - **The walker's room reachability is the shared substrate.** Lenses borrow it
   through the walk's `onRoomFirstSeen` hook; none re-derives it.
 
