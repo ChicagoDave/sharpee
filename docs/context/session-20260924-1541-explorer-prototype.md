@@ -120,3 +120,30 @@ Plan complete — all phases done. `docs/work/testing-explorer/` stays unarchive
 ---
 
 **Progressive update**: Session completed 2026-09-24 (write-up pass)
+
+## Activity Log (auto-captured)
+```
+[21:42:35] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[21:47:04] EDIT: File written — docs/work/testing-explorer/plan-20260924-518-reader-walk.md
+[21:47:08] EDIT: File changed via Bash — docs/context/.current-plan
+[21:47:08] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-518-reader-walk.md
+[22:09:58] EDIT: File changed via Bash — packages/world-index/src/statements.ts
+[22:09:59] EDIT: File changed via Bash — packages/world-index/src/index.ts
+[22:10:24] BUILD: Build passed — npx tsc -p packages/world-index/tsconfig.json --noEmit; echo "TSC-EXIT:$?"
+[22:10:25] EDIT: File changed via Bash — packages/world-index/tests/readers.test.ts
+[22:10:29] TEST: Tests failed — 2 failed 1 failed 2 failed 4 passed
+[22:21:22] TEST: Tests passed — 1 passed 6 passed
+[22:21:28] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee && git stash push -- packages/world-index/src/stat
+[22:21:36] TEST: Tests passed — 15 passed 187 passed
+[22:21:37] BUILD: Build passed — npx tsc -b packages/world-index/tsconfig.json && npx tsc -p packages/world-index
+[22:21:46] BUILD: Build passed — npx tsc -b /Users/david/repos/sharpee/packages/world-index/tsconfig.json && npx 
+[22:22:23] EDIT: File changed via Bash — docs/context/session-20260924-1541-explorer-prototype.md
+[23:59:13] EDIT: File changed via Bash — tools/explorer-probe/lens-declared-state.js
+[23:59:13] EDIT: File changed via Bash — tools/explorer-probe/tests/lens-declared-state.test.js
+[00:03:44] TEST: Tests passed — 15 passed 187 passed
+[00:04:59] EDIT: File written — docs/context/session-20260924-1541-explorer-prototype.md
+[00:07:19] TEST: Tests passed — 12 passed 121 passed
+[00:07:25] EDIT: File written — .commit-files
+[00:07:30] EDIT: File written — .commit-msg
+[00:07:34] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```
