@@ -74,9 +74,9 @@ function fragmentIR() {
 describe('collectStateReads', () => {
   test('reads an `is` predicate on an entity, negated or not, and a story-state', () => {
     const reads = collectStateReads(fragmentIR()).map((r) => [r.target, r.state, r.owner, r.via]);
-    assert.deepEqual(reads.filter((r) => r[0] === 'lamp'), [['lamp', 'dim', 'entity:lamp', 'is']]);
-    assert.deepEqual(reads.filter((r) => r[0] === 'guard'), [['guard', 'angry', 'story', 'is']]);
-    assert.deepEqual(reads.filter((r) => r[0] === 'story'), [['story', 'dusk', 'story', 'story-state']]);
+    assert.deepEqual(reads.filter((r) => r[0] === 'lamp'), [['lamp', 'dim', { kind: 'entity', id: 'lamp' }, 'is']]);
+    assert.deepEqual(reads.filter((r) => r[0] === 'guard'), [['guard', 'angry', { kind: 'story' }, 'is']]);
+    assert.deepEqual(reads.filter((r) => r[0] === 'story'), [['story', 'dusk', { kind: 'story' }, 'story-state']]);
   });
 
   test('expands a trait select-on once per composing entity, one read per arm, `it` bound', () => {

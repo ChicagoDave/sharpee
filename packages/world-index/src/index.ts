@@ -35,8 +35,8 @@ export type { WiredEdge } from './loader-semantics.js';
 export { holderIndex, roomOf } from './containment.js';
 export type { ContainmentIndex } from './containment.js';
 
-export { collectStateWriters, entitiesMovedIntoPlay } from './statements.js';
-export type { StateWriter, WriterOwner } from './statements.js';
+export { collectStateWriters, collectStateReaders, entitiesMovedIntoPlay } from './statements.js';
+export type { StateWriter, StateReader, ReadForm, WriterOwner } from './statements.js';
 
 export { holdsAtStart, canBeFalsified } from './conditions.js';
 export type { Truth, ConditionWorld } from './conditions.js';

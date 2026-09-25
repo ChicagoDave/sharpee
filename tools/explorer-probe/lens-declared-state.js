@@ -56,19 +56,19 @@
  * regression detector — a future surface the platform walk misses would
  * reappear here, not disappear silently.
  *
- * The read side has no platform derivation to consume (verified: world-index's
- * `conditions.ts` evaluates reachability gates, it does not enumerate reads;
- * `dimensions.js`'s harvest never roots at topics, manner, machines or
- * traits), so `collectStateReads` below is local. It is shaped like
- * `collectStateWriters` — same owners, same `it` binding — so it can move to
- * world-index unchanged; that move is a discussion item, not done here. It
- * walks EVERY root of the IR, not a chosen list: a missed read is a false
- * never-read finding, and the soundness contract forbids that. Reads are:
+ * The read side is `@sharpee/world-index`'s `collectStateReaders` (GH #518,
+ * 2026-09-24), the same walk this lens carried locally until it moved there
+ * unchanged — same roots, same owners, same `it` binding as
+ * `collectStateWriters`. Reads are:
  *
  *   predicate `is`     subject entity/it, object symbol   → (entity, value)
  *   select-on          subject `it.state` / `<entity>.state`, one arm per
  *                      value                              → (entity, value) each
  *   story-state        → (story, value)
+ *
+ * An `is` read carries no source line: the compiler attaches no span to a
+ * predicate condition, so a never-read finding on one cannot point at the
+ * author's text until that changes.
  *
  * USAGE
  *
@@ -113,7 +113,14 @@ const path = require('node:path');
 
 const REPO = path.resolve(__dirname, '..', '..');
 const { loadStoryIR } = require('./dimensions.js');
-const { collectStateWriters } = require(path.join(REPO, 'packages/world-index/dist/index.js'));
+const { collectStateWriters, collectStateReaders } = require(path.join(REPO, 'packages/world-index/dist/index.js'));
+
+/**
+ * The read side, consumed from world-index since GH #518 (2026-09-24). The
+ * local name is kept so the module's public interface does not move; the
+ * rows carry world-index's `WriterOwner` object, which `ownerLabel` flattens.
+ */
+const collectStateReads = collectStateReaders;
 
 /** The id under which the story's own state is reported. */
 const STORY = 'story';
@@ -122,7 +129,7 @@ const STORY = 'story';
 const DIRECTIONS = ['never-assigned', 'never-read'];
 
 // ---------------------------------------------------------------------------
-// The read-side walk — shaped like world-index's collectStateWriters
+// Local helpers for the whole-IR writer sweep below
 // ---------------------------------------------------------------------------
 
 function isWalkable(node) {
@@ -141,79 +148,9 @@ function lineOf(node) {
   return node && node.span && typeof node.span.line === 'number' ? node.span.line : null;
 }
 
-/**
- * Collect every state read in a subtree.
- *
- * @param root      the subtree
- * @param owner     what the read belongs to (`entity:<id>`, `machine:<name>`, `story`)
- * @param itBinding the entity `it` refers to here, if any
- * @param into      accumulator of { target, state, owner, line, via }
- */
-function walkForReads(root, owner, itBinding, into) {
-  if (!isWalkable(root)) return;
-  if (Array.isArray(root)) {
-    for (const child of root) walkForReads(child, owner, itBinding, into);
-    return;
-  }
-  const node = root;
-  if (node.kind === 'predicate' && node.pred === 'is') {
-    const target = subjectOf(node.subject, itBinding);
-    const object = node.object;
-    if (target !== undefined && isWalkable(object) && object.kind === 'symbol' && typeof object.name === 'string') {
-      into.push({ target, state: object.name, owner, line: lineOf(node), via: 'is' });
-    }
-  } else if (node.kind === 'select-on') {
-    const subject = node.subject;
-    const base = isWalkable(subject) && subject.kind === 'field' && subject.field === 'state' ? subject.base : undefined;
-    const target = subjectOf(base, itBinding);
-    if (target !== undefined) {
-      for (const arm of node.arms || []) {
-        if (typeof arm.value === 'string') {
-          into.push({ target, state: arm.value, owner, line: lineOf(arm) || lineOf(node), via: 'select-on' });
-        }
-      }
-    }
-  } else if (node.kind === 'story-state' && typeof node.state === 'string') {
-    into.push({ target: STORY, state: node.state, owner, line: lineOf(node), via: 'story-state' });
-  }
-  for (const key of Object.keys(node)) walkForReads(node[key], owner, itBinding, into);
-}
-
 /** Every entity composing a named trait, in declaration order. */
 function composersOf(ir, traitName) {
   return (ir.entities || []).filter((e) => (e.traits || []).some((t) => t.name === traitName));
-}
-
-/**
- * Every state read in the story, resolved to the entity (or the story) it
- * tests and the value it tests for.
- *
- * Every root of the IR is walked: entities whole (their `states` list is not
- * a read and holds no nodes), traits once per composing entity with `it`
- * bound, machines, and every other top-level key as story-owned.
- *
- * @param ir the compiled story IR
- * @returns Array<{ target, state, owner, line, via }>
- */
-function collectStateReads(ir) {
-  const reads = [];
-  for (const entity of ir.entities || []) {
-    const { states, ...rest } = entity;
-    walkForReads(rest, 'entity:' + entity.id, entity.id, reads);
-  }
-  for (const trait of ir.traits || []) {
-    for (const composer of composersOf(ir, trait.name)) {
-      walkForReads(trait, 'entity:' + composer.id, composer.id, reads);
-    }
-  }
-  for (const machine of ir.machines || []) {
-    walkForReads(machine, 'machine:' + machine.name, undefined, reads);
-  }
-  for (const key of Object.keys(ir)) {
-    if (key === 'entities' || key === 'traits' || key === 'machines') continue;
-    walkForReads(ir[key], STORY, undefined, reads);
-  }
-  return reads;
 }
 
 /**

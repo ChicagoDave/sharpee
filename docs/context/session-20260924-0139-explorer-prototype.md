@@ -122,3 +122,53 @@ Plan complete — all phases done. `docs/work/testing-explorer/` is deliberately
 ---
 
 **Progressive update**: Session completed 2026-09-24 15:21 MDT
+
+## Activity Log (auto-captured)
+```
+[07:39:56] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[07:40:01] BUILD: Build passed — npx tsc --noEmit; echo "EXIT:$?"
+[07:51:01] EDIT: File written — docs/context/session-20260924-0150-explorer-prototype.md
+[07:51:06] EDIT: File changed via Bash — docs/context/session-20260924-0150-explorer-prototype.md
+[07:56:49] EDIT: File edited — packages/world-index/src/statements.ts
+[07:57:09] EDIT: File edited — packages/world-index/src/statements.ts
+[07:57:21] EDIT: File edited — packages/world-index/src/statements.ts
+[07:57:36] BUILD: Build passed — npx tsc -p packages/world-index/tsconfig.json --noEmit 2>&1 | head -80
+[07:57:36] EDIT: File changed via Bash — packages/world-index/src/statements.ts
+[08:04:11] EDIT: File written — packages/world-index/tests/statements.test.ts
+[08:04:17] EDIT: File changed via Bash — packages/world-index/tests/statements.test.ts
+[08:05:04] EDIT: File written — packages/world-index/tests/timer-clause-gate.test.ts
+[08:05:10] EDIT: File changed via Bash — packages/world-index/tests/timer-clause-gate.test.ts
+[08:05:29] EDIT: File edited — packages/world-index/tests/timer-clause-gate.test.ts
+[08:05:50] EDIT: File edited — packages/world-index/tests/timer-clause-gate.test.ts
+[08:06:08] EDIT: File edited — packages/world-index/tests/timer-clause-gate.test.ts
+[08:06:20] EDIT: File edited — packages/world-index/tests/timer-clause-gate.test.ts
+[08:06:44] EDIT: File changed via Bash — packages/world-index/src/statements.ts
+[08:07:21] EDIT: File written — packages/world-index/measure-517.mts
+[08:07:28] EDIT: File changed via Bash — packages/world-index/measure-517.mts
+[08:10:11] EDIT: File changed via Bash — packages/sharpee/docs/genai-api/index.md
+[08:10:11] EDIT: File changed via Bash — packages/sharpee/docs/genai-api/presentation.md
+[08:10:41] BUILD: Build passed — npx tsc -b packages/world-index/tsconfig.json --verbose 2>&1 | tail -30
+[08:11:17] BUILD: Build passed — git stash push -- packages/world-index/src/statements.ts && npx tsc -b packages/
+[08:11:29] BUILD: Build passed — git stash pop && npx tsc -b packages/world-index/tsconfig.json 2>&1 | tail -20
+g
+[08:11:29] EDIT: File changed via Bash — packages/world-index/src/statements.ts
+[08:12:36] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[08:12:52] EDIT: File edited — tools/explorer-probe/lens-declared-state.js
+[08:12:56] EDIT: File changed via Bash — tools/explorer-probe/lens-declared-state.js
+[08:13:13] EDIT: File edited — tools/explorer-probe/tests/lens-declared-state.test.js
+[08:13:19] EDIT: File edited — tools/explorer-probe/tests/lens-declared-state.test.js
+[08:13:27] EDIT: File edited — tools/explorer-probe/tests/lens-declared-state.test.js
+[08:28:40] EDIT: File changed via Bash — tools/explorer-probe/tests/lens-declared-state.test.js
+[08:48:54] EDIT: File written — docs/work/testing-explorer/plan-20260924-517-writer-walk.md
+[08:49:01] EDIT: File changed via Bash — docs/context/.current-plan
+[08:49:01] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-517-writer-walk.md
+[08:57:04] TEST: Tests passed — 2 passed 12 passed
+[21:08:42] TEST: Tests passed — 14 passed 181 passed
+[21:10:49] BUILD: Build passed — npx tsc -b packages/world-index/tsconfig.json && echo TSC-OK && grep -c forEachS
+[21:10:50] TEST: Tests passed — 2 passed 12 passed
+[21:18:57] EDIT: File written — docs/context/session-20260924-0139-explorer-prototype.md
+[21:19:10] EDIT: File changed via Bash — docs/context/session-20260924-0139-explorer-prototype.md
+[21:21:19] EDIT: File written — .commit-files
+[21:21:19] EDIT: File written — .commit-msg
+[21:21:25] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```
