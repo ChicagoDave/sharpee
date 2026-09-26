@@ -24,19 +24,30 @@
  *   tree — AC-4). It never throws.
  * - The grammar is closed: unknown keys are malformed. Additive fields
  *   arrive with a version bump, never silently.
+ * - A card that declares an `ending` is an END STATE card (ADR-356 D4): the
+ *   story ended on that turn, so it is the last card of its line — nothing
+ *   is recorded after it and nothing forks from it. The wire validator
+ *   checks the field's shape; the walker reports the card-position rule.
  *
  * Public interface: the TreeDocument/TreeCard/TreeBranch/TreeAssertions/
  * TreeChannelAssertion types, TREE_DOCUMENT_VERSION,
  * treeDocumentFileNameFor, emptyTreeDocument, serializeTreeDocument,
- * deserializeTreeDocument, channelIdsReferencedBy, roomSlugOf,
- * mainLineLabelOf, branchLineLabelOf.
+ * deserializeTreeDocument, channelIdsReferencedBy, endingIdsDeclaredBy,
+ * roomSlugOf, mainLineLabelOf, branchLineLabelOf.
  * Owner context: @sharpee/branch-tester — the Chord/IDE testing world's
  * harness (transcript-tester's text world is a different format and is
  * untouched by this module).
  */
 
-/** The newest document version this build reads and writes. */
-export const TREE_DOCUMENT_VERSION = 1;
+/**
+ * The newest document version this build reads and writes.
+ *
+ * 2 (ADR-356 D4): a turn card may declare `ending`. Version 1 documents
+ * are read as malformed like any older shape — there is no shim; a
+ * one-shot repair sets the version, since the field is optional and no
+ * version-1 card carries it.
+ */
+export const TREE_DOCUMENT_VERSION = 2;
 
 /**
  * The whole at-rest document: story id, the pinned seed governing every
@@ -73,6 +84,14 @@ export interface TreeCard {
   assertions?: TreeAssertions;
   /** The turn runs and asserts nothing (`[SKIP]` demotion, D4). */
   skip?: boolean;
+  /**
+   * The ending this turn reached — the id the story's `win`, `lose` or
+   * `kill` statement named (ADR-356 D4). Its presence makes the card an END
+   * STATE card: the replay asserts the world's Ending carries this id, the
+   * line ends here, and no card may follow it or fork from it. Present only
+   * on a `'turn'` card.
+   */
+  ending?: string;
   /** Forks taken from this card, in creation order. */
   branches?: TreeBranch[];
 }
@@ -242,6 +261,31 @@ export function channelIdsReferencedBy(document: TreeDocument): string[] {
   return ids;
 }
 
+/**
+ * Every ending id an END STATE card in the document declares, deduplicated,
+ * in first-declaration order — the "reached" side of ADR-356 D5's endings
+ * ratio, read off the document alone. Which of the story's declared endings
+ * are missing from this list is the enumerator's question, not this one.
+ *
+ * @param document the tree document.
+ * @returns the declared ending ids, each once.
+ */
+export function endingIdsDeclaredBy(document: TreeDocument): string[] {
+  const ids: string[] = [];
+  const seen = new Set<string>();
+  const walkCards = (cards: TreeCard[]): void => {
+    for (const card of cards) {
+      if (card.ending !== undefined && !seen.has(card.ending)) {
+        seen.add(card.ending);
+        ids.push(card.ending);
+      }
+      for (const branch of card.branches ?? []) walkCards(branch.cards);
+    }
+  };
+  walkCards(document.cards);
+  return ids;
+}
+
 // ---------------------------------------------------------------------------
 // Derived labels (ADR-307 D2/Q-8) — shared formatting, never persisted.
 // ---------------------------------------------------------------------------
@@ -349,7 +393,14 @@ function validateCards(value: unknown, path: string): string | undefined {
 
 function validateCard(value: unknown, path: string): string | undefined {
   if (!isPlainObject(value)) return `'${path}' must be an object`;
-  const unknownKey = firstUnknownKey(value, ['type', 'command', 'assertions', 'skip', 'branches']);
+  const unknownKey = firstUnknownKey(value, [
+    'type',
+    'command',
+    'assertions',
+    'skip',
+    'ending',
+    'branches',
+  ]);
   if (unknownKey !== undefined) return `unknown key '${unknownKey}' in '${path}'`;
 
   const type = value['type'];
@@ -357,13 +408,23 @@ function validateCard(value: unknown, path: string): string | undefined {
     return `'${path}.type' must be 'opening', 'boot', or 'turn'`;
   }
   // The opening and the boot look are what the story did unprompted; only a
-  // typed turn carries a command (ADR-307 D2).
+  // typed turn carries a command (ADR-307 D2) — and only a typed turn can
+  // have ended the story (ADR-356 D4).
   if (type === 'turn') {
     if (typeof value['command'] !== 'string' || value['command'] === '') {
       return `'${path}' is a turn and must carry a non-empty 'command'`;
     }
-  } else if (value['command'] !== undefined) {
-    return `'${path}' is type '${type}' and must not carry a 'command'`;
+  } else {
+    if (value['command'] !== undefined) {
+      return `'${path}' is type '${type}' and must not carry a 'command'`;
+    }
+    if (value['ending'] !== undefined) {
+      return `'${path}' is type '${type}' and cannot be an END STATE card`;
+    }
+  }
+
+  if (value['ending'] !== undefined && (typeof value['ending'] !== 'string' || value['ending'] === '')) {
+    return `'${path}.ending' must be a non-empty ending id`;
   }
 
   if (value['skip'] !== undefined && typeof value['skip'] !== 'boolean') {

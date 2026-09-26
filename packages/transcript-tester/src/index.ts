@@ -31,6 +31,7 @@ export { runTranscript, goldenPathFor, divergencePathFor } from './runner.js';
 export {
   checkAssertion,
   checkEmittedAssertion,
+  checkEndingAssertion,
   evaluateEmittedClaim,
   checkEventAssertion,
   checkStateAssertion,

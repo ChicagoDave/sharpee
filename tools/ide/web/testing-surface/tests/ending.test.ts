@@ -9,7 +9,7 @@
  * that would reintroduce the walk.
  */
 import { describe, expect, it } from 'vitest';
-import { blocksCommand, endingOf } from '../src/ending.js';
+import { endingOf, endingIdOf, blocksCommand } from '../src/ending.js';
 
 const ending = (kind: string) => [{
   channel: 'story-ending',
@@ -77,5 +77,31 @@ describe('blocksCommand', () => {
 
   it('is insensitive to case and surrounding space', () => {
     expect(blocksCommand('  RESTART ')).toBe(false);
+  });
+});
+
+describe('endingIdOf — the id an END STATE card declares (ADR-356 D4)', () => {
+  const record = (value: unknown) => [{ channel: 'story-ending', values: [value] }];
+
+  it('reads a win/lose ending by its messageId', () => {
+    expect(endingIdOf(record({ kind: 'victory', turn: 30, messageId: 'fernhill-saved' }))).toBe('fernhill-saved');
+  });
+
+  it('reads a kill ending by its cause', () => {
+    expect(endingIdOf(record({ kind: 'defeat', turn: 25, cause: 'fuse-blast' }))).toBe('fuse-blast');
+  });
+
+  it('prefers the messageId when an Ending carries both', () => {
+    expect(endingIdOf(record({ kind: 'defeat', turn: 9, messageId: 'dawn-comes', cause: 'timer' }))).toBe('dawn-comes');
+  });
+
+  it('names nothing for an Ending the story never named', () => {
+    expect(endingIdOf(record({ kind: 'defeat', turn: 9 }))).toBeUndefined();
+  });
+
+  it('names nothing while the story is live or the channel said nothing', () => {
+    expect(endingIdOf(record(null))).toBeUndefined();
+    expect(endingIdOf([])).toBeUndefined();
+    expect(endingIdOf(undefined)).toBeUndefined();
   });
 });

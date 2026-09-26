@@ -39,7 +39,7 @@ end before
 
 /** The document a Testing tab session would have written. Seed pinned (D5). */
 const TREE_DOCUMENT = {
-  version: 1,
+  version: 2,
   story: 'mini',
   seed: 42,
   cards: [

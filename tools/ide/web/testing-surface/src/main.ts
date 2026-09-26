@@ -33,7 +33,7 @@
 
 import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
 import { postToHost } from '@sharpee/platform-browser/host-bridge';
-import { endingOf, blocksCommand } from './ending.js';
+import { endingOf, endingIdOf, blocksCommand } from './ending.js';
 import { visitPlanOf, type LineVisit, type ReplayStep } from './visit.js';
 import { outlineOf } from './outline.js';
 import { OutlineView } from './outline-view.js';
@@ -583,9 +583,14 @@ function deliver(raw: unknown): void {
   // Read the Ending before anything else folds: whether the driver may type
   // another command is decided by this, not by whether the last turn landed.
   const ending = endingOf(record.captures);
+  // The turn the story ENDS on is this record's card (ADR-356 D4): the card
+  // declares the ending's id and becomes the END STATE card. Later records
+  // still carry the Ending (it is state), so only the flip stamps a card.
+  let endedThisTurn: string | undefined;
   if (ending === 'ended' && !storyEnded) {
     storyEnded = true;
-    trace(`story ended at turn ${record.turn}`);
+    endedThisTurn = endingIdOf(record.captures);
+    trace(`story ended at turn ${record.turn}${endedThisTurn ? ` (${endedThisTurn})` : ''}`);
   } else if (ending === 'live' && storyEnded) {
     storyEnded = false;
     trace(`story live again at turn ${record.turn}`);
@@ -667,6 +672,7 @@ function deliver(raw: unknown): void {
     ...(room !== undefined ? { room } : {}),
     ...(recorded.assertions !== undefined ? { assertions: recorded.assertions } : {}),
     ...(recorded.skip === true ? { skip: true } : {}),
+    ...(endedThisTurn !== undefined ? { ending: endedThisTurn } : {}),
     ...(openingClaims.length > 0
       ? { openingAssertions: { channels: openingClaims } }
       : {}),

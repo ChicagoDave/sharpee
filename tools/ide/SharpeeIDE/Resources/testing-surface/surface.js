@@ -102,6 +102,12 @@
     }
     return void 0;
   }
+  function endingIdOf(captures) {
+    if (endingOf(captures) !== "ended") return void 0;
+    const value = (captures ?? []).find((c) => c.channel === "story-ending")?.values.at(-1);
+    const id = value.messageId ?? value.cause;
+    return typeof id === "string" && id.length > 0 ? id : void 0;
+  }
   function blocksCommand(command) {
     const meta = /* @__PURE__ */ new Set(["restart", "restore", "quit", "undo"]);
     return !meta.has(command.trim().toLowerCase());
@@ -327,7 +333,7 @@
   }
 
   // packages/branch-tester/src/tree-document.ts
-  var TREE_DOCUMENT_VERSION = 1;
+  var TREE_DOCUMENT_VERSION = 2;
   function emptyTreeDocument(story, seed2) {
     return { version: TREE_DOCUMENT_VERSION, story, seed: seed2, cards: [] };
   }
@@ -415,7 +421,14 @@
   }
   function validateCard(value, path) {
     if (!isPlainObject(value)) return `'${path}' must be an object`;
-    const unknownKey = firstUnknownKey(value, ["type", "command", "assertions", "skip", "branches"]);
+    const unknownKey = firstUnknownKey(value, [
+      "type",
+      "command",
+      "assertions",
+      "skip",
+      "ending",
+      "branches"
+    ]);
     if (unknownKey !== void 0) return `unknown key '${unknownKey}' in '${path}'`;
     const type = value["type"];
     if (type !== "opening" && type !== "boot" && type !== "turn") {
@@ -425,8 +438,16 @@
       if (typeof value["command"] !== "string" || value["command"] === "") {
         return `'${path}' is a turn and must carry a non-empty 'command'`;
       }
-    } else if (value["command"] !== void 0) {
-      return `'${path}' is type '${type}' and must not carry a 'command'`;
+    } else {
+      if (value["command"] !== void 0) {
+        return `'${path}' is type '${type}' and must not carry a 'command'`;
+      }
+      if (value["ending"] !== void 0) {
+        return `'${path}' is type '${type}' and cannot be an END STATE card`;
+      }
+    }
+    if (value["ending"] !== void 0 && (typeof value["ending"] !== "string" || value["ending"] === "")) {
+      return `'${path}.ending' must be a non-empty ending id`;
     }
     if (value["skip"] !== void 0 && typeof value["skip"] !== "boolean") {
       return `'${path}.skip' must be a boolean`;
@@ -717,6 +738,10 @@
       const meta = document.createElement("div");
       meta.className = "ts-meta";
       meta.textContent = ordinal === 0 ? "opening" : `turn ${ordinal}${boot ? " \xB7 boot" : ""}${branch ? " \xB7 branch" : ""}`;
+      const endState = document.createElement("span");
+      endState.className = "ts-end-state";
+      endState.style.display = "none";
+      meta.appendChild(endState);
       if (this.model.cardAt(ordinal)?.type === "turn") {
         const cut = document.createElement("button");
         cut.className = "ts-card-delete";
@@ -825,6 +850,7 @@
       this.host.appendChild(row);
       this.cards.set(ordinal, {
         row,
+        endState,
         asserts,
         exactButton,
         branchButton,
@@ -1001,6 +1027,10 @@
         if (card.branchButton) {
           card.branchButton.style.display = this.model.canBranch(ordinal) ? "" : "none";
         }
+        const ending = this.model.cardAt(ordinal)?.ending;
+        card.endState.textContent = ending !== void 0 ? `\xB7 END STATE \xB7 ${ending}` : "";
+        card.endState.title = ending !== void 0 ? `The story ended here (${ending}) \u2014 no further command lands on this card, and nothing forks from it` : "";
+        card.endState.style.display = ending !== void 0 ? "" : "none";
         card.exactButton?.classList.toggle(
           "ts-active",
           this.model.claimsOf(ordinal)?.exact !== void 0
@@ -1817,6 +1847,9 @@
           if (recorded2 !== void 0) bound.assertions = recorded2;
           else if (delivery.skip === true) bound.skip = true;
         }
+        if (bound.ending === void 0 && delivery.ending !== void 0 && bound.type === "turn") {
+          bound.ending = delivery.ending;
+        }
         bind(bound, delivery.ordinal);
         this.bindCursor.set(this.active, cursor + 1);
         return;
@@ -1825,6 +1858,7 @@
       const card = delivery.boot ? { type: "boot" } : { type: "turn", command: delivery.command };
       if (recorded !== void 0) card.assertions = recorded;
       if (delivery.skip === true) card.skip = true;
+      if (delivery.ending !== void 0 && card.type === "turn") card.ending = delivery.ending;
       cards2.push(card);
       bind(card, delivery.ordinal);
       this.bindCursor.set(this.active, cards2.length);
@@ -2004,6 +2038,7 @@
     canBranch(ordinal) {
       const card = this.cardByOrdinal.get(ordinal);
       if (card === void 0 || card.type === "opening") return false;
+      if (card.ending !== void 0) return false;
       const path = this.pathCardsOf(this.active);
       const index = path.indexOf(card);
       return index >= 0 && index < path.length - 1;
@@ -2937,9 +2972,11 @@
     const record = raw;
     if (!record || typeof record.turn !== "number") return;
     const ending = endingOf(record.captures);
+    let endedThisTurn;
     if (ending === "ended" && !storyEnded) {
       storyEnded = true;
-      trace(`story ended at turn ${record.turn}`);
+      endedThisTurn = endingIdOf(record.captures);
+      trace(`story ended at turn ${record.turn}${endedThisTurn ? ` (${endedThisTurn})` : ""}`);
     } else if (ending === "live" && storyEnded) {
       storyEnded = false;
       trace(`story live again at turn ${record.turn}`);
@@ -3001,6 +3038,7 @@
       ...room !== void 0 ? { room } : {},
       ...recorded.assertions !== void 0 ? { assertions: recorded.assertions } : {},
       ...recorded.skip === true ? { skip: true } : {},
+      ...endedThisTurn !== void 0 ? { ending: endedThisTurn } : {},
       ...openingClaims.length > 0 ? { openingAssertions: { channels: openingClaims } } : {}
     });
     if (pendingDialogOutcome) {

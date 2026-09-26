@@ -30,87 +30,83 @@
           "Gravel Drive"
         ]
       },
-      "command": "north",
-      "type": "turn",
       "branches": [
         {
           "branch": 1,
           "cards": [
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Fountain Court"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "east",
               "assertions": {
                 "contains": [
                   "Boiler Shed"
                 ]
-              }
+              },
+              "command": "east",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "turn stopcock",
               "assertions": {
                 "contains": [
                   "You crank the stopcock"
                 ]
-              }
+              },
+              "command": "turn stopcock",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "push plunger",
               "assertions": {
                 "contains": [
                   "You push the primer plunger."
                 ]
-              }
+              },
+              "command": "push plunger",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "switch on boiler",
               "assertions": {
                 "contains": [
                   "The boiler hums to life."
                 ]
-              }
+              },
+              "command": "switch on boiler",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "west",
               "assertions": {
                 "contains": [
                   "Fountain Court"
                 ]
-              }
+              },
+              "command": "west",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "west",
               "assertions": {
                 "contains": [
                   "Greenhouse"
                 ]
-              }
+              },
+              "command": "west",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Folly Hill"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "The warped door doesn't shift."
@@ -118,7 +114,9 @@
                 "notContains": [
                   "The folly door is closed."
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             }
           ]
         },
@@ -126,197 +124,195 @@
           "branch": 2,
           "cards": [
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Fountain Court"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "search mat",
               "assertions": {
                 "contains": [
                   "Hidden on the doormat, you discover: a tarnished key."
                 ]
-              }
+              },
+              "command": "search mat",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "take key",
               "assertions": {
                 "contains": [
                   "You take the tarnished key from the doormat."
                 ]
-              }
+              },
+              "command": "take key",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Entrance Hall"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Cellar Stairs"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "take lamp",
               "assertions": {
                 "contains": [
                   "Taken."
                 ]
-              }
+              },
+              "command": "take lamp",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "switch on lamp",
               "assertions": {
                 "contains": [
                   "The oil lamp switches on"
                 ]
-              }
+              },
+              "command": "switch on lamp",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "unlock cellar door with key",
               "assertions": {
                 "contains": [
                   "You unlock the cellar door"
                 ]
-              }
+              },
+              "command": "unlock cellar door with key",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "open cellar door",
               "assertions": {
                 "contains": [
                   "You open the cellar door."
                 ]
-              }
+              },
+              "command": "open cellar door",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "down",
               "assertions": {
                 "contains": [
                   "Cellar"
                 ]
-              }
+              },
+              "command": "down",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "take crowbar",
               "assertions": {
                 "contains": [
                   "Taken."
                 ]
-              }
+              },
+              "command": "take crowbar",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "up",
               "assertions": {
                 "contains": [
                   "Cellar Stairs"
                 ]
-              }
+              },
+              "command": "up",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "south",
               "assertions": {
                 "contains": [
                   "Entrance Hall"
                 ]
-              }
+              },
+              "command": "south",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "south",
               "assertions": {
                 "contains": [
                   "Fountain Court"
                 ]
-              }
+              },
+              "command": "south",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "east",
               "assertions": {
                 "contains": [
                   "Boiler Shed"
                 ]
-              }
+              },
+              "command": "east",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "open crate with crowbar",
               "assertions": {
                 "contains": [
                   "You open the nailed crate."
                 ]
-              }
+              },
+              "command": "open crate with crowbar",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "take opener",
               "assertions": {
                 "contains": [
                   "You take the tin opener from the nailed crate."
                 ]
-              }
+              },
+              "command": "take opener",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "west",
               "assertions": {
                 "contains": [
                   "Fountain Court"
                 ]
-              }
+              },
+              "command": "west",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Entrance Hall"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "east",
               "assertions": {
                 "contains": [
                   "Kitchen"
                 ]
-              }
+              },
+              "command": "east",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "open pantry door",
               "assertions": {
                 "contains": [
                   "You open the pantry door."
                 ]
-              }
+              },
+              "command": "open pantry door",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Pantry",
@@ -325,38 +321,38 @@
                 "states": [
                   "Smoke.location = Pantry"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "take tin",
               "assertions": {
                 "contains": [
                   "Taken."
                 ]
-              }
+              },
+              "command": "take tin",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "open tin with opener",
               "assertions": {
                 "contains": [
                   "In the kipper tin you see a kipper."
                 ]
-              }
+              },
+              "command": "open tin with opener",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "take kipper",
               "assertions": {
                 "contains": [
                   "You take the kipper from the kipper tin."
                 ]
-              }
+              },
+              "command": "take kipper",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "south",
               "assertions": {
                 "contains": [
                   "Kitchen"
@@ -368,29 +364,29 @@
                   "Smoke.location = Pantry",
                   "player.location = Kitchen"
                 ]
-              }
+              },
+              "command": "south",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "north",
               "assertions": {
                 "contains": [
                   "Pantry"
                 ]
-              }
+              },
+              "command": "north",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "feed cat",
               "assertions": {
                 "contains": [
                   "From now on, you have a shadow."
                 ]
-              }
+              },
+              "command": "feed cat",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "south",
               "assertions": {
                 "contains": [
                   "Smoke pads after you"
@@ -399,11 +395,11 @@
                   "Smoke.location = Kitchen",
                   "player.location = Kitchen"
                 ]
-              }
+              },
+              "command": "south",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "west",
               "assertions": {
                 "contains": [
                   "Entrance Hall",
@@ -413,11 +409,15 @@
                   "Smoke.location = Entrance Hall",
                   "player.location = Entrance Hall"
                 ]
-              }
+              },
+              "command": "west",
+              "type": "turn"
             }
           ]
         }
-      ]
+      ],
+      "command": "north",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -574,51 +574,51 @@
           "Mrs Kettle turns the bottle to read the label, and something in her shoulders comes down an inch. \"Her ladyship's oloroso. Well.\" She steps away from the study door. \"Five minutes, mind.\""
         ]
       },
-      "command": "give sherry to kettle",
-      "type": "turn",
       "branches": [
         {
           "branch": 1,
           "cards": [
             {
-              "type": "turn",
-              "command": "west",
               "assertions": {
                 "contains": [
                   "Study"
                 ]
-              }
+              },
+              "command": "west",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "hide behind curtains",
               "assertions": {
                 "contains": [
                   "You slip behind the long curtains."
                 ]
-              }
+              },
+              "command": "hide behind curtains",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "look",
               "assertions": {
                 "contains": [
                   "(You're hiding behind the long curtains.)"
                 ]
-              }
+              },
+              "command": "look",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "come out",
               "assertions": {
                 "contains": [
                   "You come out of hiding."
                 ]
-              }
+              },
+              "command": "come out",
+              "type": "turn"
             }
           ]
         }
-      ]
+      ],
+      "command": "give sherry to kettle",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -635,24 +635,24 @@
           "Greenhouse"
         ]
       },
-      "command": "west",
-      "type": "turn",
       "branches": [
         {
           "branch": 1,
           "cards": [
             {
-              "type": "turn",
-              "command": "x vine",
               "assertions": {
                 "contains": [
                   "hurried white flowers"
                 ]
-              }
+              },
+              "command": "x vine",
+              "type": "turn"
             }
           ]
         }
-      ]
+      ],
+      "command": "west",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -669,24 +669,24 @@
           "Taken."
         ]
       },
-      "command": "take locket",
-      "type": "turn",
       "branches": [
         {
           "branch": 1,
           "cards": [
             {
-              "type": "turn",
-              "command": "x vine",
               "assertions": {
                 "contains": [
                   "Its one heavy fruit has come and gone"
                 ]
-              }
+              },
+              "command": "x vine",
+              "type": "turn"
             }
           ]
         }
-      ]
+      ],
+      "command": "take locket",
+      "type": "turn"
     },
     {
       "assertions": {
@@ -741,22 +741,22 @@
           "branch": 4,
           "cards": [
             {
-              "type": "turn",
-              "command": "take the deed",
               "assertions": {
                 "contains": [
                   "You can't see any such thing."
                 ]
-              }
+              },
+              "command": "take the deed",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "inventory",
               "assertions": {
                 "notContains": [
                   "deed box"
                 ]
-              }
+              },
+              "command": "inventory",
+              "type": "turn"
             }
           ]
         },
@@ -764,26 +764,24 @@
           "branch": 5,
           "cards": [
             {
-              "type": "turn",
-              "command": "wait",
               "assertions": {
                 "contains": [
                   "Time passes"
                 ]
-              }
+              },
+              "command": "wait",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "wait",
               "assertions": {
                 "contains": [
                   "Time passes"
                 ]
-              }
+              },
+              "command": "wait",
+              "type": "turn"
             },
             {
-              "type": "turn",
-              "command": "wait",
               "assertions": {
                 "contains": [
                   "The cache goes up in one white roar"
@@ -791,7 +789,10 @@
                 "notContains": [
                   "Sparks walk the waxed cord"
                 ]
-              }
+              },
+              "command": "wait",
+              "ending": "fuse-blast",
+              "type": "turn"
             }
           ]
         }
@@ -872,10 +873,11 @@
         ]
       },
       "command": "south",
+      "ending": "fernhill-saved",
       "type": "turn"
     }
   ],
   "seed": 42,
   "story": "fernhill",
-  "version": 1
+  "version": 2
 }

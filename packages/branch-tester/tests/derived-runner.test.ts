@@ -75,6 +75,10 @@ describe('AC-2 — the vine fixture, as written', () => {
       'story · define action pruning': 'skipped',
     });
     expect([run.total, run.passed, run.failed, run.skipped, run.errored]).toEqual([8, 7, 0, 1, 0]);
+    // D5's rooms contribution: every room a branch placed the player in, as IR ids.
+    expect(run.roomsEntered).toContain('greenhouse');
+    expect(run.outcomes.find((o) => o.label === 'vine · on pruning · when flowering')?.rooms).toEqual(['greenhouse']);
+    expect(run.outcomes.find((o) => o.status === 'skipped')?.rooms).toBeUndefined();
   }, 30_000);
 
   it('the flowering branch arranged the precondition, typed the command, and every claim held', async () => {

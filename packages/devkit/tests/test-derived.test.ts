@@ -40,6 +40,10 @@ describe('sharpee test — the derived tier runs by default (ADR-356 D5a)', () =
     expect(stdout).toContain('Not exercised (1):');
     expect(stdout.some((line) => /^ {2}derived-skip\.story:\d+ · brass lamp · on examining — timer-phase/.test(line))).toBe(true);
     expect(stdout.some((line) => line.startsWith('✓ brass lamp · on touching'))).toBe(true);
+    // D5's other two ratios, printed in the same report: the fixture declares
+    // no ending and one room, which both tiers stand in.
+    expect(stdout).toContain('Endings reached: 0 / 0');
+    expect(stdout).toContain('Rooms entered: 1 / 1');
   }, 60_000);
 
   it('a derived failure exits 1 and names the branch and the parse failure', async () => {

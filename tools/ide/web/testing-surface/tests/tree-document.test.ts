@@ -16,7 +16,7 @@ import {
 describe('shared tree-document module (rule 8b wiring)', () => {
   it('round-trips a document through the aliased source import', () => {
     const document: TreeDocument = {
-      version: 1,
+      version: 2,
       story: 'fernhill',
       seed: 42,
       cards: [

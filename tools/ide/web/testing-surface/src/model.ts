@@ -75,6 +75,10 @@ export interface TurnDelivery {
    *  policy had nothing to read this turn). Binds void-fill like
    *  `assertions`, never overwrite. */
   skip?: boolean;
+  /** The story ended on this turn, with this ending id (ADR-356 D4): the
+   *  card becomes an END STATE card. Binds void-fill like `assertions` —
+   *  a version-1 document's ending cards gain their id on first replay. */
+  ending?: string;
   /** Opening claims persisted when this delivery seats a FRESH opening card
    *  (prologue/title/description from the real boot captures). */
   openingAssertions?: TreeAssertions;
@@ -348,6 +352,9 @@ export class TreeSessionModel {
         if (recorded !== undefined) bound.assertions = recorded;
         else if (delivery.skip === true) bound.skip = true;
       }
+      if (bound.ending === undefined && delivery.ending !== undefined && bound.type === 'turn') {
+        bound.ending = delivery.ending;
+      }
       bind(bound, delivery.ordinal);
       this.bindCursor.set(this.active, cursor + 1);
       return;
@@ -359,6 +366,7 @@ export class TreeSessionModel {
       : { type: 'turn', command: delivery.command };
     if (recorded !== undefined) card.assertions = recorded;
     if (delivery.skip === true) card.skip = true;
+    if (delivery.ending !== undefined && card.type === 'turn') card.ending = delivery.ending;
     cards.push(card);
     bind(card, delivery.ordinal);
     this.bindCursor.set(this.active, cards.length);
@@ -563,6 +571,9 @@ export class TreeSessionModel {
   canBranch(ordinal: number): boolean {
     const card = this.cardByOrdinal.get(ordinal);
     if (card === undefined || card.type === 'opening') return false;
+    // An END STATE card cannot fork (ADR-356 D4): the story ended on it, so
+    // a branch would replay onto a stopped engine. Fork from an earlier card.
+    if (card.ending !== undefined) return false;
     const path = this.pathCardsOf(this.active);
     const index = path.indexOf(card);
     return index >= 0 && index < path.length - 1;

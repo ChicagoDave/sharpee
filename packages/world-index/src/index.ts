@@ -125,5 +125,6 @@ export {
   roomsOf,
   thingsOf,
   startRoomOf,
+  endingsOf,
 } from './story.js';
-export type { StoryIRReadFailure } from './story.js';
+export type { StoryIRReadFailure, DeclaredEnding } from './story.js';

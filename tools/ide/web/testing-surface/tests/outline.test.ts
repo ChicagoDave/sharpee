@@ -27,7 +27,7 @@ const turn = (command: string, extra: Record<string, unknown> = {}) =>
   ({ type: 'turn' as const, command, ...extra });
 
 const doc = (cards: unknown[]): TreeDocument =>
-  ({ version: 1, story: 'mini', seed: 42, cards } as TreeDocument);
+  ({ version: 2, story: 'mini', seed: 42, cards } as TreeDocument);
 
 const at = (location: string) => ({ assertions: { states: [`player.location = ${location}`] } });
 

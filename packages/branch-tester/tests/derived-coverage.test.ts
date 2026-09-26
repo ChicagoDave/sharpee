@@ -14,7 +14,7 @@ import { collectClauseBranches } from '@sharpee/world-index';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
 import { runDerivedSuite, type DerivedGame } from '../src/derived-runner.js';
-import { branchCoverageOf, formatDerivedRun } from '../src/coverage.js';
+import { branchCoverageOf, endingCoverageOf, formatCoverageSummary, formatDerivedRun, roomCoverageOf } from '../src/coverage.js';
 
 const SEED = 7;
 
@@ -99,4 +99,53 @@ describe('AC-8 — the report names unexercised branches by span', () => {
       `✗ mat · on entering_room — parse failure: no language pattern for if.action.entering_room (no-vocabulary.story:${lineOf(source, 'on the player entering_room')})`
     );
   }, 30_000);
+});
+
+describe('endings and rooms ratios (ADR-356 D5) — the two D4 unlocked', () => {
+  const declared = [
+    { id: 'fernhill-saved', kind: 'victory', statement: 'win', owner: { kind: 'entity', id: 'iron-gates' }, line: 65, file: null },
+    { id: 'dawn-comes', kind: 'defeat', statement: 'lose', owner: { kind: 'story' }, line: 636, file: null },
+    { id: 'fuse-blast', kind: 'defeat', statement: 'kill', owner: { kind: 'story' }, line: 625, file: 'night.chord' },
+    { id: null, kind: 'defeat', statement: 'kill', owner: { kind: 'story' }, line: 700, file: null },
+  ] as const;
+  const rooms = [{ id: 'iron-gates', name: 'Iron Gates' }, { id: 'folly', name: 'Folly' }, { id: 'cellar', name: 'Cellar' }] as never[];
+
+  it('counts a named ending as reached when a passing END STATE card carries it, lists the rest, and keeps unnamed ones out of the ratio', () => {
+    const coverage = endingCoverageOf([...declared] as never, ['fernhill-saved', 'fuse-blast', 'not-declared']);
+    expect([coverage.reached, coverage.declared]).toEqual([2, 3]);
+    expect(coverage.unreached.map((ending) => ending.id)).toEqual(['dawn-comes']);
+    expect(coverage.unnamed.map((ending) => ending.line)).toEqual([700]);
+  });
+
+  it('counts a room as entered when either tier put the player there, and names the rest', () => {
+    const coverage = roomCoverageOf(rooms, ['folly', 'iron-gates', 'iron-gates', 'elsewhere']);
+    expect([coverage.entered, coverage.declared]).toEqual([2, 3]);
+    expect(coverage.unentered.map((room: { id: string }) => room.id)).toEqual(['cellar']);
+  });
+
+  it('renders both ratios with every gap named by site (AC-6: an unreached declared ending appears in the report)', () => {
+    const endings = endingCoverageOf([...declared] as never, ['fernhill-saved']);
+    const roomsCoverage = roomCoverageOf(rooms, ['iron-gates']);
+    expect(formatCoverageSummary(endings, roomsCoverage, 'fernhill.story')).toEqual([
+      '',
+      'Endings reached: 1 / 3',
+      'Not reached (2):',
+      '  fernhill.story:636 · dawn-comes (lose)',
+      '  night.chord:625 · fuse-blast (kill)',
+      'Endings declared without an id (1) — no END STATE card can name them:',
+      '  fernhill.story:700 · kill',
+      'Rooms entered: 1 / 3',
+      'Not entered (2):',
+      '  folly',
+      '  cellar',
+    ]);
+  });
+
+  it('a story with nothing declared reads 0 / 0 and lists nothing', () => {
+    expect(formatCoverageSummary(endingCoverageOf([], []), roomCoverageOf([], []))).toEqual([
+      '',
+      'Endings reached: 0 / 0',
+      'Rooms entered: 0 / 0',
+    ]);
+  });
 });

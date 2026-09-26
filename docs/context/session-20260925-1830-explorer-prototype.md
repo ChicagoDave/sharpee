@@ -126,3 +126,129 @@ Plan complete — all four phases DONE. No next phase in this plan. Scoping inpu
 ---
 
 **Progressive update**: session completed 2026-09-26 02:28 — Phases 2-4 all landed and measured; plan and ADR-356 both marked DONE/dated; issue store updated (I-242 commented, I-522/523/524/525 filed); all test/build claims re-verified fresh at this write; Status set to COMPLETE.
+
+## Activity Log (auto-captured)
+```
+[00:38:37] EDIT: File written — packages/story-loader/src/pin-grammar.ts
+[00:39:38] EDIT: File changed via Bash — packages/story-loader/src/pin-grammar.ts
+[00:39:38] EDIT: File written — packages/story-loader/src/arrange.ts
+[00:39:38] EDIT: File changed via Bash — packages/story-loader/src/arrange.ts
+[00:40:00] EDIT: File changed via Bash — packages/story-loader/package.json
+[00:40:00] EDIT: File changed via Bash — packages/story-loader/src/index.ts
+[00:40:00] EDIT: File changed via Bash — packages/transcript-tester/package.json
+[00:40:00] EDIT: File changed via Bash — packages/transcript-tester/tsconfig.json
+[00:40:00] EDIT: File changed via Bash — tools/ide/web/testing-surface/build.mjs
+[00:40:00] EDIT: File changed via Bash — tools/ide/web/testing-surface/tsconfig.json
+[00:40:00] EDIT: File changed via Bash — tools/ide/web/testing-surface/vitest.config.ts
+[00:40:32] EDIT: File changed via Bash — packages/transcript-tester/src/assertion-core.ts
+[00:40:49] EDIT: File changed via Bash — pnpm-lock.yaml
+[00:41:03] BUILD: Build passed — ls packages/story-loader/dist/pin-grammar.d.ts packages/story-loader/dist-esm/pi
+[00:41:03] BUILD: Build passed — npx tsc -p packages/branch-tester/tsconfig.json --noEmit; echo "branch-tester ty
+[00:41:05] BUILD: Build passed — cd /Users/david/repos/sharpee/tools/ide/web/testing-surface && npx tsc -p tsconf
+[00:43:22] EDIT: File written — packages/story-loader/tests/pin-grammar.test.ts
+[00:43:22] EDIT: File written — packages/story-loader/tests/arrange.test.ts
+[00:43:22] EDIT: File written — packages/story-loader/tests/key-ownership.test.ts
+[00:43:23] EDIT: File written — packages/transcript-tester/tests/pin-forms.test.ts
+[00:43:44] TEST: Tests failed — 1 failed 2 passed 19 failed 17 passed
+[00:43:44] EDIT: File changed via Bash — packages/story-loader/tests/arrange.test.ts
+[00:43:44] EDIT: File changed via Bash — packages/story-loader/tests/key-ownership.test.ts
+[00:43:44] EDIT: File changed via Bash — packages/story-loader/tests/pin-grammar.test.ts
+[00:43:44] EDIT: File changed via Bash — packages/transcript-tester/tests/pin-forms.test.ts
+[00:43:46] TEST: Tests passed — 2 passed 26 passed
+[00:43:49] TEST: Tests passed — 8 passed 136 passed
+[00:44:04] TEST: Tests passed — 1 passed 19 passed
+[00:44:43] BUILD: Build passed — cd /Users/david/repos/sharpee && npx tsc -p packages/story-loader/tsconfig.test.
+[00:44:46] TEST: Tests passed — 12 passed 131 passed
+[00:46:04] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[00:46:05] EDIT: File written — docs/context/session-20260925-1830-explorer-prototype.md
+[00:47:43] EDIT: File changed via Bash — docs/context/session-20260925-1830-explorer-prototype.md
+[00:57:48] EDIT: File changed via Bash — packages/branch-tester/package.json
+[00:57:48] EDIT: File changed via Bash — packages/branch-tester/src/runner.ts
+[00:57:48] EDIT: File changed via Bash — packages/branch-tester/tsconfig.json
+[00:57:48] EDIT: File changed via Bash — packages/transcript-tester/src/types.ts
+[00:58:37] EDIT: File changed via Bash — packages/transcript-tester/src/index.ts
+[01:01:07] EDIT: File written — packages/branch-tester/src/derived-runner.ts
+[01:01:07] EDIT: File changed via Bash — packages/branch-tester/src/derived-runner.ts
+[01:01:07] EDIT: File changed via Bash — packages/branch-tester/src/index.ts
+[01:01:22] BUILD: Build passed — python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('packages/branch-tester/src/de
+[01:02:26] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/guard-defect.story
+[01:02:26] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/no-vocabulary.story
+[01:02:26] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/skip.story
+[01:02:26] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/vine-defect.story
+[01:02:26] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/vine.story
+[01:04:56] BUILD: Build passed — python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('packages/branch-tester/src/de
+[01:04:57] EDIT: File written — packages/branch-tester/tests/derived-plan.test.ts
+[01:04:57] EDIT: File written — packages/branch-tester/tests/derived-runner.test.ts
+[01:04:57] EDIT: File written — packages/transcript-tester/tests/claim-kinds.test.ts
+[01:05:07] TEST: Tests passed — 3 passed 35 passed
+[01:05:07] EDIT: File changed via Bash — packages/branch-tester/tests/derived-plan.test.ts
+[01:05:07] EDIT: File changed via Bash — packages/branch-tester/tests/derived-runner.test.ts
+[01:05:07] EDIT: File changed via Bash — packages/transcript-tester/tests/claim-kinds.test.ts
+[01:05:10] TEST: Tests failed — 1 failed
+[01:05:12] TEST: Tests failed — 1 failed 9 failed
+[01:05:41] TEST: Tests failed — cat > tests/zz-import-probe.test.ts <<'EOF'
+import { describe, expect, it } from (exit 1)
+[01:05:54] TEST: Tests failed — 1 failed 1 failed 1 failed 6 passed
+[01:07:37] TEST: Tests failed — 1 failed 1 failed
+[01:07:38] BUILD: Build passed — cd /Users/david/repos/sharpee && python3 - <<'EOF'
+import pathlib
+p = pathlib.Pa
+[01:07:49] TEST: Tests failed — 1 failed
+[01:07:52] TEST: Tests failed — 1 failed 9 failed
+[01:08:16] TEST: Tests failed — 1 failed 1 failed
+[01:08:16] EDIT: File changed via Bash — packages/branch-tester/tests/zz-boot-probe.test.ts
+[01:08:52] TEST: Tests passed — 1 passed 1 passed
+[01:09:12] TEST: Tests failed — 2 failed 2 failed 19 passed
+[01:10:04] TEST: Tests passed — 2 passed 21 passed
+[01:10:36] BUILD: Build passed — cd /Users/david/repos/sharpee && npx tsc -p packages/story-loader/tsconfig.json 
+[01:10:39] TEST: Tests passed — 12 passed 131 passed
+[01:10:40] BUILD: Build passed — cd /Users/david/repos/sharpee && npx tsc -p packages/branch-tester/tsconfig.test
+[06:52:17] EDIT: File written — packages/branch-tester/src/coverage.ts
+[06:52:17] EDIT: File written — packages/devkit/src/commands/test-derived.ts
+[06:52:18] EDIT: File changed via Bash — packages/branch-tester/src/coverage.ts
+[06:52:18] EDIT: File changed via Bash — packages/devkit/src/commands/test-derived.ts
+[06:52:18] EDIT: File written — packages/branch-tester/tests/derived-coverage.test.ts
+[06:52:19] EDIT: File changed via Bash — packages/branch-tester/tests/derived-coverage.test.ts
+[06:52:19] EDIT: File written — packages/devkit/tests/test-derived.test.ts
+[06:52:55] EDIT: File changed via Bash — packages/devkit/tests/test-derived.test.ts
+[06:52:55] EDIT: File changed via Bash — packages/devkit/src/commands/test-tree-document.ts
+[06:52:55] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-fail/derived-no-vocabulary.story
+[06:52:55] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-fail/derived-no-vocabulary.tests.json
+[06:52:55] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-pass/derived-skip.story
+[06:52:55] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-pass/derived-skip.tests.json
+[06:53:25] BUILD: Build passed — python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('packages/devkit/src/standalon
+[06:53:25] EDIT: File changed via Bash — packages/devkit/src/standalone/author-game.ts
+[06:53:37] BUILD: Build passed — pnpm --filter '@sharpee/branch-tester' build 2>&1 | tail -1; echo "bt build: $?"
+[06:53:57] TEST: Tests failed — 1 failed 1 passed 2 failed 11 passed
+[06:53:58] TEST: Tests failed — 1 failed 1 failed 1 failed 2 passed
+[06:54:54] TEST: Tests passed — 3 passed 25 passed
+[06:54:56] TEST: Tests failed — pnpm --filter '@sharpee/branch-tester' build 2>&1 | tail -1; echo "bt build: $?" (exit 1)
+[06:55:19] TEST: Tests passed — 1 passed 3 passed
+[06:59:43] BUILD: Build passed — python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('packages/branch-tester/src/de
+[06:59:43] EDIT: File written — packages/branch-tester/tests/fixtures/derived/reach.story
+[07:00:00] TEST: Tests passed — 1 passed 10 passed
+[07:00:00] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/reach.story
+[07:01:29] TEST: Tests passed — 3 passed 26 passed
+[07:02:18] TEST: Tests passed — 1 passed 3 passed
+[07:02:26] BUILD: Build passed — npx tsc -p packages/branch-tester/tsconfig.json --noEmit; echo "bt: $?"; npx tsc
+[07:03:16] BUILD: Build passed — cd /Users/david/repos/sharpee && npx tsc -p /Users/david/repos/sharpee/packages/
+[07:03:47] TEST: Tests ran (status unverified) — pnpm --filter '@sharpee/story-loader' test:ci 2>&1 | grep -v "CJS build" | tail 
+[07:04:15] TEST: Tests passed — 127 passed 1155 passed 12 passed 131 passed
+[07:05:48] EDIT: File changed via Bash — docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md
+[07:22:25] BUILD: Build passed — npx tsc -p packages/branch-tester/tsconfig.json --noEmit; echo "branch-tester: $
+[07:26:28] BUILD: Build passed — npx tsc -p packages/devkit/tsconfig.json --noEmit; echo "devkit: $?"; cd tools/i
+[07:28:10] EDIT: File written — docs/context/session-20260925-1830-explorer-prototype.md
+[07:28:25] EDIT: File edited — docs/context/session-20260925-1830-explorer-prototype.md
+[07:31:41] TEST: Tests passed — 12 passed 121 passed
+[07:32:14] EDIT: File written — .commit-files
+[07:32:22] EDIT: File written — .commit-msg
+[07:32:28] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

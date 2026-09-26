@@ -9,7 +9,7 @@
  * the same commit.
  *
  * Public interface: readStoryIR, StoryIRReadError, isRoom, isRegion, isDoor,
- * roomsOf, thingsOf, startRoomOf.
+ * roomsOf, thingsOf, startRoomOf, endingsOf, DeclaredEnding.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
  * contract.
@@ -21,6 +21,7 @@
 
 import { readFileSync } from 'node:fs';
 import type { IREntity, StoryIR } from '@sharpee/chord';
+import { forEachStatementRoot, type WriterOwner } from './statements.js';
 
 /**
  * Why a Story IR could not be loaded.
@@ -203,4 +204,73 @@ export function startRoomOf(ir: StoryIR): string | undefined {
   const playerId = initialPlayerIdOf(ir);
   if (playerId === undefined) return undefined;
   return ir.entities.find((entity) => entity.id === playerId)?.placement?.place;
+}
+
+/**
+ * One way the story declares it can end: a `win`, `lose` or `kill`
+ * statement (ADR-356 D5's endings denominator).
+ *
+ * `id` is the phrase key the statement named — what an END STATE card
+ * declares (ADR-356 D4) and what the world's Ending carries (`messageId`
+ * for `win`/`lose`, `cause` for `kill`). A statement with no key declares
+ * an ending no card can ever name; it is kept, with `id: null`, so the
+ * report can list it as its own kind of gap rather than fold it into a
+ * denominator it could never satisfy.
+ */
+export interface DeclaredEnding {
+  /** The phrase key, or null for a `win`/`lose`/`kill` written without one. */
+  id: string | null;
+  kind: 'victory' | 'defeat';
+  statement: 'win' | 'lose' | 'kill';
+  /** What must be reached for the statement to fire. */
+  owner: WriterOwner;
+  /** The statement's source line, or null when it carries no span. */
+  line: number | null;
+  /** The source file the line is in, relative to the main file; null for the main file. */
+  file: string | null;
+}
+
+/**
+ * Every ending the story declares, in declaration order — a static pass
+ * over the same statement roots the writer and reader collectors walk
+ * (ADR-321 D2: no engine run, IR types imported directly).
+ *
+ * Named endings are deduplicated by id: two `win fernhill-saved` statements
+ * are one ending reached by two routes, and the first declaration's line
+ * is the one reported. Unnamed endings are never merged — each is its own
+ * unnameable gap.
+ *
+ * @param ir the story IR
+ * @returns the declared endings, named ones once each
+ */
+export function endingsOf(ir: StoryIR): DeclaredEnding[] {
+  const endings: DeclaredEnding[] = [];
+  const seen = new Set<string>();
+  const visit = (root: unknown, owner: WriterOwner): void => {
+    if (typeof root !== 'object' || root === null) return;
+    if (Array.isArray(root)) {
+      for (const child of root) visit(child, owner);
+      return;
+    }
+    const node = root as Record<string, unknown>;
+    if (node.kind === 'win' || node.kind === 'lose' || node.kind === 'kill') {
+      const statement = node.kind;
+      const id = typeof node.phraseKey === 'string' && node.phraseKey.length > 0 ? node.phraseKey : null;
+      const span = node.span as { line?: number; file?: string } | undefined;
+      if (id === null || !seen.has(id)) {
+        if (id !== null) seen.add(id);
+        endings.push({
+          id,
+          kind: statement === 'win' ? 'victory' : 'defeat',
+          statement,
+          owner,
+          line: typeof span?.line === 'number' ? span.line : null,
+          file: typeof span?.file === 'string' ? span.file : null,
+        });
+      }
+    }
+    for (const key of Object.keys(node)) visit(node[key], owner);
+  };
+  forEachStatementRoot(ir, (root, owner) => visit(root, owner));
+  return endings;
 }

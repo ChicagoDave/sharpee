@@ -99,6 +99,12 @@ body.ts-active .sharpee-window { display: none; }
   text-transform: uppercase;
   margin-bottom: 6px;
 }
+/* END STATE (ADR-356 D4): the mark on the card the story ended on. */
+.ts-end-state {
+  margin-left: 6px;
+  color: var(--ts-warn);
+  font-weight: 700;
+}
 /* The turn's prose: the client's real elements, engine.css styling kept.
    Echo styling piggybacks on the client's own command class names. */
 .ts-prose p { margin: 0 0 8px; }

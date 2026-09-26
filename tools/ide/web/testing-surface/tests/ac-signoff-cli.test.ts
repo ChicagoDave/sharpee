@@ -224,7 +224,7 @@ async function buildBase(): Promise<BaseSession> {
     },
   ];
   const expected: TreeDocument = {
-    version: 1,
+    version: 2,
     story: 'mini',
     seed: 42,
     cards: [

@@ -75,6 +75,9 @@ export interface CardsDelegate {
 /** Per-turn DOM handles, keyed by ordinal. */
 interface CardRow {
   row: HTMLElement;
+  /** The END STATE mark in the card's meta line (ADR-356 D4), shown while
+   *  the card declares an ending. */
+  endState: HTMLElement;
   asserts: HTMLElement;
   exactButton: HTMLButtonElement | null;
   branchButton: HTMLButtonElement | null;
@@ -348,6 +351,14 @@ export class CardsView {
     meta.textContent = ordinal === 0
       ? 'opening'
       : `turn ${ordinal}${boot ? ' · boot' : ''}${branch ? ' · branch' : ''}`;
+    // END STATE (ADR-356 D4): the story ended on this turn. The mark reads
+    // the card's own `ending`, filled by render() — a loaded document's
+    // ending card shows it before any replay, a live ending the moment it
+    // lands. No command lands here and nothing forks from here.
+    const endState = document.createElement('span');
+    endState.className = 'ts-end-state';
+    endState.style.display = 'none';
+    meta.appendChild(endState);
 
     // Tail-cut (D4/Q-4): the card's hover ✕, armed-then-confirmed — the
     // same two-act destruction idiom as the chip's ✕. Turn cards only: the
@@ -491,7 +502,7 @@ export class CardsView {
     row.append(column);
     this.host.appendChild(row);
     this.cards.set(ordinal, {
-      row, asserts, exactButton, branchButton,
+      row, endState, asserts, exactButton, branchButton,
       character, characterButton, characterOpen: false,
     });
   }
@@ -687,6 +698,12 @@ export class CardsView {
       if (card.branchButton) {
         card.branchButton.style.display = this.model.canBranch(ordinal) ? '' : 'none';
       }
+      const ending = this.model.cardAt(ordinal)?.ending;
+      card.endState.textContent = ending !== undefined ? `· END STATE · ${ending}` : '';
+      card.endState.title = ending !== undefined
+        ? `The story ended here (${ending}) — no further command lands on this card, and nothing forks from it`
+        : '';
+      card.endState.style.display = ending !== undefined ? '' : 'none';
       card.exactButton?.classList.toggle(
         'ts-active',
         this.model.claimsOf(ordinal)?.exact !== undefined,

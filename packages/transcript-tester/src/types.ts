@@ -238,11 +238,21 @@ export interface GoldenRecording {
 export interface Assertion {
   type: 'ok' | 'ok-contains' | 'ok-not-contains'
       | 'fail' | 'skip' | 'todo'
-      | 'event-assert' | 'state-assert'
+      | 'event-assert' | 'state-assert' | 'ending-assert'
       | 'channel-contains' | 'channel-not-contains'
       | 'channel-is' | 'channel-is-not' | 'channel-absent' | 'channel-present';
   value?: string;      // For contains/not-contains
   reason?: string;     // For fail/todo
+
+  /**
+   * The ending id an `ending-assert` claim expects the world's Ending to
+   * carry (ADR-356 D4): the id the story's `win`/`lose` statement named
+   * (its `messageId`) or its `kill` statement named (its `cause`). The
+   * claim holds when the story has ended and the Ending carries this id;
+   * it is the END STATE card's own claim, synthesized by the tree walker,
+   * and has no `.transcript` spelling.
+   */
+  endingId?: string;
 
   /**
    * Channel this assertion reads, for the `channel-*` forms.

@@ -56,7 +56,7 @@ end before
  * move north. Seed pinned at 42 (D5).
  */
 const TREE_DOCUMENT = {
-  version: 1,
+  version: 2,
   story: 'mini',
   seed: 42,
   cards: [
@@ -174,7 +174,7 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
       writeFileSync(
         join(openingDir, 'mini.tests.json'),
         `${JSON.stringify({
-          version: 1,
+          version: 2,
           story: 'mini',
           seed: 42,
           cards: [
@@ -238,7 +238,7 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
       writeFileSync(
         join(openingDir, 'mini.tests.json'),
         `${JSON.stringify({
-          version: 1,
+          version: 2,
           story: 'mini',
           seed: 42,
           cards: [
@@ -259,7 +259,7 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
       writeFileSync(
         join(openingDir, 'mini.tests.json'),
         `${JSON.stringify({
-          version: 1,
+          version: 2,
           story: 'mini',
           seed: 42,
           cards: [
@@ -297,7 +297,7 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
       writeFileSync(
         join(bareDir, 'mini.tests.json'),
         `${JSON.stringify({
-          version: 1,
+          version: 2,
           story: 'mini',
           seed: 42,
           cards: [

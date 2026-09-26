@@ -128,7 +128,7 @@ final class TestRunnerTests: XCTestCase {
     private func writeDocument(claim: String) throws {
         try writeFixture("mini.tests.json", """
         {
-          "version": 1,
+          "version": 2,
           "story": "mini",
           "seed": 42,
           "cards": [

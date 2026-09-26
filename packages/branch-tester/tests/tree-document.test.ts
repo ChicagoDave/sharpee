@@ -13,6 +13,7 @@ import {
   channelIdsReferencedBy,
   deserializeTreeDocument,
   emptyTreeDocument,
+  endingIdsDeclaredBy,
   mainLineLabelOf,
   roomSlugOf,
   serializeTreeDocument,
@@ -22,7 +23,7 @@ import {
 
 /** A hand-built multi-branch tree exercising every card type and family. */
 const MULTI_BRANCH_TREE: TreeDocument = {
-  version: 1,
+  version: 2,
   story: 'fernhill',
   seed: 42,
   cards: [
@@ -95,10 +96,10 @@ describe('serialization (AC-1)', () => {
       seed: 42,
       cards: [{ command: 'north', type: 'turn', assertions: { states: ['a = b'], contains: ['x'] } }],
       story: 'fernhill',
-      version: 1,
+      version: 2,
     } as unknown as TreeDocument;
     const sorted: TreeDocument = {
-      version: 1,
+      version: 2,
       story: 'fernhill',
       seed: 42,
       cards: [{ type: 'turn', command: 'north', assertions: { contains: ['x'], states: ['a = b'] } }],
@@ -119,11 +120,11 @@ describe('serialization (AC-1)', () => {
 
 describe('version gate (AC-4)', () => {
   it('refuses a newer version with a named message and never calls it malformed', () => {
-    const newer = serializeTreeDocument(MULTI_BRANCH_TREE).replace('"version": 1', '"version": 2');
+    const newer = serializeTreeDocument(MULTI_BRANCH_TREE).replace('"version": 2', '"version": 3');
     const read = deserializeTreeDocument(newer);
     expect(read.status).toBe('refused');
     if (read.status !== 'refused') return;
-    expect(read.message).toContain('version 2');
+    expect(read.message).toContain('version 3');
     expect(read.message).toContain(`version ${TREE_DOCUMENT_VERSION}`);
   });
 
@@ -197,7 +198,7 @@ describe('the document name', () => {
 describe('channelIdsReferencedBy — the capture set both consumers derive', () => {
   it('collects each claimed channel once, in first-use order, branches included', () => {
     const document: TreeDocument = {
-      version: 1,
+      version: 2,
       story: 's',
       seed: 1,
       cards: [
@@ -249,7 +250,7 @@ describe('channelIdsReferencedBy — the capture set both consumers derive', () 
 
   it('a dotted claim id maps to its base channel — the capture is the structured value', () => {
     const document: TreeDocument = {
-      version: 1,
+      version: 2,
       story: 's',
       seed: 1,
       cards: [
@@ -288,5 +289,90 @@ describe('derived-label helpers — one formatting for both consumers (D2/Q-8)',
     expect(branchLineLabelOf('den', 1, 'look')).toBe('den · look');
     expect(branchLineLabelOf(undefined, 3, 'east')).toBe('branch-3 · east');
     expect(branchLineLabelOf('den', 1, undefined)).toBe('den · (empty)');
+  });
+});
+
+describe('END STATE cards (ADR-356 D4) — the one field version 2 adds', () => {
+  const withEnding = (card: Record<string, unknown>) =>
+    deserializeTreeDocument(
+      serializeTreeDocument({
+        version: 2,
+        story: 'mini',
+        seed: 1,
+        cards: [{ type: 'opening' }, { type: 'boot' }, card as never],
+      }),
+    );
+
+  it('a turn card declares an ending and it round-trips byte-identically', () => {
+    const document: TreeDocument = {
+      ...emptyTreeDocument('mini', 1),
+      cards: [
+        { type: 'opening' },
+        { type: 'boot', assertions: { contains: ['Den'] } },
+        { type: 'turn', command: 'open the box', ending: 'box-opened', assertions: { contains: ['You win'] } },
+      ],
+    };
+    const text = serializeTreeDocument(document);
+    expect(text).toContain('"ending": "box-opened"');
+    const read = deserializeTreeDocument(text);
+    expect(read.status).toBe('ok');
+    if (read.status !== 'ok') return;
+    expect(read.document.cards[2].ending).toBe('box-opened');
+    expect(serializeTreeDocument(read.document)).toBe(text);
+  });
+
+  it('only a typed turn can be an END STATE card', () => {
+    const read = deserializeTreeDocument(
+      serializeTreeDocument({
+        version: 2,
+        story: 'mini',
+        seed: 1,
+        cards: [{ type: 'opening' }, { type: 'boot', ending: 'nope' } as never],
+      }),
+    );
+    expect(read).toEqual({
+      status: 'malformed',
+      message: `'cards[1]' is type 'boot' and cannot be an END STATE card`,
+    });
+  });
+
+  it('the ending id is a non-empty string', () => {
+    expect(withEnding({ type: 'turn', command: 'wait', ending: '' })).toEqual({
+      status: 'malformed',
+      message: `'cards[2].ending' must be a non-empty ending id`,
+    });
+    expect(withEnding({ type: 'turn', command: 'wait', ending: 7 })).toEqual({
+      status: 'malformed',
+      message: `'cards[2].ending' must be a non-empty ending id`,
+    });
+  });
+
+  it('a version-1 document is malformed — no shim, a one-shot repair sets the version', () => {
+    const read = deserializeTreeDocument(
+      JSON.stringify({ version: 1, story: 'mini', seed: 1, cards: [{ type: 'opening' }] }),
+    );
+    expect(read).toEqual({ status: 'malformed', message: 'unknown document version 1' });
+    expect(TREE_DOCUMENT_VERSION).toBe(2);
+  });
+
+  it('endingIdsDeclaredBy lists each declared ending once, branches included, in declaration order', () => {
+    const document: TreeDocument = {
+      ...emptyTreeDocument('mini', 1),
+      cards: [
+        { type: 'opening' },
+        { type: 'boot' },
+        {
+          type: 'turn',
+          command: 'north',
+          branches: [
+            { branch: 1, cards: [{ type: 'turn', command: 'wait', ending: 'dawn-comes' }] },
+            { branch: 2, cards: [{ type: 'turn', command: 'dig', ending: 'dawn-comes' }] },
+          ],
+        },
+        { type: 'turn', command: 'save the manor', ending: 'fernhill-saved' },
+      ],
+    };
+    expect(endingIdsDeclaredBy(document)).toEqual(['dawn-comes', 'fernhill-saved']);
+    expect(endingIdsDeclaredBy(emptyTreeDocument('mini', 1))).toEqual([]);
   });
 });

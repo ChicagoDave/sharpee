@@ -132,6 +132,12 @@ export interface DerivedOutcome {
   arranged: string[];
   claims: DerivedClaimResult[];
   span: Span | null;
+  /**
+   * The rooms the player stood in while this branch ran — after arranging
+   * and after the command — as IR ids (ADR-356 D5's rooms ratio, the
+   * arranged half). Absent when the branch never booted.
+   */
+  rooms?: string[];
 }
 
 export interface DerivedSuiteResult {
@@ -142,6 +148,8 @@ export interface DerivedSuiteResult {
   failed: number;
   skipped: number;
   errored: number;
+  /** Every room any branch placed the player in, as IR ids, each once, in first-visit order. */
+  roomsEntered: string[];
 }
 
 // ---------------------------------------------------------------------------
@@ -686,6 +694,10 @@ export async function runDerivedSuite(
     options.onOutcome?.(outcome);
   }
   const count = (status: DerivedStatus): number => outcomes.filter((outcome) => outcome.status === status).length;
+  const roomsEntered: string[] = [];
+  for (const room of outcomes.flatMap((outcome) => outcome.rooms ?? [])) {
+    if (!roomsEntered.includes(room)) roomsEntered.push(room);
+  }
   return {
     outcomes,
     total: branches.length,
@@ -693,7 +705,16 @@ export async function runDerivedSuite(
     failed: count('failed'),
     skipped: count('skipped'),
     errored: count('error'),
+    roomsEntered,
   };
+}
+
+/** The IR id of the room the player stands in, or undefined when offstage or unstamped. */
+function playerRoomIrIdOf(world: DerivedWorld): string | undefined {
+  const player = world.getPlayer();
+  const room = player ? world.getContainingRoom(player.id) : undefined;
+  const irId = room ? world.getEntity(room.id)?.attributes[CHORD_IR_ID_ATTRIBUTE] : undefined;
+  return typeof irId === 'string' ? irId : undefined;
 }
 
 /**
@@ -786,6 +807,14 @@ export async function runDerivedBranch(
     }
   }
 
+  // ── Rooms (ADR-356 D5): where arranging put the player, then where the command left them
+  const rooms: string[] = [];
+  const noteRoom = (): void => {
+    const room = playerRoomIrIdOf(world);
+    if (room !== undefined && !rooms.includes(room)) rooms.push(room);
+  };
+  noteRoom();
+
   // ── Baselines for the runner-side reads ────────────────────────────────
   const before = new Map<string, unknown>();
   for (const claim of plan.claims) {
@@ -808,15 +837,16 @@ export async function runDerivedBranch(
     try {
       result = await runCommand(transcriptCommand, game, { storyStateKeys: CHORD_STORY_STATE_KEYS });
     } catch (error) {
-      return { ...base, status: 'error', detail: error instanceof Error ? error.message : String(error), command, arranged };
+      return { ...base, status: 'error', detail: error instanceof Error ? error.message : String(error), command, arranged, rooms };
     }
+    noteRoom();
     events = result.actualEvents;
     const parseFailure = events.find((event) => event.type === 'command.failed' && event.data?.storyRule !== true);
     if (parseFailure) {
-      return { ...base, status: 'failed', detail: `parse failure: ${String(parseFailure.data?.reason ?? 'command.failed')}`, command, arranged };
+      return { ...base, status: 'failed', detail: `parse failure: ${String(parseFailure.data?.reason ?? 'command.failed')}`, command, arranged, rooms };
     }
     if (result.error) {
-      return { ...base, status: 'error', detail: result.error, command, arranged };
+      return { ...base, status: 'error', detail: result.error, command, arranged, rooms };
     }
     for (const assertionResult of result.assertionResults) {
       claims.push(claimResult(assertionResult));
@@ -869,6 +899,7 @@ export async function runDerivedBranch(
     ...(command !== undefined ? { command } : {}),
     arranged,
     claims,
+    rooms,
   };
 }
 

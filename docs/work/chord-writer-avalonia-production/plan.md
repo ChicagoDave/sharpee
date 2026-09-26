@@ -748,7 +748,13 @@ actually independent.
   resolving it, per rule 11a.
 - **Exit state**: David has ruled which direction to take, recorded as an ADR (or amendment) if he
   asks for one, or as a plan note otherwise. This ruling is Phase 17's entry condition.
-- **Status**: PENDING
+- **Status**: DONE (2026-09-26, session 54fb33). Direction (a) shipped in session 04d4dd (the
+  surface reads the `story-ending` channel and stops a line at an ending — ADR-353 D8). The
+  remaining deliverable — the ended-vs-failed presentation call — was ruled by David on
+  2026-09-25 under ADR-356's interview (Q-5): *"an ending is a declarative state. A card would
+  block additional commands in that card and show a message for 'END STATE'."* Landed by
+  `docs/work/testing-explorer/plan-20260926-adr356-d4-endstate.md` Phase 1 as the END STATE card (ADR-356 D4); the ruling is
+  quoted beside ADR-353 D8. Closed on a ruling given, not inferred.
 
 ### Phase 17: Testing pane — parallel branch replay, dead-player and failed-card handling
 - **Status**: SUPERSEDED by ADR-353 D8 (2026-09-19, session 04d4dd). This phase existed to make an

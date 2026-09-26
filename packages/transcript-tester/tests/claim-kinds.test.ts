@@ -118,3 +118,43 @@ describe('emitted <message-id>', () => {
     expect(evaluateStateExpression('emitted need-shears', hall().w, KEYS).details).toBe('Could not parse expression: emitted need-shears');
   });
 });
+
+describe('ending-assert — the END STATE card\'s claim (ADR-356 D4)', () => {
+  const claim = (endingId: string): Assertion => ({ type: 'ending-assert', endingId });
+  const worldEnded = (ending: { kind: string; messageId?: string; cause?: string } | undefined) =>
+    ({ getEnding: () => ending }) as unknown as WorldModel;
+
+  it('holds when the Ending carries the declared id as messageId (win/lose)', () => {
+    const result = checkAssertion(claim('fernhill-saved'), '', '', [], worldEnded({ kind: 'victory', messageId: 'fernhill-saved' }));
+    expect(result).toEqual({ assertion: claim('fernhill-saved'), passed: true });
+  });
+
+  it('holds when the Ending carries the declared id as cause (kill)', () => {
+    const result = checkAssertion(claim('fuse-blast'), '', '', [], worldEnded({ kind: 'defeat', cause: 'fuse-blast' }));
+    expect(result.passed).toBe(true);
+  });
+
+  it('fails by name when the story did not end', () => {
+    const result = checkAssertion(claim('fernhill-saved'), '', '', [], worldEnded(undefined));
+    expect(result.passed).toBe(false);
+    expect(result.message).toBe('Ending "fernhill-saved" not reached: the story did not end');
+  });
+
+  it('fails naming both endings when the story ended differently', () => {
+    const result = checkAssertion(claim('fernhill-saved'), '', '', [], worldEnded({ kind: 'defeat', cause: 'fuse-blast' }));
+    expect(result.passed).toBe(false);
+    expect(result.message).toBe('Ending "fernhill-saved" not reached: the story ended with defeat (fuse-blast)');
+  });
+
+  it('fails when the claim declares no id — an END STATE card must name its ending', () => {
+    const result = checkAssertion({ type: 'ending-assert' }, '', '', [], worldEnded({ kind: 'victory', messageId: 'x' }));
+    expect(result.passed).toBe(false);
+    expect(result.message).toBe('An END STATE card must declare an ending id');
+  });
+
+  it('fails when the seam exposes no world', () => {
+    const result = checkAssertion(claim('fernhill-saved'), '', '', [], undefined);
+    expect(result.passed).toBe(false);
+    expect(result.message).toContain('the story did not end');
+  });
+});

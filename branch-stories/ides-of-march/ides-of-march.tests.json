@@ -123,6 +123,7 @@
                 ]
               },
               "command": "ask burbage about henslowe",
+              "ending": "unmasked-lose",
               "type": "turn"
             }
           ]
@@ -386,10 +387,11 @@
         ]
       },
       "command": "east",
+      "ending": "ides-won",
       "type": "turn"
     }
   ],
   "seed": 42,
   "story": "ides-of-march",
-  "version": 1
+  "version": 2
 }

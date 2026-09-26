@@ -16,7 +16,9 @@
  *
  * The derived rule-test tier (ADR-356 D5a) runs after the tree, at the
  * document's seed, through `test-derived.ts`: a derived failure exits 1 like
- * a failed line, a SKIPPED branch never changes the code.
+ * a failed line, a SKIPPED branch never changes the code. The tree run hands
+ * it the endings its END STATE cards proved and the rooms its replays walked,
+ * for D5's endings and rooms ratios.
  *
  * Public interface: findTreeDocument(projectDir), runTreeDocumentCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
@@ -230,7 +232,13 @@ export async function runTreeDocumentCommand(
 
   // ADR-356 D5a: the derived rule-test tier, by default, at the same seed.
   // Its failure is a failure of the build; its SKIPPED branches are not.
-  const derivedCode = await runDerivedTests({ dir, seed: document.seed, json, verbose });
+  const derivedCode = await runDerivedTests({
+    dir,
+    seed: document.seed,
+    json,
+    verbose,
+    tree: { endingsReached: run.endingsReached, roomsEntered: run.roomsEntered },
+  });
   const code = Math.max(treeCode, derivedCode);
 
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);

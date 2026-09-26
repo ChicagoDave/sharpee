@@ -81,8 +81,14 @@ export { runTranscript, CHORD_STORY_STATE_KEYS } from './runner.js';
 // branches, enumerated by world-index, arranged through the loader, run one
 // command each through the real engine, and asserted through the core.
 export { runDerivedSuite, runDerivedBranch, planBranch, derivedBranchLabel } from './derived-runner.js';
-export { branchCoverageOf, formatDerivedRun } from './coverage.js';
-export type { BranchCoverage, BranchGap } from './coverage.js';
+export {
+  branchCoverageOf,
+  endingCoverageOf,
+  roomCoverageOf,
+  formatDerivedRun,
+  formatCoverageSummary,
+} from './coverage.js';
+export type { BranchCoverage, BranchGap, EndingCoverage, RoomCoverage } from './coverage.js';
 export type {
   ActionPatterns,
   ArrangeTerm,

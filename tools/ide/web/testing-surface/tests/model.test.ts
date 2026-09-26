@@ -480,7 +480,7 @@ describe('opening self-heal — a claim-less opening gains the boot claims (GH #
   // self-heal looked covered while the three shipped trees never once healed —
   // the guard tested `=== undefined` and `{}` is not undefined.
   const RECORDED: TreeDocument = {
-    version: 1,
+    version: 2,
     story: 'mini',
     seed: 42,
     cards: [
@@ -522,7 +522,7 @@ describe('opening self-heal — a claim-less opening gains the boot claims (GH #
 
 describe('binding replay — restore re-derives the board from the document', () => {
   const PERSISTED: TreeDocument = {
-    version: 1,
+    version: 2,
     story: 'mini',
     seed: 42,
     cards: [
@@ -564,7 +564,7 @@ describe('binding replay — restore re-derives the board from the document', ()
 
   it('sibling-set-duplicate branch ids from a hand-edited document are reassigned', () => {
     const doc: TreeDocument = {
-      version: 1,
+      version: 2,
       story: 'mini',
       seed: 42,
       cards: [
@@ -606,5 +606,59 @@ describe('undo — authoring gestures only', () => {
     expect(model.claimsOf(took)).toBeUndefined();
     expect(model.claimsOf(alt)).toBeUndefined();
     expect(model.lineIds().includes(id)).toBe(true);
+  });
+});
+
+describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => {
+  it('a delivery carrying the ending id stamps the appended card, and the card cannot fork', () => {
+    const model = bootedModel();
+    play(model, 'north', 'Garden');
+    const last = ++nextOrdinal;
+    model.addTurn({ ordinal: last, command: 'open the box', boot: false, room: 'Garden', ending: 'box-opened' });
+    expect(model.cardAt(last)?.ending).toBe('box-opened');
+    expect(model.canBranch(last)).toBe(false);
+    expect(model.canBranch(last - 1)).toBe(true);
+    expect(model.document.cards.at(-1)).toEqual({ type: 'turn', command: 'open the box', ending: 'box-opened' });
+  });
+
+  it('a binding replay fills a missing ending and never overwrites a declared one', () => {
+    const document: TreeDocument = {
+      version: 2,
+      story: 'mini',
+      seed: 42,
+      cards: [
+        { type: 'opening' },
+        { type: 'boot' },
+        { type: 'turn', command: 'north' },
+        { type: 'turn', command: 'open the box' },
+        { type: 'turn', command: 'dig', ending: 'authored' },
+      ],
+    };
+    const model = new TreeSessionModel('mini', 42);
+    model.load(document);
+    model.beginRebindAll();
+    model.activateLine(MAIN_LINE);
+    model.addTurn({ ordinal: 1, command: '', boot: true, room: 'Den' });
+    model.addTurn({ ordinal: 2, command: 'north', boot: false, room: 'Garden' });
+    model.addTurn({ ordinal: 3, command: 'open the box', boot: false, room: 'Garden', ending: 'box-opened' });
+    model.addTurn({ ordinal: 4, command: 'dig', boot: false, room: 'Garden', ending: 'replayed' });
+    expect(model.document.cards[3]).toEqual({ type: 'turn', command: 'open the box', ending: 'box-opened' });
+    expect(model.document.cards[4]).toEqual({ type: 'turn', command: 'dig', ending: 'authored' });
+  });
+
+  it('the ending survives the document round trip through the shared reader', () => {
+    const model = bootedModel();
+    const last = ++nextOrdinal;
+    model.addTurn({ ordinal: last, command: 'open the box', boot: false, ending: 'box-opened' });
+    const read = deserializeTreeDocument(JSON.stringify(model.document));
+    expect(read.status).toBe('ok');
+    if (read.status !== 'ok') return;
+    expect(read.document.cards.at(-1)?.ending).toBe('box-opened');
+  });
+
+  it('a boot delivery never becomes an END STATE card', () => {
+    const model = new TreeSessionModel('mini', 42);
+    model.addTurn({ ordinal: 1, command: '', boot: true, room: 'Den', ending: 'instant-death' });
+    expect(model.cardAt(1)).toEqual({ type: 'boot' });
   });
 });

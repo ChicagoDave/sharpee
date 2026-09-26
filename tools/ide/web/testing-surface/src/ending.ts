@@ -16,7 +16,7 @@
  *   both are surrogates, and D3a exists because four namings of one fact was
  *   the defect.
  *
- * Public interface: EndingState, endingOf, blocksCommand.
+ * Public interface: EndingState, endingOf, endingIdOf, blocksCommand.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -57,6 +57,23 @@ export function endingOf(captures: readonly Capture[] | undefined): EndingState 
   // Anything else on this channel is a story's own payload, not an Ending.
   // Guessing at it would lock the driver out of a story that overrode it.
   return undefined;
+}
+
+/**
+ * The id of the Ending a delivered record carries — what an END STATE card
+ * declares (ADR-356 D4). A `win`/`lose` stamps the id as the Ending's
+ * `messageId`, a `kill` as its `cause`; a death the story never named has
+ * neither, and such an ending cannot be declared on a card.
+ *
+ * @param captures the record's channel captures, or undefined when it carries none
+ * @returns the ending id, or `undefined` when the record carries no named Ending
+ */
+export function endingIdOf(captures: readonly Capture[] | undefined): string | undefined {
+  if (endingOf(captures) !== 'ended') return undefined;
+  const value = (captures ?? []).find(c => c.channel === 'story-ending')?.values.at(-1) as
+    { messageId?: unknown; cause?: unknown };
+  const id = value.messageId ?? value.cause;
+  return typeof id === 'string' && id.length > 0 ? id : undefined;
 }
 
 /**

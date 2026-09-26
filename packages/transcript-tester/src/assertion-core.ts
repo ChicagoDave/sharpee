@@ -61,6 +61,8 @@ export interface WorldModel {
   getPlayer?(): any;
   /** World-state lookup — carries the Chord story phase (`story.state` claims). */
   getStateValue?(key: string): unknown;
+  /** The Ending the world carries once the story has ended (ADR-347 D2a). */
+  getEnding?(): { kind: string; messageId?: string; cause?: string } | undefined;
 }
 
 // ============================================================================
@@ -176,6 +178,10 @@ export function checkAssertion(
       return checkStateAssertion(assertion, world, storyStateKeys);
     }
 
+    case 'ending-assert': {
+      return checkEndingAssertion(assertion, world);
+    }
+
     default:
       return {
         assertion,
@@ -274,6 +280,44 @@ export function checkEmittedAssertion(assertion: Assertion, events: TestEventInf
       : `"${pin.messageId}" should not have been emitted but was`;
   }
   return { assertion, passed, message };
+}
+
+/**
+ * Check an END STATE card's claim (ADR-356 D4): the story has ended, and the
+ * Ending the world carries names the id the card declares. The id is read
+ * off the Ending record, never off prose: a `win`/`lose` stamps it as
+ * `messageId`, a `kill` as `cause`, and either spelling satisfies the claim.
+ * A miss names the ending that was not reached and what the story did
+ * instead, so a truncated line fails by name.
+ *
+ * @param assertion the `ending-assert` claim, carrying `endingId`
+ * @param world the live world, read after the card's command ran
+ * @returns the verdict, naming the declared ending on a miss
+ */
+export function checkEndingAssertion(assertion: Assertion, world?: WorldModel): AssertionResult {
+  const declared = assertion.endingId;
+  if (declared === undefined || declared === '') {
+    return { assertion, passed: false, message: 'An END STATE card must declare an ending id' };
+  }
+  const ending = world?.getEnding?.();
+  if (ending === undefined) {
+    return {
+      assertion,
+      passed: false,
+      message: `Ending "${declared}" not reached: the story did not end`,
+    };
+  }
+  if (ending.messageId === declared || ending.cause === declared) {
+    return { assertion, passed: true };
+  }
+  const reached = [ending.kind, ending.messageId, ending.cause ? `(${ending.cause})` : undefined]
+    .filter((part) => part !== undefined)
+    .join(' ');
+  return {
+    assertion,
+    passed: false,
+    message: `Ending "${declared}" not reached: the story ended with ${reached}`,
+  };
 }
 
 /**

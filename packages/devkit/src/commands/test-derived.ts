@@ -7,7 +7,11 @@
  * precondition through the loader, runs its one command through the real
  * engine, and asserts its effects. This module runs that suite over a
  * project and prints D5's report — the branches ratio and every unexercised
- * branch by its source span.
+ * branch by its source span, then the endings and rooms ratios: endings the
+ * tree's END STATE cards proved over endings the story declares, and rooms
+ * either tier placed the player in over rooms the story declares (D4/D5).
+ * The tree run supplies its half through `tree`; an unreached ending or an
+ * unentered room is a gap, never a failure.
  *
  * Runs by default beside the tree document (D5a, Q-3). A derived FAILURE
  * means the story does not do what its own source says and exits 1; a
@@ -37,6 +41,12 @@ export interface DerivedTestOptions {
   /** The run-event stream owns stdout; the derived report goes to stderr. */
   json: boolean;
   verbose: boolean;
+  /**
+   * What the tree document's run contributed (ADR-356 D4/D5): the ending
+   * ids its END STATE cards proved, and the rooms its replays walked. Absent
+   * when no tree ran — the ratios then count the derived tier alone.
+   */
+  tree?: { endingsReached: string[]; roomsEntered: string[] };
 }
 
 /**
@@ -49,10 +59,12 @@ export interface DerivedTestOptions {
  */
 export async function runDerivedTests(options: DerivedTestOptions): Promise<number> {
   // Lazy require (the test.ts pattern): the harness loads only when testing.
-  const { runDerivedSuite, formatDerivedRun } =
+  const { runDerivedSuite, formatDerivedRun, endingCoverageOf, roomCoverageOf, formatCoverageSummary } =
     require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  const { endingsOf, roomsOf } =
+    require('@sharpee/world-index') as typeof import('@sharpee/world-index');
 
-  const { dir, seed, json, verbose } = options;
+  const { dir, seed, json, verbose, tree } = options;
   const out = (line: string): void => {
     if (json) console.error(line);
     else console.log(line);
@@ -87,7 +99,11 @@ export async function runDerivedTests(options: DerivedTestOptions): Promise<numb
   }
 
   out('');
-  for (const line of formatDerivedRun(run, path.basename(storyFile))) out(line);
+  const storyName = path.basename(storyFile);
+  for (const line of formatDerivedRun(run, storyName)) out(line);
+  const endings = endingCoverageOf(endingsOf(ir), tree?.endingsReached ?? []);
+  const rooms = roomCoverageOf(roomsOf(ir), [...(tree?.roomsEntered ?? []), ...run.roomsEntered]);
+  for (const line of formatCoverageSummary(endings, rooms, storyName)) out(line);
 
   return run.failed + run.errored > 0 ? 1 : 0;
 }

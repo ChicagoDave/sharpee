@@ -12,8 +12,10 @@
  * Owner context: branch-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
+import { CHORD_IR_ID_ATTRIBUTE } from '@sharpee/story-loader';
 import {
   emptyTreeDocument,
+  roomSlugOf,
   TreeCard,
   TreeDocument,
 } from '../src/tree-document.js';
@@ -77,6 +79,12 @@ interface StubOptions {
   policy?: 'all-emitted-text';
   /** Per-command structured channel captures (`lastChannelValues`). */
   channelValues?: Record<string, unknown[]>;
+  /**
+   * command → the Ending the world carries after it (ADR-356 D4). Once set
+   * the stub behaves like a stopped engine: every later non-meta command
+   * lands a refusal on `game.lastError`, as bootstrap surfaces one.
+   */
+  endsOn?: Record<string, { kind: 'victory' | 'defeat'; messageId?: string; cause?: string }>;
 }
 
 /**
@@ -92,11 +100,15 @@ function stubHarness(options: StubOptions = {}) {
   const makeGame = (bootNumber: number) => {
     let token = 'fresh';
     let room = 'Iron Gates';
+    let ending: { kind: string; messageId?: string; cause?: string } | undefined;
     const world = {
       getPlayer: () => ({ id: 'player' }),
       getLocation: () => 'room-1',
-      getEntity: () => ({ id: 'room-1', name: room }),
+      // The loader stamps every Chord entity with its IR id; the stub's room
+      // carries its slug there so room tracking (ADR-356 D5) reads a real key.
+      getEntity: () => ({ id: 'room-1', name: room, attributes: { [CHORD_IR_ID_ATTRIBUTE]: roomSlugOf(room) } }),
       getContents: () => [],
+      getEnding: () => ending,
     };
     const game: Record<string, unknown> = {
       executeCommand: async (command: string) => {
@@ -106,11 +118,20 @@ function stubHarness(options: StubOptions = {}) {
           options.throwOn?.[command] ??
           (bootNumber > 1 ? options.throwOnReplay?.[command] : undefined);
         if (thrown !== undefined) throw new Error(thrown);
+        // A stopped engine (the story ended on an earlier command) refuses
+        // everything but the meta commands — bootstrap catches the throw and
+        // records it on `lastError`, exactly as the real seam does.
+        if (ending !== undefined) {
+          game.lastError = "the engine is in the 'stopped' phase";
+          return 'Error: stopped';
+        }
         // Bootstrap's shape: the refusal is recorded on the game and the call
         // returns, cleared per command so it never pins a previous failure.
         const refused = bootNumber > 1 ? options.refuseOnReplay?.[command] : undefined;
         game.lastError = refused;
         if (refused !== undefined) return `Error: ${refused}`;
+        const ends = options.endsOn?.[command];
+        if (ends !== undefined) ending = ends;
         const moved = options.movesTo?.[command];
         if (moved !== undefined) room = moved;
         return `did ${command}`;
@@ -488,8 +509,201 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
       defects: [{ path: 'cards[1]', message: 'x' }],
       executedCommands: 0,
       authoredCommands: 0,
+      roomsEntered: [],
+      endingsReached: [],
     });
     expect(rows[0]).toContain('malformed');
     expect(rows[1]).toContain('cards[1]');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// END STATE cards (ADR-356 D4)
+// ---------------------------------------------------------------------------
+
+describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', () => {
+  const endsOn = { 'open the box': { kind: 'victory' as const, messageId: 'box-opened' } };
+
+  it('AC-6 — the END STATE card passes when the replay reaches its ending', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('north'), okTurn('open the box', { ending: 'box-opened' })]),
+      harness.load,
+    );
+    expect(run.defects).toEqual([]);
+    expect(run.lines.map((l) => l.status)).toEqual(['passed']);
+    const last = run.lines[0].result!.commands.at(-1)!;
+    expect(last.ending).toBeUndefined(); // the stub emits no game.ended event; the claim reads the world
+    expect(last.assertionResults.map((a) => [a.assertion.type, a.passed])).toEqual([
+      ['ending-assert', true],
+      ['ok-contains', true],
+    ]);
+  });
+
+  it('AC-6 — a declared ending the replay does not reach fails by name', async () => {
+    const harness = stubHarness({ endsOn });
+    // The winning command is gone from the line; the declaration stays.
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('north', { ending: 'box-opened' })]),
+      harness.load,
+    );
+    expect(run.lines[0].status).toBe('failed');
+    expect(run.lines[0].result!.commands.at(-1)!.failure).toBe(
+      'Ending "box-opened" not reached: the story did not end',
+    );
+    expect(formatTreeDocumentRun(run)[0]).toBe(
+      '✗ opening-iron-gates — north: Ending "box-opened" not reached: the story did not end',
+    );
+  });
+
+  it('a card that declares one ending while the story reached another fails naming both', async () => {
+    const harness = stubHarness({ endsOn: { dig: { kind: 'defeat', cause: 'cave-in' } } });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('dig', { ending: 'box-opened' })]),
+      harness.load,
+    );
+    expect(run.lines[0].status).toBe('failed');
+    expect(run.lines[0].result!.commands.at(-1)!.failure).toBe(
+      'Ending "box-opened" not reached: the story ended with defeat (cave-in)',
+    );
+  });
+
+  it('a kill ending is declared by its cause and passes', async () => {
+    const harness = stubHarness({ endsOn: { dig: { kind: 'defeat', cause: 'cave-in' } } });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('dig', { ending: 'cave-in' })]),
+      harness.load,
+    );
+    expect(run.lines[0].status).toBe('passed');
+  });
+
+  it('skip does not suppress the ending claim — an END STATE card always asserts its ending', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), turn('open the box', { skip: true, ending: 'box-opened' })]),
+      harness.load,
+    );
+    expect(run.lines[0].status).toBe('passed');
+    const last = run.lines[0].result!.commands.at(-1)!;
+    expect(last.skipped).toBe(false);
+    expect(last.assertionResults.map((a) => a.assertion.type)).toEqual(['ending-assert']);
+  });
+
+  it('AC-6 — a card after an END STATE card is MALFORMED: reported, and nothing runs', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look')]),
+      harness.load,
+    );
+    expect(run.defects).toEqual([
+      {
+        path: 'cards[3]',
+        message:
+          "a card after an END STATE card (cards[2] declares ending 'box-opened') — a line ends where the story ends",
+      },
+    ]);
+    expect(run.lines).toEqual([]);
+    expect(harness.counters.boots).toBe(0);
+    expect(formatTreeDocumentRun(run)[0]).toBe('Tree document is malformed — 1 defect(s); nothing ran.');
+  });
+
+  it('a branch from an END STATE card is MALFORMED too — fork from an earlier card', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([
+        opening(),
+        okBoot(),
+        okTurn('open the box', {
+          ending: 'box-opened',
+          branches: [{ branch: 1, cards: [okTurn('look')] }],
+        }),
+      ]),
+      harness.load,
+    );
+    expect(run.defects).toEqual([
+      {
+        path: 'cards[2].branches',
+        message: "a branch from an END STATE card (ending 'box-opened') — fork from an earlier card instead",
+      },
+    ]);
+    expect(harness.counters.boots).toBe(0);
+  });
+
+  it('a fork from an EARLIER card of a line that ends stays legitimate and runs on a live engine', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([
+        opening(),
+        okBoot(),
+        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east'), okTurn('wait')] }] }),
+        okTurn('open the box', { ending: 'box-opened' }),
+      ]),
+      harness.load,
+    );
+    expect(run.defects).toEqual([]);
+    expect(run.lines.map((l) => [l.id, l.status])).toEqual([
+      ['main', 'passed'],
+      ['main/b1', 'passed'],
+    ]);
+    // The branch replayed only through its fork card — never the ending.
+    expect(harness.executed.filter((e) => e.boot === 2).map((e) => e.command)).toEqual([
+      'look',
+      'north',
+      'east',
+      'wait',
+    ]);
+  });
+
+  it('an ending no card declares is not revived: the cards after it meet a stopped engine and error', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('open the box'), okTurn('look'), okTurn('wait')]),
+      harness.load,
+    );
+    const rows = run.lines[0].result!.commands;
+    expect(rows.map((r) => [r.command.input, r.passed, r.error !== undefined])).toEqual([
+      ['look', true, false],
+      ['open the box', true, false],
+      ['look', false, true],
+      ['wait', false, true],
+    ]);
+    expect(run.lines[0].status).not.toBe('passed');
+  });
+});
+
+describe('rooms entered and endings reached (ADR-356 D5) — what the tree run contributes', () => {
+  it('records the boot room, every room a replay or a card walked through, each once, and the endings proved', async () => {
+    const harness = stubHarness({
+      movesTo: { north: 'Gravel Drive', east: 'Boiler Shed', south: 'Iron Gates' },
+      endsOn: { 'open the box': { kind: 'victory', messageId: 'box-opened' } },
+    });
+    const run = await runTreeDocument(
+      doc([
+        opening(),
+        okBoot(),
+        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('south'),
+        okTurn('open the box', { ending: 'box-opened' }),
+      ]),
+      harness.load,
+    );
+    expect(run.roomsEntered).toEqual(['iron-gates', 'gravel-drive', 'boiler-shed']);
+    expect(run.endingsReached).toEqual(['box-opened']);
+  });
+
+  it('an END STATE card that fails its claim proves nothing', async () => {
+    const harness = stubHarness({ endsOn: { dig: { kind: 'defeat', cause: 'cave-in' } } });
+    const run = await runTreeDocument(doc([opening(), okBoot(), okTurn('dig', { ending: 'box-opened' })]), harness.load);
+    expect(run.endingsReached).toEqual([]);
+  });
+
+  it('a defective document contributes nothing', async () => {
+    const harness = stubHarness({ endsOn: { 'open the box': { kind: 'victory', messageId: 'box-opened' } } });
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look')]),
+      harness.load,
+    );
+    expect(run.roomsEntered).toEqual([]);
+    expect(run.endingsReached).toEqual([]);
   });
 });

@@ -15,6 +15,16 @@
  * its fork card — then runs its own cards live (D5: fresh boot +
  * deterministic replay at the pinned seed).
  *
+ * **A line ends where the story ends** (ADR-356 D4). A card that declares an
+ * `ending` is an END STATE card: the walker runs it, asserts through the
+ * assertion core that the world's Ending carries the declared id, and runs
+ * nothing after it — a card recorded after an END STATE card, or a branch
+ * forking from one, is a card-position defect and nothing runs. A fork from
+ * an EARLIER card is the ordinary shape and unchanged. The engine is never
+ * revived: a line that reaches an ending its cards do not declare keeps
+ * running into a stopped engine, and every refusal after it is that line's
+ * own finding (the story ended where the tree says it did not).
+ *
  * **A seam is a failed claim, not corruption** (D4). A failed assertion never
  * blocks descendant lines — the tree is a script, and a content edit shows as
  * that turn's failed claim while everything else keeps running. Only an
@@ -53,6 +63,7 @@ import {
   RunnerOptions,
 } from './types.js';
 import { captureWorldSnapshot } from '@sharpee/transcript-tester';
+import { CHORD_IR_ID_ATTRIBUTE } from '@sharpee/story-loader';
 import { runTranscript } from './runner.js';
 import {
   TreeCard,
@@ -78,12 +89,6 @@ export interface TreeWalkerGame {
    * here before (#425).
    */
   lastError?: string;
-  /**
-   * Resume the engine after a game-over stopped it. A line may legitimately
-   * fork on the card that ended the game — its replay lands on a stopped
-   * engine, and the branch's own cards still have to run.
-   */
-  reviveEngine?(): void;
   /**
    * The story's declared `auto-assertion:` policy, set by bootstrap. The
    * walker CLEARS it before running a line (David 2026-08-10: the JSON is
@@ -126,7 +131,11 @@ export interface TreeLine {
   readonly firstCommand?: string;
 }
 
-/** A structural problem the wire validator cannot see (card position). */
+/**
+ * A structural problem the wire validator cannot see (card position): an
+ * opening or boot card away from the main line's head, or a card recorded
+ * after — or forking from — an END STATE card (ADR-356 D4).
+ */
 export interface TreeLineDefect {
   /** JSON-path-ish location of the offending card. */
   readonly path: string;
@@ -177,6 +186,17 @@ export interface TreeDocumentRunResult {
   readonly executedCommands: number;
   /** Typed turn cards across all lines — what the author actually played. */
   readonly authoredCommands: number;
+  /**
+   * Every room the player stood in during the run — at boot, after each
+   * replayed command, after each card — as IR ids, each once, in first-visit
+   * order (ADR-356 D5's rooms ratio, the replayed half).
+   */
+  readonly roomsEntered: string[];
+  /**
+   * The ending ids whose END STATE card passed its claim (ADR-356 D4/D5):
+   * the "reached" side of the endings ratio, each once.
+   */
+  readonly endingsReached: string[];
 }
 
 /**
@@ -186,7 +206,9 @@ export interface TreeDocumentRunResult {
  * Also validates what the wire validator cannot: `opening`/`boot` cards are
  * the main line's head (opening first, boot at most once, directly after),
  * and appear nowhere else — a branch continues a game that has already
- * opened. A defective document produces its defects and no runnable lines.
+ * opened; and an END STATE card is the last card of its line, with no card
+ * after it and no branch from it (ADR-356 D4 — a line ends where the story
+ * ends). A defective document produces its defects and no runnable lines.
  *
  * @param document a valid (post-deserialize) tree document.
  * @returns the lines in run order, and any card-position defects.
@@ -233,6 +255,27 @@ export function flattenTreeLines(document: TreeDocument): {
           path: cardPath,
           message: `a 'boot' card is only valid at the main line's head, directly after the opening`,
         });
+      }
+      // An END STATE card ends its line (ADR-356 D4): the story stopped on
+      // this turn, so a card after it would type into a stopped engine, and
+      // a branch from it would replay onto one.
+      if (card.ending !== undefined) {
+        if (index < cards.length - 1) {
+          defects.push({
+            path: `${path}[${index + 1}]`,
+            message:
+              `a card after an END STATE card (${cardPath} declares ending ` +
+              `'${card.ending}') — a line ends where the story ends`,
+          });
+        }
+        if ((card.branches ?? []).length > 0) {
+          defects.push({
+            path: `${cardPath}.branches`,
+            message:
+              `a branch from an END STATE card (ending '${card.ending}') — ` +
+              `fork from an earlier card instead`,
+          });
+        }
       }
       // The command stream the card contributes: a typed turn its command,
       // the boot look its `look` (part of what the main line really
@@ -281,10 +324,12 @@ export async function runTreeDocument(
 ): Promise<TreeDocumentRunResult> {
   const { lines, defects } = flattenTreeLines(document);
   if (defects.length > 0) {
-    return { lines: [], defects, executedCommands: 0, authoredCommands: 0 };
+    return { lines: [], defects, executedCommands: 0, authoredCommands: 0, roomsEntered: [], endingsReached: [] };
   }
 
   const outcomes: TreeLineOutcome[] = [];
+  const roomsEntered: string[] = [];
+  const endingsReached: string[] = [];
   /** Per finished line: its outcome plus where (if anywhere) execution broke. */
   const tracked = new Map<string, { outcome: TreeLineOutcome; execErrorIndex?: number }>();
   let executedCommands = 0;
@@ -327,6 +372,11 @@ export async function runTreeDocument(
     // truth) — the policy governs what RECORDING persists, never what a run
     // invents. Cleared even when declared, through the one code path (D6).
     game.autoAssertionPolicy = undefined;
+    const noteRoom = (): void => {
+      const room = playerRoomIrIdOf(game);
+      if (room !== undefined && !roomsEntered.includes(room)) roomsEntered.push(room);
+    };
+    noteRoom();
 
     // ── Replay the prefix, verbatim, claims not re-evaluated ─────────────
     // Only what the runner itself treats as an execution error counts as
@@ -345,6 +395,7 @@ export async function runTreeDocument(
         failure = error instanceof Error ? error.message : String(error);
       }
       executedCommands += 1;
+      noteRoom();
       if (failure !== undefined) {
         // The owning line executed this same command cleanly (an execution
         // error there would have blocked this line), so failing here means
@@ -365,10 +416,10 @@ export async function runTreeDocument(
       });
       continue;
     }
-    // A prefix ending on the card that ended the game leaves the engine
-    // stopped; the line's own cards still run (fork-on-the-death-card is a
-    // legitimate shape). Harmless when the engine is running.
-    game.reviveEngine?.();
+    // No revive (ADR-356 D4): a fork from an END STATE card is a defect
+    // above, so a prefix only ever leaves the engine stopped when the story
+    // ended on a card that does not declare it — and then the refusals the
+    // line's own cards meet are its finding, not something to paper over.
 
     // ── Label, then run the line's own cards ─────────────────────────────
     const label = labelOf(line, game);
@@ -377,7 +428,24 @@ export async function runTreeDocument(
     const { transcript, cardIndexOfCommand } = transcriptOfLine(line);
     const result = await runTranscript(transcript, game as never, {
       ...options,
+      observer: {
+        ...options.observer,
+        // The room after each card, read while the game is in hand — the
+        // runner's own snapshot names rooms, not IR ids.
+        onCommandResult: (commandResult) => {
+          noteRoom();
+          options.observer?.onCommandResult?.(commandResult);
+        },
+      },
     });
+    for (const row of result.commands) {
+      for (const entry of row.assertionResults) {
+        const id = entry.assertion.endingId;
+        if (entry.assertion.type === 'ending-assert' && entry.passed && id !== undefined && !endingsReached.includes(id)) {
+          endingsReached.push(id);
+        }
+      }
+    }
 
     const executedRows = result.commands.filter((row) => row.command.input !== '(opening)');
     executedCommands += executedRows.length;
@@ -406,7 +474,7 @@ export async function runTreeDocument(
     );
   }
 
-  return { lines: outcomes, defects: [], executedCommands, authoredCommands };
+  return { lines: outcomes, defects: [], executedCommands, authoredCommands, roomsEntered, endingsReached };
 }
 
 /**
@@ -519,13 +587,20 @@ function countTurns(cards: TreeCard[]): number {
  * all) fails the assertion boundary by name — the JSON is the source of
  * truth (David 2026-08-10): recording persists assertions, running invents
  * none, and a bare card only exists in a hand-edited document.
+ *
+ * An END STATE card's `ending` is its own claim (ADR-356 D4), evaluated by
+ * the assertion core against the world's Ending after the command ran. It
+ * is neither a policy default nor a prose claim, so `skip` does not suppress
+ * it and a bare END STATE card is not bare: the ending is what it asserts.
  */
 function assertionsOfCard(card: TreeCard): Assertion[] {
-  if (card.skip === true) return [{ type: 'skip' }];
+  const ending: Assertion[] =
+    card.ending !== undefined ? [{ type: 'ending-assert', endingId: card.ending }] : [];
+  if (card.skip === true) return ending.length > 0 ? ending : [{ type: 'skip' }];
   const authored = card.assertions;
-  if (authored === undefined) return [];
+  if (authored === undefined) return ending;
 
-  const assertions: Assertion[] = [];
+  const assertions: Assertion[] = [...ending];
   if (authored.exact !== undefined) {
     assertions.push({ type: 'ok', block: [...authored.exact] });
   } else {
@@ -665,6 +740,28 @@ function labelOf(line: TreeLine, game: TreeWalkerGame): string {
   const room = roomSlugOf(captureWorldSnapshot(game as never)?.location?.name);
   if (line.parentId === undefined) return mainLineLabelOf(room);
   return branchLineLabelOf(room, line.branchId!, line.firstCommand);
+}
+
+/**
+ * The IR id of the room the player stands in, read off the live world's
+ * entity attributes (the loader stamps every Chord entity with its IR id),
+ * or undefined when the game exposes no world, the player is offstage, or
+ * the room is not a Chord entity.
+ */
+function playerRoomIrIdOf(game: TreeWalkerGame): string | undefined {
+  const world = game.world as
+    | {
+        getPlayer?(): { id: string } | undefined;
+        getContainingRoom?(entityId: string): { id: string } | undefined;
+        getLocation?(entityId: string): string | undefined;
+        getEntity?(id: string): { attributes?: Record<string, unknown> } | undefined;
+      }
+    | undefined;
+  const player = world?.getPlayer?.();
+  if (!player) return undefined;
+  const roomId = world?.getContainingRoom?.(player.id)?.id ?? world?.getLocation?.(player.id);
+  const irId = roomId ? world?.getEntity?.(roomId)?.attributes?.[CHORD_IR_ID_ATTRIBUTE] : undefined;
+  return typeof irId === 'string' ? irId : undefined;
 }
 
 /** The label of a line that never ran — no world to read a room from. */
