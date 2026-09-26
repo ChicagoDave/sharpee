@@ -1,0 +1,19 @@
+{
+ "story": "derived-no-vocabulary",
+ "seed": 7,
+ "version": 1,
+ "cards": [
+  {
+   "type": "opening",
+   "assertions": {}
+  },
+  {
+   "type": "boot",
+   "assertions": {
+    "states": [
+     "mat.location = hall"
+    ]
+   }
+  }
+ ]
+}

@@ -7,7 +7,10 @@
  * and seeded RNG.
  *
  * Public interface: createStory(), ChordStory, StoryLoaderOptions, LoadError,
- * CHORD_STATE_PREFIX.
+ * CHORD_STATE_PREFIX; arrange() and parsePin() (ADR-356 D2 — the pin
+ * grammar's one parser and the arrange primitive that performs it; the
+ * parser is also published on its own subpath, `./pin-grammar`, for the
+ * browser-bundled assertion core).
  *
  * Owner context: Chord runtime consumer. Language-neutral by design — it
  * consumes IR and never sees Chord syntax. Depends on the platform
@@ -16,6 +19,10 @@
  */
 
 export { LoadError } from './errors.js';
+export { arrange } from './arrange.js';
+export type { ArrangeResult, ArrangeShape } from './arrange.js';
+export { parsePin } from './pin-grammar.js';
+export type { ParsedPin, PinOperator, PinShape } from './pin-grammar.js';
 export { HIDING_POSITIONS, SETTING_SCHEMA } from './setting-schema.js';
 export type { SettingSpec, SettingValueType } from './setting-schema.js';
 export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS, REGION_EVENT_TRIGGERS } from './event-contract.js';
@@ -26,6 +33,7 @@ export { ChordRuntime, ChordBehaviorTrait } from './runtime.js';
 export { PHRASEBOOK_DATA } from './phrasebook-data.js';
 export type { PhrasebookData } from './phrasebook-data.js';
 export {
+  CHORD_GONE_PREFIX,
   CHORD_OCCURRENCE_PREFIX,
   CHORD_RNG_KEY,
   CHORD_SELECT_PREFIX,
@@ -34,6 +42,7 @@ export {
   CHORD_STORY_STATE_KEY,
   CHORD_TRAIT_PREFIX,
   RETIRED_SELECT_KEY,
+  counterKey,
   selectOccurrenceKey,
 } from './state-keys.js';
 /**

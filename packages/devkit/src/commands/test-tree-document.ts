@@ -14,12 +14,17 @@
  * authoring surface starts over); a test runner silently passing zero tests
  * over a corrupted document would be the silent pass the plan forbids.
  *
+ * The derived rule-test tier (ADR-356 D5a) runs after the tree, at the
+ * document's seed, through `test-derived.ts`: a derived failure exits 1 like
+ * a failed line, a SKIPPED branch never changes the code.
+ *
  * Public interface: findTreeDocument(projectDir), runTreeDocumentCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import * as path from 'node:path';
 import { loadAuthorGame } from '../standalone/author-game.js';
+import { runDerivedTests } from './test-derived.js';
 
 /**
  * Find a project's ADR-307 tree document: `<story-id>.tests.json` beside the
@@ -75,9 +80,10 @@ export interface TreeDocumentTestOptions {
  * Run `sharpee test --tree` over a tree document.
  *
  * @param options resolved project directory, the document path, and run flags.
- * @returns process exit code — 0 all lines passed, 1 failures or errored
- *   lines, 2 the document was refused/malformed or has card-position defects
- *   (nothing ran), 3 the story failed to load. Never calls `process.exit()`;
+ * @returns process exit code — 0 all lines and every derived branch passed,
+ *   1 failures or errored lines or a failed derived branch, 2 the document
+ *   was refused/malformed or has card-position defects (nothing ran), 3 the
+ *   story failed to load. Never calls `process.exit()`;
  *   the caller owns the process.
  */
 export async function runTreeDocumentCommand(
@@ -220,7 +226,13 @@ export async function runTreeDocumentCommand(
   }
 
   const failed = run.lines.filter((l) => l.status === 'failed' || l.status === 'error').length;
-  const code = failed > 0 ? 1 : 0;
+  const treeCode = failed > 0 ? 1 : 0;
+
+  // ADR-356 D5a: the derived rule-test tier, by default, at the same seed.
+  // Its failure is a failure of the build; its SKIPPED branches are not.
+  const derivedCode = await runDerivedTests({ dir, seed: document.seed, json, verbose });
+  const code = Math.max(treeCode, derivedCode);
+
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);
   stream?.runEnd(aggregateTestRun(results), code, blockedCount);
   return code;

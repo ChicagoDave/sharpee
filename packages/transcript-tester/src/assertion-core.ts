@@ -9,12 +9,15 @@
  * other half of "what a claim means".
  *
  * Browser-safe by construction: no Node import, no package barrel — the
- * IDE's testing surface bundles this file from source. Per-command execution,
+ * IDE's testing surface bundles this file from source. Its one cross-package
+ * import is `@sharpee/story-loader/pin-grammar`, a pure subpath the surface
+ * aliases to source beside this file. Per-command execution,
  * directives, and session instruments are Node-bound and live in
  * `command-core.ts`.
  *
  * Public interface: `checkAssertion`, `checkEventAssertion`,
- * `checkStateAssertion`, `evaluateStateExpression`, `findEntity`,
+ * `checkStateAssertion`, `checkEmittedAssertion`, `evaluateStateExpression`,
+ * `evaluateEmittedClaim`, `findEntity`,
  * `getEntityProperty`, `resolveValue`, `collectStrings`,
  * `captureEntityTraits`, `normalizeOutput`, `synthesizePolicyAssertions`,
  * `proseTextLinesOf`; the `WorldModel` seam; every shared type, re-exported.
@@ -23,7 +26,8 @@
  *
  * References: ADR-340 D1/D3 (one owner, drift is a test), ADR-300 D13
  * (channel claims), ADR-294 D2 (the auto-assertion boundary), GH #355 (the
- * Chord-spelled state claim).
+ * Chord-spelled state claim), ADR-356 D2 (the pin grammar is parsed once,
+ * in the loader, for the read and the write direction alike).
  */
 
 import type {
@@ -35,6 +39,11 @@ import type {
   TestEventInfo,
 } from './types.js';
 import { checkChannelAssertion } from './channel-assert.js';
+// The pin grammar's one parser (ADR-356 D2): this module reads a pin, the
+// loader's `arrange()` writes one, and neither carries a regex of its own.
+// The subpath is pure and dependency-free, so the browser bundle stays
+// runtime-free (the barrel would drag the whole loader in).
+import { parsePin } from '@sharpee/story-loader/pin-grammar';
 
 export type * from './types.js';
 
@@ -157,6 +166,13 @@ export function checkAssertion(
     }
 
     case 'state-assert': {
+      // `emitted <message-id>` (ADR-356 D3) is written where state pins are
+      // written — a tree card's `states:`, a derived test's claims — but it
+      // is a claim about the turn's events, not the world, so it is read
+      // here where the events are in hand.
+      if (assertion.stateExpression && parsePin(assertion.stateExpression).kind === 'emitted') {
+        return checkEmittedAssertion(assertion, events);
+      }
       return checkStateAssertion(assertion, world, storyStateKeys);
     }
 
@@ -236,6 +252,57 @@ export function checkEventAssertion(assertion: Assertion, events: TestEventInfo[
 }
 
 /**
+ * Check an `emitted <message-id>` claim (ADR-356 D3) against the turn's
+ * captured events.
+ *
+ * @param assertion the `state-assert` claim whose expression is the emitted form
+ * @param events the turn's captured events
+ * @returns the verdict, naming what was emitted instead on a miss
+ */
+export function checkEmittedAssertion(assertion: Assertion, events: TestEventInfo[]): AssertionResult {
+  const pin = parsePin(assertion.stateExpression ?? '');
+  if (pin.kind !== 'emitted') {
+    return { assertion, passed: false, message: `Not an emitted claim: ${assertion.stateExpression}` };
+  }
+  const result = evaluateEmittedClaim(pin.messageId, events);
+  const assertTrue = assertion.assertTrue !== false;
+  const passed = assertTrue ? result.matches : !result.matches;
+  let message: string | undefined;
+  if (!passed) {
+    message = assertTrue
+      ? `Emitted assertion failed: ${assertion.stateExpression}. ${result.details ?? ''}`
+      : `"${pin.messageId}" should not have been emitted but was`;
+  }
+  return { assertion, passed, message };
+}
+
+/**
+ * Whether the turn emitted a message id: a phrase or refusal rides an event
+ * whose data carries `messageId` (a story action's `chord.phrase`, a standard
+ * action's own event), and an author `emit` is an event of that type. A
+ * phrase an entity defines for itself is emitted owner-qualified
+ * (`solicitor's-letter.summons-text`) while the story names it bare
+ * (`summons-text`), so a bare id matches the last segment of a qualified one.
+ *
+ * @param messageId the phrase key or event id a claim wrote
+ * @param events the turn's captured events
+ * @returns whether it was emitted, with what was emitted instead on a miss
+ */
+export function evaluateEmittedClaim(
+  messageId: string,
+  events: TestEventInfo[]
+): { matches: boolean; details?: string } {
+  const named = (candidate: unknown): boolean =>
+    typeof candidate === 'string' && (candidate === messageId || candidate.endsWith(`.${messageId}`));
+  const matches = events.some((event) => named(event.type) || named(event.data?.messageId));
+  if (matches) return { matches: true };
+  const emitted = events
+    .map((event) => (typeof event.data?.messageId === 'string' ? `${event.type} (${event.data.messageId})` : event.type))
+    .join(', ');
+  return { matches: false, details: `"${messageId}" was not emitted. Emitted: ${emitted || '(nothing)'}` };
+}
+
+/**
  * Check a state assertion against the world model.
  *
  * @param assertion the `state-assert` claim
@@ -296,18 +363,31 @@ export function checkStateAssertion(
 /**
  * Evaluate a state expression against the world model.
  *
- * Supports, tried in this order:
+ * Recognition is the loader's `parsePin` (ADR-356 D2 — one grammar, one
+ * parser, read here and written by `arrange()`); this function owns only
+ * what each recognized form MEANS as a claim. The forms:
  *   story.state = value / story.state != value        (the story's phase)
- *   entity.property = value / entity.property != value
+ *   entity.location = value, entity.property = value (and != for both)
  *   entity.collection contains item / not-contains item
  *   [the] name is state / [the] name is not state     (a Chord entity's own
  *     `states:`, spelled the way Chord spells the condition — GH #355;
  *     `the story is state` reads the story's phase the same way)
+ *   [the] name is gone / is not gone                   (a Chord `remove` took
+ *     the entity out of play — ADR-356 D3; needs `entityGonePrefix`)
+ *
+ * With keys, an entity name in any form may also be the runtime id the
+ * loader stamps (`silver-locket`), so a claim derived from the story's own
+ * IR resolves without a display-name round trip.
  *
  * The `story.state` and `[the] name is state` forms read the story runtime's
  * declared states, keyed as `storyStateKeys` says; with no keys supplied
  * (a session without a story runtime that declares states) neither form is
- * recognized and the expression falls through to the entity forms.
+ * recognized: `story.state` is then read as the entity form (an entity
+ * named `story`, its `state` property) and the Chord-spelled form is not a
+ * claim at all. The four shapes the grammar names but the floor does not
+ * write (occurrence, topic history, timer phase, timer position) are not
+ * claims either: no read of them is defined here. `emitted` is read by
+ * `checkEmittedAssertion`, which has the events this function does not.
  *
  * @param expression - The pin text from a tree-document card or a `[STATE:]` line
  * @param world - The live world after the command ran
@@ -319,42 +399,45 @@ export function evaluateStateExpression(
   world: WorldModel,
   storyStateKeys?: StoryStateKeys
 ): { matches: boolean; details?: string } {
-  // Reserved head: "story.state = <state>" / "story.state != <state>" — the
-  // Chord story object's phase (`states:` in the header, moved by `change the
-  // story to`). It is a world-state value, not an entity property, so it
-  // cannot ride the entity form below.
-  const storyStateMatch = expression.match(/^story\.state\s*(=|!=)\s*(\S+)$/);
-  if (storyStateKeys && storyStateMatch) {
-    const [, operator, expected] = storyStateMatch;
+  const pin = parsePin(expression);
+  const idAttribute = storyStateKeys?.entityIdAttribute;
+
+  // Reserved head: the Chord story object's phase (`states:` in the header,
+  // moved by `change the story to`). It is a world-state value, not an
+  // entity property, so it cannot ride the entity form below.
+  if (pin.kind === 'story-state' && storyStateKeys) {
     const actual = world.getStateValue?.(storyStateKeys.storyState);
     if (actual === undefined) {
       return { matches: false, details: 'story.state: this story declares no states' };
     }
-    const isEqual = actual === expected;
-    if (operator === '=') {
-      return { matches: isEqual, details: isEqual ? undefined : `story.state is "${actual}", expected "${expected}"` };
+    const isEqual = actual === pin.state;
+    if (pin.operator === '=') {
+      return { matches: isEqual, details: isEqual ? undefined : `story.state is "${actual}", expected "${pin.state}"` };
     }
-    return { matches: !isEqual, details: !isEqual ? undefined : `story.state should not be "${expected}"` };
+    return { matches: !isEqual, details: !isEqual ? undefined : `story.state should not be "${pin.state}"` };
   }
 
-  // Parse "entity.property = value" or "entity.property != value"
-  const equalityMatch = expression.match(/^(\w+)\.(\w+)\s*(=|!=)\s*(.+)$/);
-  if (equalityMatch) {
-    const [, entityName, property, operator, expectedValue] = equalityMatch;
+  // "entity.property = value" / "entity.property != value" — `location`
+  // is the same claim over the spatial property; without story keys the
+  // `story.state` head is read here too, as an entity named `story`.
+  if (pin.kind === 'property' || pin.kind === 'location' || pin.kind === 'story-state') {
+    const entityName = pin.kind === 'story-state' ? 'story' : pin.entity;
+    const property = pin.kind === 'story-state' ? 'state' : pin.kind === 'location' ? 'location' : pin.property;
+    const expectedValue = pin.kind === 'story-state' ? pin.state : pin.kind === 'location' ? pin.place : pin.value;
 
-    const entity = findEntity(entityName, world);
+    const entity = findEntity(entityName, world, idAttribute);
     if (!entity) {
       return { matches: false, details: `Entity "${entityName}" not found` };
     }
 
     const actualValue = getEntityProperty(entity, property, world);
-    const expectedResolved = resolveValue(expectedValue.trim(), world);
+    const expectedResolved = resolveValue(expectedValue, world, idAttribute);
 
     const isEqual = actualValue === expectedResolved ||
                     (actualValue?.id && actualValue.id === expectedResolved) ||
                     (typeof expectedResolved === 'string' && actualValue?.id === expectedResolved);
 
-    if (operator === '=') {
+    if (pin.operator === '=') {
       return {
         matches: isEqual,
         details: isEqual ? undefined : `${entityName}.${property} is "${actualValue?.id || actualValue}", expected "${expectedResolved}"`
@@ -367,12 +450,11 @@ export function evaluateStateExpression(
     }
   }
 
-  // Parse "collection contains item" or "collection not-contains item"
-  const containsMatch = expression.match(/^(\w+)\.(\w+)\s+(contains|not-contains)\s+(.+)$/);
-  if (containsMatch) {
-    const [, entityName, property, operator, itemName] = containsMatch;
+  // "collection contains item" / "collection not-contains item"
+  if (pin.kind === 'contains') {
+    const { entity: entityName, collection: property, item: itemName } = pin;
 
-    const entity = findEntity(entityName, world);
+    const entity = findEntity(entityName, world, idAttribute);
     if (!entity) {
       return { matches: false, details: `Entity "${entityName}" not found` };
     }
@@ -382,26 +464,42 @@ export function evaluateStateExpression(
       return { matches: false, details: `${entityName}.${property} is not a collection` };
     }
 
-    const item = findEntity(itemName.trim(), world);
-    const itemId = item?.id || itemName.trim();
+    const item = findEntity(itemName, world, idAttribute);
+    const itemId = item?.id || itemName;
     const hasItem = collection.some((c: any) => c === itemId || c?.id === itemId);
 
-    if (operator === 'contains') {
+    if (pin.operator === 'contains') {
       return { matches: hasItem, details: hasItem ? undefined : `${entityName}.${property} does not contain "${itemName}"` };
     } else {
       return { matches: !hasItem, details: !hasItem ? undefined : `${entityName}.${property} should not contain "${itemName}"` };
     }
   }
 
-  // Reserved form spelled the way Chord spells the condition (GH #355,
-  // ruled 2026-09-03): "[the] <name> is <state>" / "[the] <name> is not
-  // <state>". Tried last so the dotted forms keep their exact behaviour.
-  // The name may carry spaces (`first partner`) and resolves through the
-  // same lookup as the dotted head: name, id, IdentityTrait name, alias.
-  const chordStateMatch = expression.match(/^(?:the\s+)?(.+?)\s+is\s+(not\s+)?(\S+)$/);
-  if (storyStateKeys && chordStateMatch) {
-    const [, name, negation, expected] = chordStateMatch;
-    return evaluateChordStateClaim(name.trim(), negation !== undefined, expected, world, storyStateKeys);
+  // Spelled the way Chord spells the condition (GH #355, ruled 2026-09-03):
+  // "[the] <name> is <state>" / "[the] <name> is not <state>". The name may
+  // carry spaces (`first partner`) and resolves through the same lookup as
+  // the dotted head: name, id, IdentityTrait name, alias.
+  if (pin.kind === 'declared-state' && storyStateKeys) {
+    return evaluateChordStateClaim(pin.name, pin.negated, pin.state, world, storyStateKeys);
+  }
+
+  // "[the] <name> is gone" (ADR-356 D3): the loader's gone flag under the
+  // entity's runtime id — an entity a Chord `remove` took out of play stays
+  // in the world, so its location alone cannot answer this.
+  if (pin.kind === 'gone' && storyStateKeys?.entityGonePrefix) {
+    const entity = findEntity(pin.name, world, idAttribute);
+    if (!entity) {
+      return { matches: false, details: `Entity "${pin.name}" not found` };
+    }
+    const irId = entity.attributes?.[storyStateKeys.entityIdAttribute];
+    if (typeof irId !== 'string') {
+      return { matches: false, details: `the ${pin.name}: not a Chord entity (no IR id), so it cannot be gone` };
+    }
+    const gone = world.getStateValue?.(storyStateKeys.entityGonePrefix + irId) === true;
+    if (!pin.negated) {
+      return { matches: gone, details: gone ? undefined : `the ${pin.name} is not gone` };
+    }
+    return { matches: !gone, details: !gone ? undefined : `the ${pin.name} should not be gone` };
   }
 
   return { matches: false, details: `Could not parse expression: ${expression}` };
@@ -428,7 +526,7 @@ function evaluateChordStateClaim(
       return { matches: false, details: `${label}: this story declares no states` };
     }
   } else {
-    const entity = findEntity(name, world);
+    const entity = findEntity(name, world, keys.entityIdAttribute);
     if (!entity) {
       return { matches: false, details: `Entity "${name}" not found` };
     }
@@ -452,19 +550,27 @@ function evaluateChordStateClaim(
  * Find an entity by name in the world model.
  *
  * `player` is a reserved word that always resolves to the player entity via
- * `world.getPlayer()`, regardless of what the story named it. Otherwise
- * entities match by name, by id, by their IdentityTrait name, or by any of
- * their IdentityTrait aliases.
+ * `world.getPlayer()`, regardless of what the story named it. With an
+ * `idAttribute`, the token is next tried as the story runtime's own id for
+ * an entity (the attribute the loader stamps). Otherwise entities match by
+ * name, by id, by their IdentityTrait name, or by any of their IdentityTrait
+ * aliases.
  *
  * @param name the token a claim wrote
  * @param world the live world
+ * @param idAttribute the entity attribute carrying the story runtime's id, when the session has one
  * @returns the entity, or null when nothing matches
  */
-export function findEntity(name: string, world: WorldModel): any {
+export function findEntity(name: string, world: WorldModel, idAttribute?: string): any {
   // Reserved word: the player, whatever the story named it.
   if (name === 'player' && world.getPlayer) {
     const player = world.getPlayer();
     if (player) return player;
+  }
+
+  if (idAttribute && world.getAllEntities) {
+    const stamped = world.getAllEntities().find((entity) => entity.attributes?.[idAttribute] === name);
+    if (stamped) return stamped;
   }
 
   if (world.findEntityByName) {
@@ -540,10 +646,11 @@ export function getEntityProperty(entity: any, property: string, world?: WorldMo
  *
  * @param value the text a claim wrote
  * @param world the live world, for entity names
+ * @param idAttribute the story runtime's id attribute, when the session has one
  * @returns the comparable value
  */
-export function resolveValue(value: string, world: WorldModel): any {
-  const entity = findEntity(value, world);
+export function resolveValue(value: string, world: WorldModel, idAttribute?: string): any {
+  const entity = findEntity(value, world, idAttribute);
   if (entity) {
     return entity.id;
   }

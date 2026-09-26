@@ -77,4 +77,28 @@ export {
 // Runner — the tree runner's loop the walker drives; the per-command core
 // and the run aggregation are the assertion core's (ADR-340 D1)
 export { runTranscript, CHORD_STORY_STATE_KEYS } from './runner.js';
+// The derived rule-test runner (ADR-356 D3): the story's own clause
+// branches, enumerated by world-index, arranged through the loader, run one
+// command each through the real engine, and asserted through the core.
+export { runDerivedSuite, runDerivedBranch, planBranch, derivedBranchLabel } from './derived-runner.js';
+export { branchCoverageOf, formatDerivedRun } from './coverage.js';
+export type { BranchCoverage, BranchGap } from './coverage.js';
+export type {
+  ActionPatterns,
+  ArrangeTerm,
+  ClaimPlan,
+  CommandPlan,
+  DerivedClaimResult,
+  DerivedEngine,
+  DerivedEntity,
+  DerivedGame,
+  DerivedGameLoader,
+  DerivedOutcome,
+  DerivedPlan,
+  DerivedRunOptions,
+  DerivedStatus,
+  DerivedSuiteResult,
+  DerivedWorld,
+  NegativeRead,
+} from './derived-runner.js';
 export { aggregateTestRun } from '@sharpee/transcript-tester';

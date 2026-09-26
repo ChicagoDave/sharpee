@@ -119,3 +119,33 @@ See Completed above — one grammar, one parser, both directions of use.
 ---
 
 **Progressive update**: Session completed 2026-09-26 00:15
+
+## Activity Log (auto-captured)
+```
+[21:46:13] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[21:46:36] EDIT: File changed via Bash — docs/context/session-20260925-2200-explorer-prototype.md
+[21:52:12] EDIT: File written — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[21:52:16] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[21:52:22] EDIT: File changed via Bash — docs/context/.current-plan
+[21:54:13] EDIT: File edited — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[21:54:28] EDIT: File edited — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[21:54:34] EDIT: File edited — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[21:55:16] EDIT: File edited — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[21:55:27] EDIT: File edited — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[22:06:22] EDIT: File written — packages/world-index/src/branches.ts
+[22:06:40] BUILD: Build passed — python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('packages/world-index/src/stat
+[22:06:40] EDIT: File changed via Bash — packages/world-index/src/branches.ts
+[22:06:40] EDIT: File changed via Bash — packages/world-index/src/statements.ts
+[00:07:45] EDIT: File changed via Bash — packages/world-index/src/index.ts
+[00:10:04] EDIT: File written — packages/world-index/tests/branches.test.ts
+[00:10:14] EDIT: File changed via Bash — packages/world-index/tests/branches.test.ts
+[00:10:15] BUILD: Build passed — cd /Users/david/repos/sharpee && npx tsc -p packages/world-index/tsconfig.json -
+[00:13:39] EDIT: File changed via Bash — docs/context/session-20260925-1544-explorer-prototype.md
+[00:16:19] EDIT: File written — docs/context/session-20260925-1544-explorer-prototype.md
+[00:18:55] TEST: Tests passed — 12 passed 121 passed
+[00:19:18] EDIT: File written — .commit-files
+[00:19:18] EDIT: File written — .commit-msg
+[00:19:23] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

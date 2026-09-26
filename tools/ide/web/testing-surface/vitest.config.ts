@@ -31,6 +31,10 @@ export default defineConfig({
         __dirname,
         '../../../../packages/transcript-tester/src/assertion-core.ts',
       ),
+      '@sharpee/story-loader/pin-grammar': resolve(
+        __dirname,
+        '../../../../packages/story-loader/src/pin-grammar.ts',
+      ),
       '@sharpee/ide-protocol/run-events': resolve(
         __dirname,
         '../../../../packages/ide-protocol/src/run-events.ts',

@@ -1,7 +1,7 @@
 {
   "name": "@sharpee/story-loader",
   "version": "5.4.1",
-  "description": "Story IR interpreter for Sharpee — a generic Story implementation constructed from Chord-compiled IR (ADR-210)",
+  "description": "Story IR interpreter for Sharpee \u2014 a generic Story implementation constructed from Chord-compiled IR (ADR-210)",
   "main": "./dist/index.js",
   "module": "./dist-esm/index.js",
   "types": "./dist/index.d.ts",
@@ -10,6 +10,11 @@
       "types": "./dist/index.d.ts",
       "import": "./dist-esm/index.js",
       "require": "./dist/index.js"
+    },
+    "./pin-grammar": {
+      "types": "./dist/pin-grammar.d.ts",
+      "import": "./dist-esm/pin-grammar.js",
+      "require": "./dist/pin-grammar.js"
     }
   },
   "scripts": {
@@ -75,5 +80,12 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "typesVersions": {
+    "*": {
+      "pin-grammar": [
+        "./dist/pin-grammar.d.ts"
+      ]
+    }
   }
 }

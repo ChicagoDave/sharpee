@@ -30,6 +30,8 @@ export { runTranscript, goldenPathFor, divergencePathFor } from './runner.js';
 // is also a package subpath, browser-safe, for the IDE's testing surface.
 export {
   checkAssertion,
+  checkEmittedAssertion,
+  evaluateEmittedClaim,
   checkEventAssertion,
   checkStateAssertion,
   evaluateStateExpression,

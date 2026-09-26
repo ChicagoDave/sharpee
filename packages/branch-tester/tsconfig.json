@@ -11,6 +11,7 @@
   "exclude": ["node_modules", "dist"],
   "references": [
     { "path": "../bootstrap" },
+    { "path": "../chord" },
     { "path": "../core" },
     { "path": "../engine" },
     { "path": "../lang-en-us" },
@@ -19,6 +20,7 @@
     { "path": "../story-loader" },
     { "path": "../text-blocks" },
     { "path": "../transcript-tester" },
+    { "path": "../world-index" },
     { "path": "../world-model" }
   ]
 }

@@ -72,18 +72,17 @@ export function findStoryFile(dir: string): string | null {
 }
 
 /**
- * Compile a Chord `.story` file and construct its story via
- * @sharpee/story-loader (hatches bound). Load-time-gate diagnostics abort
- * with `.story` line numbers (ADR-210 AC-3).
+ * Compile a Chord project's story file to its IR, imports resolved against
+ * the story's directory. The one compile path for an author project: the
+ * game boot (`loadChordStory`) and the derived rule-test suite (ADR-356)
+ * both read this, so the IR under test is always the IR that runs.
  *
  * @param storyFile absolute or cwd-relative path to the `.story` file
- * @param seed master seed for the chord evaluator's stream (ADR-293 D1);
- *   omitted, the stream is time-seeded (interactive play with no pin)
- * @returns the constructed story instance (not yet assembled into a game)
- * @throws on gate errors, with every diagnostic in the message
+ * @returns the compiled Story IR
+ * @throws when the load-time gates report any error, each named with its site
  */
-export function loadChordStory(storyFile: string, seed?: number): unknown {
-  // Lazy requires (compose.ts pattern): pull the compiler/loader only when needed.
+export function compileChordStory(storyFile: string): import('@sharpee/chord').StoryIR {
+  // Lazy require (compose.ts pattern): pull the compiler only when needed.
   const chord = require('@sharpee/chord') as typeof import('@sharpee/chord');
   const storyDir = path.dirname(path.resolve(storyFile));
   const result = chord.compile(readFileSync(storyFile, 'utf-8'), {
@@ -96,6 +95,23 @@ export function loadChordStory(storyFile: string, seed?: number): unknown {
     );
     throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
   }
+  return result.ir;
+}
+
+/**
+ * Compile a Chord `.story` file and construct its story via
+ * @sharpee/story-loader (hatches bound). Load-time-gate diagnostics abort
+ * with `.story` line numbers (ADR-210 AC-3).
+ *
+ * @param storyFile absolute or cwd-relative path to the `.story` file
+ * @param seed master seed for the chord evaluator's stream (ADR-293 D1);
+ *   omitted, the stream is time-seeded (interactive play with no pin)
+ * @returns the constructed story instance (not yet assembled into a game)
+ * @throws on gate errors, with every diagnostic in the message
+ */
+export function loadChordStory(storyFile: string, seed?: number): unknown {
+  const storyDir = path.dirname(path.resolve(storyFile));
+  const result = { ir: compileChordStory(storyFile) };
 
   const hatchModules: Record<string, Record<string, unknown>> = {};
   for (const hatch of result.ir.hatches) {

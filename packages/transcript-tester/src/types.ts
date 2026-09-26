@@ -526,6 +526,12 @@ export interface StoryStateKeys {
   entityStatePrefix: string;
   /** Entity attribute carrying the runtime id the prefix is joined with. */
   entityIdAttribute: string;
+  /**
+   * Prefix joined with an entity's runtime id → `true` while a story
+   * `remove` has taken it out of play (the `is gone` claim, ADR-356 D3).
+   * Absent → the claim is not recognized.
+   */
+  entityGonePrefix?: string;
 }
 
 /**
