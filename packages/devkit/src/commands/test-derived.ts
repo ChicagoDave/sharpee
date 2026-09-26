@@ -23,15 +23,27 @@
  * `loadAuthorGame` boots from) — never a committed `dist/*.ir.json`, which
  * can silently drift from the `.story` it was compiled from (GH #519).
  *
- * Under `--json` the report goes to stderr: the run-event wire carries the
- * tree's rows and has no event for a derived outcome yet, so the human
- * report is the one record of why a run exited 1.
+ * Under `--json` the human report still goes to stderr, unchanged, and the
+ * run-event stream on stdout carries the same facts structured: one
+ * `derived-branch` per branch as it completes, then one `derived-summary`
+ * with the three ratios and their gap lists, both mapped by `branch-tester`
+ * so the wire cites the claim the text report cites (GH #524).
  *
  * Public interface: runDerivedTests(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
 import * as path from 'node:path';
+import type { StreamableDerivedOutcome, StreamableDerivedSummary } from '@sharpee/transcript-tester';
 import { compileChordStory, findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
+
+/**
+ * The two stream methods the derived tier writes to — structurally, so the
+ * caller passes its `RunEventStream` and a test passes a recorder.
+ */
+export interface DerivedEventSink {
+  derivedBranch(outcome: StreamableDerivedOutcome): void;
+  derivedSummary(summary: StreamableDerivedSummary): void;
+}
 
 export interface DerivedTestOptions {
   /** Resolved project directory (absolute). */
@@ -47,6 +59,12 @@ export interface DerivedTestOptions {
    * when no tree ran — the ratios then count the derived tier alone.
    */
   tree?: { endingsReached: string[]; roomsEntered: string[] };
+  /**
+   * The run-event stream to carry each branch's outcome and the summary
+   * (GH #524). Absent when the caller has no stream — the text report is
+   * then the only output, as before.
+   */
+  stream?: DerivedEventSink;
 }
 
 /**
@@ -59,12 +77,20 @@ export interface DerivedTestOptions {
  */
 export async function runDerivedTests(options: DerivedTestOptions): Promise<number> {
   // Lazy require (the test.ts pattern): the harness loads only when testing.
-  const { runDerivedSuite, formatDerivedRun, endingCoverageOf, roomCoverageOf, formatCoverageSummary } =
-    require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  const {
+    runDerivedSuite,
+    formatDerivedRun,
+    branchCoverageOf,
+    endingCoverageOf,
+    roomCoverageOf,
+    formatCoverageSummary,
+    streamableDerivedOutcome,
+    streamableDerivedSummary,
+  } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
   const { endingsOf, roomsOf } =
     require('@sharpee/world-index') as typeof import('@sharpee/world-index');
 
-  const { dir, seed, json, verbose, tree } = options;
+  const { dir, seed, json, verbose, tree, stream } = options;
   const out = (line: string): void => {
     if (json) console.error(line);
     else console.log(line);
@@ -92,7 +118,11 @@ export async function runDerivedTests(options: DerivedTestOptions): Promise<numb
 
   let run;
   try {
-    run = await runDerivedSuite(ir, () => loadAuthorGame(storyFile, { seed }));
+    // Each branch reaches the wire as it completes (GH #524) — the seam
+    // already fires per branch, so this is wiring, not new concurrency.
+    run = await runDerivedSuite(ir, () => loadAuthorGame(storyFile, { seed }), {
+      onOutcome: (outcome) => stream?.derivedBranch(streamableDerivedOutcome(outcome)),
+    });
   } catch (error) {
     console.error(`Error running the derived suite: ${error instanceof Error ? error.message : error}`);
     return 3;
@@ -104,6 +134,8 @@ export async function runDerivedTests(options: DerivedTestOptions): Promise<numb
   const endings = endingCoverageOf(endingsOf(ir), tree?.endingsReached ?? []);
   const rooms = roomCoverageOf(roomsOf(ir), [...(tree?.roomsEntered ?? []), ...run.roomsEntered]);
   for (const line of formatCoverageSummary(endings, rooms, storyName)) out(line);
+  // The same three values the report just printed, once, structured.
+  stream?.derivedSummary(streamableDerivedSummary(branchCoverageOf(run), endings, rooms));
 
   return run.failed + run.errored > 0 ? 1 : 0;
 }

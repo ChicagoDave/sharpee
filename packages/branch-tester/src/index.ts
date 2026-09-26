@@ -87,6 +87,8 @@ export {
   roomCoverageOf,
   formatDerivedRun,
   formatCoverageSummary,
+  streamableDerivedOutcome,
+  streamableDerivedSummary,
 } from './coverage.js';
 export type { BranchCoverage, BranchGap, EndingCoverage, RoomCoverage } from './coverage.js';
 export type {

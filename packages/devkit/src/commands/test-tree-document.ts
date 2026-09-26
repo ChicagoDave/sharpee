@@ -238,6 +238,9 @@ export async function runTreeDocumentCommand(
     json,
     verbose,
     tree: { endingsReached: run.endingsReached, roomsEntered: run.roomsEntered },
+    // The derived events ride the tree's own stream, after its lines and
+    // before `run-end` (GH #524); no other event moves.
+    stream,
   });
   const code = Math.max(treeCode, derivedCode);
 

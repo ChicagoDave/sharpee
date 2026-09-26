@@ -11,12 +11,18 @@
  *   an explorer run lasts minutes, and the IDE's Testing tab fills live rather
  *   than jumping when each file completes.
  *
+ *   The derived rule-test tier (ADR-356) rides the same stream after the
+ *   tree's own events: one `derived-branch` per clause branch as it completes,
+ *   then one `derived-summary` carrying the three coverage ratios and their
+ *   gap lists, before `run-end`. A SKIPPED branch is its own status on the
+ *   wire, never a failure in disguise (D5a).
+ *
  *   Supersedes `test-results.ts` (ADR-277 D1), whose records were constructed
  *   from a COMPLETED `TranscriptResult` and written together — which made
  *   `transcript-start` ("a transcript is about to run") false by construction.
  *   That module stays until its consumers move; new emitters use this one.
  *
- * Public interface: RUN_EVENT_SCHEMA_VERSION, RunEvent and its seven variants,
+ * Public interface: RUN_EVENT_SCHEMA_VERSION, RunEvent and its nine variants,
  *   isRunEvent plus one guard per variant.
  * Owner context: @sharpee/ide-protocol — the shared wire contract. TypeScript
  *   producers (the transcript runner, the tree runner, eventually the explorer)
@@ -24,6 +30,8 @@
  *   rather than mirroring it, so the two sides cannot silently disagree
  *   (DEVARCH 8b).
  */
+
+import type { Span } from '@sharpee/chord';
 
 /**
  * Version of the run-event shapes. Distinct from `COMPOSE_JSON_SCHEMA_VERSION`
@@ -351,6 +359,91 @@ export interface CoverageEvent extends RunEventEnvelope {
   classesUnobserved: number;
 }
 
+/**
+ * A derived branch's verdict. Four values, never a boolean: `skipped` is a
+ * limit of the arrange floor and `error` a harness fault, and neither is a
+ * failure of the story (ADR-356 D5a). A consumer cannot construct "SKIPPED
+ * counts as failed" from this shape, which is the point of it.
+ */
+export type DerivedBranchStatus = 'passed' | 'failed' | 'skipped' | 'error';
+
+/**
+ * One derived rule test's outcome (ADR-356 D1 to D3), emitted as the branch
+ * completes. The enumerator's label and span identify the branch; nothing
+ * here is keyed on a tree line, because a derived branch is an IR concept.
+ */
+export interface DerivedBranchEvent extends RunEventEnvelope {
+  type: 'derived-branch';
+  /** The enumerator's label (`vine · on pruning · when flowering`). */
+  label: string;
+  /** The clause's source span, or null when the compiler carried none. */
+  span: Span | null;
+  status: DerivedBranchStatus;
+  /** Present exactly when `status` is `'skipped'`: the named arrange-floor shape. */
+  shape?: string;
+  /** Why it was skipped, what failed at parse, or what the engine threw. */
+  detail?: string;
+  /**
+   * Present when `status` is `'failed'`: the first failing claim rendered
+   * with its message, or the parse failure when no claim ran. One line, the
+   * way `command-result`'s `failure` is one line.
+   */
+  failure?: string;
+  /** The command typed, when one ran. */
+  command?: string;
+  /** The precondition expressions arranged before the command, in order. */
+  arranged?: string[];
+}
+
+/** One declared branch the run did not exercise, for the summary's gap list. */
+export interface DerivedBranchGap {
+  label: string;
+  status: 'skipped' | 'error';
+  shape?: string;
+  detail?: string;
+  span: Span | null;
+}
+
+/** One declared ending, for the summary's unreached and unnamed lists. */
+export interface DerivedEndingGap {
+  /** The story's phrase key, or null for a `win`/`lose`/`kill` written without one. */
+  id: string | null;
+  statement: 'win' | 'lose' | 'kill';
+  /** The statement's source line, or null when it carries no span. */
+  line: number | null;
+  /** The source file the line is in, relative to the main file; null for the main file. */
+  file: string | null;
+}
+
+/**
+ * The derived tier's report (ADR-356 D5): three ratios, each measured against
+ * what the story declares, and every gap by its source site. One per run,
+ * after every `derived-branch` and before `run-end`. Unnamed endings are
+ * listed apart and never folded into the ratio, matching the CLI report.
+ */
+export interface DerivedRunSummaryEvent extends RunEventEnvelope {
+  type: 'derived-summary';
+  branches: {
+    declared: number;
+    exercised: number;
+    passed: number;
+    failed: number;
+    gaps: DerivedBranchGap[];
+  };
+  endings: {
+    declared: number;
+    reached: number;
+    unreached: DerivedEndingGap[];
+    unnamed: DerivedEndingGap[];
+  };
+  rooms: {
+    declared: number;
+    entered: number;
+    /** IR ids of declared rooms neither tier placed the player in. */
+    unentered: string[];
+  };
+}
+
 /** Last event of every run: the aggregate and the process exit code. */
 export interface RunEndEvent extends RunEventEnvelope {
   type: 'run-end';
@@ -384,6 +477,8 @@ export type RunEvent =
   | TranscriptEndEvent
   | ProgressEvent
   | CoverageEvent
+  | DerivedBranchEvent
+  | DerivedRunSummaryEvent
   | RunEndEvent;
 
 function isObject(v: unknown): v is Record<string, unknown> {
@@ -567,6 +662,92 @@ export function isCoverageEvent(value: unknown): value is CoverageEvent {
   );
 }
 
+/** Narrow a value to a valid {@link Span} — the compiler's shape, no more. */
+function isSpan(value: unknown): value is Span {
+  if (!isObject(value)) return false;
+  return (
+    (value.file === undefined || typeof value.file === 'string') &&
+    typeof value.line === 'number' &&
+    typeof value.column === 'number' &&
+    typeof value.endLine === 'number' &&
+    typeof value.endColumn === 'number'
+  );
+}
+
+function isSpanOrNull(value: unknown): boolean {
+  return value === null || isSpan(value);
+}
+
+function isDerivedBranchStatus(value: unknown): value is DerivedBranchStatus {
+  return value === 'passed' || value === 'failed' || value === 'skipped' || value === 'error';
+}
+
+/** Narrow a value to a valid {@link DerivedBranchEvent}. */
+export function isDerivedBranchEvent(value: unknown): value is DerivedBranchEvent {
+  if (!isObject(value)) return false;
+  return (
+    hasEnvelopeAndType(value, 'derived-branch') &&
+    typeof value.label === 'string' &&
+    'span' in value &&
+    isSpanOrNull(value.span) &&
+    isDerivedBranchStatus(value.status) &&
+    (value.shape === undefined || typeof value.shape === 'string') &&
+    (value.detail === undefined || typeof value.detail === 'string') &&
+    (value.failure === undefined || typeof value.failure === 'string') &&
+    (value.command === undefined || typeof value.command === 'string') &&
+    (value.arranged === undefined || isStringArray(value.arranged))
+  );
+}
+
+/** Narrow a value to a valid {@link DerivedBranchGap}. */
+function isDerivedBranchGap(value: unknown): value is DerivedBranchGap {
+  if (!isObject(value)) return false;
+  return (
+    typeof value.label === 'string' &&
+    (value.status === 'skipped' || value.status === 'error') &&
+    (value.shape === undefined || typeof value.shape === 'string') &&
+    (value.detail === undefined || typeof value.detail === 'string') &&
+    'span' in value &&
+    isSpanOrNull(value.span)
+  );
+}
+
+/** Narrow a value to a valid {@link DerivedEndingGap}. */
+function isDerivedEndingGap(value: unknown): value is DerivedEndingGap {
+  if (!isObject(value)) return false;
+  return (
+    (value.id === null || typeof value.id === 'string') &&
+    (value.statement === 'win' || value.statement === 'lose' || value.statement === 'kill') &&
+    (value.line === null || typeof value.line === 'number') &&
+    (value.file === null || typeof value.file === 'string')
+  );
+}
+
+/** Narrow a value to a valid {@link DerivedRunSummaryEvent}. */
+export function isDerivedRunSummaryEvent(value: unknown): value is DerivedRunSummaryEvent {
+  if (!isObject(value)) return false;
+  if (!hasEnvelopeAndType(value, 'derived-summary')) return false;
+  const { branches, endings, rooms } = value;
+  if (!isObject(branches) || !isObject(endings) || !isObject(rooms)) return false;
+  return (
+    typeof branches.declared === 'number' &&
+    typeof branches.exercised === 'number' &&
+    typeof branches.passed === 'number' &&
+    typeof branches.failed === 'number' &&
+    Array.isArray(branches.gaps) &&
+    branches.gaps.every(isDerivedBranchGap) &&
+    typeof endings.declared === 'number' &&
+    typeof endings.reached === 'number' &&
+    Array.isArray(endings.unreached) &&
+    endings.unreached.every(isDerivedEndingGap) &&
+    Array.isArray(endings.unnamed) &&
+    endings.unnamed.every(isDerivedEndingGap) &&
+    typeof rooms.declared === 'number' &&
+    typeof rooms.entered === 'number' &&
+    isStringArray(rooms.unentered)
+  );
+}
+
 /** Narrow a value to a valid {@link RunEndEvent}. */
 export function isRunEndEvent(value: unknown): value is RunEndEvent {
   if (!isObject(value)) return false;
@@ -596,6 +777,8 @@ export function isRunEvent(value: unknown): value is RunEvent {
     isTranscriptEndEvent(value) ||
     isProgressEvent(value) ||
     isCoverageEvent(value) ||
+    isDerivedBranchEvent(value) ||
+    isDerivedRunSummaryEvent(value) ||
     isRunEndEvent(value)
   );
 }

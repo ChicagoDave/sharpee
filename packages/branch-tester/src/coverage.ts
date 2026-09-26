@@ -23,9 +23,16 @@
  * unreached ending or an unentered room is a gap in the ratio, never a
  * failure (D5a) — the report is the finding.
  *
+ * The same values reach the IDE over the run-event wire: `streamableDerivedOutcome`
+ * maps one outcome onto the `derived-branch` payload and `streamableDerivedSummary`
+ * maps the three coverage values onto the `derived-summary` payload. Both live
+ * here so the failure line and the gap lists have one renderer, the one the
+ * text report already uses; a consumer never re-derives either.
+ *
  * Public interface: `branchCoverageOf`, `endingCoverageOf`, `roomCoverageOf`,
- * `formatDerivedRun`, `formatCoverageSummary`, `BranchCoverage`, `BranchGap`,
- * `EndingCoverage`, `RoomCoverage`.
+ * `formatDerivedRun`, `formatCoverageSummary`, `streamableDerivedOutcome`,
+ * `streamableDerivedSummary`, `BranchCoverage`, `BranchGap`, `EndingCoverage`,
+ * `RoomCoverage`.
  * Owner context: @sharpee/branch-tester — the runtime that executes what
  * ADR-356 derives.
  *
@@ -37,6 +44,7 @@
 
 import type { IREntity, Span } from '@sharpee/chord';
 import type { DeclaredEnding } from '@sharpee/world-index';
+import type { StreamableDerivedOutcome, StreamableDerivedSummary } from '@sharpee/transcript-tester';
 import type { DerivedOutcome, DerivedSuiteResult } from './derived-runner.js';
 
 /** One declared branch the run did not exercise. */
@@ -220,6 +228,78 @@ export function formatDerivedRun(run: DerivedSuiteResult, storyFile?: string): s
     }
   }
   return rows;
+}
+
+/**
+ * One derived outcome as the run-event wire carries it (the `derived-branch`
+ * payload, envelope excluded). The failure line is `formatDerivedRun`'s own
+ * rendering, so the wire and the text report cite the same claim.
+ *
+ * @param outcome one branch's outcome from the derived runner
+ * @returns the payload `RunEventStream.derivedBranch` takes
+ */
+export function streamableDerivedOutcome(outcome: DerivedOutcome): StreamableDerivedOutcome {
+  const failure = outcome.status === 'failed' ? firstFailureOf(outcome) : undefined;
+  return {
+    label: outcome.label,
+    span: outcome.span,
+    status: outcome.status,
+    ...(outcome.shape !== undefined ? { shape: outcome.shape } : {}),
+    ...(outcome.detail !== undefined ? { detail: outcome.detail } : {}),
+    ...(failure !== undefined ? { failure } : {}),
+    ...(outcome.command !== undefined ? { command: outcome.command } : {}),
+    ...(outcome.arranged.length > 0 ? { arranged: outcome.arranged } : {}),
+  };
+}
+
+/**
+ * The three coverage values as the run-event wire carries them (the
+ * `derived-summary` payload, envelope excluded): the same numbers and gap
+ * lists `formatDerivedRun` and `formatCoverageSummary` print, so a consumer
+ * can render that text without re-deriving it.
+ *
+ * @param branches the branches ratio and its gaps
+ * @param endings the endings ratio, its unreached list and its unnamed list
+ * @param rooms the rooms ratio and its unentered list
+ * @returns the payload `RunEventStream.derivedSummary` takes
+ */
+export function streamableDerivedSummary(
+  branches: BranchCoverage,
+  endings: EndingCoverage,
+  rooms: RoomCoverage,
+): StreamableDerivedSummary {
+  const endingGap = (ending: DeclaredEnding) => ({
+    id: ending.id,
+    statement: ending.statement,
+    line: ending.line,
+    file: ending.file,
+  });
+  return {
+    branches: {
+      declared: branches.declared,
+      exercised: branches.exercised,
+      passed: branches.passed,
+      failed: branches.failed,
+      gaps: branches.gaps.map((gap) => ({
+        label: gap.label,
+        status: gap.status,
+        ...(gap.shape !== undefined ? { shape: gap.shape } : {}),
+        ...(gap.detail !== undefined ? { detail: gap.detail } : {}),
+        span: gap.span,
+      })),
+    },
+    endings: {
+      declared: endings.declared,
+      reached: endings.reached,
+      unreached: endings.unreached.map(endingGap),
+      unnamed: endings.unnamed.map(endingGap),
+    },
+    rooms: {
+      declared: rooms.declared,
+      entered: rooms.entered,
+      unentered: rooms.unentered.map((room) => room.id),
+    },
+  };
 }
 
 /** The first failing claim of an outcome, or its detail (a parse failure), for the failure row. */

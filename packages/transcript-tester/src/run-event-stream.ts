@@ -7,9 +7,12 @@
  *   `elapsedMs` clock — in one place so no producer can get them wrong.
  *   Emission is immediate: every method writes as it is called, which is what
  *   lets the IDE's Testing tab fill while the run is still going.
- * Public interface: `RunEventStream`, `ndjsonEventLine`, and the three
+ * Public interface: `RunEventStream`, `ndjsonEventLine`, and the five
  * `Streamable*` result shapes its methods take — kept (ADR-340 D4) because
  * they are the parameter types of public methods; the barrel exports them.
+ * The two derived shapes (ADR-356) are the wire's own payloads minus the
+ * envelope: `branch-tester` maps its outcomes onto them, this module
+ * sequences them.
  * Owner context: transcript-tester (testing tooling). The wire SHAPES are owned
  *   by `@sharpee/ide-protocol`; this module only builds and sequences them.
  *
@@ -25,7 +28,26 @@ import type {
   BudgetUse,
   ProgressEvent,
   CoverageEvent,
+  DerivedBranchEvent,
+  DerivedRunSummaryEvent,
+  RunEventEnvelope,
 } from '@sharpee/ide-protocol';
+
+/**
+ * One derived branch's outcome as the wire carries it (ADR-356 D1 to D3):
+ * the `derived-branch` payload without its envelope. `branch-tester`'s
+ * `streamableDerivedOutcome` produces it; the failure line is rendered there,
+ * where the claim shapes live, so the wire only moves it.
+ */
+export type StreamableDerivedOutcome = Omit<DerivedBranchEvent, keyof RunEventEnvelope | 'type'>;
+
+/**
+ * The derived tier's report as the wire carries it (ADR-356 D5): the
+ * `derived-summary` payload without its envelope, produced by
+ * `branch-tester`'s `streamableDerivedSummary` from the same coverage values
+ * the CLI report prints.
+ */
+export type StreamableDerivedSummary = Omit<DerivedRunSummaryEvent, keyof RunEventEnvelope | 'type'>;
 
 /**
  * What the stream needs from ONE command's outcome — structurally, not by name.
@@ -340,6 +362,39 @@ export class RunEventStream {
       pointsFired: report.pointsFired,
       pointsNeverFired: report.pointsNeverFired,
       classesUnobserved: report.classesUnobserved,
+    };
+    this.write(event);
+  }
+
+  /**
+   * One derived rule test finished (ADR-356) — emitted as the branch
+   * completes, after the tree's own events. `status` is the four-valued
+   * verdict; SKIPPED and error never masquerade as failures here.
+   */
+  derivedBranch(outcome: StreamableDerivedOutcome): void {
+    const event: DerivedBranchEvent = {
+      ...this.envelope(),
+      type: 'derived-branch',
+      label: outcome.label,
+      span: outcome.span,
+      status: outcome.status,
+      ...(outcome.shape !== undefined ? { shape: outcome.shape } : {}),
+      ...(outcome.detail !== undefined ? { detail: outcome.detail } : {}),
+      ...(outcome.failure !== undefined ? { failure: outcome.failure } : {}),
+      ...(outcome.command !== undefined ? { command: outcome.command } : {}),
+      ...(outcome.arranged !== undefined ? { arranged: outcome.arranged } : {}),
+    };
+    this.write(event);
+  }
+
+  /** The derived tier's three ratios and gap lists (ADR-356 D5) — once per run. */
+  derivedSummary(summary: StreamableDerivedSummary): void {
+    const event: DerivedRunSummaryEvent = {
+      ...this.envelope(),
+      type: 'derived-summary',
+      branches: summary.branches,
+      endings: summary.endings,
+      rooms: summary.rooms,
     };
     this.write(event);
   }
