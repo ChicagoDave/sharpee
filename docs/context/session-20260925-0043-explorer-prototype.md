@@ -118,3 +118,24 @@
 ---
 
 **Progressive update**: Session completed 2026-09-25 03:05
+
+## Activity Log (auto-captured)
+```
+[06:44:31] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[06:46:08] EDIT: File edited — docs/context/project-profile.md
+[06:46:14] EDIT: File edited — docs/context/project-profile.md
+[06:46:28] EDIT: File edited — docs/context/project-profile.md
+[06:46:39] EDIT: File edited — docs/context/project-profile.md
+[06:47:08] EDIT: File edited — docs/context/project-profile.md
+[06:47:28] EDIT: File changed via Bash — docs/context/project-profile.md
+[08:18:15] EDIT: File written — docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md
+[08:18:20] EDIT: File changed via Bash — docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md
+[08:18:34] EDIT: File written — docs/context/session-20260925-0218-explorer-prototype.md
+[08:23:37] EDIT: File changed via Bash — docs/context/session-20260925-0218-explorer-prototype.md
+[21:38:05] EDIT: File changed via Bash — docs/context/session-20260925-0043-explorer-prototype.md
+[21:41:04] EDIT: File written — docs/context/session-20260925-0043-explorer-prototype.md
+[21:43:35] TEST: Tests passed — 12 passed 121 passed
+[21:43:45] EDIT: File written — .commit-files
+[21:43:45] EDIT: File written — .commit-msg
+[21:43:54] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

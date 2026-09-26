@@ -34,6 +34,8 @@
  *
  * Public interface: collectStateWriters, collectStateReaders,
  * entitiesMovedIntoPlay, StateWriter, StateReader, WriterOwner.
+ * Package-internal (shared with `branches.ts`, never re-exported from the
+ * barrel): forEachStatementRoot, composersOf, targetOf.
  *
  * Owner context: @sharpee/world-index — the derivation package. No platform
  * contract.
@@ -113,7 +115,7 @@ function isWalkable(node: unknown): node is IRNode | unknown[] {
  * @param itBinding the entity `it` refers to in this context, if any
  * @returns the target entity id, or `undefined` when it cannot be resolved
  */
-function targetOf(entityValue: unknown, itBinding: string | undefined): string | undefined {
+export function targetOf(entityValue: unknown, itBinding: string | undefined): string | undefined {
   if (!isWalkable(entityValue) || Array.isArray(entityValue)) return undefined;
   const value = entityValue as IRNode;
   if (value.kind === 'entity' && typeof value.id === 'string') return value.id;
@@ -212,7 +214,7 @@ function walkForReaders(
  * @param traitName the trait's adjective
  * @returns every entity composing it, in declaration order
  */
-function composersOf(ir: StoryIR, traitName: string): IREntity[] {
+export function composersOf(ir: StoryIR, traitName: string): IREntity[] {
   return ir.entities.filter((entity) =>
     (entity.traits ?? []).some((trait) => trait.name === traitName),
   );
@@ -226,8 +228,9 @@ function composersOf(ir: StoryIR, traitName: string): IREntity[] {
  * `collectStateReaders` both walk — they need the same roots, owners and
  * `it` bindings; only what they match at each node differs. Each makes its
  * own call rather than sharing one pass: the IRs are small and keeping the
- * two collectors independent keeps each testable alone. Module-internal: nothing outside this file needs the
- * walk itself, only what a visitor collects from it.
+ * collectors independent keeps each testable alone. Package-internal:
+ * `branches.ts` rides the same walk for the clause-branch enumerator
+ * (ADR-356 D1); it is not part of the package's public barrel.
  *
  * The sweep is total, not a chosen list, because a chosen list is the
  * shape that missed surfaces here: an entity whole except its `states` list
@@ -243,7 +246,7 @@ function composersOf(ir: StoryIR, traitName: string): IREntity[] {
  * @param visit called once per root with the subtree, its owner, and the
  *   entity `it` is bound to there (`undefined` where nothing binds it)
  */
-function forEachStatementRoot(
+export function forEachStatementRoot(
   ir: StoryIR,
   visit: (root: unknown, owner: WriterOwner, itBinding: string | undefined) => void,
 ): void {
