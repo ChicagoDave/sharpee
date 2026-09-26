@@ -97,7 +97,7 @@ Plan complete — all phases done. `.current-plan` still points at this plan; pe
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: safe to revert (all changes uncommitted at session end; nothing pushed or merged)
+- **Rollback Safety**: committed and pushed to `explorer-prototype` as `36b35cba8` (git-commit.sh --push, 17:38 CDT); not merged to main. Reverting means reverting that commit, not discarding a working tree.
 
 ## Dependency/Prerequisite Check
 
@@ -135,3 +135,84 @@ Plan complete — all phases done. `.current-plan` still points at this plan; pe
 **Progressive update 03:38**: Phase 2 landed — endingsOf, rooms/endings tracking in both tiers, three-ratio report; measured fernhill 2/3 endings 13/13 rooms, ides 2/5 and 5/5, secret-letter 4/5 and 21/21; plan marked DONE.
 
 **Progressive update**: session completed 2026-09-26 12:30 — terminal write: both phases confirmed DONE against the plan's own Landed/Evidence sections, six open findings sorted into the issue store (#523 sharpened by comment, #399 commented, #524 re-confirmed by comment, #526/#527/#528 filed new), Phase 16 closure and D9 notes corroborated directly in their files.
+
+## Activity Log (auto-captured)
+```
+[07:48:26] EDIT: File written — docs/work/testing-explorer/plan-20260926-adr356-d4-endstate.md
+[07:48:30] EDIT: File changed via Bash — docs/context/.current-plan
+[07:48:30] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260926-adr356-d4-endstate.md
+[07:50:20] EDIT: File edited — docs/work/testing-explorer/plan-20260926-adr356-d4-endstate.md
+[08:04:04] EDIT: File changed via Bash — packages/branch-tester/src/tree-document.ts
+[08:04:59] EDIT: File changed via Bash — packages/branch-tester/src/auto-assertion.ts
+[08:04:59] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/assertion-core-names.json
+[08:04:59] EDIT: File changed via Bash — packages/transcript-tester/src/assertion-core.ts
+[08:04:59] EDIT: File changed via Bash — packages/transcript-tester/src/serializer.ts
+[08:04:59] EDIT: File changed via Bash — packages/transcript-tester/src/types.ts
+[08:05:00] EDIT: File changed via Bash — packages/branch-tester/src/tree-walker.ts
+[08:05:53] EDIT: File changed via Bash — packages/transcript-tester/src/index.ts
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/cards.ts
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/ending.ts
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/main.ts
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/model.ts
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/surface.css
+[08:05:54] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/state-pins/state-pins.tests.json
+[08:05:54] EDIT: File changed via Bash — packages/branch-tester/tests/tree-document.test.ts
+[08:05:54] EDIT: File changed via Bash — packages/devkit/src/commands/test-tree-document.test.ts
+[08:05:54] EDIT: File changed via Bash — packages/devkit/src/commands/test.test.ts
+[08:05:54] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-fail/derived-no-vocabulary.tests.json
+[08:05:54] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-pass/derived-skip.tests.json
+[08:05:54] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/TestRunnerTests.swift
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/ac-signoff-cli.test.ts
+[08:05:54] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/model.test.ts
+[08:05:55] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/outline.test.ts
+[08:05:55] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/tree-document.test.ts
+[08:06:12] BUILD: Build passed — pnpm --filter '@sharpee/transcript-tester' build | tail -3 && pnpm --filter '@sh
+[08:08:10] EDIT: File changed via Bash — packages/transcript-tester/tests/claim-kinds.test.ts
+[08:08:11] EDIT: File changed via Bash — packages/branch-tester/tests/tree-walker.test.ts
+[08:08:11] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/ending.test.ts
+[08:08:54] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/end-state/end-state.story
+[08:08:54] EDIT: File changed via Bash — packages/branch-tester/tests/tree-end-state.test.ts
+[08:09:32] EDIT: File changed via Bash — branch-stories/fernhill/fernhill.tests.json
+[08:09:32] EDIT: File changed via Bash — branch-stories/ides-of-march/ides-of-march.tests.json
+[08:09:32] EDIT: File changed via Bash — branch-stories/secret-letter/prototypes/w10-dance/w10-dance.tests.json
+[08:09:32] EDIT: File changed via Bash — branch-stories/secret-letter/secret-letter.tests.json
+[08:09:32] EDIT: File changed via Bash — docs/work/john-chord-samples/no-signal-home.tests.json
+[08:09:32] EDIT: File changed via Bash — stories/thealderman/chord/thealderman.tests.json
+[08:10:01] TEST: Tests passed — 12 passed 140 passed
+[08:11:18] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.css
+[08:11:18] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.js
+[08:11:18] EDIT: File changed via Bash — docs/architecture/adrs/adr-340-testing-assertion-core.md
+[08:11:18] EDIT: File changed via Bash — docs/architecture/adrs/adr-353-the-testing-pane-visits-one-line.md
+[08:11:19] EDIT: File changed via Bash — docs/work/chord-writer-avalonia-production/plan.md
+[08:11:54] BUILD: Build passed — npx tsc -p packages/devkit/tsconfig.json --noEmit && echo "devkit tsc clean"; pn
+[08:11:54] EDIT: File changed via Bash — docs/context/session-20260926-0236-explorer-prototype.md
+[17:01:49] EDIT: File changed via Bash — packages/world-index/src/index.ts
+[17:01:49] EDIT: File changed via Bash — packages/world-index/src/story.ts
+[17:01:49] EDIT: File changed via Bash — packages/branch-tester/src/derived-runner.ts
+[17:01:50] EDIT: File changed via Bash — packages/branch-tester/src/coverage.ts
+[17:02:17] EDIT: File changed via Bash — packages/branch-tester/src/index.ts
+[17:02:17] EDIT: File changed via Bash — packages/devkit/src/commands/test-derived.ts
+[17:02:17] EDIT: File changed via Bash — packages/devkit/src/commands/test-tree-document.ts
+[17:03:21] EDIT: File changed via Bash — packages/world-index/tests/endings.test.ts
+[17:03:21] EDIT: File changed via Bash — packages/branch-tester/tests/derived-coverage.test.ts
+[17:03:22] EDIT: File changed via Bash — packages/branch-tester/tests/derived-runner.test.ts
+[17:03:22] EDIT: File changed via Bash — packages/devkit/tests/test-derived.test.ts
+[17:08:50] BUILD: Build passed — npx tsc -p packages/branch-tester/tsconfig.test.json --noEmit 2>&1 | head -5; ec
+[17:09:37] TEST: Tests passed — 4 passed
+[17:09:37] BUILD: Build failed — python3 - <<'EOF'
+import pathlib
+p = pathlib.Path('packages/branch-tester/tests/ (exit 1)
+[17:09:51] BUILD: Build passed — cd /Users/david/repos/sharpee && python3 - <<'EOF'
+import pathlib
+p = pathlib.Pa
+[17:10:10] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee/packages/world-index && npx vitest run 2>&1 | grep
+[17:12:10] TEST: Tests passed — 4 passed
+[17:12:13] BUILD: Build passed — pnpm --filter '@sharpee/branch-tester' test 2>&1 | grep "Test Files\|Tests \|FAI
+[17:28:24] EDIT: File changed via Bash — docs/context/session-20260926-0235-explorer-prototype.md
+[17:34:29] EDIT: File written — docs/context/session-20260926-0235-explorer-prototype.md
+[17:34:37] EDIT: File edited — docs/context/session-20260926-0235-explorer-prototype.md
+[17:37:40] TEST: Tests passed — 12 passed 121 passed
+[17:38:11] EDIT: File written — .commit-files
+[17:38:11] EDIT: File written — .commit-msg
+[17:38:16] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```
