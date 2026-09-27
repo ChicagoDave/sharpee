@@ -863,12 +863,7 @@ public partial class ShellWindow : Window
             ? await File.ReadAllTextAsync(testsPath)
             : "{}";
 
-        var session = new System.Text.Json.Nodes.JsonObject
-        {
-            ["story"] = project.Id,
-            ["seed"] = 42,
-            ["document"] = document,
-        };
+        var session = TestingSession.Build(project.Id, document);
 
         _door.Open(new PaneServer(built, RepoPaths.TestingSurface, RepoPaths.DocsTab, session.ToJsonString()));
         _log.Line($"panes: door open for {project.Id} — {_door.Mechanism}");

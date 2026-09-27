@@ -15,8 +15,9 @@
  *   - Reopen deserializes `<story-id>.tests.json` and replays it to the
  *     board: the main line types live (delivered turns BIND to the
  *     document's cards), each branch fresh-boots with its prefix suppressed,
- *     the persisted active line replays last. A refused (newer-version)
- *     document shows its named message and write-locks the session; a
+ *     the persisted active line replays last. A refused document — newer
+ *     than this build reads, or pinned at a seed the engine did not boot at
+ *     (GH #540) — shows its named message and write-locks the session; a
  *     malformed one degrades to a fresh empty tree (AC-4).
  *   - An author restart replays the tree the same way — restart has no
  *     meaning of its own in the Testing tab (D4).
@@ -38,7 +39,7 @@ import { visitPlanOf, type LineVisit, type ReplayStep } from './visit.js';
 import { outlineOf } from './outline.js';
 import { OutlineView } from './outline-view.js';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
-import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
+import { admitBootDocument } from './boot-document';
 import { CardsView } from './cards';
 import { characterRowsOf, explainGroups, type ExplainGroup } from './character';
 import { affordanceGroupsOf, sceneExplainGroups, sceneRowsOf, threadAffordanceGroupsOf } from './scene';
@@ -979,21 +980,19 @@ document.addEventListener('keydown', event => {
 // Adopt the persisted document BEFORE draining the queue, so the boot look
 // binds to the document's cards rather than appending fresh ones.
 let loadedDocument = false;
-if (bootSession?.document !== undefined) {
-  const read = deserializeTreeDocument(bootSession.document);
-  if (read.status === 'ok') {
-    model.load(read.document);
-    lastDocumentText = model.serialize();
-    dialogOutcomes = new Map(bootSession.view?.dialogs ?? []);
-    loadedDocument = true;
-  } else if (read.status === 'refused') {
-    // AC-4: a newer document is refused BY NAME and never written — the
-    // session works as a scratch board over a fresh tree.
-    documentWriteLocked = true;
-    cards.setNotice(read.message);
-  }
-  // Malformed: the model already holds a fresh empty tree — degrade quietly.
+const admission = admitBootDocument(bootSession?.document, seed);
+if (admission.document) {
+  model.load(admission.document);
+  lastDocumentText = model.serialize();
+  dialogOutcomes = new Map(bootSession?.view?.dialogs ?? []);
+  loadedDocument = true;
 }
+// AC-4 / GH #540: a refused document — newer than this build reads, or pinned
+// at a seed the engine did not boot at — is named and never written; the
+// session works as a scratch board over a fresh tree. A malformed one is
+// neither: the model already holds a fresh empty tree — degrade quietly.
+if (admission.writeLocked) documentWriteLocked = true;
+if (admission.notice) cards.setNotice(admission.notice);
 
 for (const record of queued) deliver(record);
 

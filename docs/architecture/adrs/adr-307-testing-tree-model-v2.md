@@ -177,6 +177,8 @@ auto-drive from recorded outcomes. All of it now operates on and records into
 pure tree structure. Branch runs, blocked-by-ancestor reporting, and
 seed-pinned-at-root carry over.
 
+**Amendment 2026-09-27 (GH #540) — the document's seed is the engine's seed.** "Pinned seed" here always meant the document's `seed` field: `sharpee test --tree` replays at it and at nothing else. The IDE hosts, though, booted the Testing tab's live engine at the IDE's fixed play seed (ADR-305 D1) whatever the loaded document pinned, so a story whose document pinned another seed (secret-letter, 1209) recorded every card at one seed and replayed them at another — two different plays of the same commands for anything chance-dependent, and the document could not say which it recorded. Both hosts (macOS and Avalonia) now read the loaded document's `seed` and boot the engine at it; the fixed play seed is the pin of a fresh tree only. The surface states the invariant where the two values meet: a document pinned at a seed the engine did not boot at is refused by name and write-locked, the treatment a newer-version document already gets (AC-4).
+
 ### D6 — The runner consumes the tree
 
 `sharpee test --tree` (branch-tester) deserializes and walks the same JSON

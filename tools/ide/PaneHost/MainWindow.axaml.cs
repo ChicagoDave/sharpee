@@ -21,6 +21,7 @@ using Avalonia.Interactivity;
 using Avalonia.Platform;
 using Avalonia.Threading;
 using PaneHost.Hosting;
+using PaneHost.Shell;
 
 namespace PaneHost;
 
@@ -239,13 +240,8 @@ public partial class MainWindow : Window
         _log.Line("── stage 2: token-scoped loopback origin ──");
 
         var document = File.ReadAllText(RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillTests, "fernhill.tests.json"));
-        var session = new JsonObject
-        {
-            ["story"] = "fernhill",
-            ["seed"] = 42,
-            ["document"] = document,
-            ["mode"] = "replay",
-        };
+        var session = TestingSession.Build("fernhill", document);
+        session["mode"] = "replay";
         var panes = new PaneServer(
             RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillBundle, "fernhill's browser bundle"),
             RepoPaths.TestingSurface,

@@ -59,8 +59,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     })();
     """
 
-    /// The document-start boot script: the pinned play seed (ADR-305 D1),
-    /// a cleared origin (belt and braces on top of the non-persistent
+    /// The document-start boot script: the session's play seed — the loaded
+    /// document's own pin, or the IDE constant for a fresh tree (ADR-305 D1,
+    /// GH #540) — a cleared origin (belt and braces on top of the non-persistent
     /// store), no AudioContext (below), the deliver shim that queues
     /// forwarded records until surface.js loads, and the session payload —
     /// the tree document's text plus the D7 view state (ADR-307).
@@ -82,7 +83,8 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     private static func bootScript(sessionJSON: String) -> String {
         """
         (function () {
-          window.__SHARPEE_PLAY_SEED__ = \(PlayViewController.idePlaySeed);
+          var session = \(sessionJSON);
+          window.__SHARPEE_PLAY_SEED__ = session.seed;
           try { window.AudioContext = undefined; window.webkitAudioContext = undefined; } catch (e) {}
           try { window.confirm = function () { return true; }; } catch (e) {}
           try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
@@ -90,7 +92,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             q: [],
             deliver: function (record) { this.q.push(record); }
           };
-          window.__SHARPEE_TESTING_SESSION__ = \(sessionJSON);
+          window.__SHARPEE_TESTING_SESSION__ = session;
         })();
         """
     }
@@ -283,18 +285,24 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     }
 
     /// (Re)installs the document scripts, baking in the session payload:
-    /// the tree document's bytes (when one exists), the story id and pinned
-    /// seed (a fresh tree's identity), the policy, and the D7 view state.
+    /// the tree document's bytes (when one exists), the story id, the seed —
+    /// the document's own pin when one loads, the IDE constant for a fresh
+    /// tree (GH #540) — the policy, and the D7 view state.
     private func installUserScripts() {
         let contentController = webView.configuration.userContentController
         contentController.removeAllUserScripts()
 
-        var session: [String: Any] = ["seed": PlayViewController.idePlaySeed]
+        var session: [String: Any] = [:]
+        var seed = PlayViewController.idePlaySeed
         if let storyId = documentStoryId { session["story"] = storyId }
         if let testDocumentURL,
            let text = try? String(contentsOf: testDocumentURL, encoding: .utf8) {
             session["document"] = text
+            // The document is the pin (ADR-307 D5); the IDE constant seeds
+            // only a fresh tree.
+            if let pinned = Self.documentSeed(in: text) { seed = pinned }
         }
+        session["seed"] = seed
         if let viewState = sessionStore.viewState { session["view"] = viewState }
         if let policy { session["policy"] = policy }
         if !regionByRoom.isEmpty { session["regions"] = regionByRoom }
@@ -436,6 +444,17 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         return trimmed.isEmpty
             ? "The run exited \(code) before any line ran."
             : "The run exited \(code).\n\(trimmed)"
+    }
+
+    /// The seed a tree document pins (its `seed` field, ADR-307 D5), or nil
+    /// when the text is not a JSON object carrying an integer seed. The host
+    /// reads this ONE field, so the engine boots at the document's seed
+    /// (GH #540); the surface validates the rest of the document (AC-4).
+    static func documentSeed(in text: String) -> Int? {
+        guard let data = text.data(using: .utf8),
+              let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
+              let seed = object["seed"] as? Int else { return nil }
+        return seed
     }
 
     // MARK: - WKScriptMessageHandler

@@ -132,3 +132,44 @@ When deciding which forks are safe to run, `blockOriginOf` now prefers a specifi
 ---
 
 **Progressive update**: session completed 2026-09-27 16:40 — terminal write: consolidated the 15:00 checkpoint into a full-form summary, corroborated test/build claims against the event log and a fresh branch-tester run, confirmed GH #522/523/525/539/540/541 state via `gh issue view`, and renamed the file to the session's `summaryPrefix`-named path.
+
+## Activity Log (auto-captured)
+```
+[19:57:54] EDIT: File changed via Bash — branch-stories/secret-letter/secret-letter.tests.json
+[19:58:04] EDIT: File changed via Bash — docs/context/.current-plan
+[19:58:04] EDIT: File changed via Bash — docs/work/archive/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[19:58:04] EDIT: File changed via Bash — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[20:00:36] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[20:04:40] EDIT: File changed via Bash — docs/context/.session-state-1cbe5e.json.9iadJk
+[20:04:55] EDIT: File changed via Bash — docs/context/session-20260927-1500-explorer-prototype.md
+[20:19:55] EDIT: File changed via Bash — packages/branch-tester/src/tree-walker.ts
+[20:20:44] TEST: Tests failed — 1 failed 1 passed 2 failed 34 passed
+[20:20:44] EDIT: File changed via Bash — packages/branch-tester/tests/tree-end-state.test.ts
+[20:20:44] EDIT: File changed via Bash — packages/branch-tester/tests/tree-walker.test.ts
+[20:20:44] TEST: Tests failed — python3 - <<'EOF'
+p='tools/ide/web/testing-surface/src/run.ts'
+s=open(p).read()
+ (exit 1)
+[20:21:06] TEST: Tests ran (status unverified) — npx vitest run tests/tree-walker.test.ts 2>&1 | grep -n "FAIL\|✗\|×\| ❯ tests" |
+[20:21:07] TEST: Tests passed — 1 passed 16 passed
+[20:21:07] EDIT: File changed via Bash — packages/branch-tester/src/tree-document.ts
+[20:21:07] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/run.ts
+[20:21:07] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/run.test.ts
+[20:21:23] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee/packages/branch-tester && npx vitest run tests/tre
+[20:22:05] BUILD: Build passed — python3 - <<'EOF'
+p='packages/branch-tester/src/tree-walker.ts'
+s=open(p).read()
+[20:22:35] EDIT: File changed via Bash — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[20:23:32] EDIT: File changed via Bash — docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md
+[20:23:33] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/TestingSurfaceExitNoteTests.swift
+[20:23:37] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.js
+[20:24:03] TEST: Tests passed — 14 passed 155 passed
+[20:26:46] EDIT: File written — /Users/david/.claude/projects/-Users-david-repos-sharpee/memory/project_ide_xcodebuild_practice.md
+[21:38:41] TEST: Tests passed — 13 passed 216 passed
+[21:40:32] EDIT: File changed via Bash — docs/context/session-20260927-1427-explorer-prototype.md
+[21:41:31] EDIT: File written — docs/context/session-20260927-1427-explorer-prototype.md
+[21:45:03] TEST: Tests passed — 12 passed 121 passed
+[21:45:13] EDIT: File written — .commit-files
+[21:45:20] EDIT: File written — .commit-msg
+[21:45:24] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

@@ -652,6 +652,31 @@ final class TestingSurfaceRealPathTests: XCTestCase {
                        "reopen must replay to the identical document, byte for byte")
     }
 
+    // MARK: - GH #540: the document's seed is the engine's seed
+
+    func testADocumentPinnedAtItsOwnSeedBootsTheEngineAtThatSeed() async throws {
+        let pinned = #"{"version": 2, "story": "probe", "seed": 7, "cards": [{"type": "opening"}, {"type": "boot"}]}"#
+        try Data(pinned.utf8).write(to: documentURL)
+
+        try await boot()
+        // The page global the client's boot reads (ADR-305 D1) carries the
+        // document's pin, not the IDE constant.
+        let seed = try await surface.evaluateInSurface("window.__SHARPEE_PLAY_SEED__")
+        XCTAssertEqual(seed as? Int, 7)
+        // The surface adopted the document (no refusal notice) and recording
+        // continues at that seed: the document written back keeps its pin.
+        try await waitForIdleInput()
+        let notice = try await surface.evaluateInSurface(
+            "!!document.querySelector('.ts-notice') && document.querySelector('.ts-notice').textContent")
+        XCTAssertEqual(notice as? Bool, false)
+        try await type("north")
+        try await waitForDocument("the played turn at the pinned seed") { object in
+            let cards = (object["cards"] as? [[String: Any]]) ?? []
+            return cards.count == 3
+        }
+        XCTAssertEqual(try documentJSON()["seed"] as? Int, 7)
+    }
+
     // MARK: - AC-4: refused and malformed documents
 
     func testANewerVersionDocumentShowsItsNoticeAndIsNeverWritten() async throws {

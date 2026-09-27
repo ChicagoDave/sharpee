@@ -534,6 +534,21 @@
     return Object.keys(value).find((key) => !allowed.includes(key));
   }
 
+  // tools/ide/web/testing-surface/src/boot-document.ts
+  function admitBootDocument(text3, engineSeed) {
+    if (text3 === void 0) return { writeLocked: false };
+    const read = deserializeTreeDocument(text3);
+    if (read.status === "refused") return { writeLocked: true, notice: read.message };
+    if (read.status !== "ok") return { writeLocked: false };
+    if (read.document.seed !== engineSeed) {
+      return {
+        writeLocked: true,
+        notice: `This tree is pinned at seed ${read.document.seed}, but the engine booted at seed ${engineSeed}. Nothing is recorded until the host boots at the document's seed.`
+      };
+    }
+    return { document: read.document, writeLocked: false };
+  }
+
   // tools/ide/web/testing-surface/src/derived.ts
   var LABEL_SEPARATOR = " \xB7 ";
   function derivedRowOf(event) {
@@ -3701,18 +3716,15 @@
     performUndo();
   });
   var loadedDocument = false;
-  if (bootSession?.document !== void 0) {
-    const read = deserializeTreeDocument(bootSession.document);
-    if (read.status === "ok") {
-      model.load(read.document);
-      lastDocumentText = model.serialize();
-      dialogOutcomes = new Map(bootSession.view?.dialogs ?? []);
-      loadedDocument = true;
-    } else if (read.status === "refused") {
-      documentWriteLocked = true;
-      cards.setNotice(read.message);
-    }
+  var admission = admitBootDocument(bootSession?.document, seed);
+  if (admission.document) {
+    model.load(admission.document);
+    lastDocumentText = model.serialize();
+    dialogOutcomes = new Map(bootSession?.view?.dialogs ?? []);
+    loadedDocument = true;
   }
+  if (admission.writeLocked) documentWriteLocked = true;
+  if (admission.notice) cards.setNotice(admission.notice);
   for (const record of queued) deliver(record);
   if (loadedDocument && model.document.cards.length > 0) {
     void replayTree(bootSession?.view?.active ?? MAIN_LINE);
