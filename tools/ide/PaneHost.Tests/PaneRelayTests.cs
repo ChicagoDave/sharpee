@@ -1,6 +1,7 @@
 // Tests for the relay's contract: records reach the page in the order they were posted,
-// everything queued at drain time rides one round trip, and a refused delivery does not
-// strand the ones behind it.
+// everything queued at drain time rides one round trip, a refused delivery does not
+// strand the ones behind it, and a caller awaiting the drain is sequenced behind every
+// record enqueued before it (GH #535 — the run column's exit signal).
 //
 // STUB JUSTIFICATION (rule 13a). Delivery here is a recording delegate rather than the real
 // door evaluating script in a real view, because that needs a constructed Avalonia view and
@@ -165,6 +166,87 @@ public sealed class PaneRelayTests
         Assert.True(script.IndexOf("""{"turn":2}""", StringComparison.Ordinal)
             < script.IndexOf("""{"turn":3}""", StringComparison.Ordinal));
         Assert.Contains("__sharpeeHost({type:'deliver'", script);
+    }
+
+    [Fact]
+    public void an_idle_relay_is_already_drained()
+    {
+        // The exit path awaits the drain on every exit, including the ones where nothing
+        // was ever streamed ("no story is open"); those must not wait on anything.
+        var relay = Relay(new RecordingPane());
+
+        Assert.True(relay.WhenDrainedAsync().IsCompleted);
+
+        relay.Enqueue("""{"turn":1}""");
+
+        // Inline scheduling delivered it on Enqueue, so the relay is idle again.
+        Assert.True(relay.WhenDrainedAsync().IsCompleted);
+        Assert.Equal(1, relay.Delivered);
+    }
+
+    [Fact]
+    public async Task the_drain_completes_only_after_every_queued_record_has_reached_the_page()
+    {
+        // GH #535: the CLI process returns before the relay's UI-thread drain has run, so
+        // an exit signal sent on process return overtakes the final batch and the surface
+        // reports a stream that "ended without completing" over one it received whole.
+        var pane = new RecordingPane();
+        var held = new HeldScheduler();
+        var relay = new PaneRelay(pane.DeliverAsync, null, held.Schedule);
+
+        relay.Enqueue("""{"seq":0}""");
+        relay.Enqueue("""{"seq":1,"type":"run-end"}""");
+        var drained = relay.WhenDrainedAsync();
+        Assert.False(drained.IsCompleted);
+        Assert.Empty(pane.Delivered);
+
+        held.Release();
+        await drained;
+
+        Assert.Equal(2, relay.Delivered);
+        Assert.Single(pane.Delivered);
+        Assert.Contains("run-end", pane.Delivered[0]);
+    }
+
+    [Fact]
+    public async Task an_exit_sequenced_behind_the_drain_lands_after_the_last_batch()
+    {
+        // The shell's exit path in miniature: enqueue the stream, await the drain, then
+        // evaluate the exit script — the page must see the batch first and the exit last.
+        var pane = new RecordingPane();
+        var held = new HeldScheduler();
+        var relay = new PaneRelay(pane.DeliverAsync, null, held.Schedule);
+
+        relay.Enqueue("""{"seq":0,"type":"run-end"}""");
+        var exit = relay.WhenDrainedAsync().ContinueWith(
+            _ => pane.DeliverAsync("runExit(false)"), TaskScheduler.Default).Unwrap();
+        Assert.Empty(pane.Delivered);
+
+        held.Release();
+        await exit;
+
+        Assert.Equal(2, pane.Delivered.Count);
+        Assert.Contains("run-end", pane.Delivered[0]);
+        Assert.Equal("runExit(false)", pane.Delivered[1]);
+    }
+
+    [Fact]
+    public async Task a_record_refused_by_the_page_still_lets_the_drain_complete()
+    {
+        // A refused batch is recorded and skipped; it must not leave the exit path waiting
+        // forever for a drain that has in fact finished.
+        var pane = new RecordingPane(_ => throw new InvalidOperationException("the page refused it"));
+        var held = new HeldScheduler();
+        var relay = new PaneRelay(pane.DeliverAsync, null, held.Schedule);
+
+        relay.Enqueue("""{"seq":0}""");
+        var drained = relay.WhenDrainedAsync();
+
+        held.Release();
+        await drained;
+
+        Assert.Equal(0, relay.Delivered);
+        Assert.NotNull(relay.LastError);
     }
 
     [Fact]

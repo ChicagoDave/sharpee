@@ -1166,14 +1166,20 @@ public partial class ShellWindow : Window
         + " window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runLine"
         + " && window.__sharpeeTestingSurface.runLine(l)";
 
-    /// <summary>Ends the run column, so the Run button leaves "Running…" whatever happened.</summary>
+    /// <summary>
+    /// Ends the run column, so the Run button leaves "Running…" whatever happened. The exit
+    /// is sequenced behind the stream: the process returns before the relay's final batch
+    /// has reached the page, and an exit that overtakes `run-end` makes the surface report
+    /// a stream that "ended without completing" over one it received whole (GH #535).
+    /// </summary>
     /// <param name="ok">True when the run finished and passed.</param>
     /// <param name="note">Why it did not start or did not pass, or null.</param>
-    private Task FinishSurfaceRunAsync(bool ok, string? note = null)
+    private async Task FinishSurfaceRunAsync(bool ok, string? note = null)
     {
+        await _runRelay.WhenDrainedAsync();
         var arguments = ok ? "true" : "false";
         if (note is not null) arguments += ", " + System.Text.Json.JsonSerializer.Serialize(note);
-        return _door.EvaluateAsync(TestingWeb,
+        await _door.EvaluateAsync(TestingWeb,
             "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runExit"
             + $" && window.__sharpeeTestingSurface.runExit({arguments})");
     }
@@ -1589,6 +1595,12 @@ public partial class ShellWindow : Window
             + "text:(document.getElementById('ts-run-results')||{}).innerText||''})");
         _log.Line($"  run button: settled={settled}, after={afterLabel}, relayed={_runRelay.Delivered} line(s)");
         _log.Line($"  run column: {Trim(column, 200)}");
+        // The exit must land behind the stream (GH #535): a note here after a stream that
+        // ended with `run-end` means the exit signal overtook the relay's last batch.
+        var runNote = await EvaluateAsync(TestingWeb,
+            "(function(){var n=document.querySelector('#ts-run-results .ts-run-note');"
+            + "return n ? n.textContent : '<none>';})()");
+        _log.Line($"  run note after exit: {runNote} (relay drained before runExit: {_runRelay.WhenDrainedAsync().IsCompleted})");
 
         // The DERIVED TIER in the run column (GH #524): the three ratios and the section
         // headers read back from the page, then a real span link clicked — its post travels

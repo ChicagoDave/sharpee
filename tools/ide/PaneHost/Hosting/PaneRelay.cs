@@ -18,7 +18,13 @@
 // same on every platform slice, and it does not care that the shell now keeps one view per
 // pane rather than re-navigating a single one.
 //
-// Public interface: PaneRelay — Enqueue, Delivered, LastError.
+// THE END OF THE STREAM IS ORDERED TOO. Draining is posted to the UI thread, so a caller
+// that learns the stream has ended (the CLI process returning) can reach the page ahead of
+// the relay's final batch — the run column then reported "ended without completing its
+// stream" over a stream it received whole (GH #535). WhenDrainedAsync is the awaitable
+// that sequences such a caller behind everything enqueued so far.
+//
+// Public interface: PaneRelay — Enqueue, WhenDrainedAsync, Delivered, LastError.
 // Owner context: tools/ide — the Avalonia desktop head's host layer.
 
 using Avalonia.Threading;
@@ -38,6 +44,7 @@ public sealed class PaneRelay
     private readonly Queue<string> _queue = new();
     private readonly object _gate = new();
     private bool _draining;
+    private TaskCompletionSource? _drained;
 
     /// <param name="deliver">Runs one script in the testing pane and answers when it returns.</param>
     /// <param name="log">Optional sink for delivery failures; nothing is logged per record.</param>
@@ -105,6 +112,24 @@ public sealed class PaneRelay
     }
 
     /// <summary>
+    /// Completes once every record enqueued before the call has been delivered or refused
+    /// and no batch is in flight — already complete when the relay is idle. A caller that
+    /// must reach the page after the stream (the run column's exit signal) awaits this
+    /// first; without it the exit can overtake the final batch, because draining is posted
+    /// to the UI thread rather than run inline.
+    /// </summary>
+    /// <returns>A task that completes when the queue has drained; never faults.</returns>
+    public Task WhenDrainedAsync()
+    {
+        lock (_gate)
+        {
+            if (!_draining) return Task.CompletedTask;
+            _drained ??= new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            return _drained.Task;
+        }
+    }
+
+    /// <summary>
     /// Delivers everything queued in one round trip, then whatever arrived while that
     /// trip was in flight, and so on until the queue is empty. Records within a batch
     /// run in one script execution, so the page cannot paint between them and the order
@@ -118,15 +143,28 @@ public sealed class PaneRelay
         while (true)
         {
             string[] batch;
+            TaskCompletionSource? drained;
             lock (_gate)
             {
                 if (_queue.Count == 0)
                 {
                     _draining = false;
-                    return;
+                    drained = _drained;
+                    _drained = null;
+                    batch = Array.Empty<string>();
                 }
-                batch = _queue.ToArray();
-                _queue.Clear();
+                else
+                {
+                    drained = null;
+                    batch = _queue.ToArray();
+                    _queue.Clear();
+                }
+            }
+            if (batch.Length == 0)
+            {
+                // Outside the gate: the continuation is the shell's, not the relay's.
+                drained?.SetResult();
+                return;
             }
 
             try
