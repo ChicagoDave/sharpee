@@ -75,12 +75,21 @@ describe('AC-6 — an END STATE card proves its ending on a real replay', () => 
     );
   }, 30_000);
 
-  it('a card after an END STATE card is MALFORMED — reported, nothing runs', async () => {
+  it('cards after an END STATE card never run — the line stops on the real ending and names the cut-off', async () => {
     let boots = 0;
     const counting = async () => { boots += 1; return loadGame(); };
     const run = await runTreeDocument(doc([skip('examine the box', { ending: 'box-opened' }), skip('look')]), counting);
-    expect(run.defects.map((d) => d.path)).toEqual(['cards[3]']);
-    expect(run.lines).toEqual([]);
-    expect(boots).toBe(0);
+    expect(run.defects).toEqual([]);
+    expect(boots).toBe(1);
+    const [main] = run.lines;
+    expect(main.status).toBe('error');
+    expect(main.error).toBe(
+      "the story ended on \"examine the box\" (ending 'box-opened') — 1 card after it never ran; a line ends where the story ends",
+    );
+    // The ending was really reached on the real engine, and nothing was
+    // typed into it afterwards.
+    expect(main.result!.commands.map((c) => c.command.input)).toEqual(['look', 'examine the box']);
+    expect(main.result!.commands.at(-1)!.ending).toBe('victory');
+    expect(run.endingsReached).toEqual(['box-opened']);
   }, 30_000);
 });

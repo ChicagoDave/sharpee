@@ -18,12 +18,18 @@
  * **A line ends where the story ends** (ADR-356 D4). A card that declares an
  * `ending` is an END STATE card: the walker runs it, asserts through the
  * assertion core that the world's Ending carries the declared id, and runs
- * nothing after it — a card recorded after an END STATE card, or a branch
- * forking from one, is a card-position defect and nothing runs. A fork from
- * an EARLIER card is the ordinary shape and unchanged. The engine is never
- * revived: a line that reaches an ending its cards do not declare keeps
- * running into a stopped engine, and every refusal after it is that line's
- * own finding (the story ended where the tree says it did not).
+ * nothing after it. Cards recorded after an END STATE card are cards the run
+ * never reached: the line reports `error` naming the ending card and the
+ * count, and a branch forking at or after that card is `blocked` with the
+ * line as origin — the state it would continue from is a stopped engine.
+ * The document is never refused over it (amended 2026-09-27): the Testing
+ * tab stamps the ending it observed on replay, so a line that dies where it
+ * did not use to is a recorded finding about that line, not a malformed
+ * document that runs nothing. A fork from an EARLIER card is the ordinary
+ * shape and unchanged. The engine is never revived: a line that reaches an
+ * ending its cards do not declare keeps running into a stopped engine, and
+ * every refusal after it is that line's own finding (the story ended where
+ * the tree says it did not).
  *
  * **A seam is a failed claim, not corruption** (D4). A failed assertion never
  * blocks descendant lines — the tree is a script, and a content edit shows as
@@ -129,12 +135,19 @@ export interface TreeLine {
   readonly cards: TreeCard[];
   /** The line's first typed command — half of a branch's derived label. */
   readonly firstCommand?: string;
+  /**
+   * Index of the line's first END STATE card (ADR-356 D4), when it has one.
+   * The line runs through this card and no further; cards after it never
+   * run, and branches forking at or after it are blocked.
+   */
+  readonly endingIndex?: number;
 }
 
 /**
  * A structural problem the wire validator cannot see (card position): an
- * opening or boot card away from the main line's head, or a card recorded
- * after — or forking from — an END STATE card (ADR-356 D4).
+ * opening or boot card away from the main line's head. A card after — or a
+ * branch from — an END STATE card is not a defect but a run-time outcome
+ * (ADR-356 D4, amended 2026-09-27; see the header).
  */
 export interface TreeLineDefect {
   /** JSON-path-ish location of the offending card. */
@@ -206,9 +219,10 @@ export interface TreeDocumentRunResult {
  * Also validates what the wire validator cannot: `opening`/`boot` cards are
  * the main line's head (opening first, boot at most once, directly after),
  * and appear nowhere else — a branch continues a game that has already
- * opened; and an END STATE card is the last card of its line, with no card
- * after it and no branch from it (ADR-356 D4 — a line ends where the story
- * ends). A defective document produces its defects and no runnable lines.
+ * opened. A defective document produces its defects and no runnable lines.
+ * An END STATE card is noted on its line (`endingIndex`) rather than
+ * validated: a line ends where the story ends (ADR-356 D4), and the walker
+ * enforces that at run time by stopping there.
  *
  * @param document a valid (post-deserialize) tree document.
  * @returns the lines in run order, and any card-position defects.
@@ -228,6 +242,7 @@ export function flattenTreeLines(document: TreeDocument): {
     parent?: { parentId: string; branchId: number; forkIndex: number },
     prefix: string[] = [],
   ): void => {
+    const endingIndex = cards.findIndex((card) => card.ending !== undefined);
     lines.push({
       id,
       ...(parent !== undefined
@@ -236,6 +251,7 @@ export function flattenTreeLines(document: TreeDocument): {
       prefix,
       cards,
       ...(firstCommandOf(cards) !== undefined ? { firstCommand: firstCommandOf(cards) } : {}),
+      ...(endingIndex !== -1 ? { endingIndex } : {}),
     });
 
     const stream = [...prefix];
@@ -256,27 +272,10 @@ export function flattenTreeLines(document: TreeDocument): {
           message: `a 'boot' card is only valid at the main line's head, directly after the opening`,
         });
       }
-      // An END STATE card ends its line (ADR-356 D4): the story stopped on
-      // this turn, so a card after it would type into a stopped engine, and
-      // a branch from it would replay onto one.
-      if (card.ending !== undefined) {
-        if (index < cards.length - 1) {
-          defects.push({
-            path: `${path}[${index + 1}]`,
-            message:
-              `a card after an END STATE card (${cardPath} declares ending ` +
-              `'${card.ending}') — a line ends where the story ends`,
-          });
-        }
-        if ((card.branches ?? []).length > 0) {
-          defects.push({
-            path: `${cardPath}.branches`,
-            message:
-              `a branch from an END STATE card (ending '${card.ending}') — ` +
-              `fork from an earlier card instead`,
-          });
-        }
-      }
+      // An END STATE card ends its line (ADR-356 D4). Cards after it and
+      // branches from it are still enumerated — the walker reports them as
+      // never reached and blocked, so the author sees exactly what the
+      // ending cut off, instead of a refused document.
       // The command stream the card contributes: a typed turn its command,
       // the boot look its `look` (part of what the main line really
       // executed, so part of what a replay must repeat), the opening nothing.
@@ -416,7 +415,7 @@ export async function runTreeDocument(
       });
       continue;
     }
-    // No revive (ADR-356 D4): a fork from an END STATE card is a defect
+    // No revive (ADR-356 D4): a fork from an END STATE card is blocked
     // above, so a prefix only ever leaves the engine stopped when the story
     // ended on a card that does not declare it — and then the refusals the
     // line's own cards meet are its finding, not something to paper over.
@@ -425,6 +424,9 @@ export async function runTreeDocument(
     const label = labelOf(line, game);
     options.lineObserver?.onLineStart?.({ line, label, replayedCommands: line.prefix.length });
 
+    // The line runs through its END STATE card and no further (D4): the
+    // engine is stopped after it, so every later card is one the run never
+    // reached, and a branch forking at or after it is blocked below.
     const { transcript, cardIndexOfCommand } = transcriptOfLine(line);
     const result = await runTranscript(transcript, game as never, {
       ...options,
@@ -459,18 +461,28 @@ export async function runTreeDocument(
       cardIndexOfCommand,
       transcript.commands.length,
     );
+    const cutOff = cardsAfterEndingOf(line);
+    const outcomeResult: TranscriptResult =
+      cutOff !== undefined ? { ...result, status: 'error', errorMessage: cutOff } : result;
 
     record(
       line,
       {
         id: line.id,
         label,
-        status: result.status === 'passed' ? 'passed' : result.status === 'failed' ? 'failed' : 'error',
+        status:
+          outcomeResult.status === 'passed' ? 'passed'
+          : outcomeResult.status === 'failed' ? 'failed'
+          : 'error',
         turnCount: countTurns(line.cards),
-        result,
-        ...(result.errorMessage !== undefined ? { error: result.errorMessage } : {}),
+        result: outcomeResult,
+        ...(outcomeResult.errorMessage !== undefined ? { error: outcomeResult.errorMessage } : {}),
       },
-      execErrorIndex,
+      // The state after an END STATE card is a stopped engine: a fork at or
+      // after it never validly continues, whatever else the line did.
+      line.endingIndex !== undefined
+        ? Math.min(line.endingIndex, execErrorIndex ?? Number.POSITIVE_INFINITY)
+        : execErrorIndex,
     );
   }
 
@@ -657,7 +669,11 @@ function transcriptOfLine(line: TreeLine): {
   const cardIndexOfCommand: number[] = [];
   let opening: Assertion[] | undefined;
 
-  line.cards.forEach((card, cardIndex) => {
+  // Through the END STATE card only (ADR-356 D4): what follows it is never
+  // typed — a stopped engine refuses it, and the outcome names the cut-off.
+  const runnable =
+    line.endingIndex !== undefined ? line.cards.slice(0, line.endingIndex + 1) : line.cards;
+  runnable.forEach((card, cardIndex) => {
     if (card.type === 'opening') {
       const assertions = assertionsOfCard(card);
       if (assertions.length > 0) opening = assertions;
@@ -692,6 +708,25 @@ function transcriptOfLine(line: TreeLine): {
 // ---------------------------------------------------------------------------
 
 /**
+ * The cut-off a line's END STATE card imposes, as the line's error message,
+ * or undefined when nothing was recorded after it (ADR-356 D4): the cards
+ * after the ending card never ran, and the message names the card, its
+ * ending, and how many were cut off — the finding the Testing tab records
+ * when a replay dies where the line did not use to.
+ */
+function cardsAfterEndingOf(line: TreeLine): string | undefined {
+  if (line.endingIndex === undefined) return undefined;
+  const after = line.cards.length - line.endingIndex - 1;
+  if (after <= 0) return undefined;
+  const card = line.cards[line.endingIndex];
+  const command = commandOf(card) ?? card.type;
+  return (
+    `the story ended on "${command}" (ending '${card.ending}') — ` +
+    `${after} card${after === 1 ? '' : 's'} after it never ran; a line ends where the story ends`
+  );
+}
+
+/**
  * The line id whose execution error blocks `line`, or undefined when it can
  * run. Transitive: a blocked parent passes its origin down. Direct: a parent
  * whose execution broke at or before this line's fork card never validly
@@ -705,10 +740,14 @@ function blockOriginOf(
   const parent = tracked.get(line.parentId);
   if (parent === undefined) return undefined;
   if (parent.outcome.status === 'blocked') return parent.outcome.blockedBy;
-  if (parent.outcome.status === 'error') return parent.outcome.id;
+  // A known break point is more precise than the parent's status: a fork
+  // before it continues from state the parent produced cleanly, whatever
+  // happened later on the line (an END STATE card mid-line reports `error`
+  // for the cards it cut off, and its earlier forks stay legitimate).
   if (parent.execErrorIndex !== undefined && line.forkIndex !== undefined) {
-    if (line.forkIndex >= parent.execErrorIndex) return parent.outcome.id;
+    return line.forkIndex >= parent.execErrorIndex ? parent.outcome.id : undefined;
   }
+  if (parent.outcome.status === 'error') return parent.outcome.id;
   return undefined;
 }
 

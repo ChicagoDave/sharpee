@@ -25,9 +25,9 @@
  * - The grammar is closed: unknown keys are malformed. Additive fields
  *   arrive with a version bump, never silently.
  * - A card that declares an `ending` is an END STATE card (ADR-356 D4): the
- *   story ended on that turn, so it is the last card of its line — nothing
- *   is recorded after it and nothing forks from it. The wire validator
- *   checks the field's shape; the walker reports the card-position rule.
+ *   story ended on that turn, so it is the last card of its line that runs.
+ *   The wire validator checks the field's shape; the walker stops the line
+ *   there and reports whatever was recorded after it as never reached.
  *
  * Public interface: the TreeDocument/TreeCard/TreeBranch/TreeAssertions/
  * TreeChannelAssertion types, TREE_DOCUMENT_VERSION,

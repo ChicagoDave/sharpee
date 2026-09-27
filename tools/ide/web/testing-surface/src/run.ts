@@ -311,11 +311,15 @@ export function resetRun(state: RunColumnState): void {
 /**
  * The run process exited. A clean stream already closed via `run-end`; a
  * process that died without one (launch failure, missing CLI) leaves the
- * column saying so instead of spinning forever.
+ * column saying so instead of spinning forever. So does a run that closed
+ * its stream having run NOTHING — a document refused at validation still
+ * sends `run-end` with an exit code and zero totals, and without the note
+ * the column showed all zeros and no reason (2026-09-27).
  */
 export function finishRun(state: RunColumnState, ok: boolean, note?: string): void {
   state.inFlight = false;
-  if (!ok && state.tally === undefined) {
+  const nothingRan = state.results.size === 0 && state.derived.length === 0;
+  if (!ok && (state.tally === undefined || nothingRan)) {
     state.note = note ?? 'The run ended without completing its stream.';
   }
 }

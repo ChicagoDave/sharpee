@@ -123,3 +123,40 @@ Plan complete — all phases done. GH #525's own follow-ups list (`subject-unrea
 ---
 
 **Progressive update**: session completed 2026-09-27 14:15 — revised in place for the terminal write: full-form template applied, Status stamped COMPLETE, Session Metadata / Dependency / Architectural Decisions / Mutation Audit / Recurrence Check / Test Coverage Delta sections added, Open Items ledger reconciled through `issues.sh` (filed issue 539 for the `plan-archive.sh` filename mismatch; #522/#525 follow-ups kept in Notes as plain-GitHub-tracker items outside the devarch ledger's scope).
+
+## Activity Log (auto-captured)
+```
+[17:06:35] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[17:14:55] EDIT: File changed via Bash — docs/context/session-20260927-1206-explorer-prototype.md
+[17:20:37] EDIT: File changed via Bash — packages/story-loader/src/arrange.ts
+[17:20:37] EDIT: File changed via Bash — packages/story-loader/src/evaluator.ts
+[17:20:37] EDIT: File changed via Bash — packages/story-loader/src/index.ts
+[17:20:37] EDIT: File changed via Bash — packages/story-loader/src/pin-grammar.ts
+[17:20:37] EDIT: File changed via Bash — packages/story-loader/src/state-keys.ts
+[17:21:06] EDIT: File changed via Bash — packages/branch-tester/src/derived-runner.ts
+[17:21:06] EDIT: File changed via Bash — packages/branch-tester/src/runner.ts
+[17:21:06] EDIT: File changed via Bash — packages/transcript-tester/src/assertion-core.ts
+[17:21:06] EDIT: File changed via Bash — packages/transcript-tester/src/types.ts
+[17:21:07] BUILD: Build passed — cd /Users/david/repos/sharpee/packages/story-loader && npx tsc --noEmit -p tscon
+[17:22:08] EDIT: File changed via Bash — packages/branch-tester/tests/derived-plan.test.ts
+[17:22:08] EDIT: File changed via Bash — packages/branch-tester/tests/derived-runner.test.ts
+[17:22:08] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/skip.story
+[17:22:08] EDIT: File changed via Bash — packages/story-loader/tests/arrange.test.ts
+[17:22:08] EDIT: File changed via Bash — packages/transcript-tester/tests/claim-kinds.test.ts
+[17:22:46] EDIT: File changed via Bash — docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md
+[17:33:15] TEST: Tests failed — 1 failed 12 passed 1 failed 52 passed
+[18:46:55] EDIT: File changed via Bash — packages/branch-tester/tests/derived-coverage.test.ts
+[18:46:55] EDIT: File changed via Bash — packages/branch-tester/tests/derived-stream.test.ts
+[18:47:12] EDIT: File changed via Bash — packages/devkit/tests/fixtures/derived-pass/derived-skip.story
+[18:47:12] EDIT: File changed via Bash — packages/devkit/tests/test-derived.test.ts
+[18:47:12] EDIT: File changed via Bash — scripts/__tests__/narrative-what-runs-when.test.ts
+[18:47:29] TEST: Tests passed — 13 passed 53 passed
+[18:48:25] EDIT: File changed via Bash — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[19:09:34] EDIT: File changed via Bash — docs/work/archive/testing-explorer/narrative-20260926-author-testing.md
+[19:11:45] EDIT: File changed via Bash — docs/context/session-20260927-1205-explorer-prototype.md
+[19:16:28] EDIT: File written — docs/context/session-20260927-1205-explorer-prototype.md
+[19:21:32] TEST: Tests passed — 12 passed 121 passed
+[19:21:43] EDIT: File written — .commit-files
+[19:21:51] EDIT: File written — .commit-msg
+[19:21:57] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

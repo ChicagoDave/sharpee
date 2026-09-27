@@ -589,25 +589,37 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     expect(last.assertionResults.map((a) => a.assertion.type)).toEqual(['ending-assert']);
   });
 
-  it('AC-6 — a card after an END STATE card is MALFORMED: reported, and nothing runs', async () => {
+  it('cards after an END STATE card never run: the line stops on the ending card and reports the cut-off', async () => {
     const harness = stubHarness({ endsOn });
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look')]),
+      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look'), okTurn('wait')]),
       harness.load,
     );
-    expect(run.defects).toEqual([
-      {
-        path: 'cards[3]',
-        message:
-          "a card after an END STATE card (cards[2] declares ending 'box-opened') — a line ends where the story ends",
-      },
-    ]);
-    expect(run.lines).toEqual([]);
-    expect(harness.counters.boots).toBe(0);
-    expect(formatTreeDocumentRun(run)[0]).toBe('Tree document is malformed — 1 defect(s); nothing ran.');
+    // Not a defect: the document runs (amended 2026-09-27 — the Testing tab
+    // stamps the ending it observed, so this shape is a recorded finding).
+    expect(run.defects).toEqual([]);
+    expect(harness.counters.boots).toBe(1);
+    // The engine saw the boot look and the ending card, and nothing after.
+    expect(commandsOf(harness)).toEqual(['look', 'open the box']);
+    const [main] = run.lines;
+    expect(main.status).toBe('error');
+    expect(main.error).toBe(
+      "the story ended on \"open the box\" (ending 'box-opened') — 2 cards after it never ran; a line ends where the story ends",
+    );
+    // The cards that did run keep their verdicts — the ending claim held.
+    expect(main.result!.status).toBe('error');
+    expect(main.result!.commands.map((c) => c.command.input)).toEqual(['look', 'open the box']);
+    expect(main.result!.commands.at(-1)!.assertionResults[0]).toEqual({
+      assertion: { type: 'ending-assert', endingId: 'box-opened' },
+      passed: true,
+    });
+    expect(run.endingsReached).toEqual(['box-opened']);
+    expect(formatTreeDocumentRun(run)[0]).toBe(
+      "✗ opening-iron-gates — the story ended on \"open the box\" (ending 'box-opened') — 2 cards after it never ran; a line ends where the story ends",
+    );
   });
 
-  it('a branch from an END STATE card is MALFORMED too — fork from an earlier card', async () => {
+  it('a branch from an END STATE card is blocked by its line — it would replay onto a stopped engine', async () => {
     const harness = stubHarness({ endsOn });
     const run = await runTreeDocument(
       doc([
@@ -620,13 +632,33 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
       ]),
       harness.load,
     );
-    expect(run.defects).toEqual([
-      {
-        path: 'cards[2].branches',
-        message: "a branch from an END STATE card (ending 'box-opened') — fork from an earlier card instead",
-      },
+    expect(run.defects).toEqual([]);
+    expect(run.lines.map((l) => [l.id, l.status, l.blockedBy])).toEqual([
+      ['main', 'passed', undefined],
+      ['main/b1', 'blocked', 'main'],
     ]);
-    expect(harness.counters.boots).toBe(0);
+    // The main line ended cleanly on its last card; only the fork is refused.
+    expect(harness.counters.boots).toBe(1);
+  });
+
+  it('a branch from a card AFTER the END STATE card is blocked too, and one from before it runs', async () => {
+    const harness = stubHarness({ endsOn });
+    const run = await runTreeDocument(
+      doc([
+        opening(),
+        okBoot(),
+        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('open the box', { ending: 'box-opened' }),
+        okTurn('look', { branches: [{ branch: 2, cards: [okTurn('wait')] }] }),
+      ]),
+      harness.load,
+    );
+    expect(run.lines.map((l) => [l.id, l.status, l.blockedBy])).toEqual([
+      ['main', 'error', undefined],
+      ['main/b1', 'passed', undefined],
+      ['main/b2', 'blocked', 'main'],
+    ]);
+    expect(harness.counters.boots).toBe(2);
   });
 
   it('a fork from an EARLIER card of a line that ends stays legitimate and runs on a live engine', async () => {
@@ -699,10 +731,14 @@ describe('rooms entered and endings reached (ADR-356 D5) — what the tree run c
 
   it('a defective document contributes nothing', async () => {
     const harness = stubHarness({ endsOn: { 'open the box': { kind: 'victory', messageId: 'box-opened' } } });
+    // A boot card away from the main line's head is the card-position
+    // defect that still runs nothing (cards after an END STATE card no
+    // longer are — they are the line's own finding, 2026-09-27).
     const run = await runTreeDocument(
-      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), okTurn('look')]),
+      doc([opening(), okBoot(), okTurn('open the box', { ending: 'box-opened' }), boot()]),
       harness.load,
     );
+    expect(run.defects).toHaveLength(1);
     expect(run.roomsEntered).toEqual([]);
     expect(run.endingsReached).toEqual([]);
   });

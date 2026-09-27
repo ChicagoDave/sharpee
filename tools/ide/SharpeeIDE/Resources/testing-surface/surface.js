@@ -3095,7 +3095,8 @@
   }
   function finishRun(state, ok, note) {
     state.inFlight = false;
-    if (!ok && state.tally === void 0) {
+    const nothingRan = state.results.size === 0 && state.derived.length === 0;
+    if (!ok && (state.tally === void 0 || nothingRan)) {
       state.note = note ?? "The run ended without completing its stream.";
     }
   }

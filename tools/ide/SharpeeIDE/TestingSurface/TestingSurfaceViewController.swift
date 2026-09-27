@@ -142,6 +142,16 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// The run column's child `sharpee test --tree --json` process.
     private let testRunner = TestRunner()
 
+    /// The run in flight's stderr, kept for its exit note: the walker's
+    /// refusal reasons (a malformed document, a missing CLI) exist only
+    /// there, and a non-zero exit with nothing on the stream would
+    /// otherwise reach the page as a bare exit code (2026-09-27).
+    private var runDiagnostics = ""
+
+    /// How much of the run's stderr the exit note carries — its tail, since
+    /// the reason is the last thing a refusing CLI prints.
+    private static let runDiagnosticsLimit = 1_500
+
     /// Overrides run-executable resolution — the real-path suite injects the
     /// repo's devkit CLI, because a temp-dir story resolves neither a
     /// workspace shim nor a PATH install. Production leaves it nil and
@@ -347,6 +357,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// makes the property true rather than assumed.
     private func startTestRun() {
         guard !testRunner.isRunning else { return }
+        runDiagnostics = ""
         guard let storyFile else {
             relayRunExit(ok: false, note: "No story file is wired to the surface — reopen the window.")
             return
@@ -398,8 +409,12 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     }
 
     func runner(_ runner: TestRunner, didEmitStderr text: String) {
-        // Diagnostics stay out of the column; a stream-less death is caught
-        // by didExit below, with the exit code.
+        // Diagnostics stay out of the column's rows; they ride the exit note
+        // when the run fails, so a refusal names itself (didExit below).
+        runDiagnostics += text
+        if runDiagnostics.count > Self.runDiagnosticsLimit {
+            runDiagnostics = String(runDiagnostics.suffix(Self.runDiagnosticsLimit))
+        }
     }
 
     func runner(_ runner: TestRunner, didChangeState state: TestRunner.State) {
@@ -408,9 +423,19 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
 
     func runner(_ runner: TestRunner, didExit result: TestRunner.Result) {
         relayRunExit(ok: result.state == .passed,
-                     note: result.state == .passed
-                        ? nil
-                        : "The run exited \(result.exitCode) — see the Testing tab for the full report.")
+                     note: result.state == .passed ? nil : Self.exitNote(code: result.exitCode,
+                                                                        diagnostics: runDiagnostics))
+    }
+
+    /// The note a failed run leaves the page: the exit code, then the run's
+    /// stderr tail when there is one. The page shows it only when no row
+    /// landed — a run that failed on its lines carries the failures in the
+    /// rows themselves.
+    static func exitNote(code: Int32, diagnostics: String) -> String {
+        let trimmed = diagnostics.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmed.isEmpty
+            ? "The run exited \(code) before any line ran."
+            : "The run exited \(code).\n\(trimmed)"
     }
 
     // MARK: - WKScriptMessageHandler

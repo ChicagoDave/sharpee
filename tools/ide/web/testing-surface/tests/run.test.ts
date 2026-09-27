@@ -182,6 +182,26 @@ describe('foldRunLine', () => {
     expect(clean.note).toBeUndefined();
   });
 
+  it('a run that closed its stream having run nothing keeps the exit note — the refusal is the report', () => {
+    // A document refused at validation: run-start, run-end (exit 2, zeros),
+    // no line ever announced. Before 2026-09-27 the zero tally suppressed
+    // the note and the column showed nothing but zeros.
+    const refused = createRunState();
+    beginRun(refused);
+    foldRunLine(refused, runEnd());
+    expect(refused.tally).toBeDefined();
+    finishRun(refused, false, 'The run exited 2.\nTree document is malformed — 1 defect(s); nothing ran.');
+    expect(refused.note).toBe('The run exited 2.\nTree document is malformed — 1 defect(s); nothing ran.');
+
+    // A failing run that DID run lines carries its failures in the rows —
+    // no note on top of them.
+    const failing = createRunState();
+    beginRun(failing);
+    for (const raw of [start(A), command(A), end(A), runEnd()]) foldRunLine(failing, raw);
+    finishRun(failing, false, 'The run exited 1.');
+    expect(failing.note).toBeUndefined();
+  });
+
   it('beginRun clears the previous run — the column reports THIS run only', () => {
     const state = createRunState();
     beginRun(state);
