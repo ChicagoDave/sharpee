@@ -17,6 +17,20 @@
  *   <entity>.location = <place>               → a placement
  *   <entity>.inventory|contents contains <x>  → a placement into the entity
  *   <entity>.isOpen|isLocked|isOn = true|false → the trait flag
+ *   <timer> has started|expired               → the timer's record
+ *
+ * A timer write mirrors the runtime's own verbs (`runtime/timers.ts`).
+ * `has started` on an idle timer writes a running record stamped with the
+ * current turn — `context.turn`, which the caller supplies, since a world
+ * does not know what turn it is — so the timer, like one a story `start`
+ * began, steps for the first time on the turn after; on a timer already
+ * started it writes nothing, as `start` writes nothing. `has expired`
+ * keeps the record and flips its phase, as expiry does; on an idle timer
+ * it writes the expired record `interrupt` never would, because arranging
+ * means making the state hold. A timer the story does not declare cannot
+ * be told from the world alone — an absent record is what idle looks like
+ * — so the write is honoured as named; a caller's expressions come from
+ * the IR, which declares every timer they name.
  *
  * A placement is world construction, as it is at load: it goes through the
  * author model, which bypasses runtime containment rules (a closed trunk
@@ -26,9 +40,9 @@
  *
  * `arrange` never throws and never guesses. A result is `{ arranged: true }`
  * or `{ arranged: false, shape, detail? }`, where `shape` names the form:
- * one of the four non-floor shapes the grammar recognizes and this floor
- * does not write (`occurrence`, `topic-history`, `timer-phase`,
- * `timer-position`), or the two read-only claim kinds (`emitted`, `gone`);
+ * one of the three non-floor shapes the grammar recognizes and this floor
+ * does not write (`occurrence`, `topic-history`, `timer-position`), or the
+ * two read-only claim kinds (`emitted`, `gone`);
  * `negation` for a negated form, which names no single
  * state to arrange; or `unrecognized`, for text no form matches and for a
  * floor form the world cannot honour — an entity the story does not
@@ -43,14 +57,16 @@
  * on every entity it builds), then a world id, then a display name or
  * alias.
  *
- * Public interface: arrange(), ArrangeResult, ArrangeShape.
+ * Public interface: arrange(), ArrangeContext, ArrangeResult, ArrangeShape.
  * Owner context: @sharpee/story-loader — the owner of the keys and the
  * grammar; ADR-356 Q-1 put the primitive here for that reason.
  *
  * References: ADR-356 D2 (arrange, never play; the floor; never throws,
- * never guesses), Q-1 (home), Q-2 (the floor and the four SKIPPED shapes),
- * AC-5 (no writer of loader keys outside this package); ADR-325 Z6 as
- * amended (a move back into the world revives a gone entity).
+ * never guesses), Q-1 (home), Q-2 (the floor and the SKIPPED shapes; timer
+ * phase joined the floor by the amendment of 2026-09-27), AC-5 (no writer
+ * of loader keys outside this package); ADR-325 D3 (timer verbs and
+ * records), Z6 as amended (a move back into the world revives a gone
+ * entity).
  */
 
 import {
@@ -64,13 +80,20 @@ import {
   type WorldModel,
 } from '@sharpee/world-model';
 import { parsePin, type ParsedPin } from './pin-grammar.js';
-import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from './state-keys.js';
+import {
+  CHORD_GONE_PREFIX,
+  CHORD_IR_ID_ATTRIBUTE,
+  CHORD_STATE_PREFIX,
+  CHORD_STORY_STATE_KEY,
+  IDLE_TIMER_RECORD,
+  timerKey,
+  type TimerRecord,
+} from './state-keys.js';
 
 /** The named reasons an expression is not arranged. */
 export type ArrangeShape =
   | 'occurrence'
   | 'topic-history'
-  | 'timer-phase'
   | 'timer-position'
   | 'emitted'
   | 'gone'
@@ -81,6 +104,12 @@ export type ArrangeShape =
 export type ArrangeResult =
   | { arranged: true }
   | { arranged: false; shape: ArrangeShape; detail?: string };
+
+/** What a write may need beyond the world. */
+export interface ArrangeContext {
+  /** The engine's current turn: a timer started now is stamped with it and steps first on the turn after. */
+  turn?: number;
+}
 
 /** The three trait flags the floor writes, by the pin property that names each. */
 const FLAG_WRITERS: Record<string, (entity: IFEntity, value: boolean) => boolean> = {
@@ -109,18 +138,20 @@ const FLAG_WRITERS: Record<string, (entity: IFEntity, value: boolean) => boolean
  *
  * @param world the live world — freshly booted, for a derived test
  * @param expression a pin expression in the floor grammar
+ * @param context the current turn, for a timer start; nothing else needs it
  * @returns `{ arranged: true }`, or the named reason it was not
  */
-export function arrange(world: WorldModel, expression: string): ArrangeResult {
+export function arrange(world: WorldModel, expression: string, context: ArrangeContext = {}): ArrangeResult {
   const pin = parsePin(expression);
   switch (pin.kind) {
     case 'unrecognized':
       return { arranged: false, shape: 'unrecognized', detail: `no form matches "${expression}"` };
     case 'occurrence':
     case 'topic-history':
-    case 'timer-phase':
     case 'timer-position':
       return { arranged: false, shape: pin.kind };
+    case 'timer-phase':
+      return arrangeTimerPhase(world, pin, context);
     case 'emitted':
     case 'gone':
       // Claims the assertion core reads (ADR-356 D3); nothing arranges them.
@@ -194,6 +225,30 @@ function arrangePlacement(world: WorldModel, thingName: string, placeName: strin
   if (typeof irId === 'string' && world.getStateValue(CHORD_GONE_PREFIX + irId) === true) {
     world.setStateValue(CHORD_GONE_PREFIX + irId, false);
   }
+  return { arranged: true };
+}
+
+/**
+ * `<timer> has started|expired` — the timer's record, written as the
+ * runtime's verbs write it: a start stamps the current turn, expiry keeps
+ * the record and flips its phase. A phase that already holds is left as
+ * it is.
+ */
+function arrangeTimerPhase(world: WorldModel, pin: Extract<ParsedPin, { kind: 'timer-phase' }>, context: ArrangeContext): ArrangeResult {
+  const key = timerKey(pin.timer);
+  const record = (world.getStateValue(key) as TimerRecord | undefined) ?? IDLE_TIMER_RECORD;
+  if (pin.what === 'started') {
+    if (record.phase !== 'idle') return { arranged: true };
+    if (context.turn === undefined) {
+      return unrecognized(`starting ${pin.timer} needs the current turn, and the caller supplied none`);
+    }
+    const started: TimerRecord = { phase: 'running', index: 0, startedTurn: context.turn };
+    world.setStateValue(key, started);
+    return { arranged: true };
+  }
+  if (record.phase === 'expired') return { arranged: true };
+  const expired: TimerRecord = { ...record, phase: 'expired' };
+  world.setStateValue(key, expired);
   return { arranged: true };
 }
 

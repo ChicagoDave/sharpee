@@ -542,6 +542,13 @@ export interface StoryStateKeys {
    * Absent → the claim is not recognized.
    */
   entityGonePrefix?: string;
+  /**
+   * Prefix joined with a timer's qualified key → its record, whose `phase`
+   * the `<timer> has started|expired` claim reads (ADR-356 D2 as amended
+   * 2026-09-27). An absent record is idle. Absent prefix → the claim is not
+   * recognized.
+   */
+  timerPrefix?: string;
 }
 
 /**

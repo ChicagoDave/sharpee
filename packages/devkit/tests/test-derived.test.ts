@@ -36,10 +36,10 @@ describe('sharpee test — the derived tier runs by default (ADR-356 D5a)', () =
   it('prints the ratio and the gap list, and a SKIPPED branch leaves the exit code at 0', async () => {
     const { code, stdout } = await runCapturing([PASS_PROJECT]);
     expect(code).toBe(0);
-    expect(stdout).toContain('Derived rule tests (ADR-356): 3 branches');
-    expect(stdout).toContain('Branches exercised: 2 / 3');
+    expect(stdout).toContain('Derived rule tests (ADR-356): 4 branches');
+    expect(stdout).toContain('Branches exercised: 3 / 4');
     expect(stdout).toContain('Not exercised (1):');
-    expect(stdout.some((line) => /^ {2}derived-skip\.story:\d+ · brass lamp · on examining — timer-phase/.test(line))).toBe(true);
+    expect(stdout.some((line) => /^ {2}derived-skip\.story:\d+ · brass lamp · on smelling — predicate-is/.test(line))).toBe(true);
     expect(stdout.some((line) => line.startsWith('✓ brass lamp · on touching'))).toBe(true);
     // D5's other two ratios, printed in the same report: the fixture declares
     // no ending and one room, which both tiers stand in.
@@ -94,7 +94,7 @@ describe('sharpee test --json — the derived tier rides the run-event stream (G
 
     const branches = events.filter((event): event is DerivedBranchEvent => event.type === 'derived-branch');
     const summaries = events.filter((event): event is DerivedRunSummaryEvent => event.type === 'derived-summary');
-    expect(branches).toHaveLength(3);
+    expect(branches).toHaveLength(4);
     expect(summaries).toHaveLength(1);
 
     // Order on the wire: every tree event, then the branches as they complete, then the summary, then run-end.
@@ -107,18 +107,18 @@ describe('sharpee test --json — the derived tier rides the run-event stream (G
 
     // D5a on the wire: the SKIPPED branch is its own status with a named shape, and it did not fail the run.
     const skipped = branches.find((event) => event.status === 'skipped')!;
-    expect(skipped.label).toBe('brass lamp · on examining');
-    expect(skipped.shape).toBe('timer-phase');
+    expect(skipped.label).toBe('brass lamp · on smelling');
+    expect(skipped.shape).toBe('predicate-is');
     expect(skipped.span?.line).toEqual(expect.any(Number));
-    expect(branches.filter((event) => event.status === 'passed')).toHaveLength(2);
+    expect(branches.filter((event) => event.status === 'passed')).toHaveLength(3);
   }, 60_000);
 
   it('the summary carries the ratios the text report prints, and the text report on stderr is unchanged', async () => {
     const { events, stderr } = await runStreaming([PASS_PROJECT]);
     const summary = events.find((event): event is DerivedRunSummaryEvent => event.type === 'derived-summary')!;
-    expect(summary.branches).toMatchObject({ declared: 3, exercised: 2, passed: 2, failed: 0 });
+    expect(summary.branches).toMatchObject({ declared: 4, exercised: 3, passed: 3, failed: 0 });
     expect(summary.branches.gaps.map((gap) => [gap.label, gap.status, gap.shape])).toEqual([
-      ['brass lamp · on examining', 'skipped', 'timer-phase'],
+      ['brass lamp · on smelling', 'skipped', 'predicate-is'],
     ]);
     expect(summary.endings).toEqual({ declared: 0, reached: 0, unreached: [], unnamed: [] });
     expect(summary.rooms).toEqual({ declared: 1, entered: 1, unentered: [] });

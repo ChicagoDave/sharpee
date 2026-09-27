@@ -19,7 +19,7 @@
  * ADR-294 D2/D5, GH #355 (the Chord-spelled state claim).
  */
 
-import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
+import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TIMER_PREFIX } from '@sharpee/story-loader';
 import {
   checkAssertion,
   configureRandomInstruments,
@@ -45,14 +45,16 @@ import { synthesizeOpeningAssertions } from './auto-assertion.js';
 
 /**
  * How Chord's loader keys declared states in world state — what the state
- * evaluator needs to read `story.state = x` and `[the] name is state`
- * claims (GH #355). The loader's own constants, never respelled.
+ * evaluator needs to read `story.state = x`, `[the] name is state`
+ * (GH #355), `is gone` and `<timer> has started|expired` claims. The
+ * loader's own constants, never respelled.
  */
 export const CHORD_STORY_STATE_KEYS: StoryStateKeys = {
   storyState: CHORD_STORY_STATE_KEY,
   entityStatePrefix: CHORD_STATE_PREFIX,
   entityIdAttribute: CHORD_IR_ID_ATTRIBUTE,
   entityGonePrefix: CHORD_GONE_PREFIX,
+  timerPrefix: CHORD_TIMER_PREFIX,
 };
 
 /**

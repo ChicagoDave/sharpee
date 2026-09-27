@@ -53,7 +53,7 @@ describe('a SKIPPED branch never fails the build', () => {
     expect(branches.filter((event) => event.status === 'failed')).toHaveLength(0);
     const skipped = branches.filter((event) => event.status === 'skipped');
     expect(skipped).toHaveLength(1);
-    expect(skipped[0].shape).toBe('timer-phase');
+    expect(skipped[0].shape).toBe('predicate-is');
     expect(runEnd(run).exitCode).toBe(0);
     expect(run.status).toBe(0);
     expect(run.stderr).toContain('Not exercised (1):');

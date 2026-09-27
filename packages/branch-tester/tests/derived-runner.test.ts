@@ -159,9 +159,9 @@ describe('AC-3 — a refusal that fires and then the state changes anyway', () =
 describe('AC-4 — a precondition the floor cannot arrange', () => {
   it('is SKIPPED with the shape named, and still counted against the enumerator\'s total', async () => {
     const { ir, run } = await runFixture('skip');
-    const guarded = outcome(run, 'on examining');
+    const guarded = outcome(run, 'on smelling');
     expect(guarded.status).toBe('skipped');
-    expect(guarded.shape).toBe('timer-phase');
+    expect(guarded.shape).toBe('predicate-is');
     expect(guarded.arranged).toEqual([]);
     expect(guarded.span).toEqual(guarded.branch.span);
 
@@ -170,6 +170,16 @@ describe('AC-4 — a precondition the floor cannot arrange', () => {
     expect(run.total).toBe(collectClauseBranches(ir).length);
     expect(run.outcomes.length).toBe(run.total);
     expect(run.passed + run.failed + run.skipped + run.errored).toBe(run.total);
+  }, 30_000);
+});
+
+describe('a timer phase is arranged, not skipped (ADR-356 D2 as amended 2026-09-27)', () => {
+  it('arranges `has expired` on the lamp\'s timer and proves the guarded clause fires', async () => {
+    const { run } = await runFixture('skip');
+    const guarded = outcome(run, 'on examining');
+    expect(guarded.status).toBe('passed');
+    expect(guarded.arranged).toContain('brass-lamp.flicker has expired');
+    expect(guarded.claims).toEqual([{ claim: 'emitted lamp-after', passed: true }]);
   }, 30_000);
 });
 

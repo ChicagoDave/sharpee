@@ -15,7 +15,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LockableTrait, OpenableTrait, SwitchableTrait, TraitType, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import { arrange } from '../src/arrange';
-import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '../src/state-keys';
+import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, timerKey } from '../src/state-keys';
 import { bootEngine } from './helpers/boot-engine';
 
 const STORY = `story
@@ -25,6 +25,10 @@ const STORY = `story
   id: arrange-fixture
   story-version: 0.0.1
   states: calm, alarmed
+
+define timer bell for the player
+  dusk
+end timer
 
 create the Greenhouse
   a room
@@ -175,11 +179,52 @@ describe('arrange — the floor forms write the world', () => {
   });
 });
 
-describe('arrange — the four shapes named and not written', () => {
+describe('arrange — a timer phase writes the timer record as the runtime verbs do (ADR-356 D2 as amended 2026-09-27)', () => {
+  const key = timerKey('player.bell');
+
+  it('has started on an idle timer writes a running record stamped with the current turn', () => {
+    expect(world.getStateValue(key)).toBeUndefined();
+    expect(arrange(world, 'player.bell has started', { turn: 4 })).toEqual({ arranged: true });
+    expect(world.getStateValue(key)).toEqual({ phase: 'running', index: 0, startedTurn: 4 });
+  });
+
+  it('has started on a timer already started writes nothing, as `start` writes nothing', () => {
+    world.setStateValue(key, { phase: 'stopped', index: 2, startedTurn: 1 });
+    expect(arrange(world, 'player.bell has started', { turn: 9 })).toEqual({ arranged: true });
+    expect(world.getStateValue(key)).toEqual({ phase: 'stopped', index: 2, startedTurn: 1 });
+  });
+
+  it('has expired keeps the record and flips its phase, as expiry does', () => {
+    world.setStateValue(key, { phase: 'running', index: 1, startedTurn: 3 });
+    expect(arrange(world, 'player.bell has expired')).toEqual({ arranged: true });
+    expect(world.getStateValue(key)).toEqual({ phase: 'expired', index: 1, startedTurn: 3 });
+  });
+
+  it('has expired on an idle timer writes the expired record from the idle default', () => {
+    expect(arrange(world, 'player.bell has expired')).toEqual({ arranged: true });
+    expect(world.getStateValue(key)).toEqual({ phase: 'expired', index: 0, startedTurn: -1 });
+  });
+
+  it('a start that must write and has no turn is refused by name, and writes nothing', () => {
+    expect(arrange(world, 'player.bell has started')).toEqual({
+      arranged: false,
+      shape: 'unrecognized',
+      detail: 'starting player.bell needs the current turn, and the caller supplied none',
+    });
+    expect(world.getStateValue(key)).toBeUndefined();
+  });
+
+  it('the record is ordinary world state: it survives a state round trip and the story reads it as started', () => {
+    expect(arrange(world, 'player.bell has started', { turn: 2 })).toEqual({ arranged: true });
+    world.setState(JSON.parse(JSON.stringify(world.getState())));
+    expect(world.getStateValue(key)).toEqual({ phase: 'running', index: 0, startedTurn: 2 });
+  });
+});
+
+describe('arrange — the three shapes named and not written', () => {
   it.each([
     ['vine.pruning occurrence = 2', 'occurrence'],
     ['the weather asked once', 'topic-history'],
-    ['player.bell has expired', 'timer-phase'],
     ['player.bell at dusk', 'timer-position'],
   ])('%s → SKIPPED as %s, nothing written', (expression, shape) => {
     const before = JSON.stringify(world.getState());

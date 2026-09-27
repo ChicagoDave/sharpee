@@ -1,9 +1,11 @@
 /**
  * claim-kinds.test.ts — the two claim kinds ADR-356 D3 adds to the
- * assertion core, `is gone` and `emitted <message-id>`, plus the runtime-id
- * lookup that lets a derived claim name an entity by its IR id. Each test
- * drives the real evaluator against a real `WorldModel` and real event
- * records; the verdicts and the details lines are pinned.
+ * assertion core, `is gone` and `emitted <message-id>`, the timer-phase
+ * read D2's amendment of 2026-09-27 adds (`<timer> has started|expired`),
+ * plus the runtime-id lookup that lets a derived claim name an entity by
+ * its IR id. Each test drives the real evaluator against a real
+ * `WorldModel` and real event records; the verdicts and the details lines
+ * are pinned.
  *
  * Owner context: transcript-tester test suite (tooling).
  */
@@ -17,7 +19,43 @@ const KEYS: StoryStateKeys = {
   entityStatePrefix: 'test.state.',
   entityIdAttribute: 'testId',
   entityGonePrefix: 'test.gone.',
+  timerPrefix: 'test.timer.',
 };
+
+describe('<timer> has started | has expired (ADR-356 D2 as amended 2026-09-27)', () => {
+  function withTimer(phase?: 'idle' | 'running' | 'stopped' | 'expired'): WorldModel {
+    const w = new WorldModel();
+    if (phase) w.setStateValue(KEYS.timerPrefix + 'player.bell', { phase, index: 0, startedTurn: 1 });
+    return w;
+  }
+
+  it('has started holds while running, stopped or expired', () => {
+    for (const phase of ['running', 'stopped', 'expired'] as const) {
+      expect(evaluateStateExpression('player.bell has started', withTimer(phase), KEYS)).toEqual({ matches: true });
+    }
+  });
+
+  it('has expired holds only once expired', () => {
+    expect(evaluateStateExpression('player.bell has expired', withTimer('expired'), KEYS)).toEqual({ matches: true });
+    expect(evaluateStateExpression('player.bell has expired', withTimer('running'), KEYS)).toEqual({
+      matches: false,
+      details: 'player.bell has not expired (running)',
+    });
+  });
+
+  it('an absent record is idle, and idle answers no to both', () => {
+    expect(evaluateStateExpression('player.bell has started', withTimer(), KEYS)).toEqual({ matches: false, details: 'player.bell has not started (idle)' });
+    expect(evaluateStateExpression('player.bell has expired', withTimer('idle'), KEYS)).toEqual({ matches: false, details: 'player.bell has not expired (idle)' });
+  });
+
+  it('is not a claim without a timer prefix', () => {
+    const { timerPrefix: _omitted, ...withoutTimers } = KEYS;
+    expect(evaluateStateExpression('player.bell has started', withTimer('running'), withoutTimers)).toEqual({
+      matches: false,
+      details: 'Could not parse expression: player.bell has started',
+    });
+  });
+});
 
 /** A hall with a stamped locket (gone) and a stamped lamp (present). */
 function hall() {

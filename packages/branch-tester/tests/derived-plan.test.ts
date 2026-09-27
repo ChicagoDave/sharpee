@@ -161,7 +161,7 @@ describe('planBranch — the other shapes in the fixture', () => {
 });
 
 describe('planBranch — shapes outside the floor are named', () => {
-  it('a timer-phase guard is arranged as its named non-floor pin', () => {
+  it('a timer-phase guard is planned as its pin, for the floor to write', () => {
     const skipIr = fixture('skip');
     const skipBranches = collectClauseBranches(skipIr);
     const guarded = skipBranches.find((candidate) => candidate.clause.kind === 'on' && candidate.clause.action === 'examining')!;

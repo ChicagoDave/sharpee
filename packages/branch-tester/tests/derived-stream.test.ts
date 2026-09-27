@@ -49,9 +49,9 @@ describe('streamableDerivedOutcome', () => {
     const payloads = run.outcomes.map(streamableDerivedOutcome);
 
     const skipped = payloads.find((payload) => payload.status === 'skipped')!;
-    expect(skipped.label).toBe('brass lamp · on examining');
-    expect(skipped.shape).toBe('timer-phase');
-    expect(skipped.detail).toBe('brass-lamp.flicker has expired');
+    expect(skipped.label).toBe('brass lamp · on smelling');
+    expect(skipped.shape).toBe('predicate-is');
+    expect(skipped.detail).toBe('a predicate over something other than a named entity');
     expect(skipped.span?.line).toBe(run.outcomes.find((outcome) => outcome.status === 'skipped')!.span!.line);
     expect(Object.keys(skipped)).not.toContain('failure');
 
@@ -99,11 +99,11 @@ describe('streamableDerivedSummary', () => {
 
     const summary = streamableDerivedSummary(branches, endings, roomCoverage);
     expect(summary.branches).toEqual({
-      declared: 3,
-      exercised: 2,
-      passed: 2,
+      declared: 4,
+      exercised: 3,
+      passed: 3,
       failed: 0,
-      gaps: [{ label: 'brass lamp · on examining', status: 'skipped', shape: 'timer-phase', detail: 'brass-lamp.flicker has expired', span: branches.gaps[0].span }],
+      gaps: [{ label: 'brass lamp · on smelling', status: 'skipped', shape: 'predicate-is', detail: 'a predicate over something other than a named entity', span: branches.gaps[0].span }],
     });
     expect(summary.endings).toEqual({
       declared: 2,

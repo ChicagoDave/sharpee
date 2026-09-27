@@ -20,7 +20,7 @@
 
 export { LoadError } from './errors.js';
 export { arrange } from './arrange.js';
-export type { ArrangeResult, ArrangeShape } from './arrange.js';
+export type { ArrangeContext, ArrangeResult, ArrangeShape } from './arrange.js';
 export { parsePin } from './pin-grammar.js';
 export type { ParsedPin, PinOperator, PinShape } from './pin-grammar.js';
 export { HIDING_POSITIONS, SETTING_SCHEMA } from './setting-schema.js';
@@ -40,11 +40,14 @@ export {
   CHORD_STATE_PREFIX,
   CHORD_IR_ID_ATTRIBUTE,
   CHORD_STORY_STATE_KEY,
+  CHORD_TIMER_PREFIX,
   CHORD_TRAIT_PREFIX,
   RETIRED_SELECT_KEY,
   counterKey,
   selectOccurrenceKey,
+  timerKey,
 } from './state-keys.js';
+export type { TimerRecord } from './state-keys.js';
 /**
  * ADR-289 D2. `sweepRetiredSelectKeys` is exported because it must also run on
  * RESTORE, which happens outside this package — see its doc comment.

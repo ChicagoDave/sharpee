@@ -120,3 +120,68 @@ The plan's Phase 1 exit-state prediction was that ~40 `wary`-trait rows would re
 ---
 
 **Progressive update**: session completed 2026-09-27 08:11 — wrote the full-form summary for the session (archive, GH #525 scoping, Phase 1 implementation), re-verified all headline test/build numbers live (branch-tester 214/214, scripts 53/53, secret-letter 367/721 exit 1, fernhill 34/63 exit 0), posted Phase 1 completion and Phase 2 re-estimate as a comment on GH #525; Status COMPLETE.
+
+## Activity Log (auto-captured)
+```
+[11:32:25] BUILD: Build passed — npx tsc --noEmit; echo "EXIT: $?"
+[11:43:18] EDIT: File changed via Bash — docs/context/.current-plan
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/narrative-20260926-author-testing.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260922-examinable-lens.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260924-517-writer-walk.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260924-518-reader-walk.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260924-declared-states-lens.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260926-524-derived-wire.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260926-adr356-d4-endstate.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/plan-20260926-narrative-walk.md
+[11:43:18] EDIT: File changed via Bash — docs/work/archive/testing-explorer/spike-20260922-explorer-measurement.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260922-examinable-lens.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-517-writer-walk.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-518-reader-walk.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260924-declared-states-lens.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260925-520-adr356-first-cut.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260926-adr356-d4-endstate.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[11:43:18] EDIT: File changed via Bash — docs/work/testing-explorer/spike-20260922-explorer-measurement.md
+[11:53:22] EDIT: File written — docs/context/session-20260927-0653-explorer-prototype.md
+[11:53:23] EDIT: File changed via Bash — docs/context/session-20260927-0653-explorer-prototype.md
+[11:56:12] EDIT: File written — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[11:56:25] EDIT: File edited — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[11:56:32] EDIT: File edited — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[11:56:37] EDIT: File changed via Bash — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[12:06:20] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/compose.story
+[12:07:20] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:07:20] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:07:20] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:07:48] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:07:49] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:08:20] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:08:21] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:08:30] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:08:37] BUILD: Build passed — cd /Users/david/repos/sharpee/packages/branch-tester && npx tsc --noEmit -p tsco
+[12:08:37] EDIT: File changed via Bash — packages/branch-tester/src/derived-runner.ts
+[12:13:46] EDIT: File changed via Bash — packages/branch-tester/tests/derived-plan.test.ts
+[12:13:46] EDIT: File changed via Bash — packages/branch-tester/tests/derived-runner.test.ts
+[12:39:45] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:40:06] EDIT: File edited — packages/branch-tester/src/derived-runner.ts
+[12:49:03] BUILD: Build passed — python3 - <<'EOF'
+p='packages/branch-tester/src/derived-runner.ts'
+s=open(p).rea
+[12:50:16] TEST: Tests passed — 1 passed 6 passed
+[12:50:16] EDIT: File changed via Bash — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[12:50:56] TEST: Tests failed — 1 failed 12 passed 1 failed 52 passed
+[13:04:37] TEST: Tests passed — 34 passing 4 passed
+[13:04:37] EDIT: File changed via Bash — scripts/__tests__/narrative-coverage-numbers.test.ts
+[13:05:03] EDIT: File changed via Bash — docs/context/session-20260927-0631-explorer-prototype.md
+[13:09:46] TEST: Tests passed — 13 passed 53 passed
+[13:10:11] EDIT: File edited — docs/context/session-20260927-0631-explorer-prototype.md
+[13:11:21] EDIT: File written — docs/context/session-20260927-0631-explorer-prototype.md
+[13:11:35] EDIT: File edited — docs/context/session-20260927-0631-explorer-prototype.md
+[13:11:46] EDIT: File edited — docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md
+[13:14:29] TEST: Tests passed — 12 passed 121 passed
+[13:14:54] EDIT: File written — .commit-files
+[13:15:03] EDIT: File written — .commit-msg
+[13:15:08] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

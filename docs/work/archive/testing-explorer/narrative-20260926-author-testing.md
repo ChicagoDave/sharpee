@@ -3,7 +3,7 @@
 **Written**: 2026-09-26, session e9f1df, at David's request ("write a narrative from an author's perspective on writing the game and testing aspects of it").
 **Purpose**: alignment. This is the experience the testing rebuild is building toward, told as one author's afternoon with one story. The final section says which beats ship today and which are planned, with the issue or ADR that carries each.
 **Story used**: `branch-stories/fernhill` throughout. Every phrase, room, rule, ending and test result below is fernhill's own, taken from the story source and from the real `sharpee test branch-stories/fernhill` report of 2026-09-26. Nothing is invented.
-**Walked by a suite**: every beat the CLI can observe is asserted by `scripts/__tests__/narrative-*.test.ts` (run with `pnpm test:scripts`), which spawns `./sharpee` against fernhill and reads what it produces. When the story or the tools change, that suite says which beat moved. Three beats are IDE surfaces with no CLI face and are marked so in the closing table. Two beats were corrected by the suite on 2026-09-26: the "delete the move line" demonstration (the tier cannot see a deleted effect, GH #532) and "remove the last card and the line fails" (a removed END STATE card is a gap, not a failure). A third was corrected on 2026-09-27: the Tobias failures were the tester's, not the story's (GH #530), and fernhill now exits 0.
+**Walked by a suite**: every beat the CLI can observe is asserted by `scripts/__tests__/narrative-*.test.ts` (run with `pnpm test:scripts`), which spawns `./sharpee` against fernhill and reads what it produces. When the story or the tools change, that suite says which beat moved. Three beats are IDE surfaces with no CLI face and are marked so in the closing table. Two beats were corrected by the suite on 2026-09-26: the "delete the move line" demonstration (the tier cannot see a deleted effect, GH #532) and "remove the last card and the line fails" (a removed END STATE card is a gap, not a failure). A third was corrected on 2026-09-27: the Tobias failures were the tester's, not the story's (GH #530), and fernhill now exits 0. Refreshed 2026-09-27 (session 24d359) against that day's real `sharpee test branch-stories/fernhill` report: the branch count moved to 34 of 63 and the negation skips to two, and the closing table records what shipped since it was written — the derived tier in the Testing tab, span links into the editor, and the arrange step's second round of shapes.
 
 ---
 
@@ -77,7 +77,7 @@ To see what this buys you, you break the story on purpose. Not by deleting the `
 
 You press Run. Exactly one derived row goes red: `vine · on pruning · when flowering`, with the locket's actual location against the Greenhouse the clause put it in, and the source line. The tree notices the same break one card later, where the main line takes the locket and finds it gone. Two rules you wrote cannot both hold, and the story told you which one lost. You delete the rule you planted.
 
-Some rows are not green or red but hollow. `case clock · on winding · refused clock-already-going` is SKIPPED, and the reason is spelled out: `negation: case-clock is stopped already holds in the booted world`. The tool cannot yet arrange a world in which that guard is false, so it did not pretend to test the branch. A skipped row is a limit of the tool, never a fault in your story. It counts against your coverage, it never fails the build, and it is grouped with the other skips by shape, so you can see at a glance that six branches are skipped because their bodies have no effect the tester knows how to assert, five because they fire on entering a room rather than on a typed verb, and three because of that negation gap.
+Some rows are not green or red but hollow. `case clock · on winding · refused clock-already-going` is SKIPPED, and the reason is spelled out: `negation: case-clock is stopped already holds in the arranged world`. The tool cannot yet arrange a world in which that guard is false, so it did not pretend to test the branch. A skipped row is a limit of the tool, never a fault in your story. It counts against your coverage, it never fails the build, and it is grouped with the other skips by shape, so you can see at a glance that six branches are skipped because their bodies have no effect the tester knows how to assert, five because they fire on entering a room rather than on a typed verb, and two because of that negation gap.
 
 ## Playing through, and branching
 
@@ -100,14 +100,14 @@ The tree now proves two things it did not prove before. Replaying the main line 
 At the top of the run column there is a Coverage strip with three ratios, each measured against what the story itself declares.
 
 ```
-Branches   33 / 63
+Branches   34 / 63
 Endings     2 / 3
 Rooms      13 / 13
 ```
 
 You open Endings. `fernhill-saved` and `fuse-blast` are reached. `dawn-comes`, the `lose` at line 636, is not, and the note says why: no line reaches it. You know what that means. You have never once played the long night through to dawn without finding the deed. You can go play that line now, and its last card will become the third END STATE card, or you can leave the gap and know that it is a gap.
 
-You open Branches. Thirty-three of sixty-three exercised. The thirty that were not are listed by shape, each with the source line, and every line is a link that opens the editor there. None of them is a failure.
+You open Branches. Thirty-four of sixty-three exercised. The twenty-nine that were not are listed by shape, each with the source line, and every line is a link that opens the editor there. None of them is a failure.
 
 ## The conversation you never played
 
@@ -131,7 +131,7 @@ You never transcribe a rule into a test. You never commit a generated test file.
 
 ## Where each beat stands today
 
-| Beat | Status on 2026-09-26 | Carried by |
+| Beat | Status on 2026-09-27 | Carried by |
 | --- | --- | --- |
 | Map, Reach and Incomplete views in the World tab | Shipped in the macOS IDE; the analysis behind them walked by `narrative-world-tab.test.ts` through `sharpee world-index`; the views themselves are IDE only, not CLI-observable | ADR-321 D4 to D7, D11 to D13 |
 | Testing tab as a play surface with cards, default room-name-and-description claims, Add contains, state picker, region groups | Shipped; the cards' claims and verdicts walked by `narrative-pinned-prose.test.ts`; the gestures (Add contains, the picker) are IDE only, not CLI-observable | ADR-306, ADR-307 |
@@ -140,9 +140,9 @@ You never transcribe a rule into a test. You never commit a generated test file.
 | Derived rule tests from the compiled story, arrange for the floor shapes, one real command, effects asserted, refusals assert the negative space | Shipped, CLI and `sharpee test`; walked by `narrative-rule-tests-itself.test.ts` with a planted fighting rule (a deleted effect is not detectable, GH #532; failure messages print engine ids, GH #533) | ADR-356 D1 to D3, GH #520 |
 | SKIPPED with a named shape, never failing the build | Shipped; walked by `narrative-rule-tests-itself.test.ts` and `narrative-what-runs-when.test.ts` (exit 0 with a skip, 1 with a failure, 2 with an unreadable document) | ADR-356 D2, D5a |
 | Three coverage ratios with gaps listed by span | Shipped in the CLI report and on the `derived-summary` run event; walked by `narrative-coverage-numbers.test.ts`, and the Tobias failures by `narrative-unexpected-failure.test.ts` | ADR-356 D5, GH #524 Phase 1 |
-| Derived rows, skip groups and the coverage strip in the Testing tab | Planned, the current plan | GH #524, `plan-20260926-524-derived-wire.md`, mock at https://claude.ai/artifact/FgCKuk41qBkFzUBkpiKiCQ |
-| Span links from the run column into the editor | Planned with the above | GH #524 Phase 2 |
-| Arranging beyond the floor: negations, timer phases, or-conditions, occurrence ordinals | Planned, ranked by count | GH #525 |
+| Derived rows, skip groups and the coverage strip in the Testing tab | Shipped 2026-09-27 in the macOS IDE, on both heads; the derived tier rides the run-event wire the CLI already emits, walked by `narrative-coverage-numbers.test.ts` (`derived-summary`); the rendering is IDE only, not CLI-observable | GH #524 Phases 2–3 (closed #528), `docs/work/archive/testing-explorer/plan-20260926-524-derived-wire.md`, mock at https://claude.ai/artifact/FgCKuk41qBkFzUBkpiKiCQ |
+| Span links from the run column into the editor | Shipped 2026-09-27 with the above; IDE only | GH #524 Phase 3 |
+| Arranging beyond the floor: negations, timer phases, or-conditions, occurrence ordinals | Two of four shipped 2026-09-27: `or` guards (by their leftmost arrangeable operand), failed `and` guards and named conditions (Phase 1), and timer phases — `has started`, `has expired` — (Phase 2, an amendment to ADR-356 D2). Negations stay a read, never a write, by policy: the tester proves a guard already fails rather than arranging a failure. Occurrence ordinals are unplanned. Secret-letter, the stress case, moved from 358 to 392 of 721 branches exercised across the two phases; fernhill has none of these shapes and did not move | GH #525, `docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md`, ADR-356 D2 amendment 2026-09-27 |
 | Effect-less bodies and conversation rows with no player command | Unplanned, needs a different tier or mapping | GH #525 notes |
 | The Tobias topics | Green since 2026-09-27; the runner brings an entity-keyed topic's entity into the speaker's room before asking. Whether the story-facing syntax should make that scope requirement visible stays open | GH #530 (closed), GH #242 |
 | Segmented test tree on disk | Accepted, no code | ADR-355 |

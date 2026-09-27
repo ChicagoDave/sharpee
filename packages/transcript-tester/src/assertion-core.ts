@@ -418,6 +418,8 @@ export function checkStateAssertion(
  *     `the story is state` reads the story's phase the same way)
  *   [the] name is gone / is not gone                   (a Chord `remove` took
  *     the entity out of play — ADR-356 D3; needs `entityGonePrefix`)
+ *   timer has started / timer has expired              (the timer's phase —
+ *     ADR-356 D2 as amended 2026-09-27; needs `timerPrefix`)
  *
  * With keys, an entity name in any form may also be the runtime id the
  * loader stamps (`silver-locket`), so a claim derived from the story's own
@@ -428,9 +430,9 @@ export function checkStateAssertion(
  * (a session without a story runtime that declares states) neither form is
  * recognized: `story.state` is then read as the entity form (an entity
  * named `story`, its `state` property) and the Chord-spelled form is not a
- * claim at all. The four shapes the grammar names but the floor does not
- * write (occurrence, topic history, timer phase, timer position) are not
- * claims either: no read of them is defined here. `emitted` is read by
+ * claim at all. The three shapes the grammar names but the floor does not
+ * write (occurrence, topic history, timer position) are not claims either:
+ * no read of them is defined here. `emitted` is read by
  * `checkEmittedAssertion`, which has the events this function does not.
  *
  * @param expression - The pin text from a tree-document card or a `[STATE:]` line
@@ -544,6 +546,18 @@ export function evaluateStateExpression(
       return { matches: gone, details: gone ? undefined : `the ${pin.name} is not gone` };
     }
     return { matches: !gone, details: !gone ? undefined : `the ${pin.name} should not be gone` };
+  }
+
+  // "<timer> has started|expired" (ADR-356 D2 as amended 2026-09-27): the
+  // timer's record under the prefix `keys` names. An absent record is idle
+  // — never started, or reset — and idle answers no to both, as the
+  // runtime's own read does; `started` holds while running, stopped or
+  // expired.
+  if (pin.kind === 'timer-phase' && storyStateKeys?.timerPrefix) {
+    const record = world.getStateValue?.(storyStateKeys.timerPrefix + pin.timer) as { phase?: string } | undefined;
+    const phase = record?.phase ?? 'idle';
+    const holds = pin.what === 'started' ? phase !== 'idle' : phase === 'expired';
+    return { matches: holds, details: holds ? undefined : `${pin.timer} has not ${pin.what} (${phase})` };
   }
 
   return { matches: false, details: `Could not parse expression: ${expression}` };

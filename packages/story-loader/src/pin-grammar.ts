@@ -33,10 +33,12 @@
  * An entity head in the dotted forms is one token of word characters and
  * hyphens — a display name (`player`, `lamp`) or a compiled IR id
  * (`brass-lamp`); a head with spaces does not parse, and the Chord-spelled
- * `[the] <name> is <state>` form is where a multi-word name goes. The four
- * non-floor shapes (occurrence, topic-history, timer-phase, timer-position)
- * are recognized so that a consumer can NAME them; no consumer writes them
- * yet, and the assertion core does not read them. `emitted` and `gone` are
+ * `[the] <name> is <state>` form is where a multi-word name goes. Three
+ * non-floor shapes (occurrence, topic-history, timer-position) are
+ * recognized so that a consumer can NAME them; no consumer writes them
+ * yet, and the assertion core does not read them. `timer-phase` left that
+ * list on 2026-09-27 (ADR-356 D2 as amended): the assertion core reads it
+ * and `arrange` writes it. `emitted` and `gone` are
  * the two claim kinds ADR-356 D3 adds: read by the assertion core (`gone`
  * off the world, `emitted` off the turn's events), written by nothing —
  * `arrange` names them as it names the non-floor shapes.
@@ -77,7 +79,7 @@ export type ParsedPin =
   | { kind: 'occurrence'; key: string; count: number }
   /** `<topic> asked once|again|many times` / `<topic> was discussed`. Named, not written. */
   | { kind: 'topic-history'; topic: string; history: 'once' | 'again' | 'many-times' | 'discussed' }
-  /** `<timer> has started|expired`. Named, not written. */
+  /** `<timer> has started|expired` — the timer's phase. A floor form since 2026-09-27. */
   | { kind: 'timer-phase'; timer: string; what: 'started' | 'expired' }
   /** `<timer> at <named-turn>` — a timer-driven position. Named, not written. */
   | { kind: 'timer-position'; timer: string; turn: string }

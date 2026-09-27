@@ -44,7 +44,7 @@ import { sceneWith } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
-import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, adjacentKey, counterKey, landingKey, timerKey, type AdjacentRecord, type LandingRecord, type TimerRecord } from './state-keys.js';
+import { CHORD_RNG_KEY, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, IDLE_TIMER_RECORD, adjacentKey, counterKey, landingKey, timerKey, type AdjacentRecord, type LandingRecord, type TimerRecord } from './state-keys.js';
 
 export interface EvalContext {
   world: WorldModel;
@@ -785,7 +785,7 @@ export class Evaluator {
   /** A timer's persisted record (ADR-325 D3g); idle when never written. */
   timerRecord(qualified: string, ctx: EvalContext): TimerRecord {
     const stored = ctx.world.getStateValue(timerKey(qualified)) as TimerRecord | undefined;
-    return stored ?? { phase: 'idle', index: 0, startedTurn: -1 };
+    return stored ?? { ...IDLE_TIMER_RECORD };
   }
 
   /** Evaluate a value that must be an entity (world id). */

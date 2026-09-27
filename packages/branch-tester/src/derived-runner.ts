@@ -220,6 +220,8 @@ export type ActionPatterns = (actionId: string) => string[] | undefined;
 /** The engine surface the vocabulary is read from — what bootstrap's `LoadedGame.engine` provides. */
 export interface DerivedEngine {
   getLanguageProvider(): { getActionPatterns(actionId: string): string[] | undefined };
+  /** The engine's turn counter — what a timer start is stamped with. */
+  getContext?(): { currentTurn: number };
 }
 
 export interface DerivedRunOptions {
@@ -883,7 +885,9 @@ export async function runDerivedBranch(
     if ('shape' in resolved) return { ...base, status: 'skipped', shape: resolved.shape, detail: resolved.detail, arranged };
     if (term.kind === 'reach-subject') reachTarget = term.subject;
     for (const expression of resolved.expressions) {
-      const result = arrange(world as never, expression);
+      // A timer started here is stamped with the engine's turn, as a story
+      // `start` would be, so it first steps on the turn after the command.
+      const result = arrange(world as never, expression, { turn: game.engine?.getContext?.().currentTurn });
       if (!result.arranged) {
         return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? expression, arranged };
       }
@@ -1030,7 +1034,7 @@ export async function runDerivedBranch(
  */
 function readPin(expression: string, world: DerivedWorld): { matches: boolean } | { shape: string; detail: string } {
   const pin = parsePin(expression);
-  if (pin.kind === 'unrecognized' || pin.kind === 'occurrence' || pin.kind === 'topic-history' || pin.kind === 'timer-phase' || pin.kind === 'timer-position') {
+  if (pin.kind === 'unrecognized' || pin.kind === 'occurrence' || pin.kind === 'topic-history' || pin.kind === 'timer-position') {
     return { shape: pin.kind === 'unrecognized' ? 'negation' : pin.kind, detail: `cannot read \`${expression}\` to prove it fails` };
   }
   return { matches: evaluateStateExpression(expression, world as never, CHORD_STORY_STATE_KEYS).matches };

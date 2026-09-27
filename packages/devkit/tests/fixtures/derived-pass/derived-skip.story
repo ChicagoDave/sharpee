@@ -1,7 +1,9 @@
 ## A dedicated project fixture for `sharpee test`'s derived tier (ADR-356
 ## D5a): one SKIPPED branch beside passing ones — exit 0. Copied from
-## branch-tester's AC-4 fixture: one clause guarded by a timer phase, a shape the arrange floor
-## does not write, beside one it does. Not story content.
+## branch-tester's AC-4 fixture: one clause guarded by a timer's named turn
+## (`is turning`), which the arrange floor does not write, beside one guarded
+## by a timer phase, which the floor writes since 2026-09-27, and one with no
+## guard at all. Not story content.
 
 story
   title: Derived Skip
@@ -31,6 +33,10 @@ create the brass lamp
     phrase lamp-after
   end on
 
+  on the player smelling while flicker is turning
+    phrase lamp-mid
+  end on
+
   on the player touching
     change the brass lamp to lit
   end on
@@ -42,6 +48,10 @@ create Alex
 
 define phrase lamp-after
   After the flicker.
+end phrase
+
+define phrase lamp-mid
+  Mid-flicker.
 end phrase
 
 before the game starts

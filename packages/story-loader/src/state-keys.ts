@@ -113,6 +113,9 @@ export interface TimerRecord {
   startedTurn: number;
 }
 
+/** A timer never started, or reset: what an absent record reads as. */
+export const IDLE_TIMER_RECORD: Readonly<TimerRecord> = { phase: 'idle', index: 0, startedTurn: -1 };
+
 /**
  * A region's landing (ADR-325 D5): `chord.landing.<region-ir-id>`. Absent
  * until first read or first `set`; the loader seeds it from the IR then.
