@@ -389,6 +389,13 @@ const cards = new CardsView(model, {
     postToBridge({ run: true });
   },
   runColumn: () => runState,
+  onOpenSource(file, line) {
+    // A span in the run column is a place in the author's source: the host
+    // opens the editor there (GH #524 Phase 2). `file` is relative to the
+    // story file's directory, or null for the story file itself — the host
+    // resolves it, since only the host knows where the story lives.
+    postToBridge({ openSource: { file, line } });
+  },
   assertionLines: assertionLinesFor,
   characterExplain: characterExplainFor,
   onAssertCharacter(ordinal, fragments, channel) {

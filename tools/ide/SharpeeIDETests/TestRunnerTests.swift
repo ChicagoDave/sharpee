@@ -268,6 +268,41 @@ final class TestRunnerTests: XCTestCase {
         XCTAssertEqual(runner.state, .cancelled)
         XCTAssertEqual(delegate.lines.count, 1, "lines up to the cancel point are kept")
     }
+
+    // MARK: - The derived tier's lines pass through unexamined (GH #524 Phase 3)
+
+    /// The REAL CLI on the repo's fernhill (read, never written): the runner
+    /// delivers every `derived-branch` and the one `derived-summary` exactly
+    /// as the process wrote them — after the tree's lines, before `run-end`
+    /// — with no decode in front of them (ADR-352: this stream has no
+    /// native target). The relay's contract is per line, so the count on
+    /// the wire is the count delivered.
+    func testRealFernhillRunDeliversTheDerivedLinesVerbatim() throws {
+        let fernhill = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill", isDirectory: true)
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.appendingPathComponent("fernhill.tests.json").path),
+                          "branch-stories/fernhill has no tree document")
+        runReal(arguments: [fernhill.appendingPathComponent("fernhill.story").path], timeout: 300)
+
+        XCTAssertNotNil(delegate.result, "the run exits")
+        let types = eventTypes()
+        XCTAssertEqual(types.count, delegate.lines.count, "every delivered line is one JSON event")
+        let branches = types.enumerated().filter { $0.element == "derived-branch" }.map(\.offset)
+        let summaries = types.enumerated().filter { $0.element == "derived-summary" }.map(\.offset)
+        XCTAssertGreaterThan(branches.count, 0, "fernhill declares rules")
+        XCTAssertEqual(summaries.count, 1, "one summary per run")
+        let lastTranscriptEnd = types.lastIndex(of: "transcript-end") ?? -1
+        XCTAssertLessThan(lastTranscriptEnd, branches.first ?? -1, "derived lines follow the tree's")
+        XCTAssertLessThan(branches.last ?? -1, summaries.first ?? -1, "the summary follows every branch")
+        XCTAssertEqual(types.last, "run-end")
+
+        // The summary's own count is the branch count on the wire — nothing dropped.
+        let summary = events()[summaries[0]]
+        let declared = (summary["branches"] as? [String: Any])?["declared"] as? Int
+        XCTAssertEqual(declared, branches.count)
+        // A SKIPPED branch rides with its shape, verbatim (D5a's distinction survives transport).
+        let skipped = events().filter { $0["type"] as? String == "derived-branch" && $0["status"] as? String == "skipped" }
+        XCTAssertTrue(skipped.allSatisfy { $0["shape"] is String }, "every SKIPPED line names its shape")
+    }
 }
 
 @MainActor

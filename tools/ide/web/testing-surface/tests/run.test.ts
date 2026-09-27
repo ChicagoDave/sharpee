@@ -212,3 +212,105 @@ describe('resetRun (David 2026-08-09: a changed suite voids the results)', () =>
     expect(state.note).toBeUndefined();
   });
 });
+
+// ── the derived tier on the same stream (ADR-356 D5, GH #524 Phase 2) ──────
+
+const derived = (label: string, extra: Record<string, unknown> = {}): string =>
+  line({ type: 'derived-branch', label, span: { line: 12, column: 3, endLine: 12, endColumn: 9 }, status: 'passed', ...extra });
+const summary = (extra: Record<string, unknown> = {}): string =>
+  line({
+    type: 'derived-summary',
+    branches: { declared: 4, exercised: 2, passed: 1, failed: 1, gaps: [] },
+    endings: { declared: 1, reached: 1, unreached: [], unnamed: [] },
+    rooms: { declared: 3, entered: 3, unentered: [] },
+    ...extra,
+  });
+
+describe('foldRunLine — derived rows and the summary', () => {
+  it('keeps one row per derived-branch in arrival order, distinguishable by FIELD: skipped carries its shape, failed its failure, error its detail', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      derived('vine · on pruning · when seedling'),
+      derived('vine · on pruning · when fruiting', { status: 'skipped', shape: 'timer-phase', detail: 'the phase is a timer' }),
+      derived('Tobias · topic boiler', {
+        status: 'failed', failure: 'emitted tobias-boiler-reply: not emitted',
+        command: 'ask tobias about boiler', arranged: ['player.location = Cellar'],
+      }),
+      derived('story · on turn', { status: 'error', detail: 'engine threw', span: null }),
+    ]) foldRunLine(state, raw);
+
+    expect(state.derived.map(row => row.label)).toEqual([
+      'vine · on pruning · when seedling',
+      'vine · on pruning · when fruiting',
+      'Tobias · topic boiler',
+      'story · on turn',
+    ]);
+    expect(state.derived[0]).toEqual({ label: 'vine · on pruning · when seedling', span: { line: 12, column: 3, endLine: 12, endColumn: 9 }, status: 'passed' });
+    // D5a on the wire and in the state: SKIPPED is its own status with a shape, never `failed`.
+    expect(state.derived[1]?.status).toBe('skipped');
+    expect(state.derived[1]?.shape).toBe('timer-phase');
+    expect(state.derived[1]?.failure).toBeUndefined();
+    expect(state.derived[2]?.status).toBe('failed');
+    expect(state.derived[2]?.failure).toBe('emitted tobias-boiler-reply: not emitted');
+    expect(state.derived[2]?.command).toBe('ask tobias about boiler');
+    expect(state.derived[2]?.arranged).toEqual(['player.location = Cellar']);
+    expect(state.derived[2]?.shape).toBeUndefined();
+    expect(state.derived[3]?.status).toBe('error');
+    expect(state.derived[3]?.detail).toBe('engine threw');
+    expect(state.derived[3]?.span).toBeNull();
+  });
+
+  it('a derived-branch with a status the wire does not define is rejected by the guard, not folded', () => {
+    const state = createRunState();
+    beginRun(state);
+    foldRunLine(state, derived('vine · on pruning', { status: 'maybe' }));
+    expect(state.derived).toHaveLength(0);
+  });
+
+  it('keeps the latest derived-summary and never merges', () => {
+    const state = createRunState();
+    beginRun(state);
+    foldRunLine(state, summary());
+    foldRunLine(state, summary({ rooms: { declared: 3, entered: 2, unentered: ['r_cellar'] } }));
+    expect(state.derivedSummary?.branches).toEqual({ declared: 4, exercised: 2, passed: 1, failed: 1, gaps: [] });
+    expect(state.derivedSummary?.rooms).toEqual({ declared: 3, entered: 2, unentered: ['r_cellar'] });
+  });
+
+  it('run-end adds the rules tally from the ROWS — passed, failed, skipped, errors each their own count — and only when the tier ran', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [start(A), command(A), end(A), runEnd()]) foldRunLine(state, raw);
+    expect(state.tally?.rules).toBeUndefined();
+
+    beginRun(state);
+    for (const raw of [
+      start(A), command(A), end(A),
+      derived('a'), derived('b'),
+      derived('c', { status: 'skipped', shape: 'negation' }),
+      derived('d', { status: 'failed', failure: 'x' }),
+      derived('e', { status: 'error', detail: 'boom' }),
+      summary(),
+      runEnd(),
+    ]) foldRunLine(state, raw);
+    expect(state.tally?.rules).toEqual({ passed: 2, failed: 1, skipped: 1, errors: 1 });
+    expect(state.tally?.cardsPassed).toBe(1);
+  });
+
+  it('beginRun and resetRun drop the derived rows and the summary with everything else', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [derived('a'), summary()]) foldRunLine(state, raw);
+    expect(state.derived).toHaveLength(1);
+    expect(state.derivedSummary).toBeDefined();
+
+    beginRun(state);
+    expect(state.derived).toHaveLength(0);
+    expect(state.derivedSummary).toBeUndefined();
+
+    for (const raw of [derived('a'), summary()]) foldRunLine(state, raw);
+    resetRun(state);
+    expect(state.derived).toHaveLength(0);
+    expect(state.derivedSummary).toBeUndefined();
+  });
+});

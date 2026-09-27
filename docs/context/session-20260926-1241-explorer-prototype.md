@@ -150,3 +150,149 @@ Plan complete — all phases done (narrative-walk plan). The next open plan is `
 ---
 
 **Progressive update**: session completed 2026-09-26 18:56 — full-form rewrite for terminal write: both plans' phase evidence re-corroborated (branch-tester and ide-protocol suites re-run fresh; transcript-tester/devkit/repo-level suites verified against the event log), Status set to COMPLETE, Session Metadata/Dependency/Architectural Decisions/Mutation Audit/Recurrence/Test Coverage Delta sections added, #524 commented with Phase-1 status.
+
+## Activity Log (auto-captured)
+```
+[17:42:28] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[17:51:56] EDIT: File edited — docs/context/session-20260926-0235-explorer-prototype.md
+[17:54:47] TEST: Tests passed — 12 passed 121 passed
+[17:54:54] EDIT: File written — .commit-files
+[17:54:54] EDIT: File written — .commit-msg
+[17:54:56] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh
+[18:22:04] EDIT: File written — docs/context/session-20260926-1321-explorer-prototype.md
+[18:22:08] EDIT: File changed via Bash — docs/context/session-20260926-1321-explorer-prototype.md
+[18:28:35] EDIT: File written — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[18:28:40] EDIT: File changed via Bash — docs/context/.current-plan
+[18:28:40] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[18:44:18] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/adb5670f-68c8-41ce-a0bd-dd67b910b830/scratchpad/testing-pane-mock/project/canvas.json
+[18:45:50] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/adb5670f-68c8-41ce-a0bd-dd67b910b830/scratchpad/testing-pane-mock/project/Main.dc.html
+[18:47:04] EDIT: File written — /private/tmp/claude-501/-Users-david-repos-sharpee/adb5670f-68c8-41ce-a0bd-dd67b910b830/scratchpad/testing-pane-mock/project/RunColumn.dc.html
+[18:47:34] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[18:48:05] EDIT: File edited — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[18:53:11] EDIT: File written — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[18:53:40] EDIT: File changed via Bash — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[18:53:40] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[18:53:41] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[18:53:56] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[19:32:57] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[20:09:15] EDIT: File edited — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[20:09:15] EDIT: File edited — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[20:09:15] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[20:10:21] EDIT: File edited — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[20:31:15] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:15] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:16] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:16] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:16] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:16] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:17] EDIT: File changed via Bash — packages/ide-protocol/src/run-events.ts
+[20:31:52] EDIT: File edited — packages/ide-protocol/src/run-events.ts
+[20:31:52] EDIT: File edited — packages/ide-protocol/src/index.ts
+[20:31:52] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[20:31:53] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[20:31:53] EDIT: File edited — packages/transcript-tester/src/run-event-stream.ts
+[20:31:53] EDIT: File edited — packages/transcript-tester/src/index.ts
+[20:31:53] EDIT: File changed via Bash — packages/ide-protocol/src/index.ts
+[20:31:53] EDIT: File changed via Bash — packages/transcript-tester/src/index.ts
+[20:31:54] EDIT: File changed via Bash — packages/transcript-tester/src/run-event-stream.ts
+[20:32:53] EDIT: File edited — packages/branch-tester/src/coverage.ts
+[20:32:53] EDIT: File edited — packages/branch-tester/src/coverage.ts
+[20:32:53] EDIT: File edited — packages/branch-tester/src/coverage.ts
+[20:32:54] EDIT: File edited — packages/branch-tester/src/index.ts
+[20:32:54] EDIT: File edited — packages/devkit/src/commands/test-derived.ts
+[20:32:54] EDIT: File edited — packages/devkit/src/commands/test-derived.ts
+[20:32:54] EDIT: File edited — packages/devkit/src/commands/test-derived.ts
+[20:32:55] EDIT: File edited — packages/devkit/src/commands/test-derived.ts
+[20:32:55] EDIT: File edited — packages/devkit/src/commands/test-tree-document.ts
+[20:32:55] EDIT: File changed via Bash — packages/branch-tester/src/coverage.ts
+[20:32:55] EDIT: File changed via Bash — packages/branch-tester/src/index.ts
+[20:32:55] EDIT: File changed via Bash — packages/devkit/src/commands/test-derived.ts
+[20:32:55] EDIT: File changed via Bash — packages/devkit/src/commands/test-tree-document.ts
+[20:35:20] EDIT: File written — packages/ide-protocol/tests/run-events-derived.test.ts
+[20:35:20] EDIT: File written — packages/transcript-tester/tests/run-event-stream.test.ts
+[20:35:20] EDIT: File written — packages/branch-tester/tests/derived-stream.test.ts
+[20:36:02] EDIT: File edited — packages/devkit/tests/test-derived.test.ts
+[20:36:02] EDIT: File edited — packages/devkit/tests/test-derived.test.ts
+[20:36:03] EDIT: File changed via Bash — packages/branch-tester/tests/derived-stream.test.ts
+[20:36:03] EDIT: File changed via Bash — packages/devkit/tests/test-derived.test.ts
+[20:36:03] EDIT: File changed via Bash — packages/ide-protocol/tests/run-events-derived.test.ts
+[20:36:03] EDIT: File changed via Bash — packages/transcript-tester/tests/run-event-stream.test.ts
+[20:36:06] TEST: Tests passed — 2 passed 17 passed
+[20:36:08] TEST: Tests passed — 2 passed 11 passed
+[20:36:27] TEST: Tests passed — 1 passed 6 passed
+[20:36:30] BUILD: Build passed — cd /Users/david/repos/sharpee && npx tsc -p packages/ide-protocol/tsconfig.test.
+[20:36:34] TEST: Tests passed — 28 passed 351 passed
+[20:36:37] TEST: Tests passed — 28 passed 351 passed
+[20:47:30] TEST: Tests ran (status unverified) — npx vitest run --root /Users/david/repos/sharpee/packages/branch-tester 2>&1 | t
+[20:47:34] TEST: Tests passed — 30 passed 189 passed
+[20:52:10] TEST: Tests ran (status unverified) — npx vitest run --root /Users/david/repos/sharpee/packages/branch-tester --report
+[20:53:13] EDIT: File edited — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[20:53:13] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[21:00:19] EDIT: File edited — docs/work/testing-explorer/plan-20260926-524-derived-wire.md
+[21:01:38] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[21:09:08] EDIT: File written — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[21:09:14] EDIT: File changed via Bash — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[21:38:18] EDIT: File written — scripts/__tests__/support/fernhill-run.ts
+[21:38:19] EDIT: File written — scripts/__tests__/narrative-support.test.ts
+[21:38:19] EDIT: File written — scripts/__tests__/narrative-world-tab.test.ts
+[21:38:19] EDIT: File written — scripts/__tests__/narrative-pinned-prose.test.ts
+[21:38:19] EDIT: File written — scripts/__tests__/narrative-coverage-numbers.test.ts
+[21:38:20] EDIT: File written — scripts/__tests__/narrative-unexpected-failure.test.ts
+[21:38:20] EDIT: File changed via Bash — scripts/__tests__/narrative-coverage-numbers.test.ts
+[21:38:20] EDIT: File changed via Bash — scripts/__tests__/narrative-pinned-prose.test.ts
+[21:38:20] EDIT: File changed via Bash — scripts/__tests__/narrative-support.test.ts
+[21:38:20] EDIT: File changed via Bash — scripts/__tests__/narrative-unexpected-failure.test.ts
+[21:38:20] EDIT: File changed via Bash — scripts/__tests__/narrative-world-tab.test.ts
+[21:38:20] EDIT: File changed via Bash — scripts/__tests__/support/fernhill-run.ts
+[21:38:32] TEST: Tests passed — 5 passed 18 passed
+[21:39:02] TEST: Tests passed — 9 passed 32 passed
+[21:39:02] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[21:39:02] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[21:39:34] EDIT: File edited — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[21:39:34] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[21:41:07] EDIT: File written — scripts/__tests__/support/scratch-story.ts
+[21:41:08] EDIT: File written — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[21:41:08] EDIT: File written — scripts/__tests__/narrative-what-runs-when.test.ts
+[21:41:10] TEST: Tests failed — 1 failed 1 passed 2 failed 8 passed
+[21:41:10] EDIT: File changed via Bash — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[21:41:10] EDIT: File changed via Bash — scripts/__tests__/narrative-what-runs-when.test.ts
+[21:41:10] EDIT: File changed via Bash — scripts/__tests__/support/scratch-story.ts
+[21:43:11] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[21:43:26] EDIT: File edited — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[23:38:47] EDIT: File edited — scripts/__tests__/support/scratch-story.ts
+[23:38:48] EDIT: File edited — scripts/__tests__/support/scratch-story.ts
+[23:38:48] EDIT: File written — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[23:38:50] TEST: Tests failed — 1 failed
+[23:39:09] EDIT: File edited — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[23:39:11] TEST: Tests failed — 1 failed 1 failed 5 passed
+[23:39:45] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[23:40:32] EDIT: File edited — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[23:40:45] EDIT: File edited — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[23:40:47] TEST: Tests passed — 2 passed 11 passed
+[23:41:19] EDIT: File edited — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[23:41:19] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[23:43:33] EDIT: File edited — scripts/__tests__/support/scratch-story.ts
+[23:43:34] EDIT: File edited — scripts/__tests__/support/scratch-story.ts
+[23:43:34] EDIT: File written — scripts/__tests__/narrative-playing-through.test.ts
+[23:43:34] EDIT: File written — scripts/__tests__/narrative-endings.test.ts
+[23:43:34] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[23:43:37] TEST: Tests passed — 2 passed 9 passed
+[23:43:37] EDIT: File changed via Bash — scripts/__tests__/narrative-endings.test.ts
+[23:43:37] EDIT: File changed via Bash — scripts/__tests__/narrative-playing-through.test.ts
+[23:44:24] TEST: Tests passed — 13 passed 52 passed
+[23:44:25] EDIT: File edited — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[23:44:25] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[23:44:46] TEST: Tests passed — 9 passed 38 passed
+[23:44:56] TEST: Tests passed — 13 passed 52 passed
+[23:44:59] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[23:45:00] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[23:45:13] EDIT: File edited — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[23:46:19] EDIT: File edited — docs/work/testing-explorer/plan-20260926-narrative-walk.md
+[23:46:20] EDIT: File edited — docs/context/session-20260926-1321-explorer-prototype.md
+[23:49:47] EDIT: File changed via Bash — docs/context/session-20260926-1241-explorer-prototype.md
+[23:56:03] EDIT: File written — docs/context/session-20260926-1241-explorer-prototype.md
+[23:59:17] TEST: Tests passed — 12 passed 121 passed
+[23:59:31] EDIT: File written — .commit-files
+[23:59:38] EDIT: File written — .commit-msg
+[23:59:43] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

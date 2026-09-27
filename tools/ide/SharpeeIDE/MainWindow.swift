@@ -1374,6 +1374,12 @@ private final class MainSplitViewController: NSSplitViewController {
             storyURL.deletingPathExtension().lastPathComponent + ".tests.json")
         surface.storyFile = storyURL
         surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
+        // A coverage gap or a failed derived rule is a place in the source
+        // (GH #524 Phase 2): the run column's span links open the editor
+        // there, the same click-through a build diagnostic has.
+        surface.openSource = { [weak self] url, line in
+            self?.openDocument(at: url, line: line, column: 1)
+        }
         let storySource = (try? String(contentsOf: storyURL, encoding: .utf8)) ?? ""
         // Declared policy only. No header line → the page applies the
         // platform default (branch-tester's constant; David 2026-08-10,

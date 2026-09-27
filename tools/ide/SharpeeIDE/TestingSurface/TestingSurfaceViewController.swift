@@ -12,8 +12,8 @@
 // The web view uses a non-persistent store — a testing session never touches
 // the Play pane's origin storage, and every load is a guaranteed fresh boot.
 // Public interface: load(bundleDirectory:), isLoaded, testDocumentURL,
-// storyFile, saveDocuments, policy, evaluateInSurface(_:),
-// showPlaceholder(_:), sessionStore.
+// storyFile, saveDocuments, openSource, sourceURL(file:), policy,
+// evaluateInSurface(_:), showPlaceholder(_:), sessionStore.
 // Owner context: tools/ide — TestingSurface.
 
 import AppKit
@@ -120,6 +120,24 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// Saves the IDE's open documents before a run — the run reads DISK.
     /// Returns false to abort the run. Set by the opener; nil = nothing to save.
     var saveDocuments: (() -> Bool)?
+
+    /// The run column clicked a span (GH #524 Phase 2): open the editor at
+    /// this file and 1-based line. Set by the opener, which owns the editor;
+    /// nil = the click is ignored. The surface is the one place that knows
+    /// where the story lives, so the file is already resolved (below).
+    var openSource: ((URL, Int) -> Void)?
+
+    /// Resolves a span's `file` — relative to the story file's directory, or
+    /// nil for the story file itself, exactly as the compiler's spans and
+    /// the wire's ending gaps name it — to the file to open. nil when no
+    /// story file is wired.
+    func sourceURL(file: String?) -> URL? {
+        guard let storyFile else { return nil }
+        guard let file, !file.isEmpty else { return storyFile }
+        if file.hasPrefix("/") { return URL(fileURLWithPath: file) }
+        return storyFile.deletingLastPathComponent()
+            .appendingPathComponent(file).standardizedFileURL
+    }
 
     /// The run column's child `sharpee test --tree --json` process.
     private let testRunner = TestRunner()
@@ -421,6 +439,13 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             }
             if object["run"] as? Bool == true {
                 startTestRun()
+            }
+            // A span clicked in the run column (GH #524 Phase 2): resolve the
+            // file against the story and hand the opener the place to open.
+            if let open = object["openSource"] as? [String: Any],
+               let line = open["line"] as? Int,
+               let url = sourceURL(file: open["file"] as? String) {
+                openSource?(url, line)
             }
             // `forkBoot` pre-announcements ride this handler too; with no
             // command log left there is nothing to mark — ignored by design.

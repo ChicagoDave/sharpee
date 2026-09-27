@@ -302,7 +302,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             return cards.count == 4
         }
         let object = try documentJSON()
-        XCTAssertEqual(object["version"] as? Int, 1)
+        XCTAssertEqual(object["version"] as? Int, 2, "the current tree-document version (ADR-356 D4)")
         XCTAssertEqual(object["story"] as? String, "probe")
         XCTAssertEqual(object["seed"] as? Int, 42)
         let cards = try documentCards()
@@ -682,7 +682,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 2", "cards")
         try await waitForDocument("the fresh tree replacing the malformed file") { object in
             let cards = (object["cards"] as? [[String: Any]]) ?? []
-            return object["version"] as? Int == 1 && cards.count == 2
+            return object["version"] as? Int == 2 && cards.count == 2
         }
     }
 
@@ -796,7 +796,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try Data(story.utf8).write(to: project.appendingPathComponent("mini.story"))
         let document = """
         {
-          "version": 1,
+          "version": 2,
           "story": "mini",
           "seed": 42,
           "cards": [
@@ -842,8 +842,10 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         // Every assertion counts (David 2026-08-10): the boot look and the
         // branch's look each pass their one claim; take-lamp fails its one —
         // the same counts the CLI human report shows (AC-2 parity).
-        XCTAssertEqual(tally, "2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing",
-                       "the tally aggregates cards and assertions from the detail")
+        // The derived tier (ADR-356) rides the same run: the fixture's one
+        // clause (`before the game starts`) is one derived branch, passing.
+        XCTAssertEqual(tally, "2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing, 1 rule passing",
+                       "the tally aggregates cards, assertions and rules from the detail")
 
         // The stream's rows key by derived label (Q-8) — the identities on
         // this wire. (The fixture session's own line shows as a dash row
@@ -874,6 +876,193 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         let buttonLabel = try await surface.evaluateInSurface(
             "document.getElementById('ts-run-btn').textContent") as? String
         XCTAssertEqual(buttonLabel, "Run", "the button re-arms when the run ends")
+    }
+
+    // MARK: - The derived tier's rows and the span click-through (GH #524 Phase 2)
+
+    /// The REAL committed bundle folds `derived-branch` / `derived-summary`
+    /// lines relayed through `runLine` exactly as a run would deliver them,
+    /// renders the coverage strip and the derived rows, and a click on a
+    /// span link travels the real `testingSurface` bridge to the
+    /// `openSource` hook with the file resolved against the story.
+    func testDerivedRowsRenderAndASpanClickReachesTheOpenSourceHook() async throws {
+        try await boot()
+        let project = tmp.appendingPathComponent("proj", isDirectory: true)
+        let storyURL = project.appendingPathComponent("mini.story")
+        surface.storyFile = storyURL
+
+        var opened: [(URL, Int)] = []
+        surface.openSource = { url, line in opened.append((url, line)) }
+
+        // A run's worth of wire lines, the derived tier after the tree's.
+        let lines: [String] = [
+            #"{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mode":"tree","transcriptCount":1,"seed":42}"#,
+            #"{"schemaVersion":2,"seq":1,"elapsedMs":1,"type":"transcript-start","file":"opening-den","index":0}"#,
+            #"{"schemaVersion":2,"seq":2,"elapsedMs":2,"type":"command-result","file":"opening-den","line":0,"input":"look","passed":true,"expectedFailure":false,"skipped":false}"#,
+            #"{"schemaVersion":2,"seq":3,"elapsedMs":3,"type":"transcript-end","file":"opening-den","status":"passed","passed":1,"failed":0,"expectedFailures":0,"skipped":0,"duration":1}"#,
+            #"{"schemaVersion":2,"seq":4,"elapsedMs":4,"type":"derived-branch","label":"vine · on pruning · when seedling","span":{"line":12,"column":1,"endLine":12,"endColumn":2},"status":"passed"}"#,
+            #"{"schemaVersion":2,"seq":5,"elapsedMs":5,"type":"derived-branch","label":"Tobias · topic boiler","span":{"file":"npcs/tobias.chord","line":9,"column":1,"endLine":9,"endColumn":2},"status":"failed","failure":"emitted tobias-boiler-reply: not emitted","command":"ask tobias about boiler"}"#,
+            #"{"schemaVersion":2,"seq":6,"elapsedMs":6,"type":"derived-branch","label":"boiler · on switching_on","span":{"line":271,"column":1,"endLine":271,"endColumn":2},"status":"skipped","shape":"negation","detail":"the guard already holds"}"#,
+            #"{"schemaVersion":2,"seq":7,"elapsedMs":7,"type":"derived-summary","branches":{"declared":3,"exercised":2,"passed":1,"failed":1,"gaps":[{"label":"boiler · on switching_on","status":"skipped","shape":"negation","span":{"line":271,"column":1,"endLine":271,"endColumn":2}}]},"endings":{"declared":2,"reached":1,"unreached":[{"id":"dawn-comes","statement":"lose","line":636,"file":null}],"unnamed":[]},"rooms":{"declared":2,"entered":2,"unentered":[]}}"#,
+            #"{"schemaVersion":2,"seq":8,"elapsedMs":8,"type":"run-end","totalPassed":1,"totalFailed":0,"totalExpectedFailures":0,"totalSkipped":0,"totalErrors":0,"totalUnreached":0,"totalDuration":8,"exitCode":1}"#,
+        ]
+        for line in lines {
+            _ = try await surface.evaluateInSurface(
+                "window.__sharpeeTestingSurface.runLine(\(jsString(line)));")
+        }
+        try await waitFor("!!document.querySelector('.ts-run-tally')", "the run to close")
+
+        // The three ratios, the failed row with its claim, the SKIPPED row
+        // grouped under its shape and never badged as a failure (D5a).
+        let ratios = try await surface.evaluateInSurface(
+            "Array.from(document.querySelectorAll('.ts-cov-ratio')).map(function (e) { return e.textContent; }).join('|')") as? String
+        XCTAssertEqual(ratios, "2 / 3|1 / 2|2 / 2", "branches, endings, rooms — as the wire carried them")
+        let failed = try await surface.evaluateInSurface("""
+        Array.from(document.querySelectorAll('.ts-derived-row')).map(function (row) {
+          return row.querySelector('.ts-badge').textContent + '|' + row.querySelector('.ts-name').textContent
+            + '|' + row.querySelector('.ts-failure').textContent;
+        }).join('\\n')
+        """) as? String
+        XCTAssertEqual(failed, "FAIL|Tobias · topic boiler|✗ emitted tobias-boiler-reply: not emitted",
+                       "exactly one open row: the failure, with its claim")
+        let shapes = try await surface.evaluateInSurface(
+            "Array.from(document.querySelectorAll('.ts-group-head .ts-shape')).map(function (e) { return e.textContent; }).join('|')") as? String
+        XCTAssertEqual(shapes, "negation", "the SKIPPED branch groups under its shape")
+        let tally = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-run-tally').textContent") as? String
+        XCTAssertEqual(tally, "1 card passing, 0 assertions passing, 1 rule passing, 1 rule failing, 1 skipped",
+                       "the tally names rules and SKIPPED apart from failing")
+
+        // Click the failed row's span: an imported file, resolved against the story.
+        _ = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-derived-row .ts-src').click();")
+        for _ in 0..<160 {
+            if !opened.isEmpty { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(opened.count, 1, "one click, one open")
+        XCTAssertEqual(opened.first?.0.standardizedFileURL,
+                       project.appendingPathComponent("npcs/tobias.chord").standardizedFileURL,
+                       "the span's file resolves beside the story")
+        XCTAssertEqual(opened.first?.1, 9)
+
+        // Click the unreached ending's span: the story file itself (null file).
+        _ = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-cov-detail .ts-src').click();")
+        for _ in 0..<160 {
+            if opened.count >= 2 { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(opened.count, 2)
+        XCTAssertEqual(opened.last?.0.standardizedFileURL, storyURL.standardizedFileURL,
+                       "a null file is the story file")
+        XCTAssertEqual(opened.last?.1, 636)
+    }
+
+    /// The resolver alone: nil without a story, the story for nil or empty,
+    /// beside the story for a relative file, as given for an absolute one.
+    func testSourceURLResolvesAgainstTheStoryFile() {
+        let surface = TestingSurfaceViewController(
+            sessionStore: TestingSessionStore(fileURL: sidecarURL))
+        XCTAssertNil(surface.sourceURL(file: "a.chord"), "no story wired → nothing to open")
+
+        let story = URL(fileURLWithPath: "/tmp/proj/mini.story")
+        surface.storyFile = story
+        XCTAssertEqual(surface.sourceURL(file: nil), story)
+        XCTAssertEqual(surface.sourceURL(file: ""), story)
+        XCTAssertEqual(surface.sourceURL(file: "npcs/tobias.chord")?.path, "/tmp/proj/npcs/tobias.chord")
+        XCTAssertEqual(surface.sourceURL(file: "/elsewhere/x.chord")?.path, "/elsewhere/x.chord")
+    }
+
+    /// Fernhill's REAL derived tier, from the REAL process: the Run button
+    /// spawns the real devkit CLI on a temp copy of `branch-stories/fernhill`
+    /// (its story, tree document and sidecars — the repo's copy is never
+    /// written), the Swift TestRunner relays every line unexamined, and the
+    /// committed bundle renders the three ratios, the derived rules section
+    /// and the span links from what the process said — the rendering claim
+    /// the synthetic-lines test above cannot make. Numbers are checked for
+    /// consistency with each other, not pinned: the story's rule count is
+    /// the story's business.
+    func testRunButtonOnRealFernhillRendersTheDerivedTierFromTheRealProcess() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let source = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill", isDirectory: true)
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: source.appendingPathComponent("fernhill.tests.json").path),
+                          "branch-stories/fernhill has no tree document")
+        let project = tmp.appendingPathComponent("fernhill", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        for name in ["fernhill.story", "fernhill.tests.json", "fernhill.config.json",
+                     "fernhill.world-ignore.json", "fernhill.recipe.json"] {
+            let file = source.appendingPathComponent(name)
+            if FileManager.default.fileExists(atPath: file.path) {
+                try FileManager.default.copyItem(at: file, to: project.appendingPathComponent(name))
+            }
+        }
+
+        try await boot()
+        surface.storyFile = project.appendingPathComponent("fernhill.story")
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+        var opened: [(URL, Int)] = []
+        surface.openSource = { url, line in opened.append((url, line)) }
+
+        _ = try await surface.evaluateInSurface(
+            "document.getElementById('ts-run-btn').click();")
+        for _ in 0..<1800 {
+            if let done = try? await surface.evaluateInSurface(
+                "!!document.querySelector('.ts-run-tally')"), done as? Bool == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+
+        // Three ratios, each `n / m` with n ≤ m.
+        let ratios = try await surface.evaluateInSurface(
+            "Array.from(document.querySelectorAll('.ts-cov-ratio')).map(function (e) { return e.textContent; }).join('|')") as? String
+        let parts = (ratios ?? "").split(separator: "|").map(String.init)
+        XCTAssertEqual(parts.count, 3, "branches, endings, rooms; got: \(ratios ?? "nil")")
+        var branchesDeclared = -1
+        for (index, part) in parts.enumerated() {
+            let numbers = part.split(separator: "/").compactMap { Int($0.trimmingCharacters(in: .whitespaces)) }
+            XCTAssertEqual(numbers.count, 2, "a ratio is `n / m`; got: \(part)")
+            if numbers.count == 2 {
+                XCTAssertLessThanOrEqual(numbers[0], numbers[1], part)
+                if index == 0 { branchesDeclared = numbers[1] }
+            }
+        }
+        XCTAssertGreaterThan(branchesDeclared, 0, "fernhill declares rules")
+
+        // The derived section names the same count the ratio's denominator does,
+        // and its rows and groups account for every branch.
+        let sections = try await surface.evaluateInSurface(
+            "Array.from(document.querySelectorAll('.ts-run-section')).map(function (e) { return e.firstChild.textContent; }).join('|')") as? String
+        XCTAssertEqual(sections?.hasPrefix("tree · "), true, "the tree section heads the rows; got: \(sections ?? "nil")")
+        XCTAssertTrue(sections?.contains("derived rules · \(branchesDeclared)") == true,
+                      "the derived section counts every declared branch; got: \(sections ?? "nil")")
+        let accounted = try await surface.evaluateInSurface("""
+        (function () {
+          var open = document.querySelectorAll('.ts-derived-row').length;
+          var grouped = 0;
+          document.querySelectorAll('.ts-group-head .ts-count').forEach(function (e) {
+            var n = parseInt(e.textContent, 10); if (!isNaN(n)) grouped += n;
+          });
+          return open + grouped;
+        })()
+        """) as? Int
+        XCTAssertEqual(accounted, branchesDeclared, "failures open + passes by subject + SKIPPED by shape = declared")
+        let tally = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-run-tally').textContent") as? String
+        XCTAssertTrue(tally?.contains("rule") == true, "the tally counts rules; got: \(tally ?? "nil")")
+
+        // A span link from the real wire opens the real story copy.
+        let clicked = try await surface.evaluateInSurface(
+            "(function () { var a = document.querySelector('#ts-run-results .ts-src'); if (!a) return null; a.click(); return a.textContent; })()") as? String
+        XCTAssertNotNil(clicked, "the real run carries at least one span")
+        for _ in 0..<160 {
+            if !opened.isEmpty { break }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTAssertEqual(opened.count, 1)
+        XCTAssertEqual(opened.first?.0.deletingLastPathComponent().standardizedFileURL,
+                       project.standardizedFileURL, "the span resolves inside the story copy")
+        XCTAssertGreaterThan(opened.first?.1 ?? 0, 0)
     }
 
     // MARK: - The real client (rule 13a: no stand-ins anywhere on this path)

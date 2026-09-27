@@ -318,6 +318,9 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
       assertionsFailed: 0,
       errors: 0,
       unreached: 0,
+      // The derived tier (ADR-356) rides the same run: the fixture's one
+      // clause (`before the game starts`) is one derived branch, passing.
+      rules: { passed: 1, failed: 0, skipped: 0, errors: 0 },
     });
 
     // The detail view's data (David 2026-08-10): every executed command
@@ -379,6 +382,8 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
       assertionsFailed: 1,
       errors: 0,
       unreached: 0,
+      // A failing CARD claim leaves the derived tier's one branch untouched.
+      rules: { passed: 1, failed: 0, skipped: 0, errors: 0 },
     });
 
     // …and the human report cites the same message on the same label.
@@ -420,6 +425,7 @@ describe('AC-2 — the fresh-start session (no header, nothing hand-authored)', 
       assertionsFailed: 0,
       errors: 0,
       unreached: 0,
+      rules: { passed: 1, failed: 0, skipped: 0, errors: 0 },
     });
     expect(run.stdout).not.toContain('has no assertion');
   }, 600_000);

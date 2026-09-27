@@ -498,6 +498,75 @@ body.ts-active .sharpee-window { display: none; }
   color: var(--ts-fg-dim); border-top: 1px solid var(--ts-border); margin-top: 6px;
 }
 .ts-run-note { padding: 6px 0; font-size: 10.5px; color: var(--ts-fail); }
+
+/* ── the derived tier (ADR-356 D5 on the wire, GH #524 Phase 2) ──
+   A coverage strip above the tree's rows, then the derived rules: failures
+   open, passes by subject, SKIPPED by shape — a SKIP is shown, grouped,
+   never styled as a failure (D5a). Every span is a link into the editor. */
+.ts-cov {
+  padding: 2px 0 8px; border-bottom: 1px solid var(--ts-border);
+  display: flex; flex-direction: column; gap: 5px;
+}
+.ts-cov-title, .ts-run-section {
+  font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ts-fg-dim); font-weight: 700;
+}
+.ts-run-section {
+  padding: 8px 0 4px; margin-top: 8px; font-size: 10.5px;
+  border-bottom: 1px solid var(--ts-border);
+  display: flex; justify-content: space-between; gap: 8px;
+}
+.ts-run-section.ts-dashed { border-bottom-style: dashed; margin-top: 4px; }
+.ts-cov-row, .ts-group-head {
+  display: flex; align-items: center; gap: 6px; width: 100%;
+  border: none; background: transparent; padding: 0; margin: 0;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
+}
+.ts-cov-row .ts-caret, .ts-group-head .ts-caret {
+  font-size: 9px; color: var(--ts-fg-faint); width: 8px; flex: none;
+}
+.ts-cov-row .ts-cov-name { font-size: 11px; width: 66px; flex: none; }
+.ts-cov-bar {
+  flex: 1; height: 5px; border-radius: 3px; background: var(--ts-rail-bg);
+  overflow: hidden; display: flex;
+}
+.ts-cov-bar .ts-cov-pass { background: var(--ts-assert); }
+.ts-cov-bar .ts-cov-fail { background: var(--ts-fail); }
+.ts-cov-row .ts-cov-ratio {
+  font-size: 11px; font-weight: 700; font-variant-numeric: tabular-nums;
+  width: 52px; text-align: right; flex: none;
+}
+.ts-cov-detail {
+  padding: 0 0 2px 14px; display: flex; flex-direction: column; gap: 1px;
+  font-size: 10.5px; color: var(--ts-fg-dim);
+}
+.ts-cov-detail .ts-hint { font-size: 10px; color: var(--ts-fg-faint); padding-left: 14px; }
+.ts-count-pass { color: var(--ts-assert); }
+.ts-count-fail { color: var(--ts-fail); }
+.ts-count-skip { color: var(--ts-fg-faint); }
+.ts-src { color: var(--ts-accent); text-decoration: none; }
+.ts-src:hover { text-decoration: underline; }
+.ts-derived-row { padding: 5px 0 3px; border-bottom: 1px solid var(--ts-border); }
+.ts-derived-row:last-child { border-bottom: none; }
+.ts-derived-row .ts-head { display: flex; justify-content: space-between; gap: 8px; }
+.ts-derived-row .ts-name { font-size: 11.5px; font-weight: 700; }
+.ts-derived-row .ts-badge { font-size: 10.5px; font-weight: 700; flex: none; }
+.ts-derived-row .ts-badge.ts-fail { color: var(--ts-fail); }
+.ts-derived-row .ts-badge.ts-error { color: var(--ts-warn); }
+.ts-derived-row .ts-arrange { font-size: 10px; color: var(--ts-fg-faint); padding-left: 12px; white-space: pre-wrap; }
+.ts-derived-row .ts-failure { font-size: 10.5px; color: var(--ts-fail); padding: 1px 0 0 12px; white-space: pre-wrap; }
+.ts-derived-row .ts-site { font-size: 10px; padding-left: 12px; }
+.ts-group { padding: 5px 0 2px; border-bottom: 1px solid var(--ts-border); }
+.ts-group:last-child { border-bottom: none; }
+.ts-group-head .ts-subject { font-size: 11.5px; font-weight: 700; flex: 1; }
+.ts-group-head .ts-shape { font-size: 11px; font-style: italic; flex: 1; }
+.ts-group-head .ts-count { font-size: 10.5px; font-weight: 700; flex: none; }
+.ts-group-list {
+  padding: 2px 0 2px 14px; display: flex; flex-direction: column; gap: 1px;
+  font-size: 10.5px; color: var(--ts-fg-dim);
+}
+.ts-group-list .ts-pass { color: var(--ts-assert); }
+.ts-group-list .ts-hint { font-size: 10px; color: var(--ts-fg-faint); padding-top: 2px; }
 .ts-pending-note { color: var(--ts-fg-faint); font-style: italic; }
 
 /* Region group headers (David 2026-08-10): derived grouping, collapsible. */

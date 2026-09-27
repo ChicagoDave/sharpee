@@ -4,6 +4,11 @@
   // (ADR-306 D2: imported, never reimplemented); its `paths` entry must stay
   // in step with build.mjs's `alias` and vitest.config.ts — all three point
   // at the SOURCE file, so what is checked is what the bundle carries.
+  // The two branch-tester entries used only by tests (the CLI's coverage
+  // report formatters, for the golden test) point at the package's BUILT
+  // declarations instead: the source would pull its whole runtime chain into
+  // this program, where transcript-tester's src and dist types collide.
+  // vitest still runs them from source.
   "compilerOptions": {
     "target": "ES2022",
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
@@ -26,7 +31,9 @@
       "@sharpee/branch-tester/tree-document": ["../../../../packages/branch-tester/src/tree-document.ts"],
       "@sharpee/transcript-tester/assertion-core": ["../../../../packages/transcript-tester/src/assertion-core.ts"],
       "@sharpee/story-loader/pin-grammar": ["../../../../packages/story-loader/src/pin-grammar.ts"],
-      "@sharpee/ide-protocol/run-events": ["../../../../packages/ide-protocol/src/run-events.ts"]
+      "@sharpee/ide-protocol/run-events": ["../../../../packages/ide-protocol/src/run-events.ts"],
+      "@sharpee/branch-tester/coverage": ["../../../../packages/branch-tester/dist/coverage.d.ts"],
+      "@sharpee/branch-tester/derived-runner": ["../../../../packages/branch-tester/dist/derived-runner.d.ts"]
     }
   },
   "include": ["src/**/*.ts", "tests/**/*.ts"]

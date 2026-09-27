@@ -9,8 +9,12 @@
  *   executed command with every assertion's verdict (David 2026-08-10: the
  *   run shows every card and its assertions). A failed line also carries its
  *   FIRST failure one-line for the header; a closing tally counts lines.
- *   Decoding goes through the wire's own `isRunEvent` guard (DEVARCH 8b —
- *   the shapes are imported, never mirrored).
+ *   The derived tier (ADR-356, GH #524) rides the same stream after the
+ *   tree's lines: one `derived-branch` row per clause branch in arrival
+ *   order, its status kept as the wire's four values (a SKIPPED branch is
+ *   never a failure — D5a), and the one `derived-summary` per run, kept as
+ *   the latest seen. Decoding goes through the wire's own `isRunEvent`
+ *   guard (DEVARCH 8b — the shapes are imported, never mirrored).
  *
  * Public interface: RunColumnState, TranscriptRunResult, createRunState,
  *   beginRun, foldRunLine, finishRun, resetRun.
@@ -18,6 +22,7 @@
  */
 
 import { isRunEvent, type RunEvent } from '@sharpee/ide-protocol/run-events';
+import { derivedRowOf, derivedSummaryOf, type DerivedBranchRow, type DerivedSummary } from './derived';
 
 /** One assertion's verdict, as the wire carried it (the detail view's row). */
 export interface AssertionVerdict {
@@ -78,11 +83,17 @@ export interface RunColumnState {
     assertionsFailed: number;
     errors: number;
     unreached: number;
+    /** The derived tier's four counts, present only when it ran a branch. */
+    rules?: { passed: number; failed: number; skipped: number; errors: number };
   };
   /** A pipeline failure (launch/load death with no stream), in Swift's words. */
   note?: string;
   /** Files whose CURRENT execution is a replay (state rebuild) — never rows. */
   replaying: Set<string>;
+  /** Derived branches in arrival order (ADR-356; one per `derived-branch`). */
+  derived: DerivedBranchRow[];
+  /** The run's three ratios — the latest `derived-summary` (one per run). */
+  derivedSummary?: DerivedSummary;
 }
 
 /** A column that has never run. */
@@ -92,6 +103,7 @@ export function createRunState(): RunColumnState {
     results: new Map(),
     pendingCommands: new Map(),
     replaying: new Set(),
+    derived: [],
   };
 }
 
@@ -101,6 +113,8 @@ export function beginRun(state: RunColumnState): void {
   state.results.clear();
   state.pendingCommands.clear();
   state.replaying.clear();
+  state.derived = [];
+  delete state.derivedSummary;
   delete state.tally;
   delete state.note;
 }
@@ -245,6 +259,30 @@ function fold(state: RunColumnState, event: RunEvent): void {
         errors,
         unreached,
       };
+      // The derived tier counts the same way — from its rows, never the
+      // summary's totals — and only when it ran a branch: a story with no
+      // rules keeps the tally it always had.
+      if (state.derived.length > 0) {
+        const rules = { passed: 0, failed: 0, skipped: 0, errors: 0 };
+        for (const row of state.derived) {
+          if (row.status === 'passed') rules.passed += 1;
+          else if (row.status === 'failed') rules.failed += 1;
+          else if (row.status === 'skipped') rules.skipped += 1;
+          else rules.errors += 1;
+        }
+        state.tally.rules = rules;
+      }
+      return;
+    }
+    case 'derived-branch': {
+      // One row per branch as it completes; the status is the wire's own
+      // four values, so a consumer cannot read SKIPPED as failed (D5a).
+      state.derived.push(derivedRowOf(event));
+      return;
+    }
+    case 'derived-summary': {
+      // Exactly one per run — keep the latest, no merging.
+      state.derivedSummary = derivedSummaryOf(event);
       return;
     }
     default:
@@ -264,6 +302,8 @@ export function resetRun(state: RunColumnState): void {
   state.results.clear();
   state.pendingCommands.clear();
   state.replaying.clear();
+  state.derived = [];
+  delete state.derivedSummary;
   delete state.tally;
   delete state.note;
 }

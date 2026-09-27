@@ -1122,6 +1122,14 @@ public partial class ShellWindow : Window
             {
                 _ = RunTreeTestsForSurfaceAsync();
             }
+            // A span clicked in the run column (GH #524 Phase 2): the same reveal the Index
+            // tab's rows use — the file is relative to the story folder, null for the story.
+            else if (message.Handler == "testingSurface"
+                && ReferenceEquals(message.View, TestingWeb)
+                && TestingSurfacePosts.ReadOpenSource(message.Body) is { } open)
+            {
+                _ = RevealAsync(new IndexSpan(open.File, open.Line, 1));
+            }
         }
 
         // A replayed tree posts hundreds of records; the log wants the shape, not each one.
@@ -1581,6 +1589,37 @@ public partial class ShellWindow : Window
             + "text:(document.getElementById('ts-run-results')||{}).innerText||''})");
         _log.Line($"  run button: settled={settled}, after={afterLabel}, relayed={_runRelay.Delivered} line(s)");
         _log.Line($"  run column: {Trim(column, 200)}");
+
+        // The DERIVED TIER in the run column (GH #524): the three ratios and the section
+        // headers read back from the page, then a real span link clicked — its post travels
+        // OnPaneMessage → RevealAsync, so the editor's caret must land on the span's line.
+        var ratios = await EvaluateAsync(TestingWeb,
+            "Array.from(document.querySelectorAll('.ts-cov-ratio')).map(function(e){return e.textContent;}).join('|')");
+        var sections = await EvaluateAsync(TestingWeb,
+            "Array.from(document.querySelectorAll('.ts-run-section')).map(function(e){return e.firstChild.textContent;}).join('|')");
+        _log.Line($"  derived tier: ratios={ratios}, sections={Trim(sections ?? "<none>", 160)}");
+        var link = await EvaluateAsync(TestingWeb,
+            "(function(){var a=document.querySelector('#ts-run-results .ts-src');"
+            + "if(!a) return 'none'; a.click(); return a.textContent;})()") ?? "null";
+        if (link is "none" or "null")
+        {
+            _log.Line("  span click: no span link in the run column");
+        }
+        else
+        {
+            // `file:line` or `line N` — the number at the end is the line the reveal owes.
+            var wanted = int.TryParse(link[(link.LastIndexOfAny(new[] { ':', ' ' }) + 1)..], out var n) ? n : -1;
+            var caretLine = -1;
+            for (var wait = 0; wait < 50; wait++)
+            {
+                await Frames();
+                caretLine = Editor.Document.GetLineByOffset(Editor.CaretOffset).LineNumber;
+                if (caretLine == wanted) break;
+                await Task.Delay(100);
+            }
+            _log.Line($"  span click: \"{link}\" → {Path.GetFileName(_documents[_activeDocument].Path)}:{caretLine} "
+                      + (caretLine == wanted ? "(revealed)" : $"(NOT revealed — wanted {wanted})"));
+        }
 
         _log.Line("app exit state: done");
     }

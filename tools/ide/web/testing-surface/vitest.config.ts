@@ -39,6 +39,17 @@ export default defineConfig({
         __dirname,
         '../../../../packages/ide-protocol/src/run-events.ts',
       ),
+      // Tests only: the CLI's own report formatters, so the run column's
+      // rendering of the three ratios is pinned to them by a golden test
+      // (GH #524 Phase 2) rather than eyeballed.
+      '@sharpee/branch-tester/coverage': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/coverage.ts',
+      ),
+      '@sharpee/branch-tester/derived-runner': resolve(
+        __dirname,
+        '../../../../packages/branch-tester/src/derived-runner.ts',
+      ),
     },
   },
   test: {

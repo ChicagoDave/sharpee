@@ -534,6 +534,86 @@
     return Object.keys(value).find((key) => !allowed.includes(key));
   }
 
+  // tools/ide/web/testing-surface/src/derived.ts
+  var LABEL_SEPARATOR = " \xB7 ";
+  function derivedRowOf(event) {
+    return {
+      label: event.label,
+      span: event.span,
+      status: event.status,
+      ...event.shape !== void 0 ? { shape: event.shape } : {},
+      ...event.detail !== void 0 ? { detail: event.detail } : {},
+      ...event.failure !== void 0 ? { failure: event.failure } : {},
+      ...event.command !== void 0 ? { command: event.command } : {},
+      ...event.arranged !== void 0 ? { arranged: event.arranged } : {}
+    };
+  }
+  function derivedSummaryOf(event) {
+    return { branches: event.branches, endings: event.endings, rooms: event.rooms };
+  }
+  function subjectOf(label) {
+    const at = label.indexOf(LABEL_SEPARATOR);
+    return at < 0 ? label : label.slice(0, at);
+  }
+  function restOf(label) {
+    const at = label.indexOf(LABEL_SEPARATOR);
+    return at < 0 ? label : label.slice(at + LABEL_SEPARATOR.length);
+  }
+  function groupDerivedRows(rows) {
+    const failures = [];
+    const subjects = /* @__PURE__ */ new Map();
+    const shapes = /* @__PURE__ */ new Map();
+    let passed = 0;
+    let failed = 0;
+    let skipped = 0;
+    let errors = 0;
+    for (const row of rows) {
+      switch (row.status) {
+        case "passed": {
+          passed += 1;
+          const subject = subjectOf(row.label);
+          const list = subjects.get(subject) ?? [];
+          list.push(row);
+          subjects.set(subject, list);
+          break;
+        }
+        case "failed":
+          failed += 1;
+          failures.push(row);
+          break;
+        case "error":
+          errors += 1;
+          failures.push(row);
+          break;
+        case "skipped": {
+          skipped += 1;
+          const shape = row.shape ?? "skipped";
+          const list = shapes.get(shape) ?? [];
+          list.push(row);
+          shapes.set(shape, list);
+          break;
+        }
+      }
+    }
+    return {
+      failures,
+      subjects: [...subjects].map(([subject, list]) => ({ subject, rows: list })),
+      shapes: [...shapes].map(([shape, list]) => ({ shape, rows: list })),
+      passed,
+      failed,
+      skipped,
+      errors
+    };
+  }
+  function siteLabel(span2) {
+    if (!span2) return void 0;
+    return span2.file !== void 0 ? `${span2.file}:${span2.line}` : `line ${span2.line}`;
+  }
+  function endingSiteLabel(gap) {
+    if (gap.line === null) return void 0;
+    return gap.file !== null ? `${gap.file}:${gap.line}` : `line ${gap.line}`;
+  }
+
   // tools/ide/web/testing-surface/src/cards.ts
   function escapeHtml(text3) {
     return text3.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -579,6 +659,12 @@
     host;
     session;
     notice = null;
+    /** Run-column groups the author opened — `subject:<s>`, `shape:<s>`
+     *  (closed by default) — view ephemera, never persisted. */
+    openGroups = /* @__PURE__ */ new Set();
+    /** Coverage rows the author closed — `branches`, `endings`, `rooms`
+     *  (open by default while they have gaps) — view ephemera. */
+    closedCoverage = /* @__PURE__ */ new Set();
     /**
      * Takes the page over once: hides the client's window (its prose pane
      * keeps receiving turns as staging), builds the cards and run columns, and
@@ -1137,7 +1223,7 @@
       }
       const lineIds = this.model.lineIds().filter((id) => id === 0 ? this.model.hasOpening : true);
       results.innerHTML = "";
-      if (!this.model.hasOpening && run.results.size === 0) {
+      if (!this.model.hasOpening && run.results.size === 0 && run.derived.length === 0 && run.derivedSummary === void 0) {
         results.innerHTML = '<span class="ts-pending-note">no tests yet</span>';
         return;
       }
@@ -1146,6 +1232,16 @@
         note.className = "ts-run-note";
         note.textContent = run.note;
         results.appendChild(note);
+      }
+      if (run.derivedSummary) this.renderCoverageStrip(results, run.derivedSummary);
+      if (run.derived.length > 0) {
+        const tally = [...run.results.values()];
+        const passing = tally.filter((result) => result.status === "passed").length;
+        results.appendChild(this.sectionHeader(
+          `tree \xB7 ${lineIds.length} line${lineIds.length === 1 ? "" : "s"}`,
+          passing > 0 ? [[`${passing} pass`, "ts-count-pass"]] : [],
+          true
+        ));
       }
       const row = (badgeText, badgeClass, title, why) => {
         const line = document.createElement("div");
@@ -1220,6 +1316,7 @@
         const why = this.model.isPending(id) ? "pending branch" : run.inFlight ? "running\u2026" : "not run yet";
         row("\u2014", "", label, why);
       }
+      if (run.derived.length > 0) this.renderDerivedRows(results, run.derived);
       if (run.tally) {
         const tally = document.createElement("div");
         tally.className = "ts-run-tally";
@@ -1233,8 +1330,302 @@
         if (t.assertionsFailed > 0) parts.push(`${unit(t.assertionsFailed, "assertion")} failing`);
         if (t.errors > 0) parts.push(`${unit(t.errors, "error")}`);
         if (t.unreached > 0) parts.push(`${t.unreached} unreached`);
+        if (t.rules) {
+          parts.push(`${unit(t.rules.passed, "rule")} passing`);
+          if (t.rules.failed > 0) parts.push(`${unit(t.rules.failed, "rule")} failing`);
+          if (t.rules.skipped > 0) parts.push(`${t.rules.skipped} skipped`);
+          if (t.rules.errors > 0) parts.push(`${unit(t.rules.errors, "rule error")}`);
+        }
         tally.textContent = parts.join(", ");
         results.appendChild(tally);
+      }
+    }
+    /** A section header in the run column: a title, right-aligned counts. */
+    sectionHeader(title, counts, dashed = false) {
+      const head = document.createElement("div");
+      head.className = `ts-run-section${dashed ? " ts-dashed" : ""}`;
+      const left = document.createElement("span");
+      left.textContent = title;
+      const right = document.createElement("span");
+      for (const [text3, className] of counts) {
+        const count = document.createElement("span");
+        count.className = className;
+        count.textContent = text3;
+        if (right.childElementCount > 0) right.append(" ");
+        right.appendChild(count);
+      }
+      head.append(left, right);
+      return head;
+    }
+    /** A span as a link into the editor (GH #524 Phase 2) — the host opens
+     *  the file at the line. Null for no span. */
+    sourceLink(file, line, label) {
+      const link = document.createElement("a");
+      link.className = "ts-src";
+      link.href = "#";
+      link.textContent = label;
+      link.title = "open in the editor";
+      link.addEventListener("click", (event) => {
+        event.preventDefault();
+        this.delegate.onOpenSource(file, line);
+      });
+      return link;
+    }
+    spanLink(span2) {
+      const label = siteLabel(span2);
+      if (!span2 || label === void 0) return null;
+      return this.sourceLink(span2.file ?? null, span2.line, label);
+    }
+    /**
+     * The coverage strip (ADR-356 D5): three ratios, each a bar and `n / m`,
+     * each opening its gap list — the unexercised branches by span, the
+     * unreached endings by span, the unentered rooms by id. Open by default
+     * while a row has gaps; a full row has nothing to open.
+     */
+    renderCoverageStrip(results, summary) {
+      const strip = document.createElement("div");
+      strip.className = "ts-cov";
+      const title = document.createElement("div");
+      title.className = "ts-cov-title";
+      title.textContent = "coverage";
+      strip.appendChild(title);
+      const ratioRow = (key, name, numerator, denominator, failed, hasDetail) => {
+        const open = hasDetail && !this.closedCoverage.has(key);
+        const rowEl = document.createElement("button");
+        rowEl.type = "button";
+        rowEl.className = "ts-cov-row";
+        rowEl.dataset.tsCoverage = key;
+        const caret = document.createElement("span");
+        caret.className = "ts-caret";
+        caret.textContent = hasDetail ? open ? "\u25BE" : "\u25B8" : "";
+        const label = document.createElement("span");
+        label.className = "ts-cov-name";
+        label.textContent = name;
+        const bar = document.createElement("span");
+        bar.className = "ts-cov-bar";
+        const passWidth = denominator > 0 ? (numerator - failed) / denominator * 100 : 0;
+        const failWidth = denominator > 0 ? failed / denominator * 100 : 0;
+        const pass = document.createElement("span");
+        pass.className = "ts-cov-pass";
+        pass.style.width = `${Math.max(0, passWidth)}%`;
+        const fail = document.createElement("span");
+        fail.className = "ts-cov-fail";
+        fail.style.width = `${Math.max(0, failWidth)}%`;
+        bar.append(pass, fail);
+        const ratio = document.createElement("span");
+        ratio.className = "ts-cov-ratio";
+        ratio.textContent = `${numerator} / ${denominator}`;
+        rowEl.append(caret, label, bar, ratio);
+        if (hasDetail) {
+          rowEl.addEventListener("click", () => {
+            if (this.closedCoverage.has(key)) this.closedCoverage.delete(key);
+            else this.closedCoverage.add(key);
+            this.renderRunColumn();
+          });
+        }
+        strip.appendChild(rowEl);
+        return open;
+      };
+      const detailBlock = () => {
+        const block = document.createElement("div");
+        block.className = "ts-cov-detail";
+        strip.appendChild(block);
+        return block;
+      };
+      const countSpan = (text3, className) => {
+        const span2 = document.createElement("span");
+        span2.className = className;
+        span2.textContent = text3;
+        return span2;
+      };
+      const b = summary.branches;
+      const branchesOpen = ratioRow("branches", "Branches", b.exercised, b.declared, b.failed, true);
+      if (branchesOpen) {
+        const block = detailBlock();
+        const line = document.createElement("div");
+        line.append(`exercised ${b.exercised} \xB7 `, countSpan(`${b.passed} pass`, "ts-count-pass"));
+        if (b.failed > 0) line.append(" \xB7 ", countSpan(`${b.failed} fail`, "ts-count-fail"));
+        if (b.gaps.length > 0) {
+          const skipped = b.gaps.filter((gap) => gap.status === "skipped").length;
+          const errors = b.gaps.length - skipped;
+          if (skipped > 0) line.append(" \xB7 ", countSpan(`${skipped} skipped`, "ts-count-skip"));
+          if (errors > 0) line.append(" \xB7 ", countSpan(`${errors} error${errors === 1 ? "" : "s"}`, "ts-count-fail"));
+        }
+        block.appendChild(line);
+        if (b.gaps.length === 0 && b.declared > 0) {
+          const hint = document.createElement("div");
+          hint.className = "ts-hint";
+          hint.textContent = "every declared branch exercised";
+          block.appendChild(hint);
+        }
+      }
+      const e = summary.endings;
+      const endingsHaveDetail = e.unreached.length > 0 || e.unnamed.length > 0;
+      const endingsOpen = ratioRow("endings", "Endings", e.reached, e.declared, 0, endingsHaveDetail);
+      if (endingsOpen) {
+        const block = detailBlock();
+        for (const ending of e.unreached) {
+          const line = document.createElement("div");
+          line.append(countSpan("\u25CC", "ts-count-skip"), ` ${ending.id ?? ""} `, countSpan(`(${ending.statement})`, "ts-count-skip"));
+          const site = endingSiteLabel(ending);
+          if (site !== void 0 && ending.line !== null) {
+            line.append(" \xB7 ", this.sourceLink(ending.file, ending.line, site));
+          }
+          block.appendChild(line);
+        }
+        if (e.unreached.length > 0) {
+          const hint = document.createElement("div");
+          hint.className = "ts-hint";
+          hint.textContent = "no line reaches it \u2014 play one and its last card becomes the END STATE card";
+          block.appendChild(hint);
+        }
+        for (const ending of e.unnamed) {
+          const line = document.createElement("div");
+          line.append(countSpan("\u25CC", "ts-count-skip"), ` ${ending.statement} without an id`);
+          const site = endingSiteLabel(ending);
+          if (site !== void 0 && ending.line !== null) {
+            line.append(" \xB7 ", this.sourceLink(ending.file, ending.line, site));
+          }
+          block.appendChild(line);
+        }
+        if (e.unnamed.length > 0) {
+          const hint = document.createElement("div");
+          hint.className = "ts-hint";
+          hint.textContent = "no END STATE card can name it \u2014 give it an id";
+          block.appendChild(hint);
+        }
+      } else if (!endingsHaveDetail && e.declared > 0) {
+        const block = detailBlock();
+        block.textContent = "every declared ending reached";
+      }
+      const r = summary.rooms;
+      const roomsOpen = ratioRow("rooms", "Rooms", r.entered, r.declared, 0, r.unentered.length > 0);
+      if (roomsOpen) {
+        const block = detailBlock();
+        for (const room of r.unentered) {
+          const line = document.createElement("div");
+          line.append(countSpan("\u25CC", "ts-count-skip"), ` ${room}`);
+          block.appendChild(line);
+        }
+      } else if (r.unentered.length === 0 && r.declared > 0) {
+        const block = detailBlock();
+        block.textContent = "every declared room entered";
+      }
+      results.appendChild(strip);
+    }
+    /**
+     * The derived rules section (ADR-356): failures and errors first and
+     * open — the label, what was arranged and typed, the failing claim, the
+     * span — then passes grouped by subject and SKIPPED grouped by shape,
+     * each group closed until opened. A SKIPPED row shows its shape and is
+     * never styled as a failure (D5a).
+     */
+    renderDerivedRows(results, rows) {
+      const groups = groupDerivedRows(rows);
+      const counts = [[`${groups.passed}`, "ts-count-pass"]];
+      if (groups.failed > 0) counts.push([`${groups.failed} \u2717`, "ts-count-fail"]);
+      if (groups.errors > 0) counts.push([`${groups.errors} error${groups.errors === 1 ? "" : "s"}`, "ts-count-fail"]);
+      if (groups.skipped > 0) counts.push([`${groups.skipped} \u25CC`, "ts-count-skip"]);
+      results.appendChild(this.sectionHeader(`derived rules \xB7 ${rows.length}`, counts));
+      for (const failure of groups.failures) {
+        const rowEl = document.createElement("div");
+        rowEl.className = "ts-derived-row";
+        rowEl.dataset.tsDerived = failure.status;
+        const head = document.createElement("div");
+        head.className = "ts-head";
+        const name = document.createElement("span");
+        name.className = "ts-name";
+        name.textContent = failure.label;
+        const badge = document.createElement("span");
+        badge.className = `ts-badge ${failure.status === "error" ? "ts-error" : "ts-fail"}`;
+        badge.textContent = failure.status === "error" ? "ERROR" : "FAIL";
+        head.append(name, badge);
+        rowEl.appendChild(head);
+        const arranged = failure.arranged ?? [];
+        if (arranged.length > 0 || failure.command !== void 0) {
+          const arrange = document.createElement("div");
+          arrange.className = "ts-arrange";
+          const parts = [];
+          if (arranged.length > 0) parts.push(`arrange ${arranged.join(" \xB7 ")}`);
+          if (failure.command !== void 0) parts.push(`> ${failure.command}`);
+          arrange.textContent = parts.join(" \xB7 ");
+          rowEl.appendChild(arrange);
+        }
+        const why = failure.status === "error" ? `error${failure.detail !== void 0 ? `: ${failure.detail}` : ""}` : failure.failure ?? failure.detail ?? "failed";
+        const failureEl = document.createElement("div");
+        failureEl.className = "ts-failure";
+        failureEl.textContent = `\u2717 ${why}`;
+        rowEl.appendChild(failureEl);
+        const link = this.spanLink(failure.span);
+        if (link) {
+          const site = document.createElement("div");
+          site.className = "ts-site";
+          site.appendChild(link);
+          rowEl.appendChild(site);
+        }
+        results.appendChild(rowEl);
+      }
+      const groupBlock = (key, title, titleClass, countEls, list, render, hint) => {
+        const open = this.openGroups.has(key);
+        const group = document.createElement("div");
+        group.className = "ts-group";
+        group.dataset.tsGroup = key;
+        const head = document.createElement("button");
+        head.type = "button";
+        head.className = "ts-group-head";
+        const caret = document.createElement("span");
+        caret.className = "ts-caret";
+        caret.textContent = open ? "\u25BE" : "\u25B8";
+        const name = document.createElement("span");
+        name.className = titleClass;
+        name.textContent = title;
+        head.append(caret, name);
+        for (const [text3, className] of countEls) {
+          const count = document.createElement("span");
+          count.className = `ts-count ${className}`;
+          count.textContent = text3;
+          head.appendChild(count);
+        }
+        head.addEventListener("click", () => {
+          if (this.openGroups.has(key)) this.openGroups.delete(key);
+          else this.openGroups.add(key);
+          this.renderRunColumn();
+        });
+        group.appendChild(head);
+        if (open) {
+          const listEl = document.createElement("div");
+          listEl.className = "ts-group-list";
+          for (const row of list) listEl.appendChild(render(row));
+          if (hint !== void 0) {
+            const hintEl = document.createElement("div");
+            hintEl.className = "ts-hint";
+            hintEl.textContent = hint;
+            listEl.appendChild(hintEl);
+          }
+          group.appendChild(listEl);
+        }
+        results.appendChild(group);
+      };
+      for (const { subject, rows: list } of groups.subjects) {
+        groupBlock(`subject:${subject}`, subject, "ts-subject", [[`${list.length} \u2713`, "ts-count-pass"]], list, (row) => {
+          const line = document.createElement("div");
+          line.className = "ts-pass";
+          line.textContent = `\u2713 ${restOf(row.label)}`;
+          return line;
+        });
+      }
+      if (groups.shapes.length > 0) {
+        results.appendChild(this.sectionHeader(`skipped \xB7 ${groups.skipped} \xB7 by shape`, [], true));
+        for (const { shape, rows: list } of groups.shapes) {
+          const detail = list.find((row) => row.detail !== void 0)?.detail;
+          groupBlock(`shape:${shape}`, shape, "ts-shape", [[`${list.length}`, "ts-count-skip"]], list, (row) => {
+            const line = document.createElement("div");
+            line.append(`\u25CC ${row.label}`);
+            const link = this.spanLink(row.span);
+            if (link) line.append(" \xB7 ", link);
+            return line;
+          }, detail);
+        }
       }
     }
     scrollToLatest() {
@@ -2498,12 +2889,41 @@
     if (!isObject(value)) return false;
     return hasEnvelopeAndType(value, "coverage") && Array.isArray(value.points) && value.points.every(isCoveragePoint) && typeof value.pointsFired === "number" && typeof value.pointsNeverFired === "number" && typeof value.classesUnobserved === "number";
   }
+  function isSpan(value) {
+    if (!isObject(value)) return false;
+    return (value.file === void 0 || typeof value.file === "string") && typeof value.line === "number" && typeof value.column === "number" && typeof value.endLine === "number" && typeof value.endColumn === "number";
+  }
+  function isSpanOrNull(value) {
+    return value === null || isSpan(value);
+  }
+  function isDerivedBranchStatus(value) {
+    return value === "passed" || value === "failed" || value === "skipped" || value === "error";
+  }
+  function isDerivedBranchEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "derived-branch") && typeof value.label === "string" && "span" in value && isSpanOrNull(value.span) && isDerivedBranchStatus(value.status) && (value.shape === void 0 || typeof value.shape === "string") && (value.detail === void 0 || typeof value.detail === "string") && (value.failure === void 0 || typeof value.failure === "string") && (value.command === void 0 || typeof value.command === "string") && (value.arranged === void 0 || isStringArray(value.arranged));
+  }
+  function isDerivedBranchGap(value) {
+    if (!isObject(value)) return false;
+    return typeof value.label === "string" && (value.status === "skipped" || value.status === "error") && (value.shape === void 0 || typeof value.shape === "string") && (value.detail === void 0 || typeof value.detail === "string") && "span" in value && isSpanOrNull(value.span);
+  }
+  function isDerivedEndingGap(value) {
+    if (!isObject(value)) return false;
+    return (value.id === null || typeof value.id === "string") && (value.statement === "win" || value.statement === "lose" || value.statement === "kill") && (value.line === null || typeof value.line === "number") && (value.file === null || typeof value.file === "string");
+  }
+  function isDerivedRunSummaryEvent(value) {
+    if (!isObject(value)) return false;
+    if (!hasEnvelopeAndType(value, "derived-summary")) return false;
+    const { branches, endings, rooms } = value;
+    if (!isObject(branches) || !isObject(endings) || !isObject(rooms)) return false;
+    return typeof branches.declared === "number" && typeof branches.exercised === "number" && typeof branches.passed === "number" && typeof branches.failed === "number" && Array.isArray(branches.gaps) && branches.gaps.every(isDerivedBranchGap) && typeof endings.declared === "number" && typeof endings.reached === "number" && Array.isArray(endings.unreached) && endings.unreached.every(isDerivedEndingGap) && Array.isArray(endings.unnamed) && endings.unnamed.every(isDerivedEndingGap) && typeof rooms.declared === "number" && typeof rooms.entered === "number" && isStringArray(rooms.unentered);
+  }
   function isRunEndEvent(value) {
     if (!isObject(value)) return false;
     return hasEnvelopeAndType(value, "run-end") && typeof value.totalPassed === "number" && typeof value.totalFailed === "number" && typeof value.totalExpectedFailures === "number" && typeof value.totalSkipped === "number" && typeof value.totalErrors === "number" && typeof value.totalUnreached === "number" && typeof value.totalDuration === "number" && typeof value.exitCode === "number";
   }
   function isRunEvent(value) {
-    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isRunEndEvent(value);
+    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isRunEndEvent(value);
   }
 
   // tools/ide/web/testing-surface/src/run.ts
@@ -2512,7 +2932,8 @@
       inFlight: false,
       results: /* @__PURE__ */ new Map(),
       pendingCommands: /* @__PURE__ */ new Map(),
-      replaying: /* @__PURE__ */ new Set()
+      replaying: /* @__PURE__ */ new Set(),
+      derived: []
     };
   }
   function beginRun(state) {
@@ -2520,6 +2941,8 @@
     state.results.clear();
     state.pendingCommands.clear();
     state.replaying.clear();
+    state.derived = [];
+    delete state.derivedSummary;
     delete state.tally;
     delete state.note;
   }
@@ -2636,6 +3059,24 @@
           errors,
           unreached
         };
+        if (state.derived.length > 0) {
+          const rules = { passed: 0, failed: 0, skipped: 0, errors: 0 };
+          for (const row of state.derived) {
+            if (row.status === "passed") rules.passed += 1;
+            else if (row.status === "failed") rules.failed += 1;
+            else if (row.status === "skipped") rules.skipped += 1;
+            else rules.errors += 1;
+          }
+          state.tally.rules = rules;
+        }
+        return;
+      }
+      case "derived-branch": {
+        state.derived.push(derivedRowOf(event));
+        return;
+      }
+      case "derived-summary": {
+        state.derivedSummary = derivedSummaryOf(event);
         return;
       }
       default:
@@ -2647,6 +3088,8 @@
     state.results.clear();
     state.pendingCommands.clear();
     state.replaying.clear();
+    state.derived = [];
+    delete state.derivedSummary;
     delete state.tally;
     delete state.note;
   }
@@ -2842,6 +3285,9 @@
       postToBridge({ run: true });
     },
     runColumn: () => runState,
+    onOpenSource(file, line) {
+      postToBridge({ openSource: { file, line } });
+    },
     assertionLines: assertionLinesFor,
     characterExplain: characterExplainFor,
     onAssertCharacter(ordinal, fragments, channel) {
