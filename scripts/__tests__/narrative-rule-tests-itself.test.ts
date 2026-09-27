@@ -142,7 +142,8 @@ describe('the SKIPPED branch', () => {
       expect(summary.branches.gaps.some((gap) => gap.label === CLOCK_NEGATION && gap.status === 'skipped')).toBe(true);
       expect(derivedBranches(run).filter((event) => event.status === 'failed').map((event) => event.label)).not.toContain(CLOCK_NEGATION);
     }
-    expect(runEnd(real).exitCode).toBe(1);
+    // The real story exits 0; only the planted fighting rule turns it to 1.
+    expect(runEnd(real).exitCode).toBe(0);
     expect(runEnd(mutated).exitCode).toBe(1);
   });
 });

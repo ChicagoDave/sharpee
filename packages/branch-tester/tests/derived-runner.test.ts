@@ -193,6 +193,7 @@ describe('implicit arrangement — the command reaches its subject', () => {
       'cellar door · after opening': 'passed',
       'rope · on cutting': 'passed',
       'cook · topic the weather': 'passed',
+      'cook · topic rope': 'passed',
       'story · before the game starts': 'passed',
     });
 
@@ -221,6 +222,14 @@ describe('implicit arrangement — the command reaches its subject', () => {
     expect(cook.command).toBe('ask cook about the weather');
     expect(cook.arranged).toEqual([expect.stringMatching(/^player\.location = /)]);
     expect(cook.claims).toEqual([{ claim: 'emitted weather-talk', passed: true }]);
+
+    // The rope starts in the Hall; the cook is in the Pantry. The ask names
+    // the rope, so the rope is brought to the cook's room after the player is.
+    const ropeTopic = outcome(run, 'topic rope');
+    expect(ropeTopic.command).toBe('ask cook about rope');
+    expect(ropeTopic.arranged).toEqual([expect.stringMatching(/^player\.location = /), expect.stringMatching(/^rope\.location = /)]);
+    expect(ropeTopic.arranged![0].slice('player.location = '.length)).toBe(ropeTopic.arranged![1].slice('rope.location = '.length));
+    expect(ropeTopic.claims).toEqual([{ claim: 'emitted rope-talk', passed: true }]);
   }, 30_000);
 });
 

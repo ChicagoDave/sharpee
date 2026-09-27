@@ -89,6 +89,34 @@ describe('planBranch — the refused leaf', () => {
   });
 });
 
+describe('planBranch — an entity-keyed topic (the reach fixture)', () => {
+  const reachIr = fixture('reach');
+  const reachBranches = collectClauseBranches(reachIr);
+  const topicBranch = (labelPart: string): ClauseBranch => {
+    const hits = reachBranches.filter((candidate) => derivedBranchLabel(candidate, reachIr).includes(labelPart));
+    if (hits.length !== 1) throw new Error(`${hits.length} branches match "${labelPart}"`);
+    return hits[0];
+  };
+
+  it('brings the thing asked about into the room with the speaker, after placing the player there', () => {
+    const plan = planBranch(topicBranch('topic rope'), reachIr, reachBranches, language);
+    expect(plan.kind === 'run' && plan.command).toEqual({ kind: 'typed', input: 'ask cook about rope' });
+    expect(plan.kind === 'run' && plan.arrange).toEqual([
+      { kind: 'reach-subject', subject: 'cook' },
+      { kind: 'player-to-subject', subject: 'cook' },
+      { kind: 'with-player', entity: 'rope', mustHold: true },
+    ]);
+  });
+
+  it('a text topic places only the player: there is no thing to bring', () => {
+    const plan = planBranch(topicBranch('topic the weather'), reachIr, reachBranches, language);
+    expect(plan.kind === 'run' && plan.arrange).toEqual([
+      { kind: 'reach-subject', subject: 'cook' },
+      { kind: 'player-to-subject', subject: 'cook' },
+    ]);
+  });
+});
+
 describe('planBranch — the other shapes in the fixture', () => {
   it('an after-clause arranges the intercepting on-clause\'s guards as well as its own condition', () => {
     const plan = planBranch(branch('after pruning, once'), ir, branches, language);

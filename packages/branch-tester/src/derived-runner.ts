@@ -25,12 +25,14 @@
  * command and asserts the arithmetic. Endings and the player role are read
  * off the world the same way.
  *
- * Three implicit arrange terms make the typed command reachable, since the
+ * Four implicit arrange terms make the typed command reachable, since the
  * enumerator records only what the clause itself guards: every closed
  * container enclosing the subject is opened (unlocked first), the player is
- * placed in the subject's room unless a term already places the player, and
- * a standard action's own flag preconditions are satisfied (a door closed
- * and unlocked to open, a tool held to cut). A subject still out of the
+ * placed in the subject's room unless a term already places the player, a
+ * standard action's own flag preconditions are satisfied (a door closed
+ * and unlocked to open, a tool held to cut), and the thing an entity-keyed
+ * topic asks about is placed in the room with the speaker, since the parser
+ * resolves it against what the player can see. A subject still out of the
  * player's sight after that — darkness, concealment — is SKIPPED
  * `subject-unreachable`, never reported as a parse failure of the story.
  *
@@ -320,6 +322,16 @@ export function planBranch(
     terms.push({ kind: 'reach-subject', subject: reachTarget });
     if (!terms.some((term) => term.kind === 'pin' && term.mustHold && /^player\.location\s*=/.test(term.expression))) {
       terms.push({ kind: 'player-to-subject', subject: reachTarget });
+    }
+    // An entity-keyed topic is asked about the thing itself, and the parser
+    // resolves "the boiler" against what the player can see — so the thing
+    // stands in the room with the speaker, unless a term already places it.
+    if (branch.command.kind === 'ask' && branch.command.filter.kind === 'entity') {
+      const topicEntity = branch.command.filter.id;
+      const placed = new RegExp(`^(${topicEntity}\\.location\\s*=|player\\.inventory contains ${topicEntity}$)`);
+      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placed.test(term.expression))) {
+        terms.push({ kind: 'with-player', entity: topicEntity, mustHold: true });
+      }
     }
     if (branch.command.kind === 'action' && STANDARD_PRECONDITIONS.has(branch.command.action) && !ir.actions.some((action) => action.name === (branch.command as { action: string }).action)) {
       terms.push({ kind: 'action-preconditions', action: branch.command.action, subject: reachTarget });

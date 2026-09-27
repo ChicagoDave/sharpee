@@ -4,10 +4,11 @@
  * A failed card or a failed rule exits 1. A SKIPPED branch never does. A
  * document the tester cannot read runs nothing and exits 2, saying why.
  *
- * The exit-0 case uses devkit's own SKIPPED fixture project — a dedicated
- * test story, one passing branch beside one SKIPPED — because fernhill exits
- * 1 today (GH #242). The exit-2 cases corrupt a scratch copy's tree document,
- * never fernhill's.
+ * Fernhill as written is the exit-0 case: every card and every exercised
+ * branch passes. The exit-1 case uses devkit's own failing fixture project — a
+ * dedicated test story whose one clause has no vocabulary, so its derived
+ * row fails at parse. The SKIPPED case uses devkit's SKIPPED fixture, and the
+ * exit-2 cases corrupt a scratch copy's tree document, never fernhill's.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
@@ -18,15 +19,29 @@ import { FERNHILL_DIR, REPO_ROOT, derivedBranches, runEnd, runFernhillTest, runT
 import { copyStoryToScratch, type ScratchStory } from './support/scratch-story';
 
 const SKIP_FIXTURE = join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 'derived-pass');
+const FAIL_FIXTURE = join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 'derived-fail');
 
-describe('a failed rule exits 1', () => {
-  it('fernhill today: every card passes, two derived rows fail, the run exits 1', () => {
+describe('one gesture runs everything, and a clean story exits 0', () => {
+  it('fernhill today: every card passes, every exercised derived row passes, the run exits 0', () => {
     const run = runFernhillTest();
     const end = runEnd(run);
     expect(end.totalFailed).toBe(0);
-    expect(derivedBranches(run).filter((event) => event.status === 'failed')).toHaveLength(2);
+    expect(derivedBranches(run).filter((event) => event.status === 'failed')).toHaveLength(0);
+    expect(derivedBranches(run).filter((event) => event.status === 'passed').length).toBeGreaterThan(0);
+    expect(end.exitCode).toBe(0);
+    expect(run.status).toBe(0);
+  }, 60_000);
+});
+
+describe('a failed rule exits 1', () => {
+  it('a project whose one derived row fails exits 1 though every card passed', () => {
+    const run = runTestJson(FAIL_FIXTURE);
+    const end = runEnd(run);
+    expect(end.totalFailed).toBe(0);
+    expect(derivedBranches(run).filter((event) => event.status === 'failed')).toHaveLength(1);
     expect(end.exitCode).toBe(1);
     expect(run.status).toBe(1);
+    expect(run.stderr).toContain('Derived failures: 1');
   }, 60_000);
 });
 

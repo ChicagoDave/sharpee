@@ -2,9 +2,10 @@
 ## scroll inside a locked chest (the runner unlocks and opens the chest to
 ## reach it), a door the player must unlock and open (its `after opening`
 ## needs the door closed and unlocked, the key held), a rope that needs its
-## tool held to cut, a cook in another room with a topic (the runner walks
-## the player to her), and a room whose `after entering` fires on movement,
-## not on a typed verb. Not story content.
+## tool held to cut, a cook in another room with a text topic (the runner
+## walks the player to her) and an entity topic about the rope in the Hall
+## (the runner brings the rope to her too), and a room whose `after entering`
+## fires on movement, not on a typed verb. Not story content.
 
 story
   title: Derived Reach
@@ -88,6 +89,7 @@ create the cook
 
 define topics for the cook
   about "the weather": phrase weather-talk
+  about the rope: phrase rope-talk
 end topics
 
 create Alex
@@ -103,6 +105,9 @@ define phrase scroll-text
 end phrase
 define phrase weather-talk
   Fine weather.
+end phrase
+define phrase rope-talk
+  Mind that rope.
 end phrase
 
 before the game starts

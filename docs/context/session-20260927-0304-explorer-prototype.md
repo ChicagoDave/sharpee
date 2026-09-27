@@ -114,3 +114,29 @@ No plan phase is open. Recommended next work, stated in order:
 ---
 
 **Progressive update**: session completed 2026-09-27 04:23 — terminal write for `/devarch:finalize`. First write for this session. Closed GH #524 (verified via `gh issue view`). Fixed GH #535 (`PaneRelay.WhenDrainedAsync`, `ShellWindow.FinishSurfaceRunAsync`, 4 new tests) with a Behavior Statement and Integration Reality Statement produced in conversation; real-path evidence independently re-verified from the Avalonia shell's own log file rather than taken on report. Filed issue 536 for the plan's stale Superseded-by stamp. Nothing committed yet — finalize commits and pushes next.
+
+## Activity Log (auto-captured)
+```
+[08:34:37] EDIT: File edited — tools/ide/PaneHost/Hosting/PaneRelay.cs
+[08:34:37] EDIT: File edited — tools/ide/PaneHost/Hosting/PaneRelay.cs
+[08:34:38] EDIT: File edited — tools/ide/PaneHost/Hosting/PaneRelay.cs
+[08:34:38] EDIT: File edited — tools/ide/PaneHost/Hosting/PaneRelay.cs
+[08:34:38] EDIT: File changed via Bash — tools/ide/PaneHost/Hosting/PaneRelay.cs
+[08:35:03] EDIT: File edited — tools/ide/PaneHost/Hosting/PaneRelay.cs
+[08:35:03] EDIT: File edited — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[08:35:03] EDIT: File edited — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[08:35:04] EDIT: File changed via Bash — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[08:35:26] EDIT: File edited — tools/ide/PaneHost.Tests/PaneRelayTests.cs
+[08:35:27] EDIT: File edited — tools/ide/PaneHost.Tests/PaneRelayTests.cs
+[08:35:29] BUILD: Build passed — cd /Users/david/repos/sharpee/tools/ide/PaneHost && dotnet build --nologo -v q 2
+[08:35:29] EDIT: File changed via Bash — tools/ide/PaneHost.Tests/PaneRelayTests.cs
+[08:35:47] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee/tools/ide/PaneHost.Tests && dotnet test --nologo -
+[09:20:01] TEST: Tests failed — 154 passing 90 passing 8 failing 16 passing
+[09:24:19] EDIT: File written — docs/context/session-20260927-0304-explorer-prototype.md
+[09:24:30] EDIT: File changed via Bash — docs/context/session-20260927-0304-explorer-prototype.md
+[09:24:30] EDIT: File changed via Bash — docs/context/session-20260927-0304-explorer-prototype.md
+[09:26:58] TEST: Tests passed — 12 passed 121 passed
+[09:27:07] EDIT: File written — .commit-files
+[09:27:08] EDIT: File written — .commit-msg
+[09:27:12] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```

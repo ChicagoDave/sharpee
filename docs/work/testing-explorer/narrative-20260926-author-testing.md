@@ -3,7 +3,7 @@
 **Written**: 2026-09-26, session e9f1df, at David's request ("write a narrative from an author's perspective on writing the game and testing aspects of it").
 **Purpose**: alignment. This is the experience the testing rebuild is building toward, told as one author's afternoon with one story. The final section says which beats ship today and which are planned, with the issue or ADR that carries each.
 **Story used**: `branch-stories/fernhill` throughout. Every phrase, room, rule, ending and test result below is fernhill's own, taken from the story source and from the real `sharpee test branch-stories/fernhill` report of 2026-09-26. Nothing is invented.
-**Walked by a suite**: every beat the CLI can observe is asserted by `scripts/__tests__/narrative-*.test.ts` (run with `pnpm test:scripts`), which spawns `./sharpee` against fernhill and reads what it produces. When the story or the tools change, that suite says which beat moved. Three beats are IDE surfaces with no CLI face and are marked so in the closing table. Two beats were corrected by the suite on 2026-09-26: the "delete the move line" demonstration (the tier cannot see a deleted effect, GH #532) and "remove the last card and the line fails" (a removed END STATE card is a gap, not a failure).
+**Walked by a suite**: every beat the CLI can observe is asserted by `scripts/__tests__/narrative-*.test.ts` (run with `pnpm test:scripts`), which spawns `./sharpee` against fernhill and reads what it produces. When the story or the tools change, that suite says which beat moved. Three beats are IDE surfaces with no CLI face and are marked so in the closing table. Two beats were corrected by the suite on 2026-09-26: the "delete the move line" demonstration (the tier cannot see a deleted effect, GH #532) and "remove the last card and the line fails" (a removed END STATE card is a gap, not a failure). A third was corrected on 2026-09-27: the Tobias failures were the tester's, not the story's (GH #530), and fernhill now exits 0.
 
 ---
 
@@ -107,15 +107,15 @@ Rooms      13 / 13
 
 You open Endings. `fernhill-saved` and `fuse-blast` are reached. `dawn-comes`, the `lose` at line 636, is not, and the note says why: no line reaches it. You know what that means. You have never once played the long night through to dawn without finding the deed. You can go play that line now, and its last card will become the third END STATE card, or you can leave the gap and know that it is a gap.
 
-You open Branches. Thirty-three of sixty-three exercised. The thirty that were not are listed by shape, each with the source line, and every line is a link that opens the editor there. None of them is a failure. Two rows above them are.
+You open Branches. Thirty-three of sixty-three exercised. The thirty that were not are listed by shape, each with the source line, and every line is a link that opens the editor there. None of them is a failure.
 
-## The failure you did not expect
+## The conversation you never played
 
-`Tobias · topic boiler` is red. The claim was `emitted tobias-boiler-reply`. What was actually emitted was `tobias-shrug` and the cellar's ambient `cellar-drip`. The same for `topic silver-locket`. You wrote two topics for Tobias and the story shrugs at both of them.
+`Tobias · topic boiler` and `Tobias · topic silver-locket` are green. You never asked Tobias about either in the tree, so no card covers those conversations. The derived tier read the two topic rows out of the story, stood you beside Tobias with the boiler in the room, typed `ask Tobias about boiler`, and read `tobias-boiler-reply` off the turn. Then the same with the locket. The story says he answers; the engine agrees.
 
-You did not play those conversations in the tree, so no card would have caught this. The derived tier caught it because the story's own source says Tobias answers about the boiler, and the engine says he does not. That is the strongest kind of failure a story test can produce, and it fails the build, because a story that does not do what its own text says is broken whatever the prose looks like.
+That setup matters. The parser resolves "the boiler" against what you can see, so a test that stood you beside Tobias and left the boiler in its shed would hear him shrug and call the story broken. The first cut of this tier did exactly that, and reported both rows red for a day. The tester's job is to arrange everything the rule needs, the boiler included, and now it does.
 
-You open `fernhill.story:709` and find out why.
+When a derived row does go red, it looks like the flowering row did when you planted the fighting rule: the claim, what the engine actually produced, and the source line. You did not have to play the conversation to be told about it. That is the strongest kind of failure a story test can produce, and it fails the build, because a story that does not do what its own text says is broken whatever the prose looks like.
 
 ## What runs when
 
@@ -144,7 +144,7 @@ You never transcribe a rule into a test. You never commit a generated test file.
 | Span links from the run column into the editor | Planned with the above | GH #524 Phase 2 |
 | Arranging beyond the floor: negations, timer phases, or-conditions, occurrence ordinals | Planned, ranked by count | GH #525 |
 | Effect-less bodies and conversation rows with no player command | Unplanned, needs a different tier or mapping | GH #525 notes |
-| The Tobias failures | Real and open; the root cause is a platform defect (entity topics fall through to the generic ask reply when the topic entity is out of scope), which is exactly the kind of thing the tier exists to surface | GH #242 |
+| The Tobias topics | Green since 2026-09-27; the runner brings an entity-keyed topic's entity into the speaker's room before asking. Whether the story-facing syntax should make that scope requirement visible stays open | GH #530 (closed), GH #242 |
 | Segmented test tree on disk | Accepted, no code | ADR-355 |
 | Mentioned-but-not-examinable and declared-states lenses | Shipped as developer CLIs under `tools/explorer-probe/`, not yet an author surface | ADR-294 D23, GH #508, #515 |
 | Testing navigation for large trees | Cursory draft | ADR-308 |
