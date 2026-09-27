@@ -805,6 +805,11 @@ async function driveFreshBoot(
     suppressDelivery = false;
     currentLine = line;
     model.activateLine(line);
+    // A visit types the line's own commands live. On a RE-visit those cards
+    // are already bound from the first one, and a bound line appends — so
+    // unbind the line first and let the turns rebind in order (GH #541). The
+    // prefix lines keep their bindings: nothing of theirs was redelivered.
+    if (live.length > 0) model.beginRebind(line);
     for (const step of live) {
       if (storyEnded) { trace(`boot line ${line}: ended on its own cards`); return 'ended'; }
       armedOutcomeKey = step.key;

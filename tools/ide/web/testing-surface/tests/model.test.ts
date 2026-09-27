@@ -362,6 +362,40 @@ describe('derived labels (Q-8) — computed, never persisted', () => {
     expect(model.labelOf(id)).toBe('den · east');
     expect(model.serialize()).not.toContain('opening-den');
   });
+
+  it('re-visiting a line rebinds its own cards instead of appending a second copy (GH #541)', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    play(model, 'north', 'Garden');
+    const id = model.branch(took, 'east')!;
+    const first = play(model, 'east', 'Shed');
+    play(model, 'up', 'Loft');
+    const before = model.serialize();
+
+    // A second visit: the driver replays the prefix suppressed (nothing is
+    // delivered for it) and types the line's own commands live again.
+    model.activateLine(MAIN_LINE);
+    model.activateLine(id);
+    model.beginRebind(id);
+    const again = play(model, 'east', 'Shed');
+    const up = play(model, 'up', 'Loft');
+
+    // The document holds each command once — byte for byte what it held.
+    expect(model.ownCommandsOf(id)).toEqual(['east', 'up']);
+    expect(model.serialize()).toBe(before);
+    // The new turns are the ones on the board; the first visit's are gone.
+    expect(model.isTurnVisible(again)).toBe(true);
+    expect(model.isTurnVisible(first)).toBe(false);
+    // The prefix line kept its bindings — its cards were never redelivered.
+    expect(model.visibleOrdinals()).toEqual([0, 1, took, again, up]);
+  });
+
+  it('beginRebind on an unknown line changes nothing', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    model.beginRebind(999);
+    expect(model.visibleOrdinals()).toEqual([0, 1, took]);
+  });
 });
 
 describe('branch delete and tail-cut (D4/Q-4)', () => {

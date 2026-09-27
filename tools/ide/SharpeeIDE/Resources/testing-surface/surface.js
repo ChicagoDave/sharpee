@@ -2179,6 +2179,24 @@
       this.ordinalByCard.clear();
       for (const id of this.lineCards.keys()) this.bindCursor.set(id, 0);
     }
+    /**
+     * Unbind ONE line's own cards and rewind its cursor — a re-visit of a line
+     * already on the board types the line's commands live again, and those
+     * turns must rebind to its cards rather than append a second copy of them
+     * (GH #541). The lines above it keep their bindings: their cards replay
+     * suppressed and are never redelivered. Unknown line: nothing happens.
+     */
+    beginRebind(lineId) {
+      const cards2 = this.lineCards.get(lineId);
+      if (cards2 === void 0) return;
+      for (const card of cards2) {
+        const ordinal = this.ordinalByCard.get(card);
+        if (ordinal === void 0) continue;
+        this.ordinalByCard.delete(card);
+        this.cardByOrdinal.delete(ordinal);
+      }
+      this.bindCursor.set(lineId, 0);
+    }
     /** True once the opening card is bound (ordinal 0 is on the board). */
     get hasOpening() {
       return this.cardByOrdinal.has(0);
@@ -3591,6 +3609,7 @@
       suppressDelivery = false;
       currentLine = line;
       model.activateLine(line);
+      if (live.length > 0) model.beginRebind(line);
       for (const step of live) {
         if (storyEnded) {
           trace(`boot line ${line}: ended on its own cards`);

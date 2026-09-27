@@ -471,6 +471,47 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         }
     }
 
+    func testSelectingABranchTwiceRebindsItsCardsInsteadOfDoublingThem() async throws {
+        try await playThreeTurns()
+        try await clickAction(2, "Branch…")
+        try await commitActionPrompt(2, "east")
+        try await waitFor("document.querySelectorAll('.ts-branch-chip').length === 2", "chips")
+        try await waitForIdleInput()
+
+        // Back to the main line, then the branch again — each a driver boot
+        // that types the visited line's own commands live (GH #541).
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-branch-chip')[0].click();")
+        try await waitFor("!document.querySelectorAll('.ts-branch-chip')[1].className.match('ts-chip-selected')",
+                         "the main line selected")
+        try await waitForIdleInput()
+        _ = try await surface.evaluateInSurface(
+            "document.querySelectorAll('.ts-branch-chip')[1].click();")
+        try await waitFor("!!document.querySelectorAll('.ts-branch-chip')[1].className.match('ts-chip-selected')",
+                         "the branch selected again")
+        try await waitForIdleInput()
+        try await Task.sleep(nanoseconds: 500_000_000)
+
+        // The DOCUMENT holds the branch's command once …
+        let cards = try documentCards()
+        let branches = try XCTUnwrap(cards[2]["branches"] as? [[String: Any]])
+        let branchCards = try XCTUnwrap(branches.first?["cards"] as? [[String: Any]])
+        XCTAssertEqual(branchCards.map { $0["command"] as? String }, ["east"])
+        // … and the board shows the alternate's card once, not twice.
+        let shown = try await surface.evaluateInSurface("""
+        (function () {
+          var cards = document.querySelectorAll('#ts-cards .ts-turn:not(.ts-branch-point)');
+          var n = 0;
+          for (var i = 0; i < cards.length; i++) {
+            if (cards[i].style.display !== 'none' &&
+                cards[i].textContent.indexOf('Boiler Shed') !== -1) n += 1;
+          }
+          return n;
+        })()
+        """)
+        XCTAssertEqual(shown as? Int, 1)
+    }
+
     // MARK: - Tail-cut (D4/Q-4): the card's ✕, armed then confirmed
 
     func testTailCutDiscardsTheTailFromBoardAndDocument() async throws {

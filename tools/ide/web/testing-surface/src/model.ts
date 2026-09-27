@@ -15,14 +15,15 @@
  * is deleted, not carried (ADR-307 D2/D3). Labels are DERIVED, computed from
  * session rooms through the shared helpers, persisted nowhere.
  *
- * Binding replay: after `load()` (reopen), `beginRebindAll()`, or a
- * structural repair, delivered turns BIND to the document's existing cards in
- * line order instead of appending — restore-by-replay re-derives the board
- * from the document without duplicating it. Once a line's cards are all
- * bound, further turns append (the author keeps playing).
+ * Binding replay: after `load()` (reopen), `beginRebindAll()`, a
+ * structural repair, or `beginRebind(line)` (a re-visit of one line),
+ * delivered turns BIND to the document's existing cards in line order
+ * instead of appending — restore-by-replay re-derives the board from the
+ * document without duplicating it. Once a line's cards are all bound,
+ * further turns append (the author keeps playing).
  *
  * Public interface: TreeSessionModel (document, serialize, load, reset,
- *   beginRebindAll, addTurn, hasOpening, cardAt, ordinalOf, roomOf,
+ *   beginRebindAll, beginRebind, addTurn, hasOpening, cardAt, ordinalOf, roomOf,
  *   isTurnVisible, visibleOrdinals, pathCardsOf, prefixCommandsOf,
  *   ownCommandsOf, lineIds, activeLine, activateLine, lineParentOf,
  *   labelOf, branchPointsOnPath, canBranch, branch, deleteBranch, tailCut,
@@ -246,6 +247,25 @@ export class TreeSessionModel {
     this.cardByOrdinal.clear();
     this.ordinalByCard.clear();
     for (const id of this.lineCards.keys()) this.bindCursor.set(id, 0);
+  }
+
+  /**
+   * Unbind ONE line's own cards and rewind its cursor — a re-visit of a line
+   * already on the board types the line's commands live again, and those
+   * turns must rebind to its cards rather than append a second copy of them
+   * (GH #541). The lines above it keep their bindings: their cards replay
+   * suppressed and are never redelivered. Unknown line: nothing happens.
+   */
+  beginRebind(lineId: number): void {
+    const cards = this.lineCards.get(lineId);
+    if (cards === undefined) return;
+    for (const card of cards) {
+      const ordinal = this.ordinalByCard.get(card);
+      if (ordinal === undefined) continue;
+      this.ordinalByCard.delete(card);
+      this.cardByOrdinal.delete(ordinal);
+    }
+    this.bindCursor.set(lineId, 0);
   }
 
   /** True once the opening card is bound (ordinal 0 is on the board). */

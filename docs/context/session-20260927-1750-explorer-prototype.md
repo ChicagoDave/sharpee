@@ -11,6 +11,20 @@
 
 ## Completed
 
+### GH #540 — landed
+- Committed locally as `0c8739ee2` (not pushed): "the Testing tab boots at the document's pinned seed" — 15 files, including the surface/Swift/C# changes below and the ADR-307 D5 amendment. The commit script also archived the stale `docs/context/session-20260927-0304-explorer-prototype.md` to `docs/context/archive/` as routine housekeeping (unrelated to this session's own content).
+- Issue left open on GitHub pending push (per standing practice, closes via the landing commit's `closes #540`, not by this local commit alone).
+
+### GH #541 — a re-visit of a line rebinds instead of appending (uncommitted, on top of `0c8739ee2`)
+- `model.ts`: new `beginRebind(lineId)` — unbinds one line's own cards and rewinds its cursor to 0; other lines untouched; unknown line is a no-op. Header updated.
+- `main.ts` `driveFreshBoot`: after `model.activateLine(line)`, and before typing the line's live steps, `if (live.length > 0) model.beginRebind(line)` — so a second visit rebinds the line's cards in order instead of appending a second copy. Bundle rebuilt (`tools/ide/build-testing-surface.sh` → `SharpeeIDE/Resources/testing-surface/surface.js`).
+- Tests: `model.test.ts` +2. Evidence: session event log, 2026-09-27T23:25:23Z — `{"kind":"test","msg":"Tests passed","detail":"15 passed 162 passed"}` (was 160 before this fix), timestamped after the last edit to `model.ts`/`main.ts`/`model.test.ts` at 23:25:10Z. `npx tsc --noEmit -p tsconfig.json` clean (build-passed row 23:25:24Z).
+- Real-path: `testSelectingABranchTwiceRebindsItsCardsInsteadOfDoublingThem` in `TestingSurfaceRealPathTests.swift` — branch on turn 2, click main chip, click the branch chip again; the document's branch holds `["east"]` once and the board shows one Boiler Shed card. Verified: xcodebuild run through Bash to scratchpad log `xcodebuild-541.log`, 2026-09-27 ~18:25 CDT — `TestingSurfaceRealPathTests` 22 executed, 0 failures, TEST SUCCEEDED. **[reported by session, unverified]** — the xcodebuild invocation went through Bash but redirected to a log file, so the PostToolUse hook did not parse pass/fail counts from it; only the session's own read of the log corroborates the number.
+- Comment posted on GH #541 with the fix summary: https://github.com/ChicagoDave/sharpee/issues/541#issuecomment-5860813009. Issue left open (state confirmed OPEN via `gh issue view 541`) for the landing commit's `closes #541`.
+- Document repair for secret-letter's two doubled lines was already done last session (cut back to 9 and 41 cards, committed in `dcb58f8af`).
+- Rule 15: `beginRebind`/`driveFreshBoot` do not match the mutation-verification function-name signal list (`execute|handle|process|save|update|delete|remove|create|send|dispatch|publish|persist|submit|store`); a Behavior Statement was produced in conversation instead of running the agent.
+- Next: commit locally (message will read "closes #541"). Nothing pushed this session so far — GH #540's commit is also still local-only.
+
 ### Surface (`tools/ide/web/testing-surface`)
 - New `src/boot-document.ts` — `admitBootDocument(text, engineSeed)` decides whether the boot-time document becomes the session's tree: adopts a document pinned at the engine's own seed; refuses by name and write-locks a document pinned at a different seed (same AC-4 treatment as a newer-version document); malformed or absent text adopts neither. `main.ts` now adopts through it.
 - Tests: `tests/boot-document.test.ts` (5 new tests).
@@ -45,8 +59,8 @@ GH #540 option 1, matching ADR-307 D5's "fresh boot + deterministic replay at th
 ## Open Items
 
 ### Short Term
-- GH #541 (tracked directly on GitHub, not the devarch issue store): a second visit to a branch line in one IDE session doubles its cards. Fix proposed on the issue (rebind the line driver on visit) but not implemented this session.
-- GH #540: fix is in the working tree, comment posted; not yet closed — closes on the landing commit for this checkpoint's changes.
+- GH #541 (tracked directly on GitHub, not the devarch issue store): fixed in the working tree (`beginRebind` + the driver call), tests green, comment posted; not yet committed locally. Next action: commit locally with "closes #541".
+- GH #540: committed locally as `0c8739ee2` ("closes #540"); not pushed yet, so the issue closes when the branch is pushed.
 
 (GH #540/#541 are the user's own platform issue tracker per standing practice — "all issues go to GitHub" — not devarch-labelled ledger items, so they are not filed through `issues.sh`; `issues.sh list-open` was checked and neither id appears there, consistent with them being outside that store.)
 
@@ -71,15 +85,22 @@ GH #540 option 1, matching ADR-307 D5's "fresh boot + deterministic replay at th
 **Docs** (1 file):
 - `docs/architecture/adrs/adr-307-testing-tree-model-v2.md` - D5 amendment note (GH #540)
 
+**GH #541 fix, uncommitted** (4 files + rebuilt bundle):
+- `tools/ide/web/testing-surface/src/model.ts` - new `beginRebind(lineId)`
+- `tools/ide/web/testing-surface/src/main.ts` - `driveFreshBoot` calls `beginRebind` on a re-visit
+- `tools/ide/web/testing-surface/tests/model.test.ts` - +2 tests
+- `tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift` - +1 real-path test
+- `tools/ide/SharpeeIDE/Resources/testing-surface/surface.js` - rebuilt bundle
+
 ## Notes
 
-**Session duration**: ~30 minutes (started 17:50 CDT, this write ~18:18 CDT).
+**Session duration**: ~50 minutes (started 17:50 CDT, this write ~18:27 CDT).
 
-**Approach**: Same fix applied in parallel across the three places that decide the engine's boot seed (TS surface, Swift host, C# host), each backed by its own new unit tests plus one added real-path test on the macOS side.
+**Approach**: GH #540 fix applied in parallel across the three places that decide the engine's boot seed (TS surface, Swift host, C# host), each backed by its own new unit tests plus one real-path test on the macOS side; committed as `0c8739ee2`. GH #541, found immediately after, is a single-surface fix (TS model + driver) with matching Swift real-path coverage; fixed and tested but not yet committed.
 
-**Also uncommitted, carried alongside**: `docs/context/session-20260927-1427-explorer-prototype.md` — the prior session's summary, already finalized after its own commit; staged with this session's changes because it was never committed separately.
+**Also carried in the GH #540 commit**: `docs/context/session-20260927-1427-explorer-prototype.md` — the prior session's summary, already finalized after its own commit; staged and landed alongside GH #540's changes because it was never committed separately. The commit script also moved `docs/context/session-20260927-0304-explorer-prototype.md` to `docs/context/archive/` as routine housekeeping, unrelated to this session's own work.
 
-**Evidence gap**: the xcodebuild and dotnet test pass/fail counts above are the session's own account, not hook-corroborated (the xcode MCP tool bypasses the Bash-parsing hook entirely; the dotnet hook fired but could not parse counts). Treat the Swift/C# numbers as reported, not verified, until re-run through a corroborating path.
+**Evidence gap**: GH #540's xcodebuild and dotnet test pass/fail counts (in that commit's message) were the session's own account, not hook-corroborated — the xcode MCP tool bypasses the Bash-parsing hook, and the dotnet hook fired but could not parse counts. GH #541's Swift real-path count has the same gap (xcodebuild output was redirected to a log file rather than parsed by the hook). GH #541's TS/vitest count (162 passing) IS hook-corroborated (event log row, 2026-09-27T23:25:23Z, timestamped after the last edit to the covered files).
 
 ---
 
@@ -90,7 +111,7 @@ GH #540 option 1, matching ADR-307 D5's "fresh boot + deterministic replay at th
 - **Blocker**: N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining**: N/A
-- **Rollback Safety**: safe to revert (nothing pushed; local working tree only)
+- **Rollback Safety**: safe to revert (GH #540 is committed locally as `0c8739ee2` but not pushed; GH #541's fix is uncommitted in the working tree; nothing on this branch has reached the remote)
 
 ## Dependency/Prerequisite Check
 
@@ -104,20 +125,22 @@ GH #540 option 1, matching ADR-307 D5's "fresh boot + deterministic replay at th
 
 ## Mutation Audit
 
-- Files with state-changing logic modified: `boot-document.ts` (decides tree adoption), `TestingSurfaceViewController.swift` (sets session/page-global seed), `TestingSession.cs` (builds session state).
-- Tests verify actual state mutations (not just events): YES (evidence: vitest event-log row, 160 passing, 2026-09-27 17:57 CDT, for the surface; Swift and C# suites reported by session, unverified per Notes above).
+- Files with state-changing logic modified: `boot-document.ts` (decides tree adoption), `TestingSurfaceViewController.swift` (sets session/page-global seed), `TestingSession.cs` (builds session state), `model.ts` (`beginRebind` unbinds a line's cards and rewinds its cursor).
+- Tests verify actual state mutations (not just events): YES (evidence: vitest event-log row, 162 passing, 2026-09-27T23:25:23Z, for the surface — asserts on the document's card list and cursor after a re-visit, not just that no error was thrown; Swift and C# suites reported by session, unverified per Notes above).
 - If NO: N/A for the surface (verified). For Swift/C#: re-run through a hook-visible path (Bash `xcodebuild`/`dotnet test` invocation) to corroborate before relying on the counts in a later session.
 
 ## Recurrence Check
 
-- Similar to past issue? NO — this is the first time the seed-source mismatch between a loaded document and a host's boot constant has been fixed; no prior session summary references this pattern.
+- Similar to past issue? NO — this is the first time the seed-source mismatch (GH #540) and the re-visit-appends-instead-of-rebinds pattern (GH #541) have been fixed; no prior session summary references either pattern. (GH #541 was discovered as a direct side effect of testing #540's fix, not an independent recurrence.)
 
 ## Test Coverage Delta
 
-- Tests added: 5 (surface) + 4 (Swift) + 1 (Swift real-path) + 4 (C#) = 14.
-- Tests passing before: unknown exact baseline → after: surface 160/160 (evidence: vitest event-log row above). Swift and C# after-counts are session-reported, unverified (see Notes).
+- Tests added: GH #540 — 5 (surface) + 4 (Swift) + 1 (Swift real-path) + 4 (C#) = 14. GH #541 — 2 (surface) + 1 (Swift real-path) = 3. Session total: 17.
+- Tests passing before: unknown exact baseline → after GH #540: surface 160/160 (evidence: vitest event-log row, corroborated). After GH #541 (this write): surface 162/162 (evidence: vitest event-log row, 2026-09-27T23:25:23Z, corroborated — timestamped after the last edit to the covered files). Swift/C# after-counts remain session-reported, unverified (see Notes).
 - Known untested areas: none newly introduced; the pre-existing 8 `HostCapabilityTests`/`SubprocessTests` failures (missing `SHARPEE_IDE_TOOLCHAIN`) are unrelated and untouched.
 
 ---
 
 **Progressive update**: checkpoint 2026-09-27 18:18 — revised in place: added inline evidence citations from the session event log, marked the xcodebuild/dotnet-test pass counts unverified (no corroborating hook row), confirmed GH #540/#541 are tracked outside the devarch issue store, and expanded to full structured form (ADR amendment + 14 new tests + 3+ substantive files cross this session's bar).
+
+**Progressive update**: checkpoint 2026-09-27 18:27 — GH #540 landed as commit `0c8739ee2` (local, not pushed; 15 files, including the stale-summary archive move); GH #541 (re-visit doubles a line's cards) found and fixed on top of it — `beginRebind` in `model.ts`, wired into `driveFreshBoot`, +2 vitest tests (162 passing, hook-corroborated) and +1 Swift real-path test (22 executed 0 failures, session-reported), comment posted on the issue; fix is uncommitted, next action is a local commit closing #541.
