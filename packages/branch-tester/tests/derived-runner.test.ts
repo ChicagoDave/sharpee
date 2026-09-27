@@ -267,3 +267,83 @@ describe('determinism', () => {
     expect(strip(second.run)).toBe(strip(first.run));
   }, 60_000);
 });
+
+describe('condition compositions — the compose fixture, end to end', () => {
+  it('runs what the compositions arrange and names what they cannot', async () => {
+    const { run } = await runFixture('compose');
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'lamp · on switching_on · refused lamp-bell-first': 'passed',
+      'lamp · on switching_on · refused lamp-contradiction': 'skipped',
+      'lamp · on switching_on · refused lamp-flickers': 'passed',
+      'lamp · on switching_on': 'skipped',
+      'bell · on examining · refused too-dark': 'passed',
+      'bell · on examining': 'skipped',
+      'bell · on ringing · refused bell-outside': 'passed',
+      'bell · on ringing · refused ring-done': 'passed',
+      'bell · on ringing · refused ring-quiet': 'passed',
+      'bell · on ringing': 'passed',
+      'gong · on examining · refused cat-startled': 'passed',
+      'gong · on examining': 'passed',
+      'story · before the game starts': 'passed',
+      'story · define action ringing': 'skipped',
+    });
+    expect([run.total, run.passed, run.failed, run.skipped, run.errored]).toEqual([14, 10, 0, 4, 0]);
+  }, 30_000);
+
+  it('a thing that must be `here` is placed after the player: the cat reaches the gong\'s room, not the boot room', async () => {
+    const { run } = await runFixture('compose');
+    const startled = outcome(run, 'refused cat-startled');
+    expect(startled.arranged).toEqual([expect.stringMatching(/^player\.location = /), expect.stringMatching(/^cat\.location = /)]);
+    const [playerRoom, catRoom] = startled.arranged.map((expression) => expression.split(' = ')[1]);
+    expect(catRoom).toBe(playerRoom);
+    expect(startled.rooms).toEqual(['yard']);
+    expect(startled.claims).toContainEqual({ claim: 'emitted cat-startled', passed: true });
+    // The through leaf reads `cat is here` against the settled room too: the cat stayed in the Hall, so it fails, and the body runs.
+    const through = run.outcomes.find((o) => o.label === 'gong · on examining')!;
+    expect(through.status).toBe('passed');
+    expect(through.arranged).toEqual([expect.stringMatching(/^player\.location = /)]);
+  }, 30_000);
+
+  it('a named open condition read `it` as the subject: the bell went to the Yard and the player followed', async () => {
+    const { run } = await runFixture('compose');
+    const outside = outcome(run, 'refused bell-outside');
+    expect(outside.command).toBe('ring bell');
+    expect(outside.arranged).toEqual(['bell.location = yard', expect.stringMatching(/^player\.location = /)]);
+    expect(outside.rooms).toEqual(['yard']);
+    expect(outside.claims).toContainEqual({ claim: 'emitted bell-outside', passed: true });
+  }, 30_000);
+
+  it('a failed `and` is proved by the arranged world and a named `or` by its leftmost witness — then the body runs', async () => {
+    const { run } = await runFixture('compose');
+    const quiet = outcome(run, 'refused ring-quiet');
+    expect(quiet.arranged).toEqual(['lamp is warm', expect.stringMatching(/^player\.location = /)]);
+    expect(quiet.claims).toContainEqual({ claim: 'emitted ring-quiet', passed: true });
+    const through = run.outcomes.find((o) => o.label === 'bell · on ringing')!;
+    expect(through.arranged).toEqual([expect.stringMatching(/^player\.location = /)]);
+    expect(through.claims).toContainEqual({ claim: 'bell is rung', passed: true });
+  }, 30_000);
+
+  it('checks run after every write: a guard pair whose preconditions contradict is SKIPPED as a negation, never run', async () => {
+    const { run } = await runFixture('compose');
+    const contradiction = outcome(run, 'refused lamp-contradiction');
+    expect(contradiction.status).toBe('skipped');
+    expect(contradiction.shape).toBe('negation');
+    expect(contradiction.detail).toBe('`bell is rung` already holds in the arranged world');
+    // Every write landed before the check read it — the write that made the check fail is in the list.
+    expect(contradiction.arranged).toEqual(['bell is rung', 'lamp is cold', expect.stringMatching(/^player\.location = /)]);
+    expect(contradiction.command).toBeUndefined();
+  }, 30_000);
+
+  it('an `and` whose every operand already holds is SKIPPED naming the conjunction, and the witness skips an operand that maps to nothing', async () => {
+    const { run } = await runFixture('compose');
+    const examine = run.outcomes.find((o) => o.label === 'bell · on examining')!;
+    expect(examine.shape).toBe('negation');
+    expect(examine.detail).toBe('every operand of `bell is still and lamp is cold` holds in the arranged world');
+    const flickers = outcome(run, 'refused lamp-flickers');
+    expect(flickers.arranged).toContain('bell is still');
+    expect(flickers.claims).toContainEqual({ claim: 'emitted lamp-flickers', passed: true });
+    const lampThrough = run.outcomes.find((o) => o.label === 'lamp · on switching_on')!;
+    expect(lampThrough.shape).toBe('condition-chance');
+  }, 30_000);
+});

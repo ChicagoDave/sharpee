@@ -118,3 +118,28 @@ None this session. ADR-356 D5a (derived-tier failure semantics) and ADR-321 D6a/
 ---
 
 **Progressive update**: session completed 2026-09-27 06:10 — full-form rewrite on terminal write: GH #530 fixed (fourth implicit arrange term in derived-runner.ts) and closed via issues.sh; narrative suites and doc flipped to fernhill's green state; all test/build claims corroborated fresh (branch-tester 196 passing, scripts suite 53 passing, fernhill exit 0 86/106); GH #242 narrowed, #532/#531/#533/#525 carried forward open.
+
+## Activity Log (auto-captured)
+```
+[09:45:24] BUILD: Build passed — npx tsc --noEmit; echo "EXIT: $?"
+[10:26:31] EDIT: File changed via Bash — packages/branch-tester/src/derived-runner.ts
+[10:26:31] EDIT: File changed via Bash — packages/branch-tester/tests/fixtures/derived/reach.story
+[10:26:54] EDIT: File changed via Bash — packages/branch-tester/tests/derived-plan.test.ts
+[10:26:54] EDIT: File changed via Bash — packages/branch-tester/tests/derived-runner.test.ts
+[10:28:40] EDIT: File changed via Bash — docs/work/testing-explorer/narrative-20260926-author-testing.md
+[10:28:40] EDIT: File changed via Bash — scripts/__tests__/narrative-coverage-numbers.test.ts
+[10:28:40] EDIT: File changed via Bash — scripts/__tests__/narrative-rule-tests-itself.test.ts
+[10:28:40] EDIT: File changed via Bash — scripts/__tests__/narrative-unexpected-failure.test.ts
+[10:28:40] EDIT: File changed via Bash — scripts/__tests__/narrative-what-runs-when.test.ts
+[10:28:48] TEST: Tests ran (status unverified) — npx vitest run --config vitest.scripts.config.ts scripts/__tests__/narrative-une
+[10:28:58] TEST: Tests failed — 1 failed 1 failed 3 passed 1 failed 17 passed
+[10:55:51] TEST: Tests passed — 4 passed 18 passed
+[10:56:13] TEST: Tests passed — 13 passed 53 passed
+[10:56:46] EDIT: File written — docs/context/session-20260927-0444-explorer-prototype.md
+[11:06:07] EDIT: File changed via Bash — docs/context/session-20260927-0444-explorer-prototype.md
+[11:08:47] TEST: Tests passed — 13 passed 53 passed
+[11:11:17] EDIT: File written — docs/context/session-20260927-0444-explorer-prototype.md
+[11:12:59] EDIT: File written — .commit-files
+[11:12:59] EDIT: File written — .commit-msg
+[11:13:04] GIT: Git operation — bash /Users/david/.claude/scripts/git-commit.sh --push
+```

@@ -36,6 +36,18 @@
  * player's sight after that — darkness, concealment — is SKIPPED
  * `subject-unreachable`, never reported as a parse failure of the story.
  *
+ * Three compositions of floor forms are arranged as compositions, not
+ * named as shapes: a named condition expands to its body with `it` bound
+ * to the clause subject; an `or` that must hold is arranged by its
+ * leftmost operand that maps to floor forms (the witness rule — one leaf
+ * per operand was rejected because it would change D1's denominator); and
+ * an `and` that must fail is never arranged at all — its operands are read
+ * after every write, and the branch runs only if one of them already fails
+ * (the never-write-a-negation policy, applied to a conjunction). Arranging
+ * is therefore two passes: every write first, then every check, so a later
+ * write can never invalidate an earlier check. Within the writes, a thing
+ * that must be `here` is placed last, once the player's room is settled.
+ *
  * The vocabulary a standard verb is typed from is the booted game's own
  * language provider — one vocabulary, the one the parser will read — not a
  * language package imported here. The suite boots once up front to read it.
@@ -71,7 +83,16 @@ export type ArrangeTerm =
   /** Every closed (and locked) container between the subject and its room is opened, so the command can reach it. Implicit. */
   | { kind: 'reach-subject'; subject: string }
   /** The standard action's own preconditions on the subject's flags (a door must be closed to open, a tool held to cut). Implicit. */
-  | { kind: 'action-preconditions'; action: string; subject: string };
+  | { kind: 'action-preconditions'; action: string; subject: string }
+  /**
+   * An `and` that must fail: each operand as the terms that make it HOLD.
+   * Never written — checked after every write, and satisfied when at least
+   * one operand does not hold.
+   */
+  | { kind: 'some-fails'; operands: ArrangeTerm[][] };
+
+/** A term that resolves to pin expressions against the live world — every kind but the read-only `some-fails`. */
+type ResolvableTerm = Exclude<ArrangeTerm, { kind: 'some-fails' }>;
 
 /** What drives the test: one typed command, or nothing (a boot branch asserts the booted world). */
 export type CommandPlan = { kind: 'typed'; input: string } | { kind: 'none' };
@@ -258,7 +279,7 @@ export function planBranch(
   const siblings = branches.filter((candidate) => sameClause(candidate, branch));
   const terms: ArrangeTerm[] = [];
   for (const precondition of [...interceptingGuards(branch, branches), ...branch.precondition]) {
-    const mapped = preconditionTerms(precondition, branch.subject);
+    const mapped = preconditionTerms(precondition, { ir, subject: branch.subject, reading: false, expanding: [] });
     if ('shape' in mapped) return { kind: 'skip', shape: mapped.shape, detail: mapped.detail };
     terms.push(...mapped.terms);
   }
@@ -362,14 +383,29 @@ function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): Bra
   return guards;
 }
 
+/** What a condition is mapped within: the story, the clause subject `it` binds to, and how the terms will be used. */
+interface ConditionScope {
+  ir: StoryIR;
+  subject: string | null;
+  /**
+   * True inside an `and` that must fail: its operands are only ever READ
+   * (the run proves one already fails), so an `or` that must hold cannot
+   * stand in for its witness there — the read would answer for one
+   * alternative while the guard answers for all of them.
+   */
+  reading: boolean;
+  /** Named conditions being expanded, so a condition that names itself is a named shape and not a stack overflow. */
+  expanding: string[];
+}
+
 /** The arrange terms one precondition record needs, or the shape it cannot be expressed in. */
 function preconditionTerms(
   precondition: BranchPrecondition,
-  subject: string | null
+  scope: ConditionScope
 ): { terms: ArrangeTerm[] } | { shape: string; detail: string } {
   switch (precondition.kind) {
     case 'condition':
-      return conditionTerms(precondition.condition, precondition.holds, subject);
+      return conditionTerms(precondition.condition, precondition.holds, scope);
     case 'state':
       return { terms: [{ kind: 'pin', expression: `${precondition.entity} is ${precondition.state}`, mustHold: true }] };
     case 'story-state':
@@ -391,41 +427,85 @@ function preconditionTerms(
   }
 }
 
-/** The arrange terms a condition needs to hold (or to fail), or the shape it cannot be expressed in. */
+/**
+ * The arrange terms a condition needs to hold (or to fail), or the shape it
+ * cannot be expressed in.
+ *
+ * An `or` that must hold is arranged by its WITNESS: the leftmost operand
+ * that maps to floor forms. Leftmost, not cheapest or first-by-form, so the
+ * choice is deterministic and reads straight off the source. The rejected
+ * alternative — one enumerated leaf per operand — would change ADR-356
+ * D1's one-test-per-leaf denominator, which is not this runner's to move.
+ *
+ * An `and` that must fail chooses nothing: every operand is mapped as what
+ * makes it hold, and the run reads them after every write, satisfied when
+ * one already fails. That is the runner's existing never-write-a-negation
+ * policy applied to a conjunction.
+ */
 function conditionTerms(
   condition: IRCondition,
   holds: boolean,
-  subject: string | null
+  scope: ConditionScope
 ): { terms: ArrangeTerm[] } | { shape: string; detail: string } {
   switch (condition.kind) {
     case 'and': {
-      if (!holds) return { shape: 'condition-not-and', detail: 'which operand of an `and` fails is a guess' };
-      const terms: ArrangeTerm[] = [];
-      for (const operand of condition.operands) {
-        const mapped = conditionTerms(operand, true, subject);
-        if ('shape' in mapped) return mapped;
-        terms.push(...mapped.terms);
+      if (holds) {
+        const terms: ArrangeTerm[] = [];
+        for (const operand of condition.operands) {
+          const mapped = conditionTerms(operand, true, scope);
+          if ('shape' in mapped) return mapped;
+          terms.push(...mapped.terms);
+        }
+        return { terms };
       }
-      return { terms };
+      const operands: ArrangeTerm[][] = [];
+      for (const operand of condition.operands) {
+        const mapped = conditionTerms(operand, true, { ...scope, reading: true });
+        if ('shape' in mapped) return mapped;
+        operands.push(mapped.terms);
+      }
+      return { terms: [{ kind: 'some-fails', operands }] };
     }
     case 'or': {
-      if (holds) return { shape: 'condition-or', detail: 'which operand of an `or` holds is a guess' };
-      const terms: ArrangeTerm[] = [];
-      for (const operand of condition.operands) {
-        const mapped = conditionTerms(operand, false, subject);
-        if ('shape' in mapped) return mapped;
-        terms.push(...mapped.terms);
+      if (!holds) {
+        const terms: ArrangeTerm[] = [];
+        for (const operand of condition.operands) {
+          const mapped = conditionTerms(operand, false, scope);
+          if ('shape' in mapped) return mapped;
+          terms.push(...mapped.terms);
+        }
+        return { terms };
       }
-      return { terms };
+      if (scope.reading) {
+        return { shape: 'condition-or', detail: 'an `or` inside a failed `and` has no single witness to read' };
+      }
+      let unmappable: { shape: string; detail: string } | null = null;
+      for (const operand of condition.operands) {
+        const mapped = conditionTerms(operand, true, scope);
+        if ('shape' in mapped) {
+          unmappable ??= mapped;
+          continue;
+        }
+        return mapped;
+      }
+      return { shape: 'condition-or', detail: `no operand of the \`or\` maps to a floor form (${unmappable?.detail ?? 'empty'})` };
     }
     case 'not':
-      return conditionTerms(condition.operand, !holds, subject);
+      return conditionTerms(condition.operand, !holds, scope);
+    case 'condition': {
+      const named = scope.ir.conditions.find((candidate) => candidate.name === condition.name);
+      if (!named) return { shape: 'condition-condition', detail: `\`${condition.name}\` names no condition the story defines` };
+      if (scope.expanding.includes(condition.name)) {
+        return { shape: 'condition-condition', detail: `\`${condition.name}\` refers to itself` };
+      }
+      return conditionTerms(named.condition, holds, { ...scope, expanding: [...scope.expanding, condition.name] });
+    }
     case 'story-state':
       return { terms: [{ kind: 'pin', expression: `story.state = ${condition.state}`, mustHold: holds }] };
     case 'predicate': {
       const effective = condition.negated ? !holds : holds;
-      const left = valueName(condition.subject, subject);
-      const right = valueName(condition.object, subject);
+      const left = valueName(condition.subject, scope.subject);
+      const right = valueName(condition.object, scope.subject);
       if (left === null || right === null) {
         return { shape: `predicate-${condition.pred}`, detail: 'a predicate over something other than a named entity' };
       }
@@ -780,31 +860,58 @@ export async function runDerivedBranch(
   }
   const world = game.world;
 
-  // ── Arrange ────────────────────────────────────────────────────────────
+  // ── Arrange, pass one: every write ─────────────────────────────────────
+  // Terms resolve in order because a later one reads what an earlier one
+  // wrote (the player goes where the subject was just placed). A thing
+  // that must be `here` is written last of all: "here" is wherever the
+  // player finally stands, which the implicit placement decides. Anything
+  // that is only checked waits for pass two, after the last write.
   const arranged: string[] = [];
+  // A check is kept as its term, not its expression: a `here` that must
+  // NOT hold is resolved only in pass two, against the room the player
+  // finally stands in.
+  const checks: ArrangeTerm[] = [];
+  const isHereWrite = (term: ArrangeTerm): boolean => term.kind === 'with-player' && term.mustHold;
+  const writesInOrder = [...plan.arrange.filter((term) => !isHereWrite(term)), ...plan.arrange.filter(isHereWrite)];
   let reachTarget: string | null = null;
-  for (const term of plan.arrange) {
+  for (const term of writesInOrder) {
+    if (term.kind === 'some-fails' || ((term.kind === 'pin' || term.kind === 'with-player') && !term.mustHold)) {
+      checks.push(term);
+      continue;
+    }
     const resolved = resolveTerm(term, world);
     if ('shape' in resolved) return { ...base, status: 'skipped', shape: resolved.shape, detail: resolved.detail, arranged };
     if (term.kind === 'reach-subject') reachTarget = term.subject;
     for (const expression of resolved.expressions) {
-      if (resolved.mustHold) {
-        const result = arrange(world as never, expression);
-        if (!result.arranged) {
-          return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? expression, arranged };
-        }
-        arranged.push(expression);
-      } else {
-        // Never written: a fresh world must already fail it, or the branch
-        // needs a negation the floor does not arrange.
-        const pin = parsePin(expression);
-        if (pin.kind === 'unrecognized' || pin.kind === 'occurrence' || pin.kind === 'topic-history' || pin.kind === 'timer-phase' || pin.kind === 'timer-position') {
-          return { ...base, status: 'skipped', shape: pin.kind === 'unrecognized' ? 'negation' : pin.kind, detail: `cannot read \`${expression}\` to prove it fails`, arranged };
-        }
-        const read = evaluateStateExpression(expression, world as never, CHORD_STORY_STATE_KEYS);
-        if (read.matches) {
-          return { ...base, status: 'skipped', shape: 'negation', detail: `\`${expression}\` already holds in the booted world`, arranged };
-        }
+      const result = arrange(world as never, expression);
+      if (!result.arranged) {
+        return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? expression, arranged };
+      }
+      arranged.push(expression);
+    }
+  }
+
+  // ── Arrange, pass two: every check ─────────────────────────────────────
+  // Never written: the arranged world must already fail a negated term, and
+  // must already fail some operand of a failed `and` — or the branch needs
+  // a negation the floor does not arrange.
+  for (const check of checks) {
+    if (check.kind === 'some-fails') {
+      const held = termHolds(check, world);
+      if ('shape' in held) return { ...base, status: 'skipped', shape: held.shape, detail: held.detail, arranged };
+      if (!held.holds) {
+        const conjunction = check.operands.map((operand) => describeTerms(operand)).join(' and ');
+        return { ...base, status: 'skipped', shape: 'negation', detail: `every operand of \`${conjunction}\` holds in the arranged world`, arranged };
+      }
+      continue;
+    }
+    const resolved = resolveTerm(check, world);
+    if ('shape' in resolved) return { ...base, status: 'skipped', shape: resolved.shape, detail: resolved.detail, arranged };
+    for (const expression of resolved.expressions) {
+      const read = readPin(expression, world);
+      if ('shape' in read) return { ...base, status: 'skipped', shape: read.shape, detail: read.detail, arranged };
+      if (read.matches) {
+        return { ...base, status: 'skipped', shape: 'negation', detail: `\`${expression}\` already holds in the arranged world`, arranged };
       }
     }
   }
@@ -916,8 +1023,70 @@ export async function runDerivedBranch(
 }
 
 /** Resolve a runtime term against the booted world into the pin expressions it needs. */
+/**
+ * Read one pin against the live world, never writing it.
+ *
+ * @returns whether it matches, or the shape of a pin no read is defined for
+ */
+function readPin(expression: string, world: DerivedWorld): { matches: boolean } | { shape: string; detail: string } {
+  const pin = parsePin(expression);
+  if (pin.kind === 'unrecognized' || pin.kind === 'occurrence' || pin.kind === 'topic-history' || pin.kind === 'timer-phase' || pin.kind === 'timer-position') {
+    return { shape: pin.kind === 'unrecognized' ? 'negation' : pin.kind, detail: `cannot read \`${expression}\` to prove it fails` };
+  }
+  return { matches: evaluateStateExpression(expression, world as never, CHORD_STORY_STATE_KEYS).matches };
+}
+
+/**
+ * Whether one term holds in the world as arranged — a read, never a write.
+ * A `some-fails` term holds when at least one of its operands does not;
+ * an operand holds when every one of its terms does.
+ */
+function termHolds(term: ArrangeTerm, world: DerivedWorld): { holds: boolean } | { shape: string; detail: string } {
+  if (term.kind === 'some-fails') {
+    for (const operand of term.operands) {
+      let operandHolds = true;
+      for (const inner of operand) {
+        const held = termHolds(inner, world);
+        if ('shape' in held) return held;
+        if (!held.holds) {
+          operandHolds = false;
+          break;
+        }
+      }
+      if (!operandHolds) return { holds: true };
+    }
+    return { holds: false };
+  }
+  const resolved = resolveTerm(term, world);
+  if ('shape' in resolved) return resolved;
+  for (const expression of resolved.expressions) {
+    const read = readPin(expression, world);
+    if ('shape' in read) return read;
+    if (read.matches !== resolved.mustHold) return { holds: false };
+  }
+  return { holds: true };
+}
+
+/** Source-shaped text for a term list, for a SKIPPED detail line: `a is x and not b.location = y and not (c is z and d is w)`. */
+function describeTerms(terms: ArrangeTerm[]): string {
+  return terms
+    .map((term) => {
+      switch (term.kind) {
+        case 'pin':
+          return term.mustHold ? term.expression : `not ${term.expression}`;
+        case 'with-player':
+          return term.mustHold ? `${term.entity} is here` : `${term.entity} is not here`;
+        case 'some-fails':
+          return `not (${term.operands.map((operand) => describeTerms(operand)).join(' and ')})`;
+        default:
+          return term.kind;
+      }
+    })
+    .join(' and ');
+}
+
 function resolveTerm(
-  term: ArrangeTerm,
+  term: ResolvableTerm,
   world: DerivedWorld
 ): { expressions: string[]; mustHold: boolean } | { shape: string; detail: string } {
   switch (term.kind) {

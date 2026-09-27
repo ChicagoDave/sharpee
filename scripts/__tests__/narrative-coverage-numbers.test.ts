@@ -5,8 +5,8 @@
  * the human report on stderr come from the same `sharpee test --json` run of
  * fernhill and must agree.
  *
- * The numbers are fernhill's as of 2026-09-27: 33 of 63 branches exercised,
- * all 33 passing (the two Tobias rows went green when the runner learned to
+ * The numbers are fernhill's as of 2026-09-27: 34 of 63 branches exercised,
+ * all 34 passing (the two Tobias rows went green when the runner learned to
  * bring the topic entity to the speaker), 2 of 3 endings reached with
  * `dawn-comes` unreached, 13 of 13 rooms entered. A story edit or an
  * arrange-floor extension (GH #525, #529) moves them, and this file says
@@ -24,9 +24,9 @@ beforeAll(() => {
 }, 60_000);
 
 describe('the Coverage strip', () => {
-  it('Branches 33 / 63 — the gaps are the SKIPPED branches, each with a shape and a span', () => {
+  it('Branches 34 / 63 — the gaps are the SKIPPED branches, each with a shape and a span', () => {
     const { branches } = derivedSummary(run);
-    expect(branches).toMatchObject({ declared: 63, exercised: 33, passed: 33, failed: 0 });
+    expect(branches).toMatchObject({ declared: 63, exercised: 34, passed: 34, failed: 0 });
     expect(branches.gaps).toHaveLength(branches.declared - branches.exercised);
     expect(branches.gaps.every((gap) => gap.status === 'skipped' && typeof gap.shape === 'string')).toBe(true);
     expect(branches.gaps.every((gap) => gap.span !== null)).toBe(true);

@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { compile, type StoryIR } from '@sharpee/chord';
+import { compile, type IRCondition, type StoryIR } from '@sharpee/chord';
 import { collectClauseBranches, type ClauseBranch } from '@sharpee/world-index';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
@@ -185,5 +185,119 @@ describe('planBranch — shapes outside the floor are named', () => {
         JSON.stringify(planBranch(candidate, ir, branches, language))
       );
     }
+  });
+});
+
+describe('planBranch — condition compositions (the compose fixture)', () => {
+  const composeIr = fixture('compose');
+  const composeBranches = collectClauseBranches(composeIr);
+  /** The one branch with exactly this label. */
+  const composeBranch = (label: string): ClauseBranch => {
+    const hit = composeBranches.find((candidate) => derivedBranchLabel(candidate, composeIr) === label);
+    if (!hit) throw new Error(`no branch labelled "${label}": ${composeBranches.map((b) => derivedBranchLabel(b, composeIr)).join(' | ')}`);
+    return hit;
+  };
+  const planOf = (label: string) => planBranch(composeBranch(label), composeIr, composeBranches, language);
+  const is = (id: string, state: string): IRCondition => ({ kind: 'predicate', pred: 'is', negated: false, subject: { kind: 'entity', id }, object: { kind: 'symbol', name: state } });
+  /** The refused-too-dark record with its one precondition replaced — the pure half accepts any record. */
+  const withCondition = (condition: IRCondition, holds: boolean): ClauseBranch => ({
+    ...composeBranch('bell · on examining · refused too-dark'),
+    precondition: [{ kind: 'condition', condition, holds }],
+  });
+
+  it('a named open condition expands to its body with `it` bound to the subject', () => {
+    const plan = planOf('bell · on ringing · refused bell-outside');
+    expect(plan.kind === 'run' && plan.arrange).toEqual([
+      { kind: 'pin', expression: 'bell.location = yard', mustHold: true },
+      { kind: 'reach-subject', subject: 'bell' },
+      { kind: 'player-to-subject', subject: 'bell' },
+    ]);
+  });
+
+  it('an `and` that must hold arranges every operand; a named condition that must fail is its body, negated', () => {
+    const plan = planOf('bell · on ringing · refused ring-done');
+    expect(plan.kind === 'run' && plan.arrange).toEqual([
+      { kind: 'pin', expression: 'bell.location = yard', mustHold: false },
+      { kind: 'pin', expression: 'lamp is warm', mustHold: true },
+      { kind: 'pin', expression: 'bell is rung', mustHold: true },
+      { kind: 'reach-subject', subject: 'bell' },
+      { kind: 'player-to-subject', subject: 'bell' },
+    ]);
+  });
+
+  it('an `and` that must fail is one some-fails term: each operand as what makes it hold, no witness chosen', () => {
+    const plan = planOf('bell · on ringing · refused ring-quiet');
+    expect(plan.kind === 'run' && plan.arrange[1]).toEqual({
+      kind: 'some-fails',
+      operands: [
+        [{ kind: 'pin', expression: 'lamp is warm', mustHold: true }],
+        [{ kind: 'pin', expression: 'bell is rung', mustHold: true }],
+      ],
+    });
+  });
+
+  it('a named closed `or` that must hold is arranged by its leftmost operand only', () => {
+    const plan = planOf('bell · on ringing · refused ring-quiet');
+    expect(plan.kind === 'run' && plan.arrange[2]).toEqual({ kind: 'pin', expression: 'lamp is warm', mustHold: true });
+    expect(plan.kind === 'run' && plan.arrange).not.toContainEqual({ kind: 'pin', expression: 'bell is rung', mustHold: true });
+  });
+
+  it('an `or` that must fail negates every operand', () => {
+    const plan = planOf('bell · on ringing');
+    expect(plan.kind === 'run' && plan.arrange.slice(2, 4)).toEqual([
+      { kind: 'pin', expression: 'lamp is warm', mustHold: false },
+      { kind: 'pin', expression: 'bell is rung', mustHold: false },
+    ]);
+  });
+
+  it('the witness is the leftmost operand that MAPS: `chance` maps to nothing, so the second operand is arranged', () => {
+    const plan = planOf('lamp · on switching_on · refused lamp-flickers');
+    expect(plan.kind === 'run' && plan.arrange).toContainEqual({ kind: 'pin', expression: 'bell is still', mustHold: true });
+    expect(JSON.stringify(plan)).not.toContain('chance');
+  });
+
+  it('an `or` that must fail with an operand outside the floor is SKIPPED by that operand\'s shape', () => {
+    expect(planOf('lamp · on switching_on')).toEqual({ kind: 'skip', shape: 'condition-chance', detail: '`chance` is not a floor form' });
+  });
+
+  it('an `or` none of whose operands map is SKIPPED as condition-or', () => {
+    const plan = planBranch(withCondition({ kind: 'or', operands: [{ kind: 'chance', n: 2 }, { kind: 'chance', n: 3 }] }, true), composeIr, composeBranches, language);
+    expect(plan.kind).toBe('skip');
+    expect(plan.kind === 'skip' && plan.shape).toBe('condition-or');
+    expect(plan.kind === 'skip' && plan.detail).toMatch(/^no operand of the `or` maps to a floor form/);
+  });
+
+  it('an `or` that must hold inside a failed `and` has no single witness to read', () => {
+    const inner: IRCondition = { kind: 'or', operands: [is('lamp', 'warm'), is('bell', 'rung')] };
+    const plan = planBranch(withCondition({ kind: 'and', operands: [inner, is('bell', 'still')] }, false), composeIr, composeBranches, language);
+    expect(plan).toEqual({ kind: 'skip', shape: 'condition-or', detail: 'an `or` inside a failed `and` has no single witness to read' });
+  });
+
+  it('a name the story does not define is a named shape, not a throw', () => {
+    const plan = planBranch(withCondition({ kind: 'condition', name: 'nowhere' }, true), composeIr, composeBranches, language);
+    expect(plan).toEqual({ kind: 'skip', shape: 'condition-condition', detail: '`nowhere` names no condition the story defines' });
+  });
+
+  it('a condition that names itself is a named shape, not a stack overflow', () => {
+    const loopIr: StoryIR = {
+      ...composeIr,
+      conditions: [...composeIr.conditions, { name: 'loop', open: false, condition: { kind: 'condition', name: 'loop' }, span: composeIr.conditions[0].span }],
+    };
+    const plan = planBranch(withCondition({ kind: 'condition', name: 'loop' }, true), loopIr, composeBranches, language);
+    expect(plan).toEqual({ kind: 'skip', shape: 'condition-condition', detail: '`loop` refers to itself' });
+  });
+});
+
+describe('planBranch — `here` is a with-player term, placed after the implicit player placement', () => {
+  const composeIr = fixture('compose');
+  const composeBranches = collectClauseBranches(composeIr);
+  it('an `is here` guard maps to with-player; the run writes it after player-to-subject', () => {
+    const startled = composeBranches.find((candidate) => derivedBranchLabel(candidate, composeIr) === 'gong · on examining · refused cat-startled')!;
+    const plan = planBranch(startled, composeIr, composeBranches, language);
+    expect(plan.kind === 'run' && plan.arrange).toEqual([
+      { kind: 'with-player', entity: 'cat', mustHold: true },
+      { kind: 'reach-subject', subject: 'gong' },
+      { kind: 'player-to-subject', subject: 'gong' },
+    ]);
   });
 });

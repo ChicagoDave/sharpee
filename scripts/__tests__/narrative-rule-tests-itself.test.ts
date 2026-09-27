@@ -137,7 +137,7 @@ describe('the SKIPPED branch', () => {
       const clock = rowsOf(run).get(CLOCK_NEGATION)!;
       expect(clock.status).toBe('skipped');
       expect(clock.shape).toBe('negation');
-      expect(clock.detail).toMatch(/already holds in the booted world/);
+      expect(clock.detail).toMatch(/already holds in the arranged world/);
       const summary = derivedSummary(run);
       expect(summary.branches.gaps.some((gap) => gap.label === CLOCK_NEGATION && gap.status === 'skipped')).toBe(true);
       expect(derivedBranches(run).filter((event) => event.status === 'failed').map((event) => event.label)).not.toContain(CLOCK_NEGATION);
