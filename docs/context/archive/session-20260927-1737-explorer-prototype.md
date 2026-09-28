@@ -152,3 +152,91 @@ GH #540 option 1, matching ADR-307 D5's "fresh boot + deterministic replay at th
 **Progressive update**: checkpoint 2026-09-27 18:27 — GH #540 landed as commit `0c8739ee2` (local, not pushed; 15 files, including the stale-summary archive move); GH #541 (re-visit doubles a line's cards) found and fixed on top of it — `beginRebind` in `model.ts`, wired into `driveFreshBoot`, +2 vitest tests (162 passing, hook-corroborated) and +1 Swift real-path test (22 executed 0 failures, session-reported), comment posted on the issue; fix is uncommitted, next action is a local commit closing #541.
 
 **Progressive update**: session completed 2026-09-27 18:41 — GH #541 landed as commit `f713670b9`, gated by a fresh `turbo run test:ci` (121 passed, 1 skipped, hook-corroborated for the pass count); file renamed via `git mv` from the mis-stamped `session-20260927-1750-*` to the canonical `session-20260927-1737-*` per the session state's `summaryPrefix`; corrected an earlier write's claim that GH #540/#541 don't appear in `issues.sh list-open` (they do — the listing isn't devarch-filtered — but neither carries the `devarch` label); ran the Integration Reality Check (rule 13a) for both fixes and found it satisfied by run-output evidence despite the hook-corroboration gap; Status promoted IN-FLIGHT → COMPLETE (unverified: xcodebuild and dotnet pass counts). Both commits remain unpushed at this write; `commit-remote` pushes next as part of the same `/devarch:finalize` invocation.
+
+## Activity Log (auto-captured)
+```
+[22:38:12] BUILD: Build passed — npx tsc --noEmit 2>&1 | tail -20
+[22:51:36] EDIT: File written — docs/context/session-20260927-1750-explorer-prototype.md
+[22:53:25] EDIT: File changed via Bash — docs/context/session-20260927-1750-explorer-prototype.md
+[22:54:58] EDIT: File written — tools/ide/web/testing-surface/src/boot-document.ts
+[22:56:55] EDIT: File edited — tools/ide/web/testing-surface/src/main.ts
+[22:56:55] EDIT: File edited — tools/ide/web/testing-surface/src/main.ts
+[22:56:56] EDIT: File edited — tools/ide/web/testing-surface/src/main.ts
+[22:56:56] EDIT: File written — tools/ide/web/testing-surface/tests/boot-document.test.ts
+[22:56:56] EDIT: File edited — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[22:56:56] EDIT: File edited — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[22:56:57] EDIT: File edited — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[22:56:57] EDIT: File edited — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[22:56:57] EDIT: File written — tools/ide/SharpeeIDETests/TestingSurfaceDocumentSeedTests.swift
+[22:56:57] EDIT: File edited — tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift
+[22:56:58] EDIT: File written — tools/ide/PaneHost/Shell/TestingSession.cs
+[22:56:58] EDIT: File edited — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[22:56:58] EDIT: File edited — tools/ide/PaneHost/MainWindow.axaml.cs
+[22:56:58] EDIT: File written — tools/ide/PaneHost.Tests/TestingSessionTests.cs
+[22:56:59] EDIT: File edited — docs/architecture/adrs/adr-307-testing-tree-model-v2.md
+[22:56:59] EDIT: File changed via Bash — docs/architecture/adrs/adr-307-testing-tree-model-v2.md
+[22:56:59] EDIT: File changed via Bash — tools/ide/PaneHost.Tests/TestingSessionTests.cs
+[22:56:59] EDIT: File changed via Bash — tools/ide/PaneHost/MainWindow.axaml.cs
+[22:56:59] EDIT: File changed via Bash — tools/ide/PaneHost/Shell/ShellWindow.axaml.cs
+[22:56:59] EDIT: File changed via Bash — tools/ide/PaneHost/Shell/TestingSession.cs
+[22:56:59] EDIT: File changed via Bash — tools/ide/SharpeeIDE/TestingSurface/TestingSurfaceViewController.swift
+[22:56:59] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/TestingSurfaceDocumentSeedTests.swift
+[22:56:59] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift
+[22:56:59] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/boot-document.ts
+[22:56:59] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/main.ts
+[22:56:59] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/boot-document.test.ts
+[22:57:22] EDIT: File edited — tools/ide/PaneHost/MainWindow.axaml.cs
+[22:57:25] TEST: Tests passed — 15 passed 160 passed
+[22:57:44] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.js
+[22:57:47] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee/tools/ide && dotnet test PaneHost.Tests/PaneHost.T
+[22:58:13] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[22:58:33] BUILD: Build passed — cd /Users/david/repos/sharpee/tools/ide/web/testing-surface && npx tsc --noEmit 
+[22:59:57] TEST: Tests ran (status unverified) — cd /Users/david/repos/sharpee/tools/ide && dotnet test PaneHost.Tests/PaneHost.T
+[22:59:59] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[22:59:59] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:01:54] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:21:03] EDIT: File written — docs/context/session-20260927-1750-explorer-prototype.md
+[23:22:48] EDIT: File written — .commit-files
+[23:23:05] EDIT: File written — .commit-msg
+[23:23:08] GIT: Git operation — bash "$HOME/.claude/scripts/git-commit.sh"
+[23:24:27] EDIT: File edited — tools/ide/web/testing-surface/src/model.ts
+[23:24:28] EDIT: File edited — tools/ide/web/testing-surface/src/model.ts
+[23:24:28] EDIT: File edited — tools/ide/web/testing-surface/src/main.ts
+[23:25:10] EDIT: File edited — tools/ide/web/testing-surface/tests/model.test.ts
+[23:25:10] EDIT: File edited — tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift
+[23:25:23] TEST: Tests passed — 15 passed 162 passed
+[23:25:23] EDIT: File changed via Bash — tools/ide/SharpeeIDETests/TestingSurfaceRealPathTests.swift
+[23:25:23] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/main.ts
+[23:25:23] EDIT: File changed via Bash — tools/ide/web/testing-surface/src/model.ts
+[23:25:23] EDIT: File changed via Bash — tools/ide/web/testing-surface/tests/model.test.ts
+[23:25:24] BUILD: Build passed — cd /Users/david/repos/sharpee/tools/ide/web/testing-surface && npx tsc --noEmit 
+[23:25:25] EDIT: File changed via Bash — tools/ide/SharpeeIDE/Resources/testing-surface/surface.js
+[23:26:34] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:26:35] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:26:36] EDIT: File changed via Bash — docs/context/session-20260927-1750-explorer-prototype.md
+[23:28:17] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:28:25] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:28:40] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:29:00] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:29:31] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:29:44] EDIT: File edited — docs/context/session-20260927-1750-explorer-prototype.md
+[23:32:24] TEST: Tests passed — 12 passed 121 passed
+[23:32:38] EDIT: File written — .commit-files
+[23:32:38] EDIT: File written — .commit-msg
+[23:32:45] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh
+[23:38:48] EDIT: File changed via Bash — docs/context/session-20260927-1737-explorer-prototype.md
+[23:38:48] EDIT: File changed via Bash — docs/context/session-20260927-1750-explorer-prototype.md
+[23:41:43] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:42:06] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:42:15] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:42:22] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:42:43] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:42:50] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:43:04] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:43:15] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:43:20] EDIT: File edited — docs/context/session-20260927-1737-explorer-prototype.md
+[23:46:16] TEST: Tests passed — 12 passed 121 passed
+[23:46:25] EDIT: File written — .commit-files
+[23:46:25] EDIT: File written — .commit-msg
+[23:46:31] GIT: Git operation — bash $HOME/.claude/scripts/git-commit.sh --push
+```
