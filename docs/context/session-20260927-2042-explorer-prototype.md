@@ -16,12 +16,18 @@
 ### Cherry-pick landed (recorded in the prior write, unchanged)
 - `fb9b60aee` ("chapter title announces before the room") committed as `83baf300f`, local only, not pushed. Secret Letter web bundle rebuilt on it.
 
-### Merged `feat/secret-letter-port` into `explorer-prototype` (staged, not yet committed)
+### Merged `feat/secret-letter-port` into `explorer-prototype` (committed as `1b671e015`)
 - `git merge --no-commit --no-ff feat/secret-letter-port`. Merge base `34732b852` (2026-09-04); 33 branch commits, 110 main commits since; 31 conflicted files.
 - **Resolution approach**: main had refactored the exact files the branch fixed (ADR-334 engine install pipeline, ADR-335 story-loader runtime split into `runtime/*.ts`, ADR-336 analyzer pass list, ADR-337 lifecycle call site, ADR-339 character tick sub-steps, ADR-340/356 branch-tester) — the branch's hunks were pre-refactor bodies. Took main's versions of `runtime.ts`, `loader.ts`, `game-engine.ts`, `analyzer.ts`, `ComposeDiagnostics.swift`, then re-ported the branch's fixes by hand onto the refactored code, each verified against the branch's own added tests.
 - **Re-ported fixes** (all passing on the branch's own tests after re-porting): GH #359 deferred entity override gates (`resolveOverrideGates` pass after `buildTimers`, analyzer); ADR-325 W1 `make <actor> wear|take off <item>` (analyzer `resolveWearStatement` + 4 exhaustive switches, runtime `statements.ts`, select-ids walk); GH #370 select-on entity → state field; GH #366 declared state wins over a colliding recency/concluded word; GH #364 + ADR-333 D1a `descriptionId` id mode (loader `compileDescriptionSnippets`, `snippetMarkerTest`, `rewriteSnippetMarkers`, `RoomTrait.initialDescriptionId`, `IdentityTrait.descriptionId`); `unlisted` adjective (`IdentityTrait.contentsUnlisted`); GH #365 region-presence gate on every-turn clauses (`scheduler-constructs.ts playerPresentInRegionOwner`); GH #372 offstage-owner timer prose speaks from the player (`timers.ts`); GH #367 authored-move order + GH #373 `fireMoveDeparture` for offstage moves (`statements.ts`); GH #368 visited fact (new `visited-fact` bind step in `event-clauses.ts`, first in `RUNTIME_BIND_STEPS`, stamped in `moveWithLifecycle`; `extensions/chapters.ts` rewired to the branch's `stateKey` contract — this mismatch was why walked arrivals stopped beginning chapters mid-merge); GH #375 multi-word claim heads (`pin-grammar.ts` DOTTED_EQUALITY/DOTTED_CONTAINS, `pin-grammar.test.ts` updated); GH #369 dotted channel ids (bootstrap `resolveDeclaredChannelId`, branch-tester `splitChannelClaimId`/`capturedChannels`, combined by hand with main's END STATE/ending assertions in `tree-document.ts`/`tree-walker.ts`); GH #362 sleeping/waking signal actions rewritten to main's ADR-337 D1 shape (descriptor gains `reportEventType`/`blockedEventType`, golden test drives the phase runner); `chord.ebnf` hash re-pinned in `language-version.test.ts`; `message-alias-catalog.ts` regenerated (`./repokit aliases`); `adr-349-room-name.test.ts` helper type fixed to `readonly` diagnostics (a main-side typecheck-gate defect, surfaced by `pnpm typecheck`, not branch-caused).
 - **Secret Letter test tree**: took the branch's 1468-card tree (matches merged chapters 2–11), re-applied main's nine repairs by path (seven END STATE `ending` fields + the two-card north/ne ending line, version 2), canonical sorted-key serialization.
 - **Docs conflicts**: ADR-334..340, code-documentation-sweep proposal, `.open-items.jsonl`, publish-readiness archived plan, secret-letter-port plan (kept its TABLED disposition), genai-api docs, dungeo `version.ts` → took main's versions. Imported `session-20260905-2230` record moved to `docs/context/archive/`. ADR-330 D4 / ADR-163 §7 amendments (chapter-before-room) already present via the cherry-pick.
+
+### Merge committed and stash reapplied
+- `git commit` landed as `1b671e015` — "merge: feat/secret-letter-port into explorer-prototype — the tabled port's platform fixes land on main's refactored code (closes #543)". 202 files, 37147 insertions, 1005 deletions vs the pre-merge HEAD (`83baf300f`). Confirmed via `git log`/`git show -s` this write.
+- `git stash pop` re-applied David's own one-line `skip: true` edit (top-level `ne` death-turn card) to `secret-letter.tests.json`; confirmed present (`"skip": true` at the expected card). It sits unstaged in the working tree together with `docs/context/session-20260927-1737-explorer-prototype.md` (the prior session's own activity-log append, untouched by this session) — both will be staged by `commit-remote` next, per the standing rule to stage whatever is in the tree.
+- Local only as of this write (`git status -sb`: `ahead 35` of `origin/explorer-prototype`); `/devarch:finalize` runs this write, then `commit-remote` pushes both `83baf300f` and `1b671e015` in the same push.
+- GH #543 carries a closing-summary comment (posted this session) and the merge commit's `closes #543` trailer; confirmed still `OPEN` as of this write (not closed here — closes on push, per instruction not to close it directly).
 
 ### Two things deliberately excluded, each filed
 - **(a) GH #275 (clock-mirror off-by-one)** — the branch's fix (character tick mirror written after sub-steps; `conversation-threads.ts` compare without `- 1`) passes its own test and every unit suite, but regresses Ides of March: 7 thread-beat cards fail (39/51 → 32/41; `tell me more`/`no` replies go silent). Bisected by swapping exactly those two files and rebuilding character+story-loader dist: Ides passes under main's clock, fails under the branch's. **Decision**: kept main's clock scale (`character-clock.ts`, `tick-phases.ts`, `conversation-threads.ts`, `scene-sub-step.test.ts` restored to main); the branch's gh-275 test has its failing case `it.skip`'d with the finding in a comment, the same-topic case stays live. GH #275 **reopened** with this explanation (2026-09-27 ~22:15 CDT) — confirmed still `OPEN` with that comment as its last comment.
@@ -38,10 +44,9 @@
 - Secret Letter web bundle rebuilt on the merged platform (`dist/web/secret-letter/game.js`, 22:18 CDT).
 - **Corroboration note (ADR-0019)**: the session event log (`.devarch-events-5b6f1f.jsonl`, 294 rows) carries no `test`-kind rows for this session and only 4 `build`-kind rows — two `tsc --noEmit` passes for `if-domain`/`ext-chapters` at 02:03:02Z/02:03:04Z, an `esbuild --version` check at 02:05:50Z, and the session-init `tsc` at 01:42:55Z. None of these correspond to the vitest suite counts, `./repokit build dungeo`, story-tree runs, the Dungeo walkthrough chain, or the `xcodebuild` results above — **all of those are `[reported by session, unverified]`**, not independently re-run by this write.
 
-### Staged and left aside
-- Staged: 202 files vs HEAD (37147 insertions, 1005 deletions), including regenerated genai-api docs, docs-tab pages, and `pnpm-lock.yaml`.
-- Unstaged, deliberately: `docs/context/session-20260927-1737-explorer-prototype.md` (prior session's post-push activity-log append, untouched here).
-- `git stash`: `david-ide-skip-ne-death-turn` (David's own one-line `skip: true` edit to `secret-letter.tests.json`), to be re-applied after the commit.
+### Committed and left aside
+- Committed in `1b671e015`: 202 files vs the pre-merge HEAD (37147 insertions, 1005 deletions), including regenerated genai-api docs, docs-tab pages, and `pnpm-lock.yaml` (see "Merge committed and stash reapplied" above for the commit's final disposition).
+- Left unstaged, deliberately, after the commit: `docs/context/session-20260927-1737-explorer-prototype.md` (prior session's post-push activity-log append, untouched here) and `branch-stories/secret-letter/secret-letter.tests.json` (David's stash-popped `skip: true` edit) — both go into `commit-remote`'s next commit.
 
 ## Key Decisions
 
@@ -63,12 +68,12 @@ Confirmed again this session (third `./repokit build dungeo` run) that only the 
 ## Open Items
 
 ### Short Term
-- 542: repokit bundle fails: esbuild alias maps @sharpee/story-loader subpath import to a single file — **carried forward, unchanged**; reconfirmed failing on the merged tree.
+- 542: repokit bundle fails: esbuild alias maps @sharpee/story-loader subpath import to a single file — **carried forward, unchanged**; confirmed still `OPEN` via `gh issue list` this write, reconfirmed failing on the merged tree (third `./repokit build dungeo` run).
 
 ### Long Term
-- 543: feat/secret-letter-port carries 15+ platform/IDE fixes (closed GH issues) never merged to main — **carried forward, not yet closed**: this merge resolves the bulk of what it describes, but the merge itself is still staged/uncommitted, and the planned outcome comment on #543 is deferred to the terminal write (per this session's own next-actions list) rather than written twice.
+- 543: feat/secret-letter-port carries 15+ platform/IDE fixes (closed GH issues) never merged to main — merge is now **committed** (`1b671e015`, `closes #543`) and carries a closing-summary comment; confirmed still `OPEN` via `gh issue list` as of this write because the closing push has not landed yet. Not closed by this write per instruction — closes automatically when `commit-remote` pushes next. Do not close it again after the push confirms it.
 
-(GH #275 and GH #544, above, are plain project issues opened/reopened directly this session — not part of this ledger; see Completed.)
+(GH #275 and GH #544, above, are plain project issues opened/reopened directly this session — not part of this ledger; both reconfirmed `OPEN` via `gh issue list` this write; see Completed.)
 
 ## Files Modified
 
@@ -110,30 +115,30 @@ Confirmed again this session (third `./repokit build dungeo` run) that only the 
 
 ## Notes
 
-**Session duration**: ~1 hour 40 minutes so far (20:42–22:23 CDT), spanning the cherry-pick and the full branch merge.
+**Session duration**: ~1 hour 44 minutes (20:42–22:26 CDT), spanning the cherry-pick, the full branch merge, and its commit.
 
 **Approach**: Root-caused the original report via git history before touching code (see prior write), then, once David authorized the wider merge, resolved 31 conflicts by re-implementing the branch's fixes against main's refactored structure rather than reverting refactors — verifying each re-ported fix against the branch's own tests.
 
 **Rule 15 (mutation-verification)**: not run as a subagent — the ported functions are re-implementations of branch code already covered by the branch's own real-path tests, re-run here; behavior is pinned by those tests (`adr-330-chapters`, `authored-move-order`, `adr-325-w1-make-wear`, `gh-365`, `gh-372`, `gh-370`, `gh-366`, `gh-371`, `gh-364`, `unlisted-holder`, `chord-state-claim`, `chapter-before-room`).
 
-**Rule 13a (Integration Reality)**: applies in full at the terminal write, once the merge is committed and Status can claim COMPLETE — the story trees and the Dungeo walkthrough chain are the intended real-path gate for the merge as a whole; not evaluated here since this is a checkpoint and the merge is uncommitted.
+**Rule 13a (Integration Reality)**: the keyword scan over this write's Phase executed name ("N/A — ad hoc investigation, cherry-pick, and branch merge; not a plan phase") and Goals does not match any of `integration|engine|runtime|sandbox|subprocess|database|migration|deploy`, so the check does not fire for this session as a unit — even though the merge itself touches `packages/engine` and `packages/story-loader/src/runtime/*`. The unverified marker on the test/build claims (Mutation Audit, Test Coverage Delta below) already carries the same caution the check would have added.
 
-**Left unstaged/stashed, deliberately, not part of this write's changes**:
+**Left unstaged, deliberately, not part of this write's changes**:
 - `docs/context/session-20260927-1737-explorer-prototype.md` - untouched, prior session's append.
-- `git stash@{0}` "david-ide-skip-ne-death-turn" - David's own edit, to be reapplied post-commit.
+- `branch-stories/secret-letter/secret-letter.tests.json` - David's own `skip: true` edit, stash-popped and verified present; both files go into `commit-remote`'s next commit per the standing rule to stage whatever is in the tree.
 
-**Merge is mid-flight**: staged, not committed (`MERGE_HEAD` = `38be542db`). Next actions, in order: `git commit` (message recording the resolutions, the two exclusions, #275 reopened, #544 filed); `git stash pop`; comment on #543 with the outcome once committed.
+**Merge is committed**: `1b671e015`, local only. Remaining actions, both outside this write: `commit-remote` stages the two files above and pushes `83baf300f` + `1b671e015`, which closes #543 via the merge commit's trailer.
 
 ---
 
 ## Session Metadata
 
 - **Session**: 5b6f1f
-- **Status**: IN-FLIGHT
+- **Status**: COMPLETE (unverified: the vitest per-package suite counts, `./repokit build dungeo`, `pnpm typecheck`, the freshness gates, the three story-tree runs, the Dungeo walkthrough chain, and the `xcodebuild` Testing-surface run — the session event log carries no `test`-kind rows and only 4 unrelated `build`-kind rows for this session, so none of these are hook-corroborated; they are the session's own account of commands it ran and read the output of directly)
 - **Blocker** (if any): N/A
 - **Blocker Category**: N/A
 - **Estimated Remaining** (if incomplete): N/A
-- **Rollback Safety**: has orphaned artifacts — an in-progress merge (staged, uncommitted; `git merge --abort` would cleanly discard it, though it would also discard the cherry-pick's own follow-on work if run carelessly since HEAD already includes `83baf300f`), plus a stash and one intentionally-unstaged file (see Notes).
+- **Rollback Safety**: safe to revert — an ordinary commit (`1b671e015`) on `explorer-prototype`, not yet pushed, revertible with `git revert`; the merge is no longer mid-flight (no `MERGE_HEAD`, no orphaned stash — see Notes).
 
 ## Dependency/Prerequisite Check
 
@@ -152,12 +157,12 @@ Confirmed again this session (third `./repokit build dungeo` run) that only the 
 ## Mutation Audit
 
 - Files with state-changing logic modified: story-loader `analyzer.ts`/`loader.ts`/`runtime/*.ts` (re-ported behavior described above), world-model traits (`RoomTrait`, `IdentityTrait`), chord `pin-grammar.ts`, extensions/chapters state-key wiring, bootstrap/branch-tester channel-id handling.
-- Tests verify actual state mutations (not just events): YES **[reported by session, unverified]** — the session event log carries no `test`-kind rows and only 4 unrelated `build`-kind rows for this session (see Verification section above); the vitest/story-tree/xcodebuild counts reported are the session's own account, not hook-corroborated, and were not independently re-run by this write given the volume and that the merge is still uncommitted.
-- If NO: re-running the full suite matrix (13 vitest packages, 3 story trees, the Dungeo chain, and the IDE real-path tests) independently is the outstanding verification gap; recommended before the terminal write claims COMPLETE.
+- Tests verify actual state mutations (not just events): YES **[reported by session, unverified]** — the session event log carries no `test`-kind rows and only 4 unrelated `build`-kind rows for this session (see Verification section above); the vitest/story-tree/xcodebuild counts reported are the session's own account, not hook-corroborated, and were not independently re-run by this write given the volume.
+- If NO: re-running the full suite matrix (13 vitest packages, 3 story trees, the Dungeo chain, and the IDE real-path tests) independently, on the now-committed merge, is the outstanding verification gap for a future session to close.
 
 ## Recurrence Check
 
-- Similar to past issue? YES — open item #543, filed earlier this same session, named exactly this pattern ("stranded branch carrying unmerged fixes"); this write is that item's resolution in progress, not a new recurrence.
+- Similar to past issue? YES — open item #543, filed earlier this same session, named exactly this pattern ("stranded branch carrying unmerged fixes"); this write is that item's resolution, merge committed (`1b671e015`), closing on the next push (not closed by this write).
 
 ## Test Coverage Delta
 
@@ -169,3 +174,4 @@ Confirmed again this session (third `./repokit build dungeo` run) that only the 
 
 **Progressive update**: checkpoint 2026-09-27 21:10 — first write this session; root-caused the reported regression to an unmerged branch, cherry-picked the fix (staged, mid-cherry-pick), re-verified all four real-path test suites green, filed open items #542 (pre-existing bundle failure) and #543 (stranded port-branch fixes).
 **Progressive update**: checkpoint 2026-09-27 22:23 — cherry-pick committed (`83baf300f`); David authorized merging the full `feat/secret-letter-port` branch; merged and resolved 31 conflicts by re-porting the branch's fixes onto main's refactored structure, excluding GH #275's regression (reopened) and the ADR-333 IDE Swift half (filed #544); 202 files staged, not yet committed.
+**Progressive update**: session completed 2026-09-27 22:30 — merge committed (`1b671e015`, closes #543 on push); David's stashed `secret-letter.tests.json` edit popped and verified present; #542/#543/#275/#544 reconfirmed via `gh issue list`; handing off to `commit-remote` for staging and push.

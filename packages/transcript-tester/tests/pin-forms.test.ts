@@ -123,10 +123,18 @@ describe('[the] name is state', () => {
   });
 });
 
+describe('a multi-word head in the dotted forms (GH #375)', () => {
+  it('parses as a claim and fails by name, not as unparseable', () => {
+    expect(evaluateStateExpression('first partner.location = anywhere', hall().w, KEYS)).toEqual({
+      matches: false,
+      details: 'Entity "first partner" not found',
+    });
+  });
+});
+
 describe('what is not a claim', () => {
   it.each([
     'prune the vine',
-    'first partner.location = anywhere',
     'vine.pruning occurrence = 2',
     'the weather asked once',
     'player.bell has expired',
