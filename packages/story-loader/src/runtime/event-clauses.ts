@@ -16,11 +16,37 @@ import type { IREntity, IROnClause } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, movedActorId, REGION_EVENT_TRIGGERS } from '../event-contract.js';
-import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
+import { CHORD_OCCURRENCE_PREFIX, CHORD_VISITED_PREFIX } from '../state-keys.js';
 import { ExecContext, type RuntimeCore } from './core.js';
 
 export class EventClausesSection {
   constructor(private readonly core: RuntimeCore) {}
+
+  /**
+   * Stamp the visited fact on every WALKED arrival of the player (GH #368):
+   * `chord.visited.<room>` is set off the same actor-moved event the room's
+   * entering clauses ride — registered once, ahead of the clauses, so a clause
+   * that moves the player on still leaves the fact behind. An authored move
+   * stamps it in the statements section's move lifecycle. The chapters
+   * extension's `visits <room> for the first time` reads it (ADR-330 D2), so
+   * a row holds even when the arrival turn ends somewhere else. The start
+   * room is not an arrival: nothing stamps it at the start itself.
+   *
+   * @param world the world being bound
+   */
+  bindVisitedFact(world: WorldModel): void {
+    world.chainEvent(
+      EVENT_TRIGGERS.entering,
+      (event, w) => {
+        const toRoom = enteringDestination(event.data);
+        if (toRoom !== undefined && movedActorId(event) === (w as WorldModel).getPlayer()?.id) {
+          (w as WorldModel).setStateValue(CHORD_VISITED_PREFIX + toRoom, true);
+        }
+        return null;
+      },
+      { key: 'chord.visited' },
+    );
+  }
 
   /**
    * Bind an event clause (`after entering it` on a room or region) to its

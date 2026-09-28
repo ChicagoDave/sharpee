@@ -2428,7 +2428,18 @@ export interface PhrasebookResolution {
  * @returns the realized blocks re-keyed to `blockKey`, or `null` when the message
  *   id is not registered (the caller applies its inline-text fallback)
  */
-export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string, actorId?: EntityId): ITextBlock[] | null;
+/**
+ * The event data fields a block's `source.facts` carries (ADR-333 D1 as
+ * amended): every top-level string, number, or boolean EXCEPT the message
+ * id, the rendering params, and the inline fallback text. Nested objects
+ * (a `NounPhrase`, an entity snapshot) never ride — a client that needs
+ * them resolves the ids the facts name.
+ *
+ * @param data - the event's data, or anything else (→ undefined)
+ * @returns the facts, or undefined when there are none
+ */
+export declare function primitiveFacts(data: unknown): Record<string, string | number | boolean> | undefined;
+export declare function renderViaPhrase(context: HandlerContext, messageId: string, params: Record<string, unknown>, blockKey: string, actorId?: EntityId, facts?: Record<string, string | number | boolean>): ITextBlock[] | null;
 /**
  * Flatten realized blocks to a single plain string (newlines between blocks).
  * Used when a rendered message must be embedded into another message as a
@@ -2444,15 +2455,16 @@ export declare function flattenBlocks(blocks: ITextBlock[]): string;
 
 ```typescript
 /**
- * Load-time room-snippet validation (ADR-209 AC-5; ADR-211 AC-3 bare-fragment
- * gate).
+ * Load-time description-snippet validation (ADR-209 AC-5; ADR-211 AC-3
+ * bare-fragment gate).
  *
  * After a story's `initializeWorld` returns, every snippet-bearing room's
- * `description` and `initialDescription` are scanned with the shared
- * marker-extraction helper; a `{snippet:name}` marker with no entry in the
- * room's map fails story load synchronously, naming room and marker — the
- * same posture as `PhraseParseError`. Rooms without a snippet map are never
- * scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
+ * `description` and `initialDescription` — and every other snippet-bearing
+ * entity's description (`IdentityTrait.snippets`, GH #364) — are scanned
+ * with the shared marker-extraction helper; a `{snippet:name}` marker with
+ * no entry in the host's map fails story load synchronously, naming host
+ * and marker — the same posture as `PhraseParseError`. Hosts without a
+ * snippet map are never scanned (the opt-in rule, AC-7). Additionally (ADR-211), every LITERAL
  * snippet text must be a bare fragment: a non-empty text leading with
  * punctuation or whitespace fails load with the fix-it — the separator is
  * platform-owned. `{ messageId }` texts resolve at render and stay
@@ -2466,6 +2478,7 @@ export declare function flattenBlocks(blocks: ITextBlock[]): string;
  * lookup). Render-time degradation for maps mutated after load lives in
  * the room-description handler path, not here.
  */
+import type { LanguageProvider } from '@sharpee/if-domain';
 import type { WorldModel } from '@sharpee/world-model';
 import type { InstallStep } from './context.js';
 /**
@@ -2497,9 +2510,11 @@ export declare class SnippetValidationError extends Error {
  * Validate every snippet-bearing room's descriptions against its snippet map.
  *
  * @param world the initialized world model (after `initializeWorld`)
+ * @param languageProvider resolves id-mode descriptions; without it only
+ *   literal texts are scanned
  * @throws SnippetValidationError naming every unbound `(room, marker)` pair
  */
-export declare function validateRoomSnippets(world: WorldModel): void;
+export declare function validateRoomSnippets(world: WorldModel, languageProvider?: LanguageProvider): void;
 /**
  * Lint for snippet entries whose marker appears in NEITHER description text
  * (ADR-209 AC-6, resolution Q4): usually mid-edit author drift. A warning,
@@ -2507,9 +2522,11 @@ export declare function validateRoomSnippets(world: WorldModel): void;
  * which puts broken text on screen. The devkit build prints these.
  *
  * @param world the initialized world model
+ * @param languageProvider resolves id-mode descriptions; without it only
+ *   literal texts are scanned
  * @returns `(room, entry)` pairs with no matching marker, in discovery order
  */
-export declare function lintUnusedSnippetEntries(world: WorldModel): Array<{
+export declare function lintUnusedSnippetEntries(world: WorldModel, languageProvider?: LanguageProvider): Array<{
     room: string;
     entry: string;
 }>;

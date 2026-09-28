@@ -318,7 +318,9 @@ ADR-325's `move` and ADR-326's adjacent-room place are authorial teleportation a
 exactly as written — no observer change, no arrival change, no new spelling. The reference
 documents the two verbs side by side in one sentence: `move the monkey offstage` *puts* the
 monkey somewhere; `the monkey gives the necklace to the player` *does* something, and can
-be refused, witnessed, and reacted to. An author reaching for `move` to make a character
+be refused, witnessed, and reacted to. `make the player wear the woolen cap` and
+`make Teisha take off the veil` (ADR-325 Amendment W1, landed 2026-09-07) are puts in the
+same family: a garment goes on or comes off with no act performed and nothing narrated. An author reaching for `move` to make a character
 act is reaching for the wrong word, and the reference says so where `move` is documented.
 
 *(Landed — compile half, 2026-08-29, session aeade8, Phase 9a of the program plan.

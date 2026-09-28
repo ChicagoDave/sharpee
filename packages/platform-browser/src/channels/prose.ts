@@ -168,6 +168,14 @@ export function createProseChannelRenderers(
         if (entry.tight) p.classList.add('main-entry--tight');
         if (entry.className) p.classList.add(entry.className);
         if (entry.presence) p.classList.add(`main-entry--${entry.presence}`);
+        // ADR-333 D3: the paragraph is addressable by the message it came
+        // from. A DOM attribute, not a wire decoration.
+        if (entry.source) {
+          p.dataset.messageId = entry.source.messageId;
+          // The facts beside the id, as JSON, for a client that wants to
+          // know who a reply was about and what it concerned (ADR-333 D1).
+          if (entry.source.facts) p.dataset.sourceFacts = JSON.stringify(entry.source.facts);
+        }
         const label = presenceLabel(entry.presence, entry.location, presentation);
         if (label) p.appendChild(doc.createTextNode(`${label} `));
         // No `white-space: pre-line`. Engine handlers split `\n` into
@@ -244,8 +252,24 @@ function normalizeEntry(raw: unknown): ProseEntry | null {
       className?: unknown;
       presence?: unknown;
       location?: unknown;
+      source?: unknown;
     };
     if (!Array.isArray(obj.content)) return null;
+    // ADR-333 D1: provenance is an object with a non-empty string id;
+    // anything else is dropped, so a stray field never reaches the DOM.
+    const sourceId =
+      obj.source && typeof obj.source === 'object' && typeof (obj.source as { messageId?: unknown }).messageId === 'string'
+        ? (obj.source as { messageId: string }).messageId
+        : '';
+    // The facts beside the id (ADR-333 D1 as amended): a flat object of
+    // primitives, or nothing — a nested value is dropped, never passed on.
+    const rawFacts = sourceId ? (obj.source as { facts?: unknown }).facts : undefined;
+    const facts: Record<string, string | number | boolean> = {};
+    if (rawFacts && typeof rawFacts === 'object' && !Array.isArray(rawFacts)) {
+      for (const [k, v] of Object.entries(rawFacts as Record<string, unknown>)) {
+        if (typeof v === 'string' || typeof v === 'number' || typeof v === 'boolean') facts[k] = v;
+      }
+    }
     const presence =
       obj.presence === 'present' || obj.presence === 'absent' || obj.presence === 'concealed'
         ? obj.presence
@@ -258,6 +282,7 @@ function normalizeEntry(raw: unknown): ProseEntry | null {
         : {}),
       ...(presence ? { presence } : {}),
       ...(typeof obj.location === 'string' && obj.location ? { location: obj.location } : {}),
+      ...(sourceId ? { source: { messageId: sourceId, ...(Object.keys(facts).length > 0 ? { facts } : {}) } } : {}),
     };
   }
   return null;

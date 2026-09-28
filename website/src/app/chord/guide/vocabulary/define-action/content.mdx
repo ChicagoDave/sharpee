@@ -160,6 +160,15 @@ always outranks the standard library's, which is what makes
 [extend action](/chord/guide/vocabulary/extend-action) and
 [remove from action](/chord/guide/vocabulary/remove-from-action) work.
 
+That ranking holds for the whole game, not just where the action makes
+sense. A story action whose grammar carries `wear dress` takes every
+`wear dress` a player ever types, in every room and chapter, away from
+the standard `wearing` action — so a second dress the player is holding
+later can never be worn by that phrase. To react to a standard action on
+one thing, put an `on` clause on the thing (`on the player wearing`)
+and leave the phrase to the standard action; reserve a story action's
+grammar for phrases that are the story's own.
+
 ## The standard slot names
 
 The standard library's grammar uses seventeen slot names, most-used

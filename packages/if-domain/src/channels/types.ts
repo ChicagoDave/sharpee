@@ -25,7 +25,7 @@
  */
 
 import type { ISemanticEvent, Presence } from '@sharpee/core';
-import type { ITextBlock, TextContent } from '@sharpee/text-blocks';
+import type { IBlockSource, ITextBlock, TextContent } from '@sharpee/text-blocks';
 
 // ────────────────────────────────────────────────────────────────────
 //  Channel content / mode / emit policy
@@ -95,6 +95,13 @@ export interface ProseEntry {
    * Mirrors `ITextBlock.location`; set only alongside `presence`.
    */
   readonly location?: string;
+  /**
+   * The message the entry's text was rendered from (ADR-333 D1). Mirrors
+   * `ITextBlock.source` — the same `IBlockSource` type, imported, never
+   * redeclared — so a client can address the paragraph's source by id.
+   * Absent on entries not rendered from a message.
+   */
+  readonly source?: IBlockSource;
 }
 
 /**

@@ -26,7 +26,7 @@
 ##   4. Teisha's five repeat prefixes are Gentry's five, but fixed one per quip
 ##      instead of drawn at random, because Chord does not interpolate a phrase
 ##      inside another phrase's body (GH #286).
-##   5. `st-patience-third` in `stallkeepers.chord` expands Gentry's `[one of]
+##   5. `st-patience-third` in `grubbers-market.chord` expands Gentry's `[one of]
 ##      beat it[or]scram[or]get out of here[at random]` into three whole-phrase
 ##      variants, because Chord randomises phrase arms rather than words inside
 ##      one. Same three words, same odds. (Two quips are also FOLDED in that
@@ -46,6 +46,28 @@
 ##      [noun]" — a marker cannot render a bare name (`{item}` is rejected
 ##      as unbound; the binder's hints are all articles), so "piece of
 ##      fruit" is the substitution.
+##   9. `pieter-follows` in `preparations.chord` expands Gentry's two
+##      `[at random]` draws (follows / hurries after you / hurries to catch
+##      up / sticks close to you; looking around warily / his hand on his
+##      sword hilt / doggedly keeping you in sight) into twelve whole-sentence
+##      arms, for the reason given in 5 and 6. Every word is his.
+##  10. `pieter-mutters` in `journey.chord` plays Gentry's ten road lines
+##      `cycling` — the source's order, once each — where the source draws
+##      them `[in random order]`; Chord has no draw-without-replacement
+##      strategy. The words are his; only the order is fixed.
+##  11. `trails-wind-around-grumble` in `journey.chord` fixes one of
+##      Gentry's four verbs (says / grumbles / mutters / pants) to each of
+##      his seven lines instead of drawing the verb separately, for the
+##      reason given in 5. Same words, fewer combinations.
+##  12. "You can't see Pieter anywhere; he must have gotten separated from
+##      you in the press of guests…" (`ball.chord`) closes the ballroom's
+##      first description, where the source prints it on her first
+##      reference to Pieter — Chord cannot intercept a reference to an
+##      absent thing. The words are Gentry's; only the moment moved.
+##  13. `bobby-none-the-worse` in `ball.chord` carries Bobby's Skirmish
+##      description without its last clause, "even as he parries the
+##      Baron's savage blows" — the clause names the cut scene (the change
+##      document's Chapter 11 ruling names the sentence it keeps).
 ##
 ## Everything else is carried verbatim from the 2009 source or is a marked
 ## `(TODO during play-testing — …)`.
@@ -102,6 +124,26 @@ define chapters
     begins when the game starts
   commerce - Chapter II - Commerce Street
     begins when the player visits Commerce Street for the first time
+  bobby - Chapter III - Bobby and Maiden House
+    begins when the player visits the Back Alley for the first time
+  keep - Chapter IV - The Night Journey to Lord's Keep
+    begins when the privy window becomes climbed
+  jail - Chapter V - Jail and the Sewers
+    begins when the player visits the Jail Cell for the first time
+  rooftops - Chapter VI - The Rooftops and Black Gate Estate
+    begins when the player visits the Empty Alleyway for the first time
+  gallows - Chapter VII - The Gallows and the Raid on Maiden House
+    begins when the butler becomes gone
+  red-gate - Chapter VIII - Red Gate Estate
+    begins when the raid becomes escaped
+  preparations - Chapter IX - Dame Sandler and the Preparations
+    begins when the company becomes done
+  journey - Chapter X - The Night Journey to the Ball
+    begins when the preparations becomes journey
+  ball - Chapter XI - The Ball
+    begins when the player visits the Ballroom for the first time
+  vella - Chapter XII - Vella
+    begins when the player visits Vella for the first time
 end chapters
 
 ## The P-8 "seen from elsewhere" layer: the peering action and its phrases.
@@ -113,6 +155,71 @@ import "peering"
 ## Teisha, imported from inside the market (`npc-teisha`).
 
 import "grubbers-market"
+
+## Chapter 2 — Commerce Street (Book 3) and Lord's Market (Book 4): the rooms,
+## scenery and refusals, the Fossville collision, the Back Alley the chapter
+## ends in. Keepers and their conversation stubs follow.
+
+import "commerce-street"
+import "lords-market"
+
+## Chapter 3 — Bobby in the Back Alley, then the night at Maiden House (Books
+## 6 and 5), ending at the privy window.
+
+import "maiden-house"
+
+## Chapter 4 — the night journey to Lord's Keep (Book 5B): the empty market,
+## the road, the pasture, the stream, the woods, the clearing and its
+## fountain, the tunnel, the keep, and the capture. Bobby's night stubs.
+
+import "night-journey"
+
+## Chapter 5 — jail and the sewers (Books 6 and 7): the cell, Bobby's voice,
+## Jacobs and the wire, Olmer and Darrens, the drain, the glyphs, the
+## ladder into the morning.
+
+import "jail"
+
+## Chapter 6 — the rooftops and Black Gate Estate (Book 8): the closed alley
+## and the gutter, the jump, the estate's roof and three floors, the winch
+## and the chandelier, the letter, the butler. The shops' second visits and
+## the morning's refusals sit in Chapter 2's files, gated on the chapter.
+
+import "black-gate"
+
+## Chapter 7 — the gallows and the raid on Maiden House (Books 9 and 10):
+## the crowd, the square, Fossville's three beats, the blackout, the bedside,
+## the pounding, the closet and its six rows, the expulsion, the key.
+
+import "gallows"
+
+## Chapter 8 — Red Gate Estate (Book 11): Shannon's company, the park wall,
+## the gates and the brass key, the empty house, the furnace, the box of
+## letters, the bath, the dress and the mirror, the goodbye in the square.
+
+import "red-gate"
+
+## Chapter 9 — Dame Sandler and the Preparations (Book 12 Parts 1-2 with
+## the clean-Jack layers of Books 3 and 4): the reveal, the jewel, Pieter
+## from guard to bodyguard, the loan, the gown, the dagger. No new rooms:
+## the chapter's own things and phrases live here, its clauses on Chapter
+## 2's files, gated on `the preparations`.
+
+import "preparations"
+
+## Chapter 10 — the night journey to the ball (Book 12 Parts 3-4 with the
+## Pieter layers of Book 5B): evening, the Southern Gate, Chapter 4's road
+## and woods and tunnel walked again with Pieter, the bailey cleaned for
+## the ball, the Foyer. The ballroom is a placeholder for Chapter 11.
+
+import "journey"
+
+## Chapter 11 — the ball (Book 12 Parts 5-7 under the redesigned ending):
+## the world of light, the Baron's confrontation and dismissal, the throne
+## with Bobby and Pieter beside it, the seven players, the Queen's
+## judgment, the Priestess. Vella is a placeholder for Chapter 12.
+
+import "ball"
 
 ## ---------------------------------------------------------------------------
 ## THE PLAYER
@@ -141,7 +248,7 @@ create Jack
   playable
   starts in the Northwest Junction
   kick-yourself
-  states: urchin, dressed, identified
+  states, reversible: urchin, dressed, identified, clean
   wears the old gray cloak
   wears the woolen cap
   wears the boots
@@ -151,8 +258,17 @@ create Jack
   bothered to look.
 
   phrase detail while Jack is dressed:
-    (TODO during play-testing — Jack in the dress and the fashionable hat,
-    boots underneath.)
+    (TODO during play-testing — Jack Toresal, in a green dress and a lady's
+    hat, with a boy's boots underneath and a boy's walk she is trying to
+    remember to forget.)
+
+  phrase detail while after jail and Jack is not clean:
+    You are utterly filthy.
+
+  phrase detail while Jack is clean:
+    With all the dirt and grime scrubbed away, you hardly look anything like
+    the urchin you once were. You're not Jack anymore; you are Jacqueline
+    Toresal, daughter of the Duke.
 
   on going while the wandering mercenaries is aggressive
     refuse merc-held
@@ -161,6 +277,7 @@ create Jack
   after going
     restart the player's waiting when (hunted and Jack is not dressed) or (chase and Jack is identified)
     phrase escape-sprint when the player's market-escape has started
+    set stallkeeper-patience to 0
   end after
 
 create the old gray cloak

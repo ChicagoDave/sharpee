@@ -166,12 +166,21 @@ ul, ol, menu {
 }
 
 /* Continuation entries — emitted by the main channel renderer when a
-   block carries `tight: true`. Collapses the inter-paragraph margin so
-   the line stacks flush against its predecessor. Used where a former
+   block carries `tight: true`. A tight entry stacks flush against its
+   PREDECESSOR and says nothing about what follows it: the gap before it
+   goes (its own top margin, and the predecessor's bottom margin, which is
+   where the themes put paragraph spacing), while the gap after it stays.
+   Zeroing its bottom margin too — the rule until 2026-09-06 — swallowed
+   the blank line between a room's description (tight under the room
+   name) and the "You can see … here." paragraph that follows it (David:
+   "the platform printed scenery should be a paragraph with the blank
+   line"; the headless renderer always had that line). Used where a former
    intra-block `\n` was lifted to a block boundary (book text under its
    prefix, banner lines under a title). */
 .sharpee-prose-pane p.main-entry--tight {
   margin-top: 0;
+}
+.sharpee-prose-pane p:has(+ p.main-entry--tight) {
   margin-bottom: 0;
 }
 

@@ -124,6 +124,53 @@ describe('createProseChannelRenderers', () => {
     expect(slot.querySelector('strong')).toBeNull();
   });
 
+  it('exposes an entry\'s source as data-message-id and nothing for entries without one (ADR-333 D3)', () => {
+    const prose = build();
+    turn(
+      prose,
+      {
+        'game-message': [
+          { content: ['Crisp and delicious!'], source: { messageId: 'apple-first-bite' } },
+          { content: ['Taken.'] },
+          { content: ['Stray.'], source: { messageId: '' } },
+          { content: ['Odd.'], source: 'not-an-object' },
+        ],
+      },
+      ['game-message', 'game-message', 'game-message', 'game-message'],
+    );
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(4);
+    expect(ps[0].dataset.messageId).toBe('apple-first-bite');
+    expect(ps[1].hasAttribute('data-message-id')).toBe(false);
+    expect(ps[2].hasAttribute('data-message-id')).toBe(false);
+    expect(ps[3].hasAttribute('data-message-id')).toBe(false);
+  });
+
+  it('exposes the source facts as data-source-facts JSON, primitives only, and nothing without them (ADR-333 D1 as amended)', () => {
+    const prose = build();
+    turn(
+      prose,
+      {
+        'action-result': [
+          {
+            content: ['The gems stallkeeper says, "I don\'t know anything about that."'],
+            source: { messageId: 'if.action.asking.unknown_topic', facts: { targetName: 'gems stallkeeper', topic: 'gems', nested: { no: 1 } } },
+          },
+          { content: ['Taken.'], source: { messageId: 'if.action.taking.taken' } },
+          { content: ['Odd.'], source: { messageId: 'x', facts: 'not-an-object' } },
+        ],
+      },
+      ['action-result', 'action-result', 'action-result'],
+    );
+    const ps = slot.querySelectorAll('p');
+    expect(ps.length).toBe(3);
+    expect(JSON.parse(ps[0].dataset.sourceFacts!)).toEqual({ targetName: 'gems stallkeeper', topic: 'gems' });
+    expect(ps[0].dataset.messageId).toBe('if.action.asking.unknown_topic');
+    expect(ps[1].hasAttribute('data-source-facts')).toBe(false);
+    expect(ps[2].hasAttribute('data-source-facts')).toBe(false);
+    expect(ps[2].dataset.messageId).toBe('x');
+  });
+
   it('hides an absent entry by default and shows present/concealed ones (ADR-328 D3)', () => {
     const prose = build();
     turn(

@@ -88,6 +88,13 @@ end phrase
 `;
 }
 
+/** The templates the story registers, keyed by message id (ADR-333 D1a: the texts live here, not on the traits). */
+function registered(story: ChordStory): Map<string, string> {
+  const map = new Map<string, string>();
+  story.extendLanguage({ addMessage: (id: string, t: string) => map.set(id, t) } as never);
+  return map;
+}
+
 function roomBits(booted: Booted, irId = 'lab') {
   const entity = booted.world.getEntity(booted.story.entityId(irId)!)!;
   return {
@@ -106,7 +113,8 @@ describe('Z2 loader: marker rewrite + snippet-map population', () => {
     const booted = boot(compileSource(labSource(' while the cat is in the Lab')));
     const { entity, identity, room } = roomBits(booted);
 
-    expect(identity.description).toBe('Shelves line the walls{snippet:note}. A door leads north.');
+    expect(identity.descriptionId).toBe('lab.description');
+    expect(registered(booted.story).get('lab.description')).toBe('Shelves line the walls{snippet:note}. A door leads north.');
     expect(room.snippets?.note).toEqual({
       selector: 'cycling',
       texts: ['and a cat glares from the top shelf', ''],
@@ -121,7 +129,8 @@ describe('Z2 loader: marker rewrite + snippet-map population', () => {
     const hereBits = roomBits(viaHere);
     const isInBits = roomBits(viaIsIn);
 
-    expect(hereBits.identity.description).toBe(isInBits.identity.description);
+    expect(registered(viaHere.story).get(hereBits.identity.descriptionId!))
+      .toBe(registered(viaIsIn.story).get(isInBits.identity.descriptionId!));
     expect(JSON.stringify(hereBits.room.snippets)).toBe(JSON.stringify(isInBits.room.snippets));
   });
 
@@ -197,8 +206,9 @@ end phrase
     const booted = boot(compileSource(source));
     const { identity, room } = roomBits(booted);
 
-    expect(identity.description).toContain('{snippet:note}');
-    expect(room.initialDescription).toContain('{snippet:note}');
+    const templates = registered(booted.story);
+    expect(templates.get(identity.descriptionId!)).toContain('{snippet:note}');
+    expect(templates.get(room.initialDescriptionId!)).toContain('{snippet:note}');
     expect(room.snippets).toEqual({
       note: { selector: 'cycling', texts: ['and a kettle whistles somewhere', ''] },
     });
@@ -254,7 +264,7 @@ end phrase
     const lab = world.getEntity(labId!)!;
     const identity = lab.get(TraitType.IDENTITY) as IdentityTrait;
     const room = lab.get(TraitType.ROOM) as RoomTrait;
-    expect(identity.description).toContain('{note}'); // NOT rewritten
+    expect(identity.descriptionId).toBe('lab.description'); // the key is bound; no entries, no gates
     expect(room.snippets).toBeUndefined();
     expect(lookupSnippetGate(labId!, 'note')).toBeUndefined();
   });

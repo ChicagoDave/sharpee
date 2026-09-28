@@ -152,10 +152,15 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("restore game").mapsTo("if.action.restoring").build();
   grammar.define("restart").mapsTo("if.action.restarting").build();
   grammar.define("sleep").mapsTo("if.action.sleeping").build();
+  grammar.define("go to sleep").mapsTo("if.action.sleeping").build();
+  grammar.define("go to bed").mapsTo("if.action.sleeping").build();
+  grammar.define("lie down").mapsTo("if.action.sleeping").build();
   grammar.define("nap").mapsTo("if.action.sleeping").build();
   grammar.define("doze").mapsTo("if.action.sleeping").build();
   grammar.define("rest").mapsTo("if.action.sleeping").build();
   grammar.define("slumber").mapsTo("if.action.sleeping").build();
+  grammar.define("wake").mapsTo("if.action.waking").build();
+  grammar.define("wake up").mapsTo("if.action.waking").build();
   grammar.define("quit").mapsTo("if.action.quitting").build();
   grammar.define("q").mapsTo("if.action.quitting").build();
   grammar.define("exit game").mapsTo("if.action.quitting").build();

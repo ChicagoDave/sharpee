@@ -226,6 +226,9 @@ export interface RuntimeBindStep {
  * than by the shape of one method.
  */
 export const RUNTIME_BIND_STEPS: readonly RuntimeBindStep[] = [
+  // The player's visited fact rides the arrival event ahead of every clause
+  // that might move the player on in the same firing (GH #368).
+  { name: 'visited-fact', requires: [], run: (r, w) => r.eventClauses.bindVisitedFact(w) },
   { name: 'on-clauses', requires: [], run: (r, w) => r.onClauses.bindOnClauses(w) },
   { name: 'move-clauses', requires: [], run: (r, w) => r.moveClauses.bindMoveClauses(w) },
   { name: 'trait-clauses', requires: [], run: (r, w) => r.dispatchVerbs.bindTraitClauses(w) },

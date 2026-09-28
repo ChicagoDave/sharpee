@@ -44,6 +44,18 @@ export const CHORD_STORY_STATE_KEY = 'chord.story.state';
 export const CHORD_GONE_PREFIX = 'chord.gone.';
 
 /**
+ * `chord.visited.<room-world-id>` → `true` once the player has ARRIVED in the
+ * room — stamped by the arrival event on both paths, the walked one (`going`'s
+ * actor-moved event) and the authored one (`move the player to …`), in the
+ * same firing that runs the room's `after the player entering` clauses (GH
+ * #368). The chapters plugin's `visits <room> for the first time` reads it,
+ * so a row holds even when the room's own entering clause moves the player on
+ * in the same turn. The start room is not an arrival: it is never stamped by
+ * the start itself. Ordinary world state, so saves round-trip it.
+ */
+export const CHORD_VISITED_PREFIX = 'chord.visited.';
+
+/**
  * Numeric counters (ADR-264): story-global as `chord.counter.<name>`, per-entity
  * as `chord.counter.<ir-entity-id>.<name>`. Ordinary world state, so save/restore
  * covers each independently.

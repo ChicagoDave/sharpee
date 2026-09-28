@@ -106,11 +106,17 @@ describe('{br} and paragraph mapping', () => {
     expect(registered.get('verse')).toBe('Line one.\nLine two.');
   });
 
-  it('writes multi-paragraph descriptions with \\n\\n into the identity trait', () => {
+  it('registers multi-paragraph descriptions with \\n\\n under the key the identity trait carries', () => {
+    // ADR-333 D1a: the trait carries the description KEY (ADR-107 id mode);
+    // the text lives only in the language provider's registration.
     const { story, world } = load();
     const hall = world.getEntity(story.entityId('hall')!)!;
     const identity = hall.get(TraitType.IDENTITY) as IdentityTrait;
-    expect(identity.description).toBe('First paragraph of the hall.\n\nSecond paragraph of the hall.');
+    const registered = new Map<string, string>();
+    story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);
+    expect(identity.descriptionId).toBe('hall.description');
+    expect(identity.description).toBe('');
+    expect(registered.get(identity.descriptionId!)).toBe('First paragraph of the hall.\n\nSecond paragraph of the hall.');
   });
 });
 

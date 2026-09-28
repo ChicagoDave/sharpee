@@ -356,11 +356,13 @@ async function runChordBuild(
  */
 async function lintStorySnippets(projectDir: string): Promise<void> {
   let world: unknown;
+  let language: unknown;
   try {
     // Lazy-load so plain builds don't pay the import cost twice.
     const { loadStory } = require('@sharpee/transcript-tester');
     const game = await loadStory(projectDir);
     world = game.world;
+    language = game.engine?.getLanguageProvider?.();
   } catch (error: any) {
     if (error?.name === 'SnippetValidationError') {
       console.error('--- Snippet Lint ---\n');
@@ -371,7 +373,8 @@ async function lintStorySnippets(projectDir: string): Promise<void> {
   }
 
   const { lintUnusedSnippetEntries } = require('@sharpee/engine');
-  const unused = lintUnusedSnippetEntries(world);
+  // ADR-333 D1a: Chord rooms carry description ids; the lint resolves them.
+  const unused = lintUnusedSnippetEntries(world, language);
   if (unused.length > 0) {
     console.log('--- Snippet Lint ---\n');
     for (const u of unused) {

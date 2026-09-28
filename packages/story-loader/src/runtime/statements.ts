@@ -19,12 +19,12 @@ import type { IRCondition, IRStatement, IRValue, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
-import { TraitType, WorldModel } from '@sharpee/world-model';
+import { TraitType, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS } from '../event-contract.js';
 import { translateEventId } from '../event-id-map.js';
-import { CHORD_GONE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, counterKey, selectOccurrenceKey } from '../state-keys.js';
+import { CHORD_GONE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_VISITED_PREFIX, counterKey, selectOccurrenceKey } from '../state-keys.js';
 import { ExecContext, RefusalVeto, MOVE_ARRIVAL_DEPTH_CAP, type RuntimeCore } from './core.js';
 
 export class StatementsSection {
@@ -197,6 +197,37 @@ export class StatementsSection {
           if (phase !== 'reports' && holds) {
             const thing = this.core.evaluator.entityValue(stmt.entity, ctx);
             this.moveWithLifecycle(thing, this.resolvePlace(stmt.place, ctx, thing), ctx);
+          }
+          break;
+        }
+        case 'wear':
+        case 'take-off': {
+          // ADR-325 Amendment W1: a put in the `move` family — no narration
+          // of its own. `wear` (W1b): off another wearer first, into the
+          // actor's hands through the move lifecycle if not already held
+          // (witness rows fire as `move … to <actor>` fires them), then the
+          // trait flips; already worn by this actor is a no-op. `take-off`
+          // (W1c): the trait flips back and the item stays held; not worn
+          // by this actor is a no-op.
+          if (phase !== 'reports' && holds) {
+            const actorId = this.core.evaluator.entityValue(stmt.actor, ctx);
+            const itemId = this.core.evaluator.entityValue(stmt.item, ctx);
+            const actor = ctx.world.getEntity(actorId);
+            const item = ctx.world.getEntity(itemId);
+            if (!actor || !item) throw new LoadError('`make … wear` names an actor and a garment.', stmt.span);
+            const wearable = item.get(TraitType.WEARABLE) as WearableTrait | undefined;
+            if (!wearable) throw new LoadError(`\`${item.name}\` is not wearable.`, stmt.span);
+            if (stmt.kind === 'wear') {
+              if (wearable.worn && wearable.wornBy === actor.id) break;
+              if (wearable.worn && wearable.wornBy) {
+                const other = ctx.world.getEntity(wearable.wornBy);
+                if (other) WearableBehavior.remove(item, other);
+              }
+              if (ctx.world.getLocation(item.id) !== actor.id) this.moveWithLifecycle(item.id, actor.id, ctx);
+              WearableBehavior.wear(item, actor);
+            } else if (wearable.worn && wearable.wornBy === actor.id) {
+              WearableBehavior.remove(item, actor);
+            }
           }
           break;
         }
@@ -496,23 +527,28 @@ export class StatementsSection {
 
     this.witnessMove(thingWorldId, placeWorldId, fromRoom, toRoom, world);
 
-    // ADR-327 D5: an arrival is an arrival, walked or moved — a room
-    // transition fires the destination's entering clauses and every
-    // `when <entity> moves` clause for the mover, whoever the mover is.
-    if (placeWorldId !== null && toRoom !== undefined && fromRoom !== toRoom) {
-      const outermost = this.core.moveArrivalDepth === 0;
-      this.fireMoveArrival(thingWorldId, fromRoom, toRoom, world);
-      // GH #331: an authorial move of the PLAYER describes the destination,
-      // as a walked arrival does — the real looking action, run as the
-      // player through the engine's execution entry, its events riding the
-      // acting-statement flush (right after the action, ahead of the
-      // scheduler, so the description precedes the arrival clauses'
-      // narration exactly as it does for `going`). Only the outermost move
-      // of a re-entry chain describes, so a blocked-stall bounce shows the
-      // room the player ends in, not every room passed through.
-      if (outermost && thingWorldId === world.getPlayer()?.id) {
-        this.describeArrival(thingWorldId);
-      }
+    if (fromRoom === toRoom) return; // not a room transition — no arrival, no departure
+
+    const isPlayer = thingWorldId === world.getPlayer()?.id;
+    if (toRoom !== undefined) {
+      // ADR-327 D5: an arrival is an arrival, walked or moved — a room
+      // transition fires the destination's entering clauses and every
+      // `when <entity> moves` clause for the mover, whoever the mover is.
+      // The order is the walked one (GH #367): for the PLAYER, the room is
+      // described first (GH #331's real looking action, run as the player
+      // through the engine's execution entry) — every level of a re-entry
+      // chain, exactly as each walked arrival of a bounce describes — and
+      // the arrival clauses' narration follows it on the same deferred queue.
+      const deferred = isPlayer && this.core.executionEntry !== null;
+      if (isPlayer) world.setStateValue(CHORD_VISITED_PREFIX + toRoom, true); // GH #368
+      if (deferred) this.describeArrival(thingWorldId);
+      this.fireMoveArrival(thingWorldId, fromRoom, toRoom, world, deferred);
+    } else if (fromRoom !== undefined) {
+      // GH #373: a move OFFSTAGE completes a move too (ADR-325 D3h as
+      // amended) — the mover's `when <entity> moves` clauses fire, with no
+      // destination and so no entering clause. `remove` arrives here as
+      // well: it is the same lifecycle (ADR-325 Z6 as amended).
+      this.fireMoveDeparture(thingWorldId, fromRoom, world);
     }
   }
 
@@ -528,6 +564,44 @@ export class StatementsSection {
   private describeArrival(playerId: string): void {
     if (!this.core.executionEntry) return;
     for (const e of this.core.executionEntry(playerId, 'if.action.looking').events) this.core.pendingActEvents.push(e);
+  }
+
+  /**
+   * Fire the mover's `when <entity> moves` clauses for a move offstage (GH
+   * #373; ADR-325 D3h as amended): the completed move's event carries the
+   * source room and no destination, so `enteringDestination` reads nothing
+   * and no room's entering clause can match — only the move clauses run.
+   * Their narration is channel narration, drained by the enclosing report
+   * pass like any witnessed row. Counts against the re-entry cap so a
+   * watcher that moves the mover back and forth cannot recurse unbounded.
+   *
+   * @param actorId the mover's world id
+   * @param fromRoom the room the mover left
+   * @param world the live world
+   * @throws LoadError `runtime.move-arrival-reentry` past 8 nested firings
+   */
+  private fireMoveDeparture(actorId: string, fromRoom: string, world: WorldModel): void {
+    if (this.core.moveArrivalDepth >= MOVE_ARRIVAL_DEPTH_CAP) {
+      const chain = [...this.core.moveArrivalChain, 'offstage'].map((id) => world.getEntity(id)?.name ?? id).join(' → ');
+      throw new LoadError(
+        `runtime.move-arrival-reentry: a \`move\` re-entered ${MOVE_ARRIVAL_DEPTH_CAP} times (${chain}) — a \`when … moves\` clause keeps moving something whose move fires it again.`,
+      );
+    }
+    const event: ISemanticEvent = {
+      id: `chord-move-departure-${++this.core.eventSeq}`,
+      type: EVENT_TRIGGERS.entering,
+      timestamp: Date.now(),
+      entities: { actor: actorId },
+      data: { actorId, fromRoom, toRoom: undefined },
+    };
+    this.core.moveArrivalDepth++;
+    this.core.moveArrivalChain.push('offstage');
+    try {
+      for (const e of this.core.moveClauses.fireMoveClauses(world, event)) this.core.phrases.enqueueChannelEvent(e);
+    } finally {
+      this.core.moveArrivalDepth--;
+      this.core.moveArrivalChain.pop();
+    }
   }
 
   /**
@@ -570,11 +644,26 @@ export class StatementsSection {
    * room's `entering` event clauses and the `when <entity> moves` clauses,
    * exactly as a walked arrival's `actor_moved` would through the engine's
    * chain — but fired here, not emitted, so the engine never fires them a
-   * second time. Whatever the clauses produce is enqueued as channel
-   * narration and drained by the enclosing report pass (the Z3 sink).
+   * second time.
+   *
+   * Where the clauses' narration lands (GH #367): for another mover it is
+   * channel narration, drained by the enclosing report pass (the Z3 sink).
+   * For the player (`deferred`) it joins the act queue BEHIND the room
+   * description `describeArrival` just pushed, so the flush narrates the
+   * room, then what happens in it — the walked order. A clause body's own
+   * narration is spliced in at the position the queue had before the body
+   * ran, ahead of anything a nested move inside the body deferred: a body
+   * that says a phrase and then moves the player keeps the phrase before
+   * the nested arrival, the same contract the acting statement has.
+   *
+   * @param actorId the mover's world id
+   * @param fromRoom the room left, if any
+   * @param toRoom the room arrived in
+   * @param world the live world
+   * @param deferred true to route the narration to the act queue (the player, engine ready)
    * @throws LoadError `runtime.move-arrival-reentry` past 8 nested arrivals
    */
-  private fireMoveArrival(actorId: string, fromRoom: string | undefined, toRoom: string, world: WorldModel): void {
+  private fireMoveArrival(actorId: string, fromRoom: string | undefined, toRoom: string, world: WorldModel, deferred: boolean): void {
     if (this.core.moveArrivalDepth >= MOVE_ARRIVAL_DEPTH_CAP) {
       const chain = [...this.core.moveArrivalChain, toRoom].map((id) => world.getEntity(id)?.name ?? id).join(' → ');
       throw new LoadError(
@@ -591,8 +680,13 @@ export class StatementsSection {
     this.core.moveArrivalDepth++;
     this.core.moveArrivalChain.push(toRoom);
     try {
+      const mark = this.core.pendingActEvents.length;
       const produced = [...this.core.eventClauses.fireEventClauses(world, event), ...this.core.moveClauses.fireMoveClauses(world, event)];
-      for (const e of produced) this.core.phrases.enqueueChannelEvent(e);
+      if (deferred) {
+        this.core.pendingActEvents.splice(mark, 0, ...produced);
+      } else {
+        for (const e of produced) this.core.phrases.enqueueChannelEvent(e);
+      }
     } finally {
       this.core.moveArrivalDepth--;
       this.core.moveArrivalChain.pop();

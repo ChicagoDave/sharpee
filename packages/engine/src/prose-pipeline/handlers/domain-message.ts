@@ -27,7 +27,7 @@ import { BLOCK_KEYS } from '@sharpee/text-blocks';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { HandlerContext } from './types.js';
 import { createBlocks } from '../assemble.js';
-import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
+import { phraseAvailable, primitiveFacts, renderViaPhrase } from '../phrase-render.js';
 
 interface DomainMessageData {
   messageId?: string;
@@ -101,7 +101,7 @@ export function tryProcessDomainEventMessage(
 
   // Phrase path (ADR-192): render the template to a phrase tree and realize it.
   if (phraseAvailable(context)) {
-    const blocks = renderViaPhrase(context, data.messageId, params, blockKey, event.entities?.actor);
+    const blocks = renderViaPhrase(context, data.messageId, params, blockKey, event.entities?.actor, primitiveFacts(data));
     return blocks ?? inlineFallback();
   }
 

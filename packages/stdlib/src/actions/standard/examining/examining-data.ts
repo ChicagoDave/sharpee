@@ -54,7 +54,8 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     eventData.self = true;
     // Description is universal — the player carries an IdentityTrait description
     // via the `noun.description` computed getter, same as any other entity.
-    eventData.hasDescription = !!noun.description;
+    // ADR-107 id mode: a `descriptionId` counts as a description.
+    eventData.hasDescription = !!noun.description || !!noun.getTrait(IdentityTrait)?.descriptionId;
     return eventData; // No trait checking for self-examination
   }
 
@@ -82,20 +83,32 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
 
   // Add trait-specific information
 
-  // Description and brief (description uses computed getter for trait-aware text)
+  // Description and brief (description uses computed getter for trait-aware text).
+  // ADR-107 id mode: an entity carrying `descriptionId` has a description the
+  // engine resolves at render (ADR-333 D1a) — it must not fall to the
+  // descriptionless default.
   eventData.hasDescription = !!noun.description;
   if (noun.has(TraitType.IDENTITY)) {
     const identityTrait = noun.getTrait(IdentityTrait);
     if (identityTrait) {
       eventData.hasBrief = !!identityTrait.brief;
+      if (identityTrait.descriptionId) eventData.hasDescription = true;
+      // GH #364: a snippet-bearing description travels with its map so the
+      // engine's examined handler splices it, as looking carries roomSnippets.
+      if (identityTrait.snippets) eventData.snippets = identityTrait.snippets;
     }
   }
   
+  // A holder whose own prose describes its contents (IdentityTrait
+  // .contentsUnlisted, Chord `unlisted`) shows no contents line on examine
+  // either — the same rule as the room listing; the contents stay in scope.
+  const contentsUnlisted = (noun.get(TraitType.IDENTITY) as { contentsUnlisted?: boolean } | undefined)?.contentsUnlisted === true;
+
   // Container trait
   if (noun.has(TraitType.CONTAINER)) {
     // Shared visibility read (one definition with LOOK/scope): a
     // still-concealed item stays out of EXAMINE's contents until revealed
-    const contents = VisibilityBehavior.getVisibleContents(noun, context.world);
+    const contents = contentsUnlisted ? [] : VisibilityBehavior.getVisibleContents(noun, context.world);
     const contentsSnapshots = captureEntitySnapshots(contents, context.world);
 
     eventData.isContainer = true;
@@ -121,7 +134,7 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
   // Supporter trait
   if (noun.has(TraitType.SUPPORTER)) {
     // Shared visibility read: same rule as the container branch above
-    const contents = VisibilityBehavior.getVisibleContents(noun, context.world);
+    const contents = contentsUnlisted ? [] : VisibilityBehavior.getVisibleContents(noun, context.world);
     const contentsSnapshots = captureEntitySnapshots(contents, context.world);
 
     eventData.isSupporter = true;
@@ -241,6 +254,17 @@ export function buildExaminingMessageParams(
   if (noun && eventData.hasDescription && noun.description) {
     params.description = noun.description;
   }
+  // ADR-107 id mode (ADR-333 D1a): carry the identity's `descriptionId` for
+  // the engine to resolve, unless a trait-state description (open/closed,
+  // lit/unlit — the `noun.description` getter's priority) is the one in
+  // force; that literal is the more specific text and stays as it is.
+  if (noun && eventData.hasDescription) {
+    const identity = noun.getTrait(IdentityTrait);
+    const stateText = noun.description;
+    if (identity?.descriptionId && (!stateText || stateText === identity.description)) {
+      params.descriptionId = identity.descriptionId;
+    }
+  }
 
   if (!eventData.self && noun) {
     // Add trait-specific parameters
@@ -333,7 +357,8 @@ export function buildExaminingMessageParams(
     // pebble is just a pebble.") instead of a silent blank; a contents
     // message (container/supporter) still follows. Self does not fit the
     // "just a" phrasing and gets its own fallback below.
-    if (params.description === undefined) {
+    // An id-mode description (ADR-107) counts as bound — the engine fills it.
+    if (params.description === undefined && params.descriptionId === undefined) {
       messageId = 'default_description';
       params.item = nounPhraseFor(noun);
     }
@@ -341,7 +366,7 @@ export function buildExaminingMessageParams(
 
   // Self counterpart (David's wording ruling 2026-07-20): descriptionless
   // EXAMINE ME renders "As good-looking as ever." instead of a silent blank.
-  else if (eventData.self && params.description === undefined) {
+  else if (eventData.self && params.description === undefined && params.descriptionId === undefined) {
     messageId = 'default_description_self';
   }
 

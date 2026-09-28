@@ -1,0 +1,52 @@
+# Session Summary: 2026-09-04 - feat/secret-letter-port
+
+## Status: COMPLETE — Chapters 6 (The Rooftops and Black Gate Estate), 7 (The Gallows and the Raid on Maiden House) and 8 (Red Gate Estate) built and pinned; 1227 cards / 2124 assertions passing
+
+## Goals
+- Continue the Secret Letter port, Phase 10: build Chapter 6 (The Rooftops and Black Gate Estate) as the change document authorizes it (David: "Continue with Chapter 6"), then Chapters 7 and 8 (David: "continue", twice).
+
+## Completed
+- Session start: recap, `pre-session-audit` relayed, core concepts read, gate cleared. Profile fresh (16:47 same day).
+- Research: change document Chapter 6 (six rulings, four gaps), source Book 8 `story.ni:8743-9580` read whole, the post-sewer shop layers (`4330-4350`, `4540-4580`, `4690-4705`, `4905-4918`, `5240-5290`), the self-description (`1315-1330`), the hat rule (`4284`), the tests (`12431-12433`); the chapter plugin (`chapters-plugin.ts`), the going action's closed-door path, the climbing action's destination path, the loader's door defaults, the grammar's verb list, the chord EBNF.
+- `branch-stories/secret-letter/black-gate.chord` (new, 1,810 lines): the Closed Alleyway, the Rooftop and Rooftop Edge, the Balcony, Patio and Rooftop Garden, the three floors of Black Gate Estate (landing, music room, audience area, supply closet with the winch; landing with Fossville's voice, living room, bedroom; library with the chandelier and the letter), the butler and his three clocks, the `jumping` and `playing` story actions, `sit on`/`jump to`/`look behind`/`look under`/`shimmy` grammar. Gentry's text throughout; the letter verbatim per the ruling.
+- The morning layer on Chapter 2's files: `commerce-street.chord` (west refusal, the hat rule ended by the sewer, the street-beat placeholder, GE16/HO18/HO19-24/OM9 stubs, East Commerce Street's after-jail refusals), `lords-market.chord` (the Maiden House refusal, DS24/DS30 stubs), `backdrops.chord` (bare smell/listen for the roof and the landing), `secret-letter.story` (Chapter VI's trigger fixed, Chapter VII's row, `import "black-gate"`, "You are utterly filthy").
+- Nine probe rounds through a scratch copy of the story with skip cards under `./sharpee test --json --capture-output` (the spine of the tree replayed, the chapter's commands appended); findings below.
+- Tree: 156 cards on the Chapter 5 branch, seven variant branches. `./sharpee test branch-stories/secret-letter` → **1042 cards passing, 1794 assertions passing** (from 886/1506). The Chapter 5 branch's last card re-pinned to the after-sewer west refusal.
+- Plan: Phase 10 progress entry for Chapter 6.
+- GitHub: #368 (chapter `first-visit` trigger reads the location after the action), #369 (tree document cannot reference `story.chapter`), #370 (`select on` runs no arm), #371 (`stopping` counts per call site).
+- **Chapter 7 (David: "continue")** — `branch-stories/secret-letter/gallows.chord` (new): the hanging (crowd, gallows, Fossville, Rudup, the three beats on clocks, the blackout) and the raid (the bedside hold, the nine-turn banging with the capture, Fiona following, Shannon and the board, the closet and its six rows as a player clock, the expulsion, the key, the window setting Chapter VIII's row); the raid's layer on `maiden-house.chord` (exits, the front door, the widows' talk and the letter, presence lines as markers, idles gated, the curfew re-fire fixed), the hanging's on the two street files, the orphans offstage at the morning (`jail.chord`), the closet's `listen` (`backdrops.chord`). Chapter VIII's row in the story file. Four probe rounds; the death path and Chapter VIII's start verified. Tree: 67 cards, six branches — **1109 cards passing, 1936 assertions passing**. GitHub: #372 (an offstage owner's timer speaks no bodies), #373 (a move offstage raises no `moves` event).
+- **Chapter 8 (David: "continue")** — `branch-stories/secret-letter/red-gate.chord` (new): Shannon's company (the window text, the park wall, the street's refusals, two placeholders), Red Gate Estate as a real locked door with the brass key, the eight rooms of the empty house (the region's silence and dust, the portrait, the furniture and the firewood, the furnace and the fire, the box and the mother's letters, the deathbed, the faucets and the bath, the day dress and the mirror), `Jack is clean`, the goodbye in the square and the step into Sandler & Sons; Chapter IX's row. Companion edits in `maiden-house.chord`, `commerce-street.chord`, `lords-market.chord`, `backdrops.chord`, `secret-letter.story`. Six probe rounds. Tree: 118 cards, four branches — **1227 cards passing, 2124 assertions passing**. GitHub: #374 (`wear dress` resolves to an unplaced entity).
+- Re-verified at close (2026-09-05, ~07:24 CDT, `./sharpee test branch-stories/secret-letter`, run fresh against the finished working tree): **1227 cards passing, 2124 assertions passing** — matches the figure carried through this summary.
+
+## Key Decisions
+- Chapter VI's row begins when the hatch becomes opened (the first statement of the alleyway's own clause), not on the alleyway visit — the visit trigger cannot fire when the room moves her on (#368). Chapter VII's row begins when the butler becomes gone.
+- The after-sewer layer is gated on the chapter predicates (`after jail` / `before rooftops`), except the street-beat placeholder, gated on the hatch because the arrival shares a turn with the chapter's start.
+- The house-beat placeholder sits on the Second Floor Landing's second FREE arrival (the drag lands there too and must not spend it).
+- `turn` reaches the winch through a trait-level `on the player turning` (the platform's turning does consult entity clauses; `select on` was the broken piece). The chandelier flips through a pivot state because a clause body reads the state it just changed.
+- `give letter to butler` refuses with his line and never marks him as shown: a speaking give still hands the item over unless it refuses, and a refusal cannot also mutate.
+- Chapter 7 runs on two bookkeeping entities (`the hanging`, `the raid`) whose states every room and widow reads; the hanging is set in place by the butler's release clause (the ruling's trigger; a move offstage raises no event, #373); the closet clock is the player's (#372).
+- Chapter 3's curfew is gated on `before keep` — it re-fired on the raid's daytime entry to the hallway.
+- The privy window's second climb speaks Chapter 8's opening (Shannon through the window) and starts the company; Chapter VIII's row begins on `escaped`.
+- Red Gate Estate is a real Chord door: a blocked-exit line keeps the source's "securely locked" wording for `n`, Shannon opens the unlocked gates by an acting statement, and both rooms name the door.
+- The bath's ways in are `bathe`/`take a bath`/`turn faucets`; `enter tub` cannot be one (the platform refuses entering scenery before a clause acts; an enterable tub keeps her in it; a literal grammar shape shadows the laundry's washtub).
+- The three Red Gate rooms whose source names clash with Black Gate's are `the Red Gate …`.
+
+## Open Items
+- I-c8a56c-1: David's lines are outstanding for the placeholder beats added in Chapters 6-8 — the street beat and house beat (Ch 6), the square's two beats (Ch 7), the street's two beats (Ch 8) — plus loose ends: "Estelle", Shannon's converted-portrait line, `jump`/bare `hide`/`sing` away from the closet (no source line), how she leaves a square full of mercenaries, FI25's weight, the two dead Red Gate rooms, and one other loose thread.
+- I-c8a56c-2: GH #356 (stallkeeper patience counter should track the ask count, not the approach count) is still open — David's ruling pending.
+
+## Files Modified
+- `branch-stories/secret-letter/black-gate.chord` (new), `branch-stories/secret-letter/gallows.chord` (new), `branch-stories/secret-letter/red-gate.chord` (new)
+- `branch-stories/secret-letter/{secret-letter.story, commerce-street.chord, lords-market.chord, maiden-house.chord, jail.chord, backdrops.chord, secret-letter.tests.json}`
+- `docs/work/secret-letter-port/plan.md`
+
+## Notes
+- Session started: 2026-09-04 ~23:10 CDT (session c8a56c); summary written ~00:40 CDT 2026-09-05, updated ~02:00 after Chapter 7, ~04:00 after Chapter 8, and finalized ~07:24 CDT.
+- Chapter 9 (Dame Sandler and the Preparations) is next: it opens in Sandler & Sons, clean, with `DS31-49`, the brooch, and the shopping with Pieter (Book 12, `story.ni:10588-`). Phase 10 stays CURRENT — more chapters remain, so it is not marked DONE this session.
+- Not in the tree: the `story.chapter` packets (#369) — Chapter VI is proven by the after-jail gates, Chapter VII by a scratch-only detail line.
+- GH #348 was carried into this session as "still open" but is in fact CLOSED (checked 2026-09-05) — dropped from Open Items; only #356 remains genuinely open.
+- Open items ledger (ADR-0036): this developer's ledger (`docs/context/.open-items.jsonl`) was empty going in (`devarch items list --all` returned nothing) — this is the ledger's first use in this repo, so both items above were opened fresh rather than migrated from a prior summary's prose (the immediately preceding summary, session 2111, is a docs-only recap with no Open Items to carry forward).
+- Chord findings not filed (recorded in the plan): a room's `first time` block replaces the description; a phrase in an `on` clause replaces the action's report; `is in <room>` is transitive through the player; the platform refuses pushing scenery before any clause; a positive `climb` prints "You climb onto X." before the destination; a presence line renders before an `after entering` catch text.
+
+## Recurrence Check
+- Similar to past issue? YES — the trigger/event-timing cluster this session (#368 chapter `first-visit` reads location after the action; #370 `select on` runs no arm; #372/#373 an offstage move/timer raises no event) echoes the clause-ordering findings session 3222f9 recorded (`docs/context/session-20260904-1940-feat-secret-letter-port.md`: clause bodies see their own changes, `refuse` gates regardless of body order, entity `on the player kicking` is refused). Both clusters are Chord's action/event dispatch order surfacing edge cases room-by-room rather than being audited once. Worth a one-time audit of Chord's trigger and clause-execution-order model after the port's build phase ends, rather than continuing to file one GitHub issue per case.

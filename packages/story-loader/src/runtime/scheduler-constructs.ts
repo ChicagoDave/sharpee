@@ -236,6 +236,7 @@ export class SchedulerConstructsSection {
     const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
     if (this.storyOver(world)) return [];
     if (this.core.timers.holdsPlayerRole(world, irEntity.id)) return [];
+    if (!this.playerPresentInRegionOwner(world, irEntity)) return [];
     const evalCtx: ExecContext = { world, it: irEntity.id };
     if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, evalCtx)) return [];
     const fired = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
@@ -244,6 +245,27 @@ export class SchedulerConstructsSection {
     evalCtx.occurrence = fired;
     const at = this.core.placeOf(irEntity.id, world);
     return this.core.narrated(this.core.sourced(this.core.statements.execStatements(clause.body, evalCtx), irEntity.id, world, at));
+  }
+
+  /**
+   * The region presence gate (ADR-236 D4, restored by ADR-328 D3's 2026-09-06
+   * amendment — GH #365): true for every non-region owner, and for a region
+   * owner only while the player stands in one of its member rooms —
+   * `isInRegion` walks the nesting, so a room of a nested child region
+   * counts. A region with no world entity (never lowered) is never present.
+   * Checked before the condition, so off-stage the clause neither rolls
+   * dice nor spends its `, once`.
+   *
+   * @param world the live world
+   * @param irEntity the clause owner
+   * @returns whether the owner's every-turn clauses may fire this tick
+   */
+  private playerPresentInRegionOwner(world: WorldModel, irEntity: IREntity): boolean {
+    if (!irEntity.kinds.some((k) => k.name === 'region')) return true;
+    const regionId = this.core.host.entityId(irEntity.id);
+    const player = world.getPlayer();
+    if (!regionId || !player) return false;
+    return world.isInRegion(player.id, regionId);
   }
 
   /**

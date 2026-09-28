@@ -86,9 +86,13 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
   });
 
   it('keeps region blocks composable: aka and description land on IdentityTrait (D1)', () => {
-    const { world, worldId } = load();
+    const { story, world, worldId } = load();
     const identity = world.getEntity(worldId('underground'))!.get(TraitType.IDENTITY) as IdentityTrait;
-    expect(identity.description).toContain('sunless country');
+    // ADR-333 D1a: the trait carries the description key; the text is registered under it.
+    const registered = new Map<string, string>();
+    story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);
+    expect(identity.descriptionId).toBe('underground.description');
+    expect(registered.get(identity.descriptionId!)).toContain('sunless country');
     expect(identity.aliases).toContain('the deep places');
   });
 

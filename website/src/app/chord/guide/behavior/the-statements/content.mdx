@@ -58,6 +58,18 @@ them:
   mover's own seeded stream: blocked exits and locked doors do not count,
   and with no candidate nothing moves. The spelling is exact — no
   `randomly`, and only as a `move` destination.
+- **`make <name> wear <garment>`** and **`make <name> take off
+  <garment>`** are two more puts in the `move` family. `wear` puts the
+  garment on: if the wearer does not hold it, it moves to them first
+  (the same witness rows a `move … to <name>` fires), if someone else
+  is wearing it it comes off them, and then it is worn; already worn by
+  that wearer, nothing happens. `take off` takes it off and leaves it
+  in hand; not worn by them, nothing happens. Neither narrates — the
+  clause's own `phrase` line does. `the player` is a legal wearer here,
+  because this is a put, not an act: an arrival that silently restores a
+  disguise writes `make the player wear the woolen cap`. The garment
+  must be `wearable` and the wearer `the player` or `a person`; the
+  compiler refuses anything else by name.
 - **`<character> <verb> [<object>] [<preposition> <object>]`** — the
   acting statement — has that character perform one action now, through
   the same pipeline as a typed command: `the guards take the sword`,

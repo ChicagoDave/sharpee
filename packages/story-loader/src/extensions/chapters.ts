@@ -31,7 +31,7 @@ import {
 } from '@sharpee/ext-chapters';
 import type { IChannelRegistry } from '@sharpee/if-domain';
 import type { ExtensionRegistration } from '../extension-registry.js';
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, timerKey } from '../state-keys.js';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_VISITED_PREFIX, timerKey } from '../state-keys.js';
 
 export const CHAPTERS_EXTENSION: ExtensionRegistration = {
   registerChannels: (registry) => registerChaptersChannels(registry as IChannelRegistry),
@@ -51,7 +51,10 @@ export const CHAPTERS_EXTENSION: ExtensionRegistration = {
         case 'game-starts':
           return { kind: 'game-starts' };
         case 'first-visit':
-          return { kind: 'first-visit', roomId: context.requireWorldId(t.room) };
+          // GH #368: the visit is the ARRIVAL, stamped as a visited fact on both
+          // paths (walked and authored), so a row holds even when the room's own
+          // entering clause moves the player on in the same turn.
+          return { kind: 'first-visit', stateKey: CHORD_VISITED_PREFIX + context.requireWorldId(t.room) };
         case 'timer-expires':
           return { kind: 'timer-expires', stateKey: timerKey(t.timer) };
         case 'becomes':

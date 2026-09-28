@@ -30,10 +30,10 @@
  *   [the] <name> is <state> / [the] <name> is not <state>  → declared-state
  *   anything else                                          → unrecognized
  *
- * An entity head in the dotted forms is one token of word characters and
- * hyphens — a display name (`player`, `lamp`) or a compiled IR id
- * (`brass-lamp`); a head with spaces does not parse, and the Chord-spelled
- * `[the] <name> is <state>` form is where a multi-word name goes. Three
+ * An entity head in the dotted forms is any text up to the LAST dot before
+ * the property — a display name with spaces (`silver brooch.location`, the
+ * Chord spelling), a single word (`player`, `lamp`), or a compiled IR id
+ * (`silver-brooch`); `\w+` admitted neither of the first two (GH #375). Three
  * non-floor shapes (occurrence, topic-history, timer-position) are
  * recognized so that a consumer can NAME them; no consumer writes them
  * yet, and the assertion core does not read them. `timer-phase` left that
@@ -94,8 +94,8 @@ const TIMER_PHASE = /^([\w.-]+)\s+has\s+(started|expired)$/;
 const TIMER_POSITION = /^([\w.-]+)\s+at\s+([\w-]+)$/;
 const EMITTED = /^emitted\s+(\S+)$/;
 const GONE = /^(?:the\s+)?(.+?)\s+is\s+(not\s+)?gone$/;
-const DOTTED_EQUALITY = /^([\w-]+)\.([\w-]+)\s*(=|!=)\s*(.+)$/;
-const DOTTED_CONTAINS = /^([\w-]+)\.([\w-]+)\s+(contains|not-contains)\s+(.+)$/;
+const DOTTED_EQUALITY = /^(.+)\.([\w-]+)\s*(=|!=)\s*(.+)$/;
+const DOTTED_CONTAINS = /^(.+)\.([\w-]+)\s+(contains|not-contains)\s+(.+)$/;
 const DECLARED_STATE = /^(?:the\s+)?(.+?)\s+is\s+(not\s+)?(\S+)$/;
 
 /**
@@ -139,7 +139,8 @@ export function parsePin(expression: string): ParsedPin {
 
   const equality = expression.match(DOTTED_EQUALITY);
   if (equality) {
-    const [, entity, property, operator, value] = equality;
+    const [, rawEntity, property, operator, value] = equality;
+    const entity = rawEntity.trim();
     if (property === 'location') {
       return { kind: 'location', entity, operator: operator as PinOperator, place: value.trim() };
     }
@@ -148,7 +149,8 @@ export function parsePin(expression: string): ParsedPin {
 
   const contains = expression.match(DOTTED_CONTAINS);
   if (contains) {
-    const [, entity, collection, operator, item] = contains;
+    const [, rawEntity, collection, operator, item] = contains;
+    const entity = rawEntity.trim();
     return { kind: 'contains', entity, collection, operator: operator as 'contains' | 'not-contains', item: item.trim() };
   }
 

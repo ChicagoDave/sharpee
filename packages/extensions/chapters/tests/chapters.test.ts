@@ -31,7 +31,7 @@ function fakeWorld() {
 
 const rows: ChapterRow[] = [
   { name: 'market', title: 'Chapter I', description: 'An apple.', ordinal: 0, trigger: { kind: 'game-starts' } },
-  { name: 'street', title: 'Chapter II', description: '', ordinal: 1, trigger: { kind: 'first-visit', roomId: 'r_street' } },
+  { name: 'street', title: 'Chapter II', description: '', ordinal: 1, trigger: { kind: 'first-visit', stateKey: 'chord.visited.r_street' } },
   { name: 'chase', title: 'Chapter III', description: '', ordinal: 2, trigger: { kind: 'becomes', stateKey: 'chord.story.state', state: 'chase' } },
   { name: 'ball', title: 'Chapter IV', description: '', ordinal: 3, trigger: { kind: 'timer-expires', stateKey: 'chord.timer.player.bell' } },
 ];
@@ -53,7 +53,11 @@ describe('createChaptersPlugin', () => {
     const world = fakeWorld();
     const plugin = createChaptersPlugin(rows);
     plugin.onAfterAction(ctx(world, 1, 'r_market'));
-    const first = plugin.onAfterAction(ctx(world, 2, 'r_street'));
+    // The visited fact is what the row reads (GH #368) — not where the
+    // player is standing when the plugin runs: here the player has already
+    // been moved on to the market by the street's own entering clause.
+    world.setStateValue('chord.visited.r_street', true);
+    const first = plugin.onAfterAction(ctx(world, 2, 'r_market'));
     const again = plugin.onAfterAction(ctx(world, 3, 'r_street'));
     expect(first.map((e) => e.type)).toEqual([CHAPTER_BEGAN_EVENT]);
     expect((first[0].data as { name: string }).name).toBe('street');
@@ -78,6 +82,7 @@ describe('createChaptersPlugin', () => {
     plugin.onAfterAction(ctx(world, 1, 'r_market'));
     world.setStateValue('chord.story.state', 'chase');
     plugin.onAfterAction(ctx(world, 2, 'r_market'));
+    world.setStateValue('chord.visited.r_street', true);
     const late = plugin.onAfterAction(ctx(world, 3, 'r_street'));
     expect(late.map((e) => e.type)).toEqual([CHAPTER_STALE_EVENT]);
     expect((late[0].data as { chapter: string; current: number }).chapter).toBe('street');
@@ -92,6 +97,7 @@ describe('createChaptersPlugin', () => {
     world.setStateValue(CHAPTER_ANNOUNCED_KEY, 1);
     world.setStateValue(CHAPTER_FIRED_PREFIX + 'market', true);
     world.setStateValue(CHAPTER_FIRED_PREFIX + 'street', true);
+    world.setStateValue('chord.visited.r_street', true);
     expect(createChaptersPlugin(rows).onAfterAction(ctx(world, 9, 'r_street'))).toEqual([]);
   });
 

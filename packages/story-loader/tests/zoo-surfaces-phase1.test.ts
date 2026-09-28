@@ -271,11 +271,18 @@ end before
     const roomTrait = room.get(TraitType.ROOM) as RoomTrait;
     const identity = room.get(TraitType.IDENTITY) as IdentityTrait;
 
-    // The first-visit text lands in the platform field stdlib's looking
-    // path reads (looking-data), and the standard description is untouched
-    // by it — the first-look/later-look split is platform behavior.
-    expect(roomTrait.initialDescription).toBe('Your family piles out of the car.');
-    expect(identity.description).toBe('You stand before the wrought-iron gates.');
+    // The first-visit KEY lands in the platform id field stdlib's looking
+    // path reads (looking-data, ADR-107 id mode; ADR-333 D1a), and the
+    // standard description key is untouched by it — the first-look/later-look
+    // split is platform behavior. No literal text is copied onto either trait.
+    const registered = new Map<string, string>();
+    story.extendLanguage({ addMessage: (id: string, t: string) => registered.set(id, t) } as never);
+    expect(roomTrait.initialDescriptionId).toBe('zoo-entrance.initial-description');
+    expect(roomTrait.initialDescription).toBeUndefined();
+    expect(identity.descriptionId).toBe('zoo-entrance.description');
+    expect(identity.description).toBe('');
+    expect(registered.get(roomTrait.initialDescriptionId!)).toBe('Your family piles out of the car.');
+    expect(registered.get(identity.descriptionId!)).toBe('You stand before the wrought-iron gates.');
   });
 
   it('a room without `first time` has no initialDescription (field absent, not empty)', () => {

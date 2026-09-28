@@ -166,6 +166,12 @@ the region is, and a region "is" at every member room. `it` binds the
 region. `while <condition>` and `, once` compose exactly as
 elsewhere.
 
+*Restored 2026-09-06 (David, session b8faec; GH #365): ADR-328 D3's
+2026-08-28 amendment had retired this gate along with the entity and
+trait gates, so a region daemon fired everywhere and only its narration
+was hidden — its mutations were not. ADR-328 D3's 2026-09-06 amendment
+carves regions back out; the presence rule above stands as written.*
+
 This closes the audit Part 2 finding's regional half with real
 behavior on day one — "weather over the outdoor rooms" is a
 region-owned every-turn clause, not an ambient property waiting for

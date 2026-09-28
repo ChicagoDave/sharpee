@@ -316,6 +316,7 @@ export declare const IFActions: {
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
+    readonly WAKING: "if.action.waking";
     readonly SAVING: "if.action.saving";
     readonly RESTORING: "if.action.restoring";
     readonly RESTARTING: "if.action.restarting";
@@ -548,6 +549,7 @@ export * from './attacking.js';
 export * from './hiding.js';
 export * from './waiting.js';
 export * from './sleeping.js';
+export * from './waking.js';
 export * from './scoring.js';
 export * from './hunger.js';
 export * from './help.js';
@@ -884,6 +886,42 @@ export declare const standardActionLanguage: ({
         cant_reach: string;
         key_not_held: string;
         still_locked: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_cuttable: string;
+        cant_cut: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        cut: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_diggable: string;
+        cant_dig: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        dug: string;
     };
     help: {
         description: string;
@@ -1564,38 +1602,6 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        behind: string;
-        under: string;
-        on: string;
-        inside: string;
-        nothing_to_hide: string;
-        cant_hide_there_behind: string;
-        cant_hide_there_under: string;
-        cant_hide_there_on: string;
-        cant_hide_there_inside: string;
-        already_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        revealed: string;
-        not_hidden: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
         waited: string;
         waited_patiently: string;
         time_passes: string;
@@ -1618,6 +1624,7 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
+        not_tired: string;
         slept: string;
         dozed_off: string;
         fell_asleep: string;
@@ -1631,6 +1638,17 @@ export declare const standardActionLanguage: ({
         disturbed_sleep: string;
         nightmares: string;
         peaceful_sleep: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        already_awake: string;
     };
     help: {
         description: string;
@@ -1858,14 +1876,16 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_cuttable: string;
-        cant_cut: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        cut: string;
+        behind: string;
+        under: string;
+        on: string;
+        inside: string;
+        nothing_to_hide: string;
+        cant_hide_there_behind: string;
+        cant_hide_there_under: string;
+        cant_hide_there_on: string;
+        cant_hide_there_inside: string;
+        already_hidden: string;
     };
     help: {
         description: string;
@@ -1876,14 +1896,8 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_diggable: string;
-        cant_dig: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        dug: string;
+        revealed: string;
+        not_hidden: string;
     };
     help: {
         description: string;

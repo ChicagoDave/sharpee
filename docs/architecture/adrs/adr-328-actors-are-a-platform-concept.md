@@ -192,6 +192,22 @@ as-built shape.
   parrot's confessions are spent on the first after-hours turn, unseen from the Petting
   Zoo); Dungeo's chain unchanged at 952.
 
+**Amended 2026-09-06 (David, session b8faec; GH #365, `secret-letter-port-platform-defects`
+P-7).** The 2026-08-26 amendment's gate retirement swept the **region-owned** every-turn
+daemon out with the entity- and trait-owned ones. That was an over-reach: the reason the
+gates went was character-shaped — a dormant former PC must keep living off-stage or the
+character freezes — and a region has no life to freeze. What a region daemon does
+off-stage is mutate the world where the player is not looking (a night flip, a
+`move … here` every turn), which no presence tag can hide. **Region-owned clauses are
+presence-gated again, as ADR-236 D4 states**: the clause fires only while the player is
+in a member room (nesting transitive), checked before its condition, so off-stage it
+neither rolls dice nor spends its `, once`. Entity-, trait-, and story-owned clauses are
+untouched by this amendment. Real path: `packages/story-loader/tests/region-daemon.test.ts`.
+Also under this amendment: a **timer whose owner has no place** (a never-placed
+bookkeeping entity, or one moved offstage) speaks its named-turn prose from the player
+rather than tagged `absent` — the clock is the story's, and its beats must be heard
+(GH #372; `timers-runtime.test.ts`).
+
 ### D4. Voice is a rendering property — any actor, any person
 
 Grammatical person is resolved per actor at render time, never authored into template

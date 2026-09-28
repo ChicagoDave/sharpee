@@ -77,6 +77,7 @@ import {
   branchLineLabelOf,
   mainLineLabelOf,
   roomSlugOf,
+  splitChannelClaimId,
 } from './tree-document.js';
 
 /**
@@ -105,6 +106,14 @@ export interface TreeWalkerGame {
    * since the tab persists assertions on every recorded card.
    */
   autoAssertionPolicy?: AutoAssertionPolicy;
+  /**
+   * The base channel ids this game captures (bootstrap's resolved set). A
+   * dotted claim id is split against these — the longest captured id that
+   * prefixes the claim is the channel, the rest is the path — so a channel
+   * whose own id carries a dot (`story.chapter`) is read as a channel, not
+   * as a path into `story` (GH #369). Absent: first-segment split.
+   */
+  capturedChannels?: readonly string[];
   world?: unknown;
 }
 
@@ -427,7 +436,7 @@ export async function runTreeDocument(
     // The line runs through its END STATE card and no further (D4): the
     // engine is stopped after it, so every later card is one the run never
     // reached, and a branch forking at or after it is blocked below.
-    const { transcript, cardIndexOfCommand } = transcriptOfLine(line);
+    const { transcript, cardIndexOfCommand } = transcriptOfLine(line, game.capturedChannels ?? []);
     const result = await runTranscript(transcript, game as never, {
       ...options,
       observer: {
@@ -605,7 +614,7 @@ function countTurns(cards: TreeCard[]): number {
  * is neither a policy default nor a prose claim, so `skip` does not suppress
  * it and a bare END STATE card is not bare: the ending is what it asserts.
  */
-function assertionsOfCard(card: TreeCard): Assertion[] {
+function assertionsOfCard(card: TreeCard, capturedChannels: readonly string[]): Assertion[] {
   const ending: Assertion[] =
     card.ending !== undefined ? [{ type: 'ending-assert', endingId: card.ending }] : [];
   if (card.skip === true) return ending.length > 0 ? ending : [{ type: 'skip' }];
@@ -631,9 +640,10 @@ function assertionsOfCard(card: TreeCard): Assertion[] {
   }
   for (const channel of authored.channels ?? []) {
     // A dotted document id (`info.title`) is a path INTO a structured
-    // capture: base channel id + channelPath (ADR-300 D13), exactly as the
-    // transcript grammar's `[CHANNEL: banner.title, …]` parses.
-    const [channelId, ...channelPath] = channel.id.split('.');
+    // capture: base channel id + channelPath (ADR-300 D13). The base is the
+    // longest channel the game captures that prefixes the id, so a channel
+    // whose own id is dotted (`story.chapter`) splits correctly (GH #369).
+    const { channelId, channelPath } = splitChannelClaimId(channel.id, capturedChannels);
     const pathPart = channelPath.length > 0 ? { channelPath } : {};
     if (channel.contains !== undefined) {
       for (const value of channel.contains) {
@@ -660,7 +670,7 @@ function assertionsOfCard(card: TreeCard): Assertion[] {
  * No `filePath`, ever: that is what keeps the runner's policy write-back
  * from firing — defaults synthesize live and are never persisted (D2).
  */
-function transcriptOfLine(line: TreeLine): {
+function transcriptOfLine(line: TreeLine, capturedChannels: readonly string[]): {
   transcript: Transcript;
   cardIndexOfCommand: number[];
 } {
@@ -675,7 +685,7 @@ function transcriptOfLine(line: TreeLine): {
     line.endingIndex !== undefined ? line.cards.slice(0, line.endingIndex + 1) : line.cards;
   runnable.forEach((card, cardIndex) => {
     if (card.type === 'opening') {
-      const assertions = assertionsOfCard(card);
+      const assertions = assertionsOfCard(card, capturedChannels);
       if (assertions.length > 0) opening = assertions;
       return;
     }
@@ -683,7 +693,7 @@ function transcriptOfLine(line: TreeLine): {
       lineNumber: 0,
       input: commandOf(card)!,
       expectedOutput: [],
-      assertions: assertionsOfCard(card),
+      assertions: assertionsOfCard(card, capturedChannels),
     };
     commands.push(command);
     cardIndexOfCommand.push(cardIndex);

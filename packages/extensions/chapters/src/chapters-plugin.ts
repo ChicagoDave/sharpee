@@ -51,14 +51,19 @@ export const CHAPTER_FIRED_PREFIX = 'chord.chapter.fired.';
 export const CHAPTER_ANNOUNCED_KEY = 'chord.chapter.announced';
 
 /**
- * A chapter's trigger, lowered to what the runtime can read directly: a room's
- * WORLD id, or the world-state key a timer record / a state value lives under.
- * The loader does the lowering from `ir.chapters` (it alone knows the ids and
- * the key scheme); this package never sees IR.
+ * A chapter's trigger, lowered to what the runtime can read directly: the
+ * world-state key a room's visited fact, a timer record, or a state value
+ * lives under. The loader does the lowering from `ir.chapters` (it alone knows
+ * the ids and the key scheme); this package never sees IR.
+ *
+ * `first-visit` reads the visited fact the loader stamps off the arrival event
+ * (walked or authored) — never the player's end-of-turn location, which a
+ * room's own entering clause can have moved on from (GH #368; ADR-330's "rides
+ * the same arrival event `after the player entering, once` rides").
  */
 export type ChapterRuntimeTrigger =
   | { kind: 'game-starts' }
-  | { kind: 'first-visit'; roomId: string }
+  | { kind: 'first-visit'; stateKey: string }
   | { kind: 'timer-expires'; stateKey: string }
   | { kind: 'becomes'; stateKey: string; state: string };
 
@@ -85,7 +90,7 @@ function holds(trigger: ChapterRuntimeTrigger, ctx: TurnPluginContext): boolean 
     case 'game-starts':
       return true;
     case 'first-visit':
-      return ctx.playerLocation === trigger.roomId;
+      return ctx.world.getStateValue(trigger.stateKey) === true;
     case 'timer-expires': {
       const record = ctx.world.getStateValue(trigger.stateKey) as { phase?: string } | undefined;
       return record?.phase === 'expired';

@@ -7,14 +7,20 @@ export const sleepingLanguage = {
 
   patterns: [
     'sleep',
+    'go to sleep',
+    'go to bed',
+    'lie down',
     'nap',
     'doze',
     'rest',
-    'slumber',
-    'z'
+    'slumber'
   ],
 
   messages: {
+    // The stock line (P-15, GH #362): sleeping is a signal action, and this
+    // is what it says when no story reaction speaks in its place.
+    'not_tired': "{You} aren't tired.",
+
     // Success messages
     'slept': "{You} {sleep} for a while.",
     'dozed_off': "{You} {doze} off for a bit.",
@@ -36,8 +42,8 @@ export const sleepingLanguage = {
   },
 
   help: {
-    description: 'Sleep or take a nap to pass time.',
-    examples: 'sleep, nap, doze, rest',
-    summary: 'SLEEP/NAP - Sleep or take a nap to pass time. May have different effects depending on location and circumstances. Example: SLEEP'
+    description: 'Try to sleep. Stories decide where and when it works.',
+    examples: 'sleep, go to sleep, go to bed, lie down',
+    summary: 'SLEEP/GO TO BED/LIE DOWN - Try to sleep. Stories decide where and when it works. Example: SLEEP'
   }
 };

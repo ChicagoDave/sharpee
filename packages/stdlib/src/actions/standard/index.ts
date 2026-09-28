@@ -18,6 +18,7 @@ export * from './looking/index.js';
 export * from './inventory/index.js';
 export * from './waiting/index.js';
 export * from './sleeping/index.js';
+export * from './waking/index.js';
 export * from './scoring/index.js';
 export * from './help/index.js';
 export * from './about/index.js';
@@ -97,6 +98,7 @@ import { lookingAction } from './looking/index.js'; // Now from folder
 import { inventoryAction } from './inventory/index.js'; // Now from folder
 import { waitingAction } from './waiting/index.js'; // Now from folder
 import { sleepingAction } from './sleeping/index.js'; // Now from folder
+import { wakingAction } from './waking/index.js';
 import { scoringAction } from './scoring/index.js'; // Now from folder
 import { helpAction } from './help/index.js'; // Now from folder
 import { aboutAction } from './about/index.js'; // Now from folder
@@ -171,6 +173,7 @@ export const standardActions = [
   inventoryAction,
   waitingAction,
   sleepingAction,
+  wakingAction,
   scoringAction,
   helpAction,
   aboutAction,

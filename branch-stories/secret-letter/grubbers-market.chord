@@ -195,7 +195,7 @@ create the Eastern Junction
   north to the Fruit Stall
   south to the Hat Stall
   west to the Pottery Stall
-  east to Commerce Street
+  east to Commerce Street, one-way
   east is blocked while calm: east-deflected
   east is blocked while Jack is urchin: east-watched
 
@@ -844,8 +844,9 @@ end phrase
 ## your apple in peace" (`story.ni:1469`).
 
 define phrase apple-not-here
-  (TODO during play-testing — Refused in the open; points northwest without
-  naming it.)
+  (TODO during play-testing — Not here, with half of Grubber's treading on
+  your feet. There's a quiet spot off the northwest corner of the market where
+  a person can eat in peace.)
 end phrase
 
 ## DAVID: the first bite. Two Gentry lines are candidates and either can be
@@ -855,7 +856,8 @@ end phrase
 ## voices." (`story.ni:1469`) — which is also where the eavesdrop begins.
 
 define phrase apple-first-bite
-  (TODO during play-testing — The first bite, taken in the Alley.)
+  (TODO during play-testing — You settle yourself on a crate and take a bite
+  of your apple. Crisp and delicious.)
 end phrase
 
 ## The other eight stalls' wares and the source's generic theft rule — what
@@ -907,17 +909,20 @@ import "silk-wares"
 ##   * `ST5`'s "You have any coin?" becomes a `define exchange` — the one place
 ##     the source's shape survives literally, since `ST6`/`ST7`/`ST8` really are
 ##     a yes/no/never-mind question.
-##   * The patience counter (`story.ni:1937-1949`) becomes the `asked again` and
-##     `asked many times` greeting arms — but it counts a different thing, and
-##     the difference is measured, not assumed (driven through `sharpee play`,
-##     2026-08-22). The source counts APPROACHES: every `talk to` bumps it, and
-##     moving to another stall resets it. Chord counts TOPIC ASKS, cumulatively
-##     and forever, and the arm is only consulted when a conversation scene
-##     REOPENS — a second `talk to` inside a live scene answers "doesn't
-##     respond", and the scene stays live for several turns after the player
-##     walks away. So a stallkeeper you pestered stays exasperated when you come
-##     back much later, where Gentry's cooled off the moment you moved on. The
-##     lines are his either way; only the trigger differs.
+##   * The patience counter (`story.ni:1937-1949`) is the `stallkeeper-patience`
+##     counter below, and it counts what Gentry counts: APPROACHES. Every
+##     `talk to` a keeper raises it by one (the `after the player talking`
+##     clause of the shared `wary` trait, `mercenaries.chord`); the second
+##     approach appends the exasperated line and the third onward the yell;
+##     and Jack's own `after going` (`secret-letter.story`) sets it back to 0,
+##     which is the source's "on the move" reset. Until 2026-09-08 the two
+##     lines hung off the `asked again` / `asked many times` greeting arms,
+##     which count topic asks cumulatively and forever and are consulted only
+##     when a scene reopens — a keeper stayed exasperated on any later visit,
+##     and a bare `yes` to the coin question (an answer, not an ask) never
+##     counted (GH #356). One difference stays, measured 2026-09-08: a second
+##     `talk to` inside a live scene answers "doesn't respond" where the
+##     source replays the opener, and the patience line follows that.
 ##   * `ST9`'s good-bye is authored on the `on leaving` arm and is CURRENTLY
 ##     UNREACHABLE (checked the same way, and then in the source): the arm means
 ##     "when this character walks out on YOU" — both its consumers key on the
@@ -941,8 +946,13 @@ import "silk-wares"
 ## Every line below is Gentry's, carried from `story.ni:1841-1949`.
 ## ---------------------------------------------------------------------------
 
+## The patience counter (`story.ni:1937`): raised once per approach by the
+## shared `wary` trait, set back to 0 by Jack's own `after going`.
+
+define counter stallkeeper-patience starts 0
+
 create the grocer
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, grocer, greengrocer
   pronouns he
@@ -957,10 +967,6 @@ define greetings for the grocer
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -988,7 +994,7 @@ define exchange st-coin-grocer for the grocer
 end exchange
 
 create the fruit stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, fruit seller, fruit vendor, fruiterer
   pronouns he
@@ -1014,10 +1020,6 @@ define greetings for the fruit stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1045,7 +1047,7 @@ define exchange st-coin-fruit for the fruit stallkeeper
 end exchange
 
 create the hat stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, milliner, hatter, hat seller
   pronouns he
@@ -1060,10 +1062,6 @@ define greetings for the hat stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1091,7 +1089,7 @@ define exchange st-coin-hat for the hat stallkeeper
 end exchange
 
 create the leather stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, leatherworker, leather seller, tanner
   pronouns he
@@ -1106,10 +1104,6 @@ define greetings for the leather stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1137,7 +1131,7 @@ define exchange st-coin-leather for the leather stallkeeper
 end exchange
 
 create the weaponsmith
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, smith, armorer, armourer, weapon seller
   pronouns he
@@ -1152,10 +1146,6 @@ define greetings for the weaponsmith
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1183,7 +1173,7 @@ define exchange st-coin-weaponsmith for the weaponsmith
 end exchange
 
 create the gems stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, jeweler, jeweller, gem merchant, gem seller
   pronouns he
@@ -1198,10 +1188,6 @@ define greetings for the gems stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1229,7 +1215,7 @@ define exchange st-coin-gems for the gems stallkeeper
 end exchange
 
 create the herbalist
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, herb seller, herbwife
   pronouns he
@@ -1244,10 +1230,6 @@ define greetings for the herbalist
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1275,7 +1257,7 @@ define exchange st-coin-herb for the herbalist
 end exchange
 
 create the rope dealer
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, ropemaker, rope seller
   pronouns he
@@ -1290,10 +1272,6 @@ define greetings for the rope dealer
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1321,7 +1299,7 @@ define exchange st-coin-rope for the rope dealer
 end exchange
 
 create the candlemaker
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, chandler, candle seller
   pronouns he
@@ -1336,10 +1314,6 @@ define greetings for the candlemaker
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings
@@ -1367,7 +1341,7 @@ define exchange st-coin-candle for the candlemaker
 end exchange
 
 create the pottery stallkeeper
-  a person
+  a person, scenery
   wary
   aka stallkeeper, stall keeper, merchant, seller, vendor, potter, pot seller
   pronouns he
@@ -1382,10 +1356,6 @@ define greetings for the pottery stallkeeper
     phrase st-opener
   on return:
     phrase st-opener
-  asked again:
-    phrase st-patience-second
-  asked many times:
-    phrase st-patience-third
   on leaving:
     phrase st-goodbye
 end greetings

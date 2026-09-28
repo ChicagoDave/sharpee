@@ -86,8 +86,11 @@ end before
     // The ROLE's vocabulary, not Viola's own: `x me` has to reach her.
     const identity = player.get('identity') as { aliases?: string[] };
     expect(identity.aliases).toEqual(expect.arrayContaining(['me', 'myself', 'self']));
-    // And the character keeps her own name and description.
-    expect((identity as { description?: string }).description).toContain('restless');
+    // And the character keeps her own name and description — carried as the
+    // description KEY (ADR-107 id mode, ADR-333 D1a); the text is registered.
+    const descriptionId = (identity as { descriptionId?: string }).descriptionId;
+    expect(descriptionId).toBeDefined();
+    expect(game.engine.getLanguageProvider()!.getTemplate!(descriptionId!)).toContain('restless');
 
     await game.executeCommand('x me');
     expect(game.lastOutput).toContain('restless');

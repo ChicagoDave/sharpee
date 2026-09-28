@@ -62,6 +62,8 @@ function* walk(body: IRStatement[]): Generator<IRStatement> {
       case 'change-mood':
       case 'change-feeling':
       case 'move':
+      case 'wear':
+      case 'take-off':
       case 'act':
       case 'remove':
       case 'award':

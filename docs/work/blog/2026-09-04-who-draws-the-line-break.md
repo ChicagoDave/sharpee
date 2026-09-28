@@ -1,5 +1,7 @@
 # Who draws the line break? Not the author.
 
+Published 2026-09-04: https://sharpee.plover.net/who-draws-the-line-break/
+
 A post came through Planet IF this week about wrangling line breaks in Inform 7. It is a good post, in the sense that it accurately describes what an Inform author has to do. That is what bothers me about it.
 
 The setup is a bowl of ice cream whose description cycles through three flavors, and an every-turn rule that nags you to eat it. The output has a stray blank line between the description and the nag. The post then walks through the fixes: append a substitution to the end of the string, no change; move it into the say phrase, no change; attach it to each individual sentence, that works. Then the improvement: define a substitution that prints Unicode character 46 so that the period at the end of a sentence is not a period as far as the compiler is concerned. Then a rulebook that prints a stanza of Berryman using a substitution meant for command clarification, because that substitution happens to suppress the engine's paragraph logic and nothing else does.
@@ -58,6 +60,8 @@ define phrase eat-it
 end phrase
 ```
 
+![A mock play window showing three turns of the ice cream room, with numbered badges beside each line of output and a legend naming the Chord construct that produced it: the room name, the description prose, the cycling phrase spliced at its marker, the paragraph margin, the every-turn phrase, and the standard library's wait message.](2026-09-04-ice-cream-play.svg)
+
 The description is one block. The every-turn nag is another block. The space between them is the paragraph margin, the same margin every paragraph in the story gets, and it is the same on the first turn, the fortieth, and after every flavor. There is nothing to tune because there is nothing computing it from the text.
 
 The poem is the same idea with the other marker.
@@ -83,7 +87,23 @@ Sharpee and Chord make a different bet. The virtual machine pattern bought porta
 
 I should be honest about where that bet still has gaps. Vorple has been putting Inform stories in a browser with real HTML and JavaScript for years, and Hugo shipped graphics and sound in its own runtime a long time before that. Both offer visual capabilities Sharpee has not tested against yet. Sharpee has sound, and it has minimal image placement, and neither is at the level those two systems reached. What Sharpee has settled first is the thing this post is about: the shape of the text. The rest is work I know is ahead.
 
-The one place I expect an argument is this. What happens when two rules both report on the same turn, and the author meant them to be one paragraph? In Inform the answer is to reach for the run-on substitution and hope the flags cooperate. In Sharpee the answer is that two reports are two paragraphs, and if you wanted one paragraph you write one phrase. A phrase can splice another phrase into its own prose with a marker, which is exactly what the ice cream description does with its cycling flavor. The joining is done in the source, where the author can read it, not at the output, where nobody can. That is a real constraint, and I am choosing it on purpose: if two things happen independently, they are two facts, and the reader gets two paragraphs. When the author knows they belong together, the author says so once, in the text, and the engine never has to guess.
+The one place I expect an argument is this. What happens when two rules both report on the same turn, and the author meant them to be one paragraph? In Inform the answer is to reach for the run-on substitution and hope the flags cooperate. In Sharpee the default is that two reports are two paragraphs. If two things happen independently, they are two facts, and the reader gets two paragraphs. When the author knows they belong together there are two ways to say so, both in the source. A phrase can splice another phrase into its own prose with a marker, which is what the ice cream description does with its cycling flavor. And a phrase can be tagged as running on, so that wherever it fires, its text joins the paragraph before it.
+
+```chord
+on every turn while the ice cream is on the counter
+  phrase eat-it
+end on
+
+define phrase eat-it, run-on
+  You had better eat that ice cream before it melts!
+end phrase
+```
+
+![Two turn packets side by side: by default the room description and the eat-it phrase are two blocks with the theme's paragraph margin between them; with eat-it tagged run-on they are one block, joined with a space in report order.](2026-09-04-ice-cream-blocks.svg)
+
+The tag is a property of the phrase, not of the place it is called from, so the author decides once where the text lives. The joining is done in the source, where the author can read it, not at the output, where nobody can. The engine never guesses. It either has one paragraph because the author said so, or it has two because the author did not.
+
+I will be straight about the second one: the marker splice ships today, and the run-on tag is filed and not yet built. The design is settled, and it is one word on a line the author already writes.
 
 Sharpee's split is that the story says what is true and the presentation layer says how it looks. The same story renders in a terminal, in a browser, and in Chord Writer, with different themes, and the author has not written a single character of layout for any of them. When an author wants a different look, they change the theme, not the prose. When a tester pins a transcript, the text is the text; there is no whitespace to fight over.
 

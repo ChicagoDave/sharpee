@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="880" height="400" viewBox="0 0 880 400" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="13">
+  <style>
+    .title { font-size: 15px; font-weight: 600; fill: #222; }
+    .label { font-size: 11px; fill: #666; }
+    .mono  { font-family: Menlo, Consolas, monospace; font-size: 11px; fill: #444; }
+    .prose { font-size: 13px; fill: #222; }
+    .block { fill: #f6f4ee; stroke: #8a8378; stroke-width: 1.2; }
+    .packet { fill: none; stroke: #b9b2a6; stroke-width: 1; stroke-dasharray: 4 3; }
+    .gap { fill: #e8e2d6; }
+    .arrow { stroke: #8a8378; stroke-width: 1.2; fill: none; }
+  </style>
+
+  <!-- ============ LEFT: two paragraphs ============ -->
+  <text x="30" y="28" class="title">Default: two reports, two paragraphs</text>
+
+  <text x="30" y="56" class="mono">room description  +  {ice-cream-look}</text>
+  <text x="30" y="72" class="mono">every turn: phrase eat-it</text>
+  <path d="M120 80 L120 98" class="arrow" marker-end="url(#m)"/>
+
+  <rect x="30" y="104" width="360" height="266" rx="6" class="packet"/>
+  <text x="42" y="122" class="label">turn packet (assembled after the turn ends)</text>
+
+  <rect x="44" y="132" width="332" height="74" rx="4" class="block"/>
+  <text x="56" y="150" class="label">block 1 · room description</text>
+  <text x="56" y="172" class="prose">A bowl of ice cream rests on the counter.</text>
+  <text x="56" y="192" class="prose">It looks like delicious vanilla.</text>
+
+  <rect x="44" y="212" width="332" height="30" class="gap"/>
+  <text x="56" y="231" class="label">paragraph margin (set by the theme)</text>
+
+  <rect x="44" y="248" width="332" height="56" rx="4" class="block"/>
+  <text x="56" y="266" class="label">block 2 · eat-it</text>
+  <text x="56" y="288" class="prose">You had better eat that ice cream before it melts!</text>
+
+  <text x="44" y="336" class="label">Two blocks. Nothing inspects the text to decide</text>
+  <text x="44" y="352" class="label">where the break goes; the margin is the same every turn.</text>
+
+  <!-- ============ RIGHT: one paragraph (run-on) ============ -->
+  <text x="440" y="28" class="title">Tagged: one paragraph</text>
+
+  <text x="440" y="56" class="mono">room description  +  {ice-cream-look}</text>
+  <text x="440" y="72" class="mono">every turn: phrase eat-it</text>
+  <text x="440" y="88" class="mono">define phrase eat-it, run-on</text>
+  <path d="M530 94 L530 104" class="arrow" marker-end="url(#m)"/>
+
+  <rect x="440" y="110" width="370" height="260" rx="6" class="packet"/>
+  <text x="452" y="128" class="label">turn packet (assembled after the turn ends)</text>
+
+  <rect x="454" y="138" width="342" height="112" rx="4" class="block"/>
+  <text x="466" y="156" class="label">block 1 · room description + eat-it (run-on)</text>
+  <text x="466" y="178" class="prose">A bowl of ice cream rests on the counter.</text>
+  <text x="466" y="198" class="prose">It looks like delicious vanilla. You had better</text>
+  <text x="466" y="218" class="prose">eat that ice cream before it melts!</text>
+  <text x="466" y="238" class="label">joined with one space, in report order</text>
+
+  <text x="454" y="282" class="label">One block. The join is stated once, on the phrase,</text>
+  <text x="454" y="298" class="label">in the source. Had eat-it fired first in the turn,</text>
+  <text x="454" y="314" class="label">it would stand alone.</text>
+
+  <defs>
+    <marker id="m" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0 0 L8 4 L0 8 z" fill="#8a8378"/>
+    </marker>
+  </defs>
+</svg>

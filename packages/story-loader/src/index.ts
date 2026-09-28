@@ -53,3 +53,8 @@ export type { TimerRecord } from './state-keys.js';
  * RESTORE, which happens outside this package — see its doc comment.
  */
 export { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
+/**
+ * ADR-255 alias map (Interface Contract 3) — exported for `sharpee messages`
+ * (ADR-333 D4a), which joins it with the language pack for the IDE.
+ */
+export { MESSAGE_ALIAS_TO_ACTION_ID, aliasToActionMessageId } from './message-alias-map.js';

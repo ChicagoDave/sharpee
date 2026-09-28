@@ -103,11 +103,13 @@ const PINNED = {
   // 2): `, one-way` on exit lines — ADR-234 D4's reservation wired, the
   // `[ "," "one-way" ]` tail added to the exit production. Additive; folds
   // into the unpublished 3.5.0 set under the same ruling.
-  // Re-pinned 2026-09-15 (session 3c9f76, ADR-349 Phase 2): the `room name`
-  // block — the authored location heading, with its arms numbered into the flat
-  // phrase table like repeating `detail` keys. Additive; folds into the
-  // unpublished 3.6.0 set under the same ruling (the number moves at publish).
-  ebnfSha256: '37c9fdb6e6861b73c511badcc0d0db78fa2866d57dbcc8554a45a4444c7799e2',
+  // Re-pinned 2026-09-27 (session 5b6f1f, the feat/secret-letter-port merge):
+  // the ADR-349 `room name` block (pinned 2026-09-15) joined by ADR-325
+  // Amendment W1's `make <actor> wear <item>` / `make <actor> take off <item>`
+  // statements (pinned on the port branch 2026-09-07, session 0e7d6f) — two
+  // puts in the `move` family. Both additive; both fold into the unpublished
+  // 3.6.0 set under ADR-257 D2 as amended (the number moves at publish).
+  ebnfSha256: '71c964b0cbbe3f9bfd7d2520e03d159811643003d7a5756aafc913403a2cc8cc',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

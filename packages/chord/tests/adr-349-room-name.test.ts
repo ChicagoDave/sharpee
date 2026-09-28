@@ -29,7 +29,7 @@ const PLAYER = `create Alex
 
 const compileStory = (world: string) => compile(HEADER + world + PLAYER);
 
-const errorCodes = (result: { diagnostics: { code: string; severity: string }[] }) =>
+const errorCodes = (result: { diagnostics: readonly { code: string; severity: string }[] }) =>
   result.diagnostics.filter(d => d.severity === 'error').map(d => d.code);
 
 const phraseTable = (result: any): Record<string, any> =>

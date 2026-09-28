@@ -81,6 +81,7 @@ import {
   PatternPart,
   StateName,
   Statement,
+  WearStmt,
   StoryFile,
   TextValue,
   TraitField,
@@ -908,6 +909,12 @@ export class Analyzer {
    * keep markers unrewritten by pinned contract (zoo surfaces phase 2).
    */
   private descriptionKeys = new Set<string>();
+  /**
+   * Entity phrase-override gates (`phrase detail while …:`, `phrase present
+   * while …:`) collected in pass 1 and resolved in pass 2 (GH #359), so a
+   * gate may read a timer or any symbol pass 1 has not registered yet.
+   */
+  private deferredOverrideGates: Array<{ key: string; condition: ConditionNode; owner: EntitySymbol }> = [];
 
   /**
    * The analysis passes, in the order `run` executes them. Each entry names
@@ -941,6 +948,8 @@ export class Analyzer {
     { name: 'buildWitnessedTopics', requires: ['collect'], run: (a) => a.buildWitnessedTopics() },
     // Timers resolve their owners against the entity table.
     { name: 'buildTimers', requires: ['collect'], run: (a) => a.buildTimers() },
+    // Entity `phrase detail while` / `phrase present while` gates resolve once timers are known (GH #359).
+    { name: 'resolveOverrideGates', requires: ['collect', 'buildTimers'], run: (a) => a.resolveOverrideGates() },
     // Chapters resolve their triggers against entities, timers, and states.
     { name: 'buildChapters', requires: ['collect', 'validateUses', 'buildTimers'], run: (a) => a.buildChapters() },
     // The IR skeleton, from every table the passes above filled.
@@ -957,7 +966,7 @@ export class Analyzer {
     // The implied bed's span is recorded while statements resolve.
     { name: 'emitImpliedMainBed', requires: ['buildDeclarations'], run: (a) => a.emitImpliedMainBed() },
     // Phrase conditions resolve during pass 2.
-    { name: 'emitPhraseTables', requires: ['buildDeclarations'], run: (a) => a.emitPhraseTables() },
+    { name: 'emitPhraseTables', requires: ['buildDeclarations', 'resolveOverrideGates'], run: (a) => a.emitPhraseTables() },
     { name: 'markHatches', requires: ['buildDeclarations'], run: (a) => a.markHatches() },
     // The `define` tables fold onto their owner entities after every entity is built.
     { name: 'applyTopics', requires: ['buildDeclarations'], run: (a) => a.applyTopics(a.builtIR().entities) },
@@ -2611,6 +2620,8 @@ export class Analyzer {
             case 'change-mood':
             case 'change-feeling':
             case 'move':
+            case 'wear':
+            case 'take-off':
             case 'act':
             case 'remove':
             case 'award':
@@ -3682,10 +3693,17 @@ export class Analyzer {
 
         this.registerPhrase(DEFAULT_LOCALE, key, {
           strategy: (override.strategy as IRPhrase['strategy']) ?? null,
-          ...(override.condition ? { condition: this.resolveCondition(override.condition, entityScope(e)) } : {}),
           variants: override.variants.map((v) => this.variantOf(v)),
           span: override.span,
         });
+        // GH #359: the `while` gate resolves in pass 2 (`resolveOverrideGates`),
+        // after `buildTimers` — a timer possessive (`the player's
+        // pole-destruction has started`) is unknown in pass 1, exactly as a
+        // `define phrase … while` gate already defers for late-declared
+        // entities.
+        if (override.condition) {
+          this.deferredOverrideGates.push({ key, condition: override.condition, owner: e });
+        }
       }
       // Entity-owned clauses register their inline phrases under the
       // owner-derived key (phrase-override mechanism) — four owners each
@@ -3822,6 +3840,8 @@ export class Analyzer {
         case 'change-mood':
         case 'change-feeling':
         case 'move':
+        case 'wear':
+        case 'take-off':
         case 'act':
         case 'remove':
         case 'award':
@@ -4360,6 +4380,20 @@ export class Analyzer {
       this.recordBookKey(entry.key, decl.condition === null);
     }
     this.phrasebookDecls.push({ name: decl.name, source: 'define', condition: decl.condition, entries, span: decl.span });
+  }
+
+  /**
+   * Pass 2 (GH #359): resolve every deferred entity override gate in its
+   * owner's scope and attach it to the registered phrase entry. Runs after
+   * `buildTimers`, so `<owner>'s <timer> has started` resolves as a timer
+   * read here exactly as it does on a clause head.
+   */
+  private resolveOverrideGates(): void {
+    const table = this.phrases.get(DEFAULT_LOCALE);
+    for (const gate of this.deferredOverrideGates) {
+      const entry = table?.get(gate.key);
+      if (entry) entry.condition = this.resolveCondition(gate.condition, entityScope(gate.owner));
+    }
   }
 
   private registerPhrase(locale: string, key: string, phrase: IRPhrase): void {
@@ -5313,6 +5347,8 @@ export class Analyzer {
         case 'change-mood':
         case 'change-feeling':
         case 'move':
+        case 'wear':
+        case 'take-off':
         case 'act':
         case 'remove':
         case 'award':
@@ -5482,6 +5518,55 @@ export class Analyzer {
       );
     }
     return { body, span: decl.span };
+  }
+
+  /**
+   * ADR-325 Amendment W1: `make <actor> wear <item>` / `make <actor> take off
+   * <item>` — a put in the `move` family. Two compile-time gates (W1e): the
+   * item composes `wearable` (`analysis.wear-not-wearable`, the check the
+   * `wears` declaration runs) and the actor is `the player` or `a person`
+   * (`analysis.wear-actor-not-person`). Both name the line. An unresolved
+   * name is the ordinary entity miss.
+   */
+  private resolveWearStatement(stmt: WearStmt, scope: Scope): IRStatement {
+    const spelled = stmt.kind === 'wear' ? 'wear' : 'take off';
+    const line = `make ${[stmt.actor.article, ...stmt.actor.words].filter(Boolean).join(' ')} ${spelled} ${[stmt.item.article, ...stmt.item.words].filter(Boolean).join(' ')}`;
+    const dead: IRStatement = { kind: stmt.kind, actor: { kind: 'symbol', name: '' }, item: { kind: 'symbol', name: '' }, stmtWhen: null, span: stmt.span };
+    const actor = this.resolveEntityValue(stmt.actor, scope);
+    const item = this.resolveEntityValue(stmt.item, scope);
+    if (actor.kind === 'entity') {
+      const sym = this.byId.get(actor.id);
+      if (!sym || !isActorSymbol(sym)) {
+        this.diagnostics.error(
+          'analysis.wear-actor-not-person',
+          `\`${line}\` — \`${sym ? entityDisplayName(sym) : actor.id}\` is not a person; a garment is worn by \`the player\` or an \`a person\` block.`,
+          stmt.actor.span,
+        );
+        return dead;
+      }
+    } else if (actor.kind !== 'player') {
+      this.diagnostics.error(
+        'analysis.wear-actor-not-person',
+        `\`${line}\` — the actor must be \`the player\` or a declared person.`,
+        stmt.actor.span,
+      );
+      return dead;
+    }
+    if (item.kind !== 'entity') {
+      this.diagnostics.error('analysis.wear-not-wearable', `\`${line}\` — the garment must name a declared entity.`, stmt.item.span);
+      return dead;
+    }
+    const itemSym = this.byId.get(item.id);
+    const wearable = itemSym?.decl.compositions.some((c) => !c.article && c.words.join(' ').toLowerCase() === 'wearable') ?? false;
+    if (!wearable) {
+      this.diagnostics.error(
+        'analysis.wear-not-wearable',
+        `\`${line}\` — \`${itemSym ? entityDisplayName(itemSym) : item.id}\` is not wearable; add \`wearable\` to its create block.`,
+        stmt.item.span,
+      );
+      return dead;
+    }
+    return { kind: stmt.kind, actor, item, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
   }
 
   private resolveStatement(stmt: Statement, scope: Scope, path: string): IRStatement {
@@ -5705,6 +5790,9 @@ export class Analyzer {
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
+      case 'wear':
+      case 'take-off':
+        return this.resolveWearStatement(stmt, scope);
       case 'act':
         return this.resolveActStatement(stmt, scope);
       case 'award': {
@@ -5830,7 +5918,15 @@ export class Analyzer {
       case 'hold-tongue':
         return { kind: 'hold-tongue', span: stmt.span };
       case 'select-on': {
-        const subject = this.resolveValue(stmt.subject, scope);
+        let subject = this.resolveValue(stmt.subject, scope);
+        // GH #370: `select on <entity>` / `select on it` selects on the
+        // entity's declared state — the one thing an entity subject can
+        // yield an arm word from. Lowered to the `state` field read, so the
+        // arms validate against the declared states below and the runtime
+        // reads the state. `the player` is a role, not a state owner.
+        if ((subject.kind === 'entity' && subject.id !== 'player') || subject.kind === 'it') {
+          subject = { kind: 'field', base: subject, field: 'state' };
+        }
         const stateOwner = this.stateOwnerOf(subject, scope);
         // Trait scope: `select on its state` validates against the visible
         // state set (own + cross-trait, D8) with no concrete owner entity.
@@ -6227,6 +6323,29 @@ export class Analyzer {
   }
 
   /** The entity whose `states:` list governs a select-on subject, if determinable. */
+  /**
+   * Whether a condition subject names a state owner that declares `word` as
+   * one of its own states (GH #366): a declared entity by exact name or
+   * alias, `it` in entity scope, or `it` in trait scope against the trait's
+   * visible states. Quiet — a miss returns false and the platform reading
+   * of the word stands.
+   *
+   * @param subject the condition's subject, pre-resolution
+   * @param word the colliding word
+   * @param scope the resolution scope (`it` binding)
+   */
+  private subjectDeclaresState(subject: ValueExpr, word: string, scope: Scope): boolean {
+    if (subject.kind !== 'ref' || subject.ref.kind !== 'name') return false;
+    if (nameIsIt(subject.ref)) {
+      if (scope.owner) return scope.owner.states.includes(word);
+      return scope.ownStates?.includes(word) ?? false;
+    }
+    const lower = subject.ref.words.join(' ').toLowerCase();
+    const exact = this.entities.filter((e) => e.nameLower === lower);
+    const owner = exact.length === 1 ? exact[0] : (() => { const byAlias = this.entities.filter((e) => e.aka.includes(lower)); return byAlias.length === 1 ? byAlias[0] : null; })();
+    return owner?.states.includes(word) ?? false;
+  }
+
   private stateOwnerOf(subject: IRValue, scope: Scope): EntitySymbol | null {
     if (subject.kind === 'field' && subject.field === 'state') {
       if (subject.base.kind === 'it') return scope.owner;
@@ -7174,6 +7293,23 @@ export class Analyzer {
         this.requireDialogueScope(`asked ${cond.word}`, scope, cond.span);
         return { kind: 'asked', word: cond.word };
       case 'predicate': {
+        // GH #366: an entity's OWN declared state wins a colliding platform
+        // word — the rule resolveIsObject already applies to mood words. A
+        // recency word (`fresh`) or `concluded` read against a subject that
+        // declares it as a state is that state test, not a topic or thread
+        // read, so it re-enters here as an ordinary `is <state>` predicate.
+        if (cond.predicate.kind === 'recency' || cond.predicate.kind === 'concluded') {
+          const word = cond.predicate.kind === 'recency' ? cond.predicate.word : 'concluded';
+          if (this.subjectDeclaresState(cond.subject, word, scope)) {
+            return this.resolveCondition(
+              {
+                ...cond,
+                predicate: { kind: 'is', negated: cond.predicate.negated, value: { kind: 'bare', words: [word], span: cond.predicate.span }, span: cond.predicate.span },
+              },
+              scope,
+            );
+          }
+        }
         // ADR-320 D6/D9: recency and discussed-ness take the SUBJECT as a
         // topic, not an entity — intercept before entity resolution, and
         // normalize exactly as `knows` topics do.

@@ -27,6 +27,8 @@ export { handlePlatformEvent } from './platform.js';
 
 // Inline handlers extracted from text-service.ts in this sub-phase.
 export { tryProcessDomainEventMessage } from './domain-message.js';
+export { tryProcessExamined } from './examined.js';
+export { resolveDescriptionId, stampDescriptionSource } from './description-id.js';
 export { handleImplicitTake } from './implicit-take.js';
 export { handleCommandFailed } from './command-failed.js';
 export { handleClientQuery } from './client-query.js';

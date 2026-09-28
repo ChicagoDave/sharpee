@@ -604,6 +604,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'sleeping-dozed-off': 'if.action.sleeping.dozed_off',
   'sleeping-fell-asleep': 'if.action.sleeping.fell_asleep',
   'sleeping-nightmares': 'if.action.sleeping.nightmares',
+  'sleeping-not-tired': 'if.action.sleeping.not_tired',
   'sleeping-peaceful-sleep': 'if.action.sleeping.peaceful_sleep',
   'sleeping-slept': 'if.action.sleeping.slept',
   'sleeping-slept-fitfully': 'if.action.sleeping.slept_fitfully',
@@ -811,6 +812,8 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'waiting-waited-for-event': 'if.action.waiting.waited_for_event',
   'waiting-waited-in-vehicle': 'if.action.waiting.waited_in_vehicle',
   'waiting-waited-patiently': 'if.action.waiting.waited_patiently',
+  // if.action.waking
+  'waking-already-awake': 'if.action.waking.already_awake',
   // if.action.wearing
   'wearing-already-wearing': 'if.action.wearing.already_wearing',
   'wearing-cant-wear-that': 'if.action.wearing.cant_wear_that',

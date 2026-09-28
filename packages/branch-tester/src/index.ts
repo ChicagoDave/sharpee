@@ -30,6 +30,7 @@ export {
   serializeTreeDocument,
   deserializeTreeDocument,
   channelIdsReferencedBy,
+  splitChannelClaimId,
   type TreeDocument,
   type TreeCard,
   type TreeCardType,

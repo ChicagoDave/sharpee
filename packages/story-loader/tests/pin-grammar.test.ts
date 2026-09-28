@@ -92,7 +92,15 @@ describe('parsePin — what no form matches', () => {
   it('is unrecognized, not an error', () => {
     expect(parsePin('')).toEqual({ kind: 'unrecognized' });
     expect(parsePin('prune the vine')).toEqual({ kind: 'unrecognized' });
-    expect(parsePin('first partner.location = anywhere')).toEqual({ kind: 'unrecognized' });
+  });
+
+  it('reads a multi-word head in the dotted forms — the Chord spelling (GH #375)', () => {
+    expect(parsePin('first partner.location = anywhere')).toEqual({
+      kind: 'location', entity: 'first partner', operator: '=', place: 'anywhere',
+    });
+    expect(parsePin('silver brooch.contents contains pin')).toEqual({
+      kind: 'contains', entity: 'silver brooch', collection: 'contents', operator: 'contains', item: 'pin',
+    });
   });
 
   it('does not read a phrase with "at" in it as a timer', () => {

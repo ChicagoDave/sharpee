@@ -48,6 +48,7 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'hiding-spot', // ratchet G3 (2026-07-17) — composes ConcealmentTrait; bare = all positions, `with position <word>` narrows
   'proper', // ratchet H1 (ADR-242 D1, 2026-07-19) — person-only, unconditional: IdentityTrait.properName (bare name, no article)
   'open-inventory', // GH #313 (2026-09-03) — composes OpenInventoryTrait: what the holder carries is reachable, not just visible (ADR-273 D4 opt-in)
+  'unlisted', // 2026-09-06 — marker: IdentityTrait.contentsUnlisted = true; a holder whose contents its own prose describes — the room never prints "On/In the X you see …"; the contents stay in scope
 ]);
 
 /**

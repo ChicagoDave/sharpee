@@ -221,8 +221,13 @@ export class TimersSection {
       if (table[`${def.qualified}.${state}`]) {
         // ADR-328 D3: a named turn's prose fires wherever the player is;
         // an entity owner's place rides the event so it is tagged, not dropped.
+        // An owner with no place at all — a bookkeeping entity that was never
+        // placed, or one moved offstage — has nowhere to be heard from, so its
+        // turn speaks from the player instead (GH #372, David's ruling): the
+        // line goes out unsourced and the funnel defaults it to the player.
         const spoken = this.core.phrases.phraseEvent(`${def.qualified}.${state}`, { world });
-        out.push(...(def.owner && def.owner !== 'player' ? this.core.sourced([spoken], def.owner, world) : [spoken]));
+        const at = def.owner && def.owner !== 'player' ? this.core.placeOf(def.owner, world) : undefined;
+        out.push(...(at ? this.core.sourced([spoken], def.owner!, world, at) : [spoken]));
       }
       if (def.meanwhile && (def.meanwhile.chance === null || this.core.evaluator.evalCondition({ kind: 'chance', n: def.meanwhile.chance }, ownerCtx))) {
         out.push(...this.core.statements.execStatements(def.meanwhile.body, ownerCtx));

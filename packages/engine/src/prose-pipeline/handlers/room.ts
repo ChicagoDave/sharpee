@@ -25,6 +25,7 @@ import { getStateClauses, type IFEntity } from '@sharpee/world-model';
 import type { HandlerContext } from './types.js';
 import { createBlock, createBlocks, extractValue } from '../assemble.js';
 import { phraseAvailable, renderViaPhrase } from '../phrase-render.js';
+import { resolveDescriptionId, stampDescriptionSource } from './description-id.js';
 
 /**
  * Core template id for the room description body (ADR-195). Realized through the
@@ -98,13 +99,12 @@ export function handleRoomDescription(
   // Room description.
   let description: string | undefined;
 
+  // ADR-107 id mode: the id wins over the literal. ADR-333 D1a: it resolves
+  // to the raw registered template (see description-id.ts) and stamps the
+  // realized blocks below.
   const descriptionId = data.roomDescriptionId ?? data.room?.descriptionId;
-  if (descriptionId && context.languageProvider) {
-    const resolved = context.languageProvider.getMessage(descriptionId, {});
-    if (resolved && resolved !== descriptionId) {
-      description = resolved;
-    }
-  }
+  description = resolveDescriptionId(context.languageProvider, descriptionId);
+  const fromId = description !== undefined;
 
   if (!description) {
     description = data.room?.description ?? data.roomDescription;
@@ -148,7 +148,7 @@ export function handleRoomDescription(
       // this turn. The room's prose is bound as a `{verbatim:description}` param;
       // the slot owns the connective grammar. Degrade to literal blocks only when
       // the pipeline has no world (the legacy string path, e.g. some unit tests).
-      const descBlocks = phraseAvailable(context)
+      const realized = phraseAvailable(context)
         ? renderViaPhrase(
             context,
             ROOM_DESCRIPTION_BODY_ID,
@@ -161,6 +161,9 @@ export function handleRoomDescription(
             BLOCK_KEYS.ROOM_DESCRIPTION,
           ) ?? createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc)
         : createBlocks(BLOCK_KEYS.ROOM_DESCRIPTION, resolvedDesc);
+      // ADR-333 D1a: a description realized from the entity's id names that
+      // id, not the body template — the author's phrase is what a click opens.
+      const descBlocks = stampDescriptionSource(realized, fromId ? descriptionId : undefined);
       // When the room name was emitted in this packet, the description's
       // first block continues the room "heading" visually — mark it tight
       // so the renderer collapses the inter-paragraph margin and the

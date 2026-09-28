@@ -102,8 +102,11 @@ describe('GH #331: an authorial move of the player describes the destination', (
     const descriptions = eventsOfType(events, 'if.event.room.description');
     expect(descriptions).toHaveLength(1);
     expect((descriptions[0].data as { roomId: string }).roomId).toBe(b.id('grocery-stall'));
-    // First arrival: the `first time` prose, not the standing description.
-    expect((descriptions[0].data as { roomDescription: string }).roomDescription).toBe('Cabbages, for the first time.');
+    // First arrival: the `first time` prose, not the standing description —
+    // carried as the room's initial-description KEY (ADR-107 id mode, ADR-333
+    // D1a) and resolved by the room handler; the text assertion below is the proof.
+    const snapshot = (descriptions[0].data as { room: { descriptionId?: string } }).room;
+    expect(snapshot.descriptionId).toBe('grocery-stall.initial-description');
     // Order: the clause's phrase, the description, then the arrival clause.
     const ids = messageIdsOf(events);
     const phrase = ids.findIndex((m) => m.endsWith('slip-away'));
@@ -112,6 +115,10 @@ describe('GH #331: an authorial move of the player describes the destination', (
     expect(phrase).toBeGreaterThanOrEqual(0);
     expect(events.findIndex((e) => (e.data as { messageId?: string })?.messageId?.endsWith('slip-away'))).toBeLessThan(room);
     expect(glare).toBeGreaterThanOrEqual(0);
+    // GH #367: the room BEFORE the arrival clause — the assertion this test
+    // lacked, which is how the inverted order shipped. (Compared in EVENT
+    // index space, as `room` is; `glare` above indexes the message-id list.)
+    expect(events.findIndex((e) => (e.data as { messageId?: string })?.messageId?.endsWith('grocer-glares'))).toBeGreaterThan(room);
     expect(text).toContain('Cabbages, for the first time.');
   });
 
