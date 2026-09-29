@@ -67,7 +67,30 @@ describe('entity.property and entity.location', () => {
     expect(evaluateStateExpression('player.location = hall', w).matches).toBe(true);
     expect(evaluateStateExpression(`player.location = ${room.id}`, w).matches).toBe(true);
     expect(evaluateStateExpression('player.location != hall', w).matches).toBe(false);
-    expect(evaluateStateExpression('coin.location = hall', w).details).toBe(`coin.location is "${w.getPlayer()!.id}", expected "${room.id}"`);
+  });
+
+  // GH #533: a verdict names places and things by the names authors wrote,
+  // never by engine ids.
+  it('names the actual and expected entities by display name on a miss', () => {
+    const { w, room } = hall();
+    const details = evaluateStateExpression('coin.location = hall', w).details;
+    expect(details).toBe('coin.location is "player", expected "hall"');
+    expect(details).not.toContain(room.id);
+    expect(details).not.toContain(w.getPlayer()!.id);
+  });
+
+  it('names the entity a negated location pin should not be in', () => {
+    const { w, room } = hall();
+    const details = evaluateStateExpression('player.location != hall', w).details;
+    expect(details).toBe('player.location should not be "hall"');
+    expect(details).not.toContain(room.id);
+  });
+
+  it('prints an IdentityTrait name, not the id, when the claim was written by id', () => {
+    const { w } = hall();
+    const lamp = w.getAllEntities().find((e) => e.name === 'brass lamp')!;
+    const details = evaluateStateExpression(`coin.location = ${lamp.id}`, w).details;
+    expect(details).toBe('coin.location is "player", expected "brass lamp"');
   });
 
   it('reads a trait flag as a boolean', () => {

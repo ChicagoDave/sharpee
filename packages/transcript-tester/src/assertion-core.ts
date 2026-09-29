@@ -486,12 +486,14 @@ export function evaluateStateExpression(
     if (pin.operator === '=') {
       return {
         matches: isEqual,
-        details: isEqual ? undefined : `${entityName}.${property} is "${actualValue?.id || actualValue}", expected "${expectedResolved}"`
+        details: isEqual
+          ? undefined
+          : `${entityName}.${property} is "${describeValue(actualValue, world)}", expected "${describeValue(expectedResolved, world)}"`
       };
     } else {
       return {
         matches: !isEqual,
-        details: !isEqual ? undefined : `${entityName}.${property} should not be "${expectedResolved}"`
+        details: !isEqual ? undefined : `${entityName}.${property} should not be "${describeValue(expectedResolved, world)}"`
       };
     }
   }
@@ -695,6 +697,27 @@ export function getEntityProperty(entity: any, property: string, world?: WorldMo
   }
 
   return undefined;
+}
+
+/**
+ * Render a claim value the way an author wrote it: an entity, or an engine id
+ * that names one, prints as the entity's display name (`Greenhouse`, not
+ * `r04`); anything else prints as itself. Verdicts are read by authors, who
+ * never see engine ids (GH #533).
+ *
+ * @param value an entity, an entity id, or a literal the claim compared
+ * @param world the live world, to look ids up in
+ * @returns the text to print inside a verdict's quotes
+ */
+function describeValue(value: unknown, world: WorldModel): string {
+  if (value && typeof value === 'object' && typeof (value as { id?: unknown }).id === 'string') {
+    const entity = world.getEntity?.((value as { id: string }).id);
+    return entity?.name ?? (value as { id: string }).id;
+  }
+  if (typeof value === 'string') {
+    return world.getEntity?.(value)?.name ?? value;
+  }
+  return String(value);
 }
 
 /**

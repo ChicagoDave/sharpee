@@ -15,10 +15,6 @@
  * wrong about that). What the tier catches is the engine contradicting the
  * text — here, two rules the author wrote that cannot both hold.
  *
- * KNOWN DIVERGENCE, GH #533: the failure message names engine ids where the
- * narrative promises room names. Asserted as it is today, with the flip rule
- * beside the assertion.
- *
  * The mutation runs on a copy under the OS temp directory. The real story is
  * read, never written.
  *
@@ -96,13 +92,10 @@ describe('with a second rule that fights the first, on a scratch copy', () => {
     );
     expect(newlyFailed.map((event) => event.label)).toEqual([FLOWERING]);
     expect(newlyFailed[0].failure).toMatch(/^silver-locket\.location = greenhouse: silver-locket\.location is "/);
-    // GH #533: today the verdict half names engine ids ("r0d", expected "r04"),
-    // not the Cellar and the Greenhouse the narrative promises. WHEN #533 SHIPS,
-    // the two assertions below flip: the message must match /cellar/ and
-    // /greenhouse/ and must not match a bare id. That flip is the suite doing
-    // its job, not a test to delete.
-    expect(newlyFailed[0].failure).toMatch(/ is "r[0-9a-f]+", expected "r[0-9a-f]+"$/);
-    expect(newlyFailed[0].failure).not.toMatch(/cellar/i);
+    // The verdict half names the Cellar the locket is in and the Greenhouse it
+    // should be in, never engine ids (GH #533).
+    expect(newlyFailed[0].failure).toMatch(/ is "Cellar", expected "Greenhouse"$/);
+    expect(newlyFailed[0].failure).not.toMatch(/"r[0-9a-f]+"/);
   });
 
   it('the planted clause is itself one more derived row, and every other row keeps the verdict it had', () => {
