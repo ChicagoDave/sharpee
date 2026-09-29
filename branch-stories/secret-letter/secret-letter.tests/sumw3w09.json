@@ -1,0 +1,41 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space"
+        ]
+      },
+      "command": "slide down northeast cable",
+      "id": "9z3rw4de",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "let go",
+      "id": "wspbujf0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Behind the stall, with the crates for a screen, you strip"
+        ],
+        "states": [
+          "cap.location = cloth satchel",
+          "cloak.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "change outfit",
+      "id": "9w0odwhs",
+      "type": "turn"
+    }
+  ],
+  "id": "sumw3w09",
+  "ordinal": 0,
+  "parent": "tqadj3t4"
+}

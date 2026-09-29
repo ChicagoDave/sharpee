@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The pantry door is closed."
+        ]
+      },
+      "command": "north",
+      "id": "qjwuh849",
+      "type": "turn"
+    }
+  ],
+  "id": "w45ea80q",
+  "ordinal": 1,
+  "parent": "nqjli5pi"
+}

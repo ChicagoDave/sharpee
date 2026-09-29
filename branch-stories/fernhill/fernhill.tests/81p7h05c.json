@@ -1,0 +1,100 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "north",
+      "id": "15nfp7b8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Boiler Shed"
+        ]
+      },
+      "command": "east",
+      "id": "yltoa0r6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You crank the stopcock"
+        ]
+      },
+      "command": "turn stopcock",
+      "id": "46pza3hv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You push the primer plunger."
+        ]
+      },
+      "command": "push plunger",
+      "id": "10km8cmz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The boiler hums to life."
+        ]
+      },
+      "command": "switch on boiler",
+      "id": "lx1jb86n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "west",
+      "id": "kx914ti9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Greenhouse"
+        ]
+      },
+      "command": "west",
+      "id": "6qa1ue3i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Folly Hill"
+        ]
+      },
+      "command": "north",
+      "id": "dshrm9g0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The warped door doesn't shift."
+        ],
+        "notContains": [
+          "The folly door is closed."
+        ]
+      },
+      "command": "north",
+      "id": "c4d8tzhj",
+      "type": "turn"
+    }
+  ],
+  "id": "81p7h05c",
+  "ordinal": 1,
+  "parent": "weefpbmr"
+}

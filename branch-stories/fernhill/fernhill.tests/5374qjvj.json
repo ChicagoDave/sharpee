@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You take the dead growth off in three clean cuts, and the vine answers the warmth almost while you watch: a single heavy fruit swells, splits — and something small and silver slides out into the leaf mould. Verity's own way of banking."
+        ]
+      },
+      "command": "prune vine",
+      "id": "dijvs7xa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take locket",
+      "id": "f2y5zhpf",
+      "type": "turn"
+    }
+  ],
+  "id": "5374qjvj",
+  "ordinal": 0,
+  "parent": "y1af8ibp"
+}

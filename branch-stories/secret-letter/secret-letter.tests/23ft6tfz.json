@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The mercenaries are chopping the pole down!"
+        ]
+      },
+      "command": "x mercenaries",
+      "id": "2lkhw9p4",
+      "type": "turn"
+    }
+  ],
+  "id": "23ft6tfz",
+  "ordinal": 1,
+  "parent": "z9y07mdp"
+}

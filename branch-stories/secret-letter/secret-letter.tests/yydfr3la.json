@@ -1,0 +1,130 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "fmtivcfd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "dfu6y295",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You hold out the necklace, dangling it by its chain.",
+          "'Hurry, Jack!' she hisses",
+          "Teisha gives the dress to"
+        ],
+        "states": [
+          "dress.location = cloth satchel",
+          "bonnet.location = cloth satchel",
+          "story.state = chase"
+        ]
+      },
+      "command": "give necklace to teisha",
+      "id": "w70ulp1n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "1p5ysuo2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post",
+          "You can hear Teisha yelling shrilly",
+          "One of the mercenaries tries to climb after you"
+        ]
+      },
+      "command": "u",
+      "id": "n08j0wr8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space"
+        ]
+      },
+      "command": "slide down northeast cable",
+      "id": "ayu9odea",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "let go",
+      "id": "b8dipq6v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Behind the stall, with the crates for a screen, you strip"
+        ],
+        "states": [
+          "cap.location = cloth satchel",
+          "cloak.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "change outfit",
+      "id": "jaaurxsf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "sw",
+      "id": "ru41di3s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Oi.' One of the mercenaries has stopped."
+        ]
+      },
+      "command": "wait",
+      "id": "2jr297zh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Gotcha!' the mercenary yells"
+        ]
+      },
+      "command": "wait",
+      "id": "opdm50gc",
+      "type": "turn"
+    }
+  ],
+  "id": "yydfr3la",
+  "ordinal": 3,
+  "parent": "49qggv56"
+}

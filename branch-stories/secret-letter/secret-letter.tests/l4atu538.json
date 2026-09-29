@@ -1,0 +1,62 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "his eyes seem to bore right into you",
+          "he knew it the instant you walked into his shop"
+        ]
+      },
+      "command": "x minor",
+      "id": "lc1vqq52",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "his eyes seem to bore right into you"
+        ],
+        "notContains": [
+          "he knew it the instant"
+        ]
+      },
+      "command": "x minor",
+      "id": "47gsco5i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Um, mind if I ask you something?'"
+        ]
+      },
+      "command": "talk to minor",
+      "id": "1hricgae",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Run along, girl, before you cut yourself.'"
+        ]
+      },
+      "command": "buy dagger",
+      "id": "7jy5d0gg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Commerce Street",
+          "emitted armory-relief"
+        ]
+      },
+      "command": "s",
+      "id": "ioohuhko",
+      "type": "turn"
+    }
+  ],
+  "id": "l4atu538",
+  "ordinal": 1,
+  "parent": "49ez581p"
+}

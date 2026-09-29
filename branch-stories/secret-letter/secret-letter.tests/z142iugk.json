@@ -1,0 +1,28 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "the axe bites into wood"
+        ]
+      },
+      "command": "wait",
+      "id": "t1ynx1qe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "pinwheeling off the top of the post"
+        ]
+      },
+      "command": "wait",
+      "ending": "pole-falls",
+      "id": "xjk2byd5",
+      "type": "turn"
+    }
+  ],
+  "id": "z142iugk",
+  "ordinal": 0,
+  "parent": "z9y07mdp"
+}

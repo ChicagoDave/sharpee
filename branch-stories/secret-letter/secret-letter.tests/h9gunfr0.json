@@ -1,0 +1,411 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted olmer-said-blue"
+        ]
+      },
+      "command": "follow olmer",
+      "id": "wa0iyu8k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "North Tunnel",
+          "The tunnels down here are made of ancient, unmortared brick, slimy with centuries of filth and mold."
+        ],
+        "states": [
+          "player.location = North Tunnel"
+        ]
+      },
+      "command": "n",
+      "id": "gbvulvyf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted glyph-north-red",
+          "emitted glyph-east-blue",
+          "emitted glyph-south-green"
+        ]
+      },
+      "command": "x symbols",
+      "id": "iw1gmw88",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "East Bend",
+          "Access Tunnel",
+          "The tunnels down here are made of ancient, unmortared brick, slimy with centuries of filth and mold."
+        ],
+        "states": [
+          "player.location = Access Tunnel"
+        ]
+      },
+      "command": "e",
+      "id": "3u5da1xq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ladder leads up to a hatch in the ceiling above you."
+        ]
+      },
+      "command": "x ladder",
+      "id": "yr5ms8c4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "That hatch probably leads back to the streets above."
+        ]
+      },
+      "command": "x hatch",
+      "id": "tbija6xl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cant-reach-the-hatch"
+        ]
+      },
+      "command": "open hatch",
+      "id": "vhlkazgv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "story.chapter.name",
+            "is": "rooftops"
+          }
+        ],
+        "contains": [
+          "Empty Alleyway",
+          "Daylight! You've never been so glad to see it.",
+          "Commerce Street",
+          "Commerce Street runs east to west, between Grubber's Market and Lord's Market."
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "up",
+      "id": "fjtq1ga8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street",
+          "Commerce Street runs east to west, between Grubber's Market and Lord's Market."
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "look",
+      "id": "zxckl2ze",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It might be a good idea to avoid Grubber's Market for a while."
+        ]
+      },
+      "command": "w",
+      "id": "jfa58n31",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are utterly filthy."
+        ]
+      },
+      "command": "x me",
+      "id": "na8snxzu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "East Commerce Street"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "e",
+      "id": "l3i37h7u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "No, you'll never get in through the front gate. Use the rooftops, Bobby said."
+        ]
+      },
+      "command": "nw",
+      "id": "29erxhqh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "After your encounter with the younger Jacobs in jail, you're not too keen on meeting him or his father anytime soon."
+        ]
+      },
+      "command": "ne",
+      "id": "q3jinl8s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market"
+        ]
+      },
+      "command": "e",
+      "id": "itg45swu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's probably best to stay away from Maiden House at the moment.",
+          "then you can go back to Maiden House."
+        ]
+      },
+      "command": "s",
+      "id": "x3fbopf5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jeweler's Shop",
+          "Dame Sandler looks up as you burst in, her face carefully",
+          "you look an absolute fright"
+        ]
+      },
+      "command": "e",
+      "id": "jofwulkj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "As you are about to leave, Dame Sandler lays her fingertips",
+          "As you are about to leave, Dame Sandler lays her fingertips"
+        ]
+      },
+      "command": "w",
+      "id": "vjheedl2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "East Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "079krtw2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "7pvnb5p5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bakery",
+          "Germaise looks up from his dough and scowls at the filth on",
+          "Go away, Jack."
+        ]
+      },
+      "command": "nw",
+      "id": "t6f2qiht",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Germaise looks up from his dough and scowls at the filth on"
+        ]
+      },
+      "command": "talk to germaise",
+      "id": "pmwx3o5k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street"
+        ],
+        "notContains": [
+          "'Later, Germaise,'"
+        ]
+      },
+      "command": "s",
+      "id": "g2pzfd9g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Armory"
+        ]
+      },
+      "command": "ne",
+      "id": "rgt1qlim",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Um, mind if I ask you something?'",
+          "little thief"
+        ]
+      },
+      "command": "talk to minor",
+      "id": "pchgvlt2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted armory-relief"
+        ]
+      },
+      "command": "s",
+      "id": "fpqbxtfc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Butcher's Shop",
+          "Holstenoffer looks up as you enter, and his eyes widen.",
+          "Holstenoffer looks up as you enter, and his eyes widen."
+        ],
+        "notContains": [
+          "Holstenoffer's cleaver cuts",
+          "Holstenoffer chops",
+          "Holstenoffer stops"
+        ]
+      },
+      "command": "n",
+      "id": "ng11h8m0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Have you seen Bobby?'",
+          "'Have you seen Bobby?'",
+          "Closed Alleyway",
+          "A rusted rain gutter clings to the wall."
+        ],
+        "states": [
+          "player.location = Closed Alleyway"
+        ]
+      },
+      "command": "talk to holstenoffer",
+      "id": "d7hvl8ds",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Holstenoffer's shop is behind that little metal door."
+        ]
+      },
+      "command": "x door",
+      "id": "wf3cfi8r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby told you to find the alley, get onto the rooftops. Now that you're here, there's not much point in going back."
+        ]
+      },
+      "command": "s",
+      "id": "u92jj0ih",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "there's not much point in going back."
+        ]
+      },
+      "command": "open door",
+      "id": "2oeayz1p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "towering up a full three stories over your head."
+        ]
+      },
+      "command": "x walls",
+      "id": "uxknq8ob",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted walls-too-steep"
+        ]
+      },
+      "command": "climb walls",
+      "id": "2sbspbpr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "still, it might hold your weight."
+        ]
+      },
+      "command": "x gutter",
+      "id": "peig8puh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's nowhere else to go in this little place. Just back the way you came... or up."
+        ]
+      },
+      "command": "n",
+      "id": "p0kwrd8a",
+      "type": "turn"
+    }
+  ],
+  "id": "h9gunfr0",
+  "ordinal": 0,
+  "parent": "n7blwlqd"
+}

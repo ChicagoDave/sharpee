@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted axe-way-up-here"
+        ]
+      },
+      "command": "take axe",
+      "id": "947r9wgb",
+      "type": "turn"
+    }
+  ],
+  "id": "4hh5wqtp",
+  "ordinal": 5,
+  "parent": "z9y07mdp"
+}

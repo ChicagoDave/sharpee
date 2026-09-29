@@ -1,0 +1,104 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Yes, he says. Plain as a bell.\" Kemp leans in, and the yard drops out of his voice entirely. \"You are no more a Norwich man than I am a Roman, and only Henslowe's own would carry this errand. GOOD. A lie in the offer would have insulted me; a liar bearing it means the silver is real.\" He puts out his hand. \"Tell Philip the clown is his. Sworn.\"",
+          "You hear: \"\"Done, then, and done plainly.\" He claps his hands once, the sound of a house letting go its breath. \"Tell Philip: the clown comes to the Rose, jigs and all, and the Globe may bury its Caesar with full honours. This talk is finished, friend — and finished WELL.\"\""
+        ]
+      },
+      "command": "yes",
+      "id": "5pas8h6l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your Lodging",
+          "The second night. Across the river the city sleeps easy; on this bank, nobody does. Morning comes cold and clear: the last day of rehearsal. Tomorrow, Caesar opens the Globe, and everything not carried across Bankside by then stays here for good."
+        ]
+      },
+      "command": "east",
+      "id": "vby5foip",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stage",
+          "You hear: \"Burbage plants you on your mark with two fingers on your shoulder, as if setting a property in its place. \"Attend. You enter with the second citizens, stage left, spear UP — this is a forum, not a hedgerow. You stand where I set you and you look at Caesar. Not at the house. Caesar.\"\""
+        ]
+      },
+      "command": "north",
+      "id": "xwujebo3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tiring-House",
+          "The tiring-house, behind the stage: racks of robes and armour, a property table, and the company's papers. Everything the play is made of lives in this room. The door east gives onto the stage."
+        ]
+      },
+      "command": "west",
+      "id": "jkoltgoc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take the play-book",
+      "id": "u1t4htko",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stage",
+          "You hear: \"\"Your cue is 'Peace, ho! Caesar speaks.'\" He gives the line its full weight, and the boards give it back. \"Not before, on pain of my attention. Not after, on pain of the same. The house opens TODAY, and today every man in it is exactly where the play says he is.\"\""
+        ]
+      },
+      "command": "east",
+      "id": "501ob4pb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "command": "south",
+      "id": "qaied5g1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tavern"
+        ]
+      },
+      "command": "south",
+      "id": "kgehb9id",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your Lodging",
+          "You lie down over the loose board with the play-book beneath it and the clown's handshake still warm in your palm. Tomorrow Caesar opens the Globe to a house with no jig at the end of it; within the month, the Rose will play a Caesar of its own, and Kemp will dance till the galleries shake. Henslowe pays in full, for once, and asks no questions, which from Henslowe is a knighthood. Nobody at the Globe ever learns your name; you were a hired man, and the house eats faces."
+        ]
+      },
+      "command": "east",
+      "ending": "ides-won",
+      "id": "00nxs6u3",
+      "type": "turn"
+    }
+  ],
+  "id": "298g68xi",
+  "ordinal": 0,
+  "parent": "cp299f81"
+}

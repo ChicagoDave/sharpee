@@ -1,0 +1,84 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "It's a raised platform, with some sort of scaffolding built over it",
+          "Suddenly your mouth goes dry. It's a gallows.",
+          "'Citizens of Toresal,' he shouts",
+          "The black bag covers his face, but you recognize him by the clothes he's wearing — it's Bobby!"
+        ]
+      },
+      "command": "x structure",
+      "id": "5yfjb4ca",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A gallows has been erected in the center of the square.",
+          "Honorable Magistrate Hester Rudup",
+          "the man who captured you last night at the fountain."
+        ]
+      },
+      "command": "look",
+      "id": "26ftnq3k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "This is a performance to him, you realize",
+          "I hereby sentence this man to hang by the neck until dead.",
+          "You never saw his body drop.",
+          "Everything goes black.",
+          "And then it comes back to you. It's Bobby. Bobby is dead.",
+          "You feel like there's something important you should say to",
+          "Dormitory"
+        ],
+        "states": [
+          "player.location = Dormitory"
+        ]
+      },
+      "command": "x fossville",
+      "id": "zjy2mkyg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Just wait. Rest. You're still in shock.'"
+        ]
+      },
+      "command": "se",
+      "id": "fotddvmb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the floor seems to tilt beneath your feet."
+        ],
+        "notContains": [
+          "still in shock"
+        ]
+      },
+      "command": "se",
+      "id": "o0gljvoi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I know, child,' she says, 'I know all about it."
+        ]
+      },
+      "command": "show letter to fiona",
+      "id": "ywx0pf4o",
+      "type": "turn"
+    }
+  ],
+  "id": "8j1g8212",
+  "ordinal": 0,
+  "parent": "4su2td0x"
+}

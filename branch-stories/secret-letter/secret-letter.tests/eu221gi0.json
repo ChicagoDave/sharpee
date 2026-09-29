@@ -1,0 +1,46 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ],
+        "notContains": [
+          "'Oi.' One of the mercenaries has stopped."
+        ],
+        "states": [
+          "player.location = Fruit Stall"
+        ]
+      },
+      "command": "sw",
+      "id": "zd9b0wip",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "s",
+      "id": "yapbpdkr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "e",
+      "id": "fj6j9h8q",
+      "type": "turn"
+    }
+  ],
+  "id": "eu221gi0",
+  "ordinal": 0,
+  "parent": "sumw3w09"
+}

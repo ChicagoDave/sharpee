@@ -1,0 +1,100 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "notContains": [
+          "You notice a couple of the mercenaries pushing through the crowd"
+        ]
+      },
+      "command": "se",
+      "id": "xyzlolen",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You notice a couple of the mercenaries pushing through the crowd"
+        ]
+      },
+      "command": "wait",
+      "id": "hponsabw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "rz7r0i15",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Those mercenaries are getting uncomfortably close"
+        ]
+      },
+      "command": "wait",
+      "id": "1519biqj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'There he is!' he yells"
+        ]
+      },
+      "command": "wait",
+      "id": "nvevd3j3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Gotcha!' the mercenary yells. The other one starts hollering"
+        ]
+      },
+      "command": "wait",
+      "id": "a2sen359",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "but the man is just too strong"
+        ]
+      },
+      "command": "ne",
+      "id": "jgr2yab6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're free!"
+        ],
+        "notContains": [
+          "has no effect on"
+        ]
+      },
+      "command": "attack mercenaries",
+      "id": "amf8zloz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You dash away into the crowd"
+        ]
+      },
+      "command": "ne",
+      "id": "bwxmeesa",
+      "type": "turn"
+    }
+  ],
+  "id": "66f3mxo7",
+  "ordinal": 4,
+  "parent": "5u5bu3ru"
+}

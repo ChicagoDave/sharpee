@@ -1,14 +1,15 @@
 /**
- * test.test.ts — `sharpee test` routing after the ADR-307 cutover: the tree
- * document is the only run model. Discovery + delegation run REAL-PATH (a
+ * test.test.ts — `sharpee test` routing after the ADR-307 cutover: the test
+ * tree (the `<story-id>.tests/` directory, ADR-355) is the only run model. Discovery + delegation run REAL-PATH (a
  * temp Chord project through the real chord compile → bootstrap → walker
  * chain — document-run behavior itself is pinned in
  * test-tree-document.test.ts); every retired form fails by name with exit 2,
  * never a silent pass or silent fallback.
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { TREE_DOCUMENT_VERSION, ensureSegmentIds, segmentTree, type TreeDocument } from '@sharpee/branch-tester';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { runTestCommand } from './test.js';
 
@@ -37,11 +38,12 @@ end before
 
 `;
 
-/** The document a Testing tab session would have written. Seed pinned (D5). */
-const TREE_DOCUMENT = {
-  version: 2,
+/** The tree a Testing tab session would have written. Seed pinned (D5). */
+const TREE_DOCUMENT: TreeDocument = {
+  version: TREE_DOCUMENT_VERSION,
   story: 'mini',
   seed: 42,
+  id: 'root0000',
   cards: [
     { type: 'opening' },
     { type: 'boot', assertions: { contains: ['A small square den'] } },
@@ -53,7 +55,11 @@ let projectDir: string;
 beforeAll(() => {
   projectDir = mkdtempSync(join(tmpdir(), 'devkit-test-cmd-'));
   writeFileSync(join(projectDir, 'mini.story'), STORY);
-  writeFileSync(join(projectDir, 'mini.tests.json'), `${JSON.stringify(TREE_DOCUMENT, null, 2)}\n`);
+  ensureSegmentIds(TREE_DOCUMENT);
+  mkdirSync(join(projectDir, 'mini.tests'));
+  for (const [name, text] of Object.entries(segmentTree(TREE_DOCUMENT))) {
+    writeFileSync(join(projectDir, 'mini.tests', name), text);
+  }
 });
 
 afterAll(() => rmSync(projectDir, { recursive: true, force: true }));
@@ -78,7 +84,7 @@ describe('sharpee test routes to the tree document (ADR-307 cutover)', () => {
   it('discovers and runs the document against the REAL compiled story (exit 0)', async () => {
     const { code, out } = await muted(() => runTestCommand([projectDir]));
     expect(code).toBe(0);
-    expect(out).toContain('Tree document: mini.tests.json');
+    expect(out).toContain('Test tree: mini.tests/');
   }, 60_000);
 
   it('--tree is accepted — the IDE spawn spelling changes nothing', async () => {
@@ -86,7 +92,7 @@ describe('sharpee test routes to the tree document (ADR-307 cutover)', () => {
       runTestCommand([join(projectDir, 'mini.story'), '--tree']),
     );
     expect(code).toBe(0);
-    expect(out).toContain('Tree document: mini.tests.json');
+    expect(out).toContain('Test tree: mini.tests/');
   }, 60_000);
 });
 
@@ -95,7 +101,7 @@ describe('retired forms fail by name, never silently (ADR-307 cutover)', () => {
     const { code, err } = await muted(() => runTestCommand([projectDir, 'old.transcript']));
     expect(code).toBe(2);
     expect(err).toContain("'.transcript' files are retired");
-    expect(err).toContain('.tests.json');
+    expect(err).toContain('<story-id>.tests/ directory');
   });
 
   it('--chain is refused by name (exit 2)', async () => {
@@ -116,15 +122,33 @@ describe('retired forms fail by name, never silently (ADR-307 cutover)', () => {
     expect(err).toContain('unknown flag');
   });
 
-  it('a project without a tree document is a named condition, not an empty pass (exit 2)', async () => {
+  it('a project without a test tree is a named condition, not an empty pass (exit 2)', async () => {
     const empty = mkdtempSync(join(tmpdir(), 'devkit-test-empty-'));
     try {
       writeFileSync(join(empty, 'mini.story'), STORY);
       const { code, err } = await muted(() => runTestCommand([empty]));
       expect(code).toBe(2);
-      expect(err).toContain('no tree document found');
+      expect(err).toContain('no test tree found');
+      expect(err).toContain('expected a <story-id>.tests/ directory beside the .story file');
     } finally {
       rmSync(empty, { recursive: true, force: true });
+    }
+  });
+
+  it('a project holding only the retired one-file tree is told there is no test tree — never run from it (exit 2)', async () => {
+    const retired = mkdtempSync(join(tmpdir(), 'devkit-test-retired-'));
+    try {
+      writeFileSync(join(retired, 'mini.story'), STORY);
+      writeFileSync(
+        join(retired, 'mini.tests.json'),
+        '{ "version": 2, "story": "mini", "seed": 42, "cards": [{ "type": "opening" }] }\n',
+      );
+      const { code, out, err } = await muted(() => runTestCommand([retired]));
+      expect(code).toBe(2);
+      expect(err).toContain('no test tree found');
+      expect(out).not.toContain('Loading story');
+    } finally {
+      rmSync(retired, { recursive: true, force: true });
     }
   });
 

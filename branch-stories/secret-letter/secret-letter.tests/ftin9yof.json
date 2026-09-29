@@ -1,0 +1,483 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Third Floor Landing",
+          "you are now an intruder.",
+          "he'll just slit your throat.",
+          "find this letter, and get out."
+        ],
+        "states": [
+          "player.location = Third Floor Landing"
+        ]
+      },
+      "command": "d",
+      "id": "dg62v7by",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stairs go up and down from here."
+        ]
+      },
+      "command": "x steps",
+      "id": "qtexlgrp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stairs go up and down from here."
+        ]
+      },
+      "command": "climb steps",
+      "id": "ypaiypa5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rooftop Garden"
+        ]
+      },
+      "command": "u",
+      "id": "mymjz1en",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Third Floor Landing",
+          "This is the main stairway"
+        ],
+        "notContains": [
+          "you are now an intruder."
+        ]
+      },
+      "command": "d",
+      "id": "are40b6g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Music Room",
+          "Fossville coat of arms",
+          "A harp stands on a raised wooden platform."
+        ],
+        "states": [
+          "player.location = Music Room"
+        ]
+      },
+      "command": "s",
+      "id": "j7mq3vjz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The frame and soundboard are carved of rich, dark kielwood"
+        ]
+      },
+      "command": "x harp",
+      "id": "ya5qpva8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you can't quite bring yourself to pluck the strings. What if someone hears you?"
+        ]
+      },
+      "command": "play harp",
+      "id": "1sfjciek",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A cascade of crystal-clear notes wafts through the room."
+        ]
+      },
+      "command": "strum harp",
+      "id": "0yboocs4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted harp-no-way"
+        ]
+      },
+      "command": "play harp",
+      "id": "77hly3km",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted harp-no-way"
+        ]
+      },
+      "command": "pluck harp",
+      "id": "fxps9pmm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted harp-too-heavy-to-drag"
+        ]
+      },
+      "command": "take harp",
+      "id": "xaqe89ej",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted harp-strings-still"
+        ]
+      },
+      "command": "listen to harp",
+      "id": "jhad7me3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted harp-too-much-noise"
+        ]
+      },
+      "command": "hit harp",
+      "id": "hfysun5x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cant-play-that"
+        ]
+      },
+      "command": "play carpet",
+      "id": "xef1ffrw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "maybe a stoat or a ferret",
+          "It carries a milkweed flower clamped in its jaws."
+        ]
+      },
+      "command": "x coat of arms",
+      "id": "67zqgfc3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The deep, soft carpet muffles your footsteps."
+        ]
+      },
+      "command": "x carpet",
+      "id": "jn62uxxw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Audience Area",
+          "a narrow wooden door lies south."
+        ],
+        "states": [
+          "player.location = Audience Area"
+        ]
+      },
+      "command": "s",
+      "id": "1n1czt3m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted benches-no-time-to-rest"
+        ]
+      },
+      "command": "sit on benches",
+      "id": "d9nlvuax",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's just a plain wooden door, leading into a closet."
+        ]
+      },
+      "command": "x door",
+      "id": "wn1lwnbl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Supply Closet",
+          "Fixed to the floor in the center of the closet is a strange-looking winch."
+        ],
+        "states": [
+          "player.location = Supply Closet"
+        ]
+      },
+      "command": "s",
+      "id": "d6wkj0fh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted door-out-of-closet"
+        ]
+      },
+      "command": "x door",
+      "id": "yg0ay7r9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The mops and other supplies are stacked up in the back of the closet."
+        ]
+      },
+      "command": "x mops",
+      "id": "vyr2pxgs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted no-letter-among-the-mops"
+        ]
+      },
+      "command": "search mops",
+      "id": "kjnunr8g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted mops-not-needed"
+        ]
+      },
+      "command": "take mops",
+      "id": "wzt11npx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A sturdy rope is tightly wound around it several times."
+        ]
+      },
+      "command": "x winch",
+      "id": "9ow7z8oj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The rope is tightly wound around the drum of the winch."
+        ]
+      },
+      "command": "x rope",
+      "id": "aj5i8hxw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted rope-wont-budge"
+        ]
+      },
+      "command": "pull rope",
+      "id": "nvnh2q0k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The hole is just slightly bigger around than the rope running through it."
+        ]
+      },
+      "command": "x hole",
+      "id": "waw5jq60",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "what little space there is around the edges is all dark."
+        ]
+      },
+      "command": "search hole",
+      "id": "a4v60elm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted winch-lowers-the-rope"
+        ]
+      },
+      "command": "turn winch",
+      "id": "pivmnfsm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A sturdy rope is attached at one end to the winch."
+        ]
+      },
+      "command": "x winch",
+      "id": "vtktefak",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The rope is attached to the drum of the winch."
+        ]
+      },
+      "command": "x rope",
+      "id": "fnw8s6zt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "whatever is on the other end of the rope is very heavy",
+          "pulling the rope up through the hole in the floor."
+        ]
+      },
+      "command": "turn crank",
+      "id": "559xmsvj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "lowering the rope through the hole in the floor."
+        ]
+      },
+      "command": "turn handle",
+      "id": "qljxjfw3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Audience Area"
+        ]
+      },
+      "command": "n",
+      "id": "cbuj4xw0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Music Room"
+        ]
+      },
+      "command": "n",
+      "id": "lor41ekm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Third Floor Landing"
+        ]
+      },
+      "command": "n",
+      "id": "wcfzgt5n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Second Floor Landing",
+          "You can hear people moving around below.",
+          "'Blast it all!' someone yells.",
+          "I'll be leaving again within an hour.",
+          "glasses and dishes clinking."
+        ],
+        "states": [
+          "player.location = Second Floor Landing"
+        ]
+      },
+      "command": "d",
+      "id": "i3apinup",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted muttering-voices"
+        ]
+      },
+      "command": "listen",
+      "id": "ng45scho",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You'd have to go downstairs to see what's going on."
+        ]
+      },
+      "command": "x voice",
+      "id": "w5t82lry",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go down to the first floor — Fossville is down there!"
+        ]
+      },
+      "command": "d",
+      "id": "s1wwjlu0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stairs go up and down from here."
+        ]
+      },
+      "command": "x steps",
+      "id": "03kp7pq2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Living Room",
+          "portraits of Fossville's illustrious ancestors"
+        ],
+        "states": [
+          "player.location = Living Room"
+        ]
+      },
+      "command": "s",
+      "id": "yfmi73b3",
+      "type": "turn"
+    }
+  ],
+  "id": "ftin9yof",
+  "ordinal": 0,
+  "parent": "b9nxj3ku"
+}

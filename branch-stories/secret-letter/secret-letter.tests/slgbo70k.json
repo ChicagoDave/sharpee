@@ -1,0 +1,60 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Master Bedroom",
+          "'Little thief!'"
+        ],
+        "states": [
+          "player.location = Master Bedroom"
+        ]
+      },
+      "command": "n",
+      "id": "p67em5s0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Hush,' the butler snaps, cutting you off.",
+          "The butler drags you into the stairwell"
+        ]
+      },
+      "command": "talk to butler",
+      "id": "3qe5v8du",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Gather your men at Lord's Market,' says Fossville."
+        ],
+        "states": [
+          "emitted butler-stern-look"
+        ]
+      },
+      "command": "talk to butler",
+      "id": "oga20awg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The butler is stronger than he looks, and his grip on your arm is firm.",
+          "A bit of advice, girl",
+          "East Commerce Street"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "s",
+      "id": "y95bkk5x",
+      "type": "turn"
+    }
+  ],
+  "id": "slgbo70k",
+  "ordinal": 2,
+  "parent": "ltgkzsnj"
+}

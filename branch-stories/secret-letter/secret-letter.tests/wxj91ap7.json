@@ -1,0 +1,127 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "It's huge, almost too big to put your arms around. Way up at the top, you can see wires stretching out in each of the cardinal directions."
+        ]
+      },
+      "command": "x post",
+      "id": "hgb6fpl9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted post-does-not-budge"
+        ]
+      },
+      "command": "turn post",
+      "id": "9egw5bey",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted post-does-not-budge"
+        ]
+      },
+      "command": "pull post",
+      "id": "k5xsc5mb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The canvas wall of the tent is tough and stretched tight."
+        ]
+      },
+      "command": "x canvas tent",
+      "id": "3dvkh3bj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted canvas-no-climb"
+        ]
+      },
+      "command": "climb canvas tent",
+      "id": "v7tspe05",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Teisha's tent is bright blue, though now it's somewhat faded and covered with market dust. You can enter to the south."
+        ]
+      },
+      "command": "x silk tent",
+      "id": "p3piois5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're totally hidden back here, so there's no one to stop you from climbing.",
+          "After a minute or so of grunting and sweating, you reach the top."
+        ],
+        "states": [
+          "player.location = Top of the Post"
+        ]
+      },
+      "command": "climb post",
+      "id": "pxh6zzm3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The view is spectacular, but you don't have time to waste gawking."
+        ]
+      },
+      "command": "x view",
+      "id": "s5o6xuzf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted view-too-far"
+        ]
+      },
+      "command": "touch view",
+      "id": "9ge5w5nu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "jcu3guec",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "After a minute or so of grunting and sweating, you reach the top."
+        ],
+        "notContains": [
+          "You're totally hidden back here"
+        ],
+        "states": [
+          "player.location = Top of the Post"
+        ]
+      },
+      "command": "climb post",
+      "id": "164jmcme",
+      "type": "turn"
+    }
+  ],
+  "id": "wxj91ap7",
+  "ordinal": 1,
+  "parent": "0ce9x86m"
+}

@@ -1,0 +1,75 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "'No,' says Pieter, pulling you back. 'You'll not be going back to Maiden House any time soon. That's exactly where Fossville will expect you to go.'"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "s",
+      "id": "m8pg7q26",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Wait a minute,' Pieter says. 'Dame Sandler said you needed a gown, right? We shouldn't leave until you have one.'"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "380kynyk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'There's no need to go back and bother Dame Sandler,' Pieter says. 'We've more important things to do.'"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "e",
+      "id": "lv5i0rw2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Moneylender's Shop",
+          "A moment after you enter, two faces suddenly appear at the",
+          "The Chorus Brothers hover behind their window, staring at you.",
+          "Pieter is here,"
+        ],
+        "states": [
+          "Pieter.location = Moneylender's Shop"
+        ]
+      },
+      "command": "se",
+      "id": "tqpn3l01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I need a loan,' you say."
+        ],
+        "notContains": [
+          "penniless ragamuffins"
+        ]
+      },
+      "command": "talk to brothers",
+      "id": "obank4z8",
+      "type": "turn"
+    }
+  ],
+  "id": "f550y7fi",
+  "ordinal": 0,
+  "parent": "p1i1oq7z"
+}

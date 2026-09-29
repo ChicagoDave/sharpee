@@ -1,0 +1,155 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "5z9emnq3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "v8vp2giw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "wa7hyict",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Suddenly the stallkeeper jabs his finger at you and screams",
+          "something gray and hairy scampers out from under the mercenary",
+          "stuffing the banana into your satchel",
+          "Grocery Stall"
+        ],
+        "notContains": [
+          "You take the banana from the display of bananas."
+        ],
+        "states": [
+          "banana.location = cloth satchel",
+          "player.location = Grocery Stall"
+        ]
+      },
+      "command": "take banana",
+      "id": "cwqziaok",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "sw",
+      "id": "p5uhhbkj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Herb Stall"
+        ]
+      },
+      "command": "s",
+      "id": "tn4ztftf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Come back here, you flea-bitten thief!",
+          "clutching one of the stallkeeper's necklaces"
+        ],
+        "states": [
+          "monkey.location = Top of the Post"
+        ]
+      },
+      "command": "s",
+      "id": "s79l4arn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "e",
+      "id": "hrqsde3o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "4ija3mxw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "uwunglqa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post"
+        ]
+      },
+      "command": "u",
+      "id": "adrf7tz1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the banana from the cloth satchel."
+        ],
+        "states": [
+          "banana.location = player"
+        ]
+      },
+      "command": "take banana",
+      "id": "nc6nazp5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "silvery fur and black mask-like markings",
+          "It grips the necklace protectively"
+        ]
+      },
+      "command": "x monkey",
+      "id": "tv4cc4i9",
+      "type": "turn"
+    }
+  ],
+  "id": "8apa5ok6",
+  "ordinal": 7,
+  "parent": "5u5bu3ru"
+}

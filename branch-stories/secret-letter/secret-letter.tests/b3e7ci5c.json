@@ -1,0 +1,126 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "vx2i0951",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "vpgpm98p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "fjh8aexe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Suddenly the stallkeeper jabs his finger at you and screams",
+          "something gray and hairy scampers out from under the mercenary",
+          "stuffing the banana into your satchel",
+          "Grocery Stall"
+        ],
+        "notContains": [
+          "You take the banana from the display of bananas."
+        ],
+        "states": [
+          "banana.location = cloth satchel",
+          "player.location = Grocery Stall"
+        ]
+      },
+      "command": "nick banana",
+      "id": "kwmrpux5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ],
+        "states": [
+          "player.location = Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "c8uhwkh9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stallkeeper is far too busy trying to clean up all the spilled fruit"
+        ]
+      },
+      "command": "talk to stallkeeper",
+      "id": "gc1aikjm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "frantically trying to put his wares back into some semblance of order"
+        ]
+      },
+      "command": "x stallkeeper",
+      "id": "ppozn10j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the cloth satchel you see a banana."
+        ]
+      },
+      "command": "x satchel",
+      "id": "q4l807xe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the banana from the cloth satchel."
+        ],
+        "states": [
+          "banana.location = player"
+        ]
+      },
+      "command": "take banana",
+      "id": "ql7nfknt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put the banana in the cloth satchel."
+        ],
+        "states": [
+          "banana.location = cloth satchel"
+        ]
+      },
+      "command": "put banana in satchel",
+      "id": "01pjxkxy",
+      "type": "turn"
+    }
+  ],
+  "id": "b3e7ci5c",
+  "ordinal": 8,
+  "parent": "5u5bu3ru"
+}

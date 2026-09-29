@@ -1,0 +1,60 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Royal Tunic",
+          "The clothier hovers nearby, waiting to serve.",
+          "he practically squeals with delight, clapping his hands and plucking at the fabric of your clothes with soft, nimble fingers."
+        ],
+        "states": [
+          "Pieter.location = Royal Tunic"
+        ]
+      },
+      "command": "ne",
+      "id": "4ugsessr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the clothier quotes you a price that leaves you feeling distinctly queasy",
+          "'Remember what Dame Sandler said, Jacqueline,' remarks Pieter. 'Get yourself some money first.'"
+        ]
+      },
+      "command": "buy clothes",
+      "id": "fodzsv6d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Who knew real clothes cost so much?",
+          "Get yourself some money first."
+        ]
+      },
+      "command": "pick clothes",
+      "id": "sszjx1nh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market"
+        ],
+        "notContains": [
+          "Pieter blinks"
+        ],
+        "states": [
+          "emitted clothier-come-back"
+        ]
+      },
+      "command": "w",
+      "id": "av7dz45l",
+      "type": "turn"
+    }
+  ],
+  "id": "irrp8zkt",
+  "ordinal": 1,
+  "parent": "p1i1oq7z"
+}

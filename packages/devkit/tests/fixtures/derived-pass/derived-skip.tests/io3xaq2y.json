@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "q5po1cod",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the brass lamp is dark"
+        ]
+      },
+      "id": "ssia17zh",
+      "type": "boot"
+    }
+  ],
+  "id": "io3xaq2y"
+}

@@ -1,0 +1,101 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "se",
+      "id": "ltsrchep",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "7zd3bbkj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ]
+      },
+      "command": "se",
+      "id": "ck3jkck6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "What do you want?"
+        ]
+      },
+      "command": "talk to stallkeeper",
+      "id": "a48dryhl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I'd like one of those, please",
+          "You have any coin?"
+        ]
+      },
+      "command": "ask stallkeeper about buying",
+      "id": "r8xophi7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Whatever,' the stallkeeper mutters"
+        ]
+      },
+      "command": "never mind",
+      "id": "cpfrrbuo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You have any coin?"
+        ]
+      },
+      "command": "ask stallkeeper about the wares",
+      "id": "gdr3pyog",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Beat it, kid"
+        ]
+      },
+      "command": "no",
+      "id": "b8w5q5r9",
+      "type": "turn"
+    },
+    {
+      "command": "north",
+      "id": "ivb44pgt",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "command": "ne",
+      "ending": "death-at-mercenaries-chord-167-5",
+      "id": "tq1xzhzp",
+      "skip": true,
+      "type": "turn"
+    }
+  ],
+  "id": "vthcmo8s",
+  "ordinal": 0,
+  "parent": "zjak0nxl"
+}

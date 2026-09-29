@@ -1,0 +1,876 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The brothers both reach out, one with his right hand, the other with his left, and delicately take the letter from you.",
+          "'...importance than first we assumed.'",
+          "'How may we help you?'"
+        ],
+        "states": [
+          "letter.location = player",
+          "the Chorus Brothers is respectful"
+        ]
+      },
+      "command": "show letter to brothers",
+      "id": "dsdf3ywi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I need a loan,' you say, and the two lean forward eagerly.",
+          "'I need a loan,' you say, and the two lean forward eagerly."
+        ],
+        "states": [
+          "purse.location = player"
+        ]
+      },
+      "command": "talk to brothers",
+      "id": "0fr9bewv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sack is about the size of your fist. It's very heavy.",
+          "The drawstring is closed."
+        ]
+      },
+      "command": "x purse",
+      "id": "2syera7x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted drawstring-pulled-open"
+        ]
+      },
+      "command": "open purse",
+      "id": "b6qdipjk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Each coin has the Great Seal of the Kingdom of Miradania on one side",
+          "The coins seem to shine with an inner light."
+        ]
+      },
+      "command": "x coins",
+      "id": "w2ur25or",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bag is the safest place for them, for now."
+        ]
+      },
+      "command": "take coins",
+      "id": "5rtyl6wk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted drawstring-pulled-closed"
+        ]
+      },
+      "command": "close purse",
+      "id": "4n2fp9yy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It wouldn't be very wise to leave a bag full of gold coins sitting unguarded."
+        ],
+        "states": [
+          "purse.location = player"
+        ]
+      },
+      "command": "drop purse",
+      "id": "0nxkwfbw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "purse.location = player",
+          "emitted purse-very-generous"
+        ]
+      },
+      "command": "give purse to pieter",
+      "id": "cwd50ffm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I have a question.' 'Allow us to answer, to the best of"
+        ]
+      },
+      "command": "talk to brothers",
+      "id": "i163ql74",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'No need to show us...' begins one brother.",
+          "'...again, Miss,' continues the other. 'We never forget...'",
+          "'...a customer.'"
+        ]
+      },
+      "command": "show letter to brothers",
+      "id": "ok8w5o26",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "credentials"
+        ],
+        "states": [
+          "emitted pieter-dont-lose-that"
+        ]
+      },
+      "command": "show letter to pieter",
+      "id": "zyzz1vx3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "'Come back soon,' intones one of the brothers as you leave. 'Your business is...'",
+          "'...always welcome,' finishes the other."
+        ]
+      },
+      "command": "w",
+      "id": "8iukbj7g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We've got what we need from those moneylenders,' Pieter said, 'I'd just as soon stay out of their clutches for now.'"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "se",
+      "id": "z9epo6yv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Royal Tunic",
+          "The clothier hovers nearby, waiting to serve.",
+          "he practically squeals with delight"
+        ],
+        "states": [
+          "Pieter.location = Royal Tunic"
+        ]
+      },
+      "command": "ne",
+      "id": "en315bst",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I have a question…' you start to say."
+        ],
+        "notContains": [
+          "sniffs and pretends not to hear"
+        ]
+      },
+      "command": "talk to clothier",
+      "id": "6m9vvdsl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Oh, a splendid choice! You'll look like a princess!'",
+          "'Er, I'll wait outside,' he says.",
+          "you realize that he was right — you do look like a princess."
+        ],
+        "states": [
+          "Pieter is outside"
+        ]
+      },
+      "command": "buy clothes",
+      "id": "7gy7fbld",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Royal Tunic",
+          "The clothier hovers nearby, waiting to serve."
+        ],
+        "notContains": [
+          "Pieter is here"
+        ]
+      },
+      "command": "look",
+      "id": "hg5z7q9d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The dress is pale blue with tiny pearls embroidered into the bodice and dagged sleeves."
+        ]
+      },
+      "command": "x ball gown",
+      "id": "ih6md85v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the ball gown."
+        ]
+      },
+      "command": "wear ball gown",
+      "id": "ej3lgt04",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted gown-not-the-time"
+        ]
+      },
+      "command": "take off ball gown",
+      "id": "8uhnl9qq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "Pieter blinks and does a double take as you step out onto the sidewalk in your new finery.",
+          "'Come on, Lady Toresal. We still have much to do.'"
+        ],
+        "notContains": [
+          "Pieter follows",
+          "Pieter hurries",
+          "Pieter sticks close"
+        ],
+        "states": [
+          "Pieter.location = Lord's Market",
+          "Pieter is guarding",
+          "emitted clothier-come-back"
+        ]
+      },
+      "command": "w",
+      "id": "x1mb8w2l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'You already have your gown,' says Pieter. 'We need to move on.'"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "ne",
+      "id": "tfs26bax",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "East Commerce Street",
+          "Pieter is here,"
+        ],
+        "states": [
+          "Pieter.location = East Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "3zx1bbwz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street",
+          "Pieter is here,"
+        ],
+        "states": [
+          "Pieter.location = Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "mndotu99",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We're not here for food,' Pieter says. 'We have more important things to worry about.'"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "nw",
+      "id": "vy383ari",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We're not here for food,' Pieter says."
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "n",
+      "id": "837eha50",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We don't have time to go traipsing around the city,' says Pieter. 'We need to get to Fossville's ball.'"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "e",
+      "id": "g4ucl7gp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Wait a minute,' says Pieter. 'We need to get you a weapon first. We can't leave for the ball until you have one.'"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "9wv5pciu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Armory",
+          "Pieter is here,"
+        ],
+        "states": [
+          "Pieter.location = Armory",
+          "emitted minor-finds-something-else"
+        ]
+      },
+      "command": "ne",
+      "id": "pvuh1nhj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Don't waste your breath making conversation, Jacqueline,' Pieter says.",
+          "and that maybe there's a history between the two."
+        ]
+      },
+      "command": "talk to minor",
+      "id": "nxge8hlg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Don't waste your breath making conversation, Jacqueline,' Pieter says."
+        ],
+        "notContains": [
+          "history between the two"
+        ]
+      },
+      "command": "talk to minor",
+      "id": "d9ud6b0g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Touch one of those and-'",
+          "'Shut your trap, Minor,' snaps Pieter, and Minor falls silent and even takes a step or two back."
+        ],
+        "notContains": [
+          "have your finger off"
+        ]
+      },
+      "command": "take daggers",
+      "id": "wu5ejz0q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pieter shakes his head. 'Those sorts of weapons are too big to wear discreetly,' he tells you"
+        ]
+      },
+      "command": "buy weapons",
+      "id": "9d1dcs8z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'That's the one you want.'",
+          "makes a show of biting your gold coin to make sure of its worth.",
+          "You slip the knife under your gown. Already you feel more confident."
+        ]
+      },
+      "command": "buy daggers",
+      "id": "qmt5ma2e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted dagger-keep-it-close"
+        ]
+      },
+      "command": "drop dagger",
+      "id": "8jnhw26a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "plain dagger",
+          "purse",
+          "ball gown (worn)"
+        ]
+      },
+      "command": "i",
+      "id": "0scd1ye4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted dagger-keep-it-hidden"
+        ]
+      },
+      "command": "draw dagger",
+      "id": "evcbvv51",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Commerce Street",
+          "Pieter.location = Commerce Street",
+          "the preparations is journey",
+          "emitted armory-relief"
+        ]
+      },
+      "command": "s",
+      "id": "pqt1so14",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'You've got your weapon already,' Pieter says. 'It's time to move on.'"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "ne",
+      "id": "wyywjj9m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street at night is eerily quiet and empty.",
+          "Pieter is here,"
+        ]
+      },
+      "command": "look",
+      "id": "gmize1uo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Market Square",
+          "At night, the normally crowded marketplace is an empty maze of shadows",
+          "Pieter is here,"
+        ],
+        "notContains": [
+          "Bobby is standing"
+        ],
+        "states": [
+          "player.location = Market Square",
+          "Pieter.location = Market Square"
+        ]
+      },
+      "command": "w",
+      "id": "ohuaxmjr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted not-the-time-for-climbing"
+        ]
+      },
+      "command": "climb post",
+      "id": "070s20w4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Now is not the time for climbing around!",
+          "'Remember, keep that dagger hidden until you absolutely need it,' says Pieter."
+        ],
+        "states": [
+          "player.location = Market Square"
+        ]
+      },
+      "command": "u",
+      "id": "nchtnby3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Commerce Street",
+          "Pieter.location = Commerce Street"
+        ]
+      },
+      "command": "e",
+      "id": "2cmuifbn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Market Square"
+        ],
+        "states": [
+          "player.location = Market Square"
+        ]
+      },
+      "command": "w",
+      "id": "33jbk0n4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Road",
+          "Pieter is here,"
+        ],
+        "notContains": [
+          "Bobby is here"
+        ],
+        "states": [
+          "player.location = Lord's Road",
+          "Pieter.location = Lord's Road"
+        ]
+      },
+      "command": "n",
+      "id": "aalm7c7b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We can't go back now,' says Pieter. 'The ball will be starting any minute — and Dame Sandler will have my head on a platter if I don't get you to it on time!'",
+          "'I don't know why I let Dame Sandler talk me into this,' Pieter mutters."
+        ],
+        "states": [
+          "player.location = Lord's Road"
+        ]
+      },
+      "command": "s",
+      "id": "rzmnoyht",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Southern Gate",
+          "Tonight, for the ball, the portcullis is raised; however, the guards are on high alert tonight, checking invitations as each guest arrives.",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Southern Gate",
+          "Pieter.location = Southern Gate"
+        ]
+      },
+      "command": "n",
+      "id": "xwrphbmu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The portcullis — a massive gate of thick, iron bars — is raised in its archway under the gatehouse."
+        ]
+      },
+      "command": "x portcullis",
+      "id": "bnckc0ck",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "tabards decorated with the Toresal coat of arms, and carrying long spears. They look alert and ready for trouble."
+        ]
+      },
+      "command": "x guards",
+      "id": "4no7j72z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't get close enough to do that without attracting the guards' attention."
+        ]
+      },
+      "command": "x tabards",
+      "id": "wyeig06f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted pieter-holds-you-back"
+        ]
+      },
+      "command": "talk to guards",
+      "id": "dtulqjpf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cant-get-near-the-portcullis"
+        ]
+      },
+      "command": "touch portcullis",
+      "id": "qqehrzvd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The guards won't let you in unless you have an official invitation. The way things are going lately, they might well be looking out for you specifically."
+        ],
+        "states": [
+          "player.location = Southern Gate"
+        ]
+      },
+      "command": "n",
+      "id": "3vn3twbn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's nothing in that direction but rocks and the occasional thornbush."
+        ],
+        "states": [
+          "player.location = Southern Gate"
+        ]
+      },
+      "command": "w",
+      "id": "70rb8dlp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's no way around the keep in that direction."
+        ],
+        "states": [
+          "player.location = Southern Gate"
+        ]
+      },
+      "command": "nw",
+      "id": "rtcs2k3o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pasture",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Pasture"
+        ]
+      },
+      "command": "se",
+      "id": "zeok3bbh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Southern Gate"
+        ],
+        "states": [
+          "player.location = Southern Gate"
+        ]
+      },
+      "command": "nw",
+      "id": "zx6lhwna",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stream Crossing",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Stream Crossing"
+        ]
+      },
+      "command": "e",
+      "id": "j0ho0h7w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Southern Gate"
+        ],
+        "states": [
+          "player.location = Southern Gate"
+        ]
+      },
+      "command": "w",
+      "id": "7uaqo25a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stream Crossing"
+        ],
+        "states": [
+          "player.location = Stream Crossing"
+        ]
+      },
+      "command": "e",
+      "id": "1m2gkrp8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Woods",
+          "Carefully lifting your skirts (you're still getting used to moving around in a dress)",
+          "soaking his trousers up to the knee",
+          "Bobby quickly found a shortcut to the clearing. Where was it?"
+        ],
+        "notContains": [
+          "A split sapling grows"
+        ],
+        "states": [
+          "player.location = Woods",
+          "Pieter.location = Woods"
+        ]
+      },
+      "command": "n",
+      "id": "qcyj7zgs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Woods",
+          "Pieter is here,"
+        ],
+        "notContains": [
+          "A split sapling grows"
+        ]
+      },
+      "command": "look",
+      "id": "6v0y7geb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You try following one of the game trails, but it just seems to wind around without really getting anywhere.",
+          "'It looks like we're back where we started,' says Pieter."
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "n",
+      "id": "cg8dxln0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You try following one of the game trails, but it just seems to wind around without really getting anywhere."
+        ],
+        "notContains": [
+          "Pieter"
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "n",
+      "id": "41fwlyhg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "wind around without really getting anywhere.",
+          "'Are you there yet?' pants Pieter."
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "n",
+      "id": "mr7ggj2s",
+      "type": "turn"
+    }
+  ],
+  "id": "yo781fr9",
+  "ordinal": 0,
+  "parent": "f550y7fi"
+}

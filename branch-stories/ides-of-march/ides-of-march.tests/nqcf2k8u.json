@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Small ale for small hours.\" He drinks like a man toasting a full house anyway. \"I have danced from London to Norwich on worse, friend, and been grateful to the barrel.\""
+        ]
+      },
+      "command": "ask kemp about the ale",
+      "id": "9e0mfo0l",
+      "type": "turn"
+    }
+  ],
+  "id": "nqcf2k8u",
+  "ordinal": 1,
+  "parent": "a5ec3258"
+}

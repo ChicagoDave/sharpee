@@ -1,0 +1,61 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "He's a shameless flirt"
+        ]
+      },
+      "command": "x germaise",
+      "id": "vxszd3lf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You lean casually on the counter, and the baker raises one"
+        ]
+      },
+      "command": "talk to germaise",
+      "id": "sibzl0w5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "caterpillar with particularly dirty feet"
+        ]
+      },
+      "command": "x moustache",
+      "id": "zzmcdyhu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'This is delicate business.'"
+        ]
+      },
+      "command": "take dough",
+      "id": "vdnt9iwr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Later, Germaise,' you call out as you leave.",
+          "'Eh,' grunts Germaise"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "s",
+      "id": "l8n2e609",
+      "type": "turn"
+    }
+  ],
+  "id": "ow4yrgxy",
+  "ordinal": 1,
+  "parent": "05wt3ztr"
+}

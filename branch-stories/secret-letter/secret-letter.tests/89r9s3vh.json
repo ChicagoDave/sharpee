@@ -1,0 +1,20 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ],
+        "states": [
+          "player.location = Fruit Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "v30lxkgc",
+      "type": "turn"
+    }
+  ],
+  "id": "89r9s3vh",
+  "ordinal": 2,
+  "parent": "sv34qxvq"
+}

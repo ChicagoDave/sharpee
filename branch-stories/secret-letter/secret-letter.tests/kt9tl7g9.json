@@ -1,0 +1,47 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You listen carefully to what the mercenaries are saying"
+        ]
+      },
+      "command": "listen",
+      "id": "6urasmg5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nobody ever climbs up here (except you)."
+        ]
+      },
+      "command": "x crowd",
+      "id": "fp0z8mwk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted market-from-roof"
+        ]
+      },
+      "command": "x market",
+      "id": "o3ly525o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The market smells of a mixture of all sorts of odors"
+        ]
+      },
+      "command": "smell",
+      "id": "sy7gjtc0",
+      "type": "turn"
+    }
+  ],
+  "id": "kt9tl7g9",
+  "ordinal": 1,
+  "parent": "spfznv3u"
+}

@@ -1,0 +1,483 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted brick-pulled-out"
+        ]
+      },
+      "command": "take brick",
+      "id": "sn6p7n1u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "brick"
+        ]
+      },
+      "command": "i",
+      "id": "hoomoqfq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the back of the hole you see a short lever."
+        ]
+      },
+      "command": "search hole",
+      "id": "mnk28lb8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted brick-slides-back"
+        ]
+      },
+      "command": "put brick in hole",
+      "id": "hxnba3vx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brick is loose here."
+        ]
+      },
+      "command": "x hole",
+      "id": "4q2z4osh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "pull it out."
+        ]
+      },
+      "command": "take brick",
+      "id": "h1on19xj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lever moves slightly, then snaps back with a click. The wall swings away, revealing shadows beyond.",
+          "Pieter looks impressed. 'You're full of secrets and surprises, aren't you?' You can't bring yourself to tell him that you learned all your secrets from Bobby."
+        ],
+        "states": [
+          "the blank stone wall is opened"
+        ]
+      },
+      "command": "push lever",
+      "id": "1c982mmi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing happens."
+        ]
+      },
+      "command": "pull lever",
+      "id": "fwomixwh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the blank stone wall is opened",
+          "emitted leave-the-wall-open"
+        ]
+      },
+      "command": "close wall",
+      "id": "mnttqfhn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Chapel",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Chapel",
+          "Pieter.location = Chapel"
+        ]
+      },
+      "command": "n",
+      "id": "sg8oaekw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lower Bailey",
+          "The lower bailey has been cleaned, with gravel spread over the larger mud puddles.",
+          "music and laughter drift out into the evening air.",
+          "Steep stone steps climb up to the top of the wall.",
+          "Pieter is here,"
+        ],
+        "notContains": [
+          "bored-looking guards",
+          "make a dash"
+        ],
+        "states": [
+          "player.location = Lower Bailey"
+        ]
+      },
+      "command": "sw",
+      "id": "2jot6zql",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Climbing up to the upper bailey would only attract unwanted attention. The ball is where you need to be."
+        ],
+        "states": [
+          "player.location = Lower Bailey"
+        ]
+      },
+      "command": "u",
+      "id": "f7mtpalt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way without attracting the attention of the guards."
+        ],
+        "states": [
+          "player.location = Lower Bailey"
+        ]
+      },
+      "command": "s",
+      "id": "roqy9p56",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Climbing up to the upper bailey would only attract unwanted attention."
+        ],
+        "states": [
+          "player.location = Lower Bailey"
+        ]
+      },
+      "command": "climb steps",
+      "id": "hgele7td",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Foyer",
+          "its stark, stone walls hidden behind festive tapestries and garlands.",
+          "A servant in formal livery bows, then takes your and Pieter's cloaks and deftly spirits them away.",
+          "'Well, we made it,' he whispers.",
+          "I guess you'd better head into the ballroom and start mingling.",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Foyer",
+          "Pieter.location = Foyer"
+        ]
+      },
+      "command": "n",
+      "id": "9kv6fvj6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted foyer-music-and-laughter"
+        ]
+      },
+      "command": "listen",
+      "id": "c1pkbe3e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "noblemen leading their soldiers into war against the western clans.",
+          "Interestingly, Fossville's is not among them."
+        ]
+      },
+      "command": "x tapestries",
+      "id": "enkdwwrv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The garlands add a touch of festive greenery to the room."
+        ]
+      },
+      "command": "x garlands",
+      "id": "t6y1nllz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pieter puts his hand on your back, gently but firmly. 'Don't lose your nerve now,' he says. 'You'll be fine; I'll be right behind you the whole time.'"
+        ],
+        "states": [
+          "player.location = Foyer"
+        ]
+      },
+      "command": "s",
+      "id": "b12dypb8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ballroom",
+          "You step into a world of light...",
+          "Hundreds of candles spread an unearthly golden glow throughout the hall.",
+          "It's breathtaking. It's every fantasy of beauty and riches that you ever dreamed of, brought to life.",
+          "You can't see Pieter anywhere; he must have gotten separated from you in the press of guests. For the time being at least, you're on your own."
+        ],
+        "states": [
+          "player.location = Ballroom",
+          "the ball is pending",
+          "Pieter is lost"
+        ]
+      },
+      "command": "n",
+      "id": "195atqpz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ballroom",
+          "Somewhere, a string quartet is playing a lively concerto."
+        ],
+        "notContains": [
+          "world of light",
+          "It's breathtaking"
+        ]
+      },
+      "command": "look",
+      "id": "yei5o5ka",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The candles are literally everywhere; their light suffuses the entire ballroom.",
+          "The crowd parts and Baron Fossville comes through it"
+        ],
+        "states": [
+          "the ball is confrontation"
+        ]
+      },
+      "command": "x candles",
+      "id": "5ps9g8bn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The chandeliers are enormous sculptures of dangling crystal, glittering with candlelight."
+        ]
+      },
+      "command": "x chandeliers",
+      "id": "da4vbzfm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted chandeliers-out-of-reach"
+        ]
+      },
+      "command": "touch chandeliers",
+      "id": "mu02j43s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The candelabras are elgantly sculpted from solid gold."
+        ]
+      },
+      "command": "x candelabras",
+      "id": "fl7zb1jy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The guests are all the brightest, richest, and most beautiful in Toresal.",
+          "you can't help but feel a little bit self-conscious and plain."
+        ]
+      },
+      "command": "x guests",
+      "id": "nidcnsl9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "According to Jacobs"
+        ],
+        "states": [
+          "emitted guests-small-talk"
+        ]
+      },
+      "command": "talk to guests",
+      "id": "fo33gb77",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Somewhere over in the far corner of the ballroom, a string quartet is playing stately chamber music."
+        ]
+      },
+      "command": "listen",
+      "id": "27yfll7s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a string quartet is playing stately chamber music."
+        ]
+      },
+      "command": "x quartet",
+      "id": "pr8e6tgt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The servants weave deftly through the crowd"
+        ]
+      },
+      "command": "x servants",
+      "id": "jch44pg2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The silver platters are polished to a mirror shine, piled high with food and wine."
+        ]
+      },
+      "command": "x platters",
+      "id": "051xn4d7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tiny sandwiches, delicate pastries (still fresh from Germaise's oven, you imagine)"
+        ]
+      },
+      "command": "x food",
+      "id": "by4q16rp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted food-smells-delicious"
+        ]
+      },
+      "command": "smell food",
+      "id": "xw2uy4u1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted keep-your-wits"
+        ]
+      },
+      "command": "drink wine",
+      "id": "udki2lmy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted servants-never-stop"
+        ]
+      },
+      "command": "eat food",
+      "id": "1kw6smmr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted never-danced-before"
+        ]
+      },
+      "command": "dance",
+      "id": "aexw148l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The press of people is so close, you can't make your way back to the Foyer",
+          "Besides, you can't leave without Pieter. Where did he get off to...?"
+        ],
+        "states": [
+          "player.location = Ballroom"
+        ]
+      },
+      "command": "s",
+      "id": "tr05g74w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Besides, you can't leave without Pieter."
+        ],
+        "notContains": [
+          "Where did he get off to"
+        ],
+        "states": [
+          "player.location = Ballroom"
+        ]
+      },
+      "command": "s",
+      "id": "bc5emhgh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Now that you're up close, the cracks in Fossville's façade show themselves clearly.",
+          "No wonder he hasn't made an appearance at his own party."
+        ]
+      },
+      "command": "x baron",
+      "id": "od8xzfcd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted no-choice-but-to-listen"
+        ]
+      },
+      "command": "listen to baron",
+      "id": "d3dwp1v8",
+      "type": "turn"
+    }
+  ],
+  "id": "dfx73tas",
+  "ordinal": 0,
+  "parent": "g9ww7vr0"
+}

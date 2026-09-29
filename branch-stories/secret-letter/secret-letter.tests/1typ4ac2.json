@@ -1,0 +1,212 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "There are four cables, each made of thick, braided wire."
+        ]
+      },
+      "command": "x cables",
+      "id": "qcswzh8r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "attached to the ground at the northeast corner of the market"
+        ]
+      },
+      "command": "x northeast cable",
+      "id": "a3v6apdj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "attached to the ground at the southeast corner of the market"
+        ],
+        "notContains": [
+          "The monkey balances easily on the cable"
+        ]
+      },
+      "command": "x se cable",
+      "id": "xyffk1sw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cable is too steep for you to climb down"
+        ],
+        "states": [
+          "player.location = Top of the Post"
+        ]
+      },
+      "command": "climb cable",
+      "id": "p9q8sdwn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cable-too-tough"
+        ]
+      },
+      "command": "cut cable",
+      "id": "866bssvd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "The monkey chatters"
+        ],
+        "states": [
+          "emitted cable-taut"
+        ]
+      },
+      "command": "pull cable",
+      "id": "hrrkajer",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cable-taut"
+        ]
+      },
+      "command": "push nw cable",
+      "id": "b2xvkaqt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "something you could loop over the cable"
+        ],
+        "states": [
+          "player.location = Top of the Post"
+        ]
+      },
+      "command": "ne",
+      "id": "mdj81enp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "knocking over a couple of shoppers"
+        ],
+        "notContains": [
+          "Shouts ring out and fingers point",
+          "The monkey sees you coming and leaps over you",
+          "You hear shouting coming from all quarters of the market."
+        ],
+        "states": [
+          "player.location = Exotic Gems Stall",
+          "cloak.location = Exotic Gems Stall",
+          "emitted slide-wind"
+        ]
+      },
+      "command": "slide down southwest cable",
+      "id": "btin1w11",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Exotic Gems Stall",
+          "an old gray cloak here"
+        ]
+      },
+      "command": "look",
+      "id": "qvhkifxk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ],
+        "states": [
+          "cloak.location = player"
+        ]
+      },
+      "command": "take cloak",
+      "id": "tq0wbect",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "e",
+      "id": "ntpjhave",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "zmswn9dt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "84oehrgm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post"
+        ]
+      },
+      "command": "u",
+      "id": "o7m72xm4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "coming up behind the fruit stall"
+        ],
+        "notContains": [
+          "You take a deep breath."
+        ],
+        "states": [
+          "player.location = On the Wire"
+        ]
+      },
+      "command": "slide down northeast cable",
+      "id": "49q3ao3k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Behind Fruit Stall",
+          "cloak.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "let go",
+      "id": "rma870vr",
+      "type": "turn"
+    }
+  ],
+  "id": "1typ4ac2",
+  "ordinal": 5,
+  "parent": "k6sd0y98"
+}

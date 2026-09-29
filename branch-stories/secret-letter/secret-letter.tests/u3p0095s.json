@@ -1,0 +1,266 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "'You can come with me if you want,' he says.",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "wait",
+      "id": "kk893lm5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "'Do us a kindness, girl, and free us as well,'",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "wait",
+      "id": "dmj2wrfy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "0vupfrdr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "'Fine, then,' Jacobs snarls"
+        ]
+      },
+      "command": "wait",
+      "id": "gwwfo7h7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "5ol98uig",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "3xjlxhgm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "81gmcpo7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "4xvbehbn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "8h6f65fh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "731wjbv4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "bwte89cb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "t6qp8mvy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "wait",
+      "id": "jwu17yhv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "294kw0qr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "954oedwy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "wait",
+      "id": "k81zv2yh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "yps4gduc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "w7o8aks3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "jwl66d2f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "raz2ls3i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "3foeu0zp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "h8yl7nkt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "wait",
+      "id": "57rid7m1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "j1mpgog0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "The door at the end of the corridor opens, and this time it"
+        ]
+      },
+      "command": "wait",
+      "id": "rtejbh76",
+      "type": "turn"
+    }
+  ],
+  "id": "u3p0095s",
+  "ordinal": 1,
+  "parent": "tbekp9rw"
+}

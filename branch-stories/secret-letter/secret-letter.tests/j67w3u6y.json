@@ -1,0 +1,63 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "the preparations is escorted",
+          "Pieter is guarding",
+          "emitted sandler-ds49b"
+        ]
+      },
+      "command": "take ring",
+      "id": "ek8bt8x6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Which do you mean: the silver ring or the valuable jewelry?"
+        ]
+      },
+      "command": "x ring",
+      "id": "6r4hfdac",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market"
+        ],
+        "states": [
+          "player.location = Lord's Market",
+          "emitted sandler-good-luck"
+        ]
+      },
+      "command": "w",
+      "id": "a1wl3ujh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the silver ring."
+        ]
+      },
+      "command": "wear ring",
+      "id": "bxf2zcbx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "silver ring (worn)"
+        ]
+      },
+      "command": "i",
+      "id": "ggvj1foa",
+      "type": "turn"
+    }
+  ],
+  "id": "j67w3u6y",
+  "ordinal": 1,
+  "parent": "222doh9e"
+}

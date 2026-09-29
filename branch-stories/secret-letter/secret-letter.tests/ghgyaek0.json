@@ -1,0 +1,93 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted kick-self"
+        ]
+      },
+      "command": "kick me",
+      "id": "kxyt2fbw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your woolen cap is patchy and stained"
+        ]
+      },
+      "command": "x cap",
+      "id": "166lrpqe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "cap.location = player",
+          "emitted clothing-stays"
+        ]
+      },
+      "command": "take off cap",
+      "id": "wsxmlox1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't do that."
+        ]
+      },
+      "command": "kick crates",
+      "id": "2y2csuae",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outer Market Roof",
+          "You nimbly hop up on top of the crates"
+        ],
+        "notContains": [
+          "spread out quick"
+        ],
+        "states": [
+          "player.location = Outer Market Roof",
+          "story.state = calm"
+        ]
+      },
+      "command": "u",
+      "id": "4bhwstxj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The roof tiles are warm under the morning sun."
+        ]
+      },
+      "command": "x tiles",
+      "id": "7em2tn6x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Alley"
+        ],
+        "notContains": [
+          "Check the alley!",
+          "You dash away"
+        ],
+        "states": [
+          "player.location = Alley"
+        ]
+      },
+      "command": "d",
+      "id": "doxje33u",
+      "type": "turn"
+    }
+  ],
+  "id": "ghgyaek0",
+  "ordinal": 1,
+  "parent": "qpw1gitv"
+}

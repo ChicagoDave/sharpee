@@ -1,0 +1,378 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You hold the letter up where the court can see it: the",
+          "'Well now, look who we have here,'"
+        ],
+        "states": [
+          "the ball is open"
+        ]
+      },
+      "command": "talk to baron",
+      "id": "kt9pim4q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Back for more, hmm?'"
+        ],
+        "states": [
+          "Jacobs the Elder is spoken"
+        ]
+      },
+      "command": "talk to jacobs",
+      "id": "ycbb6i6z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "uou2icoo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "ciq31xr1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "a4v1jsnw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "z6uy3nri",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "hw987dxw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "hiqyf54b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "819spm2s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "2ixxlspk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "xc389nm3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "6m7ptpjo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "2bf4t0wa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "dti8glyy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "mx4ejxbu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "ymvvt3yq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "bevxo2cz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "00tso9w9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "tc8m1k18",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "kdysjxbi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "qq8a86oo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "ll4l2mul",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "uzsleadf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes",
+          "There is a stir at the far door, and then not a stir but a"
+        ]
+      },
+      "command": "wait",
+      "id": "757795fd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "2onoqh19",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "jbu0kh0u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "j0ede5l9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "l2d1uzj6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "0rc1v73q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "jmmeb5np",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "up8q3bgm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "9jafoz6x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "lr9nabqg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "8izkell1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "kxyehit5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Queen rises and leaves without a word, and Bobby goes"
+        ],
+        "states": [
+          "the ball is abandoned"
+        ]
+      },
+      "command": "wait",
+      "id": "31yr3m56",
+      "type": "turn"
+    }
+  ],
+  "id": "e9ovmule",
+  "ordinal": 1,
+  "parent": "dfx73tas"
+}

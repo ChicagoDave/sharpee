@@ -1,0 +1,183 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "player.location = Grocery Stall",
+          "emitted stall-customers-outside"
+        ]
+      },
+      "command": "enter stall",
+      "id": "sh1rp2v1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "sw",
+      "id": "1doh8742",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Northwest Junction",
+          "emitted market-already-here"
+        ]
+      },
+      "command": "enter market",
+      "id": "qvs1b6nx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Alley"
+        ]
+      },
+      "command": "nw",
+      "id": "acreuid0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into Grubber's Market."
+        ],
+        "notContains": [
+          "the Grubber"
+        ],
+        "states": [
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "enter market",
+      "id": "r1h238nv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "e",
+      "id": "63v4m5tw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ]
+      },
+      "command": "se",
+      "id": "x1owgc2j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "sw",
+      "id": "fhl6h2pf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "qxsj5xyq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into Grubber's Market."
+        ],
+        "states": [
+          "player.location = Outside the Silk Tent"
+        ]
+      },
+      "command": "enter market",
+      "id": "6h7oqv4l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "mh53ypjs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "y8tvfkc9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Base of the Center Post",
+          "emitted market-behind-tent"
+        ]
+      },
+      "command": "enter market",
+      "id": "tw5j0y1x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post"
+        ]
+      },
+      "command": "u",
+      "id": "n82wr0nq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Top of the Post",
+          "emitted market-get-down"
+        ]
+      },
+      "command": "enter market",
+      "id": "828oc0oh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grubber"
+        ],
+        "notContains": [
+          "the Grubber"
+        ]
+      },
+      "command": "take market",
+      "id": "ahx7fqkb",
+      "type": "turn"
+    }
+  ],
+  "id": "ozqxlw3l",
+  "ordinal": 4,
+  "parent": "ytr5jjs1"
+}

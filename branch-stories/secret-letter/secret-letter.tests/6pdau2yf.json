@@ -1,0 +1,33 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "lsestdls",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The mercenaries have locked the gates."
+        ],
+        "notContains": [
+          "You can't go that way."
+        ],
+        "states": [
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "north",
+      "id": "xjwhcq3f",
+      "type": "turn"
+    }
+  ],
+  "id": "6pdau2yf",
+  "ordinal": 9,
+  "parent": "5u5bu3ru"
+}

@@ -1,0 +1,804 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "makes you reluctant to break the silence with idle chatter."
+        ]
+      },
+      "command": "talk to shannon",
+      "id": "80i4sh2d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "as though the house were holding its breath, waiting."
+        ]
+      },
+      "command": "listen",
+      "id": "5n9w799a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Wait,' says Shannon. 'Are you sure you've found everything you were meant to find here?'"
+        ]
+      },
+      "command": "s",
+      "id": "75meily8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Great Hall",
+          "The cream of the city once filled this room",
+          "Whoever took most of the furniture away for some reason decided to leave a large portrait of the Duke"
+        ],
+        "states": [
+          "player.location = Great Hall"
+        ]
+      },
+      "command": "n",
+      "id": "cuc130h5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "his eyes are still a rich, vivid blue.",
+          "his lost, beleaguered, and only heir",
+          "'His eyes...' whispers Shannon",
+          "'Jacqueline, dear, you have his eyes.'"
+        ]
+      },
+      "command": "x portrait",
+      "id": "41y3aa4x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The portrait of the Duke stares down at you from the far wall."
+        ],
+        "notContains": [
+          "cream of the city",
+          "Jacqueline, dear"
+        ]
+      },
+      "command": "look",
+      "id": "i0782i3i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted portrait-too-high"
+        ]
+      },
+      "command": "touch portrait",
+      "id": "7tt2tyve",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "finely crafted, made of rich, dark wood."
+        ]
+      },
+      "command": "x furniture",
+      "id": "bg2vny7h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted remove-the-dustsheets-first"
+        ]
+      },
+      "command": "sit on furniture",
+      "id": "rzgq1vlk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sheets are fine linen, smudged gray with dust."
+        ]
+      },
+      "command": "x sheets",
+      "id": "sxyclrna",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "it would just fill the air with dust."
+        ]
+      },
+      "command": "take sheets",
+      "id": "1ueuoz8i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted dust-smudge"
+        ]
+      },
+      "command": "touch dust",
+      "id": "jno6isfw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar",
+          "Against the back wall stands a pot-bellied iron furnace, cold and still."
+        ],
+        "states": [
+          "player.location = Cellar"
+        ]
+      },
+      "command": "d",
+      "id": "9xglt9wk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The metal grating is closed."
+        ]
+      },
+      "command": "x furnace",
+      "id": "289oz2w6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We could break up some of the furniture upstairs,' suggests Shannon."
+        ],
+        "states": [
+          "emitted grating-squeaks-open"
+        ]
+      },
+      "command": "open furnace",
+      "id": "uh24oa74",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted furnace-cold-open"
+        ]
+      },
+      "command": "x furnace",
+      "id": "xz1p1s6v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted furnace-metal-cold"
+        ]
+      },
+      "command": "touch furnace",
+      "id": "xxedt4zn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stairway-leading-up"
+        ]
+      },
+      "command": "x stairs",
+      "id": "mj5y59dc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Great Hall"
+        ]
+      },
+      "command": "u",
+      "id": "7rdtz7qz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Narrow, stone steps leading down."
+        ]
+      },
+      "command": "x stairs",
+      "id": "rnybcqo1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's tiring work... but also somehow exhilarating.",
+          "Soon you have a respectable pile of firewood."
+        ]
+      },
+      "command": "attack furniture",
+      "id": "jdk36915",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted smashed-enough"
+        ]
+      },
+      "command": "attack furniture",
+      "id": "t6e316et",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Just a bundle of sticks — that used to be a nice chair."
+        ]
+      },
+      "command": "x firewood",
+      "id": "41cvc6c5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar"
+        ]
+      },
+      "command": "d",
+      "id": "3ds9ntov",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shannon, always helpful, produces a match. Soon you have a roaring fire.",
+          "'There, that should warm things up a bit,' says Shannon."
+        ]
+      },
+      "command": "put wood in furnace",
+      "id": "s8qzh30s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "giving off a bright orange glow."
+        ]
+      },
+      "command": "look",
+      "id": "ncp4zefu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The furnace is open, and bright orange light pours out from it."
+        ]
+      },
+      "command": "x furnace",
+      "id": "oqccifax",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fire crackles cheerfully inside the belly of the furnace."
+        ]
+      },
+      "command": "x fire",
+      "id": "tm98x9te",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted wood-smoke-smell"
+        ]
+      },
+      "command": "smell fire",
+      "id": "6ieovu5p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The warm glow flickers out from the belly of the furnace."
+        ]
+      },
+      "command": "x light",
+      "id": "g7kbqdjn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted furnace-snatch-hand"
+        ]
+      },
+      "command": "touch furnace",
+      "id": "lqs6mx68",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "furnace"
+        ]
+      },
+      "command": "close furnace",
+      "id": "1gxy1i1u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The furnace is closed, but bright orange light flickers through the grating."
+        ]
+      },
+      "command": "x furnace",
+      "id": "afce3jx5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Great Hall"
+        ]
+      },
+      "command": "u",
+      "id": "dqy4s8mp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Second Floor Landing",
+          "The shadowed stairway leads up and down."
+        ],
+        "states": [
+          "player.location = Red Gate Second Floor Landing"
+        ]
+      },
+      "command": "u",
+      "id": "c18n2nnk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Office",
+          "It occurs to you that the Duke must have loved his books.",
+          "Up on the top shelf, missed by the looters, you spy a wooden box."
+        ],
+        "states": [
+          "player.location = Office"
+        ]
+      },
+      "command": "s",
+      "id": "3gjowetc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nearly hidden on one of the top bookshelves is a wooden box."
+        ],
+        "notContains": [
+          "loved his books"
+        ]
+      },
+      "command": "look",
+      "id": "6rdz5qqt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "except for a wooden box almost hidden up on the topmost shelf."
+        ]
+      },
+      "command": "x shelves",
+      "id": "xzxgru4z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted box-out-of-reach"
+        ]
+      },
+      "command": "x box",
+      "id": "ny5x3g0r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted box-out-of-reach"
+        ]
+      },
+      "command": "take box",
+      "id": "leq7vnbr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "carved from mahogany and kielwood"
+        ]
+      },
+      "command": "x desk",
+      "id": "prma2vuu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted desk-too-heavy"
+        ]
+      },
+      "command": "push desk",
+      "id": "cb2fgbgi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A few have been nibbled at by mice."
+        ]
+      },
+      "command": "x books",
+      "id": "7k98o3et",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted books-worthless"
+        ]
+      },
+      "command": "take books",
+      "id": "50b5wptw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted books-nothing-of-interest"
+        ]
+      },
+      "command": "read books",
+      "id": "8ph3u3sc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted climb-onto-the-desk"
+        ]
+      },
+      "command": "climb desk",
+      "id": "c4mq44ec",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "wooden box"
+        ]
+      },
+      "command": "take box",
+      "id": "ub34m5uk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted box-nestled-papers-first"
+        ]
+      },
+      "command": "open box",
+      "id": "4pmyl7b0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "On the lid is engraved the crest of Duke Toresal."
+        ]
+      },
+      "command": "x box",
+      "id": "nrxm6tg2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "legal documents indicating the disposition of the old Lord's estate.",
+          "At the bottom of the stack are several letters written on small, worn parchment.",
+          "The penmanship is clumsy",
+          "My precious Duke. I pressed Estelle with subtle questions",
+          "Your mother's words, you realize."
+        ]
+      },
+      "command": "x documents",
+      "id": "p0a43i03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The penmanship is clumsy",
+          "Our secret is safe. Your Love."
+        ],
+        "notContains": [
+          "Your mother's words"
+        ]
+      },
+      "command": "x letters",
+      "id": "vdwgrr9r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted leave-them-in-the-box"
+        ]
+      },
+      "command": "take letters",
+      "id": "z50wdmqz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shannon looks close to tears as you show her the letters. 'Your father was such a compassionate man,'"
+        ]
+      },
+      "command": "show letters to shannon",
+      "id": "ajv1puqj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shannon looks close to tears as you show her the letters."
+        ],
+        "notContains": [
+          "compassionate"
+        ]
+      },
+      "command": "show letters to shannon",
+      "id": "a4om5bo4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted shannon-what-a-treasure"
+        ]
+      },
+      "command": "show box to shannon",
+      "id": "ibecf38y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted shannon-keep-those"
+        ]
+      },
+      "command": "give box to shannon",
+      "id": "hc19p7hp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "wooden box"
+        ]
+      },
+      "command": "close box",
+      "id": "3m8sq550",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted box-nestled-papers"
+        ]
+      },
+      "command": "open box",
+      "id": "zw1zwdub",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Duke's desk"
+        ]
+      },
+      "command": "get off desk",
+      "id": "zb8qhihk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Second Floor Landing"
+        ]
+      },
+      "command": "n",
+      "id": "r46r4rux",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Third Floor Landing",
+          "The stairs end here at the third floor."
+        ],
+        "states": [
+          "player.location = Red Gate Third Floor Landing"
+        ]
+      },
+      "command": "u",
+      "id": "h0b0agj2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Master Bedroom",
+          "This, then, is where he died. This very room, in this very bed.",
+          "I never asked for this.",
+          "fighting off a dreadful sense of futility."
+        ],
+        "states": [
+          "player.location = Red Gate Master Bedroom"
+        ]
+      },
+      "command": "s",
+      "id": "8lyabqos",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "No one has slept in it since the Duke died, years ago."
+        ]
+      },
+      "command": "x bed",
+      "id": "1asevwy8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bare-mattress-no-comfort"
+        ]
+      },
+      "command": "enter bed",
+      "id": "ukvbv0zm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It would hardly be comfortable, lying on a bare mattress"
+        ]
+      },
+      "command": "sleep",
+      "id": "n536ig9p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted more-dust-under-the-bed"
+        ]
+      },
+      "command": "search bed",
+      "id": "gjb0r2w5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Master Bedroom"
+        ],
+        "notContains": [
+          "This, then, is where he died."
+        ]
+      },
+      "command": "look",
+      "id": "jzd3b8f7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bathroom",
+          "The walls of this small room are cold, bare marble."
+        ],
+        "states": [
+          "player.location = Bathroom"
+        ]
+      },
+      "command": "s",
+      "id": "vqxeo8e6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "They consist of a curved spout flanked by two hand-sized, spoked wheels...",
+          "Suddenly you figure it out — these are faucets!",
+          "'Oh, a bath with water-pipes! What a luxury,' exclaims Shannon.",
+          "You are the Duke's daughter, a child of nobility."
+        ]
+      },
+      "command": "x faucets",
+      "id": "oszmslat",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "one for cold water, the other (though you can scarcely imagine it) for hot."
+        ],
+        "notContains": [
+          "child of nobility"
+        ]
+      },
+      "command": "x faucets",
+      "id": "bx0tjcv8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It looks almost big enough to swim in."
+        ]
+      },
+      "command": "x tub",
+      "id": "dsxs3dba",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It tastes cold and metallic."
+        ]
+      },
+      "command": "drink water",
+      "id": "uoklwx6y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "holding its breath, waiting."
+        ]
+      },
+      "command": "listen",
+      "id": "mmad3owo",
+      "type": "turn"
+    }
+  ],
+  "id": "ckabh2sz",
+  "ordinal": 0,
+  "parent": "7lo93nnc"
+}

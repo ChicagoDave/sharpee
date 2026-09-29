@@ -1,0 +1,293 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You hold the letter up where the court can see it: the",
+          "You hold the letter up where the court can see it: the",
+          "'Well now, look who we have here,'",
+          "'Well now, look who we have here,'"
+        ],
+        "states": [
+          "letter.location = player",
+          "the ball is open",
+          "Pieter is throne",
+          "Bobby is court"
+        ]
+      },
+      "command": "show letter to baron",
+      "id": "7e7ibwhv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The throne stands at the head of the room, and the Queen in",
+          "Jacobs stands slightly apart, a goblet of spiced wine in one hand",
+          "Even from across the room, the Princess commands attention",
+          "The Duchess of Inhyron hovers, frail and mouselike, at her husband's side.",
+          "The Baron of Amhyron is mingling near the banquet table.",
+          "throwing fistfuls of money at the chamber orchestra"
+        ],
+        "notContains": [
+          "Baron Fossville"
+        ],
+        "states": [
+          "Pieter.location = Ballroom"
+        ]
+      },
+      "command": "look",
+      "id": "8brx1q8x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "letter",
+          "ball gown (worn)"
+        ]
+      },
+      "command": "i",
+      "id": "2hy28vfr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Her Royal Majesty is not a tall lady",
+          "Then, for just a moment, her gaze meets yours.",
+          "I'm watching you, she seems to say. Do not cross me."
+        ]
+      },
+      "command": "x queen",
+      "id": "qd5cvv8h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Her Royal Majesty is not a tall lady"
+        ],
+        "notContains": [
+          "Do not cross me"
+        ]
+      },
+      "command": "x queen",
+      "id": "c8ivmq94",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Queen looks at you for a long moment across the arm of"
+        ],
+        "states": [
+          "the Queen is greeted"
+        ]
+      },
+      "command": "talk to queen",
+      "id": "x24j20nb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cant-get-near-the-queen"
+        ]
+      },
+      "command": "talk to queen",
+      "id": "pwxlwka5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bobby-none-the-worse"
+        ]
+      },
+      "command": "x bobby",
+      "id": "3yoe3tlg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'You're a spy,' you say.",
+          "'You're a spy,' you say."
+        ],
+        "states": [
+          "Bobby is spoken"
+        ]
+      },
+      "command": "talk to bobby",
+      "id": "sxwx9yco",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby shakes his head, still smiling."
+        ]
+      },
+      "command": "talk to bobby",
+      "id": "s1rmi9y2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pieter is loyal to Dame Sandler and tirelessly vigilant."
+        ]
+      },
+      "command": "x pieter",
+      "id": "kb7jh42g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Hey Pieter,' you say, 'mind if I ask you something?'"
+        ]
+      },
+      "command": "talk to pieter",
+      "id": "2inu03wp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "According to Jacobs, though, the people you really should be talking to are Duke Inhyron, Baron Amhyron, Earl Bresa, the Queen, and the Princess."
+        ]
+      },
+      "command": "talk to guests",
+      "id": "92hyh8vw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacobs is a large man like his son, though age and indulgence have made him less imposing."
+        ]
+      },
+      "command": "x jacobs",
+      "id": "5pn388zm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It looks far too hot to be wearing in a crowded room like this."
+        ]
+      },
+      "command": "x velvet cloak",
+      "id": "7kzowl9h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacobs isn't the only person here drinking more than is good for him"
+        ]
+      },
+      "command": "x goblet",
+      "id": "dj9ooc2e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Back for more, hmm?'",
+          "'Back for more, hmm?'"
+        ],
+        "states": [
+          "Jacobs the Elder is spoken"
+        ]
+      },
+      "command": "talk to jacobs",
+      "id": "2zyyri95",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Back for more, hmm?'"
+        ]
+      },
+      "command": "talk to jacobs",
+      "id": "ixpy5pgf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Princess is tall, shapely, and wisp-thin",
+          "what (besides her title and her piles of riches) makes her so special?"
+        ]
+      },
+      "command": "x princess",
+      "id": "higwfmxw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The dress is pale blue with tiny pearls embroidered into the bodice and dagged sleeves."
+        ]
+      },
+      "command": "x gown",
+      "id": "1a17212p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Oh, you must be that ambitious little street urchin Mother",
+          "shoulders past you into the crowd"
+        ],
+        "states": [
+          "Princess is spoken"
+        ]
+      },
+      "command": "talk to princess",
+      "id": "pd33b30o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The throne stands at the head of the room, and the Queen in"
+        ],
+        "notContains": [
+          "the Princess commands attention"
+        ]
+      },
+      "command": "look",
+      "id": "1h2ejuv2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Duke is a handsome, elderly man, with snow-white hair swept back from a widow's peak"
+        ]
+      },
+      "command": "x duke",
+      "id": "uhkibwk3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Duke's uniform makes him look every inch the genteel statesman.",
+          "There is a stir at the far door, and then not a stir but a"
+        ]
+      },
+      "command": "x tunic",
+      "id": "fsb4256i",
+      "type": "turn"
+    }
+  ],
+  "id": "xv6bygwa",
+  "ordinal": 0,
+  "parent": "dfx73tas"
+}

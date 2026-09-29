@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You strain to hear what the men are saying"
+        ]
+      },
+      "command": "listen",
+      "id": "zknzusok",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted garbage-ripe-here"
+        ]
+      },
+      "command": "smell",
+      "id": "8uismahf",
+      "type": "turn"
+    }
+  ],
+  "id": "vmlqvt20",
+  "ordinal": 2,
+  "parent": "xtm1snmb"
+}

@@ -1,0 +1,87 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The wall of the storehouse is too high and too smooth to climb."
+        ]
+      },
+      "command": "x storehouse wall",
+      "id": "w6gqz4kw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wall of the storehouse is too high and too smooth to climb."
+        ]
+      },
+      "command": "climb storehouse",
+      "id": "2sjdzqbm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The canvas wall of the tent is tough and stretched tight."
+        ]
+      },
+      "command": "x canvas tent",
+      "id": "oxkmtm78",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The nails are just nails."
+        ]
+      },
+      "command": "x nails",
+      "id": "shb7g3xc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted crates-nailed-shut"
+        ]
+      },
+      "command": "open crates",
+      "id": "ti3y5rvx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted crates-nailed-shut"
+        ]
+      },
+      "command": "search crates",
+      "id": "x14vnwbg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted crates-too-heavy"
+        ]
+      },
+      "command": "take crates",
+      "id": "nls1cffa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "far too heavy for you to move"
+        ]
+      },
+      "command": "push crates",
+      "id": "000mjgqt",
+      "type": "turn"
+    }
+  ],
+  "id": "0zlmv216",
+  "ordinal": 1,
+  "parent": "pyrm07xl"
+}

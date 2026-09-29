@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You squeeze in, and Shannon pulls the board back into place",
+          "Secret Closet"
+        ],
+        "states": [
+          "player.location = Secret Closet"
+        ]
+      },
+      "command": "n",
+      "id": "9tq1ogu9",
+      "type": "turn"
+    }
+  ],
+  "id": "izs0fn8n",
+  "ordinal": 2,
+  "parent": "5tgjdgdw"
+}

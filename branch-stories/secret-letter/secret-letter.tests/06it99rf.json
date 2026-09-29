@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "'I know, child,' she says, 'I know all about it."
+        ]
+      },
+      "command": "give letter to fiona",
+      "id": "9zs1tg4j",
+      "type": "turn"
+    }
+  ],
+  "id": "06it99rf",
+  "ordinal": 1,
+  "parent": "8j1g8212"
+}

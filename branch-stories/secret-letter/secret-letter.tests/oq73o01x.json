@@ -1,0 +1,587 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The crowd is thick with shoppers and merchants alike"
+        ],
+        "notContains": [
+          "wider berth"
+        ]
+      },
+      "command": "x crowd",
+      "id": "4qzgglej",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "not exactly the most pleasant thing your nose has encountered"
+        ]
+      },
+      "command": "smell crowd",
+      "id": "xeg5niwv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "difficult to make out anything specific"
+        ]
+      },
+      "command": "listen to crowd",
+      "id": "9myho6tf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "no one seems interested in having a conversation with a common street urchin"
+        ]
+      },
+      "command": "talk to crowd",
+      "id": "xkimoeqo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's no use; these people just want to get on with their business"
+        ]
+      },
+      "command": "talk to crowd",
+      "id": "1s08558a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The shopper roughly shoulders you aside."
+        ],
+        "states": [
+          "shoppers.location = Grocery Stall"
+        ]
+      },
+      "command": "take crowd",
+      "id": "1ky2ci5u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The walls surrounding Grubber's are high and made of smooth, pale stone."
+        ]
+      },
+      "command": "x wall",
+      "id": "e05zxw9k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted wall-too-high"
+        ]
+      },
+      "command": "climb wall",
+      "id": "28myv1xc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stalls are simple constructions of wood and canvas."
+        ]
+      },
+      "command": "x stalls",
+      "id": "e33hacaq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stalls-too-heavy"
+        ]
+      },
+      "command": "push stalls",
+      "id": "cx0vsb4s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "providing shade for the merchants and customers below"
+        ]
+      },
+      "command": "x awnings",
+      "id": "8hikrdk0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted awnings-out-of-reach"
+        ]
+      },
+      "command": "take awnings",
+      "id": "c69kbdrd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The market is bustling this morning."
+        ]
+      },
+      "command": "x market",
+      "id": "9ffvcn4g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The market smells of a mixture of all sorts of odors"
+        ],
+        "notContains": [
+          "tasty"
+        ]
+      },
+      "command": "smell",
+      "id": "k9zai25k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The market is a cacophony of sounds"
+        ]
+      },
+      "command": "listen",
+      "id": "uudhw0aw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "v16a9l1o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted fruit-stall-smell"
+        ]
+      },
+      "command": "smell",
+      "id": "smb9iqu4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "s",
+      "id": "8rgctgbl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "relatively clear part of the market"
+        ]
+      },
+      "command": "x stalls",
+      "id": "bb0lcp74",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hat Stall"
+        ]
+      },
+      "command": "s",
+      "id": "l6n7vxxv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "w",
+      "id": "je8o9zeo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "reserved for Teisha's tent"
+        ]
+      },
+      "command": "x stalls",
+      "id": "ei64s0p6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "37aen2s1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stalls-inside-tent"
+        ]
+      },
+      "command": "x stalls",
+      "id": "1d47zqxt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted market-from-tent"
+        ]
+      },
+      "command": "x market",
+      "id": "yuboqq2l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "just you and Teisha in here"
+        ]
+      },
+      "command": "x crowd",
+      "id": "7995lbu9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "warm, dusty fabric"
+        ]
+      },
+      "command": "smell",
+      "id": "lgc4xr3c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted tent-sound"
+        ]
+      },
+      "command": "listen",
+      "id": "h9qpd49b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "mkymhjf7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Looking straight up, you can see four support wires"
+        ],
+        "states": [
+          "wires.location = Base of the Center Post"
+        ]
+      },
+      "command": "x wires",
+      "id": "nvzrqvtj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "can't really see much of the stalls from back here"
+        ]
+      },
+      "command": "x stalls",
+      "id": "rn78sxn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted market-from-back"
+        ]
+      },
+      "command": "x market",
+      "id": "etrw3nry",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The market smells of a mixture of all sorts of odors"
+        ]
+      },
+      "command": "smell",
+      "id": "hn0g7ayr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The market is a cacophony of sounds"
+        ]
+      },
+      "command": "listen",
+      "id": "rpk89zzf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post"
+        ],
+        "states": [
+          "shoppers.location = Top of the Post",
+          "awnings.location = Outside the Silk Tent",
+          "wires.location = Base of the Center Post"
+        ]
+      },
+      "command": "u",
+      "id": "hoebgucl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted shoppers-far-below"
+        ]
+      },
+      "command": "x crowd",
+      "id": "4mzm3kfa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted market-from-top"
+        ]
+      },
+      "command": "x market",
+      "id": "bh7pis7f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stalls-from-above"
+        ]
+      },
+      "command": "x stalls",
+      "id": "bpi8qv4t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The air is fresh up here"
+        ]
+      },
+      "command": "smell",
+      "id": "v692lw09",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "relatively quiet and peaceful up here"
+        ]
+      },
+      "command": "listen",
+      "id": "jxq1qttr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "85aficpk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "h7qyf5bv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "s5zr8lbq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Exotic Gems Stall"
+        ]
+      },
+      "command": "w",
+      "id": "yfhgx01s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Herb Stall"
+        ]
+      },
+      "command": "n",
+      "id": "9bjbl2jc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "n",
+      "id": "6k1l1czq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Alley"
+        ]
+      },
+      "command": "nw",
+      "id": "ubive4y1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nobody comes back here."
+        ],
+        "states": [
+          "shoppers.location = Alley"
+        ]
+      },
+      "command": "x crowd",
+      "id": "98yhxdr4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted market-from-alley"
+        ]
+      },
+      "command": "x market",
+      "id": "6bh5mt6d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stalls-from-alley"
+        ]
+      },
+      "command": "x stalls",
+      "id": "gzac67pu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted garbage-ripe-here"
+        ]
+      },
+      "command": "smell",
+      "id": "ca25017m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Little piles of garbage litter the alley."
+        ]
+      },
+      "command": "x garbage",
+      "id": "okfyfuiz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted garbage-ripe"
+        ]
+      },
+      "command": "smell garbage",
+      "id": "ii35pbdy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted garbage-no-digging"
+        ]
+      },
+      "command": "take garbage",
+      "id": "zgpjncwn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "providing shade for the merchants"
+        ]
+      },
+      "command": "x awnings",
+      "id": "9m0g3lru",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wires anchor the support posts"
+        ]
+      },
+      "command": "x wires",
+      "id": "nc24qekv",
+      "type": "turn"
+    }
+  ],
+  "id": "oq73o01x",
+  "ordinal": 3,
+  "parent": "ytr5jjs1"
+}

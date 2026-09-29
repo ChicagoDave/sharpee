@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "knocking over a couple of shoppers"
+        ],
+        "notContains": [
+          "Shouts ring out and fingers point",
+          "You hear shouting coming from all quarters of the market."
+        ],
+        "states": [
+          "player.location = Northwest Junction",
+          "cloak.location = Northwest Junction",
+          "emitted slide-wind"
+        ]
+      },
+      "command": "slide down northwest cable",
+      "id": "6vqrwa6s",
+      "type": "turn"
+    }
+  ],
+  "id": "m84dcmdp",
+  "ordinal": 6,
+  "parent": "k6sd0y98"
+}

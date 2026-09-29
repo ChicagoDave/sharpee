@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The stage goes very quiet. \"Henslowe's man. In my tiring-house, in my company, in my HOUSE.\" He does not raise his voice; the house raises it for him. Two hired men take your arms, and Bankside takes you back the way it takes all spoiled goods.",
+          "Bankside is not wide, but it has never seemed wider than it does from the wrong side of the Globe's doors, with the company's eyes on your back and Henslowe's silver still sewn in your coat. The Admiral's Men will hear of it by supper. Henslowe does not pay for a burned man."
+        ]
+      },
+      "command": "ask burbage about henslowe",
+      "ending": "unmasked-lose",
+      "id": "mhhrzuw5",
+      "type": "turn"
+    }
+  ],
+  "id": "7bhfwlon",
+  "ordinal": 1,
+  "parent": "i9duzzdp"
+}

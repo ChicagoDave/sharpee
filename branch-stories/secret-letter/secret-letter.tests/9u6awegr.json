@@ -1,0 +1,20 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Behind Maiden House"
+        ],
+        "states": [
+          "player.location = Behind Maiden House"
+        ]
+      },
+      "command": "climb window",
+      "id": "uanewuly",
+      "type": "turn"
+    }
+  ],
+  "id": "9u6awegr",
+  "ordinal": 1,
+  "parent": "5xvivtu7"
+}

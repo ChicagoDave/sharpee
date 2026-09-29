@@ -1,0 +1,59 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted odd-rolled-up-parchment"
+        ]
+      },
+      "command": "search chandelier",
+      "id": "ck05z6s2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacqueline Toresal",
+          "Your hand is trembling as you fold the letter.",
+          "you need to get out of here — fast."
+        ]
+      },
+      "command": "get letter",
+      "id": "i3fqt1vz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacqueline Toresal",
+          "Lord William, Duke of Toresal"
+        ],
+        "notContains": [
+          "Your hand is trembling"
+        ]
+      },
+      "command": "x letter",
+      "id": "qjour694",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Master Bedroom",
+          "run smack into someone coming the other way.",
+          "'Little thief!'",
+          "Fossville's butler."
+        ],
+        "states": [
+          "player.location = Master Bedroom"
+        ]
+      },
+      "command": "n",
+      "id": "6pak5pj0",
+      "type": "turn"
+    }
+  ],
+  "id": "4u9noouu",
+  "ordinal": 1,
+  "parent": "h4goviwo"
+}

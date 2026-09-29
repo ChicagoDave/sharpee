@@ -1,0 +1,18 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Jack Toresal, who has been a boy in this market",
+          "Jack Toresal, in a green dress and a lady's hat, with a"
+        ]
+      },
+      "command": "x me",
+      "id": "abc7pdbf",
+      "type": "turn"
+    }
+  ],
+  "id": "6s2v6wco",
+  "ordinal": 1,
+  "parent": "sumw3w09"
+}

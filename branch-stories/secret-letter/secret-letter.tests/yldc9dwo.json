@@ -1,0 +1,96 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "A group of people have gathered just outside the alley",
+          "grim, ugly tone"
+        ]
+      },
+      "command": "look",
+      "id": "mjwda6ze",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You strain to hear what the men are saying",
+          "Maybe if you got some elevation"
+        ]
+      },
+      "command": "listen to voices",
+      "id": "uqinkmhg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You'd have to poke your head out of the alley"
+        ]
+      },
+      "command": "x men",
+      "id": "6wz0lsxk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Those men are still talking right outside the alley",
+          "Something — an intuition?"
+        ],
+        "states": [
+          "player.location = Alley"
+        ]
+      },
+      "command": "se",
+      "id": "zshxb6zq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Better stay out of sight until they leave"
+        ],
+        "states": [
+          "player.location = Alley"
+        ]
+      },
+      "command": "se",
+      "id": "j42sju4y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is a big bite taken out of one side"
+        ]
+      },
+      "command": "x apple",
+      "id": "c5bo1sxe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's nothing left of the apple to eat."
+        ]
+      },
+      "command": "eat apple",
+      "id": "uducrgjc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You cannot see up to the roof from down here"
+        ]
+      },
+      "command": "peer u",
+      "id": "gfn6oljc",
+      "type": "turn"
+    }
+  ],
+  "id": "yldc9dwo",
+  "ordinal": 1,
+  "parent": "xtm1snmb"
+}

@@ -1,0 +1,136 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ],
+        "states": [
+          "story.state = hunted"
+        ]
+      },
+      "command": "ne",
+      "id": "2t8g0hgt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "something you know how to do, at least",
+          "pluck the loaf from its shelf",
+          "'Stop, thief!'",
+          "stuffing the loaf into your satchel",
+          "This stallkeeper will be on the lookout for you now"
+        ],
+        "notContains": [
+          "With the stallkeepers all on edge about the mercenaries",
+          "Here you go again."
+        ],
+        "states": [
+          "loaf.location = cloth satchel",
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "take loaf",
+      "id": "q5v04p4f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "e",
+      "id": "q0yfgt8c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "e",
+      "id": "vooqzi0m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "With the stallkeepers all on edge about the mercenaries",
+          "'Thief!'",
+          "something gray and hairy scampers out",
+          "stuffing the pear into your satchel",
+          "You shouldn't have any trouble coming back here if you need to."
+        ],
+        "notContains": [
+          "something you know how to do, at least",
+          "Here you go again."
+        ],
+        "states": [
+          "pear.location = cloth satchel",
+          "player.location = Eastern Junction"
+        ]
+      },
+      "command": "take pear",
+      "id": "awy4imqe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "look",
+      "id": "jvqx10xk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "n",
+      "id": "jqiejvlh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "no one notices you picking up another piece of fruit",
+          "You slip the fruit into your satchel"
+        ],
+        "notContains": [
+          "something gray and hairy scampers out",
+          "With the stallkeepers all on edge about the mercenaries"
+        ],
+        "states": [
+          "orange.location = cloth satchel",
+          "player.location = Pottery Stall"
+        ]
+      },
+      "command": "take orange",
+      "id": "fk3qyk5h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ],
+        "notContains": [
+          "On the clay pots you see a clay pot."
+        ]
+      },
+      "command": "look",
+      "id": "h0i7rui8",
+      "type": "turn"
+    }
+  ],
+  "id": "kc7muq7m",
+  "ordinal": 3,
+  "parent": "zjak0nxl"
+}

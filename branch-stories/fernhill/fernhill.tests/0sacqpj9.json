@@ -1,0 +1,41 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "vi9fsbw2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "8rh2lz30",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cache goes up in one white roar"
+        ],
+        "notContains": [
+          "Sparks walk the waxed cord"
+        ]
+      },
+      "command": "wait",
+      "ending": "fuse-blast",
+      "id": "9htlyk4d",
+      "type": "turn"
+    }
+  ],
+  "id": "0sacqpj9",
+  "ordinal": 3,
+  "parent": "gt5xcmrc"
+}

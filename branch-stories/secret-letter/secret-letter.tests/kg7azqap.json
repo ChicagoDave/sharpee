@@ -1,0 +1,30 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fiona is a plump and genial woman"
+        ]
+      },
+      "command": "x fiona",
+      "id": "1ef0cu9g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'How did I get here?'",
+          "Suddenly, someone pounds on the front door.",
+          "'Open in the name of Baron Fossville!'",
+          "quick, Jacqueline! Go to the laundry room!"
+        ]
+      },
+      "command": "talk to fiona",
+      "id": "e61awjg9",
+      "type": "turn"
+    }
+  ],
+  "id": "kg7azqap",
+  "ordinal": 0,
+  "parent": "8j1g8212"
+}

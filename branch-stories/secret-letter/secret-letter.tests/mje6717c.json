@@ -1,0 +1,98 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Great Hall"
+        ]
+      },
+      "command": "n",
+      "id": "nnsl27n8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Second Floor Landing"
+        ]
+      },
+      "command": "u",
+      "id": "y21373ty",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Third Floor Landing"
+        ]
+      },
+      "command": "u",
+      "id": "g4tprsbl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Master Bedroom"
+        ]
+      },
+      "command": "s",
+      "id": "kbtie7n3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bathroom"
+        ]
+      },
+      "command": "s",
+      "id": "wqtque5q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Suddenly you figure it out — these are faucets!"
+        ]
+      },
+      "command": "x faucets",
+      "id": "2ysosule",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "but the water is freezing!",
+          "'The furnace must be off,' muses Shannon. 'Perhaps we can get it started again.'"
+        ]
+      },
+      "command": "bathe",
+      "id": "lbu495zv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "but the water is freezing!"
+        ]
+      },
+      "command": "turn faucets",
+      "id": "o6lldpo4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "but the water is freezing!"
+        ]
+      },
+      "command": "enter tub",
+      "id": "ve5etomr",
+      "type": "turn"
+    }
+  ],
+  "id": "mje6717c",
+  "ordinal": 1,
+  "parent": "7lo93nnc"
+}

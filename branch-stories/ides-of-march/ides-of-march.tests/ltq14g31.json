@@ -1,0 +1,18 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"No.\" He straightens, and the warmth goes out like a snuffed wick. \"Then we have been two men passing an evening, and nothing said.\"",
+          "You hear: \"\"Then it is finished.\" He says it lightly, and the lightness is the armour. \"The Rose was asked, and the Rose was answered, and Kemp keeps his own counsel from here. We shall not speak of it again.\"\""
+        ]
+      },
+      "command": "no",
+      "id": "z7i22ygt",
+      "type": "turn"
+    }
+  ],
+  "id": "ltq14g31",
+  "ordinal": 1,
+  "parent": "cp299f81"
+}

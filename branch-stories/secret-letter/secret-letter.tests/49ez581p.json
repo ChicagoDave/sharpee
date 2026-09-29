@@ -1,0 +1,50 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted meat-handful"
+        ]
+      },
+      "command": "take meat",
+      "id": "5gj7p52i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "stained black with blood"
+        ]
+      },
+      "command": "x block",
+      "id": "kj5c6lkq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "s",
+      "id": "uo27u82q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "tangy smell of oiled steel"
+        ],
+        "states": [
+          "player.location = Armory"
+        ]
+      },
+      "command": "ne",
+      "id": "o7w5v04z",
+      "type": "turn"
+    }
+  ],
+  "id": "49ez581p",
+  "ordinal": 0,
+  "parent": "qdzqhmiw"
+}

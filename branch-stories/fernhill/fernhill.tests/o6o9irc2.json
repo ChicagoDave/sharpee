@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Its one heavy fruit has come and gone"
+        ]
+      },
+      "command": "x vine",
+      "id": "4p8kmwtb",
+      "type": "turn"
+    }
+  ],
+  "id": "o6o9irc2",
+  "ordinal": 1,
+  "parent": "5374qjvj"
+}

@@ -1,0 +1,160 @@
+Loading story from: /Users/david/repos/sharpee/branch-stories/ides-of-march
+Tree document: ides-of-march.tests.json (seed 42, 4 line(s))
+
+✓ opening-yard
+✓ yard · ask kemp about the ale
+✓ stage · ask burbage about henslowe
+✓ tavern · no
+39 cards passing, 51 assertions passing
+75 commands (38 authored + 37 replayed)
+
+Derived rule tests (ADR-356): 80 branches
+◌ Your Lodging · after entering · when both — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (ides-of-march.story:87)
+◌ Your Lodging · after entering · when kemp-only — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (ides-of-march.story:89)
+◌ Your Lodging · after entering · when book-only — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (ides-of-march.story:91)
+◌ Your Lodging · after entering · when nothing-yet — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (ides-of-march.story:93)
+◌ Your Lodging · after entering — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (ides-of-march.story:98)
+◌ Your Lodging · after entering — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (ides-of-march.story:107)
+✓ play-book · on taking
+◌ Will Kemp · on every-turn, once — SKIPPED condition-knows-topic: `knows-topic` is not a floor form (ides-of-march.story:208)
+✓ Will Kemp · topic the jig
+✓ Will Kemp · topic the play
+✓ Will Kemp · topic the grievance
+✓ Will Kemp · topic norwich
+✓ Will Kemp · topic burbage
+✓ Will Kemp · topic shakespeare
+◌ Will Kemp · topic the rose · refused kemp-too-raw — SKIPPED condition-recency: `recency` is not a floor form (ides-of-march.story:258)
+◌ Will Kemp · topic the rose · refused kemp-too-raw — SKIPPED condition-recency: `recency` is not a floor form (ides-of-march.story:259)
+◌ Will Kemp · topic the rose — SKIPPED condition-recency: `recency` is not a floor form (ides-of-march.story:257)
+✓ Will Kemp · topic the ale
+✓ Will Kemp · topic the bear
+◌ Will Kemp · will-kemp.greetings[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:276)
+◌ Will Kemp · will-kemp.greetings[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:282)
+◌ Will Kemp · will-kemp.greetings[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:285)
+◌ Will Kemp · will-kemp.greetings[3].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:288)
+◌ Will Kemp · will-kemp.greetings[4].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:292)
+◌ Will Kemp · will-kemp.exchanges[0].rows[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:340)
+◌ Will Kemp · will-kemp.exchanges[0].rows[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:352)
+◌ Will Kemp · will-kemp.exchanges[0].rows[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:357)
+◌ Will Kemp · will-kemp.exchanges[0].rows[3].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:362)
+◌ Will Kemp · will-kemp.initiative[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:307)
+◌ Will Kemp · will-kemp.initiative[1].body — SKIPPED no-claims: nothing the table maps: hold-tongue (ides-of-march.story:311)
+◌ Will Kemp · will-kemp.conversations[0].beats[0].body — SKIPPED condition-recency: `recency` is not a floor form (ides-of-march.story:323)
+◌ Will Kemp · will-kemp.conversations[0].beats[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:325)
+◌ Will Kemp · will-kemp.conversations[0].beats[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:327)
+◌ Will Kemp · will-kemp.conversations[0].onResuming — SKIPPED command-none: no player command fires this branch (ides-of-march.story:320)
+◌ Will Kemp · will-kemp.conversations[0].onRefusing — SKIPPED command-none: no player command fires this branch (ides-of-march.story:320)
+◌ Will Kemp · will-kemp.conversations[0].conclusion — SKIPPED command-none: no player command fires this branch (ides-of-march.story:320)
+✓ Richard Burbage · topic the play
+✓ Richard Burbage · topic kemp
+✓ Richard Burbage · topic norwich
+✓ Richard Burbage · topic the house
+✓ Richard Burbage · topic the grievance
+✓ Richard Burbage · topic the weather
+◌ Richard Burbage · richard-burbage.greetings[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:453)
+◌ Richard Burbage · richard-burbage.greetings[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:459)
+◌ Richard Burbage · richard-burbage.greetings[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:462)
+◌ Richard Burbage · richard-burbage.greetings[3].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:466)
+◌ Richard Burbage · richard-burbage.greetings[4].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:469)
+◌ Richard Burbage · richard-burbage.exchanges[0].rows[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:495)
+◌ Richard Burbage · richard-burbage.exchanges[0].rows[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:501)
+◌ Richard Burbage · richard-burbage.exchanges[0].rows[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:508)
+◌ Richard Burbage · richard-burbage.exchanges[0].rows[3].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:513)
+◌ Richard Burbage · richard-burbage.initiative[0].body — SKIPPED no-claims: nothing the table maps: hold-tongue (ides-of-march.story:484)
+◌ Richard Burbage · richard-burbage.initiative[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:486)
+◌ Richard Burbage · richard-burbage.conversations[0].beats[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:442)
+◌ Richard Burbage · richard-burbage.conversations[0].beats[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:444)
+◌ Richard Burbage · richard-burbage.conversations[0].onResuming — SKIPPED command-none: no player command fires this branch (ides-of-march.story:439)
+◌ Richard Burbage · richard-burbage.conversations[0].conclusion — SKIPPED command-none: no player command fires this branch (ides-of-march.story:439)
+✓ William Shakespeare · topic the play
+✓ William Shakespeare · topic kemp
+✓ William Shakespeare · topic the book
+✓ William Shakespeare · topic the grievance
+✓ William Shakespeare · topic the weather
+◌ William Shakespeare · william-shakespeare.greetings[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:610)
+◌ William Shakespeare · william-shakespeare.greetings[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:614)
+◌ William Shakespeare · william-shakespeare.greetings[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:617)
+◌ William Shakespeare · william-shakespeare.greetings[3].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:620)
+◌ William Shakespeare · william-shakespeare.greetings[4].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:623)
+◌ William Shakespeare · william-shakespeare.exchanges[0].rows[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:642)
+◌ William Shakespeare · william-shakespeare.exchanges[0].rows[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:647)
+◌ William Shakespeare · william-shakespeare.exchanges[0].rows[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:653)
+◌ William Shakespeare · william-shakespeare.exchanges[0].rows[3].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:660)
+◌ William Shakespeare · william-shakespeare.exchanges[0].rows[4].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:666)
+◌ William Shakespeare · william-shakespeare.initiative[0].body — SKIPPED no-claims: nothing the table maps: hold-tongue (ides-of-march.story:637)
+◌ William Shakespeare · william-shakespeare.conversations[0].beats[0].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:586)
+◌ William Shakespeare · william-shakespeare.conversations[0].beats[1].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:597)
+◌ William Shakespeare · william-shakespeare.conversations[0].beats[2].body — SKIPPED command-none: no player command fires this branch (ides-of-march.story:599)
+◌ William Shakespeare · william-shakespeare.conversations[0].onParting — SKIPPED command-none: no player command fires this branch (ides-of-march.story:584)
+◌ William Shakespeare · william-shakespeare.conversations[0].onResuming — SKIPPED command-none: no player command fires this branch (ides-of-march.story:584)
+◌ William Shakespeare · william-shakespeare.conversations[0].conclusion — SKIPPED command-none: no player command fires this branch (ides-of-march.story:584)
+✓ story · before the game starts
+
+Branches exercised: 21 / 80
+Not exercised (59):
+  ides-of-march.story:87 · Your Lodging · after entering · when both — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  ides-of-march.story:89 · Your Lodging · after entering · when kemp-only — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  ides-of-march.story:91 · Your Lodging · after entering · when book-only — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  ides-of-march.story:93 · Your Lodging · after entering · when nothing-yet — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  ides-of-march.story:98 · Your Lodging · after entering — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  ides-of-march.story:107 · Your Lodging · after entering — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  ides-of-march.story:208 · Will Kemp · on every-turn, once — condition-knows-topic (`knows-topic` is not a floor form)
+  ides-of-march.story:258 · Will Kemp · topic the rose · refused kemp-too-raw — condition-recency (`recency` is not a floor form)
+  ides-of-march.story:259 · Will Kemp · topic the rose · refused kemp-too-raw — condition-recency (`recency` is not a floor form)
+  ides-of-march.story:257 · Will Kemp · topic the rose — condition-recency (`recency` is not a floor form)
+  ides-of-march.story:276 · Will Kemp · will-kemp.greetings[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:282 · Will Kemp · will-kemp.greetings[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:285 · Will Kemp · will-kemp.greetings[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:288 · Will Kemp · will-kemp.greetings[3].body — command-none (no player command fires this branch)
+  ides-of-march.story:292 · Will Kemp · will-kemp.greetings[4].body — command-none (no player command fires this branch)
+  ides-of-march.story:340 · Will Kemp · will-kemp.exchanges[0].rows[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:352 · Will Kemp · will-kemp.exchanges[0].rows[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:357 · Will Kemp · will-kemp.exchanges[0].rows[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:362 · Will Kemp · will-kemp.exchanges[0].rows[3].body — command-none (no player command fires this branch)
+  ides-of-march.story:307 · Will Kemp · will-kemp.initiative[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:311 · Will Kemp · will-kemp.initiative[1].body — no-claims (nothing the table maps: hold-tongue)
+  ides-of-march.story:323 · Will Kemp · will-kemp.conversations[0].beats[0].body — condition-recency (`recency` is not a floor form)
+  ides-of-march.story:325 · Will Kemp · will-kemp.conversations[0].beats[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:327 · Will Kemp · will-kemp.conversations[0].beats[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:320 · Will Kemp · will-kemp.conversations[0].onResuming — command-none (no player command fires this branch)
+  ides-of-march.story:320 · Will Kemp · will-kemp.conversations[0].onRefusing — command-none (no player command fires this branch)
+  ides-of-march.story:320 · Will Kemp · will-kemp.conversations[0].conclusion — command-none (no player command fires this branch)
+  ides-of-march.story:453 · Richard Burbage · richard-burbage.greetings[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:459 · Richard Burbage · richard-burbage.greetings[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:462 · Richard Burbage · richard-burbage.greetings[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:466 · Richard Burbage · richard-burbage.greetings[3].body — command-none (no player command fires this branch)
+  ides-of-march.story:469 · Richard Burbage · richard-burbage.greetings[4].body — command-none (no player command fires this branch)
+  ides-of-march.story:495 · Richard Burbage · richard-burbage.exchanges[0].rows[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:501 · Richard Burbage · richard-burbage.exchanges[0].rows[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:508 · Richard Burbage · richard-burbage.exchanges[0].rows[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:513 · Richard Burbage · richard-burbage.exchanges[0].rows[3].body — command-none (no player command fires this branch)
+  ides-of-march.story:484 · Richard Burbage · richard-burbage.initiative[0].body — no-claims (nothing the table maps: hold-tongue)
+  ides-of-march.story:486 · Richard Burbage · richard-burbage.initiative[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:442 · Richard Burbage · richard-burbage.conversations[0].beats[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:444 · Richard Burbage · richard-burbage.conversations[0].beats[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:439 · Richard Burbage · richard-burbage.conversations[0].onResuming — command-none (no player command fires this branch)
+  ides-of-march.story:439 · Richard Burbage · richard-burbage.conversations[0].conclusion — command-none (no player command fires this branch)
+  ides-of-march.story:610 · William Shakespeare · william-shakespeare.greetings[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:614 · William Shakespeare · william-shakespeare.greetings[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:617 · William Shakespeare · william-shakespeare.greetings[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:620 · William Shakespeare · william-shakespeare.greetings[3].body — command-none (no player command fires this branch)
+  ides-of-march.story:623 · William Shakespeare · william-shakespeare.greetings[4].body — command-none (no player command fires this branch)
+  ides-of-march.story:642 · William Shakespeare · william-shakespeare.exchanges[0].rows[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:647 · William Shakespeare · william-shakespeare.exchanges[0].rows[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:653 · William Shakespeare · william-shakespeare.exchanges[0].rows[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:660 · William Shakespeare · william-shakespeare.exchanges[0].rows[3].body — command-none (no player command fires this branch)
+  ides-of-march.story:666 · William Shakespeare · william-shakespeare.exchanges[0].rows[4].body — command-none (no player command fires this branch)
+  ides-of-march.story:637 · William Shakespeare · william-shakespeare.initiative[0].body — no-claims (nothing the table maps: hold-tongue)
+  ides-of-march.story:586 · William Shakespeare · william-shakespeare.conversations[0].beats[0].body — command-none (no player command fires this branch)
+  ides-of-march.story:597 · William Shakespeare · william-shakespeare.conversations[0].beats[1].body — command-none (no player command fires this branch)
+  ides-of-march.story:599 · William Shakespeare · william-shakespeare.conversations[0].beats[2].body — command-none (no player command fires this branch)
+  ides-of-march.story:584 · William Shakespeare · william-shakespeare.conversations[0].onParting — command-none (no player command fires this branch)
+  ides-of-march.story:584 · William Shakespeare · william-shakespeare.conversations[0].onResuming — command-none (no player command fires this branch)
+  ides-of-march.story:584 · William Shakespeare · william-shakespeare.conversations[0].conclusion — command-none (no player command fires this branch)
+
+Endings reached: 2 / 5
+Not reached (3):
+  ides-of-march.story:90 · ides-no-book (lose)
+  ides-of-march.story:92 · ides-no-kemp (lose)
+  ides-of-march.story:94 · ides-nothing (lose)
+Rooms entered: 5 / 5

@@ -1,0 +1,90 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "gfzr24j8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "h3i4hrms",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "ae0l9sff",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "qxbu72yj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "2f1fwuyj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "73ats5kx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ],
+        "notContains": [
+          "carrying an axe"
+        ]
+      },
+      "command": "wait",
+      "id": "x8x1t2of",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "carrying an axe"
+        ]
+      },
+      "command": "wait",
+      "id": "5oxxu96i",
+      "type": "turn"
+    }
+  ],
+  "id": "z9y07mdp",
+  "ordinal": 0,
+  "parent": "kesbhx7z"
+}

@@ -1,0 +1,23 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The monkey"
+        ],
+        "notContains": [
+          "You can't see any such thing"
+        ],
+        "states": [
+          "necklace.location = monkey"
+        ]
+      },
+      "command": "take necklace",
+      "id": "oavlwson",
+      "type": "turn"
+    }
+  ],
+  "id": "t97d53ge",
+  "ordinal": 1,
+  "parent": "8apa5ok6"
+}

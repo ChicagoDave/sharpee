@@ -13,12 +13,10 @@
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { FERNHILL_DIR, commandResults, derivedSummary, runEnd, runFernhillTest, runTestJson, type TestRun } from './support/fernhill-run';
-import { copyStoryToScratch, editJson, type ScratchStory } from './support/scratch-story';
+import type { TreeCard, TreeDocument } from '../../packages/branch-tester/src/tree-document';
+import { copyStoryToScratch, editTree, type ScratchStory } from './support/scratch-story';
 
-interface Card { type: string; command?: string; ending?: string; assertions: Record<string, unknown> }
-interface TreeDocument { cards: Card[] }
-
-/** The main line's terminal card — the last of the document's own cards, whatever the branches hold. */
+/** The main line's terminal card — the last of the tree's own cards, whatever the branches hold. */
 function terminalCardIndex(document: TreeDocument): number {
   return document.cards.length - 1;
 }
@@ -33,14 +31,14 @@ beforeAll(() => {
   real = runFernhillTest();
 
   withoutEndCard = copyStoryToScratch(FERNHILL_DIR, 'narrative-ending-gap-');
-  const removedEnd = editJson<TreeDocument, Card>(join(withoutEndCard.dir, 'fernhill.tests.json'), (document) =>
+  const removedEnd = editTree<TreeCard>(join(withoutEndCard.dir, 'fernhill.tests'), (document) =>
     document.cards.splice(terminalCardIndex(document), 1)[0],
   );
   expect(removedEnd.ending).toBe('fernhill-saved');
   gapRun = runTestJson(withoutEndCard.dir);
 
   stopsShort = copyStoryToScratch(FERNHILL_DIR, 'narrative-ending-short-');
-  const removedBefore = editJson<TreeDocument, Card>(join(stopsShort.dir, 'fernhill.tests.json'), (document) =>
+  const removedBefore = editTree<TreeCard>(join(stopsShort.dir, 'fernhill.tests'), (document) =>
     document.cards.splice(terminalCardIndex(document) - 1, 1)[0],
   );
   expect(removedBefore.ending).toBeUndefined();

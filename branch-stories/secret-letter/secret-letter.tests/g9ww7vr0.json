@@ -1,0 +1,240 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted sapling-found-east"
+        ]
+      },
+      "command": "search underbrush",
+      "id": "vwp1w2v3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Woods",
+          "A split sapling grows right next to a path leading east."
+        ]
+      },
+      "command": "look",
+      "id": "m8ron7v6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One trail leads east, past a split sapling."
+        ]
+      },
+      "command": "x trails",
+      "id": "fny15ir8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Better stick to the east path that Bobby took last night."
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "n",
+      "id": "ceiv31mw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Clearing",
+          "In the center of the clearing stands a crumbling fountain, topped by a cracked statue of the Goddess Brigid.",
+          "At the fountain, where they took you and Bobby last night,",
+          "Pieter is here,"
+        ],
+        "notContains": [
+          "narrow opening into darkness",
+          "Good night, little mouse"
+        ],
+        "states": [
+          "player.location = Clearing",
+          "Pieter.location = Clearing"
+        ]
+      },
+      "command": "e",
+      "id": "4bnltcx8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "But at one time it must have been very beautiful."
+        ],
+        "notContains": [
+          "narrow opening into darkness"
+        ]
+      },
+      "command": "x fountain",
+      "id": "3x6ob4nf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's nothing in there but bird droppings and dead leaves."
+        ],
+        "states": [
+          "player.location = Clearing"
+        ]
+      },
+      "command": "d",
+      "id": "hze47281",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The metal knob pushes in, then pops out again with a click. Suddenly there is a deep, solid thunk",
+          "Just as it did before, part of the statue's base swings inward.",
+          "Pieter raises his eyebrows. 'Huh,' he says, 'I never knew about that.'"
+        ]
+      },
+      "command": "push bolt",
+      "id": "xlc75d6a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bolt-click-nothing"
+        ]
+      },
+      "command": "push bolt",
+      "id": "le96nfan",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "One side of the stone plinth supporting the statue has opened up, revealing a narrow opening into darkness."
+        ]
+      },
+      "command": "x fountain",
+      "id": "ejp95ovd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't turn back now — and besides, it would take you all night to find your way back out of those woods."
+        ],
+        "states": [
+          "player.location = Clearing"
+        ]
+      },
+      "command": "n",
+      "id": "1253ik9r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Underneath the Fountain",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Underneath the Fountain",
+          "Pieter.location = Underneath the Fountain"
+        ]
+      },
+      "command": "d",
+      "id": "ts6dov7q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tunnel End",
+          "The tunnel ends here at a blank, stone wall.",
+          "Pieter is here,"
+        ],
+        "states": [
+          "player.location = Tunnel End"
+        ]
+      },
+      "command": "n",
+      "id": "lcilqol7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Carefully, you run your fingertips across the wall, trying to remember where Bobby found the loose brick the last time you were here.",
+          "Ah-ha! You find it — the faint outline of a rectangular hole, with a brick resting loosely in the gap."
+        ],
+        "notContains": [
+          "except for the rough"
+        ]
+      },
+      "command": "x wall",
+      "id": "filmzwov",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "Ah-ha"
+        ],
+        "states": [
+          "emitted wall-with-the-hole"
+        ]
+      },
+      "command": "x wall",
+      "id": "kzas2b0k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brick is loose here."
+        ]
+      },
+      "command": "x hole",
+      "id": "hti4e0k8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted wall-no-obvious-means"
+        ]
+      },
+      "command": "open wall",
+      "id": "lpc7nqry",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted brick-does-not-push"
+        ]
+      },
+      "command": "push brick",
+      "id": "45r048km",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted brick-does-not-turn"
+        ]
+      },
+      "command": "turn brick",
+      "id": "z0vqbn1n",
+      "type": "turn"
+    }
+  ],
+  "id": "g9ww7vr0",
+  "ordinal": 0,
+  "parent": "yo781fr9"
+}

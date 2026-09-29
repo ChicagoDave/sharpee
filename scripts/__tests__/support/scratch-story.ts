@@ -2,7 +2,7 @@
  * scratch-story.ts — the "never modify a real story" boundary, as a path.
  *
  * Purpose: give a beat that must change a story (delete a rule's effect,
- *   remove an END STATE card, corrupt the tree document) a private copy in a
+ *   remove an END STATE card, corrupt the test tree) a private copy in a
  *   temp directory outside the repository, so the mutation happens there and
  *   `branch-stories/fernhill` is never written. The copy skips every directory
  *   the root `.gitignore` ignores — build output is rebuilt by the CLI from
@@ -12,12 +12,20 @@
  *   Mutations report what they did, so a test can prove the change was real:
  *   `deleteLine` returns the count and refuses anything but exactly one match.
  *
- * Public interface: copyStoryToScratch, deleteLine, insertAfterLine, editJson, ScratchStory.
+ * Public interface: copyStoryToScratch, deleteLine, insertAfterLine, readTreeFiles, readTree, editTree, ScratchStory.
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join, resolve } from 'node:path';
+import {
+  assembleTree,
+  diffTreeFiles,
+  ensureSegmentIds,
+  segmentTree,
+  type TreeDocument,
+  type TreeFiles,
+} from '../../../packages/branch-tester/src/tree-document';
 
 const REPO_ROOT = resolve(__dirname, '..', '..', '..');
 
@@ -116,16 +124,53 @@ export function insertAfterLine(file: string, needle: string, insertion: string[
 }
 
 /**
- * Edit a JSON file in place through a function, and return what it returned.
+ * Read a test tree directory's own files, keyed by file name.
  *
- * @param file the JSON file
- * @param edit receives the parsed document to mutate; its return value is
+ * @param treeDir the `<story-id>.tests/` directory
+ * @returns the files branch-tester assembles
+ */
+export function readTreeFiles(treeDir: string): TreeFiles {
+  const files: TreeFiles = {};
+  for (const name of readdirSync(treeDir)) {
+    const path = join(treeDir, name);
+    if (statSync(path).isFile()) files[name] = readFileSync(path, 'utf-8');
+  }
+  return files;
+}
+
+/**
+ * Read a test tree directory as the tree it holds.
+ *
+ * @param treeDir the `<story-id>.tests/` directory
+ * @returns the assembled tree
+ * @throws when the directory does not read as a tree — a suite must not
+ *   trust verdicts about a tree it could not read
+ */
+export function readTree(treeDir: string): TreeDocument {
+  const read = assembleTree(readTreeFiles(treeDir));
+  if (read.status !== 'ok') throw new Error(`${treeDir} does not read as a tree: ${read.message}`);
+  return read.document;
+}
+
+/**
+ * Edit a scratch copy's test tree through a function, and return what it
+ * returned. The tree is assembled, edited, and written back the way the
+ * Testing tab writes it — new ids minted, only changed segments rewritten,
+ * segments that no longer exist removed — so the result passes the canonical
+ * gate and the CLI runs it.
+ *
+ * @param treeDir the scratch copy's `<story-id>.tests/` directory
+ * @param edit receives the assembled tree to mutate; its return value is
  *   handed back so the test can assert on what the edit actually removed or changed
  * @returns whatever `edit` returned
  */
-export function editJson<T, R>(file: string, edit: (document: T) => R): R {
-  const document = JSON.parse(readFileSync(file, 'utf-8')) as T;
+export function editTree<R>(treeDir: string, edit: (document: TreeDocument) => R): R {
+  const before = readTreeFiles(treeDir);
+  const document = readTree(treeDir);
   const result = edit(document);
-  writeFileSync(file, JSON.stringify(document, null, 1), 'utf-8');
+  ensureSegmentIds(document);
+  const { written, removed } = diffTreeFiles(before, segmentTree(document));
+  for (const [name, text] of Object.entries(written)) writeFileSync(join(treeDir, name), text, 'utf-8');
+  for (const name of removed) rmSync(join(treeDir, name));
   return result;
 }

@@ -5,8 +5,8 @@
  * both tools carry a test command, each its own implementation). Resolves
  * the project (cwd, a registered name, a directory, or a `.story` file —
  * ADR-277 D1: the file's containing folder is the project), discovers its
- * ADR-307 tree document (`<story-id>.tests.json` beside the `.story` file),
- * and runs it through branch-tester's walker. The document is the ONLY test
+ * test tree (the `<story-id>.tests/` directory beside the `.story` file,
+ * ADR-307, ADR-355), and runs it through branch-tester's walker. The tree is the ONLY test
  * model for Chord projects: the transcript-file workflow (`tests/`
  * discovery, `--chain`, explicit `.transcript` args) was retired by
  * ADR-307's cutover — each retired form fails by name, never silently.
@@ -19,7 +19,7 @@
 import * as path from 'node:path';
 import { existsSync, statSync } from 'node:fs';
 import { lookupStory } from '../registry.js';
-import { findTreeDocument, runTreeDocumentCommand } from './test-tree-document.js';
+import { findTreeDirectory, runTreeDocumentCommand } from './test-tree-document.js';
 
 const USAGE =
   'usage: sharpee test [name|dir|file.story] [--tree] [--stop-on-failure|-s] [--verbose|-v] [--json] [--capture-output] [--capture-world]';
@@ -72,7 +72,7 @@ export async function runTestCommand(rest: string[]): Promise<number> {
       return 2;
     } else if (arg.endsWith('.transcript')) {
       console.error(
-        `test: '.transcript' files are retired for Chord projects — tests live in the story's tree document (<story-id>.tests.json), recorded by the Testing tab (ADR-307)\n${USAGE}`,
+        `test: '.transcript' files are retired for Chord projects — tests live in the story's test tree (the <story-id>.tests/ directory), recorded by the Testing tab\n${USAGE}`,
       );
       return 2;
     } else if (arg.endsWith('.story')) {
@@ -107,20 +107,20 @@ export async function runTestCommand(rest: string[]): Promise<number> {
 
   const dir = path.resolve(projectDir ?? process.cwd());
 
-  // ADR-307 D2/Q-2: `<story-id>.tests.json` beside the `.story` file is the
-  // one artifact. No document is a named condition, not an empty pass — a
-  // module project (no `.story` file) has no tree document either.
-  const docPath = findTreeDocument(dir);
-  if (docPath === undefined) {
+  // ADR-307 D2/Q-2, ADR-355 D3: the `<story-id>.tests/` directory beside the
+  // `.story` file is the one artifact. No tree is a named condition, not an
+  // empty pass — a module project (no `.story` file) has no test tree either.
+  const treePath = findTreeDirectory(dir);
+  if (treePath === undefined) {
     console.error(
-      `test: no tree document found in ${dir} — expected <story-id>.tests.json beside the .story file (record tests in the IDE's Testing tab, ADR-307)`,
+      `test: no test tree found in ${dir} — expected a <story-id>.tests/ directory beside the .story file (record tests in the IDE's Testing tab)`,
     );
     return 2;
   }
 
   return runTreeDocumentCommand({
     dir,
-    docPath,
+    treePath,
     verbose,
     stopOnFailure,
     json,

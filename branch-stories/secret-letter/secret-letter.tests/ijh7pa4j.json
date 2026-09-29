@@ -1,0 +1,129 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The Duke's wife is thin and nervous and never speaks."
+        ]
+      },
+      "command": "x duchess",
+      "id": "rhoo11az",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Duchess shrinks back as you approach, and the Duke quickly moves to stand between you and her"
+        ]
+      },
+      "command": "talk to duchess",
+      "id": "fnd2efal",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'No need for introductions,'",
+          "'No need for introductions,'"
+        ],
+        "states": [
+          "Duke of Inhyron is spoken"
+        ]
+      },
+      "command": "talk to duke",
+      "id": "42pe4wg0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted duchess-shrinks-back"
+        ]
+      },
+      "command": "talk to duchess",
+      "id": "gnbt4zc3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Yes, girl?' says the Duke of Inhyron."
+        ]
+      },
+      "command": "talk to duke",
+      "id": "wq26m45q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Baron Amhyron is middle-aged, somewhat stout, with a red face and kind crinkles around his deep, brown eyes."
+        ]
+      },
+      "command": "x amhyron",
+      "id": "ln2ii2k6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Good evening, milady,'",
+          "The Queen rises. The room rises with her."
+        ],
+        "states": [
+          "Baron of Amhyron is spoken",
+          "the ball is decided"
+        ]
+      },
+      "command": "talk to amhyron",
+      "id": "mfjkputh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Earl of Bresa has a bald head and a huge, curly, red beard."
+        ],
+        "notContains": [
+          "the asking"
+        ]
+      },
+      "command": "x bresa",
+      "id": "2knae0y3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Ah-HA! The young up-and-comer!",
+          "The Priestess comes to you through the crowd, and the crowd",
+          "Vella"
+        ],
+        "states": [
+          "player.location = Vella",
+          "the ball is taken"
+        ]
+      },
+      "command": "talk to bresa",
+      "id": "k26gotol",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Vella",
+          "the Vedd prayer circle, Chapter 12's"
+        ],
+        "states": [
+          "player.location = Vella"
+        ]
+      },
+      "command": "look",
+      "id": "3r8xa809",
+      "type": "turn"
+    }
+  ],
+  "id": "ijh7pa4j",
+  "ordinal": 0,
+  "parent": "xv6bygwa"
+}

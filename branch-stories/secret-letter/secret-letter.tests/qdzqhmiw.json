@@ -1,0 +1,61 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Germaise's huge brick oven"
+        ]
+      },
+      "command": "x oven",
+      "id": "km6watn4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you need answers more than you need a snack"
+        ]
+      },
+      "command": "take bread",
+      "id": "l5jevjyv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "just a thin film of flour"
+        ]
+      },
+      "command": "take flour",
+      "id": "tfn21rya",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "s",
+      "id": "5gph7xzd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Chains of linked sausages",
+          "Holstenoffer glances over his shoulder as you come in."
+        ],
+        "states": [
+          "player.location = Butcher's Shop"
+        ]
+      },
+      "command": "n",
+      "id": "5515mj68",
+      "type": "turn"
+    }
+  ],
+  "id": "qdzqhmiw",
+  "ordinal": 0,
+  "parent": "05wt3ztr"
+}

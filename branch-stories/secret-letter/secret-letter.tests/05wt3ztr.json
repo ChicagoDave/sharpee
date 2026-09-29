@@ -1,0 +1,106 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Raised sidewalks allow pedestrians to avoid the mud"
+        ],
+        "states": [
+          "player.location = Commerce Street",
+          "dress.location = cloth satchel",
+          "cap.location = player"
+        ]
+      },
+      "command": "look",
+      "id": "c9wvohzw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It would be a good idea to lay low for a while before returning to Grubber's Market."
+        ]
+      },
+      "command": "w",
+      "id": "h9yqx3w3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "cap"
+        ]
+      },
+      "command": "x cap",
+      "id": "pzfn9vm7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "already"
+        ]
+      },
+      "command": "wear cap",
+      "id": "2u70cw8q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A hanging sign above the door depicts a loaf of bread"
+        ]
+      },
+      "command": "x bakery",
+      "id": "xnfrd37g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A brightly painted pig decorates the sign"
+        ]
+      },
+      "command": "x butcher",
+      "id": "8rjgm3al",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "painted with an axe and shield"
+        ]
+      },
+      "command": "x armory",
+      "id": "i7nceorr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "This sort of filth accumulates"
+        ]
+      },
+      "command": "x mud",
+      "id": "pgg12nsi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "golden loaves, baguettes, and rolls"
+        ],
+        "states": [
+          "player.location = Bakery",
+          "emitted germaise-nods"
+        ]
+      },
+      "command": "nw",
+      "id": "i0y2luo1",
+      "type": "turn"
+    }
+  ],
+  "id": "05wt3ztr",
+  "ordinal": 1,
+  "parent": "eu221gi0"
+}

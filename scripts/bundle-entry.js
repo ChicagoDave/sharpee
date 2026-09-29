@@ -969,8 +969,9 @@ Examples:
       // ── Which harness? The directory decides (ADR-302 D16) ──────────
       // This CLI owns ONE harness: the v1 text transcripts under `stories/`
       // and `tutorials/`. A Chord story under `branch-stories/` has no
-      // transcripts at all — ADR-307's cutover made `<story-id>.tests.json`
-      // the tree's only serialization and retired the v2 `continues:`
+      // transcripts at all — ADR-307's cutover made the test tree (today the
+      // `<story-id>.tests/` directory, ADR-355) the tree's only serialization
+      // and retired the v2 `continues:`
       // grammar this command used to dispatch to. So a branch-stories path
       // is refused with the command that does run it, rather than being fed
       // to a parser that would report it as malformed v1.
@@ -979,8 +980,8 @@ Examples:
       );
       if (underBranch.some(Boolean)) {
         console.error(
-          'branch-stories/ has no transcript tests: a Chord story is tested by its tree ' +
-          'document (<story-id>.tests.json), recorded in the Testing tab and run with ' +
+          'branch-stories/ has no transcript tests: a Chord story is tested by its test ' +
+          'tree (the <story-id>.tests/ directory), recorded in the Testing tab and run with ' +
           '`sharpee test <story-dir>`. This command runs the text transcripts under ' +
           'stories/ and tutorials/ only.'
         );

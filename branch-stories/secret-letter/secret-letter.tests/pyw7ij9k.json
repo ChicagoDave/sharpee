@@ -1,0 +1,18 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "player.location = Top of the Post",
+          "emitted pole-scamper"
+        ]
+      },
+      "command": "climb post",
+      "id": "scwa77id",
+      "type": "turn"
+    }
+  ],
+  "id": "pyw7ij9k",
+  "ordinal": 1,
+  "parent": "dh4qy16d"
+}

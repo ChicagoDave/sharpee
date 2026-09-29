@@ -38,7 +38,8 @@ export const REPO_ROOT = resolve(__dirname, '..', '..', '..');
 export const CLI = join(REPO_ROOT, 'packages', 'devkit', 'dist', 'cli.js');
 export const FERNHILL_DIR = join(REPO_ROOT, 'branch-stories', 'fernhill');
 export const FERNHILL_STORY = join(FERNHILL_DIR, 'fernhill.story');
-export const FERNHILL_TREE = join(FERNHILL_DIR, 'fernhill.tests.json');
+/** Fernhill's test tree: the `fernhill.tests/` directory of segments (ADR-355). */
+export const FERNHILL_TREE = join(FERNHILL_DIR, 'fernhill.tests');
 
 /** One CLI invocation's raw outcome. */
 export interface SpawnOutcome {

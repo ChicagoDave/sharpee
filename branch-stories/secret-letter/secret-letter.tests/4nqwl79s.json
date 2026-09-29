@@ -1,0 +1,56 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "They're not Lord's Guards, that's for sure",
+          "So what are they doing here, you wonder?",
+          "keep your tempers and your swords sheathed"
+        ]
+      },
+      "command": "x mercenaries",
+      "id": "i8p0iafo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a bit older and a bit more grizzled than the rest",
+          "turns into a cold, hard chunk in your belly"
+        ]
+      },
+      "command": "x captain",
+      "id": "xbji92pr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You listen carefully to what the mercenaries are saying",
+          "Usually wears a hat and a gray cloak"
+        ]
+      },
+      "command": "listen to mercenaries",
+      "id": "dzzs1n0k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Okay, go!' barks the leader",
+          "start shoving them closed",
+          "Your heart sinks"
+        ],
+        "states": [
+          "story.state = hunted"
+        ]
+      },
+      "command": "wait",
+      "id": "309mjvol",
+      "type": "turn"
+    }
+  ],
+  "id": "4nqwl79s",
+  "ordinal": 0,
+  "parent": "spfznv3u"
+}

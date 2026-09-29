@@ -1,0 +1,47 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take shears",
+      "id": "bjg0igms",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take sherry",
+      "id": "z1j75cok",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "west",
+      "id": "ag18zk8h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Mrs Kettle turns the bottle to read the label, and something in her shoulders comes down an inch. \"Her ladyship's oloroso. Well.\" She steps away from the study door. \"Five minutes, mind.\""
+        ]
+      },
+      "command": "give sherry to kettle",
+      "id": "ly7khm9f",
+      "type": "turn"
+    }
+  ],
+  "id": "fq9jgq16",
+  "ordinal": 0,
+  "parent": "nqjli5pi"
+}

@@ -1,0 +1,29 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "player.location = Northwest Junction",
+          "story.state = hunted",
+          "emitted gates-locked"
+        ]
+      },
+      "command": "enter gates",
+      "id": "tcbenrgj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted market-already-here"
+        ]
+      },
+      "command": "enter market",
+      "id": "6qblb6ic",
+      "type": "turn"
+    }
+  ],
+  "id": "6hnj1oa9",
+  "ordinal": 6,
+  "parent": "zjak0nxl"
+}

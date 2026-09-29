@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "All you can hear now is the constant chock! of the axe."
+        ]
+      },
+      "command": "listen to mercenaries",
+      "id": "4ti7ejpb",
+      "type": "turn"
+    }
+  ],
+  "id": "3loxbp8d",
+  "ordinal": 2,
+  "parent": "z9y07mdp"
+}

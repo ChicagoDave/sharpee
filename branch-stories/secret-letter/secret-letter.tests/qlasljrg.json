@@ -1,0 +1,60 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "cdl0ne3r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "d5plxyw4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "qkmam43g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "s",
+      "id": "clt6372q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The mercenary captain is standing watch at the mouth of"
+        ],
+        "states": [
+          "player.location = Eastern Junction"
+        ]
+      },
+      "command": "e",
+      "id": "lgm9v0t5",
+      "type": "turn"
+    }
+  ],
+  "id": "qlasljrg",
+  "ordinal": 10,
+  "parent": "5u5bu3ru"
+}

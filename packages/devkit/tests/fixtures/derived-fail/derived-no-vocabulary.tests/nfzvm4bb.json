@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "nezoiuby",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "states": [
+          "mat.location = hall"
+        ]
+      },
+      "id": "che0qhe0",
+      "type": "boot"
+    }
+  ],
+  "id": "nfzvm4bb"
+}

@@ -1,0 +1,49 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "The wind is exhilarating as you zip down the line.",
+          "coming up behind the fruit stall"
+        ],
+        "states": [
+          "player.location = On the Wire"
+        ]
+      },
+      "command": "slide down northeast cable",
+      "id": "i6cixsu7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "dropping hard to a small space behind the fruit stall"
+        ],
+        "states": [
+          "player.location = Behind Fruit Stall",
+          "cloak.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "let go",
+      "id": "9oy9qa2k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ],
+        "states": [
+          "player.location = Fruit Stall"
+        ]
+      },
+      "command": "sw",
+      "id": "n4ekx3c5",
+      "type": "turn"
+    }
+  ],
+  "id": "in1n9k63",
+  "ordinal": 1,
+  "parent": "k6sd0y98"
+}

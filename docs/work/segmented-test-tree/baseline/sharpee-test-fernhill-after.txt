@@ -1,0 +1,118 @@
+Loading story from: /Users/david/repos/sharpee/branch-stories/fernhill
+Test tree: fernhill.tests/ (seed 42, 11 line(s))
+
+✓ opening-iron-gates
+✓ gravel-drive · north
+✓ gravel-drive · north
+✓ boiler-shed · examine boiler
+✓ kitchen · north
+✓ entrance-hall · west
+✓ greenhouse · x vine
+✓ greenhouse · x vine
+✓ folly · open deed box with locket
+✓ folly · take the deed
+✓ folly · wait
+86 cards passing, 106 assertions passing
+222 commands (85 authored + 137 replayed)
+
+Derived rule tests (ADR-356): 63 branches
+◌ Grounds · on every-turn — SKIPPED condition-chance: `chance` is not a floor form (fernhill.story:34)
+◌ Grounds · after entering — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (fernhill.story:38)
+◌ Grounds · after leaving — SKIPPED command-lifecycle: `leaving` a room fires on movement, not on a typed verb (fernhill.story:43)
+◌ House · after entering — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (fernhill.story:53)
+◌ Iron Gates · after entering — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (fernhill.story:63)
+◌ Folly · after entering, once — SKIPPED command-lifecycle: `entering` a room fires on movement, not on a typed verb (fernhill.story:137)
+✓ Cellar · on every-turn
+◌ Cellar · on every-turn, once — SKIPPED unrecognized: "oil-lamp" declares no states (fernhill.story:198)
+✓ folly door · on opening
+✓ cellar door · after opening, once
+◌ tarnished key · after taking, once — SKIPPED subject-unreachable: tarnished-key is not in the player's sight after arranging (fernhill.story:248)
+✓ boiler · on switching_on · refused boiler-clank
+✓ boiler · on switching_on · refused boiler-clank
+◌ boiler · on switching_on — SKIPPED negation: `boiler is cold` already holds in the arranged world (fernhill.story:271)
+✓ stopcock · on turning
+✓ primer plunger · on pushing
+✓ solicitor's letter · on reading
+✓ diary page · on reading
+◌ framed photograph · after examining — SKIPPED no-claims: nothing the table maps: emit (conditional) (fernhill.story:400)
+✓ vine · after pruning, once
+✓ Smoke · on every-turn, once
+✓ furnace poker · on taking
+✓ fuse · on every-turn
+✓ fuse · on cutting
+✓ deed · after taking, once
+✓ deed · on reading
+◌ Mrs Kettle · on giving — SKIPPED no-claims: nothing the table maps: change (conditional), award (conditional), phrase (conditional) (fernhill.story:679)
+✓ Mrs Kettle · topic grey-overcoat
+✓ Mrs Kettle · topic the study
+◌ Tobias · on asking — SKIPPED command-shape: no 1-object pattern for if.action.asking (fernhill.story:697)
+✓ Tobias · topic boiler
+✓ Tobias · topic silver-locket
+✓ Tobias · topic the folly
+✓ Tobias · topic the bank
+✓ auction notice · on reading
+◌ case clock · on every-turn — SKIPPED condition-chance: `chance` is not a floor form (fernhill.story:796)
+✓ iron weathervane · after examining
+✓ iron weathervane · after pushing
+✓ iron weathervane · after touching
+◌ Smoke · on feeding · refused no-morsel — SKIPPED predicate-has: a predicate over something other than a named entity (fernhill.story:537)
+◌ Smoke · on feeding · refused already-fed-cat — SKIPPED predicate-has: a predicate over something other than a named entity (fernhill.story:538)
+◌ Smoke · on feeding — SKIPPED predicate-has: a predicate over something other than a named entity (fernhill.story:536)
+✓ vine · on pruning · refused need-shears
+✓ vine · on pruning · when seedling
+✓ vine · on pruning · when flowering
+✓ vine · on pruning · when fruiting
+✓ case clock · on winding · refused need-winding-key
+◌ case clock · on winding · refused clock-already-going — SKIPPED negation: `case-clock is stopped` already holds in the arranged world (fernhill.story:573)
+✓ case clock · on winding
+◌ the boiler works · the boiler works: cold → filled — SKIPPED machine-state: the boiler works in cold (fernhill.story:304)
+◌ the boiler works · the boiler works: filled → primed — SKIPPED machine-state: the boiler works in filled (fernhill.story:311)
+◌ the boiler works · the boiler works: primed → running — SKIPPED machine-state: the boiler works in primed (fernhill.story:318)
+◌ story · on every-turn — SKIPPED condition-chance: `chance` is not a floor form (fernhill.story:18)
+✓ story · on every-turn
+✓ story · before the game starts
+◌ story · define action feeding — SKIPPED no-claims: the body has no effects (fernhill.story:544)
+◌ story · define action pruning — SKIPPED no-claims: the body has no effects (fernhill.story:579)
+◌ story · define action winding — SKIPPED no-claims: the body has no effects (fernhill.story:590)
+◌ story · sequence the fuse burn step — SKIPPED command-schedule: no player command fires this branch (fernhill.story:623)
+◌ story · sequence the fuse burn step — SKIPPED no-claims: nothing the table maps: kill (conditional) (fernhill.story:625)
+◌ story · sequence the long night step — SKIPPED command-schedule: no player command fires this branch (fernhill.story:630)
+◌ story · sequence the long night step — SKIPPED command-schedule: no player command fires this branch (fernhill.story:633)
+◌ story · sequence the long night step — SKIPPED command-schedule: no player command fires this branch (fernhill.story:635)
+
+Branches exercised: 34 / 63
+Not exercised (29):
+  fernhill.story:34 · Grounds · on every-turn — condition-chance (`chance` is not a floor form)
+  fernhill.story:38 · Grounds · after entering — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  fernhill.story:43 · Grounds · after leaving — command-lifecycle (`leaving` a room fires on movement, not on a typed verb)
+  fernhill.story:53 · House · after entering — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  fernhill.story:63 · Iron Gates · after entering — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  fernhill.story:137 · Folly · after entering, once — command-lifecycle (`entering` a room fires on movement, not on a typed verb)
+  fernhill.story:198 · Cellar · on every-turn, once — unrecognized ("oil-lamp" declares no states)
+  fernhill.story:248 · tarnished key · after taking, once — subject-unreachable (tarnished-key is not in the player's sight after arranging)
+  fernhill.story:271 · boiler · on switching_on — negation (`boiler is cold` already holds in the arranged world)
+  fernhill.story:400 · framed photograph · after examining — no-claims (nothing the table maps: emit (conditional))
+  fernhill.story:679 · Mrs Kettle · on giving — no-claims (nothing the table maps: change (conditional), award (conditional), phrase (conditional))
+  fernhill.story:697 · Tobias · on asking — command-shape (no 1-object pattern for if.action.asking)
+  fernhill.story:796 · case clock · on every-turn — condition-chance (`chance` is not a floor form)
+  fernhill.story:537 · Smoke · on feeding · refused no-morsel — predicate-has (a predicate over something other than a named entity)
+  fernhill.story:538 · Smoke · on feeding · refused already-fed-cat — predicate-has (a predicate over something other than a named entity)
+  fernhill.story:536 · Smoke · on feeding — predicate-has (a predicate over something other than a named entity)
+  fernhill.story:573 · case clock · on winding · refused clock-already-going — negation (`case-clock is stopped` already holds in the arranged world)
+  fernhill.story:304 · the boiler works · the boiler works: cold → filled — machine-state (the boiler works in cold)
+  fernhill.story:311 · the boiler works · the boiler works: filled → primed — machine-state (the boiler works in filled)
+  fernhill.story:318 · the boiler works · the boiler works: primed → running — machine-state (the boiler works in primed)
+  fernhill.story:18 · story · on every-turn — condition-chance (`chance` is not a floor form)
+  fernhill.story:544 · story · define action feeding — no-claims (the body has no effects)
+  fernhill.story:579 · story · define action pruning — no-claims (the body has no effects)
+  fernhill.story:590 · story · define action winding — no-claims (the body has no effects)
+  fernhill.story:623 · story · sequence the fuse burn step — command-schedule (no player command fires this branch)
+  fernhill.story:625 · story · sequence the fuse burn step — no-claims (nothing the table maps: kill (conditional))
+  fernhill.story:630 · story · sequence the long night step — command-schedule (no player command fires this branch)
+  fernhill.story:633 · story · sequence the long night step — command-schedule (no player command fires this branch)
+  fernhill.story:635 · story · sequence the long night step — command-schedule (no player command fires this branch)
+
+Endings reached: 2 / 3
+Not reached (1):
+  fernhill.story:636 · dawn-comes (lose)
+Rooms entered: 13 / 13

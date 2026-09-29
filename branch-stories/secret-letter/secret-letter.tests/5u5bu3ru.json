@@ -1,0 +1,25 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "one of them wobbles and your foot slips",
+          "'What was that? Check the alley!'",
+          "They approach warily"
+        ],
+        "notContains": [
+          "You dash away into the crowd"
+        ],
+        "states": [
+          "player.location = Alley"
+        ]
+      },
+      "command": "d",
+      "id": "pbodni84",
+      "type": "turn"
+    }
+  ],
+  "id": "5u5bu3ru",
+  "ordinal": 0,
+  "parent": "4nqwl79s"
+}

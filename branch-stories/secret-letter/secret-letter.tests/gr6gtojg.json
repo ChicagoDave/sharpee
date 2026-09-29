@@ -1,0 +1,29 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "knocking over a couple of shoppers"
+        ],
+        "notContains": [
+          "Shouts ring out and fingers point",
+          "The monkey sees you coming and leaps over you",
+          "You hear shouting coming from all quarters of the market.",
+          "coming up behind the fruit stall"
+        ],
+        "states": [
+          "player.location = Hat Stall",
+          "cloak.location = Hat Stall",
+          "emitted slide-wind"
+        ]
+      },
+      "command": "slide down cables",
+      "id": "58w6sre2",
+      "type": "turn"
+    }
+  ],
+  "id": "gr6gtojg",
+  "ordinal": 7,
+  "parent": "k6sd0y98"
+}

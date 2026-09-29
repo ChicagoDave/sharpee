@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You plug the drain and begin filling the enormous tub with water.",
+          "feeling everything wash clean away.",
+          "She puts the dress into your hands."
+        ]
+      },
+      "command": "turn faucets",
+      "id": "q9gxb6j9",
+      "type": "turn"
+    }
+  ],
+  "id": "s7kxjptl",
+  "ordinal": 1,
+  "parent": "ckabh2sz"
+}

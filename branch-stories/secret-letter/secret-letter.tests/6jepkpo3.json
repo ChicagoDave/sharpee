@@ -1,0 +1,20 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Even if you did manage to nick one of those swords"
+        ],
+        "states": [
+          "sword.location != player"
+        ]
+      },
+      "command": "take sword",
+      "id": "p372c1n5",
+      "type": "turn"
+    }
+  ],
+  "id": "6jepkpo3",
+  "ordinal": 1,
+  "parent": "h8jrjxr3"
+}

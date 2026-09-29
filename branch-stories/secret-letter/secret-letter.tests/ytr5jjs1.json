@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "peyntyrk",
+      "type": "turn"
+    }
+  ],
+  "id": "ytr5jjs1",
+  "ordinal": 0,
+  "parent": "lgg0dlf5"
+}

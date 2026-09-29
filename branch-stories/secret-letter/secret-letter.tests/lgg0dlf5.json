@@ -1,0 +1,47 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "Jack Toresal and The Secret Letter"
+          },
+          {
+            "id": "info.description",
+            "is": "Grubber's Market, a stolen apple, and a girl the whole city is about to start looking for."
+          }
+        ]
+      },
+      "id": "cvxljzt2",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction",
+          "This is the northwest corner of Grubber's Market."
+        ]
+      },
+      "id": "8khi3pue",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "your stomach is telling you to find a bite to eat"
+        ],
+        "notContains": [
+          "You can't go that way."
+        ],
+        "states": [
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "north",
+      "id": "jbeyo8uj",
+      "type": "turn"
+    }
+  ],
+  "id": "lgg0dlf5"
+}

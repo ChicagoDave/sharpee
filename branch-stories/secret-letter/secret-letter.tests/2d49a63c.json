@@ -1,0 +1,45 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "'Citizens of Toresal,' he shouts",
+          "it's Bobby!"
+        ]
+      },
+      "command": "z",
+      "id": "d1b6aa92",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is some sort of wooden structure erected in the center of the square.",
+          "Honorable Magistrate Hester Rudup"
+        ]
+      },
+      "command": "look",
+      "id": "v69pjhxp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "hang by the neck until dead.",
+          "Everything goes black.",
+          "Bobby is dead.",
+          "Dormitory"
+        ],
+        "states": [
+          "player.location = Dormitory"
+        ]
+      },
+      "command": "z",
+      "id": "zauksiy7",
+      "type": "turn"
+    }
+  ],
+  "id": "2d49a63c",
+  "ordinal": 1,
+  "parent": "4su2td0x"
+}

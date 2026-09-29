@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted brick-pulled-out"
+        ]
+      },
+      "command": "pull brick",
+      "id": "46873m44",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the back of the hole you see a short lever."
+        ],
+        "notContains": [
+          "The brick is loose here."
+        ]
+      },
+      "command": "x hole",
+      "id": "0z2y5ttk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lever moves slightly, then snaps back with a click. The wall swings away, revealing shadows beyond.",
+          "Pieter looks impressed."
+        ],
+        "states": [
+          "the blank stone wall is opened"
+        ]
+      },
+      "command": "pull lever",
+      "id": "9k8l6lnq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wall has swung open, revealing a secret entrance to the castle."
+        ]
+      },
+      "command": "x wall",
+      "id": "zczu11kb",
+      "type": "turn"
+    }
+  ],
+  "id": "t9hkiwij",
+  "ordinal": 1,
+  "parent": "g9ww7vr0"
+}

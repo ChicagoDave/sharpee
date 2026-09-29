@@ -1,0 +1,191 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "a certain cruel gleam in their eyes"
+        ]
+      },
+      "command": "x portraits",
+      "id": "2kgj9114",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted no-letters-behind-frames"
+        ]
+      },
+      "command": "look behind portraits",
+      "id": "9fkftued",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A quick search reveals that the letter isn't hidden under the cushions."
+        ]
+      },
+      "command": "search chairs",
+      "id": "eecyi4db",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sliding doors are closed."
+        ]
+      },
+      "command": "x doors",
+      "id": "nmulg2gt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted doors-rattle"
+        ]
+      },
+      "command": "open doors",
+      "id": "z1m8rp2p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted sliding-doors-open"
+        ]
+      },
+      "command": "x doors",
+      "id": "b6t6u8ae",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Master Bedroom",
+          "dominated by an enormous bed"
+        ],
+        "states": [
+          "player.location = Master Bedroom"
+        ]
+      },
+      "command": "s",
+      "id": "birxnbst",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Four carved mahogany pillars hold up a silken canopy",
+          "In addition to being simply gigantic, it's... fancier...",
+          "he certainly likes to sleep in comfort."
+        ]
+      },
+      "command": "x bed",
+      "id": "dcpo1ypv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Four carved mahogany pillars hold up a silken canopy"
+        ],
+        "notContains": [
+          "fancier"
+        ]
+      },
+      "command": "x bed",
+      "id": "pk854rk1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bed-searched"
+        ]
+      },
+      "command": "search bed",
+      "id": "q0l710mr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bed-no-rest"
+        ]
+      },
+      "command": "enter bed",
+      "id": "lfyo05xj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "Tall bookshelves line all four walls",
+          "In fact, the chandelier dangles practically to the floor"
+        ],
+        "states": [
+          "player.location = Library"
+        ]
+      },
+      "command": "s",
+      "id": "rcegikx6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The books are all on government and politics, dry stuff like that."
+        ]
+      },
+      "command": "x books",
+      "id": "xc6feqyv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "each row sagging beneath the weight of dozens of heavy books."
+        ]
+      },
+      "command": "x shelves",
+      "id": "t2lfovdd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted chandelier-sways"
+        ]
+      },
+      "command": "push chandelier",
+      "id": "3asz1kbq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted chandelier-too-heavy-to-lift"
+        ]
+      },
+      "command": "lift chandelier",
+      "id": "jfp3sgtx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wouldn't trust that thing to hold your weight"
+        ]
+      },
+      "command": "climb chandelier",
+      "id": "qbyvohr0",
+      "type": "turn"
+    }
+  ],
+  "id": "h4goviwo",
+  "ordinal": 0,
+  "parent": "ftin9yof"
+}

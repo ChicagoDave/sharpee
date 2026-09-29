@@ -1,0 +1,100 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The big central support post rises up from the middle of the market, holding up the canvas awnings that shade the square."
+        ]
+      },
+      "command": "x post",
+      "id": "kreincm6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted find-way-behind-stalls"
+        ]
+      },
+      "command": "push post",
+      "id": "n1vf1z1g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall",
+          "tall wooden post"
+        ]
+      },
+      "command": "se",
+      "id": "km8dxhoh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It rises from the midst of a cluster of stalls in the middle of the market, to a height of about fifty feet."
+        ]
+      },
+      "command": "x post",
+      "id": "4x2dz73m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted find-way-behind-stalls"
+        ]
+      },
+      "command": "climb post",
+      "id": "vcqca0tx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent",
+          "tall wooden post",
+          "the tent"
+        ]
+      },
+      "command": "se",
+      "id": "wy2cyymw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted silk-tent-enter-north"
+        ]
+      },
+      "command": "x tent",
+      "id": "2j1tcweh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Thick, taut support wires stretch from the top of the post"
+        ]
+      },
+      "command": "x post",
+      "id": "z8gt1eej",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted find-way-behind-stalls"
+        ]
+      },
+      "command": "take post",
+      "id": "9z6lzs1c",
+      "type": "turn"
+    }
+  ],
+  "id": "bts2hjfv",
+  "ordinal": 1,
+  "parent": "lgg0dlf5"
+}

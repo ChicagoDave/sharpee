@@ -1,0 +1,137 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "ulpmchud",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "4efv7ed0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "2vyh2zpg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "nw",
+      "id": "5qo5pn1l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "nw",
+      "id": "qwt014p6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Alley"
+        ]
+      },
+      "command": "nw",
+      "id": "o6xv1t3x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "9uxb71z2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "rope"
+        ]
+      },
+      "command": "peer se",
+      "id": "ej2bxmu3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "herb"
+        ]
+      },
+      "command": "peer s",
+      "id": "tjovmxfv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "candle"
+        ]
+      },
+      "command": "peer e",
+      "id": "192elcyl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "se",
+      "id": "bf4qh4iz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "se",
+      "id": "uige2cga",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "5ci30obh",
+      "type": "turn"
+    }
+  ],
+  "id": "5n2v7hdl",
+  "ordinal": 0,
+  "parent": "k6sd0y98"
+}

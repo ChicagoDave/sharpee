@@ -93,6 +93,16 @@ The property this buys is that **the manifest changes only when the seed or the 
 
 No ADR's **Status** line flips on account of this: ADR-307, ADR-353 and ADR-340 each keep theirs, because a superseded decision inside a document is not a superseded document. What changes is that each carries a pointer forward.
 
+**D7 — Every card carries a minted, stable id** (amendment, David, 2026-09-29, session e31b07; ruling relayed from Desktop Claude in `docs/work/desktop-claude/decisions-20260929-tree-churn.md`). A card's id is minted once, when the card is created, and never changes. It is persisted in the card, in the same alphabet as a segment id (D5), and it is opaque: it is never derived from the card's position, and never from its content.
+
+**Why.** D5 made segments things with identities, but left cards addressed by their index in a segment. That causes no churn today, but anything that has to point at a card breaks as soon as a card is inserted above it: impact queries, run history, span links from the run column, and any future index over the tree. The measurement behind this ruling is `docs/work/desktop-claude/secret-letter-tree-churn-20260929.md`.
+
+**Rejected: a content-derived id** (a hash of the card). It changes whenever an assertion on the card is edited, which recreates the churn this ADR exists to remove, and it collides for two identical cards.
+
+**Rejected: a positional id** (segment id plus index). An insertion above the card renumbers every card below it, which is the defect in the first place.
+
+**Cost, named.** Each card gains one field. For secret-letter that is 1,470 new id lines, minted in the same one-shot conversion that writes the segments, so that minting is part of the last large diff the tree takes. A card's id lives in its own segment's file, so AC-1 and AC-4 are unaffected.
+
 ## Affected
 
 Named because the review found "all affected modules named" failing, and because rule 8b makes this list the definition of what must move together.
@@ -110,7 +120,7 @@ Named because the review found "all affected modules named" failing, and because
 
 **The conversion, which is one-shot and not a migration path.** Six artifacts exist at `version: 1`: `secret-letter`, `fernhill`, `ides-of-march`, the `w10-dance` prototype, `thealderman`, and `packages/branch-tester/tests/fixtures/state-pins`. Steps: read each document with today's reader; cut at fork points per D2; allocate an id per segment per D5; write the directory per D3 and the manifest per D4; delete the old file. `TREE_DOCUMENT_VERSION` moves, so a reader that meets an unconverted document refuses it by the invariant that already exists rather than by a new check. There is no shim, and nothing reads the old shape afterward.
 
-**What the artifacts must carry**, which the decisions determine even though the key names do not follow from them. A **segment** carries: its own id (D5), the id of the segment it descends from and the fork ordinal it descends at (D4) — absent on the root — and its ordered run of cards, each keeping today's card shape unchanged. A **manifest** carries: `version`, `story`, `seed` (D4) and nothing else; in particular not the tree's shape. **The concrete key names, the manifest's filename and the id's alphabet are left to the plan** — they commit the format but decide nothing this ADR decides, and inventing them here would put rulings in David's mouth that he did not give.
+**What the artifacts must carry**, which the decisions determine even though the key names do not follow from them. A **segment** carries: its own id (D5), the id of the segment it descends from and the fork ordinal it descends at (D4) — absent on the root — and its ordered run of cards, each keeping today's card shape unchanged. *(Amended 2026-09-29 by D7: each card also carries a minted, stable `id`. The rest of the card shape is unchanged.)* A **manifest** carries: `version`, `story`, `seed` (D4) and nothing else; in particular not the tree's shape. **The concrete key names, the manifest's filename and the id's alphabet are left to the plan** — they commit the format but decide nothing this ADR decides, and inventing them here would put rulings in David's mouth that he did not give.
 
 **Two failure modes segmentation newly makes representable**, which a single nested document made structurally impossible and which the reader must therefore answer for:
 - **A dangling parent** — a segment naming a parent id that no segment in the directory carries.
@@ -145,6 +155,7 @@ Each names what decides it. All are **not met today**, which is expected — thi
 7. **AC-7 — A dangling parent is MALFORMED, not repaired and not thrown.** A test writes a directory whose segment names a parent id no segment carries, reads it, and asserts the reader reports MALFORMED and does not throw. **SELF-VERIFYING** — a reader that silently drops the orphaned subtree returns a well-formed tree and fails the assertion, which is the outcome the criterion exists to catch.
 8. **AC-8 — An absent manifest is MALFORMED, not defaulted.** A test writes a directory of valid segments with no manifest and asserts the reader reports MALFORMED rather than inventing a seed. **SELF-VERIFYING** — a defaulted seed would produce a tree that runs and whose results mean nothing, which is worse than a refusal and is why this is stated as a criterion rather than left to judgment.
 9. **AC-9 — The conversion is lossless.** Converting each of the six `version: 1` artifacts and reassembling the tree from its segments yields a tree equal to the one the old reader produced from the old file — same cards, same order, same assertions, same seed. **SELF-VERIFYING** — it compares against the artifact's own prior content, so it cannot pass against a conversion that dropped anything. This is the criterion the one-shot conversion is gated on.
+10. **AC-10 — A card's id survives every edit except its own deletion** (D7). A test inserts a card above an existing one, edits the existing card's assertions, and moves the tree through segmentation and reassembly, then asserts the card's id is unchanged throughout. A newly created card gets an id no other card in the tree carries. **SELF-VERIFYING**: a positional id fails the insertion, and a content-derived id fails the edit.
 
 ## Consequences
 

@@ -1,0 +1,1530 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "e",
+      "id": "abgr6gvd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Back Alley",
+          "A little-known shortcut between Lord's Market and the less affluent neighborhoods of the city's south end."
+        ],
+        "states": [
+          "player.location = Back Alley"
+        ]
+      },
+      "command": "ne",
+      "id": "zhclhckj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "ne",
+      "id": "93j95nck",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "At night, lanterns hung from ornate posts light the empty square of Lord's Market.",
+          "Only a cart. Nobody here is looking for you."
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "n",
+      "id": "nkeekx9x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted lanterns-lit"
+        ]
+      },
+      "command": "x lanterns",
+      "id": "wxtves90",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "All of the shops are shuttered and locked up for the night."
+        ]
+      },
+      "command": "ne",
+      "id": "o7l6ro7g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "East Commerce Street",
+          "The east end of Commerce Street winds through an upper-class residential neighborhood before ending up at Lord's Market.",
+          "Three stately houses are built close together on the north side of the road: Black Gate Estate to the northwest; Red Gate Estate to the"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "dsmfd18z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The park is not a safe place at night."
+        ]
+      },
+      "command": "s",
+      "id": "5sgcx3hn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street",
+          "Commerce Street at night is eerily quiet and empty.",
+          "Halfway along the dark street a man in a mercenary's coat"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "w",
+      "id": "mkzzj856",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted shops-shuttered"
+        ]
+      },
+      "command": "x bakery",
+      "id": "ukp3iayd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "All of the shops are shuttered and locked up for the night.",
+          "Only a cart. Nobody here is looking for you."
+        ]
+      },
+      "command": "nw",
+      "id": "00lpyemc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Market Square",
+          "At night, the normally crowded marketplace is an empty maze of shadows, abandoned stalls and rolled-up canvas.",
+          "You can see Bobby here.",
+          "When you get closer, he walks over and claps you on the shoulder."
+        ],
+        "states": [
+          "player.location = Market Square"
+        ]
+      },
+      "command": "w",
+      "id": "hyi0hs0u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's a little bit eerie, seeing the whole market empty and packed away like this."
+        ]
+      },
+      "command": "x stalls",
+      "id": "6ws4whz8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stalls-closed-tonight"
+        ]
+      },
+      "command": "enter stalls",
+      "id": "agtnff8y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's huge, almost too big to put your arms around."
+        ]
+      },
+      "command": "x post",
+      "id": "3b778q4h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby grabs your belt and pulls you back to the ground.",
+          "Bobby smirks at you in that way he has, that makes you want to smile and blush and run and hide, all at the same time."
+        ]
+      },
+      "command": "climb post",
+      "id": "5qgrqzs5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby grabs your belt and pulls you back to the ground."
+        ]
+      },
+      "command": "u",
+      "id": "cuybv7xv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Commerce Street",
+          "Commerce Street at night is eerily quiet and empty."
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "e",
+      "id": "g4kcvkwj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Market Square",
+          "At night, the normally crowded marketplace is an empty maze of shadows, abandoned stalls and rolled-up canvas.",
+          "You can see Bobby here."
+        ],
+        "states": [
+          "player.location = Market Square"
+        ]
+      },
+      "command": "w",
+      "id": "wbdh6eie",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Not really,' you say, which is a lie"
+        ]
+      },
+      "command": "talk to bobby",
+      "id": "svnu2nt2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Road",
+          "The wide and well-paved Lord's Road runs from Grubber's Market straight north to Lord's Keep, a mile or so from the city.",
+          "You can see Bobby here.",
+          "Bobby jerks his thumb down the road, to the north."
+        ],
+        "states": [
+          "player.location = Lord's Road"
+        ]
+      },
+      "command": "n",
+      "id": "6grl346c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The land to the west of Lord's Road is rocky and dry, no good for growing much of anything other than thornbushes."
+        ]
+      },
+      "command": "x ground",
+      "id": "a8l9nwb4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted thorns-not-now"
+        ]
+      },
+      "command": "take thorns",
+      "id": "1k9vhnzb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The outer walls of Toresal are built of heavy, white stone."
+        ]
+      },
+      "command": "x wall",
+      "id": "5vaqwj2m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted city-walls-too-high"
+        ]
+      },
+      "command": "climb wall",
+      "id": "rpceehgo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "That way would just take you to Lord's Keep, which is guarded day and night.",
+          "A shout behind you, and boots"
+        ]
+      },
+      "command": "n",
+      "id": "rd5qnwhv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby went east, to the pasture."
+        ]
+      },
+      "command": "ne",
+      "id": "8orh2jjf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pasture",
+          "This wide, open field is used by the city for tourneys and other holiday events, or by cattle-sellers driving their livestock to market.",
+          "You can see Bobby here.",
+          "You feel nervous and exposed out here in all this empty space; you're more used to the narrow alleys and enclosing walls of the city."
+        ],
+        "states": [
+          "player.location = Pasture"
+        ]
+      },
+      "command": "e",
+      "id": "x1i7upje",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Last time you checked, cow pies pretty much all looked the same."
+        ]
+      },
+      "command": "x pies",
+      "id": "l2cfxerm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted mostly-cow-pies"
+        ]
+      },
+      "command": "smell",
+      "id": "olnt5xxk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted um-yuck"
+        ]
+      },
+      "command": "smell pies",
+      "id": "ow8nvyuc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted mostly-cow-pies"
+        ]
+      },
+      "command": "breathe",
+      "id": "otvrmshz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's nothing out that way but endless farmland."
+        ]
+      },
+      "command": "e",
+      "id": "i5gb0fp9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "That way lies the outer wall of the city."
+        ]
+      },
+      "command": "s",
+      "id": "1357p0e8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stream Crossing",
+          "A small stream bubbles out of the woods and cuts through the pasture's north end.",
+          "You can see Bobby here.",
+          "Bobby hops nimbly across, bouncing from rock to rock as though he were playing a game of Circles-and-Stones in the park."
+        ],
+        "states": [
+          "player.location = Stream Crossing"
+        ]
+      },
+      "command": "n",
+      "id": "88a4wbpg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The water is clean and clear, rippling over a shallow bed of stones and splashing over the larger rocks."
+        ]
+      },
+      "command": "x stream",
+      "id": "ohttats7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted water-shockingly-cold"
+        ]
+      },
+      "command": "drink water",
+      "id": "355y5fwv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stream-shin-deep"
+        ]
+      },
+      "command": "swim in stream",
+      "id": "y08rt4ic",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stones just barely poke over the surface of the water, rounded and slippery."
+        ]
+      },
+      "command": "x stones",
+      "id": "q5166v0s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can just make out the silhouette of the city walls, far to the south."
+        ]
+      },
+      "command": "x city",
+      "id": "wd9vob9a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "That way would just take you to Lord's Keep, which is guarded day and night."
+        ]
+      },
+      "command": "w",
+      "id": "elxrsxml",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's no place to cross the stream in that direction."
+        ]
+      },
+      "command": "nw",
+      "id": "ijxi9hqs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Woods",
+          "You are in the woodlands just southeast of Lord's Keep, following the game trails that wind their way through strands of pale birch and",
+          "The first couple of rocks are easy enough, but the third one wobbles when you put your weight on it.",
+          "At the edge of the woods, Bobby is nearly doubled over with silent laughter."
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "n",
+      "id": "c9w1mqps",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sapling is split down half its length, forming a distinctive 'Y' shape."
+        ]
+      },
+      "command": "x sapling",
+      "id": "y6dib8ac",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The trails are little more than narrow gaps in the underbrush, leading in every which direction."
+        ]
+      },
+      "command": "x trails",
+      "id": "3qxw2wtm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "This really isn't the time for tree-climbing."
+        ]
+      },
+      "command": "u",
+      "id": "t0lgepdt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Woods",
+          "You are in the woodlands just southeast of Lord's Keep, following the game trails that wind their way through strands of pale birch and"
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "look",
+      "id": "ang4plqv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "If you go wandering off among these trails without Bobby's help, you'll never find your way out of the woods."
+        ]
+      },
+      "command": "n",
+      "id": "ykj5yiis",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "If you go wandering off among these trails without Bobby's help, you'll never find your way out of the woods."
+        ]
+      },
+      "command": "w",
+      "id": "wuv28292",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "If you go wandering off among these trails without Bobby's help, you'll never find your way out of the woods."
+        ]
+      },
+      "command": "n",
+      "id": "xa2gje7k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Clearing",
+          "The woods open out here in a small, moonlit clearing.",
+          "You can see Bobby here.",
+          "'Here we are.'"
+        ],
+        "states": [
+          "player.location = Clearing"
+        ]
+      },
+      "command": "e",
+      "id": "9j55q8m8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fountain is shaped like a large bowl, topped with a classical-style statue of Brigid pouring water from an urn."
+        ]
+      },
+      "command": "x fountain",
+      "id": "6lu6p26r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The statue's features are worn away and obscured by moss, but you've seen enough statues of Brigid to know that she's almost always"
+        ]
+      },
+      "command": "x statue",
+      "id": "noxbuunh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The urn is hollow, and probably had water flowing out of it when the fountain worked.",
+          "Looking closely, you notice a small metal bolt sticking out of the bottom of the urn."
+        ]
+      },
+      "command": "x urn",
+      "id": "iisuvcp3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The metal knob pushes in, then pops out with a click.",
+          "You realize you're staring, and quickly find something else to look at."
+        ]
+      },
+      "command": "push bolt",
+      "id": "kgqtfbyg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tunnel leads down into darkness."
+        ]
+      },
+      "command": "x entrance",
+      "id": "82s8x14c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The bowl of the fountain is filled with bird droppings and dead leaves."
+        ]
+      },
+      "command": "search fountain",
+      "id": "0pmnk7b2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't leave now, Bobby will think you're chickening out!"
+        ]
+      },
+      "command": "n",
+      "id": "b9y3rkwz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Wait, wait,' you say",
+          "You grope your way down into the tunnel, carefully sliding your feet over steps you cannot see.",
+          "Behind you, you hear Bobby fumbling with something under his cloak; the click of stone on metal; and then a sickly orange glow spreads"
+        ]
+      },
+      "command": "talk to bobby",
+      "id": "xnqxr4bm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You definitely can't chicken out now, not while Bobby is right here."
+        ]
+      },
+      "command": "u",
+      "id": "yz5gd6k7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Underneath the Fountain",
+          "The walls and floor are old, damp, and spotted with some sort of whitish fungus, and the air has a wet, sour smell to it.",
+          "You can see Bobby here."
+        ],
+        "states": [
+          "player.location = Underneath the Fountain"
+        ]
+      },
+      "command": "look",
+      "id": "pyvh3wtw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fungus grows in little clusters all over the damp walls."
+        ]
+      },
+      "command": "x fungus",
+      "id": "povnbmsd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It smells damp and sour down here."
+        ]
+      },
+      "command": "smell",
+      "id": "byf1dq9u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted tunnel-drip"
+        ]
+      },
+      "command": "listen",
+      "id": "o84hznul",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You definitely can't chicken out now, not while Bobby is right here."
+        ]
+      },
+      "command": "u",
+      "id": "wrd1zgv3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted definitely-no-chickening-out"
+        ]
+      },
+      "command": "climb steps",
+      "id": "t7ciixfx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tunnel End",
+          "The wall at the north end of the tunnel has swung open, revealing a secret entrance to the castle.",
+          "Bobby steps past you and brushes his fingertips across the stonework, holding the torch close."
+        ],
+        "states": [
+          "player.location = Tunnel End",
+          "emitted ducking-down-the-tunnel"
+        ]
+      },
+      "command": "n",
+      "id": "ya8ervz9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wall has swung open, revealing a secret entrance to the castle."
+        ]
+      },
+      "command": "x wall",
+      "id": "9vs9j0fg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wall has swung open, revealing a secret entrance to the castle."
+        ]
+      },
+      "command": "touch wall",
+      "id": "29bkuqcp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Better let Bobby handle the secret door."
+        ]
+      },
+      "command": "close wall",
+      "id": "znn2slkd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You definitely can't chicken out now, not while Bobby is right here."
+        ]
+      },
+      "command": "s",
+      "id": "0udns702",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Chapel",
+          "The chapel of the Goddesses is a spacious, octagonal room, empty of furniture.",
+          "Bobby jams his torch into a rusted bracket on the tunnel wall and steps through the secret door, gesturing you to follow."
+        ],
+        "states": [
+          "player.location = Chapel"
+        ]
+      },
+      "command": "n",
+      "id": "iyz7l04g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The candles sit on little shelves built into the otherwise bare walls."
+        ]
+      },
+      "command": "x candles",
+      "id": "2akqfq6w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted that-would-be-sacrilege"
+        ]
+      },
+      "command": "take candles",
+      "id": "yk5mjt2f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Surely here in this Chapel, the Goddesses would hear your prayers."
+        ]
+      },
+      "command": "pray",
+      "id": "chbqmjyy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Come on,' Bobby whispers, pulling at your arm, 'You don't want to go yet, we just got here."
+        ]
+      },
+      "command": "s",
+      "id": "gnqqaqc1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby shakes his head and urges you towards the southwest corridor."
+        ]
+      },
+      "command": "s",
+      "id": "qj9bslpt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lower Bailey",
+          "A thick wedge of shadow falls across the courtyard at the base of the Keep's outer wall, providing a relatively safe place to hide.",
+          "Bobby moves up quietly behind you."
+        ],
+        "states": [
+          "player.location = Lower Bailey"
+        ]
+      },
+      "command": "sw",
+      "id": "vvljmydz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Lord's Guards are dressed in polished mail and tabards emblazoned with the Toresal coat of arms, and each one wears a hefty sword at"
+        ]
+      },
+      "command": "x guards",
+      "id": "g2cwa5t8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted quicker-ways-to-die"
+        ]
+      },
+      "command": "talk to guards",
+      "id": "ogoxalll",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't get near enough to do that without attracting the attention of the guards."
+        ]
+      },
+      "command": "x mail",
+      "id": "cz5a5jv3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby tugs your sleeve and shakes his head."
+        ]
+      },
+      "command": "ne",
+      "id": "g9lgvig6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't go that way without attracting the attention of the guards."
+        ]
+      },
+      "command": "n",
+      "id": "tbztlyv7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Upper Bailey",
+          "At the top of the wall you can lean out over the parapets and take in all the lands surrounding Toresal.",
+          "Bobby comes up the steps right behind you and crouches against the wall."
+        ],
+        "states": [
+          "player.location = Upper Bailey",
+          "emitted sprint-up-the-steps"
+        ]
+      },
+      "command": "u",
+      "id": "81x22f3x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The city is a pile of shadows in the distance, lit here and there with pinpricks of light: a guardsman carrying a torch, perhaps, or some"
+        ]
+      },
+      "command": "x view",
+      "id": "dhq6t003",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's an impressive view, no doubt, but you really don't have time to admire it right now."
+        ]
+      },
+      "command": "x view",
+      "id": "xuf1m0sk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "If you get anywhere near those torches, you'll be spotted in no time."
+        ]
+      },
+      "command": "x torches",
+      "id": "pc1kna0s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby shakes his head, and again points north."
+        ]
+      },
+      "command": "d",
+      "id": "1jlglstu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Guardhouse",
+          "A narrow antechamber, with an open archway to the south and an iron-reinforced door to the north.",
+          "Bobby creeps forward and presses himself against the wall next to one of the arrow slits."
+        ],
+        "states": [
+          "player.location = Guardhouse"
+        ]
+      },
+      "command": "n",
+      "id": "32ov9i5q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The door is big and tough-looking, with bands of riveted iron across its thick wooden planks."
+        ]
+      },
+      "command": "x door",
+      "id": "scv8htf7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby waves you off with an incredulous look."
+        ]
+      },
+      "command": "open door",
+      "id": "9zv98xzu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby waves you off with an incredulous look."
+        ]
+      },
+      "command": "knock on door",
+      "id": "p541a8nn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby waves you off with an incredulous look."
+        ]
+      },
+      "command": "n",
+      "id": "qqhlqxvz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby motions you back, pointing at the arrow slit again."
+        ]
+      },
+      "command": "s",
+      "id": "1pwzbqca",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The arrow slits are rectangular holes in the wall, about two inches high and six inches wide.",
+          "From here, you can see flickering firelight through the arrow slit, and hear voices on the other side."
+        ]
+      },
+      "command": "x slit",
+      "id": "swfwu9xp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby puts his hand on your chest, holding you back."
+        ]
+      },
+      "command": "search slit",
+      "id": "93ctx5si",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can hear several voices coming from the room on the other side of the arrow slit — guards relaxing on break, probably.",
+          "'...and I says, I don't care who hired you, people are tryin' to do honest business here, and you're steppin' on toes.",
+          "'Haw!"
+        ]
+      },
+      "command": "listen at slit",
+      "id": "upl0gg19",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Bobby motions you back, pointing at the arrow slit again."
+        ]
+      },
+      "command": "s",
+      "id": "f8bprglk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'You seen tomorrow's detail yet?'",
+          "'Yeah, dress-up duty.",
+          "'Not just lords and ladies, I heard."
+        ]
+      },
+      "command": "listen to slit",
+      "id": "0y1vz9bk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted arrow-slit.guards-moved-on"
+        ]
+      },
+      "command": "listen to slit",
+      "id": "k7lwuy49",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bobby-finger-to-lips"
+        ]
+      },
+      "command": "talk to bobby",
+      "id": "re6lwzhw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bobby-right-here"
+        ]
+      },
+      "command": "follow bobby",
+      "id": "vc0wd0di",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Upper Bailey",
+          "At the top of the wall you can lean out over the parapets and take in all the lands surrounding Toresal.",
+          "Bobby follows you."
+        ],
+        "states": [
+          "player.location = Upper Bailey"
+        ]
+      },
+      "command": "s",
+      "id": "ebyv4gjs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You've heard all you need to hear; it's too dangerous to stick around any longer."
+        ]
+      },
+      "command": "n",
+      "id": "dporgq0i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lower Bailey",
+          "A thick wedge of shadow falls across the courtyard at the base of the Keep's outer wall, providing a relatively safe place to hide.",
+          "Bobby quickly brings up the rear."
+        ],
+        "states": [
+          "player.location = Lower Bailey"
+        ]
+      },
+      "command": "d",
+      "id": "d4rruhnh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You've heard all you need to hear; it's too dangerous to stick around any longer."
+        ]
+      },
+      "command": "u",
+      "id": "2jsugonf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Chapel",
+          "The chapel of the Goddesses is a spacious, octagonal room, empty of furniture.",
+          "Bobby follows you."
+        ],
+        "states": [
+          "player.location = Chapel"
+        ]
+      },
+      "command": "ne",
+      "id": "zjsbsk9y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You've heard all you need to hear; it's too dangerous to stick around any longer."
+        ]
+      },
+      "command": "sw",
+      "id": "l1uxxegq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tunnel End",
+          "The tunnel ends here at a blank, stone wall.",
+          "In the metal bracket you see a torch.",
+          "Bobby reaches back and pulls the secret door shut, carefully easing it the last few inches so that it doesn't slam."
+        ],
+        "states": [
+          "player.location = Tunnel End"
+        ]
+      },
+      "command": "s",
+      "id": "7s7crm3s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's just a blank, featureless, stone wall."
+        ]
+      },
+      "command": "x wall",
+      "id": "rg17952n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're more than ready to go home now, and you're not sure you could find the loose brick again in any case."
+        ]
+      },
+      "command": "n",
+      "id": "rwlvxmiq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Underneath the Fountain",
+          "The walls and floor are old, damp, and spotted with some sort of whitish fungus, and the air has a wet, sour smell to it.",
+          "Stealthily, you creep back up the long tunnel to the stone steps under the fountain.",
+          "You wait for ten heartbeats."
+        ],
+        "states": [
+          "player.location = Underneath the Fountain"
+        ]
+      },
+      "command": "s",
+      "id": "vj2z1k5b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You crawl out of the hole in the base of the statue, into the dirt and leaves littering the bottom of the fountain.",
+          "'Good night, little mouse.'",
+          "Jail Cell"
+        ],
+        "states": [
+          "player.location = Jail Cell"
+        ]
+      },
+      "command": "follow bobby",
+      "id": "tibbo5no",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jail Cell",
+          "A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets and a few lumps of filthy straw litter the floor. The door is to the north."
+        ],
+        "states": [
+          "player.location = Jail Cell"
+        ]
+      },
+      "command": "look",
+      "id": "fpktgbux",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your hands are empty."
+        ]
+      },
+      "command": "inventory",
+      "id": "njujl14q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacobs is a huge brute, with a face that looks young, but already grizzled and rough beyond his years.",
+          "'Bobby? Is that you?'"
+        ]
+      },
+      "command": "x jacobs",
+      "id": "dbpna6h7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Jack, listen to me."
+        ],
+        "states": [
+          "emitted jacobs-ja1"
+        ]
+      },
+      "command": "talk to jacobs",
+      "id": "iy2bqovr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The blankets are threadbare, filled with holes, and stained with Goddesses-know-what.",
+          "'Bobby, what's happening?'"
+        ]
+      },
+      "command": "x blankets",
+      "id": "g36w27wm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Suddenly the shadowy man in the corner"
+        ],
+        "states": [
+          "emitted cell-smells-terrible"
+        ]
+      },
+      "command": "smell",
+      "id": "yn91xjsf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "From the smell and the look of it, this straw is all prisoners ever get in the way of a toilet."
+        ]
+      },
+      "command": "x straw",
+      "id": "ad67qg48",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The south cell door is made of stout wood reinforced with bands of iron."
+        ]
+      },
+      "command": "x door",
+      "id": "jqlm0b6h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You peer through the closely spaced bars."
+        ]
+      },
+      "command": "look through door",
+      "id": "3igxkhbc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted unlock-door-hint"
+        ]
+      },
+      "command": "reach through window",
+      "id": "7victjjb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'My name's, uh… Jack.'"
+        ]
+      },
+      "command": "talk to jacobs",
+      "id": "jyfjetww",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted jacobs-blocks-the-view"
+        ]
+      },
+      "command": "look through door",
+      "id": "9ab2h6wo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacobs' face reddens with effort.",
+          "Somewhere down the corridor a door opens"
+        ],
+        "states": [
+          "emitted jacobs-ignores-you"
+        ]
+      },
+      "command": "talk to jacobs",
+      "id": "a6e04fl6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "'Aaah! Goddesses curse it!'"
+        ]
+      },
+      "command": "wait",
+      "id": "bcdx401h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "From the smell and the look of it, this straw is all prisoners ever get in the way of a toilet."
+        ]
+      },
+      "command": "x straw",
+      "id": "fjkucmf3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Holding your breath, you gingerly poke around in the damp, filthy straw, and eventually you find the thing that Jacobs threw in there: it's"
+        ]
+      },
+      "command": "search straw",
+      "id": "vcjabe76",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's a short bit of stiff wire, like the ones you've sometimes seen Bobby carrying around."
+        ]
+      },
+      "command": "x wire",
+      "id": "vur53zwc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacobs rolls his eyes."
+        ]
+      },
+      "command": "give wire to jacobs",
+      "id": "hti5x48w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the south cell door with the piece of wire.",
+          "You slip your arm through the bars and reach down for the lock.",
+          "Then you feel the wire bump against something inside the lock."
+        ]
+      },
+      "command": "unlock door with wire",
+      "id": "4vi2eyvb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jailhouse",
+          "The jailhouse is hardly more comfortable than the cells themselves, just a crude, small room of unfinished stone, with a wooden bench and",
+          "Jacobs turns to you."
+        ],
+        "states": [
+          "player.location = Jailhouse"
+        ]
+      },
+      "command": "n",
+      "id": "i3het633",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jailhouse",
+          "The jailhouse is hardly more comfortable than the cells themselves, just a crude, small room of unfinished stone, with a wooden bench and",
+          "You can see a piece of wire and Jacobs here."
+        ],
+        "states": [
+          "player.location = Jailhouse"
+        ]
+      },
+      "command": "look",
+      "id": "k7uvnf7g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take wire",
+      "id": "gkq7w0eh",
+      "type": "turn"
+    }
+  ],
+  "id": "tbekp9rw",
+  "ordinal": 1,
+  "parent": "buzzz3ia"
+}

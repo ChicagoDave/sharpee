@@ -1,0 +1,127 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space"
+        ]
+      },
+      "command": "slide down northeast cable",
+      "id": "rgbrvda9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "dropping hard to a small space behind the fruit stall"
+        ],
+        "states": [
+          "player.location = Behind Fruit Stall",
+          "cloak.location = Behind Fruit Stall"
+        ]
+      },
+      "command": "let go",
+      "id": "nfmzzboy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ],
+        "states": [
+          "player.location = Fruit Stall"
+        ]
+      },
+      "command": "sw",
+      "id": "wmrh19ox",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "w",
+      "id": "142w5rrk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "w",
+      "id": "8u9k2bp6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "se",
+      "id": "3bfqjmtg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "se",
+      "id": "qwvtu094",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "589l5q0w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "2n3k0t56",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post"
+        ]
+      },
+      "command": "u",
+      "id": "akfed7lh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "something you could loop over the cable"
+        ],
+        "states": [
+          "player.location = Top of the Post"
+        ]
+      },
+      "command": "slide down northeast cable",
+      "id": "das0bpav",
+      "type": "turn"
+    }
+  ],
+  "id": "49359j4c",
+  "ordinal": 3,
+  "parent": "k6sd0y98"
+}

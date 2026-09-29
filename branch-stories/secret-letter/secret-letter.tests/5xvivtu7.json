@@ -1,0 +1,279 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Secret Closet",
+          "It is pitch black. The walls press close to either side; you can barely breathe."
+        ],
+        "states": [
+          "player.location = Secret Closet",
+          "emitted squeeze-in"
+        ]
+      },
+      "command": "hide",
+      "id": "cell8drt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is pitch black.",
+          "The pounding suddenly stops.",
+          "'Where is he?' growls a rough voice."
+        ]
+      },
+      "command": "look",
+      "id": "d0s4zrvf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sound of your own harsh breathing fills the tiny alcove. If they weren't shouting so much",
+          "'Where is who, sir?' That must be Fiona.",
+          "we know he came here after the hanging. Where is he?",
+          "That was Theresa!"
+        ]
+      },
+      "command": "listen",
+      "id": "pr1g36uk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's pitch black in here!",
+          "'Widow Theresa-' Fiona begins",
+          "Now he has done something unconscionable",
+          "one ungrateful little brat."
+        ]
+      },
+      "command": "x walls",
+      "id": "vrk0srr6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The child is hiding there.",
+          "'Jacqueline! Jacqueline, wait!'",
+          "'Where did the boy go?'",
+          "wriggled out the privy window",
+          "now you'll have to revise your opinion."
+        ],
+        "states": [
+          "emitted walls-like-a-coffin"
+        ]
+      },
+      "command": "touch walls",
+      "id": "x3098zot",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you bleeding dims",
+          "You let out a long, shaky breath."
+        ],
+        "states": [
+          "emitted dare-not-make-a-sound"
+        ]
+      },
+      "command": "sing",
+      "id": "x7rwm10d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Baron's men would catch you the instant you left this hiding place.",
+          "The door opens, and Shannon takes your hand",
+          "'That was too close,' she says.",
+          "Laundry"
+        ],
+        "states": [
+          "player.location = Laundry"
+        ]
+      },
+      "command": "s",
+      "id": "tn0exq2j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ugh. You're not going in there again; that was almost as bad as the jail cell."
+        ]
+      },
+      "command": "n",
+      "id": "xdph4ha3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ugh. You're not going in there again"
+        ]
+      },
+      "command": "open gap",
+      "id": "0n5990w6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We can talk later,' Shannon says, gently pushing you towards the door."
+        ]
+      },
+      "command": "talk to shannon",
+      "id": "ovmqh5uz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hallway",
+          "Widow Fiona and Widow Theresa are standing in the middle of the hallway, staring each other down.",
+          "'Get out,' chokes Fiona.",
+          "turns on her heel and walks out, slamming the door behind her.",
+          "Widow Fiona takes a deep breath, then turns to you and"
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "nw",
+      "id": "km41lkp0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Wait, Jacqueline. There are things you need to know before you leave.'"
+        ]
+      },
+      "command": "ne",
+      "id": "3xo6byu3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There are things you need to know before you leave."
+        ]
+      },
+      "command": "n",
+      "id": "ffcbh6up",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'You're the tutor, aren't you?'",
+          "It is the key to Red Gate Manor",
+          "'You're the tutor, aren't you?'"
+        ]
+      },
+      "command": "talk to fiona",
+      "id": "2z5i75vf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "large brass key"
+        ]
+      },
+      "command": "i",
+      "id": "rylfldso",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is the key to Red Gate Manor, and it opens the way to your history."
+        ]
+      },
+      "command": "x key",
+      "id": "i0n90kwf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'There is no time, Jacqueline,' she says gently."
+        ]
+      },
+      "command": "talk to fiona",
+      "id": "yzvyspwq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Not that way,' says Fiona. 'They'll be watching the front door for sure. Sneak out the back, through the privy window.'"
+        ]
+      },
+      "command": "n",
+      "id": "c9kvmhy6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Not that way,' says Fiona."
+        ]
+      },
+      "command": "open door",
+      "id": "utp2fu2c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Laundry"
+        ]
+      },
+      "command": "se",
+      "id": "w69u211r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ugh. You're not going in there again"
+        ]
+      },
+      "command": "n",
+      "id": "dzoh8k4f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hallway"
+        ]
+      },
+      "command": "nw",
+      "id": "9taun33f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Privy"
+        ],
+        "states": [
+          "player.location = Privy"
+        ]
+      },
+      "command": "sw",
+      "id": "l5rt3tri",
+      "type": "turn"
+    }
+  ],
+  "id": "5xvivtu7",
+  "ordinal": 0,
+  "parent": "5tgjdgdw"
+}

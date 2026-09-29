@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "bald, cadaverous heads"
+        ]
+      },
+      "command": "x brothers",
+      "id": "6jj26vvg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'...idle chit-chat with penniless ragamuffins,' finishes the first."
+        ]
+      },
+      "command": "talk to brothers",
+      "id": "n74hq4c0",
+      "type": "turn"
+    }
+  ],
+  "id": "n8ohyuj6",
+  "ordinal": 1,
+  "parent": "86ttufcy"
+}

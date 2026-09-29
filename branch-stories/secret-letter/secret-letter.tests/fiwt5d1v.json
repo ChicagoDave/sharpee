@@ -1,0 +1,117 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "s",
+      "id": "b2t1dcff",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hat Stall"
+        ]
+      },
+      "command": "s",
+      "id": "i6h1qsf3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Leather Stall"
+        ]
+      },
+      "command": "sw",
+      "id": "0sfv0d5n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Weaponsmith's Stall"
+        ]
+      },
+      "command": "w",
+      "id": "9tnx0ei4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Exotic Gems Stall"
+        ]
+      },
+      "command": "nw",
+      "id": "zk0q0967",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Herb Stall"
+        ]
+      },
+      "command": "n",
+      "id": "i0vkn85o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "e",
+      "id": "tx4d9iot",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "kvcad4fp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ]
+      },
+      "command": "se",
+      "id": "xliy0oq7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "sw",
+      "id": "ihnpmjub",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "n",
+      "id": "18qnwgic",
+      "type": "turn"
+    }
+  ],
+  "id": "fiwt5d1v",
+  "ordinal": 0,
+  "parent": "sv34qxvq"
+}

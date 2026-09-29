@@ -1,0 +1,179 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You peer through the closely spaced bars.",
+          "'You can come with me if you want,' he says.",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "look through north door",
+      "id": "jqc0uoc6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We are at your service, miss,'",
+          "'Do us a kindness, girl, and free us as well,'",
+          "Somewhere down the corridor a door opens"
+        ]
+      },
+      "command": "talk to olmer",
+      "id": "11c2mmp4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We are at your service, miss,'"
+        ]
+      },
+      "command": "talk to darrens",
+      "id": "p29l5wqr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There are more guards out there, and you don't know the way.",
+          "'Fine, then,' Jacobs snarls"
+        ]
+      },
+      "command": "e",
+      "id": "vtsvpfzh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Drain Room",
+          "This tiny alcove reeks worse than the privy back at Maiden House, and that's saying something."
+        ],
+        "states": [
+          "player.location = Drain Room"
+        ]
+      },
+      "command": "sw",
+      "id": "fyr08orw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The thick bars of metal cover a rectangular hole that drops down into darkness."
+        ]
+      },
+      "command": "x grate",
+      "id": "f714db44",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted cant-squeeze-the-bars"
+        ]
+      },
+      "command": "enter hole",
+      "id": "8aclm2xc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jailhouse",
+          "The jailhouse is hardly more comfortable than the cells themselves, just a crude, small room of unfinished stone, with a wooden bench and",
+          "'Miss?' wheezes the man in the north cell."
+        ],
+        "states": [
+          "player.location = Jailhouse"
+        ]
+      },
+      "command": "ne",
+      "id": "kvzgnshh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the north cell door with the piece of wire.",
+          "Picking a lock is much easier when you're standing on the ground and can see what you're doing.",
+          "'Oh, thank you, miss, thank you kindly."
+        ]
+      },
+      "command": "unlock north door with wire",
+      "id": "hwixx1xs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'The guards use this place to relieve themselves,' Olmer explains, 'and sometimes for beatin' prisoners when they don't feel like moppin'",
+          "Drain Room",
+          "This tiny alcove reeks worse than the privy back at Maiden House, and that's saying something.",
+          "You can see Olmer and Darrens here."
+        ],
+        "states": [
+          "player.location = Drain Room"
+        ]
+      },
+      "command": "follow olmer",
+      "id": "9ili2g46",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's a strain, but you're just barely able to lift the heavy grate and drop it to the side with a dull clang."
+        ]
+      },
+      "command": "lift grate",
+      "id": "cguuxn8g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted running-water-below"
+        ]
+      },
+      "command": "listen",
+      "id": "qgp96rf6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sewer",
+          "Well, it can't be that much worse than rotting in prison, you think.",
+          "And then the two of them slosh off, leaving you alone."
+        ],
+        "states": [
+          "player.location = Sewer",
+          "emitted olmer-points-north-blue"
+        ]
+      },
+      "command": "down",
+      "id": "6fl88jgx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The symbols are a number of crude shapes, no bigger than your hand."
+        ],
+        "states": [
+          "emitted glyph-north-blue",
+          "emitted glyph-east-green"
+        ]
+      },
+      "command": "x symbols",
+      "id": "an8msefh",
+      "type": "turn"
+    }
+  ],
+  "id": "n7blwlqd",
+  "ordinal": 0,
+  "parent": "tbekp9rw"
+}

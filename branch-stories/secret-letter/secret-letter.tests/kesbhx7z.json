@@ -1,0 +1,62 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "t2rolbat",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "omln1gnj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Hurry, Jack!' she hisses"
+        ],
+        "states": [
+          "story.state = chase"
+        ]
+      },
+      "command": "give necklace to teisha",
+      "id": "e5k91ay0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "aftcjffx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post",
+          "You can hear Teisha yelling shrilly",
+          "One of the mercenaries tries to climb after you"
+        ]
+      },
+      "command": "u",
+      "id": "j25ti8mk",
+      "type": "turn"
+    }
+  ],
+  "id": "kesbhx7z",
+  "ordinal": 7,
+  "parent": "49qggv56"
+}

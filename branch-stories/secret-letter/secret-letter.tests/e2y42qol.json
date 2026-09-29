@@ -1,0 +1,46 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You search the underbrush carefully.",
+          "you find it! The split sapling that Bobby showed you last night, right next to a trail leading east."
+        ]
+      },
+      "command": "x trees",
+      "id": "hz2j3ej5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "If you go wandering off on those trails again, you'll only get lost. Better stick to the east path that Bobby took last night."
+        ],
+        "states": [
+          "player.location = Woods"
+        ]
+      },
+      "command": "w",
+      "id": "pyt7gtzl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Clearing",
+          "At the fountain, where they took you and Bobby last night,"
+        ],
+        "states": [
+          "player.location = Clearing",
+          "Pieter.location = Clearing"
+        ]
+      },
+      "command": "e",
+      "id": "2hx6z8y2",
+      "type": "turn"
+    }
+  ],
+  "id": "e2y42qol",
+  "ordinal": 1,
+  "parent": "yo781fr9"
+}

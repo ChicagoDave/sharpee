@@ -8,15 +8,16 @@
  * branch passes. The exit-1 case uses devkit's own failing fixture project — a
  * dedicated test story whose one clause has no vocabulary, so its derived
  * row fails at parse. The SKIPPED case uses devkit's SKIPPED fixture, and the
- * exit-2 cases corrupt a scratch copy's tree document, never fernhill's.
+ * exit-2 cases corrupt a scratch copy's test tree, never fernhill's.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
-import { readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { FERNHILL_DIR, REPO_ROOT, derivedBranches, runEnd, runFernhillTest, runTestJson, spawnCli } from './support/fernhill-run';
-import { copyStoryToScratch, type ScratchStory } from './support/scratch-story';
+import type { TreeFiles } from '../../packages/branch-tester/src/tree-document';
+import { copyStoryToScratch, readTreeFiles, type ScratchStory } from './support/scratch-story';
 
 const SKIP_FIXTURE = join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 'derived-pass');
 const FAIL_FIXTURE = join(REPO_ROOT, 'packages', 'devkit', 'tests', 'fixtures', 'derived-fail');
@@ -60,41 +61,74 @@ describe('a SKIPPED branch never fails the build', () => {
   }, 60_000);
 });
 
-describe('a document the tester cannot read runs nothing and exits 2', () => {
+describe('a tree the tester cannot read runs nothing and exits 2', () => {
   let scratch: ScratchStory;
-  let treeFile: string;
-  let original: string;
+  let treeDir: string;
+  let original: TreeFiles;
 
   beforeAll(() => {
     scratch = copyStoryToScratch(FERNHILL_DIR, 'narrative-exit-codes-');
-    treeFile = join(scratch.dir, 'fernhill.tests.json');
-    original = readFileSync(treeFile, 'utf-8');
+    treeDir = join(scratch.dir, 'fernhill.tests');
+    original = readTreeFiles(treeDir);
+    // An empty snapshot would make every case below pass for the wrong reason.
+    expect(Object.keys(original).length).toBeGreaterThan(1);
+  });
+
+  // Every case starts from fernhill's own tree, so each carries one defect only.
+  beforeEach(() => {
+    rmSync(treeDir, { recursive: true, force: true });
+    mkdirSync(treeDir);
+    for (const [name, text] of Object.entries(original)) writeFileSync(join(treeDir, name), text, 'utf-8');
   });
 
   afterAll(() => scratch?.cleanup());
 
-  it('a newer document version is refused by name, nothing runs, exit 2', () => {
-    writeFileSync(treeFile, JSON.stringify({ ...JSON.parse(original), version: 99 }), 'utf-8');
+  /** Run the CLI over the scratch copy and require that nothing ran. */
+  function refusedRun(): string {
     const outcome = spawnCli(['test', scratch.dir, '--json']);
     expect(outcome.status).toBe(2);
     expect(outcome.stdout.trim()).toBe('');
-    expect(outcome.stderr).toMatch(/fernhill\.tests\.json/);
-    expect(outcome.stderr).toMatch(/version/);
+    return outcome.stderr;
+  }
+
+  it('a newer tree version is refused by name, nothing runs, exit 2', () => {
+    writeFileSync(join(treeDir, 'manifest.json'), '{ "seed": 42, "story": "fernhill", "version": 99 }\n', 'utf-8');
+    expect(refusedRun()).toContain(
+      'test: fernhill.tests/: this test tree is version 99; this build reads up to version 3 — update Sharpee to open it',
+    );
   }, 60_000);
 
-  it('a document that is not a tree at all is malformed, nothing runs, exit 2', () => {
-    writeFileSync(treeFile, '{"version": "two", "cards": []}', 'utf-8');
-    const outcome = spawnCli(['test', scratch.dir, '--json']);
-    expect(outcome.status).toBe(2);
-    expect(outcome.stdout.trim()).toBe('');
-    expect(outcome.stderr).toMatch(/'version' must be an integer/);
+  it('a manifest that is not a tree manifest at all is malformed, nothing runs, exit 2', () => {
+    // Seed and story are fernhill's own: the version is the only defect.
+    writeFileSync(join(treeDir, 'manifest.json'), '{ "seed": 42, "story": "fernhill", "version": "two" }\n', 'utf-8');
+    expect(refusedRun()).toContain("test: fernhill.tests/: 'version' must be an integer");
   }, 60_000);
 
-  it('no tree document beside the story is a named condition, never an empty pass', () => {
-    rmSync(treeFile);
-    const outcome = spawnCli(['test', scratch.dir, '--json']);
-    expect(outcome.status).toBe(2);
-    expect(outcome.stdout.trim()).toBe('');
-    expect(outcome.stderr).toMatch(/no tree document found/);
+  it('a tree with no manifest is malformed — never run at a default seed, exit 2', () => {
+    rmSync(join(treeDir, 'manifest.json'));
+    expect(refusedRun()).toContain('test: fernhill.tests/: the tree has no manifest.json');
+  }, 60_000);
+
+  it('a segment naming a parent that is gone is malformed — the subtree is never silently dropped, exit 2', () => {
+    const [name, text] = Object.entries(original).find(([, body]) => body.includes('"parent"'))!;
+    const segment = JSON.parse(text) as { id: string; parent: string };
+    segment.parent = 'gone0000';
+    writeFileSync(join(treeDir, name), `${JSON.stringify(segment, null, 2)}\n`, 'utf-8');
+    expect(refusedRun()).toContain(
+      `test: fernhill.tests/: segment '${segment.id}' names parent 'gone0000', which no segment in the tree carries`,
+    );
+  }, 60_000);
+
+  it('a tree a second writer re-indented is named by the canonical gate, nothing runs, exit 2', () => {
+    writeFileSync(join(treeDir, 'manifest.json'), `${JSON.stringify(JSON.parse(original['manifest.json']), null, 1)}\n`, 'utf-8');
+    // Exactly the manifest is named: every segment is still canonical.
+    expect(refusedRun()).toBe(
+      'test: fernhill.tests/ has files not in canonical form (re-save them from the Testing tab):\n  manifest.json\n',
+    );
+  }, 60_000);
+
+  it('no test tree beside the story is a named condition, never an empty pass', () => {
+    rmSync(treeDir, { recursive: true, force: true });
+    expect(refusedRun()).toContain('test: no test tree found in');
   }, 60_000);
 });

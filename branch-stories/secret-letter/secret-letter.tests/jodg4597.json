@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You can't enter the bathtub."
+        ]
+      },
+      "command": "enter tub",
+      "id": "0pf8nik2",
+      "type": "turn"
+    }
+  ],
+  "id": "jodg4597",
+  "ordinal": 3,
+  "parent": "ckabh2sz"
+}

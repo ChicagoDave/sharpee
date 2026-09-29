@@ -1,0 +1,135 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Gowns, robes, capes, cloaks, and shawls",
+          "makes you yearn for something a little bit more... elegant."
+        ]
+      },
+      "command": "x silks",
+      "id": "nli1qyi7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The gowns are simple designs",
+          "Just elegant and beautiful."
+        ]
+      },
+      "command": "x gowns",
+      "id": "oykbl61d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted sooner-go-hungry"
+        ]
+      },
+      "command": "take gowns",
+      "id": "cuvyegrt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted silks-no-money"
+        ]
+      },
+      "command": "buy gowns",
+      "id": "966ygz0m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "story.state = calm",
+          "emitted silks-no-money"
+        ]
+      },
+      "command": "buy silks",
+      "id": "blug6rbw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cloaks are long and voluminous.",
+          "You realize suddenly that this is exactly what you need: the perfect disguise!"
+        ]
+      },
+      "command": "x cloaks",
+      "id": "vldftnkm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cloaks are long and voluminous.",
+          "The perfect disguise, if only you could afford one."
+        ],
+        "notContains": [
+          "You realize suddenly"
+        ]
+      },
+      "command": "x cloaks",
+      "id": "j9jhwhck",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "different-colored inner linings that complement the outer fabric."
+        ]
+      },
+      "command": "x capes",
+      "id": "p2zxduhd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "just simple wraps of brightly colored silk"
+        ]
+      },
+      "command": "x shawls",
+      "id": "gr01ynqw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The robes are long-sleeved, with ties in the front."
+        ]
+      },
+      "command": "x robes",
+      "id": "w0wrbe1l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You'd sooner go hungry than steal from Teisha."
+        ]
+      },
+      "command": "take silks",
+      "id": "kxh46wk0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted nothing-on-sale"
+        ]
+      },
+      "command": "buy tent",
+      "id": "iioay2l8",
+      "type": "turn"
+    }
+  ],
+  "id": "3i35cyt9",
+  "ordinal": 1,
+  "parent": "5n2v7hdl"
+}
