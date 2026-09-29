@@ -124,6 +124,34 @@ public sealed class TestingSurfacePostsTests
     }
 
     [Fact]
+    public void ApplyingAWriteIgnoresNamesThatAreNotTreeFilesEvenWhenHandedThemDirectly()
+    {
+        // ReadTreeWrite already drops these; ApplyTreeWrite guards again, so a write built
+        // any other way cannot land a non-tree file or reach outside the directory.
+        var parent = Path.Combine(Path.GetTempPath(), "tree-write-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(parent, "mini.tests");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            var sibling = Path.Combine(parent, "manifest.json");
+            File.WriteAllText(sibling, "outside\n");
+
+            var write = new TreeWrite(
+                new Dictionary<string, string> { ["notes.txt"] = "no", ["seg00001.json"] = "yes\n" },
+                new[] { "../manifest.json" });
+            TestingSurfacePosts.ApplyTreeWrite(directory, write);
+
+            Assert.False(File.Exists(Path.Combine(directory, "notes.txt")));
+            Assert.Equal("yes\n", File.ReadAllText(Path.Combine(directory, "seg00001.json")));
+            Assert.Equal("outside\n", File.ReadAllText(sibling));
+        }
+        finally
+        {
+            Directory.Delete(parent, recursive: true);
+        }
+    }
+
+    [Fact]
     public void ApplyingAWriteCreatesAMissingTreeDirectory()
     {
         var parent = Path.Combine(Path.GetTempPath(), "tree-write-" + Guid.NewGuid().ToString("N"));

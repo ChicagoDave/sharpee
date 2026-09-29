@@ -14,8 +14,10 @@
  * ever prefix-factored so siblings differ at command 1, the naming rule
  * becomes unnecessary and these tests should go with it.
  *
- * The last describe runs against the real secret-letter document, so the
- * counts quoted in ADR-353 are asserted rather than remembered.
+ * The last describe runs against the real secret-letter document. It checks
+ * the outline against an independent walk of that tree, not fixed counts:
+ * the tree grows as the author records (61 lines when ADR-353 quoted its
+ * numbers, 106 by 2026-09-29).
  */
 import { describe, expect, it } from 'vitest';
 import { readdirSync, readFileSync } from 'node:fs';
@@ -23,6 +25,8 @@ import { resolve } from 'node:path';
 import {
   assembleTree,
   TREE_DOCUMENT_VERSION,
+  type TreeBranch,
+  type TreeCard,
   type TreeDocument,
   type TreeFiles,
 } from '@sharpee/branch-tester/tree-document';
@@ -221,23 +225,41 @@ describe('outlineOf against the real secret-letter tree', () => {
   }
   const document = read.document;
 
-  it('turns 61 lines and 53 sibling chips into 19 fork points', () => {
+  // The tree grows as the author records, so these assert against an
+  // independent walk of the document rather than counts that go stale.
+  const branches: TreeBranch[] = [];
+  let forkCards = 0;
+  const collect = (cards: readonly TreeCard[]): void => {
+    for (const card of cards) {
+      if (!card.branches?.length) continue;
+      forkCards += 1;
+      for (const branch of card.branches) {
+        branches.push(branch);
+        collect(branch.cards);
+      }
+    }
+  };
+  collect(document.cards);
+  const commandsOf = (branch: TreeBranch): string[] =>
+    branch.cards.filter(c => c.type === 'turn').map(c => c.command ?? '');
+  const branchById = new Map(branches.map(b => [b.id, b]));
+
+  it('has one line per branch plus the main line, and one fork per branching card', () => {
     const outline = outlineOf(document);
-    expect(outline.lineCount).toBe(61);
-    expect(outline.forks).toHaveLength(19);
+    expect(branches.length).toBeGreaterThan(0);
+    expect(outline.lineCount).toBe(branches.length + 1);
+    expect(outline.forks).toHaveLength(forkCards);
+    expect(outline.forks.flatMap(f => f.lines.map(l => l.lineId)).sort())
+      .toEqual(branches.map(b => b.id).sort());
   });
 
-  it('keeps the fan small: median 2 lines per fork, 10 at the worst', () => {
-    const counts = outlineOf(document).forks.map(f => f.lines.length).sort((a, b) => a - b);
-    expect(counts[Math.floor(counts.length / 2)]).toBe(2);
-    expect(counts[counts.length - 1]).toBe(10);
-  });
-
-  it('gives 52 of 60 branches a distinctive command and the rest a shape', () => {
-    const lines = outlineOf(document).forks.flatMap(f => f.lines);
-    expect(lines).toHaveLength(60);
-    expect(lines.filter(l => l.nameKind === 'distinctive')).toHaveLength(52);
-    expect(lines.filter(l => l.nameKind === 'shape')).toHaveLength(8);
+  it('names every branch by one of its own commands, or by its shape', () => {
+    for (const line of outlineOf(document).forks.flatMap(f => f.lines)) {
+      const commands = commandsOf(branchById.get(line.lineId)!);
+      expect(line.name).not.toBe('');
+      if (line.nameKind === 'distinctive') expect(commands).toContain(line.name);
+      else expect(line.nameKind).toBe('shape');
+    }
   });
 
   it('names all ten of the fork that reads `alley · d` today', () => {
@@ -250,8 +272,18 @@ describe('outlineOf against the real secret-letter tree', () => {
     expect(names).toContain('se › wait ×7');
   });
 
-  it('leaves 25 branches with no destination rather than inheriting one', () => {
+  it('gives a branch the last location it asserts, and none rather than inheriting one', () => {
     const lines = outlineOf(document).forks.flatMap(f => f.lines);
-    expect(lines.filter(l => l.destination === undefined)).toHaveLength(25);
+    for (const line of lines) {
+      const asserted = branchById.get(line.lineId)!.cards
+        .filter(c => c.type === 'turn')
+        .flatMap(c => c.assertions?.states ?? [])
+        .map(s => /^\s*player\.location\s*=\s*(.+?)\s*$/.exec(s)?.[1])
+        .filter((l): l is string => l !== undefined);
+      expect(line.destination).toBe(asserted.at(-1));
+    }
+    // Both halves occur on the real tree, so neither is vacuous.
+    expect(lines.some(l => l.destination === undefined)).toBe(true);
+    expect(lines.some(l => l.destination !== undefined)).toBe(true);
   });
 });

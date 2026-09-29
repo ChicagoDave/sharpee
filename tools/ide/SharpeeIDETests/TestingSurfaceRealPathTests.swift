@@ -850,7 +850,10 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(object["version"] as? Int, TestingSessionStore.version)
         XCTAssertNil(object["commands"], "no command log — the document owns the session")
         let view = try XCTUnwrap(object["view"] as? [String: Any])
-        XCTAssertEqual(view["active"] as? Int, 0)
+        // The active line is a segment id (ADR-355 D5): a fresh session's is
+        // the main line, the tree's root segment.
+        let rootId = try XCTUnwrap(try documentJSON()["id"] as? String)
+        XCTAssertEqual(view["active"] as? String, rootId)
     }
 
     func testSaveDialogOutcomeRecordsAndAutoDrivesUnderReplay() async throws {

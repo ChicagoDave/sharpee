@@ -1123,6 +1123,24 @@ public partial class ShellWindow : Window
             {
                 _ = RevealAsync(new IndexSpan(open.File, open.Line, 1));
             }
+            // The tree changed (ADR-355): the page posts the files it wrote and removed,
+            // and they land in the story's tree on disk — what the next open replays and
+            // what the Run button tests.
+            else if (message.Handler == "testingSurface"
+                && ReferenceEquals(message.View, TestingWeb)
+                && _project is { } project
+                && TestingSurfacePosts.ReadTreeWrite(message.Body) is { } write)
+            {
+                try
+                {
+                    TestingSurfacePosts.ApplyTreeWrite(project.TestsTreeTarget, write);
+                    _log.Line($"tree: {write.Written.Count} written, {write.Removed.Count} removed → {project.TestsTreeTarget}");
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    Report($"The test tree could not be saved: {error.Message}");
+                }
+            }
         }
 
         // A replayed tree posts hundreds of records; the log wants the shape, not each one.

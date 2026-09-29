@@ -1229,6 +1229,9 @@
         <div id="ts-outline"></div>
       </div>
       <div class="ts-left">
+        <div class="ts-busy" id="ts-busy" role="status" aria-live="polite" hidden>
+          <span class="ts-spinner" aria-hidden="true"></span><span id="ts-busy-text"></span>
+        </div>
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>
       </div>
@@ -3412,6 +3415,13 @@
     filter.focus();
   }
 
+  // tools/ide/web/testing-surface/src/busy.ts
+  function busyLabel(kind, done, total) {
+    const verb = kind === "restore" ? "Restoring session" : "Replaying line";
+    if (total <= 0) return `${verb}\u2026`;
+    return `${verb} \u2014 ${Math.min(Math.max(done, 0), total)} of ${total}\u2026`;
+  }
+
   // tools/ide/web/testing-surface/src/main.ts
   var surfaceWindow = window;
   var bootSession = surfaceWindow.__SHARPEE_TESTING_SESSION__;
@@ -3840,6 +3850,14 @@
     input.placeholder = placeholder;
     if (!held) input.focus();
   }
+  function showBusy(text3) {
+    document.body.classList.toggle("ts-busy", text3 !== null);
+    const bar = document.getElementById("ts-busy");
+    const label = document.getElementById("ts-busy-text");
+    if (!bar || !label) return;
+    bar.hidden = text3 === null;
+    label.textContent = text3 ?? "";
+  }
   function visitPlan(lineId) {
     return visitPlanOf(model.pathStepsOf(lineId), model.prefixCommandsOf(lineId).length);
   }
@@ -3856,6 +3874,13 @@
     driverBusy = true;
     replayActive = true;
     setInputHeld(true, "replaying\u2026");
+    const total = replay.length + live.length;
+    let done = 0;
+    showBusy(busyLabel("line", done, total));
+    const stepLanded = () => {
+      done += 1;
+      showBusy(busyLabel("line", done, total));
+    };
     try {
       localStorage.clear();
       dropBeforeFence = true;
@@ -3884,6 +3909,7 @@
           trace(`boot line ${line}: prefix step "${step.command}" never landed`);
           return "failed";
         }
+        stepLanded();
       }
       suppressDelivery = false;
       currentLine = line;
@@ -3902,6 +3928,7 @@
           trace(`boot line ${line}: step "${step.command}" never landed`);
           return "failed";
         }
+        stepLanded();
       }
       trace(`boot line ${line}: ok`);
       return "ok";
@@ -3913,6 +3940,7 @@
       replayActive = false;
       driverBusy = wasBusy;
       setInputHeld(driverBusy, driverBusy ? "restoring session\u2026" : "");
+      showBusy(driverBusy ? busyLabel("restore", 0, 0) : null);
       update();
     }
   }
@@ -3961,6 +3989,7 @@
     driverBusy = true;
     replayActive = true;
     setInputHeld(true, "restoring session\u2026");
+    showBusy(busyLabel("restore", 0, 0));
     try {
       currentLine = model.mainLine;
       model.activateLine(model.mainLine);
@@ -3968,6 +3997,7 @@
       let intact = true;
       const mainCommands = model.ownCommandsOf(model.mainLine);
       for (const [index, command] of mainCommands.entries()) {
+        showBusy(busyLabel("restore", index, mainCommands.length));
         if (storyEnded) {
           trace(`main line: ended after ${index} of ${mainCommands.length} command(s)`);
           intact = false;
@@ -3994,6 +4024,7 @@
       driverBusy = false;
       armedOutcomeKey = null;
       setInputHeld(false);
+      showBusy(null);
       update();
     }
   }

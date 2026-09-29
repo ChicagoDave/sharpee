@@ -52,6 +52,7 @@ import { TreeSessionModel, type AuthoringMemento } from './model';
 import { diffTreeFiles, type TreeFiles } from '@sharpee/branch-tester/tree-document';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
 import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from './run';
+import { busyLabel } from './busy';
 
 /** One world-digest entity as the feed carries it. */
 interface DigestEntity {
@@ -743,6 +744,17 @@ function setInputHeld(held: boolean, placeholder = ''): void {
   if (!held) input.focus();
 }
 
+/** Shows the busy bar with `text`, or hides it for null. `body.ts-busy`
+ *  also spins the active pill, so the line clicked shows it is loading. */
+function showBusy(text: string | null): void {
+  document.body.classList.toggle('ts-busy', text !== null);
+  const bar = document.getElementById('ts-busy');
+  const label = document.getElementById('ts-busy-text');
+  if (!bar || !label) return;
+  bar.hidden = text === null;
+  label.textContent = text ?? '';
+}
+
 /** How line `lineId` divides for a visit: prefix to replay, own cards to
  *  type live. The one derivation every replay path shares (`visit.ts`), so a
  *  step cannot be keyed one way here and another way there. */
@@ -788,6 +800,10 @@ async function driveFreshBoot(
   driverBusy = true;
   replayActive = true;
   setInputHeld(true, 'replaying…');
+  const total = replay.length + live.length;
+  let done = 0;
+  showBusy(busyLabel('line', done, total));
+  const stepLanded = (): void => { done += 1; showBusy(busyLabel('line', done, total)); };
   try {
     localStorage.clear();       // fresh boots are storage-clean
     dropBeforeFence = true;
@@ -809,6 +825,7 @@ async function driveFreshBoot(
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
       if (!landed) { trace(`boot line ${line}: prefix step "${step.command}" never landed`); return 'failed'; }
+      stepLanded();
     }
     suppressDelivery = false;
     currentLine = line;
@@ -825,6 +842,7 @@ async function driveFreshBoot(
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
       if (!landed) { trace(`boot line ${line}: step "${step.command}" never landed`); return 'failed'; }
+      stepLanded();
     }
     trace(`boot line ${line}: ok`);
     return 'ok';
@@ -836,6 +854,8 @@ async function driveFreshBoot(
     replayActive = false;
     driverBusy = wasBusy;
     setInputHeld(driverBusy, driverBusy ? 'restoring session…' : '');
+    // Nested in a restore, the restore still owns the bar and relabels it.
+    showBusy(driverBusy ? busyLabel('restore', 0, 0) : null);
     update();
   }
 }
@@ -927,6 +947,7 @@ async function replayTree(activeTarget: string): Promise<void> {
   driverBusy = true;
   replayActive = true;
   setInputHeld(true, 'restoring session…');
+  showBusy(busyLabel('restore', 0, 0));
   try {
     currentLine = model.mainLine;
     model.activateLine(model.mainLine);
@@ -936,6 +957,7 @@ async function replayTree(activeTarget: string): Promise<void> {
     let intact = true;
     const mainCommands = model.ownCommandsOf(model.mainLine);
     for (const [index, command] of mainCommands.entries()) {
+      showBusy(busyLabel('restore', index, mainCommands.length));
       if (storyEnded) { trace(`main line: ended after ${index} of ${mainCommands.length} command(s)`); intact = false; break; }
       armedOutcomeKey = `${model.mainLine}:${index}`;
       typeCommand(command);
@@ -964,6 +986,7 @@ async function replayTree(activeTarget: string): Promise<void> {
     driverBusy = false;
     armedOutcomeKey = null;
     setInputHeld(false);
+    showBusy(null);
     update();
   }
 }

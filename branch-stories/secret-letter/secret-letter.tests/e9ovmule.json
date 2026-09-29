@@ -368,6 +368,7 @@
         ]
       },
       "command": "wait",
+      "ending": "queen-leaves-stub",
       "id": "31yr3m56",
       "type": "turn"
     }

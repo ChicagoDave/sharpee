@@ -40,8 +40,8 @@ at build time and nothing is fetched from the network.
 **Two macOS arches** because Chord Writer ships as separate per-arch installers
 rather than a universal binary (David, 2026-08-13): a universal app would carry
 one toolchain that is wrong for half the machines it runs on. Both darwin
-runtimes are minos 11.0, so the deployment target is 11.0 for both and the
-toolchain reaches as far as the app does on either.
+runtimes are minos 11.0, below the app's 12.0 deployment target, so the
+toolchain reaches at least as far as the app does on either.
 
 **`linux-arm64` is deliberately absent** (David, 2026-09-16). It is out of scope
 for the cross-platform pass; adding it later means vendoring one more tarball
