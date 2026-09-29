@@ -1,6 +1,6 @@
 /**
  * narrative-world-tab.test.ts — beat 1 of the author narrative
- * (`docs/work/testing-explorer/narrative-20260926-author-testing.md`, "The
+ * (`docs/work/testing-narrative/narrative-20260926-author-testing.md`, "The
  * first rooms"): what the World tab shows is what `sharpee world-index` says
  * about fernhill's compiled story. Map places every room; Reach finds no
  * room play never arrives at; Incomplete lists `scrollwork` and `gatepost`
