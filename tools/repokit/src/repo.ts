@@ -5,7 +5,7 @@
  * exactly so `devkit build`/`bundle` reach byte-for-byte output parity before
  * build.sh is retired. Any drift here is a parity-gate failure.
  *
- * Public interface: findRepoRoot(), PLATFORM_PACKAGES, BUNDLE_ALIASES, BUNDLE_DTS,
+ * Public interface: findRepoRoot(), PLATFORM_PACKAGES, BUNDLE_DTS,
  * storyVersionFile(), resolveStoryDir().
  */
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
@@ -53,48 +53,11 @@ export const PLATFORM_PACKAGES: ReadonlyArray<readonly [string, string]> = [
   ['@sharpee/transcript-tester', 'transcript-tester'],
   // The tree-document harness (ADR-307). It depends on transcript-tester for
   // the assertion core (ADR-340 D1), so it builds after it. It is deliberately
-  // NOT in BUNDLE_ALIASES (nothing in the CLI graph imports it) and NOT in the
-  // npm consumer closure (consumer-gen / test-npm) — the Family Zoo tutorial
+  // NOT in the npm consumer closure (consumer-gen / test-npm) — the Family Zoo tutorial
   // that closure serves stays on v1 permanently (ADR-302 D9/D12), so vendoring
   // v2 there would ship a package the consumer never loads.
   ['@sharpee/branch-tester', 'branch-tester'],
   ['@sharpee/devkit', 'devkit'],
-];
-
-/**
- * esbuild `--alias:` entries for the CLI bundle (build.sh build_bundle, 587-604).
- * Order matches build.sh so the esbuild command is byte-identical.
- */
-export const BUNDLE_ALIASES: ReadonlyArray<readonly [string, string]> = [
-  ['@sharpee/core', './packages/core/dist/index.js'],
-  ['@sharpee/if-domain', './packages/if-domain/dist/index.js'],
-  ['@sharpee/world-model', './packages/world-model/dist/index.js'],
-  ['@sharpee/stdlib', './packages/stdlib/dist/index.js'],
-  ['@sharpee/engine', './packages/engine/dist/index.js'],
-  ['@sharpee/parser-en-us', './packages/parser-en-us/dist/index.js'],
-  ['@sharpee/lang-en-us', './packages/lang-en-us/dist/index.js'],
-  ['@sharpee/event-processor', './packages/event-processor/dist/index.js'],
-  ['@sharpee/text-blocks', './packages/text-blocks/dist/index.js'],
-  ['@sharpee/ide-protocol', './packages/ide-protocol/dist/index.js'],
-  ['@sharpee/channel-service', './packages/channel-service/dist/index.js'],
-  ['@sharpee/if-services', './packages/if-services/dist/index.js'],
-  ['@sharpee/ext-basic-combat', './packages/extensions/basic-combat/dist/index.js'],
-  ['@sharpee/ext-scoring', './packages/extensions/scoring/dist/index.js'],
-  ['@sharpee/ext-hunger', './packages/extensions/hunger/dist/index.js'],
-  ['@sharpee/ext-chapters', './packages/extensions/chapters/dist/index.js'],
-  ['@sharpee/plugins', './packages/plugins/dist/index.js'],
-  ['@sharpee/plugin-scheduler', './packages/plugin-scheduler/dist/index.js'],
-  ['@sharpee/plugin-state-machine', './packages/plugin-state-machine/dist/index.js'],
-  ['@sharpee/bootstrap', './packages/bootstrap/dist/index.js'],
-  ['@sharpee/transcript-tester', './packages/transcript-tester/dist/index.js'],
-  // Chord `.story` support (ADR-210 Phase A): the CLI compiles + interprets
-  // .story files, so the frontend and the interpreter must resolve to the
-  // same in-bundle copies. `@sharpee/helpers` was aliased here for the
-  // interpreter's dependency on it; ADR-237 D2 removed that dependency, so
-  // the alias was inert (nothing in the CLI graph imports helpers) and is
-  // gone. Helpers is author-facing only — it must never re-enter this list.
-  ['@sharpee/chord', './packages/chord/dist/index.js'],
-  ['@sharpee/story-loader', './packages/story-loader/dist/index.js'],
 ];
 
 /** Hand-written CLI bundle declarations (build.sh build_bundle, 607-619) — verbatim. */

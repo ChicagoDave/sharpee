@@ -5195,25 +5195,22 @@ export declare function enterLucidityWindow(trait: CharacterModelTrait, targetSt
  */
 import type { WorldModel } from '@sharpee/world-model';
 /**
- * World-state key mirroring the last COMPLETED character-model tick (Phase
- * 6). The dialogue surfaces run during PLAYER actions, where the engine's
- * turn counter is unreachable by design (the selector binding's documented
+ * World-state key mirroring the last completed NPC turn (Phase 6). The
+ * dialogue surfaces run during PLAYER actions, where the engine's turn
+ * counter is unreachable by design (the selector binding's documented
  * idiom is a closed-over turn source); the character-model tick phase
- * writes its turn here as it finishes, so `mirror + 1` is the current turn
- * on both sides of the boundary — during turn T's player action and during
- * turn T's tick alike (GH #275: written at the tick's entry, the tick read
- * one ahead of the action that preceded it). Rides world state, so it
- * saves and restores.
+ * mirrors its turn here so dialogue-path bookkeeping stamps `mirror + 1`
+ * — the turn the player is acting in. Rides world state, so it saves
+ * and restores.
  */
 export declare const CHARACTER_TURN_KEY = "character.turn";
 /**
- * The current turn, read from the tick phase's mirror — the one turn source
- * for dialogue-path bookkeeping (ledger stamps, witnessed-act stamps,
- * conversation markers, scene stamps), on one scale whether the stamp is
- * made during the player's action or during the same turn's tick.
+ * The turn the player is acting in, read from the tick phase's mirror —
+ * the one turn source for dialogue-path bookkeeping (ledger stamps,
+ * witnessed-act stamps, conversation markers).
  *
  * @param world - The live world holding the mirror
- * @returns The current turn (mirror + 1; 1 before any tick completes)
+ * @returns The current player turn (mirror + 1; 1 before any tick)
  */
 export declare function dialogueTurn(world: WorldModel): number;
 /**
