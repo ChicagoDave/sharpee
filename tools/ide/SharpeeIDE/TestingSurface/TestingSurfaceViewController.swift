@@ -2,16 +2,18 @@
 // The testing play surface (ADR-307): a WKWebView hosting the story bundle's
 // TESTING page (index-testing.html — same client, no chrome) with the IDE's
 // tree-of-cards UI injected over it. Turn-feed records the client posts are
-// forwarded into the page, where the surface folds them into the tree
-// document; the page posts back the WHOLE serialized document (written to
-// `<story-id>.tests.json` beside the `.story` file — the one durable test
-// artifact) and its view-state sidecar (`{active, dialogs}` — D7 ephemera).
-// Reopening injects the document and the view state; the page replays the
-// tree through the client's real input at the pinned seed, so cards always
-// show the current build's real output.
+// forwarded into the page, where the surface folds them into the test
+// tree; the page posts back only the tree files a change touched — segment
+// files written, names removed (ADR-355), landed in the `<story-id>.tests/`
+// directory beside the `.story` file, the one durable test artifact — and
+// its view-state sidecar (`{active, dialogs}` — D7 ephemera). Reopening
+// injects the tree's files and the view state; the page replays the tree
+// through the client's real input at the pinned seed, so cards always show
+// the current build's real output.
 // The web view uses a non-persistent store — a testing session never touches
 // the Play pane's origin storage, and every load is a guaranteed fresh boot.
-// Public interface: load(bundleDirectory:), isLoaded, testDocumentURL,
+// Public interface: load(bundleDirectory:), isLoaded, testTreeURL,
+// readTreeFiles(at:), isTreeFileName(_:), manifestSeed(in:),
 // storyFile, saveDocuments, openSource, sourceURL(file:), policy,
 // evaluateInSurface(_:), showPlaceholder(_:), sessionStore.
 // Owner context: tools/ide — TestingSurface.
@@ -64,7 +66,7 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// GH #540) — a cleared origin (belt and braces on top of the non-persistent
     /// store), no AudioContext (below), the deliver shim that queues
     /// forwarded records until surface.js loads, and the session payload —
-    /// the tree document's text plus the D7 view state (ADR-307).
+    /// the tree's files by name (ADR-355) plus the D7 view state (ADR-307).
     ///
     /// AudioContext is removed BEFORE the client runs because the client
     /// awaits `AudioContext.resume()` on every command, and WebKit resolves
@@ -109,11 +111,11 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
     /// The D7 view-state sidecar for the loaded story.
     let sessionStore: TestingSessionStore
 
-    /// The story's tree document — `<story-id>.tests.json` beside the
-    /// `.story` file (ADR-307 D2/Q-2), the one durable test artifact and
+    /// The story's test tree — the `<story-id>.tests/` directory beside the
+    /// `.story` file (ADR-355 D3), the one durable test artifact and
     /// `sharpee test --tree`'s discovery target. Set by the opener before
-    /// load; nil disables document reads and writes.
-    var testDocumentURL: URL?
+    /// load; nil disables tree reads and writes.
+    var testTreeURL: URL?
 
     /// The story file the run column's runs execute against. Set by the
     /// opener before load; nil disables the Run button's work.
@@ -275,18 +277,18 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         webView.load(URLRequest(url: url))
     }
 
-    /// The story id the document is named for: the `.story` file's stem —
+    /// The story id the tree is named for: the `.story` file's stem —
     /// exactly the id `sharpee test --tree`'s discovery keys on.
-    private var documentStoryId: String? {
-        guard let testDocumentURL else { return nil }
-        let name = testDocumentURL.lastPathComponent
-        guard name.hasSuffix(".tests.json") else { return nil }
-        return String(name.dropLast(".tests.json".count))
+    private var treeStoryId: String? {
+        guard let testTreeURL else { return nil }
+        let name = testTreeURL.lastPathComponent
+        guard name.hasSuffix(".tests") else { return nil }
+        return String(name.dropLast(".tests".count))
     }
 
     /// (Re)installs the document scripts, baking in the session payload:
-    /// the tree document's bytes (when one exists), the story id, the seed —
-    /// the document's own pin when one loads, the IDE constant for a fresh
+    /// the tree's files (when the directory exists), the story id, the seed —
+    /// the manifest's pin when a tree loads, the IDE constant for a fresh
     /// tree (GH #540) — the policy, and the D7 view state.
     private func installUserScripts() {
         let contentController = webView.configuration.userContentController
@@ -294,13 +296,14 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
 
         var session: [String: Any] = [:]
         var seed = PlayViewController.idePlaySeed
-        if let storyId = documentStoryId { session["story"] = storyId }
-        if let testDocumentURL,
-           let text = try? String(contentsOf: testDocumentURL, encoding: .utf8) {
-            session["document"] = text
-            // The document is the pin (ADR-307 D5); the IDE constant seeds
+        if let storyId = treeStoryId { session["story"] = storyId }
+        if let testTreeURL, let files = Self.readTreeFiles(at: testTreeURL) {
+            session["tree"] = files
+            // The manifest is the pin (ADR-355 D4); the IDE constant seeds
             // only a fresh tree.
-            if let pinned = Self.documentSeed(in: text) { seed = pinned }
+            if let manifest = files["manifest.json"], let pinned = Self.manifestSeed(in: manifest) {
+                seed = pinned
+            }
         }
         session["seed"] = seed
         if let viewState = sessionStore.viewState { session["view"] = viewState }
@@ -343,17 +346,55 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         Task { _ = try? await evaluateInSurface(script) }
     }
 
-    // MARK: - The document writer (ADR-307 D1: one artifact, whole writes)
+    // MARK: - The tree writer (ADR-355: only the files a change touched)
 
-    /// Writes the tree document's bytes atomically — the page serializes,
-    /// Swift lands the file. A write failure is swallowed: observation must
-    /// never break play, and the page will post again on the next change.
-    private func performDocumentWrite(text: String) {
-        guard let testDocumentURL else { return }
-        try? FileManager.default.createDirectory(
-            at: testDocumentURL.deletingLastPathComponent(),
-            withIntermediateDirectories: true)
-        try? text.data(using: .utf8)?.write(to: testDocumentURL, options: .atomic)
+    /// Reads a tree directory's files by name — the map the page's shared
+    /// reader assembles. Dotfiles (`.DS_Store`) and subdirectories are not
+    /// the tree's and are skipped. nil when the directory does not exist
+    /// (the story has no tree yet).
+    static func readTreeFiles(at directory: URL) -> [String: String]? {
+        guard let names = try? FileManager.default.contentsOfDirectory(atPath: directory.path) else {
+            return nil
+        }
+        var files: [String: String] = [:]
+        for name in names where !name.hasPrefix(".") {
+            let url = directory.appendingPathComponent(name)
+            var isDirectory: ObjCBool = false
+            guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory),
+                  !isDirectory.boolValue,
+                  let text = try? String(contentsOf: url, encoding: .utf8) else { continue }
+            files[name] = text
+        }
+        return files
+    }
+
+    /// Whether the page may name this file: a plain `<name>.json` inside
+    /// the tree directory — no path component, no parent step, no dotfile.
+    /// The writer refuses anything else, so a malformed post can never reach
+    /// outside `<story-id>.tests/`.
+    static func isTreeFileName(_ name: String) -> Bool {
+        !name.isEmpty
+            && !name.hasPrefix(".")
+            && !name.contains("/")
+            && !name.contains("\\")
+            && name.hasSuffix(".json")
+    }
+
+    /// Lands one tree post: each written file atomically, each removed name
+    /// deleted — the page diffed against what it last posted, so an edit to
+    /// one run of cards touches one file (AC-1). Names failing
+    /// `isTreeFileName` are skipped. A write failure is swallowed:
+    /// observation must never break play, and the page posts again on the
+    /// next change.
+    private func performTreeWrite(written: [String: String], removed: [String]) {
+        guard let testTreeURL else { return }
+        try? FileManager.default.createDirectory(at: testTreeURL, withIntermediateDirectories: true)
+        for (name, text) in written where Self.isTreeFileName(name) {
+            try? text.data(using: .utf8)?.write(to: testTreeURL.appendingPathComponent(name), options: .atomic)
+        }
+        for name in removed where Self.isTreeFileName(name) {
+            try? FileManager.default.removeItem(at: testTreeURL.appendingPathComponent(name))
+        }
     }
 
     // MARK: - The run column
@@ -446,11 +487,11 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             : "The run exited \(code).\n\(trimmed)"
     }
 
-    /// The seed a tree document pins (its `seed` field, ADR-307 D5), or nil
-    /// when the text is not a JSON object carrying an integer seed. The host
-    /// reads this ONE field, so the engine boots at the document's seed
-    /// (GH #540); the surface validates the rest of the document (AC-4).
-    static func documentSeed(in text: String) -> Int? {
+    /// The seed a tree's manifest pins (its `seed` field, ADR-355 D4), or
+    /// nil when the text is not a JSON object carrying an integer seed. The
+    /// host reads this ONE field, so the engine boots at the tree's seed
+    /// (GH #540); the surface validates the rest of the tree (AC-4).
+    static func manifestSeed(in text: String) -> Int? {
         guard let data = text.data(using: .utf8),
               let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
               let seed = object["seed"] as? Int else { return nil }
@@ -477,9 +518,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             if let state = object["state"] as? [String: Any] {
                 sessionStore.updateViewState(state)
             }
-            if let document = object["document"] as? [String: Any],
-               let text = document["text"] as? String {
-                performDocumentWrite(text: text)
+            if let tree = object["tree"] as? [String: Any] {
+                performTreeWrite(written: tree["written"] as? [String: String] ?? [:],
+                                 removed: tree["removed"] as? [String] ?? [])
             }
             if object["run"] as? Bool == true {
                 startTestRun()

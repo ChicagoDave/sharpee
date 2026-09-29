@@ -29,7 +29,7 @@ export interface ReplayStep {
  *  the line that OWNS the command, and its index within that line. */
 export interface PathStep {
   command: string;
-  lineId: number;
+  lineId: string;
   index: number;
 }
 

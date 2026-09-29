@@ -1366,12 +1366,12 @@ private final class MainSplitViewController: NSSplitViewController {
         let store = TestingSessionStore(
             fileURL: TestingSessionStore.url(storyId: id, projectRoot: projectRoot))
         let surface = TestingSurfaceViewController(sessionStore: store)
-        // The tree document lives beside the `.story` file, named by its
-        // STEM — exactly the id `sharpee test --tree`'s discovery keys on
-        // (ADR-307 D2/Q-2) — and the story's on-disk `auto-assertion:`
-        // policy governs synthesis exactly as it governs the runs.
-        surface.testDocumentURL = projectRoot.appendingPathComponent(
-            storyURL.deletingPathExtension().lastPathComponent + ".tests.json")
+        // The test tree's directory lives beside the `.story` file, named by
+        // its STEM — exactly the id `sharpee test --tree`'s discovery keys on
+        // (ADR-355 D3) — and the story's on-disk `auto-assertion:` policy
+        // governs synthesis exactly as it governs the runs.
+        surface.testTreeURL = projectRoot.appendingPathComponent(
+            storyURL.deletingPathExtension().lastPathComponent + ".tests")
         surface.storyFile = storyURL
         surface.saveDocuments = { [weak self] in self?.saveAllDocuments() ?? true }
         // A coverage gap or a failed derived rule is a place in the source

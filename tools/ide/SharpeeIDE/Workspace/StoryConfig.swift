@@ -46,7 +46,8 @@ enum StoryConfigStore {
         case broken(String)
     }
 
-    /// `harbor.story` → `harbor.config.json` beside it (the tests.json precedent).
+    /// `harbor.story` → `harbor.config.json` beside it (named by the story's
+    /// stem, as its `harbor.tests/` tree is).
     static func path(for storyURL: URL) -> URL {
         storyURL.deletingPathExtension().appendingPathExtension("config.json")
     }

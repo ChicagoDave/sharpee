@@ -3,9 +3,11 @@
  *
  * Purpose: fold the `sharpee test --tree --json` NDJSON stream (relayed by
  *   the Swift side line by line) into the column's answer: one result per
- *   LINE, keyed by its derived label — the identity on the document run's
- *   wire (ADR-307 D2/Q-8; a fallback transcript stream's file paths reduce
- *   to their stems through the same key) — and, inside each line, EVERY
+ *   LINE, keyed by its id — the id of the segment it begins with, the
+ *   identity on the document run's wire (ADR-355 D5; a fallback transcript
+ *   stream's file paths reduce to their stems through the same key), so two
+ *   lines sharing a derived label never fold (GH #494) — carrying the label
+ *   `transcript-start` announced for display, and, inside each line, EVERY
  *   executed command with every assertion's verdict (David 2026-08-10: the
  *   run shows every card and its assertions). A failed line also carries its
  *   FIRST failure one-line for the header; a closing tally counts lines.
@@ -17,7 +19,8 @@
  *   guard (DEVARCH 8b — the shapes are imported, never mirrored).
  *
  * Public interface: RunColumnState, TranscriptRunResult, createRunState,
- *   beginRun, foldRunLine, finishRun, resetRun.
+ *   beginRun, foldRunLine, finishRun, resetRun, runRowsOf, RunColumnLine,
+ *   RunColumnRow.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -61,15 +64,20 @@ export interface TranscriptRunResult {
   firstFailure?: string;
   /** Failed turns beyond the first (`+n more`). */
   moreFailures: number;
+  /** The display name `transcript-start` announced (a tree line's derived
+   *  label); absent when the key is its own name. Display only. */
+  label?: string;
 }
 
-/** The whole column's state: per-label results and the closing tally. */
+/** The whole column's state: per-line results and the closing tally. */
 export interface RunColumnState {
   /** A run is in flight — the button disables and rows fill live. */
   inFlight: boolean;
-  /** Results keyed by derived label (a fallback stream's paths reduce to
-   *  stems through the same key). */
+  /** Results keyed by the wire's identity: a tree line's id (ADR-355 D5),
+   *  or a fallback stream's path reduced to its stem. */
   results: Map<string, TranscriptRunResult>;
+  /** Display names by key, from each `transcript-start`'s `label`. */
+  labels: Map<string, string>;
   /** Commands accumulating for a line still mid-stream (before its
    *  `transcript-end` seals them into `results`). */
   pendingCommands: Map<string, CommandOutcome[]>;
@@ -101,6 +109,7 @@ export function createRunState(): RunColumnState {
   return {
     inFlight: false,
     results: new Map(),
+    labels: new Map(),
     pendingCommands: new Map(),
     replaying: new Set(),
     derived: [],
@@ -111,6 +120,7 @@ export function createRunState(): RunColumnState {
 export function beginRun(state: RunColumnState): void {
   state.inFlight = true;
   state.results.clear();
+  state.labels.clear();
   state.pendingCommands.clear();
   state.replaying.clear();
   state.derived = [];
@@ -119,7 +129,7 @@ export function beginRun(state: RunColumnState): void {
   delete state.note;
 }
 
-/** The wire's `file` field as the column's row key: a derived label passes
+/** The wire's `file` field as the column's row key: a tree line's id passes
  *  through verbatim; a fallback stream's path reduces to its stem. */
 function stemOf(file: string): string {
   const base = file.split('/').at(-1) ?? file;
@@ -151,6 +161,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
       // are not rows (start/end pair positionally — the flag rides start).
       if (event.replayed === true) state.replaying.add(event.file);
       else state.replaying.delete(event.file);
+      if (event.label !== undefined) state.labels.set(stemOf(event.file), event.label);
       return;
     }
     case 'command-result': {
@@ -188,6 +199,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
         event.turn !== undefined ? `turn ${event.turn}`
         : event.line > 0 ? `line ${event.line}`
         : undefined;
+      const label = state.labels.get(stem);
       state.results.set(stem, {
         status: 'failed',
         passed: 0,
@@ -195,6 +207,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
         commands: [],
         firstFailure: where !== undefined ? `${where} — ${message}` : message,
         moreFailures: existing?.moreFailures ?? 0,
+        ...(label !== undefined ? { label } : {}),
       });
       return;
     }
@@ -214,12 +227,16 @@ function fold(state: RunColumnState, event: RunEvent): void {
         moreFailures: Math.max(0, event.failed - 1),
       };
       state.pendingCommands.delete(stem);
+      const label = state.labels.get(stem);
+      if (label !== undefined) result.label = label;
       if (partial?.firstFailure !== undefined) result.firstFailure = partial.firstFailure;
       else if (event.status === 'error' && event.errorMessage !== undefined) {
         result.firstFailure = event.errorMessage;
       } else if (event.status === 'unreached') {
-        result.firstFailure = event.blockedBy !== undefined
-          ? `blocked by ${stemOf(event.blockedBy)}`
+        // The blocker is named the way its own row is: its label, else its key.
+        const blocker = event.blockedBy !== undefined ? stemOf(event.blockedBy) : undefined;
+        result.firstFailure = blocker !== undefined
+          ? `blocked by ${state.labels.get(blocker) ?? blocker}`
           : 'blocked by an ancestor';
       }
       state.results.set(stem, result);
@@ -300,6 +317,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
 export function resetRun(state: RunColumnState): void {
   state.inFlight = false;
   state.results.clear();
+  state.labels.clear();
   state.pendingCommands.clear();
   state.replaying.clear();
   state.derived = [];
@@ -322,4 +340,50 @@ export function finishRun(state: RunColumnState, ok: boolean, note?: string): vo
   if (!ok && (state.tally === undefined || nothingRan)) {
     state.note = note ?? 'The run ended without completing its stream.';
   }
+}
+
+/** One line of the tree as the column needs it from the model. */
+export interface RunColumnLine {
+  /** The line's id — the id of the segment it begins with (ADR-355 D5). */
+  id: string;
+  /** Its derived label, for the row's title. */
+  label: string;
+  /** Just forked, no turn landed yet. */
+  pending: boolean;
+}
+
+/** One header row of the run column's tree section. */
+export type RunColumnRow =
+  /** A line the run reported: its result, titled by label. */
+  | { kind: 'result'; lineId: string; label: string; result: TranscriptRunResult }
+  /** A line the run did not report: a dash and why — never a borrowed verdict. */
+  | { kind: 'unrun'; lineId: string; label: string; why: 'pending branch' | 'running…' | 'not run yet' };
+
+/**
+ * The run column's tree rows (ADR-353 D2): every line the run reported, in
+ * run order, then every model line it did not, in model order. A line's
+ * verdict is looked up by its ID, so a line that shares its derived label
+ * with a reported line still reads as unrun — the label is the title, never
+ * the key (ADR-353 AC-3; GH #494).
+ *
+ * @param state the folded run.
+ * @param lines the model's lines — the ones shown when the run has not
+ *   reported them.
+ * @returns the rows, results first.
+ */
+export function runRowsOf(state: RunColumnState, lines: readonly RunColumnLine[]): RunColumnRow[] {
+  const byId = new Map(lines.map((line) => [line.id, line]));
+  const rows: RunColumnRow[] = [];
+  for (const [lineId, result] of state.results) {
+    // The model's label for a line it holds (it tracks renames as the
+    // author plays); else the one the wire announced; else the key itself.
+    const label = byId.get(lineId)?.label ?? result.label ?? lineId;
+    rows.push({ kind: 'result', lineId, label, result });
+  }
+  for (const line of lines) {
+    if (state.results.has(line.id)) continue;
+    const why = line.pending ? 'pending branch' : state.inFlight ? 'running…' : 'not run yet';
+    rows.push({ kind: 'unrun', lineId: line.id, label: line.label, why });
+  }
+  return rows;
 }

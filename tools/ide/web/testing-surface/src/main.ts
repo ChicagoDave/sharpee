@@ -7,12 +7,13 @@
  *   (`window.__sharpeeTestingSurface.deliver`); this module drains that
  *   queue, folds records into the TreeSessionModel (always recording, D3),
  *   builds cards, renders, and posts every change over the `testingSurface`
- *   bridge: the WHOLE serialized document on every mutation (D1 — files are
- *   a projection), and a view-state-only sidecar (D7 — active line and
- *   dialog outcomes; nothing the tree can re-derive).
+ *   bridge: the tree files the mutation changed — segment files written,
+ *   names removed, the manifest only when it changed (ADR-355; D1 — files
+ *   are a projection) — and a view-state-only sidecar (D7 — active line id
+ *   and dialog outcomes; nothing the tree can re-derive).
  *
  * It is also the REPLAY DRIVER (D4/D5): the session IS a replay of the tree.
- *   - Reopen deserializes `<story-id>.tests.json` and replays it to the
+ *   - Reopen assembles `<story-id>.tests/` and replays it to the
  *     board: the main line types live (delivered turns BIND to the
  *     document's cards), each branch fresh-boots with its prefix suppressed,
  *     the persisted active line replays last. A refused document — newer
@@ -47,7 +48,8 @@ import {
   cardAssertionLines, openingDefaultClaims, recordedTurnAssertions,
   type DeleteRef, type TurnSource,
 } from './compose';
-import { MAIN_LINE, TreeSessionModel, type AuthoringMemento } from './model';
+import { TreeSessionModel, type AuthoringMemento } from './model';
+import { diffTreeFiles, type TreeFiles } from '@sharpee/branch-tester/tree-document';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
 import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from './run';
 
@@ -80,16 +82,18 @@ interface DialogOutcome {
   slot: string | null;
 }
 
-/** The boot globals the IDE injects: the tree document's text, the story's
+/** The boot globals the IDE injects: the tree's files, the story's
  *  `auto-assertion:` policy, and the D7 view-state sidecar. */
 interface BootSession {
-  /** The `<story-id>.tests.json` bytes, when one exists. */
-  document?: string;
+  /** The `<story-id>.tests/` directory's files by name (ADR-355), when the
+   *  story has a tree. */
+  tree?: TreeFiles;
   policy?: AutoAssertionPolicy;
   /** View-state ephemera (D7): active line id, dialog outcomes, and
    *  collapsed region-group keys. */
   view?: {
-    active?: number;
+    /** The active line's id — the id of the segment it begins with. */
+    active?: string;
     dialogs?: [string, DialogOutcome][];
     collapsed?: string[];
   };
@@ -139,7 +143,7 @@ const regionByRoom: Record<string, string> = bootSession?.regions ?? {};
 const collapsedRegions = new Set<string>(bootSession?.view?.collapsed ?? []);
 
 /** The line newly delivered visible turns fold into. */
-let currentLine = MAIN_LINE;
+let currentLine = model.mainLine;
 /** Recorded dialog outcomes by `line:turnIndex` (D7). */
 let dialogOutcomes = new Map<string, DialogOutcome>();
 
@@ -159,10 +163,11 @@ let replayActive = false;
 let driverBusy = false;
 /** The outcome key armed for the command currently being typed. */
 let armedOutcomeKey: string | null = null;
-/** The document on disk is NEWER than this build reads — never write (AC-4). */
+/** The tree on disk is NEWER than this build reads — never write (AC-4). */
 let documentWriteLocked = false;
-/** The last document text this session posted (or adopted at load). */
-let lastDocumentText = '';
+/** The tree's files as this session last posted them (or as the host read
+ *  them at boot) — the base every post diffs against (ADR-355 AC-1). */
+let lastTreeFiles: TreeFiles = {};
 
 /**
  * The story has reached an Ending and the engine is in the `stopped` phase
@@ -457,18 +462,21 @@ function postToBridge(payload: Record<string, unknown>): void {
 }
 
 /**
- * Re-render and persist: every model change posts the WHOLE document (D1 —
- * one write target, no per-file tracking) and the view-state sidecar (D7).
- * A change to the suite resets the run column — its results describe a tree
- * that no longer exists. A refused document write-locks the session (AC-4:
- * an older writer must never clobber a newer document).
+ * Re-render and persist: every model change posts only the tree files it
+ * changed — the segment files whose bytes differ, the names to remove, the
+ * manifest only when it changed (ADR-355 AC-1: an edit to one run of cards
+ * is one file's diff) — and the view-state sidecar (D7). A change to the
+ * suite resets the run column — its results describe a tree that no longer
+ * exists. A refused tree write-locks the session (AC-4: an older writer
+ * must never clobber a newer tree).
  */
 function update(): void {
   if (!driverBusy) {
-    const text = model.serialize();
-    if (text !== lastDocumentText) {
-      lastDocumentText = text;
-      if (!documentWriteLocked) postToBridge({ document: { text } });
+    const files = model.files();
+    const { written, removed } = diffTreeFiles(lastTreeFiles, files);
+    if (Object.keys(written).length > 0 || removed.length > 0) {
+      lastTreeFiles = files;
+      if (!documentWriteLocked) postToBridge({ tree: { written, removed } });
       if (!runState.inFlight) resetRun(runState);
     }
     cards.render();
@@ -633,8 +641,8 @@ function deliver(raw: unknown): void {
     clearUndo();
     records.clear();
     model.beginRebindAll();
-    model.activateLine(MAIN_LINE);
-    currentLine = MAIN_LINE;
+    model.activateLine(model.mainLine);
+    currentLine = model.mainLine;
     expectBoot = true;
     pendingDialogOutcome = null;
     bootCaptures = undefined;
@@ -660,7 +668,7 @@ function deliver(raw: unknown): void {
   attachOutline();
   records.set(record.turn, record);
   lastDeliveredOrdinal = record.turn;
-  if (boot && currentLine === MAIN_LINE) {
+  if (boot && currentLine === model.mainLine) {
     bootCaptures = capturesOf(record);
     bootRecordOrdinal = record.turn;
   }
@@ -672,7 +680,7 @@ function deliver(raw: unknown): void {
   // delivery APPENDS — a binding replay rebuilds state, never claims.
   const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
   const openingClaims =
-    boot && currentLine === MAIN_LINE ? openingDefaultClaims(policy, bootCaptures) : [];
+    boot && currentLine === model.mainLine ? openingDefaultClaims(policy, bootCaptures) : [];
   model.addTurn({
     ordinal: record.turn,
     command: record.command ?? '',
@@ -690,7 +698,7 @@ function deliver(raw: unknown): void {
     if (at) dialogOutcomes.set(`${at.lineId}:${at.index}`, pendingDialogOutcome);
     pendingDialogOutcome = null;
   }
-  cards.addTurnCard(record.turn, boot, currentLine !== MAIN_LINE);
+  cards.addTurnCard(record.turn, boot, currentLine !== model.mainLine);
   update();
   cards.scrollToLatest();
 
@@ -738,19 +746,19 @@ function setInputHeld(held: boolean, placeholder = ''): void {
 /** How line `lineId` divides for a visit: prefix to replay, own cards to
  *  type live. The one derivation every replay path shares (`visit.ts`), so a
  *  step cannot be keyed one way here and another way there. */
-function visitPlan(lineId: number): LineVisit {
+function visitPlan(lineId: string): LineVisit {
   return visitPlanOf(model.pathStepsOf(lineId), model.prefixCommandsOf(lineId).length);
 }
 
 /** A line's full path as replay steps, keyed `line:turnIndex` so recorded
  *  dialog outcomes re-apply wherever their command replays. */
-function pathSteps(lineId: number): ReplayStep[] {
+function pathSteps(lineId: string): ReplayStep[] {
   const plan = visitPlan(lineId);
   return [...plan.replay, ...plan.live];
 }
 
 /** The path steps BEFORE the line's own cards — a branch replay's prefix. */
-function prefixSteps(lineId: number): ReplayStep[] {
+function prefixSteps(lineId: string): ReplayStep[] {
   return visitPlan(lineId).replay;
 }
 
@@ -771,7 +779,7 @@ function prefixSteps(lineId: number): ReplayStep[] {
 type BootOutcome = 'ok' | 'ended' | 'failed';
 
 async function driveFreshBoot(
-  line: number,
+  line: string,
   replay: ReplayStep[],
   live: ReplayStep[],
 ): Promise<BootOutcome> {
@@ -858,12 +866,12 @@ async function performBranch(ordinal: number, command: string): Promise<void> {
  * line shows a fresh boot card and no results. With ADR-353 D1 there is no
  * eager walk any more, so visiting a line is the only thing that ever binds it.
  */
-async function visitLine(lineId: number): Promise<BootOutcome> {
+async function visitLine(lineId: string): Promise<BootOutcome> {
   const plan = visitPlan(lineId);
   return driveFreshBoot(lineId, plan.replay, plan.live);
 }
 
-async function selectLine(lineId: number): Promise<void> {
+async function selectLine(lineId: string): Promise<void> {
   if (replayActive || driverBusy || lineId === model.activeLine) return;
   if (!model.activateLine(lineId)) return;
   clearUndo();
@@ -875,7 +883,7 @@ async function selectLine(lineId: number): Promise<void> {
 /** Chip ✕: the branch, its descendants, and their cards go. Deleting the
  *  VIEWED branch replays its parent live — the view is always the live
  *  line. Not on the ⌘Z stack: it changes what was played. */
-async function performDeleteBranch(lineId: number): Promise<void> {
+async function performDeleteBranch(lineId: string): Promise<void> {
   if (replayActive || driverBusy) return;
   const result = model.deleteBranch(lineId);
   if (result === null) return;
@@ -915,21 +923,21 @@ async function performTailCut(ordinal: number): Promise<void> {
  * The name is older than the behavior: this replayed the whole tree until
  * the walk was deleted, and the boot path still calls it by that name.
  */
-async function replayTree(activeTarget: number): Promise<void> {
+async function replayTree(activeTarget: string): Promise<void> {
   driverBusy = true;
   replayActive = true;
   setInputHeld(true, 'restoring session…');
   try {
-    currentLine = MAIN_LINE;
-    model.activateLine(MAIN_LINE);
+    currentLine = model.mainLine;
+    model.activateLine(model.mainLine);
     // The root's boot look plays itself — wait for it unless it already
     // arrived (drained queue, or the fence's reboot landing first).
     if (!model.hasOpening) await awaitNextTurn(15_000);
     let intact = true;
-    const mainCommands = model.ownCommandsOf(MAIN_LINE);
+    const mainCommands = model.ownCommandsOf(model.mainLine);
     for (const [index, command] of mainCommands.entries()) {
       if (storyEnded) { trace(`main line: ended after ${index} of ${mainCommands.length} command(s)`); intact = false; break; }
-      armedOutcomeKey = `${MAIN_LINE}:${index}`;
+      armedOutcomeKey = `${model.mainLine}:${index}`;
       typeCommand(command);
       const landed = await awaitNextTurn(15_000);
       armedOutcomeKey = null;
@@ -982,18 +990,23 @@ document.addEventListener('keydown', event => {
   performUndo();
 });
 
-// Adopt the persisted document BEFORE draining the queue, so the boot look
-// binds to the document's cards rather than appending fresh ones.
+// Adopt the persisted tree BEFORE draining the queue, so the boot look binds
+// to the tree's cards rather than appending fresh ones.
 let loadedDocument = false;
-const admission = admitBootDocument(bootSession?.document, seed);
+const admission = admitBootDocument(bootSession?.tree, seed);
+// The diff base is what is on disk: an adopted tree's files, and equally a
+// malformed tree's — the first post then removes the files it could not read
+// rather than leaving them beside the fresh tree's (always-recording
+// overwrites, AC-4). A refused tree is never written, so its base is moot.
+lastTreeFiles = { ...(bootSession?.tree ?? {}) };
 if (admission.document) {
   model.load(admission.document);
-  lastDocumentText = model.serialize();
+  currentLine = model.mainLine;
   dialogOutcomes = new Map(bootSession?.view?.dialogs ?? []);
   loadedDocument = true;
 }
-// AC-4 / GH #540: a refused document — newer than this build reads, or pinned
-// at a seed the engine did not boot at — is named and never written; the
+// AC-4 / GH #540: a refused tree — newer than this build reads, or pinned at
+// a seed the engine did not boot at — is named and never written; the
 // session works as a scratch board over a fresh tree. A malformed one is
 // neither: the model already holds a fresh empty tree — degrade quietly.
 if (admission.writeLocked) documentWriteLocked = true;
@@ -1002,5 +1015,6 @@ if (admission.notice) cards.setNotice(admission.notice);
 for (const record of queued) deliver(record);
 
 if (loadedDocument && model.document.cards.length > 0) {
-  void replayTree(bootSession?.view?.active ?? MAIN_LINE);
+  const active = bootSession?.view?.active;
+  void replayTree(typeof active === 'string' ? active : model.mainLine);
 }

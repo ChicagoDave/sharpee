@@ -18,23 +18,28 @@
  * counts quoted in ADR-353 are asserted rather than remembered.
  */
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { deserializeTreeDocument, type TreeDocument } from '@sharpee/branch-tester/tree-document';
+import {
+  assembleTree,
+  TREE_DOCUMENT_VERSION,
+  type TreeDocument,
+  type TreeFiles,
+} from '@sharpee/branch-tester/tree-document';
 import { outlineOf } from '../src/outline';
 
 const turn = (command: string, extra: Record<string, unknown> = {}) =>
   ({ type: 'turn' as const, command, ...extra });
 
 const doc = (cards: unknown[]): TreeDocument =>
-  ({ version: 2, story: 'mini', seed: 42, cards } as TreeDocument);
+  ({ version: TREE_DOCUMENT_VERSION, story: 'mini', seed: 42, id: 'root0000', cards } as TreeDocument);
 
 const at = (location: string) => ({ assertions: { states: [`player.location = ${location}`] } });
 
 /** A fork of sibling command lists, as the document nests them. */
 const forkOf = (...branches: string[][]) => ({
   branches: branches.map((commands, i) => ({
-    branch: i + 1,
+    id: `branch${String(i + 1).padStart(2, '0')}`,
     cards: commands.map((c) => turn(c)),
   })),
 });
@@ -202,12 +207,17 @@ describe('outlineOf — destinations', () => {
 });
 
 describe('outlineOf against the real secret-letter tree', () => {
-  const path = resolve(__dirname, '../../../../../branch-stories/secret-letter/secret-letter.tests.json');
-  const read = deserializeTreeDocument(readFileSync(path, 'utf8'));
+  // Read-only: the real tree's files are read, never written.
+  const directory = resolve(__dirname, '../../../../../branch-stories/secret-letter/secret-letter.tests');
+  const files: TreeFiles = {};
+  for (const name of readdirSync(directory)) {
+    if (!name.startsWith('.')) files[name] = readFileSync(resolve(directory, name), 'utf8');
+  }
+  const read = assembleTree(files);
   if (read.status !== 'ok') {
     // Not a soft skip: these criteria exist to hold the real tree's numbers,
     // and a tree that will not parse falsifies them rather than excusing them.
-    throw new Error(`secret-letter.tests.json did not read: ${read.status} — ${read.message}`);
+    throw new Error(`secret-letter.tests/ did not read: ${read.status} — ${read.message}`);
   }
   const document = read.document;
 

@@ -53,4 +53,90 @@ public sealed class TestingSurfacePostsTests
     {
         Assert.Null(TestingSurfacePosts.ReadOpenSource(body));
     }
+
+    // ── the tree write (ADR-355): only the files a change touched ──
+
+    [Fact]
+    public void ReadsATreeWritesFilesAndRemovals()
+    {
+        var write = TestingSurfacePosts.ReadTreeWrite(
+            "{\"tree\":{\"written\":{\"abcd1234.json\":\"{}\\n\"},\"removed\":[\"gone0001.json\"]}}");
+
+        Assert.NotNull(write);
+        Assert.Equal("{}\n", write!.Written["abcd1234.json"]);
+        Assert.Equal(new[] { "gone0001.json" }, write.Removed);
+    }
+
+    [Theory]
+    [InlineData("../escape.json")]
+    [InlineData("nested/segment.json")]
+    [InlineData("back\\slash.json")]
+    [InlineData(".hidden.json")]
+    [InlineData("notes.txt")]
+    [InlineData("")]
+    public void ANameOutsideTheTreeIsDropped(string name)
+    {
+        Assert.False(TestingSurfacePosts.IsTreeFileName(name));
+        var body = "{\"tree\":{\"written\":{" + System.Text.Json.JsonSerializer.Serialize(name) + ":\"x\"},\"removed\":["
+                   + System.Text.Json.JsonSerializer.Serialize(name) + "]}}";
+        var write = TestingSurfacePosts.ReadTreeWrite(body)!;
+        Assert.Empty(write.Written);
+        Assert.Empty(write.Removed);
+    }
+
+    [Theory]
+    [InlineData("{\"run\":true}")]
+    [InlineData("{\"state\":{\"active\":\"abcd1234\"}}")]
+    [InlineData("not json {{{")]
+    public void APostThatIsNotATreeWriteIsNotThis(string body)
+    {
+        Assert.Null(TestingSurfacePosts.ReadTreeWrite(body));
+    }
+
+    [Fact]
+    public void ApplyingAWriteChangesOnlyTheNamedFiles()
+    {
+        var directory = Path.Combine(Path.GetTempPath(), "tree-write-" + Guid.NewGuid().ToString("N"), "mini.tests");
+        try
+        {
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "manifest.json"), "{\"seed\": 42}\n");
+            File.WriteAllText(Path.Combine(directory, "keep0001.json"), "kept\n");
+            File.WriteAllText(Path.Combine(directory, "gone0001.json"), "doomed\n");
+            var outside = Path.Combine(Path.GetDirectoryName(directory)!, "escape.json");
+
+            var write = TestingSurfacePosts.ReadTreeWrite(
+                "{\"tree\":{\"written\":{\"new00001.json\":\"fresh\\n\",\"../escape.json\":\"no\"},\"removed\":[\"gone0001.json\"]}}")!;
+            TestingSurfacePosts.ApplyTreeWrite(directory, write);
+
+            Assert.Equal("fresh\n", File.ReadAllText(Path.Combine(directory, "new00001.json")));
+            Assert.False(File.Exists(Path.Combine(directory, "gone0001.json")));
+            Assert.Equal("kept\n", File.ReadAllText(Path.Combine(directory, "keep0001.json")));
+            Assert.Equal("{\"seed\": 42}\n", File.ReadAllText(Path.Combine(directory, "manifest.json")));
+            Assert.False(File.Exists(outside));
+            // No BOM: the tree is JSON two readers re-parse.
+            Assert.Equal((byte)'f', File.ReadAllBytes(Path.Combine(directory, "new00001.json"))[0]);
+        }
+        finally
+        {
+            Directory.Delete(Path.GetDirectoryName(directory)!, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void ApplyingAWriteCreatesAMissingTreeDirectory()
+    {
+        var parent = Path.Combine(Path.GetTempPath(), "tree-write-" + Guid.NewGuid().ToString("N"));
+        var directory = Path.Combine(parent, "fresh.tests");
+        try
+        {
+            var write = TestingSurfacePosts.ReadTreeWrite("{\"tree\":{\"written\":{\"manifest.json\":\"{}\\n\"},\"removed\":[]}}")!;
+            TestingSurfacePosts.ApplyTreeWrite(directory, write);
+            Assert.Equal("{}\n", File.ReadAllText(Path.Combine(directory, "manifest.json")));
+        }
+        finally
+        {
+            if (Directory.Exists(parent)) Directory.Delete(parent, recursive: true);
+        }
+    }
 }

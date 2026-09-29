@@ -100,7 +100,7 @@ final class ProjectArtifactsTests: XCTestCase {
     func testTestsDirectoryIsAnOrdinaryFolderSinceTheCutover() throws {
         try buildFullFixture()
 
-        // ADR-307 cutover: tests live in `<storyId>.tests.json` (the Testing
+        // ADR-307 cutover: tests live in the `<storyId>.tests/` tree (the Testing
         // tab's document), so `tests/` has no special meaning — a legacy
         // directory lands whole in Other like any unclassified folder, its
         // contents reachable and nothing hidden.

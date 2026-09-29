@@ -31,7 +31,8 @@ public partial class MainWindow : Window
     private readonly List<string> _turnRecords = new();
     private readonly List<string> _surfacePosts = new();
     private readonly List<string> _docsPosts = new();
-    private string? _lastDocument;
+    /// <summary>The tree writes the testing pane posted this stage, in arrival order.</summary>
+    private readonly List<TreeWrite> _treeWrites = new();
     private int _resourceRequestedCount;
     private bool _lastNavigationSucceeded;
     private LocalOrigin? _origin;
@@ -104,11 +105,11 @@ public partial class MainWindow : Window
                 RelayToSurface(inner);
                 break;
             case "testingSurface":
-                var text = TryReadDocumentText(inner);
-                if (text is not null)
+                var write = TestingSurfacePosts.ReadTreeWrite(inner);
+                if (write is not null)
                 {
-                    _lastDocument = text;
-                    _log.Line($"pane ← testingSurface document: {text.Length} chars");
+                    _treeWrites.Add(write);
+                    _log.Line($"pane ← testingSurface tree: {write.Written.Count} written, {write.Removed.Count} removed");
                 }
                 else
                 {
@@ -124,13 +125,6 @@ public partial class MainWindow : Window
                 _log.Line($"pane ← {handler}: {Trim(inner, 160)}");
                 break;
         }
-    }
-
-    /// <summary>The document text of a {document:{text:…}} post, or null for any other post.</summary>
-    private static string? TryReadDocumentText(string post)
-    {
-        try { return JsonNode.Parse(post)?["document"]?["text"]?.GetValue<string>(); }
-        catch { return null; }
     }
 
     private static string Trim(string s, int n) => s.Length <= n ? s : s.Substring(0, n) + " …";
@@ -239,8 +233,10 @@ public partial class MainWindow : Window
     {
         _log.Line("── stage 2: token-scoped loopback origin ──");
 
-        var document = File.ReadAllText(RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillTests, "fernhill.tests.json"));
-        var session = TestingSession.Build("fernhill", document);
+        var treeDirectory = RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillTests, "fernhill.tests/");
+        var tree = TestingSession.ReadTree(treeDirectory)
+            ?? throw new InvalidOperationException($"fernhill's test tree is missing: {treeDirectory}");
+        var session = TestingSession.Build("fernhill", tree);
         session["mode"] = "replay";
         var panes = new PaneServer(
             RepoPaths.RequireDevelopmentStory(RepoPaths.FernhillBundle, "fernhill's browser bundle"),
@@ -262,7 +258,7 @@ public partial class MainWindow : Window
         // ── the testing pane ──
         _turnRecords.Clear();
         _surfacePosts.Clear();
-        _lastDocument = null;
+        _treeWrites.Clear();
         Web.Navigate(new Uri(_origin.BaseUri(PaneServer.PlayScheme) + "index-testing.html"));
         await Task.Delay(12000);
 
@@ -271,7 +267,7 @@ public partial class MainWindow : Window
         var shim = await SafeInvoke("JSON.stringify(window.__sharpeeShim||null)");
         var boot = await SafeInvoke("JSON.stringify({"
             + "session: !!window.__SHARPEE_TESTING_SESSION__,"
-            + "sessionDocChars: (window.__SHARPEE_TESTING_SESSION__&&window.__SHARPEE_TESTING_SESSION__.document||'').length,"
+            + "sessionTreeFiles: Object.keys(window.__SHARPEE_TESTING_SESSION__&&window.__SHARPEE_TESTING_SESSION__.tree||{}).length,"
             + "surfaceIsReal: typeof (window.__sharpeeTestingSurface||{}).runLine === 'function',"
             + "surfaceKeys: Object.keys(window.__sharpeeTestingSurface||{}).join('|'),"
             + "surfaceScriptTags: Array.from(document.scripts).map(function(s){return s.getAttribute('src')||'inline'}).join(','),"
@@ -281,25 +277,27 @@ public partial class MainWindow : Window
             + "})");
         _log.Line($"testing pane: shim={shim}");
         _log.Line($"testing pane: boot={boot}");
-        _log.Line($"testing pane: {_turnRecords.Count} turn record(s), {_surfacePosts.Count} surface post(s), document posted={_lastDocument is not null}");
+        _log.Line($"testing pane: {_turnRecords.Count} turn record(s), {_surfacePosts.Count} surface post(s), tree writes={_treeWrites.Count}");
 
         // ── host → page: type one command, which is what changes the tree ──
         var typed = await SafeInvoke("window.__sharpeeHost({type:'type',command:'inventory'})");
         _log.Line($"host → page: type 'inventory' → {typed}");
         await Task.Delay(4000);
-        _log.Line($"after typed turn: {_turnRecords.Count} turn record(s), document posted={_lastDocument is not null}");
+        _log.Line($"after typed turn: {_turnRecords.Count} turn record(s), tree writes={_treeWrites.Count}");
 
-        if (_lastDocument is not null)
+        if (_treeWrites.Count > 0)
         {
-            Directory.CreateDirectory(RepoPaths.DevOut);
-            var written = Path.Combine(RepoPaths.DevOut, "fernhill.tests.json");
-            // No BOM: the tree document is JSON the CLI walker and the surface both
-            // re-read, and Encoding.UTF8 emits one, which JSON parsers reject.
-            File.WriteAllText(written, _lastDocument, new UTF8Encoding(false));
-            var before = JsonNode.Parse(document)!;
-            var after = JsonNode.Parse(_lastDocument)!;
-            _log.Line($"document: cards {before["cards"]!.AsArray().Count} → {after["cards"]!.AsArray().Count}, "
-                      + $"seed {after["seed"]}, story {after["story"]}, written to {written}");
+            // The pane's writes land on a COPY of fernhill's tree in the dev output — never on
+            // the real story's directory (#497: a probe once rewrote a real tree).
+            var written = Path.Combine(RepoPaths.DevOut, "fernhill.tests");
+            if (Directory.Exists(written)) Directory.Delete(written, recursive: true);
+            Directory.CreateDirectory(written);
+            foreach (var (name, value) in tree)
+                File.WriteAllText(Path.Combine(written, name), value!.GetValue<string>(), new UTF8Encoding(false));
+            foreach (var write in _treeWrites) TestingSurfacePosts.ApplyTreeWrite(written, write);
+            var changed = _treeWrites.SelectMany(write => write.Written.Keys).Distinct().Count();
+            var removed = _treeWrites.SelectMany(write => write.Removed).Distinct().Count();
+            _log.Line($"tree: {changed} file(s) written, {removed} removed across {_treeWrites.Count} post(s), landed in {written}");
         }
 
         // ── localStorage across a reload ──

@@ -8,7 +8,14 @@
  *   feed, per-ordinal rooms for derived labels, and the line registry (main
  *   line + every branch's cards array). Every played turn appends a card
  *   (always recording, D3); every mutation is observable through
- *   `serialize()`, which the driver posts as the whole document.
+ *   `files()`, the tree's at-rest segment files (ADR-355), which the driver
+ *   diffs against what it last posted and posts only what changed.
+ *
+ * Line identity (ADR-355 D5): a line is identified by the id of the segment
+ *   it begins with — the main line by the document's root id
+ *   ({@link TreeSessionModel.mainLine}), a branch by its own persisted id.
+ *   Ids are opaque and stable, so the run column and the view-state sidecar
+ *   key on them and two lines sharing a derived label never fold (GH #494).
  *
  * The v1 range/tick/segment machinery — ticks, open/closed ranges, extension
  * rules, stems and auto-naming, rename cascade, the detach/diverged class —
@@ -22,7 +29,7 @@
  * document without duplicating it. Once a line's cards are all bound,
  * further turns append (the author keeps playing).
  *
- * Public interface: TreeSessionModel (document, serialize, load, reset,
+ * Public interface: TreeSessionModel (document, mainLine, files, load, reset,
  *   beginRebindAll, beginRebind, addTurn, hasOpening, cardAt, ordinalOf, roomOf,
  *   isTurnVisible, visibleOrdinals, pathCardsOf, prefixCommandsOf,
  *   ownCommandsOf, lineIds, activeLine, activateLine, lineParentOf,
@@ -33,25 +40,25 @@
  *   source of truth, David 2026-08-10),
  *   removeContains, removeNotContains, removeState, removeEvent,
  *   removeChannel, claimsNothing),
- *   MAIN_LINE, TurnDelivery, BranchPoint, AuthoringMemento.
+ *   TurnDelivery, BranchPoint, AuthoringMemento.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
 import {
   branchLineLabelOf,
+  createSegmentId,
   emptyTreeDocument,
+  ensureSegmentIds,
   mainLineLabelOf,
   roomSlugOf,
-  serializeTreeDocument,
+  segmentTree,
   type TreeAssertions,
   type TreeBranch,
   type TreeCard,
   type TreeChannelAssertion,
   type TreeDocument,
+  type TreeFiles,
 } from '@sharpee/branch-tester/tree-document';
-
-/** The main line's id — branch ids are the document's own, always > 0. */
-export const MAIN_LINE = 0;
 
 /** One delivered turn as the model folds it in. */
 export interface TurnDelivery {
@@ -90,9 +97,9 @@ export interface BranchPoint {
   /** The bound ordinal of the card the fork lives on. */
   ordinal: number;
   /** The line the fork card belongs to (its continuation is the main chip). */
-  lineId: number;
-  /** Sibling branch ids in creation order. */
-  siblings: number[];
+  lineId: string;
+  /** Sibling branch ids in sibling order. */
+  siblings: string[];
 }
 
 /** The undo stack's unit: every card's authored assertions, deep-copied.
@@ -125,21 +132,28 @@ export class TreeSessionModel {
   private ordinalByCard = new Map<TreeCard, number>();
   private roomByOrdinal = new Map<number, string>();
 
-  /** Line id → the cards array it owns (MAIN_LINE → `doc.cards`). */
-  private lineCards = new Map<number, TreeCard[]>();
+  /** Line id → the cards array it owns (the main line → `doc.cards`). */
+  private lineCards = new Map<string, TreeCard[]>();
   /** Branch line id → where it forks from. Absent for the main line. */
-  private lineMeta = new Map<number, { parentLine: number; forkCard: TreeCard; branch: TreeBranch }>();
+  private lineMeta = new Map<string, { parentLine: string; forkCard: TreeCard; branch: TreeBranch }>();
   /** A just-forked line's typed command, until its replayed turn lands. */
-  private pending = new Map<number, string>();
+  private pending = new Map<string, string>();
   /** Restore-by-replay: the next unbound card index per line. */
-  private bindCursor = new Map<number, number>();
+  private bindCursor = new Map<string, number>();
 
-  private active = MAIN_LINE;
+  private active: string;
 
-  constructor(story: string, seed: number) {
-    this.doc = emptyTreeDocument(story, seed);
-    this.lineCards.set(MAIN_LINE, this.doc.cards);
-    this.bindCursor.set(MAIN_LINE, 0);
+  /**
+   * @param story the story id a fresh tree is recorded for.
+   * @param seed the pinned seed a fresh tree replays at.
+   * @param generateId the segment and card id source — `createSegmentId`
+   *   unless a test injects a deterministic one.
+   */
+  constructor(story: string, seed: number, private readonly generateId: () => string = () => createSegmentId()) {
+    this.doc = emptyTreeDocument(story, seed, generateId());
+    this.active = this.doc.id;
+    this.lineCards.set(this.doc.id, this.doc.cards);
+    this.bindCursor.set(this.doc.id, 0);
   }
 
   /** The live document — read-only by convention; mutate through the model. */
@@ -147,17 +161,28 @@ export class TreeSessionModel {
     return this.doc;
   }
 
-  /** The document's canonical bytes (the shared serializer, AC-1). */
-  serialize(): string {
-    return serializeTreeDocument(this.doc);
+  /** The main line's id: the document's root segment id (ADR-355 D5). */
+  get mainLine(): string {
+    return this.doc.id;
   }
 
   /**
-   * Adopt a deserialized document as this session's tree (reopen). Every
-   * line's bind cursor starts at 0 — the restore driver replays the
-   * document's own commands and delivered turns bind to the existing cards.
-   * Branch ids colliding across sibling sets (hand-edited documents; the tab
-   * always allocates globally unique ids) are reassigned.
+   * The tree's at-rest files (ADR-355): the manifest and one canonical file
+   * per segment, through the shared segmenter. Mints any id a mutation left
+   * missing first — a new card's id, a fork's continuation — IN the model,
+   * so the next call yields the same names and bytes for what did not change.
+   */
+  files(): TreeFiles {
+    ensureSegmentIds(this.doc, this.generateId);
+    return segmentTree(this.doc);
+  }
+
+  /**
+   * Adopt an assembled tree as this session's tree (reopen). Every line's
+   * bind cursor starts at 0 — the restore driver replays the tree's own
+   * commands and delivered turns bind to the existing cards. Ids are the
+   * reader's: `assembleTree` refuses a tree with duplicate ids, so none is
+   * reassigned here.
    */
   load(document: TreeDocument): void {
     this.doc = document;
@@ -168,34 +193,28 @@ export class TreeSessionModel {
     this.lineMeta.clear();
     this.pending.clear();
     this.bindCursor.clear();
-    this.active = MAIN_LINE;
-
-    // Reassign colliding branch ids first (globally unique from here on).
-    let nextId = 0;
-    const collectMax = (cards: TreeCard[]): void => {
-      for (const card of cards) {
-        for (const branch of card.branches ?? []) {
-          nextId = Math.max(nextId, branch.branch);
-          collectMax(branch.cards);
-        }
-      }
-    };
-    collectMax(this.doc.cards);
-    const seen = new Set<number>();
-    const dedupe = (cards: TreeCard[]): void => {
-      for (const card of cards) {
-        for (const branch of card.branches ?? []) {
-          if (seen.has(branch.branch)) {
-            nextId += 1;
-            branch.branch = nextId;
-          }
-          seen.add(branch.branch);
-          dedupe(branch.cards);
-        }
-      }
-    };
-    dedupe(this.doc.cards);
+    this.active = this.doc.id;
     this.rebuildLineRegistry();
+  }
+
+  /** A segment id no segment or card in the tree uses (one namespace, D5/D7). */
+  private freshId(): string {
+    const taken = new Set<string>([this.doc.id]);
+    const walk = (cards: TreeCard[]): void => {
+      for (const card of cards) {
+        if (card.id !== undefined) taken.add(card.id);
+        if (card.continuation !== undefined) taken.add(card.continuation);
+        for (const branch of card.branches ?? []) {
+          taken.add(branch.id);
+          walk(branch.cards);
+        }
+      }
+    };
+    walk(this.doc.cards);
+    for (;;) {
+      const id = this.generateId();
+      if (!taken.has(id)) return id;
+    }
   }
 
   /**
@@ -214,28 +233,28 @@ export class TreeSessionModel {
       while (index < cards.length && this.ordinalByCard.has(cards[index])) index += 1;
       return index;
     };
-    this.lineCards.set(MAIN_LINE, this.doc.cards);
-    this.bindCursor.set(MAIN_LINE, cursorOf(this.doc.cards));
-    const register = (cards: TreeCard[], lineId: number): void => {
+    this.lineCards.set(this.doc.id, this.doc.cards);
+    this.bindCursor.set(this.doc.id, cursorOf(this.doc.cards));
+    const register = (cards: TreeCard[], lineId: string): void => {
       for (const card of cards) {
         for (const branch of card.branches ?? []) {
-          this.lineCards.set(branch.branch, branch.cards);
-          this.lineMeta.set(branch.branch, { parentLine: lineId, forkCard: card, branch });
-          this.bindCursor.set(branch.branch, cursorOf(branch.cards));
-          register(branch.cards, branch.branch);
+          this.lineCards.set(branch.id, branch.cards);
+          this.lineMeta.set(branch.id, { parentLine: lineId, forkCard: card, branch });
+          this.bindCursor.set(branch.id, cursorOf(branch.cards));
+          register(branch.cards, branch.id);
         }
       }
     };
-    register(this.doc.cards, MAIN_LINE);
+    register(this.doc.cards, this.doc.id);
     for (const id of [...this.pending.keys()]) {
       if (!this.lineCards.has(id)) this.pending.delete(id);
     }
-    if (!this.lineCards.has(this.active)) this.active = MAIN_LINE;
+    if (!this.lineCards.has(this.active)) this.active = this.doc.id;
   }
 
   /** Start over with a fresh empty tree (the degrade target, AC-4). */
   reset(story: string, seed: number): void {
-    this.load(emptyTreeDocument(story, seed));
+    this.load(emptyTreeDocument(story, seed, this.generateId()));
   }
 
   /**
@@ -256,7 +275,7 @@ export class TreeSessionModel {
    * (GH #541). The lines above it keep their bindings: their cards replay
    * suppressed and are never redelivered. Unknown line: nothing happens.
    */
-  beginRebind(lineId: number): void {
+  beginRebind(lineId: string): void {
     const cards = this.lineCards.get(lineId);
     if (cards === undefined) return;
     for (const card of cards) {
@@ -274,22 +293,22 @@ export class TreeSessionModel {
   }
 
   /** Every line id, main first, then branches in registration order. */
-  lineIds(): number[] {
+  lineIds(): string[] {
     return [...this.lineCards.keys()];
   }
 
-  get activeLine(): number {
+  get activeLine(): string {
     return this.active;
   }
 
-  activateLine(id: number): boolean {
+  activateLine(id: string): boolean {
     if (!this.lineCards.has(id)) return false;
     this.active = id;
     return true;
   }
 
   /** The line a branch forks from, or undefined for the main line. */
-  lineParentOf(id: number): number | undefined {
+  lineParentOf(id: string): string | undefined {
     return this.lineMeta.get(id)?.parentLine;
   }
 
@@ -329,7 +348,7 @@ export class TreeSessionModel {
     // opening card, or create it when the tree is being recorded fresh — a
     // fresh opening also persists its recorded claims (JSON = source of
     // truth); a bound one keeps what the document already says.
-    if (this.active === MAIN_LINE && !this.hasOpening) {
+    if (this.active === this.doc.id && !this.hasOpening) {
       if (cursor < cards.length && cards[cursor].type === 'opening') {
         const openingCard = cards[cursor];
         // Fill a void, never overwrite — same rule as every other bind: a
@@ -397,8 +416,8 @@ export class TreeSessionModel {
   /** The branch chain root → … → `id`. Each hop carries the fork card IN
    *  ITS PARENT'S cards where the hop's line forks — so `chain[hop + 1]`'s
    *  fork card is where hop `hop`'s cards cut. */
-  private chainOf(id: number): { lineId: number; forkCard?: TreeCard }[] {
-    const chain: { lineId: number; forkCard?: TreeCard }[] = [];
+  private chainOf(id: string): { lineId: string; forkCard?: TreeCard }[] {
+    const chain: { lineId: string; forkCard?: TreeCard }[] = [];
     let lineId = id;
     for (;;) {
       const meta = this.lineMeta.get(lineId);
@@ -414,7 +433,7 @@ export class TreeSessionModel {
    * ancestor line contributes its cards up to AND INCLUDING the fork card
    * the path leaves it at; the line itself contributes all its cards.
    */
-  pathCardsOf(id: number): TreeCard[] {
+  pathCardsOf(id: string): TreeCard[] {
     const chain = this.chainOf(id);
     if (this.lineCards.get(id) === undefined) return [];
     const path: TreeCard[] = [];
@@ -440,7 +459,7 @@ export class TreeSessionModel {
 
   /** The replay prefix of line `id`: every typed command from the root
    *  through its fork card. Empty for the main line. */
-  prefixCommandsOf(id: number): string[] {
+  prefixCommandsOf(id: string): string[] {
     const meta = this.lineMeta.get(id);
     if (meta === undefined) return [];
     const parentPath = this.pathCardsOf(meta.parentLine);
@@ -449,12 +468,12 @@ export class TreeSessionModel {
   }
 
   /** The line's own typed commands, in card order. */
-  ownCommandsOf(id: number): string[] {
+  ownCommandsOf(id: string): string[] {
     return this.pathCommands(this.lineCards.get(id) ?? []);
   }
 
   /** All typed commands on the line's full path (prefix + own). */
-  fullPathCommandsOf(id: number): string[] {
+  fullPathCommandsOf(id: string): string[] {
     return this.pathCommands(this.pathCardsOf(id));
   }
 
@@ -463,9 +482,9 @@ export class TreeSessionModel {
    * turn index — replay steps with stable keys for session ephemera (a
    * recorded dialog outcome re-applies wherever its command replays).
    */
-  pathStepsOf(id: number): { command: string; lineId: number; index: number }[] {
+  pathStepsOf(id: string): { command: string; lineId: string; index: number }[] {
     const chain = this.chainOf(id);
-    const steps: { command: string; lineId: number; index: number }[] = [];
+    const steps: { command: string; lineId: string; index: number }[] = [];
     for (let hop = 0; hop < chain.length; hop += 1) {
       const lineId = chain[hop].lineId;
       const cards = this.lineCards.get(lineId) ?? [];
@@ -504,7 +523,7 @@ export class TreeSessionModel {
   /** The player's room AT `card` on line `lineId`'s path: the last recorded
    *  room up to and including the card (sparse channels — a turn that moved
    *  nowhere recorded no room; the position's room is the last one seen). */
-  private roomAtCard(lineId: number, at: TreeCard): string | undefined {
+  private roomAtCard(lineId: string, at: TreeCard): string | undefined {
     let room: string | undefined;
     for (const card of this.pathCardsOf(lineId)) {
       const ordinal = this.ordinalByCard.get(card);
@@ -522,12 +541,12 @@ export class TreeSessionModel {
    * command (falling back to the pending fork command until the replay
    * lands).
    */
-  labelOf(id: number): string {
+  labelOf(id: string): string {
     const meta = this.lineMeta.get(id);
     if (meta === undefined) {
       const bootCard = this.doc.cards.find((card) => card.type !== 'opening');
       const room = bootCard !== undefined
-        ? this.roomAtCard(MAIN_LINE, bootCard)
+        ? this.roomAtCard(this.doc.id, bootCard)
         : undefined;
       return mainLineLabelOf(roomSlugOf(room));
     }
@@ -535,18 +554,19 @@ export class TreeSessionModel {
     const firstCommand =
       (this.lineCards.get(id) ?? []).find((card) => card.type === 'turn')?.command ??
       this.pending.get(id);
-    return branchLineLabelOf(roomSlugOf(room), id, firstCommand);
+    const ordinal = (meta.forkCard.branches ?? []).indexOf(meta.branch) + 1;
+    return branchLineLabelOf(roomSlugOf(room), ordinal, firstCommand);
   }
 
   /** Lines with no landed turn yet (just forked — chip shows, run row dashes). */
-  isPending(id: number): boolean {
+  isPending(id: string): boolean {
     return this.pending.has(id) && (this.lineCards.get(id) ?? []).length === 0;
   }
 
   /** The bound card's position among its line's TURN cards — the stable key
    *  session ephemera (dialog outcomes) use; ordinals do not survive
    *  restore-by-replay, positions do. */
-  turnIndexOf(ordinal: number): { lineId: number; index: number } | undefined {
+  turnIndexOf(ordinal: number): { lineId: string; index: number } | undefined {
     const card = this.cardByOrdinal.get(ordinal);
     if (card === undefined || card.type !== 'turn') return undefined;
     for (const [lineId, cards] of this.lineCards) {
@@ -573,7 +593,7 @@ export class TreeSessionModel {
           points.push({
             ordinal,
             lineId,
-            siblings: (card.branches ?? []).map((branch) => branch.branch),
+            siblings: (card.branches ?? []).map((branch) => branch.id),
           });
         }
         if (cutCard !== undefined && card === cutCard) break;
@@ -606,16 +626,17 @@ export class TreeSessionModel {
    * its replayed turn lands. Returns the new line id, or null when the card
    * cannot fork ({@link canBranch}).
    */
-  branch(ordinal: number, command: string): number | null {
+  branch(ordinal: number, command: string): string | null {
     if (!this.canBranch(ordinal)) return null;
     const card = this.cardByOrdinal.get(ordinal)!;
     // The card's OWNING line (the chain hop whose cards array includes it).
-    let owner = MAIN_LINE;
+    let owner = this.doc.id;
     for (const { lineId } of this.chainOf(this.active)) {
       if ((this.lineCards.get(lineId) ?? []).includes(card)) owner = lineId;
     }
-    const id = Math.max(0, ...this.lineCards.keys(), ...this.lineMeta.keys()) + 1;
-    const branch: TreeBranch = { branch: id, cards: [] };
+    // A fresh, persisted segment id (ADR-355 D5) — never positional.
+    const id = this.freshId();
+    const branch: TreeBranch = { id, cards: [] };
     (card.branches ??= []).push(branch);
     this.lineCards.set(id, branch.cards);
     this.lineMeta.set(id, { parentLine: owner, forkCard: card, branch });
@@ -626,8 +647,8 @@ export class TreeSessionModel {
   }
 
   /** Every line inside `id`'s subtree, `id` included. */
-  private subtreeLines(id: number): Set<number> {
-    const doomed = new Set<number>([id]);
+  private subtreeLines(id: string): Set<string> {
+    const doomed = new Set<string>([id]);
     for (;;) {
       const before = doomed.size;
       for (const [lineId, meta] of this.lineMeta) {
@@ -658,7 +679,7 @@ export class TreeSessionModel {
    * line and whether the VIEWED line died (the caller replays the parent
    * live) — or null for the main line, which never deletes.
    */
-  deleteBranch(id: number): { parentLine: number; wasActive: boolean } | null {
+  deleteBranch(id: string): { parentLine: string; wasActive: boolean } | null {
     const meta = this.lineMeta.get(id);
     if (meta === undefined) return null;
     const wasActive = this.subtreeLines(id).has(this.active);
@@ -683,10 +704,10 @@ export class TreeSessionModel {
    * realign the engine (the session IS a replay of the tree) — or null when
    * the card cannot cut.
    */
-  tailCut(ordinal: number): { lineId: number; activeSurvived: boolean } | null {
+  tailCut(ordinal: number): { lineId: string; activeSurvived: boolean } | null {
     const card = this.cardByOrdinal.get(ordinal);
     if (card === undefined || card.type !== 'turn') return null;
-    let lineId: number | undefined;
+    let lineId: string | undefined;
     for (const [id, cards] of this.lineCards) {
       if (cards.includes(card)) {
         lineId = id;

@@ -204,13 +204,17 @@ export class RunEventStream {
    * @param index 0-based position in the run's EXECUTION order — a tree node
    *   re-executed for a sibling takes a new index, since the pairing of start
    *   to end is positional, not by file.
+   * @param file the unit's identity: a transcript's path, or a tree line's id.
    * @param extra `commandCount` for a real progress bar; `parent`/`replayed`
-   *   for tree runs (ADR-302 parentage and D17 replay).
+   *   for tree runs (ADR-302 parentage and D17 replay); `label` when `file`
+   *   is an opaque id (ADR-355 D5).
    */
   transcriptStart(
     file: string,
     index: number,
     extra: {
+      /** The display name when `file` is an opaque identity (a tree line's label). */
+      label?: string;
       commandCount?: number;
       parent?: string;
       replayed?: boolean;
@@ -222,6 +226,7 @@ export class RunEventStream {
       ...this.envelope(),
       type: 'transcript-start',
       file,
+      ...(extra.label !== undefined ? { label: extra.label } : {}),
       index,
       ...(extra.commandCount !== undefined ? { commandCount: extra.commandCount } : {}),
       ...(extra.parent !== undefined ? { parent: extra.parent } : {}),

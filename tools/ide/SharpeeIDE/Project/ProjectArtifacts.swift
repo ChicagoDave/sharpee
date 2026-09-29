@@ -10,8 +10,8 @@
 // ADR-299 D7's "Play Testing" group was removed with the `.skein` artifact it
 // existed to hold (ADR-300). The `tests/` special case (hide Chord Writer's
 // `.transcript` artifacts) retired with the transcript grammar (ADR-307
-// cutover — tests live in `<storyId>.tests.json`, presented only in the
-// Testing tab); a `tests/` directory an author still has on disk now lands in
+// cutover — tests live in the `<storyId>.tests/` directory (ADR-355),
+// presented only in the Testing tab); a `tests/` directory an author still has on disk now lands in
 // Other, the open-view rule doing its job rather than a special case needing
 // to survive.
 // Public interface: ProjectArtifacts.groups(for:), ArtifactGroup, ArtifactGroup.Kind.

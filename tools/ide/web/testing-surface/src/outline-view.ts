@@ -19,7 +19,7 @@ import type { Outline, OutlineFork, OutlineLine } from './outline.js';
 /** What the column asks the surface to do. */
 export interface OutlineDelegate {
   /** Visit a line: replay its prefix suppressed, type its own cards live. */
-  onSelectLine(lineId: number): void;
+  onSelectLine(lineId: string): void;
 }
 
 export class OutlineView {
@@ -40,7 +40,7 @@ export class OutlineView {
    * @param outline    the manifest, derived fresh from the document
    * @param activeLine the line the session is on
    */
-  render(outline: Outline, activeLine: number): void {
+  render(outline: Outline, activeLine: string): void {
     if (!this.host) return;
     this.host.replaceChildren();
 
@@ -68,18 +68,18 @@ export class OutlineView {
     return el;
   }
 
-  private rootPill(root: OutlineLine, activeLine: number): HTMLElement {
+  private rootPill(root: OutlineLine, activeLine: string): HTMLElement {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ts-outline-pill ts-outline-root';
-    if (activeLine === 0) button.classList.add('ts-outline-here');
+    if (activeLine === root.lineId) button.classList.add('ts-outline-here');
     button.append(
       span('ts-outline-name', 'root'),
       span('ts-outline-cmd', `${root.start ?? '—'} → ${root.end ?? '—'}`),
       span('ts-outline-spacer', ''),
       span('ts-outline-turns', String(root.turns)),
     );
-    button.addEventListener('click', () => this.delegate.onSelectLine(0));
+    button.addEventListener('click', () => this.delegate.onSelectLine(root.lineId));
     return button;
   }
 
@@ -107,7 +107,7 @@ export class OutlineView {
     return button;
   }
 
-  private linePill(line: OutlineLine, depth: number, activeLine: number): HTMLElement {
+  private linePill(line: OutlineLine, depth: number, activeLine: string): HTMLElement {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ts-outline-pill ts-outline-line';

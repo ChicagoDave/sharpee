@@ -12,7 +12,7 @@
 // no way to open anything (GH #482). This is the type that made a story a parameter.
 //
 // Public interface: StoryProject — Resolve, Folder, StoryFile, Id, WebBundle, StoryIr,
-// TestsDocument, IsBuilt.
+// TestsTree, IsBuilt.
 // Owner context: tools/ide — the Avalonia desktop head's shell.
 
 namespace PaneHost.Shell;
@@ -77,15 +77,15 @@ public sealed record StoryProject(string Folder, string StoryFile, string Id)
         }
     }
 
-    /// <summary>The tree document (ADR-307) the testing pane replays, or null when there is none.</summary>
-    public string? TestsDocument
+    /// <summary>The test tree's directory (ADR-355) the testing pane replays, or null when there is none.</summary>
+    public string? TestsTree
     {
         get
         {
-            var byId = Path.Combine(Folder, Id + ".tests.json");
-            if (File.Exists(byId)) return byId;
+            var byId = Path.Combine(Folder, Id + ".tests");
+            if (Directory.Exists(byId)) return byId;
 
-            var any = Directory.GetFiles(Folder, "*.tests.json", SearchOption.TopDirectoryOnly);
+            var any = Directory.GetDirectories(Folder, "*.tests", SearchOption.TopDirectoryOnly);
             return any.Length == 1 ? any[0] : null;
         }
     }

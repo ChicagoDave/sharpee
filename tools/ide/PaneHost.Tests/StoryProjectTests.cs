@@ -99,18 +99,28 @@ public sealed class StoryProjectTests : IDisposable
     }
 
     [Fact]
-    public void built_output_and_the_tree_document_are_found_by_id()
+    public void built_output_and_the_test_tree_are_found_by_id()
     {
         var folder = Folder("fenwick");
         Touch(Path.Combine(folder, "fenwick.story"));
         Directory.CreateDirectory(Path.Combine(folder, "dist", "web", "fenwick"));
-        var tests = Touch(Path.Combine(folder, "fenwick.tests.json"), "{}");
+        var tests = Path.Combine(folder, "fenwick.tests");
+        Directory.CreateDirectory(tests);
 
         var project = StoryProject.Resolve(folder)!;
 
         Assert.True(project.IsBuilt);
         Assert.Equal(Path.Combine(folder, "dist", "web", "fenwick"), project.WebBundle);
-        Assert.Equal(tests, project.TestsDocument);
+        Assert.Equal(tests, project.TestsTree);
+    }
+
+    [Fact]
+    public void a_story_with_no_test_tree_has_none()
+    {
+        var folder = Folder("treeless");
+        Touch(Path.Combine(folder, "treeless.story"));
+
+        Assert.Null(StoryProject.Resolve(folder)!.TestsTree);
     }
 
     [Fact]

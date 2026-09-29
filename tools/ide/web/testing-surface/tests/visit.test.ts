@@ -16,14 +16,17 @@
  */
 import { describe, expect, it } from 'vitest';
 import { visitPlanOf, type PathStep } from '../src/visit';
-import { MAIN_LINE, TreeSessionModel } from '../src/model';
+import { TreeSessionModel } from '../src/model';
+
+/** A main-line id for the hand-built paths (the model's is its root segment id). */
+const MAIN_LINE = 'mainline';
 
 /** A path step as the model names it. */
-const step = (command: string, lineId: number, index: number): PathStep =>
+const step = (command: string, lineId: string, index: number): PathStep =>
   ({ command, lineId, index });
 
 /** The model's own derivation of a line's visit, as `main.ts` calls it. */
-function planFor(model: TreeSessionModel, lineId: number) {
+function planFor(model: TreeSessionModel, lineId: string) {
   return visitPlanOf(model.pathStepsOf(lineId), model.prefixCommandsOf(lineId).length);
 }
 
@@ -32,8 +35,8 @@ describe('visitPlanOf — the split rule', () => {
     const path = [
       step('take lamp', MAIN_LINE, 0),
       step('north', MAIN_LINE, 1),
-      step('east', 2, 0),
-      step('open door', 2, 1),
+      step('east', 'branch02', 0),
+      step('open door', 'branch02', 1),
     ];
     const plan = visitPlanOf(path, 2);
 
@@ -44,13 +47,13 @@ describe('visitPlanOf — the split rule', () => {
   it('is the regression: a branch with its own cards never has an empty live list', () => {
     const path = [
       step('take lamp', MAIN_LINE, 0),
-      step('east', 2, 0),
+      step('east', 'branch02', 0),
     ];
     const plan = visitPlanOf(path, 1);
 
     // The shipped defect handed the WHOLE path in as replay. That is what
     // this assertion forbids — the branch's own command must be typed live.
-    expect(plan.live).toEqual([{ command: 'east', key: '2:0' }]);
+    expect(plan.live).toEqual([{ command: 'east', key: 'branch02:0' }]);
     expect(plan.replay.map(s => s.command)).not.toContain('east');
   });
 
@@ -58,21 +61,21 @@ describe('visitPlanOf — the split rule', () => {
     const path = [
       step('take lamp', MAIN_LINE, 0),
       step('north', MAIN_LINE, 1),
-      step('east', 7, 0),
+      step('east', 'branch07', 0),
     ];
     const plan = visitPlanOf(path, 2);
 
     expect(plan.replay.map(s => s.key)).toEqual([`${MAIN_LINE}:0`, `${MAIN_LINE}:1`]);
-    expect(plan.live.map(s => s.key)).toEqual(['7:0']);
+    expect(plan.live.map(s => s.key)).toEqual(['branch07:0']);
   });
 
   it('covers the path exactly once, in order — nothing dropped, nothing doubled', () => {
     const path = [
       step('a', MAIN_LINE, 0),
       step('b', MAIN_LINE, 1),
-      step('c', 3, 0),
-      step('d', 3, 1),
-      step('e', 3, 2),
+      step('c', 'branch03', 0),
+      step('d', 'branch03', 1),
+      step('e', 'branch03', 2),
     ];
     for (const prefixLength of [0, 1, 2, 3, 4, 5]) {
       const plan = visitPlanOf(path, prefixLength);
@@ -167,8 +170,8 @@ describe('visitPlanOf against the real tree model', () => {
     expect(plan.live.map(s => s.command)).toEqual(['up']);
     // The prefix crosses two owning lines, and each step keeps its own.
     expect(plan.replay.map(s => s.key)).toEqual([
-      `${MAIN_LINE}:0`,
-      `${MAIN_LINE}:1`,
+      `${model.mainLine}:0`,
+      `${model.mainLine}:1`,
       `${first}:0`,
     ]);
   });
@@ -178,7 +181,7 @@ describe('visitPlanOf against the real tree model', () => {
     play(model, 'take lamp');
     play(model, 'north', 'Garden');
 
-    const plan = planFor(model, MAIN_LINE);
+    const plan = planFor(model, model.mainLine);
 
     expect(plan.replay).toEqual([]);
     expect(plan.live.map(s => s.command)).toEqual(['take lamp', 'north']);

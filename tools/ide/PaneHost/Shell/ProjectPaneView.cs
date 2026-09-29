@@ -59,11 +59,13 @@ public sealed class ProjectPaneView : DrawnSurface
             : new List<string>();
 
         Group("Story", top.Where(f => f.EndsWith(".story") || f.EndsWith(".config.json")));
-        Group("Walkthroughs", top.Where(f => Path.GetFileName(f).StartsWith("WALKTHROUGH") || f.EndsWith(".tests.json")));
+        // The test tree is a `<story-id>.tests/` directory (ADR-355), shown in the Testing tab,
+        // so it never appears among these top-level files.
+        Group("Walkthroughs", top.Where(f => Path.GetFileName(f).StartsWith("WALKTHROUGH")));
         Group("Assets", SafeFiles(Path.Combine(storyFolder, "assets")));
         Group("Web Template", SafeFiles(Path.Combine(storyFolder, "browser")));
         Group("Other", top.Where(f => !f.EndsWith(".story") && !f.EndsWith(".config.json")
-                                      && !f.EndsWith(".tests.json") && !Path.GetFileName(f).StartsWith("WALKTHROUGH")));
+                                      && !Path.GetFileName(f).StartsWith("WALKTHROUGH")));
 
         InvalidateVisual();
     }

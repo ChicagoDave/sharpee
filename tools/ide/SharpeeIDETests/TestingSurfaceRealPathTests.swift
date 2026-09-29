@@ -6,7 +6,8 @@
 // `#command-input` that renders turns on Enter, feed records over the real
 // `turnEvents` bridge — so these tests pin the actual seams: asset
 // injection, record forwarding, card building, ALWAYS-RECORDING into the
-// single tree document (`<story-id>.tests.json` — D1/D3), the opening
+// test tree (the `<story-id>.tests/` directory of segments — ADR-355;
+// ADR-307 D1/D3), the opening
 // defaults from real boot captures (open question D), branching as document
 // structure (D2/D5), tail-cut (D4/Q-4), the author restart as a whole-tree
 // replay, reopen-restores-to-an-identical-board (AC-1 through the real
@@ -162,7 +163,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try Data(Self.fixtureHTML.utf8)
             .write(to: bundleDir.appendingPathComponent("index-testing.html"))
         sidecarURL = tmp.appendingPathComponent("probe-session.json")
-        documentURL = tmp.appendingPathComponent("probe.tests.json")
+        documentURL = tmp.appendingPathComponent("probe.tests", isDirectory: true)
     }
 
     override func tearDownWithError() throws {
@@ -179,7 +180,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         surface = TestingSurfaceViewController(
             sessionStore: TestingSessionStore(fileURL: sidecarURL))
         _ = surface.view
-        surface.testDocumentURL = documentURL
+        surface.testTreeURL = documentURL
         surface.policy = policy
         surface.regionByRoom = regions
         surface.load(bundleDirectory: bundleDir)
@@ -234,10 +235,71 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         """)
     }
 
-    /// The tree document as parsed JSON, failing when absent or malformed.
+    /// The tree on disk, assembled into its nested shape — the manifest's
+    /// fields plus `id` and `cards`, each fork card carrying `branches` of
+    /// `{id, cards}` and its continuation's cards appended after it
+    /// (ADR-355 D2-D5) — so assertions read the structure, not the file
+    /// split. Fails when the directory is absent or any file is malformed.
+    /// The shared reader's full validation is branch-tester's to test; this
+    /// only links what the writer wrote.
     private func documentJSON() throws -> [String: Any] {
-        let data = try Data(contentsOf: documentURL)
-        return try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let names = try FileManager.default.contentsOfDirectory(atPath: documentURL.path)
+            .filter { !$0.hasPrefix(".") }
+        var manifest: [String: Any] = [:]
+        var segments: [String: [String: Any]] = [:]
+        for name in names {
+            let data = try Data(contentsOf: documentURL.appendingPathComponent(name))
+            let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any], name)
+            if name == "manifest.json" { manifest = object } else { segments[try XCTUnwrap(object["id"] as? String)] = object }
+        }
+        let root = try XCTUnwrap(segments.values.first { $0["parent"] == nil }, "a root segment")
+        func build(_ segment: [String: Any]) -> [[String: Any]] {
+            var cards = (segment["cards"] as? [[String: Any]]) ?? []
+            let id = segment["id"] as? String
+            let children = segments.values
+                .filter { $0["parent"] as? String == id }
+                .sorted { ($0["ordinal"] as? Int ?? 0) < ($1["ordinal"] as? Int ?? 0) }
+            guard !children.isEmpty, !cards.isEmpty else { return cards }
+            let branches = children.filter { ($0["ordinal"] as? Int ?? 0) > 0 }
+            cards[cards.count - 1]["branches"] = branches.map { ["id": $0["id"] as Any, "cards": build($0)] }
+            if let continuation = children.first(where: { ($0["ordinal"] as? Int) == 0 }) {
+                cards.append(contentsOf: build(continuation))
+            }
+            return cards
+        }
+        var object = manifest
+        object["id"] = root["id"]
+        object["cards"] = build(root)
+        return object
+    }
+
+    /// Every tree file's bytes by name — for "the tree did not change" checks.
+    private func treeFileBytes() throws -> [String: Data] {
+        var files: [String: Data] = [:]
+        for name in try FileManager.default.contentsOfDirectory(atPath: documentURL.path) where !name.hasPrefix(".") {
+            files[name] = try Data(contentsOf: documentURL.appendingPathComponent(name))
+        }
+        return files
+    }
+
+    /// Seeds the tree directory with exactly these files, as a prior session left them.
+    private func writeTree(_ files: [String: String]) throws {
+        try FileManager.default.createDirectory(at: documentURL, withIntermediateDirectories: true)
+        for (name, text) in files {
+            try Data(text.utf8).write(to: documentURL.appendingPathComponent(name))
+        }
+    }
+
+    /// A one-segment tree's root file: the opening and the boot look.
+    private static let rootSegment =
+        #"{"cards": [{"id": "card0001", "type": "opening"}, {"id": "card0002", "type": "boot"}], "id": "root0000"}"#
+
+    /// Every tree file's bytes together — for "the tree never says" checks.
+    private func treeText() throws -> String {
+        try FileManager.default.contentsOfDirectory(atPath: documentURL.path)
+            .filter { !$0.hasPrefix(".") }
+            .map { try String(contentsOf: documentURL.appendingPathComponent($0), encoding: .utf8) }
+            .joined(separator: "\n")
     }
 
     private func documentCards() throws -> [[String: Any]] {
@@ -295,14 +357,20 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
     func testAlwaysRecordingWritesTheDocumentAndNothingElse() async throws {
         try await playThreeTurns()
-        // Every played turn landed in `<story-id>.tests.json` — no tick, no
-        // gesture, no `tests/` directory.
+        // Every played turn landed in the `<story-id>.tests/` tree — no tick,
+        // no gesture, no `tests/` directory.
         try await waitForDocument("the played session") { object in
             let cards = (object["cards"] as? [[String: Any]]) ?? []
             return cards.count == 4
         }
         let object = try documentJSON()
-        XCTAssertEqual(object["version"] as? Int, 2, "the current tree-document version (ADR-356 D4)")
+        XCTAssertEqual(object["version"] as? Int, 3, "the current tree version, the segmented format (ADR-355)")
+        let rootId = try XCTUnwrap(object["id"] as? String)
+        XCTAssertNotNil(rootId.range(of: "^[a-z0-9]{8}$", options: .regularExpression),
+                        "the root segment carries an opaque 8-character id (ADR-355 D5)")
+        XCTAssertTrue(FileManager.default.fileExists(
+            atPath: documentURL.appendingPathComponent("\(rootId).json").path),
+            "the main line's segment is its own file, named by its id")
         XCTAssertEqual(object["story"] as? String, "probe")
         XCTAssertEqual(object["seed"] as? Int, 42)
         let cards = try documentCards()
@@ -591,7 +659,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
         let view = try XCTUnwrap(object["view"] as? [String: Any])
         XCTAssertEqual(view["collapsed"] as? [String], ["Grounds#0"])
-        let documentText = try String(contentsOf: documentURL, encoding: .utf8)
+        let documentText = try treeText()
         XCTAssertFalse(documentText.contains("Grounds"),
                        "regions and collapse never touch the document — derived + ephemera only")
 
@@ -620,7 +688,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
     func testAuthorRestartReplaysTheTreeAndStripsTheAckTurn() async throws {
         try await playThreeTurns()
-        let before = try Data(contentsOf: documentURL)
+        let before = try treeFileBytes()
 
         try await type("restart")
         // The board clears, then the tree replays through the client's real
@@ -639,9 +707,9 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try await waitForIdleInput()
         // The ack turn ("the story restarts") never entered the document,
         // and the replay left it byte-identical.
-        let after = try Data(contentsOf: documentURL)
+        let after = try treeFileBytes()
         XCTAssertEqual(after, before,
-                       "an author restart replays the tree — the document must not change")
+                       "an author restart replays the tree — no tree file may change")
         let cards = try documentCards()
         XCTAssertFalse(cards.contains { $0["command"] as? String == "restart" },
                        "the restart ack is mechanics, not a recorded turn")
@@ -659,9 +727,9 @@ final class TestingSurfaceRealPathTests: XCTestCase {
             let cards = (object["cards"] as? [[String: Any]]) ?? []
             return cards.count > 2 && cards[2]["branches"] != nil
         }
-        let bytesBefore = try Data(contentsOf: documentURL)
+        let bytesBefore = try treeFileBytes()
 
-        // A fresh surface over the same document + sidecar: the main line
+        // A fresh surface over the same tree + sidecar: the main line
         // replays live, the branch fresh-boots, the active line (the branch)
         // ends up live and selected — the identical board (AC-1 through the
         // real driver).
@@ -688,16 +756,18 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         // AC-1: the reopened session re-serialized the same tree — byte for
         // byte, nothing gained, nothing lost.
         try await Task.sleep(nanoseconds: 500_000_000)
-        let bytesAfter = try Data(contentsOf: documentURL)
+        let bytesAfter = try treeFileBytes()
         XCTAssertEqual(bytesAfter, bytesBefore,
-                       "reopen must replay to the identical document, byte for byte")
+                       "reopen must replay to the identical tree, every file byte for byte")
     }
 
     // MARK: - GH #540: the document's seed is the engine's seed
 
     func testADocumentPinnedAtItsOwnSeedBootsTheEngineAtThatSeed() async throws {
-        let pinned = #"{"version": 2, "story": "probe", "seed": 7, "cards": [{"type": "opening"}, {"type": "boot"}]}"#
-        try Data(pinned.utf8).write(to: documentURL)
+        try writeTree([
+            "manifest.json": #"{"seed": 7, "story": "probe", "version": 3}"#,
+            "root0000.json": Self.rootSegment,
+        ])
 
         try await boot()
         // The page global the client's boot reads (ADR-305 D1) carries the
@@ -721,8 +791,11 @@ final class TestingSurfaceRealPathTests: XCTestCase {
     // MARK: - AC-4: refused and malformed documents
 
     func testANewerVersionDocumentShowsItsNoticeAndIsNeverWritten() async throws {
-        let newer = #"{"version": 99, "story": "probe", "seed": 42, "cards": []}"#
-        try Data(newer.utf8).write(to: documentURL)
+        try writeTree([
+            "manifest.json": #"{"seed": 42, "story": "probe", "version": 99}"#,
+            "root0000.json": Self.rootSegment,
+        ])
+        let newer = try treeFileBytes()
 
         try await boot()
         // The named message shows; the session still plays as a scratch board.
@@ -735,21 +808,26 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try await type("north")
         try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 3", "cards")
         try await Task.sleep(nanoseconds: 500_000_000)
-        // The newer document was never clobbered by this older writer.
-        let text = try String(contentsOf: documentURL, encoding: .utf8)
-        XCTAssertEqual(text, newer, "a refused document is write-locked")
+        // The newer tree was never clobbered by this older writer.
+        XCTAssertEqual(try treeFileBytes(), newer, "a refused tree is write-locked")
     }
 
-    func testAMalformedDocumentDegradesToAFreshTree() async throws {
-        try Data("not json {{{".utf8).write(to: documentURL)
+    func testAMalformedTreeDegradesToAFreshTree() async throws {
+        try writeTree([
+            "manifest.json": #"{"seed": 42, "story": "probe", "version": 3}"#,
+            "root0000.json": "not json {{{",
+        ])
         try await boot()
         // The session opens fresh and plays; always-recording replaces the
-        // malformed file with a valid document.
+        // malformed files with a valid tree — the unreadable segment goes.
         try await waitFor("document.querySelectorAll('#ts-cards .ts-turn').length === 2", "cards")
-        try await waitForDocument("the fresh tree replacing the malformed file") { object in
+        try await waitForDocument("the fresh tree replacing the malformed files") { object in
             let cards = (object["cards"] as? [[String: Any]]) ?? []
-            return object["version"] as? Int == 2 && cards.count == 2
+            return object["version"] as? Int == 3 && cards.count == 2
         }
+        XCTAssertFalse(FileManager.default.fileExists(
+            atPath: documentURL.appendingPathComponent("root0000.json").path),
+            "the unreadable segment is removed, not left beside the fresh tree")
     }
 
     // MARK: - The D7 sidecar: view state only, degraded-tolerant
@@ -860,32 +938,74 @@ final class TestingSurfaceRealPathTests: XCTestCase {
 
         """
         try Data(story.utf8).write(to: project.appendingPathComponent("mini.story"))
-        let document = """
+        // The tree as `segmentTree` writes it — canonical bytes (sorted keys,
+        // two-space indent, one trailing newline), since `sharpee test`'s
+        // canonical gate refuses anything else (ADR-355 D7): the main line
+        // ends on the fork card, and its one branch is a segment of its own.
+        let tree = project.appendingPathComponent("mini.tests", isDirectory: true)
+        try FileManager.default.createDirectory(at: tree, withIntermediateDirectories: true)
+        let manifest = """
         {
-          "version": 2,
-          "story": "mini",
           "seed": 42,
-          "cards": [
-            { "type": "opening" },
-            { "type": "boot", "assertions": { "contains": ["A small square den"] } },
-            {
-              "type": "turn",
-              "command": "take lamp",
-              "assertions": { "contains": ["no such text anywhere"] },
-              "branches": [
-                {
-                  "branch": 1,
-                  "cards": [
-                    { "type": "turn", "command": "look",
-                      "assertions": { "contains": ["A small square den"] } }
-                  ]
-                }
-              ]
-            }
-          ]
+          "story": "mini",
+          "version": 3
         }
+
         """
-        try Data(document.utf8).write(to: project.appendingPathComponent("mini.tests.json"))
+        let root = """
+        {
+          "cards": [
+            {
+              "id": "card0001",
+              "type": "opening"
+            },
+            {
+              "assertions": {
+                "contains": [
+                  "A small square den"
+                ]
+              },
+              "id": "card0002",
+              "type": "boot"
+            },
+            {
+              "assertions": {
+                "contains": [
+                  "no such text anywhere"
+                ]
+              },
+              "command": "take lamp",
+              "id": "card0003",
+              "type": "turn"
+            }
+          ],
+          "id": "root0000"
+        }
+
+        """
+        let branch = """
+        {
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "A small square den"
+                ]
+              },
+              "command": "look",
+              "id": "card0004",
+              "type": "turn"
+            }
+          ],
+          "id": "branch01",
+          "ordinal": 1,
+          "parent": "root0000"
+        }
+
+        """
+        try Data(manifest.utf8).write(to: tree.appendingPathComponent("manifest.json"))
+        try Data(root.utf8).write(to: tree.appendingPathComponent("root0000.json"))
+        try Data(branch.utf8).write(to: tree.appendingPathComponent("branch01.json"))
 
         try await boot()
         surface.storyFile = project.appendingPathComponent("mini.story")
@@ -913,9 +1033,9 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(tally, "2 cards passing, 2 assertions passing, 1 card failing, 1 assertion failing, 1 rule passing",
                        "the tally aggregates cards, assertions and rules from the detail")
 
-        // The stream's rows key by derived label (Q-8) — the identities on
-        // this wire. (The fixture session's own line shows as a dash row
-        // after them; only the stream rows carry badges.)
+        // The stream's rows key by line id (ADR-355 D5) and are titled by the
+        // derived label the wire announced. (The fixture session's own line
+        // shows as a dash row after them; only the stream rows carry badges.)
         let rows = try await surface.evaluateInSurface("""
         Array.from(document.querySelectorAll('.ts-run-row'))
           .filter(function (row) {
@@ -1053,11 +1173,13 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
                           "devkit CLI not built — run `./repokit build`")
         let source = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill", isDirectory: true)
-        try XCTSkipUnless(FileManager.default.fileExists(atPath: source.appendingPathComponent("fernhill.tests.json").path),
-                          "branch-stories/fernhill has no tree document")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: source.appendingPathComponent("fernhill.tests").path),
+                          "branch-stories/fernhill has no test tree")
+        // A scratch COPY of the story and its tree — the run never touches the
+        // real story's directory (#497).
         let project = tmp.appendingPathComponent("fernhill", isDirectory: true)
         try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
-        for name in ["fernhill.story", "fernhill.tests.json", "fernhill.config.json",
+        for name in ["fernhill.story", "fernhill.tests", "fernhill.config.json",
                      "fernhill.world-ignore.json", "fernhill.recipe.json"] {
             let file = source.appendingPathComponent(name)
             if FileManager.default.fileExists(atPath: file.path) {
@@ -1156,8 +1278,9 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         surface = TestingSurfaceViewController(
             sessionStore: TestingSessionStore(fileURL: sidecarURL))
         _ = surface.view
-        // The document writes into the TEST's temp dir — never the repo.
-        surface.testDocumentURL = tmp.appendingPathComponent("fernhill.tests.json")
+        // The tree writes into the TEST's temp dir — never the repo.
+        documentURL = tmp.appendingPathComponent("fernhill.tests", isDirectory: true)
+        surface.testTreeURL = documentURL
         surface.load(bundleDirectory: fernhill)
         XCTAssertTrue(surface.isLoaded)
 
@@ -1220,18 +1343,13 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         """)
         XCTAssertEqual(coherent as? Bool, true)
 
-        // The DOCUMENT recorded the real session: opening/boot/three norths,
-        // the branch on the third north, the pinned seed.
-        let docURL = tmp.appendingPathComponent("fernhill.tests.json")
-        for _ in 0..<160 {
-            if let data = try? Data(contentsOf: docURL),
-               let object = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any],
-               let cards = object["cards"] as? [[String: Any]],
-               cards.count == 5, cards[3]["branches"] != nil { break }
-            try await Task.sleep(nanoseconds: 50_000_000)
+        // The TREE recorded the real session: opening/boot/three norths, the
+        // branch on the third north (its own segment file), the pinned seed.
+        try await waitForDocument("the real session with its branch") { object in
+            let cards = (object["cards"] as? [[String: Any]]) ?? []
+            return cards.count == 5 && cards[3]["branches"] != nil
         }
-        let data = try Data(contentsOf: docURL)
-        let object = try XCTUnwrap(JSONSerialization.jsonObject(with: data) as? [String: Any])
+        let object = try documentJSON()
         XCTAssertEqual(object["story"] as? String, "fernhill")
         XCTAssertEqual(object["seed"] as? Int, 42)
         let cards = try XCTUnwrap(object["cards"] as? [[String: Any]])
@@ -1240,6 +1358,10 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         let branches = try XCTUnwrap(cards[3]["branches"] as? [[String: Any]])
         let branchCards = try XCTUnwrap(branches.first?["cards"] as? [[String: Any]])
         XCTAssertEqual(branchCards.map { $0["command"] as? String }, ["east"])
+        let branchId = try XCTUnwrap(branches.first?["id"] as? String)
+        XCTAssertTrue(FileManager.default.fileExists(
+            atPath: documentURL.appendingPathComponent("\(branchId).json").path),
+            "the branch is a segment file of its own (ADR-355 D2)")
 
         // The OPENING's recorded claims persisted from the real boot flush
         // (David 2026-08-10 — the fresh-start regression: they were only
