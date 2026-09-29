@@ -1461,8 +1461,9 @@ export declare function findEntity(name: string, world: WorldModel, idAttribute?
 export declare function getEntityProperty(entity: any, property: string, world?: WorldModel): any;
 /**
  * Resolve the right-hand side of a claim: an entity name becomes its id;
- * `null`/`undefined`/`nowhere` become undefined; `true`/`false` become
- * booleans; anything else stays the literal string.
+ * `null`/`undefined`/`nowhere`/`offstage` become undefined, the location of
+ * an entity in no place (`offstage` is Chord's word for it); `true`/`false`
+ * become booleans; anything else stays the literal string.
  *
  * @param value the text a claim wrote
  * @param world the live world, for entity names

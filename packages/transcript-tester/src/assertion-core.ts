@@ -483,17 +483,21 @@ export function evaluateStateExpression(
                     (actualValue?.id && actualValue.id === expectedResolved) ||
                     (typeof expectedResolved === 'string' && actualValue?.id === expectedResolved);
 
+    // A location in no place prints as `offstage`, the word the author wrote.
+    const describe = (value: unknown): string =>
+      property === 'location' && value == null ? 'offstage' : describeValue(value, world);
+
     if (pin.operator === '=') {
       return {
         matches: isEqual,
         details: isEqual
           ? undefined
-          : `${entityName}.${property} is "${describeValue(actualValue, world)}", expected "${describeValue(expectedResolved, world)}"`
+          : `${entityName}.${property} is "${describe(actualValue)}", expected "${describe(expectedResolved)}"`
       };
     } else {
       return {
         matches: !isEqual,
-        details: !isEqual ? undefined : `${entityName}.${property} should not be "${describeValue(expectedResolved, world)}"`
+        details: !isEqual ? undefined : `${entityName}.${property} should not be "${describe(expectedResolved)}"`
       };
     }
   }
@@ -722,8 +726,9 @@ function describeValue(value: unknown, world: WorldModel): string {
 
 /**
  * Resolve the right-hand side of a claim: an entity name becomes its id;
- * `null`/`undefined`/`nowhere` become undefined; `true`/`false` become
- * booleans; anything else stays the literal string.
+ * `null`/`undefined`/`nowhere`/`offstage` become undefined, the location of
+ * an entity in no place (`offstage` is Chord's word for it); `true`/`false`
+ * become booleans; anything else stays the literal string.
  *
  * @param value the text a claim wrote
  * @param world the live world, for entity names
@@ -736,7 +741,7 @@ export function resolveValue(value: string, world: WorldModel, idAttribute?: str
     return entity.id;
   }
 
-  if (value === 'null' || value === 'undefined' || value === 'nowhere') {
+  if (value === 'null' || value === 'undefined' || value === 'nowhere' || value === 'offstage') {
     return undefined;
   }
   if (value === 'true') return true;

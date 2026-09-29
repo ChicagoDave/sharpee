@@ -104,6 +104,34 @@ describe('entity.property and entity.location', () => {
     expect(evaluateStateExpression('ghost.location = hall', hall().w).details).toBe('Entity "ghost" not found');
   });
 
+  // GH #548: `offstage` is Chord's word for an entity in no place.
+  it('holds `= offstage` for an entity moved out of the world, and misses it for one in place', () => {
+    const { w, coin } = hall();
+    expect(evaluateStateExpression('coin.location = offstage', w)).toEqual({
+      matches: false,
+      details: 'coin.location is "player", expected "offstage"',
+    });
+    w.moveEntity(coin.id, null);
+    expect(w.getLocation(coin.id)).toBeUndefined();
+    expect(evaluateStateExpression('coin.location = offstage', w)).toEqual({ matches: true, details: undefined });
+  });
+
+  it('holds `!= offstage` for an entity in place, and misses it for one offstage', () => {
+    const { w, coin } = hall();
+    expect(evaluateStateExpression('coin.location != offstage', w).matches).toBe(true);
+    w.moveEntity(coin.id, null);
+    expect(evaluateStateExpression('coin.location != offstage', w)).toEqual({
+      matches: false,
+      details: 'coin.location should not be "offstage"',
+    });
+  });
+
+  it('names an offstage actual as offstage when a place was expected', () => {
+    const { w, coin } = hall();
+    w.moveEntity(coin.id, null);
+    expect(evaluateStateExpression('coin.location = hall', w).details).toBe('coin.location is "offstage", expected "hall"');
+  });
+
   it('accepts an IR-style hyphenated head', () => {
     const { w, room } = hall();
     const shears = w.createEntity('garden-shears', 'item');
