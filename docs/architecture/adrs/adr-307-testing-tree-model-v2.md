@@ -129,6 +129,10 @@ creates) and accepts the story's own spelling of the name — spaces, aliases �
 with `the story is <state>` reading the phase. The family's shape in the
 schema is unchanged; the Testing tab's `states` field is free text.
 
+> **Note (2026-09-30, session fd3ed7 — written by the plan phase that landed ADR-355 D1-D5 and D7, `docs/work/segmented-test-tree/plan-20260929-adr-355.md` Phase 4, as ADR-355 D6 requires).** "The canonical serialization is one JSON document" no longer holds: ADR-355 segments the tree at rest. The Q-2 resolution is half kept. The artifact is still named after the story and still sits beside the `.story` file, but it is now a directory, `<story-id>.tests/`, not the file `<story-id>.tests.json`. Inside it, `manifest.json` holds `version` (now 3), `story` and `seed`, and each run of cards between fork points is one segment file named by its id. D1's "the tree is the model; files are a projection" is the part of this decision that survives, and it is what makes segmentation expressible. The card-recursive schema (Q-3) is still the in-memory shape; a fork's `branch` id is now the branch's segment `id`, and every card carries a minted `id` (ADR-355 D7).
+>
+> **Note on Q-8 (same session, same owner).** Half of Q-8 is retired. "Nothing persisted" no longer holds, because ADR-355 D5 persists an opaque 8-character id on every segment, and a line is identified by its segments' ids. "Derived labels only" stands unchanged: run column rows and failure citations still show the derived label, and no rename affordance is added, since the id is not something an author names.
+
 ### D3 — The Testing tab is always recording; the checkboxes go
 
 Playing in the Testing tab **is** writing the suite: every typed command

@@ -5,7 +5,7 @@
 > | | Harness | Artifact | Command |
 > |---|---|---|---|
 > | **Sharpee** | `@sharpee/transcript-tester` | `*.transcript` | `node dist/cli/sharpee.js --test` |
-> | **Chord** | `@sharpee/branch-tester` (ADR-307) | one `<story-id>.tests.json` tree document beside the `.story` | `sharpee test <story-dir>` |
+> | **Chord** | `@sharpee/branch-tester` (ADR-307, ADR-355) | one `<story-id>.tests/` test tree beside the `.story` | `sharpee test <story-dir>` |
 >
 > **Transcript tests are strictly Sharpee. Chord stories are strictly tree
 > documents.** This document covers the Sharpee side only — the tree document is
@@ -32,7 +32,7 @@ sharpee test <dir|name|file.story>
 sharpee test --stop-on-failure --verbose
 ```
 
-That reads `<story-id>.tests.json` beside your `.story` and replays it against a
+That reads the `<story-id>.tests/` directory beside your `.story` and replays it against a
 real engine. Tests are recorded in the IDE's Testing tab rather than hand-written.
 Everything from "Writing Transcripts" down is the *other* harness and does not
 apply to it. `--chain` and `--coverage` are retired there (ADR-302 D10,
