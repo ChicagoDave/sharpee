@@ -2,8 +2,9 @@
  * model.test.ts — the tree-session model's contract (ADR-307: the tree IS
  * the model).
  *
- * Pins: always-recording (every delivered turn is a card, D3), the document
- * round-trip through the shared serializer (AC-1), assertion authoring with
+ * Pins: always-recording (every delivered turn is a card, D3), the tree's
+ * round-trip through the shared segmenter and reader (ADR-355 AC-6), one
+ * edit changing one segment file (AC-1), persisted line ids (D5), assertion authoring with
  * narrowing semantics, branching as pure structure (D2/D5), tail-cut and
  * branch-delete (D4/Q-4), the splice model operations (D4), binding replay
  * (restore-by-replay re-derives the board without duplicating the
@@ -13,12 +14,25 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  deserializeTreeDocument,
+  assembleTree,
+  diffTreeFiles,
+  segmentTree,
+  TREE_DOCUMENT_VERSION,
   type TreeDocument,
 } from '@sharpee/branch-tester/tree-document';
-import { MAIN_LINE, TreeSessionModel } from '../src/model';
+import { TreeSessionModel } from '../src/model';
 import { explainGroups } from '../src/character';
 import { affordanceGroupsOf, sceneExplainGroups } from '../src/scene';
+
+/** Read the model's files back through the shared reader (the round trip). */
+function readBack(model: TreeSessionModel) {
+  return assembleTree(model.files());
+}
+
+/** Every tree file's bytes together — for "the tree says / never says" checks. */
+function treeText(model: TreeSessionModel): string {
+  return Object.values(model.files()).join('\n');
+}
 
 /** A fresh model with the standard opening: boot look in the Den. */
 function bootedModel(): TreeSessionModel {
@@ -56,16 +70,63 @@ describe('always recording (D3) — every turn is a card, the document is live',
     ]);
   });
 
-  it('the produced document round-trips byte-identically through the shared reader (AC-1)', () => {
+  it('the produced tree round-trips byte-identically through the shared reader (AC-6)', () => {
     const model = bootedModel();
     const ordinal = play(model, 'take lamp');
     model.addContains(ordinal, 'Taken');
-    const text = model.serialize();
-    const read = deserializeTreeDocument(text);
+    const files = model.files();
+    const read = assembleTree(files);
     expect(read.status).toBe('ok');
-    expect(read.status === 'ok' && JSON.stringify(read.document)).toBe(
-      JSON.stringify(JSON.parse(text)),
-    );
+    if (read.status !== 'ok') return;
+    expect(segmentTree(read.document)).toEqual(files);
+  });
+
+  it('files() mints each new card an id once and keeps it — the next call names the same files', () => {
+    const model = bootedModel();
+    play(model, 'take lamp');
+    const first = model.files();
+    expect(model.document.cards.every((card) => typeof card.id === 'string')).toBe(true);
+    const ids = model.document.cards.map((card) => card.id);
+    expect(model.files()).toEqual(first);
+    expect(model.document.cards.map((card) => card.id)).toEqual(ids);
+  });
+});
+
+describe('segment files (ADR-355) — an edit writes only what changed', () => {
+  it('an authored claim on one branch changes that branch segment alone (AC-1)', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    play(model, 'north', 'Garden');
+    const east = model.branch(took, 'east')!;
+    const alt = play(model, 'east', 'Shed');
+    model.activateLine(model.mainLine);
+    const west = model.branch(took, 'west')!;
+    play(model, 'west', 'Yard');
+    const before = model.files();
+
+    model.addContains(alt, 'A shed.');
+    const { written, removed } = diffTreeFiles(before, model.files());
+
+    expect(Object.keys(written)).toEqual([`${east}.json`]);
+    expect(removed).toEqual([]);
+    expect(written[`${east}.json`]).toContain('A shed.');
+    expect(model.files()[`${west}.json`]).toBe(before[`${west}.json`]);
+  });
+
+  it('deleting a branch removes its segment file and leaves the manifest alone', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    play(model, 'north', 'Garden');
+    const east = model.branch(took, 'east')!;
+    play(model, 'east', 'Shed');
+    const before = model.files();
+
+    model.deleteBranch(east);
+    const { written, removed } = diffTreeFiles(before, model.files());
+
+    expect(removed).toContain(`${east}.json`);
+    expect(Object.keys(written)).not.toContain('manifest.json');
+    expect(model.files()[`${east}.json`]).toBeUndefined();
   });
 });
 
@@ -131,8 +192,8 @@ describe('assertion authoring — claims live in the card', () => {
     const fragments = group.lines[0].fragments;
     expect(model.addChannel(n, { id: 'character', contains: [...fragments] })).toBe(true);
 
-    const text = model.serialize();
-    const read = deserializeTreeDocument(text);
+    const files = model.files();
+    const read = assembleTree(files);
     expect(read.status).toBe('ok');
     if (read.status !== 'ok') return;
     const card = read.document.cards.find((c) => c.command === 'ask viola about the killer');
@@ -145,7 +206,7 @@ describe('assertion authoring — claims live in the card', () => {
         '"claimedValue":"nobody"',
       ],
     }]);
-    expect(JSON.stringify(read.document)).toBe(JSON.stringify(JSON.parse(text)));
+    expect(segmentTree(read.document)).toEqual(files);
   });
 
   it('click-to-assert scene and affordance lines claim on their OWN channels through the round trip (ADR-320 D12)', () => {
@@ -170,7 +231,7 @@ describe('assertion authoring — claims live in the card', () => {
       expect(model.addChannel(n, { id: line.claimChannel, contains: [...line.fragments] })).toBe(true);
     }
 
-    const read = deserializeTreeDocument(model.serialize());
+    const read = readBack(model);
     expect(read.status).toBe('ok');
     if (read.status !== 'ok') return;
     const card = read.document.cards.find((c) => c.command === 'ask nell about the tour');
@@ -198,7 +259,7 @@ describe('assertion authoring — claims live in the card', () => {
     const model = bootedModel();
     model.addTurn({ ordinal: 78, command: 'wait', boot: false, skip: true });
     expect(model.claimsNothing(78)).toBe(true);
-    expect(model.serialize()).toContain('"skip": true');
+    expect(treeText(model)).toContain('"skip": true');
   });
 
   it('a claim-less OPENING fills from the boot delivery on a binding replay (pre-pivot documents heal)', () => {
@@ -238,7 +299,7 @@ describe('assertion authoring — claims live in the card', () => {
     const spliced = model.cardAt(n);
     expect(spliced).toBeDefined();
     expect(model.spliceIn(n, 'wait')).toBe(true);
-    const before = model.serialize();
+    const before = treeText(model);
 
     model.beginRebindAll();
     model.addTurn({ ordinal: 90, command: '', boot: true, assertions: { contains: ['boot noise'] } });
@@ -262,7 +323,7 @@ describe('assertion authoring — claims live in the card', () => {
     // way.
     expect(model.claimsOf(91)).toEqual({ contains: ['Roses everywhere.'] });
     expect(model.claimsOf(92)).toEqual({ contains: ['Time passes.'] });
-    expect(model.serialize()).not.toBe(before);
+    expect(treeText(model)).not.toBe(before);
     expect(model.claimsOf(90)).toEqual({ contains: ['boot noise'] });
   });
 
@@ -281,7 +342,7 @@ describe('assertion authoring — claims live in the card', () => {
     model.addNotContains(n, 'x');
     model.removeNotContains(n, 0);
     expect(model.claimsOf(n)).toBeUndefined();
-    expect(model.serialize()).not.toContain('assertions');
+    expect(treeText(model)).not.toContain('assertions');
   });
 });
 
@@ -300,7 +361,8 @@ describe('branching (D2/D5) — the fork lives ON the card', () => {
     const took = play(model, 'take lamp');
     play(model, 'north', 'Garden');
     const id = model.branch(took, 'east')!;
-    expect(id).toBeGreaterThan(0);
+    expect(id).toMatch(/^[a-z0-9]{8}$/);
+    expect(id).not.toBe(model.mainLine);
     expect(model.activeLine).toBe(id);
     expect(model.isPending(id)).toBe(true);
 
@@ -308,7 +370,7 @@ describe('branching (D2/D5) — the fork lives ON the card', () => {
     expect(model.isPending(id)).toBe(false);
     const forkCard = model.cardAt(took)!;
     expect(forkCard.branches).toHaveLength(1);
-    expect(forkCard.branches![0].branch).toBe(id);
+    expect(forkCard.branches![0].id).toBe(id);
     expect(forkCard.branches![0].cards).toEqual([{ type: 'turn', command: 'east' }]);
     expect(model.isTurnVisible(alt)).toBe(true);
   });
@@ -323,11 +385,11 @@ describe('branching (D2/D5) — the fork lives ON the card', () => {
     expect(model.isTurnVisible(north)).toBe(false);
     expect(model.visibleOrdinals()).toEqual([0, 1, took, alt]);
 
-    model.activateLine(MAIN_LINE);
+    model.activateLine(model.mainLine);
     expect(model.isTurnVisible(north)).toBe(true);
     expect(model.isTurnVisible(alt)).toBe(false);
     expect(model.branchPointsOnPath()).toEqual([
-      { ordinal: took, lineId: MAIN_LINE, siblings: [id] },
+      { ordinal: took, lineId: model.mainLine, siblings: [id] },
     ]);
   });
 
@@ -343,7 +405,7 @@ describe('branching (D2/D5) — the fork lives ON the card', () => {
     expect(model.ownCommandsOf(id)).toEqual(['east', 'up']);
     expect(model.fullPathCommandsOf(id)).toEqual(['take lamp', 'east', 'up']);
     expect(model.pathStepsOf(id)).toEqual([
-      { command: 'take lamp', lineId: MAIN_LINE, index: 0 },
+      { command: 'take lamp', lineId: model.mainLine, index: 0 },
       { command: 'east', lineId: id, index: 0 },
       { command: 'up', lineId: id, index: 1 },
     ]);
@@ -358,9 +420,38 @@ describe('derived labels (Q-8) — computed, never persisted', () => {
     const id = model.branch(took, 'east')!;
     expect(model.labelOf(id)).toBe('den · east');   // pending command names it
     play(model, 'east', 'Shed');
-    expect(model.labelOf(MAIN_LINE)).toBe('opening-den');
+    expect(model.labelOf(model.mainLine)).toBe('opening-den');
     expect(model.labelOf(id)).toBe('den · east');
-    expect(model.serialize()).not.toContain('opening-den');
+    expect(treeText(model)).not.toContain('opening-den');
+  });
+
+  it('two lines sharing a derived label keep distinct ids (GH #494)', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    play(model, 'north', 'Garden');
+    const first = model.branch(took, 'east')!;
+    play(model, 'east', 'Shed');
+    model.activateLine(model.mainLine);
+    const second = model.branch(took, 'east')!;
+    play(model, 'east', 'Shed');
+
+    expect(model.labelOf(first)).toBe(model.labelOf(second));
+    expect(first).not.toBe(second);
+    expect(model.lineIds()).toEqual([model.mainLine, first, second]);
+  });
+
+  it('a room-less branch label falls back to its sibling position, not its id', () => {
+    // No delivery carries a room, so no fork room is known.
+    const model = new TreeSessionModel('mini', 42);
+    model.addTurn({ ordinal: 1, command: '', boot: true });
+    model.addTurn({ ordinal: 2, command: 'take lamp', boot: false });
+    model.addTurn({ ordinal: 3, command: 'north', boot: false });
+    model.branch(2, 'east');
+    model.addTurn({ ordinal: 4, command: 'east', boot: false });
+    model.activateLine(model.mainLine);
+    const second = model.branch(2, 'west')!;
+
+    expect(model.labelOf(second)).toBe('branch-2 · west');
   });
 
   it('re-visiting a line rebinds its own cards instead of appending a second copy (GH #541)', () => {
@@ -370,11 +461,11 @@ describe('derived labels (Q-8) — computed, never persisted', () => {
     const id = model.branch(took, 'east')!;
     const first = play(model, 'east', 'Shed');
     play(model, 'up', 'Loft');
-    const before = model.serialize();
+    const before = model.files();
 
     // A second visit: the driver replays the prefix suppressed (nothing is
     // delivered for it) and types the line's own commands live again.
-    model.activateLine(MAIN_LINE);
+    model.activateLine(model.mainLine);
     model.activateLine(id);
     model.beginRebind(id);
     const again = play(model, 'east', 'Shed');
@@ -382,7 +473,7 @@ describe('derived labels (Q-8) — computed, never persisted', () => {
 
     // The document holds each command once — byte for byte what it held.
     expect(model.ownCommandsOf(id)).toEqual(['east', 'up']);
-    expect(model.serialize()).toBe(before);
+    expect(model.files()).toEqual(before);
     // The new turns are the ones on the board; the first visit's are gone.
     expect(model.isTurnVisible(again)).toBe(true);
     expect(model.isTurnVisible(first)).toBe(false);
@@ -393,7 +484,7 @@ describe('derived labels (Q-8) — computed, never persisted', () => {
   it('beginRebind on an unknown line changes nothing', () => {
     const model = bootedModel();
     const took = play(model, 'take lamp');
-    model.beginRebind(999);
+    model.beginRebind('nosuchid');
     expect(model.visibleOrdinals()).toEqual([0, 1, took]);
   });
 });
@@ -409,17 +500,17 @@ describe('branch delete and tail-cut (D4/Q-4)', () => {
     play(model, 'down', 'Cellar');
 
     const result = model.deleteBranch(outer)!;
-    expect(result).toEqual({ parentLine: MAIN_LINE, wasActive: true });
-    expect(model.activeLine).toBe(MAIN_LINE);
-    expect(model.lineIds()).toEqual([MAIN_LINE]);
+    expect(result).toEqual({ parentLine: model.mainLine, wasActive: true });
+    expect(model.activeLine).toBe(model.mainLine);
+    expect(model.lineIds()).toEqual([model.mainLine]);
     expect(model.cardAt(took)!.branches).toBeUndefined();
     expect(model.lineIds().includes(inner)).toBe(false);
-    expect(model.serialize()).not.toContain('east');
+    expect(treeText(model)).not.toContain('east');
   });
 
   it('the main line never deletes', () => {
     const model = bootedModel();
-    expect(model.deleteBranch(MAIN_LINE)).toBeNull();
+    expect(model.deleteBranch(model.mainLine)).toBeNull();
   });
 
   it('tail-cut discards the card and everything after it, branches included', () => {
@@ -428,11 +519,11 @@ describe('branch delete and tail-cut (D4/Q-4)', () => {
     const north = play(model, 'north', 'Garden');
     model.branch(north, 'east');
     play(model, 'east', 'Shed');
-    model.activateLine(MAIN_LINE);
+    model.activateLine(model.mainLine);
     const south = play(model, 'south', 'Den');
 
     const result = model.tailCut(north)!;
-    expect(result).toEqual({ lineId: MAIN_LINE, activeSurvived: true });
+    expect(result).toEqual({ lineId: model.mainLine, activeSurvived: true });
     expect(model.document.cards.map(c => [c.type, c.command])).toEqual([
       ['opening', undefined],
       ['boot', undefined],
@@ -440,7 +531,7 @@ describe('branch delete and tail-cut (D4/Q-4)', () => {
     ]);
     expect(model.cardAt(north)).toBeUndefined();
     expect(model.cardAt(south)).toBeUndefined();
-    expect(model.lineIds()).toEqual([MAIN_LINE]);
+    expect(model.lineIds()).toEqual([model.mainLine]);
     expect(model.cardAt(took)).toBeDefined();
   });
 
@@ -455,8 +546,8 @@ describe('branch delete and tail-cut (D4/Q-4)', () => {
     // Cut the fork card itself from the main line: the branch rides it.
     const result = model.tailCut(took)!;
     expect(result.activeSurvived).toBe(false);
-    expect(model.activeLine).toBe(MAIN_LINE);
-    expect(model.lineIds()).toEqual([MAIN_LINE]);
+    expect(model.activeLine).toBe(model.mainLine);
+    expect(model.lineIds()).toEqual([model.mainLine]);
   });
 
   it('the opening and the boot look never tail-cut', () => {
@@ -497,7 +588,7 @@ describe('splice (D4) — repairs validated by whole-path replay', () => {
     play(model, 'north', 'Garden');
     const id = model.branch(took, 'east')!;
     play(model, 'east', 'Shed');
-    model.activateLine(MAIN_LINE);
+    model.activateLine(model.mainLine);
 
     expect(model.spliceOut(took)).toBe(true);
     expect(model.document.cards.map(c => c.command)).toEqual(
@@ -514,9 +605,10 @@ describe('opening self-heal — a claim-less opening gains the boot claims (GH #
   // self-heal looked covered while the three shipped trees never once healed —
   // the guard tested `=== undefined` and `{}` is not undefined.
   const RECORDED: TreeDocument = {
-    version: 2,
+    version: TREE_DOCUMENT_VERSION,
     story: 'mini',
     seed: 42,
+    id: 'root0000',
     cards: [
       { type: 'opening', assertions: {} },
       { type: 'boot' },
@@ -556,9 +648,10 @@ describe('opening self-heal — a claim-less opening gains the boot claims (GH #
 
 describe('binding replay — restore re-derives the board from the document', () => {
   const PERSISTED: TreeDocument = {
-    version: 2,
+    version: TREE_DOCUMENT_VERSION,
     story: 'mini',
     seed: 42,
+    id: 'root0000',
     cards: [
       { type: 'opening' },
       { type: 'boot' },
@@ -567,7 +660,7 @@ describe('binding replay — restore re-derives the board from the document', ()
         type: 'turn',
         command: 'north',
         branches: [
-          { branch: 1, cards: [{ type: 'turn', command: 'east' }] },
+          { id: 'branch01', cards: [{ type: 'turn', command: 'east' }] },
         ],
       },
     ],
@@ -584,42 +677,27 @@ describe('binding replay — restore re-derives the board from the document', ()
     expect(model.claimsOf(2)).toEqual({ contains: ['Taken'] });
 
     // The branch line binds its own cards when it becomes active.
-    model.activateLine(1);
+    model.activateLine('branch01');
     model.addTurn({ ordinal: 7, command: 'east', boot: false, room: 'Shed' });
     expect(model.cardAt(7)?.command).toBe('east');
     expect(model.document.cards[3].branches![0].cards).toHaveLength(1);
 
     // Fully bound: the next delivered turn appends — play continues.
-    model.activateLine(MAIN_LINE);
+    model.activateLine(model.mainLine);
     model.addTurn({ ordinal: 9, command: 'south', boot: false, room: 'Den' });
     expect(model.document.cards).toHaveLength(5);
-    expect(model.labelOf(1)).toBe('garden · east');
+    expect(model.labelOf('branch01')).toBe('garden · east');
   });
 
-  it('sibling-set-duplicate branch ids from a hand-edited document are reassigned', () => {
-    const doc: TreeDocument = {
-      version: 2,
-      story: 'mini',
-      seed: 42,
-      cards: [
-        { type: 'opening' },
-        { type: 'boot' },
-        {
-          type: 'turn',
-          command: 'a',
-          branches: [{ branch: 1, cards: [] }],
-        },
-        {
-          type: 'turn',
-          command: 'b',
-          branches: [{ branch: 1, cards: [] }],
-        },
-      ],
-    };
+  it('a loaded tree keeps its persisted ids: the root is the main line, each branch its own line', () => {
     const model = new TreeSessionModel('mini', 42);
-    model.load(doc);
-    const ids = model.lineIds().filter(id => id !== MAIN_LINE);
-    expect(new Set(ids).size).toBe(2);
+    model.load(structuredClone(PERSISTED));
+
+    expect(model.mainLine).toBe('root0000');
+    expect(model.activeLine).toBe('root0000');
+    expect(model.lineIds()).toEqual(['root0000', 'branch01']);
+    expect(model.lineParentOf('branch01')).toBe('root0000');
+    expect(Object.keys(model.files())).toContain('branch01.json');
   });
 });
 
@@ -657,9 +735,10 @@ describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => 
 
   it('a binding replay fills a missing ending and never overwrites a declared one', () => {
     const document: TreeDocument = {
-      version: 2,
+      version: TREE_DOCUMENT_VERSION,
       story: 'mini',
       seed: 42,
+      id: 'root0000',
       cards: [
         { type: 'opening' },
         { type: 'boot' },
@@ -671,7 +750,7 @@ describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => 
     const model = new TreeSessionModel('mini', 42);
     model.load(document);
     model.beginRebindAll();
-    model.activateLine(MAIN_LINE);
+    model.activateLine(model.mainLine);
     model.addTurn({ ordinal: 1, command: '', boot: true, room: 'Den' });
     model.addTurn({ ordinal: 2, command: 'north', boot: false, room: 'Garden' });
     model.addTurn({ ordinal: 3, command: 'open the box', boot: false, room: 'Garden', ending: 'box-opened' });
@@ -684,7 +763,7 @@ describe('END STATE cards (ADR-356 D4) — the story ended on this turn', () => 
     const model = bootedModel();
     const last = ++nextOrdinal;
     model.addTurn({ ordinal: last, command: 'open the box', boot: false, ending: 'box-opened' });
-    const read = deserializeTreeDocument(JSON.stringify(model.document));
+    const read = readBack(model);
     expect(read.status).toBe('ok');
     if (read.status !== 'ok') return;
     expect(read.document.cards.at(-1)?.ending).toBe('box-opened');

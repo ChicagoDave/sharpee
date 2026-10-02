@@ -1,0 +1,22 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Balcony",
+          "About ten feet.",
+          "you push yourself up and over."
+        ],
+        "states": [
+          "player.location = Balcony"
+        ]
+      },
+      "command": "e",
+      "id": "9teaoxlh",
+      "type": "turn"
+    }
+  ],
+  "id": "x4jrul67",
+  "ordinal": 1,
+  "parent": "ohuyp9mi"
+}

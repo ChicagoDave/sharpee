@@ -1,18 +1,28 @@
 /**
- * test-tree-document.test.ts — `sharpee test --tree` over the ADR-307 tree
- * document (REAL-PATH, rule 13a): a temp Chord author project (root `.story`
- * + `<story-id>.tests.json`) runs through the real chord compile →
+ * test-tree-document.test.ts — `sharpee test --tree` over a story's test tree
+ * (REAL-PATH, rule 13a): a temp Chord author project (root `.story` + a
+ * `<story-id>.tests/` directory of segments, ADR-355) runs through the real
+ * chord compile →
  * bootstrap → branch-tester tree-walker chain at the pinned seed — no stubs
  * of any owned dependency. Covers the Phase 2 exit bar: a branched document
  * produces PASS rows with derived labels through the real CLI, and a seeded
  * content edit surfaces as a failed assertion at the seam — not a crash, not
  * a silent pass, and never blocking the lines around it (D4).
  */
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import {
+  TREE_DOCUMENT_VERSION,
+  ensureSegmentIds,
+  segmentTree,
+  type TreeCard,
+  type TreeDocument,
+  type TreeFiles,
+} from '@sharpee/branch-tester';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { runTestCommand } from './test.js';
+import { runTreeDocumentCommand } from './test-tree-document.js';
 
 const STORY = `story
   title: Mini
@@ -51,15 +61,11 @@ end before
 `;
 
 /**
- * The document a Testing tab session would have written: opening, asserted
- * boot look, an examine turn carrying a branch (an alternate `look`), then a
- * move north. Seed pinned at 42 (D5).
+ * The tree a Testing tab session would have written: opening, asserted boot
+ * look, an examine turn carrying a branch (an alternate `look`), then a move
+ * north. Seed pinned at 42 (D5).
  */
-const TREE_DOCUMENT = {
-  version: 2,
-  story: 'mini',
-  seed: 42,
-  cards: [
+const TREE_CARDS: TreeCard[] = [
     { type: 'opening' },
     { type: 'boot', assertions: { contains: ['A small square den'] } },
     {
@@ -68,7 +74,7 @@ const TREE_DOCUMENT = {
       assertions: { contains: ['gleams dully'] },
       branches: [
         {
-          branch: 1,
+          id: 'branch01',
           cards: [
             { type: 'turn', command: 'look', assertions: { contains: ['A small square den'] } },
           ],
@@ -87,18 +93,38 @@ const TREE_DOCUMENT = {
         channels: [{ id: 'room-name', contains: ['Garden'] }],
       },
     },
-  ],
-};
+];
+
+/**
+ * The files the writer produces for a tree of these cards: a segmented
+ * `mini` tree at seed 42, every id minted the way the Testing tab mints them.
+ */
+function treeFilesOf(cards: TreeCard[]): TreeFiles {
+  const document: TreeDocument = {
+    version: TREE_DOCUMENT_VERSION,
+    story: 'mini',
+    seed: 42,
+    id: 'root0000',
+    cards: structuredClone(cards),
+  };
+  ensureSegmentIds(document);
+  return segmentTree(document);
+}
+
+/** Replace a project's `mini.tests/` directory with exactly these files. */
+function writeTree(projectDirectory: string, files: TreeFiles): void {
+  const treeDirectory = join(projectDirectory, 'mini.tests');
+  rmSync(treeDirectory, { recursive: true, force: true });
+  mkdirSync(treeDirectory);
+  for (const [name, text] of Object.entries(files)) writeFileSync(join(treeDirectory, name), text);
+}
 
 let projectDir: string;
 
 beforeAll(() => {
   projectDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-'));
   writeFileSync(join(projectDir, 'mini.story'), STORY);
-  writeFileSync(
-    join(projectDir, 'mini.tests.json'),
-    `${JSON.stringify(TREE_DOCUMENT, null, 2)}\n`,
-  );
+  writeTree(projectDir, treeFilesOf(TREE_CARDS));
 });
 
 afterAll(() => rmSync(projectDir, { recursive: true, force: true }));
@@ -123,8 +149,8 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
   it('discovery prefers the document, runs both lines against the real engine, labels derived (exit 0)', async () => {
     const { code, out } = await muted(() => runTestCommand(['--tree', projectDir]));
     expect(code).toBe(0);
-    // The document path announced itself — discovery routed here, not tests/.
-    expect(out).toContain('Tree document: mini.tests.json (seed 42, 2 line(s))');
+    // The tree announced itself — discovery routed here, not tests/.
+    expect(out).toContain('Test tree: mini.tests/ (seed 42, 2 line(s))');
     // Derived labels (D2/Q-8): the main line from its opening room, the
     // branch from its fork room and first command.
     expect(out).toContain('✓ opening-den');
@@ -171,27 +197,22 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
             '  prologue: Night falls on the den.\n',
         ),
       );
-      writeFileSync(
-        join(openingDir, 'mini.tests.json'),
-        `${JSON.stringify({
-          version: 2,
-          story: 'mini',
-          seed: 42,
-          cards: [
-            {
-              type: 'opening',
-              assertions: {
-                channels: [
-                  { id: 'prologue', contains: ['Night falls on the den.'] },
-                  { id: 'info.title', is: 'Mini' },
-                  { id: 'info.description', is: 'A small square test story.' },
-                ],
-              },
+      writeTree(
+        openingDir,
+        treeFilesOf([
+          {
+            type: 'opening',
+            assertions: {
+              channels: [
+                { id: 'prologue', contains: ['Night falls on the den.'] },
+                { id: 'info.title', is: 'Mini' },
+                { id: 'info.description', is: 'A small square test story.' },
+              ],
             },
-            { type: 'boot', assertions: { contains: ['A small square den'] } },
-            { type: 'turn', command: 'north', assertions: { contains: ['Roses everywhere'] } },
-          ],
-        }, null, 2)}\n`,
+          },
+          { type: 'boot', assertions: { contains: ['A small square den'] } },
+          { type: 'turn', command: 'north', assertions: { contains: ['Roses everywhere'] } },
+        ]),
       );
 
       const written: string[] = [];
@@ -235,20 +256,15 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
 
       // The dotted-id chain bites: a persisted opening claim on `info.title`
       // with a wrong value must be captured, evaluated, and cited — exit 1.
-      writeFileSync(
-        join(openingDir, 'mini.tests.json'),
-        `${JSON.stringify({
-          version: 2,
-          story: 'mini',
-          seed: 42,
-          cards: [
-            {
-              type: 'opening',
-              assertions: { channels: [{ id: 'info.title', is: 'Wrong Title' }] },
-            },
-            { type: 'boot', assertions: { contains: ['A small square den'] } },
-          ],
-        }, null, 2)}\n`,
+      writeTree(
+        openingDir,
+        treeFilesOf([
+          {
+            type: 'opening',
+            assertions: { channels: [{ id: 'info.title', is: 'Wrong Title' }] },
+          },
+          { type: 'boot', assertions: { contains: ['A small square den'] } },
+        ]),
       );
       const failed = await muted(() => runTestCommand(['--tree', openingDir]));
       expect(failed.code).toBe(1);
@@ -256,17 +272,12 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
 
       // A CLAIM-LESS opening produces no opening row at all — nothing is
       // assumed at run time.
-      writeFileSync(
-        join(openingDir, 'mini.tests.json'),
-        `${JSON.stringify({
-          version: 2,
-          story: 'mini',
-          seed: 42,
-          cards: [
-            { type: 'opening' },
-            { type: 'boot', assertions: { contains: ['A small square den'] } },
-          ],
-        }, null, 2)}\n`,
+      writeTree(
+        openingDir,
+        treeFilesOf([
+          { type: 'opening' },
+          { type: 'boot', assertions: { contains: ['A small square den'] } },
+        ]),
       );
       const bareOpening: string[] = [];
       const stdout2 = vi
@@ -294,18 +305,13 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     const bareDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-bare-'));
     try {
       writeFileSync(join(bareDir, 'mini.story'), STORY);
-      writeFileSync(
-        join(bareDir, 'mini.tests.json'),
-        `${JSON.stringify({
-          version: 2,
-          story: 'mini',
-          seed: 42,
-          cards: [
-            { type: 'opening' },
-            { type: 'boot' },
-            { type: 'turn', command: 'north' },
-          ],
-        }, null, 2)}\n`,
+      writeTree(
+        bareDir,
+        treeFilesOf([
+          { type: 'opening' },
+          { type: 'boot' },
+          { type: 'turn', command: 'north' },
+        ]),
       );
       const { code, out } = await muted(() => runTestCommand(['--tree', bareDir]));
       expect(code).toBe(1);
@@ -316,33 +322,97 @@ describe('sharpee test --tree over a tree document (ADR-307 Phase 2, REAL-PATH)'
     }
   }, 60_000);
 
-  it('a newer-version document is refused by name (exit 2, AC-4)', async () => {
-    const refusedDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-refused-'));
+  /**
+   * Run the CLI over a fresh project whose tree is `files`; the tree is the
+   * only thing varied, so each case carries exactly one defect.
+   */
+  async function runOver(label: string, files: TreeFiles): Promise<{ code: number; out: string; err: string }> {
+    const dir = mkdtempSync(join(tmpdir(), `devkit-tree-doc-${label}-`));
     try {
-      writeFileSync(join(refusedDir, 'mini.story'), STORY);
-      writeFileSync(
-        join(refusedDir, 'mini.tests.json'),
-        JSON.stringify({ ...TREE_DOCUMENT, version: 99 }),
-      );
-      const { code, err } = await muted(() => runTestCommand(['--tree', refusedDir]));
-      expect(code).toBe(2);
-      expect(err).toContain('version 99');
-      expect(err).toContain('update Sharpee');
+      writeFileSync(join(dir, 'mini.story'), STORY);
+      writeTree(dir, files);
+      return await muted(() => runTestCommand(['--tree', dir]));
     } finally {
-      rmSync(refusedDir, { recursive: true, force: true });
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it('a newer-version tree is refused by name (exit 2)', async () => {
+    const files = treeFilesOf(TREE_CARDS);
+    files['manifest.json'] = `${JSON.stringify({ seed: 42, story: 'mini', version: 99 }, null, 2)}\n`;
+    const { code, out, err } = await runOver('refused', files);
+    expect(code).toBe(2);
+    expect(err).toBe(
+      'test: mini.tests/: this test tree is version 99; this build reads up to version 3 — update Sharpee to open it',
+    );
+    expect(out).not.toContain('Loading story');
+  });
+
+  it('a malformed tree is an error at the CLI, never a silent pass (exit 2)', async () => {
+    const files = treeFilesOf(TREE_CARDS);
+    files['manifest.json'] = '{ not json';
+    const { code, out, err } = await runOver('malformed', files);
+    expect(code).toBe(2);
+    expect(err).toMatch(/^test: mini\.tests\/: manifest\.json is not valid JSON/);
+    expect(out).not.toContain('Loading story');
+  });
+
+  it('a tree whose manifest is missing is malformed, not run at a default seed (exit 2)', async () => {
+    const { ['manifest.json']: _manifest, ...files } = treeFilesOf(TREE_CARDS);
+    const { code, err } = await runOver('no-manifest', files);
+    expect(code).toBe(2);
+    expect(err).toBe('test: mini.tests/: the tree has no manifest.json');
+  });
+
+  it('a segment naming a missing parent is malformed, never run with the subtree dropped (exit 2)', async () => {
+    const files = treeFilesOf(TREE_CARDS);
+    const branch = JSON.parse(files['branch01.json']) as Record<string, unknown>;
+    branch['parent'] = 'gone0000';
+    files['branch01.json'] = `${JSON.stringify(branch, null, 2)}\n`;
+    const { code, err } = await runOver('dangling', files);
+    expect(code).toBe(2);
+    expect(err).toBe("test: mini.tests/: segment 'branch01' names parent 'gone0000', which no segment in the tree carries");
+  });
+
+  it('a directory nested inside the tree is not read as a tree file — the run is unaffected (exit 0)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-nested-'));
+    try {
+      writeFileSync(join(dir, 'mini.story'), STORY);
+      writeTree(dir, treeFilesOf(TREE_CARDS));
+      mkdirSync(join(dir, 'mini.tests', 'notes'));
+      writeFileSync(join(dir, 'mini.tests', 'notes', 'todo.txt'), 'later\n');
+      const { code, out } = await muted(() => runTestCommand(['--tree', dir]));
+      expect(code).toBe(0);
+      expect(out).toContain('Test tree: mini.tests/ (seed 42, 2 line(s))');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }, 60_000);
+
+  it('a tree directory that cannot be read is an error naming the path, nothing runs (exit 2)', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-unreadable-'));
+    try {
+      writeFileSync(join(dir, 'mini.story'), STORY);
+      const treePath = join(dir, 'mini.tests');
+      const { code, out, err } = await muted(() =>
+        runTreeDocumentCommand({ dir, treePath, verbose: false, stopOnFailure: false }),
+      );
+      expect(code).toBe(2);
+      expect(err.startsWith(`test: cannot read ${treePath}: ENOENT`)).toBe(true);
+      expect(out).toBe('');
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
     }
   });
 
-  it('a malformed document is an error at the CLI, never a silent pass (exit 2)', async () => {
-    const malformedDir = mkdtempSync(join(tmpdir(), 'devkit-tree-doc-malformed-'));
-    try {
-      writeFileSync(join(malformedDir, 'mini.story'), STORY);
-      writeFileSync(join(malformedDir, 'mini.tests.json'), '{ not json');
-      const { code, err } = await muted(() => runTestCommand(['--tree', malformedDir]));
-      expect(code).toBe(2);
-      expect(err).toContain('not valid JSON');
-    } finally {
-      rmSync(malformedDir, { recursive: true, force: true });
-    }
+  it('the canonical gate: a re-indented segment is named and nothing runs (exit 2)', async () => {
+    const files = treeFilesOf(TREE_CARDS);
+    files['branch01.json'] = `${JSON.stringify(JSON.parse(files['branch01.json']), null, 1)}\n`;
+    const { code, out, err } = await runOver('non-canonical', files);
+    expect(code).toBe(2);
+    expect(err).toBe(
+      'test: mini.tests/ has files not in canonical form (re-save them from the Testing tab):\n  branch01.json',
+    );
+    expect(out).not.toContain('Loading story');
   });
 });

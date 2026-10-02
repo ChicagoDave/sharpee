@@ -1,0 +1,34 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "notContains": [
+          "Calm yourself, Fossville"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "k4qh783r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "king's ransom in jewelry",
+          "Dame Sandler's eyebrows raise slightly as you walk into her"
+        ],
+        "states": [
+          "player.location = Jeweler's Shop"
+        ]
+      },
+      "command": "e",
+      "id": "f232gkuq",
+      "type": "turn"
+    }
+  ],
+  "id": "386erglj",
+  "ordinal": 0,
+  "parent": "9vuw9prp"
+}

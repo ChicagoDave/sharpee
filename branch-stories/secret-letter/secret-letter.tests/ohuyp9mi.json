@@ -1,0 +1,193 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Rooftop",
+          "start shimmying up",
+          "haul yourself over.",
+          "Chimneys and stovepipes stand sentry",
+          "Bobby has exclaimed the virtues of rooftop travel before"
+        ],
+        "states": [
+          "player.location = Rooftop"
+        ]
+      },
+      "command": "up",
+      "id": "b6b6yjg7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rooftop",
+          "Chimneys and stovepipes stand sentry"
+        ],
+        "notContains": [
+          "Bobby has exclaimed"
+        ]
+      },
+      "command": "look",
+      "id": "9dxo8lsc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cheery smoke billows up from several of the chimneys."
+        ]
+      },
+      "command": "x chimneys",
+      "id": "sy9u53vo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted coal-smoke-smell"
+        ]
+      },
+      "command": "smell",
+      "id": "n8y9o76o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "get a faceful of soot for your trouble."
+        ]
+      },
+      "command": "search chimneys",
+      "id": "8cczu4gy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's the black coal-smoke that hangs over most districts in Toresal."
+        ]
+      },
+      "command": "x smoke",
+      "id": "r5vvepc4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're not climbing back down until you find what Bobby told you to find... the letter in Fossville's mansion."
+        ]
+      },
+      "command": "d",
+      "id": "fjtyf6dv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're on the rooftops already; this is as high as you can go."
+        ]
+      },
+      "command": "u",
+      "id": "hfk5p0uu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You need to focus on getting to Fossville's mansion, and if memory serves, that's east of here."
+        ]
+      },
+      "command": "n",
+      "id": "7im475im",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rooftop Edge",
+          "Far, far below, you can see all the little people",
+          "To the east, across the gap, you spy a balcony."
+        ],
+        "states": [
+          "player.location = Rooftop Edge"
+        ]
+      },
+      "command": "e",
+      "id": "2b1oyrqs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "that must be Baron Fossville's house."
+        ]
+      },
+      "command": "x balcony",
+      "id": "5usobl1w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "All the people way down there on Commerce Street look like ants from up here."
+        ]
+      },
+      "command": "x people",
+      "id": "53979l92",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cheery smoke billows up from several of the chimneys."
+        ]
+      },
+      "command": "x chimneys",
+      "id": "6m4sb6ko",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted balcony-beyond-reach"
+        ]
+      },
+      "command": "touch balcony",
+      "id": "479bh2xr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The only way down from here is a long, deadly fall."
+        ]
+      },
+      "command": "d",
+      "id": "poh0obxp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The rooftops end that way in a three-story drop."
+        ]
+      },
+      "command": "ne",
+      "id": "ig72ytf3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The thought of exploring the roofs is tantalizing, but you need to focus on Bobby's mission first."
+        ]
+      },
+      "command": "w",
+      "id": "066gi3xp",
+      "type": "turn"
+    }
+  ],
+  "id": "ohuyp9mi",
+  "ordinal": 0,
+  "parent": "h9gunfr0"
+}

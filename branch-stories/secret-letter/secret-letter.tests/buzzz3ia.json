@@ -1,0 +1,490 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "devastatingly handsome",
+          "He doesn't even know that you're really a girl"
+        ]
+      },
+      "command": "x bobby",
+      "id": "v2l3zw8u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted bobby-never-hurt"
+        ]
+      },
+      "command": "attack bobby",
+      "id": "z9gwzwwr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Hey, Bobby, you mind if I ask you a question?'"
+        ]
+      },
+      "command": "talk to bobby",
+      "id": "2p66b14l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "n",
+      "id": "rabtw4cz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "copper coin"
+        ],
+        "states": [
+          "player.location = Back Alley"
+        ]
+      },
+      "command": "s",
+      "id": "7ek3y0bm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "small courtyard surrounded by old, run-down buildings"
+        ],
+        "states": [
+          "player.location = Entrance to Maiden House"
+        ]
+      },
+      "command": "sw",
+      "id": "nil7i7ns",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Well, okay, mostly bad."
+        ]
+      },
+      "command": "x door",
+      "id": "31zhdztl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "cooking grease and laundry soap",
+          "The evening churchbells are ringing",
+          "Widow Theresa turns to you."
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "s",
+      "id": "ie36i7xe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "it will stay locked until sunup"
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "n",
+      "id": "6gd28ne2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Don't trouble yourself, Jacqueline,' sneers Widow Theresa."
+        ]
+      },
+      "command": "open door",
+      "id": "ftzuv8rl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "in fourteen years you've never managed to steal it from her"
+        ]
+      },
+      "command": "unlock door",
+      "id": "rewluf43",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "harsh, sour-faced woman"
+        ]
+      },
+      "command": "x theresa",
+      "id": "hrfq678a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Widow Theresa has her eye on you constantly"
+        ]
+      },
+      "command": "take key",
+      "id": "gqsg89to",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Not so fast,' snaps Widow Theresa"
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "sw",
+      "id": "0zqbqd2u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "watching you like a hawk"
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "sw",
+      "id": "ti8g82c2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "rows upon rows of pots and pans",
+          "Fiona looks over her shoulder as you enter the kitchen."
+        ],
+        "states": [
+          "player.location = Kitchen"
+        ]
+      },
+      "command": "ne",
+      "id": "6sylumb4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "plump and genial woman"
+        ]
+      },
+      "command": "x fiona",
+      "id": "3lnla1xe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fiona smiles at you. 'Thank you, dear.'"
+        ]
+      },
+      "command": "wash dishes",
+      "id": "ma1bv73f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You continue helping with the dishes"
+        ]
+      },
+      "command": "dry dishes",
+      "id": "924i6xyi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "leave the pots and pans alone"
+        ]
+      },
+      "command": "take pans",
+      "id": "yyjjvazl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Good night, Jacqueline,' she says."
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "sw",
+      "id": "li1y4r0m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "sharp stink of lye soap",
+          "Widow Shannon looks over her shoulder and gives you a"
+        ],
+        "states": [
+          "player.location = Laundry"
+        ]
+      },
+      "command": "se",
+      "id": "1cibp51k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "youngest of the widows in Maiden House"
+        ]
+      },
+      "command": "x shannon",
+      "id": "j0d4m29l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "someone in Maiden House would end up having to go naked"
+        ]
+      },
+      "command": "take shirts",
+      "id": "gdb0f9sw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you definitely don't need a bath in that"
+        ]
+      },
+      "command": "enter tub",
+      "id": "xgb8mjt0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Take care, Jacqueline.'"
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "nw",
+      "id": "ger6d1i5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "long room lined with rough bunks"
+        ],
+        "states": [
+          "player.location = Dormitory"
+        ]
+      },
+      "command": "nw",
+      "id": "xf95yq23",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "pebbles, pennies, bits of string"
+        ]
+      },
+      "command": "x children",
+      "id": "u51skul0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're not really in the mood for a chat."
+        ]
+      },
+      "command": "talk to children",
+      "id": "5xugd82z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "your breath is coming slower, heavier",
+          "A knock wakes you."
+        ]
+      },
+      "command": "sleep",
+      "id": "cfcdnysu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The other children are all sound asleep in their bunks."
+        ]
+      },
+      "command": "x children",
+      "id": "1qevf2wy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You don't want to wake them."
+        ]
+      },
+      "command": "talk to children",
+      "id": "rq3jpxyd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "A knock wakes you."
+        ]
+      },
+      "command": "sleep",
+      "id": "ntn3m2kl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Hallway",
+          "emitted tiptoe"
+        ]
+      },
+      "command": "se",
+      "id": "3ddgssz3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "narrow closet, with a hole in the floor"
+        ],
+        "states": [
+          "player.location = Privy"
+        ]
+      },
+      "command": "sw",
+      "id": "ncg965da",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "two hand-widths of clearance"
+        ]
+      },
+      "command": "x window",
+      "id": "jvzejebl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "adamantly stuck halfway"
+        ]
+      },
+      "command": "open window",
+      "id": "lbdbroi3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It wobbles under your feet"
+        ]
+      },
+      "command": "climb bench",
+      "id": "qyxd0ak6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You're free!",
+          "extra laundry duty for a few days"
+        ],
+        "states": [
+          "player.location = Behind Maiden House"
+        ]
+      },
+      "command": "enter window",
+      "id": "sy704k3x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stone wall is about ten feet high."
+        ]
+      },
+      "command": "x wall",
+      "id": "n4jvdieq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the stones are too smooth to get a fingerhold on"
+        ],
+        "states": [
+          "player.location = Behind Maiden House"
+        ]
+      },
+      "command": "n",
+      "id": "9fvceuu9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "there's no need to sneak into Maiden House"
+        ],
+        "states": [
+          "player.location = Behind Maiden House"
+        ]
+      },
+      "command": "e",
+      "id": "ee26hekv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Entrance to Maiden House"
+        ]
+      },
+      "command": "ne",
+      "id": "6cz9w91v",
+      "type": "turn"
+    }
+  ],
+  "id": "buzzz3ia",
+  "ordinal": 1,
+  "parent": "o7usa7tt"
+}

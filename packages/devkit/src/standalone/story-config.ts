@@ -52,7 +52,7 @@ export class StoryConfigError extends Error {
   }
 }
 
-/** `harbor.story` → `<dir>/harbor.config.json` (the tests.json naming precedent). */
+/** `harbor.story` → `<dir>/harbor.config.json` (named after the story, like `<story-id>.tests/`). */
 export function configPathFor(storyFile: string): string {
   const resolved = path.resolve(storyFile);
   const stem = path.basename(resolved, '.story');

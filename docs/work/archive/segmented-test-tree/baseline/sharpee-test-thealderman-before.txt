@@ -1,0 +1,123 @@
+Loading story from: /Users/david/repos/sharpee/stories/thealderman/chord
+Tree document: thealderman.tests.json (seed 42, 1 line(s))
+
+✗ opening-foyer — ask viola about the killer: Channel "character" does not contain ""npcId":"a05"" ([{"turn":3,"kind":"character.author.ledger_mint","npcId":"a04","data":{"audience":"a01","factId":"killer","claimedValue":"nobody","heldValue":"viola-wainright","actionId":"if.action.asking","turn":3,"_transactionId":"txn:3:action"}},{"turn":3,"kind":"character.author.pressure_deposit","npcId":"a04","data":{"feed":"pin:killer","value":15,"band":"clear","actionId":"if.action.asking","turn":3,"_transactionId":"txn:3:action"}}])
+3 cards passing, 8 assertions passing, 1 card failing, 1 assertion failing
+
+Derived rule tests (ADR-356): 69 branches
+◌ Ross Bielack · topic stephanie · refused ross-stephanie-angry — SKIPPED unrecognized: "ross-bielack" declares no states (thealderman.story:278)
+✓ Ross Bielack · topic stephanie
+✗ Ross Bielack · topic the relationship — emitted ross-relationship-deflect: "ross-relationship-deflect" was not emitted. Emitted: if.event.asked (ross-relationship-admits), character.scene.scene-opened, character.scene.floor-change, character.influence.applied (john-menace-noticed), if.event.actor_exited, if.event.actor_moved, if.event.actor_entered (thealderman.story:280)
+✓ Ross Bielack · topic gambling
+✓ Ross Bielack · topic the alibi
+✓ Ross Bielack · topic jack
+✓ Viola Wainright · topic stephanie
+✓ Viola Wainright · topic the family
+✓ Viola Wainright · topic the alibi
+✓ Viola Wainright · topic the inheritance
+✓ Viola Wainright · topic the program
+✓ Viola Wainright · topic the killer
+✓ Viola Wainright · topic the truth
+✗ John Barber · topic the business arrangement — emitted john-business-reveal: "john-business-reveal" was not emitted. Emitted: if.event.asked (if.action.asking.unknown_topic), character.scene.scene-opened, character.scene.floor-change, character.author.arbitration, character.influence.applied (john-menace-noticed), if.event.actor_exited, if.event.actor_moved, if.event.actor_entered (thealderman.story:385)
+✓ John Barber · topic stephanie
+✓ John Barber · topic the alibi
+✓ John Barber · topic jack
+✗ Catherine Shelby · topic the viola secret — emitted catherine-viola-secret-reveal: "catherine-viola-secret-reveal" was not emitted. Emitted: if.event.asked (if.action.asking.unknown_topic), character.scene.scene-opened, character.scene.floor-change, character.author.arbitration, character.influence.applied (john-menace-noticed), if.event.actor_exited, if.event.actor_moved, if.event.actor_entered, character.scene.scene-opened, character.scene.floor-change (thealderman.story:425)
+✓ Catherine Shelby · topic viola
+✓ Catherine Shelby · topic stephanie
+✓ Catherine Shelby · topic the will
+✓ Catherine Shelby · topic ross
+✓ Catherine Shelby · topic chelsea
+✓ Catherine Shelby · topic jack
+✓ Catherine Shelby · topic john
+✓ Catherine Shelby · topic the alibi
+✓ Catherine Shelby · topic the guests
+✓ Jack Margolin · topic the property
+✓ Jack Margolin · topic stephanie
+✓ Jack Margolin · topic the hotel
+✓ Jack Margolin · topic the alibi
+✗ Chelsea Sumner · topic the locket — emitted chelsea-locket-clutch: "chelsea-locket-clutch" was not emitted. Emitted: if.event.asked (chelsea-locket-admits), character.scene.scene-opened, character.scene.floor-change, character.influence.applied (john-menace-noticed), character.scene.scene-opened, character.scene.floor-change (thealderman.story:519)
+✓ Chelsea Sumner · topic the mother
+✓ Chelsea Sumner · topic stephanie
+✓ Chelsea Sumner · topic the alibi
+✓ Chelsea Sumner · topic catherine
+◌ Ross Bielack · on accusing · when wrong-ross — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:556)
+◌ Ross Bielack · on accusing · when wrong-john — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:561)
+◌ Ross Bielack · on accusing · when wrong-catherine — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:565)
+◌ Ross Bielack · on accusing · when wrong-jack — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:569)
+◌ Ross Bielack · on accusing · when wrong-chelsea — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:574)
+◌ Viola Wainright · on accusing · when wrong-ross — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:556)
+◌ Viola Wainright · on accusing · when wrong-john — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:561)
+◌ Viola Wainright · on accusing · when wrong-catherine — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:565)
+◌ Viola Wainright · on accusing · when wrong-jack — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:569)
+◌ Viola Wainright · on accusing · when wrong-chelsea — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:574)
+◌ John Barber · on accusing · when wrong-ross — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:556)
+◌ John Barber · on accusing · when wrong-john — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:561)
+◌ John Barber · on accusing · when wrong-catherine — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:565)
+◌ John Barber · on accusing · when wrong-jack — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:569)
+◌ John Barber · on accusing · when wrong-chelsea — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:574)
+◌ Catherine Shelby · on accusing · when wrong-ross — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:556)
+◌ Catherine Shelby · on accusing · when wrong-john — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:561)
+◌ Catherine Shelby · on accusing · when wrong-catherine — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:565)
+◌ Catherine Shelby · on accusing · when wrong-jack — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:569)
+◌ Catherine Shelby · on accusing · when wrong-chelsea — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:574)
+◌ Jack Margolin · on accusing · when wrong-ross — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:556)
+◌ Jack Margolin · on accusing · when wrong-john — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:561)
+◌ Jack Margolin · on accusing · when wrong-catherine — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:565)
+◌ Jack Margolin · on accusing · when wrong-jack — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:569)
+◌ Jack Margolin · on accusing · when wrong-chelsea — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:574)
+◌ Chelsea Sumner · on accusing · when wrong-ross — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:556)
+◌ Chelsea Sumner · on accusing · when wrong-john — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:561)
+◌ Chelsea Sumner · on accusing · when wrong-catherine — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:565)
+◌ Chelsea Sumner · on accusing · when wrong-jack — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:569)
+◌ Chelsea Sumner · on accusing · when wrong-chelsea — SKIPPED select-value: a `select on` over something other than a state (thealderman.story:574)
+✓ story · before the game starts
+◌ story · define action accusing · refused accuse-whom — SKIPPED command-shape: slot `suspect` of `accusing` has no filler (thealderman.story:540)
+◌ story · define action accusing — SKIPPED no-claims: the body has no effects (thealderman.story:536)
+
+Branches exercised: 36 / 69
+Derived failures: 4
+Not exercised (33):
+  thealderman.story:278 · Ross Bielack · topic stephanie · refused ross-stephanie-angry — unrecognized ("ross-bielack" declares no states)
+  thealderman.story:556 · Ross Bielack · on accusing · when wrong-ross — select-value (a `select on` over something other than a state)
+  thealderman.story:561 · Ross Bielack · on accusing · when wrong-john — select-value (a `select on` over something other than a state)
+  thealderman.story:565 · Ross Bielack · on accusing · when wrong-catherine — select-value (a `select on` over something other than a state)
+  thealderman.story:569 · Ross Bielack · on accusing · when wrong-jack — select-value (a `select on` over something other than a state)
+  thealderman.story:574 · Ross Bielack · on accusing · when wrong-chelsea — select-value (a `select on` over something other than a state)
+  thealderman.story:556 · Viola Wainright · on accusing · when wrong-ross — select-value (a `select on` over something other than a state)
+  thealderman.story:561 · Viola Wainright · on accusing · when wrong-john — select-value (a `select on` over something other than a state)
+  thealderman.story:565 · Viola Wainright · on accusing · when wrong-catherine — select-value (a `select on` over something other than a state)
+  thealderman.story:569 · Viola Wainright · on accusing · when wrong-jack — select-value (a `select on` over something other than a state)
+  thealderman.story:574 · Viola Wainright · on accusing · when wrong-chelsea — select-value (a `select on` over something other than a state)
+  thealderman.story:556 · John Barber · on accusing · when wrong-ross — select-value (a `select on` over something other than a state)
+  thealderman.story:561 · John Barber · on accusing · when wrong-john — select-value (a `select on` over something other than a state)
+  thealderman.story:565 · John Barber · on accusing · when wrong-catherine — select-value (a `select on` over something other than a state)
+  thealderman.story:569 · John Barber · on accusing · when wrong-jack — select-value (a `select on` over something other than a state)
+  thealderman.story:574 · John Barber · on accusing · when wrong-chelsea — select-value (a `select on` over something other than a state)
+  thealderman.story:556 · Catherine Shelby · on accusing · when wrong-ross — select-value (a `select on` over something other than a state)
+  thealderman.story:561 · Catherine Shelby · on accusing · when wrong-john — select-value (a `select on` over something other than a state)
+  thealderman.story:565 · Catherine Shelby · on accusing · when wrong-catherine — select-value (a `select on` over something other than a state)
+  thealderman.story:569 · Catherine Shelby · on accusing · when wrong-jack — select-value (a `select on` over something other than a state)
+  thealderman.story:574 · Catherine Shelby · on accusing · when wrong-chelsea — select-value (a `select on` over something other than a state)
+  thealderman.story:556 · Jack Margolin · on accusing · when wrong-ross — select-value (a `select on` over something other than a state)
+  thealderman.story:561 · Jack Margolin · on accusing · when wrong-john — select-value (a `select on` over something other than a state)
+  thealderman.story:565 · Jack Margolin · on accusing · when wrong-catherine — select-value (a `select on` over something other than a state)
+  thealderman.story:569 · Jack Margolin · on accusing · when wrong-jack — select-value (a `select on` over something other than a state)
+  thealderman.story:574 · Jack Margolin · on accusing · when wrong-chelsea — select-value (a `select on` over something other than a state)
+  thealderman.story:556 · Chelsea Sumner · on accusing · when wrong-ross — select-value (a `select on` over something other than a state)
+  thealderman.story:561 · Chelsea Sumner · on accusing · when wrong-john — select-value (a `select on` over something other than a state)
+  thealderman.story:565 · Chelsea Sumner · on accusing · when wrong-catherine — select-value (a `select on` over something other than a state)
+  thealderman.story:569 · Chelsea Sumner · on accusing · when wrong-jack — select-value (a `select on` over something other than a state)
+  thealderman.story:574 · Chelsea Sumner · on accusing · when wrong-chelsea — select-value (a `select on` over something other than a state)
+  thealderman.story:540 · story · define action accusing · refused accuse-whom — command-shape (slot `suspect` of `accusing` has no filler)
+  thealderman.story:536 · story · define action accusing — no-claims (the body has no effects)
+
+Endings reached: 0 / 2
+Not reached (2):
+  thealderman.story:554 · viola-guilty (win)
+  thealderman.story:560 · case-collapsed (lose)
+Rooms entered: 5 / 8
+Not entered (3):
+  kitchen
+  staircase
+  room-three-oh-two

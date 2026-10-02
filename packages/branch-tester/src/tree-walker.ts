@@ -1,9 +1,11 @@
 /**
  * tree-walker.ts — running the Testing tree document (ADR-307 D4/D5/D6).
  *
- * The greenfield runtime for the tree document (`<story-id>.tests.json`):
- * `sharpee test --tree` deserializes the same JSON the Testing tab writes and
- * this module walks it. It owes the deprecated transcript tree runner
+ * The greenfield runtime for the test tree (`<story-id>.tests/`, ADR-355):
+ * `sharpee test` assembles the same segments the Testing tab writes and this
+ * module walks the assembled tree. A line's id is the id of the segment it
+ * begins with (ADR-355 D5), so two lines sharing a derived label never share
+ * an identity. It owes the deprecated transcript tree runner
  * (`tree-runner.ts`, ADR-302) nothing — no stem identities, no header
  * inheritance, no per-node reseeds (David's ruling 2026-08-10: v1 is
  * deprecated; the walker is designed on the tree's own terms).
@@ -125,12 +127,19 @@ export type TreeGameLoader = () => Promise<TreeWalkerGame>;
  * run row reports on.
  */
 export interface TreeLine {
-  /** Structural identity: `main`, then `main/b<id>` per branch, recursively. */
+  /**
+   * The line's stable identity (ADR-355 D5): the id of the segment it begins
+   * with — the root segment's for the main line, the branch segment's for a
+   * branch. Persisted, opaque, and unmoved by edits elsewhere in the tree.
+   */
   readonly id: string;
-  /** Owning line, absent for the main line. */
+  /** Owning line's id, absent for the main line. */
   readonly parentId?: string;
-  /** The branch's stable id from the document, absent for the main line. */
-  readonly branchId?: number;
+  /**
+   * The branch's 1-based position among its fork's branches, absent for the
+   * main line. Display only (a label fallback) — never an identity.
+   */
+  readonly ordinal?: number;
   /** Card index in the PARENT line's `cards` the fork lives on. */
   readonly forkIndex?: number;
   /**
@@ -248,14 +257,14 @@ export function flattenTreeLines(document: TreeDocument): {
     id: string,
     path: string,
     isMain: boolean,
-    parent?: { parentId: string; branchId: number; forkIndex: number },
+    parent?: { parentId: string; ordinal: number; forkIndex: number },
     prefix: string[] = [],
   ): void => {
     const endingIndex = cards.findIndex((card) => card.ending !== undefined);
     lines.push({
       id,
       ...(parent !== undefined
-        ? { parentId: parent.parentId, branchId: parent.branchId, forkIndex: parent.forkIndex }
+        ? { parentId: parent.parentId, ordinal: parent.ordinal, forkIndex: parent.forkIndex }
         : {}),
       prefix,
       cards,
@@ -290,20 +299,20 @@ export function flattenTreeLines(document: TreeDocument): {
       // executed, so part of what a replay must repeat), the opening nothing.
       const command = commandOf(card);
       if (command !== undefined) stream.push(command);
-      for (const branch of card.branches ?? []) {
+      (card.branches ?? []).forEach((branch, position) => {
         walk(
           branch.cards,
-          `${id}/b${branch.branch}`,
-          `${cardPath}.branches[b${branch.branch}].cards`,
+          branch.id,
+          `${cardPath}.branches[${branch.id}].cards`,
           false,
-          { parentId: id, branchId: branch.branch, forkIndex: index },
+          { parentId: id, ordinal: position + 1, forkIndex: index },
           [...stream],
         );
-      }
+      });
     });
   };
 
-  walk(document.cards, 'main', 'cards', true);
+  walk(document.cards, document.id, 'cards', true);
   return { lines, defects: defects.length > 0 ? defects : [] };
 }
 
@@ -788,7 +797,7 @@ function execErrorCardIndexOf(
 function labelOf(line: TreeLine, game: TreeWalkerGame): string {
   const room = roomSlugOf(captureWorldSnapshot(game as never)?.location?.name);
   if (line.parentId === undefined) return mainLineLabelOf(room);
-  return branchLineLabelOf(room, line.branchId!, line.firstCommand);
+  return branchLineLabelOf(room, line.ordinal!, line.firstCommand);
 }
 
 /**
@@ -816,7 +825,7 @@ function playerRoomIrIdOf(game: TreeWalkerGame): string | undefined {
 /** The label of a line that never ran — no world to read a room from. */
 function blockedLabelOf(line: TreeLine): string {
   if (line.parentId === undefined) return 'opening';
-  return branchLineLabelOf(undefined, line.branchId!, line.firstCommand);
+  return branchLineLabelOf(undefined, line.ordinal!, line.firstCommand);
 }
 
 /** The line's one-line failure citation: the first failed row's own message. */

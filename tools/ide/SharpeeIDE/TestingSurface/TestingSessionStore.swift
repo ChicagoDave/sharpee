@@ -1,7 +1,8 @@
 // TestingSessionStore.swift
 // The testing play surface's per-story session sidecar (ADR-307 D7): VIEW
-// STATE ONLY — the page's `{active, dialogs}` ephemera, held opaque. The
-// tree document (`<story-id>.tests.json`, in the author's project) carries
+// STATE ONLY — the page's `{active, dialogs}` ephemera, held opaque (the
+// active line is a segment id, ADR-355 D5). The test tree
+// (`<story-id>.tests/`, in the author's project) carries
 // everything reproducible — commands, structure, claims, seed — so the
 // sidecar keeps nothing the tree can re-derive. An unreadable or
 // version-mismatched sidecar is discarded silently (degraded mode, never an

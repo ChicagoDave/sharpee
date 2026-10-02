@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "7zqiy67s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "zlryejbi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You hold out the necklace, dangling it by its chain.",
+          "'Hurry, Jack!' she hisses",
+          "Teisha gives the dress to"
+        ],
+        "states": [
+          "dress.location = cloth satchel",
+          "bonnet.location = cloth satchel",
+          "story.state = chase"
+        ]
+      },
+      "command": "give necklace to teisha",
+      "id": "06n7cw48",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "qn6ewdj6",
+      "type": "turn"
+    }
+  ],
+  "id": "dh4qy16d",
+  "ordinal": 1,
+  "parent": "49qggv56"
+}

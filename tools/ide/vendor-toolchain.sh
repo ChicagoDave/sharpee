@@ -74,8 +74,8 @@ readonly VENDOR_DIR="$IDE_DIR/vendor/node"
 # (David 2026-08-13), never a universal binary: a universal app would carry one
 # toolchain that is wrong for half the machines it runs on. Both runtimes are
 # minos 11.0 — verified on the real tarballs 2026-08-13, arm64 and x64 alike —
-# so the deployment target is 11.0 for both and the toolchain reaches as far as
-# the app does on either.
+# below the app's 12.0 deployment target, so the toolchain reaches at least as
+# far as the app does on either.
 readonly NODE_VERSION="22.23.1"
 
 # Signing inputs for step 4.6. Same defaults and same overrides as package.sh —

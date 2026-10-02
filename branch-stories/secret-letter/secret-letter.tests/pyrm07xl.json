@@ -1,0 +1,286 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "a smile as warm as her tumbling red curls"
+        ]
+      },
+      "command": "x teisha",
+      "id": "nzm3zp4p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The little rodent loves bananas."
+        ]
+      },
+      "command": "ask teisha about the monkey",
+      "id": "ox5yxz9d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I already told you,' says Teisha,"
+        ]
+      },
+      "command": "ask teisha about the monkey",
+      "id": "w56lk0hp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the central pole holding up the big awning"
+        ]
+      },
+      "command": "ask teisha about the tent",
+      "id": "dls00pxd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "rent a shop on Commerce Street"
+        ]
+      },
+      "command": "ask teisha about the clothes",
+      "id": "l6p5a25d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I don't like his high taxes"
+        ]
+      },
+      "command": "ask teisha about fossville",
+      "id": "txe5cv13",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "w2ay9190",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "3109pqvf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "What do you want?"
+        ]
+      },
+      "command": "talk to stallkeeper",
+      "id": "5zwtkk8d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Only that they're bad for business"
+        ]
+      },
+      "command": "ask stallkeeper about the mercenaries",
+      "id": "31xeb2mc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "what are you selling today",
+          "You have any coin?"
+        ]
+      },
+      "command": "ask stallkeeper about the wares",
+      "id": "zcuj2oeo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I'll sell my stall to the monkey"
+        ]
+      },
+      "command": "yes",
+      "id": "vcrgalpr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "56z4nyc9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "These don't look half bad."
+        ]
+      },
+      "command": "x apples",
+      "id": "zxm5i5o1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You rarely see bananas this far north."
+        ]
+      },
+      "command": "x bananas",
+      "id": "enq4xthg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Normally you'd kill for a slice of kello"
+        ]
+      },
+      "command": "x kello",
+      "id": "mr4hwy6w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The thumb-sized clusters are shiny and bluish-black."
+        ]
+      },
+      "command": "x brambleberries",
+      "id": "v0ebnxqn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "thick, twisty stems"
+        ]
+      },
+      "command": "x pears",
+      "id": "5ys66noy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "tentpole wire stretching overhead",
+          "The bushel of bananas is currently blocked by the stallkeeper."
+        ]
+      },
+      "command": "look",
+      "id": "g6iy32a3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "too close to the stallkeeper to make a move"
+        ],
+        "notContains": [
+          "Taken."
+        ]
+      },
+      "command": "take banana",
+      "id": "cf5ov3vf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "What do you want?"
+        ]
+      },
+      "command": "talk to stallkeeper",
+      "id": "bd8lskjs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "apple.location = player"
+        ]
+      },
+      "command": "take apple",
+      "id": "qcg2a5d8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Not here, with half of Grubber's treading on your feet."
+        ],
+        "states": [
+          "apple.location = player",
+          "story.state = calm"
+        ]
+      },
+      "command": "eat apple",
+      "id": "4w5vmu8u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ]
+      },
+      "command": "nw",
+      "id": "z14w26wm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "sw",
+      "id": "lbhdunb4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted distant-alley"
+        ]
+      },
+      "command": "look toward northwest",
+      "id": "ml9xsa2k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Alley"
+        ]
+      },
+      "command": "nw",
+      "id": "83kh21jy",
+      "type": "turn"
+    }
+  ],
+  "id": "pyrm07xl",
+  "ordinal": 0,
+  "parent": "5n2v7hdl"
+}

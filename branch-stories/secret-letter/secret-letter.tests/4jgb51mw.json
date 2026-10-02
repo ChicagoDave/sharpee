@@ -1,0 +1,64 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The monkey balances easily on the cable, about 3 feet out from the top of the post."
+        ]
+      },
+      "command": "x se cable",
+      "id": "aj7p42io",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "The monkey sees you coming and leaps over you",
+          "knocking over a couple of shoppers"
+        ],
+        "notContains": [
+          "Shouts ring out and fingers point",
+          "You hear shouting coming from all quarters of the market."
+        ],
+        "states": [
+          "player.location = Hat Stall",
+          "cloak.location = Hat Stall",
+          "monkey.location = Top of the Post",
+          "story.state = hunted",
+          "emitted slide-wind"
+        ]
+      },
+      "command": "slide down southeast cable",
+      "id": "67wsppn6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hat Stall",
+          "an old gray cloak here"
+        ]
+      },
+      "command": "look",
+      "id": "uo6tlwm4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ],
+        "states": [
+          "cloak.location = player"
+        ]
+      },
+      "command": "take cloak",
+      "id": "zewfa8je",
+      "type": "turn"
+    }
+  ],
+  "id": "4jgb51mw",
+  "ordinal": 2,
+  "parent": "8apa5ok6"
+}

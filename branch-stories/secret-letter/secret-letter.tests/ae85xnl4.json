@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "It looks like a pretty big axe."
+        ]
+      },
+      "command": "x axe",
+      "id": "1wppffnr",
+      "type": "turn"
+    }
+  ],
+  "id": "ae85xnl4",
+  "ordinal": 3,
+  "parent": "z9y07mdp"
+}

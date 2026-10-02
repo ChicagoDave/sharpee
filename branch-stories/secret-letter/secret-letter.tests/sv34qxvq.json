@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "dg7ny7hv",
+      "type": "turn"
+    }
+  ],
+  "id": "sv34qxvq",
+  "ordinal": 0,
+  "parent": "ytr5jjs1"
+}

@@ -1,0 +1,52 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Your trusty cloth satchel: big enough to hold the things you nick"
+        ]
+      },
+      "command": "x satchel",
+      "id": "vftj422n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Leather, floppy, from a pile in Maiden House."
+        ],
+        "states": [
+          "boots.location = player"
+        ]
+      },
+      "command": "x boots",
+      "id": "iaze0jqy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "cap.location = player",
+          "emitted clothing-stays"
+        ]
+      },
+      "command": "take off cap",
+      "id": "nle3dp2u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "cloak.location = player",
+          "emitted clothing-stays"
+        ]
+      },
+      "command": "take off cloak",
+      "id": "t6faixnp",
+      "type": "turn"
+    }
+  ],
+  "id": "8z9jlkji",
+  "ordinal": 4,
+  "parent": "k6sd0y98"
+}

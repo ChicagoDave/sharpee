@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "coming up behind the fruit stall"
+        ],
+        "states": [
+          "player.location = On the Wire"
+        ]
+      },
+      "command": "hang cloak on northeast cable",
+      "id": "l1axsdxm",
+      "type": "turn"
+    }
+  ],
+  "id": "sxbhg5cm",
+  "ordinal": 9,
+  "parent": "k6sd0y98"
+}

@@ -1,0 +1,177 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "\"Norwich.\" He turns the word over once, finds it ordinary, and hands it back. \"Well, the provinces keep better discipline than the town. See you bring it with you.\" The full weight of his attention releases you, mostly."
+        ]
+      },
+      "command": "ask burbage about norwich",
+      "id": "lfvb230j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"So you said.\" The word goes into whatever ledger Burbage keeps behind his eyes. \"Norwich men are punctual, at least. Be that.\""
+        ]
+      },
+      "command": "tell burbage about norwich",
+      "id": "aeoc9b9r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "command": "south",
+      "id": "tknnmsjq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tavern"
+        ]
+      },
+      "command": "south",
+      "id": "3fmhi3b3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your Lodging"
+        ]
+      },
+      "command": "east",
+      "id": "4ma6d33g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "command": "look",
+      "id": "7rdl5kev",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "i7x38azy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Tavern"
+        ]
+      },
+      "command": "south",
+      "id": "vy6whim3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kemp's head comes round before the sentence is done. \"Not NOW, friend.\" The voice is dead level, which from Kemp is shouting. \"Ask me of roses and Henslowes some other hour, when the boards have cooled.\""
+        ]
+      },
+      "command": "ask kemp about the rose",
+      "id": "9cx1bm8x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "d7p9qvxo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "6ku4c9hm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "9yyhny5h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "ol0j5p3f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "9e87yrn7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "hjm96wsf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Hear my price before you name Philip's.\" He counts it off on his fingers, showman even now. \"The jig restored, every afternoon, at MY length. My name on the bills, big as the play's. And no poet's set-down-for-them in my scenes — the yard writes my lines with me, fresh, every house.\" He leans back. \"Cheap, for what walks out of this company when I do.\""
+        ]
+      },
+      "command": "tell me more",
+      "id": "8mdws2ri",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Well. You know what I am owed and you know what I am worth, which puts you ahead of this company on both counts.\" He sets the pot down and gives you the whole of his attention, a thing crowds pay for. \"So ask it. Ask me the question Philip sent across the river in your mouth.\""
+        ]
+      },
+      "command": "go on",
+      "id": "7jdzf4wo",
+      "type": "turn"
+    }
+  ],
+  "id": "cp299f81",
+  "ordinal": 0,
+  "parent": "i9duzzdp"
+}

@@ -1,0 +1,82 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Are you insane? Fossville's men are right outside!"
+        ]
+      },
+      "command": "n",
+      "id": "5r316and",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Jacqueline, where are you going?' hisses Fiona. 'Get into the laundry room, quickly!'"
+        ]
+      },
+      "command": "nw",
+      "id": "dvd9kp9v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Get into the laundry room, quickly!'"
+        ]
+      },
+      "command": "sw",
+      "id": "c1d6mb1b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted are-you-insane"
+        ]
+      },
+      "command": "open door",
+      "id": "76ur4p5l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted fiona-just-go"
+        ]
+      },
+      "command": "talk to fiona",
+      "id": "e42wll8r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Laundry",
+          "'Quick, Jacqueline,' she whispers, 'in here!'"
+        ]
+      },
+      "command": "se",
+      "id": "tmzsrt02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You squeeze in",
+          "Secret Closet"
+        ],
+        "states": [
+          "player.location = Secret Closet"
+        ]
+      },
+      "command": "hide",
+      "id": "b3yhdxxm",
+      "type": "turn"
+    }
+  ],
+  "id": "ta6tarbs",
+  "ordinal": 1,
+  "parent": "6go5tnq9"
+}

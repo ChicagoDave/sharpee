@@ -22,9 +22,20 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { proseTextLinesOf } from '@sharpee/branch-tester/auto-assertion';
-import { deserializeTreeDocument } from '@sharpee/branch-tester/tree-document';
+import { assembleTree, segmentTree, type TreeDocument } from '@sharpee/branch-tester/tree-document';
 import { openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
-import { MAIN_LINE, TreeSessionModel } from '../src/model';
+import { TreeSessionModel } from '../src/model';
+
+/**
+ * The tree as the walker would read it from disk: the model's files,
+ * assembled by the shared reader — the second consumer reads what the first
+ * wrote, never the first's in-memory object.
+ */
+function writtenTree(model: TreeSessionModel): TreeDocument {
+  const read = assembleTree(model.files());
+  if (read.status !== 'ok') throw new Error(`the model wrote an unreadable tree: ${read.status} — ${read.message}`);
+  return read.document;
+}
 
 const requireCompiled = createRequire(import.meta.url);
 const { loadAuthorGame } = requireCompiled(
@@ -188,29 +199,30 @@ describe('a real play session produces the document, and the real walker consume
     // Branch on the examine card with an alternate `look`: fresh boot,
     // prefix replayed suppressed (no model folds), alternate lands live.
     const branchId = model.branch(examined, 'look')!;
-    expect(branchId).toBeGreaterThan(0);
+    expect(branchId).toMatch(/^[a-z0-9]{8}$/);
     const branchGame = await loadGame();
     await branchGame.executeCommand('look');
     await branchGame.executeCommand('examine the brass lamp');
     const alt = await playReal(model, branchGame, 'look');
     model.addContains(alt, 'A small square den');
 
-    expect(model.labelOf(MAIN_LINE)).toBe('opening-den');
+    expect(model.labelOf(model.mainLine)).toBe('opening-den');
     expect(model.labelOf(branchId)).toBe('den · look');
     expect(model.cardAt(bootLook)?.type).toBe('boot');
 
-    // The document matches the Phase 1 schema and round-trips (AC-1).
-    const text = model.serialize();
-    const read = deserializeTreeDocument(text);
-    expect(read.status).toBe('ok');
+    // The tree's files read back through the shared reader and re-segment
+    // byte-identically (ADR-355 AC-6).
+    const files = model.files();
+    const tree = writtenTree(model);
+    expect(segmentTree(tree)).toEqual(files);
 
-    // One document, two consumers (AC-2 at model level): the real walker
-    // runs the tab's document green with IDENTICAL derived labels.
-    const run = await runTreeDocument(JSON.parse(text), loadGame);
+    // One tree, two consumers (AC-2 at model level): the real walker runs
+    // the tab's tree green with IDENTICAL line ids and derived labels.
+    const run = await runTreeDocument(tree, loadGame);
     expect(run.defects).toEqual([]);
-    expect(run.lines.map((line) => [line.label, line.status])).toEqual([
-      ['opening-den', 'passed'],
-      ['den · look', 'passed'],
+    expect(run.lines.map((line) => [line.id, line.label, line.status])).toEqual([
+      [model.mainLine, 'opening-den', 'passed'],
+      [branchId, 'den · look', 'passed'],
     ]);
   }, 120_000);
 
@@ -227,14 +239,14 @@ describe('a real play session produces the document, and the real walker consume
     await branchGame.executeCommand('examine the brass lamp');
     const alt = await playReal(model, branchGame, 'look');
     model.addContains(alt, 'A small square den');
-    model.activateLine(MAIN_LINE);
-    const beforeSplice = model.serialize();
+    model.activateLine(model.mainLine);
+    const beforeSplice = model.files();
 
     // The repair: splice an extra `north` in after the examine. The spliced
     // card was never played — it has NO truth yet (the JSON says so) — and
     // the whole-path replay is where its truth records (void-fill).
     expect(model.spliceIn(examined, 'north')).toBe(true);
-    expect(model.serialize()).toContain('"command": "north"');
+    expect(Object.values(model.files()).join('\n').match(/"command": "north"/g)).toHaveLength(2);
 
     model.beginRebindAll();
     ordinal += 10;
@@ -250,9 +262,9 @@ describe('a real play session produces the document, and the real walker consume
     // The walker now surfaces the SEAM: the downstream card's recorded and
     // authored claims run from the wrong room and fail — never a crash —
     // while the branch (forked before the seam) still passes.
-    const spliced = await runTreeDocument(JSON.parse(model.serialize()), loadGame);
+    const spliced = await runTreeDocument(writtenTree(model), loadGame);
     expect(spliced.defects).toEqual([]);
-    const main = spliced.lines.find((line) => line.id === 'main')!;
+    const main = spliced.lines.find((line) => line.id === model.mainLine)!;
     expect(main.status).toBe('failed');
     const failedRows = main.result!.commands.filter((row) => !row.passed);
     expect(failedRows.length).toBeGreaterThan(0);
@@ -262,13 +274,13 @@ describe('a real play session produces the document, and the real walker consume
         .map((entry) => entry.message ?? ''),
     );
     expect(failedMessages.some((message) => message.includes('Roses everywhere'))).toBe(true);
-    expect(spliced.lines.find((line) => line.id !== 'main')!.status).toBe('passed');
+    expect(spliced.lines.find((line) => line.id === branchId)!.status).toBe('passed');
 
     // Splice-out by the bound ordinal restores the tree byte-identically —
     // and the walker runs it green again.
     expect(model.spliceOut(splicedOrdinal)).toBe(true);
-    expect(model.serialize()).toBe(beforeSplice);
-    const repaired = await runTreeDocument(JSON.parse(model.serialize()), loadGame);
+    expect(model.files()).toEqual(beforeSplice);
+    const repaired = await runTreeDocument(writtenTree(model), loadGame);
     expect(repaired.lines.map((line) => line.status)).toEqual(['passed', 'passed']);
     expect(model.lineIds().includes(branchId)).toBe(true);
   }, 180_000);
@@ -281,10 +293,10 @@ describe('a real play session produces the document, and the real walker consume
     const north = await playReal(model, game, 'north');
     model.addContains(north, 'nowhere to be seen');   // a claim that would fail
 
-    expect(model.tailCut(north)).toEqual({ lineId: MAIN_LINE, activeSurvived: true });
+    expect(model.tailCut(north)).toEqual({ lineId: model.mainLine, activeSurvived: true });
     expect(model.cardAt(examined)).toBeDefined();
 
-    const run = await runTreeDocument(JSON.parse(model.serialize()), loadGame);
+    const run = await runTreeDocument(writtenTree(model), loadGame);
     expect(run.lines.map((line) => [line.label, line.status])).toEqual([
       ['opening-den', 'passed'],
     ]);

@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "take the deed",
+      "id": "n9owd9qu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "deed box"
+        ]
+      },
+      "command": "inventory",
+      "id": "ubejrurp",
+      "type": "turn"
+    }
+  ],
+  "id": "hiqt79cu",
+  "ordinal": 2,
+  "parent": "gt5xcmrc"
+}

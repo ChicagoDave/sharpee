@@ -1,0 +1,18 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "player.location = Outer Market Roof",
+          "emitted market-get-down"
+        ]
+      },
+      "command": "enter market",
+      "id": "nsipr4nb",
+      "type": "turn"
+    }
+  ],
+  "id": "sbjsgal0",
+  "ordinal": 2,
+  "parent": "spfznv3u"
+}

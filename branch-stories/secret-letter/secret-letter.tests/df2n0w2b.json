@@ -1,0 +1,59 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Master Bedroom",
+          "'Little thief!'"
+        ],
+        "states": [
+          "player.location = Master Bedroom"
+        ]
+      },
+      "command": "n",
+      "id": "s2ejchsm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'They say no dark deed goes unpunished,' he mutters.",
+          "Put that away, child; I never saw it",
+          "The butler drags you into the stairwell"
+        ]
+      },
+      "command": "give letter to butler",
+      "id": "4ouu5h0i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "letter",
+          "'Gather your men at Lord's Market,' says Fossville."
+        ]
+      },
+      "command": "i",
+      "id": "4dg8bdsy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The butler is stronger than he looks, and his grip on your arm is firm.",
+          "'Go now, and don't come back,'",
+          "East Commerce Street"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "u",
+      "id": "6flgut91",
+      "type": "turn"
+    }
+  ],
+  "id": "df2n0w2b",
+  "ordinal": 1,
+  "parent": "ltgkzsnj"
+}

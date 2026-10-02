@@ -1,0 +1,63 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You hear shouting coming from all quarters of the market."
+        ],
+        "states": [
+          "player.location = Hat Stall",
+          "story.state = chase"
+        ]
+      },
+      "command": "slide down southeast cable",
+      "id": "ntmlseua",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Leather Stall"
+        ],
+        "states": [
+          "emitted player.market-escape.closer"
+        ]
+      },
+      "command": "sw",
+      "id": "859n7zj2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "stuffing",
+          "off its display while the stallkeeper is busy haggling"
+        ],
+        "states": [
+          "belt.location = rack of belts",
+          "emitted escape-no-time"
+        ]
+      },
+      "command": "take belt",
+      "id": "61arq5i2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "stuffing"
+        ],
+        "states": [
+          "emitted escape-no-time",
+          "emitted player.market-escape.spotted"
+        ]
+      },
+      "command": "take reins",
+      "id": "ftq6509l",
+      "type": "turn"
+    }
+  ],
+  "id": "vgh72amv",
+  "ordinal": 3,
+  "parent": "tqadj3t4"
+}

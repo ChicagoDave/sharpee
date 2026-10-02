@@ -7,19 +7,18 @@ name: SharpeeIDE
 options:
   bundleIdPrefix: net.sharpee
   deploymentTarget:
-    # 11.0 here too. settings.base's MACOSX_DEPLOYMENT_TARGET already overrode
-    # this, so the effective target was always 11.0 — but leaving 26.0 in the
-    # spec invited exactly the confusion that let LSMinimumSystemVersion sit
-    # wrong for the app's whole life. Three places state the floor; all three
-    # now say the same thing.
-    macOS: "11.0"
+    # 12.0 here too. settings.base's MACOSX_DEPLOYMENT_TARGET already overrides
+    # this, but leaving a different value in the spec invited exactly the
+    # confusion that let LSMinimumSystemVersion sit wrong for the app's whole
+    # life. Three places state the floor; all three say the same thing.
+    macOS: "12.0"
   createIntermediateGroups: true
   generateEmptyDirectories: true
 
 settings:
   base:
     SWIFT_VERSION: "6.0"
-    MACOSX_DEPLOYMENT_TARGET: "11.0"
+    MACOSX_DEPLOYMENT_TARGET: "12.0"
     ENABLE_USER_SCRIPT_SANDBOXING: NO
     DEAD_CODE_STRIPPING: YES
     # Disable Xcode's Previews stub-executor for debug builds.
@@ -202,17 +201,17 @@ targets:
         # package.sh reads this line for the DMG filenames.
         CFBundleShortVersionString: "1.4.0"
         CFBundleVersion: "7"
-        # 11.0, matching MACOSX_DEPLOYMENT_TARGET above — NOT 26.0, which this
+        # 12.0, matching MACOSX_DEPLOYMENT_TARGET above — NOT 26.0, which this
         # key carried from the first IDE commit (2f6df711) through 1.0.0 and
-        # 1.0.1. Every binary in the bundle is minos 11.0 (verified 2026-08-15
-        # with otool on the app, the vendored node, and Sparkle), so the 26.0
-        # declaration was false and Launch Services refused to start the app on
+        # 1.0.1. Every binary in the bundle was minos 11.0 then (verified
+        # 2026-08-15 with otool on the app, the vendored node, and Sparkle), so
+        # the 26.0 declaration was false and Launch Services refused to start the app on
         # macOS 11-25 for no reason. ADR-279 D7 raised the cost of getting this
         # wrong: generate_appcast copies this value into the appcast as
         # sparkle:minimumSystemVersion, so a too-high number also means those
         # authors are silently never offered an update. Keep this in step with
         # MACOSX_DEPLOYMENT_TARGET; they describe the same claim.
-        LSMinimumSystemVersion: "11.0"
+        LSMinimumSystemVersion: "12.0"
         NSHumanReadableCopyright: "Copyright © 2026 David Cornelson"
         NSPrincipalClass: NSApplication
         LSApplicationCategoryType: public.app-category.developer-tools
@@ -283,9 +282,11 @@ targets:
         # notary's intermittency was understood. Arch and notarization are
         # unrelated; do not reintroduce that reasoning.
         #
-        # DEPLOYMENT TARGET 11.0 FOR BOTH ARCHES (David 2026-08-13). Verified on
-        # the real tarballs: both the arm64 and x64 Node runtimes are minos 11.0,
-        # so the toolchain reaches as far as the app does on either. Three
+        # DEPLOYMENT TARGET 12.0 FOR BOTH ARCHES (David 2026-09-29; was 11.0 from
+        # 2026-08-13). Raised because Xcode's minimum supported
+        # MACOSX_DEPLOYMENT_TARGET moved to 12.0 and xcodebuild refused 11.0.
+        # Both the arm64 and x64 Node runtimes are minos 11.0 (verified on the
+        # real tarballs), so the toolchain still reaches past the app. Three
         # `isInspectable` calls are availability-guarded and one
         # `loadViewIfNeeded()` was replaced with the portable `_ = view` to hold
         # that floor; raising it again should be a decision, not a side effect of

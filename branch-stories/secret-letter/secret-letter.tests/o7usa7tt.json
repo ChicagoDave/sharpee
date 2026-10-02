@@ -1,0 +1,42 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "ornately scrolled, brass grating"
+        ]
+      },
+      "command": "x window",
+      "id": "ejdleof0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "jvnziccb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A little-known shortcut between Lord's Market",
+          "draws a copper coin from behind the boy's grimy ear",
+          "Bobby stands and stretches, then sees you."
+        ],
+        "states": [
+          "player.location = Back Alley"
+        ]
+      },
+      "command": "s",
+      "id": "kgg4757w",
+      "type": "turn"
+    }
+  ],
+  "id": "o7usa7tt",
+  "ordinal": 0,
+  "parent": "86ttufcy"
+}

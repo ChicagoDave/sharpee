@@ -1,0 +1,47 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Study"
+        ]
+      },
+      "command": "west",
+      "id": "a13o4ye9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You slip behind the long curtains."
+        ]
+      },
+      "command": "hide behind curtains",
+      "id": "qpciq9zv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "(You're hiding behind the long curtains.)"
+        ]
+      },
+      "command": "look",
+      "id": "rskmhzn6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You come out of hiding."
+        ]
+      },
+      "command": "come out",
+      "id": "mddqekqw",
+      "type": "turn"
+    }
+  ],
+  "id": "8534x5si",
+  "ordinal": 1,
+  "parent": "fq9jgq16"
+}

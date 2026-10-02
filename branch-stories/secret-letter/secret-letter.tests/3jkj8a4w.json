@@ -1,0 +1,69 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ],
+        "states": [
+          "story.state = hunted"
+        ]
+      },
+      "command": "ne",
+      "id": "wza4jz3n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "something you know how to do, at least",
+          "pluck the loaf from its shelf",
+          "'Stop, thief!'",
+          "stuffing the loaf into your satchel",
+          "This stallkeeper will be on the lookout for you now"
+        ],
+        "notContains": [
+          "With the stallkeepers all on edge about the mercenaries",
+          "Here you go again."
+        ],
+        "states": [
+          "loaf.location = cloth satchel",
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "take loaf",
+      "id": "0eaz68fy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall",
+          "As soon as you get near, the stallkeeper spots you and starts yelling again."
+        ],
+        "states": [
+          "player.location = Candlemaker's Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "lxc8btdu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ],
+        "notContains": [
+          "As soon as you get near, the stallkeeper spots you and starts yelling again."
+        ]
+      },
+      "command": "look",
+      "id": "3jv6rloc",
+      "type": "turn"
+    }
+  ],
+  "id": "3jkj8a4w",
+  "ordinal": 1,
+  "parent": "zjak0nxl"
+}

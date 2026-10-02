@@ -1,15 +1,15 @@
 /**
  * narrative-pinned-prose.test.ts — beat 2 of the author narrative
  * ("Pinning the prose"): a turn becomes a card whose claims the author never
- * typed, and the CLI evaluates exactly those claims. The tree document is
- * read as the static file it is; the verdicts come from a real
+ * typed, and the CLI evaluates exactly those claims. The test tree is read
+ * from its segments as recorded; the verdicts come from a real
  * `sharpee test --json` run of fernhill, matched card to command-result.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
-import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { FERNHILL_TREE, commandResults, runFernhillTest, type TestRun } from './support/fernhill-run';
+import { readTree } from './support/scratch-story';
 
 interface Card { type: 'opening' | 'boot' | 'turn'; command?: string; assertions: { contains?: string[]; channels?: Array<{ id: string; is: string }> } }
 interface TreeDocument { version: number; seed: number; story: string; cards: Card[] }
@@ -18,7 +18,10 @@ let tree: TreeDocument;
 let run: TestRun;
 
 beforeAll(() => {
-  tree = JSON.parse(readFileSync(FERNHILL_TREE, 'utf-8')) as TreeDocument;
+  // The beats below read the recorded cards, so an empty tree must fail here
+  // rather than let each beat pass vacuously.
+  tree = readTree(FERNHILL_TREE) as unknown as TreeDocument;
+  expect(tree.cards.length).toBeGreaterThan(2);
   run = runFernhillTest();
 }, 60_000);
 

@@ -2,9 +2,10 @@
  * @sharpee/branch-tester — the tree-document testing runtime (ADR-307).
  *
  * The Testing tab holds one test tree per story; this package owns that tree's
- * wire format (`<story-id>.tests.json`), the walker that replays it against a
- * real engine, and the shared assertion machinery (channel claims, policy
- * synthesis) the walker and the IDE surface both consume.
+ * at-rest format (the `<story-id>.tests/` directory of segments, ADR-355),
+ * the walker that replays it against a real engine, and the shared assertion
+ * machinery (channel claims, policy synthesis) the walker and the IDE surface
+ * both consume.
  *
  * The v2 transcript grammar this package originally carried (ADR-300/302 —
  * `continues:` trees of `.transcript` files, parser/serializer/rename, the
@@ -22,13 +23,19 @@
 // Types
 export * from './types.js';
 
-// The Testing tree's wire format — one JSON document per story (ADR-307)
+// The Testing tree's model and at-rest format — a directory of segments
+// and a manifest per story (ADR-307, ADR-355)
 export {
   TREE_DOCUMENT_VERSION,
-  treeDocumentFileNameFor,
+  TREE_MANIFEST_FILE_NAME,
+  treeDirectoryNameFor,
+  createSegmentId,
   emptyTreeDocument,
-  serializeTreeDocument,
-  deserializeTreeDocument,
+  ensureSegmentIds,
+  segmentTree,
+  assembleTree,
+  diffTreeFiles,
+  checkCanonicalTree,
   channelIdsReferencedBy,
   splitChannelClaimId,
   type TreeDocument,
@@ -38,6 +45,8 @@ export {
   type TreeAssertions,
   type TreeChannelAssertion,
   type TreeDocumentReadResult,
+  type TreeFiles,
+  type TreeCanonicalCheck,
 } from './tree-document.js';
 
 // The tree-document walker — the greenfield ADR-307 runtime (D4/D5/D6):

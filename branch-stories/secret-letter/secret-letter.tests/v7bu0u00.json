@@ -1,0 +1,37 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "notContains": [
+          "You can't see any such thing"
+        ]
+      },
+      "command": "x dress",
+      "id": "nu4akvjs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't reach the dress."
+        ]
+      },
+      "command": "take dress",
+      "id": "fxuvvg4o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "You can't see any such thing"
+        ]
+      },
+      "command": "x fashionable hat",
+      "id": "85dci5db",
+      "type": "turn"
+    }
+  ],
+  "id": "v7bu0u00",
+  "ordinal": 1,
+  "parent": "fiwt5d1v"
+}

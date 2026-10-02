@@ -98,7 +98,7 @@ Thirty-one packages under `packages/`. Grouped by what they are for, not by depe
 
 **`@sharpee/transcript-tester`** — Transcript-based testing: the `.transcript` parser and its matched canonical serializer, the runner, golden recordings, coverage, outcome search, and watch mode. It owns the transcript grammar, so parser and serializer ship as a pair pinned by their own tests. The full guide — syntax, assertions, directives, CLI flags — is [`transcript-testing.md`](./transcript-testing.md), beside this file.
 
-**`@sharpee/branch-tester`** — The tree-document testing runtime (ADR-307). One test tree per story, serialized as `<story-id>.tests.json`: the walker replays it against a real engine and owns the shared assertion machinery — channel claims, policy synthesis — that both the walker and the IDE's Testing tab consume. Distinct from `transcript-tester`, which owns the `.transcript` grammar for Sharpee's own hand-authored suites; the Chord/IDE world uses this one.
+**`@sharpee/branch-tester`** — The tree-document testing runtime (ADR-307). One test tree per story, stored as the directory `<story-id>.tests/`: a `manifest.json` holding the version, story and pinned seed, plus one file per run of cards between fork points, each named by its stable id (ADR-355). The walker replays it against a real engine and owns the shared assertion machinery — channel claims, policy synthesis — that both the walker and the IDE's Testing tab consume. Distinct from `transcript-tester`, which owns the `.transcript` grammar for Sharpee's own hand-authored suites; the Chord/IDE world uses this one.
 
 **`@sharpee/sharpee`** — The umbrella package aggregating the others for consumption. It deliberately does not re-export everything (ADR-178); the baseline sub-packages remain the import contract.
 
@@ -884,7 +884,7 @@ Two runtimes run a story and assert on what it says. They are split by **who aut
 
 **`@sharpee/transcript-tester`** owns the `.transcript` text grammar and Sharpee's own hand-authored suites — Dungeo's `wt-*` walkthrough chain and the unit transcripts under `stories/{story}/tests/transcripts/`. It also owns the **assertion core** that both runtimes evaluate their claims with (ADR-340 D1).
 
-**`@sharpee/branch-tester`** owns the tree-document runtime (ADR-307): one test tree per story as `<story-id>.tests.json`, a walker that replays it against a real engine, and the channel-claim and policy-synthesis machinery the walker and the IDE's Testing tab both consume. It imports the assertion core and never copies it (ADR-340 D3).
+**`@sharpee/branch-tester`** owns the tree-document runtime (ADR-307): one test tree per story as the `<story-id>.tests/` directory (ADR-355), a walker that replays it against a real engine, and the channel-claim and policy-synthesis machinery the walker and the IDE's Testing tab both consume. It imports the assertion core and never copies it (ADR-340 D3).
 
 So a **Chord** feature's runtime test belongs in a tree document, and a **platform** feature exercised through Sharpee's own in-repo stories belongs in a transcript. The failure this prevents is writing a Dungeo transcript for a Chord construct: Dungeo declares none of them, and it is not a design input for Chord work.
 

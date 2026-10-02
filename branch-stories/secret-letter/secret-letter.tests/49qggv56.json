@@ -1,0 +1,32 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "'Here, monkey. C'mon,",
+          "You're breathing hard, but you're safe. And you have the necklace.",
+          "wiping smushed banana off his face"
+        ],
+        "states": [
+          "necklace.location = player"
+        ]
+      },
+      "command": "give banana to monkey",
+      "id": "4d1vpk7a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "clear blue with a deep indigo star in its center"
+        ]
+      },
+      "command": "x necklace",
+      "id": "4rmoeb38",
+      "type": "turn"
+    }
+  ],
+  "id": "49qggv56",
+  "ordinal": 0,
+  "parent": "8apa5ok6"
+}

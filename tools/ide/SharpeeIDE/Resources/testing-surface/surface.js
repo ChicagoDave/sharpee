@@ -194,7 +194,7 @@
         const fork = {
           depth,
           locationAsserted: asserted !== void 0,
-          lines: branches.map((branch, index) => lineOf(branch.cards, branch.branch, sequences.filter((_, i) => i !== index)))
+          lines: branches.map((branch, index) => lineOf(branch.cards, branch.id, sequences.filter((_, i) => i !== index)))
         };
         if (card.command !== void 0) fork.command = card.command;
         if (here !== void 0) fork.location = here;
@@ -202,7 +202,7 @@
         for (const branch of branches) walk(branch.cards, depth + 1, here);
       }
     };
-    const root = lineOf(doc.cards, 0, []);
+    const root = lineOf(doc.cards, doc.id, []);
     walk(doc.cards, 0, void 0);
     const lineCount = 1 + forks.reduce((total, fork) => total + fork.lines.length, 0);
     return { root, forks, lineCount };
@@ -252,14 +252,14 @@
       const button = document.createElement("button");
       button.type = "button";
       button.className = "ts-outline-pill ts-outline-root";
-      if (activeLine === 0) button.classList.add("ts-outline-here");
+      if (activeLine === root.lineId) button.classList.add("ts-outline-here");
       button.append(
         span("ts-outline-name", "root"),
         span("ts-outline-cmd", `${root.start ?? "\u2014"} \u2192 ${root.end ?? "\u2014"}`),
         span("ts-outline-spacer", ""),
         span("ts-outline-turns", String(root.turns))
       );
-      button.addEventListener("click", () => this.delegate.onSelectLine(0));
+      button.addEventListener("click", () => this.delegate.onSelectLine(root.lineId));
       return button;
     }
     forkPill(fork, index, open) {
@@ -333,43 +333,164 @@
   }
 
   // packages/branch-tester/src/tree-document.ts
-  var TREE_DOCUMENT_VERSION = 2;
-  function emptyTreeDocument(story, seed2) {
-    return { version: TREE_DOCUMENT_VERSION, story, seed: seed2, cards: [] };
+  var TREE_DOCUMENT_VERSION = 3;
+  var TREE_MANIFEST_FILE_NAME = "manifest.json";
+  var SEGMENT_ID_PATTERN = /^[a-z0-9]{8}$/;
+  var SEGMENT_ID_ALPHABET = "abcdefghijklmnopqrstuvwxyz0123456789";
+  var SEGMENT_ID_LENGTH = 8;
+  function createSegmentId(random = Math.random) {
+    let id = "";
+    for (let index = 0; index < SEGMENT_ID_LENGTH; index++) {
+      id += SEGMENT_ID_ALPHABET[Math.floor(random() * SEGMENT_ID_ALPHABET.length)];
+    }
+    return id;
   }
-  function serializeTreeDocument(document2) {
-    return `${JSON.stringify(sortKeysDeep(document2), null, 2)}
-`;
+  function emptyTreeDocument(story, seed2, id) {
+    return { version: TREE_DOCUMENT_VERSION, story, seed: seed2, id, cards: [] };
   }
-  function deserializeTreeDocument(text3) {
-    let parsed;
-    try {
-      parsed = JSON.parse(text3);
-    } catch (error) {
-      return {
-        status: "malformed",
-        message: `not valid JSON: ${error instanceof Error ? error.message : String(error)}`
-      };
+  function ensureSegmentIds(document2, generateId = () => createSegmentId()) {
+    const taken = new Set(collectSegmentIds(document2));
+    let allocated = 0;
+    const fresh = () => {
+      for (; ; ) {
+        const id = generateId();
+        if (!taken.has(id)) {
+          taken.add(id);
+          return id;
+        }
+      }
+    };
+    const walk = (cards2) => {
+      cards2.forEach((card, index) => {
+        if (card.id === void 0) {
+          card.id = fresh();
+          allocated++;
+        }
+        const branches = card.branches ?? [];
+        if (branches.length > 0 && index < cards2.length - 1 && card.continuation === void 0) {
+          card.continuation = fresh();
+          allocated++;
+        }
+        for (const branch of branches) walk(branch.cards);
+      });
+    };
+    walk(document2.cards);
+    return allocated;
+  }
+  function segmentTree(document2) {
+    const files = {};
+    files[TREE_MANIFEST_FILE_NAME] = canonicalJson({
+      version: TREE_DOCUMENT_VERSION,
+      story: document2.story,
+      seed: document2.seed
+    });
+    const cardIds = /* @__PURE__ */ new Set();
+    const emit = (id, cards2, parent) => {
+      if (files[segmentFileNameOf(id)] !== void 0) {
+        throw new Error(`segment id '${id}' is used by two segments`);
+      }
+      const run = [];
+      for (let index = 0; index < cards2.length; index++) {
+        const card = cards2[index];
+        if (card.id === void 0) {
+          throw new Error(`the card at '${id}'[${index}] has no id \u2014 mint it with ensureSegmentIds`);
+        }
+        if (cardIds.has(card.id)) throw new Error(`card id '${card.id}' is used by two cards`);
+        cardIds.add(card.id);
+        run.push(persistedCardOf(card));
+        const branches = card.branches ?? [];
+        if (branches.length === 0) continue;
+        write(id, run, parent);
+        branches.forEach((branch, position) => emit(branch.id, branch.cards, { id, ordinal: position + 1 }));
+        const rest = cards2.slice(index + 1);
+        if (rest.length > 0) {
+          if (card.continuation === void 0) {
+            throw new Error(`the fork card at '${id}'[${index}] has cards after it and no continuation id`);
+          }
+          emit(card.continuation, rest, { id, ordinal: 0 });
+        }
+        return;
+      }
+      write(id, run, parent);
+    };
+    const write = (id, run, parent) => {
+      files[segmentFileNameOf(id)] = canonicalJson({
+        id,
+        ...parent !== void 0 ? { parent: parent.id, ordinal: parent.ordinal } : {},
+        cards: run
+      });
+    };
+    emit(document2.id, document2.cards);
+    for (const cardId of cardIds) {
+      if (files[segmentFileNameOf(cardId)] !== void 0) {
+        throw new Error(`id '${cardId}' is used by both a segment and a card`);
+      }
     }
-    if (!isPlainObject(parsed)) {
-      return { status: "malformed", message: "the document is not a JSON object" };
+    return files;
+  }
+  function assembleTree(files) {
+    const manifestText = files[TREE_MANIFEST_FILE_NAME];
+    if (manifestText === void 0) {
+      return { status: "malformed", message: `the tree has no ${TREE_MANIFEST_FILE_NAME}` };
     }
-    const version = parsed["version"];
-    if (typeof version !== "number" || !Number.isInteger(version)) {
-      return { status: "malformed", message: `'version' must be an integer` };
+    const manifest = readManifest(manifestText);
+    if (manifest.status !== "ok") return manifest;
+    const segments = /* @__PURE__ */ new Map();
+    for (const name of Object.keys(files).sort(byCodeUnit)) {
+      if (name === TREE_MANIFEST_FILE_NAME || name.startsWith(".")) continue;
+      const read = readSegment(name, files[name]);
+      if (typeof read === "string") return { status: "malformed", message: read };
+      segments.set(read.id, read);
     }
-    if (version > TREE_DOCUMENT_VERSION) {
-      return {
-        status: "refused",
-        message: `this document is version ${version}; this build reads up to version ${TREE_DOCUMENT_VERSION} \u2014 update Sharpee to open it`
-      };
+    const shape = linkSegments(segments);
+    if (typeof shape === "string") return { status: "malformed", message: shape };
+    const cardOwners = /* @__PURE__ */ new Map();
+    for (const segment of segments.values()) {
+      for (const card of segment.cards) {
+        const id = card.id;
+        if (segments.has(id)) {
+          return { status: "malformed", message: `card id '${id}' in '${segment.id}' is also a segment's id` };
+        }
+        const owner = cardOwners.get(id);
+        if (owner === segment.id) {
+          return { status: "malformed", message: `card id '${id}' appears twice in '${segment.id}'` };
+        }
+        if (owner !== void 0) {
+          return { status: "malformed", message: `card id '${id}' appears in both '${owner}' and '${segment.id}'` };
+        }
+        cardOwners.set(id, segment.id);
+      }
     }
-    if (version < TREE_DOCUMENT_VERSION) {
-      return { status: "malformed", message: `unknown document version ${version}` };
+    const build = (segment) => {
+      const cards2 = segment.cards.map((card) => ({ ...card }));
+      const children = shape.children.get(segment.id);
+      if (children === void 0) return cards2;
+      const fork = cards2[cards2.length - 1];
+      fork.branches = children.branches.map((child) => ({ id: child.id, cards: build(child) }));
+      if (children.continuation !== void 0) {
+        fork.continuation = children.continuation.id;
+        cards2.push(...build(children.continuation));
+      }
+      return cards2;
+    };
+    return {
+      status: "ok",
+      document: {
+        version: TREE_DOCUMENT_VERSION,
+        story: manifest.story,
+        seed: manifest.seed,
+        id: shape.root.id,
+        cards: build(shape.root)
+      }
+    };
+  }
+  function diffTreeFiles(previous, next) {
+    const written = {};
+    for (const name of Object.keys(next).sort(byCodeUnit)) {
+      if (previous[name] !== next[name]) written[name] = next[name];
     }
-    const problem = validateDocumentShape(parsed);
-    if (problem !== void 0) return { status: "malformed", message: problem };
-    return { status: "ok", document: parsed };
+    const removed = Object.keys(previous).filter((name) => next[name] === void 0 && !name.startsWith(".")).sort(byCodeUnit);
+    return { written, removed };
   }
   function roomSlugOf(name) {
     if (name === void 0) return void 0;
@@ -379,8 +500,160 @@
   function mainLineLabelOf(roomSlug) {
     return `opening-${roomSlug ?? "start"}`;
   }
-  function branchLineLabelOf(roomSlug, branchId, firstCommand) {
-    return `${roomSlug ?? `branch-${branchId}`} \xB7 ${firstCommand ?? "(empty)"}`;
+  function branchLineLabelOf(roomSlug, ordinal, firstCommand) {
+    return `${roomSlug ?? `branch-${ordinal}`} \xB7 ${firstCommand ?? "(empty)"}`;
+  }
+  function segmentFileNameOf(id) {
+    return `${id}.json`;
+  }
+  function persistedCardOf(card) {
+    const { branches: _branches, continuation: _continuation, ...persisted } = card;
+    return persisted;
+  }
+  function canonicalJson(value) {
+    return `${JSON.stringify(sortKeysDeep(value), null, 2)}
+`;
+  }
+  function parseJson(text3) {
+    try {
+      return { ok: true, value: JSON.parse(text3) };
+    } catch (error) {
+      return {
+        ok: false,
+        message: `not valid JSON: ${error instanceof Error ? error.message : String(error)}`
+      };
+    }
+  }
+  function readManifest(text3) {
+    const parsed = parseJson(text3);
+    if (!parsed.ok) return { status: "malformed", message: `${TREE_MANIFEST_FILE_NAME} is ${parsed.message}` };
+    const manifest = parsed.value;
+    if (!isPlainObject(manifest)) {
+      return { status: "malformed", message: `${TREE_MANIFEST_FILE_NAME} is not a JSON object` };
+    }
+    const version = manifest["version"];
+    if (typeof version !== "number" || !Number.isInteger(version)) {
+      return { status: "malformed", message: `'version' must be an integer` };
+    }
+    if (version > TREE_DOCUMENT_VERSION) {
+      return {
+        status: "refused",
+        message: `this test tree is version ${version}; this build reads up to version ${TREE_DOCUMENT_VERSION} \u2014 update Sharpee to open it`
+      };
+    }
+    if (version < TREE_DOCUMENT_VERSION) {
+      return { status: "malformed", message: `unknown test tree version ${version}` };
+    }
+    const unknownKey = firstUnknownKey(manifest, ["version", "story", "seed"]);
+    if (unknownKey !== void 0) {
+      return { status: "malformed", message: `unknown key '${unknownKey}' in ${TREE_MANIFEST_FILE_NAME}` };
+    }
+    const story = manifest["story"];
+    if (typeof story !== "string" || story === "") {
+      return { status: "malformed", message: `'story' must be a non-empty string` };
+    }
+    const seed2 = manifest["seed"];
+    if (typeof seed2 !== "number" || !Number.isInteger(seed2)) {
+      return { status: "malformed", message: `'seed' must be an integer` };
+    }
+    return { status: "ok", story, seed: seed2 };
+  }
+  function readSegment(name, text3) {
+    const id = name.endsWith(".json") ? name.slice(0, -".json".length) : "";
+    if (!SEGMENT_ID_PATTERN.test(id)) {
+      return `'${name}' is neither ${TREE_MANIFEST_FILE_NAME} nor a segment file ('<8 lowercase letters or digits>.json')`;
+    }
+    const parsed = parseJson(text3);
+    if (!parsed.ok) return `'${name}' is ${parsed.message}`;
+    const segment = parsed.value;
+    if (!isPlainObject(segment)) return `'${name}' is not a JSON object`;
+    const unknownKey = firstUnknownKey(segment, ["id", "parent", "ordinal", "cards"]);
+    if (unknownKey !== void 0) return `unknown key '${unknownKey}' in '${name}'`;
+    if (segment["id"] !== id) return `'${name}' carries id '${String(segment["id"])}' \u2014 a segment's file is named by its id`;
+    const parent = segment["parent"];
+    const ordinal = segment["ordinal"];
+    if (parent === void 0 !== (ordinal === void 0)) {
+      return `'${name}' must carry both 'parent' and 'ordinal', or neither (the root)`;
+    }
+    if (parent !== void 0 && (typeof parent !== "string" || !SEGMENT_ID_PATTERN.test(parent))) {
+      return `'${name}.parent' must be a segment id`;
+    }
+    if (ordinal !== void 0 && (typeof ordinal !== "number" || !Number.isInteger(ordinal) || ordinal < 0)) {
+      return `'${name}.ordinal' must be a non-negative integer`;
+    }
+    const problem = validateCards(segment["cards"], `${id}.cards`);
+    if (problem !== void 0) return problem;
+    return {
+      id,
+      ...parent !== void 0 ? { parent, ordinal } : {},
+      cards: segment["cards"]
+    };
+  }
+  function linkSegments(segments) {
+    const roots = [...segments.values()].filter((segment) => segment.parent === void 0);
+    if (roots.length === 0) return "the tree has no root segment (every segment names a parent)";
+    if (roots.length > 1) {
+      return `the tree has ${roots.length} root segments: ${roots.map((root) => root.id).join(", ")}`;
+    }
+    const byParent = /* @__PURE__ */ new Map();
+    for (const segment of segments.values()) {
+      if (segment.parent === void 0) continue;
+      if (!segments.has(segment.parent)) {
+        return `segment '${segment.id}' names parent '${segment.parent}', which no segment in the tree carries`;
+      }
+      const siblings = byParent.get(segment.parent) ?? [];
+      siblings.push(segment);
+      byParent.set(segment.parent, siblings);
+    }
+    const children = /* @__PURE__ */ new Map();
+    for (const [parentId, siblings] of byParent) {
+      siblings.sort((a, b) => a.ordinal - b.ordinal);
+      for (let index = 1; index < siblings.length; index++) {
+        if (siblings[index].ordinal === siblings[index - 1].ordinal) {
+          return `segments '${siblings[index - 1].id}' and '${siblings[index].id}' both descend from '${parentId}' at ordinal ${siblings[index].ordinal}`;
+        }
+      }
+      const continuation = siblings[0].ordinal === 0 ? siblings[0] : void 0;
+      const branches = continuation !== void 0 ? siblings.slice(1) : siblings;
+      if (branches.length === 0) {
+        return `segment '${continuation.id}' continues '${parentId}', whose last card is not a fork (no branch descends from it)`;
+      }
+      if (continuation !== void 0 && continuation.cards.length === 0) {
+        return `continuation segment '${continuation.id}' has no cards`;
+      }
+      if (segments.get(parentId).cards.length === 0) {
+        return `segment '${parentId}' has descendants but no cards to fork from`;
+      }
+      children.set(parentId, { branches, ...continuation !== void 0 ? { continuation } : {} });
+    }
+    let reached = 0;
+    const visit = (segment) => {
+      reached++;
+      const own = children.get(segment.id);
+      for (const child of own?.branches ?? []) visit(child);
+      if (own?.continuation !== void 0) visit(own.continuation);
+    };
+    visit(roots[0]);
+    if (reached !== segments.size) {
+      const unreachable = segments.size - reached;
+      return `${unreachable} segment${unreachable === 1 ? "" : "s"} cannot be reached from the root (their parents form a cycle)`;
+    }
+    return { root: roots[0], children };
+  }
+  function collectSegmentIds(document2) {
+    const ids = [document2.id];
+    const walk = (cards2) => {
+      for (const card of cards2) {
+        if (card.id !== void 0) ids.push(card.id);
+        if (card.continuation !== void 0) ids.push(card.continuation);
+        for (const branch of card.branches ?? []) {
+          ids.push(branch.id);
+          walk(branch.cards);
+        }
+      }
+    };
+    walk(document2.cards);
+    return ids;
   }
   function byCodeUnit(a, b) {
     if (a < b) return -1;
@@ -400,17 +673,6 @@
   function isPlainObject(value) {
     return typeof value === "object" && value !== null && !Array.isArray(value);
   }
-  function validateDocumentShape(document2) {
-    const unknownKey = firstUnknownKey(document2, ["version", "story", "seed", "cards"]);
-    if (unknownKey !== void 0) return `unknown key '${unknownKey}' at the top level`;
-    if (typeof document2["story"] !== "string" || document2["story"] === "") {
-      return `'story' must be a non-empty string`;
-    }
-    if (typeof document2["seed"] !== "number" || !Number.isInteger(document2["seed"])) {
-      return `'seed' must be an integer`;
-    }
-    return validateCards(document2["cards"], "cards");
-  }
   function validateCards(value, path) {
     if (!Array.isArray(value)) return `'${path}' must be an array`;
     for (let index = 0; index < value.length; index++) {
@@ -421,14 +683,7 @@
   }
   function validateCard(value, path) {
     if (!isPlainObject(value)) return `'${path}' must be an object`;
-    const unknownKey = firstUnknownKey(value, [
-      "type",
-      "command",
-      "assertions",
-      "skip",
-      "ending",
-      "branches"
-    ]);
+    const unknownKey = firstUnknownKey(value, ["id", "type", "command", "assertions", "skip", "ending"]);
     if (unknownKey !== void 0) return `unknown key '${unknownKey}' in '${path}'`;
     const type = value["type"];
     if (type !== "opening" && type !== "boot" && type !== "turn") {
@@ -456,28 +711,10 @@
       const problem = validateAssertions(value["assertions"], `${path}.assertions`);
       if (problem !== void 0) return problem;
     }
-    if (value["branches"] !== void 0) {
-      const branches = value["branches"];
-      if (!Array.isArray(branches)) return `'${path}.branches' must be an array`;
-      const seenIds = /* @__PURE__ */ new Set();
-      for (let index = 0; index < branches.length; index++) {
-        const problem = validateBranch(branches[index], `${path}.branches[${index}]`, seenIds);
-        if (problem !== void 0) return problem;
-      }
+    if (typeof value["id"] !== "string" || !SEGMENT_ID_PATTERN.test(value["id"])) {
+      return `'${path}' must carry an 'id' of 8 lowercase letters or digits`;
     }
     return void 0;
-  }
-  function validateBranch(value, path, seenIds) {
-    if (!isPlainObject(value)) return `'${path}' must be an object`;
-    const unknownKey = firstUnknownKey(value, ["branch", "cards"]);
-    if (unknownKey !== void 0) return `unknown key '${unknownKey}' in '${path}'`;
-    const id = value["branch"];
-    if (typeof id !== "number" || !Number.isInteger(id)) {
-      return `'${path}.branch' must be an integer id`;
-    }
-    if (seenIds.has(id)) return `'${path}.branch' duplicates sibling id ${id}`;
-    seenIds.add(id);
-    return validateCards(value["cards"], `${path}.cards`);
   }
   function validateAssertions(value, path) {
     if (!isPlainObject(value)) return `'${path}' must be an object`;
@@ -535,15 +772,15 @@
   }
 
   // tools/ide/web/testing-surface/src/boot-document.ts
-  function admitBootDocument(text3, engineSeed) {
-    if (text3 === void 0) return { writeLocked: false };
-    const read = deserializeTreeDocument(text3);
+  function admitBootDocument(files, engineSeed) {
+    if (files === void 0) return { writeLocked: false };
+    const read = assembleTree(files);
     if (read.status === "refused") return { writeLocked: true, notice: read.message };
     if (read.status !== "ok") return { writeLocked: false };
     if (read.document.seed !== engineSeed) {
       return {
         writeLocked: true,
-        notice: `This tree is pinned at seed ${read.document.seed}, but the engine booted at seed ${engineSeed}. Nothing is recorded until the host boots at the document's seed.`
+        notice: `This tree is pinned at seed ${read.document.seed}, but the engine booted at seed ${engineSeed}. Nothing is recorded until the host boots at the tree's seed.`
       };
     }
     return { document: read.document, writeLocked: false };
@@ -629,6 +866,301 @@
     return gap.file !== null ? `${gap.file}:${gap.line}` : `line ${gap.line}`;
   }
 
+  // packages/ide-protocol/src/run-events.ts
+  var RUN_EVENT_SCHEMA_VERSION = 2;
+  function isObject(v) {
+    return typeof v === "object" && v !== null;
+  }
+  function isStringArray(v) {
+    return Array.isArray(v) && v.every((entry) => typeof entry === "string");
+  }
+  function hasEnvelopeAndType(v, type) {
+    return v.schemaVersion === RUN_EVENT_SCHEMA_VERSION && v.type === type && typeof v.seq === "number" && typeof v.elapsedMs === "number";
+  }
+  function isRunStartEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "run-start") && (value.mode === "tests" || value.mode === "chain" || value.mode === "tree" || value.mode === "explore") && (value.transcriptCount === void 0 || typeof value.transcriptCount === "number");
+  }
+  function isPhaseEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "phase") && (value.name === "compile" || value.name === "load" || value.name === "assemble" || value.name === "execute") && (value.status === "started" || value.status === "finished") && (value.detail === void 0 || typeof value.detail === "string");
+  }
+  function isTranscriptStartEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "transcript-start") && typeof value.file === "string" && (value.label === void 0 || typeof value.label === "string") && typeof value.index === "number" && (value.commandCount === void 0 || typeof value.commandCount === "number") && (value.parent === void 0 || typeof value.parent === "string") && (value.replayed === void 0 || typeof value.replayed === "boolean") && (value.world === void 0 || isWorldSnapshot(value.world));
+  }
+  function isCommandResultEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults));
+  }
+  function isAssertionOutcomeArray(value) {
+    return Array.isArray(value) && value.every(
+      (entry) => isObject(entry) && typeof entry.description === "string" && typeof entry.passed === "boolean" && (entry.message === void 0 || typeof entry.message === "string")
+    );
+  }
+  function isWorldEntityRef(value) {
+    if (!isObject(value)) return false;
+    return typeof value.name === "string" && typeof value.token === "string";
+  }
+  function isWorldSnapshot(value) {
+    if (!isObject(value)) return false;
+    return (value.location === void 0 || isWorldEntityRef(value.location)) && Array.isArray(value.inventory) && value.inventory.every(isWorldEntityRef);
+  }
+  function isTranscriptEndEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "transcript-end") && typeof value.file === "string" && (value.status === "passed" || value.status === "failed" || value.status === "error" || value.status === "unreached" || value.status === "skipped") && typeof value.passed === "number" && typeof value.failed === "number" && typeof value.expectedFailures === "number" && typeof value.skipped === "number" && typeof value.duration === "number" && (value.errorMessage === void 0 || typeof value.errorMessage === "string") && (value.blockedBy === void 0 || typeof value.blockedBy === "string");
+  }
+  function isBudgetUse(value) {
+    if (!isObject(value)) return false;
+    return (value.unit === "states" || value.unit === "seconds" || value.unit === "depth" || value.unit === "commands") && typeof value.spent === "number" && typeof value.limit === "number";
+  }
+  function isProgressEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "progress") && (value.scope === "commands" || value.scope === "transcripts" || value.scope === "nodes" || value.scope === "states") && typeof value.done === "number" && (value.total === void 0 || typeof value.total === "number") && (value.budgets === void 0 || Array.isArray(value.budgets) && value.budgets.every(isBudgetUse));
+  }
+  function isCoveragePoint(value) {
+    if (!isObject(value)) return false;
+    return typeof value.name === "string" && typeof value.fired === "number" && (value.classes === void 0 || isStringArray(value.classes)) && (value.observed === void 0 || isStringArray(value.observed)) && (value.unobserved === void 0 || isStringArray(value.unobserved));
+  }
+  function isCoverageEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "coverage") && Array.isArray(value.points) && value.points.every(isCoveragePoint) && typeof value.pointsFired === "number" && typeof value.pointsNeverFired === "number" && typeof value.classesUnobserved === "number";
+  }
+  function isSpan(value) {
+    if (!isObject(value)) return false;
+    return (value.file === void 0 || typeof value.file === "string") && typeof value.line === "number" && typeof value.column === "number" && typeof value.endLine === "number" && typeof value.endColumn === "number";
+  }
+  function isSpanOrNull(value) {
+    return value === null || isSpan(value);
+  }
+  function isDerivedBranchStatus(value) {
+    return value === "passed" || value === "failed" || value === "skipped" || value === "error";
+  }
+  function isDerivedBranchEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "derived-branch") && typeof value.label === "string" && "span" in value && isSpanOrNull(value.span) && isDerivedBranchStatus(value.status) && (value.shape === void 0 || typeof value.shape === "string") && (value.detail === void 0 || typeof value.detail === "string") && (value.failure === void 0 || typeof value.failure === "string") && (value.command === void 0 || typeof value.command === "string") && (value.arranged === void 0 || isStringArray(value.arranged));
+  }
+  function isDerivedBranchGap(value) {
+    if (!isObject(value)) return false;
+    return typeof value.label === "string" && (value.status === "skipped" || value.status === "error") && (value.shape === void 0 || typeof value.shape === "string") && (value.detail === void 0 || typeof value.detail === "string") && "span" in value && isSpanOrNull(value.span);
+  }
+  function isDerivedEndingGap(value) {
+    if (!isObject(value)) return false;
+    return (value.id === null || typeof value.id === "string") && (value.statement === "win" || value.statement === "lose" || value.statement === "kill") && (value.line === null || typeof value.line === "number") && (value.file === null || typeof value.file === "string");
+  }
+  function isDerivedRunSummaryEvent(value) {
+    if (!isObject(value)) return false;
+    if (!hasEnvelopeAndType(value, "derived-summary")) return false;
+    const { branches, endings, rooms } = value;
+    if (!isObject(branches) || !isObject(endings) || !isObject(rooms)) return false;
+    return typeof branches.declared === "number" && typeof branches.exercised === "number" && typeof branches.passed === "number" && typeof branches.failed === "number" && Array.isArray(branches.gaps) && branches.gaps.every(isDerivedBranchGap) && typeof endings.declared === "number" && typeof endings.reached === "number" && Array.isArray(endings.unreached) && endings.unreached.every(isDerivedEndingGap) && Array.isArray(endings.unnamed) && endings.unnamed.every(isDerivedEndingGap) && typeof rooms.declared === "number" && typeof rooms.entered === "number" && isStringArray(rooms.unentered);
+  }
+  function isRunEndEvent(value) {
+    if (!isObject(value)) return false;
+    return hasEnvelopeAndType(value, "run-end") && typeof value.totalPassed === "number" && typeof value.totalFailed === "number" && typeof value.totalExpectedFailures === "number" && typeof value.totalSkipped === "number" && typeof value.totalErrors === "number" && typeof value.totalUnreached === "number" && typeof value.totalDuration === "number" && typeof value.exitCode === "number";
+  }
+  function isRunEvent(value) {
+    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isRunEndEvent(value);
+  }
+
+  // tools/ide/web/testing-surface/src/run.ts
+  function createRunState() {
+    return {
+      inFlight: false,
+      results: /* @__PURE__ */ new Map(),
+      labels: /* @__PURE__ */ new Map(),
+      pendingCommands: /* @__PURE__ */ new Map(),
+      replaying: /* @__PURE__ */ new Set(),
+      derived: []
+    };
+  }
+  function beginRun(state) {
+    state.inFlight = true;
+    state.results.clear();
+    state.labels.clear();
+    state.pendingCommands.clear();
+    state.replaying.clear();
+    state.derived = [];
+    delete state.derivedSummary;
+    delete state.tally;
+    delete state.note;
+  }
+  function stemOf(file) {
+    const base = file.split("/").at(-1) ?? file;
+    return base.replace(/\.transcript$/, "");
+  }
+  function foldRunLine(state, text3) {
+    const trimmed = text3.trim();
+    if (!trimmed) return;
+    let parsed;
+    try {
+      parsed = JSON.parse(trimmed);
+    } catch {
+      return;
+    }
+    if (!isRunEvent(parsed)) return;
+    fold(state, parsed);
+  }
+  function fold(state, event) {
+    switch (event.type) {
+      case "transcript-start": {
+        if (event.replayed === true) state.replaying.add(event.file);
+        else state.replaying.delete(event.file);
+        if (event.label !== void 0) state.labels.set(stemOf(event.file), event.label);
+        return;
+      }
+      case "command-result": {
+        if (state.replaying.has(event.file)) return;
+        const stem = stemOf(event.file);
+        const failureMessage = event.failure ?? event.error;
+        const outcome = {
+          input: event.input,
+          passed: event.passed,
+          skipped: event.skipped,
+          assertions: (event.assertionResults ?? []).map((entry) => ({
+            description: entry.description,
+            passed: entry.passed,
+            ...entry.message !== void 0 ? { message: entry.message } : {}
+          })),
+          ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {}
+        };
+        const pending = state.pendingCommands.get(stem) ?? [];
+        pending.push(outcome);
+        state.pendingCommands.set(stem, pending);
+        if (event.passed || event.skipped) return;
+        const existing = state.results.get(stem);
+        if (existing?.firstFailure !== void 0) {
+          existing.moreFailures += 1;
+          return;
+        }
+        const message = failureMessage ?? "failed";
+        const where = event.turn !== void 0 ? `turn ${event.turn}` : event.line > 0 ? `line ${event.line}` : void 0;
+        const label = state.labels.get(stem);
+        state.results.set(stem, {
+          status: "failed",
+          passed: 0,
+          failed: 1,
+          commands: [],
+          firstFailure: where !== void 0 ? `${where} \u2014 ${message}` : message,
+          moreFailures: existing?.moreFailures ?? 0,
+          ...label !== void 0 ? { label } : {}
+        });
+        return;
+      }
+      case "transcript-end": {
+        if (state.replaying.has(event.file)) {
+          state.replaying.delete(event.file);
+          state.pendingCommands.delete(stemOf(event.file));
+          return;
+        }
+        const stem = stemOf(event.file);
+        const partial = state.results.get(stem);
+        const result = {
+          status: event.status,
+          passed: event.passed,
+          failed: event.failed,
+          commands: state.pendingCommands.get(stem) ?? [],
+          moreFailures: Math.max(0, event.failed - 1)
+        };
+        state.pendingCommands.delete(stem);
+        const label = state.labels.get(stem);
+        if (label !== void 0) result.label = label;
+        if (partial?.firstFailure !== void 0) result.firstFailure = partial.firstFailure;
+        else if (event.status === "error" && event.errorMessage !== void 0) {
+          result.firstFailure = event.errorMessage;
+        } else if (event.status === "unreached") {
+          const blocker = event.blockedBy !== void 0 ? stemOf(event.blockedBy) : void 0;
+          result.firstFailure = blocker !== void 0 ? `blocked by ${state.labels.get(blocker) ?? blocker}` : "blocked by an ancestor";
+        }
+        state.results.set(stem, result);
+        return;
+      }
+      case "run-end": {
+        state.inFlight = false;
+        let cardsPassed = 0;
+        let cardsFailed = 0;
+        let assertionsPassed = 0;
+        let assertionsFailed = 0;
+        let errors = 0;
+        let unreached = 0;
+        for (const result of state.results.values()) {
+          if (result.status === "error") errors += 1;
+          else if (result.status === "unreached") unreached += 1;
+          for (const command of result.commands) {
+            if (command.skipped) continue;
+            if (command.passed) cardsPassed += 1;
+            else cardsFailed += 1;
+            for (const assertion of command.assertions) {
+              if (assertion.passed) assertionsPassed += 1;
+              else assertionsFailed += 1;
+            }
+          }
+        }
+        state.tally = {
+          cardsPassed,
+          cardsFailed,
+          assertionsPassed,
+          assertionsFailed,
+          errors,
+          unreached
+        };
+        if (state.derived.length > 0) {
+          const rules = { passed: 0, failed: 0, skipped: 0, errors: 0 };
+          for (const row of state.derived) {
+            if (row.status === "passed") rules.passed += 1;
+            else if (row.status === "failed") rules.failed += 1;
+            else if (row.status === "skipped") rules.skipped += 1;
+            else rules.errors += 1;
+          }
+          state.tally.rules = rules;
+        }
+        return;
+      }
+      case "derived-branch": {
+        state.derived.push(derivedRowOf(event));
+        return;
+      }
+      case "derived-summary": {
+        state.derivedSummary = derivedSummaryOf(event);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+  function resetRun(state) {
+    state.inFlight = false;
+    state.results.clear();
+    state.labels.clear();
+    state.pendingCommands.clear();
+    state.replaying.clear();
+    state.derived = [];
+    delete state.derivedSummary;
+    delete state.tally;
+    delete state.note;
+  }
+  function finishRun(state, ok, note) {
+    state.inFlight = false;
+    const nothingRan = state.results.size === 0 && state.derived.length === 0;
+    if (!ok && (state.tally === void 0 || nothingRan)) {
+      state.note = note ?? "The run ended without completing its stream.";
+    }
+  }
+  function runRowsOf(state, lines) {
+    const byId = new Map(lines.map((line) => [line.id, line]));
+    const rows = [];
+    for (const [lineId, result] of state.results) {
+      const label = byId.get(lineId)?.label ?? result.label ?? lineId;
+      rows.push({ kind: "result", lineId, label, result });
+    }
+    for (const line of lines) {
+      if (state.results.has(line.id)) continue;
+      const why = line.pending ? "pending branch" : state.inFlight ? "running\u2026" : "not run yet";
+      rows.push({ kind: "unrun", lineId: line.id, label: line.label, why });
+    }
+    return rows;
+  }
+
   // tools/ide/web/testing-surface/src/cards.ts
   function escapeHtml(text3) {
     return text3.replace(/&/g, "&amp;").replace(/</g, "&lt;");
@@ -697,6 +1229,9 @@
         <div id="ts-outline"></div>
       </div>
       <div class="ts-left">
+        <div class="ts-busy" id="ts-busy" role="status" aria-live="polite" hidden>
+          <span class="ts-spinner" aria-hidden="true"></span><span id="ts-busy-text"></span>
+        </div>
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>
       </div>
@@ -1223,8 +1758,8 @@
       }
       row.title = "all continue from this card";
     }
-    /** The run column: one header per line of the tree — derived labels are
-     *  the identities on the wire (D2/Q-8) — then EVERY executed command with
+    /** The run column: one header per line of the tree — keyed by line id,
+     *  titled by derived label (ADR-355 D5) — then EVERY executed command with
      *  every assertion's verdict (David 2026-08-10: the run shows every card
      *  and its assertions), and a line tally. A pending branch shows a dash. */
     renderRunColumn() {
@@ -1236,7 +1771,7 @@
         button.disabled = run.inFlight;
         button.textContent = run.inFlight ? "Running\u2026" : "Run";
       }
-      const lineIds = this.model.lineIds().filter((id) => id === 0 ? this.model.hasOpening : true);
+      const lineIds = this.model.lineIds().filter((id) => id === this.model.mainLine ? this.model.hasOpening : true);
       results.innerHTML = "";
       if (!this.model.hasOpening && run.results.size === 0 && run.derived.length === 0 && run.derivedSummary === void 0) {
         results.innerHTML = '<span class="ts-pending-note">no tests yet</span>';
@@ -1306,7 +1841,18 @@
           }
         }
       };
-      for (const [label, result] of run.results) {
+      const columnLines = lineIds.map((id) => ({
+        id,
+        label: this.model.labelOf(id),
+        pending: this.model.isPending(id)
+      }));
+      for (const entry of runRowsOf(run, columnLines)) {
+        const label = entry.label;
+        if (entry.kind === "unrun") {
+          row("\u2014", "", label, entry.why);
+          continue;
+        }
+        const result = entry.result;
         switch (result.status) {
           case "passed":
             row("PASS", "ts-pass", label, "");
@@ -1324,12 +1870,6 @@
             detail(result);
           }
         }
-      }
-      for (const id of lineIds) {
-        const label = this.model.labelOf(id);
-        if (run.results.has(label)) continue;
-        const why = this.model.isPending(id) ? "pending branch" : run.inFlight ? "running\u2026" : "not run yet";
-        row("\u2014", "", label, why);
       }
       if (run.derived.length > 0) this.renderDerivedRows(results, run.derived);
       if (run.tally) {
@@ -2047,7 +2587,6 @@
   }
 
   // tools/ide/web/testing-surface/src/model.ts
-  var MAIN_LINE = 0;
   function cloneAssertions(assertions) {
     if (assertions === void 0) return void 0;
     const copy = {};
@@ -2060,13 +2599,26 @@
     return copy;
   }
   var TreeSessionModel = class {
+    /**
+     * @param story the story id a fresh tree is recorded for.
+     * @param seed the pinned seed a fresh tree replays at.
+     * @param generateId the segment and card id source — `createSegmentId`
+     *   unless a test injects a deterministic one.
+     */
+    constructor(story, seed2, generateId = () => createSegmentId()) {
+      this.generateId = generateId;
+      this.doc = emptyTreeDocument(story, seed2, generateId());
+      this.active = this.doc.id;
+      this.lineCards.set(this.doc.id, this.doc.cards);
+      this.bindCursor.set(this.doc.id, 0);
+    }
     /** The truth: the live document this session reads and writes. */
     doc;
     // ── session-only indexes (never persisted) ─────────────────────────────
     cardByOrdinal = /* @__PURE__ */ new Map();
     ordinalByCard = /* @__PURE__ */ new Map();
     roomByOrdinal = /* @__PURE__ */ new Map();
-    /** Line id → the cards array it owns (MAIN_LINE → `doc.cards`). */
+    /** Line id → the cards array it owns (the main line → `doc.cards`). */
     lineCards = /* @__PURE__ */ new Map();
     /** Branch line id → where it forks from. Absent for the main line. */
     lineMeta = /* @__PURE__ */ new Map();
@@ -2074,26 +2626,31 @@
     pending = /* @__PURE__ */ new Map();
     /** Restore-by-replay: the next unbound card index per line. */
     bindCursor = /* @__PURE__ */ new Map();
-    active = MAIN_LINE;
-    constructor(story, seed2) {
-      this.doc = emptyTreeDocument(story, seed2);
-      this.lineCards.set(MAIN_LINE, this.doc.cards);
-      this.bindCursor.set(MAIN_LINE, 0);
-    }
+    active;
     /** The live document — read-only by convention; mutate through the model. */
     get document() {
       return this.doc;
     }
-    /** The document's canonical bytes (the shared serializer, AC-1). */
-    serialize() {
-      return serializeTreeDocument(this.doc);
+    /** The main line's id: the document's root segment id (ADR-355 D5). */
+    get mainLine() {
+      return this.doc.id;
     }
     /**
-     * Adopt a deserialized document as this session's tree (reopen). Every
-     * line's bind cursor starts at 0 — the restore driver replays the
-     * document's own commands and delivered turns bind to the existing cards.
-     * Branch ids colliding across sibling sets (hand-edited documents; the tab
-     * always allocates globally unique ids) are reassigned.
+     * The tree's at-rest files (ADR-355): the manifest and one canonical file
+     * per segment, through the shared segmenter. Mints any id a mutation left
+     * missing first — a new card's id, a fork's continuation — IN the model,
+     * so the next call yields the same names and bytes for what did not change.
+     */
+    files() {
+      ensureSegmentIds(this.doc, this.generateId);
+      return segmentTree(this.doc);
+    }
+    /**
+     * Adopt an assembled tree as this session's tree (reopen). Every line's
+     * bind cursor starts at 0 — the restore driver replays the tree's own
+     * commands and delivered turns bind to the existing cards. Ids are the
+     * reader's: `assembleTree` refuses a tree with duplicate ids, so none is
+     * reassigned here.
      */
     load(document2) {
       this.doc = document2;
@@ -2104,32 +2661,27 @@
       this.lineMeta.clear();
       this.pending.clear();
       this.bindCursor.clear();
-      this.active = MAIN_LINE;
-      let nextId = 0;
-      const collectMax = (cards2) => {
-        for (const card of cards2) {
-          for (const branch of card.branches ?? []) {
-            nextId = Math.max(nextId, branch.branch);
-            collectMax(branch.cards);
-          }
-        }
-      };
-      collectMax(this.doc.cards);
-      const seen = /* @__PURE__ */ new Set();
-      const dedupe = (cards2) => {
-        for (const card of cards2) {
-          for (const branch of card.branches ?? []) {
-            if (seen.has(branch.branch)) {
-              nextId += 1;
-              branch.branch = nextId;
-            }
-            seen.add(branch.branch);
-            dedupe(branch.cards);
-          }
-        }
-      };
-      dedupe(this.doc.cards);
+      this.active = this.doc.id;
       this.rebuildLineRegistry();
+    }
+    /** A segment id no segment or card in the tree uses (one namespace, D5/D7). */
+    freshId() {
+      const taken = /* @__PURE__ */ new Set([this.doc.id]);
+      const walk = (cards2) => {
+        for (const card of cards2) {
+          if (card.id !== void 0) taken.add(card.id);
+          if (card.continuation !== void 0) taken.add(card.continuation);
+          for (const branch of card.branches ?? []) {
+            taken.add(branch.id);
+            walk(branch.cards);
+          }
+        }
+      };
+      walk(this.doc.cards);
+      for (; ; ) {
+        const id = this.generateId();
+        if (!taken.has(id)) return id;
+      }
     }
     /**
      * Re-derive the line registry from the document: every branch's cards
@@ -2147,27 +2699,27 @@
         while (index < cards2.length && this.ordinalByCard.has(cards2[index])) index += 1;
         return index;
       };
-      this.lineCards.set(MAIN_LINE, this.doc.cards);
-      this.bindCursor.set(MAIN_LINE, cursorOf(this.doc.cards));
+      this.lineCards.set(this.doc.id, this.doc.cards);
+      this.bindCursor.set(this.doc.id, cursorOf(this.doc.cards));
       const register = (cards2, lineId) => {
         for (const card of cards2) {
           for (const branch of card.branches ?? []) {
-            this.lineCards.set(branch.branch, branch.cards);
-            this.lineMeta.set(branch.branch, { parentLine: lineId, forkCard: card, branch });
-            this.bindCursor.set(branch.branch, cursorOf(branch.cards));
-            register(branch.cards, branch.branch);
+            this.lineCards.set(branch.id, branch.cards);
+            this.lineMeta.set(branch.id, { parentLine: lineId, forkCard: card, branch });
+            this.bindCursor.set(branch.id, cursorOf(branch.cards));
+            register(branch.cards, branch.id);
           }
         }
       };
-      register(this.doc.cards, MAIN_LINE);
+      register(this.doc.cards, this.doc.id);
       for (const id of [...this.pending.keys()]) {
         if (!this.lineCards.has(id)) this.pending.delete(id);
       }
-      if (!this.lineCards.has(this.active)) this.active = MAIN_LINE;
+      if (!this.lineCards.has(this.active)) this.active = this.doc.id;
     }
     /** Start over with a fresh empty tree (the degrade target, AC-4). */
     reset(story, seed2) {
-      this.load(emptyTreeDocument(story, seed2));
+      this.load(emptyTreeDocument(story, seed2, this.generateId()));
     }
     /**
      * Unbind every card and rewind every line's cursor — the whole-path replay
@@ -2243,7 +2795,7 @@
         this.ordinalByCard.set(card2, ordinal);
       };
       let cursor = this.bindCursor.get(this.active) ?? cards2.length;
-      if (this.active === MAIN_LINE && !this.hasOpening) {
+      if (this.active === this.doc.id && !this.hasOpening) {
         if (cursor < cards2.length && cards2[cursor].type === "opening") {
           const openingCard = cards2[cursor];
           const openingIsClaimless = openingCard.assertions === void 0 || Object.keys(openingCard.assertions).length === 0;
@@ -2406,12 +2958,13 @@
       const meta = this.lineMeta.get(id);
       if (meta === void 0) {
         const bootCard = this.doc.cards.find((card) => card.type !== "opening");
-        const room2 = bootCard !== void 0 ? this.roomAtCard(MAIN_LINE, bootCard) : void 0;
+        const room2 = bootCard !== void 0 ? this.roomAtCard(this.doc.id, bootCard) : void 0;
         return mainLineLabelOf(roomSlugOf(room2));
       }
       const room = this.roomAtCard(meta.parentLine, meta.forkCard);
       const firstCommand = (this.lineCards.get(id) ?? []).find((card) => card.type === "turn")?.command ?? this.pending.get(id);
-      return branchLineLabelOf(roomSlugOf(room), id, firstCommand);
+      const ordinal = (meta.forkCard.branches ?? []).indexOf(meta.branch) + 1;
+      return branchLineLabelOf(roomSlugOf(room), ordinal, firstCommand);
     }
     /** Lines with no landed turn yet (just forked — chip shows, run row dashes). */
     isPending(id) {
@@ -2445,7 +2998,7 @@
             points.push({
               ordinal,
               lineId,
-              siblings: (card.branches ?? []).map((branch) => branch.branch)
+              siblings: (card.branches ?? []).map((branch) => branch.id)
             });
           }
           if (cutCard !== void 0 && card === cutCard) break;
@@ -2477,12 +3030,12 @@
     branch(ordinal, command) {
       if (!this.canBranch(ordinal)) return null;
       const card = this.cardByOrdinal.get(ordinal);
-      let owner = MAIN_LINE;
+      let owner = this.doc.id;
       for (const { lineId } of this.chainOf(this.active)) {
         if ((this.lineCards.get(lineId) ?? []).includes(card)) owner = lineId;
       }
-      const id = Math.max(0, ...this.lineCards.keys(), ...this.lineMeta.keys()) + 1;
-      const branch = { branch: id, cards: [] };
+      const id = this.freshId();
+      const branch = { id, cards: [] };
       (card.branches ??= []).push(branch);
       this.lineCards.set(id, branch.cards);
       this.lineMeta.set(id, { parentLine: owner, forkCard: card, branch });
@@ -2862,276 +3415,11 @@
     filter.focus();
   }
 
-  // packages/ide-protocol/src/run-events.ts
-  var RUN_EVENT_SCHEMA_VERSION = 2;
-  function isObject(v) {
-    return typeof v === "object" && v !== null;
-  }
-  function isStringArray(v) {
-    return Array.isArray(v) && v.every((entry) => typeof entry === "string");
-  }
-  function hasEnvelopeAndType(v, type) {
-    return v.schemaVersion === RUN_EVENT_SCHEMA_VERSION && v.type === type && typeof v.seq === "number" && typeof v.elapsedMs === "number";
-  }
-  function isRunStartEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "run-start") && (value.mode === "tests" || value.mode === "chain" || value.mode === "tree" || value.mode === "explore") && (value.transcriptCount === void 0 || typeof value.transcriptCount === "number");
-  }
-  function isPhaseEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "phase") && (value.name === "compile" || value.name === "load" || value.name === "assemble" || value.name === "execute") && (value.status === "started" || value.status === "finished") && (value.detail === void 0 || typeof value.detail === "string");
-  }
-  function isTranscriptStartEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "transcript-start") && typeof value.file === "string" && typeof value.index === "number" && (value.commandCount === void 0 || typeof value.commandCount === "number") && (value.parent === void 0 || typeof value.parent === "string") && (value.replayed === void 0 || typeof value.replayed === "boolean") && (value.world === void 0 || isWorldSnapshot(value.world));
-  }
-  function isCommandResultEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults));
-  }
-  function isAssertionOutcomeArray(value) {
-    return Array.isArray(value) && value.every(
-      (entry) => isObject(entry) && typeof entry.description === "string" && typeof entry.passed === "boolean" && (entry.message === void 0 || typeof entry.message === "string")
-    );
-  }
-  function isWorldEntityRef(value) {
-    if (!isObject(value)) return false;
-    return typeof value.name === "string" && typeof value.token === "string";
-  }
-  function isWorldSnapshot(value) {
-    if (!isObject(value)) return false;
-    return (value.location === void 0 || isWorldEntityRef(value.location)) && Array.isArray(value.inventory) && value.inventory.every(isWorldEntityRef);
-  }
-  function isTranscriptEndEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "transcript-end") && typeof value.file === "string" && (value.status === "passed" || value.status === "failed" || value.status === "error" || value.status === "unreached" || value.status === "skipped") && typeof value.passed === "number" && typeof value.failed === "number" && typeof value.expectedFailures === "number" && typeof value.skipped === "number" && typeof value.duration === "number" && (value.errorMessage === void 0 || typeof value.errorMessage === "string") && (value.blockedBy === void 0 || typeof value.blockedBy === "string");
-  }
-  function isBudgetUse(value) {
-    if (!isObject(value)) return false;
-    return (value.unit === "states" || value.unit === "seconds" || value.unit === "depth" || value.unit === "commands") && typeof value.spent === "number" && typeof value.limit === "number";
-  }
-  function isProgressEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "progress") && (value.scope === "commands" || value.scope === "transcripts" || value.scope === "nodes" || value.scope === "states") && typeof value.done === "number" && (value.total === void 0 || typeof value.total === "number") && (value.budgets === void 0 || Array.isArray(value.budgets) && value.budgets.every(isBudgetUse));
-  }
-  function isCoveragePoint(value) {
-    if (!isObject(value)) return false;
-    return typeof value.name === "string" && typeof value.fired === "number" && (value.classes === void 0 || isStringArray(value.classes)) && (value.observed === void 0 || isStringArray(value.observed)) && (value.unobserved === void 0 || isStringArray(value.unobserved));
-  }
-  function isCoverageEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "coverage") && Array.isArray(value.points) && value.points.every(isCoveragePoint) && typeof value.pointsFired === "number" && typeof value.pointsNeverFired === "number" && typeof value.classesUnobserved === "number";
-  }
-  function isSpan(value) {
-    if (!isObject(value)) return false;
-    return (value.file === void 0 || typeof value.file === "string") && typeof value.line === "number" && typeof value.column === "number" && typeof value.endLine === "number" && typeof value.endColumn === "number";
-  }
-  function isSpanOrNull(value) {
-    return value === null || isSpan(value);
-  }
-  function isDerivedBranchStatus(value) {
-    return value === "passed" || value === "failed" || value === "skipped" || value === "error";
-  }
-  function isDerivedBranchEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "derived-branch") && typeof value.label === "string" && "span" in value && isSpanOrNull(value.span) && isDerivedBranchStatus(value.status) && (value.shape === void 0 || typeof value.shape === "string") && (value.detail === void 0 || typeof value.detail === "string") && (value.failure === void 0 || typeof value.failure === "string") && (value.command === void 0 || typeof value.command === "string") && (value.arranged === void 0 || isStringArray(value.arranged));
-  }
-  function isDerivedBranchGap(value) {
-    if (!isObject(value)) return false;
-    return typeof value.label === "string" && (value.status === "skipped" || value.status === "error") && (value.shape === void 0 || typeof value.shape === "string") && (value.detail === void 0 || typeof value.detail === "string") && "span" in value && isSpanOrNull(value.span);
-  }
-  function isDerivedEndingGap(value) {
-    if (!isObject(value)) return false;
-    return (value.id === null || typeof value.id === "string") && (value.statement === "win" || value.statement === "lose" || value.statement === "kill") && (value.line === null || typeof value.line === "number") && (value.file === null || typeof value.file === "string");
-  }
-  function isDerivedRunSummaryEvent(value) {
-    if (!isObject(value)) return false;
-    if (!hasEnvelopeAndType(value, "derived-summary")) return false;
-    const { branches, endings, rooms } = value;
-    if (!isObject(branches) || !isObject(endings) || !isObject(rooms)) return false;
-    return typeof branches.declared === "number" && typeof branches.exercised === "number" && typeof branches.passed === "number" && typeof branches.failed === "number" && Array.isArray(branches.gaps) && branches.gaps.every(isDerivedBranchGap) && typeof endings.declared === "number" && typeof endings.reached === "number" && Array.isArray(endings.unreached) && endings.unreached.every(isDerivedEndingGap) && Array.isArray(endings.unnamed) && endings.unnamed.every(isDerivedEndingGap) && typeof rooms.declared === "number" && typeof rooms.entered === "number" && isStringArray(rooms.unentered);
-  }
-  function isRunEndEvent(value) {
-    if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "run-end") && typeof value.totalPassed === "number" && typeof value.totalFailed === "number" && typeof value.totalExpectedFailures === "number" && typeof value.totalSkipped === "number" && typeof value.totalErrors === "number" && typeof value.totalUnreached === "number" && typeof value.totalDuration === "number" && typeof value.exitCode === "number";
-  }
-  function isRunEvent(value) {
-    return isRunStartEvent(value) || isPhaseEvent(value) || isTranscriptStartEvent(value) || isCommandResultEvent(value) || isTranscriptEndEvent(value) || isProgressEvent(value) || isCoverageEvent(value) || isDerivedBranchEvent(value) || isDerivedRunSummaryEvent(value) || isRunEndEvent(value);
-  }
-
-  // tools/ide/web/testing-surface/src/run.ts
-  function createRunState() {
-    return {
-      inFlight: false,
-      results: /* @__PURE__ */ new Map(),
-      pendingCommands: /* @__PURE__ */ new Map(),
-      replaying: /* @__PURE__ */ new Set(),
-      derived: []
-    };
-  }
-  function beginRun(state) {
-    state.inFlight = true;
-    state.results.clear();
-    state.pendingCommands.clear();
-    state.replaying.clear();
-    state.derived = [];
-    delete state.derivedSummary;
-    delete state.tally;
-    delete state.note;
-  }
-  function stemOf(file) {
-    const base = file.split("/").at(-1) ?? file;
-    return base.replace(/\.transcript$/, "");
-  }
-  function foldRunLine(state, text3) {
-    const trimmed = text3.trim();
-    if (!trimmed) return;
-    let parsed;
-    try {
-      parsed = JSON.parse(trimmed);
-    } catch {
-      return;
-    }
-    if (!isRunEvent(parsed)) return;
-    fold(state, parsed);
-  }
-  function fold(state, event) {
-    switch (event.type) {
-      case "transcript-start": {
-        if (event.replayed === true) state.replaying.add(event.file);
-        else state.replaying.delete(event.file);
-        return;
-      }
-      case "command-result": {
-        if (state.replaying.has(event.file)) return;
-        const stem = stemOf(event.file);
-        const failureMessage = event.failure ?? event.error;
-        const outcome = {
-          input: event.input,
-          passed: event.passed,
-          skipped: event.skipped,
-          assertions: (event.assertionResults ?? []).map((entry) => ({
-            description: entry.description,
-            passed: entry.passed,
-            ...entry.message !== void 0 ? { message: entry.message } : {}
-          })),
-          ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {}
-        };
-        const pending = state.pendingCommands.get(stem) ?? [];
-        pending.push(outcome);
-        state.pendingCommands.set(stem, pending);
-        if (event.passed || event.skipped) return;
-        const existing = state.results.get(stem);
-        if (existing?.firstFailure !== void 0) {
-          existing.moreFailures += 1;
-          return;
-        }
-        const message = failureMessage ?? "failed";
-        const where = event.turn !== void 0 ? `turn ${event.turn}` : event.line > 0 ? `line ${event.line}` : void 0;
-        state.results.set(stem, {
-          status: "failed",
-          passed: 0,
-          failed: 1,
-          commands: [],
-          firstFailure: where !== void 0 ? `${where} \u2014 ${message}` : message,
-          moreFailures: existing?.moreFailures ?? 0
-        });
-        return;
-      }
-      case "transcript-end": {
-        if (state.replaying.has(event.file)) {
-          state.replaying.delete(event.file);
-          state.pendingCommands.delete(stemOf(event.file));
-          return;
-        }
-        const stem = stemOf(event.file);
-        const partial = state.results.get(stem);
-        const result = {
-          status: event.status,
-          passed: event.passed,
-          failed: event.failed,
-          commands: state.pendingCommands.get(stem) ?? [],
-          moreFailures: Math.max(0, event.failed - 1)
-        };
-        state.pendingCommands.delete(stem);
-        if (partial?.firstFailure !== void 0) result.firstFailure = partial.firstFailure;
-        else if (event.status === "error" && event.errorMessage !== void 0) {
-          result.firstFailure = event.errorMessage;
-        } else if (event.status === "unreached") {
-          result.firstFailure = event.blockedBy !== void 0 ? `blocked by ${stemOf(event.blockedBy)}` : "blocked by an ancestor";
-        }
-        state.results.set(stem, result);
-        return;
-      }
-      case "run-end": {
-        state.inFlight = false;
-        let cardsPassed = 0;
-        let cardsFailed = 0;
-        let assertionsPassed = 0;
-        let assertionsFailed = 0;
-        let errors = 0;
-        let unreached = 0;
-        for (const result of state.results.values()) {
-          if (result.status === "error") errors += 1;
-          else if (result.status === "unreached") unreached += 1;
-          for (const command of result.commands) {
-            if (command.skipped) continue;
-            if (command.passed) cardsPassed += 1;
-            else cardsFailed += 1;
-            for (const assertion of command.assertions) {
-              if (assertion.passed) assertionsPassed += 1;
-              else assertionsFailed += 1;
-            }
-          }
-        }
-        state.tally = {
-          cardsPassed,
-          cardsFailed,
-          assertionsPassed,
-          assertionsFailed,
-          errors,
-          unreached
-        };
-        if (state.derived.length > 0) {
-          const rules = { passed: 0, failed: 0, skipped: 0, errors: 0 };
-          for (const row of state.derived) {
-            if (row.status === "passed") rules.passed += 1;
-            else if (row.status === "failed") rules.failed += 1;
-            else if (row.status === "skipped") rules.skipped += 1;
-            else rules.errors += 1;
-          }
-          state.tally.rules = rules;
-        }
-        return;
-      }
-      case "derived-branch": {
-        state.derived.push(derivedRowOf(event));
-        return;
-      }
-      case "derived-summary": {
-        state.derivedSummary = derivedSummaryOf(event);
-        return;
-      }
-      default:
-        return;
-    }
-  }
-  function resetRun(state) {
-    state.inFlight = false;
-    state.results.clear();
-    state.pendingCommands.clear();
-    state.replaying.clear();
-    state.derived = [];
-    delete state.derivedSummary;
-    delete state.tally;
-    delete state.note;
-  }
-  function finishRun(state, ok, note) {
-    state.inFlight = false;
-    const nothingRan = state.results.size === 0 && state.derived.length === 0;
-    if (!ok && (state.tally === void 0 || nothingRan)) {
-      state.note = note ?? "The run ended without completing its stream.";
-    }
+  // tools/ide/web/testing-surface/src/busy.ts
+  function busyLabel(kind, done, total) {
+    const verb = kind === "restore" ? "Restoring session" : "Replaying line";
+    if (total <= 0) return `${verb}\u2026`;
+    return `${verb} \u2014 ${Math.min(Math.max(done, 0), total)} of ${total}\u2026`;
   }
 
   // tools/ide/web/testing-surface/src/main.ts
@@ -3146,7 +3434,7 @@
   var bootRecordOrdinal;
   var regionByRoom = bootSession?.regions ?? {};
   var collapsedRegions = new Set(bootSession?.view?.collapsed ?? []);
-  var currentLine = MAIN_LINE;
+  var currentLine = model.mainLine;
   var dialogOutcomes = /* @__PURE__ */ new Map();
   var dropBeforeFence = false;
   var expectDriverFence = false;
@@ -3155,7 +3443,7 @@
   var driverBusy = false;
   var armedOutcomeKey = null;
   var documentWriteLocked = false;
-  var lastDocumentText = "";
+  var lastTreeFiles = {};
   var storyEnded = false;
   function turnSource(ordinal) {
     const record = records.get(ordinal);
@@ -3361,10 +3649,11 @@
   }
   function update() {
     if (!driverBusy) {
-      const text3 = model.serialize();
-      if (text3 !== lastDocumentText) {
-        lastDocumentText = text3;
-        if (!documentWriteLocked) postToBridge({ document: { text: text3 } });
+      const files = model.files();
+      const { written, removed } = diffTreeFiles(lastTreeFiles, files);
+      if (Object.keys(written).length > 0 || removed.length > 0) {
+        lastTreeFiles = files;
+        if (!documentWriteLocked) postToBridge({ tree: { written, removed } });
         if (!runState.inFlight) resetRun(runState);
       }
       cards.render();
@@ -3480,8 +3769,8 @@
       clearUndo();
       records.clear();
       model.beginRebindAll();
-      model.activateLine(MAIN_LINE);
-      currentLine = MAIN_LINE;
+      model.activateLine(model.mainLine);
+      currentLine = model.mainLine;
       expectBoot = true;
       pendingDialogOutcome = null;
       bootCaptures = void 0;
@@ -3503,14 +3792,14 @@
     attachOutline();
     records.set(record.turn, record);
     lastDeliveredOrdinal = record.turn;
-    if (boot && currentLine === MAIN_LINE) {
+    if (boot && currentLine === model.mainLine) {
       bootCaptures = capturesOf(record);
       bootRecordOrdinal = record.turn;
     }
     const room = roomOf(record);
     model.activateLine(currentLine);
     const recorded = recordedTurnAssertions(policy, turnSource(record.turn));
-    const openingClaims = boot && currentLine === MAIN_LINE ? openingDefaultClaims(policy, bootCaptures) : [];
+    const openingClaims = boot && currentLine === model.mainLine ? openingDefaultClaims(policy, bootCaptures) : [];
     model.addTurn({
       ordinal: record.turn,
       command: record.command ?? "",
@@ -3526,7 +3815,7 @@
       if (at) dialogOutcomes.set(`${at.lineId}:${at.index}`, pendingDialogOutcome);
       pendingDialogOutcome = null;
     }
-    cards.addTurnCard(record.turn, boot, currentLine !== MAIN_LINE);
+    cards.addTurnCard(record.turn, boot, currentLine !== model.mainLine);
     update();
     cards.scrollToLatest();
     const waiters = nextTurnWaiters;
@@ -3561,6 +3850,14 @@
     input.placeholder = placeholder;
     if (!held) input.focus();
   }
+  function showBusy(text3) {
+    document.body.classList.toggle("ts-busy", text3 !== null);
+    const bar = document.getElementById("ts-busy");
+    const label = document.getElementById("ts-busy-text");
+    if (!bar || !label) return;
+    bar.hidden = text3 === null;
+    label.textContent = text3 ?? "";
+  }
   function visitPlan(lineId) {
     return visitPlanOf(model.pathStepsOf(lineId), model.prefixCommandsOf(lineId).length);
   }
@@ -3577,6 +3874,13 @@
     driverBusy = true;
     replayActive = true;
     setInputHeld(true, "replaying\u2026");
+    const total = replay.length + live.length;
+    let done = 0;
+    showBusy(busyLabel("line", done, total));
+    const stepLanded = () => {
+      done += 1;
+      showBusy(busyLabel("line", done, total));
+    };
     try {
       localStorage.clear();
       dropBeforeFence = true;
@@ -3605,6 +3909,7 @@
           trace(`boot line ${line}: prefix step "${step.command}" never landed`);
           return "failed";
         }
+        stepLanded();
       }
       suppressDelivery = false;
       currentLine = line;
@@ -3623,6 +3928,7 @@
           trace(`boot line ${line}: step "${step.command}" never landed`);
           return "failed";
         }
+        stepLanded();
       }
       trace(`boot line ${line}: ok`);
       return "ok";
@@ -3634,6 +3940,7 @@
       replayActive = false;
       driverBusy = wasBusy;
       setInputHeld(driverBusy, driverBusy ? "restoring session\u2026" : "");
+      showBusy(driverBusy ? busyLabel("restore", 0, 0) : null);
       update();
     }
   }
@@ -3682,19 +3989,21 @@
     driverBusy = true;
     replayActive = true;
     setInputHeld(true, "restoring session\u2026");
+    showBusy(busyLabel("restore", 0, 0));
     try {
-      currentLine = MAIN_LINE;
-      model.activateLine(MAIN_LINE);
+      currentLine = model.mainLine;
+      model.activateLine(model.mainLine);
       if (!model.hasOpening) await awaitNextTurn(15e3);
       let intact = true;
-      const mainCommands = model.ownCommandsOf(MAIN_LINE);
+      const mainCommands = model.ownCommandsOf(model.mainLine);
       for (const [index, command] of mainCommands.entries()) {
+        showBusy(busyLabel("restore", index, mainCommands.length));
         if (storyEnded) {
           trace(`main line: ended after ${index} of ${mainCommands.length} command(s)`);
           intact = false;
           break;
         }
-        armedOutcomeKey = `${MAIN_LINE}:${index}`;
+        armedOutcomeKey = `${model.mainLine}:${index}`;
         typeCommand(command);
         const landed = await awaitNextTurn(15e3);
         armedOutcomeKey = null;
@@ -3715,6 +4024,7 @@
       driverBusy = false;
       armedOutcomeKey = null;
       setInputHeld(false);
+      showBusy(null);
       update();
     }
   }
@@ -3735,10 +4045,11 @@
     performUndo();
   });
   var loadedDocument = false;
-  var admission = admitBootDocument(bootSession?.document, seed);
+  var admission = admitBootDocument(bootSession?.tree, seed);
+  lastTreeFiles = { ...bootSession?.tree ?? {} };
   if (admission.document) {
     model.load(admission.document);
-    lastDocumentText = model.serialize();
+    currentLine = model.mainLine;
     dialogOutcomes = new Map(bootSession?.view?.dialogs ?? []);
     loadedDocument = true;
   }
@@ -3746,6 +4057,7 @@
   if (admission.notice) cards.setNotice(admission.notice);
   for (const record of queued) deliver(record);
   if (loadedDocument && model.document.cards.length > 0) {
-    void replayTree(bootSession?.view?.active ?? MAIN_LINE);
+    const active = bootSession?.view?.active;
+    void replayTree(typeof active === "string" ? active : model.mainLine);
   }
 })();

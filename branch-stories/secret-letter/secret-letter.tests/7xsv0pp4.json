@@ -1,0 +1,59 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The monkey balances easily on the cable"
+        ]
+      },
+      "command": "x se cable",
+      "id": "eajbsr62",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cables are so thick and so taut, they don't even budge.",
+          "The monkey chatters happily at your fruitless efforts to dislodge it.",
+          "'There he is!'"
+        ]
+      },
+      "command": "pull se cable",
+      "id": "5q7budg0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Gotcha!'"
+        ],
+        "notContains": [
+          "The monkey chatters"
+        ],
+        "states": [
+          "emitted cable-taut"
+        ]
+      },
+      "command": "push nw cable",
+      "id": "f8tsd3xj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "kick off into space"
+        ],
+        "states": [
+          "player.location = Top of the Post",
+          "cloak.location = player"
+        ]
+      },
+      "command": "slide down southeast cable",
+      "id": "vrrecimi",
+      "type": "turn"
+    }
+  ],
+  "id": "7xsv0pp4",
+  "ordinal": 3,
+  "parent": "8apa5ok6"
+}

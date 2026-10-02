@@ -290,7 +290,7 @@ describe('the scaffold shows what the tool supports', () => {
 
   it('creates the project folders, each kept by a dotfile', () => {
     // No tests/ folder since the ADR-307 cutover — tests live in the story's
-    // tree document (<story-id>.tests.json), recorded by the Testing tab.
+    // test tree (the <story-id>.tests/ directory), recorded by the Testing tab.
     // Asserted as absence, not omission: a regression re-creating it fails.
     expect(existsSync(join(projectDir, 'tests')), 'tests/ must NOT be scaffolded').toBe(false);
     for (const folder of ['assets', 'feelies', 'walkthroughs']) {

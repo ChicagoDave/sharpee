@@ -1,0 +1,47 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "huddled around the base of the pole"
+        ]
+      },
+      "command": "x mercenaries",
+      "id": "bkok8smk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted merc-below-muffled"
+        ]
+      },
+      "command": "listen to mercenaries",
+      "id": "jjmpxpob",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted merc-way-up-here"
+        ]
+      },
+      "command": "attack mercenaries",
+      "id": "8frd0xge",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted merc-way-up-here"
+        ]
+      },
+      "command": "kick mercenaries",
+      "id": "nle7z5zv",
+      "type": "turn"
+    }
+  ],
+  "id": "9skkvmsb",
+  "ordinal": 1,
+  "parent": "kesbhx7z"
+}

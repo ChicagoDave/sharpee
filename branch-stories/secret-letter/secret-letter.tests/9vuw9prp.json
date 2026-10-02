@@ -1,0 +1,182 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "have your finger off, little thief"
+        ]
+      },
+      "command": "take daggers",
+      "id": "a4vlqxwl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "grievously injure someone"
+        ]
+      },
+      "command": "x weapons",
+      "id": "rsx0i1t7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "s",
+      "id": "l6tduzfe",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Three stately houses are built close together"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "e",
+      "id": "qiub80u4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "somber building of dark flagstone and slate"
+        ]
+      },
+      "command": "x black gate",
+      "id": "udwp7oky",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted red-gate-no-answer"
+        ]
+      },
+      "command": "knock on red gate",
+      "id": "9b53655y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The servants would never let someone like you enter"
+        ]
+      },
+      "command": "knock on black gate",
+      "id": "tk4t3ofg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The front gates are securely locked."
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "n",
+      "id": "eroe5tto",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Several street kids have congregated in the middle of the park"
+        ]
+      },
+      "command": "s",
+      "id": "3b19xe2k",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "No, too risky. Better visit the park another day."
+        ]
+      },
+      "command": "s",
+      "id": "uakfjvlg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rumor has it that many of his dealings are decidedly less than legal"
+        ]
+      },
+      "command": "ne",
+      "id": "jccmsu9u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "too high to climb, and topped with sharp iron spikes"
+        ]
+      },
+      "command": "climb fence",
+      "id": "r3katwxi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "high-class mirror to Grubber's Market",
+          "Calm yourself, Fossville",
+          "And then they are gone."
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "e",
+      "id": "htozugb4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "no one affords you so much as a second glance"
+        ]
+      },
+      "command": "x servants",
+      "id": "ihirntma",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lampposts are unlit during the day."
+        ]
+      },
+      "command": "x lanterns",
+      "id": "mickp9r3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "tasteful curtains",
+          "A small bell above the door tinkles as you enter"
+        ],
+        "states": [
+          "player.location = Royal Tunic"
+        ]
+      },
+      "command": "ne",
+      "id": "qrvkz1oj",
+      "type": "turn"
+    }
+  ],
+  "id": "9vuw9prp",
+  "ordinal": 0,
+  "parent": "49ez581p"
+}

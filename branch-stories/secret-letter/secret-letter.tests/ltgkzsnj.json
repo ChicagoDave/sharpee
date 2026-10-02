@@ -1,0 +1,88 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted odd-rolled-up-parchment"
+        ]
+      },
+      "command": "x chandelier",
+      "id": "psmlnc8q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Library",
+          "You can see a letter here."
+        ]
+      },
+      "command": "look",
+      "id": "5194qlsy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Don't forget the letter!"
+        ]
+      },
+      "command": "n",
+      "id": "fvwtjdoj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Nothing else seems to be hidden in the gaudy chandelier."
+        ]
+      },
+      "command": "search chandelier",
+      "id": "o6kj9fmu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "this child, who bears no fault for the circumstances of her birth",
+          "Jacqueline Toresal",
+          "Your hand is trembling as you fold the letter.",
+          "just someone who happens to have the same first name as you",
+          "And what is it doing in Baron Fossville's library?"
+        ],
+        "states": [
+          "emitted you-pick-up-the-letter"
+        ]
+      },
+      "command": "x letter",
+      "id": "5svckal7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "letter"
+        ]
+      },
+      "command": "i",
+      "id": "vczlxpdc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jacqueline Toresal"
+        ],
+        "notContains": [
+          "Your hand is trembling"
+        ]
+      },
+      "command": "x letter",
+      "id": "b24ut1bu",
+      "type": "turn"
+    }
+  ],
+  "id": "ltgkzsnj",
+  "ordinal": 0,
+  "parent": "h4goviwo"
+}

@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You settle yourself on a crate and take a bite of your apple."
+        ],
+        "states": [
+          "story.state = calm",
+          "apple.location = player"
+        ]
+      },
+      "command": "eat apple",
+      "id": "o3m2djsi",
+      "type": "turn"
+    }
+  ],
+  "id": "xtm1snmb",
+  "ordinal": 0,
+  "parent": "qpw1gitv"
+}

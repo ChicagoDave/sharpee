@@ -1,0 +1,88 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "d",
+      "id": "e63b8xmc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "oudfh6hi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Hurry, Jack!' she hisses"
+        ],
+        "states": [
+          "story.state = chase"
+        ]
+      },
+      "command": "give necklace to teisha",
+      "id": "o2g3sf88",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Not back into the market — that's where they are."
+        ],
+        "states": [
+          "player.location = Inside the Silk Tent"
+        ]
+      },
+      "command": "s",
+      "id": "wuccz1p2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post",
+          "You can hear Teisha yelling shrilly"
+        ]
+      },
+      "command": "n",
+      "id": "wnjkt1i0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post",
+          "One of the mercenaries tries to climb after you"
+        ]
+      },
+      "command": "u",
+      "id": "d4100qp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You look down. The mercenaries are at the base of the post,"
+        ],
+        "states": [
+          "player.location = Top of the Post"
+        ]
+      },
+      "command": "d",
+      "id": "s2gxegn7",
+      "type": "turn"
+    }
+  ],
+  "id": "qpvi24cs",
+  "ordinal": 8,
+  "parent": "49qggv56"
+}

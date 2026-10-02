@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Just ordinary wooden crates"
+        ]
+      },
+      "command": "x crates",
+      "id": "va1h3l4y",
+      "type": "turn"
+    }
+  ],
+  "id": "qpw1gitv",
+  "ordinal": 0,
+  "parent": "pyrm07xl"
+}

@@ -1,0 +1,231 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "8lyiaokx",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "first partner, beat 1."
+        ],
+        "states": [
+          "the first partner is dancing",
+          "the second partner is waiting",
+          "the third partner is waiting",
+          "the dance is first"
+        ]
+      },
+      "id": "u61isc2q",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "first partner, beat 2.",
+          "HAND-OFF: the circle turns",
+          "first partner, PARTING.",
+          "second partner, beat 1."
+        ],
+        "states": [
+          "story.state = dancing",
+          "the first partner is waiting",
+          "the second partner is dancing",
+          "the dance is second"
+        ]
+      },
+      "command": "go on",
+      "id": "fj0yn410",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "first partner on the weather, ROUND ONE.",
+          "second partner, beat 2."
+        ]
+      },
+      "command": "ask first partner about the weather",
+      "id": "57zgeszw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "second partner on the weather.",
+          "second partner, PARTING.",
+          "HAND-OFF: the circle turns",
+          "third partner, beat 1."
+        ],
+        "states": [
+          "the second partner is waiting",
+          "the third partner is dancing",
+          "the dance is third"
+        ]
+      },
+      "command": "ask second partner about the weather",
+      "id": "5m509x7m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "third partner on the weather.",
+          "third partner, PARTING.",
+          "third partner, RESUMING."
+        ]
+      },
+      "command": "ask third partner about the weather",
+      "id": "uwj8gk5f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "ROUND: the circle has come back to the first hand",
+          "third partner, PARTING.",
+          "first partner, RESUMING where we left off."
+        ],
+        "states": [
+          "story.state = dancing",
+          "the third partner is waiting",
+          "the first partner is dancing",
+          "the dance is first"
+        ]
+      },
+      "command": "wait",
+      "id": "6rxhqsf4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A LATER ROUND: memory across rounds.",
+          "first partner, PARTING.",
+          "first partner, RESUMING where we left off."
+        ]
+      },
+      "command": "ask first partner about the weather",
+      "id": "t7gccjv9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "HAND-OFF: the circle turns",
+          "first partner, PARTING.",
+          "second partner, RESUMING."
+        ],
+        "states": [
+          "the first partner is waiting",
+          "the second partner is dancing"
+        ]
+      },
+      "command": "wait",
+      "id": "x5grtyin",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "second partner, CONCLUSION."
+        ]
+      },
+      "command": "wait",
+      "id": "zj0kttjh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "HAND-OFF: the circle turns",
+          "third partner, RESUMING."
+        ],
+        "states": [
+          "the second partner is waiting",
+          "the third partner is dancing"
+        ]
+      },
+      "command": "wait",
+      "id": "x0pvriot",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "third partner, CONCLUSION."
+        ]
+      },
+      "command": "wait",
+      "id": "y7y5b5l0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "ROUND: the circle has come back to the first hand",
+          "first partner, RESUMING where we left off."
+        ],
+        "states": [
+          "the third partner is waiting",
+          "the first partner is dancing",
+          "the dance is first"
+        ]
+      },
+      "command": "wait",
+      "id": "atx7965f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "first partner, beat 3."
+        ]
+      },
+      "command": "wait",
+      "id": "o33u4pyx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "HAND-OFF: the circle turns",
+          "first partner, CONCLUSION."
+        ],
+        "states": [
+          "story.state = dancing",
+          "the first partner is waiting",
+          "the second partner is dancing"
+        ]
+      },
+      "command": "wait",
+      "id": "ug287pmf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes...",
+          "MUSIC STOPS: every partner has had their say."
+        ],
+        "states": [
+          "story.state = ended",
+          "the story is ended"
+        ]
+      },
+      "command": "wait",
+      "id": "xm3hcost",
+      "type": "turn"
+    }
+  ],
+  "id": "ig2x0ybd"
+}

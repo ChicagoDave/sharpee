@@ -1,0 +1,91 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The shears bite through the waxed cord. The spark train staggers, gutters, and dies a hand's breadth from the cache."
+        ]
+      },
+      "command": "cut fuse with shears",
+      "id": "14njwj43",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the deed box.",
+          "In the deed box you see a deed."
+        ]
+      },
+      "command": "open deed box with locket",
+      "id": "k485ygea",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the deed from the deed box.",
+          "Somewhere below, a door you have never opened settles on its hinges, as if it had been waiting to be yours."
+        ]
+      },
+      "command": "take deed",
+      "id": "ej8qfmoy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Folly Hill"
+        ]
+      },
+      "command": "south",
+      "id": "bjv1kclo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Greenhouse"
+        ]
+      },
+      "command": "south",
+      "id": "rm389lia",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "east",
+      "id": "hx4x7mja",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Gravel Drive"
+        ]
+      },
+      "command": "south",
+      "id": "8lct566y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Iron Gates",
+          "You come down the drive with the deed of Fernhill inside your coat, and the iron gates, for the first time tonight, look like they are holding the world out rather than you in. At dawn the hammer will fall on nothing: the proof came out of the fire after all."
+        ]
+      },
+      "command": "south",
+      "ending": "fernhill-saved",
+      "id": "6vamp4lh",
+      "type": "turn"
+    }
+  ],
+  "id": "pu58fgjl",
+  "ordinal": 0,
+  "parent": "gt5xcmrc"
+}

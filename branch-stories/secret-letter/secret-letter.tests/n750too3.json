@@ -1,0 +1,45 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "grabs your ankle and drags you back down",
+          "'Gotcha!' the mercenary yells"
+        ],
+        "states": [
+          "player.location = Alley"
+        ]
+      },
+      "command": "u",
+      "id": "njwqq4kh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "but the man is just too strong"
+        ],
+        "states": [
+          "player.location = Alley"
+        ]
+      },
+      "command": "se",
+      "id": "o64p71ba",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The captain soon arrives",
+          "you never awake to find out"
+        ]
+      },
+      "command": "wait",
+      "id": "tsatgvla",
+      "type": "turn"
+    }
+  ],
+  "id": "n750too3",
+  "ordinal": 1,
+  "parent": "5u5bu3ru"
+}

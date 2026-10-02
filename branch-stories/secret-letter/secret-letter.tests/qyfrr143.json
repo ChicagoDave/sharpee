@@ -1,0 +1,118 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "impeccably dressed",
+          "scented handkerchief"
+        ]
+      },
+      "command": "x clothier",
+      "id": "mx6fynog",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted clothier-sniffs"
+        ]
+      },
+      "command": "talk to clothier",
+      "id": "emrikxh8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "dreaming about dazzling the Prince at the Royal Ball",
+          "looking at the men's clothing"
+        ]
+      },
+      "command": "x clothes",
+      "id": "fuvdib1q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "looking at the men's clothing"
+        ],
+        "notContains": [
+          "dazzling the Prince"
+        ]
+      },
+      "command": "x clothes",
+      "id": "iynll8pi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "not likely to sell anything to a dirty urchin"
+        ]
+      },
+      "command": "buy clothes",
+      "id": "bvweez8c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "vibrant... pink."
+        ],
+        "states": [
+          "emitted carpet-not-every-day"
+        ]
+      },
+      "command": "x carpet",
+      "id": "9bm0y0nt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "Definitely not something"
+        ]
+      },
+      "command": "x carpet",
+      "id": "9ole9fl7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you can see yourself from head to toe"
+        ]
+      },
+      "command": "x mirror",
+      "id": "2tdr8ckw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Armless, headless torsos"
+        ]
+      },
+      "command": "x dummies",
+      "id": "473w0jzx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Come back soon, sweetie,'"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "v2d3oi4u",
+      "type": "turn"
+    }
+  ],
+  "id": "qyfrr143",
+  "ordinal": 1,
+  "parent": "9vuw9prp"
+}

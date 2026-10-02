@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "gvf803on",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "something you know how to do, at least",
+          "pluck the cheese from its shelf"
+        ],
+        "states": [
+          "cheese.location = cloth satchel"
+        ]
+      },
+      "command": "take cheese",
+      "id": "0ppiok6t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "look",
+      "id": "47xp0279",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Some of them try to give the mercenaries a slightly wider berth"
+        ],
+        "states": [
+          "shoppers.location = Northwest Junction"
+        ]
+      },
+      "command": "x crowd",
+      "id": "9clek7jw",
+      "type": "turn"
+    }
+  ],
+  "id": "cw7ms14d",
+  "ordinal": 5,
+  "parent": "zjak0nxl"
+}

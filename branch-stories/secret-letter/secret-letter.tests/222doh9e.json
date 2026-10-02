@@ -1,0 +1,329 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You plug the drain and begin filling the enormous tub with water.",
+          "feeling everything wash clean away.",
+          "She puts the dress into your hands."
+        ]
+      },
+      "command": "bathe",
+      "id": "tx4wu2jq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't leave here naked!"
+        ]
+      },
+      "command": "n",
+      "id": "fuyal60m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "daydress"
+        ]
+      },
+      "command": "i",
+      "id": "8cw9ekln",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It is finer than anything you've ever worn in your life."
+        ]
+      },
+      "command": "x day dress",
+      "id": "60l2qf2e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Your old clothes are threadbare and crusted with filth."
+        ]
+      },
+      "command": "x clothes",
+      "id": "ozrqkvbx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You don't even want to touch them."
+        ]
+      },
+      "command": "take clothes",
+      "id": "ceso8j20",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you don't think you could bear to put those filthy rags on again."
+        ]
+      },
+      "command": "wear clothes",
+      "id": "499mejj5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "they'd probably just fall apart."
+        ]
+      },
+      "command": "wash clothes",
+      "id": "di9r1ra0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You slip the dress over your head, and Shannon helps you with the laces.",
+          "A complete stranger looks back at you",
+          "This isn't Jack anymore, you think to yourself. This is Jacqueline."
+        ]
+      },
+      "command": "wear dress",
+      "id": "p4646kz3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted not-the-time-to-undress"
+        ]
+      },
+      "command": "take off day dress",
+      "id": "xln3znke",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you are Jacqueline Toresal, daughter of the Duke."
+        ],
+        "notContains": [
+          "utterly filthy"
+        ]
+      },
+      "command": "x me",
+      "id": "519p5y7i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted once-is-enough"
+        ]
+      },
+      "command": "bathe",
+      "id": "529uxktn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a spout of clean, clear water gushes out of the spout and splashes into the tub."
+        ]
+      },
+      "command": "turn faucets",
+      "id": "6h1azuna",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Master Bedroom"
+        ]
+      },
+      "command": "n",
+      "id": "y5v797c3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Third Floor Landing"
+        ]
+      },
+      "command": "n",
+      "id": "2te0oz4q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Red Gate Second Floor Landing"
+        ]
+      },
+      "command": "d",
+      "id": "wm3as1km",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Great Hall"
+        ]
+      },
+      "command": "d",
+      "id": "l2oiz1a1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "s",
+      "id": "uf2qywl0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The front gates are open."
+        ]
+      },
+      "command": "x gates",
+      "id": "465nexmb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "East Commerce Street",
+          "The gates open again on East Commerce Street, and the same"
+        ],
+        "states": [
+          "player.location = East Commerce Street",
+          "emitted shannon-see-mrs-sandler"
+        ]
+      },
+      "command": "s",
+      "id": "o0i8s5v4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We shouldn't wander the streets any more than we have to,'"
+        ]
+      },
+      "command": "w",
+      "id": "tjb3cp9b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "'Well,' says Shannon, 'I've seen you safely to Dame Sandler.",
+          "Take care, Jacqueline.'",
+          "hurries off to the south.",
+          "Jeweler's Shop",
+          "Dame Sandler stands near the central display case.",
+          "Dame Sandler looks you over and smiles, not in the least"
+        ],
+        "states": [
+          "player.location = Jeweler's Shop"
+        ]
+      },
+      "command": "e",
+      "id": "wdytdgq0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "you are Jacqueline Toresal, daughter of the Duke."
+        ]
+      },
+      "command": "x me",
+      "id": "agqov7oz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pieter is loyal to Dame Sandler and tirelessly vigilant."
+        ]
+      },
+      "command": "x pieter",
+      "id": "9pees0x4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Light glitters across diamond-encrusted rings"
+        ]
+      },
+      "command": "x case",
+      "id": "mtab0ald",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dame Sandler takes your elbow, gently but firmly.",
+          "'Please don't go yet, dear; what I have to tell you is dreadfully important.'"
+        ],
+        "states": [
+          "player.location = Jeweler's Shop"
+        ]
+      },
+      "command": "w",
+      "id": "sbilg9ad",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I can't really talk while I'm on duty, Jack,' says Pieter."
+        ]
+      },
+      "command": "talk to pieter",
+      "id": "yda7cplx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted sandler-proof-of-heritage"
+        ]
+      },
+      "command": "show letter to sandler",
+      "id": "szr9wamb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Did you really think I hadn't guessed?'",
+          "the claim is yours by blood",
+          "she unlocks the display case with a tiny silver key",
+          "Pieter will go with you"
+        ],
+        "states": [
+          "the preparations is told",
+          "the display case is opened"
+        ]
+      },
+      "command": "talk to sandler",
+      "id": "85rax8f3",
+      "type": "turn"
+    }
+  ],
+  "id": "222doh9e",
+  "ordinal": 0,
+  "parent": "ckabh2sz"
+}

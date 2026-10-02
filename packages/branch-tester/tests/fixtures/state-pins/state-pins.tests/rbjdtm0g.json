@@ -1,0 +1,51 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "ekivbzw5",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the brass lamp is dark",
+          "the lamp is not lit",
+          "the first partner is waiting",
+          "the story is calm",
+          "story.state = calm"
+        ]
+      },
+      "id": "0agiqkfd",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lamp flares."
+        ],
+        "states": [
+          "the brass lamp is lit",
+          "the brass lamp is not dark",
+          "the first partner is waiting",
+          "the story is alarmed",
+          "story.state = alarmed"
+        ]
+      },
+      "command": "wait",
+      "id": "doc41j46",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the brass lamp is lit",
+          "the story is alarmed"
+        ]
+      },
+      "command": "wait",
+      "id": "wd9mcjk0",
+      "type": "turn"
+    }
+  ],
+  "id": "rbjdtm0g"
+}

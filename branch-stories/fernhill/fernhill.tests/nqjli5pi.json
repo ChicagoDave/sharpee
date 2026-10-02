@@ -1,0 +1,67 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You crank the stopcock a hard quarter-turn."
+        ]
+      },
+      "command": "turn stopcock",
+      "id": "2dvbv7qz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You push the primer plunger."
+        ]
+      },
+      "command": "push plunger",
+      "id": "mk6rnlsm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The boiler hums to life."
+        ]
+      },
+      "command": "switch on boiler",
+      "id": "olzbzo9b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "west",
+      "id": "ul840xox",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "north",
+      "id": "koebg5fh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kitchen"
+        ]
+      },
+      "command": "east",
+      "id": "kuo51nsm",
+      "type": "turn"
+    }
+  ],
+  "id": "nqjli5pi",
+  "ordinal": 0,
+  "parent": "1hhubfo8"
+}

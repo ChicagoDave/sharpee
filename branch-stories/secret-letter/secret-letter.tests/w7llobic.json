@@ -1,0 +1,84 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "notContains": [
+          "You notice a couple of the mercenaries pushing through the crowd"
+        ]
+      },
+      "command": "se",
+      "id": "rflk7stb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You notice a couple of the mercenaries pushing through the crowd"
+        ]
+      },
+      "command": "wait",
+      "id": "x2gwsfjp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "23dornl4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Those mercenaries are getting uncomfortably close"
+        ]
+      },
+      "command": "wait",
+      "id": "l3tl0ggk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'There he is!' he yells"
+        ]
+      },
+      "command": "wait",
+      "id": "p9mz5gtr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You dash away into the crowd"
+        ],
+        "notContains": [
+          "'Gotcha!' the mercenary yells. The other one starts hollering"
+        ]
+      },
+      "command": "ne",
+      "id": "nsqh6b3e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ],
+        "notContains": [
+          "'Gotcha!' the mercenary yells. The other one starts hollering",
+          "The captain soon arrives"
+        ]
+      },
+      "command": "wait",
+      "id": "zff0udwe",
+      "type": "turn"
+    }
+  ],
+  "id": "w7llobic",
+  "ordinal": 3,
+  "parent": "5u5bu3ru"
+}

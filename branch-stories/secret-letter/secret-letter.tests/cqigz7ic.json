@@ -1,0 +1,97 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "gold-filigreed handle",
+          "such an intriguing woman"
+        ]
+      },
+      "command": "x sandler",
+      "id": "ffucjwut",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "such an intriguing woman"
+        ]
+      },
+      "command": "x sandler",
+      "id": "8doia22r",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "tirelessly vigilant"
+        ]
+      },
+      "command": "x pieter",
+      "id": "be2z4n3h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I can't really talk while I'm on duty, Jack,'"
+        ]
+      },
+      "command": "talk to pieter",
+      "id": "p4sckt9f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Can I ask you a question, Dame Sandler?'"
+        ]
+      },
+      "command": "talk to sandler",
+      "id": "ia0ld5bw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Just as you're about to leave, Dame Sandler calls out, 'Oh,"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "dlk4a0t9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "Dame Sandler's eyebrows raise slightly as you walk into her"
+        ],
+        "states": [
+          "player.location = Jeweler's Shop"
+        ]
+      },
+      "command": "e",
+      "id": "4kyod8a1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "Just as you're about to leave, Dame Sandler calls out, 'Oh,"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "dowqh30t",
+      "type": "turn"
+    }
+  ],
+  "id": "cqigz7ic",
+  "ordinal": 1,
+  "parent": "386erglj"
+}

@@ -1,0 +1,53 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Laundry",
+          "Widow Shannon rushes over and pushes against one of the boards in the northern wall.",
+          "'Quick, Jacqueline,' she whispers, 'in here!'",
+          "A gap between boards in the northern wall leads into a tiny, dark closet."
+        ],
+        "states": [
+          "player.location = Laundry"
+        ]
+      },
+      "command": "se",
+      "id": "i4depd1e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A dark gap in the wall leads to a secret closet."
+        ]
+      },
+      "command": "x gap",
+      "id": "ptkwt1gk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Where are you going, Jacqueline?' cries Shannon. 'Get inside the closet!'"
+        ]
+      },
+      "command": "nw",
+      "id": "r6ogx23o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'No time, no time!' whispers Shannon."
+        ]
+      },
+      "command": "talk to shannon",
+      "id": "1sj0nreu",
+      "type": "turn"
+    }
+  ],
+  "id": "5tgjdgdw",
+  "ordinal": 0,
+  "parent": "6go5tnq9"
+}

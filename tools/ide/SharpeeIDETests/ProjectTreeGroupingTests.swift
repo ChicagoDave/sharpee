@@ -77,7 +77,7 @@ final class ProjectTreeGroupingTests: XCTestCase {
 
         // David's ruling: only Story opens by default. The legacy tests/
         // directory sits inside the collapsed Other group (ADR-307 cutover:
-        // tests live in the story's tests.json, shown only in the Testing tab).
+        // tests live in the story's `.tests/` tree, shown only in the Testing tab).
         XCTAssertEqual(labels, [
             "Story", "the-lost-key.story",
             "Walkthroughs",

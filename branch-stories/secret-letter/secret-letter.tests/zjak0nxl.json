@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "gtl4v3pt",
+      "type": "turn"
+    }
+  ],
+  "id": "zjak0nxl",
+  "ordinal": 0,
+  "parent": "5u5bu3ru"
+}

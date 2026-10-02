@@ -1,0 +1,23 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Outer Market Roof",
+          "You nimbly hop up on top of the crates",
+          "spread out quick, cover all streets from the square"
+        ],
+        "states": [
+          "player.location = Outer Market Roof",
+          "story.state = calm"
+        ]
+      },
+      "command": "u",
+      "id": "cli21sdq",
+      "type": "turn"
+    }
+  ],
+  "id": "spfznv3u",
+  "ordinal": 0,
+  "parent": "xtm1snmb"
+}

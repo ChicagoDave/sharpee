@@ -29,8 +29,8 @@ import {
   type DerivedSummary,
   type SourceSpan,
 } from './derived';
-import type { TreeSessionModel } from './model';
-import type { RunColumnState, TranscriptRunResult } from './run';
+import type { BranchPoint, TreeSessionModel } from './model';
+import { runRowsOf, type RunColumnState, type TranscriptRunResult } from './run';
 
 /** Chip labels interpolate model strings into innerHTML — escape them. */
 function escapeHtml(text: string): string {
@@ -42,7 +42,7 @@ export interface CardsDelegate {
   /** The card's ✕ — tail-cut: this turn and everything after it (D4/Q-4). */
   onTailCut(ordinal: number): void;
   /** A chip's ✕ — delete that branch (and every branch forked from it). */
-  onDeleteBranch(lineId: number): void;
+  onDeleteBranch(lineId: string): void;
   /** Authoring gestures — all routed to model mutators. */
   onAddContains(ordinal: number, text: string): void;
   onNotContains(ordinal: number, text: string): void;
@@ -54,7 +54,7 @@ export interface CardsDelegate {
   /** Branching (D5): fork ON this card with the typed alternate. */
   onBranch(ordinal: number, command: string): void;
   /** A sibling chip was clicked — replay that line live and view it. */
-  onSelectLine(lineId: number): void;
+  onSelectLine(lineId: string): void;
   /** The Run button: run the story's tree document at the pinned seed. */
   onRun(): void;
   /** The run column's current state — main.ts owns the fold. */
@@ -197,6 +197,9 @@ export class CardsView {
         <div id="ts-outline"></div>
       </div>
       <div class="ts-left">
+        <div class="ts-busy" id="ts-busy" role="status" aria-live="polite" hidden>
+          <span class="ts-spinner" aria-hidden="true"></span><span id="ts-busy-text"></span>
+        </div>
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>
       </div>
@@ -739,7 +742,7 @@ export class CardsView {
    * continuation first (the main chip), then each sibling branch in creation
    * order — "all continue from this card".
    */
-  private renderBranchRows(points: { ordinal: number; lineId: number; siblings: number[] }[]): void {
+  private renderBranchRows(points: BranchPoint[]): void {
     const liveOrdinals = new Set(points.map(p => p.ordinal));
     for (const [ordinal, row] of this.branchRows) {
       if (!liveOrdinals.has(ordinal)) {
@@ -763,9 +766,9 @@ export class CardsView {
   }
 
   /** The line ids on the active path, root line first. */
-  private activeChain(): number[] {
-    const chain: number[] = [];
-    let cursor: number | undefined = this.model.activeLine;
+  private activeChain(): string[] {
+    const chain: string[] = [];
+    let cursor: string | undefined = this.model.activeLine;
     while (cursor !== undefined) {
       chain.unshift(cursor);
       cursor = this.model.lineParentOf(cursor);
@@ -773,10 +776,7 @@ export class CardsView {
     return chain;
   }
 
-  private renderChips(
-    row: HTMLElement,
-    point: { ordinal: number; lineId: number; siblings: number[] },
-  ): void {
+  private renderChips(row: HTMLElement, point: BranchPoint): void {
     const container = row.querySelector('.ts-branch-row')!;
     container.innerHTML = '';
     const chain = this.activeChain();
@@ -837,8 +837,8 @@ export class CardsView {
     row.title = 'all continue from this card';
   }
 
-  /** The run column: one header per line of the tree — derived labels are
-   *  the identities on the wire (D2/Q-8) — then EVERY executed command with
+  /** The run column: one header per line of the tree — keyed by line id,
+   *  titled by derived label (ADR-355 D5) — then EVERY executed command with
    *  every assertion's verdict (David 2026-08-10: the run shows every card
    *  and its assertions), and a line tally. A pending branch shows a dash. */
   private renderRunColumn(): void {
@@ -853,7 +853,7 @@ export class CardsView {
     }
 
     const lineIds = this.model.lineIds().filter(id =>
-      id === 0 ? this.model.hasOpening : true);
+      id === this.model.mainLine ? this.model.hasOpening : true);
     results.innerHTML = '';
     if (!this.model.hasOpening && run.results.size === 0
         && run.derived.length === 0 && run.derivedSummary === undefined) {
@@ -936,9 +936,23 @@ export class CardsView {
       }
     };
 
-    // Every line the run touched, in run order — labels are the identities;
-    // under each header, the line's cards and their assertions (the detail).
-    for (const [label, result] of run.results) {
+    // Every line the run touched, in run order, then this session's lines it
+    // has not reached (or before any run) as a dash — never a guess. Rows
+    // key on line id (`runRowsOf`, ADR-353 AC-3): two lines sharing a derived
+    // label stay two rows (GH #494). Under each result header, the line's
+    // cards and their assertions (the detail).
+    const columnLines = lineIds.map((id) => ({
+      id,
+      label: this.model.labelOf(id),
+      pending: this.model.isPending(id),
+    }));
+    for (const entry of runRowsOf(run, columnLines)) {
+      const label = entry.label;
+      if (entry.kind === 'unrun') {
+        row('—', '', label, entry.why);
+        continue;
+      }
+      const result = entry.result;
       switch (result.status) {
         case 'passed':
           // No turn count: turns have no meaning unless the author gives
@@ -958,16 +972,6 @@ export class CardsView {
           detail(result);
         }
       }
-    }
-    // This session's lines the run has not reached (or before any run):
-    // a dash — never a guess.
-    for (const id of lineIds) {
-      const label = this.model.labelOf(id);
-      if (run.results.has(label)) continue;
-      const why = this.model.isPending(id)
-        ? 'pending branch'
-        : run.inFlight ? 'running…' : 'not run yet';
-      row('—', '', label, why);
     }
 
     if (run.derived.length > 0) this.renderDerivedRows(results, run.derived);

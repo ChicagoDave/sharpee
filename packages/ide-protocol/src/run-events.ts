@@ -108,8 +108,19 @@ export interface PhaseEvent extends RunEventEnvelope {
  */
 export interface TranscriptStartEvent extends RunEventEnvelope {
   type: 'transcript-start';
-  /** Absolute path of the `.transcript` file. */
+  /**
+   * The unit's identity, the key every later event of this execution
+   * carries: a `.transcript` file's absolute path, or — in a test-tree run —
+   * the tree line's id, the id of the segment it begins with (ADR-355 D5).
+   * Opaque and stable, so two lines sharing a display label never fold.
+   */
   file: string;
+  /**
+   * The unit's display name, when its identity is not one (a tree line's
+   * derived label, `hallway · open door`). Absent for a transcript, whose
+   * path is its own name. Display only — never a key.
+   */
+  label?: string;
   /** 0-based position in the run's execution order. */
   index: number;
   /**
@@ -118,8 +129,9 @@ export interface TranscriptStartEvent extends RunEventEnvelope {
    */
   commandCount?: number;
   /**
-   * Absolute path of the transcript this one `continues:` (ADR-302). Absent =
-   * root. Same identity domain as `file`, so a consumer joins on one key.
+   * The unit this one descends from: the transcript it `continues:`
+   * (ADR-302), or the tree line it forks from. Absent = root. Same identity
+   * domain as `file`, so a consumer joins on one key.
    */
   parent?: string;
   /**
@@ -289,8 +301,8 @@ export interface TranscriptEndEvent extends RunEventEnvelope {
   /** Present exactly when `status` is `'error'`: why the transcript never ran. */
   errorMessage?: string;
   /**
-   * Present exactly when `status` is `'unreached'`: absolute path of the node
-   * whose failure blocked this one.
+   * Present exactly when `status` is `'unreached'`: the identity (`file`) of
+   * the unit whose failure blocked this one — a path, or a tree line's id.
    */
   blockedBy?: string;
 }
@@ -529,6 +541,7 @@ export function isTranscriptStartEvent(value: unknown): value is TranscriptStart
   return (
     hasEnvelopeAndType(value, 'transcript-start') &&
     typeof value.file === 'string' &&
+    (value.label === undefined || typeof value.label === 'string') &&
     typeof value.index === 'number' &&
     (value.commandCount === undefined || typeof value.commandCount === 'number') &&
     (value.parent === undefined || typeof value.parent === 'string') &&

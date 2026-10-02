@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Second Floor Landing",
+          "A door opens somewhere below and a servant's voice calls up"
+        ],
+        "notContains": [
+          "'Blast it all!'"
+        ]
+      },
+      "command": "n",
+      "id": "cmglpuns",
+      "type": "turn"
+    }
+  ],
+  "id": "z2tp7tb2",
+  "ordinal": 1,
+  "parent": "ftin9yof"
+}

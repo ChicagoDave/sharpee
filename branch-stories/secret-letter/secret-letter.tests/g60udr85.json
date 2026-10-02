@@ -1,0 +1,84 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Grocery Stall"
+        ],
+        "states": [
+          "story.state = hunted"
+        ]
+      },
+      "command": "ne",
+      "id": "xnmu0ums",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "something you know how to do, at least",
+          "pluck the loaf from its shelf",
+          "'Stop, thief!'",
+          "stuffing the loaf into your satchel",
+          "This stallkeeper will be on the lookout for you now"
+        ],
+        "notContains": [
+          "With the stallkeepers all on edge about the mercenaries",
+          "Here you go again."
+        ],
+        "states": [
+          "loaf.location = cloth satchel",
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "take loaf",
+      "id": "jd0xc59o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Herb Stall"
+        ]
+      },
+      "command": "s",
+      "id": "4dv4hy0c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "With the stallkeepers all on edge about the mercenaries",
+          "'Thief!'",
+          "Here you go again.",
+          "stuffing the herb jar into your satchel"
+        ],
+        "notContains": [
+          "something you know how to do, at least"
+        ],
+        "states": [
+          "player.location = Rope Stall"
+        ]
+      },
+      "command": "take jar",
+      "id": "o3fn9ii4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ],
+        "notContains": [
+          "On the rope wares you see a length of rope."
+        ]
+      },
+      "command": "look",
+      "id": "u9mx8siu",
+      "type": "turn"
+    }
+  ],
+  "id": "g60udr85",
+  "ordinal": 2,
+  "parent": "zjak0nxl"
+}

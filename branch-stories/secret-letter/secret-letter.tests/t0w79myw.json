@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You dash away into the crowd"
+        ]
+      },
+      "command": "ne",
+      "id": "od9aisru",
+      "type": "turn"
+    }
+  ],
+  "id": "t0w79myw",
+  "ordinal": 0,
+  "parent": "h8jrjxr3"
+}

@@ -99,18 +99,56 @@ public sealed class StoryProjectTests : IDisposable
     }
 
     [Fact]
-    public void built_output_and_the_tree_document_are_found_by_id()
+    public void built_output_and_the_test_tree_are_found_by_id()
     {
         var folder = Folder("fenwick");
         Touch(Path.Combine(folder, "fenwick.story"));
         Directory.CreateDirectory(Path.Combine(folder, "dist", "web", "fenwick"));
-        var tests = Touch(Path.Combine(folder, "fenwick.tests.json"), "{}");
+        var tests = Path.Combine(folder, "fenwick.tests");
+        Directory.CreateDirectory(tests);
 
         var project = StoryProject.Resolve(folder)!;
 
         Assert.True(project.IsBuilt);
         Assert.Equal(Path.Combine(folder, "dist", "web", "fenwick"), project.WebBundle);
-        Assert.Equal(tests, project.TestsDocument);
+        Assert.Equal(tests, project.TestsTree);
+    }
+
+    [Fact]
+    public void a_story_with_no_test_tree_has_none()
+    {
+        var folder = Folder("treeless");
+        Touch(Path.Combine(folder, "treeless.story"));
+
+        Assert.Null(StoryProject.Resolve(folder)!.TestsTree);
+    }
+
+    [Fact]
+    public void a_story_with_no_test_tree_writes_its_first_one_under_its_own_id()
+    {
+        var folder = Folder("first-tree");
+        Touch(Path.Combine(folder, "first-tree.story"));
+        var project = StoryProject.Resolve(folder)!;
+
+        Assert.Equal(Path.Combine(folder, "first-tree.tests"), project.TestsTreeTarget);
+
+        // The first write creates the tree the next open then finds.
+        var write = TestingSurfacePosts.ReadTreeWrite(
+            "{\"tree\":{\"written\":{\"manifest.json\":\"{\\\"seed\\\": 7}\\n\"},\"removed\":[]}}")!;
+        TestingSurfacePosts.ApplyTreeWrite(project.TestsTreeTarget, write);
+        Assert.Equal(Path.Combine(folder, "first-tree.tests"), project.TestsTree);
+        Assert.Equal("{\"seed\": 7}\n", File.ReadAllText(Path.Combine(project.TestsTree!, "manifest.json")));
+    }
+
+    [Fact]
+    public void a_story_whose_tree_is_named_otherwise_writes_into_that_tree()
+    {
+        var folder = Folder("renamed-tree");
+        Touch(Path.Combine(folder, "renamed-tree.story"));
+        var existing = Path.Combine(folder, "older-name.tests");
+        Directory.CreateDirectory(existing);
+
+        Assert.Equal(existing, StoryProject.Resolve(folder)!.TestsTreeTarget);
     }
 
     [Fact]

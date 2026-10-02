@@ -1,0 +1,45 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "four identical eyebrows shoot up.",
+          "They hand the letter back to you, smiling, and ask in chorus, 'How may we help you?'"
+        ],
+        "states": [
+          "letter.location = player",
+          "the Chorus Brothers is respectful"
+        ]
+      },
+      "command": "give letter to brothers",
+      "id": "8gusu1uv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "letter"
+        ]
+      },
+      "command": "i",
+      "id": "4lohlq2z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'I need a loan,' you say, and the two lean forward eagerly."
+        ],
+        "states": [
+          "purse.location = player"
+        ]
+      },
+      "command": "talk to brothers",
+      "id": "zwukwlky",
+      "type": "turn"
+    }
+  ],
+  "id": "w7ga2uuk",
+  "ordinal": 1,
+  "parent": "f550y7fi"
+}

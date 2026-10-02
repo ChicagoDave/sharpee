@@ -1,0 +1,110 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "vcf3ou6d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "q2ob4cja",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "q84y3qzn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "uy7odvud",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "01394hih",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "atxrk8kj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "cndijf5d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "hp9mei6v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pounding continues"
+        ]
+      },
+      "command": "z",
+      "id": "38oledx8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Suddenly the knocking pauses.",
+          "Theresa points at you, crowing, 'There he is!'",
+          "'You're beginning to damage my credibility, boy,' he growls.",
+          "everything goes black."
+        ]
+      },
+      "command": "z",
+      "id": "pdb34jfh",
+      "type": "turn"
+    }
+  ],
+  "id": "nd8cz916",
+  "ordinal": 1,
+  "parent": "kg7azqap"
+}

@@ -1,0 +1,77 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The mirth drops off him like a mask coming down. \"Set down for them, is what I am to speak now. SET DOWN. Seven years I filled this company's purse out of my own legs, and the new house has no room in it for Kemp.\" He looks at the unfinished galleries. \"Well. Rooms can be found elsewhere.\""
+        ]
+      },
+      "command": "ask kemp about the grievance",
+      "id": "dh2ctu3l",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Stage"
+        ]
+      },
+      "command": "north",
+      "id": "i98cj7h3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "45banewc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "wnvocarj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "hzy2bok8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "3ny0hwmt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tragedian stops mid-thought and turns the whole of his attention on you, which is like standing where the light falls. \"I do not know your face.\""
+        ]
+      },
+      "command": "talk to burbage",
+      "id": "1h4zkc8e",
+      "type": "turn"
+    }
+  ],
+  "id": "i9duzzdp",
+  "ordinal": 0,
+  "parent": "a5ec3258"
+}

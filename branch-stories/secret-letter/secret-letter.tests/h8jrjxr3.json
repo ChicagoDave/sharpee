@@ -1,0 +1,88 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "notContains": [
+          "You notice a couple of the mercenaries pushing through the crowd"
+        ]
+      },
+      "command": "se",
+      "id": "4cq3217t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You notice a couple of the mercenaries pushing through the crowd"
+        ]
+      },
+      "command": "wait",
+      "id": "g9o9hetw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "8lhyqgwn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Those mercenaries are getting uncomfortably close"
+        ]
+      },
+      "command": "wait",
+      "id": "ndlh1doa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'There he is!' he yells"
+        ]
+      },
+      "command": "wait",
+      "id": "iaa3h0og",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Gotcha!' the mercenary yells. The other one starts hollering"
+        ]
+      },
+      "command": "wait",
+      "id": "xwh3naxj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "but the man is just too strong"
+        ]
+      },
+      "command": "ne",
+      "id": "xyk1cgof",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Thinking quickly, you kick the mercenary in the shin.",
+          "You're free!"
+        ]
+      },
+      "command": "kick mercenaries",
+      "id": "8nwafh28",
+      "type": "turn"
+    }
+  ],
+  "id": "h8jrjxr3",
+  "ordinal": 6,
+  "parent": "5u5bu3ru"
+}

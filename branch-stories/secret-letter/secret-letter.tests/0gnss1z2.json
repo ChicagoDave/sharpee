@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "states": [
+          "emitted axe-chocking"
+        ]
+      },
+      "command": "listen to axe",
+      "id": "yl4j2l2n",
+      "type": "turn"
+    }
+  ],
+  "id": "0gnss1z2",
+  "ordinal": 4,
+  "parent": "z9y07mdp"
+}

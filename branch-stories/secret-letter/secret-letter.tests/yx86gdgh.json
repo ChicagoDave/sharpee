@@ -1,0 +1,572 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fruit Stall"
+        ]
+      },
+      "command": "se",
+      "id": "vglb6ipk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "s",
+      "id": "2e4x19ya",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hat Stall"
+        ]
+      },
+      "command": "s",
+      "id": "nldfax7h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "If you can wear it on your head, it's sold here."
+        ]
+      },
+      "command": "x hats",
+      "id": "35zcpfwk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You already have a perfectly serviceable hat."
+        ]
+      },
+      "command": "take hats",
+      "id": "abwxom6x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "is a wide, round hat made of woven straw, pointy at the top."
+        ]
+      },
+      "command": "x sappans",
+      "id": "jgy1cbl3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You already have a perfectly serviceable hat."
+        ]
+      },
+      "command": "take sappan",
+      "id": "vuuxq3rm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There's nothing special about the wooden pegs; they're just there to hold the hats up."
+        ]
+      },
+      "command": "x pegs",
+      "id": "yl6gngod",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You already have a perfectly serviceable hat."
+        ]
+      },
+      "command": "take bonnets",
+      "id": "m9b70guv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Leather Stall"
+        ]
+      },
+      "command": "sw",
+      "id": "blm8cm88",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "This merchant mostly deals in riding equipment"
+        ]
+      },
+      "command": "x leather goods",
+      "id": "q9sfl6s3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The smell of leather always makes you think of traveling in distant, dangerous lands."
+        ]
+      },
+      "command": "smell leather goods",
+      "id": "c2m7hasa",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Keep your sticky fingers away from the goods.'"
+        ]
+      },
+      "command": "take leather goods",
+      "id": "ia8a43j9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The saddle is made of many layers of leather"
+        ]
+      },
+      "command": "x saddle",
+      "id": "o1zjugu8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted saddle-too-huge"
+        ]
+      },
+      "command": "take saddle",
+      "id": "ezr03p0p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the riding reins off its display"
+        ]
+      },
+      "command": "take reins",
+      "id": "9logv0no",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "They're ordinary riding reins, used for steering horses. What use they are to you without a horse, you're not sure yet."
+        ]
+      },
+      "command": "x reins",
+      "id": "8z77rrqm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the belt off its display"
+        ],
+        "states": [
+          "belt.location = player"
+        ]
+      },
+      "command": "take belt",
+      "id": "cqfyvlwt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the belt."
+        ]
+      },
+      "command": "wear belt",
+      "id": "irc7h244",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the plain scabbard off its display"
+        ]
+      },
+      "command": "take scabbard",
+      "id": "9gak6tzr",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted scabbard-needs-belt"
+        ]
+      },
+      "command": "wear scabbard",
+      "id": "ntq0bsr4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the harness off its display"
+        ],
+        "states": [
+          "harness.location = player"
+        ]
+      },
+      "command": "take harness",
+      "id": "2r4nczbp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the stirrup off its display"
+        ],
+        "states": [
+          "stirrup.location = player"
+        ]
+      },
+      "command": "take stirrup",
+      "id": "6fcmyn8v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Weaponsmith's Stall"
+        ]
+      },
+      "command": "w",
+      "id": "2nosvsbf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Swords and knives, mostly. Nothing fancy — just sharp, practical, and deadly."
+        ]
+      },
+      "command": "x weaponry",
+      "id": "mw3x2w6w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The swords vary from three to four feet long."
+        ]
+      },
+      "command": "x swords",
+      "id": "kilh5rwx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted swords-too-big"
+        ]
+      },
+      "command": "take swords",
+      "id": "ek1dw4pi",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The knives are just your speed: short and wicked sharp."
+        ],
+        "notContains": [
+          "On the knives you see a knife."
+        ]
+      },
+      "command": "x knives",
+      "id": "wzsqooqx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the knife off its display"
+        ],
+        "states": [
+          "knife.location = player"
+        ]
+      },
+      "command": "take knife",
+      "id": "zb1jinmj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Exotic Gems Stall"
+        ]
+      },
+      "command": "nw",
+      "id": "vtg2utlm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Some of them are loose stones; others are set in finely wrought rings and necklaces."
+        ]
+      },
+      "command": "x gems",
+      "id": "n98op0d2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The angry stallkeeper is constantly glaring at you"
+        ]
+      },
+      "command": "take gems",
+      "id": "9tuu2d11",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Most of the loose stones are tiny, some no bigger than your little fingernail."
+        ]
+      },
+      "command": "x stones",
+      "id": "cuiuuox4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The angry stallkeeper is constantly glaring at you"
+        ]
+      },
+      "command": "take stones",
+      "id": "d2cvdcbw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The angry stallkeeper is constantly glaring at you"
+        ]
+      },
+      "command": "take jewelry",
+      "id": "oqlnrhh1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Herb Stall"
+        ]
+      },
+      "command": "n",
+      "id": "286rrw24",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The dozens of tiny jars are filled with dried and crushed bits of leaves"
+        ]
+      },
+      "command": "x jars",
+      "id": "75skd3mw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted herbs-strong-stuff"
+        ]
+      },
+      "command": "smell jars",
+      "id": "9g4f31wf",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "All of this herb stuff looks pretty much the same to you."
+        ],
+        "notContains": [
+          "On the herbs you see a herb jar."
+        ]
+      },
+      "command": "x herbs",
+      "id": "l9ptwozp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the herb jar off its display"
+        ]
+      },
+      "command": "take jar",
+      "id": "komzl4zk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's a little glass jar containing a few crumbling, dried weeds.",
+          "In the herb jar you see dried weeds."
+        ]
+      },
+      "command": "x jar",
+      "id": "bv2t8ylu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted jar-still-there"
+        ]
+      },
+      "command": "open jar",
+      "id": "fntxsdgy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted jar-closed"
+        ]
+      },
+      "command": "close jar",
+      "id": "53ulnm5d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted jar-still-there"
+        ]
+      },
+      "command": "search jar",
+      "id": "iv42jpks",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The stuff is dark and pungent."
+        ]
+      },
+      "command": "x weeds",
+      "id": "lx20jyz3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted weeds-spill"
+        ]
+      },
+      "command": "take weeds",
+      "id": "rgq1otax",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted herbs-strong-stuff"
+        ]
+      },
+      "command": "smell weeds",
+      "id": "ruptluja",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "knife.location = player",
+          "emitted jar-keeps-weed"
+        ]
+      },
+      "command": "put knife in jar",
+      "id": "90k1p8n9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "e",
+      "id": "7joangdx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The piece of rope is about five feet long, stiff and scratchy."
+        ]
+      },
+      "command": "x rope",
+      "id": "sqrnds4u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "they're just there to hold the lengths of rope up."
+        ]
+      },
+      "command": "x pegs",
+      "id": "n03by6v7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the length of rope off its display"
+        ]
+      },
+      "command": "take rope",
+      "id": "51d07uzj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "riding reins",
+          "plain scabbard",
+          "harness",
+          "stirrup",
+          "knife",
+          "herb jar",
+          "length of rope",
+          "belt (worn)"
+        ]
+      },
+      "command": "i",
+      "id": "vfqxg6jb",
+      "type": "turn"
+    }
+  ],
+  "id": "yx86gdgh",
+  "ordinal": 2,
+  "parent": "ytr5jjs1"
+}

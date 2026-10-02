@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Base of the Center Post"
+        ]
+      },
+      "command": "n",
+      "id": "onm8xaca",
+      "type": "turn"
+    }
+  ],
+  "id": "0ce9x86m",
+  "ordinal": 0,
+  "parent": "fiwt5d1v"
+}

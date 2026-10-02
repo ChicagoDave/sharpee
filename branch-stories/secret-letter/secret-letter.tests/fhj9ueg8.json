@@ -1,0 +1,52 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "'Pardon me,' someone says in a low, strangely accented",
+          "You have… a highly visible fate",
+          "'And I see death.'"
+        ],
+        "states": [
+          "Prince of Gravesal is spoken"
+        ]
+      },
+      "command": "talk to prince",
+      "id": "qv44ccvb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You look for the Prince, but he is lost in the crowd, and"
+        ]
+      },
+      "command": "talk to prince",
+      "id": "6u4jahcd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brooch is shaped like a hawk, and decorated with bright red garnets."
+        ]
+      },
+      "command": "x hawk brooch",
+      "id": "5e4cv9bj",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Prince's cloak and clothes are plain but handsome, and black as coal."
+        ]
+      },
+      "command": "x black cloak",
+      "id": "tbw29h6r",
+      "type": "turn"
+    }
+  ],
+  "id": "fhj9ueg8",
+  "ordinal": 1,
+  "parent": "xv6bygwa"
+}

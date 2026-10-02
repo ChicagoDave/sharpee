@@ -1,0 +1,28 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You open the deed box.",
+          "In the deed box you see a deed."
+        ]
+      },
+      "command": "open deed box with locket",
+      "id": "mawc61yb",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the deed from the deed box."
+        ]
+      },
+      "command": "take deed",
+      "id": "i4m1bnhk",
+      "type": "turn"
+    }
+  ],
+  "id": "hpjuaufx",
+  "ordinal": 1,
+  "parent": "gt5xcmrc"
+}

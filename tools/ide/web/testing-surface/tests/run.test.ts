@@ -10,7 +10,7 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 import { describe, expect, it } from 'vitest';
-import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from '../src/run';
+import { beginRun, createRunState, finishRun, foldRunLine, resetRun, runRowsOf } from '../src/run';
 
 let seq = 0;
 const line = (event: Record<string, unknown>): string =>
@@ -332,5 +332,118 @@ describe('foldRunLine — derived rows and the summary', () => {
     resetRun(state);
     expect(state.derived).toHaveLength(0);
     expect(state.derivedSummary).toBeUndefined();
+  });
+});
+
+describe('tree lines keyed by id, titled by label (ADR-355 D5, GH #494)', () => {
+  // Two lines sharing one derived label — the measured condition: 31 of 61
+  // lines in secret-letter shared a label with another line.
+  const MAIN = 'root0000';
+  const FIRST = 'branch01';
+  const SECOND = 'branch02';
+  const SHARED = 'den · east';
+
+  it('two lines sharing a label fold into two results, each carrying the label', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(FIRST, { label: SHARED, parent: MAIN }),
+      command(FIRST),
+      end(FIRST),
+      start(SECOND, { label: SHARED, parent: MAIN }),
+      command(SECOND, { passed: false, turn: 2, failure: 'Output does not contain "shed"' }),
+      end(SECOND, { status: 'failed', passed: 0, failed: 1 }),
+    ]) foldRunLine(state, raw);
+
+    expect([...state.results.keys()]).toEqual([FIRST, SECOND]);
+    expect(state.results.get(FIRST)).toMatchObject({ status: 'passed', label: SHARED });
+    expect(state.results.get(SECOND)).toMatchObject({
+      status: 'failed',
+      label: SHARED,
+      firstFailure: 'turn 2 — Output does not contain "shed"',
+    });
+    expect(state.results.get(FIRST)?.commands).toHaveLength(1);
+    expect(state.results.get(SECOND)?.commands).toHaveLength(1);
+  });
+
+  it('an unreached line names its blocker by label, not by id', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(MAIN, { label: 'opening-den' }),
+      end(MAIN, { status: 'error', errorMessage: 'boom' }),
+      start(FIRST, { label: SHARED }),
+      end(FIRST, { status: 'unreached', blockedBy: MAIN }),
+    ]) foldRunLine(state, raw);
+
+    expect(state.results.get(FIRST)?.firstFailure).toBe('blocked by opening-den');
+  });
+
+  it('beginRun and resetRun clear the announced labels', () => {
+    const state = createRunState();
+    beginRun(state);
+    foldRunLine(state, start(FIRST, { label: SHARED }));
+    expect(state.labels.get(FIRST)).toBe(SHARED);
+    resetRun(state);
+    expect(state.labels.size).toBe(0);
+    foldRunLine(state, start(FIRST, { label: SHARED }));
+    beginRun(state);
+    expect(state.labels.size).toBe(0);
+  });
+});
+
+describe('runRowsOf — an unvisited line reads as unvisited, never as its namesake (ADR-353 AC-3)', () => {
+  const MAIN = 'root0000';
+  const RAN = 'branch01';
+  const NAMESAKE = 'branch02';
+  const SHARED = 'den · east';
+  const lines = [
+    { id: MAIN, label: 'opening-den', pending: false },
+    { id: RAN, label: SHARED, pending: false },
+    { id: NAMESAKE, label: SHARED, pending: false },
+  ];
+
+  it('the line the run reported carries its verdict; its namesake reads as not run', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [start(RAN, { label: SHARED }), command(RAN), end(RAN), runEnd()]) {
+      foldRunLine(state, raw);
+    }
+
+    const rows = runRowsOf(state, lines);
+
+    expect(rows.map((row) => [row.kind, row.lineId, row.label])).toEqual([
+      ['result', RAN, SHARED],
+      ['unrun', MAIN, 'opening-den'],
+      ['unrun', NAMESAKE, SHARED],
+    ]);
+    const namesake = rows.find((row) => row.lineId === NAMESAKE)!;
+    expect(namesake).toEqual({ kind: 'unrun', lineId: NAMESAKE, label: SHARED, why: 'not run yet' });
+  });
+
+  it('an unrun line says why: pending branch, running, or not run yet', () => {
+    const state = createRunState();
+    const pendingLines = [{ id: NAMESAKE, label: SHARED, pending: true }, { id: MAIN, label: 'opening-den', pending: false }];
+
+    expect(runRowsOf(state, pendingLines).map((row) => row.kind === 'unrun' && row.why)).toEqual([
+      'pending branch',
+      'not run yet',
+    ]);
+    beginRun(state);
+    expect(runRowsOf(state, pendingLines).map((row) => row.kind === 'unrun' && row.why)).toEqual([
+      'pending branch',
+      'running…',
+    ]);
+  });
+
+  it('a reported line the model does not hold is titled by the wire label, else its key', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start('gone0001', { label: 'hall · west' }), end('gone0001'),
+      start('bare0001'), end('bare0001'),
+    ]) foldRunLine(state, raw);
+
+    expect(runRowsOf(state, []).map((row) => row.label)).toEqual(['hall · west', 'bare0001']);
   });
 });

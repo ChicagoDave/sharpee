@@ -1,0 +1,23 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "outfit changes are rare"
+        ],
+        "notContains": [
+          "You can't see any such thing"
+        ],
+        "states": [
+          "cap.location = cloth satchel"
+        ]
+      },
+      "command": "take cap from satchel",
+      "id": "lan8hkqz",
+      "type": "turn"
+    }
+  ],
+  "id": "y5tsbab2",
+  "ordinal": 2,
+  "parent": "sumw3w09"
+}

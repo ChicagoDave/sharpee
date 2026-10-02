@@ -52,7 +52,7 @@ const okTurn = (command: string, extra?: Partial<TreeCard>): TreeCard =>
 const okBoot = (): TreeCard => boot({ contains: ['did look'] });
 
 const doc = (cards: TreeCard[]): TreeDocument => ({
-  ...emptyTreeDocument('teststory', 42),
+  ...emptyTreeDocument('teststory', 42, 'main'),
   cards,
 });
 
@@ -170,13 +170,13 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
       opening(),
       boot(),
       okTurn('north'),
-      okTurn('north', { branches: [{ branch: 3, cards: [okTurn('east')] }] }),
+      okTurn('north', { branches: [{ id: 'b3', cards: [okTurn('east')] }] }),
       okTurn('north'),
     ]);
 
     const { lines, defects } = flattenTreeLines(document);
     expect(defects).toEqual([]);
-    expect(lines.map((l) => l.id)).toEqual(['main', 'main/b3']);
+    expect(lines.map((l) => l.id)).toEqual(['main', 'b3']);
 
     const branch = lines[1];
     // The prefix is the exact stream the main line executed through the fork
@@ -185,6 +185,8 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
     expect(branch.prefix).toEqual(['look', 'north', 'north']);
     expect(branch.forkIndex).toBe(3);
     expect(branch.parentId).toBe('main');
+    // The branch's display position among its fork's branches — not its id.
+    expect(branch.ordinal).toBe(1);
     expect(branch.firstCommand).toBe('east');
   });
 
@@ -194,16 +196,16 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
       okTurn('a', {
         branches: [
           {
-            branch: 1,
-            cards: [okTurn('b', { branches: [{ branch: 2, cards: [okTurn('c')] }] })],
+            id: 'b1',
+            cards: [okTurn('b', { branches: [{ id: 'b2', cards: [okTurn('c')] }] })],
           },
         ],
       }),
-      okTurn('d', { branches: [{ branch: 5, cards: [okTurn('e')] }] }),
+      okTurn('d', { branches: [{ id: 'b5', cards: [okTurn('e')] }] }),
     ]);
 
     const { lines } = flattenTreeLines(document);
-    expect(lines.map((l) => l.id)).toEqual(['main', 'main/b1', 'main/b1/b2', 'main/b5']);
+    expect(lines.map((l) => l.id)).toEqual(['main', 'b1', 'b2', 'b5']);
     // The nested branch's prefix threads through its parent branch's cards.
     expect(lines[2].prefix).toEqual(['look', 'a', 'b']);
   });
@@ -211,7 +213,7 @@ describe('flattenTreeLines — lines, prefixes, defects', () => {
   it('reports opening/boot cards outside the main line head as defects', () => {
     const document = doc([
       boot(),
-      okTurn('north', { branches: [{ branch: 1, cards: [boot(), okTurn('east')] }] }),
+      okTurn('north', { branches: [{ id: 'b1', cards: [boot(), okTurn('east')] }] }),
       opening(),
     ]);
 
@@ -251,7 +253,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const run = await runTreeDocument(
       doc([
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         okTurn('north'),
       ]),
       harness.load,
@@ -268,7 +270,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
 
     expect(run.lines.map((l) => [l.id, l.status, l.label])).toEqual([
       ['main', 'passed', 'opening-iron-gates'],
-      ['main/b1', 'passed', 'gravel-drive · east'],
+      ['b1', 'passed', 'gravel-drive · east'],
     ]);
     // 6 executed = 4 authored (boot look + 3 turns) + 2 replayed.
     expect(run.executedCommands).toBe(6);
@@ -282,7 +284,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
         okBoot(),
         turn('north', {
           assertions: { contains: ['prose the story no longer says'] },
-          branches: [{ branch: 1, cards: [okTurn('east')] }],
+          branches: [{ id: 'b1', cards: [okTurn('east')] }],
         }),
         okTurn('north'),
       ]),
@@ -301,9 +303,9 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const run = await runTreeDocument(
       doc([
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
-        turn('explode', { skip: true, branches: [{ branch: 2, cards: [okTurn('west')] }] }),
-        okTurn('south', { branches: [{ branch: 3, cards: [okTurn('up')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
+        turn('explode', { skip: true, branches: [{ id: 'b2', cards: [okTurn('west')] }] }),
+        okTurn('south', { branches: [{ id: 'b3', cards: [okTurn('up')] }] }),
       ]),
       harness.load,
     );
@@ -311,11 +313,11 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const byId = new Map(run.lines.map((l) => [l.id, l]));
     expect(byId.get('main')!.status).toBe('failed');
     // Forked before the error: runs.
-    expect(byId.get('main/b1')!.status).toBe('passed');
+    expect(byId.get('b1')!.status).toBe('passed');
     // Forked on and after the error card: blocked, origin named, never booted.
-    expect(byId.get('main/b2')!.status).toBe('blocked');
-    expect(byId.get('main/b2')!.blockedBy).toBe('main');
-    expect(byId.get('main/b3')!.status).toBe('blocked');
+    expect(byId.get('b2')!.status).toBe('blocked');
+    expect(byId.get('b2')!.blockedBy).toBe('main');
+    expect(byId.get('b3')!.status).toBe('blocked');
     expect(commandsOf(harness)).not.toContain('west');
     expect(commandsOf(harness)).not.toContain('up');
     // 2 boots: main + the one branch that could run.
@@ -327,7 +329,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const run = await runTreeDocument(
       doc([
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
       ]),
       harness.load,
     );
@@ -349,7 +351,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const run = await runTreeDocument(
       doc([
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
       ]),
       harness.load,
     );
@@ -370,7 +372,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     const run = await runTreeDocument(
       doc([
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
       ]),
       harness.load,
     );
@@ -400,7 +402,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
       doc([
         okBoot(),
         turn('north'),
-        okTurn('south', { branches: [{ branch: 1, cards: [okTurn('west')] }] }),
+        okTurn('south', { branches: [{ id: 'b1', cards: [okTurn('west')] }] }),
       ]),
       harness.load,
     );
@@ -432,6 +434,7 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     );
 
     expect(run.defects).toHaveLength(1);
+    expect(run.defects[0].message).toContain(`'boot' card`);
     expect(run.lines).toEqual([]);
     expect(harness.counters.boots).toBe(0);
     expect(commandsOf(harness)).toEqual([]);
@@ -516,7 +519,7 @@ describe('formatTreeDocumentRun — rows, tally, replay share', () => {
       doc([
         okBoot(),
         okTurn('north', {
-          branches: [{ branch: 1, cards: [turn('east', { assertions: { contains: ['nope'] } })] }],
+          branches: [{ id: 'b1', cards: [turn('east', { assertions: { contains: ['nope'] } })] }],
         }),
       ]),
       harness.load,
@@ -658,7 +661,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
         okBoot(),
         okTurn('open the box', {
           ending: 'box-opened',
-          branches: [{ branch: 1, cards: [okTurn('look')] }],
+          branches: [{ id: 'b1', cards: [okTurn('look')] }],
         }),
       ]),
       harness.load,
@@ -666,7 +669,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     expect(run.defects).toEqual([]);
     expect(run.lines.map((l) => [l.id, l.status, l.blockedBy])).toEqual([
       ['main', 'passed', undefined],
-      ['main/b1', 'blocked', 'main'],
+      ['b1', 'blocked', 'main'],
     ]);
     // The main line ended cleanly on its last card; only the fork is refused.
     expect(harness.counters.boots).toBe(1);
@@ -678,16 +681,16 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
       doc([
         opening(),
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         okTurn('open the box', { ending: 'box-opened' }),
-        okTurn('look', { branches: [{ branch: 2, cards: [okTurn('wait')] }] }),
+        okTurn('look', { branches: [{ id: 'b2', cards: [okTurn('wait')] }] }),
       ]),
       harness.load,
     );
     expect(run.lines.map((l) => [l.id, l.status, l.blockedBy])).toEqual([
       ['main', 'error', undefined],
-      ['main/b1', 'passed', undefined],
-      ['main/b2', 'blocked', 'main'],
+      ['b1', 'passed', undefined],
+      ['b2', 'blocked', 'main'],
     ]);
     expect(harness.counters.boots).toBe(2);
   });
@@ -698,7 +701,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
       doc([
         opening(),
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east'), okTurn('wait')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east'), okTurn('wait')] }] }),
         okTurn('open the box', { ending: 'box-opened' }),
       ]),
       harness.load,
@@ -706,7 +709,7 @@ describe('END STATE cards — a line ends where the story ends (ADR-356 D4)', ()
     expect(run.defects).toEqual([]);
     expect(run.lines.map((l) => [l.id, l.status])).toEqual([
       ['main', 'passed'],
-      ['main/b1', 'passed'],
+      ['b1', 'passed'],
     ]);
     // The branch replayed only through its fork card — never the ending.
     expect(harness.executed.filter((e) => e.boot === 2).map((e) => e.command)).toEqual([
@@ -744,7 +747,7 @@ describe('rooms entered and endings reached (ADR-356 D5) — what the tree run c
       doc([
         opening(),
         okBoot(),
-        okTurn('north', { branches: [{ branch: 1, cards: [okTurn('east')] }] }),
+        okTurn('north', { branches: [{ id: 'b1', cards: [okTurn('east')] }] }),
         okTurn('south'),
         okTurn('open the box', { ending: 'box-opened' }),
       ]),
@@ -770,6 +773,7 @@ describe('rooms entered and endings reached (ADR-356 D5) — what the tree run c
       harness.load,
     );
     expect(run.defects).toHaveLength(1);
+    expect(run.defects[0].message).toContain(`'boot' card`);
     expect(run.roomsEntered).toEqual([]);
     expect(run.endingsReached).toEqual([]);
   });

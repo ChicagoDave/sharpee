@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "A cast-iron estate boiler, cold now, its dial at rest. Pipes run from its flank toward the greenhouse. A stopcock and a primer plunger stand ready on its flank, and a small brass plate reads: FILL. PRIME. LIGHT. IN THAT ORDER."
+        ]
+      },
+      "command": "examine boiler",
+      "id": "637jih9n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You need the crowbar to open the nailed crate."
+        ]
+      },
+      "command": "open crate",
+      "id": "gsmdqxpc",
+      "type": "turn"
+    }
+  ],
+  "id": "pwe930k5",
+  "ordinal": 1,
+  "parent": "1hhubfo8"
+}

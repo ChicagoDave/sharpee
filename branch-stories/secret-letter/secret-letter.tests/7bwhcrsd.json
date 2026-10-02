@@ -1,0 +1,22 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Rooftop",
+          "haul yourself over.",
+          "Bobby has exclaimed the virtues"
+        ],
+        "states": [
+          "player.location = Rooftop"
+        ]
+      },
+      "command": "climb gutter",
+      "id": "1pvn4vve",
+      "type": "turn"
+    }
+  ],
+  "id": "7bwhcrsd",
+  "ordinal": 1,
+  "parent": "h9gunfr0"
+}

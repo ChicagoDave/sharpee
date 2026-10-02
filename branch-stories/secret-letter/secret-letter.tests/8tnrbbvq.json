@@ -1,0 +1,60 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "squat brick of a man"
+        ]
+      },
+      "command": "x holstenoffer",
+      "id": "pcmimr38",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Holstenoffer calls his cleaver 'Big Molly,'"
+        ]
+      },
+      "command": "x cleaver",
+      "id": "c6hg8cu7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "solid blue tangle of swirling designs"
+        ]
+      },
+      "command": "x tattoos",
+      "id": "997x9ws9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Holstenoffer glances over his shoulder as you come in."
+        ]
+      },
+      "command": "talk to holstenoffer",
+      "id": "sw2ak5fk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Take care of yourself, Jack.'"
+        ],
+        "states": [
+          "player.location = Commerce Street"
+        ]
+      },
+      "command": "s",
+      "id": "wmrds5y7",
+      "type": "turn"
+    }
+  ],
+  "id": "8tnrbbvq",
+  "ordinal": 1,
+  "parent": "qdzqhmiw"
+}

@@ -1,0 +1,126 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Northwest Junction"
+        ]
+      },
+      "command": "se",
+      "id": "8f4zlpwt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rope Stall"
+        ]
+      },
+      "command": "se",
+      "id": "06fz1oj0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "ne",
+      "id": "cv53a04h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ]
+      },
+      "command": "se",
+      "id": "4lwd89o3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "They haven't seen you yet"
+        ]
+      },
+      "command": "wait",
+      "id": "ao15p62u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ],
+        "notContains": [
+          "uncomfortably close"
+        ]
+      },
+      "command": "wait",
+      "id": "hul2qb8q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "uncomfortably close"
+        ]
+      },
+      "command": "wait",
+      "id": "qrxuoje9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'There he is!' he yells"
+        ],
+        "states": [
+          "emitted merc-hush"
+        ]
+      },
+      "command": "talk to stallkeeper",
+      "id": "gvt4s7cn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Gotcha!' the mercenary yells"
+        ]
+      },
+      "command": "wait",
+      "id": "qszg8yhp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes..."
+        ]
+      },
+      "command": "wait",
+      "id": "nf8dus4j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The captain soon arrives"
+        ],
+        "states": [
+          "emitted merc-run"
+        ]
+      },
+      "command": "talk to stallkeeper",
+      "id": "ck7gdqei",
+      "type": "turn"
+    }
+  ],
+  "id": "9ma52vx3",
+  "ordinal": 5,
+  "parent": "5u5bu3ru"
+}

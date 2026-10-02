@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "East Tunnel",
+          "Suddenly you find yourself in a tunnel where there are no symbols painted anywhere.",
+          "You are stuck down here, blind in the stinking blackness, forever."
+        ]
+      },
+      "command": "e",
+      "id": "jxbascwt",
+      "type": "turn"
+    }
+  ],
+  "id": "t6v14vsf",
+  "ordinal": 1,
+  "parent": "n7blwlqd"
+}

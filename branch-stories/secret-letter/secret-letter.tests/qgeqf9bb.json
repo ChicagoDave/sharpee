@@ -1,0 +1,60 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing"
+        ]
+      },
+      "command": "x mercenaries",
+      "id": "wy4hsv7b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The junction is a relatively open space"
+        ]
+      },
+      "command": "peer se",
+      "id": "vlri195i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Off to the north you can see Lord's Road"
+        ]
+      },
+      "command": "peer n",
+      "id": "7hmnku9i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can climb back down the crates to the alley below"
+        ]
+      },
+      "command": "peer d",
+      "id": "9ubpk1c5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The rooftop is steep and slick"
+        ],
+        "states": [
+          "player.location = Outer Market Roof"
+        ]
+      },
+      "command": "n",
+      "id": "221w86yg",
+      "type": "turn"
+    }
+  ],
+  "id": "qgeqf9bb",
+  "ordinal": 1,
+  "parent": "4nqwl79s"
+}

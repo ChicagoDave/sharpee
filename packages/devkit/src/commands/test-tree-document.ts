@@ -1,18 +1,23 @@
 /**
- * test-tree-document.ts — `sharpee test` over the ADR-307 tree document
- * (`<story-id>.tests.json`).
+ * test-tree-document.ts — `sharpee test` over a story's test tree: the
+ * `<story-id>.tests/` directory of segments and a manifest (ADR-307, ADR-355).
  *
  * The only test model for Chord projects since ADR-307's cutover: discovery
- * finds the tree document beside the `.story` file and runs it through
- * branch-tester's greenfield walker — one JSON document, the same one the
- * Testing tab writes (D6's one-code-path contract). The transcript-grammar
- * fallback (`test-tree.ts`) is retired.
+ * finds the tree directory beside the `.story` file, reads its files, and
+ * branch-tester assembles and walks them — the same files the Testing tab
+ * writes (D6's one-code-path contract). The transcript-grammar fallback
+ * (`test-tree.ts`) is retired.
  *
- * AC-4 at the CLI: a newer-version document is REFUSED with its named
- * message, and a malformed one is reported as an error — both exit 2,
- * nothing ran. Degrading to a fresh empty tree is the TAB's behavior (an
- * authoring surface starts over); a test runner silently passing zero tests
- * over a corrupted document would be the silent pass the plan forbids.
+ * A tree that does not read is an error, never an empty pass: a newer-version
+ * tree is REFUSED with its named message and a malformed one is reported —
+ * both exit 2, nothing ran. Degrading to a fresh empty tree is the TAB's
+ * behavior (an authoring surface starts over); a test runner silently passing
+ * zero tests over a corrupted tree would be the silent pass the plan forbids.
+ *
+ * The canonical gate runs here too: a tree whose files are not byte-for-byte
+ * what the writer emits (re-indented, keys reordered by a second writer) is
+ * reported by file name and exits 2 before anything runs. The same check is
+ * the local pre-commit hook's (`scripts/check-test-trees.mjs`).
  *
  * The derived rule-test tier (ADR-356 D5a) runs after the tree, at the
  * document's seed, through `test-derived.ts`: a derived failure exits 1 like
@@ -20,28 +25,30 @@
  * it the endings its END STATE cards proved and the rooms its replays walked,
  * for D5's endings and rooms ratios.
  *
- * Public interface: findTreeDocument(projectDir), runTreeDocumentCommand(options) → process exit code.
+ * Public interface: findTreeDirectory(projectDir), readTreeFiles(treePath),
+ * runTreeDocumentCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
 import * as path from 'node:path';
+import type { TreeFiles } from '@sharpee/branch-tester';
 import { loadAuthorGame } from '../standalone/author-game.js';
 import { runDerivedTests } from './test-derived.js';
 
 /**
- * Find a project's ADR-307 tree document: `<story-id>.tests.json` beside the
+ * Find a project's test tree: the `<story-id>.tests/` directory beside the
  * `.story` file at the project root. The story id is the `.story` file's stem
- * (`fernhill.story` → `fernhill.tests.json`) — runner discovery keys off the
- * id it already knows (ADR-307 D2/Q-2). A module story (no `.story` file)
- * has no tree document.
+ * (`fernhill.story` → `fernhill.tests/`) — runner discovery keys off the id it
+ * already knows (ADR-307 D2/Q-2, ADR-355 D3). A module story (no `.story`
+ * file) has no test tree.
  *
  * @param projectDir resolved project directory (absolute).
- * @returns the document's absolute path, or undefined when the project has
- *   no `.story` file or no document beside it.
+ * @returns the tree directory's absolute path, or undefined when the project
+ *   has no `.story` file or no tree directory beside it.
  */
-export function findTreeDocument(projectDir: string): string | undefined {
+export function findTreeDirectory(projectDir: string): string | undefined {
   // Lazy require (this file's pattern): the harness loads only when needed.
-  const { treeDocumentFileNameFor } =
+  const { treeDirectoryNameFor } =
     require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
   let entries: string[];
   try {
@@ -57,17 +64,42 @@ export function findTreeDocument(projectDir: string): string | undefined {
     .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
   for (const storyFile of storyFiles) {
     const storyId = storyFile.slice(0, -'.story'.length);
-    const candidate = path.join(projectDir, treeDocumentFileNameFor(storyId));
-    if (existsSync(candidate)) return candidate;
+    const candidate = path.join(projectDir, treeDirectoryNameFor(storyId));
+    if (isDirectory(candidate)) return candidate;
   }
   return undefined;
+}
+
+/**
+ * Read a tree directory's own files (not its subdirectories) into the map
+ * branch-tester assembles — file name → contents.
+ *
+ * @param treePath the tree directory's absolute path.
+ * @returns the files, keyed by file name.
+ * @throws the file system's error when the directory or a file cannot be read.
+ */
+export function readTreeFiles(treePath: string): TreeFiles {
+  const files: TreeFiles = {};
+  for (const name of readdirSync(treePath)) {
+    const filePath = path.join(treePath, name);
+    if (statSync(filePath).isFile()) files[name] = readFileSync(filePath, 'utf-8');
+  }
+  return files;
+}
+
+function isDirectory(candidate: string): boolean {
+  try {
+    return statSync(candidate).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 export interface TreeDocumentTestOptions {
   /** Resolved project directory (absolute). */
   dir: string;
-  /** The discovered document's absolute path. */
-  docPath: string;
+  /** The discovered tree directory's absolute path. */
+  treePath: string;
   verbose: boolean;
   stopOnFailure: boolean;
   /** Emit the run-event stream on stdout instead of the human report. */
@@ -79,13 +111,13 @@ export interface TreeDocumentTestOptions {
 }
 
 /**
- * Run `sharpee test --tree` over a tree document.
+ * Run `sharpee test` over a test tree.
  *
- * @param options resolved project directory, the document path, and run flags.
+ * @param options resolved project directory, the tree directory, and run flags.
  * @returns process exit code — 0 all lines and every derived branch passed,
- *   1 failures or errored lines or a failed derived branch, 2 the document
- *   was refused/malformed or has card-position defects (nothing ran), 3 the
- *   story failed to load. Never calls `process.exit()`;
+ *   1 failures or errored lines or a failed derived branch, 2 the tree was
+ *   refused, malformed, not in canonical form, or has card-position defects
+ *   (nothing ran), 3 the story failed to load. Never calls `process.exit()`;
  *   the caller owns the process.
  */
 export async function runTreeDocumentCommand(
@@ -94,8 +126,9 @@ export async function runTreeDocumentCommand(
   // Lazy require (the test.ts pattern): pull the harness only when testing.
   const {
     aggregateTestRun,
+    assembleTree,
     channelIdsReferencedBy,
-    deserializeTreeDocument,
+    checkCanonicalTree,
     flattenTreeLines,
     formatTreeDocumentRun,
     runTreeDocument,
@@ -105,27 +138,39 @@ export async function runTreeDocumentCommand(
   const { RunEventStream, ndjsonEventLine } =
     require('@sharpee/transcript-tester') as typeof import('@sharpee/transcript-tester');
 
-  const { dir, docPath, verbose, stopOnFailure, json = false, captureOutput = false, captureWorld = false } = options;
+  const { dir, treePath, verbose, stopOnFailure, json = false, captureOutput = false, captureWorld = false } = options;
+  const treeName = `${path.basename(treePath)}/`;
 
   const info = (message: string): void => {
     if (!json) console.log(message);
   };
 
-  let text: string;
+  let files: TreeFiles;
   try {
-    text = readFileSync(docPath, 'utf-8');
+    files = readTreeFiles(treePath);
   } catch (error) {
-    console.error(`test: cannot read ${docPath}: ${error instanceof Error ? error.message : error}`);
+    console.error(`test: cannot read ${treePath}: ${error instanceof Error ? error.message : error}`);
     return 2;
   }
 
-  const read = deserializeTreeDocument(text);
+  const read = assembleTree(files);
   if (read.status !== 'ok') {
     // Refusal and malformation both name themselves; neither runs anything.
-    console.error(`test: ${path.basename(docPath)}: ${read.message}`);
+    console.error(`test: ${treeName}: ${read.message}`);
     return 2;
   }
   const document = read.document;
+
+  // The canonical gate: a second writer's formatting is caught before it is
+  // committed, not discovered as a whole-file diff afterwards.
+  const gate = checkCanonicalTree(files);
+  if (gate.status === 'non-canonical') {
+    console.error(
+      `test: ${treeName} has files not in canonical form (re-save them from the Testing tab):\n` +
+        gate.files.map((name) => `  ${name}`).join('\n'),
+    );
+    return 2;
+  }
 
   const { lines } = flattenTreeLines(document);
   const stream = json
@@ -136,7 +181,7 @@ export async function runTreeDocumentCommand(
   stream?.runStart('tree', lines.length);
 
   info(`Loading story from: ${dir}`);
-  info(`Tree document: ${path.basename(docPath)} (seed ${document.seed}, ${lines.length} line(s))`);
+  info(`Test tree: ${treeName} (seed ${document.seed}, ${lines.length} line(s))`);
 
   // The capture set (ADR-294 D15): exactly the base channels the document's
   // claims reference — the JSON is the source of truth (David 2026-08-10),
@@ -149,10 +194,13 @@ export async function runTreeDocumentCommand(
       channels,
     });
 
-  // Lines are announced on the stream by derived label (D2/Q-8) — the label
-  // IS the identity on this wire; there are no file paths to join on.
+  // Lines are announced on the stream by their id — the id of the segment
+  // each begins with (ADR-355 D5) — in the wire's `file` field, the same
+  // identity domain as `parent` and `blockedBy`. The derived label rides
+  // `transcript-start` as display only: two lines can share a label, and a
+  // label-keyed consumer folded their results into one row (GH #494).
   let executionIndex = 0;
-  let currentLabel = '';
+  let currentLine = '';
   let blockedCount = 0;
   const announced = new Set<string>();
 
@@ -166,18 +214,19 @@ export async function runTreeDocumentCommand(
         // The run detail view's rows (David 2026-08-10): every assertion's
         // verdict rides the wire, described in the tab's claim idiom.
         onCommandResult: (command) =>
-          stream.commandResult(currentLabel, streamableCommandResult(command), captureOutput),
+          stream.commandResult(currentLine, streamableCommandResult(command), captureOutput),
       },
       lineObserver: stream && {
         onLineStart: ({ line, label }) => {
-          currentLabel = label;
+          currentLine = line.id;
           announced.add(line.id);
           // Never `replayed: true` here: on the wire that flag means "this
           // whole execution is a state rebuild, not a row" (the v1 tree's
           // ancestor re-runs), and consumers drop such rows. A document
           // line replays its PREFIX inside its own single execution — the
           // line is a real row; its replay share shows in the human report.
-          stream.transcriptStart(label, executionIndex++, {
+          stream.transcriptStart(line.id, executionIndex++, {
+            label,
             commandCount: line.cards.length,
             ...(line.parentId !== undefined ? { parent: line.parentId } : {}),
           });
@@ -186,25 +235,24 @@ export async function runTreeDocumentCommand(
           // A replay-diverged line never reached onLineStart; announce it so
           // the stream is still start-then-end, never an error from nowhere.
           if (!announced.has(line.id)) {
-            stream.transcriptStart(outcome.label, executionIndex++, {});
+            stream.transcriptStart(line.id, executionIndex++, { label: outcome.label });
           }
           if (outcome.result !== undefined) {
-            // The label IS the identity on this wire (D2/Q-8): the walker's
-            // synthesized transcripts deliberately carry no filePath (the
-            // policy write-back guard), so stamp the label on the emitted
-            // copy — consumers key start/result/end rows by one name.
+            // The walker's synthesized transcripts deliberately carry no
+            // filePath (the policy write-back guard), so stamp the line id on
+            // the emitted copy — consumers key start/result/end by one id.
             stream.transcriptEnd({
               ...outcome.result,
-              transcript: { ...outcome.result.transcript, filePath: outcome.label },
+              transcript: { ...outcome.result.transcript, filePath: line.id },
             });
           } else {
-            stream.transcriptError(outcome.label, outcome.error ?? outcome.status);
+            stream.transcriptError(line.id, outcome.error ?? outcome.status);
           }
         },
-        onLineBlocked: ({ outcome }) => {
+        onLineBlocked: ({ line, outcome }) => {
           blockedCount += 1;
-          stream.transcriptStart(outcome.label, executionIndex++, {});
-          stream.transcriptUnreached(outcome.label, outcome.blockedBy ?? '(unknown)');
+          stream.transcriptStart(line.id, executionIndex++, { label: outcome.label });
+          stream.transcriptUnreached(line.id, outcome.blockedBy ?? '(unknown)');
         },
       },
     });

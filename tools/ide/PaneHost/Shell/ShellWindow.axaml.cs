@@ -857,13 +857,11 @@ public partial class ShellWindow : Window
 
         var project = _project;
 
-        // The testing pane replays a tree document; a story without one still plays, so the
-        // session carries an empty document rather than refusing to open the panes.
-        var document = project.TestsDocument is { } testsPath && File.Exists(testsPath)
-            ? await File.ReadAllTextAsync(testsPath)
-            : "{}";
+        // The testing pane replays the story's test tree (ADR-355); a story without one still
+        // plays, so the session carries no tree rather than refusing to open the panes.
+        var tree = project.TestsTree is { } treePath ? TestingSession.ReadTree(treePath) : null;
 
-        var session = TestingSession.Build(project.Id, document);
+        var session = TestingSession.Build(project.Id, tree);
 
         _door.Open(new PaneServer(built, RepoPaths.TestingSurface, RepoPaths.DocsTab, session.ToJsonString()));
         _log.Line($"panes: door open for {project.Id} — {_door.Mechanism}");
@@ -1124,6 +1122,24 @@ public partial class ShellWindow : Window
                 && TestingSurfacePosts.ReadOpenSource(message.Body) is { } open)
             {
                 _ = RevealAsync(new IndexSpan(open.File, open.Line, 1));
+            }
+            // The tree changed (ADR-355): the page posts the files it wrote and removed,
+            // and they land in the story's tree on disk — what the next open replays and
+            // what the Run button tests.
+            else if (message.Handler == "testingSurface"
+                && ReferenceEquals(message.View, TestingWeb)
+                && _project is { } project
+                && TestingSurfacePosts.ReadTreeWrite(message.Body) is { } write)
+            {
+                try
+                {
+                    TestingSurfacePosts.ApplyTreeWrite(project.TestsTreeTarget, write);
+                    _log.Line($"tree: {write.Written.Count} written, {write.Removed.Count} removed → {project.TestsTreeTarget}");
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+                {
+                    Report($"The test tree could not be saved: {error.Message}");
+                }
             }
         }
 

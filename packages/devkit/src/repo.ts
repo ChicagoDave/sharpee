@@ -2,8 +2,8 @@
  * repo.ts — monorepo detection + story resolution for the devkit author CLI.
  *
  * Owner context: @sharpee/devkit (ADR-180; ADR-187). Trimmed to resolution
- * helpers only — the platform-build config (PLATFORM_PACKAGES, BUNDLE_ALIASES,
- * BUNDLE_DTS, tsfBin) moved to repokit (tools/repokit), the in-repo platform
+ * helpers only — the platform-build config (PLATFORM_PACKAGES, BUNDLE_DTS,
+ * tsfBin) moved to repokit (tools/repokit), the in-repo platform
  * tool. devkit keeps just enough to redirect a workspace story to repokit and to
  * resolve a decoupled in-repo author project.
  *

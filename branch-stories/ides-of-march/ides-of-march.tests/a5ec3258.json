@@ -1,0 +1,43 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "The Ides of March"
+          },
+          {
+            "id": "info.description",
+            "is": "The last three days before Julius Caesar opens the new Globe. You are Henslowe's man, slipped in among the hired players. Bring the clown to the Admiral's Men and the play-book across Bankside, and let no one see your face beneath the face."
+          }
+        ],
+        "contains": [
+          "By Sharpee Platform"
+        ]
+      },
+      "id": "ns3dzemu",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Yard"
+        ]
+      },
+      "id": "dsfzses0",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The clown looks you over the way he looks over a crowd: all at once, and none of it missed. \"A new face among the hired men. Well, the house eats faces. Kemp.\" He does not bow; the name is the bow."
+        ]
+      },
+      "command": "talk to kemp",
+      "id": "gtsyau4v",
+      "type": "turn"
+    }
+  ],
+  "id": "a5ec3258"
+}

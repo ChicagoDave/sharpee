@@ -1,0 +1,149 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Behind Maiden House"
+        ],
+        "states": [
+          "player.location = Behind Maiden House"
+        ]
+      },
+      "command": "enter window",
+      "id": "hgaiwpij",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "letter",
+          "large brass key"
+        ]
+      },
+      "command": "i",
+      "id": "zjwk6wwn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Behind Maiden House",
+          "You can see Widow Shannon here."
+        ]
+      },
+      "command": "look",
+      "id": "vdo4ciwg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Can I ask you something?'",
+          "Miss Jacqueline"
+        ]
+      },
+      "command": "talk to shannon",
+      "id": "sv2qg19q",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shannon lays a hand on your elbow. 'Wait, Jacqueline,' she whispers. 'The mercenaries will be watching the entrance."
+        ]
+      },
+      "command": "ne",
+      "id": "i46smfui",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Shannon laces her fingers together and gives you a boost up to the top of the wall",
+          "East Commerce Street",
+          "You drop from the park wall onto East Commerce Street, and"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "climb wall",
+      "id": "9i42kzn0",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We shouldn't wander the streets any more than we have to,' Shannon says."
+        ]
+      },
+      "command": "w",
+      "id": "cjrqlh71",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'We should stay away from Lord's Market for a while, I think,' says Shannon."
+        ]
+      },
+      "command": "e",
+      "id": "mm2x24fw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "until his death several years ago.",
+          "The front gates are securely locked."
+        ]
+      },
+      "command": "x gates",
+      "id": "8ung66ay",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The front gates are securely locked."
+        ]
+      },
+      "command": "n",
+      "id": "phyr1vps",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "the key turns... and the door unlocks with a grinding clunk.",
+          "Entrance Hall",
+          "Then you pass over the threshold, into Red Gate Estate.",
+          "The house is eerie in its stillness."
+        ],
+        "states": [
+          "player.location = Entrance Hall"
+        ]
+      },
+      "command": "unlock gates with key",
+      "id": "6ntxbuar",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall",
+          "the street lies south."
+        ],
+        "notContains": [
+          "pass over the threshold"
+        ]
+      },
+      "command": "look",
+      "id": "8jwlqna9",
+      "type": "turn"
+    }
+  ],
+  "id": "7lo93nnc",
+  "ordinal": 0,
+  "parent": "5xvivtu7"
+}

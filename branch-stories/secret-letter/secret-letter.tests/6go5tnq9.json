@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Hallway",
+          "The pounding continues"
+        ],
+        "states": [
+          "player.location = Hallway"
+        ]
+      },
+      "command": "se",
+      "id": "kkza88dn",
+      "type": "turn"
+    }
+  ],
+  "id": "6go5tnq9",
+  "ordinal": 0,
+  "parent": "kg7azqap"
+}

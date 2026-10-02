@@ -1,0 +1,474 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "There are baskets bristling with loaves of bread"
+        ]
+      },
+      "command": "x baskets",
+      "id": "84v9xw8f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loaves are dark and grainy and look rock-hard."
+        ],
+        "notContains": [
+          "On the display of loaves you see a loaf."
+        ]
+      },
+      "command": "x loaves",
+      "id": "mf7xgqub",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loaf is dark and grainy and looks rock-hard."
+        ]
+      },
+      "command": "x bread",
+      "id": "ph4p046e",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted food-smells-tasty"
+        ]
+      },
+      "command": "smell bread",
+      "id": "13v5f74h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Keep your sticky fingers away from the goods.'"
+        ]
+      },
+      "command": "touch loaves",
+      "id": "i3mueh4a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Keep your sticky fingers away from the goods.'"
+        ]
+      },
+      "command": "push loaves",
+      "id": "o4949h77",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Keep your sticky fingers away from the goods.'"
+        ]
+      },
+      "command": "search loaves",
+      "id": "smy2jxzp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted no-time-for-breakfast"
+        ]
+      },
+      "command": "eat bread",
+      "id": "ez00rpun",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the loaf off its display"
+        ],
+        "notContains": [
+          "Taken.",
+          "something you know how to do, at least"
+        ],
+        "states": [
+          "loaf.location = player",
+          "story.state = calm"
+        ]
+      },
+      "command": "take loaf",
+      "id": "h0yrw0do",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "loaf.location = Grocery Stall"
+        ]
+      },
+      "command": "drop loaf",
+      "id": "xrinc46z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ],
+        "notContains": [
+          "off its display while the stallkeeper is busy haggling"
+        ],
+        "states": [
+          "loaf.location = player"
+        ]
+      },
+      "command": "take loaf",
+      "id": "jk0d6q7g",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loaves are dark and grainy"
+        ],
+        "notContains": [
+          "you see a loaf"
+        ]
+      },
+      "command": "x loaves",
+      "id": "rst3jjtt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "loaf.location = player",
+          "emitted no-time-for-breakfast"
+        ]
+      },
+      "command": "eat loaf",
+      "id": "ks96g7lp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the cheese off its display"
+        ],
+        "states": [
+          "cheese.location = player"
+        ]
+      },
+      "command": "take cheese",
+      "id": "o74lt0kp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the strip of beef jerky off its display"
+        ]
+      },
+      "command": "take jerky",
+      "id": "ieejyctx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "It's a twisted, shriveled strip of dried salt-beef. Yum."
+        ]
+      },
+      "command": "x jerky",
+      "id": "2jq8gy2m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Keep your sticky fingers away from the goods.'"
+        ]
+      },
+      "command": "take baskets",
+      "id": "hgk202y4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall"
+        ]
+      },
+      "command": "s",
+      "id": "zh86ura7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The candles hang in pairs, connected to each other by a common wick."
+        ]
+      },
+      "command": "x candles",
+      "id": "huiahp9x",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The tallow candles are yellow and slightly lumpy."
+        ],
+        "notContains": [
+          "On the tallow candles you see a tallow candle."
+        ]
+      },
+      "command": "x tallow candles",
+      "id": "47htb07c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the tallow candle off its display"
+        ]
+      },
+      "command": "take tallow candle",
+      "id": "e00h6tj7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The wax candles are smooth and straight, and come in several colors."
+        ]
+      },
+      "command": "x wax candles",
+      "id": "rmyhbqkt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the red wax candle off its display"
+        ]
+      },
+      "command": "take red candle",
+      "id": "msdvzpvo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Which do you mean: the red wax candle, the blue wax candle, the green wax candle, or the white wax candle?"
+        ]
+      },
+      "command": "take wax candle",
+      "id": "e7ucpjke",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The yellow, bubbling goop is kept at a constant boil."
+        ]
+      },
+      "command": "x pots",
+      "id": "y8g3ei60",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted stay-out-of-pots"
+        ]
+      },
+      "command": "touch pots",
+      "id": "tkavfq88",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'stay out of my tallow pots!'"
+        ]
+      },
+      "command": "take pots",
+      "id": "zq7koxh1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted tallow-fumes-smell"
+        ]
+      },
+      "command": "smell pots",
+      "id": "ca2jht6a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted tallow-fumes-smell"
+        ]
+      },
+      "command": "smell fumes",
+      "id": "ugcu6dd1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted insubstantial-fumes"
+        ]
+      },
+      "command": "take fumes",
+      "id": "3ecxkceh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The long, wooden dowels run the width of the stall."
+        ]
+      },
+      "command": "x dowels",
+      "id": "h6frztre",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ]
+      },
+      "command": "se",
+      "id": "cjo2e9k7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "From tall, narrow, precariously balanced urns to round, gourd-like jars to shallow bowls"
+        ]
+      },
+      "command": "x pottery",
+      "id": "qwosui05",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Keep your sticky fingers away from the goods.'"
+        ]
+      },
+      "command": "take pottery",
+      "id": "y4wokqel",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The urns are mostly decorative, for putting flowers or rushes in."
+        ],
+        "notContains": [
+          "On the urns you see a clay urn."
+        ]
+      },
+      "command": "x urns",
+      "id": "uryf3h56",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the clay urn off its display"
+        ],
+        "states": [
+          "urn.location = player"
+        ]
+      },
+      "command": "take urn",
+      "id": "gcthghsk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "loaf.location = player",
+          "emitted ceramic-too-small"
+        ]
+      },
+      "command": "put loaf in urn",
+      "id": "ue8tchka",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the clay bowl off its display"
+        ],
+        "states": [
+          "bowl.location = player"
+        ]
+      },
+      "command": "take bowl",
+      "id": "d5b9sl8j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "off its display while the stallkeeper is busy haggling",
+          "the clay pot off its display"
+        ]
+      },
+      "command": "take pot",
+      "id": "ca68h5lk",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pottery Stall"
+        ],
+        "notContains": [
+          "you see a clay urn",
+          "you see a clay bowl",
+          "On the clay jars you see a clay jar."
+        ]
+      },
+      "command": "look",
+      "id": "bzj30186",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "clay urn",
+          "clay bowl",
+          "clay pot",
+          "tallow candle",
+          "red wax candle",
+          "loaf",
+          "cheese",
+          "strip of beef jerky"
+        ]
+      },
+      "command": "i",
+      "id": "gqxhollx",
+      "type": "turn"
+    }
+  ],
+  "id": "43wojhjo",
+  "ordinal": 1,
+  "parent": "ytr5jjs1"
+}

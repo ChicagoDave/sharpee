@@ -1,0 +1,97 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "Shouts ring out and fingers point",
+          "knocking over a couple of shoppers",
+          "You hear shouting coming from all quarters of the market."
+        ],
+        "notContains": [
+          "The monkey sees you coming and leaps over you"
+        ],
+        "states": [
+          "player.location = Hat Stall",
+          "cloak.location = Hat Stall",
+          "story.state = chase",
+          "emitted slide-wind"
+        ]
+      },
+      "command": "slide down southeast cable",
+      "id": "2tdkbeug",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hat Stall"
+        ],
+        "states": [
+          "emitted player.market-escape.closer"
+        ]
+      },
+      "command": "look",
+      "id": "tw6ixpbu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "They're closing in!"
+        ],
+        "states": [
+          "emitted escape-no-time"
+        ]
+      },
+      "command": "talk to hatter",
+      "id": "s59okr40",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Outside the Silk Tent",
+          "the mercenaries have planted themselves outside it",
+          "through the crowd."
+        ],
+        "states": [
+          "emitted player.market-escape.spotted"
+        ]
+      },
+      "command": "w",
+      "id": "wbt7mqnt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Candlemaker's Stall",
+          "through the crowd."
+        ],
+        "states": [
+          "emitted player.market-escape.footsteps"
+        ]
+      },
+      "command": "nw",
+      "id": "p7ezcbiy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Mercenaries burst through the crowd from three different directions.",
+          "'Gotcha, you little runt!'",
+          "'Good work, dims."
+        ]
+      },
+      "command": "wait",
+      "ending": "mercenary-brutality",
+      "id": "b4sztoco",
+      "type": "turn"
+    }
+  ],
+  "id": "og4t27li",
+  "ordinal": 1,
+  "parent": "tqadj3t4"
+}

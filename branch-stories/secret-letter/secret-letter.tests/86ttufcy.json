@@ -1,0 +1,50 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "The cases are locked, of course."
+        ]
+      },
+      "command": "open case",
+      "id": "ihm3kq6d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pieter has his eyes on you constantly."
+        ]
+      },
+      "command": "take jewelry",
+      "id": "n2yhm5c5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "w",
+      "id": "vmds700h",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "wine-dark carpeting"
+        ],
+        "states": [
+          "player.location = Moneylender's Shop"
+        ]
+      },
+      "command": "se",
+      "id": "qg66z6j5",
+      "type": "turn"
+    }
+  ],
+  "id": "86ttufcy",
+  "ordinal": 0,
+  "parent": "386erglj"
+}

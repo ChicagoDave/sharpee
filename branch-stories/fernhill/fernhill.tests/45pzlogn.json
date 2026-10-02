@@ -1,0 +1,327 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "north",
+      "id": "vz6k9b4m",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hidden on the doormat, you discover: a tarnished key."
+        ]
+      },
+      "command": "search mat",
+      "id": "b5yf8but",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the tarnished key from the doormat."
+        ]
+      },
+      "command": "take key",
+      "id": "cv4iigme",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "north",
+      "id": "i8o3v5vy",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar Stairs"
+        ]
+      },
+      "command": "north",
+      "id": "jpu9b94w",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take lamp",
+      "id": "9jciypb8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The oil lamp switches on"
+        ]
+      },
+      "command": "switch on lamp",
+      "id": "832hjmr4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You unlock the cellar door"
+        ]
+      },
+      "command": "unlock cellar door with key",
+      "id": "6rx8dkrs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the cellar door."
+        ]
+      },
+      "command": "open cellar door",
+      "id": "cn32d3ow",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar"
+        ]
+      },
+      "command": "down",
+      "id": "2kagptst",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take crowbar",
+      "id": "6dezsi79",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Cellar Stairs"
+        ]
+      },
+      "command": "up",
+      "id": "evx9fowm",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "south",
+      "id": "fjo3vx5n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "south",
+      "id": "rvhpiufp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Boiler Shed"
+        ]
+      },
+      "command": "east",
+      "id": "q7eh0mam",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the nailed crate."
+        ]
+      },
+      "command": "open crate with crowbar",
+      "id": "fdc4r3ou",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the tin opener from the nailed crate."
+        ]
+      },
+      "command": "take opener",
+      "id": "rgfips0j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "west",
+      "id": "9slbwkk9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall"
+        ]
+      },
+      "command": "north",
+      "id": "6p4y00r4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kitchen"
+        ]
+      },
+      "command": "east",
+      "id": "ru425iru",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the pantry door."
+        ]
+      },
+      "command": "open pantry door",
+      "id": "dkcq98fg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pantry",
+          "You can see a kipper tin and Smoke here."
+        ],
+        "states": [
+          "Smoke.location = Pantry"
+        ]
+      },
+      "command": "north",
+      "id": "9unki3ba",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take tin",
+      "id": "glkjyzac",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "In the kipper tin you see a kipper."
+        ]
+      },
+      "command": "open tin with opener",
+      "id": "v64dxk9i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You take the kipper from the kipper tin."
+        ]
+      },
+      "command": "take kipper",
+      "id": "vgdqk2zq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kitchen"
+        ],
+        "notContains": [
+          "Smoke"
+        ],
+        "states": [
+          "Smoke.location = Pantry",
+          "player.location = Kitchen"
+        ]
+      },
+      "command": "south",
+      "id": "rz4n104f",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pantry"
+        ]
+      },
+      "command": "north",
+      "id": "0l5fqn5b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "From now on, you have a shadow."
+        ]
+      },
+      "command": "feed cat",
+      "id": "vhj63d64",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Smoke pads after you"
+        ],
+        "states": [
+          "Smoke.location = Kitchen",
+          "player.location = Kitchen"
+        ]
+      },
+      "command": "south",
+      "id": "rmvww6sx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Entrance Hall",
+          "Smoke pads after you"
+        ],
+        "states": [
+          "Smoke.location = Entrance Hall",
+          "player.location = Entrance Hall"
+        ]
+      },
+      "command": "west",
+      "id": "88f1mbk9",
+      "type": "turn"
+    }
+  ],
+  "id": "45pzlogn",
+  "ordinal": 2,
+  "parent": "weefpbmr"
+}

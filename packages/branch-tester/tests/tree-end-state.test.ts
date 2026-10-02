@@ -35,7 +35,7 @@ async function loadGame(): Promise<TreeWalkerGame> {
 /** Cards run and assert only what the test is about: the ending. */
 const skip = (command: string, extra?: Partial<TreeCard>): TreeCard => ({ type: 'turn', command, skip: true, ...extra });
 const doc = (cards: TreeCard[]): TreeDocument => ({
-  ...emptyTreeDocument('end-state', SEED),
+  ...emptyTreeDocument('end-state', SEED, 'main'),
   cards: [{ type: 'opening' }, { type: 'boot', skip: true }, ...cards],
 });
 

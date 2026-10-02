@@ -1,0 +1,33 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space"
+        ]
+      },
+      "command": "slide northeast cable",
+      "id": "waiq3zbt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "knocking over a couple of shoppers",
+          "You land in a heap in front of the fruit stall, and when"
+        ],
+        "states": [
+          "player.location = Fruit Stall",
+          "cloak.location = Fruit Stall"
+        ]
+      },
+      "command": "wait",
+      "ending": "ride-out-caught",
+      "id": "6kxpxflf",
+      "type": "turn"
+    }
+  ],
+  "id": "qgql0gi0",
+  "ordinal": 2,
+  "parent": "k6sd0y98"
+}

@@ -1,0 +1,52 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "kick off into space",
+          "Shouts ring out and fingers point",
+          "knocking over a couple of shoppers",
+          "You hear shouting coming from all quarters of the market."
+        ],
+        "states": [
+          "player.location = Northwest Junction",
+          "cloak.location = Northwest Junction"
+        ]
+      },
+      "command": "slide down northwest cable",
+      "id": "2oosdv06",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "No good — the mercenaries have closed the north gates"
+        ],
+        "states": [
+          "player.location = Northwest Junction",
+          "emitted player.market-escape.closer"
+        ]
+      },
+      "command": "n",
+      "id": "3wksmule",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Not that way — the alley is a dead end!",
+          "They're closing in!"
+        ],
+        "states": [
+          "player.location = Northwest Junction"
+        ]
+      },
+      "command": "nw",
+      "id": "2yv8rdr3",
+      "type": "turn"
+    }
+  ],
+  "id": "46pjlmnr",
+  "ordinal": 2,
+  "parent": "tqadj3t4"
+}

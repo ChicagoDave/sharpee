@@ -1,0 +1,37 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Folly Hill"
+        ]
+      },
+      "command": "north",
+      "id": "58betu9b",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the folly door."
+        ]
+      },
+      "command": "open folly door",
+      "id": "ugpkkb5c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Folly"
+        ]
+      },
+      "command": "north",
+      "id": "slv5x2eb",
+      "type": "turn"
+    }
+  ],
+  "id": "gt5xcmrc",
+  "ordinal": 0,
+  "parent": "5374qjvj"
+}

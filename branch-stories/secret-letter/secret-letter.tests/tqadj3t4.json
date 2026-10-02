@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Top of the Post",
+          "You can hear Teisha yelling shrilly",
+          "One of the mercenaries tries to climb after you"
+        ]
+      },
+      "command": "u",
+      "id": "zmjj5f7g",
+      "type": "turn"
+    }
+  ],
+  "id": "tqadj3t4",
+  "ordinal": 0,
+  "parent": "dh4qy16d"
+}

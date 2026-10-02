@@ -1,0 +1,237 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Balcony",
+          "About ten feet.",
+          "You take a few steps back, run... and jump.",
+          "you push yourself up and over.",
+          "You're standing on a balcony"
+        ],
+        "states": [
+          "player.location = Balcony"
+        ]
+      },
+      "command": "jump",
+      "id": "uwt48b32",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Balcony",
+          "You're standing on a balcony, complete with ornate railing"
+        ],
+        "notContains": [
+          "About ten feet."
+        ]
+      },
+      "command": "look",
+      "id": "83r2mxib",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "death-defying leaps over fifty-foot drops. Besides, you can't leave until you find the letter Bobby was talking about."
+        ]
+      },
+      "command": "w",
+      "id": "uo7zgyoh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "death-defying leaps over fifty-foot drops."
+        ]
+      },
+      "command": "jump",
+      "id": "ocmronmg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The curved, elegant railing is made of white marble and gilt iron."
+        ]
+      },
+      "command": "x railing",
+      "id": "f6fxdybt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "look like ants from up here."
+        ]
+      },
+      "command": "x people",
+      "id": "et83sr7p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can see the rooftops stretching away to the west, beyond the big drop."
+        ]
+      },
+      "command": "x rooftops",
+      "id": "uil19891",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted roses-from-here"
+        ]
+      },
+      "command": "smell",
+      "id": "yulnf6ta",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted fountain-trickle-from-here"
+        ]
+      },
+      "command": "listen",
+      "id": "3n821xav",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Patio",
+          "Cushioned divans and low marble tables"
+        ],
+        "states": [
+          "player.location = Patio"
+        ]
+      },
+      "command": "se",
+      "id": "xmz3hwgs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Water trickles over a jumble of smooth stones into a shallow pool."
+        ]
+      },
+      "command": "x fountain",
+      "id": "slil0a0n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted fountain-no-time-to-listen"
+        ]
+      },
+      "command": "listen",
+      "id": "pzd6owle",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted fountain-not-for-drinking"
+        ]
+      },
+      "command": "drink water",
+      "id": "aalibwiz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The furniture is certainly luxurious, but it's not what you're here for."
+        ]
+      },
+      "command": "x furniture",
+      "id": "5u3sb4ea",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted roses-from-here"
+        ]
+      },
+      "command": "smell",
+      "id": "cpdnnuqn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Rooftop Garden",
+          "autumn roses",
+          "a flight of steps leads down into the lower floors of the house."
+        ],
+        "states": [
+          "player.location = Rooftop Garden"
+        ]
+      },
+      "command": "n",
+      "id": "mio92464",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted no-time-to-smell-flowers"
+        ]
+      },
+      "command": "smell",
+      "id": "u79fwwne",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted fountain-trickle-from-here"
+        ]
+      },
+      "command": "listen",
+      "id": "77hxewig",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The flowers are beautiful, but you don't have time to admire them right now."
+        ]
+      },
+      "command": "x flowers",
+      "id": "z0y477zq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted lattice-leads-nowhere"
+        ]
+      },
+      "command": "climb lattice",
+      "id": "jr684l09",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted steps-lead-down"
+        ]
+      },
+      "command": "x steps",
+      "id": "jjy9yi5u",
+      "type": "turn"
+    }
+  ],
+  "id": "b9nxj3ku",
+  "ordinal": 0,
+  "parent": "ohuyp9mi"
+}

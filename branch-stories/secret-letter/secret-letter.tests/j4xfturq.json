@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Third Floor Landing",
+          "you are now an intruder."
+        ],
+        "states": [
+          "player.location = Third Floor Landing"
+        ]
+      },
+      "command": "climb steps",
+      "id": "z3scvvh7",
+      "type": "turn"
+    }
+  ],
+  "id": "j4xfturq",
+  "ordinal": 1,
+  "parent": "b9nxj3ku"
+}

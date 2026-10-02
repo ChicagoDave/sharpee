@@ -1,0 +1,20 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Bobby catches your sleeve before you can go."
+        ],
+        "states": [
+          "player.location = Back Alley"
+        ]
+      },
+      "command": "n",
+      "id": "2qsxwrgq",
+      "type": "turn"
+    }
+  ],
+  "id": "a2305rhs",
+  "ordinal": 0,
+  "parent": "o7usa7tt"
+}

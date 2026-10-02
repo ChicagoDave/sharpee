@@ -1,0 +1,169 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Master Bedroom",
+          "You leave the library in a rush — and run smack into someone coming the other way.",
+          "'Little thief!' a voice hisses",
+          "He's an older man, wearing a servant's uniform — Fossville's butler.",
+          "The butler grips your arm firmly."
+        ],
+        "states": [
+          "player.location = Master Bedroom"
+        ]
+      },
+      "command": "n",
+      "id": "9aj3tmso",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The butler is tall and somewhat gaunt, with a heavy brow and a sour, twisted cast to his mouth.",
+          "The butler drags you into the stairwell, then stops, his thin, bald head cocked, listening.",
+          "one half-witted street urchin locked in a cage for a single night",
+          "not particularly well liked by his servants.",
+          "Second Floor Landing"
+        ],
+        "states": [
+          "player.location = Second Floor Landing"
+        ]
+      },
+      "command": "x butler",
+      "id": "ncw9vuco",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The butler stares intently at the letter in your hand for a long moment.",
+          "Put that away, child; I never saw it, and I don't want to know what's in it.",
+          "'Gather your men at Lord's Market,' says Fossville. 'We'll deal with the spy first. Once that business is finished, we pay a visit to the Widows.",
+          "no greater challenge to your mercenaries than a fourteen-year-old girl.",
+          "The butler holds his hand up, palm out. Wait."
+        ]
+      },
+      "command": "show letter to butler",
+      "id": "q6a4hw9j",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The butler pointedly does not look at it.",
+          "Several agonizing minutes later",
+          "A bit of advice, girl,",
+          "East Commerce Street"
+        ],
+        "states": [
+          "player.location = East Commerce Street"
+        ]
+      },
+      "command": "show letter to butler",
+      "id": "iqvw69ke",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't see any such thing."
+        ]
+      },
+      "command": "give letter to butler",
+      "id": "iedu4y96",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "letter"
+        ]
+      },
+      "command": "i",
+      "id": "6p5vbop6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You've already gotten what you need from Fossville's house. Better not press your luck."
+        ]
+      },
+      "command": "nw",
+      "id": "7w0ydfaw",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You are utterly filthy."
+        ]
+      },
+      "command": "x me",
+      "id": "nvhpb7m4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "all rubbing shoulders."
+        ],
+        "notContains": [
+          "craning"
+        ]
+      },
+      "command": "x crowd",
+      "id": "lp3uagy4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted crowd-intent-on-the-market"
+        ]
+      },
+      "command": "talk to crowd",
+      "id": "kaval2io",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted crowd-dont-attract-attention"
+        ]
+      },
+      "command": "push crowd",
+      "id": "ub36v0mq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The crowd is too thick in that direction; everyone is heading east, towards Lord's Market."
+        ]
+      },
+      "command": "w",
+      "id": "ik1h9n4p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "There is some sort of wooden structure erected in the center of the square.",
+          "Mercenaries ring the platform, a dozen of them, facing"
+        ],
+        "states": [
+          "player.location = Lord's Market"
+        ]
+      },
+      "command": "e",
+      "id": "ot7341et",
+      "type": "turn"
+    }
+  ],
+  "id": "4su2td0x",
+  "ordinal": 0,
+  "parent": "ltgkzsnj"
+}

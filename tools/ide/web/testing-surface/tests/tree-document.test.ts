@@ -7,37 +7,40 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  deserializeTreeDocument,
-  serializeTreeDocument,
-  treeDocumentFileNameFor,
+  assembleTree,
+  segmentTree,
+  treeDirectoryNameFor,
+  TREE_DOCUMENT_VERSION,
   type TreeDocument,
 } from '@sharpee/branch-tester/tree-document';
 
 describe('shared tree-document module (rule 8b wiring)', () => {
-  it('round-trips a document through the aliased source import', () => {
+  it('round-trips a tree through the aliased source import', () => {
     const document: TreeDocument = {
-      version: 2,
+      version: TREE_DOCUMENT_VERSION,
       story: 'fernhill',
       seed: 42,
+      id: 'root0000',
       cards: [
-        { type: 'opening' },
-        { type: 'boot' },
+        { id: 'card0001', type: 'opening' },
+        { id: 'card0002', type: 'boot' },
         {
+          id: 'card0003',
           type: 'turn',
           command: 'north',
           assertions: { contains: ['The drive curves'] },
-          branches: [{ branch: 1, cards: [{ type: 'turn', command: 'east' }] }],
+          branches: [{ id: 'branch01', cards: [{ id: 'card0004', type: 'turn', command: 'east' }] }],
         },
       ],
     };
-    const text = serializeTreeDocument(document);
-    const read = deserializeTreeDocument(text);
+    const files = segmentTree(document);
+    const read = assembleTree(files);
     expect(read.status).toBe('ok');
     if (read.status !== 'ok') return;
-    expect(serializeTreeDocument(read.document)).toBe(text);
+    expect(segmentTree(read.document)).toEqual(files);
   });
 
-  it('derives the document name the Swift side will look for', () => {
-    expect(treeDocumentFileNameFor('fernhill')).toBe('fernhill.tests.json');
+  it('derives the directory name the Swift side will look for', () => {
+    expect(treeDirectoryNameFor('fernhill')).toBe('fernhill.tests');
   });
 });

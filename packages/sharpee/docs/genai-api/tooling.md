@@ -1461,8 +1461,9 @@ export declare function findEntity(name: string, world: WorldModel, idAttribute?
 export declare function getEntityProperty(entity: any, property: string, world?: WorldModel): any;
 /**
  * Resolve the right-hand side of a claim: an entity name becomes its id;
- * `null`/`undefined`/`nowhere` become undefined; `true`/`false` become
- * booleans; anything else stays the literal string.
+ * `null`/`undefined`/`nowhere`/`offstage` become undefined, the location of
+ * an entity in no place (`offstage` is Chord's word for it); `true`/`false`
+ * become booleans; anything else stays the literal string.
  *
  * @param value the text a claim wrote
  * @param world the live world, for entity names
@@ -2188,10 +2189,14 @@ export declare class RunEventStream {
      * @param index 0-based position in the run's EXECUTION order — a tree node
      *   re-executed for a sibling takes a new index, since the pairing of start
      *   to end is positional, not by file.
+     * @param file the unit's identity: a transcript's path, or a tree line's id.
      * @param extra `commandCount` for a real progress bar; `parent`/`replayed`
-     *   for tree runs (ADR-302 parentage and D17 replay).
+     *   for tree runs (ADR-302 parentage and D17 replay); `label` when `file`
+     *   is an opaque id (ADR-355 D5).
      */
     transcriptStart(file: string, index: number, extra?: {
+        /** The display name when `file` is an opaque identity (a tree line's label). */
+        label?: string;
         commandCount?: number;
         parent?: string;
         replayed?: boolean;

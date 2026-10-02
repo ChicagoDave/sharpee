@@ -47,8 +47,8 @@ export type OutlineNameKind =
 
 /** One line of the tree as the manifest names it. */
 export interface OutlineLine {
-  /** The branch id; `0` for the main line. */
-  lineId: number;
+  /** The line's id: its first segment's id — the document's root id for the main line. */
+  lineId: string;
   /** What this line is, in as few words as the tree allows. */
   name: string;
   nameKind: OutlineNameKind;
@@ -153,12 +153,12 @@ function nameOf(
  * Read one line's manifest row from its cards.
  *
  * @param cards    the line's own cards (not its prefix)
- * @param lineId   the branch id, or 0 for the main line
+ * @param lineId   the line's id (the branch's, or the document's root id)
  * @param siblings every other line at the same fork, as command lists
  */
 function lineOf(
   cards: readonly TreeCard[],
-  lineId: number,
+  lineId: string,
   siblings: readonly (readonly string[])[],
 ): OutlineLine {
   const turns = turnsOf(cards);
@@ -204,7 +204,7 @@ export function outlineOf(doc: TreeDocument): Outline {
         depth,
         locationAsserted: asserted !== undefined,
         lines: branches.map((branch, index) =>
-          lineOf(branch.cards, branch.branch, sequences.filter((_, i) => i !== index))),
+          lineOf(branch.cards, branch.id, sequences.filter((_, i) => i !== index))),
       };
       if (card.command !== undefined) fork.command = card.command;
       if (here !== undefined) fork.location = here;
@@ -214,7 +214,7 @@ export function outlineOf(doc: TreeDocument): Outline {
     }
   };
 
-  const root = lineOf(doc.cards, 0, []);
+  const root = lineOf(doc.cards, doc.id, []);
   walk(doc.cards, 0, undefined);
 
   const lineCount = 1 + forks.reduce((total, fork) => total + fork.lines.length, 0);

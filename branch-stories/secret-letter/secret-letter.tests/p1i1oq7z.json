@@ -1,0 +1,146 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Jeweler's Shop",
+          "Pieter, the guard, stands discreetly near the back of the room.",
+          "a silver ring, a silver pendant, a silver bracelet, and a silver brooch"
+        ]
+      },
+      "command": "look",
+      "id": "998n06ou",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The brooch is wrought of silver in the shape of a cup, symbol of the Goddess Magdalena."
+        ]
+      },
+      "command": "x brooch",
+      "id": "hbpgcd21",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Jacqueline,' Dame Sandler scolds, 'aren't you forgetting something?' She nods her head pointedly towards the jewelry."
+        ],
+        "states": [
+          "player.location = Jeweler's Shop"
+        ]
+      },
+      "command": "w",
+      "id": "gc8ie5ml",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ],
+        "states": [
+          "the preparations is escorted",
+          "Pieter is guarding",
+          "the display case is locked",
+          "emitted sandler-ds49b"
+        ]
+      },
+      "command": "take brooch",
+      "id": "b202o41t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "silver brooch"
+        ],
+        "notContains": [
+          "silver ring",
+          "silver pendant",
+          "silver bracelet"
+        ]
+      },
+      "command": "i",
+      "id": "j44ejl40",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Jeweler's Shop",
+          "Pieter is here, fingering his sword hilt.",
+          "Dame Sandler stands near the central display case."
+        ],
+        "notContains": [
+          "stands discreetly",
+          "a silver ring"
+        ]
+      },
+      "command": "look",
+      "id": "zzzedq2t",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted sandler-no-time"
+        ]
+      },
+      "command": "talk to sandler",
+      "id": "yi9h2g8c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "'Hey Pieter,' you say, 'mind if I ask you something?'",
+          "Jac— er, Jacqueline"
+        ]
+      },
+      "command": "talk to pieter",
+      "id": "2bquaen3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "states": [
+          "emitted pieter-dont-lose-that-credentials"
+        ]
+      },
+      "command": "show letter to pieter",
+      "id": "a31v73wp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Which do you mean: the silver brooch or the valuable jewelry?"
+        ]
+      },
+      "command": "wear brooch",
+      "id": "gzkluakl",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Lord's Market",
+          "Pieter follows, his hand on his sword hilt."
+        ],
+        "states": [
+          "player.location = Lord's Market",
+          "Pieter.location = Lord's Market",
+          "emitted sandler-good-luck"
+        ]
+      },
+      "command": "w",
+      "id": "3o5xo38n",
+      "type": "turn"
+    }
+  ],
+  "id": "p1i1oq7z",
+  "ordinal": 0,
+  "parent": "222doh9e"
+}

@@ -5,16 +5,17 @@
  * AC-2: a suite authored through the tab's real model (driven by the real
  * engine, RECORDING persisting synthesis into the JSON — David 2026-08-10:
  * the JSON is the source of truth) runs through the REAL `sharpee test
- * --tree` CLI subprocess with the tab's exact arguments; derived labels,
- * failure citations, and per-assertion detail must be identical between the
- * tab's fold and the CLI's stream/report, and the document bytes must be
- * untouched by the run.
+ * --tree` CLI subprocess with the tab's exact arguments; line ids (the
+ * wire's row keys, ADR-355 D5), derived labels, failure citations, and
+ * per-assertion detail must be identical between the tab's fold and the
+ * CLI's stream/report, and the tree's files must be untouched by the run.
  *
  * AC-3: tail-cut, splice-in, splice-out, and branch — each followed by a
  * whole-path replay through the real CLI — yield EXACTLY the specified tree
- * (byte-level, via the shared serializer; claim content is what record-time
- * synthesis persisted, structure is specified explicitly), with seams
- * surfacing as failed assertions, never corruption or lost nodes.
+ * (the structure specified explicitly, ids aside; the files canonical
+ * through the shared segmenter; claim content is what record-time synthesis
+ * persisted), with seams surfacing as failed assertions, never corruption
+ * or lost nodes.
  *
  * The CLI is spawned as a child process on the compiled devkit dist — the
  * same `node cli.js test <story> --tree --capture-output --capture-world
@@ -25,7 +26,7 @@
  * document carries everything a run needs — nothing is assumed at run time.
  */
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
@@ -36,14 +37,17 @@ import {
   proseTextLinesOf,
 } from '@sharpee/branch-tester/auto-assertion';
 import {
-  serializeTreeDocument,
+  assembleTree,
+  segmentTree,
+  TREE_DOCUMENT_VERSION,
   type TreeAssertions,
   type TreeCard,
   type TreeChannelAssertion,
   type TreeDocument,
+  type TreeFiles,
 } from '@sharpee/branch-tester/tree-document';
 import { openingDefaultClaims, recordedTurnAssertions } from '../src/compose';
-import { MAIN_LINE, TreeSessionModel } from '../src/model';
+import { TreeSessionModel } from '../src/model';
 import { beginRun, createRunState, finishRun, foldRunLine, type RunColumnState } from '../src/run';
 
 const testsDir = fileURLToPath(new URL('.', import.meta.url));
@@ -106,16 +110,60 @@ end before
 
 let projectDir: string;
 let storyPath: string;
-let docPath: string;
+let treeDir: string;
 
 beforeAll(() => {
   projectDir = mkdtempSync(join(tmpdir(), 'ac-signoff-'));
   storyPath = join(projectDir, 'mini.story');
-  docPath = join(projectDir, 'mini.tests.json');
+  treeDir = join(projectDir, 'mini.tests');
   writeFileSync(storyPath, STORY);
 });
 
 afterAll(() => rmSync(projectDir, { recursive: true, force: true }));
+
+/** Writes the model's tree as the host does — the whole directory replaced
+ *  by exactly the model's files (a scratch project, never a real story). */
+function writeTree(model: TreeSessionModel): TreeFiles {
+  const files = model.files();
+  rmSync(treeDir, { recursive: true, force: true });
+  mkdirSync(treeDir);
+  for (const [name, text] of Object.entries(files)) writeFileSync(join(treeDir, name), text);
+  return files;
+}
+
+/** The tree directory's files as they sit on disk now. */
+function readTree(): TreeFiles {
+  const files: TreeFiles = {};
+  for (const name of readdirSync(treeDir)) files[name] = readFileSync(join(treeDir, name), 'utf-8');
+  return files;
+}
+
+/**
+ * A tree's structure with the minted ids set aside — every card's `id` and a
+ * fork's `continuation` are allocated at write time, so an expected tree
+ * specified by hand names the structure and the line ids only.
+ */
+function structureOf(document: TreeDocument): unknown {
+  const strip = (cards: TreeCard[]): unknown[] =>
+    cards.map(({ id: _id, continuation: _continuation, branches, ...rest }) => ({
+      ...rest,
+      ...(branches !== undefined
+        ? { branches: branches.map((branch) => ({ id: branch.id, cards: strip(branch.cards) })) }
+        : {}),
+    }));
+  return { ...document, cards: strip(document.cards) };
+}
+
+/** The model holds exactly `expected` and its files are canonical: they read
+ *  back through the shared reader and re-segment byte-identically. */
+function expectTree(model: TreeSessionModel, expected: TreeDocument): void {
+  const files = model.files();
+  const read = assembleTree(files);
+  expect(read.status).toBe('ok');
+  if (read.status !== 'ok') return;
+  expect(segmentTree(read.document)).toEqual(files);
+  expect(structureOf(read.document)).toEqual(structureOf(expected));
+}
 
 const loadGame = (): Promise<RealGame> =>
   loadAuthorGame(projectDir, {
@@ -188,7 +236,7 @@ interface BaseSession {
   model: TreeSessionModel;
   examined: number;
   north: number;
-  branchId: number;
+  branchId: string;
   /** The EXACT tree `buildBase` specifies — AC-3's byte-equality target. */
   expected: TreeDocument;
 }
@@ -210,7 +258,7 @@ async function buildBase(): Promise<BaseSession> {
   await branchGame.executeCommand('examine the brass lamp');
   const alt = await playReal(model, branchGame, 'look');
   model.addContains(alt, 'A small square den');
-  model.activateLine(MAIN_LINE);
+  model.activateLine(model.mainLine);
 
   const examineCard = card(
     'turn',
@@ -219,14 +267,15 @@ async function buildBase(): Promise<BaseSession> {
   );
   examineCard.branches = [
     {
-      branch: branchId,
+      id: branchId,
       cards: [card('turn', 'look', withContains(recordedLog.get(alt), 'A small square den'))],
     },
   ];
   const expected: TreeDocument = {
-    version: 2,
+    version: TREE_DOCUMENT_VERSION,
     story: 'mini',
     seed: 42,
+    id: model.mainLine,
     cards: [
       card('opening', undefined, openingLog.length > 0 ? { channels: openingLog } : undefined),
       card('boot', undefined, recordedLog.get(boot)),
@@ -283,34 +332,42 @@ function runCliReport(): { exitCode: number; report: string } {
   return { exitCode: spawned.status ?? -1, report: spawned.stdout };
 }
 
-/** The labels the CLI announced, in run order (`transcript-end` files). */
-function cliLabels(events: Record<string, unknown>[]): string[] {
+/** The line ids the CLI closed, in run order (`transcript-end` files). */
+function cliLines(events: Record<string, unknown>[]): string[] {
   return events.filter((e) => e.type === 'transcript-end').map((e) => e.file as string);
 }
 
+/** The labels the CLI announced, in run order (`transcript-start` labels). */
+function cliLabels(events: Record<string, unknown>[]): string[] {
+  return events.filter((e) => e.type === 'transcript-start').map((e) => e.label as string);
+}
+
 /** Every failed assertion message in a folded line's detail. */
-function failedMessagesOf(state: RunColumnState, label: string): string[] {
-  return (state.results.get(label)?.commands ?? []).flatMap((command) =>
+function failedMessagesOf(state: RunColumnState, lineId: string): string[] {
+  return (state.results.get(lineId)?.commands ?? []).flatMap((command) =>
     command.assertions.filter((entry) => !entry.passed).map((entry) => entry.message ?? ''),
   );
 }
 
 describe('AC-2 — one document, two consumers (tab-authored suite through the real CLI)', () => {
-  it('runs green in the real CLI with identical derived labels, untouched bytes, detail on every card', async () => {
+  it('runs green in the real CLI with identical line ids and labels, untouched files, detail on every card', async () => {
     const { model, branchId, expected } = await buildBase();
-    expect(model.serialize()).toBe(serializeTreeDocument(expected));
-    writeFileSync(docPath, model.serialize());
-    const bytesBefore = readFileSync(docPath, 'utf-8');
+    expectTree(model, expected);
+    const filesBefore = writeTree(model);
 
     const run = runCliJson();
     expect(run.exitCode).toBe(0);
 
-    // Identical labels: the model's own derived labels ARE the CLI's row keys.
-    const tabLabels = [model.labelOf(MAIN_LINE), model.labelOf(branchId)];
+    // Identical identities: the model's line ids ARE the CLI's row keys
+    // (ADR-355 D5), and its derived labels are the ones the wire announces.
+    const tabLines = [model.mainLine, branchId];
+    const tabLabels = [model.labelOf(model.mainLine), model.labelOf(branchId)];
     expect(tabLabels).toEqual(['opening-den', 'den · look']);
+    expect(cliLines(run.events)).toEqual(tabLines);
     expect(cliLabels(run.events)).toEqual(tabLabels);
-    expect([...run.state.results.keys()]).toEqual(tabLabels);
-    for (const label of tabLabels) expect(run.state.results.get(label)?.status).toBe('passed');
+    expect([...run.state.results.keys()]).toEqual(tabLines);
+    expect([...run.state.results.values()].map((result) => result.label)).toEqual(tabLabels);
+    for (const lineId of tabLines) expect(run.state.results.get(lineId)?.status).toBe('passed');
     expect(run.state.tally).toEqual({
       cardsPassed: 5,
       cardsFailed: 0,
@@ -326,7 +383,7 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     // The detail view's data (David 2026-08-10): every executed command
     // carries every assertion's verdict, all passing — including the
     // persisted opening claims.
-    const mainDetail = run.state.results.get('opening-den')!.commands;
+    const mainDetail = run.state.results.get(model.mainLine)!.commands;
     expect(mainDetail.length).toBeGreaterThanOrEqual(4); // (opening) + boot + 2 turns
     expect(mainDetail.every((command) => command.assertions.length > 0)).toBe(true);
     expect(mainDetail.every((command) => command.assertions.every((entry) => entry.passed))).toBe(
@@ -339,8 +396,8 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
       'channel info.description is "A small square test story."',
     ]);
 
-    // The run consumed the tab's bytes and wrote nothing back.
-    expect(readFileSync(docPath, 'utf-8')).toBe(bytesBefore);
+    // The run consumed the tab's files and wrote nothing back.
+    expect(readTree()).toEqual(filesBefore);
 
     // The human report shows the same lines by the same labels.
     const { exitCode, report } = runCliReport();
@@ -351,9 +408,9 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
   }, 600_000);
 
   it('a failing claim is cited identically by the tab fold, the stream, and the report', async () => {
-    const { model, north } = await buildBase();
+    const { model, north, branchId } = await buildBase();
     model.addContains(north, 'no roses at all');
-    writeFileSync(docPath, model.serialize());
+    writeTree(model);
 
     const run = runCliJson();
     expect(run.exitCode).toBe(1);
@@ -368,13 +425,13 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
 
     // …the tab's fold carries it verbatim, with the failing assertion's own
     // detail row alongside the card's passing ones…
-    const tabRow = run.state.results.get('opening-den');
+    const tabRow = run.state.results.get(model.mainLine);
     expect(tabRow?.status).toBe('failed');
     expect(tabRow?.firstFailure?.endsWith(message)).toBe(true);
-    const failing = failedMessagesOf(run.state, 'opening-den');
+    const failing = failedMessagesOf(run.state, model.mainLine);
     expect(failing.some((entry) => entry.includes('no roses at all'))).toBe(true);
     // …the branch is unaffected and the tally counts lines.
-    expect(run.state.results.get('den · look')?.status).toBe('passed');
+    expect(run.state.results.get(branchId)?.status).toBe('passed');
     expect(run.state.tally).toEqual({
       cardsPassed: 4,
       cardsFailed: 1,
@@ -407,8 +464,7 @@ describe('AC-2 — the fresh-start session (no header, nothing hand-authored)', 
     await playReal(model, game, 'look', true);
     await playReal(model, game, 'examine the brass lamp');
     await playReal(model, game, 'north');
-    const text = model.serialize();
-    writeFileSync(docPath, text);
+    const text = Object.values(writeTree(model)).join('\n');
 
     // The JSON carries the recorded truth — visibly.
     expect(text).toContain('"assertions"');
@@ -416,8 +472,9 @@ describe('AC-2 — the fresh-start session (no header, nothing hand-authored)', 
 
     const run = runCliJson();
     expect(run.exitCode).toBe(0);
+    expect(cliLines(run.events)).toEqual([model.mainLine]);
     expect(cliLabels(run.events)).toEqual(['opening-den']);
-    expect(run.state.results.get('opening-den')?.status).toBe('passed');
+    expect(run.state.results.get(model.mainLine)?.status).toBe('passed');
     expect(run.state.tally).toEqual({
       cardsPassed: 3,
       cardsFailed: 0,
@@ -433,40 +490,41 @@ describe('AC-2 — the fresh-start session (no header, nothing hand-authored)', 
 
 describe('AC-3 — each gesture, then a whole-path replay through the real CLI', () => {
   it('branch: the fork lands exactly as specified and both lines replay green', async () => {
-    const { model, expected } = await buildBase();
-    expect(model.serialize()).toBe(serializeTreeDocument(expected));
+    const { model, branchId, expected } = await buildBase();
+    expectTree(model, expected);
 
-    writeFileSync(docPath, model.serialize());
+    writeTree(model);
     const run = runCliJson();
     expect(run.exitCode).toBe(0);
+    expect(cliLines(run.events)).toEqual([model.mainLine, branchId]);
     expect(cliLabels(run.events)).toEqual(['opening-den', 'den · look']);
     for (const result of run.state.results.values()) expect(result.status).toBe('passed');
   }, 600_000);
 
   it('tail-cut: the card leaves, descendants and nothing else; the tree replays green', async () => {
-    const { model, north, expected } = await buildBase();
-    expect(model.tailCut(north)).toEqual({ lineId: MAIN_LINE, activeSurvived: true });
+    const { model, north, branchId, expected } = await buildBase();
+    expect(model.tailCut(north)).toEqual({ lineId: model.mainLine, activeSurvived: true });
 
     // Exactly the base tree minus the north card — the branch is intact.
     expected.cards.pop();
-    expect(model.serialize()).toBe(serializeTreeDocument(expected));
+    expectTree(model, expected);
 
-    writeFileSync(docPath, model.serialize());
+    writeTree(model);
     const run = runCliJson();
     expect(run.exitCode).toBe(0);
-    expect(cliLabels(run.events)).toEqual(['opening-den', 'den · look']);
+    expect(cliLines(run.events)).toEqual([model.mainLine, branchId]);
     for (const result of run.state.results.values()) expect(result.status).toBe('passed');
   }, 600_000);
 
   it('splice-in: one bare turn lands at the seam; the whole-path replay fills it; the run fails THAT seam, the branch passes', async () => {
-    const { model, examined, expected } = await buildBase();
+    const { model, examined, branchId, expected } = await buildBase();
     expect(model.spliceIn(examined, 'north')).toBe(true);
 
     // Exactly the base tree with one BARE `north` after the examine card —
     // the spliced turn was never played, and the JSON says so.
     const bare = JSON.parse(JSON.stringify(expected)) as TreeDocument;
     bare.cards.splice(3, 0, { type: 'turn', command: 'north' });
-    expect(model.serialize()).toBe(serializeTreeDocument(bare));
+    expectTree(model, bare);
 
     // The whole-path replay (real commands, real engine) binds the repaired
     // stream back onto the board and FILLS the spliced card's void with its
@@ -480,27 +538,27 @@ describe('AC-3 — each gesture, then a whole-path replay through the real CLI',
     expect(model.cardAt(splicedOrdinal)?.command).toBe('north');
     const filled = JSON.parse(JSON.stringify(bare)) as TreeDocument;
     filled.cards[3] = card('turn', 'north', recordedLog.get(splicedOrdinal));
-    expect(model.serialize()).toBe(serializeTreeDocument(filled));
+    expectTree(model, filled);
 
-    writeFileSync(docPath, model.serialize());
+    const written = writeTree(model);
     const run = runCliJson();
     expect(run.exitCode).toBe(1);
 
     // The seam is the downstream card's claim, cited in the detail — never
     // corruption; the branch (forked before the seam) still passes.
-    const tabRow = run.state.results.get('opening-den');
+    const tabRow = run.state.results.get(model.mainLine);
     expect(tabRow?.status).toBe('failed');
-    const failing = failedMessagesOf(run.state, 'opening-den');
+    const failing = failedMessagesOf(run.state, model.mainLine);
     expect(failing.some((entry) => entry.includes('Roses everywhere'))).toBe(true);
-    expect(run.state.results.get('den · look')?.status).toBe('passed');
+    expect(run.state.results.get(branchId)?.status).toBe('passed');
 
     // No lost nodes: what the CLI read back is still the exact filled tree.
-    expect(readFileSync(docPath, 'utf-8')).toBe(serializeTreeDocument(filled));
+    expect(readTree()).toEqual(written);
   }, 600_000);
 
   it('splice-out: removing the spliced turn restores the tree byte-identically and it replays green', async () => {
-    const { model, examined } = await buildBase();
-    const beforeSplice = model.serialize();
+    const { model, examined, branchId } = await buildBase();
+    const beforeSplice = model.files();
     expect(model.spliceIn(examined, 'north')).toBe(true);
 
     model.beginRebindAll();
@@ -512,12 +570,12 @@ describe('AC-3 — each gesture, then a whole-path replay through the real CLI',
     expect(model.cardAt(splicedOrdinal)?.command).toBe('north');
 
     expect(model.spliceOut(splicedOrdinal)).toBe(true);
-    expect(model.serialize()).toBe(beforeSplice);
+    expect(model.files()).toEqual(beforeSplice);
 
-    writeFileSync(docPath, model.serialize());
+    writeTree(model);
     const run = runCliJson();
     expect(run.exitCode).toBe(0);
-    expect(cliLabels(run.events)).toEqual(['opening-den', 'den · look']);
+    expect(cliLines(run.events)).toEqual([model.mainLine, branchId]);
     for (const result of run.state.results.values()) expect(result.status).toBe('passed');
   }, 600_000);
 });

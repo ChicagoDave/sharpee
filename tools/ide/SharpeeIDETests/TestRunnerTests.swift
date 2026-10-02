@@ -1,7 +1,7 @@
 // TestRunnerTests.swift
 // Real-path tests for TestRunner (rule 13a): drives the actual devkit CLI
 // (`node packages/devkit/dist/cli.js test <story> --tree --json`) against real
-// `.story` + `<story-id>.tests.json` fixtures through the production
+// `.story` + `<story-id>.tests/` tree fixtures through the production
 // spawn/line-buffer path — no stubbed toolchain (ADR-307: the tree document
 // is the only run model). Fixture shell scripts appear only for the shapes
 // the real CLI cannot produce on demand (split-chunk delivery, a future
@@ -123,19 +123,40 @@ final class TestRunnerTests: XCTestCase {
 
     // MARK: - Real CLI, real stories (Acceptance 6)
 
-    /// The tree document the Testing tab would have written: opening + an
-    /// asserted boot look, claiming text the story really prints.
+    /// The tree the Testing tab would have written — a `mini.tests/`
+    /// directory holding the manifest and one segment (ADR-355): opening + an
+    /// asserted boot look, claiming text the story really prints. The bytes
+    /// are canonical (sorted keys, two-space indent, one trailing newline),
+    /// since `sharpee test`'s canonical gate refuses anything else.
     private func writeDocument(claim: String) throws {
-        try writeFixture("mini.tests.json", """
+        try writeFixture("mini.tests/manifest.json", """
         {
-          "version": 2,
-          "story": "mini",
           "seed": 42,
-          "cards": [
-            { "type": "opening" },
-            { "type": "boot", "assertions": { "contains": ["\(claim)"] } }
-          ]
+          "story": "mini",
+          "version": 3
         }
+
+        """)
+        try writeFixture("mini.tests/root0000.json", """
+        {
+          "cards": [
+            {
+              "id": "card0001",
+              "type": "opening"
+            },
+            {
+              "assertions": {
+                "contains": [
+                  "\(claim)"
+                ]
+              },
+              "id": "card0002",
+              "type": "boot"
+            }
+          ],
+          "id": "root0000"
+        }
+
         """)
     }
 
@@ -161,13 +182,13 @@ final class TestRunnerTests: XCTestCase {
         XCTAssertEqual(transcriptEndStatuses(), ["passed"])
     }
 
-    /// A document the deserializer refuses (malformed JSON) exits 2 with
-    /// nothing run — refusal happens BEFORE the stream exists (AC-4), so the
-    /// IDE sees a failed run with no events, never a silent pass over a
-    /// corrupted document.
+    /// A tree the reader refuses (a malformed segment) exits 2 with nothing
+    /// run — refusal happens BEFORE the stream exists (AC-4), so the IDE sees
+    /// a failed run with no events, never a silent pass over a corrupted tree.
     func testMalformedDocumentIsRefusedBeforeAnythingRuns() throws {
         try writeFixture("mini.story", Self.story)
-        try writeFixture("mini.tests.json", "{ this is not json")
+        try writeDocument(claim: "A small square den")
+        try writeFixture("mini.tests/root0000.json", "{ this is not json")
         runReal(arguments: [tempDir.path])
 
         XCTAssertEqual(delegate.result?.state, .failed)
@@ -279,8 +300,8 @@ final class TestRunnerTests: XCTestCase {
     /// the wire is the count delivered.
     func testRealFernhillRunDeliversTheDerivedLinesVerbatim() throws {
         let fernhill = TestToolchain.repoRoot.appendingPathComponent("branch-stories/fernhill", isDirectory: true)
-        try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.appendingPathComponent("fernhill.tests.json").path),
-                          "branch-stories/fernhill has no tree document")
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: fernhill.appendingPathComponent("fernhill.tests").path),
+                          "branch-stories/fernhill has no test tree")
         runReal(arguments: [fernhill.appendingPathComponent("fernhill.story").path], timeout: 300)
 
         XCTAssertNotNil(delegate.result, "the run exits")

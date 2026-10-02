@@ -1,0 +1,44 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Staying out of sight should be easy"
+        ],
+        "notContains": [
+          "wider berth"
+        ]
+      },
+      "command": "x crowd",
+      "id": "gznx2o55",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Time passes"
+        ]
+      },
+      "command": "wait",
+      "id": "ncrnrsub",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Some of them try to give the mercenaries a slightly wider berth"
+        ],
+        "states": [
+          "shoppers.location = Northwest Junction",
+          "story.state = hunted"
+        ]
+      },
+      "command": "x crowd",
+      "id": "z5so422d",
+      "type": "turn"
+    }
+  ],
+  "id": "9o8tnmt1",
+  "ordinal": 4,
+  "parent": "zjak0nxl"
+}

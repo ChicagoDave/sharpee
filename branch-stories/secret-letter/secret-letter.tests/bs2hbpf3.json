@@ -1,0 +1,21 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Secret Closet"
+        ],
+        "states": [
+          "player.location = Secret Closet",
+          "emitted squeeze-in"
+        ]
+      },
+      "command": "enter gap",
+      "id": "hy2a3ctl",
+      "type": "turn"
+    }
+  ],
+  "id": "bs2hbpf3",
+  "ordinal": 1,
+  "parent": "5tgjdgdw"
+}

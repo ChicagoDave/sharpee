@@ -1,0 +1,30 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Eastern Junction"
+        ]
+      },
+      "command": "s",
+      "id": "qe6chw9u",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The crowd is thickest toward Commerce Street, and you've no"
+        ],
+        "states": [
+          "player.location = Eastern Junction"
+        ]
+      },
+      "command": "e",
+      "id": "mp6ps19c",
+      "type": "turn"
+    }
+  ],
+  "id": "tpu3z606",
+  "ordinal": 1,
+  "parent": "sv34qxvq"
+}

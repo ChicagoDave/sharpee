@@ -9,7 +9,8 @@
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import type { RunEvent, TranscriptEndEvent, TranscriptStartEvent } from '@sharpee/ide-protocol';
-import { FERNHILL_DIR, commandResults, runFernhillTest, runTestJson, type TestRun } from './support/fernhill-run';
+import { FERNHILL_DIR, FERNHILL_TREE, commandResults, runFernhillTest, runTestJson, type TestRun } from './support/fernhill-run';
+import { readTree } from './support/scratch-story';
 
 let run: TestRun;
 
@@ -45,7 +46,9 @@ describe('the tree', () => {
     // The main line first, then every branch forked from it.
     expect(lines[0].start.file).toBe('opening-iron-gates');
     expect(lines[0].start.parent).toBeUndefined();
-    expect(lines.slice(1).every(({ start }) => start.parent === 'main')).toBe(true);
+    // A branch names its parent line by the id of the segment that line begins
+    // with — for these, the main line's root segment (ADR-355 D5).
+    expect(lines.slice(1).every(({ start }) => start.parent === readTree(FERNHILL_TREE).id)).toBe(true);
   });
 
   it('forks three ways at the Folly: open the deed box, take the deed, or wait — each branch starts with its own command on the same turn', () => {

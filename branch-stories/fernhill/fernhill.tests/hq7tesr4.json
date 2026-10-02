@@ -1,0 +1,17 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "hurried white flowers"
+        ]
+      },
+      "command": "x vine",
+      "id": "9b5je9ic",
+      "type": "turn"
+    }
+  ],
+  "id": "hq7tesr4",
+  "ordinal": 1,
+  "parent": "y1af8ibp"
+}

@@ -109,9 +109,9 @@ public static class RepoPaths
     public static string? FernhillIr =>
         FernhillFolder is { } folder ? Path.Combine(folder, "dist", "fernhill.ir.json") : null;
 
-    /// <summary>fernhill's tree document (ADR-307), read by the testing pane, or null when bundled.</summary>
+    /// <summary>fernhill's test tree directory (ADR-355), read by the testing pane, or null when bundled.</summary>
     public static string? FernhillTests =>
-        FernhillFolder is { } folder ? Path.Combine(folder, "fernhill.tests.json") : null;
+        FernhillFolder is { } folder ? Path.Combine(folder, "fernhill.tests") : null;
 
     /// <summary>fernhill's built browser bundle, served to the play pane, or null when bundled.</summary>
     public static string? FernhillBundle =>

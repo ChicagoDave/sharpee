@@ -1,0 +1,10 @@
+#!/bin/sh
+#
+# pre-commit — local git hook: refuse a commit whose staged test trees are not
+# in canonical form (scripts/check-test-trees.mjs). Local only, never CI.
+#
+# Install once per clone (a documented manual step):
+#   ln -s ../../scripts/hooks/pre-commit "$(git rev-parse --git-path hooks)/pre-commit"
+# Bypass for a single commit, deliberately: git commit --no-verify
+#
+exec node "$(git rev-parse --show-toplevel)/scripts/check-test-trees.mjs"

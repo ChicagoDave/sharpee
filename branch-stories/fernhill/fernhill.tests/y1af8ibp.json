@@ -1,0 +1,27 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Fountain Court"
+        ]
+      },
+      "command": "south",
+      "id": "u7182x6n",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Greenhouse"
+        ]
+      },
+      "command": "west",
+      "id": "0uo7tqu7",
+      "type": "turn"
+    }
+  ],
+  "id": "y1af8ibp",
+  "ordinal": 0,
+  "parent": "fq9jgq16"
+}
