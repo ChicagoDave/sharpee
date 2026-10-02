@@ -21,4 +21,4 @@ The narrative (`docs/work/testing-narrative/narrative-20260926-author-testing.md
 - **Status**: ACTIVE
 
 ## Spawned work
-- docs/work/segmented-test-tree/plan-20260929-adr-355.md
+- docs/work/archive/segmented-test-tree/plan-20260929-adr-355.md (DONE 2026-09-30)
