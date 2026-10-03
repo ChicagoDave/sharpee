@@ -27,6 +27,7 @@ import {
   commandResults,
   derivedBranches,
   derivedSummary,
+  lineLabel,
   runEnd,
   runFernhillTest,
   runTestJson,
@@ -115,8 +116,8 @@ describe('with a second rule that fights the first, on a scratch copy', () => {
   });
 
   it('the tree notices the same break at the card that takes the locket — the two tiers agree', () => {
-    const realTake = commandResults(real).find((result) => result.file === 'opening-iron-gates' && result.input === 'take locket')!;
-    const mutatedTake = commandResults(mutated).find((result) => result.file === 'opening-iron-gates' && result.input === 'take locket')!;
+    const realTake = commandResults(real).find((result) => lineLabel(real, result.file) === 'opening-iron-gates' && result.input === 'take locket')!;
+    const mutatedTake = commandResults(mutated).find((result) => lineLabel(mutated, result.file) === 'opening-iron-gates' && result.input === 'take locket')!;
     expect(realTake.passed).toBe(true);
     expect(mutatedTake.passed).toBe(false);
     expect(runEnd(real).totalFailed).toBe(0);

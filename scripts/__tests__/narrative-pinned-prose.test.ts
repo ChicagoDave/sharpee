@@ -8,7 +8,7 @@
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
-import { FERNHILL_TREE, commandResults, runFernhillTest, type TestRun } from './support/fernhill-run';
+import { FERNHILL_TREE, commandResults, lineLabel, runFernhillTest, type TestRun } from './support/fernhill-run';
 import { readTree } from './support/scratch-story';
 
 interface Card { type: 'opening' | 'boot' | 'turn'; command?: string; assertions: { contains?: string[]; channels?: Array<{ id: string; is: string }> } }
@@ -27,7 +27,7 @@ beforeAll(() => {
 
 /** The main line's command-results, in order — the line the tree's own cards are. */
 function mainLine() {
-  return commandResults(run).filter((result) => result.file === 'opening-iron-gates');
+  return commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-iron-gates');
 }
 
 describe('the boot card pins the room name and its description', () => {

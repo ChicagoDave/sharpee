@@ -131,7 +131,7 @@ You never transcribe a rule into a test. You never commit a generated test file.
 
 ## Where each beat stands today
 
-| Beat | Status on 2026-09-27 | Carried by |
+| Beat | Status on 2026-10-02 | Carried by |
 | --- | --- | --- |
 | Map, Reach and Incomplete views in the World tab | Shipped in the macOS IDE; the analysis behind them walked by `narrative-world-tab.test.ts` through `sharpee world-index`; the views themselves are IDE only, not CLI-observable | ADR-321 D4 to D7, D11 to D13 |
 | Testing tab as a play surface with cards, default room-name-and-description claims, Add contains, state picker, region groups | Shipped; the cards' claims and verdicts walked by `narrative-pinned-prose.test.ts`; the gestures (Add contains, the picker) are IDE only, not CLI-observable | ADR-306, ADR-307 |
@@ -145,6 +145,6 @@ You never transcribe a rule into a test. You never commit a generated test file.
 | Arranging beyond the floor: negations, timer phases, or-conditions, occurrence ordinals | Two of four shipped 2026-09-27: `or` guards (by their leftmost arrangeable operand), failed `and` guards and named conditions (Phase 1), and timer phases — `has started`, `has expired` — (Phase 2, an amendment to ADR-356 D2). Negations stay a read, never a write, by policy: the tester proves a guard already fails rather than arranging a failure. Occurrence ordinals are unplanned. Secret-letter, the stress case, moved from 358 to 392 of 721 branches exercised across the two phases; fernhill has none of these shapes and did not move | GH #525, `docs/work/testing-explorer-525/plan-20260927-525-arrange-shapes.md`, ADR-356 D2 amendment 2026-09-27 |
 | Effect-less bodies and conversation rows with no player command | Unplanned, needs a different tier or mapping | GH #525 notes |
 | The Tobias topics | Green since 2026-09-27; the runner brings an entity-keyed topic's entity into the speaker's room before asking. Whether the story-facing syntax should make that scope requirement visible stays open | GH #530 (closed), GH #242 |
-| Segmented test tree on disk | Shipped on `feat/segmented-test-tree` 2026-09-29, not yet merged to `main`: `<story-id>.tests/` holds a manifest and one file per run between fork points, and an edit rewrites only the segments it changed. Walked by `narrative-support.test.ts` (changed segments only, stale segments removed, minted ids) and `narrative-what-runs-when.test.ts` (a malformed, newer or non-canonical tree runs nothing and exits 2); the Testing tab's write is IDE only, not CLI-observable | ADR-355, GH #494 |
+| Segmented test tree on disk | Shipped 2026-09-29, merged to `main` 2026-10-02 (`43e851807`): `<story-id>.tests/` holds a manifest and one file per run between fork points, and an edit rewrites only the segments it changed. Walked by `narrative-support.test.ts` (changed segments only, stale segments removed, minted ids) and `narrative-what-runs-when.test.ts` (a malformed, newer or non-canonical tree runs nothing and exits 2); the Testing tab's write is IDE only, not CLI-observable | ADR-355, GH #494 |
 | Mentioned-but-not-examinable and declared-states lenses | Shipped as developer CLIs under `tools/explorer-probe/`, not yet an author surface | ADR-294 D23, GH #508, #515 |
 | Testing navigation for large trees | Cursory draft | ADR-308 |

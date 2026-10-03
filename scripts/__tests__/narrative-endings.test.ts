@@ -12,7 +12,7 @@
  */
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { FERNHILL_DIR, commandResults, derivedSummary, runEnd, runFernhillTest, runTestJson, type TestRun } from './support/fernhill-run';
+import { FERNHILL_DIR, commandResults, derivedSummary, lineLabel, runEnd, runFernhillTest, runTestJson, type TestRun } from './support/fernhill-run';
 import type { TreeCard, TreeDocument } from '../../packages/branch-tester/src/tree-document';
 import { copyStoryToScratch, editTree, type ScratchStory } from './support/scratch-story';
 
@@ -51,12 +51,12 @@ afterAll(() => {
   stopsShort?.cleanup();
 });
 
-const mainLine = (run: TestRun) => commandResults(run).filter((result) => result.file === 'opening-iron-gates');
+const mainLine = (run: TestRun) => commandResults(run).filter((result) => lineLabel(run, result.file) === 'opening-iron-gates');
 
 describe('END STATE cards prove their endings', () => {
   it('the main line ends at the gates with fernhill-saved, asserted from the engine\'s ending record', () => {
     const victory = commandResults(real).find((result) => result.ending === 'victory')!;
-    expect(victory.file).toBe('opening-iron-gates');
+    expect(lineLabel(real, victory.file)).toBe('opening-iron-gates');
     expect(victory.input).toBe('south');
     expect(victory.assertionResults).toContainEqual({ description: 'ending fernhill-saved', passed: true });
     expect(mainLine(real).at(-1)).toBe(victory);
@@ -64,7 +64,7 @@ describe('END STATE cards prove their endings', () => {
 
   it('the wait branch at the Folly ends with fuse-blast', () => {
     const defeat = commandResults(real).find((result) => result.ending === 'defeat')!;
-    expect(defeat.file).toBe('folly · wait');
+    expect(lineLabel(real, defeat.file)).toBe('folly · wait');
     expect(defeat.input).toBe('wait');
     expect(defeat.assertionResults).toContainEqual({ description: 'ending fuse-blast', passed: true });
   });

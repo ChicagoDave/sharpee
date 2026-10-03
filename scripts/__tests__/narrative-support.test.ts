@@ -4,11 +4,13 @@
  * Testing tab does (minted ids, changed segments only, stale segments
  * removed, canonical bytes), and `support/fernhill-run.ts` makes one spawn per process for fernhill's run
  * (proved by counting, not assumed), and a malformed or unfinished process
- * rejected by name rather than read as an empty result.
+ * rejected by name rather than read as an empty result; and
+ * `support/story-under-test.ts` lists fernhill plus the story `NARRATIVE_STORY`
+ * names, refusing a directory it cannot resolve.
  *
  * Owner context: repo tooling — `scripts/__tests__/`.
  */
-import { mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
@@ -20,6 +22,10 @@ import {
 } from '../../packages/branch-tester/src/tree-document';
 import { editTree, readTree, readTreeFiles } from './support/scratch-story';
 import {
+  FERNHILL_DIR,
+  FERNHILL_STORY,
+  FERNHILL_TREE,
+  lineLabel,
   resetFernhillMemo,
   runFernhillTest,
   runTestJson,
@@ -27,6 +33,14 @@ import {
   spawnCli,
   type Spawner,
 } from './support/fernhill-run';
+import {
+  NARRATIVE_STORY_VARIABLE,
+  resolveStory,
+  runStoryTest,
+  runTestJsonAsync,
+  storiesUnderTest,
+  type AsyncSpawner,
+} from './support/story-under-test';
 
 describe('editTree writes a scratch tree the way the Testing tab does', () => {
   /**
@@ -138,9 +152,103 @@ describe('runTestJson rejects what is not a run', () => {
   });
 });
 
+describe('lineLabel', () => {
+  it('reads a line\'s derived name from its transcript-start by id, and nothing for an id that never started', () => {
+    const run = runTestJson('/nowhere', () => ({
+      status: 0,
+      stdout: [
+        '{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mode":"tree"}',
+        '{"schemaVersion":2,"seq":1,"elapsedMs":0,"type":"transcript-start","file":"root0000","label":"opening","index":0}',
+        '{"schemaVersion":2,"seq":2,"elapsedMs":0,"type":"transcript-start","file":"branch01","label":"hall · east","index":1,"parent":"root0000"}',
+      ].join('\n'),
+      stderr: '',
+    }));
+    expect(lineLabel(run, 'branch01')).toBe('hall · east');
+    expect(lineLabel(run, 'root0000')).toBe('opening');
+    expect(lineLabel(run, 'opening')).toBeUndefined();
+  });
+});
+
 describe('runWorldIndex', () => {
   it('stdout that is not JSON throws, since the command promises a document either way', () => {
     const broken: Spawner = () => ({ status: 1, stdout: 'Error: boom', stderr: '' });
     expect(() => runWorldIndex('/nowhere.ir.json', broken)).toThrow(/not JSON/);
+  });
+});
+
+describe('story-under-test resolves the stories the agnostic suite runs', () => {
+  let scratch: string;
+
+  /** A project directory holding the named `.story` files and, optionally, the first one's tree directory. */
+  function project(name: string, stories: string[], withTree = true): string {
+    const dir = join(scratch, name);
+    mkdirSync(dir);
+    for (const story of stories) writeFileSync(join(dir, `${story}.story`), 'story\n', 'utf-8');
+    if (withTree && stories.length > 0) mkdirSync(join(dir, `${stories[0]}.tests`));
+    return dir;
+  }
+
+  beforeEach(() => {
+    scratch = mkdtempSync(join(tmpdir(), 'narrative-story-under-test-'));
+  });
+
+  afterEach(() => rmSync(scratch, { recursive: true, force: true }));
+
+  it('a repo-relative directory resolves to its one .story file and the tree beside it', () => {
+    expect(resolveStory('branch-stories/fernhill')).toEqual({
+      id: 'fernhill',
+      dir: FERNHILL_DIR,
+      storyFile: FERNHILL_STORY,
+      treeDir: FERNHILL_TREE,
+    });
+  });
+
+  it('refuses a directory that does not exist, holds no .story or two, or has no tree — naming the path', () => {
+    expect(() => resolveStory(join(scratch, 'absent'))).toThrow(/absent is not a directory/);
+    expect(() => resolveStory(project('empty', []))).toThrow(/expected one \.story file in .*empty, found 0/);
+    expect(() => resolveStory(project('two', ['a', 'b']))).toThrow(/expected one \.story file in .*two, found 2/);
+    expect(() => resolveStory(project('untested', ['lone'], false))).toThrow(/has no lone\.tests\/ directory/);
+  });
+
+  it('runs fernhill alone by default, fernhill once when it is the one named, and fernhill then the named story otherwise', () => {
+    expect(storiesUnderTest({}).map((story) => story.id)).toEqual(['fernhill']);
+    expect(storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: '  ' }).map((story) => story.id)).toEqual(['fernhill']);
+    expect(storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: FERNHILL_DIR }).map((story) => story.id)).toEqual(['fernhill']);
+    const other = project('meadow', ['meadow']);
+    const listed = storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: other });
+    expect(listed.map((story) => story.id)).toEqual(['fernhill', 'meadow']);
+    expect(listed[1].treeDir).toBe(join(other, 'meadow.tests'));
+  });
+
+  it('a named story that does not resolve fails the listing rather than dropping out of it', () => {
+    expect(() => storiesUnderTest({ [NARRATIVE_STORY_VARIABLE]: join(scratch, 'typo') })).toThrow(/typo is not a directory/);
+  });
+
+  it('runStoryTest spawns once per directory and shares the run', async () => {
+    const spawned: string[] = [];
+    const counting: AsyncSpawner = async (args) => {
+      spawned.push(args[1]);
+      return { status: 0, stdout: '{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","mode":"tree"}\n', stderr: '' };
+    };
+    const first = resolveStory(project('first', ['first']));
+    const second = resolveStory(project('second', ['second']));
+    const run = await runStoryTest(first, counting);
+    expect(await runStoryTest(first, counting)).toBe(run);
+    expect(run.events[0]?.type).toBe('run-start');
+    await runStoryTest(second, counting);
+    expect(spawned).toEqual([first.dir, second.dir]);
+  });
+
+  it('spawnCliAsync drives the real CLI without blocking, and the run decodes as the synchronous one does', async () => {
+    const run = await runTestJsonAsync(FERNHILL_DIR);
+    expect(run.status).toBe(0);
+    expect(run.events[0]?.type).toBe('run-start');
+    expect(run.events.at(-1)?.type).toBe('run-end');
+    expect(run.events.length).toBe(runTestJson(FERNHILL_DIR).events.length);
+  }, 60_000);
+
+  it('runTestJsonAsync treats a killed process as a timeout, never as an empty run', async () => {
+    const hung: AsyncSpawner = async () => ({ status: null, stdout: '', stderr: 'killed' });
+    await expect(runTestJsonAsync('/nowhere', hung)).rejects.toThrow(/did not exit/);
   });
 });

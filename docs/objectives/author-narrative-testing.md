@@ -17,8 +17,10 @@ The narrative (`docs/work/testing-narrative/narrative-20260926-author-testing.md
 - **Baseline**: (captured 2026-09-29) no story of this size exists or is being written; 10 of the 15 rows in the narrative's closing table are shipped (walked by `scripts/__tests__/narrative-*.test.ts` or IDE-only), with the other five partial (arranging beyond the floor), unplanned (effect-less bodies), accepted with no code (segmented test tree, ADR-355), not an author surface (the explorer lenses), or a cursory draft (testing navigation, ADR-308); scale has been exercised only on secret-letter, at 392 of 721 branches, whose test tree is a single 783,119-byte, 1,470-card file rewritten whole on every edit.
 - **Evidence source**: (1) the CLI — `sharpee test <new story>`'s report (exit code, the three coverage ratios, gaps listed) and the `narrative-*.test.ts` suites re-pointed at the new story alongside fernhill; (2) David playing the afternoon in Chord Writer for the IDE-only beats (World tab, fork outline, derived rows in the Testing tab, span links).
 - **Cadence**: checkpoints on 2026-10-06 and 2026-10-13 — whatever of the story exists is run through both sources and the closing table is re-counted against the 10-of-15 baseline.
+- **Progress**: (2026-10-02) 11 of 15 — the segmented test tree shipped and merged to main (`43e851807`); arranging beyond the floor still partial (occurrence ordinals unbuilt), effect-less bodies unplanned, the explorer lenses still developer CLIs, testing navigation still a cursory draft (ADR-308). No story of the objective's size exists yet.
 - **Grade**: GREEN
 - **Status**: ACTIVE
 
 ## Spawned work
 - docs/work/archive/segmented-test-tree/plan-20260929-adr-355.md (DONE 2026-09-30)
+- docs/work/author-narrative-testing/plan-20261002-remaining-rows.md (ACTIVE 2026-10-02)

@@ -44,7 +44,10 @@ describe('the tree', () => {
     expect(lines.map(({ start }) => start.index)).toEqual([...Array(11).keys()]);
     expect(lines.every(({ end }) => end.status === 'passed')).toBe(true);
     // The main line first, then every branch forked from it.
-    expect(lines[0].start.file).toBe('opening-iron-gates');
+    // A line's identity is the id of the segment it begins with; its derived
+    // name rides as the label (ADR-355 D5).
+    expect(lines[0].start.file).toBe(readTree(FERNHILL_TREE).id);
+    expect(lines[0].start.label).toBe('opening-iron-gates');
     expect(lines[0].start.parent).toBeUndefined();
     // A branch names its parent line by the id of the segment that line begins
     // with — for these, the main line's root segment (ADR-355 D5).
@@ -53,7 +56,7 @@ describe('the tree', () => {
 
   it('forks three ways at the Folly: open the deed box, take the deed, or wait — each branch starts with its own command on the same turn', () => {
     const lines = pairs(run.events);
-    const folly = lines.filter(({ start }) => start.file.startsWith('folly · '));
+    const folly = lines.filter(({ start }) => start.label?.startsWith('folly · '));
     expect(folly).toHaveLength(3);
     const firstCommands = folly.map(({ start }) => {
       const at = run.events.indexOf(start);

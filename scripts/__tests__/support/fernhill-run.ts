@@ -16,9 +16,9 @@
  *   every dist the CLI lazily requires.
  *
  * Public interface: REPO_ROOT, CLI, FERNHILL_DIR, FERNHILL_STORY, FERNHILL_TREE,
- *   spawnCli, runTestJson, runFernhillTest, resetFernhillMemo, composeIR,
- *   runWorldIndex, derivedBranches, derivedSummary, commandResults, runEnd,
- *   and the Spawner / TestRun types.
+ *   spawnCli, runTestJson, decodeTestRun, runFernhillTest, resetFernhillMemo, composeIR,
+ *   runWorldIndex, derivedBranches, derivedSummary, lineLabel, commandResults, runEnd,
+ *   and the Spawner / SpawnOutcome / TestRun types.
  * Owner context: repo tooling — `scripts/__tests__/` (the real-path suites
  *   that drive the built CLIs; not published).
  */
@@ -90,7 +90,18 @@ export interface TestRun {
  *   empty result
  */
 export function runTestJson(projectDir: string, spawner: Spawner = spawnCli): TestRun {
-  const outcome = spawner(['test', projectDir, '--json']);
+  return decodeTestRun(projectDir, spawner(['test', projectDir, '--json']));
+}
+
+/**
+ * Decode one `sharpee test <project> --json` process's outcome into a run.
+ *
+ * @param projectDir the story project directory, for the error messages
+ * @param outcome what the process produced, however it was spawned
+ * @returns the run
+ * @throws as {@link runTestJson} does
+ */
+export function decodeTestRun(projectDir: string, outcome: SpawnOutcome): TestRun {
   if (outcome.status === null) {
     throw new Error(`sharpee test ${projectDir} --json: the process did not exit (timed out)\n${outcome.stderr}`);
   }
@@ -181,6 +192,22 @@ export function derivedSummary(run: TestRun): DerivedRunSummaryEvent {
   const summaries = run.events.filter((event): event is DerivedRunSummaryEvent => event.type === 'derived-summary');
   if (summaries.length !== 1) throw new Error(`expected exactly one derived-summary, found ${summaries.length}`);
   return summaries[0];
+}
+
+/**
+ * The display label of the line a run event belongs to. In a tree run an
+ * event's `file` is the line's id — the id of the segment it begins with —
+ * and the derived name (`opening-iron-gates`, `folly · wait`) rides the
+ * line's `transcript-start` as `label` (ADR-355 D5). Labels can repeat; the
+ * id is the key, so match on a label only where the beat is about the name.
+ *
+ * @param run the run
+ * @param lineId an event's `file`
+ * @returns the label, or undefined when no line with that id started
+ */
+export function lineLabel(run: TestRun, lineId: string): string | undefined {
+  const start = run.events.find((event) => event.type === 'transcript-start' && event.file === lineId);
+  return start?.type === 'transcript-start' ? start.label : undefined;
 }
 
 /** The run's `command-result` events, in emission order. */
