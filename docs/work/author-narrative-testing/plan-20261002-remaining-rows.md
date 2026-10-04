@@ -55,7 +55,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
   3. **Occurrence ordinals**: 4 of 721 on the stress case. Rule out of scope, defer, or build (Phase 7)?
   4. **Testing navigation**: required for a 60-room tree to count as "reviewable"? If yes, the Phase 5 interview is needed; if no, rule out for O-1.
 - **Exit state**: each of the four rows is IN or OUT for O-1; phases below marked ABANDONED or DEFERRED accordingly
-- **Status**: PENDING
+- **Status**: DONE (2026-10-03, session 4d81b6) — David ruled: explorer lenses DEFERRED (Phase 9 DEFERRED); effect-less bodies and command-none rows DEFERRED (Phase 8 DEFERRED); occurrence ordinals IN (Phase 7); testing navigation IN (Phases 5 and 6). Recorded in the objective's Scope rulings line; rows counted for O-1 are now 13, 11 shipped.
 
 ### Phase 3: Make the narrative suites story-parameterised
 - **Tier**: Medium
@@ -78,23 +78,23 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Exit state**: checkpoint result recorded in the objective
 - **Status**: PENDING
 
-### Phase 5: Gate G2 — ADR-308 open-questions interview (testing navigation)
+### Phase 5: Gate G2 — ADR-357 open-questions interview (testing navigation; ADR-357 superseded ADR-308 on 2026-10-03)
 - **Tier**: Small
 - **Budget**: ~100 tool calls
-- **Domain focus**: ADR-308 Q-1 to Q-5 (graph nodes, search scope, failure navigation, unnamed aids, priority)
+- **Domain focus**: ADR-357 Q-1 to Q-5 (outline as the overview with run tint, search, failure navigation, other aids, which ships first)
 - **Entry state**: G1 says navigation is IN; David available for `/devarch:adr-interview`
-- **Deliverable**: ADR-308 resolved and ACCEPTED (not before: DRAFT with open questions must not be treated as authorization)
+- **Deliverable**: ADR-357 resolved and ACCEPTED (not before: DRAFT with open questions must not be treated as authorization)
 - **Exit state**: a concrete first aid chosen, probably failure navigation or search
-- **Status**: PENDING
+- **Status**: DONE (2026-10-03, session 4d81b6) — ADR-308 found out of date and SUPERSEDED at David's instruction; ADR-357 written, its seven questions resolved by interview, two `adr-review` passes (7/18, then 14/18 with one finding, fixed), ACCEPTED. First aid chosen (ADR-357 D8): the failure path, ordered tint and position indicator, run-column click, the D11 staleness contract, then next/previous failure and the failures-only switch. Phase 6 carries one platform discussion: D9's `cardId` on the run event.
 
 ### Phase 6: Implement the first testing-navigation aid
 - **Tier**: Medium
 - **Budget**: ~250 tool calls
 - **Domain focus**: Testing surface, a derived view over the tree and last run fold
 - **Entry state**: Phase 5 done
-- **Deliverable**: the chosen aid in `tools/ide/web/testing-surface` (web surface shared by both heads), with tests, exercised on a secret-letter-sized tree. Per ADR-308 D1 no wire, schema or `packages/branch-tester` change; if one seems needed, stop and re-scope. Not a `packages/` change, so no platform discussion is required unless that happens. The IDE-only beat needs David's eyes (warn him beforehand).
+- **Deliverable**: the chosen aid in `tools/ide/web/testing-surface` (web surface shared by both heads), with tests, exercised on a secret-letter-sized tree. Built in ADR-357 D8's order: (1) outline tint and position indicator, target 2026-10-06; (2) run-column click; (3) D11 staleness contract, including both hosts' build id; (4) next/previous failure and the switch. Step 4 needs D9's `cardId` on the run event, a platform change across `packages/branch-tester`, `packages/transcript-tester` and `packages/ide-protocol` that is discussed with David before it is built. Steps 1–3 need no `packages/` change. The IDE-only beat needs David's eyes (warn him beforehand).
 - **Exit state**: aid shipped; table row moves to partial or shipped
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-03)
 
 ### Phase 7: Occurrence ordinals arrange shape (only if G1 says IN)
 - **Tier**: Small
@@ -112,7 +112,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: G1 IN; an ADR-356 amendment or new ADR decided with David first (no design exists; this is a decision gate disguised as a phase, and its first deliverable is the amendment, not code); platform discussion
 - **Deliverable**: the amendment, then a plan of its own. This phase will not be sized further until the decision exists.
 - **Exit state**: decision recorded; a follow-on plan written or the row ruled out
-- **Status**: PENDING
+- **Status**: DEFERRED (2026-10-03, G1) — out of scope for O-1; the rows stay listed as SKIPPED; design after 2026-10-15
 
 ### Phase 9: Promote the explorer lenses to an author surface (only if G1 says IN)
 - **Tier**: Medium
@@ -121,7 +121,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: G1 IN; David has said where authors meet the lenses (a subcommand, a World tab view, a report section); platform discussion
 - **Deliverable**: the two lenses reachable by an author, with `narrative-*` coverage
 - **Exit state**: row shipped
-- **Status**: PENDING
+- **Status**: DEFERRED (2026-10-03, G1) — out of scope for O-1; the lenses stay developer tools and remain a roadmap item
 
 ### Phase 10: Checkpoint 2026-10-13 and final re-count
 - **Tier**: Small

@@ -1,7 +1,10 @@
 # ADR-308: Testing Navigation — Finding Your Way in a Fully-Tested Story
 
-**Status**: DRAFT (cursory — captures direction and candidates ahead of
-go-live; open questions unresolved)
+**Status**: SUPERSEDED by ADR-357 (2026-10-03, session 4d81b6, David: "if
+the ADR is out of date, we should close it and rewrite a new ADR with what
+isn't out of date"). Written before ADR-353's outline column and ADR-355's
+segmented tree; its open questions were never resolved and carry forward,
+updated, into ADR-357. Kept as written below for the record.
 **Date**: 2026-08-10 (session ed3730)
 **Builds on**: ADR-307 (the tree is the model; JSON is the source of truth),
 ADR-306 (testing/play surface), the region-groups feature (2026-08-10, IDE-side
