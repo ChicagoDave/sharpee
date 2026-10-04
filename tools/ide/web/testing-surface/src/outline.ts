@@ -30,7 +30,13 @@
  * marker on it is a wrong room. 25 of 60 branches assert no location, and for
  * those the manifest says nothing — which is also the authoring finding.
  *
- * Public interface: OutlineLine, OutlineFork, Outline, outlineOf().
+ * POSITION (ADR-357 D7) is read off the same manifest: each fork records the
+ * line its card sits on, so a line's place is the chain of forks from the
+ * main line down to it, named by fork command and line name — authored data
+ * every line has, unlike the rooms the pane captures only on visit.
+ *
+ * Public interface: OutlineLine, OutlineFork, Outline, outlineOf(),
+ *   OutlinePositionStep, OutlinePosition, positionOf().
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -75,7 +81,26 @@ export interface OutlineFork {
   location?: string;
   /** Whether that location was asserted at the fork card itself. */
   locationAsserted: boolean;
+  /** The line the fork card sits on — the root's id for the main line's forks. */
+  parentLineId: string;
   lines: OutlineLine[];
+}
+
+/** One step down the tree to a line: the fork taken, and the line it led to. */
+export interface OutlinePositionStep {
+  /** The command on the card the line forks from. */
+  forkCommand?: string;
+  lineId: string;
+  /** The line's outline name. */
+  name: string;
+}
+
+/**
+ * Where a line sits: the forks from the main line down to it, in order.
+ * Empty steps means the main line itself.
+ */
+export interface OutlinePosition {
+  steps: OutlinePositionStep[];
 }
 
 /** The whole manifest. */
@@ -189,7 +214,12 @@ function lineOf(
 export function outlineOf(doc: TreeDocument): Outline {
   const forks: OutlineFork[] = [];
 
-  const walk = (cards: readonly TreeCard[], depth: number, entering?: string): void => {
+  const walk = (
+    cards: readonly TreeCard[],
+    lineId: string,
+    depth: number,
+    entering?: string,
+  ): void => {
     let here = entering;
     for (const card of cards) {
       const asserted = assertedLocation(card);
@@ -203,6 +233,7 @@ export function outlineOf(doc: TreeDocument): Outline {
       const fork: OutlineFork = {
         depth,
         locationAsserted: asserted !== undefined,
+        parentLineId: lineId,
         lines: branches.map((branch, index) =>
           lineOf(branch.cards, branch.id, sequences.filter((_, i) => i !== index))),
       };
@@ -210,13 +241,42 @@ export function outlineOf(doc: TreeDocument): Outline {
       if (here !== undefined) fork.location = here;
       forks.push(fork);
 
-      for (const branch of branches) walk(branch.cards, depth + 1, here);
+      for (const branch of branches) walk(branch.cards, branch.id, depth + 1, here);
     }
   };
 
   const root = lineOf(doc.cards, doc.id, []);
-  walk(doc.cards, 0, undefined);
+  walk(doc.cards, doc.id, 0, undefined);
 
   const lineCount = 1 + forks.reduce((total, fork) => total + fork.lines.length, 0);
   return { root, forks, lineCount };
+}
+
+/**
+ * Where a line sits in the tree, built from the outline alone — the fork
+ * commands and line names are authored data, so every line has a position,
+ * visited this session or not (ADR-357 D7).
+ *
+ * @param outline the manifest {@link outlineOf} derived
+ * @param lineId  the line to place
+ * @returns the forks from the main line down to it; no steps for the main
+ *   line, and no steps for an id the outline does not hold
+ */
+export function positionOf(outline: Outline, lineId: string): OutlinePosition {
+  const forkOf = new Map<string, { fork: OutlineFork; line: OutlineLine }>();
+  for (const fork of outline.forks) {
+    for (const line of fork.lines) forkOf.set(line.lineId, { fork, line });
+  }
+
+  const steps: OutlinePositionStep[] = [];
+  const seen = new Set<string>();
+  let at = forkOf.get(lineId);
+  while (at !== undefined && !seen.has(at.line.lineId)) {
+    seen.add(at.line.lineId);
+    const step: OutlinePositionStep = { lineId: at.line.lineId, name: at.line.name };
+    if (at.fork.command !== undefined) step.forkCommand = at.fork.command;
+    steps.unshift(step);
+    at = forkOf.get(at.fork.parentLineId);
+  }
+  return { steps };
 }

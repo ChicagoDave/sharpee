@@ -643,6 +643,29 @@ body.ts-active .sharpee-window { display: none; }
 .ts-outline-fork { background: var(--ts-border); font-weight: 600; }
 .ts-outline-line { flex-direction: column; align-items: stretch; gap: 3px; }
 .ts-outline-here { outline: 1px solid var(--ts-accent); }
+/* Last-run verdicts (ADR-357 D4): a stripe on the pill's leading edge.
+   Unreached is dashed so it never reads as a softer fail; stale is dotted
+   and faint because it is unverified, not a result. No result: no stripe. */
+.ts-outline-pill.ts-verdict-pass      { box-shadow: inset 4px 0 0 var(--ts-assert); }
+.ts-outline-pill.ts-verdict-fail      { box-shadow: inset 4px 0 0 var(--ts-fail); }
+.ts-outline-pill.ts-verdict-unreached { border-left: 4px dashed var(--ts-warn); }
+.ts-outline-pill.ts-verdict-stale     { border-left: 4px dotted var(--ts-fg-faint); }
+/* The position indicator (ADR-357 D7): where the visited line sits. */
+.ts-position {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 6px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--ts-border);
+  background: var(--ts-block-bg);
+  font: 11px ui-monospace, "SF Mono", Menlo, monospace;
+  color: var(--ts-fg-dim);
+}
+.ts-position:empty { display: none; }
+.ts-position-root { color: var(--ts-fg-faint); }
+.ts-position-sep, .ts-position-arrow { color: var(--ts-fg-faint); }
+.ts-position-name { color: var(--ts-fg); font-weight: 600; }
 /* While the driver replays, the pill being loaded spins (busy.ts). */
 body.ts-busy .ts-outline-here { position: relative; padding-right: 24px; }
 body.ts-busy .ts-outline-here::after {

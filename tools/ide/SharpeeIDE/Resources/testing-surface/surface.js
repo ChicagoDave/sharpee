@@ -126,6 +126,29 @@
     };
   }
 
+  // tools/ide/web/testing-surface/src/line-verdict.ts
+  var SEVERITY = ["fail", "unreached", "stale", "none", "pass"];
+  function verdictOfResult(result) {
+    if (result === void 0) return "none";
+    switch (result.status) {
+      case "passed":
+        return "pass";
+      case "failed":
+      case "error":
+        return "fail";
+      case "unreached":
+        return "unreached";
+      case "skipped":
+        return "none";
+    }
+  }
+  function rollUpVerdicts(verdicts) {
+    if (verdicts.length === 0) return "none";
+    let worst = SEVERITY.length - 1;
+    for (const verdict of verdicts) worst = Math.min(worst, SEVERITY.indexOf(verdict));
+    return SEVERITY[worst];
+  }
+
   // tools/ide/web/testing-surface/src/outline.ts
   var PLAYER_LOCATION = /^\s*player\.location\s*=\s*(.+?)\s*$/;
   var DISTINCTIVE_SHARE = 1 / 3;
@@ -183,7 +206,7 @@
   }
   function outlineOf(doc) {
     const forks = [];
-    const walk = (cards2, depth, entering) => {
+    const walk = (cards2, lineId, depth, entering) => {
       let here = entering;
       for (const card of cards2) {
         const asserted = assertedLocation(card);
@@ -194,18 +217,36 @@
         const fork = {
           depth,
           locationAsserted: asserted !== void 0,
+          parentLineId: lineId,
           lines: branches.map((branch, index) => lineOf(branch.cards, branch.id, sequences.filter((_, i) => i !== index)))
         };
         if (card.command !== void 0) fork.command = card.command;
         if (here !== void 0) fork.location = here;
         forks.push(fork);
-        for (const branch of branches) walk(branch.cards, depth + 1, here);
+        for (const branch of branches) walk(branch.cards, branch.id, depth + 1, here);
       }
     };
     const root = lineOf(doc.cards, doc.id, []);
-    walk(doc.cards, 0, void 0);
+    walk(doc.cards, doc.id, 0, void 0);
     const lineCount = 1 + forks.reduce((total, fork) => total + fork.lines.length, 0);
     return { root, forks, lineCount };
+  }
+  function positionOf(outline2, lineId) {
+    const forkOf = /* @__PURE__ */ new Map();
+    for (const fork of outline2.forks) {
+      for (const line of fork.lines) forkOf.set(line.lineId, { fork, line });
+    }
+    const steps = [];
+    const seen = /* @__PURE__ */ new Set();
+    let at = forkOf.get(lineId);
+    while (at !== void 0 && !seen.has(at.line.lineId)) {
+      seen.add(at.line.lineId);
+      const step = { lineId: at.line.lineId, name: at.line.name };
+      if (at.fork.command !== void 0) step.forkCommand = at.fork.command;
+      steps.unshift(step);
+      at = forkOf.get(at.fork.parentLineId);
+    }
+    return { steps };
   }
 
   // tools/ide/web/testing-surface/src/outline-view.ts
@@ -225,18 +266,23 @@
      *
      * @param outline    the manifest, derived fresh from the document
      * @param activeLine the line the session is on
+     * @param verdictOf  each line's verdict from the last run; every line is
+     *   `none` (untinted) when omitted
      */
-    render(outline2, activeLine) {
+    render(outline2, activeLine, verdictOf = () => "none") {
       if (!this.host) return;
       this.host.replaceChildren();
       this.host.appendChild(this.summary(outline2));
-      this.host.appendChild(this.rootPill(outline2.root, activeLine));
+      this.host.appendChild(tinted(this.rootPill(outline2.root, activeLine), verdictOf(outline2.root.lineId)));
       outline2.forks.forEach((fork, index) => {
         const open = this.expanded.has(index);
-        this.host.appendChild(this.forkPill(fork, index, open));
+        const heading = rollUpVerdicts(fork.lines.map((line) => verdictOf(line.lineId)));
+        this.host.appendChild(tinted(this.forkPill(fork, index, open), heading));
         if (!open) return;
         for (const line of fork.lines) {
-          this.host.appendChild(this.linePill(line, fork.depth + 1, activeLine));
+          this.host.appendChild(
+            tinted(this.linePill(line, fork.depth + 1, activeLine), verdictOf(line.lineId))
+          );
         }
       });
     }
@@ -316,6 +362,33 @@
       return button;
     }
   };
+  function renderPosition(host, position) {
+    host.replaceChildren(span("ts-position-step ts-position-root", "main line"));
+    for (const step of position.steps) {
+      host.append(span("ts-position-sep", "\u203A"));
+      const el = span("ts-position-step", "");
+      if (step.forkCommand !== void 0) {
+        el.append(span("ts-position-fork", step.forkCommand), span("ts-position-arrow", " \u2192 "));
+      }
+      el.append(span("ts-position-name", step.name));
+      host.append(el);
+    }
+    host.title = position.steps.length === 0 ? "you are on the main line" : `you are ${position.steps.length} fork${position.steps.length === 1 ? "" : "s"} down from the main line`;
+  }
+  var VERDICT_TITLE = {
+    pass: "passed on the last run",
+    fail: "failed on the last run",
+    unreached: "the last run could not reach this line",
+    stale: "edited since the last run \u2014 this result is unverified",
+    none: ""
+  };
+  function tinted(pill, verdict) {
+    if (verdict === "none") return pill;
+    pill.classList.add(`ts-verdict-${verdict}`);
+    pill.dataset.verdict = verdict;
+    if (!pill.title) pill.title = VERDICT_TITLE[verdict];
+    return pill;
+  }
   function span(className, text3) {
     const el = document.createElement("span");
     el.className = className;
@@ -1232,6 +1305,7 @@
         <div class="ts-busy" id="ts-busy" role="status" aria-live="polite" hidden>
           <span class="ts-spinner" aria-hidden="true"></span><span id="ts-busy-text"></span>
         </div>
+        <div class="ts-position" id="ts-position" aria-label="where this line sits"></div>
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>
       </div>
@@ -3522,7 +3596,10 @@
     if (host) outline.attach(host);
   }
   function renderOutline() {
-    outline.render(outlineOf(model.document), model.activeLine);
+    const manifest = outlineOf(model.document);
+    outline.render(manifest, model.activeLine, (lineId) => verdictOfResult(runState.results.get(lineId)));
+    const position = document.getElementById("ts-position");
+    if (position) renderPosition(position, positionOf(manifest, model.activeLine));
   }
   var cards = new CardsView(model, {
     onTailCut(ordinal) {
@@ -3636,10 +3713,12 @@
   function deliverRunLine(text3) {
     foldRunLine(runState, text3);
     cards.render();
+    renderOutline();
   }
   function deliverRunExit(ok, note) {
     finishRun(runState, ok, note);
     cards.render();
+    renderOutline();
   }
   function trace(what) {
     postToHost("testingConsole", "driver: " + what);

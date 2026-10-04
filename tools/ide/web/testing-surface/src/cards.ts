@@ -200,6 +200,7 @@ export class CardsView {
         <div class="ts-busy" id="ts-busy" role="status" aria-live="polite" hidden>
           <span class="ts-spinner" aria-hidden="true"></span><span id="ts-busy-text"></span>
         </div>
+        <div class="ts-position" id="ts-position" aria-label="where this line sits"></div>
         <div class="ts-session"><div id="ts-cards"></div></div>
         <div class="ts-input-row"></div>
       </div>

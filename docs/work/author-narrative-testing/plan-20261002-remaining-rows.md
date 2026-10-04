@@ -94,7 +94,16 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: Phase 5 done
 - **Deliverable**: the chosen aid in `tools/ide/web/testing-surface` (web surface shared by both heads), with tests, exercised on a secret-letter-sized tree. Built in ADR-357 D8's order: (1) outline tint and position indicator, target 2026-10-06; (2) run-column click; (3) D11 staleness contract, including both hosts' build id; (4) next/previous failure and the switch. Step 4 needs D9's `cardId` on the run event, a platform change across `packages/branch-tester`, `packages/transcript-tester` and `packages/ide-protocol` that is discussed with David before it is built. Steps 1–3 need no `packages/` change. The IDE-only beat needs David's eyes (warn him beforehand).
 - **Exit state**: aid shipped; table row moves to partial or shipped
-- **Status**: CURRENT (since 2026-10-03)
+- **Status**: PAUSED after step 1 (2026-10-03, session 4d81b6). Step 1 DONE: outline tint (`src/line-verdict.ts`, `outline-view.ts`) and position indicator (`positionOf` in `outline.ts`, `renderPosition`); testing surface `npx vitest run` → 191 passing, 0 failures, 17 files; `tsc --noEmit` clean; real-path AC-1 test plants a failure through `scripts/__tests__/support/scratch-story.ts`'s `editTree`, plus a refused-run test; Chord Writer built with the new bundle. Paused at David's direction after his first click-through: the three-column tab is unreadable to an author who did not grow up with it, and secret-letter is too much noise to design the harness against. Steps 2–4 wait on what Phase 6b's incremental story shows the tab needs. Open from the click-through: pass and fail tints differ only by colour.
+
+### Phase 6b: Start the incremental story — the harness is designed against it (inserted 2026-10-03)
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: a new story under `branch-stories/`, written room by room by David; the Testing tab's design follows what each room exposes
+- **Entry state**: Phase 6 step 1 committed; David has named the story
+- **Deliverable**: the story's project scaffolded (no story content written by the agent); David's room 1; a catalog of the error kinds one room can carry, drafted from what the tester can report (compiler diagnostics, derived-tier failures, tree claim failures, unreached lines, coverage gaps, ending claims); room 1's `TEST-001-A` onward sequence, one error per file and the correct version last (objective O-1, David 2026-10-03); a record of what an author arriving cold cannot read in the tab at room 1, which becomes the input to Phase 6's remaining steps
+- **Exit state**: room 1 tested end to end in Chord Writer and the CLI, its error sequence seeded, and the tab's findings recorded
+- **Status**: PENDING
 
 ### Phase 7: Occurrence ordinals arrange shape (only if G1 says IN)
 - **Tier**: Small

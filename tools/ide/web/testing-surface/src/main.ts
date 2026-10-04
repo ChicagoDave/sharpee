@@ -37,8 +37,9 @@ import { DEFAULT_AUTO_ASSERTION_POLICY, proseTextLinesOf } from '@sharpee/branch
 import { postToHost } from '@sharpee/platform-browser/host-bridge';
 import { endingOf, endingIdOf, blocksCommand } from './ending.js';
 import { visitPlanOf, type LineVisit, type ReplayStep } from './visit.js';
-import { outlineOf } from './outline.js';
-import { OutlineView } from './outline-view.js';
+import { verdictOfResult } from './line-verdict.js';
+import { outlineOf, positionOf } from './outline.js';
+import { OutlineView, renderPosition } from './outline-view.js';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { admitBootDocument } from './boot-document';
 import { CardsView } from './cards';
@@ -284,9 +285,16 @@ function attachOutline(): void {
   if (host) outline.attach(host);
 }
 
-/** Redraw the outline from the document as it stands right now. */
+/**
+ * Redraw the outline from the document as it stands right now, tinted from
+ * the last run (ADR-357 D4), and the position indicator for the active line
+ * (D7) from the same manifest.
+ */
 function renderOutline(): void {
-  outline.render(outlineOf(model.document), model.activeLine);
+  const manifest = outlineOf(model.document);
+  outline.render(manifest, model.activeLine, (lineId) => verdictOfResult(runState.results.get(lineId)));
+  const position = document.getElementById('ts-position');
+  if (position) renderPosition(position, positionOf(manifest, model.activeLine));
 }
 
 const cards = new CardsView(model, {
@@ -439,11 +447,13 @@ const runState = createRunState();
 function deliverRunLine(text: string): void {
   foldRunLine(runState, text);
   cards.render();
+  renderOutline();
 }
 
 function deliverRunExit(ok: boolean, note?: string): void {
   finishRun(runState, ok, note);
   cards.render();
+  renderOutline();
 }
 
 /**

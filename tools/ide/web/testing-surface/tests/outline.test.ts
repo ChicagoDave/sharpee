@@ -30,7 +30,7 @@ import {
   type TreeDocument,
   type TreeFiles,
 } from '@sharpee/branch-tester/tree-document';
-import { outlineOf } from '../src/outline';
+import { outlineOf, positionOf } from '../src/outline';
 
 const turn = (command: string, extra: Record<string, unknown> = {}) =>
   ({ type: 'turn' as const, command, ...extra });
@@ -285,5 +285,67 @@ describe('outlineOf against the real secret-letter tree', () => {
     // Both halves occur on the real tree, so neither is vacuous.
     expect(lines.some(l => l.destination === undefined)).toBe(true);
     expect(lines.some(l => l.destination !== undefined)).toBe(true);
+  });
+
+  it('places every line by a chain of forks that starts on the main line and ends at the line', () => {
+    const outline = outlineOf(document);
+    const forkOfLine = new Map(outline.forks.flatMap(f => f.lines.map(l => [l.lineId, f] as const)));
+    for (const fork of outline.forks) {
+      for (const line of fork.lines) {
+        const { steps } = positionOf(outline, line.lineId);
+        expect(steps.at(-1)).toMatchObject({ lineId: line.lineId, name: line.name });
+        expect(forkOfLine.get(steps[0].lineId)!.parentLineId).toBe(document.id);
+        // Each step forks from the line before it.
+        for (let i = 1; i < steps.length; i++) {
+          expect(forkOfLine.get(steps[i].lineId)!.parentLineId).toBe(steps[i - 1].lineId);
+        }
+      }
+    }
+    // Nested forks occur on the real tree, so the chain is not vacuously one step.
+    expect(outline.forks.some(f => f.depth > 0)).toBe(true);
+  });
+});
+
+describe('positionOf — where a line sits (ADR-357 D7)', () => {
+  // main line: look · north (fork: [up · west (fork: [dig], [climb])], [south])
+  const nested = doc([
+    { type: 'opening' },
+    { type: 'boot' },
+    turn('north', {
+      branches: [
+        { id: 'upline00', cards: [turn('up'), turn('west', forkOf(['dig'], ['climb']))] },
+        { id: 'south000', cards: [turn('south')] },
+      ],
+    }),
+  ]);
+
+  it('gives the main line no steps', () => {
+    expect(positionOf(outlineOf(nested), 'root0000').steps).toEqual([]);
+  });
+
+  it('gives a first-level branch one step naming its fork command and its own name', () => {
+    const { steps } = positionOf(outlineOf(nested), 'south000');
+    expect(steps).toHaveLength(1);
+    expect(steps[0]).toMatchObject({ forkCommand: 'north', lineId: 'south000' });
+  });
+
+  it('gives a nested branch every fork from the main line down, in order', () => {
+    const outline = outlineOf(nested);
+    const { steps } = positionOf(outline, 'branch02');
+    expect(steps.map(s => s.lineId)).toEqual(['upline00', 'branch02']);
+    expect(steps.map(s => s.forkCommand)).toEqual(['north', 'west']);
+    expect(steps[1].name).toBe('climb');
+  });
+
+  it('records the line each fork sits on', () => {
+    const outline = outlineOf(nested);
+    expect(outline.forks.map(f => [f.command, f.parentLineId])).toEqual([
+      ['north', 'root0000'],
+      ['west', 'upline00'],
+    ]);
+  });
+
+  it('gives an id the outline does not hold no steps', () => {
+    expect(positionOf(outlineOf(nested), 'nosuchid').steps).toEqual([]);
   });
 });

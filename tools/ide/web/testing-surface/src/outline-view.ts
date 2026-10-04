@@ -8,13 +8,20 @@
  * Clicking a line asks the driver to visit it — the one place a boot happens.
  *
  * Nothing here reads the engine or the run: the column is readable on a tree
- * that has never been played, which is the point of it.
+ * that has never been played, which is the point of it. After a run the
+ * caller hands in each line's verdict (line-verdict.ts) and the pills are
+ * tinted with it, a fork heading taking the worst of its lines (ADR-357 D4);
+ * with no verdicts the column is exactly what it was.
  *
- * Public interface: OutlineDelegate, OutlineView.
+ * The position indicator (ADR-357 D7) renders here too, because it is the
+ * same manifest read for one line: the forks from the main line down to it.
+ *
+ * Public interface: OutlineDelegate, OutlineView, renderPosition.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import type { Outline, OutlineFork, OutlineLine } from './outline.js';
+import { rollUpVerdicts, type LineVerdict } from './line-verdict.js';
+import type { Outline, OutlineFork, OutlineLine, OutlinePosition } from './outline.js';
 
 /** What the column asks the surface to do. */
 export interface OutlineDelegate {
@@ -39,20 +46,29 @@ export class OutlineView {
    *
    * @param outline    the manifest, derived fresh from the document
    * @param activeLine the line the session is on
+   * @param verdictOf  each line's verdict from the last run; every line is
+   *   `none` (untinted) when omitted
    */
-  render(outline: Outline, activeLine: string): void {
+  render(
+    outline: Outline,
+    activeLine: string,
+    verdictOf: (lineId: string) => LineVerdict = () => 'none',
+  ): void {
     if (!this.host) return;
     this.host.replaceChildren();
 
     this.host.appendChild(this.summary(outline));
-    this.host.appendChild(this.rootPill(outline.root, activeLine));
+    this.host.appendChild(tinted(this.rootPill(outline.root, activeLine), verdictOf(outline.root.lineId)));
 
     outline.forks.forEach((fork, index) => {
       const open = this.expanded.has(index);
-      this.host!.appendChild(this.forkPill(fork, index, open));
+      // A closed heading still shows a failure under it (ADR-357 D4).
+      const heading = rollUpVerdicts(fork.lines.map((line) => verdictOf(line.lineId)));
+      this.host!.appendChild(tinted(this.forkPill(fork, index, open), heading));
       if (!open) return;
       for (const line of fork.lines) {
-        this.host!.appendChild(this.linePill(line, fork.depth + 1, activeLine));
+        this.host!.appendChild(
+          tinted(this.linePill(line, fork.depth + 1, activeLine), verdictOf(line.lineId)));
       }
     });
   }
@@ -148,6 +164,47 @@ export class OutlineView {
     button.addEventListener('click', () => this.delegate.onSelectLine(line.lineId));
     return button;
   }
+}
+
+/**
+ * Render where the active line sits: `main line › <fork command> → <line
+ * name> › …`, one step per fork from the main line down.
+ *
+ * @param host     the indicator's element (built by CardsView.ensureLayout)
+ * @param position the line's position, from {@link positionOf}
+ */
+export function renderPosition(host: HTMLElement, position: OutlinePosition): void {
+  host.replaceChildren(span('ts-position-step ts-position-root', 'main line'));
+  for (const step of position.steps) {
+    host.append(span('ts-position-sep', '›'));
+    const el = span('ts-position-step', '');
+    if (step.forkCommand !== undefined) {
+      el.append(span('ts-position-fork', step.forkCommand), span('ts-position-arrow', ' → '));
+    }
+    el.append(span('ts-position-name', step.name));
+    host.append(el);
+  }
+  host.title = position.steps.length === 0
+    ? 'you are on the main line'
+    : `you are ${position.steps.length} fork${position.steps.length === 1 ? '' : 's'} down from the main line`;
+}
+
+/** What each verdict says on hover — the tint alone is not the whole story. */
+const VERDICT_TITLE: Record<LineVerdict, string> = {
+  pass: 'passed on the last run',
+  fail: 'failed on the last run',
+  unreached: 'the last run could not reach this line',
+  stale: 'edited since the last run — this result is unverified',
+  none: '',
+};
+
+/** Mark a pill with its verdict: a class the stylesheet tints, and a title. */
+function tinted(pill: HTMLElement, verdict: LineVerdict): HTMLElement {
+  if (verdict === 'none') return pill;
+  pill.classList.add(`ts-verdict-${verdict}`);
+  pill.dataset.verdict = verdict;
+  if (!pill.title) pill.title = VERDICT_TITLE[verdict];
+  return pill;
 }
 
 function span(className: string, text: string): HTMLElement {
