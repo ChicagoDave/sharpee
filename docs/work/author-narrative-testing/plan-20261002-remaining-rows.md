@@ -103,7 +103,8 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: Phase 6 step 1 committed; David has named the story
 - **Deliverable**: the story's project scaffolded (no story content written by the agent); David's room 1; a catalog of the error kinds one room can carry, drafted from what the tester can report (compiler diagnostics, derived-tier failures, tree claim failures, unreached lines, coverage gaps, ending claims); room 1's `TEST-001-A` onward sequence, one error per file and the correct version last (objective O-1, David 2026-10-03); a record of what an author arriving cold cannot read in the tab at room 1, which becomes the input to Phase 6's remaining steps
 - **Exit state**: room 1 tested end to end in Chord Writer and the CLI, its error sequence seeded, and the tab's findings recorded
-- **Status**: PENDING
+- **The story** (David, 2026-10-03/04, his words): *UPPS (United Planetary Postal Service)*. "It's the future. mankind has discovered how to fold space or create stable wormholes. The PC is an interplanetary postal worker delivering mail. The PC runs into varying challenges along the way. The story ends when the PC returns and has successfully delivered all mail." Settings he named: "navigating space in and outside of a ship, landing on planets, moon, asteroids, needing/not needing space suits, robots." Lives at `branch-stories/upps/`; scaffolded 2026-10-04 with the header only (title, author, id `upps`, a fresh IFID) and `upps.config.json`. No story content was written by the agent.
+- **Status**: CURRENT (since 2026-10-04)
 
 ### Phase 7: Occurrence ordinals arrange shape (only if G1 says IN)
 - **Tier**: Small

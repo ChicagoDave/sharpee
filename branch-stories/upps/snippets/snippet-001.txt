@@ -1,0 +1,6 @@
+before the game starts
+    change the player to postman
+end before
+	
+create player postman
+    a person, playable
