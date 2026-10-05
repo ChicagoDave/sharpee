@@ -1,0 +1,698 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "Conscience Fixture",
+    "fields": {
+      "id": "b3-conscience",
+      "storyVersion": "0.1.0",
+      "authors": [
+        "Sharpee Platform"
+      ],
+      "testers": [],
+      "description": {
+        "kind": "literal",
+        "value": "Frozen mechanical fixture for ADR-318 Acceptance 3 (B3): maintained lies deposit conscience pressure; the strained voice takes the neutral topic exactly at the deposit that crosses into burdened; the in-conversation crack fires at breaking; the confession goal seeks the player out only outside conversation (ADR-310 D16). Sibling of character-acceptance.story, self-contained."
+      },
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "parlor",
+      "name": "Parlor",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 24,
+            "column": 3,
+            "endLine": 24,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "north",
+          "to": "hall",
+          "via": null,
+          "span": {
+            "line": 25,
+            "column": 3,
+            "endLine": 25,
+            "endColumn": 20
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "parlor.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 23,
+        "column": 1,
+        "endLine": 27,
+        "endColumn": 62
+      }
+    },
+    {
+      "id": "hall",
+      "name": "Hall",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 30,
+            "column": 3,
+            "endLine": 30,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "south",
+          "to": "parlor",
+          "via": null,
+          "span": {
+            "line": 31,
+            "column": 3,
+            "endLine": 31,
+            "endColumn": 22
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "hall.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 29,
+        "column": 1,
+        "endLine": 33,
+        "endColumn": 57
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 36,
+            "column": 3,
+            "endLine": 36,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "parlor",
+        "span": {
+          "line": 38,
+          "column": 3,
+          "endLine": 38,
+          "endColumn": 23
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 35,
+        "column": 1,
+        "endLine": 40,
+        "endColumn": 7
+      }
+    },
+    {
+      "id": "steward",
+      "name": "Steward",
+      "article": "the",
+      "aka": [
+        "steward"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 47,
+            "column": 3,
+            "endLine": 47,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "character": {
+        "personality": [
+          {
+            "trait": "stubborn",
+            "span": {
+              "line": 47,
+              "column": 13,
+              "endLine": 47,
+              "endColumn": 21
+            }
+          }
+        ],
+        "feels": [],
+        "knows": [],
+        "thinks": [
+          {
+            "factId": "ledger",
+            "value": "doctored",
+            "confidence": "certain",
+            "source": "witnessed",
+            "span": {
+              "line": 50,
+              "column": 3,
+              "endLine": 50,
+              "endColumn": 52
+            }
+          }
+        ],
+        "goals": [
+          {
+            "id": "confess-the-books",
+            "priority": "high",
+            "activeWhen": {
+              "kind": "predicate",
+              "pred": "is",
+              "negated": false,
+              "subject": {
+                "kind": "entity",
+                "id": "steward"
+              },
+              "object": {
+                "kind": "symbol",
+                "name": "breaking"
+              }
+            },
+            "steps": [
+              {
+                "kind": "seek",
+                "target": "player",
+                "span": {
+                  "line": 54,
+                  "column": 5,
+                  "endLine": 54,
+                  "endColumn": 20
+                }
+              },
+              {
+                "kind": "act",
+                "phraseKey": "steward-blurts-confession",
+                "span": {
+                  "line": 55,
+                  "column": 5,
+                  "endLine": 55,
+                  "endColumn": 34
+                }
+              }
+            ],
+            "span": {
+              "line": 52,
+              "column": 3,
+              "endLine": 56,
+              "endColumn": 11
+            }
+          }
+        ],
+        "influences": [],
+        "resists": [],
+        "temperaments": [],
+        "principles": [],
+        "obligations": [],
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "parlor",
+        "span": {
+          "line": 49,
+          "column": 3,
+          "endLine": 49,
+          "endColumn": 16
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "steward.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the weather",
+            "aliases": [
+              "small talk"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "steward-weather",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 62,
+                "column": 5,
+                "endLine": 62,
+                "endColumn": 27
+              }
+            }
+          ],
+          "span": {
+            "line": 61,
+            "column": 3,
+            "endLine": 62,
+            "endColumn": 27
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the ledger",
+            "aliases": [
+              "the books",
+              "the accounts"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "steward-denies",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 64,
+                "column": 5,
+                "endLine": 64,
+                "endColumn": 26
+              }
+            }
+          ],
+          "span": {
+            "line": 63,
+            "column": 3,
+            "endLine": 64,
+            "endColumn": 26
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the truth",
+            "aliases": []
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "steward-cracks",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "steward"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "breaking"
+                }
+              },
+              "span": {
+                "line": 66,
+                "column": 5,
+                "endLine": 66,
+                "endColumn": 55
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "steward-deflects",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 67,
+                "column": 5,
+                "endLine": 67,
+                "endColumn": 28
+              }
+            }
+          ],
+          "span": {
+            "line": 65,
+            "column": 3,
+            "endLine": 67,
+            "endColumn": 28
+          }
+        }
+      ],
+      "span": {
+        "line": 46,
+        "column": 1,
+        "endLine": 58,
+        "endColumn": 40
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 103,
+          "column": 3,
+          "endLine": 103,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 102,
+      "column": 1,
+      "endLine": 104,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "steward-denies": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"The books balance to the penny,\" the steward says.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 84,
+            "column": 1,
+            "endLine": 86,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "ledger",
+            "value": "clean"
+          }
+        },
+        "steward-cracks": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The steward's shoulders drop. \"Stop. Stop asking. I doctored them myself, entry by entry.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 88,
+            "column": 1,
+            "endLine": 91,
+            "endColumn": 11
+          }
+        },
+        "steward-deflects": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"The truth is whatever the books say,\" the steward says.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 93,
+            "column": 1,
+            "endLine": 95,
+            "endColumn": 11
+          }
+        },
+        "steward-blurts-confession": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The steward hurries in, wild-eyed. \"I cannot carry it any longer. The books are doctored — it was me, all of it.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 97,
+            "column": 1,
+            "endLine": 100,
+            "endColumn": 11
+          }
+        },
+        "parlor.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A small parlor smelling of ink and dust. The hall is north.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 27,
+            "column": 3,
+            "endLine": 27,
+            "endColumn": 62
+          }
+        },
+        "hall.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A bare hall with a single window. The parlor is south.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 33,
+            "column": 3,
+            "endLine": 33,
+            "endColumn": 57
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 40,
+            "column": 3,
+            "endLine": 40,
+            "endColumn": 7
+          }
+        },
+        "steward.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A careful man with ink-stained cuffs.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 58,
+            "column": 3,
+            "endLine": 58,
+            "endColumn": 40
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [
+    {
+      "name": "steward-strain",
+      "source": "define",
+      "condition": {
+        "kind": "predicate",
+        "pred": "is",
+        "negated": false,
+        "subject": {
+          "kind": "entity",
+          "id": "steward"
+        },
+        "object": {
+          "kind": "symbol",
+          "name": "burdened"
+        }
+      },
+      "entries": {
+        "steward-weather": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Fine. It is fine.\" The steward's fingers worry at a cuff button. \"Everything is fine.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 75,
+            "column": 3,
+            "endLine": 76,
+            "endColumn": 92
+          }
+        }
+      },
+      "span": {
+        "line": 74,
+        "column": 1,
+        "endLine": 77,
+        "endColumn": 15
+      },
+      "specificity": "character"
+    },
+    {
+      "name": "steward-even",
+      "source": "define",
+      "condition": null,
+      "entries": {
+        "steward-weather": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Mild enough,\" the steward says.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 80,
+            "column": 3,
+            "endLine": 81,
+            "endColumn": 37
+          }
+        }
+      },
+      "span": {
+        "line": 79,
+        "column": 1,
+        "endLine": 82,
+        "endColumn": 15
+      }
+    }
+  ],
+  "hatches": [],
+  "traits": [],
+  "actions": [],
+  "scores": [],
+  "ranks": [],
+  "counters": [],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false,
+  "facts": [
+    {
+      "id": "ledger",
+      "name": "ledger",
+      "article": "the",
+      "values": [
+        "doctored",
+        "clean"
+      ],
+      "span": {
+        "line": 42,
+        "column": 1,
+        "endLine": 44,
+        "endColumn": 9
+      }
+    }
+  ]
+}

@@ -2,6 +2,7 @@
 
 **Created**: 2026-10-02
 **Plan Status**: ACTIVE
+**Superseded by**: docs/work/adr-359-kind-line/plan-20261005-d1.md (David, 2026-10-05: still live; resumes at Phase 6b once D1 lands)
 **Serves objective**: author-narrative-testing (`docs/objectives/author-narrative-testing.md`, O-1, due 2026-10-15; checkpoints 2026-10-06 and 2026-10-13)
 **Overall scope**: Re-count the closing table of `docs/work/testing-narrative/narrative-20260926-author-testing.md`, ready the harness for David's 60-room story, and plan the four rows not yet shipped. Three of the four need a ruling from David before any build. No story content is planned; David invents and writes the story himself.
 **Bounded contexts touched**: Narrative test harness (`scripts/__tests__/`), Testing surface (`tools/ide/web/testing-surface`), derived rule tests (`packages/branch-tester`, platform), author CLI (`packages/devkit`, platform), docs.

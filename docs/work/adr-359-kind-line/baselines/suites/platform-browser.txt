@@ -1,0 +1,167 @@
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/platform-browser
+
+ ✓ tests/channels/lifecycle.test.ts (7 tests) 2ms
+ ✓ tests/input-focus-selection.test.ts (3 tests) 4ms
+ ✓ tests/channels/animation-clear.test.ts (7 tests) 4ms
+ ✓ tests/channels/text-content.test.ts (13 tests) 5ms
+ ✓ tests/channels/prompt-status-info.test.ts (17 tests) 8ms
+ ✓ tests/channels/notify-image-audio.test.ts (12 tests) 11ms
+stdout | tests/reset-and-theme-menu.test.ts > MenuManager (P-3 binding + P-4 delegation) > reaches onReset from the real #menu-reset element
+[menu] Handlers set up
+
+stdout | tests/reset-and-theme-menu.test.ts > MenuManager (P-3 binding + P-4 delegation) > selects a theme rendered AFTER handler setup — delegation, not per-item binding
+[menu] Handlers set up
+
+ ✓ tests/reset-and-theme-menu.test.ts (9 tests) 10ms
+ ✓ tests/channels/prose.test.ts (22 tests) 10ms
+ ✓ tests/channels/dynamic-channels.test.ts (12 tests) 10ms
+ ✓ tests/channels/layout-and-defaults.test.ts (11 tests) 13ms
+ ✓ tests/story-ending-input.test.ts (4 tests) 2ms
+ ✓ tests/host-bridge.test.ts (11 tests) 3ms
+ ✓ tests/audio-unlock.test.ts (3 tests) 504ms
+ ✓ tests/world-digest.test.ts (6 tests) 2ms
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > deletes the autosave envelope the moment restart is confirmed, before any reboot
+[autosave] Saved at turn [33m3[39m
+[sync] Synced [33m1[39m saves to world sharedData
+[autosave] Cleared
+
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > declined restart leaves the autosave intact, never reboots, and keeps the engine untouched
+[autosave] Saved at turn [33m3[39m
+[sync] Synced [33m1[39m saves to world sharedData
+
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > reboots via config.reboot after the turn resolves, stopping the old engine with reason restart
+[autosave] Saved at turn [33m3[39m
+[sync] Synced [33m1[39m saves to world sharedData
+
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > reboots via config.reboot after the turn resolves, stopping the old engine with reason restart
+[autosave] Cleared
+
+stdout | tests/shadow-renderer.test.ts > BrowserClient — channel renderer drives visible DOM (R5-C) > prose channels write to the host textContent element
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/shadow-renderer.test.ts > BrowserClient — channel renderer drives visible DOM (R5-C) > combined score+turn override updates statusScore element
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/shadow-renderer.test.ts > BrowserClient — channel renderer drives visible DOM (R5-C) > location channel writes to statusLocation element
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/story-ending-restore-seam.test.ts > the input box derives from the restored world at the boot seam (ADR-348 D1, AC-2) > connecting a world that already ended disables the box, with no turn and no packet
+[menu] Handlers set up
+[theme] Applied: classic
+
+stdout | tests/story-ending-restore-seam.test.ts > the input box derives from the restored world at the boot seam (ADR-348 D1, AC-2) > rebooting into a fresh story re-enables the box the old ending had disabled
+[menu] Handlers set up
+[theme] Applied: classic
+
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > connectEngine called again (reboot path) re-points the world and keeps DOM managers, without recreating them
+[menu] Handlers set up
+[theme] Applied: classic
+
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > emits the record: engine-composed output (echo excluded), structured captures
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/story-ending-restore-seam.test.ts > the input box derives from the restored world when a save is applied (ADR-348 D1, AC-2) > restoring a save whose world has ended disables the box
+[menu] Handlers set up
+[theme] Applied: classic
+
+stdout | tests/shadow-renderer.test.ts > BrowserClient — channel renderer drives visible DOM (R5-C) > hotspot click pumps a command through engine.executeTurn
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/story-ending-restore-seam.test.ts > the input box derives from the restored world when a save is applied (ADR-348 D1, AC-2) > restoring a save that lands a live turn re-enables the box
+[menu] Handlers set up
+[theme] Applied: classic
+
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > a reboot from an end-game prompt re-enables the input (ADR-347 D3a)
+[menu] Handlers set up
+[theme] Applied: classic
+
+stdout | tests/restart-reboot.test.ts > ADR-248 restart reboot (BrowserClient) > a failed reboot displays the real error text, not a parse fallback
+[autosave] Cleared
+
+stdout | tests/restart-reboot.test.ts > Reset Story Data (issue 248 / phase 6a) — the full handleReset flow > declined: every key survives and nothing reboots
+[autosave] Saved at turn [33m3[39m
+[sync] Synced [33m1[39m saves to world sharedData
+
+ ✓ tests/story-ending-restore-seam.test.ts (4 tests) 11ms
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > stamps data-turn on everything the turn rendered — echo included — matching the record
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/restart-reboot.test.ts > Reset Story Data (issue 248 / phase 6a) — the full handleReset flow > confirmed: the story's keys are gone from real storage, foreign keys survive, and the reboot runs
+[autosave] Saved at turn [33m3[39m
+[sync] Synced [33m1[39m saves to world sharedData
+
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > ordinals are monotonic across turns; each turn stamps only its own elements
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/shadow-renderer.test.ts > BrowserClient — channel renderer drives visible DOM (R5-C) > auto-save fires on channel:packet (not text:output)
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > an in-page reboot posts the restart fence and ordinals do NOT reset
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+ ✓ tests/restart-reboot.test.ts (8 tests) 14ms
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > runs clean without a bridge — normal play unaffected, anchors still stamped
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > never builds the world digest without a bridge — published players do not pay the enumeration
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+ ✓ tests/shadow-renderer.test.ts (5 tests) 16ms
+stdout | tests/turn-events.test.ts > BrowserClient turn feed (real render path) > a turn whose engine call throws posts events: [] — never stale types from the prior turn
+[menu] Handlers set up
+[theme] Applied: classic-light
+
+ ✓ tests/turn-events.test.ts (14 tests) 17ms
+stdout | tests/chapter-before-room.test.ts > the chapter title is announced before the room (ADR-330 D4, amended 2026-09-05) > turn 1: the opening chapter card follows the banner and precedes the opening room description
+[menu] Handlers set up
+[theme] Applied: modern-dark
+=== BROWSER CLIENT START ===
+
+stdout | tests/chapter-before-room.test.ts > the chapter title is announced before the room (ADR-330 D4, amended 2026-09-05) > turn 1: the opening chapter card follows the banner and precedes the opening room description
+Executing initial look command...
+
+stdout | tests/chapter-before-room.test.ts > the chapter title is announced before the room (ADR-330 D4, amended 2026-09-05) > turn 1: the opening chapter card follows the banner and precedes the opening room description
+Initial look complete
+
+stdout | tests/chapter-before-room.test.ts > the chapter title is announced before the room (ADR-330 D4, amended 2026-09-05) > a first-visit arrival: the new chapter card precedes that turn's room description, after the previous turn's prose
+[menu] Handlers set up
+[theme] Applied: modern-dark
+=== BROWSER CLIENT START ===
+
+stdout | tests/chapter-before-room.test.ts > the chapter title is announced before the room (ADR-330 D4, amended 2026-09-05) > a first-visit arrival: the new chapter card precedes that turn's room description, after the previous turn's prose
+Executing initial look command...
+
+stdout | tests/chapter-before-room.test.ts > the chapter title is announced before the room (ADR-330 D4, amended 2026-09-05) > a first-visit arrival: the new chapter card precedes that turn's room description, after the previous turn's prose
+Initial look complete
+
+ ✓ tests/chapter-before-room.test.ts (2 tests) 30ms
+stdout | tests/capture-parity.test.ts > ADR-282 Acceptance 5 — capture parity (Play pane vs. headless runner)
+[menu] Handlers set up
+[theme] Applied: modern-dark
+=== BROWSER CLIENT START ===
+
+stdout | tests/capture-parity.test.ts > ADR-282 Acceptance 5 — capture parity (Play pane vs. headless runner)
+Executing initial look command...
+
+stdout | tests/capture-parity.test.ts > ADR-282 Acceptance 5 — capture parity (Play pane vs. headless runner)
+Initial look complete
+
+ ✓ tests/capture-parity.test.ts (5 tests) 154ms
+
+ Test Files  20 passed (20)
+      Tests  175 passed (175)
+   Start at  00:47:00
+   Duration  2.33s (transform 1.98s, setup 0ms, collect 7.91s, tests 827ms, environment 2.23s, prepare 889ms)
+

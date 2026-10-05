@@ -1,0 +1,972 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "Cloak of Darkness",
+    "fields": {
+      "id": "cloak-of-darkness",
+      "storyVersion": "1.0.0",
+      "authors": [
+        "Roger Firth (Sharpee implementation)"
+      ],
+      "testers": [],
+      "description": {
+        "kind": "literal",
+        "value": "A basic IF demonstration - hang up your cloak!"
+      },
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "foyer-of-the-opera-house",
+      "name": "Foyer of the Opera House",
+      "article": "the",
+      "aka": [
+        "foyer",
+        "hall",
+        "entrance"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 12,
+            "column": 3,
+            "endLine": 12,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "west",
+          "to": "cloakroom",
+          "via": null,
+          "span": {
+            "line": 14,
+            "column": 3,
+            "endLine": 14,
+            "endColumn": 24
+          }
+        },
+        {
+          "direction": "south",
+          "to": "foyer-bar",
+          "via": null,
+          "span": {
+            "line": 15,
+            "column": 3,
+            "endLine": 15,
+            "endColumn": 25
+          }
+        }
+      ],
+      "blockedExits": [
+        {
+          "direction": "north",
+          "phraseKey": "cant-leave",
+          "condition": null,
+          "span": {
+            "line": 16,
+            "column": 3,
+            "endLine": 16,
+            "endColumn": 31
+          }
+        }
+      ],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "foyer-of-the-opera-house.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 11,
+        "column": 1,
+        "endLine": 18,
+        "endColumn": 71
+      }
+    },
+    {
+      "id": "cloakroom",
+      "name": "Cloakroom",
+      "article": "the",
+      "aka": [
+        "cloakroom"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 23,
+            "column": 3,
+            "endLine": 23,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "cloakroom.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 22,
+        "column": 1,
+        "endLine": 26,
+        "endColumn": 67
+      }
+    },
+    {
+      "id": "foyer-bar",
+      "name": "Foyer Bar",
+      "article": "the",
+      "aka": [
+        "bar"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 30,
+            "column": 3,
+            "endLine": 30,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "dark",
+          "config": [],
+          "condition": {
+            "kind": "predicate",
+            "pred": "has",
+            "negated": false,
+            "subject": {
+              "kind": "player"
+            },
+            "object": {
+              "kind": "entity",
+              "id": "velvet-cloak"
+            }
+          },
+          "span": {
+            "line": 30,
+            "column": 11,
+            "endLine": 30,
+            "endColumn": 53
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "foyer-bar.description",
+      "initialDescriptionKey": null,
+      "onClauses": [
+        {
+          "clauseKind": "after",
+          "once": false,
+          "action": "entering",
+          "actor": {
+            "kind": "player"
+          },
+          "binding": "object",
+          "role": null,
+          "condition": {
+            "kind": "condition",
+            "name": "in-darkness"
+          },
+          "ordering": null,
+          "routing": "interceptor",
+          "narration": "presence",
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "stumble",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 38,
+                "column": 5,
+                "endLine": 38,
+                "endColumn": 19
+              }
+            },
+            {
+              "kind": "ordinal",
+              "ordinal": 1,
+              "body": [
+                {
+                  "kind": "change",
+                  "entity": {
+                    "kind": "entity",
+                    "id": "message-in-the-sawdust"
+                  },
+                  "state": "trampled",
+                  "stmtWhen": null,
+                  "span": {
+                    "line": 40,
+                    "column": 7,
+                    "endLine": 40,
+                    "endColumn": 37
+                  }
+                }
+              ],
+              "span": {
+                "line": 39,
+                "column": 5,
+                "endLine": 40,
+                "endColumn": 37
+              }
+            },
+            {
+              "kind": "ordinal",
+              "ordinal": 3,
+              "body": [
+                {
+                  "kind": "change",
+                  "entity": {
+                    "kind": "entity",
+                    "id": "message-in-the-sawdust"
+                  },
+                  "state": "obliterated",
+                  "stmtWhen": null,
+                  "span": {
+                    "line": 42,
+                    "column": 7,
+                    "endLine": 42,
+                    "endColumn": 40
+                  }
+                }
+              ],
+              "span": {
+                "line": 41,
+                "column": 5,
+                "endLine": 42,
+                "endColumn": 40
+              }
+            }
+          ],
+          "span": {
+            "line": 37,
+            "column": 3,
+            "endLine": 43,
+            "endColumn": 12
+          }
+        }
+      ],
+      "topics": [],
+      "span": {
+        "line": 29,
+        "column": 1,
+        "endLine": 37,
+        "endColumn": 46
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 46,
+            "column": 3,
+            "endLine": 46,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "foyer-of-the-opera-house",
+        "span": {
+          "line": 48,
+          "column": 3,
+          "endLine": 48,
+          "endColumn": 41
+        }
+      },
+      "wears": [
+        "velvet-cloak"
+      ],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 45,
+        "column": 1,
+        "endLine": 51,
+        "endColumn": 27
+      }
+    },
+    {
+      "id": "velvet-cloak",
+      "name": "velvet cloak",
+      "article": "the",
+      "aka": [
+        "cloak"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [
+        {
+          "name": "wearable",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 55,
+            "column": 3,
+            "endLine": 55,
+            "endColumn": 11
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "velvet-cloak.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 53,
+        "column": 1,
+        "endLine": 57,
+        "endColumn": 63
+      }
+    },
+    {
+      "id": "brass-hook",
+      "name": "brass hook",
+      "article": "the",
+      "aka": [
+        "hook",
+        "peg"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "supporter",
+          "config": [
+            {
+              "key": "capacity",
+              "value": "1",
+              "valueKind": "number"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 63,
+            "column": 12,
+            "endLine": 63,
+            "endColumn": 39
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "scenery",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 63,
+            "column": 3,
+            "endLine": 63,
+            "endColumn": 10
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "cloakroom",
+        "span": {
+          "line": 64,
+          "column": 3,
+          "endLine": 64,
+          "endColumn": 19
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "brass-hook.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 61,
+        "column": 1,
+        "endLine": 66,
+        "endColumn": 53
+      }
+    },
+    {
+      "id": "message-in-the-sawdust",
+      "name": "message in the sawdust",
+      "article": "the",
+      "aka": [
+        "message",
+        "sawdust",
+        "floor",
+        "writing"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [
+        {
+          "name": "scenery",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 70,
+            "column": 3,
+            "endLine": 70,
+            "endColumn": 10
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "foyer-bar",
+        "span": {
+          "line": 71,
+          "column": 3,
+          "endLine": 71,
+          "endColumn": 19
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [
+        "intact",
+        "trampled",
+        "obliterated"
+      ],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": null,
+      "initialDescriptionKey": null,
+      "onClauses": [
+        {
+          "clauseKind": "on",
+          "once": false,
+          "action": "reading",
+          "actor": {
+            "kind": "player"
+          },
+          "binding": "object",
+          "role": null,
+          "condition": null,
+          "ordering": null,
+          "routing": "interceptor",
+          "narration": "presence",
+          "body": [
+            {
+              "kind": "select-on",
+              "subject": {
+                "kind": "field",
+                "base": {
+                  "kind": "entity",
+                  "id": "message-in-the-sawdust"
+                },
+                "field": "state"
+              },
+              "arms": [
+                {
+                  "value": "intact",
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "message-intact",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 77,
+                        "column": 9,
+                        "endLine": 77,
+                        "endColumn": 30
+                      }
+                    },
+                    {
+                      "kind": "win",
+                      "phraseKey": null,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 78,
+                        "column": 9,
+                        "endLine": 78,
+                        "endColumn": 12
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 76,
+                    "column": 7,
+                    "endLine": 76,
+                    "endColumn": 18
+                  }
+                },
+                {
+                  "value": "trampled",
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "message-trampled",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 80,
+                        "column": 9,
+                        "endLine": 80,
+                        "endColumn": 32
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 79,
+                    "column": 7,
+                    "endLine": 79,
+                    "endColumn": 20
+                  }
+                },
+                {
+                  "value": "obliterated",
+                  "body": [
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "message-obliterated",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 82,
+                        "column": 9,
+                        "endLine": 82,
+                        "endColumn": 35
+                      }
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": null,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 83,
+                        "column": 9,
+                        "endLine": 83,
+                        "endColumn": 13
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 81,
+                    "column": 7,
+                    "endLine": 81,
+                    "endColumn": 23
+                  }
+                }
+              ],
+              "span": {
+                "line": 75,
+                "column": 5,
+                "endLine": 84,
+                "endColumn": 15
+              }
+            }
+          ],
+          "span": {
+            "line": 74,
+            "column": 3,
+            "endLine": 85,
+            "endColumn": 9
+          }
+        }
+      ],
+      "topics": [],
+      "span": {
+        "line": 68,
+        "column": 1,
+        "endLine": 74,
+        "endColumn": 24
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 107,
+          "column": 3,
+          "endLine": 107,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 106,
+      "column": 1,
+      "endLine": 108,
+      "endColumn": 11
+    }
+  },
+  "conditions": [
+    {
+      "name": "in-darkness",
+      "open": false,
+      "condition": {
+        "kind": "predicate",
+        "pred": "is",
+        "negated": false,
+        "subject": {
+          "kind": "field",
+          "base": {
+            "kind": "player"
+          },
+          "field": "location"
+        },
+        "object": {
+          "kind": "symbol",
+          "name": "dark"
+        }
+      },
+      "span": {
+        "line": 9,
+        "column": 1,
+        "endLine": 9,
+        "endColumn": 60
+      }
+    }
+  ],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "cant-leave": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You've only just arrived, and besides, the weather outside seems to be getting worse.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 92,
+            "column": 3,
+            "endLine": 94,
+            "endColumn": 25
+          }
+        },
+        "stumble": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Blundering around in the dark isn't a good idea!",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 95,
+            "column": 3,
+            "endLine": 96,
+            "endColumn": 53
+          }
+        },
+        "message-intact": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The message, neatly marked in the sawdust, reads... You have won!",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 97,
+            "column": 3,
+            "endLine": 98,
+            "endColumn": 70
+          }
+        },
+        "message-trampled": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You can just make out: {garbled}",
+              "markers": [
+                "garbled"
+              ]
+            }
+          ],
+          "span": {
+            "line": 99,
+            "column": 3,
+            "endLine": 100,
+            "endColumn": 37
+          }
+        },
+        "message-obliterated": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The message has been trampled beyond recognition. You have lost!",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 101,
+            "column": 3,
+            "endLine": 102,
+            "endColumn": 69
+          }
+        },
+        "foyer-of-the-opera-house.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You are standing in a spacious hall, splendidly decorated in red and gold, with glittering chandeliers overhead. The entrance from the street is to the north, and there are doorways south and west.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 18,
+            "column": 3,
+            "endLine": 20,
+            "endColumn": 65
+          }
+        },
+        "cloakroom.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The walls of this small room were clearly once lined with hooks, though now only one remains. The exit is a door to the east.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 26,
+            "column": 3,
+            "endLine": 27,
+            "endColumn": 63
+          }
+        },
+        "foyer-bar.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The bar, much rougher than you'd have guessed after the opulence of the foyer to the north, is completely empty. There seems to be some sort of message scrawled in the sawdust on the floor.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 33,
+            "column": 3,
+            "endLine": 35,
+            "endColumn": 56
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "As good-looking as ever.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 51,
+            "column": 3,
+            "endLine": 51,
+            "endColumn": 27
+          }
+        },
+        "velvet-cloak.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A handsome cloak, of velvet trimmed with satin, and slightly splattered with raindrops. Its blackness is so deep that it almost seems to suck light from the room.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 57,
+            "column": 3,
+            "endLine": 59,
+            "endColumn": 37
+          }
+        },
+        "brass-hook.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "It's just a small brass hook, screwed to the wall.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 66,
+            "column": 3,
+            "endLine": 66,
+            "endColumn": 53
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [],
+  "hatches": [
+    {
+      "name": "garbled",
+      "modulePath": "./src/extras.ts",
+      "hatchKind": "text",
+      "span": {
+        "line": 104,
+        "column": 1,
+        "endLine": 104,
+        "endColumn": 43
+      }
+    }
+  ],
+  "traits": [],
+  "actions": [],
+  "scores": [],
+  "ranks": [],
+  "counters": [],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": true,
+  "grammarExtensions": [
+    {
+      "action": "putting",
+      "patterns": [
+        {
+          "parts": [
+            {
+              "kind": "word",
+              "word": "hook"
+            },
+            {
+              "kind": "slot",
+              "word": "item"
+            },
+            {
+              "kind": "word",
+              "word": "on"
+            },
+            {
+              "kind": "slot",
+              "word": "hook"
+            }
+          ],
+          "cardinality": null
+        }
+      ],
+      "constraints": [],
+      "span": {
+        "line": 87,
+        "column": 1,
+        "endLine": 88,
+        "endColumn": 10
+      }
+    }
+  ]
+}

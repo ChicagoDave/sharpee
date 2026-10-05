@@ -1,0 +1,5979 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "The Alderman",
+    "fields": {
+      "id": "thealderman",
+      "storyVersion": "0.2.0",
+      "ifid": "0A04F181-78BF-477D-852D-4DE0BDF8C034",
+      "authors": [
+        "David Cornelson"
+      ],
+      "testers": [],
+      "description": {
+        "kind": "literal",
+        "value": "Six suspects, one hotel, one dead alderman."
+      },
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "foyer",
+      "name": "Foyer",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 129,
+            "column": 3,
+            "endLine": 129,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "north",
+          "to": "staircase",
+          "via": null,
+          "span": {
+            "line": 130,
+            "column": 3,
+            "endLine": 130,
+            "endColumn": 25
+          }
+        },
+        {
+          "direction": "east",
+          "to": "bar",
+          "via": null,
+          "span": {
+            "line": 131,
+            "column": 3,
+            "endLine": 131,
+            "endColumn": 18
+          }
+        },
+        {
+          "direction": "west",
+          "to": "restaurant",
+          "via": null,
+          "span": {
+            "line": 132,
+            "column": 3,
+            "endLine": 132,
+            "endColumn": 25
+          }
+        },
+        {
+          "direction": "south",
+          "to": "ballroom",
+          "via": null,
+          "span": {
+            "line": 133,
+            "column": 3,
+            "endLine": 133,
+            "endColumn": 24
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "foyer.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 128,
+        "column": 1,
+        "endLine": 135,
+        "endColumn": 73
+      }
+    },
+    {
+      "id": "bar",
+      "name": "Bar",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 141,
+            "column": 3,
+            "endLine": 141,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "west",
+          "to": "foyer",
+          "via": null,
+          "span": {
+            "line": 142,
+            "column": 3,
+            "endLine": 142,
+            "endColumn": 20
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "bar.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 140,
+        "column": 1,
+        "endLine": 144,
+        "endColumn": 73
+      }
+    },
+    {
+      "id": "ballroom",
+      "name": "Ballroom",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 148,
+            "column": 3,
+            "endLine": 148,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "north",
+          "to": "foyer",
+          "via": null,
+          "span": {
+            "line": 149,
+            "column": 3,
+            "endLine": 149,
+            "endColumn": 21
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "ballroom.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 147,
+        "column": 1,
+        "endLine": 151,
+        "endColumn": 69
+      }
+    },
+    {
+      "id": "restaurant",
+      "name": "Restaurant",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 157,
+            "column": 3,
+            "endLine": 157,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "east",
+          "to": "foyer",
+          "via": null,
+          "span": {
+            "line": 158,
+            "column": 3,
+            "endLine": 158,
+            "endColumn": 20
+          }
+        },
+        {
+          "direction": "north",
+          "to": "kitchen",
+          "via": null,
+          "span": {
+            "line": 159,
+            "column": 3,
+            "endLine": 159,
+            "endColumn": 23
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "restaurant.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 156,
+        "column": 1,
+        "endLine": 161,
+        "endColumn": 73
+      }
+    },
+    {
+      "id": "kitchen",
+      "name": "Kitchen",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 165,
+            "column": 3,
+            "endLine": 165,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "south",
+          "to": "restaurant",
+          "via": null,
+          "span": {
+            "line": 166,
+            "column": 3,
+            "endLine": 166,
+            "endColumn": 26
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "kitchen.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 164,
+        "column": 1,
+        "endLine": 168,
+        "endColumn": 68
+      }
+    },
+    {
+      "id": "staircase",
+      "name": "Staircase",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 172,
+            "column": 3,
+            "endLine": 172,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "south",
+          "to": "foyer",
+          "via": null,
+          "span": {
+            "line": 173,
+            "column": 3,
+            "endLine": 173,
+            "endColumn": 21
+          }
+        },
+        {
+          "direction": "north",
+          "to": "room-three-oh-two",
+          "via": null,
+          "span": {
+            "line": 174,
+            "column": 3,
+            "endLine": 174,
+            "endColumn": 29
+          }
+        },
+        {
+          "direction": "east",
+          "to": "room-three-oh-eight",
+          "via": null,
+          "span": {
+            "line": 175,
+            "column": 3,
+            "endLine": 175,
+            "endColumn": 30
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "staircase.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 171,
+        "column": 1,
+        "endLine": 177,
+        "endColumn": 68
+      }
+    },
+    {
+      "id": "room-three-oh-two",
+      "name": "Room Three-Oh-Two",
+      "article": null,
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 182,
+            "column": 3,
+            "endLine": 182,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "south",
+          "to": "staircase",
+          "via": null,
+          "span": {
+            "line": 183,
+            "column": 3,
+            "endLine": 183,
+            "endColumn": 25
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "room-three-oh-two.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 181,
+        "column": 1,
+        "endLine": 185,
+        "endColumn": 69
+      }
+    },
+    {
+      "id": "room-three-oh-eight",
+      "name": "Room Three-Oh-Eight",
+      "article": null,
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 189,
+            "column": 3,
+            "endLine": 189,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [
+        {
+          "direction": "west",
+          "to": "staircase",
+          "via": null,
+          "span": {
+            "line": 190,
+            "column": 3,
+            "endLine": 190,
+            "endColumn": 24
+          }
+        }
+      ],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "room-three-oh-eight.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 188,
+        "column": 1,
+        "endLine": 192,
+        "endColumn": 71
+      }
+    },
+    {
+      "id": "stage-curtain",
+      "name": "stage curtain",
+      "article": "the",
+      "aka": [
+        "curtain"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [
+        {
+          "name": "scenery",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 198,
+            "column": 3,
+            "endLine": 198,
+            "endColumn": 10
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "ballroom",
+        "span": {
+          "line": 199,
+          "column": 3,
+          "endLine": 199,
+          "endColumn": 18
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "stage-curtain.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 197,
+        "column": 1,
+        "endLine": 202,
+        "endColumn": 72
+      }
+    },
+    {
+      "id": "dark-stain",
+      "name": "dark stain",
+      "article": "the",
+      "aka": [
+        "stain"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [
+        {
+          "name": "scenery",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 206,
+            "column": 3,
+            "endLine": 206,
+            "endColumn": 10
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "ballroom",
+        "span": {
+          "line": 207,
+          "column": 3,
+          "endLine": 207,
+          "endColumn": 18
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "dark-stain.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 205,
+        "column": 1,
+        "endLine": 210,
+        "endColumn": 69
+      }
+    },
+    {
+      "id": "curtain-cord",
+      "name": "curtain cord",
+      "article": "the",
+      "aka": [
+        "cord"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "room-three-oh-two",
+        "span": {
+          "line": 214,
+          "column": 3,
+          "endLine": 214,
+          "endColumn": 30
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "curtain-cord.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 213,
+        "column": 1,
+        "endLine": 217,
+        "endColumn": 72
+      }
+    },
+    {
+      "id": "theatre-program",
+      "name": "theatre program",
+      "article": "the",
+      "aka": [
+        "program"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "foyer",
+        "span": {
+          "line": 222,
+          "column": 3,
+          "endLine": 222,
+          "endColumn": 15
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "theatre-program.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 221,
+        "column": 1,
+        "endLine": 225,
+        "endColumn": 70
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 232,
+            "column": 3,
+            "endLine": 232,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "foyer",
+        "span": {
+          "line": 234,
+          "column": 3,
+          "endLine": 234,
+          "endColumn": 15
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 231,
+        "column": 1,
+        "endLine": 236,
+        "endColumn": 37
+      }
+    },
+    {
+      "id": "stephanie-bordeau",
+      "name": "Stephanie Bordeau",
+      "article": null,
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 239,
+            "column": 3,
+            "endLine": 239,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 239,
+            "column": 13,
+            "endLine": 239,
+            "endColumn": 19
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "room-three-oh-two",
+        "span": {
+          "line": 240,
+          "column": 3,
+          "endLine": 240,
+          "endColumn": 30
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "stephanie-bordeau.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 238,
+        "column": 1,
+        "endLine": 242,
+        "endColumn": 73
+      }
+    },
+    {
+      "id": "ross-bielack",
+      "name": "Ross Bielack",
+      "article": null,
+      "aka": [
+        "ross",
+        "ballplayer"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 250,
+            "column": 3,
+            "endLine": 250,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 250,
+            "column": 13,
+            "endLine": 250,
+            "endColumn": 19
+          }
+        },
+        {
+          "name": "accusable",
+          "config": [
+            {
+              "key": "verdict",
+              "value": "wrong-ross",
+              "valueKind": "word"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 252,
+            "column": 3,
+            "endLine": 252,
+            "endColumn": 36
+          }
+        }
+      ],
+      "character": {
+        "personality": [
+          {
+            "trait": "impulsive",
+            "intensity": "very",
+            "span": {
+              "line": 250,
+              "column": 21,
+              "endLine": 250,
+              "endColumn": 35
+            }
+          },
+          {
+            "trait": "defensive",
+            "span": {
+              "line": 250,
+              "column": 37,
+              "endLine": 250,
+              "endColumn": 46
+            }
+          },
+          {
+            "trait": "honest",
+            "intensity": "slightly",
+            "span": {
+              "line": 250,
+              "column": 48,
+              "endLine": 250,
+              "endColumn": 63
+            }
+          }
+        ],
+        "mood": "anxious",
+        "feels": [
+          {
+            "disposition": "devoted to",
+            "target": "stephanie-bordeau",
+            "span": {
+              "line": 255,
+              "column": 3,
+              "endLine": 255,
+              "endColumn": 37
+            }
+          },
+          {
+            "disposition": "dislikes",
+            "target": "jack-margolin",
+            "span": {
+              "line": 256,
+              "column": 3,
+              "endLine": 256,
+              "endColumn": 38
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "john-barber",
+            "span": {
+              "line": 257,
+              "column": 3,
+              "endLine": 257,
+              "endColumn": 28
+            }
+          }
+        ],
+        "knows": [
+          {
+            "topic": "stephanie-death",
+            "source": "told",
+            "confidence": "certain",
+            "span": {
+              "line": 258,
+              "column": 3,
+              "endLine": 258,
+              "endColumn": 39
+            }
+          },
+          {
+            "topic": "gambling-debts",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 259,
+              "column": 3,
+              "endLine": 259,
+              "endColumn": 43
+            }
+          },
+          {
+            "topic": "stephanie-lover",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 260,
+              "column": 3,
+              "endLine": 260,
+              "endColumn": 44
+            }
+          },
+          {
+            "topic": "jack-shady",
+            "source": "inferred",
+            "confidence": "suspects",
+            "span": {
+              "line": 261,
+              "column": 3,
+              "endLine": 261,
+              "endColumn": 39
+            }
+          }
+        ],
+        "thinks": [
+          {
+            "factId": "debts",
+            "value": "owed",
+            "confidence": "certain",
+            "source": "witnessed",
+            "span": {
+              "line": 262,
+              "column": 3,
+              "endLine": 262,
+              "endColumn": 47
+            }
+          }
+        ],
+        "profile": {
+          "perception": "accurate",
+          "belief-formation": "flexible",
+          "coherence": "focused",
+          "lucidity": "stable",
+          "self-model": "intact"
+        },
+        "spreads": {
+          "kind": "spreads",
+          "topics": [
+            "stephanie-death"
+          ],
+          "to": "anyone",
+          "except": [],
+          "span": {
+            "line": 264,
+            "column": 3,
+            "endLine": 264,
+            "endColumn": 36
+          }
+        },
+        "goals": [],
+        "influences": [
+          {
+            "name": "intimidation",
+            "mode": "active",
+            "range": "proximity",
+            "effect": {
+              "mood": "nervous",
+              "threat": "wary"
+            },
+            "witnessed": "ross-intimidates",
+            "resisted": "ross-intimidation-resisted",
+            "span": {
+              "line": 266,
+              "column": 3,
+              "endLine": 271,
+              "endColumn": 16
+            }
+          }
+        ],
+        "resists": [],
+        "temperaments": [],
+        "principles": [],
+        "obligations": [],
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "bar",
+        "span": {
+          "line": 253,
+          "column": 3,
+          "endLine": 253,
+          "endColumn": 13
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "ross-bielack.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "stephanie",
+            "aliases": [
+              "stephanie bordeau",
+              "the murder",
+              "the victim"
+            ]
+          },
+          "body": [
+            {
+              "kind": "refuse-when",
+              "condition": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "ross-bielack"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "threatened"
+                }
+              },
+              "phraseKey": "ross-stephanie-angry",
+              "span": {
+                "line": 278,
+                "column": 5,
+                "endLine": 278,
+                "endColumn": 65
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-stephanie-sad",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 279,
+                "column": 5,
+                "endLine": 279,
+                "endColumn": 30
+              }
+            }
+          ],
+          "span": {
+            "line": 277,
+            "column": 3,
+            "endLine": 279,
+            "endColumn": 30
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the relationship",
+            "aliases": [
+              "the lover",
+              "the romance"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-relationship-admits",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": true,
+                "subject": {
+                  "kind": "entity",
+                  "id": "ross-bielack"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "threatened"
+                }
+              },
+              "span": {
+                "line": 281,
+                "column": 5,
+                "endLine": 281,
+                "endColumn": 72
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-relationship-deflect",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 282,
+                "column": 5,
+                "endLine": 282,
+                "endColumn": 37
+              }
+            }
+          ],
+          "span": {
+            "line": 280,
+            "column": 3,
+            "endLine": 282,
+            "endColumn": 37
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "gambling",
+            "aliases": [
+              "the gambling debts",
+              "gambling-debts",
+              "the money"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-gambling-truth",
+              "params": [],
+              "stmtWhen": {
+                "kind": "feels",
+                "subject": {
+                  "kind": "entity",
+                  "id": "ross-bielack"
+                },
+                "disposition": "trusts",
+                "target": {
+                  "kind": "player"
+                }
+              },
+              "span": {
+                "line": 284,
+                "column": 5,
+                "endLine": 284,
+                "endColumn": 80
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-gambling-denies",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 285,
+                "column": 5,
+                "endLine": 285,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 283,
+            "column": 3,
+            "endLine": 285,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the alibi",
+            "aliases": [
+              "last night",
+              "the evening"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-alibi-bar",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 287,
+                "column": 5,
+                "endLine": 287,
+                "endColumn": 26
+              }
+            }
+          ],
+          "span": {
+            "line": 286,
+            "column": 3,
+            "endLine": 287,
+            "endColumn": 26
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "jack",
+            "aliases": [
+              "jack margolin",
+              "margolin"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "ross-jack-opinion",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 289,
+                "column": 5,
+                "endLine": 289,
+                "endColumn": 29
+              }
+            }
+          ],
+          "span": {
+            "line": 288,
+            "column": 3,
+            "endLine": 289,
+            "endColumn": 29
+          }
+        }
+      ],
+      "span": {
+        "line": 249,
+        "column": 1,
+        "endLine": 273,
+        "endColumn": 118
+      }
+    },
+    {
+      "id": "viola-wainright",
+      "name": "Viola Wainright",
+      "article": null,
+      "aka": [
+        "viola",
+        "actress"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 295,
+            "column": 3,
+            "endLine": 295,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 295,
+            "column": 13,
+            "endLine": 295,
+            "endColumn": 19
+          }
+        },
+        {
+          "name": "accusable",
+          "config": [
+            {
+              "key": "verdict",
+              "value": "guilty",
+              "valueKind": "word"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 297,
+            "column": 3,
+            "endLine": 297,
+            "endColumn": 32
+          }
+        }
+      ],
+      "character": {
+        "personality": [
+          {
+            "trait": "deceptive",
+            "intensity": "very",
+            "span": {
+              "line": 295,
+              "column": 21,
+              "endLine": 295,
+              "endColumn": 35
+            }
+          },
+          {
+            "trait": "charming",
+            "span": {
+              "line": 295,
+              "column": 37,
+              "endLine": 295,
+              "endColumn": 45
+            }
+          },
+          {
+            "trait": "bitter",
+            "span": {
+              "line": 295,
+              "column": 47,
+              "endLine": 295,
+              "endColumn": 53
+            }
+          }
+        ],
+        "mood": "composed",
+        "feels": [
+          {
+            "disposition": "devoted to",
+            "target": "viola-wainright",
+            "span": {
+              "line": 301,
+              "column": 3,
+              "endLine": 301,
+              "endColumn": 35
+            }
+          },
+          {
+            "disposition": "dislikes",
+            "target": "stephanie-bordeau",
+            "span": {
+              "line": 302,
+              "column": 3,
+              "endLine": 302,
+              "endColumn": 42
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "catherine-shelby",
+            "span": {
+              "line": 303,
+              "column": 3,
+              "endLine": 303,
+              "endColumn": 33
+            }
+          }
+        ],
+        "knows": [
+          {
+            "topic": "stephanie-death",
+            "source": "told",
+            "confidence": "certain",
+            "span": {
+              "line": 304,
+              "column": 3,
+              "endLine": 304,
+              "endColumn": 39
+            }
+          },
+          {
+            "topic": "half-sister",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 305,
+              "column": 3,
+              "endLine": 305,
+              "endColumn": 40
+            }
+          },
+          {
+            "topic": "inheritance-cut-out",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 306,
+              "column": 3,
+              "endLine": 306,
+              "endColumn": 48
+            }
+          },
+          {
+            "topic": "catherine-knows-secret",
+            "source": "inferred",
+            "confidence": "suspects",
+            "span": {
+              "line": 307,
+              "column": 3,
+              "endLine": 307,
+              "endColumn": 51
+            }
+          }
+        ],
+        "thinks": [
+          {
+            "factId": "killer",
+            "value": "viola-wainright",
+            "confidence": "certain",
+            "source": "witnessed",
+            "span": {
+              "line": 308,
+              "column": 3,
+              "endLine": 308,
+              "endColumn": 59
+            }
+          },
+          {
+            "factId": "whereabouts",
+            "value": "ballroom",
+            "confidence": "certain",
+            "source": "witnessed",
+            "span": {
+              "line": 309,
+              "column": 3,
+              "endLine": 309,
+              "endColumn": 57
+            }
+          }
+        ],
+        "profile": {
+          "perception": "accurate",
+          "belief-formation": "flexible",
+          "coherence": "focused",
+          "lucidity": "stable",
+          "self-model": "intact"
+        },
+        "spreads": {
+          "kind": "spreads",
+          "topics": [
+            "stephanie-death",
+            "hotel-gossip"
+          ],
+          "to": "trusted",
+          "except": [],
+          "span": {
+            "line": 311,
+            "column": 3,
+            "endLine": 311,
+            "endColumn": 54
+          }
+        },
+        "goals": [],
+        "influences": [],
+        "resists": [],
+        "temperaments": [
+          {
+            "name": "viola-wainright@temperament-1",
+            "span": {
+              "line": 312,
+              "column": 3,
+              "endLine": 312,
+              "endColumn": 31
+            }
+          }
+        ],
+        "principles": [],
+        "obligations": [],
+        "burdenedBy": [
+          "half-sister"
+        ]
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "ballroom",
+        "span": {
+          "line": 298,
+          "column": 3,
+          "endLine": 298,
+          "endColumn": 18
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [
+        "denying",
+        "confessed"
+      ],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "viola-wainright.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "stephanie",
+            "aliases": [
+              "stephanie bordeau"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-stephanie-fond",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 325,
+                "column": 5,
+                "endLine": 325,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 324,
+            "column": 3,
+            "endLine": 325,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the family",
+            "aliases": [
+              "the half sister",
+              "half-sister",
+              "the sister"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-family-owns",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "viola-wainright"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "confessed"
+                }
+              },
+              "span": {
+                "line": 327,
+                "column": 5,
+                "endLine": 327,
+                "endColumn": 63
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-family-denies",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 328,
+                "column": 5,
+                "endLine": 328,
+                "endColumn": 31
+              }
+            }
+          ],
+          "span": {
+            "line": 326,
+            "column": 3,
+            "endLine": 328,
+            "endColumn": 31
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the alibi",
+            "aliases": [
+              "the theatre",
+              "the rehearsal",
+              "last night"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-alibi-dropped",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "viola-wainright"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "confessed"
+                }
+              },
+              "span": {
+                "line": 330,
+                "column": 5,
+                "endLine": 330,
+                "endColumn": 65
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-alibi-rehearsal",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 331,
+                "column": 5,
+                "endLine": 331,
+                "endColumn": 33
+              }
+            }
+          ],
+          "span": {
+            "line": 329,
+            "column": 3,
+            "endLine": 331,
+            "endColumn": 33
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the inheritance",
+            "aliases": [
+              "the fortune"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-inheritance-cool",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 333,
+                "column": 5,
+                "endLine": 333,
+                "endColumn": 34
+              }
+            }
+          ],
+          "span": {
+            "line": 332,
+            "column": 3,
+            "endLine": 333,
+            "endColumn": 34
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the program",
+            "aliases": [
+              "the theatre program"
+            ]
+          },
+          "body": [
+            {
+              "kind": "change-mood",
+              "mood": "fearful",
+              "stmtWhen": null,
+              "span": {
+                "line": 335,
+                "column": 5,
+                "endLine": 335,
+                "endColumn": 27
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-program-caught",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 336,
+                "column": 5,
+                "endLine": 336,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 334,
+            "column": 3,
+            "endLine": 336,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the killer",
+            "aliases": [
+              "the murder"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-killer-confessed",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "viola-wainright"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "confessed"
+                }
+              },
+              "span": {
+                "line": 338,
+                "column": 5,
+                "endLine": 338,
+                "endColumn": 68
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-killer-denies",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 339,
+                "column": 5,
+                "endLine": 339,
+                "endColumn": 31
+              }
+            }
+          ],
+          "span": {
+            "line": 337,
+            "column": 3,
+            "endLine": 339,
+            "endColumn": 31
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the truth",
+            "aliases": []
+          },
+          "body": [
+            {
+              "kind": "change",
+              "entity": {
+                "kind": "entity",
+                "id": "viola-wainright"
+              },
+              "state": "confessed",
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "viola-wainright"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "breaking"
+                }
+              },
+              "span": {
+                "line": 341,
+                "column": 5,
+                "endLine": 341,
+                "endColumn": 73
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-confesses",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "viola-wainright"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "breaking"
+                }
+              },
+              "span": {
+                "line": 342,
+                "column": 5,
+                "endLine": 342,
+                "endColumn": 60
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-stands-by-it",
+              "params": [],
+              "stmtWhen": {
+                "kind": "and",
+                "operands": [
+                  {
+                    "kind": "predicate",
+                    "pred": "is",
+                    "negated": false,
+                    "subject": {
+                      "kind": "entity",
+                      "id": "viola-wainright"
+                    },
+                    "object": {
+                      "kind": "symbol",
+                      "name": "confessed"
+                    }
+                  },
+                  {
+                    "kind": "predicate",
+                    "pred": "is",
+                    "negated": true,
+                    "subject": {
+                      "kind": "entity",
+                      "id": "viola-wainright"
+                    },
+                    "object": {
+                      "kind": "symbol",
+                      "name": "breaking"
+                    }
+                  }
+                ]
+              },
+              "span": {
+                "line": 343,
+                "column": 5,
+                "endLine": 343,
+                "endColumn": 100
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "viola-truth-deflect",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 344,
+                "column": 5,
+                "endLine": 344,
+                "endColumn": 31
+              }
+            }
+          ],
+          "span": {
+            "line": 340,
+            "column": 3,
+            "endLine": 344,
+            "endColumn": 31
+          }
+        }
+      ],
+      "span": {
+        "line": 294,
+        "column": 1,
+        "endLine": 315,
+        "endColumn": 109
+      }
+    },
+    {
+      "id": "john-barber",
+      "name": "John Barber",
+      "article": null,
+      "aka": [
+        "john",
+        "enforcer"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 350,
+            "column": 3,
+            "endLine": 350,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 350,
+            "column": 13,
+            "endLine": 350,
+            "endColumn": 19
+          }
+        },
+        {
+          "name": "accusable",
+          "config": [
+            {
+              "key": "verdict",
+              "value": "wrong-john",
+              "valueKind": "word"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 352,
+            "column": 3,
+            "endLine": 352,
+            "endColumn": 36
+          }
+        }
+      ],
+      "character": {
+        "personality": [
+          {
+            "trait": "guarded",
+            "intensity": "very",
+            "span": {
+              "line": 350,
+              "column": 21,
+              "endLine": 350,
+              "endColumn": 33
+            }
+          },
+          {
+            "trait": "cold",
+            "span": {
+              "line": 350,
+              "column": 35,
+              "endLine": 350,
+              "endColumn": 39
+            }
+          },
+          {
+            "trait": "intelligent",
+            "span": {
+              "line": 350,
+              "column": 41,
+              "endLine": 350,
+              "endColumn": 52
+            }
+          }
+        ],
+        "mood": "calm",
+        "feels": [
+          {
+            "disposition": "wary of",
+            "target": "player",
+            "span": {
+              "line": 355,
+              "column": 3,
+              "endLine": 355,
+              "endColumn": 27
+            }
+          },
+          {
+            "disposition": "dislikes",
+            "target": "jack-margolin",
+            "span": {
+              "line": 356,
+              "column": 3,
+              "endLine": 356,
+              "endColumn": 38
+            }
+          },
+          {
+            "disposition": "devoted to",
+            "target": "stephanie-bordeau",
+            "span": {
+              "line": 357,
+              "column": 3,
+              "endLine": 357,
+              "endColumn": 37
+            }
+          }
+        ],
+        "knows": [
+          {
+            "topic": "stephanie-death",
+            "source": "told",
+            "confidence": "certain",
+            "span": {
+              "line": 358,
+              "column": 3,
+              "endLine": 358,
+              "endColumn": 39
+            }
+          },
+          {
+            "topic": "business-arrangement",
+            "source": "witnessed",
+            "confidence": "certain",
+            "confided": true,
+            "span": {
+              "line": 359,
+              "column": 3,
+              "endLine": 359,
+              "endColumn": 59
+            }
+          },
+          {
+            "topic": "enforcement-work",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 360,
+              "column": 3,
+              "endLine": 360,
+              "endColumn": 45
+            }
+          }
+        ],
+        "thinks": [],
+        "profile": {
+          "perception": "accurate",
+          "belief-formation": "flexible",
+          "coherence": "focused",
+          "lucidity": "stable",
+          "self-model": "intact"
+        },
+        "spreads": {
+          "kind": "nothing",
+          "span": {
+            "line": 362,
+            "column": 3,
+            "endLine": 362,
+            "endColumn": 18
+          }
+        },
+        "goals": [
+          {
+            "id": "destroy-evidence",
+            "priority": "high",
+            "activeWhen": {
+              "kind": "predicate",
+              "pred": "is",
+              "negated": true,
+              "subject": {
+                "kind": "entity",
+                "id": "john-barber"
+              },
+              "object": {
+                "kind": "symbol",
+                "name": "calm"
+              }
+            },
+            "steps": [
+              {
+                "kind": "move-to",
+                "target": "room-three-oh-two",
+                "span": {
+                  "line": 368,
+                  "column": 5,
+                  "endLine": 368,
+                  "endColumn": 30
+                }
+              },
+              {
+                "kind": "act",
+                "phraseKey": "john-searches-room",
+                "span": {
+                  "line": 369,
+                  "column": 5,
+                  "endLine": 369,
+                  "endColumn": 27
+                }
+              }
+            ],
+            "span": {
+              "line": 366,
+              "column": 3,
+              "endLine": 370,
+              "endColumn": 11
+            }
+          }
+        ],
+        "influences": [
+          {
+            "name": "menace",
+            "mode": "passive",
+            "range": "room",
+            "effect": {
+              "mood": "nervous",
+              "threat": "wary"
+            },
+            "witnessed": "john-menace-noticed",
+            "expired": "john-menace-lifted",
+            "span": {
+              "line": 372,
+              "column": 3,
+              "endLine": 377,
+              "endColumn": 16
+            }
+          }
+        ],
+        "resists": [],
+        "temperaments": [
+          {
+            "name": "professional",
+            "span": {
+              "line": 364,
+              "column": 3,
+              "endLine": 364,
+              "endColumn": 27
+            }
+          }
+        ],
+        "principles": [
+          {
+            "category": "betray a confidence",
+            "span": {
+              "line": 363,
+              "column": 3,
+              "endLine": 363,
+              "endColumn": 29
+            }
+          }
+        ],
+        "obligations": [],
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "bar",
+        "span": {
+          "line": 353,
+          "column": 3,
+          "endLine": 353,
+          "endColumn": 13
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "john-barber.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the business arrangement",
+            "aliases": [
+              "business-arrangement",
+              "the arrangement",
+              "the business"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "john-business-reveal",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 386,
+                "column": 5,
+                "endLine": 386,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 385,
+            "column": 3,
+            "endLine": 386,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "stephanie",
+            "aliases": [
+              "stephanie bordeau"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "john-stephanie-respect",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 388,
+                "column": 5,
+                "endLine": 388,
+                "endColumn": 34
+              }
+            }
+          ],
+          "span": {
+            "line": 387,
+            "column": 3,
+            "endLine": 388,
+            "endColumn": 34
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the alibi",
+            "aliases": [
+              "the docks",
+              "last night"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "john-alibi-docks",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 390,
+                "column": 5,
+                "endLine": 390,
+                "endColumn": 28
+              }
+            }
+          ],
+          "span": {
+            "line": 389,
+            "column": 3,
+            "endLine": 390,
+            "endColumn": 28
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "jack",
+            "aliases": [
+              "jack margolin",
+              "margolin"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "john-jack-flat",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 392,
+                "column": 5,
+                "endLine": 392,
+                "endColumn": 26
+              }
+            }
+          ],
+          "span": {
+            "line": 391,
+            "column": 3,
+            "endLine": 392,
+            "endColumn": 26
+          }
+        }
+      ],
+      "span": {
+        "line": 349,
+        "column": 1,
+        "endLine": 379,
+        "endColumn": 93
+      }
+    },
+    {
+      "id": "catherine-shelby",
+      "name": "Catherine Shelby",
+      "article": null,
+      "aka": [
+        "catherine",
+        "hostess"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 398,
+            "column": 3,
+            "endLine": 398,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 398,
+            "column": 13,
+            "endLine": 398,
+            "endColumn": 19
+          }
+        },
+        {
+          "name": "accusable",
+          "config": [
+            {
+              "key": "verdict",
+              "value": "wrong-catherine",
+              "valueKind": "word"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 400,
+            "column": 3,
+            "endLine": 400,
+            "endColumn": 41
+          }
+        }
+      ],
+      "character": {
+        "personality": [
+          {
+            "trait": "observant",
+            "intensity": "very",
+            "span": {
+              "line": 398,
+              "column": 21,
+              "endLine": 398,
+              "endColumn": 35
+            }
+          },
+          {
+            "trait": "honest",
+            "span": {
+              "line": 398,
+              "column": 37,
+              "endLine": 398,
+              "endColumn": 43
+            }
+          },
+          {
+            "trait": "protective",
+            "span": {
+              "line": 398,
+              "column": 45,
+              "endLine": 398,
+              "endColumn": 55
+            }
+          },
+          {
+            "trait": "warm",
+            "span": {
+              "line": 398,
+              "column": 57,
+              "endLine": 398,
+              "endColumn": 61
+            }
+          }
+        ],
+        "mood": "concerned",
+        "feels": [
+          {
+            "disposition": "devoted to",
+            "target": "stephanie-bordeau",
+            "span": {
+              "line": 403,
+              "column": 3,
+              "endLine": 403,
+              "endColumn": 37
+            }
+          },
+          {
+            "disposition": "likes",
+            "target": "chelsea-sumner",
+            "span": {
+              "line": 404,
+              "column": 3,
+              "endLine": 404,
+              "endColumn": 36
+            }
+          },
+          {
+            "disposition": "likes",
+            "target": "player",
+            "span": {
+              "line": 405,
+              "column": 3,
+              "endLine": 405,
+              "endColumn": 32
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "jack-margolin",
+            "span": {
+              "line": 406,
+              "column": 3,
+              "endLine": 406,
+              "endColumn": 30
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "john-barber",
+            "span": {
+              "line": 407,
+              "column": 3,
+              "endLine": 407,
+              "endColumn": 28
+            }
+          }
+        ],
+        "knows": [
+          {
+            "topic": "stephanie-death",
+            "source": "told",
+            "confidence": "certain",
+            "span": {
+              "line": 408,
+              "column": 3,
+              "endLine": 408,
+              "endColumn": 39
+            }
+          },
+          {
+            "topic": "executor-of-will",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 409,
+              "column": 3,
+              "endLine": 409,
+              "endColumn": 45
+            }
+          },
+          {
+            "topic": "viola-secret",
+            "source": "witnessed",
+            "confidence": "certain",
+            "confided": true,
+            "span": {
+              "line": 410,
+              "column": 3,
+              "endLine": 410,
+              "endColumn": 51
+            }
+          },
+          {
+            "topic": "ross-at-bar",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 411,
+              "column": 3,
+              "endLine": 411,
+              "endColumn": 40
+            }
+          },
+          {
+            "topic": "jack-debts",
+            "source": "told",
+            "confidence": "suspects",
+            "span": {
+              "line": 412,
+              "column": 3,
+              "endLine": 412,
+              "endColumn": 35
+            }
+          },
+          {
+            "topic": "chelsea-locket",
+            "source": "witnessed",
+            "confidence": "suspects",
+            "span": {
+              "line": 413,
+              "column": 3,
+              "endLine": 413,
+              "endColumn": 44
+            }
+          },
+          {
+            "topic": "john-business",
+            "source": "told",
+            "confidence": "suspects",
+            "span": {
+              "line": 414,
+              "column": 3,
+              "endLine": 414,
+              "endColumn": 38
+            }
+          }
+        ],
+        "thinks": [],
+        "profile": {
+          "perception": "accurate",
+          "belief-formation": "flexible",
+          "coherence": "focused",
+          "lucidity": "stable",
+          "self-model": "intact"
+        },
+        "spreads": {
+          "kind": "spreads",
+          "topics": [
+            "stephanie-death",
+            "ross-at-bar",
+            "jack-debts",
+            "chelsea-locket",
+            "john-business"
+          ],
+          "to": "anyone",
+          "except": [],
+          "span": {
+            "line": 416,
+            "column": 3,
+            "endLine": 416,
+            "endColumn": 104
+          }
+        },
+        "goals": [],
+        "influences": [],
+        "resists": [],
+        "temperaments": [
+          {
+            "name": "catherine-shelby@temperament-1",
+            "span": {
+              "line": 419,
+              "column": 3,
+              "endLine": 419,
+              "endColumn": 29
+            }
+          }
+        ],
+        "principles": [
+          {
+            "category": "betray a confidence",
+            "span": {
+              "line": 417,
+              "column": 3,
+              "endLine": 417,
+              "endColumn": 29
+            }
+          }
+        ],
+        "obligations": [
+          {
+            "kind": "protects",
+            "scope": {
+              "kind": "entity",
+              "value": "chelsea-sumner"
+            },
+            "span": {
+              "line": 418,
+              "column": 3,
+              "endLine": 418,
+              "endColumn": 26
+            }
+          }
+        ],
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "restaurant",
+        "span": {
+          "line": 401,
+          "column": 3,
+          "endLine": 401,
+          "endColumn": 20
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "catherine-shelby.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the viola secret",
+            "aliases": [
+              "viola-secret",
+              "violas secret"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-viola-secret-reveal",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 426,
+                "column": 5,
+                "endLine": 426,
+                "endColumn": 41
+              }
+            }
+          ],
+          "span": {
+            "line": 425,
+            "column": 3,
+            "endLine": 426,
+            "endColumn": 41
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "viola",
+            "aliases": [
+              "viola wainright",
+              "the actress"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-viola-guarded",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 428,
+                "column": 5,
+                "endLine": 428,
+                "endColumn": 35
+              }
+            }
+          ],
+          "span": {
+            "line": 427,
+            "column": 3,
+            "endLine": 428,
+            "endColumn": 35
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "stephanie",
+            "aliases": [
+              "stephanie bordeau"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-stephanie-grief",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 430,
+                "column": 5,
+                "endLine": 430,
+                "endColumn": 37
+              }
+            }
+          ],
+          "span": {
+            "line": 429,
+            "column": 3,
+            "endLine": 430,
+            "endColumn": 37
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the will",
+            "aliases": [
+              "the estate"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-will-executor",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 432,
+                "column": 5,
+                "endLine": 432,
+                "endColumn": 35
+              }
+            }
+          ],
+          "span": {
+            "line": 431,
+            "column": 3,
+            "endLine": 432,
+            "endColumn": 35
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "ross",
+            "aliases": [
+              "ross bielack"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-ross-alibi",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 434,
+                "column": 5,
+                "endLine": 434,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 433,
+            "column": 3,
+            "endLine": 434,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "chelsea",
+            "aliases": [
+              "chelsea sumner"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-chelsea-protective",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 436,
+                "column": 5,
+                "endLine": 436,
+                "endColumn": 40
+              }
+            }
+          ],
+          "span": {
+            "line": 435,
+            "column": 3,
+            "endLine": 436,
+            "endColumn": 40
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "jack",
+            "aliases": [
+              "jack margolin",
+              "margolin"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-jack-debts",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 438,
+                "column": 5,
+                "endLine": 438,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 437,
+            "column": 3,
+            "endLine": 438,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "john",
+            "aliases": [
+              "john barber"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-john-suspects",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 440,
+                "column": 5,
+                "endLine": 440,
+                "endColumn": 35
+              }
+            }
+          ],
+          "span": {
+            "line": 439,
+            "column": 3,
+            "endLine": 440,
+            "endColumn": 35
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the alibi",
+            "aliases": [
+              "last night"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-alibi-restaurant",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 442,
+                "column": 5,
+                "endLine": 442,
+                "endColumn": 38
+              }
+            }
+          ],
+          "span": {
+            "line": 441,
+            "column": 3,
+            "endLine": 442,
+            "endColumn": 38
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the guests",
+            "aliases": [
+              "the hotel"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "catherine-guests-gossip",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 444,
+                "column": 5,
+                "endLine": 444,
+                "endColumn": 35
+              }
+            }
+          ],
+          "span": {
+            "line": 443,
+            "column": 3,
+            "endLine": 444,
+            "endColumn": 35
+          }
+        }
+      ],
+      "span": {
+        "line": 397,
+        "column": 1,
+        "endLine": 421,
+        "endColumn": 132
+      }
+    },
+    {
+      "id": "jack-margolin",
+      "name": "Jack Margolin",
+      "article": null,
+      "aka": [
+        "jack",
+        "mogul"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 450,
+            "column": 3,
+            "endLine": 450,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 450,
+            "column": 13,
+            "endLine": 450,
+            "endColumn": 19
+          }
+        },
+        {
+          "name": "accusable",
+          "config": [
+            {
+              "key": "verdict",
+              "value": "wrong-jack",
+              "valueKind": "word"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 452,
+            "column": 3,
+            "endLine": 452,
+            "endColumn": 36
+          }
+        }
+      ],
+      "character": {
+        "personality": [
+          {
+            "trait": "aggressive",
+            "intensity": "very",
+            "span": {
+              "line": 450,
+              "column": 21,
+              "endLine": 450,
+              "endColumn": 36
+            }
+          },
+          {
+            "trait": "dishonest",
+            "span": {
+              "line": 450,
+              "column": 38,
+              "endLine": 450,
+              "endColumn": 47
+            }
+          },
+          {
+            "trait": "cowardly",
+            "span": {
+              "line": 450,
+              "column": 49,
+              "endLine": 450,
+              "endColumn": 57
+            }
+          }
+        ],
+        "mood": "agitated",
+        "feels": [
+          {
+            "disposition": "dislikes",
+            "target": "player",
+            "span": {
+              "line": 455,
+              "column": 3,
+              "endLine": 455,
+              "endColumn": 35
+            }
+          },
+          {
+            "disposition": "dislikes",
+            "target": "john-barber",
+            "span": {
+              "line": 456,
+              "column": 3,
+              "endLine": 456,
+              "endColumn": 36
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "stephanie-bordeau",
+            "span": {
+              "line": 457,
+              "column": 3,
+              "endLine": 457,
+              "endColumn": 34
+            }
+          }
+        ],
+        "knows": [
+          {
+            "topic": "stephanie-death",
+            "source": "told",
+            "confidence": "certain",
+            "span": {
+              "line": 458,
+              "column": 3,
+              "endLine": 458,
+              "endColumn": 39
+            }
+          },
+          {
+            "topic": "property-debt",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 459,
+              "column": 3,
+              "endLine": 459,
+              "endColumn": 42
+            }
+          },
+          {
+            "topic": "hotel-deed",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 460,
+              "column": 3,
+              "endLine": 460,
+              "endColumn": 39
+            }
+          }
+        ],
+        "thinks": [
+          {
+            "factId": "solvency",
+            "value": "ruined",
+            "confidence": "certain",
+            "source": "witnessed",
+            "span": {
+              "line": 461,
+              "column": 3,
+              "endLine": 461,
+              "endColumn": 52
+            }
+          }
+        ],
+        "profile": {
+          "perception": "accurate",
+          "belief-formation": "flexible",
+          "coherence": "focused",
+          "lucidity": "stable",
+          "self-model": "intact"
+        },
+        "spreads": {
+          "kind": "spreads",
+          "topics": [
+            "stephanie-death"
+          ],
+          "to": "anyone",
+          "except": [],
+          "span": {
+            "line": 463,
+            "column": 3,
+            "endLine": 463,
+            "endColumn": 36
+          }
+        },
+        "goals": [],
+        "influences": [
+          {
+            "name": "bullying",
+            "mode": "active",
+            "range": "targeted",
+            "effect": {
+              "mood": "nervous"
+            },
+            "witnessed": "jack-bullies",
+            "resisted": "jack-bullying-resisted",
+            "span": {
+              "line": 467,
+              "column": 3,
+              "endLine": 471,
+              "endColumn": 16
+            }
+          }
+        ],
+        "resists": [],
+        "temperaments": [
+          {
+            "name": "jack-margolin@temperament-1",
+            "span": {
+              "line": 465,
+              "column": 3,
+              "endLine": 465,
+              "endColumn": 30
+            }
+          }
+        ],
+        "principles": [],
+        "obligations": [],
+        "honor": {
+          "scope": {
+            "kind": "anyone"
+          },
+          "except": [],
+          "faceActs": [
+            "backs down",
+            "shows fear",
+            "admits fault",
+            "pleads",
+            "accepts insult",
+            "caught lying"
+          ],
+          "span": {
+            "line": 464,
+            "column": 3,
+            "endLine": 464,
+            "endColumn": 22
+          }
+        },
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "room-three-oh-eight",
+        "span": {
+          "line": 453,
+          "column": 3,
+          "endLine": 453,
+          "endColumn": 32
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "jack-margolin.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the property",
+            "aliases": [
+              "the property debt",
+              "property-debt",
+              "the debt"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "jack-property-broke",
+              "params": [],
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "entity",
+                  "id": "jack-margolin"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "cornered"
+                }
+              },
+              "span": {
+                "line": 478,
+                "column": 5,
+                "endLine": 478,
+                "endColumn": 62
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "jack-property-denies",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 479,
+                "column": 5,
+                "endLine": 479,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 477,
+            "column": 3,
+            "endLine": 479,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "stephanie",
+            "aliases": [
+              "stephanie bordeau"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "jack-stephanie-bluster",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 481,
+                "column": 5,
+                "endLine": 481,
+                "endColumn": 34
+              }
+            }
+          ],
+          "span": {
+            "line": 480,
+            "column": 3,
+            "endLine": 481,
+            "endColumn": 34
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the hotel",
+            "aliases": [
+              "the deed"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "jack-hotel-brags",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 483,
+                "column": 5,
+                "endLine": 483,
+                "endColumn": 28
+              }
+            }
+          ],
+          "span": {
+            "line": 482,
+            "column": 3,
+            "endLine": 483,
+            "endColumn": 28
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the alibi",
+            "aliases": [
+              "room service",
+              "last night"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "jack-alibi-room-service",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 485,
+                "column": 5,
+                "endLine": 485,
+                "endColumn": 35
+              }
+            }
+          ],
+          "span": {
+            "line": 484,
+            "column": 3,
+            "endLine": 485,
+            "endColumn": 35
+          }
+        }
+      ],
+      "span": {
+        "line": 449,
+        "column": 1,
+        "endLine": 473,
+        "endColumn": 106
+      }
+    },
+    {
+      "id": "chelsea-sumner",
+      "name": "Chelsea Sumner",
+      "article": null,
+      "aka": [
+        "chelsea",
+        "cigarette girl"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 491,
+            "column": 3,
+            "endLine": 491,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [
+        {
+          "name": "proper",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 491,
+            "column": 13,
+            "endLine": 491,
+            "endColumn": 19
+          }
+        },
+        {
+          "name": "accusable",
+          "config": [
+            {
+              "key": "verdict",
+              "value": "wrong-chelsea",
+              "valueKind": "word"
+            }
+          ],
+          "condition": null,
+          "span": {
+            "line": 493,
+            "column": 3,
+            "endLine": 493,
+            "endColumn": 39
+          }
+        }
+      ],
+      "character": {
+        "personality": [
+          {
+            "trait": "honest",
+            "span": {
+              "line": 491,
+              "column": 21,
+              "endLine": 491,
+              "endColumn": 27
+            }
+          },
+          {
+            "trait": "nervous",
+            "intensity": "very",
+            "span": {
+              "line": 491,
+              "column": 29,
+              "endLine": 491,
+              "endColumn": 41
+            }
+          },
+          {
+            "trait": "curious",
+            "span": {
+              "line": 491,
+              "column": 43,
+              "endLine": 491,
+              "endColumn": 50
+            }
+          }
+        ],
+        "mood": "fearful",
+        "feels": [
+          {
+            "disposition": "likes",
+            "target": "catherine-shelby",
+            "span": {
+              "line": 496,
+              "column": 3,
+              "endLine": 496,
+              "endColumn": 38
+            }
+          },
+          {
+            "disposition": "likes",
+            "target": "player",
+            "span": {
+              "line": 497,
+              "column": 3,
+              "endLine": 497,
+              "endColumn": 32
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "john-barber",
+            "span": {
+              "line": 498,
+              "column": 3,
+              "endLine": 498,
+              "endColumn": 28
+            }
+          },
+          {
+            "disposition": "wary of",
+            "target": "jack-margolin",
+            "span": {
+              "line": 499,
+              "column": 3,
+              "endLine": 499,
+              "endColumn": 30
+            }
+          }
+        ],
+        "knows": [
+          {
+            "topic": "stephanie-death",
+            "source": "told",
+            "confidence": "certain",
+            "span": {
+              "line": 500,
+              "column": 3,
+              "endLine": 500,
+              "endColumn": 39
+            }
+          },
+          {
+            "topic": "locket-photo",
+            "source": "witnessed",
+            "confidence": "certain",
+            "span": {
+              "line": 501,
+              "column": 3,
+              "endLine": 501,
+              "endColumn": 41
+            }
+          },
+          {
+            "topic": "possible-daughter",
+            "source": "told",
+            "confidence": "suspects",
+            "span": {
+              "line": 502,
+              "column": 3,
+              "endLine": 502,
+              "endColumn": 42
+            }
+          },
+          {
+            "topic": "catherine-knows-truth",
+            "source": "inferred",
+            "confidence": "suspects",
+            "span": {
+              "line": 503,
+              "column": 3,
+              "endLine": 503,
+              "endColumn": 50
+            }
+          }
+        ],
+        "thinks": [],
+        "profile": {
+          "perception": "accurate",
+          "belief-formation": "flexible",
+          "coherence": "focused",
+          "lucidity": "stable",
+          "self-model": "intact"
+        },
+        "spreads": {
+          "kind": "spreads",
+          "topics": [
+            "stephanie-death"
+          ],
+          "to": "trusted",
+          "except": [],
+          "span": {
+            "line": 505,
+            "column": 3,
+            "endLine": 505,
+            "endColumn": 37
+          }
+        },
+        "goals": [
+          {
+            "id": "seek-truth",
+            "priority": "high",
+            "activeWhen": null,
+            "steps": [
+              {
+                "kind": "seek",
+                "target": "catherine-shelby",
+                "in": "restaurant",
+                "span": {
+                  "line": 509,
+                  "column": 5,
+                  "endLine": 509,
+                  "endColumn": 44
+                }
+              },
+              {
+                "kind": "say",
+                "phraseKey": "chelsea-asks-catherine",
+                "target": "catherine-shelby",
+                "span": {
+                  "line": 510,
+                  "column": 5,
+                  "endLine": 510,
+                  "endColumn": 51
+                }
+              }
+            ],
+            "span": {
+              "line": 508,
+              "column": 3,
+              "endLine": 511,
+              "endColumn": 11
+            }
+          }
+        ],
+        "influences": [],
+        "resists": [
+          {
+            "influence": "bullying",
+            "span": {
+              "line": 513,
+              "column": 3,
+              "endLine": 513,
+              "endColumn": 19
+            }
+          }
+        ],
+        "temperaments": [],
+        "principles": [
+          {
+            "category": "lie",
+            "span": {
+              "line": 506,
+              "column": 3,
+              "endLine": 506,
+              "endColumn": 13
+            }
+          }
+        ],
+        "obligations": [],
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "foyer",
+        "span": {
+          "line": 494,
+          "column": 3,
+          "endLine": 494,
+          "endColumn": 15
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "chelsea-sumner.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the locket",
+            "aliases": [
+              "the locket photo",
+              "locket-photo"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "chelsea-locket-admits",
+              "params": [],
+              "stmtWhen": {
+                "kind": "feels",
+                "subject": {
+                  "kind": "entity",
+                  "id": "chelsea-sumner"
+                },
+                "disposition": "likes",
+                "target": {
+                  "kind": "player"
+                }
+              },
+              "span": {
+                "line": 520,
+                "column": 5,
+                "endLine": 520,
+                "endColumn": 83
+              }
+            },
+            {
+              "kind": "phrase",
+              "phraseKey": "chelsea-locket-clutch",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 521,
+                "column": 5,
+                "endLine": 521,
+                "endColumn": 33
+              }
+            }
+          ],
+          "span": {
+            "line": 519,
+            "column": 3,
+            "endLine": 521,
+            "endColumn": 33
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the mother",
+            "aliases": [
+              "the daughter"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "chelsea-mother-evades",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 523,
+                "column": 5,
+                "endLine": 523,
+                "endColumn": 33
+              }
+            }
+          ],
+          "span": {
+            "line": 522,
+            "column": 3,
+            "endLine": 523,
+            "endColumn": 33
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "stephanie",
+            "aliases": [
+              "stephanie bordeau"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "chelsea-stephanie-grief",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 525,
+                "column": 5,
+                "endLine": 525,
+                "endColumn": 35
+              }
+            }
+          ],
+          "span": {
+            "line": 524,
+            "column": 3,
+            "endLine": 525,
+            "endColumn": 35
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the alibi",
+            "aliases": [
+              "the rounds",
+              "last night"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "chelsea-alibi-rounds",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 527,
+                "column": 5,
+                "endLine": 527,
+                "endColumn": 32
+              }
+            }
+          ],
+          "span": {
+            "line": 526,
+            "column": 3,
+            "endLine": 527,
+            "endColumn": 32
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "catherine",
+            "aliases": [
+              "catherine shelby"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "chelsea-catherine-warm",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 529,
+                "column": 5,
+                "endLine": 529,
+                "endColumn": 34
+              }
+            }
+          ],
+          "span": {
+            "line": 528,
+            "column": 3,
+            "endLine": 529,
+            "endColumn": 34
+          }
+        }
+      ],
+      "span": {
+        "line": 490,
+        "column": 1,
+        "endLine": 515,
+        "endColumn": 125
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 943,
+          "column": 3,
+          "endLine": 943,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 942,
+      "column": 1,
+      "endLine": 944,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "accuse-whom": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Accuse whom?",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 544,
+            "column": 5,
+            "endLine": 545,
+            "endColumn": 19
+          }
+        },
+        "accuse-not-suspect": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "{capitalize the suspect} {verb:isn't suspect} a suspect in this case.",
+              "markers": [
+                "capitalize the suspect",
+                "verb:isn't suspect"
+              ]
+            }
+          ],
+          "span": {
+            "line": 546,
+            "column": 5,
+            "endLine": 547,
+            "endColumn": 76
+          }
+        },
+        "ross-intimidates": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Ross squares his shoulders.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 585,
+            "column": 1,
+            "endLine": 587,
+            "endColumn": 11
+          }
+        },
+        "ross-intimidation-resisted": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The look slides right off.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 589,
+            "column": 1,
+            "endLine": 591,
+            "endColumn": 11
+          }
+        },
+        "john-searches-room": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Papers rustle somewhere above.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 593,
+            "column": 1,
+            "endLine": 595,
+            "endColumn": 11
+          }
+        },
+        "john-menace-noticed": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The room gets quieter around John Barber.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 597,
+            "column": 1,
+            "endLine": 599,
+            "endColumn": 11
+          }
+        },
+        "john-menace-lifted": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The weight of John Barber's attention lifts as you go.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 601,
+            "column": 1,
+            "endLine": 603,
+            "endColumn": 11
+          }
+        },
+        "jack-bullies": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Jack leans in, too close.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 605,
+            "column": 1,
+            "endLine": 607,
+            "endColumn": 11
+          }
+        },
+        "jack-bullying-resisted": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The bluster breaks like a wave.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 609,
+            "column": 1,
+            "endLine": 611,
+            "endColumn": 11
+          }
+        },
+        "chelsea-asks-catherine": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Chelsea leans toward Catherine, voice low.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 613,
+            "column": 1,
+            "endLine": 615,
+            "endColumn": 11
+          }
+        },
+        "ross-stephanie-angry": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Ross slams his glass down. \"Don't. Don't you put her name in your mouth like a question.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 619,
+            "column": 1,
+            "endLine": 622,
+            "endColumn": 11
+          }
+        },
+        "ross-stephanie-sad": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Ross turns his glass in slow circles. \"She was the only one in this hotel who never wanted a thing from me. Now ask me who I think that leaves.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 624,
+            "column": 1,
+            "endLine": 628,
+            "endColumn": 11
+          }
+        },
+        "ross-relationship-admits": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"We weren't a secret, whatever the papers would've made of it. I loved her. There. Write it in your little book.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 630,
+            "column": 1,
+            "endLine": 633,
+            "endColumn": 11
+          }
+        },
+        "ross-relationship-deflect": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"A gentleman doesn't discuss a lady.\" He says it like a line he practiced in a mirror.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 635,
+            "column": 1,
+            "endLine": 638,
+            "endColumn": 11
+          }
+        },
+        "ross-gambling-truth": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "He drops his voice. \"Fine. I owe — owed — her money. Cards. She bankrolled my whole career and I paid her back in losses. That's the truth, and it's ugly enough without a murder on top.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 640,
+            "column": 1,
+            "endLine": 644,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "debts",
+            "value": "owed"
+          }
+        },
+        "ross-gambling-denies": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Debts?\" He laughs too fast. \"Paid. Every cent, months ago. Whoever told you different is selling something.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 646,
+            "column": 1,
+            "endLine": 649,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "debts",
+            "value": "paid"
+          }
+        },
+        "ross-alibi-bar": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I was on this stool from seven until they found her. Catherine kept the whiskey coming. Ask her.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 651,
+            "column": 1,
+            "endLine": 654,
+            "endColumn": 11
+          }
+        },
+        "ross-jack-opinion": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Margolin?\" Ross spits the name. \"Man would sell his own mother a leaky roof. Stephanie had his deed, you know. Had him by the throat.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 656,
+            "column": 1,
+            "endLine": 659,
+            "endColumn": 11
+          }
+        },
+        "viola-stephanie-fond": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Viola's eyes shine, precisely as much as grief requires. \"Stephanie was a great woman. The city is smaller tonight.\" It is a beautiful performance.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 663,
+            "column": 1,
+            "endLine": 667,
+            "endColumn": 11
+          }
+        },
+        "viola-family-denies": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Family? Stephanie had none — that was half her tragedy.\" A small, perfect smile. \"We were friendly strangers, she and I.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 669,
+            "column": 1,
+            "endLine": 672,
+            "endColumn": 11
+          }
+        },
+        "viola-alibi-rehearsal": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I was at McVicker's until ten — the director kept us late on the second act. I came back and the hotel was already full of policemen.\" She smooths her glove, unhurried.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 674,
+            "column": 1,
+            "endLine": 678,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "whereabouts",
+            "value": "theatre"
+          }
+        },
+        "viola-inheritance-cool": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Inheritance is a subject for relatives and vultures, detective. I am told I am neither.\" The word RELATIVES sits oddly in her mouth.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 680,
+            "column": 1,
+            "endLine": 683,
+            "endColumn": 11
+          }
+        },
+        "viola-program-caught": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You hold up the program: rehearsal, eight until NINE. Viola looks at it for a long moment, and something behind the poise goes very still. \"Printers,\" she says lightly, \"make mistakes.\" Her hands do not.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 685,
+            "column": 1,
+            "endLine": 689,
+            "endColumn": 11
+          }
+        },
+        "viola-killer-denies": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"The killer?\" She shakes her head slowly. \"Detective, look around you. Grief, debt, secrets — but murder? I don't believe any soul in this hotel had it in them. Some accident. Some stranger.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 691,
+            "column": 1,
+            "endLine": 695,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "killer",
+            "value": "nobody"
+          }
+        },
+        "viola-confesses": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The poise cracks — all at once, like ice on a pond. \"The ballroom. We argued in the BALLROOM. She called our father a mistake she'd finally outlived — outlived, that was the word — and the cord was in my hands before I knew it had left the curtain.\" She looks at her hands as if they belonged to the costume. \"I carried her upstairs. I made it neat. It's what I do — I stage things.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 697,
+            "column": 1,
+            "endLine": 704,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "whereabouts",
+            "value": "ballroom"
+          }
+        },
+        "viola-truth-deflect": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"The truth is a role like any other, detective. Everyone here is playing it a little differently.\" She smiles, and it almost holds.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 706,
+            "column": 1,
+            "endLine": 709,
+            "endColumn": 11
+          }
+        },
+        "viola-stands-by-it": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I said it once, and it cost me everything I had saved up to say it.\" Her voice is level, empty of theatre. \"The ballroom. The cord. I will not take it back.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 716,
+            "column": 1,
+            "endLine": 720,
+            "endColumn": 11
+          }
+        },
+        "viola-alibi-dropped": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"The theatre let us out at nine. You hold the program; I have no use for the lie now.\" She looks at her gloves without putting them on.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 722,
+            "column": 1,
+            "endLine": 725,
+            "endColumn": 11
+          }
+        },
+        "viola-killer-confessed": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"You already know who, detective. I told you what happened in the ballroom — don't ask me to say the word as well. It will be said in a courtroom soon enough.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 727,
+            "column": 1,
+            "endLine": 731,
+            "endColumn": 11
+          }
+        },
+        "viola-family-owns": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Half-sisters. Same father, different luck — the family money never learned my name.\" A small, tired shrug. \"That was the last thing I had left to keep, and I find I don't want it.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 733,
+            "column": 1,
+            "endLine": 737,
+            "endColumn": 11
+          }
+        },
+        "john-business-reveal": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A long, flat pause; something behind his eyes closes like a ledger. \"Stephanie financed my operations. I collected what she was owed and kept certain hands off her investments. She trusted me with that. Remember I did not give it up easily.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 741,
+            "column": 1,
+            "endLine": 746,
+            "endColumn": 11
+          }
+        },
+        "john-stephanie-respect": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Miss Bordeau was serious about her affairs. I respect serious people.\" He offers nothing else.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 748,
+            "column": 1,
+            "endLine": 751,
+            "endColumn": 11
+          }
+        },
+        "john-alibi-docks": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I left before ten. Business at the docks.\" He does not elaborate. Men like Barber never do.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 753,
+            "column": 1,
+            "endLine": 756,
+            "endColumn": 11
+          }
+        },
+        "john-jack-flat": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Margolin is loud. Loud men owe money.\" He straightens a cuff. \"That is arithmetic, not gossip.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 758,
+            "column": 1,
+            "endLine": 761,
+            "endColumn": 11
+          }
+        },
+        "catherine-viola-secret-reveal": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Catherine takes off her spectacles, and suddenly looks ten years older. \"Stephanie told me once, and told no one else. Viola is her half-sister. Same father. The family money went one way, and it did not go toward Viola.\" She looks at the door. \"I promised. Remember that I promised.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 765,
+            "column": 1,
+            "endLine": 771,
+            "endColumn": 11
+          }
+        },
+        "catherine-viola-guarded": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Something crosses Catherine's face and is gone. \"Miss Wainright stays here often. She and Stephanie were... acquainted.\" The pause is a door closing.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 773,
+            "column": 1,
+            "endLine": 777,
+            "endColumn": 11
+          }
+        },
+        "catherine-stephanie-grief": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Thirty years I knew her. Thirty years.\" Catherine folds a napkin that was already folded. \"Whoever did this ate her food and drank her wine. You find them, detective.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 779,
+            "column": 1,
+            "endLine": 783,
+            "endColumn": 11
+          }
+        },
+        "catherine-will-executor": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I'm the executor, yes — Stephanie's choice, not mine. The estate is substantial and the will is old. Older than some of the people who'd like to be in it.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 785,
+            "column": 1,
+            "endLine": 789,
+            "endColumn": 11
+          }
+        },
+        "catherine-ross-alibi": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Ross was at the bar all evening; I served him myself.\" A beat. \"I stepped away perhaps twenty minutes, closing the restaurant. But he was there when I left and there when I came back, deeper in the same glass.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 791,
+            "column": 1,
+            "endLine": 796,
+            "endColumn": 11
+          }
+        },
+        "catherine-chelsea-protective": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Catherine's voice cools five degrees. \"Chelsea is a good girl doing honest work, and whatever you're implying, detective, you may take it up with me instead.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 798,
+            "column": 1,
+            "endLine": 802,
+            "endColumn": 11
+          }
+        },
+        "catherine-jack-debts": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Margolin owes — owed — Stephanie more than the hotel's worth. She held the deed to his precious block. He's been sweating through his collars for a month.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 804,
+            "column": 1,
+            "endLine": 808,
+            "endColumn": 11
+          }
+        },
+        "catherine-john-suspects": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Mr. Barber and Stephanie had dealings I was not part of. He is politer than his reputation. That is all I will swear to.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 810,
+            "column": 1,
+            "endLine": 813,
+            "endColumn": 11
+          }
+        },
+        "catherine-alibi-restaurant": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I was here, closing up. Chelsea can tell you — she was through on her rounds.\" She says it easily, a woman with nothing to count.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 815,
+            "column": 1,
+            "endLine": 818,
+            "endColumn": 11
+          }
+        },
+        "catherine-guests-gossip": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Catherine leans in, dropping her voice into the register reserved for the best gossip. \"Ask me about anyone in this hotel, detective. Thirty years, and I have watched every one of them.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 820,
+            "column": 1,
+            "endLine": 824,
+            "endColumn": 11
+          }
+        },
+        "jack-property-broke": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Jack's face goes from red to grey. \"You want it? Fine. She held my deed. The debt comes due this quarter and I am RUINED, detective, ruined — and now she's dead and it looks like a motive, and that's exactly why I'd never have touched her!\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 828,
+            "column": 1,
+            "endLine": 833,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "solvency",
+            "value": "ruined"
+          }
+        },
+        "jack-property-denies": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"My finances are SOUND.\" He says it loudly enough for the whole floor. \"Margolin properties are the bedrock of this neighborhood. Bedrock!\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 835,
+            "column": 1,
+            "endLine": 838,
+            "endColumn": 11
+          },
+          "claims": {
+            "factId": "solvency",
+            "value": "sound"
+          }
+        },
+        "jack-stephanie-bluster": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Tragic. Tragic! A great loss for the city.\" He mops his neck with a silk handkerchief. \"We had business, sure. Everyone had business with Stephanie Bordeau.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 840,
+            "column": 1,
+            "endLine": 844,
+            "endColumn": 11
+          }
+        },
+        "jack-hotel-brags": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Finest block I own — I mean, finest block in the ward.\" The slip hangs in the air a moment too long before he talks over it.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 846,
+            "column": 1,
+            "endLine": 849,
+            "endColumn": 11
+          }
+        },
+        "jack-alibi-room-service": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"In my suite all night. Rang for room service at nine — steak, rare. Check with the kitchen, they stamp the tickets.\" On this one point he sounds genuinely unworried.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 851,
+            "column": 1,
+            "endLine": 855,
+            "endColumn": 11
+          }
+        },
+        "chelsea-locket-admits": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Chelsea's hand goes to her collar and draws out a small silver locket. Inside, a photograph: a young woman with Stephanie's unmistakable eyes. \"My mother gave me up when I was born. I came here because — because I think it was HER, detective. And now I'll never get to ask.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 859,
+            "column": 1,
+            "endLine": 864,
+            "endColumn": 11
+          }
+        },
+        "chelsea-locket-clutch": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Chelsea's hand closes over something at her collar. \"It's just a locket. It was my mother's.\" She won't meet your eyes, but she won't lie to them either.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 866,
+            "column": 1,
+            "endLine": 870,
+            "endColumn": 11
+          }
+        },
+        "chelsea-mother-evades": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I never knew my mother.\" The tray trembles, just barely. \"Is there anything else? I have my rounds.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 872,
+            "column": 1,
+            "endLine": 875,
+            "endColumn": 11
+          }
+        },
+        "chelsea-stephanie-grief": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Miss Bordeau was kind to me. Kinder than she had to be.\" Her eyes fill. \"I keep thinking I should have said something to her, while there was time. There was something I wanted to ask her.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 877,
+            "column": 1,
+            "endLine": 881,
+            "endColumn": 11
+          }
+        },
+        "chelsea-alibi-rounds": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"I was on the ground floor all evening — foyer, bar, restaurant, around and around. People saw me everywhere.\" She counts the rooms on her fingers, earnest as arithmetic.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 883,
+            "column": 1,
+            "endLine": 887,
+            "endColumn": 11
+          }
+        },
+        "chelsea-catherine-warm": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Catherine looks out for me. She's the only one here who does.\" A small, real smile. \"Whatever she told you, you can believe it.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 889,
+            "column": 1,
+            "endLine": 892,
+            "endColumn": 11
+          }
+        },
+        "viola-guilty": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Viola listens to the accusation all the way through, and then — as if a curtain came down — stops performing. \"The ballroom. The cord. The program was the mistake; everything else was staged to the inch.\" She draws off her gloves, finger by finger. \"Our father owed us both a life, detective. I only collected mine late.\" The police take her at the foyer doors, and the Alderman Hotel breathes again.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 896,
+            "column": 1,
+            "endLine": 903,
+            "endColumn": 11
+          }
+        },
+        "case-collapsed": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Three accusations, three denials, and the ward has run out of patience. By morning the case belongs to a downtown man with a cigar, and the Alderman Hotel keeps its secret. Whoever killed Stephanie Bordeau walks out through the foyer like any other guest.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 905,
+            "column": 1,
+            "endLine": 910,
+            "endColumn": 11
+          }
+        },
+        "accuse-ross-wrong": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Ross comes off the stool with his fists balled. \"I LOVED her!\" It takes two porters to sit him back down, and the whole bar has heard the accusation fail.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 912,
+            "column": 1,
+            "endLine": 916,
+            "endColumn": 11
+          }
+        },
+        "accuse-john-wrong": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "John Barber looks at you the way a ledger looks at a smudge. \"No, detective. And you have just spent one of your chances on a man who collects debts, not lives.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 918,
+            "column": 1,
+            "endLine": 922,
+            "endColumn": 11
+          }
+        },
+        "accuse-catherine-wrong": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Catherine goes white, then very quiet. \"Thirty years her friend.\" The words land harder than shouting. Around you, the staff's faces close like shutters.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 924,
+            "column": 1,
+            "endLine": 928,
+            "endColumn": 11
+          }
+        },
+        "accuse-jack-wrong": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Jack bellows loudly enough to rattle the glassware, threatens three separate lawsuits, and demands a telegram be sent to his lawyer, his alderman, and his mother. The room-service ticket, stamped nine o'clock, does the actual arguing.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 930,
+            "column": 1,
+            "endLine": 935,
+            "endColumn": 11
+          }
+        },
+        "accuse-chelsea-wrong": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Chelsea drops her tray. In the ringing silence that follows, half the foyer saw her face — and no one who saw it believes she did it.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 937,
+            "column": 1,
+            "endLine": 940,
+            "endColumn": 11
+          }
+        },
+        "foyer.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The hotel foyer. Marble floors, a cold fireplace with an iron poker on its hook, and the murmur of a hotel pretending nothing has happened. The ballroom doors stand south; the bar is east, the restaurant west, and the grand staircase climbs north.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 135,
+            "column": 3,
+            "endLine": 138,
+            "endColumn": 40
+          }
+        },
+        "bar.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The hotel bar, all dark wood and low light. Bottles glitter behind the counter. The foyer is back west.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 144,
+            "column": 3,
+            "endLine": 145,
+            "endColumn": 35
+          }
+        },
+        "ballroom.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The ballroom, dressed for a reception that never happened. A music stand lies toppled by the stage, and near it a dark stain has soaked into the parquet. The tall stage curtain hangs crooked. The foyer is north.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 151,
+            "column": 3,
+            "endLine": 154,
+            "endColumn": 9
+          }
+        },
+        "restaurant.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "White tablecloths and upturned chairs. The kitchen is north; the foyer is east.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 161,
+            "column": 3,
+            "endLine": 162,
+            "endColumn": 11
+          }
+        },
+        "kitchen.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Clean and ready for a morning prep that no one has started. Every knife sits in its block. The restaurant is south.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 168,
+            "column": 3,
+            "endLine": 169,
+            "endColumn": 52
+          }
+        },
+        "staircase.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The grand staircase, carpeted in red. Room 302 is north along the third-floor landing; Jack Margolin's suite, 308, is east. The foyer is below, south.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 177,
+            "column": 3,
+            "endLine": 179,
+            "endColumn": 16
+          }
+        },
+        "room-three-oh-two.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Stephanie Bordeau's room. It is tidy — too tidy. Nothing here says struggle; everything says arranged. The landing is south.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 185,
+            "column": 3,
+            "endLine": 186,
+            "endColumn": 60
+          }
+        },
+        "room-three-oh-eight.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Jack Margolin's suite: cigar smoke, ledgers, and a nightstand with a half-open drawer. The landing is west.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 192,
+            "column": 3,
+            "endLine": 193,
+            "endColumn": 41
+          }
+        },
+        "stage-curtain.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Heavy velvet, hanging crooked. The tie-back cord has been torn away — the ripped stub still dangles from its ring.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 202,
+            "column": 3,
+            "endLine": 203,
+            "endColumn": 47
+          }
+        },
+        "dark-stain.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A dark stain soaked into the parquet near the toppled music stand. Someone scrubbed at it and gave up.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 210,
+            "column": 3,
+            "endLine": 211,
+            "endColumn": 38
+          }
+        },
+        "curtain-cord.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A silk curtain tie-back, frayed at one end where it was torn from its ring. It has been coiled and tucked behind the wardrobe, and it did not come from this room.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 217,
+            "column": 3,
+            "endLine": 219,
+            "endColumn": 27
+          }
+        },
+        "theatre-program.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A program from McVicker's Theatre, dropped near the ballroom doors. The evening rehearsal of The Winter Rose is printed plainly: eight until NINE o'clock.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 225,
+            "column": 3,
+            "endLine": 227,
+            "endColumn": 22
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A house detective with a notebook.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 236,
+            "column": 3,
+            "endLine": 236,
+            "endColumn": 37
+          }
+        },
+        "stephanie-bordeau.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The late owner of the Alderman Hotel, laid out on her own bed. Whoever brought her here arranged her carefully — but the thin bruised line across her throat was made by something narrow and strong, and there is no sign of it having happened in this room.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 242,
+            "column": 3,
+            "endLine": 245,
+            "endColumn": 49
+          }
+        },
+        "ross-bielack.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A broad-shouldered man in his late twenties with calloused hands and an uneasy smile. He smells faintly of whiskey.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 273,
+            "column": 3,
+            "endLine": 273,
+            "endColumn": 118
+          }
+        },
+        "viola-wainright.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A striking woman in her mid-thirties with dark eyes and an actress's poise. Every gesture seems rehearsed.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 315,
+            "column": 3,
+            "endLine": 315,
+            "endColumn": 109
+          }
+        },
+        "john-barber.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A lean man in a perfectly tailored suit. He watches everything with flat, appraising eyes.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 379,
+            "column": 3,
+            "endLine": 379,
+            "endColumn": 93
+          }
+        },
+        "catherine-shelby.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A handsome woman in her fifties with sharp eyes behind wire-rimmed spectacles. She moves through the restaurant like she owns it.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 421,
+            "column": 3,
+            "endLine": 421,
+            "endColumn": 132
+          }
+        },
+        "jack-margolin.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A heavyset man with a red face and a diamond stickpin. He fills every room he enters with sheer volume.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 473,
+            "column": 3,
+            "endLine": 473,
+            "endColumn": 106
+          }
+        },
+        "chelsea-sumner.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A young woman in her early twenties with auburn hair and anxious green eyes. She carries a tray of cigarettes and matches.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 515,
+            "column": 3,
+            "endLine": 515,
+            "endColumn": 125
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [],
+  "hatches": [],
+  "traits": [
+    {
+      "name": "accusable",
+      "data": [
+        {
+          "name": "verdict",
+          "type": "one-of",
+          "optional": false,
+          "initial": null,
+          "oneOf": [
+            "guilty",
+            "wrong-ross",
+            "wrong-john",
+            "wrong-catherine",
+            "wrong-jack",
+            "wrong-chelsea"
+          ]
+        }
+      ],
+      "states": [],
+      "statesReversible": false,
+      "scores": [],
+      "onClauses": [
+        {
+          "clauseKind": "on",
+          "once": false,
+          "action": "accusing",
+          "actor": {
+            "kind": "player"
+          },
+          "binding": "object",
+          "role": null,
+          "condition": null,
+          "ordering": null,
+          "routing": "capability",
+          "narration": "presence",
+          "body": [
+            {
+              "kind": "win",
+              "phraseKey": "viola-guilty",
+              "stmtWhen": {
+                "kind": "predicate",
+                "pred": "is",
+                "negated": false,
+                "subject": {
+                  "kind": "field",
+                  "base": {
+                    "kind": "it"
+                  },
+                  "field": "verdict"
+                },
+                "object": {
+                  "kind": "symbol",
+                  "name": "guilty"
+                }
+              },
+              "span": {
+                "line": 554,
+                "column": 5,
+                "endLine": 554,
+                "endColumn": 44
+              }
+            },
+            {
+              "kind": "select-on",
+              "subject": {
+                "kind": "field",
+                "base": {
+                  "kind": "it"
+                },
+                "field": "verdict"
+              },
+              "arms": [
+                {
+                  "value": "wrong-ross",
+                  "body": [
+                    {
+                      "kind": "raise",
+                      "counter": "accusations",
+                      "owner": null,
+                      "amount": 1,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 557,
+                        "column": 9,
+                        "endLine": 557,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "change-mood",
+                      "mood": "furious",
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 558,
+                        "column": 9,
+                        "endLine": 558,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "accuse-ross-wrong",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 559,
+                        "column": 9,
+                        "endLine": 559,
+                        "endColumn": 33
+                      }
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": "case-collapsed",
+                      "stmtWhen": {
+                        "kind": "compare",
+                        "op": "gte",
+                        "left": {
+                          "kind": "counter",
+                          "name": "accusations",
+                          "owner": null
+                        },
+                        "right": {
+                          "kind": "literal",
+                          "value": "3",
+                          "valueType": "number"
+                        }
+                      },
+                      "span": {
+                        "line": 560,
+                        "column": 9,
+                        "endLine": 560,
+                        "endColumn": 59
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 556,
+                    "column": 7,
+                    "endLine": 556,
+                    "endColumn": 22
+                  }
+                },
+                {
+                  "value": "wrong-john",
+                  "body": [
+                    {
+                      "kind": "raise",
+                      "counter": "accusations",
+                      "owner": null,
+                      "amount": 1,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 562,
+                        "column": 9,
+                        "endLine": 562,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "accuse-john-wrong",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 563,
+                        "column": 9,
+                        "endLine": 563,
+                        "endColumn": 33
+                      }
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": "case-collapsed",
+                      "stmtWhen": {
+                        "kind": "compare",
+                        "op": "gte",
+                        "left": {
+                          "kind": "counter",
+                          "name": "accusations",
+                          "owner": null
+                        },
+                        "right": {
+                          "kind": "literal",
+                          "value": "3",
+                          "valueType": "number"
+                        }
+                      },
+                      "span": {
+                        "line": 564,
+                        "column": 9,
+                        "endLine": 564,
+                        "endColumn": 59
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 561,
+                    "column": 7,
+                    "endLine": 561,
+                    "endColumn": 22
+                  }
+                },
+                {
+                  "value": "wrong-catherine",
+                  "body": [
+                    {
+                      "kind": "raise",
+                      "counter": "accusations",
+                      "owner": null,
+                      "amount": 1,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 566,
+                        "column": 9,
+                        "endLine": 566,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "accuse-catherine-wrong",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 567,
+                        "column": 9,
+                        "endLine": 567,
+                        "endColumn": 38
+                      }
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": "case-collapsed",
+                      "stmtWhen": {
+                        "kind": "compare",
+                        "op": "gte",
+                        "left": {
+                          "kind": "counter",
+                          "name": "accusations",
+                          "owner": null
+                        },
+                        "right": {
+                          "kind": "literal",
+                          "value": "3",
+                          "valueType": "number"
+                        }
+                      },
+                      "span": {
+                        "line": 568,
+                        "column": 9,
+                        "endLine": 568,
+                        "endColumn": 59
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 565,
+                    "column": 7,
+                    "endLine": 565,
+                    "endColumn": 27
+                  }
+                },
+                {
+                  "value": "wrong-jack",
+                  "body": [
+                    {
+                      "kind": "raise",
+                      "counter": "accusations",
+                      "owner": null,
+                      "amount": 1,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 570,
+                        "column": 9,
+                        "endLine": 570,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "change-mood",
+                      "mood": "furious",
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 571,
+                        "column": 9,
+                        "endLine": 571,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "accuse-jack-wrong",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 572,
+                        "column": 9,
+                        "endLine": 572,
+                        "endColumn": 33
+                      }
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": "case-collapsed",
+                      "stmtWhen": {
+                        "kind": "compare",
+                        "op": "gte",
+                        "left": {
+                          "kind": "counter",
+                          "name": "accusations",
+                          "owner": null
+                        },
+                        "right": {
+                          "kind": "literal",
+                          "value": "3",
+                          "valueType": "number"
+                        }
+                      },
+                      "span": {
+                        "line": 573,
+                        "column": 9,
+                        "endLine": 573,
+                        "endColumn": 59
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 569,
+                    "column": 7,
+                    "endLine": 569,
+                    "endColumn": 22
+                  }
+                },
+                {
+                  "value": "wrong-chelsea",
+                  "body": [
+                    {
+                      "kind": "raise",
+                      "counter": "accusations",
+                      "owner": null,
+                      "amount": 1,
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 575,
+                        "column": 9,
+                        "endLine": 575,
+                        "endColumn": 31
+                      }
+                    },
+                    {
+                      "kind": "phrase",
+                      "phraseKey": "accuse-chelsea-wrong",
+                      "params": [],
+                      "stmtWhen": null,
+                      "span": {
+                        "line": 576,
+                        "column": 9,
+                        "endLine": 576,
+                        "endColumn": 36
+                      }
+                    },
+                    {
+                      "kind": "lose",
+                      "phraseKey": "case-collapsed",
+                      "stmtWhen": {
+                        "kind": "compare",
+                        "op": "gte",
+                        "left": {
+                          "kind": "counter",
+                          "name": "accusations",
+                          "owner": null
+                        },
+                        "right": {
+                          "kind": "literal",
+                          "value": "3",
+                          "valueType": "number"
+                        }
+                      },
+                      "span": {
+                        "line": 577,
+                        "column": 9,
+                        "endLine": 577,
+                        "endColumn": 59
+                      }
+                    }
+                  ],
+                  "span": {
+                    "line": 574,
+                    "column": 7,
+                    "endLine": 574,
+                    "endColumn": 25
+                  }
+                }
+              ],
+              "span": {
+                "line": 555,
+                "column": 5,
+                "endLine": 578,
+                "endColumn": 15
+              }
+            }
+          ],
+          "span": {
+            "line": 553,
+            "column": 3,
+            "endLine": 579,
+            "endColumn": 9
+          }
+        }
+      ],
+      "span": {
+        "line": 549,
+        "column": 1,
+        "endLine": 580,
+        "endColumn": 10
+      }
+    }
+  ],
+  "actions": [
+    {
+      "name": "accusing",
+      "patterns": [
+        {
+          "parts": [
+            {
+              "kind": "word",
+              "word": "accuse"
+            },
+            {
+              "kind": "slot",
+              "word": "suspect"
+            }
+          ],
+          "cardinality": null
+        }
+      ],
+      "constraints": [
+        {
+          "slot": "suspect",
+          "requirement": "reachable"
+        }
+      ],
+      "musts": [],
+      "refusals": [
+        {
+          "kind": "without",
+          "slot": "suspect",
+          "phraseKey": "accuse-whom",
+          "span": {
+            "line": 540,
+            "column": 3,
+            "endLine": 540,
+            "endColumn": 38
+          }
+        }
+      ],
+      "otherwise": "accuse-not-suspect",
+      "scores": [],
+      "body": [],
+      "span": {
+        "line": 536,
+        "column": 1,
+        "endLine": 543,
+        "endColumn": 16
+      }
+    }
+  ],
+  "scores": [],
+  "ranks": [],
+  "counters": [
+    {
+      "name": "accusations",
+      "starts": 0,
+      "lo": 0,
+      "hi": 3,
+      "span": {
+        "line": 534,
+        "column": 1,
+        "endLine": 534,
+        "endColumn": 43
+      }
+    }
+  ],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false,
+  "facts": [
+    {
+      "id": "killer",
+      "name": "killer",
+      "article": "the",
+      "values": [
+        "ross-bielack",
+        "viola-wainright",
+        "john-barber",
+        "catherine-shelby",
+        "jack-margolin",
+        "chelsea-sumner",
+        "nobody"
+      ],
+      "span": {
+        "line": 110,
+        "column": 1,
+        "endLine": 112,
+        "endColumn": 9
+      }
+    },
+    {
+      "id": "whereabouts",
+      "name": "whereabouts",
+      "article": "the",
+      "values": [
+        "theatre",
+        "ballroom"
+      ],
+      "span": {
+        "line": 114,
+        "column": 1,
+        "endLine": 116,
+        "endColumn": 9
+      }
+    },
+    {
+      "id": "debts",
+      "name": "debts",
+      "article": "the",
+      "values": [
+        "paid",
+        "owed"
+      ],
+      "span": {
+        "line": 118,
+        "column": 1,
+        "endLine": 120,
+        "endColumn": 9
+      }
+    },
+    {
+      "id": "solvency",
+      "name": "solvency",
+      "article": "the",
+      "values": [
+        "sound",
+        "ruined"
+      ],
+      "span": {
+        "line": 122,
+        "column": 1,
+        "endLine": 124,
+        "endColumn": 9
+      }
+    }
+  ],
+  "witnessedTopics": [
+    {
+      "actor": "john-barber",
+      "act": "betray a confidence",
+      "alias": "johns-slip",
+      "span": {
+        "line": 382,
+        "column": 1,
+        "endLine": 382,
+        "endColumn": 60
+      }
+    }
+  ],
+  "customMoods": [
+    {
+      "name": "composed",
+      "like": "calm",
+      "span": {
+        "line": 95,
+        "column": 1,
+        "endLine": 95,
+        "endColumn": 31
+      }
+    },
+    {
+      "name": "concerned",
+      "like": "anxious",
+      "but": "stiller",
+      "span": {
+        "line": 96,
+        "column": 1,
+        "endLine": 96,
+        "endColumn": 48
+      }
+    },
+    {
+      "name": "agitated",
+      "like": "anxious",
+      "but": "restless",
+      "span": {
+        "line": 97,
+        "column": 1,
+        "endLine": 97,
+        "endColumn": 48
+      }
+    },
+    {
+      "name": "fearful",
+      "like": "anxious",
+      "but": "darker",
+      "span": {
+        "line": 98,
+        "column": 1,
+        "endLine": 98,
+        "endColumn": 45
+      }
+    }
+  ],
+  "customPersonalities": [
+    {
+      "name": "defensive",
+      "span": {
+        "line": 81,
+        "column": 1,
+        "endLine": 81,
+        "endColumn": 29
+      }
+    },
+    {
+      "name": "deceptive",
+      "span": {
+        "line": 82,
+        "column": 1,
+        "endLine": 82,
+        "endColumn": 29
+      }
+    },
+    {
+      "name": "charming",
+      "span": {
+        "line": 83,
+        "column": 1,
+        "endLine": 83,
+        "endColumn": 28
+      }
+    },
+    {
+      "name": "bitter",
+      "span": {
+        "line": 84,
+        "column": 1,
+        "endLine": 84,
+        "endColumn": 26
+      }
+    },
+    {
+      "name": "guarded",
+      "span": {
+        "line": 85,
+        "column": 1,
+        "endLine": 85,
+        "endColumn": 27
+      }
+    },
+    {
+      "name": "cold",
+      "span": {
+        "line": 86,
+        "column": 1,
+        "endLine": 86,
+        "endColumn": 24
+      }
+    },
+    {
+      "name": "intelligent",
+      "span": {
+        "line": 87,
+        "column": 1,
+        "endLine": 87,
+        "endColumn": 31
+      }
+    },
+    {
+      "name": "observant",
+      "span": {
+        "line": 88,
+        "column": 1,
+        "endLine": 88,
+        "endColumn": 29
+      }
+    },
+    {
+      "name": "protective",
+      "span": {
+        "line": 89,
+        "column": 1,
+        "endLine": 89,
+        "endColumn": 30
+      }
+    },
+    {
+      "name": "warm",
+      "span": {
+        "line": 90,
+        "column": 1,
+        "endLine": 90,
+        "endColumn": 24
+      }
+    },
+    {
+      "name": "aggressive",
+      "span": {
+        "line": 91,
+        "column": 1,
+        "endLine": 91,
+        "endColumn": 30
+      }
+    },
+    {
+      "name": "dishonest",
+      "span": {
+        "line": 92,
+        "column": 1,
+        "endLine": 92,
+        "endColumn": 29
+      }
+    },
+    {
+      "name": "nervous",
+      "span": {
+        "line": 93,
+        "column": 1,
+        "endLine": 93,
+        "endColumn": 27
+      }
+    }
+  ],
+  "temperaments": [
+    {
+      "name": "professional",
+      "pairs": [
+        [
+          "duty",
+          "fear"
+        ],
+        [
+          "duty",
+          "desire"
+        ]
+      ],
+      "span": {
+        "line": 100,
+        "column": 1,
+        "endLine": 103,
+        "endColumn": 16
+      }
+    },
+    {
+      "name": "viola-wainright@temperament-1",
+      "pairs": [
+        [
+          "desire",
+          "fear"
+        ]
+      ],
+      "span": {
+        "line": 312,
+        "column": 3,
+        "endLine": 312,
+        "endColumn": 31
+      }
+    },
+    {
+      "name": "catherine-shelby@temperament-1",
+      "pairs": [
+        [
+          "duty",
+          "fear"
+        ]
+      ],
+      "span": {
+        "line": 419,
+        "column": 3,
+        "endLine": 419,
+        "endColumn": 29
+      }
+    },
+    {
+      "name": "jack-margolin@temperament-1",
+      "pairs": [
+        [
+          "honor",
+          "fear"
+        ]
+      ],
+      "span": {
+        "line": 465,
+        "column": 3,
+        "endLine": 465,
+        "endColumn": 30
+      }
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+[33mThe CJS build of Vite's Node API is deprecated. See https://vite.dev/guide/troubleshooting.html#vite-cjs-node-api-deprecated for more details.[39m
+stderr | tests/adr-329-goal-steps.test.ts > goal steps run through the execution entry — ADR-329 Acceptance item 3, through real turns > a refusal on the recipient blocks the `give`: the letter stays, the step does not advance, and the refusal narrates each turn it is retried
+[phrase] blocked event "if.event.give_blocked" rendered blank: no template registered for "not-yours" and no inline fallback
+
+stderr | tests/adr-329-goal-steps.test.ts > goal steps run through the execution entry — ADR-329 Acceptance item 3, through real turns > a refusal on the recipient blocks the `give`: the letter stays, the step does not advance, and the refusal narrates each turn it is retried
+[phrase] blocked event "if.event.give_blocked" rendered blank: no template registered for "not-yours" and no inline fallback
+
+stderr | tests/adr-329-act-statement.test.ts > the guards take the sword — ADR-329 Acceptance item 2, through a real turn > a refusal on the guards' take leaves the sword in the Yard, fires no `after`, and narrates the refusal (D5)
+[phrase] blocked event "if.event.take_blocked" rendered blank: no template registered for "not-theirs" and no inline fallback
+
+stderr | tests/adr-329-d10-perform-step.test.ts > a goal step in an action's own words — ADR-329 Acceptance item 7, through real turns > a refused `perform` leaves the world unchanged, does not advance, and narrates its refusal to the present player each turn
+[phrase] blocked event "if.event.open_blocked" rendered blank: no template registered for "not-now" and no inline fallback
+
+stderr | tests/adr-329-d10-perform-step.test.ts > a goal step in an action's own words — ADR-329 Acceptance item 7, through real turns > a refused `perform` leaves the world unchanged, does not advance, and narrates its refusal to the present player each turn
+[phrase] blocked event "if.event.open_blocked" rendered blank: no template registered for "not-now" and no inline fallback
+
+stderr | tests/adr-330-chapters.test.ts > ADR-330 chapters on the real path > Acceptance 7: `during`/`before`/`after` read the current chapter — an intercept, an arrival phrase at the boundary, and a blocked exit
+[phrase] blocked event "if.event.smell_blocked" rendered blank: no template registered for "smell-market" and no inline fallback
+
+stderr | tests/adr-330-chapters.test.ts > ADR-330 chapters on the real path > Acceptance 7: `during`/`before`/`after` read the current chapter — an intercept, an arrival phrase at the boundary, and a blocked exit
+[phrase] blocked event "if.event.smell_blocked" rendered blank: no template registered for "smell-later" and no inline fallback
+

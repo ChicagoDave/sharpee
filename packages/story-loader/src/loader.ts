@@ -149,6 +149,7 @@ import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_F
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { findChordLiteral } from './hatch-context.js';
+import { classifiesAs } from './kind-classification.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
 import { withLineBreaks } from './text.js';
@@ -971,7 +972,7 @@ export class ChordStory implements Story {
    * The loaded story's answer surface for the character runtime (ADR-310
    * Phase 5): compiled conditions evaluate through the loader's own
    * evaluator with `it` bound to the asking NPC; kind membership reads
-   * the IR's kind-noun compositions (the same source `is-a` uses).
+   * the IR's kind-noun compositions through the same rule `is-a` uses.
    */
   private storyOracle(): CompiledStoryOracle {
     return {
@@ -982,7 +983,7 @@ export class ChordStory implements Story {
       isKindMember: (entityId, kind) => {
         const irId = this.irIdOf(entityId);
         const irEntity = irId !== undefined ? this.ir.entities.find((e) => e.id === irId) : undefined;
-        return irEntity?.kinds.some((k) => k.name === kind) ?? false;
+        return irEntity !== undefined && classifiesAs(irEntity, kind);
       },
     };
   }
@@ -1730,6 +1731,9 @@ export class ChordStory implements Story {
         entity.add(new OpenableTrait({ isOpen: false }));
         break;
       }
+      // ADR-359 D1: `a thing` builds exactly what a block with no kind built
+      // before the kind line was required.
+      case 'thing':
       case null: {
         entity = world.createEntity(irEntity.name, 'object');
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));

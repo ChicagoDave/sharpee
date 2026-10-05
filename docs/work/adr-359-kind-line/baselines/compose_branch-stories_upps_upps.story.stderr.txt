@@ -1,0 +1,2 @@
+branch-stories/upps/upps.story:1:1 error [analysis.start-block-missing] This story never says who the player is. Add a `before the game starts` block assigning the role: `change the player to <character>`.
+compose: branch-stories/upps/upps.story failed the load-time gates (1 error(s))

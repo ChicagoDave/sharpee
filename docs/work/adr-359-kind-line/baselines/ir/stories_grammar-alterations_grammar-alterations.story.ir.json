@@ -1,0 +1,387 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "Grammar Alterations",
+    "fields": {
+      "id": "grammar-alterations",
+      "storyVersion": "0.0.1",
+      "authors": [
+        "Sharpee"
+      ],
+      "testers": [],
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "study",
+      "name": "Study",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 13,
+            "column": 3,
+            "endLine": 13,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "study.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 12,
+        "column": 1,
+        "endLine": 15,
+        "endColumn": 17
+      }
+    },
+    {
+      "id": "lamp",
+      "name": "lamp",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "study",
+        "span": {
+          "line": 18,
+          "column": 3,
+          "endLine": 18,
+          "endColumn": 15
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "lamp.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 17,
+        "column": 1,
+        "endLine": 20,
+        "endColumn": 16
+      }
+    },
+    {
+      "id": "book",
+      "name": "book",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "study",
+        "span": {
+          "line": 23,
+          "column": 3,
+          "endLine": 23,
+          "endColumn": 15
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "book.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 22,
+        "column": 1,
+        "endLine": 25,
+        "endColumn": 16
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 28,
+            "column": 3,
+            "endLine": 28,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "study",
+        "span": {
+          "line": 30,
+          "column": 3,
+          "endLine": 30,
+          "endColumn": 22
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 27,
+        "column": 1,
+        "endLine": 32,
+        "endColumn": 7
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 53,
+          "column": 3,
+          "endLine": 53,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 52,
+      "column": 1,
+      "endLine": 54,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "study.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A quiet study.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 15,
+            "column": 3,
+            "endLine": 15,
+            "endColumn": 17
+          }
+        },
+        "lamp.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A brass lamp.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 20,
+            "column": 3,
+            "endLine": 20,
+            "endColumn": 16
+          }
+        },
+        "book.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A dusty book.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 25,
+            "column": 3,
+            "endLine": 25,
+            "endColumn": 16
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 32,
+            "column": 3,
+            "endLine": 32,
+            "endColumn": 7
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [],
+  "hatches": [],
+  "traits": [],
+  "actions": [],
+  "scores": [],
+  "ranks": [],
+  "counters": [],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false,
+  "grammarExtensions": [
+    {
+      "action": "taking",
+      "patterns": [
+        {
+          "parts": [
+            {
+              "kind": "word",
+              "word": "snag"
+            },
+            {
+              "kind": "slot",
+              "word": "item"
+            }
+          ],
+          "cardinality": null
+        }
+      ],
+      "constraints": [],
+      "span": {
+        "line": 36,
+        "column": 1,
+        "endLine": 37,
+        "endColumn": 10
+      }
+    },
+    {
+      "action": "examining",
+      "patterns": [
+        {
+          "parts": [
+            {
+              "kind": "word",
+              "word": "read"
+            },
+            {
+              "kind": "slot",
+              "word": "target"
+            }
+          ],
+          "cardinality": null
+        }
+      ],
+      "constraints": [],
+      "span": {
+        "line": 48,
+        "column": 1,
+        "endLine": 49,
+        "endColumn": 10
+      }
+    }
+  ],
+  "grammarRemovals": [
+    {
+      "action": "taking",
+      "patterns": [
+        {
+          "parts": [
+            {
+              "kind": "word",
+              "word": "get"
+            },
+            {
+              "kind": "slot",
+              "word": "item"
+            }
+          ],
+          "cardinality": null
+        }
+      ],
+      "span": {
+        "line": 42,
+        "column": 1,
+        "endLine": 43,
+        "endColumn": 15
+      }
+    }
+  ]
+}

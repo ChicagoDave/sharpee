@@ -442,7 +442,7 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "wears": [],
     },
   ],
-  "format": "story language 4",
+  "format": "story language 5",
   "hasHatches": false,
   "hatches": [],
   "languageVersion": "3.6.0",

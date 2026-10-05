@@ -85,7 +85,7 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     // The story IS in the bundle: its IR carries the format stamp and the
     // story's own id, neither of which any platform package would supply.
     // (`sharpee init -y` titles the story after its directory.)
-    expect(game).toContain('story language 4');
+    expect(game).toContain('story language 5');
     expect(game).toContain('first-light');
     // ...and the COMPILER is not. This message exists only in chord's parser
     // (verified by grep across chord/story-loader/engine/platform-browser),
@@ -152,7 +152,7 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     // IR artifact for the IDE/tooling surface (David, 2026-07-18): dist/,
     // beside (not inside) the shipped page.
     const ir = JSON.parse(readFileSync(join(projectDir, 'dist', 'first-light.ir.json'), 'utf-8'));
-    expect(ir.format).toBe('story language 4');
+    expect(ir.format).toBe('story language 5');
     expect(ir.entities.length).toBeGreaterThan(0);
   }, 120_000);
 

@@ -15,8 +15,13 @@
  * docs/architecture/chord-grammar-changes.md.
  */
 
-/** v1 kind nouns (take an article: `a room`). Plain thing = no kind noun. */
+/**
+ * v1 kind nouns (take an article: `a room`). A plain object is `a thing`
+ * (ADR-359 D1); `thing` is also the parent of every kind but `room` and
+ * `region` when a condition classifies (`is a thing`).
+ */
 export const KIND_NOUNS: ReadonlySet<string> = new Set([
+  'thing',
   'room',
   'door',
   'person',

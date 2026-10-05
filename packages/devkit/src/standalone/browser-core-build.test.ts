@@ -65,7 +65,7 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     expect(statSync(join(outDir, 'game.js')).size).toBeGreaterThan(100_000);
     // The story is EMBEDDED as compiled IR — always, whatever the header says.
     expect(readFileSync(join(root, 'dist', '.browser-entry', 'fernhill', 'story-ir.ts'), 'utf-8'))
-      .toContain('story language 4');
+      .toContain('story language 5');
     // Whether the SOURCE also travels follows fernhill's own header (ADR-284).
     // Read from the story rather than pinned here: fernhill is a living example
     // and an author toggling `publish-source:` must not fail this test — it

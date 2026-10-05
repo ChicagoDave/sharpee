@@ -1,0 +1,1 @@
+compose: Chord 3.6.0 — stories/character-acceptance/chord/b1-no-temperament.story is gate-clean (--check: IR not emitted)

@@ -1,0 +1,423 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "Nautical",
+    "fields": {
+      "id": "nautical",
+      "storyVersion": "0.0.1",
+      "authors": [
+        "Sharpee Tests"
+      ],
+      "testers": [],
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "cockpit",
+      "name": "Cockpit",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 36,
+            "column": 3,
+            "endLine": 36,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "cockpit.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 35,
+        "column": 1,
+        "endLine": 38,
+        "endColumn": 61
+      }
+    },
+    {
+      "id": "tiller",
+      "name": "tiller",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [
+        {
+          "name": "scenery",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 41,
+            "column": 3,
+            "endLine": 41,
+            "endColumn": 10
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "cockpit",
+        "span": {
+          "line": 42,
+          "column": 3,
+          "endLine": 42,
+          "endColumn": 17
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "tiller.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 40,
+        "column": 1,
+        "endLine": 44,
+        "endColumn": 45
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 47,
+            "column": 3,
+            "endLine": 47,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "cockpit",
+        "span": {
+          "line": 49,
+          "column": 3,
+          "endLine": 49,
+          "endColumn": 24
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 46,
+        "column": 1,
+        "endLine": 51,
+        "endColumn": 31
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 54,
+          "column": 3,
+          "endLine": 54,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 53,
+      "column": 1,
+      "endLine": 55,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "sail-where": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Sail which way?",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 28,
+            "column": 5,
+            "endLine": 29,
+            "endColumn": 22
+          }
+        },
+        "no-aft": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "The boom slams across — never aft, not in this wind.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 30,
+            "column": 5,
+            "endLine": 31,
+            "endColumn": 59
+          }
+        },
+        "sailed": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You lean on the tiller and the sloop swings {the direction}.",
+              "markers": [
+                "the direction"
+              ]
+            }
+          ],
+          "span": {
+            "line": 32,
+            "column": 5,
+            "endLine": 33,
+            "endColumn": 67
+          }
+        },
+        "cockpit.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Teak decking, a worn tiller, and open water on every side.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 38,
+            "column": 3,
+            "endLine": 38,
+            "endColumn": 61
+          }
+        },
+        "tiller.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Worn smooth by three generations of hands.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 44,
+            "column": 3,
+            "endLine": 44,
+            "endColumn": 45
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Salt-streaked and squinting.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 51,
+            "column": 3,
+            "endLine": 51,
+            "endColumn": 31
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [],
+  "hatches": [],
+  "traits": [],
+  "actions": [
+    {
+      "name": "sailing",
+      "patterns": [
+        {
+          "parts": [
+            {
+              "kind": "word",
+              "word": "sail"
+            },
+            {
+              "kind": "slot",
+              "word": "direction"
+            }
+          ],
+          "cardinality": null
+        },
+        {
+          "parts": [
+            {
+              "kind": "slot",
+              "word": "direction"
+            }
+          ],
+          "cardinality": null
+        }
+      ],
+      "directions": [
+        {
+          "canonical": "port",
+          "aliases": [
+            "p"
+          ]
+        },
+        {
+          "canonical": "starboard",
+          "aliases": [
+            "sb"
+          ]
+        },
+        {
+          "canonical": "fore",
+          "aliases": []
+        },
+        {
+          "canonical": "aft",
+          "aliases": []
+        }
+      ],
+      "constraints": [],
+      "musts": [],
+      "refusals": [
+        {
+          "kind": "without",
+          "slot": "direction",
+          "phraseKey": "sail-where",
+          "span": {
+            "line": 23,
+            "column": 3,
+            "endLine": 23,
+            "endColumn": 39
+          }
+        },
+        {
+          "kind": "when",
+          "condition": {
+            "kind": "predicate",
+            "pred": "is",
+            "negated": false,
+            "subject": {
+              "kind": "slot",
+              "name": "direction"
+            },
+            "object": {
+              "kind": "symbol",
+              "name": "aft"
+            }
+          },
+          "phraseKey": "no-aft",
+          "span": {
+            "line": 24,
+            "column": 3,
+            "endLine": 24,
+            "endColumn": 43
+          }
+        }
+      ],
+      "otherwise": null,
+      "scores": [],
+      "body": [
+        {
+          "kind": "phrase",
+          "phraseKey": "sailed",
+          "params": [],
+          "stmtWhen": null,
+          "span": {
+            "line": 25,
+            "column": 3,
+            "endLine": 25,
+            "endColumn": 16
+          }
+        }
+      ],
+      "span": {
+        "line": 14,
+        "column": 1,
+        "endLine": 27,
+        "endColumn": 16
+      }
+    }
+  ],
+  "scores": [],
+  "ranks": [],
+  "counters": [],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false
+}

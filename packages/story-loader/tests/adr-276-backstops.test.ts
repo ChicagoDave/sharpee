@@ -207,9 +207,9 @@ create the wardrobe
 
   it('census 17: an unknown kind noun still throws', () => {
     const rogue = structuredClone(compileClean(BASE));
-    rogue.entities.find((e) => e.id === 'crate')!.kinds[0].name = 'thing';
+    rogue.entities.find((e) => e.id === 'crate')!.kinds[0].name = 'gadget';
     expect(load(rogue)).toThrowError(LoadError);
-    expect(load(rogue)).toThrowError(/unknown kind noun `thing`/);
+    expect(load(rogue)).toThrowError(/unknown kind noun `gadget`/);
   });
 
   it('census 18: multiple kind nouns still throw', () => {

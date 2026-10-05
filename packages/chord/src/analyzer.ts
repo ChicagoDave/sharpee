@@ -1450,9 +1450,27 @@ export class Analyzer {
             k.span,
           );
         }
+        // ADR-359 D1: a kind cannot come and go, so it never takes `while`.
+        if (k.condition !== null) {
+          this.diagnostics.error(
+            'analysis.conditional-kind',
+            `\`${entity.name}\`: a kind cannot come and go — remove the \`while\` condition from \`a ${k.name}\`.`,
+            k.span,
+          );
+        }
       }
-      // Census 18 (discovered in Phase 1): one kind noun per entity.
-      if (entity.kinds.length > 1) {
+      // ADR-359 D1: `a thing` beside another kind names the fix — every
+      // kind but room and region is already a thing.
+      const hasThing = entity.kinds.some((k) => k.name === 'thing');
+      const kindWithThing = hasThing ? entity.kinds.find((k) => k.name !== 'thing') : undefined;
+      if (kindWithThing) {
+        this.diagnostics.error(
+          'analysis.thing-with-kind',
+          thingWithKindMessage(entity.name, kindWithThing.name),
+          kindWithThing.span,
+        );
+      } else if (entity.kinds.length > 1) {
+        // Census 18 (discovered in Phase 1): one kind noun per entity.
         this.diagnostics.error(
           'analysis.multiple-kind-nouns',
           `\`${entity.name}\` declares more than one kind noun.`,
@@ -1462,6 +1480,20 @@ export class Analyzer {
 
       const isRoom = entity.kinds.some((k) => k.name === 'room');
       for (const comp of entity.traits) {
+        // ADR-359 D1: a kind noun written bare (`scenery, container`) reads
+        // as a trait; name the fix instead of an undeclared-trait error.
+        if (KIND_NOUNS.has(comp.name)) {
+          if (hasThing && comp.name !== 'thing') {
+            this.diagnostics.error('analysis.thing-with-kind', thingWithKindMessage(entity.name, comp.name), comp.span);
+          } else {
+            this.diagnostics.error(
+              'analysis.kind-noun-needs-article',
+              `\`${entity.name}\`: \`${comp.name}\` is a kind and takes an article — write \`a ${comp.name}\`.`,
+              comp.span,
+            );
+          }
+          continue;
+        }
         // Census 14: conditional composition legality — room-`dark`, or a
         // declared trait whose clauses are ALL NPC-behavior-shaped (`on
         // every turn …`). `proper` has its own earlier gates (ADR-242 D1).
@@ -7833,6 +7865,22 @@ function descriptionMarkerSites(text: string): DescriptionMarkerSite[] {
     sites.push({ marker: match[1], mode: mode ?? 'boundary' });
   }
   return sites;
+}
+
+/**
+ * The fix for `a thing` written beside another kind (ADR-359 D1).
+ *
+ * @param entityName the entity the block creates
+ * @param kind the other kind noun (`container`)
+ * @returns "a container is already a kind of thing; write `a container`",
+ *   or for a room or region, which are not things, the plain instruction to
+ *   keep one kind
+ */
+function thingWithKindMessage(entityName: string, kind: string): string {
+  if (kind === 'room' || kind === 'region') {
+    return `\`${entityName}\`: a ${kind} is not a thing — write \`a ${kind}\` alone.`;
+  }
+  return `\`${entityName}\`: a ${kind} is already a kind of thing; write \`a ${kind}\`.`;
 }
 
 /** True when `needle` appears in `haystack` in order (not necessarily adjacent). */

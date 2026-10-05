@@ -1,0 +1,85 @@
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "manage-package-manager-versions". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+stderr | src/commands/compose.test.ts > sharpee compose > writes valid Story IR JSON with -o (pure-IR story, load proof included)
+compose: Chord 3.6.0 — /Users/david/repos/sharpee/packages/chord/tests/fixtures/ac5-random.story loaded — 3 entities, 0 trait(s), 0 action(s), 0 hatch(es)
+compose: IR written to /var/folders/wb/k_3t0zsd7yq4hzylynb6fz3h0000gn/T/compose-test-ZfoNXR/ac5.ir.json
+
+
+  dist/web/gatehouse/game.js      1.4mb ⚠️
+  dist/web/gatehouse/game.js.map  2.8mb
+
+⚡ Done in 195ms
+
+  dist/web/harbor/game.js      1.4mb ⚠️
+  dist/web/harbor/game.js.map  2.8mb
+
+⚡ Done in 209ms
+✘ [ERROR] Expected identifier but found ";"
+
+    ../../../../../../private/var/folders/wb/k_3t0zsd7yq4hzylynb6fz3h0000gn/T/hatch-err-test-cgLe7d/extras.ts:1:23:
+      1 │ export const broken = {;
+        ╵                        ^
+
+
+  dist/web/hatch-bind/game.js  3.2mb ⚠️
+
+⚡ Done in 178ms
+
+  dist/web/first-light/game.js      1.4mb ⚠️
+  dist/web/first-light/game.js.map  2.8mb
+
+⚡ Done in 195ms
+
+  dist/web/harbor/game.js      1.4mb ⚠️
+  dist/web/harbor/game.js.map  2.8mb
+
+⚡ Done in 212ms
+
+  dist/web/hatch-bind/game.js  3.2mb ⚠️
+
+⚡ Done in 150ms
+
+  dist/web/first-light/game.js      1.4mb ⚠️
+  dist/web/first-light/game.js.map  2.8mb
+
+⚡ Done in 218ms
+
+  dist/web/harbor/game.js      1.4mb ⚠️
+  dist/web/harbor/game.js.map  2.8mb
+
+⚡ Done in 205ms
+stderr | tests/import-fs-resolver.test.ts > fs importResolver (ADR-251 Phase 2) > sharpee compose --check resolves the real import and passes the gate (exit 0)
+compose: Chord 3.6.0 — /Users/david/repos/sharpee/packages/devkit/tests/fixtures/import-basic/harbor.story is gate-clean (--check: IR not emitted)
+
+
+  dist/web/legacy/game.js      1.4mb ⚠️
+  dist/web/legacy/game.js.map  2.7mb
+
+⚡ Done in 131ms
+stderr | src/commands/world-index.test.ts > sharpee world-index > analyzes a compiled story and exits 0
+compose: Chord 3.6.0 — /Users/david/repos/sharpee/packages/chord/tests/fixtures/ac5-random.story loaded — 3 entities, 0 trait(s), 0 action(s), 0 hatch(es)
+compose: IR written to /var/folders/wb/k_3t0zsd7yq4hzylynb6fz3h0000gn/T/world-index-test-RHAr3v/analyzed.ir.json
+
+
+  dist/web/first-light/game.js      1.4mb ⚠️
+  dist/web/first-light/game.js.map  2.8mb
+
+⚡ Done in 127ms
+
+  dist/web/first-light/game.js      1.4mb ⚠️
+  dist/web/first-light/game.js.map  2.8mb
+
+⚡ Done in 116ms
+
+  dist/web/first-light/game.js      1.4mb ⚠️
+  dist/web/first-light/game.js.map  2.8mb
+
+⚡ Done in 127ms
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "manage-package-manager-versions". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "manage-package-manager-versions". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "manage-package-manager-versions". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "manage-package-manager-versions". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.

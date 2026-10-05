@@ -1,0 +1,1 @@
+compose: Chord 3.6.0 — stories/counter-demo/counter-demo.story is gate-clean (--check: IR not emitted)

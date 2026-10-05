@@ -24,7 +24,7 @@ describe('cloak.story IR', () => {
   });
 
   it('stamps the IR format version', () => {
-    expect(ir.format).toBe('story language 4');
+    expect(ir.format).toBe('story language 5');
     expect(ir.format).toBe(IR_FORMAT);
   });
 

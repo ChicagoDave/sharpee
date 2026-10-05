@@ -1,0 +1,1085 @@
+Loading story from: stories/dungeo
+Found 17 transcript(s) to run
+Chain mode: Game state will persist between transcripts
+Seed: 42 (seed:)
+
+Running: stories/dungeo/walkthroughs/wt-01-get-torch-early.transcript
+  "Get Torch Early (Save Lantern Battery)"
+
+  > look                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open window                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > take lantern                                     PASS
+  > take sword                                       PASS
+  > turn on lantern                                  PASS
+  > east                                             PASS
+  > up                                               PASS
+  > take rope                                        PASS
+  > down                                             PASS
+  > west                                             PASS
+  > move rug                                         PASS
+  > open trapdoor                                    PASS
+  > down                                             PASS
+  > east                                             PASS
+  > attack troll with sword                          PASS
+  > attack troll with sword                          PASS
+  > attack troll with sword                          PASS
+  > north                                            PASS
+  > north                                            PASS
+  > west                                             PASS
+  > east                                             PASS
+  > tie rope to railing                              PASS
+  > down                                             PASS
+  > take torch                                       PASS
+  > turn on torch                                    PASS
+  > turn off lantern                                 PASS
+  > look                                             PASS
+  > down                                             PASS
+  > south                                            PASS
+  > northwest                                        PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-01-get-torch-early.golden
+  34 passed (305ms)
+
+Running: stories/dungeo/walkthroughs/wt-02-bank-puzzle.transcript
+  "Bank of Zork Walkthrough"
+
+  > west                                             PASS
+  > northeast                                        PASS
+  > south                                            PASS
+  > take portrait                                    PASS
+  > north                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > walk through curtain                             PASS
+  > walk through south wall                          PASS
+  > walk through north wall                          PASS
+  > take zorkmid bills                               PASS
+  > walk through north wall                          PASS
+  > walk through curtain                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > inventory                                        PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-02-bank-puzzle.golden
+  16 passed (145ms)
+
+Running: stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.transcript
+  "Maze Cyclops Goal (Gallery, Maze, Cyclops)"
+
+  > take painting                                    PASS
+  > south                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > drop sword                                       PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > take incense                                     PASS
+  > take key                                         PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > say odysseus                                     PASS
+  > north                                            PASS
+  > east                                             PASS
+  > look                                             PASS
+  > inventory                                        PASS
+  > open trophy case                                 PASS
+  > put portrait in trophy case                      PASS
+  > put painting in trophy case                      PASS
+  > put zorkmid bills in trophy case                 PASS
+  > drop lantern                                     PASS
+  > drop incense                                     PASS
+  > drop key                                         PASS
+  > inventory                                        PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-03-maze-cyclops-goal.golden
+  28 passed (246ms)
+
+Running: stories/dungeo/walkthroughs/wt-04-dam-reservoir.transcript
+  "Dam Puzzle (Loud Room, Dam Controls, Drain Reservoir)"
+
+  > take lantern                                     PASS
+  > open trap door                                   PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > echo                                             PASS
+  > take bar                                         PASS
+  > up                                               PASS
+  > east                                             PASS
+  > north                                            PASS
+  > take guidebook                                   PASS
+  > take matchbook                                   PASS
+  > north                                            PASS
+  > press yellow button                              PASS
+  > take wrench                                      PASS
+  > take screwdriver                                 PASS
+  > south                                            PASS
+  > south                                            PASS
+  > turn bolt                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > north                                            PASS
+  > south                                            PASS
+  > south                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > read matchbook                                   PASS
+  > send for brochure                                PASS
+  > east                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > open mailbox                                     PASS
+  > take brochure                                    PASS
+  > take stamp                                       PASS
+  > north                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > open trophy case                                 PASS
+  > put bar in trophy case                           PASS
+  > put stamp in trophy case                         PASS
+  > drop guidebook                                   PASS
+  > drop matchbook                                   PASS
+  > drop brochure                                    PASS
+  > drop wrench                                      PASS
+  > drop screwdriver                                 PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-04-dam-reservoir.golden
+  58 passed (483ms)
+
+Running: stories/dungeo/walkthroughs/wt-05-reservoir.transcript
+  "Reservoir (Trunk and Pump)"
+
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > up                                               PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > north                                            PASS
+  > take trunk                                       PASS
+  > north                                            PASS
+  > take pump                                        PASS
+  > south                                            PASS
+  > south                                            PASS
+  > up                                               PASS
+  > east                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > north                                            PASS
+  > south                                            PASS
+  > south                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > drop trunk                                       PASS
+  > drop pump                                        PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-05-reservoir.golden
+  32 passed (269ms)
+
+Running: stories/dungeo/walkthroughs/wt-06-egyptian-room.transcript
+  "Egyptian Room (Gold Coffin)"
+
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > west                                             PASS
+  > northwest                                        PASS
+  > take coffin                                      PASS
+  > east                                             PASS
+  > west                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > open trophy case                                 PASS
+  > put coffin in trophy case                        PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-06-egyptian-room.golden
+  17 passed (177ms)
+
+Running: stories/dungeo/walkthroughs/wt-07-exorcism.transcript
+  "Exorcism (Bell/Book/Candle Ritual)"
+
+  > look                                             PASS
+  > inventory                                        PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > south                                            PASS
+  > up                                               PASS
+  > east                                             PASS
+  > take bell                                        PASS
+  > take book                                        PASS
+  > take candles                                     PASS
+  > west                                             PASS
+  > down                                             PASS
+  > east                                             PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > down                                             PASS
+  > ring bell                                        PASS
+  > read book                                        PASS
+  > turn on candles                                  PASS
+  > wait                                             PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > west                                             PASS
+  > northeast                                        PASS
+  > west                                             PASS
+  > west                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > wait                                             PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > north                                            PASS
+  > south                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-07-exorcism.golden
+  124 passed (1016ms)
+
+Running: stories/dungeo/walkthroughs/wt-08-river-rainbow.transcript
+  "River & Rainbow (Emerald, Statue, Pot of Gold)"
+
+  > drop lantern                                     PASS
+  > drop bell                                        PASS
+  > drop book                                        PASS
+  > drop candles                                     PASS
+  > take pump                                        PASS
+  > inventory                                        PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > up                                               PASS
+  > east                                             PASS
+  > down                                             PASS
+  > inflate boat with pump                           PASS
+  > drop pump                                        PASS
+  > put stick in boat                                PASS
+  > board boat                                       PASS
+  > launch                                           PASS
+  > down                                             PASS
+  > take buoy                                        PASS
+  > open buoy                                        PASS
+  > take emerald                                     PASS
+  > drop buoy                                        PASS
+  > look                                             PASS
+  > down                                             PASS
+  > west                                             PASS
+  > disembark                                        PASS
+  > northwest                                        PASS
+  > take shovel                                      PASS
+  > south                                            PASS
+  > board boat                                       PASS
+  > launch                                           PASS
+  > down                                             PASS
+  > west                                             PASS
+  > disembark                                        PASS
+  > take stick                                       PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > dig                                              PASS
+  > take statue                                      PASS
+  > drop shovel                                      PASS
+  > south                                            PASS
+  > south                                            PASS
+  > wave stick                                       PASS
+  > east                                             PASS
+  > east                                             PASS
+  > take pot                                         PASS
+  > southeast                                        PASS
+  > up                                               PASS
+  > up                                               PASS
+  > west                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > south                                            PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > open trophy case                                 PASS
+  > put emerald in trophy case                       PASS
+  > put statue in trophy case                        PASS
+  > put pot in trophy case                           PASS
+  > drop stick                                       PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-08-river-rainbow.golden
+  69 passed (544ms)
+
+Running: stories/dungeo/walkthroughs/wt-09-egg-tree.transcript
+  "Egg from Tree"
+
+  > east                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > up                                               PASS
+  > take egg                                         PASS
+  > inventory                                        PASS
+  > examine egg                                      PASS
+  > down                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > open trophy case                                 PASS
+  > put egg in trophy case                           PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-09-egg-tree.golden
+  17 passed (144ms)
+
+Running: stories/dungeo/walkthroughs/wt-10-tea-room.transcript
+  "Tea Room Area"
+
+  > east                                             PASS
+  > take bottle                                      PASS
+  > west                                             PASS
+  > open trap door                                   PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > south                                            PASS
+  > look                                             PASS
+  > southeast                                        PASS
+  > answer "a well"                                  PASS
+  > east                                             PASS
+  > take necklace                                    PASS
+  > east                                             PASS
+  > enter bucket                                     PASS
+  > pour water                                       PASS
+  > look                                             PASS
+  > exit bucket                                      PASS
+  > east                                             PASS
+  > take blue cake                                   PASS
+  > take red cake                                    PASS
+  > eat eat-me cake                                  PASS
+  > look                                             PASS
+  > east                                             PASS
+  > throw red cake at pool                           PASS
+  > take spices                                      PASS
+  > west                                             PASS
+  > eat blue cake                                    PASS
+  > look                                             PASS
+  > northwest                                        PASS
+  > tell robot to go east                            PASS
+  > east                                             PASS
+  > tell robot to push button                        PASS
+  > tell robot to go south                           PASS
+  > south                                            PASS
+  > take sphere                                      PASS
+  > tell robot to raise cage                         PASS
+  > take sphere                                      PASS
+  > inventory                                        PASS
+  > north                                            PASS
+  > west                                             PASS
+  > southeast                                        PASS
+  > west                                             PASS
+  > enter bucket                                     PASS
+  > fill bottle                                      PASS
+  > exit bucket                                      PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > north                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > open trophy case                                 PASS
+  > put necklace in trophy case                      PASS
+  > put spices in trophy case                        PASS
+  > put sphere in trophy case                        PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-10-tea-room.golden
+  61 passed (532ms)
+
+Running: stories/dungeo/walkthroughs/wt-11-coal-mine.transcript
+  "Coal Mine (Diamond, Bracelet)"
+
+  > take lantern                                     PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > southeast                                        PASS
+  > east                                             PASS
+  > rub mirror                                       PASS
+  > west                                             PASS
+  > west                                             PASS
+  > north                                            PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > west                                             PASS
+  > drop torch                                       PASS
+  > turn on lantern                                  PASS
+  > down                                             PASS
+  > take bracelet                                    PASS
+  > up                                               PASS
+  > take torch                                       PASS
+  > turn off lantern                                 PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > northeast                                        PASS
+  > northwest                                        PASS
+  > down                                             PASS
+  > down                                             PASS
+  > northeast                                        PASS
+  > take coal                                        PASS
+  > south                                            PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > put coal in machine                              PASS
+  > turn switch                                      PASS
+  > take diamond                                     PASS
+  > northwest                                        PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > up                                               PASS
+  > up                                               PASS
+  > east                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > rub mirror                                       PASS
+  > west                                             PASS
+  > northwest                                        PASS
+  > west                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > inventory                                        PASS
+  > open trophy case                                 PASS
+  > put diamond in trophy case                       PASS
+  > put bracelet in trophy case                      PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-11-coal-mine.golden
+  62 passed (610ms)
+
+Running: stories/dungeo/walkthroughs/wt-12-scattered-treasures.transcript
+  "Scattered Treasures (Violin, Coins, Grail, Trident, Blue Sphere, Jade, Red Sphere)"
+
+  > east                                             PASS
+  > take brown sack                                  PASS
+  > west                                             PASS
+  > take screwdriver                                 PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open box                                         PASS
+  > take violin                                      PASS
+  > east                                             PASS
+  > west                                             PASS
+  > northwest                                        PASS
+  > northwest                                        PASS
+  > north                                            PASS
+  > north                                            PASS
+  > north                                            PASS
+  > take trident                                     PASS
+  > southeast                                        PASS
+  > south                                            PASS
+  > south                                            PASS
+  > up                                               PASS
+  > southeast                                        PASS
+  > west                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > open trophy case                                 PASS
+  > put violin in trophy case                        PASS
+  > put trident in trophy case                       PASS
+  > down                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > north                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > east                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > west                                             PASS
+  > take welcome mat                                 PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > down                                             PASS
+  > east                                             PASS
+  > east                                             PASS
+  > up                                               PASS
+  > west                                             PASS
+  > look                                             PASS
+  > north                                            PASS
+  > put mat under door                               PASS
+  > push key with screwdriver                        PASS
+  > take mat                                         PASS
+  > unlock door with key                             PASS
+  > open door                                        PASS
+  > north                                            PASS
+  > look                                             PASS
+  > drop screwdriver                                 PASS
+  > drop mat                                         PASS
+  > drop key                                         PASS
+  > take blue crystal sphere                         PASS
+  > south                                            PASS
+  > east                                             PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > southeast                                        PASS
+  > east                                             PASS
+  > rub mirror                                       PASS
+  > west                                             PASS
+  > west                                             PASS
+  > north                                            PASS
+  > northwest                                        PASS
+  > take jade figurine                               PASS
+  > south                                            PASS
+  > south                                            PASS
+  > down                                             PASS
+  > down                                             PASS
+  > down                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > take red sphere                                  PASS
+  > north                                            PASS
+  > up                                               PASS
+  > down                                             PASS
+  > down                                             PASS
+  > up                                               PASS
+  > put blue crystal sphere in trophy case           PASS
+  > put jade in trophy case                          PASS
+  > put red crystal sphere in trophy case            PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-12-scattered-treasures.golden
+  101 passed (911ms)
+
+Running: stories/dungeo/walkthroughs/wt-13-thief-fight.transcript
+  "Thief Fight + Egg/Canary/Bauble"
+
+  > drop blue cake                                   PASS
+  > drop eat-me cake                                 PASS
+  > drop sack                                        PASS
+  > inventory                                        PASS
+  > east                                             PASS
+  > up                                               PASS
+  > take nasty knife                                 PASS
+  > take brick                                       PASS
+  > take shiny wire                                  PASS
+  > down                                             PASS
+  > west                                             PASS
+  > drop brick                                       PASS
+  > drop shiny wire                                  PASS
+  > open trophy case                                 PASS
+  > take egg                                         PASS
+  > turn on lantern                                  PASS
+  > open trap door                                   PASS
+  > down                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > up                                               PASS
+  > give egg to thief                                PASS
+  > down                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > up                                               PASS
+  > attack thief with knife                          PASS
+  > take stiletto                                    PASS
+  > attack thief with stiletto                       PASS
+  > attack thief with stiletto                       PASS
+  > attack thief with stiletto                       PASS
+  > attack thief with stiletto                       PASS
+  > attack thief with stiletto                       PASS
+  > attack thief with stiletto                       PASS
+  > attack thief with stiletto                       PASS
+  > drop knife                                       PASS
+  > take canary                                      PASS
+  > take egg                                         PASS
+  > take chalice                                     PASS
+  > take torch                                       PASS
+  > take grail                                       PASS
+  > take bag of coins                                PASS
+  > break frame                                      PASS
+  > take frame piece                                 PASS
+  > down                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > wind canary                                      PASS
+  > take bauble                                      PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > west                                             PASS
+  > open trophy case                                 PASS
+  > put canary in trophy case                        PASS
+  > put bauble in trophy case                        PASS
+  > put chalice in trophy case                       PASS
+  > put grail in trophy case                         PASS
+  > put bag of coins in trophy case                  PASS
+  > put egg in trophy case                           PASS
+  > open trap door                                   PASS
+  > down                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > up                                               PASS
+  > down                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open trophy case                                 PASS
+  > drop frame piece                                 PASS
+  > inventory                                        PASS
+  > look                                             PASS
+  > turn off lantern                                 PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-13-thief-fight.golden
+  91 passed (824ms)
+
+Running: stories/dungeo/walkthroughs/wt-14-royal-puzzle.transcript
+  "Royal Puzzle - Gold Card"
+
+  > open trap door                                   PASS
+  > down                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > southwest                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northeast                                        PASS
+  > up                                               PASS
+  > east                                             PASS
+  > down                                             PASS
+  > down                                             PASS
+  > push east wall                                   PASS
+  > south                                            PASS
+  > southwest                                        PASS
+  > push south wall                                  PASS
+  > east                                             PASS
+  > east                                             PASS
+  > push south wall                                  PASS
+  > north                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > push south wall                                  PASS
+  > take card                                        PASS
+  > push south wall                                  PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > push west wall                                   PASS
+  > push west wall                                   PASS
+  > push west wall                                   PASS
+  > push west wall                                   PASS
+  > northeast                                        PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > push east wall                                   PASS
+  > southwest                                        PASS
+  > south                                            PASS
+  > southeast                                        PASS
+  > northeast                                        PASS
+  > north                                            PASS
+  > push west wall                                   PASS
+  > northwest                                        PASS
+  > push south wall                                  PASS
+  > push south wall                                  PASS
+  > west                                             PASS
+  > northwest                                        PASS
+  > northwest                                        PASS
+  > push south wall                                  PASS
+  > southeast                                        PASS
+  > southeast                                        PASS
+  > southeast                                        PASS
+  > northeast                                        PASS
+  > push west wall                                   PASS
+  > push west wall                                   PASS
+  > southwest                                        PASS
+  > push north wall                                  PASS
+  > push north wall                                  PASS
+  > push north wall                                  PASS
+  > northwest                                        PASS
+  > up                                               PASS
+  > look                                             PASS
+  > up                                               PASS
+  > west                                             PASS
+  > down                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > open trophy case                                 PASS
+  > put gold card in trophy case                     PASS
+  > inventory                                        PASS
+  > look                                             PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-14-royal-puzzle.golden
+  73 passed (652ms)
+
+Running: stories/dungeo/walkthroughs/wt-15-volcano-balloon.transcript
+  "Volcano Balloon & Treasures"
+
+  > take guidebook                                   PASS
+  > take matchbook                                   PASS
+  > take brick                                       PASS
+  > take shiny wire                                  PASS
+  > inventory                                        PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > west                                             PASS
+  > northwest                                        PASS
+  > turn on lantern                                  PASS
+  > up                                               PASS
+  > throw torch at glacier                           PASS
+  > west                                             PASS
+  > take ruby                                        PASS
+  > west                                             PASS
+  > south                                            PASS
+  > enter balloon                                    PASS
+  > open receptacle                                  PASS
+  > burn guidebook                                   PASS
+  > put guidebook in receptacle                      PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > tie braided wire to hook                         PASS
+  > exit                                             PASS
+  > take coin                                        PASS
+  > south                                            PASS
+  > take book                                        PASS
+  > take stamp                                       PASS
+  > north                                            PASS
+  > enter balloon                                    PASS
+  > untie braided wire from hook                     PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > tie braided wire to hook                         PASS
+  > exit                                             PASS
+  > south                                            PASS
+  > put brick in hole                                PASS
+  > burn wire                                        PASS
+  > north                                            PASS
+  > wait                                             PASS
+  > south                                            PASS
+  > take crown                                       PASS
+  > north                                            PASS
+  > enter balloon                                    PASS
+  > close receptacle                                 PASS
+  > untie wire                                       PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > exit                                             PASS
+  > north                                            PASS
+  > west                                             PASS
+  > south                                            PASS
+  > north                                            PASS
+  > take torch                                       PASS
+  > north                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > west                                             PASS
+  > south                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > open trophy case                                 PASS
+  > put ruby in trophy case                          PASS
+  > put coin in trophy case                          PASS
+  > put stamp in trophy case                         PASS
+  > put crown in trophy case                         PASS
+  > put trunk in trophy case                         PASS
+  > put torch in trophy case                         PASS
+  > inventory                                        PASS
+  > look                                             PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > ds ledger                                        PASS
+  > ex                                               PASS
+  > turn off lantern                                 PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-15-volcano-balloon.golden
+  93 passed (809ms)
+
+Running: stories/dungeo/walkthroughs/wt-16-canvas-puzzle.transcript
+  "Canvas Puzzle (Ghost Ritual)"
+
+  > take incense                                     PASS
+  > take frame piece                                 PASS
+  > inventory                                        PASS
+  > open trap door                                   PASS
+  > turn on lantern                                  PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > east                                             PASS
+  > northeast                                        PASS
+  > east                                             PASS
+  > south                                            PASS
+  > burn incense                                     PASS
+  > pray                                             PASS
+  > drop frame piece                                 PASS
+  > north                                            PASS
+  > west                                             PASS
+  > west                                             PASS
+  > north                                            PASS
+  > south                                            PASS
+  > south                                            PASS
+  > west                                             PASS
+  > east                                             PASS
+  > south                                            PASS
+  > northwest                                        PASS
+  > look                                             PASS
+  > take canvas                                      PASS
+  > south                                            PASS
+  > north                                            PASS
+  > east                                             PASS
+  > west                                             PASS
+  > up                                               PASS
+  > open trophy case                                 PASS
+  > put canvas in trophy case                        PASS
+  > score                                            PASS
+  > gdt                                              PASS
+  > ds ledger                                        PASS
+  > ex                                               PASS
+  > turn off lantern                                 PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-16-canvas-puzzle.golden
+  41 passed (411ms)
+
+Running: stories/dungeo/walkthroughs/wt-17-endgame.transcript
+  "Endgame (Trivia, Dial Puzzle, Victory)"
+
+  > turn on lantern                                  PASS
+  > down                                             PASS
+  > east                                             PASS
+  > north                                            PASS
+  > east                                             PASS
+  > southeast                                        PASS
+  > east                                             PASS
+  > rub mirror                                       PASS
+  > east                                             PASS
+  > down                                             PASS
+  > east                                             PASS
+  > east                                             PASS
+  > turn off lantern                                 PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > wait                                             PASS
+  > west                                             PASS
+  > push stone button                                PASS
+  > south                                            PASS
+  > south                                            PASS
+  > in                                               PASS
+  > out                                              PASS
+  > south                                            PASS
+  > knock                                            PASS
+  > answer rub                                       PASS
+  > answer no                                        PASS
+  > answer 30003                                     PASS
+  > north                                            PASS
+  > north                                            PASS
+  > north                                            PASS
+  > set dial to 4                                    PASS
+  > push dial button                                 PASS
+  > down                                             PASS
+  > open bronze door                                 PASS
+  > south                                            PASS
+
+  ✓ matched recording stories/dungeo/walkthroughs/wt-17-endgame.golden
+  35 passed (323ms)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Total: 952 tests in 17 transcripts
+952 passed
+Duration: 8401ms
+
+✓ All tests passed!
+
+Coverage: 17 of 33 points fired, 16 never fired, 40 classes unobserved

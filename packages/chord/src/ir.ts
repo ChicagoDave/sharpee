@@ -1,5 +1,5 @@
 /**
- * ir.ts — the Story IR wire types (`story language 3`).
+ * ir.ts — the Story IR wire types (`story language 5`).
  *
  * Purpose: the versioned, JSON-serializable product of Chord compilation
  * (ADR-210: the IR is the product). Everything is resolved — entity
@@ -20,8 +20,11 @@ import type { Span } from './span.js';
  * Format stamp of this IR schema. Consumers refuse unknown formats.
  * `story language 3` (ADR-327, 2026-08-26): `IROnClause.actor` is a new
  * required field and the owner-is-object binding is spelled `object`.
+ * `story language 5` (ADR-359 D1, 2026-10-05): a plain object records the
+ * kind `thing` in `kinds`; a loader that predates it refuses the format
+ * instead of failing inside its kind switch.
  */
-export const IR_FORMAT = 'story language 4';
+export const IR_FORMAT = 'story language 5';
 
 /** Root of a compiled story. */
 export interface StoryIR {

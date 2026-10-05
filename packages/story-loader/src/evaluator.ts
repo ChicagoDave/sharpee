@@ -20,6 +20,7 @@
 import type { IRCondition, IREntity, IRTimerDef, IRValue, StoryIR } from '@sharpee/chord';
 import { createSeededRandom, type RandomService, type SeededRandom } from '@sharpee/core';
 import { exitBlockedKey } from '@sharpee/stdlib';
+import { classifiesAs } from './kind-classification.js';
 import {
   CharacterModelTrait,
   LightSourceTrait,
@@ -370,7 +371,7 @@ export class Evaluator {
         if (!irEntity) return raw(false);
         const classifier =
           cond.object.kind === 'symbol' ? cond.object.name : String(this.evalValue(cond.object, ctx));
-        return raw(irEntity.kinds.some((k) => k.name === classifier));
+        return raw(classifiesAs(irEntity, classifier));
       }
       case 'is-in': {
         // ADR-325 D1: the place may be `<owner>'s location`; an offstage

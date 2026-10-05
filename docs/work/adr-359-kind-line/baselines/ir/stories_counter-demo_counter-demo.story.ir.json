@@ -1,0 +1,270 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "The Vigil",
+    "fields": {
+      "id": "counter-demo",
+      "storyVersion": "1.0.0",
+      "authors": [
+        "DevArch"
+      ],
+      "testers": [],
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": [
+      {
+        "clauseKind": "on",
+        "once": false,
+        "action": "every-turn",
+        "actor": null,
+        "binding": "every-turn",
+        "role": null,
+        "condition": null,
+        "ordering": null,
+        "routing": null,
+        "narration": "broadcast",
+        "body": [
+          {
+            "kind": "raise",
+            "counter": "dread",
+            "owner": null,
+            "amount": 20,
+            "stmtWhen": null,
+            "span": {
+              "line": 9,
+              "column": 5,
+              "endLine": 9,
+              "endColumn": 22
+            }
+          },
+          {
+            "kind": "kill",
+            "phraseKey": null,
+            "stmtWhen": {
+              "kind": "compare",
+              "op": "gte",
+              "left": {
+                "kind": "counter",
+                "name": "dread",
+                "owner": null
+              },
+              "right": {
+                "kind": "literal",
+                "value": "100",
+                "valueType": "number"
+              }
+            },
+            "span": {
+              "line": 10,
+              "column": 5,
+              "endLine": 10,
+              "endColumn": 47
+            }
+          }
+        ],
+        "span": {
+          "line": 8,
+          "column": 3,
+          "endLine": 11,
+          "endColumn": 9
+        }
+      }
+    ]
+  },
+  "entities": [
+    {
+      "id": "chapel",
+      "name": "Chapel",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 16,
+            "column": 3,
+            "endLine": 16,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "chapel.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 15,
+        "column": 1,
+        "endLine": 18,
+        "endColumn": 77
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 22,
+            "column": 3,
+            "endLine": 22,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "chapel",
+        "span": {
+          "line": 24,
+          "column": 3,
+          "endLine": 24,
+          "endColumn": 23
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 21,
+        "column": 1,
+        "endLine": 26,
+        "endColumn": 7
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 29,
+          "column": 3,
+          "endLine": 29,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 28,
+      "column": 1,
+      "endLine": 30,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "chapel.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A cold stone chapel. The dark presses in from every corner, and the single candle does nothing against it.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 18,
+            "column": 3,
+            "endLine": 19,
+            "endColumn": 34
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 26,
+            "column": 3,
+            "endLine": 26,
+            "endColumn": 7
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [],
+  "hatches": [],
+  "traits": [],
+  "actions": [],
+  "scores": [],
+  "ranks": [],
+  "counters": [
+    {
+      "name": "dread",
+      "starts": 0,
+      "lo": 0,
+      "hi": 100,
+      "span": {
+        "line": 13,
+        "column": 1,
+        "endLine": 13,
+        "endColumn": 48
+      }
+    }
+  ],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false
+}

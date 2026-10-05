@@ -1,0 +1,21 @@
+stderr | tests/shadow-renderer.test.ts > BrowserClient — channel renderer drives visible DOM (R5-C) > auto-save fires on channel:packet (not text:output)
+[autosave] Failed: TypeError: localStorage.setItem is not a function
+    at SaveManager.performAutoSave [90m(/Users/david/repos/sharpee/packages/platform-browser/[39msrc/managers/SaveManager.ts:307:20[90m)[39m
+    at [90m/Users/david/repos/sharpee/packages/platform-browser/[39msrc/BrowserClient.ts:447:26
+    at [90m/Users/david/repos/sharpee/packages/platform-browser/[39mtests/shadow-renderer.test.ts:41:43
+    at Set.forEach (<anonymous>)
+    at Object.emit [90m(/Users/david/repos/sharpee/packages/platform-browser/[39mtests/shadow-renderer.test.ts:41:28[90m)[39m
+    at [90m/Users/david/repos/sharpee/packages/platform-browser/[39mtests/shadow-renderer.test.ts:268:12
+    at file:///Users/david/repos/sharpee/node_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:155:11
+    at file:///Users/david/repos/sharpee/node_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:752:26
+    at file:///Users/david/repos/sharpee/node_modules/[4m.pnpm[24m/@vitest+runner@3.2.4/node_modules/[4m@vitest/runner[24m/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+
+(node:19356) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19355) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19354) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:19353) Warning: `--localstorage-file` was provided without a valid path
+(Use `node --trace-warnings ...` to show where the warning was created)

@@ -1,0 +1,344 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "The Long Cold",
+    "fields": {
+      "id": "hunger-demo",
+      "storyVersion": "1.0.0",
+      "authors": [
+        "DevArch"
+      ],
+      "testers": [],
+      "themes": []
+    }
+  },
+  "uses": [
+    "hunger"
+  ],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "waste",
+      "name": "Waste",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 21,
+            "column": 3,
+            "endLine": 21,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "waste.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 20,
+        "column": 1,
+        "endLine": 23,
+        "endColumn": 74
+      }
+    },
+    {
+      "id": "ration",
+      "name": "ration",
+      "article": "the",
+      "aka": [
+        "biscuit"
+      ],
+      "isPlayable": false,
+      "kinds": [],
+      "traits": [
+        {
+          "name": "edible",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 28,
+            "column": 3,
+            "endLine": 28,
+            "endColumn": 9
+          }
+        }
+      ],
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "waste",
+        "span": {
+          "line": 29,
+          "column": 3,
+          "endLine": 29,
+          "endColumn": 15
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "ration.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 26,
+        "column": 1,
+        "endLine": 31,
+        "endColumn": 49
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 34,
+            "column": 3,
+            "endLine": 34,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "waste",
+        "span": {
+          "line": 36,
+          "column": 3,
+          "endLine": 36,
+          "endColumn": 22
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 33,
+        "column": 1,
+        "endLine": 38,
+        "endColumn": 7
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 41,
+          "column": 3,
+          "endLine": 41,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 40,
+      "column": 1,
+      "endLine": 42,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "feeling-peckish": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A hollow ache settles behind your ribs.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 15,
+            "column": 3,
+            "endLine": 16,
+            "endColumn": 44
+          }
+        },
+        "stomach-tightens": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "Your stomach knots and will not let go.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 17,
+            "column": 3,
+            "endLine": 18,
+            "endColumn": 44
+          }
+        },
+        "waste.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A grey salt waste under a sunless sky. Nothing grows here, and the wind never stops.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 23,
+            "column": 3,
+            "endLine": 24,
+            "endColumn": 15
+          }
+        },
+        "ration.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "One dry emergency ration, hard as a roof tile.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 31,
+            "column": 3,
+            "endLine": 31,
+            "endColumn": 49
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 38,
+            "column": 3,
+            "endLine": 38,
+            "endColumn": 7
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [],
+  "hatches": [],
+  "traits": [],
+  "actions": [],
+  "scores": [],
+  "ranks": [],
+  "hunger": {
+    "grows": 3,
+    "fatal": 12,
+    "rungs": [
+      {
+        "id": "peckish",
+        "threshold": 3,
+        "phraseKey": "feeling-peckish",
+        "span": {
+          "line": 9,
+          "column": 5,
+          "endLine": 9,
+          "endColumn": 38
+        }
+      },
+      {
+        "id": "hungry",
+        "threshold": 6,
+        "phraseKey": "stomach-tightens",
+        "span": {
+          "line": 10,
+          "column": 5,
+          "endLine": 10,
+          "endColumn": 38
+        }
+      },
+      {
+        "id": "starving",
+        "threshold": 9,
+        "span": {
+          "line": 11,
+          "column": 5,
+          "endLine": 11,
+          "endColumn": 18
+        }
+      }
+    ],
+    "span": {
+      "line": 8,
+      "column": 5,
+      "endLine": 8,
+      "endColumn": 22
+    }
+  },
+  "counters": [],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false
+}

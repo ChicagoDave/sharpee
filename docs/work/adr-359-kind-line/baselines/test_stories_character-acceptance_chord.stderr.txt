@@ -1,0 +1,1 @@
+test: no test tree found in /Users/david/repos/sharpee/stories/character-acceptance/chord — expected a <story-id>.tests/ directory beside the .story file (record tests in the IDE's Testing tab)

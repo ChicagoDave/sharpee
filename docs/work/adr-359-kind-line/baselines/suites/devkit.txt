@@ -1,0 +1,49 @@
+
+ RUN  v1.6.1 /Users/david/repos/sharpee/packages/devkit
+
+ ✓ src/standalone/browser-core.test.ts  (18 tests) 2ms
+ ✓ src/standalone/story-config.test.ts  (12 tests) 12ms
+ ✓ src/hatch-lint.test.ts  (7 tests) 29ms
+ ✓ src/commands/compose.test.ts  (5 tests) 235ms
+ ✓ src/commands/tree-document-discovery.test.ts  (8 tests) 306ms
+ ✓ src/standalone/version-stamp.test.ts  (4 tests) 6ms
+ ✓ src/standalone/manifest-browser-parity.test.ts  (8 tests) 325ms
+ ✓ src/standalone/publish.test.ts  (13 tests) 31ms
+ ✓ tests/hatch-transpile-error.test.ts  (3 tests) 120ms
+ ↓ src/commands/standalone-build.test.ts  (1 test | 1 skipped)
+ ✓ tests/hatch-host-parity.test.ts  (3 tests) 720ms
+ ✓ src/standalone/resolve-engine-styles.test.ts  (3 tests) 9ms
+ ✓ src/standalone/esbuild-bin.test.ts  (4 tests) 171ms
+{"schemaVersion":2,"seq":0,"elapsedMs":0,"type":"run-start","transcriptCount":1,"mode":"tree"}
+ ✓ tests/compose-json.test.ts  (7 tests) 406ms
+ ✓ tests/test-derived.test.ts  (6 tests) 472ms
+{"schemaVersion":2,"seq":1,"elapsedMs":2,"type":"transcript-start","file":"nfzvm4bb","label":"opening-hall","index":0,"commandCount":2}
+{"schemaVersion":2,"seq":2,"elapsedMs":4,"type":"command-result","file":"nfzvm4bb","line":0,"input":"look","passed":true,"expectedFailure":false,"skipped":false,"turn":1,"assertionResults":[{"description":"state mat.location = hall","passed":true}]}
+{"schemaVersion":2,"seq":3,"elapsedMs":4,"type":"transcript-end","file":"nfzvm4bb","status":"passed","passed":1,"failed":0,"expectedFailures":0,"skipped":0,"duration":2}
+{"schemaVersion":2,"seq":4,"elapsedMs":7,"type":"derived-branch","label":"mat · on entering_room","span":{"line":23,"column":3,"endLine":25,"endColumn":9},"status":"failed","detail":"parse failure: no language pattern for if.action.entering_room","failure":"parse failure: no language pattern for if.action.entering_room"}
+{"schemaVersion":2,"seq":5,"elapsedMs":8,"type":"derived-branch","label":"story · before the game starts","span":{"line":36,"column":1,"endLine":38,"endColumn":11},"status":"passed"}
+{"schemaVersion":2,"seq":6,"elapsedMs":8,"type":"derived-summary","branches":{"declared":2,"exercised":2,"passed":1,"failed":1,"gaps":[]},"endings":{"declared":0,"reached":0,"unreached":[],"unnamed":[]},"rooms":{"declared":1,"entered":1,"unentered":[]}}
+{"schemaVersion":2,"seq":7,"elapsedMs":8,"type":"run-end","totalPassed":1,"totalFailed":0,"totalExpectedFailures":0,"totalSkipped":0,"totalErrors":0,"totalUnreached":0,"totalDuration":2,"exitCode":1}
+ ✓ src/registry.test.ts  (6 tests) 31ms
+ ✓ src/standalone/browser-build-ts-path.test.ts  (1 test) 276ms
+ ✓ src/standalone/chord-import-browser.test.ts  (3 tests) 915ms
+ ✓ src/standalone/init.test.ts  (1 test) 6ms
+ ✓ tests/import-fs-resolver.test.ts  (4 tests) 29ms
+ ✓ tests/adr-276-acceptance.test.ts  (1 test) 25ms
+ ✓ src/commands/introspect.test.ts  (1 test) 3ms
+ ✓ src/commands/play.test.ts  (2 tests) 230ms
+ ✓ src/commands/world-index.test.ts  (4 tests) 93ms
+ ✓ src/standalone/chord-build.test.ts  (16 tests) 1701ms
+ ✓ src/consumer-gen.test.ts  (17 tests) 2016ms
+ ✓ src/standalone/browser-core-build.test.ts  (10 tests) 2114ms
+ ✓ src/standalone/browser-build.test.ts  (2 tests) 2172ms
+ ✓ tests/hatch-bind-check.test.ts  (10 tests) 2419ms
+ ✓ src/commands/messages.test.ts  (4 tests) 9ms
+ ✓ src/commands/test.test.ts  (9 tests) 104ms
+ ✓ src/commands/test-tree-document.test.ts  (11 tests) 146ms
+
+ Test Files  31 passed | 1 skipped (32)
+      Tests  203 passed | 1 skipped (204)
+   Start at  00:46:56
+   Duration  2.99s (transform 3.86s, setup 1ms, collect 13.43s, tests 15.13s, environment 3ms, prepare 2.09s)
+

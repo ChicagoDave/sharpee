@@ -375,7 +375,7 @@ describe('atomic load rejections', () => {
   it('rejects an unknown IR format', () => {
     const ir = { ...cloakIr(), format: 'story language 99' } as unknown as StoryIR;
     expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(LoadError);
-    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 4/);
+    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 5/);
   });
 
   it('rejects the retired `story language 1` (ADR-289 D2, AC6)', () => {

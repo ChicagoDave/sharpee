@@ -1,6 +1,6 @@
 # ADR-359: Chord says what absence would otherwise decide
 
-**Status**: DRAFT, a proposal to assess (David, 2026-10-04, session 4d81b6). Widened the same day at David's direction from "every entity names its kind" to every implied default of the same class, so that one migration and one major version cover them all. Every decision here is a grammar change: it goes through `docs/architecture/chord-grammar-changes.md`, each is ruled on separately by David before any code, and no log entry is written until he rules. Nothing here is built.
+**Status**: DRAFT, a proposal to assess (David, 2026-10-04, session 4d81b6). Widened the same day at David's direction from "every entity names its kind" to every implied default of the same class, so that one migration and one major version cover them all. Every decision here is a grammar change: it goes through `docs/architecture/chord-grammar-changes.md`, each is ruled on separately by David before any code, and no log entry is written until he rules. Nothing here is built. D1 approved and logged 2026-10-04 (session 0ebc5d; former Q-2), and the IR records `thing` (former Q-1, same day); the rest remains open.
 **Scope**: `packages/chord` (catalog, parser where a decision adds a form, analyzer, `chord.ebnf`, the language version), `packages/story-loader` where a default lives there today (D9), and a one-time migration of every Chord source in the repository and the manual.
 
 **The criterion** (from David's review of the grammar with Claude Desktop, 2026-10-04): *make it explicit when leaving it out changes what the story does and the author cannot see why from the text.* Where a default stays, ADR-358's balloons state it, since the grammar does not.
@@ -50,9 +50,9 @@ The 10 secret-letter entities that are unplaced and never moved by a `move` are 
 
 ## Decision (proposed)
 
-### D1: Every `create` block names its kind
+### D1: Every `create` block names its kind (approved, 2026-10-04)
 
-Every `create` block carries exactly one kind noun. A plain thing is written `a thing`. Traits stay in the same comma list:
+Every `create` block carries exactly one kind noun, as the analyzer already requires. A plain thing is written `a thing`. The kind noun comes first on its line, and traits follow it in the same comma list:
 
 ```chord
 create the cracked bell
@@ -72,6 +72,12 @@ A block with no kind noun is a compile error, `analysis.missing-kind-noun`, with
 
 Trait defaults do not change. A thing is portable unless it says `scenery`.
 
+Ruled with D1 (David, 2026-10-04, logged in `chord-grammar-changes.md`):
+- `scenery, a thing` is an error: the kind comes first, so every block has the same shape and completion has one place to look.
+- `a thing, scenery` and `a thing, plural` are accepted as written. `some` as an article is a separate grammar change; UPPS will show whether `a thing, plural` grates.
+- `a thing, container` is an error whose message names the fix: "a container is already a kind of thing; write `a container`."
+- A conditional kind (`a thing while …`) is refused, since a kind cannot come and go, on the same reasoning that refuses a conditional `proper`.
+
 ### D2: The kind is `thing`, not `object`
 
 "Object" already means the action's object in clause bindings (ADR-327), and `catalog.ts` already calls the plain case a "plain thing".
@@ -81,10 +87,14 @@ Trait defaults do not change. A thing is portable unless it says `scenery`.
 - **`catalog.ts`**: `thing` joins `KIND_NOUNS`.
 - **The parser**: no change. `composition = [ ARTICLE ] WORD` already reads `a thing` as a kind composition (`chord.ebnf`, the `composition` production).
 - **The analyzer**: the new `analysis.missing-kind-noun` error; `analysis.unknown-kind-noun` stops firing for `thing`; `analysis.multiple-kind-nouns` already forbids `a thing, a container`.
-- **The IR**: unchanged, as David expected, if the analyzer leaves `kinds` empty for `a thing`. The loader already builds a plain thing from an empty `kinds` (`story-loader/src/loader.ts`, `const kind = irEntity.kinds[0]?.name ?? null`, and its `default:` branch throws on any unknown kind name). Writing `thing` into `kinds` instead would need a loader `case 'thing'`. Q-1.
+- **The IR records `thing`** (ruled 2026-10-04, former Q-1). An empty `kinds` list would bring back what D1 removes from the source, absence deciding what an entity is, one layer down. The wire carries what the author wrote, and every consumer that asks "what kind is this?" (world-index, the lenses, the IDE's story index, completion's value dropdowns) reads one field instead of knowing that empty means thing.
+  - **The loader** gains `case 'thing'`, building exactly what it builds today for an empty `kinds` (`story-loader/src/loader.ts`, `const kind = irEntity.kinds[0]?.name ?? null`). An entity with no kind becomes a load error, so a compiler bug can no longer pass as a plain thing. The baseline comparison below verifies the mapping.
+  - **`IR_FORMAT`** moves from `story language 4` to `story language 5` (`packages/chord/src/ir.ts:24`). A new kind name is not a shape change, but a loader that predates it would fail inside its kind switch; the format gate (`loader.ts:305`) refuses it cleanly up front instead. It ships with 4.0.0.
+  - **The IR's shape stays.** With exactly one kind and no conditional kinds, `kinds` could become a single field. That is a later tidy-up and does not ride with this change.
 - **`chord.ebnf`**: the `create` production requires a kind composition; the `composition` comment ("article => kind noun; bare => trait") stays; `KIND-NOUN` gains `thing`. Both copies (`packages/chord/chord.ebnf`, and `website/public/chord.ebnf`, which already differs from it today).
-- **The language version**: `3.6.0` → **`4.0.0`**, a major bump under ADR-257 D2, since every story with a plain thing stops compiling. Per standing practice, the version moves at publish, not at landing.
+- **The language version**: `3.6.0` → **`4.0.0`**, a major bump under ADR-257 D2, since every story with a plain thing stops compiling. Per standing practice, the version moves at publish, not at landing. D1 is approved now so the codemod and UPPS can be written in the new form, but 4.0.0 is not published until the rest of this ADR is ruled, so outside authors migrate once.
 - **The migration**: all 1,028 blocks in one cutover (no back-compatibility). Mechanical: prepend `a thing, ` to the first composition line, or add an `a thing` line where a block has none. A codemod over the parser's spans, never a regex pass. The manual's 121 blocks move with it. ADR examples are records and are left as written.
+- **Verifying the cutover**: the way the segment cutover was verified. Every story's `sharpee test` report matches its baseline line for line, before and after the codemod.
 
 ### D4: What this removes from ADR-358
 
@@ -102,6 +112,8 @@ David's question assumed a door can exist only because an exit names it with `th
 ### D6: An entity created out of play says so (proposed)
 
 An entity with no placement and no holder is created out of play, and today that is silent. The proposal: such an entity carries an explicit line saying it starts offstage, and a block with neither a placement, a holder nor that line is an error. The form is a grammar addition, Q-3; the working form is `starts offstage`, beside `starts in`. Migration: the 123 unplaced entities each gain the line, after a look at the 10 secret-letter cases (and their kin elsewhere) that no `move` brings in, since some may be bugs.
+
+Finding for the Q-3 ruling (2026-10-05): the secret-letter entities that no `move` brings in are neither props nor bugs. They hold story state, like `Toresal` (day/night) and `the hanging` (pending → over), and they were never meant to be in the world. `starts offstage` would say the wrong thing about them. The form has to tell a state holder apart from an offstage prop. Cleaning up Secret Letter itself waits until the language and the IDE are working.
 
 ### D7: A phrase with several variants names its strategy (proposed)
 
@@ -141,7 +153,7 @@ Two silent rules are kept because they are the feel of the language: description
 - A reader can tell every entity's kind from its block, and a forgotten kind line is an error, not a silent plain thing.
 - The kind list in the dropdown and the guide is the whole `KIND_NOUNS` set, with nothing special-cased.
 
-## Awkward cases (for the ruling)
+## Awkward cases (ruled with D1, 2026-10-04; see D1)
 
 - **Scenery is most of the cost.** Over half the migrated blocks are scenery. `a thing, scenery` is the explicit form; the alternative of making `scenery` a kind noun of its own would contradict "traits stay in the same comma list" and make scenery containers or supporters impossible to say.
 - **`a thing, plural`.** Plural things ("some coins") read oddly behind the singular article. `ARTICLE` already allows `a`, `an` and `the` (`chord.ebnf`); allowing `some` would be a further grammar change.
@@ -154,14 +166,6 @@ Two silent rules are kept because they are the feel of the language: description
 2026-10-04, session 4d81b6, from David's proposal: "make every entity's kind explicit in Chord … Use `thing`, not `object` … This is a grammar change, so it goes through docs/architecture/chord-grammar-changes.md and needs my ruling before any code." Widened the same session after David shared Claude Desktop's survey of other implied syntax in `chord.ebnf` and the chord and story-loader packages ("yes, widen ADR-359 and run the counts"); the file keeps its first name so links to it hold.
 
 ## Open Questions
-
-### Q-1: Does the IR record `thing`, or stay as it is?
-- **Why it matters**: leaving `kinds` empty for `a thing` keeps the IR and the loader untouched. Recording `thing` makes the IR say what the author wrote, at the cost of a loader `case 'thing'` and an IR format note.
-- **Blocks**: the analyzer and loader changes.
-
-### Q-2: Is the kind line (D1) approved as a grammar change?
-- **Why it matters**: `chord-grammar-changes.md` requires David's explicit approval, logged as a dated entry, before any code. The ruling also decides whether the awkward cases above are accepted, or change the form.
-- **Blocks**: everything in D3.
 
 ### Q-3: Is explicit offstage (D6) approved, and in what form?
 - **Why it matters**: 123 entities migrate, and the form (`starts offstage`, or another) is new syntax. The 10 secret-letter entities no `move` brings in should be looked at either way.

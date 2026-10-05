@@ -183,9 +183,9 @@ end before
 
 describe('census 17/18 (discovered in Phase 1) — kind nouns are the closed catalog set, one per entity', () => {
   it('reports an unknown kind noun', () => {
-    const found = errors(story('create the lamp\n  a thing\n  in the Vault\n\n  A lamp.'));
+    const found = errors(story('create the lamp\n  a gadget\n  in the Vault\n\n  A lamp.'));
     expect(found.map((d) => d.code)).toEqual(['analysis.unknown-kind-noun']);
-    expect(found[0].message).toContain('unknown kind noun `thing`');
+    expect(found[0].message).toContain('unknown kind noun `gadget`');
   });
 
   it('reports more than one kind noun', () => {

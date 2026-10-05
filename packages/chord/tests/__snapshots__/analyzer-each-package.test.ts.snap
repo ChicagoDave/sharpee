@@ -521,7 +521,7 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "wears": [],
     },
   ],
-  "format": "story language 4",
+  "format": "story language 5",
   "hasHatches": false,
   "hatches": [],
   "languageVersion": "3.6.0",

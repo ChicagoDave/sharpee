@@ -1,0 +1,36 @@
+
+> @sharpee/world-index@5.4.1 test /Users/david/repos/sharpee/packages/world-index
+> vitest
+
+
+ DEV  v1.6.1 /Users/david/repos/sharpee/packages/world-index
+
+ ✓ tests/statements.test.ts  (10 tests) 11ms
+ ✓ tests/branches.test.ts  (24 tests) 5ms
+ ✓ tests/reach.test.ts  (23 tests) 53ms
+ ✓ tests/readers.test.ts  (6 tests) 11ms
+ ✓ tests/map.test.ts  (12 tests) 29ms
+ ✓ tests/corpus-shape.test.ts  (7 tests) 28ms
+ ✓ tests/synthetic-corpus.test.ts  (25 tests) 219ms
+ ✓ tests/multi-arm-gates.test.ts  (2 tests) 10ms
+ ✓ tests/timer-clause-gate.test.ts  (2 tests) 10ms
+ ✓ tests/endings.test.ts  (4 tests) 10ms
+ ✓ tests/loader-semantics.test.ts  (23 tests) 11ms
+ ✓ tests/vocabulary.test.ts  (4 tests) 51ms
+ ✓ tests/incomplete.test.ts  (40 tests) 60ms
+ ✓ tests/roles.test.ts  (11 tests) 58ms
+ ✓ tests/unnamed.test.ts  (8 tests) 101ms
+ ✓ tests/cli.test.ts  (10 tests) 603ms
+ ✓ tests/scale-timing.test.ts  (5 tests | 1 skipped) 653ms
+
+ Test Files  17 passed (17)
+      Tests  215 passed | 1 skipped (216)
+   Start at  00:41:42
+   Duration  1.56s (transform 895ms, setup 0ms, collect 5.81s, tests 1.92s, environment 2ms, prepare 746ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+/Users/david/repos/sharpee/packages/world-index:
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  @sharpee/world-index@5.4.1 test: `vitest`
+Command failed with signal "SIGTERM"

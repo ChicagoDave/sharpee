@@ -1,0 +1,94 @@
+
+> @sharpee/chord@5.4.1 test /Users/david/repos/sharpee/packages/chord
+> vitest
+
+
+ RUN  v3.2.4 /Users/david/repos/sharpee/packages/chord
+
+ ✓ tests/dialogue-only-forms.test.ts (4 tests) 17ms
+ ✓ tests/places.test.ts (10 tests) 16ms
+ ✓ tests/grammar-alterations.test.ts (20 tests) 20ms
+ ✓ tests/landing.test.ts (12 tests) 20ms
+ ✓ tests/message-override.test.ts (8 tests) 23ms
+ ✓ tests/comments.test.ts (18 tests) 25ms
+ ✓ tests/pattern-constructs.test.ts (28 tests) 24ms
+ ✓ tests/phrasebooks.test.ts (30 tests) 26ms
+ ✓ tests/movement-clauses.test.ts (18 tests) 24ms
+ ✓ tests/adr-330-chapters.test.ts (22 tests) 25ms
+ ✓ tests/adr-327-phase3.test.ts (22 tests) 25ms
+ ✓ tests/adr-329-d10-perform-step.test.ts (18 tests) 27ms
+ ✓ tests/adr-320-threads.test.ts (16 tests) 28ms
+ ✓ tests/adr-320-phase4.test.ts (23 tests) 34ms
+ ✓ tests/act-statement.test.ts (18 tests) 38ms
+ ✓ tests/adr-327-phase1.test.ts (41 tests) 39ms
+ ✓ tests/character-declarations.test.ts (95 tests) 49ms
+ ✓ tests/phrase-overlap.test.ts (12 tests) 14ms
+ ✓ tests/channel-record.test.ts (11 tests) 13ms
+ ✓ tests/counter.test.ts (20 tests) 16ms
+ ✓ tests/composition-legality.test.ts (17 tests) 16ms
+ ✓ tests/adr-349-room-name.test.ts (10 tests) 16ms
+ ✓ tests/parser-death.test.ts (13 tests) 16ms
+ ✓ tests/person-identity.test.ts (16 tests) 16ms
+ ✓ tests/setting-domains.test.ts (11 tests) 18ms
+ ✓ tests/zoo-surfaces-phase1.test.ts (19 tests) 19ms
+ ✓ tests/zoo-surfaces-phase3.test.ts (18 tests) 18ms
+ ✓ tests/story-block-fields.test.ts (38 tests) 17ms
+ ✓ tests/dynamic-channels.test.ts (13 tests) 21ms
+ ✓ tests/adr-320-phase3.test.ts (16 tests) 21ms
+ ✓ tests/topics.test.ts (19 tests) 23ms
+ ✓ tests/adr-289-d3-d10.test.ts (17 tests) 24ms
+ ✓ tests/timers.test.ts (17 tests) 28ms
+ ✓ tests/ac3-cloak-sweep.test.ts (6 tests) 17ms
+ ✓ tests/adr-289-d8.test.ts (14 tests) 14ms
+ ✓ tests/slot-spelling.test.ts (8 tests) 14ms
+ ✓ tests/gh-359-detail-gate-timer-read.test.ts (5 tests) 15ms
+ ✓ tests/compile-gate-sweep.test.ts (9 tests) 14ms
+ ✓ tests/analysis-passes.test.ts (6 tests) 16ms
+ ✓ tests/adr-325-w1-make-wear.test.ts (7 tests) 15ms
+ ✓ tests/region-membership.test.ts (17 tests) 15ms
+ ✓ tests/starts-state.test.ts (11 tests) 17ms
+ ✓ tests/grammar-file.test.ts (14 tests) 14ms
+ ✓ tests/import.test.ts (18 tests) 17ms
+ ✓ tests/use-extensions.test.ts (15 tests) 15ms
+ ✓ tests/entity-line-builders.test.ts (5 tests) 16ms
+ ✓ tests/adjacent-room.test.ts (8 tests) 18ms
+ ✓ tests/publish-readiness-phase3.test.ts (7 tests) 16ms
+ ✓ tests/doors.test.ts (18 tests) 19ms
+ ✓ tests/secret-letter-phase4-resolution.test.ts (10 tests) 19ms
+ ✓ tests/parser-phase-b.test.ts (26 tests) 15ms
+ ✓ tests/lexer-golden.test.ts (2 tests) 14ms
+ ✓ tests/hunger.test.ts (6 tests) 9ms
+ ✓ tests/blocked-exit-unreachable.test.ts (4 tests) 9ms
+ ✓ tests/rank-ladder-analysis.test.ts (16 tests) 13ms
+ ✓ tests/channel-capability.test.ts (8 tests) 12ms
+ ✓ tests/story-daemon.test.ts (6 tests) 11ms
+ ✓ tests/formatting.test.ts (11 tests) 10ms
+ ✓ tests/state-machine.test.ts (8 tests) 13ms
+ ✓ tests/alteration-targets.test.ts (9 tests) 10ms
+ ✓ tests/media-sugar.test.ts (5 tests) 10ms
+ ✓ tests/scope-requirements.test.ts (8 tests) 10ms
+ ✓ tests/parser.test.ts (33 tests) 11ms
+ ✓ tests/zoo-surfaces-phase2.test.ts (11 tests) 18ms
+ ✓ tests/chain-hatch.test.ts (5 tests) 10ms
+ ✓ tests/adr-289-d5-d6.test.ts (10 tests) 14ms
+ ✓ tests/analyzer-each-package.test.ts (20 tests) 12ms
+ ✓ tests/analyzer.test.ts (24 tests) 16ms
+ ✓ tests/condition-discharge.test.ts (5 tests) 1ms
+ ✓ tests/language-version.test.ts (2 tests) 2ms
+ ✓ tests/channel-return.test.ts (8 tests) 11ms
+ ✓ tests/dotted-key-rejection.test.ts (8 tests) 4ms
+ ✓ tests/adr-276-acceptance.test.ts (2 tests) 8ms
+ ✓ tests/scoring-gate.test.ts (7 tests) 10ms
+ ✓ tests/rank-ladder-parse.test.ts (15 tests) 6ms
+ ✓ tests/parser-each-package.test.ts (12 tests) 5ms
+ ✓ tests/announce-mode.test.ts (5 tests) 11ms
+ ✓ tests/emit-payload.test.ts (5 tests) 3ms
+ ✓ tests/analyzer-phase-c.test.ts (18 tests) 8ms
+ ✓ tests/zoo-phase-c-parse.test.ts (5 tests) 8ms
+ ✓ tests/analyzer-phase-b.test.ts (27 tests) 9ms
+
+ Test Files  81 passed (81)
+      Tests  1179 passed (1179)
+   Start at  00:41:31
+   Duration  1.63s (transform 1.46s, setup 0ms, collect 9.16s, tests 1.33s, environment 7ms, prepare 3.64s)
+

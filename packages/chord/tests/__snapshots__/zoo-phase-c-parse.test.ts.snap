@@ -4223,7 +4223,7 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "wears": [],
     },
   ],
-  "format": "story language 4",
+  "format": "story language 5",
   "hasHatches": true,
   "hatches": [
     {

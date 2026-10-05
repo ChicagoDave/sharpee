@@ -1,0 +1,535 @@
+{
+  "format": "story language 4",
+  "languageVersion": "3.6.0",
+  "meta": {
+    "title": "Character Acceptance",
+    "fields": {
+      "id": "character-acceptance",
+      "storyVersion": "0.1.0",
+      "authors": [
+        "Sharpee Platform"
+      ],
+      "testers": [],
+      "description": {
+        "kind": "literal",
+        "value": "Frozen mechanical fixture for ADR-310 Acceptance 2 and ADR-318 Acceptance 1 (the threatened Witness, B1). Never revised as a story. The sibling variants b1-no-principle.story and b1-no-temperament.story differ from this file by exactly the deleted line the acceptance experiment names."
+      },
+      "themes": []
+    }
+  },
+  "uses": [],
+  "announceModes": {},
+  "story": {
+    "states": [],
+    "reversible": false,
+    "onClauses": []
+  },
+  "entities": [
+    {
+      "id": "interview-room",
+      "name": "Interview Room",
+      "article": "the",
+      "aka": [],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "room",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 22,
+            "column": 3,
+            "endLine": 22,
+            "endColumn": 9
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": null,
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "interview-room.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 21,
+        "column": 1,
+        "endLine": 24,
+        "endColumn": 54
+      }
+    },
+    {
+      "id": "alex",
+      "name": "Alex",
+      "article": null,
+      "aka": [],
+      "isPlayable": true,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 27,
+            "column": 3,
+            "endLine": 27,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "startsStates": [],
+      "placement": {
+        "relation": "starts-in",
+        "place": "interview-room",
+        "span": {
+          "line": 29,
+          "column": 3,
+          "endLine": 29,
+          "endColumn": 31
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "alex.description",
+      "initialDescriptionKey": null,
+      "onClauses": [],
+      "topics": [],
+      "span": {
+        "line": 26,
+        "column": 1,
+        "endLine": 31,
+        "endColumn": 7
+      }
+    },
+    {
+      "id": "witness",
+      "name": "Witness",
+      "article": "the",
+      "aka": [
+        "witness",
+        "clerk"
+      ],
+      "isPlayable": false,
+      "kinds": [
+        {
+          "name": "person",
+          "config": [],
+          "condition": null,
+          "span": {
+            "line": 34,
+            "column": 3,
+            "endLine": 34,
+            "endColumn": 11
+          }
+        }
+      ],
+      "traits": [],
+      "character": {
+        "personality": [
+          {
+            "trait": "honest",
+            "span": {
+              "line": 34,
+              "column": 13,
+              "endLine": 34,
+              "endColumn": 19
+            }
+          },
+          {
+            "trait": "cowardly",
+            "span": {
+              "line": 34,
+              "column": 21,
+              "endLine": 34,
+              "endColumn": 29
+            }
+          }
+        ],
+        "feels": [],
+        "knows": [
+          {
+            "topic": "the-secret",
+            "source": "witnessed",
+            "confidence": "certain",
+            "confided": true,
+            "span": {
+              "line": 37,
+              "column": 3,
+              "endLine": 37,
+              "endColumn": 49
+            }
+          }
+        ],
+        "thinks": [],
+        "goals": [],
+        "influences": [],
+        "resists": [],
+        "temperaments": [
+          {
+            "name": "witness@temperament-1",
+            "span": {
+              "line": 39,
+              "column": 3,
+              "endLine": 39,
+              "endColumn": 29
+            }
+          }
+        ],
+        "principles": [
+          {
+            "category": "betray a confidence",
+            "span": {
+              "line": 38,
+              "column": 3,
+              "endLine": 38,
+              "endColumn": 29
+            }
+          }
+        ],
+        "obligations": [],
+        "burdenedBy": []
+      },
+      "startsStates": [],
+      "placement": {
+        "relation": "in",
+        "place": "interview-room",
+        "span": {
+          "line": 36,
+          "column": 3,
+          "endLine": 36,
+          "endColumn": 24
+        }
+      },
+      "wears": [],
+      "carries": [],
+      "containing": [],
+      "exits": [],
+      "blockedExits": [],
+      "deadlyExits": [],
+      "deadly": null,
+      "states": [],
+      "statesReversible": false,
+      "counters": [],
+      "descriptionKey": "witness.description",
+      "initialDescriptionKey": null,
+      "onClauses": [
+        {
+          "clauseKind": "on",
+          "once": false,
+          "action": "attacking",
+          "actor": {
+            "kind": "player"
+          },
+          "binding": "object",
+          "role": null,
+          "condition": null,
+          "ordering": null,
+          "routing": "interceptor",
+          "narration": "presence",
+          "body": [
+            {
+              "kind": "change-mood",
+              "mood": "panicked",
+              "stmtWhen": null,
+              "span": {
+                "line": 42,
+                "column": 5,
+                "endLine": 42,
+                "endColumn": 28
+              }
+            }
+          ],
+          "span": {
+            "line": 41,
+            "column": 3,
+            "endLine": 43,
+            "endColumn": 9
+          }
+        }
+      ],
+      "topics": [
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the secret",
+            "aliases": [
+              "the-secret",
+              "what you saw",
+              "what he saw"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "witness-secret-reveal",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 49,
+                "column": 5,
+                "endLine": 49,
+                "endColumn": 33
+              }
+            }
+          ],
+          "span": {
+            "line": 48,
+            "column": 3,
+            "endLine": 49,
+            "endColumn": 33
+          }
+        },
+        {
+          "filter": {
+            "kind": "text",
+            "primary": "the weather",
+            "aliases": [
+              "small talk"
+            ]
+          },
+          "body": [
+            {
+              "kind": "phrase",
+              "phraseKey": "witness-weather",
+              "params": [],
+              "stmtWhen": null,
+              "span": {
+                "line": 51,
+                "column": 5,
+                "endLine": 51,
+                "endColumn": 27
+              }
+            }
+          ],
+          "span": {
+            "line": 50,
+            "column": 3,
+            "endLine": 51,
+            "endColumn": 27
+          }
+        }
+      ],
+      "span": {
+        "line": 33,
+        "column": 1,
+        "endLine": 45,
+        "endColumn": 57
+      }
+    }
+  ],
+  "startBlock": {
+    "body": [
+      {
+        "kind": "change-player",
+        "entity": {
+          "kind": "entity",
+          "id": "alex"
+        },
+        "stmtWhen": null,
+        "span": {
+          "line": 74,
+          "column": 3,
+          "endLine": 74,
+          "endColumn": 28
+        }
+      }
+    ],
+    "span": {
+      "line": 73,
+      "column": 1,
+      "endLine": 75,
+      "endColumn": 11
+    }
+  },
+  "conditions": [],
+  "phrases": {
+    "defaultLocale": "en-US",
+    "locales": {
+      "en-US": {
+        "witness-secret-reveal": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"All right. All right! It is buried behind the mill. That is what I saw.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 70,
+            "column": 3,
+            "endLine": 71,
+            "endColumn": 78
+          }
+        },
+        "interview-room.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A bare room with two hard chairs and a shaded lamp.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 24,
+            "column": 3,
+            "endLine": 24,
+            "endColumn": 54
+          }
+        },
+        "alex.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "You.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 31,
+            "column": 3,
+            "endLine": 31,
+            "endColumn": 7
+          }
+        },
+        "witness.description": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "A thin clerk who saw everything and wishes he had not.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 45,
+            "column": 3,
+            "endLine": 45,
+            "endColumn": 57
+          }
+        }
+      }
+    }
+  },
+  "messageOverrides": {
+    "defaultLocale": "en-US",
+    "locales": {}
+  },
+  "phrasebooks": [
+    {
+      "name": "witness-panic",
+      "source": "define",
+      "condition": {
+        "kind": "predicate",
+        "pred": "is",
+        "negated": false,
+        "subject": {
+          "kind": "entity",
+          "id": "witness"
+        },
+        "object": {
+          "kind": "symbol",
+          "name": "panicked"
+        }
+      },
+      "entries": {
+        "witness-weather": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Please—\" The clerk's voice cracks. \"I cannot talk about the weather right now.\"",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 60,
+            "column": 3,
+            "endLine": 61,
+            "endColumn": 85
+          }
+        }
+      },
+      "span": {
+        "line": 59,
+        "column": 1,
+        "endLine": 62,
+        "endColumn": 15
+      },
+      "specificity": "character"
+    },
+    {
+      "name": "witness-calm",
+      "source": "define",
+      "condition": null,
+      "entries": {
+        "witness-weather": {
+          "strategy": null,
+          "variants": [
+            {
+              "text": "\"Cold for the season,\" the clerk says evenly.",
+              "markers": []
+            }
+          ],
+          "span": {
+            "line": 65,
+            "column": 3,
+            "endLine": 66,
+            "endColumn": 50
+          }
+        }
+      },
+      "span": {
+        "line": 64,
+        "column": 1,
+        "endLine": 67,
+        "endColumn": 15
+      }
+    }
+  ],
+  "hatches": [],
+  "traits": [],
+  "actions": [],
+  "scores": [],
+  "ranks": [],
+  "counters": [],
+  "timers": [],
+  "sequences": [],
+  "machines": [],
+  "channels": [],
+  "pronounSets": [],
+  "hasHatches": false,
+  "temperaments": [
+    {
+      "name": "witness@temperament-1",
+      "pairs": [
+        [
+          "duty",
+          "fear"
+        ]
+      ],
+      "span": {
+        "line": 39,
+        "column": 3,
+        "endLine": 39,
+        "endColumn": 29
+      }
+    }
+  ]
+}
