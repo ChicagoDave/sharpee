@@ -230,7 +230,7 @@ end trait
 
 create the baskets
   aka basket, display, displays, fare, grocer's displays, wares, merchandise, goods
-  scenery, plural
+  a thing, scenery, plural
   in the Grocery Stall
 
   There are baskets bristling with loaves of bread, yellow pyramids of cheese,
@@ -246,7 +246,7 @@ create the baskets
 
 create the display of loaves
   aka loaves, loaves of bread, dark loaves, grainy loaves, rock-hard loaves, bread display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Grocery Stall
 
@@ -262,7 +262,7 @@ create the display of loaves
 
 create the pyramid display
   aka pyramids, pyramids of cheese, cheese pyramids, yellow pyramids, cheese display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Grocery Stall
 
@@ -278,7 +278,7 @@ create the pyramid display
 
 create the strips display
   aka strips, strips of jerky, bundles, bundles of jerky, spiced jerky, jerky display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Grocery Stall
 
@@ -295,7 +295,7 @@ create the strips display
 
 create the loaf
   aka bread, loaf of bread, dark loaf, grainy loaf
-  edible
+  a thing, edible
   grocer-ware
   states: shelved, nicked
   on the display of loaves
@@ -312,7 +312,7 @@ create the loaf
 
 create the cheese
   aka wedge of cheese, yellow cheese, milky cheese
-  edible
+  a thing, edible
   grocer-ware
   states: shelved, nicked
   on the pyramid display
@@ -329,7 +329,7 @@ create the cheese
 
 create the strip of beef jerky
   aka jerky, strip of jerky, beef jerky, beef, strip, salt-beef, dried beef
-  edible
+  a thing, edible
   grocer-ware
   states: shelved, nicked
   on the strips display
@@ -362,7 +362,7 @@ end phrase
 
 create the hat pegs
   aka wooden pegs, pegs, peg, wood pegs, scores of pegs
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   There's nothing special about the wooden pegs; they're just there to hold
@@ -370,7 +370,7 @@ create the hat pegs
 
 create the stock of hats
   aka hats, headgear, forest of headgear, varied headgear, display, displays, fare, wares, merchandise, goods
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   If you can wear it on your head, it's sold here. Big, flop-brimmed traveling
@@ -384,7 +384,7 @@ create the stock of hats
 
 create the traveling hats
   aka traveling hat, travelling hats, travelling hat, floppy hats, flop-brimmed hats, brimmed hats
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   The traveling hats have big, floppy brims to keep the sun out of your eyes
@@ -396,7 +396,7 @@ create the traveling hats
 
 create the workmans caps
   aka workman's caps, workmans cap, workman's cap, leather caps, leather cap, caps
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   These leather caps are small and functional, more to protect your head from
@@ -408,7 +408,7 @@ create the workmans caps
 
 create the sappans
   aka sappan, straw hats, straw hat, woven hats, round hats, pointy hats, kozarian hats
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   The *sappan* is a wide, round hat made of woven straw, pointy at the top.
@@ -421,7 +421,7 @@ create the sappans
 
 create the fancy hats
   aka fancy hat, feathered hats, feathered hat, courtly hats, gaudy hats, cheap hats
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   At a closer look, the 'fancy' hats are actually sort of cheap and gaudy.
@@ -434,7 +434,7 @@ create the fancy hats
 
 create the bonnets
   aka white caps, peasant bonnets, ordinary bonnets
-  scenery, plural
+  a thing, scenery, plural
   in the Hat Stall
 
   The bonnets are just ordinary peasant wear, little white caps that tie
@@ -489,7 +489,7 @@ end trait
 
 create the leather goods
   aka leather-goods, goods, riding equipment, equipment, display, displays, fare, wares, merchandise, leatherware
-  scenery, plural
+  a thing, scenery, plural
   in the Leather Stall
 
   This merchant mostly deals in riding equipment — reins, harnesses,
@@ -506,7 +506,7 @@ create the leather goods
 
 create the riding saddle
   aka saddle, saddles, full saddle, polished saddle, lacquered saddle
-  scenery
+  a thing, scenery
   in the Leather Stall
 
   The saddle is made of many layers of leather, shaped into sweeping curves
@@ -518,7 +518,7 @@ create the riding saddle
 
 create the collective reins
   aka reins display, ordinary reins, riding reins display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -526,7 +526,7 @@ create the collective reins
 
 create the harnesses
   aka harness display, harnesses display, complicated harnesses, contraptions
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -535,7 +535,7 @@ create the harnesses
 
 create the stirrups
   aka stirrup display, stirrups display, ordinary stirrups, riding stirrups
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -543,7 +543,7 @@ create the stirrups
 
 create the scabbards
   aka scabbard display, scabbards display, sheaths, plain scabbards, unadorned scabbards
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Leather Stall
 
@@ -552,7 +552,7 @@ create the scabbards
 
 create the rack of belts
   aka rack, belt rack, belts, belts display, sturdy belts, well-crafted belts
-  scenery, a supporter, unlisted
+  a supporter, scenery, unlisted
   stall-display
   in the Leather Stall
 
@@ -561,7 +561,7 @@ create the rack of belts
 
 create the riding reins
   aka reins, rein, useless reins
-  leather-ware-plural
+  a thing, leather-ware-plural
   plural
   states: shelved, nicked
   on the collective reins
@@ -571,7 +571,7 @@ create the riding reins
 
 create the harness
   aka leather harness, tough harness, complicated contraption, contraption
-  leather-ware
+  a thing, leather-ware
   states: shelved, nicked
   on the harnesses
 
@@ -580,7 +580,7 @@ create the harness
 
 create the stirrup
   aka riding stirrup, ordinary stirrup
-  leather-ware
+  a thing, leather-ware
   states: shelved, nicked
   on the stirrups
 
@@ -589,7 +589,7 @@ create the stirrup
 
 create the plain scabbard
   aka scabbard, sheath, unadorned scabbard, leather scabbard, good scabbard
-  wearable
+  a thing, wearable
   leather-ware
   states: shelved, nicked
   on the scabbards
@@ -604,7 +604,7 @@ create the plain scabbard
 
 create the belt
   aka good belt, sturdy belt, leather belt, strap, well-crafted belt
-  wearable
+  a thing, wearable
   leather-ware
   states: shelved, nicked
   on the rack of belts
@@ -650,7 +650,7 @@ end trait
 
 create the weaponry
   aka weapons, display of various weaponry, various weaponry, display, displays, fare, wares, merchandise, goods
-  scenery, plural
+  a thing, scenery, plural
   in the Weaponsmith's Stall
 
   Swords and knives, mostly. Nothing fancy — just sharp, practical, and
@@ -662,7 +662,7 @@ create the weaponry
 
 create the longswords
   aka swords, sword, longsword, heavy swords, blades, picket fence, fence of blades
-  scenery, plural
+  a thing, scenery, plural
   in the Weaponsmith's Stall
 
   The swords vary from three to four feet long. They look too heavy for you
@@ -674,7 +674,7 @@ create the longswords
 
 create the knives
   aka knife display, knives display, daggers, short knives, wicked knives, sharp knives
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Weaponsmith's Stall
 
@@ -682,7 +682,7 @@ create the knives
 
 create the knife
   aka dagger, blade, short knife, wicked knife, sharp knife
-  weapons-ware
+  a thing, weapons-ware
   states: shelved, nicked
   on the knives
 
@@ -698,7 +698,7 @@ end phrase
 
 create the precious gems
   aka gems, gem, jewels, cheap gems, smuggled gems, display, displays, fare, wares, merchandise, goods
-  scenery, plural
+  a thing, scenery, plural
   in the Exotic Gems Stall
 
   Some of them are loose stones; others are set in finely wrought rings and
@@ -713,7 +713,7 @@ create the precious gems
 
 create the loose stones
   aka stones, stone, gemstones, gemstone, gem stones, loose gems, tiny stones, shiny stones
-  scenery, plural
+  a thing, scenery, plural
   in the Exotic Gems Stall
 
   Most of the loose stones are tiny, some no bigger than your little
@@ -725,7 +725,7 @@ create the loose stones
 
 create the pretty jewelry
   aka jewelry, jewelery, rings, ring, necklaces, flashy jewelry, flashy rings
-  scenery, plural
+  a thing, scenery, plural
   in the Exotic Gems Stall
 
   The rings and necklaces are pretty, but they all look a bit *too* flashy.
@@ -764,7 +764,7 @@ end trait
 
 create the jars of herbs
   aka herbwares, jars, tiny jars, herb jars, display, displays, fare, wares, merchandise, goods
-  scenery, plural
+  a thing, scenery, plural
   in the Herb Stall
 
   The dozens of tiny jars are filled with dried and crushed bits of leaves,
@@ -781,7 +781,7 @@ create the jars of herbs
 
 create the herbs
   aka herb stuff, stuff, crushed bits, leaves, roots, berries, petals, moss, bark, shriveled pieces
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Herb Stall
 
@@ -822,7 +822,7 @@ create the herb jar
 
 create the dried weeds
   aka weeds, weed, crumbling weeds, dark weeds, pungent weeds
-  plural
+  a thing, plural
   in the herb jar
 
   The stuff is dark and pungent.
@@ -882,7 +882,7 @@ end trait
 
 create the rope pegs
   aka wooden pegs, pegs, peg, wood pegs
-  scenery, plural
+  a thing, scenery, plural
   in the Rope Stall
 
   There's nothing special about the wooden pegs; they're just there to hold
@@ -890,7 +890,7 @@ create the rope pegs
 
 create the rope wares
   aka ropes, coils, coils of rope, heaps of rope, knotted rope, loose rope, thick rope, thin rope, display, displays, wares, merchandise, goods
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Rope Stall
 
@@ -899,7 +899,7 @@ create the rope wares
 
 create the length of rope
   aka rope, piece of rope, short rope, stiff rope, scratchy rope, five feet of rope
-  rope-ware
+  a thing, rope-ware
   states: shelved, nicked
   on the rope wares
 
@@ -928,7 +928,7 @@ end trait
 
 create the stock of candles
   aka candles, pairs of candles, pairs, display, displays, fare, wares, merchandise, goods
-  scenery, plural
+  a thing, scenery, plural
   in the Candlemaker's Stall
 
   The candles hang in pairs, connected to each other by a common wick. Most
@@ -941,7 +941,7 @@ create the stock of candles
 
 create the tallow candles
   aka tallow display, yellow candles, lumpy candles, cheap candles
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -949,7 +949,7 @@ create the tallow candles
 
 create the wax candles
   aka wax display, premade candles, colored candles, coloured candles, smooth candles, straight candles
-  scenery, plural
+  a thing, scenery, plural
   stall-display
   in the Candlemaker's Stall
 
@@ -957,7 +957,7 @@ create the wax candles
 
 create the red wax candles
   aka red candles, red wax display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -966,7 +966,7 @@ create the red wax candles
 
 create the blue wax candles
   aka blue candles, blue wax display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -975,7 +975,7 @@ create the blue wax candles
 
 create the green wax candles
   aka green candles, green wax display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -984,7 +984,7 @@ create the green wax candles
 
 create the white wax candles
   aka white candles, white wax display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Candlemaker's Stall
 
@@ -993,7 +993,7 @@ create the white wax candles
 
 create the tallow candle
   aka candle, yellow candle, lumpy candle, cheap candle
-  candle-ware
+  a thing, candle-ware
   states: shelved, nicked
   on the tallow candles
 
@@ -1001,7 +1001,7 @@ create the tallow candle
 
 create the red wax candle
   aka red candle, wax candle, candle
-  candle-ware
+  a thing, candle-ware
   states: shelved, nicked
   on the red wax candles
 
@@ -1009,7 +1009,7 @@ create the red wax candle
 
 create the blue wax candle
   aka blue candle, wax candle, candle
-  candle-ware
+  a thing, candle-ware
   states: shelved, nicked
   on the blue wax candles
 
@@ -1017,7 +1017,7 @@ create the blue wax candle
 
 create the green wax candle
   aka green candle, wax candle, candle
-  candle-ware
+  a thing, candle-ware
   states: shelved, nicked
   on the green wax candles
 
@@ -1025,7 +1025,7 @@ create the green wax candle
 
 create the white wax candle
   aka white candle, wax candle, candle
-  candle-ware
+  a thing, candle-ware
   states: shelved, nicked
   on the white wax candles
 
@@ -1033,7 +1033,7 @@ create the white wax candle
 
 create the tallow pots
   aka pots, pot, cauldron, cauldrons, tallow pot, boiling goop, goop, yellow goop
-  scenery, plural
+  a thing, scenery, plural
   in the Candlemaker's Stall
 
   The yellow, bubbling goop is kept at a constant boil.
@@ -1064,14 +1064,14 @@ create the tallow pots
 
 create the dowel rods
   aka dowels, dowel, rods, rod, wooden dowels, long dowels
-  scenery, plural
+  a thing, scenery, plural
   in the Candlemaker's Stall
 
   The long, wooden dowels run the width of the stall.
 
 create the fumes
   aka fume, steam, vapor, vapors, pungent fumes
-  scenery, plural
+  a thing, scenery, plural
   in the Candlemaker's Stall
 
   Pungent fumes rise from the tallow pots.
@@ -1131,7 +1131,7 @@ end trait
 
 create the assorted pottery
   aka pottery, assorted-pottery, wares, display, displays, fare, merchandise, goods, glazes, fired clay
-  scenery, plural
+  a thing, scenery, plural
   in the Pottery Stall
 
   From tall, narrow, precariously balanced urns to round, gourd-like jars to
@@ -1145,7 +1145,7 @@ create the assorted pottery
 
 create the clay pots
   aka pots, pot display, simple pots, functional pots
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Pottery Stall
 
@@ -1153,7 +1153,7 @@ create the clay pots
 
 create the urns
   aka urn display, tall urns, narrow urns, decorative urns, precarious urns
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Pottery Stall
 
@@ -1161,7 +1161,7 @@ create the urns
 
 create the clay jars
   aka jars, jar display, round jars, gourd-like jars, gourds
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Pottery Stall
 
@@ -1169,7 +1169,7 @@ create the clay jars
 
 create the bowls
   aka bowl display, shallow bowls, dishes, dish
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   stall-display
   in the Pottery Stall
 

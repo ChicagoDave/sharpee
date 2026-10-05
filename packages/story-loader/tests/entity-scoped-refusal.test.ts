@@ -63,6 +63,7 @@ before the game starts
 end before
 
 create the iron ring
+  a thing
   in the Vault
   phrase stuck-fast:
     The ring is fused to the stone; it will not budge.
@@ -173,6 +174,7 @@ before the game starts
 end before
 
 create the statue
+  a thing
   in the Yard
 
   A statue.
@@ -182,7 +184,7 @@ create the statue
   end on
 
 create the bench
-  bolted
+  a thing, bolted
   in the Yard
 
   A bench.

@@ -36,7 +36,7 @@ create the Garden
   A walled garden.
 
 create the sundial
-  scenery
+  a thing, scenery
   in the Terrace
 
   A brass sundial.

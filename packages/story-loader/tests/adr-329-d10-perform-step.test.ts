@@ -70,7 +70,7 @@ create the Vault
   A vault.
 
 create the key
-  conjurable
+  a thing, conjurable
 ${s.key ?? '  in the Tower'}
 
   A key.

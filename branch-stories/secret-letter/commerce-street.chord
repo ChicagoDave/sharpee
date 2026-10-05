@@ -203,21 +203,21 @@ end phrase
 
 create the sidewalk
   aka sidewalks, flagstone, flagstones, raised sidewalks
-  scenery
+  a thing, scenery
   in the Commerce Street
 
   The sidewalks are made of flagstones laid over the cobbles of the street.
 
 create the cobbles
   aka cobblestones, cobblestone, cobble, street stones, stone, stones
-  scenery, plural
+  a thing, scenery, plural
   in the Commerce Street
 
   The cobblestones are slick with mud.
 
 create the mud
   aka dung, filth, horse dung
-  scenery
+  a thing, scenery
   in the Commerce Street
 
   This sort of filth accumulates in most of the streets in Toresal, except for
@@ -228,7 +228,7 @@ create the mud
 
 create the bakery storefront
   aka bakery, baker, bakers, bakery sign, bakery door, loaf sign
-  scenery
+  a thing, scenery
   in the Commerce Street
 
   A hanging sign above the door depicts a loaf of bread, and the warm smell of
@@ -240,7 +240,7 @@ create the bakery storefront
 
 create the butcher's storefront
   aka butchers storefront, butcher, butchers, butchery, pig, painted pig, pig sign
-  scenery
+  a thing, scenery
   in the Commerce Street
 
   A brightly painted pig decorates the sign over this shop. The smell of burned
@@ -252,7 +252,7 @@ create the butcher's storefront
 
 create the armory storefront
   aka armory, armoury, armorers, armourers, armourer, armory sign, shield sign
-  scenery
+  a thing, scenery
   in the Commerce Street
 
   The walls of this shop are built of heavy, blackened bricks — a grim exterior
@@ -265,7 +265,7 @@ create the armory storefront
 
 create the shopfronts
   aka shops, stores, storefronts, shop fronts, store fronts, signs, shop signs, doors, shop doors, buildings
-  scenery, plural
+  a thing, scenery, plural
   in the Commerce Street
 
   Storefronts for a bakery, a butcher's shop, and an armory line the north side
@@ -301,7 +301,7 @@ create the Bakery
 
 create the bread counter
   aka counter, counters, bakery counter
-  scenery
+  a thing, scenery
   in the Bakery
 
   (TODO during play-testing — A long wooden counter, scrubbed pale, with a
@@ -309,7 +309,7 @@ create the bread counter
 
 create the bread
   aka baked goods, loaves, baguettes, rolls, loaf, baguette, roll, golden loaves
-  scenery
+  a thing, scenery
   in the Bakery
 
   The bread looks and smells delicious, but right now you need answers more
@@ -325,7 +325,7 @@ create the bread
 
 create the flour
   aka white powder, powder, powdery stuff, film of flour, thin film, dust, floury stuff
-  scenery
+  a thing, scenery
   in the Bakery
 
   Germaise likes to throw around great handfuls of flour whenever he's making
@@ -338,7 +338,7 @@ create the flour
 
 create the oven
   aka brick oven, huge oven, kiln, furnace, back wall, orange glow, glow
-  scenery
+  a thing, scenery
   in the Bakery
 
   Most of the shop's back wall is actually the front of Germaise's huge brick
@@ -404,7 +404,7 @@ create the Butcher's Shop
 
 create the trays of meat
   aka trays, tray, meat, sausage, sausages, carcass, carcasses, bits, bargain bits, bargains, gristle, cuts, chops, joints, raw meat, hanging meat, counter
-  scenery, plural
+  a thing, scenery, plural
   in the Butcher's Shop
 
   The sausage looks tasty enough, and the hanging meat cuts would probably
@@ -424,7 +424,7 @@ create the trays of meat
 
 create the hooks
   aka hook, brutal hooks, thick hooks, ceiling hooks
-  scenery, plural
+  a thing, scenery, plural
   in the Butcher's Shop
 
   Dozens of thick, brutal hooks hang from the ceiling.
@@ -439,7 +439,7 @@ create the hooks
 
 create the chopping block
   aka block, butcher block, butcher's block, cutting board, board, oak block, stains, stain
-  scenery
+  a thing, scenery
   in the Butcher's Shop
 
   Holstenoffer's chopping block is cut from a single, gigantic piece of
@@ -497,7 +497,7 @@ create the Armory
 
 create the dagger display
   aka dagger, daggers, knives, knife, display, blades, blade, stilettos, stiletto, stickers, sticker
-  scenery
+  a thing, scenery
   buy-from-minor
   in the Armory
 
@@ -517,7 +517,7 @@ create the dagger display
 
 create the big weapons
   aka weapons, axes, flails, flail, racks, rack, gauntlets, gauntlet, spiked gauntlets, interesting weapons
-  scenery, plural
+  a thing, scenery, plural
   too-big-to-wear
   in the Armory
 
@@ -619,7 +619,7 @@ create the East Commerce Street
 
 create Black Gate Estate
   aka black gate, fossville's house, baron's house, somber building, estate
-  scenery, proper
+  a thing, scenery, proper
   knock-black-gate
   in the East Commerce Street
 
@@ -686,7 +686,7 @@ create Red Gate Estate
 
 create the Jacobs Mansion
   aka jacobs family mansion, jacobs mansion, mansion, castle, miniature castle, jacobs house
-  scenery
+  a thing, scenery
   knock-jacobs
   in the East Commerce Street
 
@@ -706,14 +706,14 @@ create the Jacobs Mansion
 
 create the crenellations
   aka turrets, turret, crenellation, portcullis, castle architecture
-  scenery, plural
+  a thing, scenery, plural
   in the East Commerce Street
 
   All the castle-style architecture on Jacobs' mansion is a bit ostentatious.
 
 create the City Park
   aka park, meadow, woods, wood, open meadow, park wall, park gate
-  scenery, proper
+  a thing, scenery, proper
   in the East Commerce Street
 
   The park is a couple of acres of open meadow and sparse woods in the middle
@@ -736,7 +736,7 @@ end phrase
 
 create the iron fence
   aka fence, fences, spikes, spike, iron spikes, spiked fence
-  scenery
+  a thing, scenery
   in the East Commerce Street
 
   The fence is too high to climb, and topped with sharp iron spikes to boot.
@@ -856,7 +856,7 @@ create Germaise
 
 create the moustache
   aka moustaches, mustache, mustaches, germaise's moustache, caterpillar, tracks
-  scenery
+  a thing, scenery
   in the Bakery
 
   Germaise's moustache looks like a caterpillar with particularly dirty feet
@@ -871,6 +871,7 @@ create the moustache
   end on
 
 create the mound of dough
+  a thing
   aka dough, pastry dough, mound, strips
 
   The mound of dough is twice the size of Germaise's head, and he keeps
@@ -955,6 +956,7 @@ create Old Man Holstenoffer
   end on
 
 create the cleaver
+  a thing
   aka big molly, molly, knife, holstenoffer's cleaver, bloody cleaver
 
   Holstenoffer calls his cleaver 'Big Molly,' and often talks to it as though
@@ -964,7 +966,7 @@ create the cleaver
 
 create the tattoos
   aka tattoo, sailors' tattoos, blue tangle, swirling designs, designs, arms
-  scenery, plural
+  a thing, scenery, plural
   in the Butcher's Shop
 
   Holstenoffer's tattoos are a solid blue tangle of swirling designs, covering

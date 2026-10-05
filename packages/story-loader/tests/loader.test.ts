@@ -240,7 +240,7 @@ create the bread box
   A box.
 
 create the direction signs
-  plural, scenery
+  a thing, plural, scenery
   in the Pantry
 
   Painted arrows.
@@ -286,11 +286,12 @@ create the Pantry
   A pantry.
 
 create the sword
+  a thing
 
   A sword.
 
 create the hat
-  wearable
+  a thing, wearable
 
   A hat.
 
@@ -342,7 +343,7 @@ create the Pantry
   A pantry.
 
 create the anvil
-  wearable
+  a thing, wearable
   in the Pantry
 
   Heavy.

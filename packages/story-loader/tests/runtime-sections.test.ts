@@ -134,6 +134,7 @@ create the Hall
   A hall.
 
 create the lamp
+  a thing
   in the Hall
 
   A lamp.

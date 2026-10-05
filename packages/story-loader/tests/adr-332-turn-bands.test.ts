@@ -58,6 +58,7 @@ create Bea
   A watcher.
 
 create the stone
+  a thing
   in the Camp
 
   A stone.

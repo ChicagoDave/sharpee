@@ -42,6 +42,7 @@ before the game starts
 end before
 
 create the brass key
+  a thing
 
   A small brass key.
 ${extra}`;

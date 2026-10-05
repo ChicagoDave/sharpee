@@ -76,7 +76,7 @@ create the Market
     The market is behind you.
 
 create the apples
-  scenery
+  a thing, scenery
   in the Market
 
   Apples.

@@ -100,7 +100,7 @@ end trait
 
 create the pygmy goats
   aka goats
-  plural
+  a thing, plural
   in the Petting Zoo
   pettable with kind goats
   feedable with food the handful of feed
@@ -113,6 +113,7 @@ create the pygmy goats
   end after
 
 create the handful of feed
+  a thing
   aka feed
   in the Petting Zoo
 
@@ -121,7 +122,7 @@ create the handful of feed
 create the garden snake
   aka snake
   in the Petting Zoo
-  pettable with kind snake
+  a thing, pettable with kind snake
 
   Coiled behind glass, radiating disdain.
 

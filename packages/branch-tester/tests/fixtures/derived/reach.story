@@ -36,12 +36,13 @@ create the chest
   A chest.
 
 create the brass key
+  a thing
   in the Pantry
 
   A key.
 
 create the scroll
-  readable
+  a thing, readable
   in the chest
 
   A scroll.
@@ -61,12 +62,13 @@ create the cellar door
   end after
 
 create the iron key
+  a thing
   in the Pantry
 
   An iron key.
 
 create the rope
-  cuttable with the knife
+  a thing, cuttable with the knife
   in the Hall
   states: whole, cut
 
@@ -77,6 +79,7 @@ create the rope
   end on
 
 create the knife
+  a thing
   in the Pantry
 
   A knife.

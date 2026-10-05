@@ -86,6 +86,7 @@ create Teisha
   Teisha.
 
 create the monkey
+  a thing
   in the Stall
 
   A monkey.

@@ -80,7 +80,7 @@
 
 create the company
   aka shannon's company
-  proper
+  a thing, proper
   states: pending, escorting, done
 
   Widow Shannon's company.
@@ -208,7 +208,7 @@ create the Duke's House
 
 create the silence
   aka stillness, quiet, eerie silence, expectant silence, echo, echoes
-  scenery
+  a thing, scenery
 
   It's just insubstantial silence.
 
@@ -239,7 +239,7 @@ end phrase
 
 create the dust
   aka film of dust, gray film, grey film, gray dust, grime
-  scenery
+  a thing, scenery
 
   The dust covers everything, muting all colors under a film of gray.
 
@@ -299,7 +299,7 @@ end phrase
 
 create the marble floor
   aka floor, marble, marble floors, floors
-  scenery
+  a thing, scenery
   in the Entrance Hall
 
   The walls are bare; your footsteps echo on the marble floors.
@@ -350,7 +350,7 @@ end phrase
 
 create the portrait of the Duke
   aka portrait, painting, picture, canvas, portrait of the old duke, duke, old duke, father, my father, your father, duke's eyes, eyes
-  scenery
+  a thing, scenery
   in the Great Hall
 
   The Duke's features are strong and stern, yet softened by kindness, and
@@ -398,7 +398,7 @@ end phrase
 
 create the old furniture
   aka furniture, tables, table, chairs, chair, fine furniture, stacked furniture, shrouded furniture, dark wood, wood
-  scenery, plural
+  a thing, scenery, plural
   in the Great Hall
   states: intact, smashed
 
@@ -444,7 +444,7 @@ end phrase
 
 create the dustsheets
   aka sheets, sheet, dust sheets, dust sheet, dustsheet, linen, linens, shrouds, shroud, white sheets, dusty sheets
-  scenery, plural
+  a thing, scenery, plural
   in the Great Hall
 
   The sheets are fine linen, smudged gray with dust.
@@ -471,6 +471,7 @@ define phrase little-point-dust
 end phrase
 
 create the pile of broken wood
+  a thing
   aka wood, broken wood, firewood, fire wood, bundle, bundle of sticks, sticks, pile, kindling
 
   Just a bundle of sticks — that used to be a nice chair.
@@ -508,7 +509,7 @@ create the Cellar
 
 create the narrow stairway
   aka stairway, stairs, staircase, narrow stairs, stone steps, steps, step
-  scenery, climbable, enterable
+  a thing, scenery, climbable, enterable
 
   Narrow, stone steps leading down.
 
@@ -619,7 +620,7 @@ end phrase
 
 create the roaring fire
   aka fire, flames, flame, crackling fire, cheerful fire, smoke
-  scenery
+  a thing, scenery
 
   The fire crackles cheerfully inside the belly of the furnace.
 
@@ -653,7 +654,7 @@ end phrase
 
 create the orange light
   aka light, glow, warm glow, orange glow, flickering light, bright light
-  scenery
+  a thing, scenery
 
   The warm glow flickers out from the belly of the furnace.
 
@@ -716,7 +717,7 @@ end phrase
 
 create the dusty bookshelves
   aka bookshelves, shelves, shelf, bookshelf, top shelf, topmost shelf, empty shelves, looted shelves, warped shelves
-  scenery, plural
+  a thing, scenery, plural
   in the Office
 
   The bookshelves have been completely looted.
@@ -746,7 +747,7 @@ end trait
 
 create the Duke's desk
   aka desk, old desk, writing desk, dusty desk, handsome desk, mahogany desk, kielwood desk
-  scenery, enterable, climbable
+  a thing, scenery, enterable, climbable
   desk-restore
   in the Office
   states, reversible: dusty, climbed
@@ -861,7 +862,7 @@ end phrase
 
 create the collected documents
   aka documents, papers, legal documents, financial records, records, bundles of papers, bundles, correspondence, correspondences, stack
-  plural
+  a thing, plural
   in the wooden box
 
   Some of them are legal documents indicating the disposition of the old
@@ -917,7 +918,7 @@ end phrase
 
 create the old love letters
   aka letters, love letters, old letters, mother's letters, small letters, worn parchment, scribbled letters, unsigned letters
-  plural
+  a thing, plural
 
   The penmanship is clumsy, like the way yours looked when Fiona was first
   teaching you your letters. Each is short, no more than a few scribbled
@@ -959,7 +960,7 @@ end phrase
 
 create the scattered books
   aka books, book, pages, page, covers, cover, torn books, damaged books, old tomes, tomes, tome, piles of books, piles, pile
-  scenery, plural
+  a thing, scenery, plural
   in the Office
 
   Most of the books are damaged — pages missing, covers torn off. A few have
@@ -1047,7 +1048,7 @@ create the Red Gate Master Bedroom
 
 create the bare bed
   aka bed, mattress, bare mattress, duke's bed, dusty sheet, plain sheet
-  scenery
+  a thing, scenery
   in the Red Gate Master Bedroom
 
   No one has slept in it since the Duke died, years ago.
@@ -1103,7 +1104,7 @@ end phrase
 
 create the bathtub
   aka tub, bath, basin, granite basin, stone basin, huge basin, granite tub, block of granite, lip
-  scenery
+  a thing, scenery
   in the Bathroom
 
   The basin is carved from a single block of granite, polished smooth as
@@ -1202,7 +1203,7 @@ end trait
 
 create the faucets
   aka faucet, taps, tap, wheels, wheel, spout, curved spout, pipes, pipe, plumbing, water pipes, running water, water, devices, device, strange devices, brass fittings, fittings, hot faucet, cold faucet
-  scenery, plural
+  a thing, scenery, plural
   faucet-bath
   in the Bathroom
   states: strange, understood
@@ -1298,7 +1299,7 @@ end trait
 
 create the old clothes
   aka clothes, my clothes, your clothes, rags, filthy rags, threadbare clothes, filthy clothes, urchin's clothes
-  plural
+  a thing, plural
   rags-fall-apart
 
   Your old clothes are threadbare and crusted with filth.
@@ -1338,7 +1339,7 @@ end phrase
 
 create the daydress
   aka dress, day dress, simple dress, linen dress, skirt, blouse, bodice, embroidered bodice, duchess's dress, fine dress
-  wearable
+  a thing, wearable
 
   It's nothing fancy — a simple skirt and blouse of finespun linen, with an
   embroidered bodice. The sort of day dress you might see a somewhat

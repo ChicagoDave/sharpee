@@ -16,6 +16,7 @@ create the Hall
   A hall.
 
 create the mat
+  a thing
   in the Hall
 
   A mat.

@@ -11,7 +11,8 @@
  * list values resolved to entity ids, and its `while` condition resolved in
  * the entity's scope. Extension vocabulary is admitted only under its
  * `use`, and its config keys and value kinds are the manifest's closed set;
- * `[ … ]` list values exist only as manifest list fields.
+ * `[ … ]` list values exist only as manifest list fields. Every block names
+ * exactly one kind, and it leads the block.
  *
  * Public interface: compositionsBuilder.
  * Owner context: @sharpee/chord analyzer (language frontend; browser-safe).
@@ -21,9 +22,11 @@
  * - ADR-310 D2/D4 — personality adjectives and `cognitive-profile` compile to character data.
  * - ADR-215 — extension vocabulary, `use` gating, and the typed config set.
  */
+import type { CreateDecl } from '../../ast.js';
+import { KIND_NOUNS } from '../../catalog.js';
 import type { IRPersonalityEntry } from '../../ir.js';
 import { manifestForAdjective } from '../../manifests/index.js';
-import type { EntityLineBuilder } from './context.js';
+import type { EntityBuildContext, EntityLineBuilder } from './context.js';
 
 export const compositionsBuilder: EntityLineBuilder = {
   name: 'compositions',
@@ -123,6 +126,39 @@ export const compositionsBuilder: EntityLineBuilder = {
       }
     }
 
+    checkKindLine(decl, context);
     entity.profile = profile;
   },
 };
+
+/**
+ * Every block names its kind, and the kind leads the block: it is the first
+ * item of the first composition line. A kind noun written bare already has
+ * its own diagnostic (the composition-legality pass), so it does not also
+ * report as missing.
+ *
+ * References:
+ * - ADR-359 D1 — `analysis.missing-kind-noun`; kind-first in the block (clarified 2026-10-05).
+ */
+function checkKindLine(decl: CreateDecl, context: EntityBuildContext): void {
+  const name = decl.name.words.join(' ');
+  const kindIndex = decl.compositions.findIndex((c) => c.article !== null);
+  if (kindIndex === -1) {
+    const bareKind = decl.compositions.some((c) => KIND_NOUNS.has(c.words.join(' ').toLowerCase()));
+    if (bareKind) return;
+    context.diagnostics.error(
+      'analysis.missing-kind-noun',
+      `\`${name}\` names no kind. Begin its block with one: \`a room\`, \`a door\`, \`a person\`, \`a container\`, \`a supporter\`, \`a region\`, or \`a thing\` for anything that is not a room, door, person, container, supporter or region.`,
+      decl.name.span,
+    );
+    return;
+  }
+  if (kindIndex > 0) {
+    const kind = decl.compositions[kindIndex];
+    context.diagnostics.error(
+      'analysis.kind-not-first',
+      `\`${name}\`: the kind leads the block — move \`${kind.article} ${kind.words.join(' ')}\` to the front of the first composition line.`,
+      kind.span,
+    );
+  }
+}

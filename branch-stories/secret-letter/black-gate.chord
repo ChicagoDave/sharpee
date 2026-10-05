@@ -128,7 +128,7 @@ create the Closed Alleyway
 
 create the little metal door
   aka metal door, little door, door, butchers, butcher, butcher's, holstenoffer, holstenoffers, holstenoffer's, shop, store, lock
-  scenery
+  a thing, scenery
   in the Closed Alleyway
 
   Holstenoffer's shop is behind that little metal door.
@@ -155,7 +155,7 @@ end phrase
 
 create the rough walls
   aka walls, wall, mortar, brick, bricks, rough brick
-  scenery, plural
+  a thing, scenery, plural
   in the Closed Alleyway
 
   The walls are rough brick and mortar, towering up a full three stories over
@@ -175,7 +175,7 @@ end phrase
 
 create the rain gutter
   aka gutter, rusted gutter, rusty gutter, pipe, rusted pipe, rusty pipe, rain pipe
-  scenery, climbable, enterable
+  a thing, scenery, climbable, enterable
   in the Closed Alleyway
 
   The pipe is old and rusty, and only barely still attached to the brick wall
@@ -286,7 +286,7 @@ end phrase
 
 create the distant balcony
   aka balcony, ornate balcony, decorated balcony, fossville's balcony
-  scenery, enterable, climbable
+  a thing, scenery, enterable, climbable
   in the Rooftop Edge
 
   It's an ornately decorated balcony, jutting out from what looks like a
@@ -370,7 +370,7 @@ end phrase
 
 create the chimneys
   aka chimney, stovepipes, stovepipe, pipes, sentries, sentry, keeps, keep, towers
-  scenery, plural
+  a thing, scenery, plural
   in the Rooftop
 
   Cheery smoke billows up from several of the chimneys.
@@ -422,7 +422,7 @@ end phrase
 
 create the smoke
   aka coal smoke, coal-smoke, black smoke, cheery smoke, grimy smoke
-  scenery
+  a thing, scenery
   in the Rooftop
 
   It's the black coal-smoke that hangs over most districts in Toresal.
@@ -453,7 +453,7 @@ end phrase
 
 create the people far below
   aka people, crowd, crowds, pedestrians, pedestrian, ants, ant, little people, street, wide street, residential district, district, business, drop, gap
-  scenery, plural
+  a thing, scenery, plural
   in the Rooftop Edge
 
   All the people way down there on Commerce Street look like ants from up
@@ -516,7 +516,7 @@ end phrase
 
 create the railing
   aka rail, railings, curved railing, elegant railing, ornate railing, marble, gilt iron, gilt, iron, white marble
-  scenery
+  a thing, scenery
   in the Balcony
 
   The curved, elegant railing is made of white marble and gilt iron.
@@ -525,7 +525,7 @@ create the railing
 
 create the rooftops to the west
   aka rooftops, roofs, distant rooftops, big drop
-  scenery, plural
+  a thing, scenery, plural
   in the Balcony
 
   You can see the rooftops stretching away to the west, beyond the big drop.
@@ -545,7 +545,7 @@ create the Patio
 
 create the patio furniture
   aka furniture, divan, divans, table, tables, cushioned divans, cushions, cushion, marble tables, low tables
-  scenery, plural
+  a thing, scenery, plural
   in the Patio
 
   The furniture is certainly luxurious, but it's not what you're here for.
@@ -572,7 +572,7 @@ end phrase
 
 create the ornamental fountain
   aka fountain, small fountain, water, pool, shallow pool, smooth stones, stones, jumble, trickle
-  scenery
+  a thing, scenery
   in the Patio
 
   Water trickles over a jumble of smooth stones into a shallow pool. The
@@ -628,7 +628,7 @@ create the Rooftop Garden
 
 create the flowers
   aka flower, autumn roses, roses, rose, lilies, lily, hanging lilies, greenery, blooms
-  scenery, plural
+  a thing, scenery, plural
   in the Rooftop Garden
 
   The flowers are beautiful, but you don't have time to admire them right
@@ -653,7 +653,7 @@ end phrase
 
 create the lattice
   aka wooden lattice, decorative lattice, trellis
-  scenery
+  a thing, scenery
   in the Rooftop Garden
 
   It's a decorative wooden lattice, for the flowers to climb up.
@@ -672,7 +672,7 @@ end phrase
 
 create the flight of steps
   aka steps, step, stairs, stair, staircase, stairway, stair case, stair way, main stairway, main stairs
-  scenery, climbable, enterable, plural
+  a thing, scenery, climbable, enterable, plural
   in the Rooftop Garden
 
   The stairs go up and down from here.
@@ -773,7 +773,7 @@ end trait
 
 create the harp
   aka instrument, musical instrument, strings, string, frame, soundboard, kielwood, copper strings
-  scenery
+  a thing, scenery
   harp-strings
   in the Music Room
 
@@ -839,14 +839,14 @@ end phrase
 
 create the wooden platform
   aka platform, small platform, small wooden platform, raised platform, wood platform
-  scenery
+  a thing, scenery
   in the Music Room
 
   It's a small wooden platform, holding up the harp.
 
 create the coat of arms
   aka crest, fossville's crest, arms, walls, wall, paint, painted walls, pattern, gilded vines, vines, vine, stoat, ferret, animal, rodent, milkweed, milkweed flower, field of yellow, symbol, symbols
-  scenery
+  a thing, scenery
   in the Music Room
 
   Fossville's crest depicts a slender, rodent-like animal, maybe a stoat or a
@@ -857,7 +857,7 @@ create the coat of arms
 
 create the blue carpet
   aka carpet, deep carpet, soft carpet, deep blue carpet
-  scenery
+  a thing, scenery
   in the Music Room
 
   The deep, soft carpet muffles your footsteps.
@@ -876,7 +876,7 @@ create the Audience Area
 
 create the auditorium benches
   aka benches, bench, rows, row, rows of benches, furniture, chairs, chair, seats, seat
-  scenery, plural
+  a thing, scenery, plural
   in the Audience Area
 
   The benches are for audience members to sit and appreciate the music during
@@ -924,7 +924,7 @@ create the Supply Closet
 
 create the mops
   aka mop, supplies, cleaning supplies, stack, stacks, stack of mops, brooms, buckets
-  scenery, plural
+  a thing, scenery, plural
   in the Supply Closet
 
   The mops and other supplies are stacked up in the back of the closet.
@@ -974,7 +974,7 @@ end trait
 
 create the winch
   aka strange winch, strange-looking winch, spool, large spool, drum
-  scenery
+  a thing, scenery
   winch-crank
   in the Supply Closet
 
@@ -1000,7 +1000,7 @@ end phrase
 
 create the crank handle
   aka handle, crank, winch handle, winch crank
-  scenery
+  a thing, scenery
   winch-crank
   in the Supply Closet
 
@@ -1020,7 +1020,7 @@ end phrase
 
 create the chandelier rope
   aka rope, sturdy rope, cord, taut rope, wound rope
-  scenery
+  a thing, scenery
   in the Supply Closet
 
   The rope is tightly wound around the drum of the winch. The other end
@@ -1054,7 +1054,7 @@ end phrase
 
 create the small hole
   aka hole, hole in the floor, floor hole
-  scenery
+  a thing, scenery
   in the Supply Closet
 
   The hole is just slightly bigger around than the rope running through it.
@@ -1138,7 +1138,7 @@ end phrase
 
 create Fossville's voice
   aka voice, voices, baron's voice, fossville, baron, baron fossville, activity, footsteps, footstep, muttering, mutters
-  scenery
+  a thing, scenery
   in the Second Floor Landing
 
   You'd have to go downstairs to see what's going on.
@@ -1185,7 +1185,7 @@ extend action searching
 
 create the chairs
   aka chair, comfortable chairs, cushions, cushion, furniture, furnishings, furnishing
-  scenery, plural
+  a thing, scenery, plural
   in the Living Room
 
   A quick search reveals that the letter isn't hidden under the cushions.
@@ -1204,7 +1204,7 @@ end phrase
 
 create the portraits
   aka portrait, paintings, painting, pictures, picture, ancestors, ancestor, relatives, relative, frames, frame, faces, face, forefathers, forefather, fossvilles
-  scenery, plural
+  a thing, scenery, plural
   in the Living Room
 
   You can spot the family resemblance, certain features that repeat
@@ -1286,7 +1286,7 @@ create the Master Bedroom
 
 create the four-poster bed
   aka bed, four poster bed, enormous bed, canopy, silken canopy, coverlet, sheets, sheet, pillows, pillow, headboard, mattress, pillars, pillar, mahogany pillars, furniture
-  scenery
+  a thing, scenery
   in the Master Bedroom
 
   The bed is the most impressive piece of furniture you've seen in the house
@@ -1356,7 +1356,7 @@ end phrase
 
 create the bookshelves
   aka bookshelf, shelves, shelf, book shelves, book shelf, rows, row, heavy books, dozens of books
-  scenery, plural
+  a thing, scenery, plural
   in the Library
 
   The shelves reach almost to the ceiling, each row sagging beneath the
@@ -1377,7 +1377,7 @@ end phrase
 
 create the old books
   aka books, book, old book, older books, worn books, tomes, tome, government books, politics books, well-read books, dusty books
-  scenery, plural
+  a thing, scenery, plural
   in the Library
 
   The books are all on government and politics, dry stuff like that. They
@@ -1399,7 +1399,7 @@ end trait
 
 create the gaudy chandelier
   aka chandelier, crystal chandelier, crystals, crystal, candle holders, candle holder, holders, arms, branches, curlicues, long rope, rope
-  scenery
+  a thing, scenery
   chandelier-lift
   in the Library
   states, reversible: raised, lowered
@@ -1485,6 +1485,7 @@ end phrase
 ## it, as the source does.
 
 create the letter
+  a thing
   aka secret letter, parchment, sheet, sheet of parchment, folded sheet, folded parchment, folded sheet of parchment, rolled parchment, roll, page, paper, writing, script, duke's letter
   states: hidden, revealed, read
 

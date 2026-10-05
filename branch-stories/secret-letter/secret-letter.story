@@ -282,7 +282,7 @@ create Jack
 
 create the old gray cloak
   aka gray cloak, grey cloak, cloak, old cloak
-  wearable
+  a thing, wearable
 
   Your cloak is made of undyed wool, stained and patched in several places. You
   wear it in the masculine style, fastened on the side and thrown back over your
@@ -315,7 +315,7 @@ create the old gray cloak
 
 create the woolen cap
   aka cap, hat, woolen hat, wool cap
-  wearable
+  a thing, wearable
 
   Your woolen cap is patchy and stained, like the rest of you. You usually
   keep your hair stuffed up under it.
@@ -351,7 +351,7 @@ end phrase
 
 create the boots
   aka boot, urchin's boots, worn boots
-  wearable, plural
+  a thing, wearable, plural
 
   Leather, floppy, from a pile in Maiden House.
 

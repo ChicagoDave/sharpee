@@ -131,7 +131,7 @@ end phrase
 
 create the clothier's storefront
   aka clothiers storefront, clothier, clothiers, tailor, royal tunic sign, shop window, window, display, velvet backdrop, backdrop, dummy, clothier's dummy, tunic
-  scenery
+  a thing, scenery
   in the Lord's Market
 
   A large window, trimmed in fine, dark wood, lets light into the front of the
@@ -144,7 +144,7 @@ create the clothier's storefront
 
 create the jeweler's storefront
   aka jewelers storefront, jeweler, jewelers, jewelry store, plaque, brass plaque, iron bars, bars, barred windows, pearls sign, sandler and son
-  scenery
+  a thing, scenery
   in the Lord's Market
 
   The sign above this store is painted with a necklace of pearls. The windows
@@ -157,7 +157,7 @@ create the jeweler's storefront
 
 create the moneylender's storefront
   aka moneylenders storefront, moneylender, moneylenders, placard, discreet placard, chorus brothers sign, blue storefront
-  scenery
+  a thing, scenery
   in the Lord's Market
 
   A discreet placard next to the door reads 'Chorus Brothers.' The remainder
@@ -169,7 +169,7 @@ create the moneylender's storefront
 
 create the tasteful shopfronts
   aka shopfronts, shops, stores, storefronts, shop fronts, store fronts, signs, shop signs, doors, shop doors, buildings
-  scenery, plural
+  a thing, scenery, plural
   in the Lord's Market
 
   A fine clothier's, a jewelry store, and a moneylender's shop lie northeast,
@@ -177,7 +177,7 @@ create the tasteful shopfronts
 
 create the servants
   aka people, crowd, crowds, shopper, shoppers, servant, well dressed servants
-  scenery, plural
+  a thing, scenery, plural
   in the Lord's Market
 
   Most of the people wandering about Lord's Market are well dressed servants
@@ -188,7 +188,7 @@ create the servants
 
 create the lanterns
   aka lantern, lamp, lamps, lamppost, lampposts, post, posts, ornate posts
-  scenery, plural
+  a thing, scenery, plural
   in the Lord's Market
 
   The lampposts are unlit during the day.
@@ -239,7 +239,7 @@ create the Royal Tunic
 
 create the clothier's curtains
   aka curtains, curtain, velvet curtains, purple curtains, thick curtains
-  scenery, plural
+  a thing, scenery, plural
   in the Royal Tunic
 
   The curtains are made of thick, purple velvet.
@@ -292,7 +292,7 @@ create the Jeweler's Shop
 
 create the display case
   aka case, cases, glass case, glass, pedestal, pedestals, display
-  scenery
+  a thing, scenery
   in the Jeweler's Shop
   states, reversible: locked, opened
 
@@ -309,7 +309,7 @@ create the display case
 
 create the valuable jewelry
   aka jewelry, jewels, jewel, rings, bracelets, pendants, brooches, necklaces, diamonds, diamond, ring, bracelet, pendant, brooch
-  scenery
+  a thing, scenery
   in the Jeweler's Shop
 
   Any one piece is several times more valuable than everything you've ever
@@ -353,7 +353,7 @@ create the Moneylender's Shop
 
 create the armchairs
   aka armchair, chair, chairs, leather armchairs, leather chairs
-  scenery, plural
+  a thing, scenery, plural
   in the Moneylender's Shop
 
   The armchairs are overstuffed, upholstered in rich, dark leather.
@@ -364,7 +364,7 @@ create the armchairs
 
 create the moneylender's carpet
   aka carpet, carpeting, wine-dark carpet
-  scenery
+  a thing, scenery
   in the Moneylender's Shop
 
   (TODO during play-testing — A wine-dark carpet, thick enough to swallow a
@@ -372,7 +372,7 @@ create the moneylender's carpet
 
 create the teller's window
   aka window, tellers window, counter, grating, brass grating, grate, reinforced wall, wall
-  scenery
+  a thing, scenery
   in the Moneylender's Shop
 
   The window forms a sort of counter, with an ornately scrolled, brass grating
@@ -407,7 +407,7 @@ end phrase
 
 create the clothier's carpet
   aka carpet, rug, pink carpet, plush carpet, soft carpet, deep carpet
-  scenery
+  a thing, scenery
   in the Royal Tunic
 
   The carpet is deep, plush, and colored a rich, vibrant... pink.
@@ -423,7 +423,7 @@ end phrase
 
 create the dummies
   aka dummy, torsos, torso, tripods, tripod, clothier's dummies, wooden torsos
-  scenery, plural
+  a thing, scenery, plural
   in the Royal Tunic
 
   Armless, headless torsos carved from wood, stuck atop iron tripods, and
@@ -432,7 +432,7 @@ create the dummies
 
 create the floor-length mirror
   aka mirror, tall mirror, floor length mirror
-  scenery
+  a thing, scenery
   in the Royal Tunic
 
   In the clothier's tall, floor-length mirror, you can see yourself from head
@@ -445,7 +445,7 @@ create the floor-length mirror
 
 create the lovely clothes
   aka clothes, dresses, dress, gowns, gown, ballgowns, ball gowns, velvets, silks, costumes, costume, formal wear, court apparel, apparel, ladies' formal wear
-  scenery, plural
+  a thing, scenery, plural
   buy-from-clothier
   in the Royal Tunic
 

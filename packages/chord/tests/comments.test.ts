@@ -58,7 +58,7 @@ end before
 
 describe('ADR-249 lexer: `##` comment lines (AC group 1)', () => {
   it('flags indent-0 `##` lines, single and stacked', () => {
-    const lines = lex('## one\n## two\n\ncreate the rock\n', new DiagnosticBag());
+    const lines = lex('## one\n## two\n\ncreate the rock\n  a thing\n', new DiagnosticBag());
     expect(lines[0].comment).toBe(true);
     expect(lines[1].comment).toBe(true);
     expect(lines[2].comment).toBe(false);
@@ -66,25 +66,25 @@ describe('ADR-249 lexer: `##` comment lines (AC group 1)', () => {
 
   it('missing following blank raises lex.comment-blank-lines', () => {
     const bag = new DiagnosticBag();
-    lex('## header\ncreate the rock\n', bag);
+    lex('## header\ncreate the rock\n  a thing\n', bag);
     expect(bag.all().map((d) => d.code)).toContain('lex.comment-blank-lines');
   });
 
   it('missing preceding blank raises lex.comment-blank-lines', () => {
     const bag = new DiagnosticBag();
-    lex('create the rock\n## note\n\ncreate the hat\n', bag);
+    lex('create the rock\n  a thing\n## note\n\ncreate the hat\n  a thing\n', bag);
     expect(bag.all().map((d) => d.code)).toContain('lex.comment-blank-lines');
   });
 
   it('file start counts as the leading blank (file-header comment is legal)', () => {
     const bag = new DiagnosticBag();
-    lex('## header comment\n\ncreate the rock\n', bag);
+    lex('## header comment\n\ncreate the rock\n  a thing\n', bag);
     expect(bag.all()).toHaveLength(0);
   });
 
   it('file end counts as the trailing blank (trailing comment is legal)', () => {
     const bag = new DiagnosticBag();
-    lex('create the rock\n\n## trailing note', bag);
+    lex('create the rock\n  a thing\n\n## trailing note', bag);
     expect(bag.all()).toHaveLength(0);
   });
 
@@ -107,7 +107,7 @@ describe('ADR-249 lexer: `##` comment lines (AC group 1)', () => {
 
   it('one diagnostic per violating run, not per line', () => {
     const bag = new DiagnosticBag();
-    lex('create the rock\n## one\n## two\ncreate the hat\n', bag);
+    lex('create the rock\n  a thing\n## one\n## two\ncreate the hat\n  a thing\n', bag);
     expect(bag.all().filter((d) => d.code === 'lex.comment-blank-lines')).toHaveLength(1);
   });
 });
@@ -121,13 +121,13 @@ describe('ADR-249 parser: comment position (AC group 2)', () => {
   });
 
   it('a blank-delimited comment between a create header and its body raises parse.comment-inside-block', () => {
-    const src = story('create the lamp\n\n## still deciding\n\n  a thing, portable\n\n');
+    const src = story('create the lamp\n  a thing\n\n## still deciding\n\n  a thing, portable\n\n');
     expect(errorCodes(src)).toContain('parse.comment-inside-block');
     expect(errorCodes(src)).not.toContain('lex.comment-blank-lines');
   });
 
   it('the same header/body split without blanks raises lex.comment-blank-lines', () => {
-    const src = story('create the lamp\n## still deciding\n  a thing, portable\n\n');
+    const src = story('create the lamp\n  a thing\n## still deciding\n  a thing, portable\n\n');
     expect(errorCodes(src)).toContain('lex.comment-blank-lines');
   });
 

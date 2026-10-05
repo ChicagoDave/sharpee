@@ -26,7 +26,8 @@ describe('prose block is the only phrase-text form', () => {
   });
 
   it('rejects the quoted form in entity phrase overrides', () => {
-    const source = `${HEADER}create the sign\n  phrase read-it: "Words."\n\n  A sign.\n`;
+    const source = `${HEADER}create the sign
+  a thing\n  phrase read-it: "Words."\n\n  A sign.\n`;
     const result = parse(source);
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors.some((e) => e.code === 'parse.phrase-text-form')).toBe(true);

@@ -75,11 +75,13 @@ before the game starts
 end before
 
 create the camera
+  a thing
   in the Yard
 
   A camera.
 
 create the gnome
+  a thing
   in the Yard
 
   A gnome.

@@ -117,12 +117,12 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
     expect(player.description?.text).toBe('As good-looking as ever.');
   });
 
-  it('parses the hook: scenery + supporter with capacity 1, placement', () => {
+  it('parses the hook: supporter with capacity 1 + scenery, placement', () => {
     const hook = creates[5];
     expect(hook.aka).toEqual(['hook', 'peg']);
     expect(hook.compositions).toMatchObject([
-      { article: null, words: ['scenery'] },
       { article: 'a', words: ['supporter'], config: [{ key: ['capacity'], value: '1', valueKind: 'number' }] },
+      { article: null, words: ['scenery'] },
     ]);
     expect(hook.placement).toMatchObject({ relation: 'in', place: { words: ['Cloakroom'] } });
   });

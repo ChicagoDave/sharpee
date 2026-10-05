@@ -219,6 +219,7 @@ create the Hall
   A bare proving hall.
 
 create the player
+  a thing
   starts in the Hall
 
   You.

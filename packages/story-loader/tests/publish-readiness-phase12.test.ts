@@ -53,19 +53,20 @@ create the deed box
   A box.
 
 create the deed
+  a thing
   in the deed box
 
   A deed.
 
 create the curtains
-  scenery, plural
+  a thing, scenery, plural
   hiding-spot with position behind
   in the Hall
 
   Curtains.
 
 create the fuse
-  scenery
+  a thing, scenery
   in the Hall
   states: coiled, lit
 
@@ -83,6 +84,7 @@ define sequence the burn
 end sequence
 
 create the taper
+  a thing
   in the Hall
 
   A taper.

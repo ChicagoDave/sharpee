@@ -126,6 +126,7 @@ create the West Room
   West.
 
 create the monkey
+  a thing
   in the Hub
 
   A monkey.
@@ -385,6 +386,7 @@ describe('a `move` arrival fires the destination\'s entering clause (ADR-327 D5)
   it('`when <entity> moves` clauses fire on a moved arrival too', () => {
     const b = boot(HUB('move the monkey to a random adjacent room', `
 create the watcher
+  a thing
   in the Hub
 
   A watcher.

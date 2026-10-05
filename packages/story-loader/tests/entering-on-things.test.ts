@@ -98,7 +98,7 @@ create the Yard
   A yard.
 
 create the gates
-  scenery, plural
+  a thing, scenery, plural
   in the Yard
 
   Huge doors.

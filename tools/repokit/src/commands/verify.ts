@@ -14,8 +14,10 @@ import { findControlBytes, formatControlByteFailure } from './control-bytes';
 import { checkAliasCatalogModule } from './aliases';
 import { checkDocsBlocksModule, checkGrammarModule } from './grammar';
 import { checkManifestModule } from './manifest';
+import { analyzeEbnf, ebnfDefects, EBNF_PATH } from './ebnf';
 import { checkProtocolTypes } from './protocol';
 import { checkRandomGate, formatRandomGateFailure } from './random-gate';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 export class VerifyCommand implements Command {
@@ -43,6 +45,13 @@ export class VerifyCommand implements Command {
       console.error(
         'verify: website grammar-blocks.ts is STALE against grammar/standard-en-us.story — run `repokit grammar` and commit.',
       );
+      return 1;
+    }
+    // The grammar gate rides verify as well as build: a malformed chord.ebnf
+    // is a build error, never a silently wrong download.
+    const ebnf = ebnfDefects(analyzeEbnf(readFileSync(join(root, EBNF_PATH), 'utf8')));
+    if (ebnf.length > 0) {
+      console.error(`verify: ${EBNF_PATH} is not well-formed — run \`repokit ebnf --check\`:\n  ${ebnf.join('\n  ')}`);
       return 1;
     }
     // ADR-276 D2 / ADR-310 Phase 3: a stale generated manifest is a build

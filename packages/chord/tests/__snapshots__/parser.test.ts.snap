@@ -1470,13 +1470,28 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "codes": [],
       "compositions": [
         {
-          "article": null,
+          "article": "a",
           "condition": null,
           "config": [],
           "kind": "composition",
           "span": {
             "column": 3,
-            "endColumn": 11,
+            "endColumn": 10,
+            "endLine": 55,
+            "line": 55,
+          },
+          "words": [
+            "thing",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 20,
             "endLine": 55,
             "line": 55,
           },
@@ -1560,21 +1575,6 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "codes": [],
       "compositions": [
         {
-          "article": null,
-          "condition": null,
-          "config": [],
-          "kind": "composition",
-          "span": {
-            "column": 3,
-            "endColumn": 10,
-            "endLine": 63,
-            "line": 63,
-          },
-          "words": [
-            "scenery",
-          ],
-        },
-        {
           "article": "a",
           "condition": null,
           "config": [
@@ -1583,8 +1583,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
                 "capacity",
               ],
               "span": {
-                "column": 29,
-                "endColumn": 39,
+                "column": 20,
+                "endColumn": 30,
                 "endLine": 63,
                 "line": 63,
               },
@@ -1594,13 +1594,28 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           ],
           "kind": "composition",
           "span": {
-            "column": 12,
-            "endColumn": 39,
+            "column": 3,
+            "endColumn": 30,
             "endLine": 63,
             "line": 63,
           },
           "words": [
             "supporter",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 32,
+            "endColumn": 39,
+            "endLine": 63,
+            "line": 63,
+          },
+          "words": [
+            "scenery",
           ],
         },
       ],
@@ -1703,13 +1718,28 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "codes": [],
       "compositions": [
         {
-          "article": null,
+          "article": "a",
           "condition": null,
           "config": [],
           "kind": "composition",
           "span": {
             "column": 3,
             "endColumn": 10,
+            "endLine": 70,
+            "line": 70,
+          },
+          "words": [
+            "thing",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 19,
             "endLine": 70,
             "line": 70,
           },

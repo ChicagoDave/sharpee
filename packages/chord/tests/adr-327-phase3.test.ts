@@ -108,7 +108,7 @@ describe('D10 — the start block', () => {
 
 describe('D10 — `create the player` is removed', () => {
   it('reports parse.removed-create-player with the D10 fix-it', () => {
-    const errors = errorsOf(story('create the player\n  in the Hall\n\n  You.\n\n'));
+    const errors = errorsOf(story('create the player\n  a thing\n  in the Hall\n\n  You.\n\n'));
     const removed = errors.find((d) => d.code === 'parse.removed-create-player')!;
     expect(removed).toBeDefined();
     expect(removed.message).toContain('playable');
@@ -126,7 +126,8 @@ describe('D9 — `change the player to <character>`', () => {
 
   it('lowers inside an ordinary clause body, `when` tail intact', () => {
     const ir = ok(
-      whole(`create Jack\n  a person\n  playable\n  in the Hall\n\n  A man.\n\ncreate the lever\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to Jack when the Hall is lit\n  end on\n\n`),
+      whole(`create Jack\n  a person\n  playable\n  in the Hall\n\n  A man.\n\ncreate the lever
+  a thing\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to Jack when the Hall is lit\n  end on\n\n`),
     );
     const clause = ir.entities.find((e) => e.id === 'lever')!.onClauses[0];
     expect(clause.body[0]).toMatchObject({ kind: 'change-player', entity: { kind: 'entity', id: 'jack' } });
@@ -135,21 +136,21 @@ describe('D9 — `change the player to <character>`', () => {
 
   it('a non-playable target is analysis.player-target-not-playable', () => {
     const codes = codesOf(
-      whole('create Jack\n  a person\n  in the Hall\n\n  A man.\n\ncreate the lever\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to Jack\n  end on\n\n'),
+      whole('create Jack\n  a person\n  in the Hall\n\n  A man.\n\ncreate the lever\n  a thing\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to Jack\n  end on\n\n'),
     );
     expect(codes).toContain('analysis.player-target-not-playable');
   });
 
   it('a non-person target is analysis.player-target-not-person', () => {
     const codes = codesOf(
-      whole('create the crate\n  a container\n  in the Hall\n\n  A crate.\n\ncreate the lever\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to the crate\n  end on\n\n'),
+      whole('create the crate\n  a container\n  in the Hall\n\n  A crate.\n\ncreate the lever\n  a thing\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to the crate\n  end on\n\n'),
     );
     expect(codes).toContain('analysis.player-target-not-person');
   });
 
   it('an unresolved target rides the standard unknown-entity gate, and only that', () => {
     const codes = codesOf(
-      whole('create the lever\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to Mirabel\n  end on\n\n'),
+      whole('create the lever\n  a thing\n  in the Hall\n\n  A lever.\n\n  on the player pulling\n    change the player to Mirabel\n  end on\n\n'),
     );
     expect(codes).toContain('analysis.unknown-entity');
     expect(codes).not.toContain('analysis.player-target-not-person');
@@ -157,7 +158,7 @@ describe('D9 — `change the player to <character>`', () => {
 
   it('`change <entity> to <state>` still reads as a state change', () => {
     const ir = ok(
-      whole('create the lamp\n  in the Hall\n  states: lit, dark\n\n  A lamp.\n\n  on the player pulling\n    change the lamp to dark\n  end on\n\n'),
+      whole('create the lamp\n  a thing\n  in the Hall\n  states: lit, dark\n\n  A lamp.\n\n  on the player pulling\n    change the lamp to dark\n  end on\n\n'),
     );
     expect(ir.entities.find((e) => e.id === 'lamp')!.onClauses[0].body[0]).toMatchObject({
       kind: 'change',
@@ -177,7 +178,7 @@ describe('D10 — the wire shape', () => {
   it('`the player` in a clause head is still the ROLE, resolved at fire time', () => {
     const ir = ok(
       whole(
-        'create the sword\n  in the Hall\n\n  A sword.\n\n  on the player taking\n    refuse nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Not yours.\n\n',
+        'create the sword\n  a thing\n  in the Hall\n\n  A sword.\n\n  on the player taking\n    refuse nope\n  end on\n\ndefine phrases en-US\n  nope:\n    Not yours.\n\n',
       ),
     );
     expect(ir.entities.find((e) => e.id === 'sword')!.onClauses[0].actor).toEqual({ kind: 'player' });

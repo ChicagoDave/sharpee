@@ -13,7 +13,7 @@ define timer hand for the dance
 end timer
 
 create the dance
-  scenery
+  a thing, scenery
   aka circle, circles, music, rotation
   states, reversible: first, second, third
   in the Ballroom

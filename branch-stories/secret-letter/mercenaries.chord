@@ -267,6 +267,7 @@ create the wandering mercenaries
   end on
 
 create the sword
+  a thing
   aka swords, blade, blades, steel
 
   Not some decorated dandy's blades, these. Their steel is dull and tarnished,
@@ -459,7 +460,7 @@ end trait
 
 create the chasing mercenaries
   aka mercenaries, mercenary, merc, mercs, soldiers, soldier, men, man, bravos, bravo, guards, guard, people, person
-  scenery, plural
+  a thing, scenery, plural
   kick-way-up-here
   states, reversible: huddled, chopping
 
@@ -489,7 +490,7 @@ create the chasing mercenaries
 
 create the axe
   aka big axe, chopping axe
-  scenery
+  a thing, scenery
 
   It looks like a pretty big axe. It probably won't take them long to chop
   down this pole.

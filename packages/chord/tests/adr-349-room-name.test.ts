@@ -195,6 +195,7 @@ create the bucket
   A well.
 
 create the lamp
+  a thing
   in the Well
   room name:
     Lamplight

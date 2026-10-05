@@ -99,7 +99,7 @@ end timer
 
 create the hanging
   aka bobby's hanging, the execution
-  proper
+  a thing, proper
   states: pending, gathering, speaking, over
 
   Bobby's hanging.
@@ -222,7 +222,7 @@ end phrase
 
 create the gallows
   aka wooden structure, structure, platform, wooden platform, scaffold, scaffolding, raised platform, rope, trapdoor
-  scenery
+  a thing, scenery
   states: vague, recognized
 
   The gallows stands stark against the late morning sky.
@@ -286,7 +286,7 @@ end phrase
 
 create the crowd of spectators
   aka crowd, spectators, spectator, people, person, pedestrians, pedestrian, man, men, woman, women, aristocrats, aristocrat, servants, servant, merchants, merchant, beggars, beggar
-  scenery, plural
+  a thing, scenery, plural
 
   The crowd is made up of people from every part of the city. Men and women,
   aristocrats and servants, merchants and beggars, all rubbing shoulders.
@@ -541,7 +541,7 @@ end timer
 
 create the raid
   aka raid on maiden house, the baron's men
-  proper
+  a thing, proper
   states: pending, waking, pounding, hidden, aftermath, keyed, escaped
 
   The raid on Maiden House.
@@ -684,7 +684,7 @@ end phrase
 
 create the gap in the wall
   aka gap, boards, board, opening, narrow opening, dark opening, secret door, secret closet door, closet door, hidden closet, hiding place
-  scenery, enterable
+  a thing, scenery, enterable
   states, reversible: opened, shut
 
   A dark gap in the wall leads to a secret closet.
@@ -800,7 +800,7 @@ end phrase
 
 create the closet walls
   aka walls, wall, close walls
-  scenery, plural
+  a thing, scenery, plural
   in the Secret Closet
 
   It's pitch black in here!
@@ -923,6 +923,7 @@ end phrase
 ## gives it no description, so its line is FI30's own sentence about it.
 
 create the large brass key
+  a thing
   aka brass key, key, red gate key, key to red gate manor, manor key
 
   It is the key to Red Gate Manor, and it opens the way to your history.

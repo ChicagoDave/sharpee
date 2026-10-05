@@ -56,7 +56,7 @@ create the lectern
 
 create the notice
   aka card
-  readable
+  a thing, readable
   on the lectern
 
   A stiff card, printed on one side.

@@ -21,6 +21,7 @@ import {
 import { runBundle } from './bundle';
 import { runGrammarStep } from './grammar';
 import { runManifestStep } from './manifest';
+import { runEbnfStep } from './ebnf';
 import { buildBrowserClient, chordStoryFile } from './browser';
 import { buildPlaygroundClient } from './playground';
 
@@ -151,6 +152,9 @@ export function buildPlatform(root: string, opts: BuildOptions): void {
     // ADR-276 D2: the stdlib manifest is generated from stdlib SOURCE (no
     // dist needed) before chord compiles — the analyzer imports it.
     if (dir === 'chord') runManifestStep(root, opts.quiet);
+    // The grammar gate: chord.ebnf must read as a grammar (every rule ends,
+    // none is defined twice or orphaned, no comment nests) before chord builds.
+    if (dir === 'chord') runEbnfStep(root, opts.quiet);
     run('pnpm', ['--filter', pkg, 'build']);
     // Invariant: assert the compile produced output (precludes the .tsbuildinfo silent no-op class).
     const distIndex = join(root, 'packages', dir, 'dist', 'index.js');

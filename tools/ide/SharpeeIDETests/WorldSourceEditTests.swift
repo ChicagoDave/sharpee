@@ -13,16 +13,16 @@ final class WorldSourceEditTests: XCTestCase {
     private let source = """
     create the doormat
       aka mat
-      scenery, a supporter
+      a supporter, scenery
       in the Fountain Court
 
     create the stopcock
       aka cock, water valve
-      scenery
+      a thing, scenery
       in the Boiler Shed
 
     create the plunger
-      scenery
+      a thing, scenery
       in the Boiler Shed
     """
 
@@ -52,7 +52,7 @@ final class WorldSourceEditTests: XCTestCase {
         let edit = try XCTUnwrap(WorldSourceEdit.addingWord("primer", toThingNamed: "plunger", in: source))
         let after = apply(edit, to: source)
 
-        XCTAssertTrue(after.contains("create the plunger\n  scenery\n  aka primer\n  in the Boiler Shed"), after)
+        XCTAssertTrue(after.contains("create the plunger\n  a thing, scenery\n  aka primer\n  in the Boiler Shed"), after)
         XCTAssertEqual(edit.line, 13, "the author lands on the line that was written")
     }
 
@@ -108,7 +108,7 @@ final class WorldSourceEditTests: XCTestCase {
                          north to the Yard
 
                        create the bankside sign
-                         scenery
+                         a thing, scenery
                          in the Tavern
 
                        create the Yard
@@ -156,7 +156,7 @@ final class WorldSourceEditTests: XCTestCase {
           end topic
 
         create the pen
-          scenery
+          a thing, scenery
           in the Tiring-House
 
         define phrase ides-nothing
@@ -190,7 +190,7 @@ final class WorldSourceEditTests: XCTestCase {
           a door, openable
 
         create the iron latch
-          scenery
+          a thing, scenery
 
         create the Yard
           a room
@@ -204,7 +204,7 @@ final class WorldSourceEditTests: XCTestCase {
         let after = apply(edit, to: source)
 
         XCTAssertFalse(edit.text.contains("in the"), edit.text)
-        XCTAssertTrue(after.hasSuffix("create the false modesty\n  scenery\n"), after)
+        XCTAssertTrue(after.hasSuffix("create the false modesty\n  a thing, scenery\n"), after)
         XCTAssertTrue(after.hasPrefix(source), "an append never disturbs what is already there")
     }
 
@@ -239,7 +239,7 @@ final class WorldSourceEditTests: XCTestCase {
           aka bankside
 
         create the long bar
-          scenery
+          a thing, scenery
           in the Tavern
 
         define phrase closing-time
@@ -277,7 +277,7 @@ final class WorldSourceEditTests: XCTestCase {
     func testOpeningADescriptionWritesTheBlankLineAndIndentOnly() throws {
         let story = """
         create the bankside sign
-          scenery
+          a thing, scenery
           in the Tavern
 
         create the Yard
@@ -289,7 +289,7 @@ final class WorldSourceEditTests: XCTestCase {
 
         XCTAssertEqual(after, """
         create the bankside sign
-          scenery
+          a thing, scenery
           in the Tavern
 
           

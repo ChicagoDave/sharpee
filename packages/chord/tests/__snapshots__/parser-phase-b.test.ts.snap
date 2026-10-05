@@ -1110,7 +1110,23 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "burdens": [],
       "carries": [],
       "codes": [],
-      "compositions": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 77,
+            "line": 77,
+          },
+          "words": [
+            "thing",
+          ],
+        },
+      ],
       "containing": [],
       "counters": [],
       "deadly": null,
@@ -1122,8 +1138,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 80,
-          "line": 80,
+          "endLine": 81,
+          "line": 81,
         },
         "text": "Woven this morning, regretted by noon.",
       },
@@ -1164,8 +1180,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 6,
             "endColumn": 20,
-            "endLine": 78,
-            "line": 78,
+            "endLine": 79,
+            "line": 79,
           },
           "words": [
             "Break",
@@ -1176,8 +1192,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 20,
-          "endLine": 78,
-          "line": 78,
+          "endLine": 79,
+          "line": 79,
         },
       },
       "pronouns": [],
@@ -1186,7 +1202,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 41,
-        "endLine": 80,
+        "endLine": 81,
         "line": 76,
       },
       "spreads": [],
@@ -1205,8 +1221,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 84,
-            "line": 83,
+            "endLine": 85,
+            "line": 84,
           },
           "value": {
             "form": "prose",
@@ -1215,8 +1231,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 5,
               "endColumn": 42,
-              "endLine": 84,
-              "line": 84,
+              "endLine": 85,
+              "line": 85,
             },
             "text": "The north door is bolted after hours.",
           },
@@ -1227,8 +1243,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 84,
-        "line": 82,
+        "endLine": 85,
+        "line": 83,
       },
     },
     {
@@ -1246,8 +1262,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 87,
-            "line": 87,
+            "endLine": 88,
+            "line": 88,
           },
           "words": [
             "person",
@@ -1261,8 +1277,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 88,
-            "line": 88,
+            "endLine": 89,
+            "line": 89,
           },
           "words": [
             "playable",
@@ -1291,8 +1307,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 8,
           "endColumn": 12,
-          "endLine": 86,
-          "line": 86,
+          "endLine": 87,
+          "line": 87,
         },
         "words": [
           "Alex",
@@ -1309,8 +1325,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 88,
-        "line": 86,
+        "endLine": 89,
+        "line": 87,
       },
       "spreads": [],
       "startsStates": [],
@@ -1328,8 +1344,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 28,
-            "endLine": 91,
-            "line": 91,
+            "endLine": 92,
+            "line": 92,
           },
           "stmtWhen": null,
           "target": {
@@ -1338,8 +1354,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 24,
               "endColumn": 28,
-              "endLine": 91,
-              "line": 91,
+              "endLine": 92,
+              "line": 92,
             },
             "words": [
               "Alex",
@@ -1351,8 +1367,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 92,
-        "line": 90,
+        "endLine": 93,
+        "line": 91,
       },
     },
   ],
@@ -1427,7 +1443,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
   "span": {
     "column": 1,
     "endColumn": 11,
-    "endLine": 92,
+    "endLine": 93,
     "line": 1,
   },
 }
@@ -2771,13 +2787,28 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "codes": [],
       "compositions": [
         {
-          "article": null,
+          "article": "a",
           "condition": null,
           "config": [],
           "kind": "composition",
           "span": {
             "column": 3,
-            "endColumn": 9,
+            "endColumn": 10,
+            "endLine": 103,
+            "line": 103,
+          },
+          "words": [
+            "thing",
+          ],
+        },
+        {
+          "article": null,
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 12,
+            "endColumn": 18,
             "endLine": 103,
             "line": 103,
           },
@@ -3022,7 +3053,23 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "burdens": [],
       "carries": [],
       "codes": [],
-      "compositions": [],
+      "compositions": [
+        {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 116,
+            "line": 116,
+          },
+          "words": [
+            "thing",
+          ],
+        },
+      ],
       "containing": [],
       "counters": [],
       "deadly": null,
@@ -3034,8 +3081,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "span": {
           "column": 3,
           "endColumn": 32,
-          "endLine": 119,
-          "line": 119,
+          "endLine": 120,
+          "line": 120,
         },
         "text": "A waxy paper cone of pellets.",
       },
@@ -3077,8 +3124,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "span": {
             "column": 6,
             "endColumn": 21,
-            "endLine": 117,
-            "line": 117,
+            "endLine": 118,
+            "line": 118,
           },
           "words": [
             "Petting",
@@ -3089,8 +3136,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 117,
-          "line": 117,
+          "endLine": 118,
+          "line": 118,
         },
       },
       "pronouns": [],
@@ -3099,7 +3146,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "span": {
         "column": 1,
         "endColumn": 32,
-        "endLine": 119,
+        "endLine": 120,
         "line": 115,
       },
       "spreads": [],
@@ -3121,6 +3168,21 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "codes": [],
       "compositions": [
         {
+          "article": "a",
+          "condition": null,
+          "config": [],
+          "kind": "composition",
+          "span": {
+            "column": 3,
+            "endColumn": 10,
+            "endLine": 125,
+            "line": 125,
+          },
+          "words": [
+            "thing",
+          ],
+        },
+        {
           "article": null,
           "condition": null,
           "config": [
@@ -3129,10 +3191,10 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
                 "kind",
               ],
               "span": {
-                "column": 17,
-                "endColumn": 27,
-                "endLine": 124,
-                "line": 124,
+                "column": 26,
+                "endColumn": 36,
+                "endLine": 125,
+                "line": 125,
               },
               "value": "snake",
               "valueKind": "word",
@@ -3140,10 +3202,10 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           ],
           "kind": "composition",
           "span": {
-            "column": 3,
-            "endColumn": 27,
-            "endLine": 124,
-            "line": 124,
+            "column": 12,
+            "endColumn": 36,
+            "endLine": 125,
+            "line": 125,
           },
           "words": [
             "pettable",
@@ -3161,8 +3223,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "span": {
           "column": 3,
           "endColumn": 42,
-          "endLine": 126,
-          "line": 126,
+          "endLine": 127,
+          "line": 127,
         },
         "text": "Coiled behind glass, radiating disdain.",
       },
@@ -3183,8 +3245,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "span": {
           "column": 8,
           "endColumn": 24,
-          "endLine": 121,
-          "line": 121,
+          "endLine": 122,
+          "line": 122,
         },
         "words": [
           "garden",
@@ -3203,8 +3265,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "span": {
             "column": 6,
             "endColumn": 21,
-            "endLine": 123,
-            "line": 123,
+            "endLine": 124,
+            "line": 124,
           },
           "words": [
             "Petting",
@@ -3215,8 +3277,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
         "span": {
           "column": 3,
           "endColumn": 21,
-          "endLine": 123,
-          "line": 123,
+          "endLine": 124,
+          "line": 124,
         },
       },
       "pronouns": [],
@@ -3225,8 +3287,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 126,
-        "line": 121,
+        "endLine": 127,
+        "line": 122,
       },
       "spreads": [],
       "startsStates": [],
@@ -3244,8 +3306,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
           "span": {
             "column": 3,
             "endColumn": 28,
-            "endLine": 129,
-            "line": 129,
+            "endLine": 130,
+            "line": 130,
           },
           "stmtWhen": null,
           "target": {
@@ -3254,8 +3316,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
             "span": {
               "column": 24,
               "endColumn": 28,
-              "endLine": 129,
-              "line": 129,
+              "endLine": 130,
+              "line": 130,
             },
             "words": [
               "Alex",
@@ -3267,8 +3329,8 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 130,
-        "line": 128,
+        "endLine": 131,
+        "line": 129,
       },
     },
   ],
@@ -3324,7 +3386,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
   "span": {
     "column": 1,
     "endColumn": 11,
-    "endLine": 130,
+    "endLine": 131,
     "line": 1,
   },
 }

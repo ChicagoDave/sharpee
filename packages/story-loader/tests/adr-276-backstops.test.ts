@@ -169,12 +169,13 @@ create the keeper
       BASE +
         `
 create the chest
-  lockable with the iron key
+  a thing, lockable with the iron key
   in the Vault
 
   A chest.
 
 create the iron key
+  a thing
   in the Vault
 
   A key.
@@ -192,7 +193,7 @@ create the iron key
       BASE +
         `
 create the wardrobe
-  hiding-spot with position behind
+  a thing, hiding-spot with position behind
   in the Vault
 
   A wardrobe.

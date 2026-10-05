@@ -16,12 +16,12 @@ create the Closet
 
 create the brass hook
   aka hook
-  scenery
+  a thing, scenery
   in the Closet
 
 create the iron hook
   aka hook
-  scenery
+  a thing, scenery
   in the Closet
 
 create Alex

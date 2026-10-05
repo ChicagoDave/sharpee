@@ -60,7 +60,7 @@ function storySource(extraLines: string[] = []): string {
 
 const HATCH_STORY_TAIL = [
   'create the note',
-  '  readable',
+  '  a thing, readable',
   '  in the Lab',
   '',
   '  A note.',
@@ -133,7 +133,7 @@ describe('compose --json — clean story (gates + IR)', () => {
 describe('compose --json — diagnostics', () => {
   it('a compile diagnostic carries the FULL span (endLine/endColumn — the underline range)', async () => {
     const file = join(DIR, 'analyzer-error.story');
-    writeFileSync(file, storySource(['create the widget', '  frobnicating', '  in the Lab', '', '  A widget.', '']));
+    writeFileSync(file, storySource(['create the widget', '  a thing, frobnicating', '  in the Lab', '', '  A widget.', '']));
     const { code, stdout } = await run([file, '--json']);
     expect(code).toBe(1);
     const payload = payloadOf(stdout);
@@ -171,7 +171,7 @@ describe('compose --json — diagnostics', () => {
     const file = join(DIR, 'both.story');
     writeFileSync(
       file,
-      storySource([...HATCH_STORY_TAIL, 'create the widget', '  frobnicating', '  in the Lab', '', '  A widget.', ''])
+      storySource([...HATCH_STORY_TAIL, 'create the widget', '  a thing, frobnicating', '  in the Lab', '', '  A widget.', ''])
     );
     const { code, stdout } = await run([file, '--json']);
     expect(code).toBe(1);

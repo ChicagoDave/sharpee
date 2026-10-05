@@ -41,18 +41,20 @@ create the Tent
   A tent.
 
 create the voices
-  scenery, plural
+  a thing, scenery, plural
   in the Alley
   states: murmuring, shouting
 
   Voices.
 
 create the necklace
+  a thing
   in the Tent
 
   A necklace.
 
 create the silk
+  a thing
   in the Tent
 
   A silk.
@@ -62,6 +64,7 @@ create the silk
   end on
 
 create the drum
+  a thing
   in the Tent
 
   A drum.
@@ -72,6 +75,7 @@ create the drum
   end after
 
 create the bell
+  a thing
   in the Tent
 
   A bell.
@@ -81,6 +85,7 @@ create the bell
   end after
 
 create the whistle
+  a thing
   in the Tent
 
   A whistle.
@@ -90,6 +95,7 @@ create the whistle
   end after
 
 create the cracked bell
+  a thing
   in the Tent
 
   A cracked bell.

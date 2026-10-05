@@ -46,11 +46,13 @@ ${slots.guards ?? ''}
   Guards.
 
 create the sword
+  a thing
   in the Yard
 ${slots.sword ?? ''}
   A sword.
 
 create the rock
+  a thing
   in the Yard
 
   A rock.

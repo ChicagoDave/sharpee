@@ -142,11 +142,13 @@ create the wizard
   end goal
 
 create the brass key
+  a thing
   in the Alley
 
   A brass key, warm to the touch.
 
 create the pear
+  a thing
   in the Market Square
 
   A pear, past its best.

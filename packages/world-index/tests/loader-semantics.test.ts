@@ -81,6 +81,7 @@ describe('D3 row 1 — states[0] is the implicit initial state', () => {
   it('takes the first declared state, as the compiler orders them', () => {
     const ir = irOf(`${TWO_ROOMS}
 create the boiler
+  a thing
   in the Hall
   states: cold, filled, running
 
@@ -224,7 +225,7 @@ describe('D3 row 5 — platform trait states are not author states', () => {
   it('reports the words an entity answers to because of a composed trait', () => {
     const ir = irOf(`${TWO_ROOMS}
 create the lamp
-  light-source, switchable
+  a thing, light-source, switchable
   in the Hall
 
   A lamp.
@@ -324,11 +325,12 @@ create the cellar door
 
 create the strongbox
   in the Hall
-  lockable with the brass key
+  a thing, lockable with the brass key
 
   A strongbox.
 
 create the brass key
+  a thing
   in the Hall
 
   A small brass key.
@@ -344,6 +346,7 @@ create the brass key
   it('returns undefined when no composed trait owns the word', () => {
     const ir = irOf(`${TWO_ROOMS}
 create the boiler
+  a thing
   in the Hall
   states: cold, running
 
@@ -358,13 +361,13 @@ create the boiler
     const ir = irOf(`${TWO_ROOMS}
 create the lamp
   in the Hall
-  switchable
+  a thing, switchable
 
   A lamp.
 
 create the heater
   in the Hall
-  switchable, starts on
+  a thing, switchable, starts on
 
   A heater.
 `);
@@ -392,12 +395,13 @@ create the Hall
   A hall.
 
 create the sherry bottle
+  a thing
   in the Hall
 
   A dusty bottle.
 
 create the cold range
-  scenery
+  a thing, scenery
   in the Hall
 
   A cold iron range.

@@ -53,7 +53,7 @@ create the Ballroom
   A ballroom.
 
 create the dance
-  scenery
+  a thing, scenery
   states, reversible: first, second
   in the Ballroom
 

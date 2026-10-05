@@ -23,6 +23,7 @@ create the study door
   A paneled oak door with a heavy iron lock.
 
 create the iron key
+  a thing
   in the Landing
 
   Cold, old, and heavier than it looks.

@@ -40,6 +40,7 @@ create the porter
   aka gatekeeper
 
 create the sword
+  a thing
   in the Lodge
   aka blade
 
@@ -158,6 +159,7 @@ end topics
   about the sword: phrase sword-reply
 
 create the gate
+  a thing
   in the Lodge
 `))).toContain('parse.topics-end');
   });

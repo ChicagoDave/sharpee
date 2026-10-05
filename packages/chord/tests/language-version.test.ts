@@ -109,7 +109,17 @@ const PINNED = {
   // statements (pinned on the port branch 2026-09-07, session 0e7d6f) — two
   // puts in the `move` family. Both additive; both fold into the unpublished
   // 3.6.0 set under ADR-257 D2 as amended (the number moves at publish).
-  ebnfSha256: '71c964b0cbbe3f9bfd7d2520e03d159811643003d7a5756aafc913403a2cc8cc',
+  // Re-pinned 2026-10-05 (session d48e7d, ADR-359 D1): every create block
+  // names one kind and the kind leads the block; `KIND-NOUN` gains `thing`;
+  // the stale region-crossing comment corrected. BREAKING — the next publish
+  // is 4.0.0 (David, 2026-10-05); the number moves at that publish.
+  // Same re-pin, text fixes with no language change (the parser already
+  // behaved this way): `composition` names `ARTICLE KIND-NOUN`; `feels-line`,
+  // `knows-line` and `thinks-line` restored to `create-line` from a comment
+  // that swallowed them; `define-conversation` listed in `declaration`; the
+  // header no longer nests a comment. The repokit build's grammar gate
+  // (tools/repokit/src/commands/ebnf.ts) pins it.
+  ebnfSha256: 'bf0a33ea4e6eeb5a7451c47200f1c5981e7ba48646e838865cc0661ac1c9a473',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

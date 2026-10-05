@@ -69,7 +69,7 @@ describe('GH #349: partner-only predicates and reply moves outside dialogue', ()
   it('rejects `is concluded` in an every-turn clause, naming what holds outside dialogue', () => {
     const result = compile(story(`${PARTNER}
 create the music
-  scenery
+  a thing, scenery
   in the Ballroom
 
   Music.
@@ -87,6 +87,7 @@ create the music
   it('rejects `was discussed` and `subject changes` in an entity clause, and accepts them in a topic row', () => {
     expect(errorCodes(story(`${PARTNER}
 create the fan
+  a thing
   in the Ballroom
 
   A fan.
@@ -152,6 +153,7 @@ describe('GH #351: the acting statement matches `talk to|with :target`', () => {
   it('`talks to <name>` and `talks to the player` compile and bind the target', () => {
     const result = compile(story(`${PARTNER}
 create the gong
+  a thing
   in the Ballroom
 
   A gong.

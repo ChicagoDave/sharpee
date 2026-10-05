@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the pygmy goats
-  scenery
+  a thing, scenery
   states: fed, unfed
 
 create Alex

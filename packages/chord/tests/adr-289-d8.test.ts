@@ -78,7 +78,7 @@ describe('L1 — error recovery stops at `extend` and `remove`', () => {
 describe('L2 — a lone quote is prose punctuation, not an unterminated string', () => {
   it('an unclosed quote inside prose lexes clean, with no diagnostic', () => {
     const source = `${HEADER}${WORLD}\ncreate the placard
-  scenery
+  a thing, scenery
   in the Hall
 
   The tannoy crackles: "Mind the gap, and mind it well.
@@ -128,7 +128,7 @@ describe('Acceptance 21 — the misparse hint names both remedies', () => {
   /** A phrase body whose prose paragraph opens with `opener`. */
   const prose = (opener: string) =>
     `${HEADER}${WORLD}\ncreate the sign
-  scenery
+  a thing, scenery
   in the Hall
 
   A sign.
@@ -163,7 +163,7 @@ ${PHRASES}`;
 
   it('a genuine `set` statement error outside prose position keeps its plain message', () => {
     const source = `${HEADER}${WORLD}\ncreate the sign
-  scenery
+  a thing, scenery
   in the Hall
   states: clean, weathered
 

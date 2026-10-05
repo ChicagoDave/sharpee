@@ -110,14 +110,14 @@ create the Yard
   A yard.
 
 create the apple
-  ripenable
+  a thing, ripenable
   in the Yard
   states, reversible: green, ripe
 
   An apple.
 
 create the pear
-  ripenable
+  a thing, ripenable
   in the Yard
   states, reversible: green, ripe
 

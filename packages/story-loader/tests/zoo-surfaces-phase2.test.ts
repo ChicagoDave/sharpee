@@ -65,6 +65,7 @@ create the Annex
   An annex.
 
 create the cat
+  a thing
   in the Lab
 
   A cat.

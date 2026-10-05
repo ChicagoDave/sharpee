@@ -33,7 +33,7 @@ create the Yard
 ## carry one, and the lens has no such direction.)
 
 create the lamp
-  scenery, pushable
+  a thing, scenery, pushable
   in the Yard
   states: dim, bright, broken
 
@@ -47,7 +47,7 @@ create the lamp
 ## Written only from a topic body; nothing reads it.
 
 create the bell
-  scenery
+  a thing, scenery
   in the Yard
   states: silent, rung
 
@@ -69,14 +69,14 @@ end topics
 ## Nothing reads the pump's own state.
 
 create the pump
-  scenery, pushable
+  a thing, scenery, pushable
   in the Yard
   states: still, going
 
   A pump.
 
 create the tank
-  scenery
+  a thing, scenery
   in the Yard
   states: empty, full
 
@@ -112,14 +112,14 @@ define trait ripenable
 end trait
 
 create the apple
-  ripenable
+  a thing, ripenable
   in the Yard
   states: green, ripe
 
   An apple.
 
 create the pear
-  ripenable
+  a thing, ripenable
   in the Yard
   states: green, ripe
 
@@ -132,7 +132,7 @@ define timer drip for the tap
 end timer
 
 create the tap
-  scenery
+  a thing, scenery
   in the Yard
   states: dry, dripping
 

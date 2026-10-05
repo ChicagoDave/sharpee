@@ -121,7 +121,7 @@ describe('trait states: cross-trait resolution and the D8 collision gate', () =>
       `${HEADER}define trait feedable\n  states, reversible: hungry, content\nend trait\n\n` +
         `define trait restless\n  phrases en-US\n    paces:\n      It paces.\n\n` +
         `  on every turn while it is hungry\n    phrase paces\n  end on\nend trait\n\n` +
-        `create the llama\n  scenery\n  feedable\n  restless\n\ncreate Alex\n  a person\n  playable\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
+        `create the llama\n  a thing, scenery\n  feedable\n  restless\n\ncreate Alex\n  a person\n  playable\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });
@@ -138,7 +138,7 @@ describe('change legality (D4)', () => {
 
   it('a reversible set permits the back-transition', () => {
     const errors = errorsOf(
-      `${HEADER}create the vase\n  scenery\n  states, reversible: whole, broken\n\n` +
+      `${HEADER}create the vase\n  a thing, scenery\n  states, reversible: whole, broken\n\n` +
         `create the Parlor\n  a room\n\n  A parlor.\n\n` +
         `  after the player entering\n    change the vase to whole\n  end after\n\ncreate Alex\n  a person\n  playable\n  starts in the Parlor\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
@@ -149,7 +149,7 @@ describe('change legality (D4)', () => {
 describe('state adjectives (D1) and narration tags (decision 10)', () => {
   it('`is closed` resolves as a state adjective with no shadow flag', () => {
     const errors = errorsOf(
-      `${HEADER}create the staff gate\n  scenery\n  openable\n\n` +
+      `${HEADER}create the staff gate\n  a thing, scenery\n  openable\n\n` +
         `create the Yard\n  a room\n  north is blocked while the staff gate is closed: gate-shut\n\n  A yard.\n\n` +
         `define phrase gate-shut\n  The gate is shut.\nend phrase\n\ncreate Alex\n  a person\n  playable\n  starts in the Yard\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
@@ -173,7 +173,7 @@ describe('owner-scoped inline phrases (Phase C P3)', () => {
   const result = compile(
     `${HEADER}create the Den\n  a room\n\n  A den.\n\n` +
       `  after the player entering\n    phrase confession\n      The den confesses.\n  end after\n\n` +
-      `create the snake\n  scenery\n  in the Den\n\n  after the player entering\n    phrase confession\n      The snake confesses.\n  end after\n\n` +
+      `create the snake\n  a thing, scenery\n  in the Den\n\n  after the player entering\n    phrase confession\n      The snake confesses.\n  end after\n\n` +
       `create Alex\n  a person\n  playable\n  starts in the Den\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
   );
 

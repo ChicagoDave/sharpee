@@ -1,0 +1,78 @@
+are there any measurement tools for language syntax to evaluate them?
+
+Yes, though nothing gives you a single score. There are three families, and they measure different things.
+
+Grammar metrics (run on the EBNF itself)
+
+Power and Malloy's "A metrics suite for grammar-based software" (2004) adapts code metrics to grammars: counts of terminals and non-terminals, McCabe complexity (decision points per production), average right-hand-side size, Halstead effort, and how tangled the non-terminal dependency graph is. These are mechanical and cheap, and good for tracking a grammar over versions. They measure the parser's burden, not the author's.
+
+Cognitive Dimensions of Notations (Green and Petre)
+
+This is the standard heuristic framework: about fourteen named trade-offs you score a notation against. It's a structured vocabulary for design review, not a measurement, but it's the most useful of the three for a language like Chord. From what I read:
+
+Dimension	Chord
+Closeness of mapping	High: create, a room, prose
+Abstraction gradient	Deliberately low: no if, no user-defined abstractions beyond traits
+Diffuseness	Costly in places: one gerund per on head
+Hidden dependencies	Import order as arbitration order
+Error-proneness	Mitigated by fix-its on removed forms
+Progressive evaluation	Strong, if the IDE delivers room-by-room testing
+
+Empirical studies
+
+Stefik and Siebert's "An Empirical Investigation into Programming Language Syntax" (2013) put novices in front of several languages plus one with randomly chosen keywords. Novices did no better with Perl or Java than with the random one, while Quorum, Python and Ruby did better. Pane and Myers's "natural programming" work did the reverse: they asked non-programmers to describe behaviour in their own words, then compared that to language constructs. Both are methods you can copy, not tools you can download.
+
+What you could actually run
+
+Compute the grammar metrics over chord.ebnf per language version, so growth in vocabulary is visible.
+Have the IDE log which diagnostics fire, by construct. That gives you an error rate per production from real authoring, which no published tool will.
+Count what Secret Letter uses against what the grammar offers. A construct no full-size story touches, such as select randomly, either isn't needed or isn't being found.
+
+I can run the first and third against the files I already have access to, if you want numbers.
+
+do it
+
+Used 10 tools
+
+I ran both. Secret Letter compiles clean on language 3.6.0 (24 files, 0 diagnostics), so the usage numbers come from walking the real AST, not from searching text.
+
+Grammar metrics (chord.ebnf)
+Metric	Value	Reading
+Productions	179	
+Terminals	345, of which 314 are keyword words	C has 32 keywords and Python 35; this is COBOL territory
+McCabe complexity	592 total, 3.3 per rule	Three rules carry a quarter of it: statement (63), create-line (38), declaration (36)
+Average right-hand-side size	9.7 symbols	
+Recursive clusters	3 (conditions, emit values, statements)	96% of productions are not recursive at all
+Fan-out	37 declaration forms, 29 statement forms, 31 create-block line forms	
+
+The shape is wide and flat: a huge vocabulary with almost no nesting. That is the "form with many fields" picture in numbers. I have no other grammar run through the same script, so the absolute values are only useful as a baseline for future Chord versions.
+
+What Secret Letter uses
+Coverage: 84 of the parser's 176 AST node kinds, or 48%.
+Size: 13,552 code lines, 3,648 comment lines, 3,889 blank.
+Declarations: 1,548 in total, of which 904 are define phrase and 480 are create.
+
+Unused, by cluster:
+
+Character model: feels, knows, goals and their steps, influences, temperament, honor, code, profile, personality, fact.
+Conversation depth: conversation threads, initiative, manner, deflect, leave, recency and "was discussed". Topics, greetings and exchanges are used.
+Iteration: each, and the any/no quantifiers.
+Media and channels: emit, the media statements, assets, channels.
+Others: scoring and win, machines, sequences, phrasebooks, message overrides, and all three hatch forms.
+
+select randomly is confirmed unused: the six select blocks are five stopping and one first-time.
+
+Diffuseness, measured
+
+Of 875 on/after clauses, 278 (32%) are identical to a sibling in the same block except for the gerund. That is about 930 lines, or 7% of the code. The worst cases are farmland view and guards checking invites, where 9 of 10 clauses are the same refusal. A gerund list on the clause head would remove all of it.
+
+Defects in the EBNF file
+
+Parsing it strictly turned up four problems. They matter because the file is hash-pinned to the language version and served for download.
+
+KIND-NOUN loses three kinds. A comment opens mid-rule and swallows | "container" | "supporter" | "region" ;, terminator included.
+create-line loses three alternatives. The same thing happens to feels-line, knows-line and thinks-line.
+define-conversation is orphaned. It is defined, but missing from the declaration list.
+The header comment nests. It contains a (* … *) inside itself, so the file only tokenizes if comments nest.
+
+The two scripts live in scratch space on your Mac's Claude sandbox and will vanish with this session. Say the word and I'll put them in the repo so you can re-run them per version.

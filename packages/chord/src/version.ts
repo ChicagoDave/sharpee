@@ -283,5 +283,14 @@
  * `on the player sleeping` / `on the player waking` loading against the
  * standard `sleeping` and `waking` actions (GH #362 — no grammar motion).
  * Additive — every valid 3.6.0 story is unchanged; only the EBNF hash moves.
+ *
+ * Landed under the unpublished 3.6.0 (2026-10-05, session d48e7d): every
+ * `create` block names exactly one kind and the kind leads the block; a
+ * plain object is `a thing` (ADR-359 D1). Breaking — a block with no kind is
+ * `analysis.missing-kind-noun`, a kind behind a trait is
+ * `analysis.kind-not-first` — so the next publish takes the language to
+ * **4.0.0** (David's ruling, 2026-10-05). The number moves at that publish,
+ * which waits until the rest of ADR-359 is ruled; until then only the EBNF
+ * hash is re-recorded.
  */
 export const CHORD_LANGUAGE_VERSION = '3.6.0';

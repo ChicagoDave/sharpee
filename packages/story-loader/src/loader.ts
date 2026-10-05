@@ -1619,7 +1619,12 @@ export class ChordStory implements Story {
       // (analysis.multiple-kind-nouns) — defensive backstop.
       throw new LoadError(`\`${irEntity.name}\` declares more than one kind noun.`, irEntity.span);
     }
-    const kind = irEntity.kinds[0]?.name ?? null;
+    if (irEntity.kinds.length === 0) {
+      // ADR-359 D1: the compiler's gate refuses this
+      // (analysis.missing-kind-noun) — defensive backstop.
+      throw new LoadError(`\`${irEntity.name}\` names no kind.`, irEntity.span);
+    }
+    const kind = irEntity.kinds[0].name;
     // ADR-333 D1a: the entity carries its registered description KEY
     // (ADR-107 id mode), never a copy of the text — the language provider
     // holds the one text (registered by extendLanguage), and every block
@@ -1731,10 +1736,8 @@ export class ChordStory implements Story {
         entity.add(new OpenableTrait({ isOpen: false }));
         break;
       }
-      // ADR-359 D1: `a thing` builds exactly what a block with no kind built
-      // before the kind line was required.
-      case 'thing':
-      case null: {
+      // ADR-359 D1: `a thing` is the plain object.
+      case 'thing': {
         entity = world.createEntity(irEntity.name, 'object');
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;

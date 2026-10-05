@@ -32,6 +32,7 @@ create the Weaponsmith's Stall
   Blades.
 
 create the pear
+  a thing
   in the Weaponsmith's Stall
 
   A pear.
@@ -42,6 +43,7 @@ create the pear
   end after
 
 create the drum
+  a thing
   in the Weaponsmith's Stall
 
   A drum.

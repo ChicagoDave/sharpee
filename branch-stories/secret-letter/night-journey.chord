@@ -265,7 +265,7 @@ end phrase
 
 create the abandoned stalls
   aka stalls, stall, closed stalls, empty stalls, canvas, rolled up canvas, rolled-up canvas
-  scenery, plural
+  a thing, scenery, plural
   in the Market Square
 
   It's a little bit eerie, seeing the whole market empty and packed away like
@@ -284,7 +284,7 @@ end phrase
 
 create the foot of the center post
   aka post, center post, central post, support post, wooden post, big post, tall post, pole, bottom of the center post
-  scenery
+  a thing, scenery
   in the Market Square
 
   It's huge, almost too big to put your arms around. Way up at the top, you
@@ -356,7 +356,7 @@ end phrase
 
 create the broken ground
   aka land, rocks, rock, rocky ground, dry ground, scrub, bushes, bush, thorn, thorns, thornbush, thornbushes
-  scenery
+  a thing, scenery
   in the Lord's Road
 
   The land to the west of Lord's Road is rocky and dry, no good for growing
@@ -388,7 +388,7 @@ end phrase
 
 create the city wall
   aka walls, outer wall, outer walls, white stone, heavy stone, stones, wall of toresal
-  scenery
+  a thing, scenery
   in the Lord's Road
 
   The outer walls of Toresal are built of heavy, white stone.
@@ -454,7 +454,7 @@ end phrase
 
 create the cow pies
   aka cow pie, pie, pies, patty, patties, dung, manure
-  scenery, plural
+  a thing, scenery, plural
   in the Pasture
 
   Last time you checked, cow pies pretty much all looked the same.
@@ -544,7 +544,7 @@ end trait
 
 create the stream
   aka water, brook, river, clear water, clean water, ripples
-  scenery, enterable
+  a thing, scenery, enterable
   shin-deep
   in the Stream Crossing
 
@@ -571,7 +571,7 @@ end phrase
 
 create the stepping stones
   aka stones, stone, rocks, rock, bed of stones, larger rocks, large rocks, slippery rocks
-  scenery, plural, climbable, enterable
+  a thing, scenery, plural, climbable, enterable
   in the Stream Crossing
 
   The stones just barely poke over the surface of the water, rounded and
@@ -587,7 +587,7 @@ create the stepping stones
 
 create the distant city
   aka city, toresal, city walls, town, silhouette, walls of the city
-  scenery
+  a thing, scenery
   in the Stream Crossing
 
   You can just make out the silhouette of the city walls, far to the south.
@@ -743,7 +743,7 @@ end phrase
 
 create the split sapling
   aka sapling, small tree, y shaped tree, y-shaped tree, y shape, split tree
-  scenery
+  a thing, scenery
   in the Woods
   states: northward, eastward, westward
 
@@ -760,7 +760,7 @@ create the split sapling
 
 create the trees
   aka tree, birch, birches, spruce, spruces, branch, branches, upper branches, thick trees, dark trees
-  scenery, plural
+  a thing, scenery, plural
   in the Woods
 
   The trees grow thick and close all around you.
@@ -789,7 +789,7 @@ create the trees
 
 create the game trails
   aka trail, path, paths, gap, gaps, narrow gaps, track, tracks
-  scenery, plural
+  a thing, scenery, plural
   in the Woods
 
   The trails are little more than narrow gaps in the underbrush, leading in
@@ -823,7 +823,7 @@ create the game trails
 
 create the underbrush
   aka brush, bush, bushes, undergrowth, tangled underbrush
-  scenery
+  a thing, scenery
   in the Woods
 
   The underbrush is thick and tangled.
@@ -965,7 +965,7 @@ end phrase
 
 create the fountain
   aka crumbling fountain, stone fountain, bowl, stone bowl, dry fountain, ruined fountain, cracked fountain
-  scenery, enterable
+  a thing, scenery, enterable
   in the Clearing
 
   The fountain is shaped like a large bowl, topped with a classical-style
@@ -1003,7 +1003,7 @@ end phrase
 
 create the ruined pavilion
   aka pavilion, ruins, ruin, pavestones, pavestone, pale pavestones, rubble, grass, bones
-  scenery
+  a thing, scenery
   in the Clearing
 
   Whatever once stood here was probably very beautiful. Now it's just rubble
@@ -1020,7 +1020,7 @@ end trait
 
 create the statue
   aka statue of brigid, brigid, goddess, goddess brigid, cracked statue, sculpture, worn statue, moss
-  scenery
+  a thing, scenery
   moss-rub
   in the Clearing
 
@@ -1102,7 +1102,7 @@ end phrase
 
 create the metal bolt
   aka bolt, knob, metal knob, stud, button, little knob, bottom of the urn, underside of the urn
-  scenery, pushable
+  a thing, scenery, pushable
   in the Clearing
 
   Just a little knob of metal, sticking out of the bottom of the urn.
@@ -1135,7 +1135,7 @@ end phrase
 
 create the secret entrance
   aka entrance, opening, narrow opening, hole, tunnel, dark tunnel, darkness, plinth, base, stone plinth, statue's base, rectangle of stone, secret door
-  scenery, enterable
+  a thing, scenery, enterable
 
   The tunnel leads down into darkness.
 
@@ -1239,7 +1239,7 @@ end phrase
 
 create the white fungus
   aka fungus, mold, clusters, cluster, whitish fungus, sticky fungus, damp walls, walls, wall
-  scenery
+  a thing, scenery
   in the Underneath the Fountain
 
   The fungus grows in little clusters all over the damp walls.
@@ -1267,7 +1267,7 @@ end phrase
 
 create the stone steps
   aka steps, stairs, staircase
-  scenery, climbable
+  a thing, scenery, climbable
   in the Underneath the Fountain
 
   The stairs lead back up to the clearing above.
@@ -1278,6 +1278,7 @@ create the stone steps
   end on
 
 create the torch
+  a thing
   aka bobby's torch, flame, torch flame
 
   The torch's flame throws weird, shivering shadows across the walls.
@@ -1385,7 +1386,7 @@ create the metal bracket
 
 create the blank stone wall
   aka wall, stone wall, blank wall, north wall, stonework, bricks, brickwork, secret door, door, featureless wall
-  scenery
+  a thing, scenery
   in the Tunnel End
   states, reversible: sealed, opened
 
@@ -1512,7 +1513,7 @@ end phrase
 
 create the candle-shelves
   aka shelves, shelf, little shelves, candle shelves
-  scenery, plural
+  a thing, scenery, plural
   in the Chapel
 
   Little shelves built into the otherwise bare walls hold a number of
@@ -1520,7 +1521,7 @@ create the candle-shelves
 
 create the devotional candles
   aka candles, candle, light, candlelight, flame, flames, points of light, wavering light
-  scenery, plural
+  a thing, scenery, plural
   in the Chapel
 
   The candles sit on little shelves built into the otherwise bare walls. It
@@ -1614,7 +1615,7 @@ end phrase
 
 create the steep steps
   aka steps, stone steps, stairs, staircase, steep stone steps
-  scenery, climbable
+  a thing, scenery, climbable
   in the Lower Bailey
 
   Steep stone steps climb up to the top of the wall.
@@ -1681,7 +1682,7 @@ end phrase
 
 create the polished mail
   aka mail, tabard, tabards, sword, swords, coat of arms, guards' things, hefty sword
-  scenery
+  a thing, scenery
   in the Lower Bailey
 
   You can't get near enough to do that without attracting the attention of
@@ -1740,7 +1741,7 @@ end phrase
 
 create the stone stairs
   aka stairs, steps, stone steps, staircase
-  scenery, climbable
+  a thing, scenery, climbable
   in the Upper Bailey
 
   Steep stone steps climb up to the top of the wall.
@@ -1752,7 +1753,7 @@ create the stone stairs
 
 create the wall torches
   aka torches, torch, fire, flames, flame, torchlight
-  scenery, plural
+  a thing, scenery, plural
   in the Upper Bailey
 
   If you get anywhere near those torches, you'll be spotted in no time. Best
@@ -1773,7 +1774,7 @@ end phrase
 
 create the view of Toresal
   aka view, city, skyline, shadows in the distance, pinpricks of light, town, lands
-  scenery
+  a thing, scenery
   in the Upper Bailey
 
   It's an impressive view, no doubt, but you really don't have time to admire
@@ -1862,7 +1863,7 @@ end trait
 
 create the guardhouse door
   aka door, iron door, reinforced door, iron-reinforced door, big door, tough door, wooden door, planks, bands, rivets, lock
-  scenery
+  a thing, scenery
   knock-guardhouse
   in the Guardhouse
 
@@ -1886,7 +1887,7 @@ extend action listening
 
 create the arrow slit
   aka slit, slits, arrow slits, holes, hole, rectangular holes, firelight, voices, voice
-  scenery
+  a thing, scenery
   in the Guardhouse
   states: chattering, half-heard, heard
 

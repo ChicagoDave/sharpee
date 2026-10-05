@@ -49,7 +49,7 @@ create the Gate
   end on
 
 create the deed
-  scenery
+  a thing, scenery
   in the Gate
 
   A deed.

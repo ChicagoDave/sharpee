@@ -41,13 +41,13 @@ create the Closet
   A closet.
 
 create the winch
-  scenery, winch-crank
+  a thing, scenery, winch-crank
   in the Closet
 
   A winch.
 
 create the chandelier
-  scenery
+  a thing, scenery
   in the Closet
   states, reversible: raised, lowered
 
@@ -103,6 +103,7 @@ create the Street
   A street.
 
 create the coin
+  a thing
   in the Street
   states: fresh, seen
 

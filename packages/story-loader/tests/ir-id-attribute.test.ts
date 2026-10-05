@@ -36,7 +36,7 @@ create the Hall
   A hall.
 
 create the brass lamp
-  scenery
+  a thing, scenery
   aka lamp
   states, reversible: dark, lit
   in the Hall
@@ -56,6 +56,7 @@ create the table
   A table.
 
 create the pebble
+  a thing
   in the Hall
 
   A pebble.

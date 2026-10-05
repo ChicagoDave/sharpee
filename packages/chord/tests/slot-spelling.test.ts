@@ -67,7 +67,8 @@ describe('analysis.slot-shadows-entity (ADR-267 D2)', () => {
   // A body statement referencing `the animal` where `animal` is both the
   // action's slot and an entity's name: the slot wins (unchanged), and the
   // collision now warns instead of staying silent.
-  const shadowStory = `${HEADER}define action petting\n  grammar\n    pet the animal\n  move the animal to the Barn\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\ncreate the animal\n  in the Barn\n\n  An animal.\n\n${WORLD}`;
+  const shadowStory = `${HEADER}define action petting\n  grammar\n    pet the animal\n  move the animal to the Barn\n  otherwise refuse cant-pet\n\n  phrases en-US\n    cant-pet:\n      No.\n\ncreate the animal
+  a thing\n  in the Barn\n\n  An animal.\n\n${WORLD}`;
 
   it('warns on the collision, naming both the slot and the shadowed entity', () => {
     const warnings = warningsOf(shadowStory);

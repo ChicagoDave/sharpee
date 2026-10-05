@@ -117,6 +117,7 @@ create the chest
   A chest.
 
 create the coin
+  a thing
   in the chest
 
   A coin.

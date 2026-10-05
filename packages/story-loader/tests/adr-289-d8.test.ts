@@ -66,7 +66,7 @@ describe('L5 — trait double-add guards are consistent', () => {
     // no text — replaced the configured one and the plaque read as empty.
     const l = load(`${HEADER}${ROOMS}
 create the plaque
-  readable with text "Est. 1897.", readable
+  a thing, readable with text "Est. 1897.", readable
   in the Hall
 
   A brass plaque.
@@ -79,7 +79,7 @@ create the plaque
   it('a doubly-declared `wearable` still yields exactly one wearable entity', () => {
     const l = load(`${HEADER}${ROOMS}
 create the cloak
-  wearable, wearable
+  a thing, wearable, wearable
   in the Hall
 
   A cloak.
@@ -102,6 +102,7 @@ create the Hall
     A lamp burns in the corner.
 
 create the brass lamp
+  a thing
   in the Hall
 
   A brass lamp.

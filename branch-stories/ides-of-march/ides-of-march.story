@@ -123,6 +123,7 @@ create the tiring-house door
   standing open so the book-holder can follow the lines.
 
 create the tiring-house key
+  a thing
   in the Tiring-House
   aka key
 
@@ -130,6 +131,7 @@ create the tiring-house key
   troubled to turn it since the house was raised.
 
 create the play-book
+  a thing
   in the Tiring-House
   aka book, playbook, prompt-book, the play
 
@@ -142,6 +144,7 @@ create the play-book
   end on
 
 create the property sword
+  a thing
   in the Stage
   aka sword, foil
 
@@ -149,7 +152,7 @@ create the property sword
   Caesar every morning this week.
 
 create the galleries
-  scenery
+  a thing, scenery
   in the Yard
   aka gallery, benches
 
@@ -157,7 +160,7 @@ create the galleries
   there a man could watch everything and be watched by no one.
 
 create the plot-board
-  scenery
+  a thing, scenery
   in the Stage
   aka plot, board
 
@@ -165,7 +168,7 @@ create the plot-board
   door. There is no clown's name anywhere on it.
 
 create the property table
-  scenery
+  a thing, scenery
   in the Tiring-House
   aka properties, table
 
@@ -173,6 +176,7 @@ create the property table
   of seeming.
 
 create a pot of ale
+  a thing
   in the Tavern
   aka ale, pot, leather, small
 
@@ -542,7 +546,7 @@ create William Shakespeare
   end goal
 
 create the pen
-  scenery
+  a thing, scenery
   in the Tiring-House
   
   Ink-tipped and well-used.

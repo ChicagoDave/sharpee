@@ -51,7 +51,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     // carries the `cloak` alias — alias match is no longer unique.
     const mutated =
       CLOAK.replace('wears the velvet cloak', 'wears the cloak') +
-      '\ncreate the opera cloak\n  wearable\n  aka cloak\n\n  A spare cloak.\n';
+      '\ncreate the opera cloak\n  a thing, wearable\n  aka cloak\n\n  A spare cloak.\n';
     const errors = errorsOf(mutated);
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.ambiguous-reference');

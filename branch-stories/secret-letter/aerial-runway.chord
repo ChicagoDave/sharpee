@@ -103,7 +103,7 @@ end timer
 
 create the cables
   aka cable, anchor cables, anchor cable, wires, wire, braided wire
-  scenery, plural
+  a thing, scenery, plural
   in the Top of the Post
   slides-to-hat-stall
   anchor-cable
@@ -132,7 +132,7 @@ create the cables
 
 create the northeast cable
   aka ne cable, northeast wire, northeast anchor cable
-  scenery
+  a thing, scenery
   in the Top of the Post
   slideable
   anchor-cable
@@ -143,7 +143,7 @@ create the northeast cable
 
 create the southeast cable
   aka se cable, southeast wire, southeast anchor cable
-  scenery
+  a thing, scenery
   in the Top of the Post
   anchor-cable
   slides-to-hat-stall
@@ -168,7 +168,7 @@ create the southeast cable
 
 create the southwest cable
   aka sw cable, southwest wire, southwest anchor cable
-  scenery
+  a thing, scenery
   in the Top of the Post
   anchor-cable
   slides-to-gems-stall
@@ -180,7 +180,7 @@ create the southwest cable
 
 create the northwest cable
   aka nw cable, northwest wire, northwest anchor cable
-  scenery
+  a thing, scenery
   in the Top of the Post
   anchor-cable
   slides-to-junction

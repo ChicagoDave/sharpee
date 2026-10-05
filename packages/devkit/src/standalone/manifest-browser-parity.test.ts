@@ -111,7 +111,7 @@ describe('ADR-276 Phase 3 — alteration-target diagnostics reach the browser pi
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const chord = require(join(REPO_ROOT, 'packages/chord/dist/index.js')) as typeof import('@sharpee/chord');
     const result = chord.compile(
-      cleanSource + '\ncreate the wardrobe\n  hiding-spot with position sideways\n\n  A wardrobe.\n',
+      cleanSource + '\ncreate the wardrobe\n  a thing, hiding-spot with position sideways\n\n  A wardrobe.\n',
     );
     expect(result.diagnostics.map((d) => d.code)).toContain('analysis.unknown-hiding-position');
   });

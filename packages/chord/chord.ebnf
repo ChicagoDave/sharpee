@@ -23,7 +23,7 @@
    Notation:
      UPPER      = token class          "quoted" = literal word
      [ x ]      = optional             { x }    = zero or more
-     x | y      = alternatives         (* … *)  = comment
+     x | y      = alternatives         ( * … * ) = comment (written without the spaces)
      NL         = end of source line (Chord is line-oriented)
      >>>        = an indented block follows (layout; EBNF cannot express
                   indentation — the summary below is the rule)
@@ -238,6 +238,7 @@ declaration  = create | start-block | define-condition | define-phrase | define-
              | define-topics                               (* ADR-239 *)
              | define-manner | define-greetings            (* ADR-320, frozen 2026-08-17 *)
              | define-exchange | define-initiative         (* ADR-320, frozen 2026-08-17 *)
+             | define-conversation                         (* ADR-320 D14, frozen 2026-08-17 *)
              | define-pronouns                             (* ADR-242 *)
              | define-phrasebook | import-phrasebook       (* ADR-245/250 *)
              | override-message | override-messages       (* ADR-255 *)
@@ -375,7 +376,7 @@ clause-modifier = "once"                          (* D5: one lifetime firing *)
    binds to the movement event; on any other thing — scenery, enterables —
    it is the entering ACTION's interceptor ("someone enters this thing",
    GH #341), like any consulted gerund; on REGION blocks (ADR-236 D6)
-   `after entering it` / `after leaving it` bind to the region's crossing
+   `after the player entering` / `after the player leaving` bind to the region's crossing
    events (region_entered/region_exited), fired per boundary actually
    crossed. `leaving` (ratchet R3) exists ONLY on region blocks — a load
    error anywhere else. Region blocks also host `on every turn` (D4):
@@ -402,7 +403,13 @@ start-block  = "before" "the" "game" "starts" NL >>> { statement } "end" "before
 
 (* ---- create ------------------------------------------------------------ *)
 
-create       = "create" name NL >>> { create-line } ;
+create       = "create" name NL >>> { create-line } ;   (* ADR-359 D1: every block names
+                                                              exactly one kind, and the kind
+                                                              leads the block — the first
+                                                              composition line opens with
+                                                              ARTICLE KIND-NOUN
+                                                              (analysis.missing-kind-noun,
+                                                              analysis.kind-not-first) *)
 create-line  = "aka" alias { "," alias } NL
              | "pronouns" WORD NL                          (* ADR-242 D5 (ratchet H2):
                                                               person blocks only (analyzer
@@ -470,10 +477,11 @@ create-line  = "aka" alias { "," alias } NL
              | on-clause
              | timer-clause | move-clause                  (* ADR-325 D3e / D3h: event
                                                               clause heads on the owner *)
-             | mood-line                                   (* ADR-310 character-model
-             | feels-line                                     lines: person blocks only
-             | knows-line                                     (analysis.character-line-
-             | thinks-line                                    person-only) *)
+             | mood-line | feels-line | knows-line | thinks-line
+                                                           (* ADR-310 character-model
+                                                              lines: person blocks only
+                                                              (analysis.character-line-
+                                                              person-only) *)
              | spreads-line
              | resists-line
              | influence-block
@@ -882,7 +890,7 @@ room-name-block = "room" "name" [ "while" condition ] ":" NL
                      an `enterable` thing, or a region — the three kinds that can
                      contribute to a heading (analysis.room-name-owner). *)
 
-composition  = [ ARTICLE ] WORD                            (* article => kind noun;
+composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind noun;
                                                               bare => trait *)
                [ "with" setting { "and" setting } ]
                [ "while" condition ]
@@ -896,6 +904,15 @@ composition  = [ ARTICLE ] WORD                            (* article => kind no
                                                               parse error *)
 STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
              | "off" | "on" ;
+KIND-NOUN    = "thing" | "room" | "door" | "person"
+             | "container" | "supporter" | "region" ;      (* ADR-359 D1: the WORD of a kind
+                                                              composition; any other word
+                                                              is analysis.unknown-kind-noun.
+                                                              `a thing` is the plain object,
+                                                              and never sits beside another
+                                                              kind (analysis.thing-with-kind);
+                                                              a kind never takes `while`
+                                                              (analysis.conditional-kind) *)
 setting      = ARTICLE name                                (* ratchet R3 (ADR-234 D6):
                                                               article directly after
                                                               `with`/`and` = the

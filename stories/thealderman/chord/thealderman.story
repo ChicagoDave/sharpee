@@ -195,7 +195,7 @@ create Room Three-Oh-Eight
 ## ------------------------------------------------------------------ evidence
 
 create the stage curtain
-  scenery
+  a thing, scenery
   in the Ballroom
   aka curtain
 
@@ -203,7 +203,7 @@ create the stage curtain
   the ripped stub still dangles from its ring.
 
 create the dark stain
-  scenery
+  a thing, scenery
   in the Ballroom
   aka stain
 
@@ -211,6 +211,7 @@ create the dark stain
   Someone scrubbed at it and gave up.
 
 create the curtain cord
+  a thing
   starts in Room Three-Oh-Two
   aka cord
 
@@ -219,6 +220,7 @@ create the curtain cord
   not come from this room.
 
 create the theatre program
+  a thing
   in the Foyer
   aka program
 

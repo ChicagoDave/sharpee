@@ -25,7 +25,7 @@ create the Waste
 
 create the ration
   aka biscuit
-  edible
+  a thing, edible
   in the Waste
 
   One dry emergency ration, hard as a roof tile.

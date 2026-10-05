@@ -47,7 +47,7 @@ describe('GH #370: `select on <entity>` selects on the declared state', () => {
   A hall.
 
 create the chandelier
-  scenery
+  a thing, scenery
   in the Hall
   states, reversible: raised, lowered
 
@@ -92,7 +92,7 @@ create the Hall
   A hall.
 
 create the chandelier
-  scenery, crank
+  a thing, scenery, crank
   in the Hall
   states, reversible: raised, lowered
 
@@ -121,6 +121,7 @@ describe('GH #366: a declared state wins over a colliding platform word', () => 
   A hall.
 
 create the coin
+  a thing
   in the Hall
   states: fresh, seen
 
@@ -166,7 +167,7 @@ create the Hall
   A hall.
 
 create the coin
-  inspectable
+  a thing, inspectable
   in the Hall
   states: fresh, seen
 
@@ -224,6 +225,7 @@ create the Hall
   A hall.
 
 create the lamp
+  a thing
   in the Hall
   states: cold, warm
 

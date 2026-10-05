@@ -31,17 +31,19 @@ create the cloth satchel
   A satchel.
 
 create the woolen cap
-  wearable
+  a thing, wearable
   in the cloth satchel
 
   A cap.
 
 create the pear
+  a thing
   in the cloth satchel
 
   A pear.
 
 create the bell
+  a thing
   in the Stall
 
   A bell.

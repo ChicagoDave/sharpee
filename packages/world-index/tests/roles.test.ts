@@ -87,7 +87,7 @@ create the Hall
   A hall.
 
 create the humming pipe
-  scenery
+  a thing, scenery
   in the Hall
 
   A pipe runs up the wall.
@@ -134,12 +134,12 @@ end before
   });
 
   it('calls an ordinary portable thing a tool, though no IR row says takeable', () => {
-    // The sherry bottle declares nothing at all: no trait, no kind, no clause.
-    // It is a tool because world-model grants portability by default, which is a
-    // fact about the loader and not a row anything can read.
+    // The sherry bottle declares nothing but its kind: `a thing`, no trait, no
+    // clause. It is a tool because world-model grants portability by default,
+    // which is a fact about the loader and not a row anything can read.
     const bottle = entity(fernhill, 'sherry-bottle');
     expect(bottle.traits).toHaveLength(0);
-    expect(bottle.kinds).toHaveLength(0);
+    expect(bottle.kinds.map((k) => k.name)).toEqual(['thing']);
     expect(bottle.onClauses).toHaveLength(0);
     expect(rolesOf(fernhill).get('sherry-bottle')).toBe('tool');
   });

@@ -37,6 +37,7 @@ create the keeper
   The watchful keeper on her rounds.
 
 create the rusty winch
+  a thing
   aka winch
   in the Gate Yard
 
@@ -44,7 +45,7 @@ create the rusty winch
 
 create the long sword
   aka sword
-  weapon with damage 6 and skill-bonus 2
+  a thing, weapon with damage 6 and skill-bonus 2
   in the Gate Yard
 
   A long sword, recently oiled.

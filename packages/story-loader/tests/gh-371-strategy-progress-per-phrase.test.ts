@@ -27,6 +27,7 @@ create the Hall
   A hall.
 
 create the letter
+  a thing
   in the Hall
 
   A letter.

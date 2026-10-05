@@ -95,12 +95,12 @@ create the Barn
   end on
 
 create the bull
-  scenery
+  a thing, scenery
   jumpy
   in the Barn
 
 create the owl
-  scenery
+  a thing, scenery
   in the Barn
 
   on every turn

@@ -138,6 +138,7 @@ create Alex
   Just an ordinary visitor to the zoo.
 
 create the staff keycard
+  a thing
   aka keycard, key card, card, key
   in the Zoo Entrance
 
@@ -146,7 +147,7 @@ create the staff keycard
 
 create the staff gate
   aka gate, metal gate, staff door
-  scenery, openable, lockable with the staff keycard
+  a thing, scenery, openable, lockable with the staff keycard
   in the Main Path
 
   A sturdy metal gate with a "STAFF ONLY" sign.
@@ -162,7 +163,7 @@ create the staff gate
 
 create the welcome sign
   aka sign
-  scenery
+  a thing, scenery
   in the Zoo Entrance
 
   A brightly painted wooden sign reads: "WELCOME TO WILLOWBROOK FAMILY
@@ -170,91 +171,91 @@ create the welcome sign
 
 create the ticket booth
   aka booth
-  scenery
+  a thing, scenery
   in the Zoo Entrance
 
   A small wooden booth with a "Self-Guided Tours" sign.
 
 create the iron fence
   aka fence, railing
-  scenery
+  a thing, scenery
   in the Zoo Entrance
 
   A tall wrought-iron fence with animal silhouettes.
 
 create the direction signs
   aka signs, arrow signs
-  scenery, plural
+  a thing, scenery, plural
   in the Main Path
 
   Arrow signs: PETTING ZOO (east), AVIARY (west), EXIT (north).
 
 create the flower beds
   aka flowers
-  scenery, plural
+  a thing, scenery, plural
   in the Main Path
 
   Tidy beds of marigolds and petunias.
 
 create the hay bale
   aka hay, bale
-  scenery
+  a thing, scenery
   in the Petting Zoo
 
   A large round bale of golden hay.
 
 create the toucan
   aka toco toucan
-  scenery
+  a thing, scenery
   in the Aviary
 
   A Toco toucan with an enormous orange-and-black bill.
 
 create the waterfall
   aka water, basin
-  scenery
+  a thing, scenery
   in the Aviary
 
   A gentle artificial waterfall cascading into a stone basin.
 
 create the rope perches
   aka perches, ropes
-  scenery, plural
+  a thing, scenery, plural
   in the Aviary
 
   Thick sisal ropes strung between wooden posts.
 
 create the metal shelves
   aka shelves, shelf
-  scenery, plural
+  a thing, scenery, plural
   in the Supply Room
 
   Industrial metal shelving units stacked with supplies.
 
 create the sugar gliders
   aka gliders
-  scenery, plural
+  a thing, scenery, plural
   in the Nocturnal Animals Exhibit
 
   A family of tiny sugar gliders with enormous dark eyes.
 
 create the bush babies
   aka galagos
-  scenery, plural
+  a thing, scenery, plural
   in the Nocturnal Animals Exhibit
 
   Two bush babies with impossibly large round eyes.
 
 create the barn owl
   aka owl
-  scenery
+  a thing, scenery
   in the Nocturnal Animals Exhibit
 
   An enormous barn owl with a heart-shaped white face.
 
 create the snake
   aka python, snake enclosure
-  scenery
+  a thing, scenery
   in the Nocturnal Animals Exhibit
   score confession worth 5
 
@@ -273,21 +274,21 @@ create the snake
 
 create the stuffed animals
   aka plush, toys
-  scenery, plural
+  a thing, scenery, plural
   in the Gift Shop
 
   Shelves of plush tigers, pandas, and penguins.
 
 create the postcards
   aka cards, postcard rack
-  scenery, plural
+  a thing, scenery, plural
   in the Gift Shop
 
   A spinning rack of postcards showing the zoo's greatest hits.
 
 create the enamel pins
   aka pins, pin, rack, pin rack
-  scenery, plural
+  a thing, scenery, plural
   in the Gift Shop
 
   A spinning rack of enamel pins: parrots, pygmy goats, a grinning
@@ -295,7 +296,7 @@ create the enamel pins
 
 create the cork board
   aka board, notices
-  scenery
+  a thing, scenery
   in the Supply Room
 
   A cork board with staff schedules. A note in red marker: "DON'T
@@ -303,7 +304,7 @@ create the cork board
 
 create the info plaque
   aka plaque, brass plaque
-  scenery, readable
+  a thing, scenery, readable
   in the Petting Zoo
 
   A brass plaque mounted on a wooden post near the petting zoo gate.
@@ -319,7 +320,7 @@ create the info plaque
 
 create the aviary plaque
   aka information board
-  scenery, readable
+  a thing, scenery, readable
   in the Aviary
 
   A colorful information board near the aviary entrance.
@@ -336,7 +337,7 @@ create the aviary plaque
 
 create the warning sign
   aka warning, yellow sign
-  scenery, readable
+  a thing, scenery, readable
   in the Supply Room
 
   A yellow warning sign near the nocturnal exhibit entrance.
@@ -350,7 +351,7 @@ create the warning sign
 
 create the zoo brochure
   aka brochure, pamphlet, leaflet
-  readable
+  a thing, readable
   in the Zoo Entrance
   score read worth 5
 
@@ -362,6 +363,7 @@ create the zoo brochure
   end on
 
 create the zoo map
+  a thing
   aka map, folding map
   in the Zoo Entrance
   score collected worth 5
@@ -380,12 +382,14 @@ create the backpack
   A small red canvas backpack.
 
 create the bag of animal feed
+  a thing
   aka feed, animal feed, bag of feed, corn
   in the Petting Zoo
 
   A small brown paper bag filled with dried corn and pellets.
 
 create the souvenir penny
+  a thing
   aka penny, coin
   in the Main Path
 
@@ -393,7 +397,7 @@ create the souvenir penny
 
 create the park bench
   aka bench, benches, seat
-  scenery, a supporter with capacity 3
+  a supporter with capacity 3, scenery
   in the Main Path
 
   A sturdy park bench painted forest green.
@@ -406,6 +410,7 @@ create the lunchbox
   A dented metal lunchbox decorated with cartoon zoo animals.
 
 create the juice box
+  a thing
   aka juice, drink
   in the lunchbox
 
@@ -430,7 +435,7 @@ create the souvenir press
 
 create the flashlight
   aka torch, light, lamp
-  light-source, switchable
+  a thing, light-source, switchable
   in the Supply Room
 
   A heavy-duty yellow flashlight.
@@ -443,7 +448,7 @@ create the flashlight
 
 create the radio
   aka portable radio
-  scenery, switchable
+  a thing, scenery, switchable
   in the Supply Room
 
   A battered portable radio held together with duct tape. The antenna is
@@ -454,6 +459,7 @@ create the radio
     It hums softly.
 
 create the disposable camera
+  a thing
   aka camera
   in the Gift Shop
 
@@ -624,7 +630,7 @@ create the parrot
 
 create the pygmy goats
   aka goats, goat
-  scenery, plural
+  a thing, scenery, plural
   in the Petting Zoo
   pettable
   feedable with food the bag of animal feed
@@ -661,7 +667,7 @@ create the pygmy goats
 
 create the rabbits
   aka rabbit, bunnies
-  scenery, plural
+  a thing, scenery, plural
   in the Petting Zoo
   pettable
   feedable with food the bag of animal feed
@@ -696,7 +702,7 @@ create the rabbits
 
 create the parrots
   aka macaws, birds
-  scenery, plural
+  a thing, scenery, plural
   in the Aviary
 
   A raucous flock of scarlet macaws and grey African parrots.

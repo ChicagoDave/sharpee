@@ -37,7 +37,8 @@ function diagnosticsOf(source: string) {
 describe('Z2: trailing `while` on the define-phrase header (CP1\')', () => {
   it('parses and resolves into IRPhrase.condition', () => {
     const result = compile(
-      `${HEADER}${CLAUSE_ROOM}create the cat\n  in the Lab\n\n  A cat.\n\ndefine phrase frag, cycling while the cat is here\n  and a cat glares from the top shelf\nor\n  nothing\nend phrase\n`,
+      `${HEADER}${CLAUSE_ROOM}create the cat
+  a thing\n  in the Lab\n\n  A cat.\n\ndefine phrase frag, cycling while the cat is here\n  and a cat glares from the top shelf\nor\n  nothing\nend phrase\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const frag = result.ir.phrases.locales['en-US']['frag'];
@@ -58,7 +59,8 @@ describe('Z2: trailing `while` on the define-phrase header (CP1\')', () => {
 
   it('the gate may reference an entity declared after the phrase (pass-2 resolution)', () => {
     const result = compile(
-      `${HEADER}${CLAUSE_ROOM}define phrase frag, cycling while the owl is here\n  and an owl blinks slowly\nor\n  nothing\nend phrase\n\ncreate the owl\n  in the Lab\n\n  An owl.\n`,
+      `${HEADER}${CLAUSE_ROOM}define phrase frag, cycling while the owl is here\n  and an owl blinks slowly\nor\n  nothing\nend phrase\n\ncreate the owl
+  a thing\n  in the Lab\n\n  An owl.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ir.phrases.locales['en-US']['frag'].condition).toMatchObject({
@@ -182,6 +184,7 @@ before the game starts
 end before
 
 create the jar
+  a thing
   in the Lab
 
   A jar of oddments{frag}. Best not to shake it.

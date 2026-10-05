@@ -57,10 +57,11 @@ create Alex
   starts in the Trophy Barn
 
 create the no smoking sign
-  skittish
+  a thing, skittish
   in the Trophy Barn
 
 create the pygmy goat
+  a thing
   in the Trophy Barn
   states: hungry, content
 

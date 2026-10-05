@@ -33,7 +33,7 @@ create the Lab
   A bare lab.
 
 create the tablet
-  scenery, readable
+  a thing, scenery, readable
   in the Lab
 
   A stone tablet.
@@ -61,13 +61,13 @@ define trait chimed
 end trait
 
 create the bell
-  scenery, pushable, chimed
+  a thing, scenery, pushable, chimed
   in the Lab
 
   A bronze bell.
 
 create the gong
-  scenery, pushable, chimed
+  a thing, scenery, pushable, chimed
   in the Lab
 
   A brass gong.

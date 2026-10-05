@@ -27,6 +27,7 @@ import { PlayCommand } from './commands/play';
 import { GrammarCommand } from './commands/grammar';
 import { AliasesCommand } from './commands/aliases';
 import { ManifestCommand } from './commands/manifest';
+import { EbnfCommand } from './commands/ebnf';
 import { ProtocolCommand } from './commands/protocol';
 
 /**
@@ -43,6 +44,7 @@ const COMMANDS: Command[] = [
   new GrammarCommand(),
   new AliasesCommand(),
   new ManifestCommand(),
+  new EbnfCommand(),
   new ProtocolCommand(),
   new TestCommand(),
   new PlayCommand(),

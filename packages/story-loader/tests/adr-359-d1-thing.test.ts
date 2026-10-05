@@ -45,7 +45,7 @@ create the cap
   A cap.
 
 create the scarf
-  wearable
+  a thing, wearable
   in the Hall
 
   A scarf.
@@ -76,12 +76,27 @@ describe('ADR-359 D1 — `a thing` in the IR and the world', () => {
     expect(ir.entities.find((e) => e.id === 'cap')!.kinds.map((k) => k.name)).toEqual(['thing']);
   });
 
-  it('builds `a thing` exactly as a block with no kind', () => {
+  it('builds `a thing` as the plain object a block with no kind used to build', () => {
+    // The removed no-kind path made an `object` with an IdentityTrait and
+    // nothing else of its own; the block's traits (`wearable`) ride on top.
     const cap = entityOf('cap');
-    const scarf = entityOf('scarf');
-    expect(cap.type).toBe(scarf.type);
-    expect([...cap.traits.keys()].sort()).toEqual([...scarf.traits.keys()].sort());
+    const crate = entityOf('crate');
+    expect(cap.type).toBe('object');
+    expect(cap.has('identity')).toBe(true);
+    expect(cap.has('wearable')).toBe(true);
+    expect(cap.has('container')).toBe(false);
+    expect(crate.has('container')).toBe(true);
     expect(world.getLocation(cap.id)).toBe(story.entityId('hall'));
+  });
+});
+
+describe('ADR-359 D1 — the loader refuses an entity with no kind', () => {
+  it('throws a load error naming the entity when an IR entity has empty kinds', () => {
+    const result = compile(SOURCE);
+    const ir = structuredClone(result.ir);
+    ir.entities.find((e) => e.id === 'scarf')!.kinds = [];
+    const story = createStory(ir, { seed: 1 });
+    expect(() => story.initializeWorld(new WorldModel())).toThrow('`scarf` names no kind.');
   });
 });
 

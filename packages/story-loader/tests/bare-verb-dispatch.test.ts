@@ -74,6 +74,7 @@ create the Beach
   A beach.
 
 create the sea
+  a thing
   in the Beach
 
   The sea.

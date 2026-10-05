@@ -63,6 +63,7 @@ before the game starts
 end before
 
 create the knife
+  a thing
   in the Shed
 
   A knife.
@@ -70,7 +71,7 @@ create the knife
 
 const CUTTABLE_ROPE = `create the rope
   in the Shed
-  cuttable with the knife
+  a thing, cuttable with the knife
 
   A rope.
 
@@ -117,7 +118,7 @@ describe('cuttable trait adjective (ADR-230 D3c)', () => {
   it('rejects a tool name that matches no entity', () => {
     const source = storyWith(`create the rope
   in the Shed
-  cuttable with the chainsaw
+  a thing, cuttable with the chainsaw
 
   A rope.
 
@@ -157,12 +158,13 @@ before the game starts
 end before
 
 create the shovel
+  a thing
 
   A shovel.
 
 create the sand
   in the Beach
-  diggable with the shovel
+  a thing, diggable with the shovel
 
   Sand.
 
@@ -191,7 +193,7 @@ end phrase
   it('rejects a diggable with no digging implementation at load time', () => {
     const source = storyWith(`create the sand
   in the Shed
-  diggable
+  a thing, diggable
 
   Sand.`);
     expect(() => loadStory(source)).toThrowError(/registers no digging implementation/);
@@ -210,7 +212,7 @@ end trait
 
 create the rope
   in the Shed
-  severable, cuttable with the knife
+  a thing, severable, cuttable with the knife
 
   A rope.
 

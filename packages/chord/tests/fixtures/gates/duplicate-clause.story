@@ -22,7 +22,7 @@ define trait guarded
 end trait
 
 create the rope
-  scenery
+  a thing, scenery
 
 create the Foyer
   a room

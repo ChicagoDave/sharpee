@@ -21,6 +21,7 @@ create the Annex
   south to the Lab
 
 create the brass bell
+  a thing
   aka bell
   in the Annex
 
@@ -28,7 +29,7 @@ create the brass bell
 
 create the machine
   in the Lab
-  scenery
+  a thing, scenery
   states: quiet, humming
 
   A squat machine.

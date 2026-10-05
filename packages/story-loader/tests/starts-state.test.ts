@@ -65,13 +65,13 @@ create the bin
   A bin.
 
 create the locket
-  openable
+  a thing, openable
   in the Vault
 
   A locket.
 
 create the generator
-  switchable, starts on
+  a thing, switchable, starts on
   in the Vault
 
   A generator.
@@ -89,6 +89,7 @@ before the game starts
 end before
 
 create the brass key
+  a thing
 
   A small brass key.
 `;

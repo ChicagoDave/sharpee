@@ -29,6 +29,7 @@ before the game starts
 end before
 
 create the cat
+  a thing
   in the Lab
 
   A cat.
@@ -50,14 +51,16 @@ describe('Z3: reserved channel keys', () => {
 
   it('emitting a channel via a `phrase` statement is a load error (channels are never pushed)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    phrase present\n      Pushed.\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    phrase present\n      Pushed.\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.channel-pushed');
   });
 
   it('the entity `phrase present:` block itself registers clean (the one authoring surface)', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the keeper\n  in the Lab\n\n  A keeper.\n\n  phrase present:\n    Sam is here, jingling keys.\n`,
+      `${HEADER}${WORLD}create the keeper
+  a thing\n  in the Lab\n\n  A keeper.\n\n  phrase present:\n    Sam is here, jingling keys.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     expect(result.ir.phrases.locales['en-US']['keeper.present'].variants[0].text).toBe(
@@ -69,7 +72,8 @@ describe('Z3: reserved channel keys', () => {
 describe('CP3: override strategy adverbs and or-variants', () => {
   it('`phrase present, cycling:` with or-variants carries strategy + both variants', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the keeper\n  in the Lab\n\n  A keeper.\n\n  phrase present, cycling:\n    Sam is here.\n  or\n    Sam jingles the keys.\n`,
+      `${HEADER}${WORLD}create the keeper
+  a thing\n  in the Lab\n\n  A keeper.\n\n  phrase present, cycling:\n    Sam is here.\n  or\n    Sam jingles the keys.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const phrase = result.ir.phrases.locales['en-US']['keeper.present'];
@@ -79,7 +83,8 @@ describe('CP3: override strategy adverbs and or-variants', () => {
 
   it('a retired adverb on an override header gets the AC-13 fix-it', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the keeper\n  in the Lab\n\n  A keeper.\n\n  phrase present, ordered:\n    Sam is here.\n`,
+      `${HEADER}${WORLD}create the keeper
+  a thing\n  in the Lab\n\n  A keeper.\n\n  phrase present, ordered:\n    Sam is here.\n`,
     );
     const retired = errors.find((e) => e.code === 'parse.phrase-strategy-retired');
     expect(retired).toBeTruthy();
@@ -90,7 +95,7 @@ describe('CP3: override strategy adverbs and or-variants', () => {
 describe('Z3b: detail blocks', () => {
   it('`phrase detail while the flashlight is on:` compiles with its condition', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the flashlight\n  switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the flashlight is on:\n    It clicks faintly as it powers up.\n`,
+      `${HEADER}${WORLD}create the flashlight\n  a thing, switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the flashlight is on:\n    It clicks faintly as it powers up.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const phrase = result.ir.phrases.locales['en-US']['flashlight.detail'];
@@ -100,7 +105,7 @@ describe('Z3b: detail blocks', () => {
 
   it('two detail blocks per owner get deterministic suffixed keys', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the flashlight\n  switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the flashlight is on:\n    It hums.\n\n  phrase detail while the cat is here:\n    The cat eyes it warily.\n`,
+      `${HEADER}${WORLD}create the flashlight\n  a thing, switchable\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the flashlight is on:\n    It hums.\n\n  phrase detail while the cat is here:\n    The cat eyes it warily.\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const table = result.ir.phrases.locales['en-US'];
@@ -110,21 +115,24 @@ describe('Z3b: detail blocks', () => {
 
   it('`phrase detail` with no `while` is a load error (unconditional detail belongs in the description)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the flashlight\n  in the Lab\n\n  A flashlight.\n\n  phrase detail:\n    It hums.\n`,
+      `${HEADER}${WORLD}create the flashlight
+  a thing\n  in the Lab\n\n  A flashlight.\n\n  phrase detail:\n    It hums.\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.detail-unconditional');
   });
 
   it('multi-variant detail is a load error (variety = more blocks)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the flashlight\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the cat is here:\n    One.\n  or\n    Two.\n`,
+      `${HEADER}${WORLD}create the flashlight
+  a thing\n  in the Lab\n\n  A flashlight.\n\n  phrase detail while the cat is here:\n    One.\n  or\n    Two.\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.detail-variants');
   });
 
   it('`while` on a lifecycle channel or ordinary override is a load error (never-guess)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the keeper\n  in the Lab\n\n  A keeper.\n\n  phrase exited while the cat is here:\n    Sam leaves.\n`,
+      `${HEADER}${WORLD}create the keeper
+  a thing\n  in the Lab\n\n  A keeper.\n\n  phrase exited while the cat is here:\n    Sam leaves.\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.override-gate');
   });
@@ -133,7 +141,8 @@ describe('Z3b: detail blocks', () => {
 describe('Z6: the `remove` statement', () => {
   it('parses and IR-compiles alongside `move`, with the D7 when-suffix', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    remove the cat when the cat is here\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    remove the cat when the cat is here\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const clause = result.ir.entities.find((e) => e.id === 'bell')!.onClauses[0];
@@ -146,7 +155,8 @@ describe('Z6: the `remove` statement', () => {
 
   it('`remove the crumbs` resolves the owner by name in its own block', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the crumbs\n  in the Lab\n\n  Crumbs.\n\n  after the player taking\n    remove the crumbs\n  end after\n`,
+      `${HEADER}${WORLD}create the crumbs
+  a thing\n  in the Lab\n\n  Crumbs.\n\n  after the player taking\n    remove the crumbs\n  end after\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const clause = result.ir.entities.find((e) => e.id === 'crumbs')!.onClauses[0];
@@ -166,7 +176,8 @@ describe('Z6: the `remove` statement', () => {
 
   it('`remove the player` is a load error (analysis.remove-player)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    remove the player\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on the player examining\n    remove the player\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.remove-player');
   });

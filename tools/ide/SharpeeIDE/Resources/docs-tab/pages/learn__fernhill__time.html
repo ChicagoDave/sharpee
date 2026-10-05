@@ -28,6 +28,7 @@ end sequence</code></pre>
 <p><code>when &lt;entity&gt; becomes &lt;state&gt;</code> starts the clock; <code>N turns later</code> steps follow; <code>kill the player</code> is the hard ending, gated <code>when the fuse is lit</code>, so cutting the fuse (<code>cuttable with the garden shears</code>, <em>Things</em>) defuses the death. Both branches are real: the game will kill you.</p>
 <h2 id="recurring-events-gated-on-presence">Recurring events, gated on presence</h2>
 <pre><code class="language-chord">create the Cellar
+  a thing
   on every turn
     phrase cellar-drip
   end on

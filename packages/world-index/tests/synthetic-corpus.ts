@@ -475,13 +475,14 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
       lines.push(prose(obstacle.from + 1, words));
       lines.push('');
       lines.push(`create ${obstacle.key}`);
+      lines.push('  a thing');
       lines.push(`  in ${roomName(obstacle.opener)}`);
       lines.push('');
       lines.push(prose(obstacle.from + 2, words));
       lines.push('');
     } else {
       lines.push(`create ${obstacle.lever}`);
-      lines.push('  switchable');
+      lines.push('  a thing, switchable');
       lines.push(`  in ${roomName(obstacle.opener)}`);
       lines.push('');
       lines.push(prose(obstacle.from + 3, words));
@@ -495,6 +496,7 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
 
   for (const [ordinal, thing] of plan.things.entries()) {
     lines.push(`create ${thing.name}`);
+    lines.push('  a thing');
     lines.push(`  in ${roomName(thing.room)}`);
     lines.push('');
     lines.push(prose(ordinal, words));

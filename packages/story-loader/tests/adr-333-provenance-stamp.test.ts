@@ -28,7 +28,7 @@ create the Alley
 
 create the apple
   in the Alley
-  edible
+  a thing, edible
 
   A red apple.
 

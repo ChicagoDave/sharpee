@@ -14,7 +14,7 @@ define trait moody
 end trait
 
 create the llama
-  scenery
+  a thing, scenery
   feedable
   moody
 

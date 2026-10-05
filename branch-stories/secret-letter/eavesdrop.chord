@@ -81,7 +81,7 @@
 
 create the voices
   aka voice, men, group of men, group of people, people, words, talking, conversation
-  scenery, plural
+  a thing, scenery, plural
 
   You'd have to poke your head out of the alley to get a good look at the
   men. You only know they're there because you can hear them talking.
@@ -177,14 +177,14 @@ create the Outer Market Roof
 
 create the tiles
   aka red tiles, tile, shingle, shingles, storehouse roof
-  scenery, plural
+  a thing, scenery, plural
   in the Outer Market Roof
 
   The roof tiles are warm under the morning sun.
 
 create the view
   aka view of town, vista, landscape, city, town, Miradania, Toresal
-  scenery
+  a thing, scenery
   in the Outer Market Roof
 
   You have a good view of the market's northwest junction and Lord's Road
@@ -202,7 +202,7 @@ create the view
 
 create the group of mercenaries
   aka mercenaries, mercenary, men, soldiers, people, person, bravos, guards, mercs, group
-  scenery, plural
+  a thing, scenery, plural
 
   They're not Lord's Guards, that's for sure. They wear no insignia, for one
   thing. Their arms and armor are mismatched, ugly, and scarred — not an
@@ -221,7 +221,7 @@ create the group of mercenaries
 
 create the mercenary captain
   aka captain, leader, mercenary leader, older mercenary, grizzled mercenary
-  scenery
+  a thing, scenery
 
   The leader of the mercenaries looks a bit older and a bit more grizzled
   than the rest. He also looks smarter. You'll have a hard time fooling him,

@@ -92,6 +92,7 @@ describe('client has <capability> (ADR-216)', () => {
   it('lowers to the camelCase platform key, hyphen words included', () => {
     const result = compile(
       story(`create the lamp
+  a thing
   in the Hall
 
   A lamp.
@@ -115,6 +116,7 @@ end phrase
     expect(
       errorCodes(
         story(`create the lamp
+  a thing
   in the Hall
 
   on every turn

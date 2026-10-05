@@ -79,6 +79,7 @@ describe('ADR-251 Acceptance — worked example', () => {
       '  A wooden pier.',
       '',
       'create the brass gull',
+      '  a thing',
       '  in the Lighthouse',
       '',
       '  A brass gull perches here.',

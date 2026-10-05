@@ -222,7 +222,8 @@ describe('traits-basic IR (§2.2/§3.2 + ownership package)', () => {
 describe('ownership-package additions — inline sources', () => {
   it('compiles define-action must lines with infinitive normalization (D6)', () => {
     const result = compile(
-      `${HEADER}define action bowing\n  grammar\n    bow the noble\n  the noble must be reachable\n  the actor must hold the hat: no-hat\n  otherwise refuse cant-bow\n\n  phrases en-US\n    no-hat:\n      You need your hat.\n    cant-bow:\n      No.\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the hat\n  in the Hall\n\n  A hat.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
+      `${HEADER}define action bowing\n  grammar\n    bow the noble\n  the noble must be reachable\n  the actor must hold the hat: no-hat\n  otherwise refuse cant-bow\n\n  phrases en-US\n    no-hat:\n      You need your hat.\n    cant-bow:\n      No.\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the hat
+  a thing\n  in the Hall\n\n  A hat.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const bowing = result.ir.actions.find((a) => a.name === 'bowing')!;
@@ -241,7 +242,7 @@ describe('ownership-package additions — inline sources', () => {
 
   it('merges trait-declared states into composer entities for state checks (D8)', () => {
     const errors = errorsOf(
-      `${HEADER}define trait sleepy\n  states: dozing, awake\nend trait\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering\n    change the cat to awake\n  end after\n\ncreate the cat\n  sleepy\n  in the Hall\n\n  A cat.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
+      `${HEADER}define trait sleepy\n  states: dozing, awake\nend trait\n\ncreate the Hall\n  a room\n\n  A hall.\n\n  after the player entering\n    change the cat to awake\n  end after\n\ncreate the cat\n  a thing, sleepy\n  in the Hall\n\n  A cat.\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });

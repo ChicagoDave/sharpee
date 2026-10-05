@@ -42,25 +42,25 @@ create the oak door
   An oak door.
 
 create the cable
-  scenery
+  a thing, scenery
   in the Roof
   hangable
 
   A cable.
 
 create the cloak
-  wearable
+  a thing, wearable
   in the Roof
 
   A cloak.
 
 create the boots
-  wearable, plural
+  a thing, wearable, plural
 
   Boots.
 
 create the dress
-  wearable
+  a thing, wearable
 
   A dress.
 
@@ -72,6 +72,7 @@ create Teisha
   Teisha.
 
 create the bell
+  a thing
   in the Roof
 
   A bell.

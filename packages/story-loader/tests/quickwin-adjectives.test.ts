@@ -81,7 +81,7 @@ describe('D1: pushable/pullable loader cases', () => {
   it('loads a pushable entity (previously a misleading LoadError) and stamps the trait', () => {
     const { story, world } = loadStory(storyWith(`create the boulder
   in the Shed
-  pushable
+  a thing, pushable
 
   A boulder.`));
     const boulder = world.getEntity(story.entityId('boulder')!)!;
@@ -91,7 +91,7 @@ describe('D1: pushable/pullable loader cases', () => {
   it('loads a pullable entity and stamps the trait', () => {
     const { story, world } = loadStory(storyWith(`create the lever
   in the Shed
-  pullable
+  a thing, pullable
 
   A lever.`));
     const lever = world.getEntity(story.entityId('lever')!)!;
@@ -103,7 +103,7 @@ describe('G1: drinkable liquid marker', () => {
   it('composes EdibleTrait with liquid=true', () => {
     const { story, world } = loadStory(storyWith(`create the potion
   in the Shed
-  drinkable
+  a thing, drinkable
 
   A potion.`));
     const potion = world.getEntity(story.entityId('potion')!)!;
@@ -116,7 +116,7 @@ describe('G1: drinkable liquid marker', () => {
     for (const composition of ['edible, drinkable', 'drinkable, edible']) {
       const { story, world } = loadStory(storyWith(`create the broth
   in the Shed
-  ${composition}
+  a thing, ${composition}
 
   Broth.`));
       const broth = world.getEntity(story.entityId('broth')!)!;
@@ -130,7 +130,7 @@ describe('G2: concealed marker', () => {
   it('sets IdentityTrait.concealed so searching has something to reveal', () => {
     const { story, world } = loadStory(storyWith(`create the key
   in the Shed
-  concealed
+  a thing, concealed
 
   A key.`));
     const key = world.getEntity(story.entityId('key')!)!;
@@ -144,7 +144,7 @@ describe('unlisted marker (2026-09-06)', () => {
   it('sets IdentityTrait.contentsUnlisted so the room never lists what the holder carries', () => {
     const { story, world } = loadStory(storyWith(`create the rope wares
   in the Shed
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
 
   All rope.`));
     const wares = world.getEntity(story.entityId('rope-wares')!)!;
@@ -157,7 +157,7 @@ describe('G3: hiding-spot adjective', () => {
   it('bare form supports every hiding position', () => {
     const { story, world } = loadStory(storyWith(`create the curtain
   in the Shed
-  hiding-spot
+  a thing, hiding-spot
 
   A curtain.`));
     const curtain = world.getEntity(story.entityId('curtain')!)!;
@@ -169,7 +169,7 @@ describe('G3: hiding-spot adjective', () => {
   it('`with position behind` narrows to exactly that position', () => {
     const { story, world } = loadStory(storyWith(`create the curtain
   in the Shed
-  hiding-spot with position behind
+  a thing, hiding-spot with position behind
 
   A curtain.`));
     const curtain = world.getEntity(story.entityId('curtain')!)!;
@@ -182,7 +182,7 @@ describe('G3: hiding-spot adjective', () => {
     // defensive backstop must still throw.
     const ir = compileSource(storyWith(`create the curtain
   in the Shed
-  hiding-spot with position behind
+  a thing, hiding-spot with position behind
 
   A curtain.`));
     const rogue = structuredClone(ir);
@@ -203,11 +203,12 @@ describe('G4/D3: openable tool config', () => {
   it('stamps the tool as a resolved WORLD id, not a raw name (was silently dropped)', () => {
     const { story, world } = loadStory(storyWith(`create the crate
   in the Shed
-  openable with the crowbar
+  a thing, openable with the crowbar
 
   A crate.
 
 create the crowbar
+  a thing
   in the Shed
 
   A crowbar.`));
@@ -222,7 +223,7 @@ create the crowbar
   it('rejects a tool name that matches no entity', () => {
     const source = storyWith(`create the crate
   in the Shed
-  openable with the ghostbar
+  a thing, openable with the ghostbar
 
   A crate.`);
     expect(() => loadStory(source)).toThrowError(/`ghostbar` \(config `tool`\) names no entity/);
@@ -233,7 +234,7 @@ describe('turning: `on the player turning` through stdlib turningAction (REAL-PA
   it('loads the clause (dead-gerund gate passes) and the turn mutates the world', () => {
     const { story, world, player } = loadStory(storyWith(`create the crank
   in the Shed
-  scenery
+  a thing, scenery
 
   A crank.
 
@@ -243,6 +244,7 @@ describe('turning: `on the player turning` through stdlib turningAction (REAL-PA
   end on
 
 create the prize
+  a thing
   in the Bin
 
   A prize.
@@ -287,6 +289,7 @@ end phrase`));
 
   it('an entity with no turning implementation refuses with cant_turn_that', () => {
     const { story, world, player } = loadStory(storyWith(`create the statue
+  a thing
   in the Shed
 
   A statue.`));

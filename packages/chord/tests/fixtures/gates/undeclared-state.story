@@ -15,7 +15,7 @@ create the Foyer
   end after
 
 create the message
-  scenery
+  a thing, scenery
   in the Foyer
   states: intact, trampled
 

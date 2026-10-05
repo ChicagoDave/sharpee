@@ -141,7 +141,7 @@ final class SyntaxHighlighterTests: XCTestCase {
     }
 
     func testHighlightColorsCommentLineWhole() {
-        let storage = highlighted("## a file header comment\n\ncreate the Lab\n")
+        let storage = highlighted("## a file header comment\n\ncreate the Lab\n  a thing\n")
         XCTAssertEqual(color(in: storage, of: "## a file"), Theme.tokenComment)
         XCTAssertEqual(color(in: storage, of: "comment"), Theme.tokenComment,
                        "the WHOLE comment line colors, not just the ## marker")

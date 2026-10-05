@@ -39,6 +39,7 @@ before the game starts
 end before
 
 create the widget
+  a thing
   in the Lab
 
   A small widget.
@@ -75,7 +76,8 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
     ['once', 'first-time'],
   ])('Z5 applies at the `select` site too: `select %s` errors naming `%s`', (retired, replacement) => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select ${retired}\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
+      `${HEADER}${WORLD}create the lever
+  a thing\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select ${retired}\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('parse.select-strategy-retired');
     const retiredError = errors.find((e) => e.code === 'parse.select-strategy-retired')!;
@@ -84,14 +86,16 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
 
   it('`select sticky` parses clean (new adverb accepted at the select site)', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the lever\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select sticky\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
+      `${HEADER}${WORLD}create the lever
+  a thing\n  in the Lab\n\n  A lever.\n\n  on the player pull\n    select sticky\n      phrase a\n        First.\n    or\n      phrase b\n        Second.\n    end select\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
 
   it('D5 regression: the rule modifier `, once` still parses while the adverb is retired', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on every turn while the widget is here, once\n    phrase ding\n      Ding.\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on every turn while the widget is here, once\n    phrase ding\n      Ding.\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
@@ -100,7 +104,8 @@ describe('Z5: strategy adverbs (ADR-211 Decision 4)', () => {
 describe('Z4: the `here` deictic', () => {
   it('`while <entity> is here` parses to the is-here predicate and IR-compiles', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on every turn while the widget is here\n    phrase ding\n      Ding.\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on every turn while the widget is here\n    phrase ding\n      Ding.\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const bell = result.ir.entities.find((e) => e.id === 'widget' || e.id === 'bell');
@@ -116,7 +121,8 @@ describe('Z4: the `here` deictic', () => {
 
   it('`is not here` carries negation', () => {
     const result = compile(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on every turn while the widget is not here\n    phrase ding\n      Ding.\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on every turn while the widget is not here\n    phrase ding\n      Ding.\n  end on\n`,
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
     const clause = result.ir.entities.find((e) => e.id === 'bell')!.onClauses[0];
@@ -125,7 +131,8 @@ describe('Z4: the `here` deictic', () => {
 
   it('a literal subject is a load error (analysis.here-subject)', () => {
     const errors = errorsOf(
-      `${HEADER}${WORLD}create the bell\n  in the Lab\n\n  A bell.\n\n  on every turn while 3 is here\n    phrase ding\n      Ding.\n  end on\n`,
+      `${HEADER}${WORLD}create the bell
+  a thing\n  in the Lab\n\n  A bell.\n\n  on every turn while 3 is here\n    phrase ding\n      Ding.\n  end on\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.here-subject');
   });
@@ -177,7 +184,8 @@ end before
 
   it('`first time` on a non-room is a load error', () => {
     const errors = errorsOf(
-      `${HEADER}create the Lab\n  a room\n\n  A lab.\n\ncreate Alex\n  a person\n  playable\n  in the Lab\n\nbefore the game starts\n  change the player to Alex\nend before\n\ncreate the widget\n  in the Lab\n  first time\n    Shiny.\n\n  A widget.\n`,
+      `${HEADER}create the Lab\n  a room\n\n  A lab.\n\ncreate Alex\n  a person\n  playable\n  in the Lab\n\nbefore the game starts\n  change the player to Alex\nend before\n\ncreate the widget
+  a thing\n  in the Lab\n  first time\n    Shiny.\n\n  A widget.\n`,
     );
     expect(errors.map((e) => e.code)).toContain('analysis.first-time-non-room');
   });

@@ -116,31 +116,33 @@ create the Yard
   A yard.
 
 create the vine
-  prunable
+  a thing, prunable
   scenery
   in the Yard
 
   A vine.
 
 create the rose
-  prunable
+  a thing, prunable
   scenery
   in the Yard
 
   A rose.
 
 create the locket
+  a thing
   in the Yard
 
   A locket.
 
 create the shears
+  a thing
   in the Yard
 
   Shears.
 
 create the lever
-  scenery
+  a thing, scenery
   in the Yard
 
   A lever.

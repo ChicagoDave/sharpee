@@ -74,6 +74,7 @@ create the Break Room
   Lockers, a kettle, one sagging couch.
 
 create the flimsy basket
+  a thing
   aka basket
   in the Break Room
 

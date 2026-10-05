@@ -60,6 +60,7 @@ ${s.guards ?? ''}
   Guards.
 
 create the sword
+  a thing
 ${s.swordPlace ?? '  in the Yard\n'}${s.sword ?? ''}
   A sword.
 

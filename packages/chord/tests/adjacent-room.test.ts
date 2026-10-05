@@ -28,6 +28,7 @@ create the Alley
   An alley.
 
 create the monkey
+  a thing
   in the Stall
 ${body}
   A monkey.

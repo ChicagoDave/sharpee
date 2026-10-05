@@ -149,6 +149,7 @@ create the strongbox
   openable, ${composition}
 
 create the brass key
+  a thing
 
 `);
 
@@ -169,9 +170,10 @@ create the brass key
 
   it('`with tool the …` is the same parse error', () => {
     expect(errorCodes(story(`create the crate
-  openable with tool the crowbar
+  a thing, openable with tool the crowbar
 
 create the crowbar
+  a thing
 
 `))).toContain('parse.removed-config-keyword');
   });
@@ -182,9 +184,10 @@ create the crowbar
 end trait
 
 create the goat
-  feedable with food the handful of feed
+  a thing, feedable with food the handful of feed
 
 create the handful of feed
+  a thing
 
 `));
     const goat = result.ir.entities.find((e) => e.id === 'goat')!;
@@ -194,9 +197,10 @@ create the handful of feed
 
   it('word-valued configs keep their keyword (`with position behind`)', () => {
     const result = compile(story(`create the sofa
+  a thing
 
 create the mouse
-  hiding-spot with position behind
+  a thing, hiding-spot with position behind
 
 `));
     const mouse = result.ir.entities.find((e) => e.id === 'mouse')!;
@@ -215,6 +219,7 @@ create the Hall
   a room
 
 create the rug
+  a thing
 
   A threadbare rug.
 

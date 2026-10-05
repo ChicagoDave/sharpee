@@ -45,12 +45,13 @@ create the Study
   key lies on the desk. Try: look, examine the desk, take the key.
 
 create the desk
-  scenery
+  a thing, scenery
   in the Study
 
   A leather-topped writing desk, its surface scarred by decades of ink.
 
 create the brass key
+  a thing
   aka key
   in the Study
 
@@ -124,6 +125,7 @@ create the Lamp Room
   Shelves of unlit lamps line every wall. Try: take the lantern, examine the statue.
 
 create the brass lantern
+  a thing
   aka lantern
   in the Lamp Room
 
@@ -131,7 +133,7 @@ create the brass lantern
 
 create the marble statue
   aka statue
-  scenery
+  a thing, scenery
   in the Lamp Room
 
   A blank-eyed statue, far too heavy to move.
@@ -174,6 +176,7 @@ create the study door
   A paneled oak door with a heavy iron lock.
 
 create the iron key
+  a thing
   aka key
   in the Landing
 

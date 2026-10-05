@@ -148,6 +148,7 @@ create the Gatehouse
   A gatehouse.
 
 create the rusty winch
+  a thing
   in the Gatehouse
 
   A winch.
@@ -203,6 +204,7 @@ create the Hall
   A hall.
 
 create the goat
+  a thing
   in the Hall
 
   A goat.

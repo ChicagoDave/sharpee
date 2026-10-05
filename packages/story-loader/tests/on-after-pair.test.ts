@@ -26,7 +26,7 @@ create the Shrine
   A quiet shrine.
 
 create the tablet
-  scenery, readable
+  a thing, scenery, readable
   in the Shrine
   states: whole, studied
 
@@ -44,7 +44,7 @@ create the tablet
   end after
 
 create the bell
-  scenery
+  a thing, scenery
   in the Shrine
   states: silent, rung
 
@@ -76,10 +76,10 @@ end trait
 `;
 
 const TRAIT_SOURCE = SOURCE.replace(`create the bell
-  scenery
+  a thing, scenery
   in the Shrine
   states: silent, rung`, `create the bell
-  scenery, pushable, chimed
+  a thing, scenery, pushable, chimed
   in the Shrine
   states: silent, rung`);
 
@@ -155,9 +155,9 @@ describe('capability pair: refused legibly, never silently overwritten', () => {
 define trait chimed
   on the player ringing`).replace('after the player pushing, once', 'after the player ringing, once')
       .replace(`create the bell
-  scenery
+  a thing, scenery
   in the Shrine`, `create the bell
-  scenery, chimed
+  a thing, scenery, chimed
   in the Shrine`);
     const result = compile(source);
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);

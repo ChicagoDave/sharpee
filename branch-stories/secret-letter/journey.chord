@@ -152,7 +152,7 @@ end phrase
 
 create the gatehouse
   aka portcullis, archway, gate house, iron bars, bars, massive gate, iron gate
-  scenery
+  a thing, scenery
   in the Southern Gate
 
   The portcullis — a massive gate of thick, iron bars — is raised in its
@@ -266,7 +266,7 @@ end phrase
 
 create the tabards
   aka tabard, polished mail, mail, armor, spear, spears, long spears, coat of arms, arms, weapon, weapons, guards' things
-  scenery, plural
+  a thing, scenery, plural
   in the Southern Gate
 
   You can't get close enough to do that without attracting the guards'
@@ -520,7 +520,7 @@ end phrase
 
 create the brick
   aka loose brick, stone
-  pullable
+  a thing, pullable
   in the rectangular hole
 
   You see nothing special about the brick.
@@ -564,7 +564,7 @@ end phrase
 
 create the short lever
   aka lever, metal lever, short metal lever
-  scenery, pullable, pushable
+  a thing, scenery, pullable, pushable
 
   It's just a short, metal lever.
 
@@ -667,7 +667,7 @@ end phrase
 
 create the tapestries
   aka tapestry, hangings, hanging, battle, battles, battle scenes, scenes, scene, noblemen, nobleman, nobles, soldiers, soldier, coats of arms, coat of arms, western clans, clans, clan, war
-  scenery, plural
+  a thing, scenery, plural
   in the Foyer
 
   The tapestries depict important battles in the history of Miradania,
@@ -677,7 +677,7 @@ create the tapestries
 
 create the garlands
   aka garland, greenery, festive greenery
-  scenery, plural
+  a thing, scenery, plural
   in the Foyer
 
   The garlands add a touch of festive greenery to the room.

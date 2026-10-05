@@ -213,6 +213,7 @@ create the Room
   A room.
 
 create the box
+  a thing
   in the Room
   states: shut, ajar
 

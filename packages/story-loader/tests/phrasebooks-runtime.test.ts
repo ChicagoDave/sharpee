@@ -26,7 +26,7 @@ create the Parlour
   A parlour.
 
 create the bell
-  scenery
+  a thing, scenery
   in the Parlour
 
   A hand bell.

@@ -15,11 +15,13 @@ create the Study
   A quiet study.
 
 create the lamp
+  a thing
   in the Study
 
   A brass lamp.
 
 create the book
+  a thing
   in the Study
 
   A dusty book.

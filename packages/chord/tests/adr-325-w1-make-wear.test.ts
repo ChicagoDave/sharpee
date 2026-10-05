@@ -29,12 +29,13 @@ ${lines.split('\n').map((l) => `    ${l}`).join('\n')}
   end after
 
 create the woolen cap
-  wearable
+  a thing, wearable
   in the Street
 
   A cap.
 
 create the brick
+  a thing
   in the Street
 
   A brick.

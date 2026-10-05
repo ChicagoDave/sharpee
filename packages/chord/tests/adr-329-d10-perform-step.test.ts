@@ -52,16 +52,19 @@ create the Vault
   A vault.
 
 create the key
+  a thing
   in the Tower
 
   A key.
 
 create the wand
+  a thing
   in the Tower
 
   A wand.
 
 create the door
+  a thing
   in the Tower
 
   A door.

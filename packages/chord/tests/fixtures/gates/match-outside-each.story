@@ -14,6 +14,7 @@ create Alex
   starts in the Barn
 
 create the goat
+  a thing
   in the Barn
   states: hungry, content
 

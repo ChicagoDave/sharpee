@@ -37,7 +37,7 @@ create the Den
   A small square den.
 
 create the metronome
-  scenery
+  a thing, scenery
   in the Den
 
   It ticks.

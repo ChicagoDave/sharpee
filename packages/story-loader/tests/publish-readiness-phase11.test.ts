@@ -37,18 +37,19 @@ create the Stall
   A stall.
 
 create the pyramid display
-  scenery, a supporter
+  a supporter, scenery
   in the Stall
 
   A display.
 
 create the cheese
+  a thing
   on the pyramid display
 
   A cheese.
 
 create the fuse
-  scenery
+  a thing, scenery
   cuttable with the shears
   in the Yard
   states: coiled, cut
@@ -61,6 +62,7 @@ create the fuse
   end on
 
 create the shears
+  a thing
   in the Yard
 
   Shears.

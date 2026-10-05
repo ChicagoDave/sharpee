@@ -46,20 +46,23 @@ create the Hall
   A hall.
 
 create the letter
+  a thing
 ${s.letter ?? ''}
   A letter.
 
 create the tray
+  a thing
 
   A tray.
 
 create the coin
+  a thing
   in the Parlor
 
   A coin.
 
 create the vase
-  scenery
+  a thing, scenery
   in the Parlor
 
   A vase.

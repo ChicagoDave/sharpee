@@ -28,6 +28,7 @@ create the second partner
   A partner.
 
 create the gong
+  a thing
   in the Ballroom
 
   A gong.
@@ -37,6 +38,7 @@ create the gong
   end after
 
 create the bell
+  a thing
   in the Ballroom
 
   A bell.

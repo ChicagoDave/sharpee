@@ -288,7 +288,7 @@ end phrase
 
 create the burlap blankets
   aka blankets, blanket, ragged blankets, threadbare blankets, holes, stains
-  scenery, plural
+  a thing, scenery, plural
   in the Jail Cell
 
   The blankets are threadbare, filled with holes, and stained with
@@ -349,7 +349,7 @@ end trait
 
 create the straw
   aka filthy straw, damp straw, pile of straw, piles of straw, lump of straw, lumps of straw, nasty stuff, filth
-  scenery
+  a thing, scenery
   straw-lift
   in the Jail Cell
   states, reversible: bare, hiding
@@ -400,6 +400,7 @@ end phrase
 ## `story.ni:8254` — the wire, offstage until JA8.
 
 create the piece of wire
+  a thing
   aka wire, lockpick, lock pick, pick, bit of wire, stiff wire, short wire
 
   It's a short bit of stiff wire, like the ones you've sometimes seen Bobby
@@ -644,14 +645,14 @@ end phrase
 
 create the jailhouse table
   aka table, wooden table, furniture, rough table, crude table
-  scenery
+  a thing, scenery
   in the Jailhouse
 
   The furniture is rough and crudely carved.
 
 create the jailhouse bench
   aka bench, wooden bench, rough bench, crude bench
-  scenery, enterable
+  a thing, scenery, enterable
   in the Jailhouse
 
   The furniture is rough and crudely carved.
@@ -666,7 +667,7 @@ end phrase
 
 create the east passage
   aka passage, passageway, way out, other areas, rest of the prison
-  scenery
+  a thing, scenery
   in the Jailhouse
 
   The east passage leads out to other areas of the prison... and hopefully
@@ -1121,7 +1122,7 @@ end trait
 
 create the metal grate
   aka grate, bars, thick bars, metal bars, cover, heavy grate
-  scenery
+  a thing, scenery
   grate-lift
   in the Drain Room
   states: seated, moved
@@ -1174,7 +1175,7 @@ end phrase
 
 create the loose stonework
   aka stonework, crumbling stonework, stone, stones, crumbly stone, loose stone
-  scenery
+  a thing, scenery
   in the Drain Room
 
   The stonework around the metal grate is loose and crumbling.
@@ -1184,7 +1185,7 @@ create the loose stonework
 
 create the drain hole
   aka hole, rectangular hole, shaft, drain, darkness, foul-smelling darkness
-  scenery, enterable
+  a thing, scenery, enterable
   in the Drain Room
 
   The hole is too dark and too deep for you to see the bottom, although you
@@ -1224,12 +1225,14 @@ end phrase
 ## one of four rotations, redrawn after a correct move. See the header.
 
 create the magic color
+  a thing
   aka magic colour
   states, reversible: red, blue, green, yellow
 
   The colour Olmer named.
 
 create the glyph layout
+  a thing
   states, reversible: layout-a, layout-b, layout-c, layout-d
 
   The glyphs, as they stand.
@@ -1608,7 +1611,7 @@ end phrase
 
 create the sewer water
   aka water, sewage, ooze, garbage, rats, dead rats, rat, muck, filth water
-  scenery
+  a thing, scenery
   in the Sewer
 
   The water is sluggish and cold, knee-deep in most places. Things float
@@ -1646,7 +1649,7 @@ end phrase
 
 create the ancient bricks
   aka bricks, brick, walls, wall, tunnel walls, slimy bricks, slime, mold, unmortared brick
-  scenery, plural
+  a thing, scenery, plural
   in the Sewer
 
   The tunnel walls are slimy with filth and mold.
@@ -1681,7 +1684,7 @@ end phrase
 
 create the ceiling vents
   aka vents, vent, grating, gratings, light, dim light, trickle of light, ceiling
-  scenery, plural
+  a thing, scenery, plural
   in the Sewer
 
   The ceiling vents let in a tiny trickle of light, barely enough to see by.
@@ -1717,7 +1720,7 @@ define condition in-the-glyph-tunnels: the player is in the Sewer or the player 
 
 create the painted symbols
   aka symbols, symbol, glyph, glyphs, odd symbols, shapes, paint, red glyph, blue glyph, green glyph, yellow glyph, red square, blue diamond, green circle, yellow triangle, square, diamond, circle, triangle
-  scenery, plural
+  a thing, scenery, plural
   in the Sewer
 
   The symbols are a number of crude shapes, no bigger than your hand. Each
@@ -1851,7 +1854,7 @@ create the Access Tunnel
 
 create the hatch
   aka trap, trapdoor, trap door, door, ceiling hatch
-  scenery
+  a thing, scenery
   in the Access Tunnel
   states: shut, opened
 
@@ -1879,7 +1882,7 @@ end phrase
 
 create the ladder
   aka rungs, bolted ladder
-  scenery, climbable
+  a thing, scenery, climbable
   in the Access Tunnel
 
   The ladder leads up to a hatch in the ceiling above you.

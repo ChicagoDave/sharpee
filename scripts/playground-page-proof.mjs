@@ -122,7 +122,7 @@ try {
   // a TypeScript-hatch story is refused with a diagnostic, never executed.
   const sandbox = await page.locator('iframe[title="Sharpee Playground"]').getAttribute('sandbox');
   if (!sandbox || !sandbox.includes('allow-scripts')) fail(`AC-7: iframe not sandboxed (sandbox="${sandbox}")`);
-  await setEditor(page, 'story "H" by "T"\n  id: h\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the player\n  starts in the Hall\n\n  You.\n\ndefine text foo from "./x.ts"\n');
+  await setEditor(page, 'story "H" by "T"\n  id: h\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the player\n  a thing\n  starts in the Hall\n\n  You.\n\ndefine text foo from "./x.ts"\n');
   await page.getByRole('button', { name: '▶ Play' }).click();
   await page.locator('.text-rose-700').first().waitFor({ timeout: 15000 }).catch(() => fail('AC-7: hatch story was not refused with a diagnostic'));
   const hatchMsg = await page.locator('.text-rose-700').first().innerText();

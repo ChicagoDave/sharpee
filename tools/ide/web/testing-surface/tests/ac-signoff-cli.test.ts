@@ -91,6 +91,7 @@ create the Garden
   Roses everywhere.
 
 create the brass lamp
+  a thing
   in the Den
 
   It gleams dully.

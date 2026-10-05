@@ -60,7 +60,7 @@ create Alex
 
 create the velvet cloak
   aka cloak
-  wearable
+  a thing, wearable
 
   A handsome cloak, of velvet trimmed with satin, and slightly
   splattered with raindrops. Its blackness is so deep that it almost
@@ -68,14 +68,14 @@ create the velvet cloak
 
 create the brass hook
   aka hook, peg
-  scenery, a supporter with capacity 1
+  a supporter with capacity 1, scenery
   in the Cloakroom
 
   It's just a small brass hook, screwed to the wall.
 
 create the message in the sawdust
   aka message, sawdust, floor, writing
-  scenery
+  a thing, scenery
   in the Foyer Bar
   states: intact, trampled, obliterated
 

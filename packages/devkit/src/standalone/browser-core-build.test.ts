@@ -161,7 +161,8 @@ describe('buildBrowser core (real path, ADR-252)', () => {
     const storyFile = join(root, 'ch.story');
     writeFileSync(
       storyFile,
-      `story\n  title: Ch\n  authors:\n    T\n  id: ch\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the clock\n  in the Hall\n\n  A clock.\n\n  on every turn\n    emit tick with beat "steady"\n  end on\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n\ndefine channel beat\n  mode replace\n  return beat from tick\nend channel\n`,
+      `story\n  title: Ch\n  authors:\n    T\n  id: ch\n\ncreate the Hall\n  a room\n\n  A hall.\n\ncreate the clock
+  a thing\n  in the Hall\n\n  A clock.\n\n  on every turn\n    emit tick with beat "steady"\n  end on\n\ncreate Alex\n  a person\n  playable\n  starts in the Hall\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n\ndefine channel beat\n  mode replace\n  return beat from tick\nend channel\n`,
     );
     // A custom page that does NOT link engine.css and has no #beat element → two warnings.
     mkdirSync(join(root, 'browser'), { recursive: true });

@@ -71,7 +71,7 @@ describe('`proper` trait adjective (ADR-242 D1)', () => {
 
   it('`proper` composes on a plain thing with no kind noun (GH #342)', () => {
     const ir = compiled(`create the doormat
-  proper
+  a thing, proper
   in the Hall
 `);
     expect(ir.entities.find((e) => e.id === 'doormat')!.traits.map((t) => t.name)).toContain('proper');

@@ -150,6 +150,7 @@ create the crate
   A nailed crate.${mention}
 
 create the brass spanner
+  a thing
   in the crate
 
   A brass spanner.
@@ -166,7 +167,7 @@ create the brass spanner
   it('reports nothing that is scenery with nothing to do, a place, or the player', () => {
     const story = compileSource(`${ROOMS}
 create the zarquon frieze
-  scenery
+  a thing, scenery
   in the Study
 
   A frieze.

@@ -76,7 +76,7 @@ define condition post-behind-the-stalls: the player is in the Rope Stall or the 
 
 create the distant post
   aka post, center post, centre post, central post, support post, wooden post, tall post, big post, pole
-  scenery
+  a thing, scenery
   in the Northwest Junction
 
   The big central support post rises up from the middle of the market, holding
@@ -127,7 +127,7 @@ create the distant post
 
 create the inner post
   aka post, center post, centre post, central post, support post, wooden post, tall post, big post, pole
-  scenery
+  a thing, scenery
   in the Rope Stall
 
   This is the central post that holds up the canvas awnings stretched over the
@@ -183,7 +183,7 @@ create the inner post
 
 create the near post
   aka post, center post, centre post, central post, support post, wooden post, tall post, big post, pole
-  scenery
+  a thing, scenery
   starts in Outside the Silk Tent
 
   This is the central post that holds up the canvas awnings stretched over the
@@ -247,7 +247,7 @@ end phrase
 
 create the silk tent
   aka silk, blue tent, bright blue tent, faded tent, dusty tent, teishas tent
-  scenery
+  a thing, scenery
   starts in Outside the Silk Tent
 
   Teisha's tent is bright blue, though now it's somewhat faded and covered
@@ -273,7 +273,7 @@ end phrase
 
 create the canvas tent
   aka canvas, canvas wall, wall, stall, stallkeepers tent, stallkeeper tent, keepers tent, smooth canvas, stretched canvas, tough canvas, tight canvas
-  scenery
+  a thing, scenery
   in the Alley
 
   The canvas wall of the tent is tough and stretched tight.
@@ -298,7 +298,7 @@ end phrase
 
 create the storehouse wall
   aka storehouse, warehouse, store house, high wall, smooth wall, back wall, wall
-  scenery
+  a thing, scenery
   in the Alley
 
   The wall of the storehouse is too high and too smooth to climb.
@@ -318,7 +318,7 @@ end phrase
 
 create the nails
   aka nail
-  scenery, plural
+  a thing, scenery, plural
   in the Alley
 
 ## ---------------------------------------------------------------------------
@@ -331,7 +331,7 @@ create the nails
 
 create the center post
   aka bottom of the center post, post, support post, central post, wooden post, big post, tall post, pole
-  scenery, climbable, enterable
+  a thing, scenery, climbable, enterable
   in the Base of the Center Post
 
   It's huge, almost too big to put your arms around. Way up at the top, you
@@ -392,7 +392,7 @@ end phrase
 
 create the farmland view
   aka view, road, keep, city, meadows, meadow, farmlands, farmland, farms, farm, lords road, lords keep, commerce street, street, Miradan, Miradania, rolling pastures, pastures, pasture
-  scenery
+  a thing, scenery
   in the Top of the Post
 
   The view is spectacular, but you don't have time to waste gawking.

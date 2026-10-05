@@ -19,9 +19,11 @@ create the Shed
   runs across the ceiling.
 
 create the pebble
+  a thing
   in the Shed
 
 create the bucket
+  a thing
   in the Shed
 
   A dented tin bucket.

@@ -26,7 +26,7 @@ create the Street
   A street.
 
 create the sky
-  scenery
+  a thing, scenery
   in the Street
   states, reversible: day, night
 
@@ -37,7 +37,7 @@ create the sky
   end on
 
 create the lanterns
-  scenery, plural
+  a thing, scenery, plural
   in the Street
 
   {lantern-night}The lampposts stand along the street. {lantern-tail}

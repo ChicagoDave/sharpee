@@ -16,6 +16,7 @@ create Alex
   starts in the Barn
 
 create the goat
+  a thing
   in the Barn
 
   on the player prodding while any sweep-time

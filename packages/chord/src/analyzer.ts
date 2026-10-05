@@ -1772,7 +1772,7 @@ export class Analyzer {
             roomMemberOf.set(member.id, { region, span: member.span });
           }
         } else {
-          const kind = target.kinds[0]?.name ?? 'plain thing';
+          const kind = target.kinds[0]?.name ?? 'thing';
           this.diagnostics.error(
             'analysis.region-member-kind',
             `\`${target.name}\` is a ${kind} — \`containing\` members must be rooms or regions.`,
@@ -1872,7 +1872,7 @@ export class Analyzer {
         const door = byId.get(exit.via);
         if (!door) continue;
         if (!isDoorEntity(door)) {
-          const kind = door.kinds[0]?.name ?? 'plain thing';
+          const kind = door.kinds[0]?.name ?? 'thing';
           this.diagnostics.error(
             'analysis.door-through-kind',
             `\`${door.name}\` is a ${kind} — \`through\` names a door (\`create the ${door.name} / a door\`).`,
@@ -1986,7 +1986,7 @@ export class Analyzer {
       blockOwners.set(ownerId, decl.span);
 
       if (!owner.kinds.some((k) => k.name === 'person')) {
-        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.topics-host',
           `\`define topics\` needs a person — \`${owner.name}\` is ${kind}, and only people answer \`ask\`/\`tell\` (a table here could never be reached).`,
@@ -2121,7 +2121,7 @@ export class Analyzer {
       blockOwners.set(ownerId, decl.span);
 
       if (!owner.kinds.some((k) => k.name === 'person')) {
-        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.manner-host',
           `\`define manner\` needs a person — \`${owner.name}\` is ${kind}, and manner colors a character's delivery (a block here could never fire).`,
@@ -2192,7 +2192,7 @@ export class Analyzer {
       blockOwners.set(ownerId, decl.span);
 
       if (!owner.kinds.some((k) => k.name === 'person')) {
-        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.greetings-host',
           `\`define greetings\` needs a person — \`${owner.name}\` is ${kind}, and only people hold conversation boundaries (a block here could never be reached).`,
@@ -2279,7 +2279,7 @@ export class Analyzer {
       ownerSeen.set(decl.name, decl.span);
 
       if (!owner.kinds.some((k) => k.name === 'person')) {
-        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.exchange-host',
           `\`define exchange\` needs a person — \`${owner.name}\` is ${kind}, and an exchange is a speaker's own moment (a block here could never open).`,
@@ -2441,7 +2441,7 @@ export class Analyzer {
       blockOwners.set(ownerId, decl.span);
 
       if (!owner.kinds.some((k) => k.name === 'person')) {
-        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.initiative-host',
           `\`define initiative\` needs a person — \`${owner.name}\` is ${kind}, and initiative is a character's own seizure of a moment (a block here could never fire).`,
@@ -2519,7 +2519,7 @@ export class Analyzer {
       ownerSeen.set(decl.name, decl.span);
 
       if (!owner.kinds.some((k) => k.name === 'person')) {
-        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a plain thing';
+        const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.conversation-host',
           `\`define conversation\` needs a person — \`${owner.name}\` is ${kind}, and a thread is a speaker's own subject (a block here could never open).`,

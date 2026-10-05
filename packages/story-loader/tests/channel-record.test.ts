@@ -35,6 +35,7 @@ create the Hall
   A hall.
 
 create the clock
+  a thing
   in the Hall
 
   A clock.

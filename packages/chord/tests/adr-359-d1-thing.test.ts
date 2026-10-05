@@ -73,6 +73,47 @@ describe('ADR-359 D1 — a kind written bare takes an article', () => {
   });
 });
 
+describe('ADR-359 D1 — every block names its kind', () => {
+  it('a block with no kind is analysis.missing-kind-noun at its name, listing the kinds and `a thing`', () => {
+    const found = errors(story('create the coin\n  in the Vault\n\n  A coin.'));
+    expect(found.map((d) => d.code)).toEqual(['analysis.missing-kind-noun']);
+    expect(found[0].span.line).toBe(24); // the header: the body starts on line 24
+    expect(found[0].message).toContain('`coin` names no kind');
+    expect(found[0].message).toContain('`a thing` for anything that is not a room, door, person, container, supporter or region');
+  });
+
+  it('a block of traits alone is missing its kind too', () => {
+    expect(errors(story('create the rug\n  scenery, plural\n  in the Vault\n\n  A rug.')).map((d) => d.code)).toEqual([
+      'analysis.missing-kind-noun',
+    ]);
+  });
+
+  it('a bare kind noun reports its own fix, not a missing kind as well', () => {
+    expect(errors(story('create the bin\n  container\n  in the Vault\n\n  A bin.')).map((d) => d.code)).toEqual([
+      'analysis.kind-noun-needs-article',
+    ]);
+  });
+});
+
+describe('ADR-359 D1 — the kind leads the block', () => {
+  it('a kind after a trait on the same line is analysis.kind-not-first at the kind', () => {
+    const found = errors(story('create the table\n  scenery, a supporter\n  in the Vault\n\n  A table.'));
+    expect(found.map((d) => d.code)).toEqual(['analysis.kind-not-first']);
+    expect(found[0].span).toMatchObject({ line: 25, column: 12 });
+    expect(found[0].message).toContain('move `a supporter` to the front');
+  });
+
+  it('a kind on a line below a trait line is analysis.kind-not-first', () => {
+    const found = errors(story('create the shelf\n  scenery\n  a supporter\n  in the Vault\n\n  A shelf.'));
+    expect(found.map((d) => d.code)).toEqual(['analysis.kind-not-first']);
+    expect(found[0].span.line).toBe(26);
+  });
+
+  it('a kind line below an `aka` line still leads the block: aka is not a composition', () => {
+    expect(errors(story('create the doormat\n  aka mat\n  a supporter, scenery\n  in the Vault\n\n  A mat.'))).toEqual([]);
+  });
+});
+
 describe('ADR-359 D1 — a kind cannot come and go', () => {
   it('refuses `a thing while …`', () => {
     const found = errors(

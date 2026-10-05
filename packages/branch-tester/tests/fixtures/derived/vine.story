@@ -23,7 +23,7 @@ create the Shed
   A shed.
 
 create the vine
-  scenery, prunable
+  a thing, scenery, prunable
   states: seedling, flowering, fruiting
   in the Greenhouse
   score fruited worth 5
@@ -35,12 +35,14 @@ create the vine
   end after
 
 create the garden shears
+  a thing
   aka shears
   in the Shed
 
   Shears.
 
 create the silver locket
+  a thing
   aka locket
   in the Shed
 

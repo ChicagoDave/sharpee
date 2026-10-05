@@ -31,6 +31,7 @@ create the strongbox
   A closed strongbox.
 
 create the letter
+  a thing
   in the strongbox
 
   The hidden letter.

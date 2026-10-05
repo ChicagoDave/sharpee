@@ -94,7 +94,7 @@
 
 create the preparations
   aka dame sandler's errands, the errands
-  proper
+  a thing, proper
   states: pending, reveal, told, escorted, journey, ball
 
   Dame Sandler's preparations.
@@ -220,7 +220,7 @@ end trait
 
 create the silver ring
   aka ring, diamond ring, silver diamond ring, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
-  wearable
+  a thing, wearable
   dress-jewelry
 
   The ring is silver and inlaid all over with tiny, expertly cut diamonds,
@@ -229,7 +229,7 @@ create the silver ring
 
 create the silver pendant
   aka pendant, necklace, teardrop, link, links, silver links, sapphire, sapphires, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
-  wearable
+  a thing, wearable
   dress-jewelry
 
   The pendant is a teardrop the size of your thumb, encrusted with diamonds
@@ -237,7 +237,7 @@ create the silver pendant
 
 create the silver bracelet
   aka bracelet, band, silver band, sapphire, sapphires, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
-  wearable
+  a thing, wearable
   dress-jewelry
 
   The bracelet is a band of silver, just big enough to squeeze over the
@@ -246,7 +246,7 @@ create the silver bracelet
 
 create the silver brooch
   aka brooch, pin, cup, stem, rim, silver cup, sapphire, sapphires, jewelry, jewelery, jewel, jewels, gem, gems, gemstone, gemstones, diamonds, diamond, silver, encrusted
-  wearable
+  a thing, wearable
   dress-jewelry
 
   The brooch is wrought of silver in the shape of a cup, symbol of the
@@ -538,7 +538,7 @@ end phrase
 
 create the gold coins
   aka coins, coin, gold coin, great seal, seal, seal of the kingdom, kingdom of miradania, miradania, old king, dead king, face
-  plural
+  a thing, plural
   in the purse
 
   Each coin has the Great Seal of the Kingdom of Miradania on one side; the
@@ -647,7 +647,7 @@ end phrase
 
 create the ball gown
   aka gown, dress, ball dress, pale blue dress, blue dress, pale blue gown, new dress, new gown, finery, new finery, pearls, tiny pearls, bodice, dagged sleeves, sleeves
-  wearable
+  a thing, wearable
 
   The dress is pale blue with tiny pearls embroidered into the bodice and
   dagged sleeves.
@@ -727,7 +727,7 @@ end phrase
 
 create the plain dagger
   aka dagger, knife, blade, plain blade, plain-looking blade, plain-handled blade, weapon
-  wearable
+  a thing, wearable
 
   It's a plain-looking blade about six inches long, easily concealed beneath
   your gown.

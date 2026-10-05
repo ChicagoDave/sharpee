@@ -47,7 +47,7 @@ create the Yard
   The yard.
 
 create the bell
-  scenery
+  a thing, scenery
   in the Junction
 
   A bell.
@@ -57,7 +57,7 @@ create the bell
   end on
 
 create the gong
-  scenery
+  a thing, scenery
   in the Junction
 
   A gong.

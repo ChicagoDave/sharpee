@@ -53,6 +53,7 @@
 ## yours — the noun `dress` and the aliases below are structural stand-ins.
 
 create the dress
+  a thing
   aka gown, green dress, new dress
 
   (TODO during play-testing — A simple dress of dusky green, cut for a lady of
@@ -68,6 +69,7 @@ create the dress
 ## names the woolen cap, so the parser will ask which while both exist.
 
 create the fashionable hat
+  a thing
   aka fashionable hat, new hat, lady's hat, bonnet
 
   (TODO during play-testing — A lady's hat with a brim wide enough to hide a

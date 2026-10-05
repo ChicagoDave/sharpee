@@ -33,7 +33,7 @@ create the Yard
   A yard.
 
 create the woolen cap
-  wearable
+  a thing, wearable
   in the Yard
 
   A cap.

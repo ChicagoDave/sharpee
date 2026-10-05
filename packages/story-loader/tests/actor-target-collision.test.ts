@@ -78,6 +78,7 @@ create the Yard
   A yard.
 
 create the loaf
+  a thing
   in the Yard
 
   Bread.
@@ -87,6 +88,7 @@ create the loaf
   end on
 
 create the stone
+  a thing
   in the Yard
 
   A stone.

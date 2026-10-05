@@ -44,6 +44,7 @@ create the porter
   mood calm
 
 create the sword
+  a thing
   in the Lodge
 
 define phrase reply-a

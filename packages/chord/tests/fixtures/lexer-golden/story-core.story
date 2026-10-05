@@ -17,7 +17,7 @@ create the Lighthouse
   "KEEP THE LIGHT — whatever else fails.
 
 create the logbook
-  readable, portable
+  a thing, readable, portable
   in the Lighthouse
 
   Salt-swollen pages; someone's tidy hand goes ragged near the end.

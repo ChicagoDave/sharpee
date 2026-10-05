@@ -25,6 +25,7 @@ create the Stall
   A stall.
 
 create the pear
+  a thing
 
   A pear.
 

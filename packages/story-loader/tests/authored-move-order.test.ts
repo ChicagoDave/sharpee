@@ -62,7 +62,7 @@ create the Cell
   A cell.
 
 create the hole
-  scenery, enterable
+  a thing, scenery, enterable
   in the Cell
 
   A hole in the floor.
@@ -74,6 +74,7 @@ create the hole
   end on
 
 create the rope
+  a thing
   in the Cell
 
   A rope.
@@ -131,6 +132,7 @@ create the Start
   The start.
 
 create the token
+  a thing
   in the Start
 
   A token.
@@ -183,6 +185,7 @@ create the Yard
   A yard.
 
 create the coin
+  a thing
   in the Yard
 
   A coin.
@@ -255,7 +258,7 @@ create the butler
   The butler.
 
 create the gallows
-  scenery
+  a thing, scenery
 
   A gallows.
 

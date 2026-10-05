@@ -61,6 +61,7 @@ ${s.mercs ?? ''}
   Mercs.
 
 create the sword
+  a thing
   in the Hall
   states, reversible: sheathed, drawn
 ${s.sword ?? ''}
@@ -338,14 +339,14 @@ end exchange
 
 describe('placement vs head — split by block structure, not by the article', () => {
   it('`on the table` (one line) is a placement, not a clause', () => {
-    const ir = ok({ top: 'create the table\n  in the Hall\n\n  A table.\n', sword: '  on the table\n' });
+    const ir = ok({ top: 'create the table\n  a thing\n  in the Hall\n\n  A table.\n', sword: '  on the table\n' });
     const sword = ir.entities.find((e) => e.id === 'sword')!;
     expect(sword.onClauses).toEqual([]);
     expect(sword.placement).toMatchObject({ relation: 'on', place: 'table' });
   });
 
   it('`on the player taking` followed by a body is a clause', () => {
-    const ir = ok({ top: 'create the table\n  in the Hall\n\n  A table.\n', sword: '  on the table\n\n  on the player taking\n    refuse nope\n  end on\n' });
+    const ir = ok({ top: 'create the table\n  a thing\n  in the Hall\n\n  A table.\n', sword: '  on the table\n\n  on the player taking\n    refuse nope\n  end on\n' });
     const sword = ir.entities.find((e) => e.id === 'sword')!;
     expect(sword.onClauses).toHaveLength(1);
     expect(sword.placement).toMatchObject({ relation: 'on', place: 'table' });

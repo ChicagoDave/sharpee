@@ -13,6 +13,7 @@ create the Gatehouse
   A cold stone gatehouse.
 
 create the rusty winch
+  a thing
   aka winch
   in the Gatehouse
 

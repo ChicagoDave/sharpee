@@ -31,14 +31,14 @@ create the Yard
   A yard.
 
 create Grubber's Market
-  scenery, proper
+  a thing, scenery, proper
   aka market
   in the Yard
 
   The market is bustling.
 
 create the gates
-  scenery, plural
+  a thing, scenery, plural
   in the Yard
 
   Gates.

@@ -206,6 +206,7 @@ describe('`kill the player` statement', () => {
   story-version: 1.0.0
 
 create the amulet
+  a thing
   in the Crypt
 
 create the Crypt

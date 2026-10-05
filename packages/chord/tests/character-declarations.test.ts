@@ -73,7 +73,7 @@ describe('D2 — diagnostics', () => {
   });
 
   it('personality on a non-person is analysis.personality-person-only', () => {
-    const errors = errorsOf('create the Lantern\n  honest\n\n  A lantern.\n');
+    const errors = errorsOf('create the Lantern\n  a thing, honest\n\n  A lantern.\n');
     const personOnly = errors.filter((e) => e.code === 'analysis.personality-person-only');
     expect(personOnly).toHaveLength(1);
     expect(errors.every((e) => e.code !== 'analysis.trait-not-declared')).toBe(true);
@@ -83,7 +83,7 @@ describe('D2 — diagnostics', () => {
   // player carries no character model. A `playable` character is a person like
   // any other — the model drives them for as long as they are not the PC (D9).
   it('personality composes on a playable character', () => {
-    const errors = errorsOf('create Robin\n  playable\n  a person, honest\n\n  Me.\n');
+    const errors = errorsOf('create Robin\n  a person, playable\n  honest\n\n  Me.\n');
     expect(errors).toEqual([]);
   });
 
@@ -195,13 +195,13 @@ describe('D3 — mood, feels, knows declarations', () => {
 
   it('character lines gate on a non-person, and compose on a playable character', () => {
     expect(
-      errorsOf('create the Lantern\n  mood calm\n\n  A lantern.\n').filter(
+      errorsOf('create the Lantern\n  a thing\n  mood calm\n\n  A lantern.\n').filter(
         (e) => e.code === 'analysis.character-line-person-only',
       ),
     ).toHaveLength(1);
     // ADR-327 D10: no `analysis.character-line-player` — see above.
     expect(
-      errorsOf('create Robin\n  playable\n  a person\n  mood calm\n\n  Me.\n'),
+      errorsOf('create Robin\n  a person, playable\n  mood calm\n\n  Me.\n'),
     ).toEqual([]);
   });
 });
@@ -245,7 +245,7 @@ describe('D3 — change mood / change feeling transitions', () => {
 
   it('`change the Kettle to <state>` keeps its state reading', () => {
     const result = compileStory(
-      'create the Kettle\n  states: cold, hot\n\n  on the player taking\n    change the Kettle to hot\n  end on\n\n  A kettle.\n',
+      'create the Kettle\n  a thing\n  states: cold, hot\n\n  on the player taking\n    change the Kettle to hot\n  end on\n\n  A kettle.\n',
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
   });
@@ -412,7 +412,7 @@ describe('D13 — entity-scoped predicates and D16 phrasebook specificity', () =
 
   it('an entity state shadowing a mood word keeps its state reading', () => {
     const result = compileStory(
-      'create the Kettle\n  states: calm, boiling\n\n  A kettle.\n\n' +
+      'create the Kettle\n  a thing\n  states: calm, boiling\n\n  A kettle.\n\n' +
         'define phrasebook kettle-voice while the Kettle is calm\n  greeting:\n    It sits.\nend phrasebook\n',
     );
     expect(result.diagnostics.filter((d) => d.severity === 'error')).toEqual([]);
@@ -591,7 +591,7 @@ describe('D10 — spreads propagation lines', () => {
         'define phrase ginger-brushes-against-no-effect\n  Nothing happens.\nend phrase\n\n' +
         'define phrase ginger-moves-off\n  The air clears.\nend phrase\n\n' +
         'create the Kitchen\n  a room\n\n  A kitchen.\n\n' +
-        'create the kitchen knife\n  in the Kitchen\n\n  A knife.\n\n' +
+        'create the kitchen knife\n  a thing\n  in the Kitchen\n\n  A knife.\n\n' +
         'create Robin\n  a person\n  playable\n\n  Me.\n\n' +
         'create Colonel Mustard\n' +
         '  a person, proper, cruel\n' +
@@ -845,12 +845,12 @@ describe('ADR-318 D3/D7 — temperaments', () => {
 
   it('temperament gates on a non-person, and composes on a playable character', () => {
     expect(
-      errorsOf('create the Lantern\n  temperament duty over fear\n\n  A lantern.\n').filter(
+      errorsOf('create the Lantern\n  a thing\n  temperament duty over fear\n\n  A lantern.\n').filter(
         (e) => e.code === 'analysis.character-line-person-only',
       ),
     ).toHaveLength(1);
     // ADR-327 D10: no `analysis.character-line-player` — the role is not a block.
-    expect(errorsOf('create Robin\n  playable\n  a person\n  temperament duty over fear\n\n  Me.\n')).toEqual([]);
+    expect(errorsOf('create Robin\n  a person, playable\n  temperament duty over fear\n\n  Me.\n')).toEqual([]);
   });
 
   it('an empty define block and a malformed pair line each error at parse', () => {
@@ -960,7 +960,7 @@ describe('ADR-318 D4/D5 — principles, obligations, codes', () => {
 
   it('principle lines on a non-person gate; an empty or malformed code block errors at parse', () => {
     expect(
-      errorsOf('create the Lantern\n  never lies\n\n  A lantern.\n').filter(
+      errorsOf('create the Lantern\n  a thing\n  never lies\n\n  A lantern.\n').filter(
         (e) => e.code === 'analysis.character-line-person-only',
       ),
     ).toHaveLength(1);
@@ -1039,7 +1039,7 @@ describe('ADR-318 D7 — honor', () => {
 
   it('honor on a non-person gates; a missing `before` and an empty bundle error at parse', () => {
     expect(
-      errorsOf('create the Lantern\n  honor before anyone\n\n  A lantern.\n').filter(
+      errorsOf('create the Lantern\n  a thing\n  honor before anyone\n\n  A lantern.\n').filter(
         (e) => e.code === 'analysis.character-line-person-only',
       ),
     ).toHaveLength(1);

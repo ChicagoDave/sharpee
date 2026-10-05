@@ -41,13 +41,14 @@ create the Shed
   A shed.
 
 create the vine
-  scenery
+  a thing, scenery
   states, reversible: flowering, fruiting
   in the Greenhouse
 
   A vine.
 
 create the garden shears
+  a thing
   aka shears
   in the Shed
 
@@ -60,17 +61,19 @@ create the chest
   A chest.
 
 create the brass key
+  a thing
   in the Shed
 
   A key.
 
 create the lantern
-  switchable
+  a thing, switchable
   in the Greenhouse
 
   A lantern.
 
 create the pebble
+  a thing
   in the Greenhouse
 
   A pebble.

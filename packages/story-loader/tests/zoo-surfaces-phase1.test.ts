@@ -187,11 +187,13 @@ before the game starts
 end before
 
 create the widget
+  a thing
   in the Lab
 
   A widget.
 
 create the bell
+  a thing
   in the Lab
 
   A bell.

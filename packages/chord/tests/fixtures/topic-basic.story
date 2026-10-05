@@ -26,6 +26,7 @@ create the porter
   end on
 
 create the sword
+  a thing
   in the Lodge
 
   Notched and old.

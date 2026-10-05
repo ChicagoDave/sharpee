@@ -72,6 +72,7 @@ describe('D5 gerund fail-fast (ADR-228)', () => {
   A shed.
 
 create the biscuit
+  a thing
   in the Shed
 
   A biscuit.
@@ -90,6 +91,7 @@ create the biscuit
   A shed.
 
 create the basket
+  a thing
   in the Shed
 
   A basket.
@@ -113,7 +115,7 @@ create the Shed
   A shed.
 
 create the lolly
-  lickable
+  a thing, lickable
   in the Shed
 
   A lolly.`);
@@ -128,6 +130,7 @@ create the Shed
   A shed.
 
 create the badger
+  a thing
   in the Shed
 
   A badger.
@@ -147,6 +150,7 @@ create the Shed
   A shed.
 
 create the badger
+  a thing
   in the Shed
 
   A badger.
@@ -172,6 +176,7 @@ create the badger
   end after
 
 create the note
+  a thing
   in the Shed
 
   A note.

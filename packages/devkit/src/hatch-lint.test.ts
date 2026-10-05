@@ -85,7 +85,7 @@ function lintCaseStory(extraLines: string[] = []): string {
     '  You.',
     '',
     'create the note',
-    '  readable',
+    '  a thing, readable',
     '  in the Lab',
     '',
     '  A note.',
@@ -168,7 +168,7 @@ describe('runComposeGates — the unified diagnostics stream (ADR-276 D4)', () =
       // violation in the same story — one pass yields both record kinds.
       writeFileSync(
         file,
-        lintCaseStory(['create the widget', '  frobnicating', '  in the Lab', '', '  A widget.', ''])
+        lintCaseStory(['create the widget', '  a thing, frobnicating', '  in the Lab', '', '  A widget.', ''])
       );
 
       const gates = runComposeGates(file);

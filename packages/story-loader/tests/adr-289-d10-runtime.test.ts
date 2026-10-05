@@ -45,18 +45,19 @@ before the game starts
 end before
 
 create the goat
-  feedable
+  a thing, feedable
   in the Barn
 
   A goat.
 
 create the sheep
-  feedable
+  a thing, feedable
   in the Barn
 
   A sheep.
 
 create the anvil
+  a thing
   in the Barn
 
   An anvil, which is never hungry.

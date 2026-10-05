@@ -27,24 +27,26 @@ create the Rope Stall
 
 create the rope wares
   aka display
-  scenery, a supporter, plural, unlisted
+  a supporter, scenery, plural, unlisted
   in the Rope Stall
 
   It's all rope, and lots of it.
 
 create the length of rope
+  a thing
   aka rope
   on the rope wares
 
   Five feet of rope.
 
 create the bench
-  scenery, a supporter
+  a supporter, scenery
   in the Rope Stall
 
   A bench.
 
 create the hat
+  a thing
   on the bench
 
   A hat.

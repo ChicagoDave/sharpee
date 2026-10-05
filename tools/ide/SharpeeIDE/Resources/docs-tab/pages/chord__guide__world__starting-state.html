@@ -6,7 +6,7 @@
   A squat floor safe with a brass keyhole.</code></pre>
 <p>Six state words are accepted, each paired with the trait it initializes: <code>locked</code> and <code>unlocked</code> set <code>lockable</code>, <code>closed</code> and <code>open</code> set <code>openable</code>, <code>off</code> and <code>on</code> set <code>switchable</code>. The pairing is enforced: <code>starts locked</code> on an entity that does not compose <code>lockable</code> is a load error (<code>analysis.starts-state-pairing</code>), never a silent no-op. Any other word after <code>starts</code> is a parse error (<code>parse.starts-state</code>), except <code>in</code>, which is the placement line. <code>starts in</code> names where something begins; <code>starts &lt;state&gt;</code> names how.</p>
 <pre><code class="language-chord">create the space heater
-  switchable, starts on
+  a thing, switchable, starts on
   in the Back Office
   aka heater
 

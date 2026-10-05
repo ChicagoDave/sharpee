@@ -924,6 +924,7 @@ final class TestingSurfaceRealPathTests: XCTestCase {
           A small square den.
 
         create the brass lamp
+          a thing
           in the Den
 
           It gleams dully.

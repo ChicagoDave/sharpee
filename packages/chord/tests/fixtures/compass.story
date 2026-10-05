@@ -17,6 +17,7 @@ create the Courtyard
   A cobbled courtyard.
 
 create the well
+  a thing
   in the Courtyard
 
   A stone well.

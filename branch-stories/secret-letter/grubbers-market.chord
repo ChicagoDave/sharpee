@@ -104,7 +104,7 @@ create the Northwest Junction
 
 create the market gates
   aka north gates, north gate, gates, gate, ceremonial gates, wooden doors, doors
-  scenery, plural
+  a thing, scenery, plural
   in the Northwest Junction
 
   The north gates are huge wooden doors, nearly ten feet wide each, that date
@@ -445,7 +445,7 @@ create the Top of the Post
 
 create the display of apples
   aka apples, apple display
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   These don't look half bad. If you hadn't stumbled into so much trouble, you'd
@@ -453,7 +453,7 @@ create the display of apples
 
 create the display of pears
   aka pears, pear display
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   These vary in color from yellowish-green to dusky orange-brown, with thick,
@@ -461,7 +461,7 @@ create the display of pears
 
 create the display of kello fruit
   aka kello, kello fruit, kello display
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   Normally you'd kill for a slice of kello, but these look a bit too green. Not
@@ -469,7 +469,7 @@ create the display of kello fruit
 
 create the display of brambleberries
   aka brambleberries, brambleberry clusters, clusters, berries
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   The thumb-sized clusters are shiny and bluish-black. Your mouth waters at the
@@ -477,21 +477,21 @@ create the display of brambleberries
 
 create the display of oranges
   aka oranges, orange display, pale oranges, small oranges
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   The oranges are pale and disappointingly small.
 
 create the display of limes
   aka limes, lime display, dark green limes, green limes
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   The dark green limes look refreshing.
 
 create the display of bananas
   aka bananas, banana display, bushel
-  scenery, a supporter, plural
+  a supporter, scenery, plural
   in the Fruit Stall
 
   You rarely see bananas this far north. These look just about perfect — plump,
@@ -499,7 +499,7 @@ create the display of bananas
 
 create the apple
   aka round, firm, green apple
-  edible
+  a thing, edible
   states: whole, bitten
   on the display of apples
 
@@ -523,7 +523,7 @@ create the apple
 
 create the banana
   aka kozarian banana, yellow banana
-  edible
+  a thing, edible
   states: shelved, nicked
   on the display of bananas
 
@@ -693,7 +693,7 @@ end phrase
 
 create the pear
   aka yellowish pear, twisty pear
-  edible
+  a thing, edible
   fruit-ware
   states: shelved, nicked
   on the display of pears
@@ -702,7 +702,7 @@ create the pear
 
 create the kello fruit
   aka green fruit, unripe fruit
-  edible
+  a thing, edible
   fruit-ware
   states: shelved, nicked
   on the display of kello fruit
@@ -711,7 +711,7 @@ create the kello fruit
 
 create the cluster of brambleberries
   aka brambleberry cluster, berry cluster, cluster
-  edible
+  a thing, edible
   fruit-ware
   states: shelved, nicked
   on the display of brambleberries
@@ -720,7 +720,7 @@ create the cluster of brambleberries
 
 create the orange
   aka pale orange, small orange
-  edible
+  a thing, edible
   fruit-ware
   states: shelved, nicked
   on the display of oranges
@@ -729,7 +729,7 @@ create the orange
 
 create the lime
   aka dark green lime, green lime
-  edible
+  a thing, edible
   fruit-ware
   states: shelved, nicked
   on the display of limes

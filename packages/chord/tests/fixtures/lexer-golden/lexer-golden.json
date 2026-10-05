@@ -23187,15 +23187,44 @@
     {
       "lineNo": 145,
       "indent": 2,
+      "raw": "  a thing",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 145,
+            "column": 3,
+            "endLine": 145,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 145,
+            "column": 5,
+            "endLine": 145,
+            "endColumn": 10
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 146,
+      "indent": 2,
       "raw": "  in the Alley",
       "tokens": [
         {
           "kind": "word",
           "text": "in",
           "span": {
-            "line": 145,
+            "line": 146,
             "column": 3,
-            "endLine": 145,
+            "endLine": 146,
             "endColumn": 5
           }
         },
@@ -23203,9 +23232,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 145,
+            "line": 146,
             "column": 6,
-            "endLine": 145,
+            "endLine": 146,
             "endColumn": 9
           }
         },
@@ -23213,9 +23242,9 @@
           "kind": "word",
           "text": "Alley",
           "span": {
-            "line": 145,
+            "line": 146,
             "column": 10,
-            "endLine": 145,
+            "endLine": 146,
             "endColumn": 15
           }
         }
@@ -23224,7 +23253,7 @@
       "comment": false
     },
     {
-      "lineNo": 147,
+      "lineNo": 148,
       "indent": 2,
       "raw": "  A brass key, warm to the touch.",
       "tokens": [
@@ -23232,9 +23261,9 @@
           "kind": "word",
           "text": "A",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 3,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 4
           }
         },
@@ -23242,9 +23271,9 @@
           "kind": "word",
           "text": "brass",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 5,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 10
           }
         },
@@ -23252,9 +23281,9 @@
           "kind": "word",
           "text": "key",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 11,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 14
           }
         },
@@ -23262,9 +23291,9 @@
           "kind": "comma",
           "text": ",",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 14,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 15
           }
         },
@@ -23272,9 +23301,9 @@
           "kind": "word",
           "text": "warm",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 16,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 20
           }
         },
@@ -23282,9 +23311,9 @@
           "kind": "word",
           "text": "to",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 21,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 23
           }
         },
@@ -23292,9 +23321,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 24,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 27
           }
         },
@@ -23302,9 +23331,9 @@
           "kind": "word",
           "text": "touch",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 28,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 33
           }
         },
@@ -23312,9 +23341,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 147,
+            "line": 148,
             "column": 33,
-            "endLine": 147,
+            "endLine": 148,
             "endColumn": 34
           }
         }
@@ -23323,7 +23352,7 @@
       "comment": false
     },
     {
-      "lineNo": 149,
+      "lineNo": 150,
       "indent": 0,
       "raw": "create the pear",
       "tokens": [
@@ -23331,9 +23360,9 @@
           "kind": "word",
           "text": "create",
           "span": {
-            "line": 149,
+            "line": 150,
             "column": 1,
-            "endLine": 149,
+            "endLine": 150,
             "endColumn": 7
           }
         },
@@ -23341,9 +23370,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 149,
+            "line": 150,
             "column": 8,
-            "endLine": 149,
+            "endLine": 150,
             "endColumn": 11
           }
         },
@@ -23351,9 +23380,9 @@
           "kind": "word",
           "text": "pear",
           "span": {
-            "line": 149,
+            "line": 150,
             "column": 12,
-            "endLine": 149,
+            "endLine": 150,
             "endColumn": 16
           }
         }
@@ -23362,48 +23391,28 @@
       "comment": false
     },
     {
-      "lineNo": 150,
+      "lineNo": 151,
       "indent": 2,
-      "raw": "  in the Market Square",
+      "raw": "  a thing",
       "tokens": [
         {
           "kind": "word",
-          "text": "in",
+          "text": "a",
           "span": {
-            "line": 150,
+            "line": 151,
             "column": 3,
-            "endLine": 150,
-            "endColumn": 5
+            "endLine": 151,
+            "endColumn": 4
           }
         },
         {
           "kind": "word",
-          "text": "the",
+          "text": "thing",
           "span": {
-            "line": 150,
-            "column": 6,
-            "endLine": 150,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Market",
-          "span": {
-            "line": 150,
-            "column": 10,
-            "endLine": 150,
-            "endColumn": 16
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Square",
-          "span": {
-            "line": 150,
-            "column": 17,
-            "endLine": 150,
-            "endColumn": 23
+            "line": 151,
+            "column": 5,
+            "endLine": 151,
+            "endColumn": 10
           }
         }
       ],
@@ -23413,15 +23422,64 @@
     {
       "lineNo": 152,
       "indent": 2,
+      "raw": "  in the Market Square",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 152,
+            "column": 3,
+            "endLine": 152,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 152,
+            "column": 6,
+            "endLine": 152,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Market",
+          "span": {
+            "line": 152,
+            "column": 10,
+            "endLine": 152,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Square",
+          "span": {
+            "line": 152,
+            "column": 17,
+            "endLine": 152,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 154,
+      "indent": 2,
       "raw": "  A pear, past its best.",
       "tokens": [
         {
           "kind": "word",
           "text": "A",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 3,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 4
           }
         },
@@ -23429,9 +23487,9 @@
           "kind": "word",
           "text": "pear",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 5,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 9
           }
         },
@@ -23439,9 +23497,9 @@
           "kind": "comma",
           "text": ",",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 9,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 10
           }
         },
@@ -23449,9 +23507,9 @@
           "kind": "word",
           "text": "past",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 11,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 15
           }
         },
@@ -23459,9 +23517,9 @@
           "kind": "word",
           "text": "its",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 16,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 19
           }
         },
@@ -23469,9 +23527,9 @@
           "kind": "word",
           "text": "best",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 20,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 24
           }
         },
@@ -23479,9 +23537,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 152,
+            "line": 154,
             "column": 24,
-            "endLine": 152,
+            "endLine": 154,
             "endColumn": 25
           }
         }
@@ -23490,7 +23548,7 @@
       "comment": false
     },
     {
-      "lineNo": 154,
+      "lineNo": 156,
       "indent": 2,
       "raw": "  after the player taking",
       "tokens": [
@@ -23498,9 +23556,9 @@
           "kind": "word",
           "text": "after",
           "span": {
-            "line": 154,
+            "line": 156,
             "column": 3,
-            "endLine": 154,
+            "endLine": 156,
             "endColumn": 8
           }
         },
@@ -23508,9 +23566,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 154,
+            "line": 156,
             "column": 9,
-            "endLine": 154,
+            "endLine": 156,
             "endColumn": 12
           }
         },
@@ -23518,9 +23576,9 @@
           "kind": "word",
           "text": "player",
           "span": {
-            "line": 154,
+            "line": 156,
             "column": 13,
-            "endLine": 154,
+            "endLine": 156,
             "endColumn": 19
           }
         },
@@ -23528,9 +23586,9 @@
           "kind": "word",
           "text": "taking",
           "span": {
-            "line": 154,
+            "line": 156,
             "column": 20,
-            "endLine": 154,
+            "endLine": 156,
             "endColumn": 26
           }
         }
@@ -23539,7 +23597,7 @@
       "comment": false
     },
     {
-      "lineNo": 155,
+      "lineNo": 157,
       "indent": 4,
       "raw": "    phrase another-one",
       "tokens": [
@@ -23547,9 +23605,9 @@
           "kind": "word",
           "text": "phrase",
           "span": {
-            "line": 155,
+            "line": 157,
             "column": 5,
-            "endLine": 155,
+            "endLine": 157,
             "endColumn": 11
           }
         },
@@ -23557,178 +23615,10 @@
           "kind": "word",
           "text": "another-one",
           "span": {
-            "line": 155,
+            "line": 157,
             "column": 12,
-            "endLine": 155,
-            "endColumn": 23
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 156,
-      "indent": 4,
-      "raw": "    phrase named-ware with ware = the pear",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "phrase",
-          "span": {
-            "line": 156,
-            "column": 5,
-            "endLine": 156,
-            "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "named-ware",
-          "span": {
-            "line": 156,
-            "column": 12,
-            "endLine": 156,
-            "endColumn": 22
-          }
-        },
-        {
-          "kind": "word",
-          "text": "with",
-          "span": {
-            "line": 156,
-            "column": 23,
-            "endLine": 156,
-            "endColumn": 27
-          }
-        },
-        {
-          "kind": "word",
-          "text": "ware",
-          "span": {
-            "line": 156,
-            "column": 28,
-            "endLine": 156,
-            "endColumn": 32
-          }
-        },
-        {
-          "kind": "punct",
-          "text": "=",
-          "span": {
-            "line": 156,
-            "column": 33,
-            "endLine": 156,
-            "endColumn": 34
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 156,
-            "column": 35,
-            "endLine": 156,
-            "endColumn": 38
-          }
-        },
-        {
-          "kind": "word",
-          "text": "pear",
-          "span": {
-            "line": 156,
-            "column": 39,
-            "endLine": 156,
-            "endColumn": 43
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 157,
-      "indent": 4,
-      "raw": "    move the player to a random adjacent room",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "move",
-          "span": {
-            "line": 157,
-            "column": 5,
-            "endLine": 157,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 157,
-            "column": 10,
-            "endLine": 157,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "player",
-          "span": {
-            "line": 157,
-            "column": 14,
-            "endLine": 157,
-            "endColumn": 20
-          }
-        },
-        {
-          "kind": "word",
-          "text": "to",
-          "span": {
-            "line": 157,
-            "column": 21,
             "endLine": 157,
             "endColumn": 23
-          }
-        },
-        {
-          "kind": "word",
-          "text": "a",
-          "span": {
-            "line": 157,
-            "column": 24,
-            "endLine": 157,
-            "endColumn": 25
-          }
-        },
-        {
-          "kind": "word",
-          "text": "random",
-          "span": {
-            "line": 157,
-            "column": 26,
-            "endLine": 157,
-            "endColumn": 32
-          }
-        },
-        {
-          "kind": "word",
-          "text": "adjacent",
-          "span": {
-            "line": 157,
-            "column": 33,
-            "endLine": 157,
-            "endColumn": 41
-          }
-        },
-        {
-          "kind": "word",
-          "text": "room",
-          "span": {
-            "line": 157,
-            "column": 42,
-            "endLine": 157,
-            "endColumn": 46
           }
         }
       ],
@@ -23737,27 +23627,166 @@
     },
     {
       "lineNo": 158,
-      "indent": 2,
-      "raw": "  end after",
+      "indent": 4,
+      "raw": "    phrase named-ware with ware = the pear",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "phrase",
           "span": {
             "line": 158,
-            "column": 3,
+            "column": 5,
             "endLine": 158,
-            "endColumn": 6
+            "endColumn": 11
           }
         },
         {
           "kind": "word",
-          "text": "after",
+          "text": "named-ware",
           "span": {
             "line": 158,
-            "column": 7,
+            "column": 12,
             "endLine": 158,
-            "endColumn": 12
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "word",
+          "text": "with",
+          "span": {
+            "line": 158,
+            "column": 23,
+            "endLine": 158,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "ware",
+          "span": {
+            "line": 158,
+            "column": 28,
+            "endLine": 158,
+            "endColumn": 32
+          }
+        },
+        {
+          "kind": "punct",
+          "text": "=",
+          "span": {
+            "line": 158,
+            "column": 33,
+            "endLine": 158,
+            "endColumn": 34
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 158,
+            "column": 35,
+            "endLine": 158,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "word",
+          "text": "pear",
+          "span": {
+            "line": 158,
+            "column": 39,
+            "endLine": 158,
+            "endColumn": 43
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 159,
+      "indent": 4,
+      "raw": "    move the player to a random adjacent room",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "move",
+          "span": {
+            "line": 159,
+            "column": 5,
+            "endLine": 159,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 159,
+            "column": 10,
+            "endLine": 159,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "player",
+          "span": {
+            "line": 159,
+            "column": 14,
+            "endLine": 159,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "to",
+          "span": {
+            "line": 159,
+            "column": 21,
+            "endLine": 159,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 159,
+            "column": 24,
+            "endLine": 159,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "random",
+          "span": {
+            "line": 159,
+            "column": 26,
+            "endLine": 159,
+            "endColumn": 32
+          }
+        },
+        {
+          "kind": "word",
+          "text": "adjacent",
+          "span": {
+            "line": 159,
+            "column": 33,
+            "endLine": 159,
+            "endColumn": 41
+          }
+        },
+        {
+          "kind": "word",
+          "text": "room",
+          "span": {
+            "line": 159,
+            "column": 42,
+            "endLine": 159,
+            "endColumn": 46
           }
         }
       ],
@@ -23766,56 +23795,27 @@
     },
     {
       "lineNo": 160,
-      "indent": 0,
-      "raw": "create Alex",
+      "indent": 2,
+      "raw": "  end after",
       "tokens": [
         {
           "kind": "word",
-          "text": "create",
+          "text": "end",
           "span": {
             "line": 160,
-            "column": 1,
+            "column": 3,
             "endLine": 160,
-            "endColumn": 7
+            "endColumn": 6
           }
         },
         {
           "kind": "word",
-          "text": "Alex",
+          "text": "after",
           "span": {
             "line": 160,
-            "column": 8,
+            "column": 7,
             "endLine": 160,
             "endColumn": 12
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 161,
-      "indent": 2,
-      "raw": "  a person",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "a",
-          "span": {
-            "line": 161,
-            "column": 3,
-            "endLine": 161,
-            "endColumn": 4
-          }
-        },
-        {
-          "kind": "word",
-          "text": "person",
-          "span": {
-            "line": 161,
-            "column": 5,
-            "endLine": 161,
-            "endColumn": 11
           }
         }
       ],
@@ -23824,16 +23824,55 @@
     },
     {
       "lineNo": 162,
-      "indent": 2,
-      "raw": "  playable",
+      "indent": 0,
+      "raw": "create Alex",
       "tokens": [
         {
           "kind": "word",
-          "text": "playable",
+          "text": "create",
           "span": {
             "line": 162,
-            "column": 3,
+            "column": 1,
             "endLine": 162,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Alex",
+          "span": {
+            "line": 162,
+            "column": 8,
+            "endLine": 162,
+            "endColumn": 12
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 163,
+      "indent": 2,
+      "raw": "  a person",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "a",
+          "span": {
+            "line": 163,
+            "column": 3,
+            "endLine": 163,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "person",
+          "span": {
+            "line": 163,
+            "column": 5,
+            "endLine": 163,
             "endColumn": 11
           }
         }
@@ -23842,58 +23881,18 @@
       "comment": false
     },
     {
-      "lineNo": 163,
+      "lineNo": 164,
       "indent": 2,
-      "raw": "  starts in the Market Square",
+      "raw": "  playable",
       "tokens": [
         {
           "kind": "word",
-          "text": "starts",
+          "text": "playable",
           "span": {
-            "line": 163,
+            "line": 164,
             "column": 3,
-            "endLine": 163,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "in",
-          "span": {
-            "line": 163,
-            "column": 10,
-            "endLine": 163,
-            "endColumn": 12
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 163,
-            "column": 13,
-            "endLine": 163,
-            "endColumn": 16
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Market",
-          "span": {
-            "line": 163,
-            "column": 17,
-            "endLine": 163,
-            "endColumn": 23
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Square",
-          "span": {
-            "line": 163,
-            "column": 24,
-            "endLine": 163,
-            "endColumn": 30
+            "endLine": 164,
+            "endColumn": 11
           }
         }
       ],
@@ -23903,15 +23902,74 @@
     {
       "lineNo": 165,
       "indent": 2,
+      "raw": "  starts in the Market Square",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "starts",
+          "span": {
+            "line": 165,
+            "column": 3,
+            "endLine": 165,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 165,
+            "column": 10,
+            "endLine": 165,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 165,
+            "column": 13,
+            "endLine": 165,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Market",
+          "span": {
+            "line": 165,
+            "column": 17,
+            "endLine": 165,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Square",
+          "span": {
+            "line": 165,
+            "column": 24,
+            "endLine": 165,
+            "endColumn": 30
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 167,
+      "indent": 2,
       "raw": "  Mud on your boots, dirt under your nails.",
       "tokens": [
         {
           "kind": "word",
           "text": "Mud",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 3,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 6
           }
         },
@@ -23919,9 +23977,9 @@
           "kind": "word",
           "text": "on",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 7,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 9
           }
         },
@@ -23929,9 +23987,9 @@
           "kind": "word",
           "text": "your",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 10,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 14
           }
         },
@@ -23939,9 +23997,9 @@
           "kind": "word",
           "text": "boots",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 15,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 20
           }
         },
@@ -23949,9 +24007,9 @@
           "kind": "comma",
           "text": ",",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 20,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 21
           }
         },
@@ -23959,9 +24017,9 @@
           "kind": "word",
           "text": "dirt",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 22,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 26
           }
         },
@@ -23969,9 +24027,9 @@
           "kind": "word",
           "text": "under",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 27,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 32
           }
         },
@@ -23979,9 +24037,9 @@
           "kind": "word",
           "text": "your",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 33,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 37
           }
         },
@@ -23989,9 +24047,9 @@
           "kind": "word",
           "text": "nails",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 38,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 43
           }
         },
@@ -23999,9 +24057,9 @@
           "kind": "punct",
           "text": ".",
           "span": {
-            "line": 165,
+            "line": 167,
             "column": 43,
-            "endLine": 165,
+            "endLine": 167,
             "endColumn": 44
           }
         }
@@ -24010,7 +24068,7 @@
       "comment": false
     },
     {
-      "lineNo": 167,
+      "lineNo": 169,
       "indent": 0,
       "raw": "before the game starts",
       "tokens": [
@@ -24018,9 +24076,9 @@
           "kind": "word",
           "text": "before",
           "span": {
-            "line": 167,
+            "line": 169,
             "column": 1,
-            "endLine": 167,
+            "endLine": 169,
             "endColumn": 7
           }
         },
@@ -24028,9 +24086,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 167,
+            "line": 169,
             "column": 8,
-            "endLine": 167,
+            "endLine": 169,
             "endColumn": 11
           }
         },
@@ -24038,9 +24096,9 @@
           "kind": "word",
           "text": "game",
           "span": {
-            "line": 167,
+            "line": 169,
             "column": 12,
-            "endLine": 167,
+            "endLine": 169,
             "endColumn": 16
           }
         },
@@ -24048,9 +24106,9 @@
           "kind": "word",
           "text": "starts",
           "span": {
-            "line": 167,
+            "line": 169,
             "column": 17,
-            "endLine": 167,
+            "endLine": 169,
             "endColumn": 23
           }
         }
@@ -24059,7 +24117,7 @@
       "comment": false
     },
     {
-      "lineNo": 168,
+      "lineNo": 170,
       "indent": 2,
       "raw": "  change the player to Alex",
       "tokens": [
@@ -24067,9 +24125,9 @@
           "kind": "word",
           "text": "change",
           "span": {
-            "line": 168,
+            "line": 170,
             "column": 3,
-            "endLine": 168,
+            "endLine": 170,
             "endColumn": 9
           }
         },
@@ -24077,9 +24135,9 @@
           "kind": "word",
           "text": "the",
           "span": {
-            "line": 168,
+            "line": 170,
             "column": 10,
-            "endLine": 168,
+            "endLine": 170,
             "endColumn": 13
           }
         },
@@ -24087,9 +24145,9 @@
           "kind": "word",
           "text": "player",
           "span": {
-            "line": 168,
+            "line": 170,
             "column": 14,
-            "endLine": 168,
+            "endLine": 170,
             "endColumn": 20
           }
         },
@@ -24097,9 +24155,9 @@
           "kind": "word",
           "text": "to",
           "span": {
-            "line": 168,
+            "line": 170,
             "column": 21,
-            "endLine": 168,
+            "endLine": 170,
             "endColumn": 23
           }
         },
@@ -24107,39 +24165,10 @@
           "kind": "word",
           "text": "Alex",
           "span": {
-            "line": 168,
+            "line": 170,
             "column": 24,
-            "endLine": 168,
+            "endLine": 170,
             "endColumn": 28
-          }
-        }
-      ],
-      "afterBlank": false,
-      "comment": false
-    },
-    {
-      "lineNo": 169,
-      "indent": 0,
-      "raw": "end before",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "end",
-          "span": {
-            "line": 169,
-            "column": 1,
-            "endLine": 169,
-            "endColumn": 4
-          }
-        },
-        {
-          "kind": "word",
-          "text": "before",
-          "span": {
-            "line": 169,
-            "column": 5,
-            "endLine": 169,
-            "endColumn": 11
           }
         }
       ],
@@ -24149,165 +24178,26 @@
     {
       "lineNo": 171,
       "indent": 0,
-      "raw": "define phrase night-wind",
+      "raw": "end before",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 171,
             "column": 1,
             "endLine": 171,
-            "endColumn": 7
-          }
-        },
-        {
-          "kind": "word",
-          "text": "phrase",
-          "span": {
-            "line": 171,
-            "column": 8,
-            "endLine": 171,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "night-wind",
-          "span": {
-            "line": 171,
-            "column": 15,
-            "endLine": 171,
-            "endColumn": 25
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 172,
-      "indent": 2,
-      "raw": "  A wind gets in under the stalls and lifts the awnings.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "A",
-          "span": {
-            "line": 172,
-            "column": 3,
-            "endLine": 172,
             "endColumn": 4
           }
         },
         {
           "kind": "word",
-          "text": "wind",
+          "text": "before",
           "span": {
-            "line": 172,
+            "line": 171,
             "column": 5,
-            "endLine": 172,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "gets",
-          "span": {
-            "line": 172,
-            "column": 10,
-            "endLine": 172,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "in",
-          "span": {
-            "line": 172,
-            "column": 15,
-            "endLine": 172,
-            "endColumn": 17
-          }
-        },
-        {
-          "kind": "word",
-          "text": "under",
-          "span": {
-            "line": 172,
-            "column": 18,
-            "endLine": 172,
-            "endColumn": 23
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 172,
-            "column": 24,
-            "endLine": 172,
-            "endColumn": 27
-          }
-        },
-        {
-          "kind": "word",
-          "text": "stalls",
-          "span": {
-            "line": 172,
-            "column": 28,
-            "endLine": 172,
-            "endColumn": 34
-          }
-        },
-        {
-          "kind": "word",
-          "text": "and",
-          "span": {
-            "line": 172,
-            "column": 35,
-            "endLine": 172,
-            "endColumn": 38
-          }
-        },
-        {
-          "kind": "word",
-          "text": "lifts",
-          "span": {
-            "line": 172,
-            "column": 39,
-            "endLine": 172,
-            "endColumn": 44
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 172,
-            "column": 45,
-            "endLine": 172,
-            "endColumn": 48
-          }
-        },
-        {
-          "kind": "word",
-          "text": "awnings",
-          "span": {
-            "line": 172,
-            "column": 49,
-            "endLine": 172,
-            "endColumn": 56
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 172,
-            "column": 56,
-            "endLine": 172,
-            "endColumn": 57
+            "endLine": 171,
+            "endColumn": 11
           }
         }
       ],
@@ -24317,16 +24207,16 @@
     {
       "lineNo": 173,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase night-wind",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 173,
             "column": 1,
             "endLine": 173,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -24334,9 +24224,148 @@
           "text": "phrase",
           "span": {
             "line": 173,
-            "column": 5,
+            "column": 8,
             "endLine": 173,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "night-wind",
+          "span": {
+            "line": 173,
+            "column": 15,
+            "endLine": 173,
+            "endColumn": 25
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 174,
+      "indent": 2,
+      "raw": "  A wind gets in under the stalls and lifts the awnings.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 174,
+            "column": 3,
+            "endLine": 174,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "wind",
+          "span": {
+            "line": 174,
+            "column": 5,
+            "endLine": 174,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "gets",
+          "span": {
+            "line": 174,
+            "column": 10,
+            "endLine": 174,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 174,
+            "column": 15,
+            "endLine": 174,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "under",
+          "span": {
+            "line": 174,
+            "column": 18,
+            "endLine": 174,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 174,
+            "column": 24,
+            "endLine": 174,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "stalls",
+          "span": {
+            "line": 174,
+            "column": 28,
+            "endLine": 174,
+            "endColumn": 34
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 174,
+            "column": 35,
+            "endLine": 174,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "word",
+          "text": "lifts",
+          "span": {
+            "line": 174,
+            "column": 39,
+            "endLine": 174,
+            "endColumn": 44
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 174,
+            "column": 45,
+            "endLine": 174,
+            "endColumn": 48
+          }
+        },
+        {
+          "kind": "word",
+          "text": "awnings",
+          "span": {
+            "line": 174,
+            "column": 49,
+            "endLine": 174,
+            "endColumn": 56
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 174,
+            "column": 56,
+            "endLine": 174,
+            "endColumn": 57
           }
         }
       ],
@@ -24346,16 +24375,16 @@
     {
       "lineNo": 175,
       "indent": 0,
-      "raw": "define phrase cold-returns",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 175,
             "column": 1,
             "endLine": 175,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -24363,138 +24392,9 @@
           "text": "phrase",
           "span": {
             "line": 175,
-            "column": 8,
+            "column": 5,
             "endLine": 175,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "cold-returns",
-          "span": {
-            "line": 175,
-            "column": 15,
-            "endLine": 175,
-            "endColumn": 27
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 176,
-      "indent": 2,
-      "raw": "  The cold finds you again the moment you are outside.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "The",
-          "span": {
-            "line": 176,
-            "column": 3,
-            "endLine": 176,
-            "endColumn": 6
-          }
-        },
-        {
-          "kind": "word",
-          "text": "cold",
-          "span": {
-            "line": 176,
-            "column": 7,
-            "endLine": 176,
             "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "finds",
-          "span": {
-            "line": 176,
-            "column": 12,
-            "endLine": 176,
-            "endColumn": 17
-          }
-        },
-        {
-          "kind": "word",
-          "text": "you",
-          "span": {
-            "line": 176,
-            "column": 18,
-            "endLine": 176,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "word",
-          "text": "again",
-          "span": {
-            "line": 176,
-            "column": 22,
-            "endLine": 176,
-            "endColumn": 27
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 176,
-            "column": 28,
-            "endLine": 176,
-            "endColumn": 31
-          }
-        },
-        {
-          "kind": "word",
-          "text": "moment",
-          "span": {
-            "line": 176,
-            "column": 32,
-            "endLine": 176,
-            "endColumn": 38
-          }
-        },
-        {
-          "kind": "word",
-          "text": "you",
-          "span": {
-            "line": 176,
-            "column": 39,
-            "endLine": 176,
-            "endColumn": 42
-          }
-        },
-        {
-          "kind": "word",
-          "text": "are",
-          "span": {
-            "line": 176,
-            "column": 43,
-            "endLine": 176,
-            "endColumn": 46
-          }
-        },
-        {
-          "kind": "word",
-          "text": "outside",
-          "span": {
-            "line": 176,
-            "column": 47,
-            "endLine": 176,
-            "endColumn": 54
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 176,
-            "column": 54,
-            "endLine": 176,
-            "endColumn": 55
           }
         }
       ],
@@ -24504,16 +24404,16 @@
     {
       "lineNo": 177,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase cold-returns",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 177,
             "column": 1,
             "endLine": 177,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -24521,9 +24421,138 @@
           "text": "phrase",
           "span": {
             "line": 177,
-            "column": 5,
+            "column": 8,
             "endLine": 177,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "cold-returns",
+          "span": {
+            "line": 177,
+            "column": 15,
+            "endLine": 177,
+            "endColumn": 27
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 178,
+      "indent": 2,
+      "raw": "  The cold finds you again the moment you are outside.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "The",
+          "span": {
+            "line": 178,
+            "column": 3,
+            "endLine": 178,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "cold",
+          "span": {
+            "line": 178,
+            "column": 7,
+            "endLine": 178,
             "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "finds",
+          "span": {
+            "line": 178,
+            "column": 12,
+            "endLine": 178,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "you",
+          "span": {
+            "line": 178,
+            "column": 18,
+            "endLine": 178,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "again",
+          "span": {
+            "line": 178,
+            "column": 22,
+            "endLine": 178,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 178,
+            "column": 28,
+            "endLine": 178,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "word",
+          "text": "moment",
+          "span": {
+            "line": 178,
+            "column": 32,
+            "endLine": 178,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "word",
+          "text": "you",
+          "span": {
+            "line": 178,
+            "column": 39,
+            "endLine": 178,
+            "endColumn": 42
+          }
+        },
+        {
+          "kind": "word",
+          "text": "are",
+          "span": {
+            "line": 178,
+            "column": 43,
+            "endLine": 178,
+            "endColumn": 46
+          }
+        },
+        {
+          "kind": "word",
+          "text": "outside",
+          "span": {
+            "line": 178,
+            "column": 47,
+            "endLine": 178,
+            "endColumn": 54
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 178,
+            "column": 54,
+            "endLine": 178,
+            "endColumn": 55
           }
         }
       ],
@@ -24533,16 +24562,16 @@
     {
       "lineNo": 179,
       "indent": 0,
-      "raw": "define phrase merc-idle",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 179,
             "column": 1,
             "endLine": 179,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -24550,108 +24579,9 @@
           "text": "phrase",
           "span": {
             "line": 179,
-            "column": 8,
+            "column": 5,
             "endLine": 179,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "merc-idle",
-          "span": {
-            "line": 179,
-            "column": 15,
-            "endLine": 179,
-            "endColumn": 24
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 180,
-      "indent": 2,
-      "raw": "  One of the mercenaries spits, thoughtfully.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "One",
-          "span": {
-            "line": 180,
-            "column": 3,
-            "endLine": 180,
-            "endColumn": 6
-          }
-        },
-        {
-          "kind": "word",
-          "text": "of",
-          "span": {
-            "line": 180,
-            "column": 7,
-            "endLine": 180,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 180,
-            "column": 10,
-            "endLine": 180,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "mercenaries",
-          "span": {
-            "line": 180,
-            "column": 14,
-            "endLine": 180,
-            "endColumn": 25
-          }
-        },
-        {
-          "kind": "word",
-          "text": "spits",
-          "span": {
-            "line": 180,
-            "column": 26,
-            "endLine": 180,
-            "endColumn": 31
-          }
-        },
-        {
-          "kind": "comma",
-          "text": ",",
-          "span": {
-            "line": 180,
-            "column": 31,
-            "endLine": 180,
-            "endColumn": 32
-          }
-        },
-        {
-          "kind": "word",
-          "text": "thoughtfully",
-          "span": {
-            "line": 180,
-            "column": 33,
-            "endLine": 180,
-            "endColumn": 45
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 180,
-            "column": 45,
-            "endLine": 180,
-            "endColumn": 46
+            "endColumn": 11
           }
         }
       ],
@@ -24661,16 +24591,16 @@
     {
       "lineNo": 181,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase merc-idle",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 181,
             "column": 1,
             "endLine": 181,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -24678,9 +24608,108 @@
           "text": "phrase",
           "span": {
             "line": 181,
-            "column": 5,
+            "column": 8,
             "endLine": 181,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "merc-idle",
+          "span": {
+            "line": 181,
+            "column": 15,
+            "endLine": 181,
+            "endColumn": 24
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 182,
+      "indent": 2,
+      "raw": "  One of the mercenaries spits, thoughtfully.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "One",
+          "span": {
+            "line": 182,
+            "column": 3,
+            "endLine": 182,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 182,
+            "column": 7,
+            "endLine": 182,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 182,
+            "column": 10,
+            "endLine": 182,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "mercenaries",
+          "span": {
+            "line": 182,
+            "column": 14,
+            "endLine": 182,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "spits",
+          "span": {
+            "line": 182,
+            "column": 26,
+            "endLine": 182,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 182,
+            "column": 31,
+            "endLine": 182,
+            "endColumn": 32
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thoughtfully",
+          "span": {
+            "line": 182,
+            "column": 33,
+            "endLine": 182,
+            "endColumn": 45
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 182,
+            "column": 45,
+            "endLine": 182,
+            "endColumn": 46
           }
         }
       ],
@@ -24690,16 +24719,16 @@
     {
       "lineNo": 183,
       "indent": 0,
-      "raw": "define phrase merc-spotted",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 183,
             "column": 1,
             "endLine": 183,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -24707,148 +24736,9 @@
           "text": "phrase",
           "span": {
             "line": 183,
-            "column": 8,
-            "endLine": 183,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "merc-spotted",
-          "span": {
-            "line": 183,
-            "column": 15,
-            "endLine": 183,
-            "endColumn": 27
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 184,
-      "indent": 2,
-      "raw": "  A shout, and two heads turn your way at once.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "A",
-          "span": {
-            "line": 184,
-            "column": 3,
-            "endLine": 184,
-            "endColumn": 4
-          }
-        },
-        {
-          "kind": "word",
-          "text": "shout",
-          "span": {
-            "line": 184,
             "column": 5,
-            "endLine": 184,
-            "endColumn": 10
-          }
-        },
-        {
-          "kind": "comma",
-          "text": ",",
-          "span": {
-            "line": 184,
-            "column": 10,
-            "endLine": 184,
+            "endLine": 183,
             "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "and",
-          "span": {
-            "line": 184,
-            "column": 12,
-            "endLine": 184,
-            "endColumn": 15
-          }
-        },
-        {
-          "kind": "word",
-          "text": "two",
-          "span": {
-            "line": 184,
-            "column": 16,
-            "endLine": 184,
-            "endColumn": 19
-          }
-        },
-        {
-          "kind": "word",
-          "text": "heads",
-          "span": {
-            "line": 184,
-            "column": 20,
-            "endLine": 184,
-            "endColumn": 25
-          }
-        },
-        {
-          "kind": "word",
-          "text": "turn",
-          "span": {
-            "line": 184,
-            "column": 26,
-            "endLine": 184,
-            "endColumn": 30
-          }
-        },
-        {
-          "kind": "word",
-          "text": "your",
-          "span": {
-            "line": 184,
-            "column": 31,
-            "endLine": 184,
-            "endColumn": 35
-          }
-        },
-        {
-          "kind": "word",
-          "text": "way",
-          "span": {
-            "line": 184,
-            "column": 36,
-            "endLine": 184,
-            "endColumn": 39
-          }
-        },
-        {
-          "kind": "word",
-          "text": "at",
-          "span": {
-            "line": 184,
-            "column": 40,
-            "endLine": 184,
-            "endColumn": 42
-          }
-        },
-        {
-          "kind": "word",
-          "text": "once",
-          "span": {
-            "line": 184,
-            "column": 43,
-            "endLine": 184,
-            "endColumn": 47
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 184,
-            "column": 47,
-            "endLine": 184,
-            "endColumn": 48
           }
         }
       ],
@@ -24858,16 +24748,16 @@
     {
       "lineNo": 185,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase merc-spotted",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 185,
             "column": 1,
             "endLine": 185,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -24875,9 +24765,148 @@
           "text": "phrase",
           "span": {
             "line": 185,
-            "column": 5,
+            "column": 8,
             "endLine": 185,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "merc-spotted",
+          "span": {
+            "line": 185,
+            "column": 15,
+            "endLine": 185,
+            "endColumn": 27
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 186,
+      "indent": 2,
+      "raw": "  A shout, and two heads turn your way at once.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "A",
+          "span": {
+            "line": 186,
+            "column": 3,
+            "endLine": 186,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "shout",
+          "span": {
+            "line": 186,
+            "column": 5,
+            "endLine": 186,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 186,
+            "column": 10,
+            "endLine": 186,
             "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "and",
+          "span": {
+            "line": 186,
+            "column": 12,
+            "endLine": 186,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "two",
+          "span": {
+            "line": 186,
+            "column": 16,
+            "endLine": 186,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "heads",
+          "span": {
+            "line": 186,
+            "column": 20,
+            "endLine": 186,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "turn",
+          "span": {
+            "line": 186,
+            "column": 26,
+            "endLine": 186,
+            "endColumn": 30
+          }
+        },
+        {
+          "kind": "word",
+          "text": "your",
+          "span": {
+            "line": 186,
+            "column": 31,
+            "endLine": 186,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "way",
+          "span": {
+            "line": 186,
+            "column": 36,
+            "endLine": 186,
+            "endColumn": 39
+          }
+        },
+        {
+          "kind": "word",
+          "text": "at",
+          "span": {
+            "line": 186,
+            "column": 40,
+            "endLine": 186,
+            "endColumn": 42
+          }
+        },
+        {
+          "kind": "word",
+          "text": "once",
+          "span": {
+            "line": 186,
+            "column": 43,
+            "endLine": 186,
+            "endColumn": 47
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 186,
+            "column": 47,
+            "endLine": 186,
+            "endColumn": 48
           }
         }
       ],
@@ -24887,16 +24916,16 @@
     {
       "lineNo": 187,
       "indent": 0,
-      "raw": "define phrase footsteps-behind",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 187,
             "column": 1,
             "endLine": 187,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -24904,98 +24933,9 @@
           "text": "phrase",
           "span": {
             "line": 187,
-            "column": 8,
+            "column": 5,
             "endLine": 187,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "footsteps-behind",
-          "span": {
-            "line": 187,
-            "column": 15,
-            "endLine": 187,
-            "endColumn": 31
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 188,
-      "indent": 2,
-      "raw": "  Footsteps, keeping pace with yours.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "Footsteps",
-          "span": {
-            "line": 188,
-            "column": 3,
-            "endLine": 188,
-            "endColumn": 12
-          }
-        },
-        {
-          "kind": "comma",
-          "text": ",",
-          "span": {
-            "line": 188,
-            "column": 12,
-            "endLine": 188,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "keeping",
-          "span": {
-            "line": 188,
-            "column": 14,
-            "endLine": 188,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "word",
-          "text": "pace",
-          "span": {
-            "line": 188,
-            "column": 22,
-            "endLine": 188,
-            "endColumn": 26
-          }
-        },
-        {
-          "kind": "word",
-          "text": "with",
-          "span": {
-            "line": 188,
-            "column": 27,
-            "endLine": 188,
-            "endColumn": 31
-          }
-        },
-        {
-          "kind": "word",
-          "text": "yours",
-          "span": {
-            "line": 188,
-            "column": 32,
-            "endLine": 188,
-            "endColumn": 37
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 188,
-            "column": 37,
-            "endLine": 188,
-            "endColumn": 38
+            "endColumn": 11
           }
         }
       ],
@@ -25005,16 +24945,16 @@
     {
       "lineNo": 189,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase footsteps-behind",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 189,
             "column": 1,
             "endLine": 189,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -25022,9 +24962,98 @@
           "text": "phrase",
           "span": {
             "line": 189,
-            "column": 5,
+            "column": 8,
             "endLine": 189,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "footsteps-behind",
+          "span": {
+            "line": 189,
+            "column": 15,
+            "endLine": 189,
+            "endColumn": 31
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 190,
+      "indent": 2,
+      "raw": "  Footsteps, keeping pace with yours.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Footsteps",
+          "span": {
+            "line": 190,
+            "column": 3,
+            "endLine": 190,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 190,
+            "column": 12,
+            "endLine": 190,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "keeping",
+          "span": {
+            "line": 190,
+            "column": 14,
+            "endLine": 190,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "pace",
+          "span": {
+            "line": 190,
+            "column": 22,
+            "endLine": 190,
+            "endColumn": 26
+          }
+        },
+        {
+          "kind": "word",
+          "text": "with",
+          "span": {
+            "line": 190,
+            "column": 27,
+            "endLine": 190,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "word",
+          "text": "yours",
+          "span": {
+            "line": 190,
+            "column": 32,
+            "endLine": 190,
+            "endColumn": 37
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 190,
+            "column": 37,
+            "endLine": 190,
+            "endColumn": 38
           }
         }
       ],
@@ -25034,16 +25063,16 @@
     {
       "lineNo": 191,
       "indent": 0,
-      "raw": "define phrase no-time-to-chat",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 191,
             "column": 1,
             "endLine": 191,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -25051,108 +25080,9 @@
           "text": "phrase",
           "span": {
             "line": 191,
-            "column": 8,
+            "column": 5,
             "endLine": 191,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "no-time-to-chat",
-          "span": {
-            "line": 191,
-            "column": 15,
-            "endLine": 191,
-            "endColumn": 30
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 192,
-      "indent": 2,
-      "raw": "  Tobias waves you off without looking up.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "Tobias",
-          "span": {
-            "line": 192,
-            "column": 3,
-            "endLine": 192,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "waves",
-          "span": {
-            "line": 192,
-            "column": 10,
-            "endLine": 192,
-            "endColumn": 15
-          }
-        },
-        {
-          "kind": "word",
-          "text": "you",
-          "span": {
-            "line": 192,
-            "column": 16,
-            "endLine": 192,
-            "endColumn": 19
-          }
-        },
-        {
-          "kind": "word",
-          "text": "off",
-          "span": {
-            "line": 192,
-            "column": 20,
-            "endLine": 192,
-            "endColumn": 23
-          }
-        },
-        {
-          "kind": "word",
-          "text": "without",
-          "span": {
-            "line": 192,
-            "column": 24,
-            "endLine": 192,
-            "endColumn": 31
-          }
-        },
-        {
-          "kind": "word",
-          "text": "looking",
-          "span": {
-            "line": 192,
-            "column": 32,
-            "endLine": 192,
-            "endColumn": 39
-          }
-        },
-        {
-          "kind": "word",
-          "text": "up",
-          "span": {
-            "line": 192,
-            "column": 40,
-            "endLine": 192,
-            "endColumn": 42
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 192,
-            "column": 42,
-            "endLine": 192,
-            "endColumn": 43
+            "endColumn": 11
           }
         }
       ],
@@ -25162,16 +25092,16 @@
     {
       "lineNo": 193,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase no-time-to-chat",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 193,
             "column": 1,
             "endLine": 193,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -25179,9 +25109,108 @@
           "text": "phrase",
           "span": {
             "line": 193,
-            "column": 5,
+            "column": 8,
             "endLine": 193,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "no-time-to-chat",
+          "span": {
+            "line": 193,
+            "column": 15,
+            "endLine": 193,
+            "endColumn": 30
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 194,
+      "indent": 2,
+      "raw": "  Tobias waves you off without looking up.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Tobias",
+          "span": {
+            "line": 194,
+            "column": 3,
+            "endLine": 194,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "waves",
+          "span": {
+            "line": 194,
+            "column": 10,
+            "endLine": 194,
+            "endColumn": 15
+          }
+        },
+        {
+          "kind": "word",
+          "text": "you",
+          "span": {
+            "line": 194,
+            "column": 16,
+            "endLine": 194,
+            "endColumn": 19
+          }
+        },
+        {
+          "kind": "word",
+          "text": "off",
+          "span": {
+            "line": 194,
+            "column": 20,
+            "endLine": 194,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "without",
+          "span": {
+            "line": 194,
+            "column": 24,
+            "endLine": 194,
+            "endColumn": 31
+          }
+        },
+        {
+          "kind": "word",
+          "text": "looking",
+          "span": {
+            "line": 194,
+            "column": 32,
+            "endLine": 194,
+            "endColumn": 39
+          }
+        },
+        {
+          "kind": "word",
+          "text": "up",
+          "span": {
+            "line": 194,
+            "column": 40,
+            "endLine": 194,
+            "endColumn": 42
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 194,
+            "column": 42,
+            "endLine": 194,
+            "endColumn": 43
           }
         }
       ],
@@ -25191,16 +25220,16 @@
     {
       "lineNo": 195,
       "indent": 0,
-      "raw": "define phrase tobias-mutters",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 195,
             "column": 1,
             "endLine": 195,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -25208,118 +25237,9 @@
           "text": "phrase",
           "span": {
             "line": 195,
-            "column": 8,
+            "column": 5,
             "endLine": 195,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "tobias-mutters",
-          "span": {
-            "line": 195,
-            "column": 15,
-            "endLine": 195,
-            "endColumn": 29
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 196,
-      "indent": 2,
-      "raw": "  Tobias mutters something about the price of everything.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "Tobias",
-          "span": {
-            "line": 196,
-            "column": 3,
-            "endLine": 196,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "mutters",
-          "span": {
-            "line": 196,
-            "column": 10,
-            "endLine": 196,
-            "endColumn": 17
-          }
-        },
-        {
-          "kind": "word",
-          "text": "something",
-          "span": {
-            "line": 196,
-            "column": 18,
-            "endLine": 196,
-            "endColumn": 27
-          }
-        },
-        {
-          "kind": "word",
-          "text": "about",
-          "span": {
-            "line": 196,
-            "column": 28,
-            "endLine": 196,
-            "endColumn": 33
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 196,
-            "column": 34,
-            "endLine": 196,
-            "endColumn": 37
-          }
-        },
-        {
-          "kind": "word",
-          "text": "price",
-          "span": {
-            "line": 196,
-            "column": 38,
-            "endLine": 196,
-            "endColumn": 43
-          }
-        },
-        {
-          "kind": "word",
-          "text": "of",
-          "span": {
-            "line": 196,
-            "column": 44,
-            "endLine": 196,
-            "endColumn": 46
-          }
-        },
-        {
-          "kind": "word",
-          "text": "everything",
-          "span": {
-            "line": 196,
-            "column": 47,
-            "endLine": 196,
-            "endColumn": 57
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 196,
-            "column": 57,
-            "endLine": 196,
-            "endColumn": 58
+            "endColumn": 11
           }
         }
       ],
@@ -25329,16 +25249,16 @@
     {
       "lineNo": 197,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase tobias-mutters",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 197,
             "column": 1,
             "endLine": 197,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -25346,9 +25266,118 @@
           "text": "phrase",
           "span": {
             "line": 197,
-            "column": 5,
+            "column": 8,
             "endLine": 197,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "tobias-mutters",
+          "span": {
+            "line": 197,
+            "column": 15,
+            "endLine": 197,
+            "endColumn": 29
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 198,
+      "indent": 2,
+      "raw": "  Tobias mutters something about the price of everything.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Tobias",
+          "span": {
+            "line": 198,
+            "column": 3,
+            "endLine": 198,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "mutters",
+          "span": {
+            "line": 198,
+            "column": 10,
+            "endLine": 198,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "something",
+          "span": {
+            "line": 198,
+            "column": 18,
+            "endLine": 198,
+            "endColumn": 27
+          }
+        },
+        {
+          "kind": "word",
+          "text": "about",
+          "span": {
+            "line": 198,
+            "column": 28,
+            "endLine": 198,
+            "endColumn": 33
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 198,
+            "column": 34,
+            "endLine": 198,
+            "endColumn": 37
+          }
+        },
+        {
+          "kind": "word",
+          "text": "price",
+          "span": {
+            "line": 198,
+            "column": 38,
+            "endLine": 198,
+            "endColumn": 43
+          }
+        },
+        {
+          "kind": "word",
+          "text": "of",
+          "span": {
+            "line": 198,
+            "column": 44,
+            "endLine": 198,
+            "endColumn": 46
+          }
+        },
+        {
+          "kind": "word",
+          "text": "everything",
+          "span": {
+            "line": 198,
+            "column": 47,
+            "endLine": 198,
+            "endColumn": 57
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 198,
+            "column": 57,
+            "endLine": 198,
+            "endColumn": 58
           }
         }
       ],
@@ -25358,16 +25387,16 @@
     {
       "lineNo": 199,
       "indent": 0,
-      "raw": "define phrase wizard-gloats",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 199,
             "column": 1,
             "endLine": 199,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -25375,128 +25404,9 @@
           "text": "phrase",
           "span": {
             "line": 199,
-            "column": 8,
+            "column": 5,
             "endLine": 199,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "wizard-gloats",
-          "span": {
-            "line": 199,
-            "column": 15,
-            "endLine": 199,
-            "endColumn": 28
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 200,
-      "indent": 2,
-      "raw": "  \"So,\" says the wizard, to nobody in particular.",
-      "tokens": [
-        {
-          "kind": "string",
-          "text": "So,",
-          "span": {
-            "line": 200,
-            "column": 3,
-            "endLine": 200,
-            "endColumn": 8
-          }
-        },
-        {
-          "kind": "word",
-          "text": "says",
-          "span": {
-            "line": 200,
-            "column": 9,
-            "endLine": 200,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 200,
-            "column": 14,
-            "endLine": 200,
-            "endColumn": 17
-          }
-        },
-        {
-          "kind": "word",
-          "text": "wizard",
-          "span": {
-            "line": 200,
-            "column": 18,
-            "endLine": 200,
-            "endColumn": 24
-          }
-        },
-        {
-          "kind": "comma",
-          "text": ",",
-          "span": {
-            "line": 200,
-            "column": 24,
-            "endLine": 200,
-            "endColumn": 25
-          }
-        },
-        {
-          "kind": "word",
-          "text": "to",
-          "span": {
-            "line": 200,
-            "column": 26,
-            "endLine": 200,
-            "endColumn": 28
-          }
-        },
-        {
-          "kind": "word",
-          "text": "nobody",
-          "span": {
-            "line": 200,
-            "column": 29,
-            "endLine": 200,
-            "endColumn": 35
-          }
-        },
-        {
-          "kind": "word",
-          "text": "in",
-          "span": {
-            "line": 200,
-            "column": 36,
-            "endLine": 200,
-            "endColumn": 38
-          }
-        },
-        {
-          "kind": "word",
-          "text": "particular",
-          "span": {
-            "line": 200,
-            "column": 39,
-            "endLine": 200,
-            "endColumn": 49
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 200,
-            "column": 49,
-            "endLine": 200,
-            "endColumn": 50
+            "endColumn": 11
           }
         }
       ],
@@ -25506,16 +25416,16 @@
     {
       "lineNo": 201,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase wizard-gloats",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 201,
             "column": 1,
             "endLine": 201,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -25523,9 +25433,128 @@
           "text": "phrase",
           "span": {
             "line": 201,
-            "column": 5,
+            "column": 8,
             "endLine": 201,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "wizard-gloats",
+          "span": {
+            "line": 201,
+            "column": 15,
+            "endLine": 201,
+            "endColumn": 28
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 202,
+      "indent": 2,
+      "raw": "  \"So,\" says the wizard, to nobody in particular.",
+      "tokens": [
+        {
+          "kind": "string",
+          "text": "So,",
+          "span": {
+            "line": 202,
+            "column": 3,
+            "endLine": 202,
+            "endColumn": 8
+          }
+        },
+        {
+          "kind": "word",
+          "text": "says",
+          "span": {
+            "line": 202,
+            "column": 9,
+            "endLine": 202,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 202,
+            "column": 14,
+            "endLine": 202,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "wizard",
+          "span": {
+            "line": 202,
+            "column": 18,
+            "endLine": 202,
+            "endColumn": 24
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 202,
+            "column": 24,
+            "endLine": 202,
+            "endColumn": 25
+          }
+        },
+        {
+          "kind": "word",
+          "text": "to",
+          "span": {
+            "line": 202,
+            "column": 26,
+            "endLine": 202,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "word",
+          "text": "nobody",
+          "span": {
+            "line": 202,
+            "column": 29,
+            "endLine": 202,
+            "endColumn": 35
+          }
+        },
+        {
+          "kind": "word",
+          "text": "in",
+          "span": {
+            "line": 202,
+            "column": 36,
+            "endLine": 202,
+            "endColumn": 38
+          }
+        },
+        {
+          "kind": "word",
+          "text": "particular",
+          "span": {
+            "line": 202,
+            "column": 39,
+            "endLine": 202,
+            "endColumn": 49
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 202,
+            "column": 49,
+            "endLine": 202,
+            "endColumn": 50
           }
         }
       ],
@@ -25535,16 +25564,16 @@
     {
       "lineNo": 203,
       "indent": 0,
-      "raw": "define phrase another-one",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 203,
             "column": 1,
             "endLine": 203,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -25552,148 +25581,9 @@
           "text": "phrase",
           "span": {
             "line": 203,
-            "column": 8,
+            "column": 5,
             "endLine": 203,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "another-one",
-          "span": {
-            "line": 203,
-            "column": 15,
-            "endLine": 203,
-            "endColumn": 26
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 204,
-      "indent": 2,
-      "raw": "  No one notices you picking up another {bare item}.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "No",
-          "span": {
-            "line": 204,
-            "column": 3,
-            "endLine": 204,
-            "endColumn": 5
-          }
-        },
-        {
-          "kind": "word",
-          "text": "one",
-          "span": {
-            "line": 204,
-            "column": 6,
-            "endLine": 204,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "notices",
-          "span": {
-            "line": 204,
-            "column": 10,
-            "endLine": 204,
-            "endColumn": 17
-          }
-        },
-        {
-          "kind": "word",
-          "text": "you",
-          "span": {
-            "line": 204,
-            "column": 18,
-            "endLine": 204,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "word",
-          "text": "picking",
-          "span": {
-            "line": 204,
-            "column": 22,
-            "endLine": 204,
-            "endColumn": 29
-          }
-        },
-        {
-          "kind": "word",
-          "text": "up",
-          "span": {
-            "line": 204,
-            "column": 30,
-            "endLine": 204,
-            "endColumn": 32
-          }
-        },
-        {
-          "kind": "word",
-          "text": "another",
-          "span": {
-            "line": 204,
-            "column": 33,
-            "endLine": 204,
-            "endColumn": 40
-          }
-        },
-        {
-          "kind": "lbrace",
-          "text": "{",
-          "span": {
-            "line": 204,
-            "column": 41,
-            "endLine": 204,
-            "endColumn": 42
-          }
-        },
-        {
-          "kind": "word",
-          "text": "bare",
-          "span": {
-            "line": 204,
-            "column": 42,
-            "endLine": 204,
-            "endColumn": 46
-          }
-        },
-        {
-          "kind": "word",
-          "text": "item",
-          "span": {
-            "line": 204,
-            "column": 47,
-            "endLine": 204,
-            "endColumn": 51
-          }
-        },
-        {
-          "kind": "rbrace",
-          "text": "}",
-          "span": {
-            "line": 204,
-            "column": 51,
-            "endLine": 204,
-            "endColumn": 52
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 204,
-            "column": 52,
-            "endLine": 204,
-            "endColumn": 53
+            "endColumn": 11
           }
         }
       ],
@@ -25703,16 +25593,16 @@
     {
       "lineNo": 205,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase another-one",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 205,
             "column": 1,
             "endLine": 205,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -25720,9 +25610,148 @@
           "text": "phrase",
           "span": {
             "line": 205,
-            "column": 5,
+            "column": 8,
             "endLine": 205,
-            "endColumn": 11
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "another-one",
+          "span": {
+            "line": 205,
+            "column": 15,
+            "endLine": 205,
+            "endColumn": 26
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 206,
+      "indent": 2,
+      "raw": "  No one notices you picking up another {bare item}.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "No",
+          "span": {
+            "line": 206,
+            "column": 3,
+            "endLine": 206,
+            "endColumn": 5
+          }
+        },
+        {
+          "kind": "word",
+          "text": "one",
+          "span": {
+            "line": 206,
+            "column": 6,
+            "endLine": 206,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "notices",
+          "span": {
+            "line": 206,
+            "column": 10,
+            "endLine": 206,
+            "endColumn": 17
+          }
+        },
+        {
+          "kind": "word",
+          "text": "you",
+          "span": {
+            "line": 206,
+            "column": 18,
+            "endLine": 206,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "word",
+          "text": "picking",
+          "span": {
+            "line": 206,
+            "column": 22,
+            "endLine": 206,
+            "endColumn": 29
+          }
+        },
+        {
+          "kind": "word",
+          "text": "up",
+          "span": {
+            "line": 206,
+            "column": 30,
+            "endLine": 206,
+            "endColumn": 32
+          }
+        },
+        {
+          "kind": "word",
+          "text": "another",
+          "span": {
+            "line": 206,
+            "column": 33,
+            "endLine": 206,
+            "endColumn": 40
+          }
+        },
+        {
+          "kind": "lbrace",
+          "text": "{",
+          "span": {
+            "line": 206,
+            "column": 41,
+            "endLine": 206,
+            "endColumn": 42
+          }
+        },
+        {
+          "kind": "word",
+          "text": "bare",
+          "span": {
+            "line": 206,
+            "column": 42,
+            "endLine": 206,
+            "endColumn": 46
+          }
+        },
+        {
+          "kind": "word",
+          "text": "item",
+          "span": {
+            "line": 206,
+            "column": 47,
+            "endLine": 206,
+            "endColumn": 51
+          }
+        },
+        {
+          "kind": "rbrace",
+          "text": "}",
+          "span": {
+            "line": 206,
+            "column": 51,
+            "endLine": 206,
+            "endColumn": 52
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 206,
+            "column": 52,
+            "endLine": 206,
+            "endColumn": 53
           }
         }
       ],
@@ -25732,16 +25761,16 @@
     {
       "lineNo": 207,
       "indent": 0,
-      "raw": "define phrase named-ware",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "define",
+          "text": "end",
           "span": {
             "line": 207,
             "column": 1,
             "endLine": 207,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
@@ -25749,108 +25778,9 @@
           "text": "phrase",
           "span": {
             "line": 207,
-            "column": 8,
+            "column": 5,
             "endLine": 207,
-            "endColumn": 14
-          }
-        },
-        {
-          "kind": "word",
-          "text": "named-ware",
-          "span": {
-            "line": 207,
-            "column": 15,
-            "endLine": 207,
-            "endColumn": 25
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 208,
-      "indent": 2,
-      "raw": "  Another {bare ware}, then.",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "Another",
-          "span": {
-            "line": 208,
-            "column": 3,
-            "endLine": 208,
-            "endColumn": 10
-          }
-        },
-        {
-          "kind": "lbrace",
-          "text": "{",
-          "span": {
-            "line": 208,
-            "column": 11,
-            "endLine": 208,
-            "endColumn": 12
-          }
-        },
-        {
-          "kind": "word",
-          "text": "bare",
-          "span": {
-            "line": 208,
-            "column": 12,
-            "endLine": 208,
-            "endColumn": 16
-          }
-        },
-        {
-          "kind": "word",
-          "text": "ware",
-          "span": {
-            "line": 208,
-            "column": 17,
-            "endLine": 208,
-            "endColumn": 21
-          }
-        },
-        {
-          "kind": "rbrace",
-          "text": "}",
-          "span": {
-            "line": 208,
-            "column": 21,
-            "endLine": 208,
-            "endColumn": 22
-          }
-        },
-        {
-          "kind": "comma",
-          "text": ",",
-          "span": {
-            "line": 208,
-            "column": 22,
-            "endLine": 208,
-            "endColumn": 23
-          }
-        },
-        {
-          "kind": "word",
-          "text": "then",
-          "span": {
-            "line": 208,
-            "column": 24,
-            "endLine": 208,
-            "endColumn": 28
-          }
-        },
-        {
-          "kind": "punct",
-          "text": ".",
-          "span": {
-            "line": 208,
-            "column": 28,
-            "endLine": 208,
-            "endColumn": 29
+            "endColumn": 11
           }
         }
       ],
@@ -25860,16 +25790,16 @@
     {
       "lineNo": 209,
       "indent": 0,
-      "raw": "end phrase",
+      "raw": "define phrase named-ware",
       "tokens": [
         {
           "kind": "word",
-          "text": "end",
+          "text": "define",
           "span": {
             "line": 209,
             "column": 1,
             "endLine": 209,
-            "endColumn": 4
+            "endColumn": 7
           }
         },
         {
@@ -25877,8 +25807,136 @@
           "text": "phrase",
           "span": {
             "line": 209,
-            "column": 5,
+            "column": 8,
             "endLine": 209,
+            "endColumn": 14
+          }
+        },
+        {
+          "kind": "word",
+          "text": "named-ware",
+          "span": {
+            "line": 209,
+            "column": 15,
+            "endLine": 209,
+            "endColumn": 25
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 210,
+      "indent": 2,
+      "raw": "  Another {bare ware}, then.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Another",
+          "span": {
+            "line": 210,
+            "column": 3,
+            "endLine": 210,
+            "endColumn": 10
+          }
+        },
+        {
+          "kind": "lbrace",
+          "text": "{",
+          "span": {
+            "line": 210,
+            "column": 11,
+            "endLine": 210,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "word",
+          "text": "bare",
+          "span": {
+            "line": 210,
+            "column": 12,
+            "endLine": 210,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "ware",
+          "span": {
+            "line": 210,
+            "column": 17,
+            "endLine": 210,
+            "endColumn": 21
+          }
+        },
+        {
+          "kind": "rbrace",
+          "text": "}",
+          "span": {
+            "line": 210,
+            "column": 21,
+            "endLine": 210,
+            "endColumn": 22
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 210,
+            "column": 22,
+            "endLine": 210,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "then",
+          "span": {
+            "line": 210,
+            "column": 24,
+            "endLine": 210,
+            "endColumn": 28
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 210,
+            "column": 28,
+            "endLine": 210,
+            "endColumn": 29
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 211,
+      "indent": 0,
+      "raw": "end phrase",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "end",
+          "span": {
+            "line": 211,
+            "column": 1,
+            "endLine": 211,
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "phrase",
+          "span": {
+            "line": 211,
+            "column": 5,
+            "endLine": 211,
             "endColumn": 11
           }
         }
@@ -27086,16 +27144,26 @@
     {
       "lineNo": 20,
       "indent": 2,
-      "raw": "  readable, portable",
+      "raw": "  a thing, readable, portable",
       "tokens": [
         {
           "kind": "word",
-          "text": "readable",
+          "text": "a",
           "span": {
             "line": 20,
             "column": 3,
             "endLine": 20,
-            "endColumn": 11
+            "endColumn": 4
+          }
+        },
+        {
+          "kind": "word",
+          "text": "thing",
+          "span": {
+            "line": 20,
+            "column": 5,
+            "endLine": 20,
+            "endColumn": 10
           }
         },
         {
@@ -27103,9 +27171,29 @@
           "text": ",",
           "span": {
             "line": 20,
-            "column": 11,
+            "column": 10,
             "endLine": 20,
-            "endColumn": 12
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "readable",
+          "span": {
+            "line": 20,
+            "column": 12,
+            "endLine": 20,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "comma",
+          "text": ",",
+          "span": {
+            "line": 20,
+            "column": 20,
+            "endLine": 20,
+            "endColumn": 21
           }
         },
         {
@@ -27113,9 +27201,9 @@
           "text": "portable",
           "span": {
             "line": 20,
-            "column": 13,
+            "column": 22,
             "endLine": 20,
-            "endColumn": 21
+            "endColumn": 30
           }
         }
       ],

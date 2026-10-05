@@ -105,7 +105,7 @@ end phrase
 
 create the silk garments
   aka display, displays, fare, wares, merchandise, goods, teishas wares, beautiful silks, silks, garment, clothes, fabric, fabrics, rippling, shimmering
-  scenery, plural
+  a thing, scenery, plural
   silk-ware
   starts in Inside the Silk Tent
 
@@ -121,7 +121,7 @@ create the silk garments
 
 create the gowns
   aka gown, simple, design, designs, elegant
-  scenery, plural
+  a thing, scenery, plural
   silk-ware
   starts in Inside the Silk Tent
 
@@ -130,7 +130,7 @@ create the gowns
 
 create the capes
   aka cape, short, waist, length, decorative, inner, lining, linings, outer, color, colors, colored, colour, colours, coloured
-  scenery, plural
+  a thing, scenery, plural
   silk-ware
   starts in Inside the Silk Tent
 
@@ -145,7 +145,7 @@ create the capes
 
 create the cloaks
   aka long, voluminous, hood, hoods
-  scenery, plural
+  a thing, scenery, plural
   silk-ware
   starts in Inside the Silk Tent
 
@@ -166,7 +166,7 @@ end phrase
 
 create the shawls
   aka shawl, wrap, wraps, bright, brightly, color, colors, colored, colour, colours, coloured
-  scenery, plural
+  a thing, scenery, plural
   silk-ware
   starts in Inside the Silk Tent
 
@@ -175,7 +175,7 @@ create the shawls
 
 create the robes
   aka robe, sleeve, sleeves, long, sleeved, tie, ties
-  scenery, plural
+  a thing, scenery, plural
   silk-ware
   starts in Inside the Silk Tent
 

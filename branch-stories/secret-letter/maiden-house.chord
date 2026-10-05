@@ -52,7 +52,7 @@
 
 create Toresal
   aka the city, the hour
-  proper
+  a thing, proper
   states, reversible: day, night
 
   The city of Toresal.
@@ -236,14 +236,14 @@ create the Entrance to Maiden House
 
 create the run-down buildings
   aka buildings, run down buildings, tenements, old buildings
-  scenery, plural
+  a thing, scenery, plural
   in the Entrance to Maiden House
 
   The buildings in this part of town have seen better days.
 
 create the wooden door
   aka door, battered door, front door, southern building, maiden house door
-  scenery
+  a thing, scenery
   in the Entrance to Maiden House
 
   There's nothing on the outside to distinguish Maiden House from any of the
@@ -375,7 +375,7 @@ end phrase
 
 create the front door
   aka door, wooden door, locked door
-  scenery
+  a thing, scenery
   in the Hallway
 
   The front door is closed and locked — and it will stay locked until sunup.
@@ -444,6 +444,7 @@ create Widow Theresa
   end on
 
 create the long brass key
+  a thing
   aka brass key, key, front door key, door key
 
   That's the key to the front door. Widow Theresa keeps it on a ribbon around
@@ -458,6 +459,7 @@ create the long brass key
   end on
 
 create the ribbon
+  a thing
   aka long ribbon, piece of ribbon
 
   It's just a long piece of ribbon.
@@ -525,7 +527,7 @@ end trait
 
 create the bunk
   aka bunk bed, my bunk, your bunk, bed, mattress, straw mattress, wooden frame
-  scenery
+  a thing, scenery
   bunk-sleep
   in the Dormitory
 
@@ -534,7 +536,7 @@ create the bunk
 
 create the other bunks
   aka bunks, beds, bunk beds, other beds, mattresses, frames
-  scenery, plural
+  a thing, scenery, plural
   in the Dormitory
 
   The bunks are spare and functional, straw mattresses on wooden frames. It's
@@ -626,6 +628,7 @@ create the Kitchen
   end after
 
 create the long table
+  a thing
   aka table
 
   scenery
@@ -638,7 +641,7 @@ create the long table
 
 create the pots and pans
   aka pans, pots, pot, pan
-  scenery, plural
+  a thing, scenery, plural
   in the Kitchen
 
   Dozens of them, and you are familiar with each and every one. Scullery duty
@@ -650,14 +653,14 @@ create the pots and pans
 
 create the fire pit
   aka fireplace, fire, logs, log, embers, ember
-  scenery
+  a thing, scenery
   in the Kitchen
 
   The logs are down to glowing embers now.
 
 create the rafters
   aka rafter, ceiling, low ceiling, beams
-  scenery, plural
+  a thing, scenery, plural
   in the Kitchen
 
   The rafters are made of dark, rough wood.
@@ -672,7 +675,7 @@ create the rafters
 
 create the basin
   aka sink, washing basin, dishwater, water, greasy water
-  scenery
+  a thing, scenery
   in the Kitchen
 
   The basin is filled with grayish, greasy water. It's not clear whether it's
@@ -710,7 +713,7 @@ end trait
 
 create the dishes
   aka plates, plate, stack, stack of dishes, stack of plates, dinner dishes
-  scenery, plural
+  a thing, scenery, plural
   dish-washing
   in the Kitchen
   states, reversible: dirty, clean
@@ -845,6 +848,7 @@ create the Privy
   over it. At least it's more private than an alley.
 
 create the hole
+  a thing
   aka privy hole, hole in the floor
 
   scenery
@@ -866,7 +870,7 @@ create the hole
 
 create the bench
   aka privy bench, wooden bench, seat
-  scenery
+  a thing, scenery
   in the Privy
 
   The bench allows you to use the privy without a lot of ungainly squatting.
@@ -888,7 +892,7 @@ create the bench
 
 create the privy window
   aka window, narrow window, stuck window, pane, sill, glass, dirty glass
-  scenery, climbable, enterable
+  a thing, scenery, climbable, enterable
   in the Privy
   states: shut-in, climbed
 
@@ -1016,7 +1020,7 @@ end phrase
 
 create the washtub
   aka tub, wooden tub, huge tub, huge wooden washtub
-  scenery
+  a thing, scenery
   in the Laundry
 
   The wooden tub is huge enough to bathe in (and it has been used for that
@@ -1029,7 +1033,7 @@ create the washtub
 
 create the washing water
   aka water, gray water, suds, soapy water
-  scenery
+  a thing, scenery
   in the Laundry
 
   The water is gray and coated with greasy-looking suds.
@@ -1044,7 +1048,7 @@ create the washing water
 
 create the dirty laundry
   aka laundry, underpants, dirty underpants, wet clothes, clothes in the tub, nappies, gray clothes
-  scenery, plural
+  a thing, scenery, plural
   in the Laundry
 
   The clothes look as gray as the water they're floating in. It's hard to see
@@ -1060,21 +1064,21 @@ create the dirty laundry
 
 create the moisture
   aka steam, puddles, puddle, damp, humid air
-  scenery
+  a thing, scenery
   in the Laundry
 
   The constant steam makes everything in this room damp.
 
 create the clothesline
   aka line, clothes line, rope
-  scenery
+  a thing, scenery
   in the Laundry
 
   Dripping clothes hang from a simple clothesline stretched across the room.
 
 create the hanging clothes
   aka dripping clothes, grungy clothes, clean clothes, shirts, shirt, shifts, shift, trousers, socks, sock
-  scenery, plural
+  a thing, scenery, plural
   in the Laundry
 
   The hanging clothes still look grungy, but at least they smell a bit nicer.
@@ -1198,7 +1202,7 @@ create the Behind Maiden House
 
 create the stone wall
   aka wall, mortar wall, high wall, park wall, flagstones
-  scenery, climbable, enterable
+  a thing, scenery, climbable, enterable
   in the Behind Maiden House
 
   The stone wall is about ten feet high.
@@ -1212,7 +1216,7 @@ create the stone wall
 
 create the back window
   aka privy window, window, grimy window, dirty glass, ground-level window
-  scenery
+  a thing, scenery
   in the Behind Maiden House
 
   The privy window is at ground level on the outside. Through the dirty glass,

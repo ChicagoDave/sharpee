@@ -120,6 +120,7 @@ create the guards
   Guards.
 
 create the sword
+  a thing
   in the Yard
 ${sword}
   A sword.

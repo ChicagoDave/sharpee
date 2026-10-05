@@ -118,6 +118,7 @@ end before
 
 describe('D9 — the role moves at the turn boundary', () => {
   const SWITCHER = `${TWO_ACTORS}create the lever
+  a thing
   in the Hall
 
   A brass lever.
@@ -155,6 +156,7 @@ end before
 describe('D9 — two switches in one turn', () => {
   it('the first wins, and the contradiction is reported rather than silently resolved', async () => {
     const game = gameOf(`${TWO_ACTORS}create the lever
+  a thing
   in the Hall
 
   A brass lever.
@@ -209,6 +211,7 @@ create Viola
   A restless sort.
 
 create the lever
+  a thing
   in the Hall
 
   A brass lever.
@@ -271,6 +274,7 @@ create Viola
   end on
 
 create the lever
+  a thing
   in the Hall
 
   A brass lever.

@@ -16,7 +16,7 @@ create the Hall
   A hall.
 
 create the strongbox
-  scenery
+  a thing, scenery
   aka box
   in the Hall
 
@@ -27,7 +27,7 @@ create the strongbox
   end on
 
 create the loose beam
-  scenery
+  a thing, scenery
   aka beam
   in the Hall
 

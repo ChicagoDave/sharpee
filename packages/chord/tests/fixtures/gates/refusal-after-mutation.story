@@ -6,6 +6,7 @@ story
   story-version: 0.0.1
 
 create the box
+  a thing
   states: shut, open
 
   on the player reading

@@ -224,7 +224,7 @@ create the cellar door
 
 create the doormat
   aka mat
-  scenery, a supporter
+  a supporter, scenery
   in the Fountain Court
 
   A bristle mat worn bald in the middle, older than you are. It sits a
@@ -233,7 +233,7 @@ create the doormat
 
 create the tarnished key
   aka key
-  concealed
+  a thing, concealed
   on the doormat
   score found worth 5
 
@@ -245,14 +245,14 @@ create the tarnished key
 
 create the oil lamp
   aka lamp
-  light-source, switchable
+  a thing, light-source, switchable
   in the Cellar Stairs
 
   A hurricane lamp with a full reservoir and a clean chimney.
 
 create the boiler
   aka furnace
-  scenery, switchable
+  a thing, scenery, switchable
   in the Boiler Shed
   states: cold, filled, primed, running
   score lit worth 10
@@ -270,7 +270,7 @@ create the boiler
 
 create the stopcock
   aka cock, water valve
-  scenery
+  a thing, scenery
   in the Boiler Shed
 
   A quarter-turn stopcock on the feed pipe from the rain tank.
@@ -281,7 +281,7 @@ create the stopcock
 
 create the primer plunger
   aka primer, plunger
-  scenery, pushable
+  a thing, scenery, pushable
   in the Boiler Shed
 
   A long-handled primer plunger, worn smooth by fifty winters of use.
@@ -323,7 +323,7 @@ end machine
 
 create the solicitor's letter
   aka summons
-  readable
+  a thing, readable
 
   The letter that brought you here: Fernhill goes to auction at dawn,
   and whatever Great-Aunt Verity hid is lost with it unless someone
@@ -347,7 +347,7 @@ create the travelling trunk
 
 create the diary page
   aka page, diary
-  readable
+  a thing, readable
   in the travelling trunk
   states: folded, read
 
@@ -364,7 +364,7 @@ create the diary page
 
 create the half-burned letter
   aka burned letter
-  readable with text "…arrangements with the county bank, where the deed may rest secure until…"
+  a thing, readable with text "…arrangements with the county bank, where the deed may rest secure until…"
   in the travelling trunk
 
   Only the middle of the letter survived its trip through a grate. It
@@ -372,7 +372,7 @@ create the half-burned letter
 
 create the mantel
   aka mantelpiece, shelf
-  scenery, a supporter with capacity 2
+  a supporter with capacity 2, scenery
   in the Entrance Hall
 
   A wide stone mantel over the dead fireplace, dusted but bare except
@@ -380,7 +380,7 @@ create the mantel
 
 create the framed photograph
   aka photograph, photo, frame
-  scenery
+  a thing, scenery
   on the mantel
 
   Verity at thirty, on the folly steps, squinting into some summer
@@ -397,7 +397,7 @@ create the framed photograph
 
 create the grey overcoat
   aka overcoat, coat, verity's overcoat
-  wearable, a container
+  a container, wearable
   in the Entrance Hall
 
   A great grey wool overcoat hanging by the door, too heavy for
@@ -405,12 +405,13 @@ create the grey overcoat
 
 create the winding key
   aka clock key
-  concealed
+  a thing, concealed
   in the grey overcoat
 
   A small brass crank key — the kind that winds a tall case clock.
 
 create the crowbar
+  a thing
   aka bar, pry bar
   in the Cellar
 
@@ -426,12 +427,14 @@ create the nailed crate
   SPARES.
 
 create the tin opener
+  a thing
   aka opener
   in the nailed crate
 
   A wooden-handled tin opener, estate issue.
 
 create the brass valve handle
+  a thing
   aka valve handle, handle
   in the nailed crate
 
@@ -447,12 +450,13 @@ create the kipper tin
 
 create the kipper
   aka fish
-  edible
+  a thing, edible
   in the kipper tin
 
   One bronze kipper, pungent enough to summon any cat in the county.
 
 create the garden shears
+  a thing
   aka shears
   in the Kitchen
 
@@ -460,6 +464,7 @@ create the garden shears
   by the edge.
 
 create the sherry bottle
+  a thing
   aka sherry, bottle
   in the Kitchen
 
@@ -468,7 +473,7 @@ create the sherry bottle
 
 create the vine
   aka determined vine
-  scenery, prunable
+  a thing, scenery, prunable
   in the Greenhouse
   states: seedling, flowering, fruiting
   score fruited worth 5
@@ -495,6 +500,7 @@ create Smoke
   end on
 
 create the furnace poker
+  a thing
   aka poker
   in the Boiler Shed
 
@@ -585,7 +591,7 @@ define action winding
 
 create the fuse
   aka fireworks fuse
-  scenery
+  a thing, scenery
   cuttable with the garden shears
   in the Folly
   states: coiled, lit, cut
@@ -633,7 +639,7 @@ create the deed box
 
 create the deed
   aka title deed, title
-  readable
+  a thing, readable
   in the deed box
   score recovered worth 10
 
@@ -684,6 +690,7 @@ create Tobias
   end on
 
 create the silver locket
+  a thing
   aka locket
 
   A little silver locket on a fine chain, its face engraved with the
@@ -718,7 +725,7 @@ create Wren
 
 create the auction notice
   aka notice, sign
-  scenery, readable
+  a thing, scenery, readable
   in the Iron Gates
 
   Fresh print on old iron: FERNHILL HOUSE AND GROUNDS, BY ORDER OF THE
@@ -732,7 +739,7 @@ create the auction notice
 
 create the lime trees
   aka trees, limes
-  scenery, plural
+  a thing, scenery, plural
   in the Gravel Drive
 
   Bare pollarded limes, planted two lifetimes ago, creaking in the
@@ -740,7 +747,7 @@ create the lime trees
 
 create the fountain
   aka basin
-  scenery
+  a thing, scenery
   in the Fountain Court
 
   A dry stone basin drifted with last summer's leaves. The cherub in
@@ -748,7 +755,7 @@ create the fountain
 
 create the staging benches
   aka benches, staging
-  scenery, plural
+  a thing, scenery, plural
   in the Greenhouse
 
   Slatted staging the length of the glasshouse, empty but for one
@@ -756,7 +763,7 @@ create the staging benches
 
 create the iron pipes
   aka pipes
-  scenery, plural
+  a thing, scenery, plural
   in the Boiler Shed
 
   Lagged iron pipes leaving the boiler's flank, running toward the
@@ -764,14 +771,14 @@ create the iron pipes
 
 create the fireplace
   aka hearth
-  scenery
+  a thing, scenery
   in the Entrance Hall
 
   Cold ash and a firedog, under the wide stone mantel.
 
 create the case clock
   aka clock, tall clock
-  scenery, windable
+  a thing, scenery, windable
   in the Entrance Hall
   states: stopped, ticking
 
@@ -786,7 +793,7 @@ create the case clock
 
 create the writing desk
   aka desk
-  scenery, a supporter
+  a supporter, scenery
   in the Study
 
   A leather-topped desk under the window, its blotter still dented by
@@ -794,7 +801,7 @@ create the writing desk
 
 create the long curtains
   aka curtains
-  scenery, plural
+  a thing, scenery, plural
   hiding-spot with position behind
   in the Study
 
@@ -803,21 +810,21 @@ create the long curtains
 
 create the copper pans
   aka pans
-  scenery, plural
+  a thing, scenery, plural
   in the Kitchen
 
   Ranks of copper pans, dull with disuse but hung in strict order.
 
 create the cold range
   aka range, stove
-  scenery
+  a thing, scenery
   in the Kitchen
 
   A black iron range, cold to the wrist, its fire door hanging open.
 
 create the preserve shelves
   aka shelves, preserves, jars
-  scenery, plural
+  a thing, scenery, plural
   in the Pantry
 
   Narrow shelves of preserves in ranked jars: damson, quince, and
@@ -825,7 +832,7 @@ create the preserve shelves
 
 create the wall niche
   aka niche
-  scenery
+  a thing, scenery
   in the Cellar Stairs
 
   A little arched niche worn smooth at the lip — a lamp has lived here
@@ -833,7 +840,7 @@ create the wall niche
 
 create the scorched dome
   aka dome, hole
-  scenery
+  a thing, scenery
   in the Folly
 
   The folly's little dome, breached by fire; the night sky shows
@@ -1098,7 +1105,7 @@ end phrase
 
 create the iron weathervane
   aka weathervane, vane
-  scenery, pushable
+  a thing, scenery, pushable
   in the Iron Gates
 
   An iron weathervane on the gatepost, older than the house behind it.

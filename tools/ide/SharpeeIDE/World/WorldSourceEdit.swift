@@ -114,7 +114,7 @@ extension WorldSourceEdit {
     static func definingScenery(_ phrase: String,
                                 placedBy placement: WorldRoomPlacement?,
                                 in text: String) -> WorldSourceEdit {
-        var block = "create the \(phrase)\n  scenery\n"
+        var block = "create the \(phrase)\n  a thing, scenery\n"
         if let room = placement?.room { block += "  in the \(room)\n" }
 
         let lines = text.components(separatedBy: "\n")

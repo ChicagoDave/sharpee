@@ -72,6 +72,7 @@ create the chest
   A pine chest.
 
 create the brass key
+  a thing
 
   A small brass key.
 

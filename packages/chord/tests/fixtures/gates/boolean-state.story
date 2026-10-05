@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the switch panel
-  scenery
+  a thing, scenery
   states: true, done
 
 create Alex

@@ -157,7 +157,7 @@ define condition estate-air: the player is in the Rooftop or the player is in th
 
 create the shoppers
   aka main crowd, crowd, crowds, people, marketfolk, market folk, marketgoers, market goers, townsfolk, townfolk, town folk, townspeople, town people, passers by, passersby, folk, merchants, buyers, shopper, customer, customers, others, hagglers, browsers, knot, knots
-  scenery, plural
+  a thing, scenery, plural
   in the Northwest Junction
 
   The crowd is thick with shoppers and merchants alike, all shouting at each
@@ -332,7 +332,7 @@ end phrase
 
 create the market wall
   aka pale stone wall, stone wall, market walls, walls, wall, tall wall, smooth wall, high wall
-  scenery
+  a thing, scenery
   in the Northwest Junction
 
   The walls surrounding Grubber's are high and made of smooth, pale stone.
@@ -357,7 +357,7 @@ end phrase
 
 create the stalls
   aka stall, stand, stands, other stalls, other stands, sellers, vendors, dealers
-  scenery, plural
+  a thing, scenery, plural
   in the Northwest Junction
 
   The stalls are simple constructions of wood and canvas.
@@ -426,7 +426,7 @@ end phrase
 
 create the awnings
   aka canvas awnings, huge awnings, awning, canvas, shade, shades
-  scenery, plural
+  a thing, scenery, plural
   in the Northwest Junction
 
   The canvas awnings stretch out over the market, providing shade for the
@@ -474,7 +474,7 @@ end phrase
 
 create the wires
   aka support wires, support wire, wire, anchor wires, anchor wire, cable, cables, anchor cable, anchor cables, thick wires, braided wires
-  scenery, plural
+  a thing, scenery, plural
   in the Northwest Junction
 
   The wires anchor the support posts and hold the canvas awnings in place.
@@ -545,7 +545,7 @@ end phrase
 
 create Grubber's Market
   aka market, grubbers, grubbers market, grubber, square, market square, outer ring, center, centre, market center, aisle, aisles, hub, central hub, main market, bustle, bustling market
-  scenery, enterable, proper
+  a thing, scenery, enterable, proper
   in the Northwest Junction
 
   The market is bustling this morning.
@@ -635,7 +635,7 @@ end phrase
 
 create the piles of garbage
   aka garbage, trash, litter, rubbish, pile, piles, pile of garbage, little piles
-  scenery, plural
+  a thing, scenery, plural
   in the Alley
 
   Little piles of garbage litter the alley. Some of it has been sitting back

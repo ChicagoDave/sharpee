@@ -36,6 +36,7 @@ create the Market
   Stalls crowd the square{note}.
 
 create the dress
+  a thing
   in the Market
 
   A silk dress the colour of midnight.

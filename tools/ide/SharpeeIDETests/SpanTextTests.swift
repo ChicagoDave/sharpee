@@ -8,7 +8,7 @@ import XCTest
 
 final class SpanTextTests: XCTestCase {
 
-    private let text = "story \"Probe\"\n  id: probe\n\ncreate the Lab\n"
+    private let text = "story \"Probe\"\n  id: probe\n\ncreate the Lab\n  a thing\n"
 
     func testSingleLineSpanSelectsExactRange() throws {
         // Line 2 is "  id: probe" — span columns 3..5 cover "id:".

@@ -89,6 +89,7 @@ create the Alley
   end after
 
 create the monkey
+  a thing
   in the Alley
 
   A monkey.

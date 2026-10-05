@@ -44,6 +44,7 @@ create the Lane
   A lane.
 
 create the banana
+  a thing
   in the Fruit Stall
 
   A banana.
@@ -55,6 +56,7 @@ create the banana
   end after
 
 create the apple
+  a thing
   in the Fruit Stall
 
   An apple.
@@ -66,6 +68,7 @@ create the apple
   end after
 
 create the pear
+  a thing
   in the Fruit Stall
 
   A pear.

@@ -79,6 +79,7 @@ create the Zoo
   A zoo.
 
 create the keeper
+  a thing
   in the Zoo
 
   A keeper.
@@ -87,6 +88,7 @@ create the keeper
     Sam is here.
 
 create the parrot
+  a thing
   in the Zoo
 
   A parrot.
@@ -97,6 +99,7 @@ create the parrot
     The parrot stares.
 
 create the ghost
+  a thing
   in the Zoo
 
   A ghost.
@@ -202,6 +205,7 @@ create the Hall
   end after
 
 create the cat
+  a thing
   in the Lab
 
   A cat.
@@ -292,6 +296,7 @@ create the Annex
   An annex.
 
 create the cat
+  a thing
   in the Lab
 
   A cat.
@@ -386,7 +391,7 @@ create the Lab
   A lab.
 
 create the flashlight
-  switchable
+  a thing, switchable
   in the Lab
 
   A flashlight.
@@ -395,7 +400,7 @@ create the flashlight
     It clicks faintly.
 
 create the lantern
-  light-source
+  a thing, light-source
   in the Lab
 
   A lantern.
@@ -404,6 +409,7 @@ create the lantern
     Its glow steadies.
 
 create the jar
+  a thing
   in the Lab
 
   A jar.
@@ -412,6 +418,7 @@ create the jar
     The cat eyes it warily.
 
 create the cat
+  a thing
   in the Lab
 
   A cat.

@@ -6,7 +6,7 @@ story
   story-version: 0.0.1
 
 create the vase
-  scenery
+  a thing, scenery
   states: whole, broken
 
 create the Parlor

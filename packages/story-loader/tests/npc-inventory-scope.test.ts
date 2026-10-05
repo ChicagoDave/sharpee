@@ -36,7 +36,7 @@ create the monkey
   A small monkey.
 
 create the necklace
-  wearable
+  a thing, wearable
 
   A starburst necklace, clear blue with an indigo star.
 
@@ -45,6 +45,7 @@ create the necklace
   end on
 
 create the peanut
+  a thing
 
   A peanut.
 

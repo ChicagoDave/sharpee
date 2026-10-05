@@ -20,7 +20,7 @@ create the Hall
   A bare hall with a lamp on the wall.
 
 create the brass lamp
-  scenery
+  a thing, scenery
   aka lamp
   states, reversible: dark, lit
   in the Hall

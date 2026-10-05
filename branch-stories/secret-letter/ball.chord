@@ -90,7 +90,7 @@
 
 create the ball
   aka the court, fossville's ball
-  proper
+  a thing, proper
   states: pending, confrontation, dismissed, open, decided, taken, abandoned
   counter turns starts 0 between 0 and 40
 
@@ -397,7 +397,7 @@ end phrase
 
 create the decorative candles
   aka candles, candle, light, lights, glow, golden glow, flames, flame, flickering flames, stars, multitude, multitude of flames
-  scenery, plural
+  a thing, scenery, plural
   in the Ballroom
 
   The candles are literally everywhere; their light suffuses the entire
@@ -417,7 +417,7 @@ create the decorative candles
 
 create the enormous chandeliers
   aka chandeliers, chandelier, crystal, crystals, dangling crystal, sculptures, massive chandeliers
-  scenery, plural
+  a thing, scenery, plural
   in the Ballroom
 
   The chandeliers are enormous sculptures of dangling crystal, glittering
@@ -445,7 +445,7 @@ end phrase
 
 create the candelabras
   aka candelabra, golden candelabras, gold candelabras, gold
-  scenery, plural
+  a thing, scenery, plural
   in the Ballroom
 
   The candelabras are elgantly sculpted from solid gold.
@@ -463,7 +463,7 @@ create the candelabras
 
 create the guests
   aka guest, crowd, crowds, people, partygoer, partygoers, party goers, party goer, high society, extravagant costumes, costumes
-  scenery, plural
+  a thing, scenery, plural
 
   The guests are all the brightest, richest, and most beautiful in Toresal.
   They laugh and chatter and compliment each other on their extravagant
@@ -612,7 +612,7 @@ end phrase
 
 create the silver platters
   aka platters, platter, silver, polished platters, mirror shine
-  scenery, a supporter, plural
+  a supporter, scenery, plural
 
   The silver platters are polished to a mirror shine, piled high with food
   and wine.
@@ -627,7 +627,7 @@ create the silver platters
 
 create the party food
   aka food, food and drink, drink, drinks, wine, glasses, glass, wine glasses, sandwiches, sandwich, tiny sandwiches, pastries, pastry, delicate pastries, canapes, canape
-  scenery, plural
+  a thing, scenery, plural
   on the silver platters
 
   Tiny sandwiches, delicate pastries (still fresh from Germaise's oven, you
@@ -788,11 +788,12 @@ create Jacobs the Elder
 
 create the velvet cloak
   aka ostentatious cloak, jacobs's cloak, furred collar, collar, fur, thick collar
-  wearable
+  a thing, wearable
 
   It looks far too hot to be wearing in a crowded room like this.
 
 create the goblet of spiced wine
+  a thing
   aka goblet, spiced wine, wine goblet, jacobs's wine, jacobs' wine
 
   Jacobs isn't the only person here drinking more than is good for him, but
@@ -831,7 +832,7 @@ create the Princess
 
 create the wine-colored gown
   aka gown, silk gown, wine-colored silk gown, wine-coloured gown, princess's gown, princess's dress, amethysts, amethyst, wine silk
-  wearable
+  a thing, wearable
 
   You hate to admit it, but her dress is quite simply stunning.
 
@@ -875,7 +876,7 @@ create the Duke of Inhyron
 
 create the aristocratic tunic
   aka tunic, duke's clothes, duke's tunic, duke's uniform, uniform, buttons, button, golden buttons, epaulets, epaulet, braided epaulets, formal cloak
-  wearable
+  a thing, wearable
 
   The Duke's uniform makes him look every inch the genteel statesman.
 
@@ -1040,13 +1041,13 @@ create the Prince of Gravesal
 
 create the hawk brooch
   aka brooch, garnet brooch, hawk, garnets, garnet, red garnets, decoration
-  wearable
+  a thing, wearable
 
   The brooch is shaped like a hawk, and decorated with bright red garnets.
 
 create the black cloak
   aka prince's cloak, prince's clothes, black clothes, coal
-  wearable
+  a thing, wearable
 
   The Prince's cloak and clothes are plain but handsome, and black as coal.
 

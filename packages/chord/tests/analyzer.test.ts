@@ -237,7 +237,7 @@ describe('AC-3 load-time gates — exact code, line, and suggestion', () => {
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-after-mutation');
-    expect(errors[0].span.line).toBe(13);
+    expect(errors[0].span.line).toBe(14);
     expect(errors[0].message).toContain('move the check above');
   });
 
