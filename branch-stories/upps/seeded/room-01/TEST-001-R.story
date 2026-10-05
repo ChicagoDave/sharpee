@@ -22,7 +22,7 @@ create the Sorting Room
   only seen as postmarks. The sorting machine hums in the middle of the
   floor. East, the loading dock door is shut.
 
-create Postman
+create player Postman
   a person
   playable
   proper

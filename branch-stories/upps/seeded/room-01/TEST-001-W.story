@@ -33,7 +33,6 @@ create Postman
 create the sorting machine
   a thing, scenery
   in the Sorting Room
-  aka machine, sorter
 
   A squat steel cabinet the size of a shuttle engine, chuckling to
   itself as it reads addresses. Its out tray is empty for now.

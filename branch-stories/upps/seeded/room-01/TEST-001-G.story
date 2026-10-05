@@ -26,7 +26,7 @@ create Postman
   a person
   playable
   proper
-  starts in the Sorting Room
+  starts in the Sorting Hall
 
   A carrier of the United Planetary Postal Service, in regulation grey.
 

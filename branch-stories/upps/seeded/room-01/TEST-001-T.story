@@ -40,7 +40,6 @@ create the sorting machine
 
 create the mail satchel
   a container, wearable
-  in the Sorting Room
   aka satchel, bag
 
   A canvas satchel with the UPPS wing-and-planet badge stitched on the

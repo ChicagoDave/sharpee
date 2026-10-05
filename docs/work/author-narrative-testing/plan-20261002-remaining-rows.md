@@ -2,7 +2,7 @@
 
 **Created**: 2026-10-02
 **Plan Status**: ACTIVE
-**Superseded by**: docs/work/adr-359-kind-line/plan-20261005-d1.md (David, 2026-10-05: still live; resumes at Phase 6b once D1 lands)
+**Resumed**: 2026-10-05 (session f8ef32) at Phase 6b, after the ADR-359 D1 plan (`docs/work/archive/adr-359-kind-line/plan-20261005-d1.md`) finished; it had set this plan aside "still live" (David, 2026-10-05).
 **Serves objective**: author-narrative-testing (`docs/objectives/author-narrative-testing.md`, O-1, due 2026-10-15; checkpoints 2026-10-06 and 2026-10-13)
 **Overall scope**: Re-count the closing table of `docs/work/testing-narrative/narrative-20260926-author-testing.md`, ready the harness for David's 60-room story, and plan the four rows not yet shipped. Three of the four need a ruling from David before any build. No story content is planned; David invents and writes the story himself.
 **Bounded contexts touched**: Narrative test harness (`scripts/__tests__/`), Testing surface (`tools/ide/web/testing-surface`), derived rule tests (`packages/branch-tester`, platform), author CLI (`packages/devkit`, platform), docs.
@@ -105,6 +105,23 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Deliverable**: the story's project scaffolded (no story content written by the agent); David's room 1; a catalog of the error kinds one room can carry, drafted from what the tester can report (compiler diagnostics, derived-tier failures, tree claim failures, unreached lines, coverage gaps, ending claims); room 1's `TEST-001-A` onward sequence, one error per file and the correct version last (objective O-1, David 2026-10-03); a record of what an author arriving cold cannot read in the tab at room 1, which becomes the input to Phase 6's remaining steps
 - **Exit state**: room 1 tested end to end in Chord Writer and the CLI, its error sequence seeded, and the tab's findings recorded
 - **The story** (David, 2026-10-03/04, his words): *UPPS (United Planetary Postal Service)*. "It's the future. mankind has discovered how to fold space or create stable wormholes. The PC is an interplanetary postal worker delivering mail. The PC runs into varying challenges along the way. The story ends when the PC returns and has successfully delivered all mail." Settings he named: "navigating space in and outside of a ship, landing on planets, moon, asteroids, needing/not needing space suits, robots." Lives at `branch-stories/upps/`; scaffolded 2026-10-04 with the header only (title, author, id `upps`, a fresh IFID) and `upps.config.json`. No story content was written by the agent.
+- **Authorship changed** (David, 2026-10-05): UPPS is a testing story, so Claude writes its content within David's premise. Read "David's room 1" above as room 1 written by Claude.
+- **Progress** (2026-10-05, session f8ef32): room 1 written in `upps.story`. It has:
+  - the Sorting Room, with east blocked by the `dock-sealed` phrase;
+  - Postman, the playable person, set as the player by the start block;
+  - the sorting machine (scenery), the mail satchel (a wearable container) and the route card (readable).
+
+  `./sharpee compose branch-stories/upps/upps.story --check` reports it gate-clean (Chord 3.6.0). A scripted `./sharpee play branch-stories/upps` reads as intended. Finding F-4 (inventory hides a worn container's contents) is recorded.
+  - Error catalog drafted in `upps-error-catalog.md` from 20 probes against scratch copies of room 1. 16 errors are caught by the compiler with a span. Of the 9 that compile clean:
+    - 7 are left to test-tree claims, which name the turn, not the line;
+    - 1 fails only at load, with no line;
+    - 1 passes silently.
+  - Findings F-5 to F-9 are recorded.
+  - Room 1's sequence is seeded in `branch-stories/upps/seeded/room-01/`: `TEST-001-A` to `Z`, with a README manifest.
+    - Every file was compiled once. `A` to `P` each raise their expected code, and `Q` to `Z` are gate-clean.
+    - `U` to `Y` were played. `W` is caught on `examine sorter`, not `examine machine`, because "machine" is part of the name.
+    - `Z` is byte-identical to `upps.story` (`cmp`).
+  - Next: David records room 1's tree on the correct story in the Testing tab, with claims on `look`, `wear satchel`, `take machine`, `examine sorter`, `read card` and `east`. Then each seeded file is run against it.
 - **Status**: CURRENT (since 2026-10-04)
 
 ### Phase 7: Occurrence ordinals arrange shape (only if G1 says IN)

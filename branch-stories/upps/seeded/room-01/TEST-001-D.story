@@ -39,7 +39,7 @@ create the sorting machine
   itself as it reads addresses. Its out tray is empty for now.
 
 create the mail satchel
-  a container, wearable
+  a container, wearble
   in the Sorting Room
   aka satchel, bag
 

@@ -1,6 +1,6 @@
 # ADR-358: Three ways to start a story, and completion that teaches as the author types
 
-**Status**: DRAFT. The decisions below are David's, taken on 2026-10-04 (session 4d81b6), D5 among them ("the problems panel needs to be a right-side panel and not sure we need Game Errors at all"); all seven open questions were resolved by interview the same day and folded into D1–D6. `adr-review` scored 6/17; its findings were drafted into fixes the same day: New Story's write steps (D1, which also corrects D6: the starts' templates are a `packages/devkit` change), the completion protocol, help catalog, quiet-in-prose rule and service lifecycle (D4), saved layout (D5), the Affected and Acceptance Criteria sections, and the latency citation. The protocol, the lifecycle, the quiet rule and the editable id are proposals awaiting David's confirmation. D4 reaches `packages/chord`, which is a platform change and gets its own discussion before it is built.
+**Status**: DRAFT. The decisions below are David's, taken on 2026-10-04 (session 4d81b6), D5 among them ("the problems panel needs to be a right-side panel and not sure we need Game Errors at all"); all seven open questions were resolved by interview the same day and folded into D1–D6. `adr-review` scored 6/17; its findings were drafted into fixes the same day: New Story's write steps (D1, which also corrects D6: the starts' templates are a `packages/devkit` change), the completion protocol, help catalog, quiet-in-prose rule and service lifecycle (D4), saved layout (D5), the Affected and Acceptance Criteria sections, and the latency citation. The protocol, the lifecycle, the quiet rule and the editable id are proposals awaiting David's confirmation. D4 reaches `packages/chord`, which is a platform change and gets its own discussion before it is built. Amended 2026-10-05 (session f8ef32, David approving) for ADR-359 D1, which made `a thing` a kind: no completion entry inserts nothing any more (D2, the protocol, AC-4).
 **Scope**: `tools/ide/SharpeeIDE` (New Story, `Launch/CreateStoryViewController.swift`; the editor, `Editor/`), the Avalonia head's equivalents under `tools/ide/PaneHost`, `tools/ide/editor-bridge`, and a completion entry point in `packages/chord` (D4).
 
 ## Date: 2026-10-04
@@ -18,7 +18,7 @@ David started UPPS from an empty file to see what an author starting from nothin
 Today, as of 2026-10-04:
 - **New Story** asks for a title and a location (`CreateStoryViewController.swift`, the `titleField` and `locationField`) and writes one template: a room (`the Landing`), a thing with an `aka` (`the brass lantern`), a playable person who `starts in` the room and `carries` the thing (`Alex`), and the `before the game starts` block. It runs, but it holds the author's own names nowhere, and the from-scratch author can only delete it.
 - **The editor has no completion.** No completion code exists in `tools/ide/SharpeeIDE` or `tools/ide/editor-bridge/src`.
-- **The compiler already holds what completion needs.** `packages/chord/src/catalog.ts` lists the closed vocabulary: the kind nouns that take an article (`room`, `door`, `person`, `container`, `supporter`, `region`), and the bare trait adjectives (`scenery`, `wearable`, `openable`, and the rest). "Plain thing = no kind noun." The parser knows which line forms a block accepts (`parseCreate` in `parser.ts` reads `aka`, `pronouns`, composition lines, and so on), and its diagnostics name what is missing.
+- **The compiler already holds what completion needs.** `packages/chord/src/catalog.ts` lists the closed vocabulary: the kind nouns that take an article (`room`, `door`, `person`, `container`, `supporter`, `region`), and the bare trait adjectives (`scenery`, `wearable`, `openable`, and the rest). "Plain thing = no kind noun." (Since ADR-359 D1, `thing` is a kind noun and every `create` block names one.) The parser knows which line forms a block accepts (`parseCreate` in `parser.ts` reads `aka`, `pronouns`, composition lines, and so on), and its diagnostics name what is missing.
 
 David's direction (F-2): "the author should be able to type everything in from the start … we need guides to explain to the author what they need to do. And then, we definitely need syntax completion."
 
@@ -69,7 +69,7 @@ It compiles and plays, so the first test can be recorded at once (checked 2026-1
 The interaction, as David described it:
 
 1. The author types `create` and a space. A **help balloon** appears: *type in the name of your room, object or person, followed by Enter*.
-2. The author types `the Sorting Room` and presses Enter. On the new, indented line a **dropdown** offers what may come next: `a person`, `a room`, `(object)`, `scenery`, and the rest of what the language allows there.
+2. The author types `the Sorting Room` and presses Enter. On the new, indented line a **dropdown** offers what may come next: `a person`, `a room`, `a thing`, and the rest of what the language allows there. (David's original list read "a person, a room, (object), scenery"; ADR-359 D1 made `a thing` a kind, and `scenery` is offered only after the kind, at `a thing, `.)
 3. The author moves with the up and down arrows and presses **Tab** to insert the highlighted entry.
 
 "Same process for other completions": every place where the language offers a closed set of next words works this way, with a balloon explaining what goes there and a dropdown of what may.
@@ -82,8 +82,7 @@ create the cargo robot        ← balloon after "create ": name it, then Enter
   starts in the Sorting Room  ← dropdown offers create's next lines; "starts in", Tab; then the rooms the story has
 ```
 
-**The flow chains** (David, 2026-10-04, Q-3: "A"). Every choice either inserts its text or deliberately inserts nothing, and then the next dropdown opens, so an author can Tab through a whole `create` block:
-- **A choice that inserts nothing.** `(object)` stands for writing no kind line, because a plain thing has no kind noun (`catalog.ts`). It reads in the list as "(plain object — no kind line)". Tab inserts nothing and opens the next dropdown: the lines a plain thing may carry.
+**The flow chains** (David, 2026-10-04, Q-3: "A"). Every choice inserts its text, and then the next dropdown opens, so an author can Tab through a whole `create` block. `a thing` is a kind like any other (ADR-359 D1), so once the kind line exists every later position has an unambiguous context.
 - **A choice that needs a value.** Tab on `starts in` inserts it and immediately opens a second dropdown of the rooms the story already has. The list comes from the same compiler answer (D4), which has read the whole file. The same holds for every line form whose value is a story entity.
 - **Not now: "(new room…)"** in a value dropdown, writing a `create` block for a room that does not exist yet. It would move the cursor somewhere the author did not go. It is left until UPPS shows authors wanting it.
 
@@ -127,7 +126,7 @@ type CompletionResponse =
   | { id: number; op: 'help'; help: Record<string, HelpText> };
 
 interface CompletionEntry {
-  /** Text Tab inserts; empty for a choice that inserts nothing, such as `(object)`. */
+  /** Text Tab inserts; never empty. */
   insert: string;
   /** How the entry reads in the dropdown. */
   label: string;
@@ -191,7 +190,7 @@ Each names its test. Editor behaviour is checked through the completion service'
 - **AC-1 (named start, D1).** `sharpee init --start named --player Postman --room "Sorting Room"` on a title "UPPS (United Planetary Postal Service)" writes `upps-united-planetary-postal-service.story` holding exactly D1's start 1 shape, a config sidecar with the same IFID, and a `.gitignore`; `sharpee compose` loads it with 2 entities and `sharpee play` answers `look` with the room's name. Test: devkit real-path test in a scratch directory.
 - **AC-2 (empty start, D1).** `--start empty` writes the story block only; `sharpee compose` fails with exactly one diagnostic, `analysis.start-block-missing`. Test: devkit real-path test.
 - **AC-3 (both heads agree, D1).** macOS `StoryScaffold` and `sharpee init` produce byte-identical `.story` files for the same inputs and start (the IFID aside). Test: an XCTest rendering through `StoryScaffold` compared with the devkit test's output.
-- **AC-4 (the create flow, D2, D4).** Against the real service: after `create ` the answer's balloon is `balloon.create-name` and there are no entries; on the indented line after `create the cargo robot` the entries include `a person`, `a room`, `(plain object — no kind line)` with empty `insert`, and `scenery`; with `starts in ` typed in a story that has the Sorting Room, the entries are its rooms. Test: editor-bridge service test spawning the real service.
+- **AC-4 (the create flow, D2, D4).** Against the real service: after `create ` the answer's balloon is `balloon.create-name` and there are no entries; on the indented line after `create the cargo robot` the entries include `a person`, `a room` and `a thing`, every entry has a non-empty `insert`, and `scenery` is offered after `a thing, `; with `starts in ` typed in a story that has the Sorting Room, the entries are its rooms. Test: editor-bridge service test spawning the real service.
 - **AC-5 (quiet in prose, D4).** With the cursor in a room's description paragraph, in a `##` comment, and in a string, the answer is `quiet: true` with no balloon and no entries. Test: editor-bridge service test.
 - **AC-6 (unfinished file, D4).** With the cursor on an unfinished line in a file that does not parse, the service still answers for that position and does not exit. Test: editor-bridge service test.
 - **AC-7 (no error without words, D3).** Every diagnostic code the analyzer can raise and every help key a completion can return has a help-catalog entry. Test: `packages/chord` unit test that fails on a missing key.

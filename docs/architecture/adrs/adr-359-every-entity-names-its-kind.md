@@ -1,6 +1,6 @@
 # ADR-359: Chord says what absence would otherwise decide
 
-**Status**: DRAFT, a proposal to assess (David, 2026-10-04, session 4d81b6). Widened the same day at David's direction from "every entity names its kind" to every implied default of the same class, so that one migration and one major version cover them all. Every decision here is a grammar change: it goes through `docs/architecture/chord-grammar-changes.md`, each is ruled on separately by David before any code, and no log entry is written until he rules. Nothing here is built. D1 approved and logged 2026-10-04 (session 0ebc5d; former Q-2), and the IR records `thing` (former Q-1, same day); the rest remains open.
+**Status**: DRAFT, a proposal to assess (David, 2026-10-04, session 4d81b6). Widened the same day at David's direction from "every entity names its kind" to every implied default of the same class, so that one migration and one major version cover them all. Every decision here is a grammar change: it goes through `docs/architecture/chord-grammar-changes.md`, each is ruled on separately by David before any code, and no log entry is written until he rules. D1 approved and logged 2026-10-04 (session 0ebc5d; former Q-2), and the IR records `thing` (former Q-1, same day). **D1 is implemented** (2026-10-05, commits `158cc2858` and `1d842b3f5`; see "D1 as built" below); it is not yet published, since 4.0.0 waits on the rest of this ADR. D5 to D11 are not built, and Q-3 to Q-6 remain open.
 **Scope**: `packages/chord` (catalog, parser where a decision adds a form, analyzer, `chord.ebnf`, the language version), `packages/story-loader` where a default lives there today (D9), and a one-time migration of every Chord source in the repository and the manual.
 
 **The criterion** (from David's review of the grammar with Claude Desktop, 2026-10-04): *make it explicit when leaving it out changes what the story does and the author cannot see why from the text.* Where a default stays, ADR-358's balloons state it, since the grammar does not.
@@ -77,6 +77,13 @@ Ruled with D1 (David, 2026-10-04, logged in `chord-grammar-changes.md`):
 - `a thing, scenery` and `a thing, plural` are accepted as written. `some` as an article is a separate grammar change; UPPS will show whether `a thing, plural` grates.
 - `a thing, container` is an error whose message names the fix: "a container is already a kind of thing; write `a container`."
 - A conditional kind (`a thing while …`) is refused, since a kind cannot come and go, on the same reasoning that refuses a conditional `proper`.
+
+**D1 as built** (2026-10-05, plan `docs/work/adr-359-kind-line/plan-20261005-d1.md`, Phases 2 to 4):
+- The analyzer raises `analysis.missing-kind-noun` at the block name and `analysis.kind-not-first` at the kind (`packages/chord/src/analyzer/entity/compositions.ts`, `checkKindLine`). `kind-not-first` was named during implementation and kept by David (2026-10-05). The rulings above are `analysis.thing-with-kind`, `analysis.kind-noun-needs-article` (a kind noun written bare) and `analysis.conditional-kind`.
+- `thing` is the parent kind: `is a thing` and `must be a thing` hold for every entity except rooms and regions, while the IR records the specific kind (`packages/story-loader/src/kind-classification.ts`). The loader refuses an entity with no kind as a `LoadError`.
+- `IR_FORMAT` is `story language 5`. `chord.ebnf` states the rule and adds a `KIND-NOUN` production. Both copies are now identical, and the stale `chord.ebnf:378` comment noted below is corrected. The hash is re-recorded under `3.6.0`; `CHORD_LANGUAGE_VERSION` becomes `4.0.0` at the publish.
+- The codemod (`tools/migrate-kind-line/`, deleted after the cutover with the IR baselines, David 2026-10-05; it is in history at `1d842b3f5`) migrated 1,101 blocks in 292 files, including Chord embedded in TS, JS and Swift strings. `docs/work` fixtures were left as written, like ADR examples (David, 2026-10-05). Every story's test-tree report matched its baseline line for line.
+- **Owed**: the help-catalog entry for `analysis.missing-kind-noun` (and for the other new codes) does not exist yet, because `packages/chord/src/help-catalog.ts` is not built (ADR-358 D3). ADR-358 AC-7, its catalog-coverage test, must include these codes when it is.
 
 ### D2: The kind is `thing`, not `object`
 

@@ -32,7 +32,7 @@ create Postman
 
 create the sorting machine
   a thing, scenery
-  in the Sorting Room
+  in the Sorting Hall
   aka machine, sorter
 
   A squat steel cabinet the size of a shuttle engine, chuckling to

@@ -16,6 +16,7 @@ create the Sorting Room
   a room
   aka depot, sorting
   east is blocked: dock-sealed
+  west to the Locker Room
 
   Pigeonholes climb every wall of the depot, each one stencilled with
   the name of a world: Ceres, Titan, Kepler Station, places you have

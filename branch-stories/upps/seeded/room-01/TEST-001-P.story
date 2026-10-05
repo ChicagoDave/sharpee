@@ -23,7 +23,7 @@ create the Sorting Room
   floor. East, the loading dock door is shut.
 
 create Postman
-  a person
+  a thing
   playable
   proper
   starts in the Sorting Room

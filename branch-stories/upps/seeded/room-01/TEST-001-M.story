@@ -6,10 +6,6 @@ story
   ifid: 29E1F727-29D4-44A0-9E87-D2BDC6AC021F
   story-version: 0.1.0
 
-before the game starts
-  change the player to Postman
-end before
-
 ## Room 1 — the depot, where the shift begins.
 
 create the Sorting Room

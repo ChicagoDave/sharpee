@@ -56,4 +56,3 @@ create the route card
 define phrase dock-sealed
   The loading dock door stays shut until your shift is cleared to
   launch.
-end phrase

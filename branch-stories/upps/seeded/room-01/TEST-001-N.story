@@ -7,7 +7,7 @@ story
   story-version: 0.1.0
 
 before the game starts
-  change the player to Postman
+  change the player to Mailman
 end before
 
 ## Room 1 — the depot, where the shift begins.

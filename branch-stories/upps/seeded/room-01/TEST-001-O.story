@@ -24,7 +24,6 @@ create the Sorting Room
 
 create Postman
   a person
-  playable
   proper
   starts in the Sorting Room
 

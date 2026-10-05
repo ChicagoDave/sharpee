@@ -31,7 +31,7 @@ create Postman
   A carrier of the United Planetary Postal Service, in regulation grey.
 
 create the sorting machine
-  a thing, scenery
+  a thing
   in the Sorting Room
   aka machine, sorter
 

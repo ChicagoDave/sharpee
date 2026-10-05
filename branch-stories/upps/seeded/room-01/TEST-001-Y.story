@@ -19,7 +19,7 @@ create the Sorting Room
 
   Pigeonholes climb every wall of the depot, each one stencilled with
   the name of a world: Ceres, Titan, Kepler Station, places you have
-  only seen as postmarks. The sorting machine hums in the middle of the
+  only seen as postmarks. The sorting machine rattles in the middle of the
   floor. East, the loading dock door is shut.
 
 create Postman

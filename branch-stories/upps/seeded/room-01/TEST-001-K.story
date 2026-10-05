@@ -46,7 +46,7 @@ create the mail satchel
   A canvas satchel with the UPPS wing-and-planet badge stitched on the
   flap, worn soft at the strap.
 
-create the route card
+create the mail satchel
   a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
   in the Sorting Room
   aka card, route

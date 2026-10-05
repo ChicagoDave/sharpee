@@ -1,7 +1,7 @@
 # UPPS findings — what an author starting from nothing meets
 
 **Plan**: `plan-20261002-remaining-rows.md`, Phase 6b. **Objective**: `docs/objectives/author-narrative-testing.md`, O-1.
-**Story**: `branch-stories/upps/` (David writes it, room by room).
+**Story**: `branch-stories/upps/`, written room by room. Claude writes it from 2026-10-05, because it is a testing story (David: "this is a testing story, so it supersedes my llm-no-content rule"); David's premise is fixed.
 
 Each entry is something David met while writing UPPS from an empty file, recorded as he said it, with what was observed and where it belongs (Chord, the IDE, the Testing tab, the CLI, or the platform). Entries are findings, not decisions: designs come later, from several findings together.
 
@@ -50,3 +50,39 @@ Today New Story asks for a title and a location only (`tools/ide/SharpeeIDE/Laun
 **Observed**: the bottom dock holds two tabs, Problems (the compiler's diagnostics) and Game Errors (Play's runtime errors in author terms) (`tools/ide/SharpeeIDE/Build/BottomPanelViewController.swift`). Selecting a Game Errors row opens its full explanation in the right panel's Diagnosis tab (`Play/ErrorDiagnosisView.swift`), so the list largely duplicates a door to Diagnosis.
 
 **Belongs to**: the IDE layout. Recorded as ADR-358 D5 (Problems moves right) and Q-7 (Game Errors, and what remains of the bottom dock).
+
+## F-4: Inventory hides what a worn container holds (2026-10-05)
+
+**Observed** in room 1 (`./sharpee play branch-stories/upps`): after `wear satchel`, `take card` and `put card in satchel`, `inventory` answers only "You are wearing: / a mail satchel (worn)". The route card is in the satchel but is not listed, and "(worn)" repeats the heading above it.
+
+**Belongs to**: the platform's inventory report (stdlib and lang-en-us), not Chord. Not investigated yet.
+
+## F-5: `create player Postman` compiles as an entity named "player Postman" (2026-10-05)
+
+**Observed**: `parse.removed-create-player` fires only when the whole name is the one word `player` (`packages/chord/src/parser.ts:1692`). David's first attempt, `create player postman` (`snippets/snippet-001.txt`), therefore compiles clean. The person is named `player Postman`, and `change the player to Postman` still resolves to it. Nothing tells the author that the old form was read as part of the name.
+
+**Belongs to**: the Chord parser (and a guide, ADR-358 D3).
+
+## F-6: Unquoted readable text is read as a different config key (2026-10-05)
+
+**Observed**: `a thing, readable with text ROUTE 7` compiles clean. The IR records the trait config as key `text ROUTE`, value `7` (a number), and `read card` prints "The route card reads:" followed by nothing. No diagnostic names the unknown key.
+
+**Belongs to**: the Chord analyzer: a trait config key the trait does not declare should be an error.
+
+## F-7: A player with no `starts in` passes compose and fails at load, without a line (2026-10-05)
+
+**Observed**: with `starts in the Sorting Room` removed, `sharpee compose --check` reports gate-clean. `sharpee play` then exits 3 with "Story player "Postman" (a01) is not placed in the world — an unplaced player character is nowhere to play." The message names no file or line and shows an internal id (`a01`).
+
+**Belongs to**: the Chord analyzer. It already knows which entity the start block makes the player and whether that entity is placed, so this could be a compile error with a span.
+
+## F-8: Test-tree failures point at the turn, not the source line (2026-10-05)
+
+**Observed**: `packages/branch-tester/src/tree-walker.ts` carries no source span, so a failed claim names the card and the claim. Derived-tier branches do carry spans (`coverage.ts`). A room with no clauses, like room 1, has no derived branches, so every behaviour error in it (a missing trait, `scenery` or `aka`, a misplaced thing, a wrong blocked direction) is reported against a turn. O-1 counts "caught without pointing at its cause" as a falsifier.
+
+**Belongs to**: the testing surface and branch-tester. Detail in `upps-error-catalog.md`.
+
+## F-9: The "did you mean" suggestion lowercases the name and doubles the punctuation (2026-10-05)
+
+**Observed**: "No entity named `Sorting Hall` — did you mean `sorting room`?." The room is declared `the Sorting Room`.
+
+**Belongs to**: the Chord analyzer's message text.

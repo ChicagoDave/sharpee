@@ -47,7 +47,7 @@ create the mail satchel
   flap, worn soft at the strap.
 
 create the route card
-  a thing, readable with text "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+  a thing, readable with text ROUTE 7
   in the Sorting Room
   aka card, route
 
