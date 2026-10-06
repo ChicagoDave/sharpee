@@ -16,10 +16,12 @@ The design is sound and the core idea delivers: agreement, articles and punctuat
 
 Severity is my judgment of how likely an author is to hit the issue and how visible the result is.
 
+Filed Oct 5, 2026: finding 1 is #561, 2 is #562, 3 is #563, 4 is #564, 5 is #565 and 6 is #566. The capitalization bug under finding 6 is filed on its own as #567.
+
 | # | Finding | Where | Severity |
 | --- | --- | --- | --- |
 | 1 | Lists, contents and slots flatten to strings, dropping decorations | `english-assembler.ts` | High |
-| 2 | `Verb` and `Contents` hold names resolved against the host message | `phrase.ts`, `english-assembler.ts` | High |
+| 2 | `Verb` and `Contents` hold names resolved against the host message | `phrase.ts`, `english-assembler.ts` | Low (latent) |
 | 3 | Indefinite article is chosen by first letter plus five prefixes | `english-assembler.ts` | Medium |
 | 4 | Templates are parsed and bound at render time | `parse-phrase-template.ts`, `phrase-render.ts` | Medium |
 | 5 | Pronoun sets and choice picks are module-level state | `english-assembler.ts` | Medium |
@@ -45,6 +47,14 @@ This is what keeps the model short of an algebra in the strict sense: a phrase's
 
 I inferred this from the code. I did not check whether any current slot contribution contains a `Verb`.
 
+**Verified (Oct 5, 2026): the mechanism is real, and nothing reaches it today.** Severity lowered from High to Low (latent).
+
+- Only the template parser builds a `Verb` or `Contents` (`parse-phrase-template.ts:147`, `:269`). The parser rejects a verb whose subject is not in the params it was given (`:144`), and those are the params the render context carries (`phrase-render.ts:147`). A verb parsed from a message always finds its subject in that message.
+- Every slot producer contributes a `Literal` or a `Choice` of `Literal`s: Chord `present` lines (`story-loader/src/loader.ts:1286`), examine's detail clauses (`examining.ts:122`), the room handler's detail clauses (`room.ts:158`) and the zoo tutorial's slot entries. Nothing calls `registerSlotContributor`.
+- The open path is a phrase-valued param. `bindNounPhrase` and `{verbatim:}` insert a bound `Phrase` as-is (`parse-phrase-template.ts:98`, `:171`), so a `Verb` nested inside one would resolve against the host's params. No producer passes such a tree today.
+
+The finding becomes live the first time a slot contribution or a phrase param carries a parsed template.
+
 ### 3. Indefinite article is chosen by first letter
 
 `indefiniteArticle` checks five prefixes (`hour`, `honest`, `heir`, `uni`, `one`) and otherwise picks "an" before a vowel letter. Because the article agrees over adjectives too, ordinary inventory text reaches the gaps:
@@ -67,6 +77,15 @@ I inferred this from the code. I did not check whether any current slot contribu
 **Suggested fix:** split the step in two. Parse the template once into an unbound tree and validate it at load against the params the message declares. Bind values at render.
 
 I did not check whether Chord validates templates at compile time or whether `language-provider.ts` caches parsed trees.
+
+**Verified (Oct 5, 2026): confirmed, and the gap is wider than stated.**
+
+- Nothing is cached. `renderTemplate` runs the perspective pass and `parsePhraseTemplate` on every render (`language-provider.ts:335`). The catch, warning and inline fallback are in `renderViaPhrase` (`phrase-render.ts:166`).
+- The only load-time template check is `validateRoomSnippets`, which covers `{snippet:}` markers and nothing else.
+- Chord's `checkPhraseMarkers` rejects a bare `{marker}` that names nothing, but skips every variant written in template form: any marker with a capital, a space or a colon, such as `{the item}`, `{verb:is item}` or `{You}` (`chord/src/analyzer.ts:7708`, "Full chain validation lands with the AC-9 contract"). Those are the forms where an unbound param or a bad kind prefix occurs. Its diagnostic spans the whole phrase, not the token.
+- TypeScript-authored templates in stdlib and lang-en-us have no check at all.
+
+The parse-once step would close all three gaps.
 
 ### 5. Module-level state in the assembler
 

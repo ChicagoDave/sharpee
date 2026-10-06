@@ -1,6 +1,6 @@
 # Project Profile
 
-**Generated**: 2026-09-25
+**Generated**: 2026-10-05
 **Repository**: sharpee (`@sharpee/*` lockstep v5.4.1, unchanged this pass; Chord language versioned independently at v3.6.0, ADR-257, unchanged)
 
 ## Domains
@@ -15,7 +15,7 @@
 - Frontend UI (web) — `platform-browser`, `runtime`, `media`, `website/` (Next.js/React)
 - CLI / Tooling — `devkit` (author tool), `tools/repokit` (in-repo build CLI, ADR-187, now also the protocol-type generator per ADR-352), `bridge`, `helpers`, `queries`, `ide-protocol`
 - Library / Package — publishable `@sharpee/*` packages with generated API docs (`packages/sharpee/docs/genai-api/`)
-- Story Content (branch stories) — `branch-stories/secret-letter` (active port of the 2009 game, structural work only, currently ON HOLD per user direction), `branch-stories/fernhill`, `branch-stories/ides-of-march`; `stories/*` in-repo example/test stories (`dungeo`, `cloak-of-darkness`, `family-zoo-tutorial`, `thealderman`, `friendly-zoo`, `armoured` (retired sample), etc.)
+- Story Content (branch stories) — `branch-stories/secret-letter` (active port of the 2009 game, structural work only, currently ON HOLD per user direction), `branch-stories/fernhill`, `branch-stories/ides-of-march`, `branch-stories/upps` (new: testing story, room-by-room, Claude authors content within David's premise); `stories/*` in-repo example/test stories (`dungeo`, `cloak-of-darkness`, `family-zoo-tutorial`, `thealderman`, `friendly-zoo`, `armoured` (retired sample), etc.)
 
 ## Tech Stack
 
@@ -88,6 +88,6 @@
 - **Three new ADRs this profile, all touching the testing surface, none of them cleared for implementation yet.** ADR-353 ("the testing pane visits one line," DRAFT) replaces the pane's eager whole-tree replay with a single-line visit — measured against `secret-letter` (566 cards/61 lines/3,854 executed commands from 565 authored ones): 1.8s for the main line's 75 records vs. an unfinished 240s+ eager replay in the Avalonia head. D1–D3 and D5–D8 shipped; D4/D4a/D4b/D4c stay unimplemented pending a platform-change discussion (D4a touches `packages/platform-browser`). ADR-354 ("the page an author lays out," ACCEPTED) retires and rewrites ADR-286 as a layout DSL sourced from publishing vocabulary; every decision touches `packages/` (`devkit`, `platform-browser`, `if-domain`, `stdlib`, `engine`, `lang-en-us`) so acceptance authorizes no implementation by itself. ADR-355 ("the test tree is segmented," ACCEPTED) replaces one whole-document tree file — measured at 202,002 bytes/6,732 lines for `secret-letter`, with a single test session producing a 93%-rewritten diff — with per-segment files; it also surfaces (and defers) a stable-line-id gap filed as **GH #494** (OPEN), and by rule 8b its shared module (`tree-document.ts`) moves `packages/branch-tester` and `tools/ide/web/testing-surface` together in one commit whenever it changes.
 - **`pnpm typecheck:tests` (GH #401) is confirmed still OPEN** — 1,574 type errors across 260 test files, zero in `src`. The prior profile could not verify this (no `gh` access); this pass confirms it's a real, unresolved gap, not merely unverified. `pnpm typecheck` (GH #400/#404) is confirmed CLOSED, as the prior profile reported.
 - The `test:ci` gap from two profiles ago (GH #402, `basic-combat`) remains resolved — every scanned `packages/**/package.json` declares a `test:ci` script alongside `test`.
-- ADR count is at least 355 numbered (`adr-355-the-test-tree-is-segmented.md` is the highest-numbered file found), up from 352 in the prior profile. ADRs live at `docs/architecture/adrs/adr-NNN-*.md`, not `docs/adrs/` as DEVARCH.md's generic path implies.
+- ADR count is at least 359 numbered (`adr-359-every-entity-names-its-kind.md` is the highest-numbered file found; ADR-358 DRAFT on story starts, ADR-359 D1 built: every Chord create block names its kind, `thing` is a kind, `chord.ebnf` gated in the build), up from 355 in the prior profile. ADRs live at `docs/architecture/adrs/adr-NNN-*.md`, not `docs/adrs/` as DEVARCH.md's generic path implies.
 - Secret Letter port (`branch-stories/secret-letter`) is ON HOLD indefinitely per user direction (2026-09-09) — do not treat it as active work; it appears in domains for completeness only. (It is, however, the corpus story used to measure ADR-353's and ADR-355's testing-surface costs this week — used as fixture data, not as active port work.)
 - `engine`'s file layout (ADR-334/342/343/344/345) is unchanged from the prior profile: `command/`, `install/`, `session/`, `ports/`, `introspection/`, `plugins/`, `turn/`, 31 named exports.
