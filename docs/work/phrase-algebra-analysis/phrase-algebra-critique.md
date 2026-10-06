@@ -47,7 +47,7 @@ This is what keeps the model short of an algebra in the strict sense: a phrase's
 
 I inferred this from the code. I did not check whether any current slot contribution contains a `Verb`.
 
-**Verified (Oct 5, 2026): the mechanism is real, and nothing reaches it today.** Severity lowered from High to Low (latent).
+**Verified (Oct 5, 2026, added by Claude Code, Opus 5.5): the mechanism is real, and nothing reaches it today.** Severity lowered from High to Low (latent).
 
 - Only the template parser builds a `Verb` or `Contents` (`parse-phrase-template.ts:147`, `:269`). The parser rejects a verb whose subject is not in the params it was given (`:144`), and those are the params the render context carries (`phrase-render.ts:147`). A verb parsed from a message always finds its subject in that message.
 - Every slot producer contributes a `Literal` or a `Choice` of `Literal`s: Chord `present` lines (`story-loader/src/loader.ts:1286`), examine's detail clauses (`examining.ts:122`), the room handler's detail clauses (`room.ts:158`) and the zoo tutorial's slot entries. Nothing calls `registerSlotContributor`.
@@ -78,7 +78,7 @@ The finding becomes live the first time a slot contribution or a phrase param ca
 
 I did not check whether Chord validates templates at compile time or whether `language-provider.ts` caches parsed trees.
 
-**Verified (Oct 5, 2026): confirmed, and the gap is wider than stated.**
+**Verified (Oct 5, 2026, added by Claude Code, Opus 5.5): confirmed, and the gap is wider than stated.**
 
 - Nothing is cached. `renderTemplate` runs the perspective pass and `parsePhraseTemplate` on every render (`language-provider.ts:335`). The catch, warning and inline fallback are in `renderViaPhrase` (`phrase-render.ts:166`).
 - The only load-time template check is `validateRoomSnippets`, which covers `{snippet:}` markers and nothing else.
