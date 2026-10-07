@@ -1,0 +1,88 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "channels": [
+          {
+            "id": "info.title",
+            "is": "UPPS (United Planetary Postal Service)"
+          }
+        ]
+      },
+      "id": "vkl2db7g",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sorting Room",
+          "Pigeonholes climb every wall of the depot, each one stencilled with the name of a world: Ceres, Titan, Kepler Station, places you have only seen as postmarks. The sorting machine hums in the middle of the floor. East, the loading dock door is shut."
+        ]
+      },
+      "id": "qh07ldk5",
+      "type": "boot"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sorting Room",
+          "Pigeonholes climb every wall of the depot, each one stencilled with the name of a world: Ceres, Titan, Kepler Station, places you have only seen as postmarks. The sorting machine hums in the middle of the floor. East, the loading dock door is shut."
+        ]
+      },
+      "command": "look",
+      "id": "ugjzavrp",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the mail satchel."
+        ]
+      },
+      "command": "wear satchel",
+      "id": "ictjne3v",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine is fixed in place."
+        ]
+      },
+      "command": "take machine",
+      "id": "ep7zq4r4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A squat steel cabinet the size of a shuttle engine, chuckling to itself as it reads addresses. Its out tray is empty for now."
+        ]
+      },
+      "command": "examine sorter",
+      "id": "oim9xloz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "ROUTE 7: Ceres, Titan, Kepler Station. Return to depot when empty."
+        ]
+      },
+      "command": "read card",
+      "id": "cmydybyz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loading dock door stays shut until your shift is cleared to launch."
+        ]
+      },
+      "command": "east",
+      "id": "nzjkdbi6",
+      "type": "turn"
+    }
+  ],
+  "id": "opejfh5t"
+}

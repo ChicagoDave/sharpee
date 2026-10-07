@@ -86,3 +86,51 @@ Today New Story asks for a title and a location only (`tools/ide/SharpeeIDE/Laun
 **Observed**: "No entity named `Sorting Hall` — did you mean `sorting room`?." The room is declared `the Sorting Room`.
 
 **Belongs to**: the Chord analyzer's message text.
+
+## F-10: A failed `contains` claim does not show what the game printed (2026-10-07)
+
+**Observed**: running the seeded room-1 files against David's recorded tree (`upps.tests/opejfh5t.json`), every tree failure reads only `Output does not contain "<expected>"`, with or without `--verbose`. For `TEST-001-Y` (one word of the description changed), the author sees the whole expected paragraph and has to find the difference by eye. For `TEST-001-U` and `TEST-001-T` the failure is identical, although the causes differ (no `wearable`; satchel not placed), because the actual reply ("You can't wear…" against "You can't see any such thing.") is not shown.
+
+**Belongs to**: branch-tester's CLI reporter (and the Testing tab, unchecked): a failed text claim should print the actual output, ideally with the differing span.
+
+## F-11: The CLI shows one failing card when two failed (2026-10-07)
+
+**Observed**: `TEST-001-Y` reports "2 cards failing, 2 assertions failing" but prints a single ✗ line (`look`). The other failure is the `boot` card, which makes the same claim on the opening description; it is counted but never named.
+
+**Belongs to**: branch-tester's CLI reporter.
+
+## F-12: A misplaced thing is caught on the wrong turn (2026-10-07)
+
+**Observed**: the seeded manifest expected `TEST-001-T` (satchel not placed) to be caught on `look`. It is caught on `wear satchel` instead, because David's `look` claim covers the room description and not the list of things in it. The failure therefore reports a wear problem for what is a placement error. This is a property of what the recorded claim covers rather than a defect, but it shows how far F-8's "names the turn" can be from the cause.
+
+**Belongs to**: the testing surface (what claims recording offers by default); recorded for Phase 6.
+
+### Testing tab check, `TEST-001-Y` (2026-10-07)
+
+David ran his tree in Chord Writer's Testing tab with `TEST-001-Y` copied over `upps.story`. The tally matched the CLI (6 cards passing, 8 assertions passing, 2 cards failing, 2 assertions failing, 1 rule passing).
+- **F-10 holds in the tab.** "rattles" appears nowhere in the run results. Each failure shows the expected paragraph three times: in the line header, as the ✗ claim, and as its explanation. The game's actual output is not shown. David saw the change only in the source editor.
+- **F-11 is CLI-only.** The tab lists both failing cards.
+
+## F-13: The boot card shows as a second `> look`, and the header calls it turn 1 (2026-10-07)
+
+**Observed** in the tab with `TEST-001-Y`: the results list `> look` twice, each with the same ✗. The first is the boot card (the opening description), not a turn the author typed, and the line header reads "turn 1 — Output does not contain …". An author sees one `look` in their tree and two in the results.
+
+**Belongs to**: the Testing tab's run results (`tools/ide/web/testing-surface/src/cards.ts`, `detail`), and the runner's label for the boot card.
+
+## F-14: A failed claim's explanation repeats the claim (2026-10-07)
+
+**Observed**: under `✗ contains "<text>"` the explanation reads `Output does not contain "<text>"`. The second line adds nothing to the first; it is where the actual output (F-10) would go.
+
+**Belongs to**: the Testing tab's run results, together with F-10.
+
+### Testing tab check, `TEST-001-T` (2026-10-07)
+
+With the satchel unplaced, the tab fails one card: "turn 3 — Output does not contain "You put on the mail satchel."" (turn 3 because the boot card is counted as turn 1, F-13). Nothing in the results or the coverage panel points at placement. The game's actual reply, "You can't see any such thing.", is the clue an author would need, and it is not shown (F-10). F-12 holds in the tab.
+
+### Testing tab check, `TEST-001-Q` (2026-10-07)
+
+With Postman's `starts in` removed, the tab's run reports the load error verbatim: "Story player "Postman" (a01) is not placed in the world — an unplaced player character is nowhere to play." F-7 holds in the tab: no file or line, and the internal id `a01` is shown to the author.
+
+### Testing tab check, `TEST-001-A` (2026-10-07)
+
+With the machine's kind missing, the compiler error (`analysis.missing-kind-noun`, line 33) shows in Problems and in Diagnosis on reload, before any run. Run refuses, and the same error shows in Diagnosis. The compiler tier (A to P) is readable in the IDE without the tab's help.

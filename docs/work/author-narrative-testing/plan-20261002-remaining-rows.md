@@ -121,7 +121,16 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
     - Every file was compiled once. `A` to `P` each raise their expected code, and `Q` to `Z` are gate-clean.
     - `U` to `Y` were played. `W` is caught on `examine sorter`, not `examine machine`, because "machine" is part of the name.
     - `Z` is byte-identical to `upps.story` (`cmp`).
-  - Next: David records room 1's tree on the correct story in the Testing tab, with claims on `look`, `wear satchel`, `take machine`, `examine sorter`, `read card` and `east`. Then each seeded file is run against it.
+  - **Progress** (2026-10-07, session bafcb7): David recorded room 1's tree (`branch-stories/upps/upps.tests/`, 8 cards: opening, boot, and the six turns). `./sharpee test branch-stories/upps/upps.story --tree` on the correct story: 8 cards passing, 10 assertions passing. Each seeded file was copied with the tree into a scratch `upps/` directory and run with `--tree`:
+    - `A` to `P` stop at the load-time gate with the README's code and a file:line:col (exit 3).
+    - `Q` exits 3 with "not placed in the world", no line.
+    - `R` passes everything (8 cards passing): nothing catches it.
+    - `S`, `U`, `V`, `W`, `X` each fail one card on their README turn (exit 1). `T` fails on `wear satchel`, not `look` (F-12). `Y` fails `look` and also the boot card, which is counted but not printed (F-11).
+    - `Z` passes everything.
+    - Findings F-10 to F-12 are recorded. F-10: a failed claim never shows the actual output.
+  - Testing tab checked on `Y`, `T`, `Q` and `A` (David in Chord Writer, each file copied over `upps.story`, then `Z` restored). The compiler tier shows in Problems and Diagnosis, and Run refuses. The load error shows verbatim with no line. Tree failures show the expected text but never the actual output (F-10 holds in the tab; F-11 is CLI-only). The boot card renders as a second `> look` and counts as turn 1 (F-13). The explanation line repeats the claim (F-14). Detail in `upps-findings.md`.
+  - Room 1 is tested end to end in the CLI and Chord Writer. What an author arriving cold cannot read: the actual output of a failed claim (F-10, F-14), the cause behind a turn-level failure (F-8, F-12), the boot card's identity (F-13), the line for an unplaced player (F-7), and `create player` read as a name (F-5).
+  - Next: bring these findings into Phase 6's remaining steps (David decides which come first), or write room 2.
 - **Status**: CURRENT (since 2026-10-04)
 
 ### Phase 7: Occurrence ordinals arrange shape (only if G1 says IN)
