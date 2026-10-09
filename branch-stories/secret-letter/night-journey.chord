@@ -94,22 +94,17 @@ end timer
 
 create the Tunnels
   a region
-  containing the Underneath the Fountain, the Tunnel End
 
 create the Lord's Keep
   a region
-  containing the Chapel, the Lower Bailey, the Upper Bailey, the Guardhouse
 
-## `story.ni:7586-7589` — Bobby brings up the rear on the way home.
+## The source's Secret Way region held the Tunnels and the Lord's Keep;
+## regions no longer nest, so it is the `on-the-secret-way` condition.
+## `story.ni:7586-7589` — Bobby brings up the rear on the way home. That rule
+## is the story's own (`secret-letter.story`): a region's rules run only while
+## the player is in that region, and the way home crosses two.
 
-create the Secret Way
-  a region
-  containing the Tunnels, the Lord's Keep
-
-  on every turn while the player is in the Secret Way and Bobby is returning and Bobby is not here
-    move Bobby here
-    phrase bobby-follows
-  end on
+define condition on-the-secret-way: the player is in the Tunnels or the player is in the Lord's Keep
 
 define phrase bobby-follows, randomly
   Bobby follows you.
@@ -1166,6 +1161,7 @@ end phrase
 
 create the Underneath the Fountain
   a room
+  in the Tunnels
   aka tunnel, low tunnel, under the fountain, beneath the fountain
   north to the Tunnel End
   up is blocked while Bobby is leading: definitely-no-chickening-out
@@ -1292,6 +1288,7 @@ create the torch
 
 create the Tunnel End
   a room
+  in the Tunnels
   aka secret passage, passage, end of the tunnel, dead end
   north to the Chapel
   north is blocked while Bobby is returning: ready-to-go-home
@@ -1466,6 +1463,7 @@ end phrase
 
 create the Chapel
   a room
+  in the Lord's Keep
   aka chapel of the goddesses, temple, shrine, octagonal room
   southwest to the Lower Bailey
   south is blocked while Bobby is leading: bobby-not-yet
@@ -1567,6 +1565,7 @@ end phrase
 
 create the Lower Bailey
   a room
+  in the Lord's Keep
   aka bailey, courtyard, yard, lower courtyard
   up to the Upper Bailey
   north to the Foyer
@@ -1711,6 +1710,7 @@ end phrase
 
 create the Upper Bailey
   a room
+  in the Lord's Keep
   aka top of the wall, walkway, parapets, parapet, wall walk
   north to the Guardhouse
   down is blocked while Bobby is leading: bobby-points-north
@@ -1820,6 +1820,7 @@ end phrase
 
 create the Guardhouse
   a room
+  in the Lord's Keep
   aka antechamber, narrow antechamber, archway
   north is blocked: are-you-nuts
   south is blocked while the arrow slit is chattering: bobby-motions-you-back

@@ -146,8 +146,8 @@ Regenerate with `node scripts/extract-book-snippets.cjs` (from `docs/book/`).
 |---|------|---------|------|------|----------|
 | 01 | `01-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 42 |
 | 02 | `02-regions-grouping-rooms.ts` | Regions: grouping rooms | typescript | author | 60 |
-| 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 100 |
-| 04 | `04-nesting-and-querying.ts` | Nesting and querying | typescript | author | 125 |
+| 03 | `03-crossing-the-boundary.ts` | Crossing the boundary | typescript | author | 103 |
+| 04 | `04-membership-and-querying.ts` | Membership and querying | typescript | author | 130 |
 
 # Volume III — Making It Interactive
 

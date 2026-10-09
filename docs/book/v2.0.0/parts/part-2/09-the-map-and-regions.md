@@ -78,7 +78,6 @@ its rooms inherit. A `RegionOptions` object accepts a few:
 | `defaultDark` | Rooms in the region start dark unless they say otherwise |
 | `ambientSound` | A region-wide sound (dripping water, distant traffic) |
 | `ambientSmell` | A region-wide smell |
-| `parentRegionId` | Nest this region inside another |
 
 Setting `defaultDark: true` on, say, a cave region saves you marking every room
 `isDark` by hand: a property that belongs to the *area* lives on the area.
@@ -89,8 +88,12 @@ The real power shows up when the player moves *between* regions. When a `go`
 command carries the player from a room in one region to a room in another, the
 engine emits two events automatically:
 
-- `if.event.region_exited`, fired once for each region being left,
-- `if.event.region_entered`, fired once for each region being entered.
+- `if.event.region_exited`, fired for the region being left,
+- `if.event.region_entered`, fired for the region being entered.
+
+A move between two rooms of the same region fires neither. A move from a room
+that belongs to no region into one that does fires only `region_entered`, and
+the move back out fires only `region_exited`.
 
 You react to them exactly the way you'll react to any event in Volume IV, by
 registering a handler. The sketch below is a preview of that volume, not part
@@ -117,24 +120,28 @@ This is the natural home for "as you enter the old town, the noise of the market
 swells": atmosphere keyed to an area instead of bolted onto every room's
 description.
 
-## Nesting and querying
+## Membership and querying
 
-Regions can nest. Give one a `parentRegionId` and a room in the child counts as
-being in the parent too:
+A room belongs to at most one region, and regions do not nest inside one
+another. When an area seems to have two levels, such as a coal mine and a cave
+system that are both "underground", make each of the smaller areas a region and
+write the larger idea as a check over them:
 
 ```typescript
-world.createRegion('reg-underground', {
-  name: 'The Underground',
-  defaultDark: true,
-});
 world.createRegion('reg-mine', {
   name: 'Coal Mine',
-  parentRegionId: 'reg-underground',
+  defaultDark: true,
 });
-// a room in reg-mine answers true for reg-underground as well
+world.createRegion('reg-caves', {
+  name: 'The Caves',
+  defaultDark: true,
+});
+// "underground" means either region
+const isUnderground = (roomId: string) =>
+  world.isInRegion(roomId, 'reg-mine') || world.isInRegion(roomId, 'reg-caves');
 ```
 
-And you can ask the world about membership at any time:
+You can ask the world about membership at any time:
 `world.isInRegion(roomId, 'reg-staff')` gives a yes/no. If you add the optional
 `@sharpee/queries` package, its entity-query API lists every room in an area:
 `world.rooms.inRegion('reg-staff', world).toArray()`. The package installs

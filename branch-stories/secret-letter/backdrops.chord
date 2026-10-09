@@ -90,23 +90,18 @@
 ## ---------------------------------------------------------------------------
 ## WHERE THINGS ARE — the source's two regions and its per-backdrop lists,
 ## as named conditions (`story.ni:3326-3330, 3455-3459` and the backdrop
-## declarations). `the Weapons Stall` and `the Candle Stall` are the rooms'
-## own akas — written when a possessive name could not stand in a condition
-## (GH #336, fixed 2026-09-03: `the Candlemaker's Stall` now resolves there too).
+## declarations). Each stall names its region on an `in` line in
+## `grubbers-market.chord`. The source nests the perimeter inside the
+## open-air market; regions no longer nest, so `open-air` names both.
 ## ---------------------------------------------------------------------------
 
 create the Open-Air Market
   a region
-  containing the Rope Stall, the Candle Stall, the Pottery Stall
-  containing Outside the Silk Tent, the Market Perimeter
 
 create the Market Perimeter
   a region
-  containing the Fruit Stall, the Northwest Junction, the Grocery Stall
-  containing the Eastern Junction, the Hat Stall, the Exotic Gems Stall
-  containing the Weapons Stall, the Leather Stall, the Herb Stall
 
-define condition open-air: the player is in the Open-Air Market
+define condition open-air: the player is in the Open-Air Market or the player is in the Market Perimeter
 
 define condition market-perimeter: the player is in the Market Perimeter
 

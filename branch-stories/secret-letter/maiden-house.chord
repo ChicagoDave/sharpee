@@ -141,7 +141,7 @@ create Bobby
   about to tell him, because if he knew he would certainly stop inviting you
   along on his exploits.
 
-  on every turn while Bobby is here and one chance in 5 and the player is not in the Secret Way and before gallows
+  on every turn while Bobby is here and one chance in 5 and not on-the-secret-way and before gallows
     phrase bobby-idle
   end on
 

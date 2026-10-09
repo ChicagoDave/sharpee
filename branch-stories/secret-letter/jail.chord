@@ -216,11 +216,9 @@ end phrase
 
 create the Prison
   a region
-  containing the Jail Cell, the Jailhouse, the North Cell, the West Cell, the Drain Room
 
 create the Sewers
   a region
-  containing the Sewer, the North Tunnel, the East Tunnel, the South Tunnel, the West Tunnel, the North Bend, the East Bend, the South Bend, the West Bend, the Access Tunnel
 
 ## ---------------------------------------------------------------------------
 ## OUR CELL (`story.ni:7810-7862`) — the waking, the blankets, the straw
@@ -231,6 +229,7 @@ create the Sewers
 
 create the Jail Cell
   a room
+  in the Prison
   aka cell, holding cell, jail, prison, dank cell, cramped cell
   north to the Jailhouse through the south cell door
 
@@ -605,6 +604,7 @@ end phrase
 
 create the Jailhouse
   a room
+  in the Prison
   aka main room, jailhouse main room, guard room, crude room
   southwest to the Drain Room
   east is blocked: no-way-out-alone
@@ -681,6 +681,7 @@ create the east passage
 
 create the North Cell
   a room
+  in the Prison
   south to the Jailhouse through the north cell door
 
   A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets and
@@ -688,6 +689,7 @@ create the North Cell
 
 create the West Cell
   a room
+  in the Prison
   east to the Jailhouse through the west cell door
 
   A dank, cramped, foul-smelling cell. A pair of ragged burlap blankets and
@@ -994,6 +996,7 @@ end phrase
 
 create the Drain Room
   a room
+  in the Prison
   aka alcove, tiny alcove, drain
   down to the Sewer
   down is blocked while the metal grate is seated: cant-squeeze-the-bars
@@ -1247,6 +1250,7 @@ define condition west-marked: (the glyph layout is layout-a and the magic color 
 
 create the Sewer
   a room
+  in the Sewers
   aka sewers, tunnel, tunnels, side tunnels
   north to the North Tunnel, one-way
   east to the East Tunnel, one-way
@@ -1446,6 +1450,7 @@ end phrase
 
 create the North Tunnel
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
   east to the East Bend, one-way
@@ -1467,6 +1472,7 @@ create the North Tunnel
 
 create the East Tunnel
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
   east to the East Bend, one-way
@@ -1488,6 +1494,7 @@ create the East Tunnel
 
 create the South Tunnel
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
   east to the East Bend, one-way
@@ -1509,6 +1516,7 @@ create the South Tunnel
 
 create the West Tunnel
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
   north to the North Bend, one-way
   east to the East Bend, one-way
@@ -1532,6 +1540,7 @@ create the West Tunnel
 
 create the North Bend
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
 
   The tunnels down here are made of ancient, unmortared brick, slimy with
@@ -1546,6 +1555,7 @@ create the North Bend
 
 create the East Bend
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
 
   The tunnels down here are made of ancient, unmortared brick, slimy with
@@ -1560,6 +1570,7 @@ create the East Bend
 
 create the South Bend
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
 
   The tunnels down here are made of ancient, unmortared brick, slimy with
@@ -1574,6 +1585,7 @@ create the South Bend
 
 create the West Bend
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
 
   The tunnels down here are made of ancient, unmortared brick, slimy with
@@ -1840,6 +1852,7 @@ end phrase
 
 create the Access Tunnel
   a room
+  in the Sewers
   aka tunnel, sewer, sewers
   up to the Empty Alleyway, one-way
   north is deadly: lost-in-the-sewers

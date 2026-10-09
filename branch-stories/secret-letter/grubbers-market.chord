@@ -82,6 +82,7 @@ create the Alley
 
 create the Northwest Junction
   a room
+  in the Market Perimeter
   aka junction, northwest corner
   northwest to the Alley
   northeast to the Grocery Stall
@@ -128,6 +129,7 @@ create the market gates
 
 create the Grocery Stall
   a room
+  in the Market Perimeter
   aka grocer, grocers stall
   southwest to the Northwest Junction
   southeast to the Fruit Stall
@@ -162,6 +164,7 @@ create the Grocery Stall
 
 create the Fruit Stall
   a room
+  in the Market Perimeter
   aka fruit
   northwest to the Grocery Stall
   west to the Candlemaker's Stall
@@ -191,6 +194,7 @@ create the Fruit Stall
 
 create the Eastern Junction
   a room
+  in the Market Perimeter
   aka eastern edge
   north to the Fruit Stall
   south to the Hat Stall
@@ -205,6 +209,7 @@ create the Eastern Junction
 
 create the Hat Stall
   a room
+  in the Market Perimeter
   aka hats, hatter
   north to the Eastern Junction
   northwest to the Pottery Stall
@@ -219,6 +224,7 @@ create the Hat Stall
 
 create the Leather Stall
   a room
+  in the Market Perimeter
   aka leather, leather shop, leather goods
   northeast to the Hat Stall
   northwest to Outside the Silk Tent
@@ -237,6 +243,7 @@ create the Leather Stall
 
 create the Weaponsmith's Stall
   a room
+  in the Market Perimeter
   aka weapons stall, weapons, weaponsmith, smith
   east to the Leather Stall
   northeast to Outside the Silk Tent
@@ -254,6 +261,7 @@ create the Weaponsmith's Stall
 
 create the Exotic Gems Stall
   a room
+  in the Market Perimeter
   aka gems stall, gems, jewels, jeweler
   north to the Herb Stall
   northeast to the Rope Stall
@@ -275,6 +283,7 @@ create the Exotic Gems Stall
 
 create the Herb Stall
   a room
+  in the Market Perimeter
   aka herbs, herbalist
   north to the Northwest Junction
   east to the Rope Stall
@@ -293,6 +302,7 @@ create the Herb Stall
 
 create the Rope Stall
   a room
+  in the Open-Air Market
   aka rope, rope dealer, ropemaker
   northwest to the Northwest Junction
   northeast to the Candlemaker's Stall
@@ -314,6 +324,7 @@ create the Rope Stall
 
 create the Candlemaker's Stall
   a room
+  in the Open-Air Market
   aka candle stall, candles, candlemaker, chandler
   north to the Grocery Stall
   east to the Fruit Stall
@@ -336,6 +347,7 @@ create the Candlemaker's Stall
 
 create the Pottery Stall
   a room
+  in the Open-Air Market
   aka pottery, potter, urns
   northwest to the Candlemaker's Stall
   northeast to the Fruit Stall
@@ -358,6 +370,7 @@ create the Pottery Stall
 
 create Outside the Silk Tent
   a room
+  in the Open-Air Market
   aka silk stall, outside the tent, teishas stall
   north to Inside the Silk Tent
   east to the Hat Stall

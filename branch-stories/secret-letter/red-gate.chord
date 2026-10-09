@@ -204,7 +204,6 @@ end phrase
 
 create the Duke's House
   a region
-  containing the Entrance Hall, the Great Hall, the Cellar, the Red Gate Second Floor Landing, the Office, the Red Gate Third Floor Landing, the Red Gate Master Bedroom, the Bathroom
 
 create the silence
   aka stillness, quiet, eerie silence, expectant silence, echo, echoes
@@ -271,6 +270,7 @@ end phrase
 
 create the Entrance Hall
   a room
+  in the Duke's House
   aka foyer, entrance, hall, entrance hall, marble hall
   north to the Great Hall
   south to the East Commerce Street through Red Gate Estate
@@ -311,6 +311,7 @@ create the marble floor
 
 create the Great Hall
   a room
+  in the Duke's House
   aka hall, great hall, large hall, long room
   south to the Entrance Hall
   up to the Red Gate Second Floor Landing
@@ -499,6 +500,7 @@ end phrase
 
 create the Cellar
   a room
+  in the Duke's House
   aka basement, red gate cellar, stone cellar
   up to the Great Hall
 
@@ -676,6 +678,7 @@ end phrase
 
 create the Red Gate Second Floor Landing
   a room
+  in the Duke's House
   aka landing, second floor landing, shadowed stairway, stairway
   down to the Great Hall
   up to the Red Gate Third Floor Landing
@@ -685,6 +688,7 @@ create the Red Gate Second Floor Landing
 
 create the Office
   a room
+  in the Duke's House
   aka office, ransacked office, study
   north to the Red Gate Second Floor Landing
 
@@ -1005,6 +1009,7 @@ end phrase
 
 create the Red Gate Third Floor Landing
   a room
+  in the Duke's House
   aka landing, third floor landing, top of the stairs
   down to the Red Gate Second Floor Landing
   south to the Red Gate Master Bedroom
@@ -1013,6 +1018,7 @@ create the Red Gate Third Floor Landing
 
 create the Red Gate Master Bedroom
   a room
+  in the Duke's House
   aka bedroom, master bedroom, duke's bedroom, duke's room
   north to the Red Gate Third Floor Landing
   south to the Bathroom
@@ -1080,6 +1086,7 @@ end phrase
 
 create the Bathroom
   a room
+  in the Duke's House
   aka bath room, marble room, small room
   north to the Red Gate Master Bedroom
   north is blocked while Jack is clean and the daydress is not worn: cant-leave-naked

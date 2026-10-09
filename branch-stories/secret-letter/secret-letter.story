@@ -94,6 +94,11 @@ story
   states: calm, hunted, chase
   use chapters
 
+  on every turn while on-the-secret-way and Bobby is returning and Bobby is not here
+    move Bobby here
+    phrase bobby-follows
+  end on
+
 ## ---------------------------------------------------------------------------
 ## THE IMPORTS
 ##

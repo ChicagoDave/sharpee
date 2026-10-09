@@ -12,6 +12,11 @@
 
 `packages/lang-en-us` was checked and left unchanged: its heading realizer joins part texts and never reads the role.
 
+**D5 migration amendment** (2026-10-09, session 1d8197, plan `chord-syntax-round` Phase 8): the migration found two things D5 and AC-13 got wrong.
+- **A region's every-turn rule runs only while the player is in that region.** D5 put the follow daemon on `the Tunnels` on the strength of a 2026-09-04 probe. The presence gate came back two days later (ADR-236 D4, restored by ADR-328 D3's 2026-09-06 amendment, GH #365), and `runEntityTurnClause` checks it (`packages/story-loader/src/runtime/scheduler-constructs.ts:239`). On the Tunnels, Bobby stopped following in the Lord's Keep. Bobby can't own the rule either, because a clause's narration is stamped with its owner's place before the body runs, so "Bobby follows you." landed where Bobby had been and was hidden. The rule is now a story-level `on every turn` in `secret-letter.story`'s header. Story clauses have neither gate, and the test tree matches the baseline. A nested region that carried a rule flattens to a story rule guarded by the named condition, not to a rule on one of the inner regions.
+- **The Secret Letter nested a second time.** `the Open-Air Market` contained the region `the Market Perimeter` (`backdrops.chord`). The perimeter keeps its stalls, and the `open-air` condition now names both regions.
+- **AC-13 gates only Fernhill** (David, 2026-10-09, during the plan review). The Secret Letter is migrated so that it compiles, and its test-tree diff against the Phase 1 baseline is reported, but no difference in it blocks this ADR. Measured on 2026-10-09 against `docs/work/chord-syntax-round/baseline/`, both trees match once source line numbers are normalized. The Secret Letter's only remaining difference is that its skipped every-turn rule is now listed under "story" instead of "Secret Way".
+
 ## Date: 2026-10-08
 
 ## Parent
@@ -195,7 +200,7 @@ create the Maze 64, a room
 
 12. **AC-12 (tooling).** A lexer-golden corpus file using a group and both exit tables is added, the golden is regenerated with the existing streams unchanged, and `ChordLexerGoldenTests` passes with `ChordLexer.swift` and `SyntaxHighlighter.swift` untouched. `rooms` and `exits` are not added to the highlighter's keyword set, which leaves out words common in prose (ADR-258 D7), and both are. Completion of the group and table positions is ADR-358's, which is DRAFT and unbuilt, and is not an AC here. **MECHANICAL**, in the IDE suite. *(Amended 2026-10-08, session 8d348c, during ADR-362's review: the earlier text required completion that does not exist and keyword colouring against the highlighter's own policy, and named editor-bridge, which only serves the real lexer's tokens.)*
 
-13. **AC-13 (D5, migration).** Fernhill and the four Secret Letter fragments compile with their `containing` lines replaced by `in` lines on each member, and the Secret Letter's `the Secret Way` flattened to the `on-the-secret-way` condition as D5 shows, its daemon on `the Tunnels` and `maiden-house.chord:144` guarded by `not on-the-secret-way`. Their test trees report exactly what they did before, line for line, including Bobby following the player through both the Tunnels and the Lord's Keep. **MECHANICAL**, the verification ADR-359's cutover used.
+13. **AC-13 (D5, migration).** Fernhill and the four Secret Letter fragments compile with their `containing` lines replaced by `in` lines on each member, and the Secret Letter's `the Secret Way` flattened to the `on-the-secret-way` condition as D5 shows, its daemon on `the Tunnels` and `maiden-house.chord:144` guarded by `not on-the-secret-way`. Their test trees report exactly what they did before, line for line, including Bobby following the player through both the Tunnels and the Lord's Keep. **MECHANICAL**, the verification ADR-359's cutover used. *(Amended 2026-10-09, session 1d8197: only Fernhill gates. The daemon is a story-level rule, not a rule on the Tunnels, and the Open-Air Market's nesting is flattened too. See the D5 migration amendment under Scope.)*
 
 ## Consequences
 
