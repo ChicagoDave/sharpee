@@ -78,20 +78,30 @@ export async function bootTurns(source: string, seed = 7): Promise<BootedTurns> 
   return { engine, story, world, player: world.getPlayer()!, stream, turn, turnText, id };
 }
 
-/** Every string inside the text blocks' content, joined with newlines. */
+/**
+ * Each text block's content as one string, blocks joined with newlines.
+ *
+ * Inside a block the pieces are concatenated, not newline-joined: a decorated
+ * or chosen span (`IChosen`, ADR-364 D4) is part of the same line as the text
+ * around it, exactly as every renderer shows it.
+ */
 function flattenText(blocks: unknown[]): string {
-  const out: string[] = [];
-  const walk = (node: unknown): void => {
+  const walk = (node: unknown, out: string[]): void => {
     if (typeof node === 'string') out.push(node);
-    else if (Array.isArray(node)) node.forEach(walk);
+    else if (Array.isArray(node)) node.forEach((child) => walk(child, out));
     else if (node && typeof node === 'object') {
       const rec = node as Record<string, unknown>;
-      if ('content' in rec) walk(rec.content);
-      else if ('text' in rec) walk(rec.text);
+      if ('content' in rec) walk(rec.content, out);
+      else if ('text' in rec) walk(rec.text, out);
     }
   };
-  walk(blocks);
-  return out.join('\n');
+  return blocks
+    .map((block) => {
+      const pieces: string[] = [];
+      walk(block, pieces);
+      return pieces.join('');
+    })
+    .join('\n');
 }
 
 /** The message ids the events carry, in order (events without one dropped). */
