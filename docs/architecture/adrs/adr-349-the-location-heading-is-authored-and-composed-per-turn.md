@@ -1,6 +1,6 @@
 # ADR-349: The location heading is authored and composed per turn
 
-**Status**: **ACCEPTED** (2026-09-14, session 483831, at David's "accept 349" — his flip, made with the Open Questions section empty as rule 11a requires. Written 2026-09-14, session 4ca16b, on `main`, at David's "two ADRs — one for the room name". Raised by his report of a gap in Chord — "a maze puzzle where all the room names are identical" — which the session traced through four successively better framings, each retired by a case he supplied: the maze, the Kitchen at night and in daylight, the Dungeo barrel, and finally the well-room bucket, which is the one the decision is shaped around. **Implementation is partial.** Phases 1–3 of `docs/work/adr-349-location-heading/plan.md` were built 2026-09-15 (session 3c9f76): the projection, the `room name` construct, and the loader's registration. Phase 4, the wire cutover that makes either surface show the authored heading, has been CURRENT since then and has not landed, so no player sees a `room name` yet. Phases 1 and 3 implemented the region-as-contributor shape that ADR-360 supersedes.
+**Status**: **ACCEPTED** (2026-09-14, session 483831, at David's "accept 349" — his flip, made with the Open Questions section empty as rule 11a requires. Written 2026-09-14, session 4ca16b, on `main`, at David's "two ADRs — one for the room name". Raised by his report of a gap in Chord — "a maze puzzle where all the room names are identical" — which the session traced through four successively better framings, each retired by a case he supplied: the maze, the Kitchen at night and in daylight, the Dungeo barrel, and finally the well-room bucket, which is the one the decision is shaped around. **Implementation in progress.** Phases 1–3 of `docs/work/adr-349-location-heading/plan.md` were built 2026-09-15 (session 3c9f76): the projection, the `room name` construct, and the loader's registration. Phase 4, the one-shot wire cutover, was built 2026-09-15 (session c35f3d) on branch `adr-353-pin-provenance` and reached `main` when that branch was rebased and merged on 2026-10-09 (session d8546c). **Discharged**: AC-2, AC-3, AC-4, AC-6, AC-7, AC-8, AC-9, AC-10, AC-12, AC-13, AC-14. **Not discharged**: AC-1 and AC-5 (Phase 6, the maze fixture and the regression sweep) and **AC-11, which moved** — see its entry below. Phases 1 and 3 implemented the region-as-contributor shape that ADR-360 supersedes, so AC-13's discharge is superseded with it.
 
 **`adr-review` ran at 3/13 BLOCKED** (2026-09-14, same session, at David's "let's run 349"), ten findings. The blocker was the one the checklist's newest item exists to catch, and it hit the first document reviewed after that item was added: **D3's "single function" had no home**, because engine depends on stdlib and not the reverse, so a projection in `packages/engine` is unreachable from the `location` channel producer in `packages/stdlib` — and every viable host package was absent from the Scope line, which made AC-2, AC-3, AC-4 and AC-7 undischargeable as written.
 
@@ -29,7 +29,7 @@ Two criteria were added for the new rulings (AC-10, AC-11), and the Scope line g
 
 ## Parent
 
-**Supersedes nothing.** **Revisits** ADR-107 (`IdentityTrait.nameId`, the localized-name seam) — not to overturn it, but because it settled how a name is *localized* without asking whether the heading is a name at all. **Depends on** ADR-174 (bracket decorations, the span-and-class wire shape), ADR-163 (channels as the universal UI surface), and ADR-165 (a renderer per channel). **Related**: ADR-090 (capability dispatch, the pattern the Dungeo basket uses), ADR-289 D6 (exits are a room-block line), ADR-255 (the author's message-override surface, which this decision deliberately does not extend).
+**Supersedes nothing.** **Revisits** ADR-107 (`IdentityTrait.nameId`, the localized-name seam) — not to overturn it, but because it settled how a name is *localized* without asking whether the heading is a name at all. **Depends on** ADR-174 (bracket decorations, the span-and-class wire shape), ADR-163 (channels as the universal UI surface), and ADR-165 (a renderer per channel). **Related**: ADR-090 (capability dispatch, the pattern the Dungeo basket uses), ADR-289 D6 (exits are gated to rooms at compile time), ADR-255 (the author's message-override surface, which this decision deliberately does not extend).
 
 ## Context — verified, not assumed
 
@@ -218,7 +218,7 @@ That is the shape ADR-347 recorded for the story's ending, where one fact had ac
 
 **D9 — This decision does not extend ADR-255.** No core template becomes author-overridable, no alias namespace grows past `if.action.*`, and `if.room.description_body` is untouched. An earlier draft required all of that; D6 removes the need.
 
-**D10 — Rooms and enclosures both take the construct, and neither is gated on the other's traits.** ADR-289 D6 makes exits a room-block line; this is deliberately not that shape, because the bucket is the motivating case and it is not a room.
+**D10 — Rooms and enclosures both take the construct, and neither is gated on the other's traits.** ADR-289 D6 gates exits to rooms at compile time; this is deliberately not that shape, because the bucket is the motivating case and it is not a room. (Corrected 2026-09-15: earlier revisions described D6 as making exits "a room-block line", which is not what it says. The contrast the decision rests on is unaffected — D6 restricts a construct to rooms, and this one is legal on rooms and enclosures alike.)
 
 **D11 — The projection lives in `packages/world-model`, beside `getDescribableLocation`.** D3's "single function" needs a home both consumers can reach, and the dependency graph leaves exactly one sensible answer. Measured 2026-09-14:
 
@@ -242,8 +242,12 @@ interface HeadingPart {
   /** The winning arm's resolved prose, pre-decoration. */
   readonly text: string;
   readonly role: 'place' | 'enclosure' | 'region';
+  /** Amendment 2026-09-15 — see below. */
+  readonly variable?: boolean;
 }
 ```
+
+**Amended 2026-09-15 (session c35f3d): `HeadingPart` gains `variable?: boolean`.** D11 pinned this contract by enumerating three fields, so adding a fourth amends it rather than extending it quietly. The field says the contributor declared at least one conditional arm — static, true whether or not that arm won, because a heading that *can* vary is what D14 must not pin. Its reader is `@sharpee/lang-en-us`, which wraps a variable part so the realized run carries ADR-364 D4's provenance to the wire; `HeadingPart` is the only channel from the projection to the locale. Because `HeadingPart` is also the `location` channel's payload, the field reaches clients too, where nothing reads it — a consequence of this ADR's one-type-two-uses design, recorded rather than left to be found later.
 
 *(Amended by ADR-360 D6: `role` loses `'region'`.)*
 
@@ -324,6 +328,8 @@ Phases 1–3 discharged AC-12 and AC-14 and the analyzer half of AC-1 (2026-09-1
 10. **AC-10 (Q-6, joining).** A heading with a place part and an enclosure part renders with the assembler's punctuation and no conjunction — "Top of Well, in the bucket", not "Top of Well and the bucket" — and a heading with one part renders with no separator at all. **MECHANICAL**, and it fails if the parts are realized as a `PhraseList`.
 
 11. **AC-11 (Q-5, auto-assertion refusal).** A room whose `room name` carries a `while` arm is not auto-pinned under `room-name-and-description`; a room whose `room name` is unconditional, and a room with none, are pinned exactly as today. **SELF-VERIFYING, and probed in both directions** — removing the refusal pins the varying heading, and over-applying it stops pinning the unconditional ones.
+
+    **Discharged by ADR-364 AC-10, not here** (2026-09-15). Phase 5 could not build D14's refusal as a rule about headings: the IDE's recording path has no way to see the condition, and four *other* values — a spliced snippet, a state-derived detail clause, an occupant clause, a `Choice` — were already being auto-pinned with the same defect and predate this ADR. ADR-364 D4 replaces the heading-shaped rule with the general one (a value is pinnable where its realization made no state-dependent choice, tracked per run), and its AC-10 requires that **no rule naming headings appears in the implementation at all** — which is what proves D14 was generalized rather than relocated. D14 stands as written; what changed is where it is implemented.
 
 12. **AC-12 (D15, the arms).** A `room name` block with three arms compiles to `<id>.room-name`, `<id>.room-name.2`, `<id>.room-name.3` in declaration order, and the first arm whose condition holds wins at runtime. Two negatives: a second unconditional arm is a compile error, and an unconditional arm followed by a conditional one is a compile error. **MECHANICAL.**
 

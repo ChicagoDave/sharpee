@@ -30,6 +30,7 @@ import type {
   Mentioned,
 } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
+import { plainNode } from '../test-utils/flatten';
 
 // --- harness ---------------------------------------------------------------
 
@@ -60,7 +61,7 @@ const asm = new EnglishAssembler();
 function renderWith(tree: Phrase, ctx: RenderContext): string {
   const blocks = asm.realize(tree, ctx);
   if (blocks.length === 0) return '';
-  return blocks[0].content.map((c) => (typeof c === 'string' ? c : '')).join('');
+  return blocks[0].content.map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 }
 
 /** Realize `tree` `n` times against a shared ctx (shared textState), collecting output. */

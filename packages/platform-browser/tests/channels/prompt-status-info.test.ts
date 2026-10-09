@@ -64,10 +64,16 @@ describe('status renderers', () => {
     document.body.append(location, score, turn);
   });
 
-  it('location writes the room name', () => {
+  it('location writes the realized heading (ADR-349 D12)', () => {
+    const r = createLocationChannelRenderer(location);
+    r.onValue({ text: 'Cave Entrance', parts: [] }, replaceJson);
+    expect(location.textContent).toBe('Cave Entrance');
+  });
+
+  it('location ignores the retired bare-string payload', () => {
     const r = createLocationChannelRenderer(location);
     r.onValue('Cave Entrance', replaceText);
-    expect(location.textContent).toBe('Cave Entrance');
+    expect(location.textContent).toBe('');
   });
 
   it('score formats current/max', () => {

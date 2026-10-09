@@ -7,6 +7,7 @@ import { describe, it, expect } from 'vitest';
 import type { Phrase, RenderContext } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
 import { numberToWords, ordinalString } from '../../src/number-words';
+import { plainNode } from '../test-utils/flatten';
 
 const asm = new EnglishAssembler();
 
@@ -23,7 +24,7 @@ function makeCtx(params: Record<string, unknown> = {}): RenderContext {
 }
 
 const render = (tree: Phrase): string =>
-  asm.realize(tree, makeCtx()).flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : '')).join('');
+  asm.realize(tree, makeCtx()).flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 
 const num = (value: number, format: 'digits' | 'words' | 'ordinal'): Phrase => ({ kind: 'number', value, format });
 

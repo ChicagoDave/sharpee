@@ -9,6 +9,7 @@
 
 import { EnglishLanguageProvider } from '../src/language-provider';
 import type { Phrase, RenderContext } from '@sharpee/if-domain';
+import { plainNode } from './test-utils/flatten';
 
 function makeCtx(
   params: Record<string, unknown> = {},
@@ -29,7 +30,7 @@ function makeCtx(
 function text(blocks: ReturnType<EnglishLanguageProvider['renderMessage']>): string {
   return blocks
     .flatMap((b) => b.content)
-    .map((c) => (typeof c === 'string' ? c : ''))
+    .map((c) => (typeof c === 'string' ? c : plainNode(c)))
     .join('');
 }
 

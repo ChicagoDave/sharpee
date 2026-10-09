@@ -27,6 +27,7 @@ import type {
   Mentioned,
 } from '@sharpee/if-domain';
 import { EnglishAssembler, ASSEMBLER_DEFAULT_BLOCK_KEY, PhraseNotImplementedError } from '../../src/assembler';
+import { markedNode } from '../test-utils/flatten';
 
 // --- harness ---------------------------------------------------------------
 
@@ -49,7 +50,7 @@ const asm = new EnglishAssembler();
 function render(tree: Phrase, settings?: LocaleSettings): string {
   const blocks = asm.realize(tree, makeCtx(settings));
   expect(blocks).toHaveLength(1);
-  return blocks[0].content.map((c) => (typeof c === 'string' ? c : '⟦deco⟧')).join('');
+  return blocks[0].content.map((c) => (typeof c === 'string' ? c : markedNode(c))).join('');
 }
 
 const lit = (text: string, whitespace?: 'verbatim'): Literal => ({ kind: 'literal', text, ...(whitespace ? { whitespace } : {}) });
@@ -269,7 +270,7 @@ describe('Slot combinator realizes the turn contributions (ADR-195)', () => {
     const ctx: RenderContext = { ...makeCtx(settings), slotContributions: (key) => staged[key] ?? [] };
     const blocks = asm.realize(tree, ctx);
     expect(blocks).toHaveLength(1);
-    return blocks[0].content.map((c) => (typeof c === 'string' ? c : '⟦deco⟧')).join('');
+    return blocks[0].content.map((c) => (typeof c === 'string' ? c : markedNode(c))).join('');
   }
 
   it('AC-1: sentence mode joins contributions with a space after the stem terminator', () => {

@@ -14,6 +14,7 @@ import { describe, it, expect } from 'vitest';
 import type { Mentioned, NounPhrase, Phrase, RenderContext } from '@sharpee/if-domain';
 import { parsePhraseTemplate, PhraseParseError } from '../../src/parser';
 import { EnglishAssembler } from '../../src/assembler';
+import { markedNode } from '../test-utils/flatten';
 
 describe('parser: {quote:…} (ADR-201 §5, AC-2)', () => {
   it('parses a bound scalar utterance into a Quote over a Literal', () => {
@@ -108,7 +109,7 @@ describe('end-to-end: dialogue template round-trips through the Assembler', () =
     const text = new EnglishAssembler()
       .realize(tree, makeCtx(params, { number: 'singular', pronounSet: 'he' } as Mentioned))
       .flatMap((b) => b.content)
-      .map((c) => (typeof c === 'string' ? c : '⟦deco⟧'))
+      .map((c) => (typeof c === 'string' ? c : markedNode(c)))
       .join('');
     expect(text).toBe('He says, "Hello."');
   });
@@ -119,7 +120,7 @@ describe('end-to-end: dialogue template round-trips through the Assembler', () =
     const text = new EnglishAssembler()
       .realize(tree, makeCtx(params, { number: 'plural', pronounSet: 'they' } as Mentioned))
       .flatMap((b) => b.content)
-      .map((c) => (typeof c === 'string' ? c : '⟦deco⟧'))
+      .map((c) => (typeof c === 'string' ? c : markedNode(c)))
       .join('');
     expect(text).toBe('They say, "Hello."');
   });

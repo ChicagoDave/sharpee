@@ -28,6 +28,7 @@ import type {
   TextStateStore,
 } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
+import { plainNode } from '../test-utils/flatten';
 
 // --- harness (matches optional-choice.test.ts conventions) ------------------
 
@@ -56,7 +57,7 @@ const asm = new EnglishAssembler();
 function renderWith(tree: Phrase, ctx: RenderContext): string {
   const blocks = asm.realize(tree, ctx);
   if (blocks.length === 0) return '';
-  return blocks[0].content.map((c) => (typeof c === 'string' ? c : '')).join('');
+  return blocks[0].content.map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 }
 
 const verbatim = (text: string): Verbatim => ({ kind: 'verbatim', text });
@@ -187,7 +188,7 @@ describe('spliced Sequence bound as the description param (ADR-209, real templat
     );
     const rendered = blocks
       .flatMap((b) => b.content)
-      .map((c) => (typeof c === 'string' ? c : ''))
+      .map((c) => (typeof c === 'string' ? c : plainNode(c)))
       .join('');
     expect(rendered).toBe(
       'The study has a doorway to the north, next to a cabinet and ' +

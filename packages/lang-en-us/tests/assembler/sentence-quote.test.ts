@@ -15,6 +15,7 @@ import type {
   LocaleSettings, Mentioned, NounPhrase, Phrase, RenderContext, RenderPosition, Verb,
 } from '@sharpee/if-domain';
 import { EnglishAssembler } from '../../src/assembler';
+import { markedNode } from '../test-utils/flatten';
 
 // --- harness ---------------------------------------------------------------
 
@@ -52,7 +53,7 @@ const asm = new EnglishAssembler();
 function render(tree: Phrase, opts?: CtxOpts): string {
   return asm.realize(tree, makeCtx(opts))
     .flatMap((b) => b.content)
-    .map((c) => (typeof c === 'string' ? c : '⟦deco⟧'))
+    .map((c) => (typeof c === 'string' ? c : markedNode(c)))
     .join('');
 }
 

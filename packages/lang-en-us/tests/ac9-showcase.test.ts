@@ -9,6 +9,7 @@
 import { describe, it, expect } from 'vitest';
 import { EnglishLanguageProvider } from '../src/language-provider';
 import type { NounPhrase, PhraseList, RenderContext } from '@sharpee/if-domain';
+import { plainNode } from './test-utils/flatten';
 
 function makeCtx(): RenderContext {
   return {
@@ -27,7 +28,7 @@ const list = (...items: NounPhrase[]): PhraseList => ({ kind: 'list', conj: 'and
 
 function render(provider: EnglishLanguageProvider, items: PhraseList): string {
   const blocks = provider.renderMessage('if.action.looking.contents_list', { items }, makeCtx());
-  return blocks.flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : '')).join('');
+  return blocks.flatMap((b) => b.content).map((c) => (typeof c === 'string' ? c : plainNode(c))).join('');
 }
 
 describe('AC-9: room-contents showcase (ADR-190)', () => {

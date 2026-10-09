@@ -128,7 +128,7 @@ describe('registerDefaultBrowserRenderers — full stack', () => {
         'room-description': [['You are in a forest.']],
         'preferred-layout': ['room-description'],
         prompt: '? ',
-        location: 'Forest',
+        location: { text: 'Forest', parts: [] },
         score: { current: 5, max: 100 },
         turn: 1,
         info: { title: 'Cloak', author: 'RP', version: '1.0' },

@@ -15,6 +15,7 @@ import { talkingLanguage } from '../src/actions/talking';
 import { askingLanguage } from '../src/actions/asking';
 import { tellingLanguage } from '../src/actions/telling';
 import type { LocaleSettings, NarrativeAgreement, NounPhrase, RenderContext } from '@sharpee/if-domain';
+import { markedNode } from './test-utils/flatten';
 
 /**
  * Minimal render context; narrative defaults to 3rd-person. Mirrors production:
@@ -41,7 +42,7 @@ function makeCtx(
 function text(blocks: ReturnType<EnglishLanguageProvider['renderMessage']>): string {
   return blocks
     .flatMap((b) => b.content)
-    .map((c) => (typeof c === 'string' ? c : '⟦deco⟧'))
+    .map((c) => (typeof c === 'string' ? c : markedNode(c)))
     .join('');
 }
 

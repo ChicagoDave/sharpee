@@ -204,11 +204,56 @@ describe('BrowserClient — channel renderer drives visible DOM (R5-C)', () => {
       {
         kind: 'turn',
         turn_id: 'turn-1',
-        payload: { location: 'Cave Entrance' },
+        payload: { location: { text: 'Cave Entrance', parts: [] } },
       },
       1,
     );
     expect(elements.statusLocation.textContent).toBe('Cave Entrance');
+  });
+
+  it('a status-line refresh leaves the composed heading alone (ADR-349 D3a)', () => {
+    const { engine } = makeFakeEngine();
+    const elements = mountHostElements();
+    const client = new BrowserClient({
+      storagePrefix: 'test-',
+      defaultTheme: 'classic-light',
+      themes: [{ id: 'classic-light', name: 'Classic Light' }],
+      storyInfo: { title: 'Test', author: 'Test', version: '1.0' },
+      autoSave: false,
+    });
+    client.initialize(elements);
+
+    // A world that CAN answer `getCurrentLocation()` — the raw containing-entity
+    // name, which is what a status-line refresh used to push into this element.
+    // Without a player here the regression would be invisible.
+    const world = {
+      ...makeWorld(),
+      getPlayer: () => ({ id: 'p1' }),
+      getLocation: () => 'r1',
+      getEntity: (id: string) => (id === 'r1' ? { id: 'r1', name: 'well-bottom' } : undefined),
+    } as never;
+    client.connectEngine(engine as never, world);
+
+    engine.emit('channel:manifest', STANDARD_MANIFEST);
+    engine.emit(
+      'channel:packet',
+      {
+        kind: 'turn',
+        turn_id: 'turn-1',
+        payload: { location: { text: 'Well Bottom, in the bucket', parts: [] } },
+      },
+      1,
+    );
+    expect(elements.statusLocation.textContent).toBe('Well Bottom, in the bucket');
+
+    // The refresh a save, a restore, or a score change triggers. The location
+    // element belongs to the `location` channel's renderer (ADR-165), and the
+    // heading it carries is the one D3a says both surfaces must show — so this
+    // must touch score and turns and nothing else.
+    (client as unknown as { updateStatusLine(): void }).updateStatusLine();
+
+    expect(elements.statusLocation.textContent).toBe('Well Bottom, in the bucket');
+    expect(elements.statusLocation.textContent).not.toContain('well-bottom');
   });
 
   it('hotspot click pumps a command through engine.executeTurn', () => {

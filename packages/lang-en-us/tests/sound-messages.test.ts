@@ -17,6 +17,7 @@ import {
   soundMessageId,
   soundFallbackMessageId,
 } from '../src';
+import { plainNode } from './test-utils/flatten';
 
 /** Inert render context for exercising the phrase path in tests. */
 function makeCtx(): RenderContext {
@@ -36,7 +37,7 @@ function renderSound(provider: EnglishLanguageProvider, id: string, params: Reco
   return provider
     .renderMessage(id, params, makeCtx())
     .flatMap((b) => b.content)
-    .map((c) => (typeof c === 'string' ? c : ''))
+    .map((c) => (typeof c === 'string' ? c : plainNode(c)))
     .join('');
 }
 

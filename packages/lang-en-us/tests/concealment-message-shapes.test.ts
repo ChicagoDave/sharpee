@@ -13,6 +13,7 @@
 
 import { EnglishLanguageProvider } from '../src/language-provider';
 import type { LocaleSettings, NounPhrase, RenderContext } from '@sharpee/if-domain';
+import { plainNode } from './test-utils/flatten';
 
 /** Minimal inert render context (mirrors render-message.test.ts). */
 function makeCtx(settings: LocaleSettings = { serialComma: true }): RenderContext {
@@ -31,7 +32,7 @@ function makeCtx(settings: LocaleSettings = { serialComma: true }): RenderContex
 function text(blocks: ReturnType<EnglishLanguageProvider['renderMessage']>): string {
   return blocks
     .flatMap((b) => b.content)
-    .map((c) => (typeof c === 'string' ? c : ''))
+    .map((c) => (typeof c === 'string' ? c : plainNode(c)))
     .join('');
 }
 
