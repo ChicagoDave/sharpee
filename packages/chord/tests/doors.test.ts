@@ -77,8 +77,12 @@ describe('`through` exit-line tail (ADR-234 D1/D2, ratchet R2)', () => {
   a room
   down to the Cellar
 
+  A dusty attic.
+
 create the Cellar
   a room
+
+  A damp cellar.
 
 `),
     );
@@ -142,6 +146,8 @@ create the Hall
 describe('ratchet R3 — keyless single-entity `with` config (ADR-234 D6, AC-6)', () => {
   const LOCK_STORY = (composition: string) => story(`create the Vault
   a room
+
+  A steel vault.
 
 create the strongbox
   a container

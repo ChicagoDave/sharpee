@@ -94,8 +94,9 @@ import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
-import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, newEntityDraft } from './analyzer/entity/index.js';
+import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, lowerExit, newEntityDraft } from './analyzer/entity/index.js';
 import type { EntityBuildContext } from './analyzer/entity/context.js';
+import { expandRoomGroups, type RoomGroupOrigin } from './analyzer/room-groups.js';
 
 export { normalizeTopic };
 import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
@@ -555,7 +556,10 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
  * @returns the IR — meaningful only when diagnostics has no errors (atomic load)
  */
 export function analyze(ast: StoryFile, diagnostics: DiagnosticBag): StoryIR {
-  return new Analyzer(ast, diagnostics).run();
+  // ADR-360 D1: `rooms` groups become ordinary room blocks before any pass
+  // runs, so every pass sees a created room exactly as a written one.
+  const expansion = expandRoomGroups(ast, diagnostics);
+  return new Analyzer(expansion.ast, diagnostics, expansion.origins).run();
 }
 
 
@@ -856,6 +860,8 @@ export class Analyzer {
   constructor(
     private readonly ast: StoryFile,
     private readonly diagnostics: DiagnosticBag,
+    /** The `rooms` group each created room came from (ADR-360 D1). */
+    private readonly groupOrigins: ReadonlyMap<CreateDecl, RoomGroupOrigin> = new Map(),
   ) {}
 
   /** Extensions admitted by validated `use` lines (ADR-215). */
@@ -982,9 +988,13 @@ export class Analyzer {
       run: (a) => a.checkConversationTargets(a.builtIR().entities),
     },
     // Whole-graph gates: cross-entity lookups need every entity built.
-    { name: 'checkRegions', requires: ['buildDeclarations'], run: (a) => a.checkRegions(a.builtIR().entities) },
-    { name: 'checkDoors', requires: ['buildDeclarations'], run: (a) => a.checkDoors(a.builtIR().entities) },
-    { name: 'checkDuplicateExits', requires: ['buildDeclarations'], run: (a) => a.checkDuplicateExits(a.builtIR().entities) },
+    // Membership comes from rooms' `in` lines, so it is collected before any region gate reads it.
+    { name: 'collectRegionMembers', requires: ['buildDeclarations'], run: (a) => a.collectRegionMembers(a.builtIR().entities) },
+    { name: 'checkRegions', requires: ['collectRegionMembers'], run: (a) => a.checkRegions(a.builtIR().entities) },
+    // Table rows join their rooms' exits before any exit gate reads them; a row names a member.
+    { name: 'applyExitTables', requires: ['collectRegionMembers'], run: (a) => a.applyExitTables(a.builtIR().entities) },
+    { name: 'checkDoors', requires: ['applyExitTables'], run: (a) => a.checkDoors(a.builtIR().entities) },
+    { name: 'checkDuplicateExits', requires: ['applyExitTables'], run: (a) => a.checkDuplicateExits(a.builtIR().entities) },
     { name: 'checkCompositionLegality', requires: ['buildDeclarations'], run: (a) => a.checkCompositionLegality(a.builtIR()) },
     // The influencer may be declared after the resister.
     { name: 'checkInfluenceReferences', requires: ['buildDeclarations'], run: (a) => a.checkInfluenceReferences(a.builtIR()) },
@@ -1397,14 +1407,6 @@ export class Analyzer {
   }
 
   /**
-   * ADR-236 D2/D3 never-guess gates over the whole region graph: member
-   * kinds (rooms or regions only), single direct membership (RoomTrait's
-   * `regionId` is single-valued — an ancestor+descendant listing is the
-   * same error), single parent per region, no memberless regions, no
-   * containment cycles. Runs after every entity is built so cross-entity
-   * lookups and spans are all available.
-   */
-  /**
    * ADR-276 Phase 1 (census entries 9, 11–15): composition-legality rules
    * migrated from story-loader — every rule here is derivable from the IR
    * alone, so it reports as a collected compile diagnostic with a span; the
@@ -1700,10 +1702,126 @@ export class Analyzer {
     }
   }
 
-  private checkRegions(entities: IREntity[]): void {
+  /**
+   * ADR-360 D4/D5: region membership, written where each room is. A room's
+   * `in the <region>` line — written, or the one a `rooms` group gives each
+   * room it creates — makes it a member: the room joins the region's
+   * `containing` list and loses the placement, which was never a location.
+   * The gates: an `in` line on a room naming something that is not a
+   * region, a room naming two regions, and anything but a room placed in a
+   * region. Runs after every entity is built, so imports are already
+   * spliced and a member may live in any fragment.
+   */
+  private collectRegionMembers(entities: IREntity[]): void {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const isRegionEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'region');
-    const regions = entities.filter(isRegionEntity);
+    for (const entity of entities) {
+      const placement = entity.placement;
+      if (!placement || placement.place === '') continue; // none, or unresolved (already reported)
+      const place = byId.get(placement.place);
+      if (!place) continue;
+      const isRoom = entity.kinds.some((k) => k.name === 'room');
+      if (!isRoom) {
+        // A region or a door placed anywhere already has its own host gate.
+        const hasOwnGate = entity.kinds.some((k) => k.name === 'region' || k.name === 'door');
+        if (isRegionEntity(place) && !hasOwnGate) {
+          this.diagnostics.error(
+            'analysis.thing-in-region',
+            `\`${entity.name}\` is placed in the region \`${place.name}\` — a region holds rooms, not objects. Which of its rooms is \`${entity.name}\` in? Name that room instead.`,
+            placement.span,
+          );
+        }
+        continue;
+      }
+      if (placement.relation !== 'in') continue;
+      if (!isRegionEntity(place)) {
+        this.diagnostics.error(
+          'analysis.room-in-non-region',
+          `\`${place.name}\` is not a region — a room can only be \`in\` a region. To connect the rooms, write an exit instead.`,
+          placement.span,
+        );
+        continue;
+      }
+      const lines = this.byId.get(entity.id)?.decl.placementLines.filter((p) => p.relation === 'in') ?? [];
+      if (lines.length > 1) {
+        this.diagnostics.error(
+          'analysis.room-two-regions',
+          `\`${entity.name}\` already names a region on line ${lines[0].span.line} — a room is in at most one region. Remove one of the \`in\` lines.`,
+          lines[1].span,
+        );
+        continue;
+      }
+      place.containing.push({ id: entity.id, span: placement.span });
+      entity.placement = null;
+    }
+  }
+
+  /**
+   * ADR-360 D3: a region's exit tables lower onto the rooms they name. Each
+   * row's exits join that room's own exits, after the ones its block writes,
+   * so every later exit gate — doors, duplicate directions, contradicted
+   * reverses — sees one list per room wherever its lines were written. A
+   * table is legal only in a region (`analysis.exit-table-owner`), one of
+   * each kind (`analysis.exit-table-duplicate`), and a row must name one of
+   * the region's own rooms (`analysis.exit-row-not-member`). Runs after
+   * membership is collected and before the exit gates.
+   */
+  private applyExitTables(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    for (const decl of this.ast.declarations) {
+      if (decl.kind !== 'create' || decl.exitTables.length === 0) continue;
+      const owner = byId.get(this.byId.get(decl.name.words.join('-').toLowerCase())?.id ?? '');
+      if (!owner) continue; // collection rejected the block — already reported
+      if (!owner.kinds.some((k) => k.name === 'region')) {
+        for (const table of decl.exitTables) {
+          this.diagnostics.error(
+            'analysis.exit-table-owner',
+            `An \`exits\` table belongs in a region — \`${owner.name}\` is not one. A room writes its exits as lines in its own block (\`north to the Hall\`).`,
+            table.headSpan,
+          );
+        }
+        continue;
+      }
+      const seenKinds = new Map<boolean, Span>();
+      const members = new Set(owner.containing.map((m) => m.id));
+      for (const table of decl.exitTables) {
+        const prior = seenKinds.get(table.oneWay);
+        if (prior) {
+          this.diagnostics.error(
+            'analysis.exit-table-duplicate',
+            `\`${owner.name}\` already has an \`${table.oneWay ? 'exits, one-way' : 'exits'}\` table (line ${prior.line}) — a region has one table of each kind. Move these rows into it.`,
+            table.headSpan,
+          );
+          continue;
+        }
+        seenKinds.set(table.oneWay, table.headSpan);
+        for (const row of table.rows) {
+          const roomId = this.resolveEntityId(row.room);
+          if (roomId === null) continue; // reported by resolveEntityId
+          const room = byId.get(roomId);
+          if (!room || !members.has(roomId)) {
+            this.diagnostics.error(
+              'analysis.exit-row-not-member',
+              `\`${room?.name ?? row.room.words.join(' ')}\` is not one of \`${owner.name}\`'s rooms — a table row connects the region's own rooms. Write this room's exits in its own block, or put \`in the ${owner.name}\` in it.`,
+              row.room.span,
+            );
+            continue;
+          }
+          room.exits.push(...row.exits.map((e) => lowerExit(e, (ref) => this.resolveEntityId(ref))));
+        }
+      }
+    }
+  }
+
+  /**
+   * Gates over the whole region graph: no memberless regions (ADR-236 D2,
+   * counting the members ADR-360 collects) and landings inside their region
+   * (ADR-325 D5). Membership is single by construction: a room names one
+   * region, and a region names none, so regions never nest.
+   */
+  private checkRegions(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const regions = entities.filter((e) => e.kinds.some((k) => k.name === 'region'));
 
     // Memberless region: declared-but-unanswerable, uniformly hard (D2 —
     // ruled no warning tier; its daemon could otherwise silently never fire).
@@ -1711,72 +1829,16 @@ export class Analyzer {
       if (region.containing.length === 0) {
         this.diagnostics.error(
           'analysis.region-memberless',
-          `Region \`${region.name}\` has no \`containing\` line — an empty region is unanswerable (its daemons and crossings could never fire). List its member rooms.`,
+          `Region \`${region.name}\` has no rooms — an empty region is unanswerable (its daemons and crossings could never fire). Give it a \`rooms\` group, or put \`in the ${region.name}\` in a room's block.`,
           region.span,
         );
       }
     }
 
-    // Direct membership is stated exactly once, graph-wide.
-    const roomMemberOf = new Map<string, { region: IREntity; span: Span }>();
-    const parentOf = new Map<string, { parent: IREntity; span: Span }>();
-    for (const region of regions) {
-      for (const member of region.containing) {
-        const target = byId.get(member.id);
-        if (!target) continue; // unresolved — already reported by resolveEntityId
-        if (isRegionEntity(target)) {
-          const prior = parentOf.get(member.id);
-          if (prior) {
-            this.diagnostics.error(
-              'analysis.region-two-parents',
-              `Region \`${target.name}\` is already contained by region \`${prior.parent.name}\` (line ${prior.span.line}) — a region has exactly one parent.`,
-              member.span,
-            );
-          } else {
-            parentOf.set(member.id, { parent: region, span: member.span });
-          }
-        } else if (target.kinds.some((k) => k.name === 'room')) {
-          const prior = roomMemberOf.get(member.id);
-          if (prior) {
-            this.diagnostics.error(
-              'analysis.region-double-membership',
-              `\`${target.name}\` is already a member of region \`${prior.region.name}\` (line ${prior.span.line}) — direct membership is stated exactly once (nesting already makes a room part of every ancestor region).`,
-              member.span,
-            );
-          } else {
-            roomMemberOf.set(member.id, { region, span: member.span });
-          }
-        } else {
-          const kind = target.kinds[0]?.name ?? 'thing';
-          this.diagnostics.error(
-            'analysis.region-member-kind',
-            `\`${target.name}\` is a ${kind} — \`containing\` members must be rooms or regions.`,
-            member.span,
-          );
-        }
-      }
-    }
-
-    // ADR-325 D5: every landing room is a room the region contains,
-    // directly or through a nested region.
-    const roomsWithin = (region: IREntity, seen = new Set<string>()): Set<string> => {
-      const out = new Set<string>();
-      if (seen.has(region.id)) return out;
-      seen.add(region.id);
-      for (const member of region.containing) {
-        const target = byId.get(member.id);
-        if (!target) continue;
-        if (isRegionEntity(target)) {
-          for (const id of roomsWithin(target, seen)) out.add(id);
-        } else {
-          out.add(target.id);
-        }
-      }
-      return out;
-    };
+    // ADR-325 D5: every landing room is one of the region's rooms.
     for (const region of regions) {
       if (!region.landing) continue;
-      const within = roomsWithin(region);
+      const within = new Set(region.containing.map((m) => m.id));
       for (const roomId of region.landing.rooms) {
         const target = byId.get(roomId);
         if (!target) continue;
@@ -1789,37 +1851,11 @@ export class Analyzer {
         } else if (!within.has(roomId)) {
           this.diagnostics.error(
             'analysis.landing-not-contained',
-            `\`${target.name}\` is not contained by \`${region.name}\` — a landing must be one of the region's own rooms (directly or through a nested region).`,
+            `\`${target.name}\` is not in \`${region.name}\` — a landing must be one of the region's own rooms.`,
             region.landing.span,
           );
         }
       }
-    }
-
-    // Containment cycles (walking child → parent; two-parents kept the
-    // first edge, so the graph is functional and one walk per region ends).
-    const walked = new Map<string, 'visiting' | 'done'>();
-    for (const region of regions) {
-      if (walked.has(region.id)) continue;
-      const path: string[] = [];
-      let cur: string | undefined = region.id;
-      while (cur !== undefined && !walked.has(cur)) {
-        walked.set(cur, 'visiting');
-        path.push(cur);
-        const edge = parentOf.get(cur);
-        const next: string | undefined = edge?.parent.id;
-        if (next !== undefined && walked.get(next) === 'visiting') {
-          const names = [...path.slice(path.indexOf(next)), next].map((id) => byId.get(id)?.name ?? id);
-          this.diagnostics.error(
-            'analysis.region-cycle',
-            `Region containment cycle: ${names.map((n) => `\`${n}\``).join(' → ')}.`,
-            edge!.span,
-          );
-          break;
-        }
-        cur = next;
-      }
-      for (const id of path) walked.set(id, 'done');
     }
   }
 
@@ -3644,18 +3680,22 @@ export class Analyzer {
 
     // Derived phrase keys: entity descriptions and per-entity overrides.
     for (const e of this.entities) {
-      if (e.decl.description) {
-        this.descriptionKeys.add(`${e.id}.description`);
-        this.registerPhrase(DEFAULT_LOCALE, `${e.id}.description`, {
+      // ADR-360 D8: the rooms of a group share one description key, so the
+      // group's text is registered once, by its first room.
+      const keys = this.descriptionKeysOf(e);
+      const registersProse = (this.groupOrigins.get(e.decl)?.index ?? 0) === 0;
+      if (e.decl.description && registersProse) {
+        this.descriptionKeys.add(keys.description);
+        this.registerPhrase(DEFAULT_LOCALE, keys.description, {
           strategy: null,
           variants: [this.variantOf(e.decl.description)],
           span: e.decl.description.span,
         });
       }
-      if (e.decl.initialDescription) {
+      if (e.decl.initialDescription && registersProse) {
         // Z1: the `first time` prose — first-visit description, its own key.
-        this.descriptionKeys.add(`${e.id}.initial-description`);
-        this.registerPhrase(DEFAULT_LOCALE, `${e.id}.initial-description`, {
+        this.descriptionKeys.add(keys.initialDescription);
+        this.registerPhrase(DEFAULT_LOCALE, keys.initialDescription, {
           strategy: null,
           variants: [this.variantOf(e.decl.initialDescription)],
           span: e.decl.initialDescription.span,
@@ -3665,9 +3705,10 @@ export class Analyzer {
       // ADR-349 D15: `room name` arms repeat under the same numbered-key
       // convention `detail` uses, and are gated as an ordered SET — at most one
       // unconditional arm, and nothing may follow it, because an arm after the
-      // unconditional one can never be reached. Only the three block kinds that
-      // can contribute to a heading may carry one (a room, an enterable
-      // enclosure, a region).
+      // unconditional one can never be reached. Only the block kinds that
+      // contribute to a heading may carry one: a room and an enterable
+      // enclosure (ADR-360 D6 — a region contributes no heading). A group's
+      // arms are copied under each created room's own keys (ADR-360 D8).
       let roomNameIndex = 0;
       let unconditionalRoomName = false;
       let roomNameOwnerReported = false;
@@ -3675,8 +3716,7 @@ export class Analyzer {
         e.decl.compositions.some(
           (c) => Boolean(c.article) === asKind && c.words.join(' ').toLowerCase() === name,
         );
-      const canCarryRoomName =
-        composedAs('room', true) || composedAs('region', true) || composedAs('enterable', false);
+      const canCarryRoomName = composedAs('room', true) || composedAs('enterable', false);
       for (const override of e.decl.phraseOverrides) {
         const isDetail = override.key === 'detail';
         const isRoomName = override.key === 'room-name';
@@ -3693,7 +3733,7 @@ export class Analyzer {
           roomNameOwnerReported = true;
           this.diagnostics.error(
             'analysis.room-name-owner',
-            '`room name` belongs on a room, on an `enterable` thing, or on a region — nothing else contributes to a location heading.',
+            '`room name` belongs on a room, in a `rooms` group, or on an `enterable` thing — nothing else contributes to a location heading. A region has no heading of its own: give the heading to its rooms.',
             override.span,
           );
         }
@@ -5210,6 +5250,7 @@ export class Analyzer {
         temperamentDefs: this.temperamentDefs,
         codes: this.codes,
         honorDefs: this.honorDefs,
+        groupOrigins: this.groupOrigins,
         resolveEntityId: (ref) => this.resolveEntityId(ref),
         resolveCondition: (cond, scope) => this.resolveCondition(cond, scope),
         suggestText: (input, candidates) => this.suggestText(input, candidates),
@@ -5229,6 +5270,7 @@ export class Analyzer {
         resolveObligationLine: (o) => this.resolveObligationLine(o),
         resolveScopeRefDecl: (sr) => this.resolveScopeRefDecl(sr),
         buildLanding: (landing) => this.buildLanding(landing),
+        descriptionKeysOf: (id, decl) => this.descriptionKeysOf({ id, decl }),
         buildCounterDecl: (counter) => this.buildCounterDecl(counter),
         checkDuplicateClauses: (clauses, ownerDesc) => this.checkDuplicateClauses(clauses, ownerDesc),
         buildOnClause: (clause, scope, ownerKey, clauseIndex) => this.buildOnClause(clause, scope, ownerKey, clauseIndex),
@@ -7773,6 +7815,19 @@ export class Analyzer {
    * variant and is exempt. The rewrite itself is the loader's, atomically
    * with the snippet-map population.
    */
+  /**
+   * The phrase keys an entity's description and `first time` prose are
+   * registered under: its own, or its group's shared pair (ADR-360 D8).
+   * The prose builder writes the same keys onto the IR entity.
+   * @param e the entity's id and block
+   */
+  private descriptionKeysOf(e: { id: string; decl: CreateDecl }): { description: string; initialDescription: string } {
+    const origin = this.groupOrigins.get(e.decl);
+    return origin
+      ? { description: origin.descriptionKey, initialDescription: origin.initialDescriptionKey }
+      : { description: `${e.id}.description`, initialDescription: `${e.id}.initial-description` };
+  }
+
   private checkDescriptionMarkers(): void {
     const table = this.phrases.get(DEFAULT_LOCALE);
     if (!table) return;
@@ -7782,7 +7837,10 @@ export class Analyzer {
         (c) => c.article && c.words.join(' ').toLowerCase() === 'room',
       );
       if (!isRoom) continue;
-      for (const key of [`${e.id}.description`, `${e.id}.initial-description`]) {
+      // A group's shared keys are checked once, by its first room.
+      if ((this.groupOrigins.get(e.decl)?.index ?? 0) > 0) continue;
+      const keys = this.descriptionKeysOf(e);
+      for (const key of [keys.description, keys.initialDescription]) {
         const desc = table.get(key);
         if (!desc) continue;
         for (const site of descriptionMarkerSites(desc.variants[0]?.text ?? '')) {

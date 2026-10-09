@@ -93,13 +93,13 @@ cab is gone, so you're not leaving).
 ## Regions and crossing reactions
 
 Regions group rooms and give them shared behavior. Fernhill has two, and
-the Grounds narrate every crossing in both directions:
+the Grounds narrate every crossing in both directions. Each of the six
+outdoor rooms joins the Grounds with an `in the Grounds` line in its own
+block, so the region itself holds only the behavior:
 
 ```chord
 create the Grounds
   a region
-  containing the Iron Gates, the Gravel Drive, the Fountain Court
-  containing the Greenhouse, the Boiler Shed, Folly Hill
 
   on every turn while one chance in 6
     phrase night-wind
@@ -129,6 +129,7 @@ church bell).
 ```chord
 create the Iron Gates
   a room
+  in the Grounds
 
   first time
     The cab is already grinding away down the lane, its lamps swallowed

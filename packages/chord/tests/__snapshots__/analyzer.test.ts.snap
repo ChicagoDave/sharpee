@@ -61,6 +61,9 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "foyer-of-the-opera-house.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [
         {
           "direction": "west",
@@ -104,6 +107,9 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "name": "Foyer of the Opera House",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 71,
@@ -129,6 +135,9 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "cloakroom.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "cloakroom",
       "initialDescriptionKey": null,
@@ -149,6 +158,9 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "name": "Cloakroom",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 67,
@@ -174,6 +186,9 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "foyer-bar.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "foyer-bar",
       "initialDescriptionKey": null,
@@ -286,6 +301,9 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         },
       ],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 46,

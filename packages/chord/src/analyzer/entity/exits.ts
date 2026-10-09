@@ -11,7 +11,10 @@
  * key an exit line names is required to exist. Whether the block is a room
  * at all is the host gate's question.
  *
- * Public interface: exitsBuilder.
+ * A region's exit-table rows lower through the same `lowerExit` once every
+ * entity is built (the analyzer's `applyExitTables`).
+ *
+ * Public interface: exitsBuilder, lowerExit().
  * Owner context: @sharpee/chord analyzer (language frontend; browser-safe).
  *
  * References:
@@ -20,20 +23,33 @@
  * - GH #315 — the unreachable blocked-line warning.
  * - Platform-issue-sweep Phase 8 #15d — `is deadly while` fails at compile.
  */
+import type { ExitDecl, NameRef } from '../../ast.js';
+import type { IRExit } from '../../ir.js';
 import type { EntityLineBuilder } from './context.js';
+
+/**
+ * Lower one parsed exit to the IR — the one lowering for a room's exit
+ * lines and a region's exit-table rows (ADR-360 D3), so they cannot drift.
+ * @param e the parsed exit
+ * @param resolve entity-name resolution (reports an unresolved name)
+ * @returns the IR exit; '' marks an unresolved destination or door
+ */
+export function lowerExit(e: ExitDecl, resolve: (ref: NameRef) => string | null): IRExit {
+  return {
+    direction: e.direction,
+    to: resolve(e.to) ?? '',
+    via: e.via ? (resolve(e.via) ?? '') : null,
+    ...(e.oneWay ? { oneWay: true as const } : {}),
+    span: e.span,
+  };
+}
 
 export const exitsBuilder: EntityLineBuilder = {
   name: 'exits',
   requires: [],
   build(decl, entity, context) {
     const { scope } = entity;
-    entity.exits = decl.exits.map((e) => ({
-      direction: e.direction,
-      to: context.resolveEntityId(e.to) ?? '',
-      via: e.via ? (context.resolveEntityId(e.via) ?? '') : null,
-      ...(e.oneWay ? { oneWay: true as const } : {}),
-      span: e.span,
-    }));
+    entity.exits = decl.exits.map((e) => lowerExit(e, (ref) => context.resolveEntityId(ref)));
     entity.blockedExits = decl.blockedExits.map((b, i) => {
       context.requirePhrase(b.phraseKey, b.span);
       // The first line whose condition holds supplies the refusal, and a

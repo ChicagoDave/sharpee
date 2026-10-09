@@ -1,9 +1,11 @@
 /**
- * region-membership.test.ts — ADR-236 D1–D3 through the REAL loader
- * (AC-1): a Chord story with a nested region tree loads onto the platform
- * seam — region entities exist (RegionTrait), every member room's
- * `RoomTrait.regionId` is set via `assignRoom`, child regions carry
- * `parentRegionId`, and `world.isInRegion` is transitive through nesting.
+ * region-membership.test.ts — ADR-236 D1 and ADR-360 D4/D5 through the
+ * REAL loader: a Chord story whose rooms name their regions with `in` lines
+ * loads onto the platform seam — region entities exist (RegionTrait), every
+ * member room's `RoomTrait.regionId` is set via `assignRoom`, and
+ * `world.isInRegion` answers for the room's one region. The rogue-IR cycle
+ * case keeps the loader's backstop for nested IR covered until that wiring
+ * is removed.
  * REAL-PATH per Integration Reality: real @sharpee/chord compile of the
  * region-nesting.story fixture, real createStory/initializeWorld — no
  * stubs; every assertion reads loaded world trait state.
@@ -46,7 +48,6 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
     const regionTrait = underground.get(TraitType.REGION) as RegionTrait;
     expect(regionTrait).toBeDefined();
     expect(regionTrait.name).toBe('Underground');
-    expect(regionTrait.parentRegionId).toBeUndefined();
   });
 
   it('sets every member room regionId through the assignRoom seam', () => {
@@ -60,17 +61,13 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
     expect(roomRegion('surface-camp')).toBeUndefined();
   });
 
-  it('wires nesting: the child region carries parentRegionId (D3)', () => {
-    const { world, worldId } = load();
-    const mines = world.getEntity(worldId('mines'))!;
-    expect((mines.get(TraitType.REGION) as RegionTrait).parentRegionId).toBe(worldId('underground'));
-  });
-
-  it('membership is transitive through nesting (isInRegion ancestry walk)', () => {
+  // ADR-360 D5: regions no longer nest, so the nesting cases (a child
+  // region's parentRegionId, membership through an ancestor) cannot be
+  // written in Chord. Each room is in at most one region.
+  it('a room is in its own region and in no other', () => {
     const { world, worldId } = load();
     expect(world.isInRegion(worldId('coal-seam'), worldId('mines'))).toBe(true);
-    expect(world.isInRegion(worldId('coal-seam'), worldId('underground'))).toBe(true);
-    // Direct member of the parent, not of the child.
+    expect(world.isInRegion(worldId('coal-seam'), worldId('underground'))).toBe(false);
     expect(world.isInRegion(worldId('round-room'), worldId('underground'))).toBe(true);
     expect(world.isInRegion(worldId('round-room'), worldId('mines'))).toBe(false);
     expect(world.isInRegion(worldId('surface-camp'), worldId('underground'))).toBe(false);
@@ -82,7 +79,7 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
     expect(world.isInRegion(player.id, worldId('underground'))).toBe(false);
     world.moveEntity(player.id, worldId('coal-seam'));
     expect(world.isInRegion(player.id, worldId('mines'))).toBe(true);
-    expect(world.isInRegion(player.id, worldId('underground'))).toBe(true);
+    expect(world.isInRegion(player.id, worldId('underground'))).toBe(false);
   });
 
   it('keeps region blocks composable: aka and description land on IdentityTrait (D1)', () => {
@@ -96,7 +93,7 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
     expect(identity.aliases).toContain('the deep places');
   });
 
-  it('is declaration-order independent: a child region declared before its parent still wires (pass-0 topo order)', () => {
+  it('is declaration-order independent: a member room declared before its region still wires', () => {
     const { world, worldId } = load(`story
   title: Order
   authors:
@@ -104,18 +101,14 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
   id: order
   story-version: 0.0.1
 
-create the Mines
-  a region
-  containing the Coal Seam
-
 create the Coal Seam
   a room
+  in the Mines
 
   Coal.
 
-create the Underground
+create the Mines
   a region
-  containing the Mines
 
 create Alex
   a person
@@ -129,16 +122,18 @@ before the game starts
 end before
 
 `);
-    const mines = world.getEntity(worldId('mines'))!;
-    expect((mines.get(TraitType.REGION) as RegionTrait).parentRegionId).toBe(worldId('underground'));
-    expect(world.isInRegion(worldId('coal-seam'), worldId('underground'))).toBe(true);
+    const coalSeam = world.getEntity(worldId('coal-seam'))!;
+    expect((coalSeam.get(TraitType.ROOM) as RoomTrait).regionId).toBe(worldId('mines'));
+    expect(world.isInRegion(worldId('coal-seam'), worldId('mines'))).toBe(true);
   });
 
   it('refuses rogue IR carrying a containment cycle with a LoadError (compiler gate bypassed)', () => {
     const ir = compileSource(FIXTURE);
-    // Hand-corrupt the IR: make the child contain its own parent.
+    // Hand-corrupt the IR: make each region contain the other.
     const mines = ir.entities.find((e) => e.id === 'mines')!;
+    const underground = ir.entities.find((e) => e.id === 'underground')!;
     mines.containing.push({ id: 'underground', span: mines.span });
+    underground.containing.push({ id: 'mines', span: underground.span });
     const story = createStory(ir, { seed: 11 });
     const world = new WorldModel();
     expect(() => story.initializeWorld(world)).toThrow(LoadError);

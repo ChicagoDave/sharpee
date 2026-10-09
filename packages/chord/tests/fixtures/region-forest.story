@@ -7,7 +7,6 @@ story
 
 create the Forest
   a region
-  containing the Clearing, the Forest Path, and the Canyon View
 
   on every turn while one chance in 3
     phrase forest-birdsong
@@ -23,12 +22,14 @@ create the Forest
 
 create the Clearing
   a room
+  in the Forest
   east to the Forest Path
 
   A sunlit clearing in the forest.
 
 create the Forest Path
   a room
+  in the Forest
   west to the Clearing
   east to the Canyon View
 
@@ -36,6 +37,7 @@ create the Forest Path
 
 create the Canyon View
   a room
+  in the Forest
   west to the Forest Path
   east to the White House
 

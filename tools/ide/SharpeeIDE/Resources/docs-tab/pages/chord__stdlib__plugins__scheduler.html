@@ -63,7 +63,7 @@ Steam fogs the little window over the sink.
 &gt; wait
 Time passes...</code></pre>
 <p>The opening look is turn 1, so <code>at turn 2</code> lands on the first <code>wait</code>; and the second sequence's <code>when the story becomes boiling</code> step fires in the very turn the first sequence changes the state.</p>
-<p>An <code>on every turn [while …][, once]</code> clause (chord-language.md) becomes one daemon per clause. Owned by an entity, a trait, or a region, it is <strong>presence-gated</strong>: off-stage the clause neither fires, rolls dice, nor consumes its <code>once</code> (for a region, &quot;present&quot; means anywhere in a member room, nesting included). Hosted in the story header's own body it is the story's clause, one daemon with <strong>no gate</strong>: a background clock that ticks wherever the player is (weather, off-stage simulation; ADR-236).</p>
+<p>An <code>on every turn [while …][, once]</code> clause (chord-language.md) becomes one daemon per clause. Owned by an entity, a trait, or a region, it is <strong>presence-gated</strong>: off-stage the clause neither fires, rolls dice, nor consumes its <code>once</code> (for a region, &quot;present&quot; means anywhere in a member room). Hosted in the story header's own body it is the story's clause, one daemon with <strong>no gate</strong>: a background clock that ticks wherever the player is (weather, off-stage simulation; ADR-236).</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">story
   title: The Lighthouse
@@ -84,13 +84,13 @@ create the Jetty
 
 create the Lamp Room
   a room
+  in the Lighthouse
   south to the Jetty
 
   Glass on every side, the great lamp turning overhead.
 
 create the Lighthouse
   a region
-  containing the Lamp Room
 
   on every turn
     phrase lamp-hum

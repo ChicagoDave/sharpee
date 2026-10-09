@@ -88,10 +88,11 @@ The rest of the trait in one-liners:
   zookeeper` and `create a zookeeper` load identically.
 
 **region** (`a region`, a kind noun since ADR-236) groups rooms into
-areas: a room carries a region id, regions nest by containing each
-other, and going emits `region_exited` / `region_entered` per
-crossed boundary. Everything is authored region-side: `containing`
-lists members (additive across lines), `after the player entering` / `after
+areas: a room carries the id of its one region (regions do not nest),
+and going emits `region_exited` / `region_entered` per crossed
+boundary. A room joins with an `in the <region>` line in its own block,
+or is created by a `rooms` group inside the region. The behavior is
+authored region-side: `after the player entering` / `after
 the player leaving` react to boundary crossings (`leaving` exists only on region
 blocks), and an `on every turn` clause on the region block is a region
 daemon, firing only while the player is in a member room (the daemon
@@ -100,9 +101,20 @@ machinery is [the plugins layer's](/chord/stdlib/plugins)).
 The author writes:
 
 ```chord
+create the Orchard
+  a room
+  in the Grounds
+
+  Apple trees in ragged rows.
+
+create the Apiary
+  a room
+  in the Grounds
+
+  White hives stand in the grass.
+
 create the Grounds
   a region
-  containing the Orchard, the Apiary
 
   after the player entering
     phrase under-the-boughs

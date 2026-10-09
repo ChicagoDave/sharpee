@@ -28,8 +28,6 @@ story
 
 create the Grounds
   a region
-  containing the Iron Gates, the Gravel Drive, the Fountain Court
-  containing the Greenhouse, the Boiler Shed, Folly Hill
 
   on every turn while one chance in 6
     phrase night-wind
@@ -47,8 +45,6 @@ create the Grounds
 
 create the House
   a region
-  containing the Entrance Hall, the Study, the Pantry
-  containing the Kitchen, the Cellar Stairs and the Cellar
 
   after the player entering
     phrase house-hush
@@ -56,6 +52,7 @@ create the House
 
 create the Iron Gates
   a room
+  in the Grounds
   aka gates, gate
   north to the Gravel Drive
   south is blocked: long-road
@@ -77,6 +74,7 @@ create the Iron Gates
 
 create the Gravel Drive
   a room
+  in the Grounds
   aka drive
   south to the Iron Gates
   north to the Fountain Court
@@ -86,6 +84,7 @@ create the Gravel Drive
 
 create the Fountain Court
   a room
+  in the Grounds
   aka court, courtyard
   south to the Gravel Drive
   north to the Entrance Hall
@@ -99,6 +98,7 @@ create the Fountain Court
 
 create the Greenhouse
   a room
+  in the Grounds
   aka glasshouse
   east to the Fountain Court
   north to Folly Hill
@@ -110,6 +110,7 @@ create the Greenhouse
 
 create the Boiler Shed
   a room
+  in the Grounds
   aka shed
   west to the Fountain Court
 
@@ -119,6 +120,7 @@ create the Boiler Shed
 
 create Folly Hill
   a room
+  in the Grounds
   aka hill
   south to the Greenhouse
   north to the Folly through the folly door
@@ -141,6 +143,7 @@ create the Folly
 
 create the Entrance Hall
   a room
+  in the House
   aka hall
   south to the Fountain Court
   west to the Study
@@ -155,6 +158,7 @@ create the Entrance Hall
 
 create the Study
   a room
+  in the House
   east to the Entrance Hall
 
   Verity's study, exactly as she left it: a desk under the window, a
@@ -163,6 +167,7 @@ create the Study
 
 create the Kitchen
   a room
+  in the House
   west to the Entrance Hall
   north to the Pantry through the pantry door
 
@@ -171,12 +176,14 @@ create the Kitchen
 
 create the Pantry
   a room
+  in the House
 
   Narrow shelves of preserves and crockery. With the door shut, no one
   in the kitchen would know you were here.
 
 create the Cellar Stairs
   a room
+  in the House
   aka stairs, landing
   south to the Entrance Hall
   down to the Cellar through the cellar door
@@ -186,6 +193,7 @@ create the Cellar Stairs
 
 create the Cellar
   a room
+  in the House
   dark
 
   Brick vaults run off into the dark, cold enough to keep milk in

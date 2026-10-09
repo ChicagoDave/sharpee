@@ -32,6 +32,7 @@ import { proseBuilder } from './prose.js';
 import { statesBuilder } from './states.js';
 
 export { assembleEntity } from './assemble.js';
+export { lowerExit } from './exits.js';
 export { isPersonDecl, isPlayableDecl, newEntityDraft } from './context.js';
 export type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './context.js';
 

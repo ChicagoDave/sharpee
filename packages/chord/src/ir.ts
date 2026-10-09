@@ -284,11 +284,10 @@ export interface IREntity {
   /** Entity IDs carried at start, not worn (player carries the knife — ADR-230 Phase 6). */
   carries: string[];
   /**
-   * Region membership (`containing <list>`, ADR-236 D2/D3) — resolved member
-   * entity IDs in declaration order, additive across lines. Members are
-   * rooms (loader: `assignRoom`) or nested regions (member's
-   * `parentRegionId` = this region). Non-empty only on region-kind entities
-   * (analyzer-gated).
+   * Region membership, collected by the analyzer from the region's `rooms`
+   * groups and every room's `in the <region>` line (ADR-360 D4/D5) — member
+   * room IDs in declaration order (loader: `assignRoom`). Non-empty only on
+   * region-kind entities.
    */
   containing: IRContainedMember[];
   /**
@@ -328,6 +327,14 @@ export interface IREntity {
    * Rooms only — the loader binds it to `RoomTrait.initialDescription`.
    */
   initialDescriptionKey: string | null;
+  /**
+   * Where a room's description comes from (ADR-360 D8). Rooms only, and on
+   * every room. Readers — the missing-description warning, the IDE's room
+   * lens — take it as written and never derive it again.
+   */
+  descriptionSource?: IRTextSource;
+  /** Where a room's `room name` heading comes from (ADR-360 D8). Rooms only, and on every room. */
+  roomNameSource?: IRTextSource;
   onClauses: IROnClause[];
   /**
    * The entity's declared ask/tell topic table (`define topics for …`,
@@ -830,7 +837,22 @@ export interface IRLanding {
   span: Span;
 }
 
-/** One resolved `containing` member (ADR-236 D2) — a room or nested region. */
+/**
+ * Where a room's text comes from (ADR-360 D8): written in its own block, shared
+ * from the `rooms` group that created it, or absent.
+ */
+export interface IRTextSource {
+  readonly from: 'own' | 'group' | 'none';
+  /** The region whose group created the room; present only when `from` is 'group'. */
+  readonly regionId?: string;
+  /** The group's first and last created names, for display; present only when `from` is 'group'. */
+  readonly group?: readonly [first: string, last: string];
+}
+
+/**
+ * One region member (ADR-360 D1/D4): a room created by one of the region's
+ * `rooms` groups or placed `in` it by its own block.
+ */
 export interface IRContainedMember {
   /** Entity ID of the member. */
   id: string;

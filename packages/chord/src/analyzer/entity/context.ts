@@ -64,6 +64,7 @@ import type {
   IRResistsEntry,
   IRScopeRef,
   IRSpreads,
+  IRTextSource,
   IRTemperamentBinding,
   IRTemperamentDef,
   IRThinksEntry,
@@ -71,6 +72,7 @@ import type {
 } from '../../ir.js';
 import type { Span } from '../../span.js';
 import type { EntitySymbol, Scope } from '../../analyzer.js';
+import type { RoomGroupOrigin } from '../room-groups.js';
 
 /**
  * The entity under construction. Identity fields are set at creation; each
@@ -126,6 +128,8 @@ export interface EntityDraft {
   counters: IRCounterDecl[];
   descriptionKey: string | null;
   initialDescriptionKey: string | null;
+  descriptionSource?: IRTextSource;
+  roomNameSource?: IRTextSource;
   onClauses: IROnClause[];
   timerClauses?: IRTimerClause[];
   moveClauses?: IRMoveClause[];
@@ -152,6 +156,8 @@ export interface EntityBuildContext {
   readonly codes: ReadonlyMap<string, { principles: IRPrincipleEntry[]; obligations: IRObligationEntry[] }>;
   /** `define honor` bundles by name — the face acts each names. */
   readonly honorDefs: ReadonlyMap<string, string[]>;
+  /** The `rooms` group each created room came from (ADR-360 D1); written blocks are absent. */
+  readonly groupOrigins: ReadonlyMap<CreateDecl, RoomGroupOrigin>;
 
   resolveEntityId(ref: NameRef): string | null;
   resolveCondition(cond: ConditionNode, scope: Scope): IRCondition;
@@ -174,6 +180,8 @@ export interface EntityBuildContext {
   resolveObligationLine(o: ObligationLineDecl): IRObligationEntry | null;
   resolveScopeRefDecl(s: ScopeRefDecl): IRScopeRef | null;
   buildLanding(landing: LandingDecl): IRLanding;
+  /** The phrase keys a block's description and `first time` prose are registered under. */
+  descriptionKeysOf(id: string, decl: CreateDecl): { description: string; initialDescription: string };
   buildCounterDecl(decl: CounterDecl): IRCounterDecl;
   checkDuplicateClauses(clauses: OnClause[], ownerDesc: string): OnClause[];
   buildOnClause(clause: OnClause, scope: Scope, ownerKey: string, clauseIndex: number): IROnClause;

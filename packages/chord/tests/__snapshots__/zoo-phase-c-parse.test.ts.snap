@@ -246,6 +246,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "zoo-entrance.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [
         {
           "direction": "south",
@@ -278,6 +281,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "name": "Zoo Entrance",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 75,
@@ -328,6 +334,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "main-path.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [
         {
           "direction": "east",
@@ -382,6 +391,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "name": "Main Path",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 76,
@@ -408,6 +420,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "petting-zoo.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "petting-zoo",
       "initialDescriptionKey": null,
@@ -465,6 +480,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 28,
@@ -491,6 +509,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "aviary.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [
         {
           "direction": "west",
@@ -637,6 +658,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 46,
@@ -687,6 +711,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "supply-room.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [
         {
           "direction": "south",
@@ -756,6 +783,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 28,
@@ -783,6 +813,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "nocturnal-animals-exhibit.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "nocturnal-animals-exhibit",
       "initialDescriptionKey": null,
@@ -840,6 +873,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 28,
@@ -878,6 +914,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "gift-shop.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "gift-shop",
       "initialDescriptionKey": null,
@@ -935,6 +974,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
       ],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 28,
@@ -958,6 +1000,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "staff-parking-lot.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "staff-parking-lot",
       "initialDescriptionKey": null,
@@ -978,6 +1023,9 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "name": "Staff Parking Lot",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 74,

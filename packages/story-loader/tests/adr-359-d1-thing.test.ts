@@ -20,12 +20,12 @@ const SOURCE = `story
 
 create the Hall
   a room
+  in the Grounds
 
   A hall.
 
 create the Grounds
   a region
-  containing the Hall
 
 create Alex
   a person

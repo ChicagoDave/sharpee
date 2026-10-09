@@ -118,7 +118,6 @@ const REGION_STORY = `story
 
 create the Inner
   a region
-  containing the Plaza
 
   on every turn while day
     change the story to night
@@ -133,6 +132,7 @@ create the Street
 
 create the Plaza
   a room
+  in the Inner
   south to the Street
 
   The plaza.

@@ -757,19 +757,25 @@ export interface CreateDecl {
    * the required trait (`lockable`, …) is the analyzer's gate.
    */
   startsStates: StartsStateDecl[];
-  /** `in <place>` / `on <place>` / `starts in <place>`. */
+  /** `in <place>` / `on <place>` / `starts in <place>` — the last such line. */
   placement: Placement | null;
+  /**
+   * Every placement line, in order (`placement` is the last). A room may
+   * name one region (ADR-360 D4), so a second `in` line is the analyzer's
+   * `analysis.room-two-regions`.
+   */
+  placementLines: Placement[];
   /** `wears <thing>` lines (the player wears the cloak). */
   wears: NameRef[];
 
   /** `carries <thing>` lines — start inventory, not worn (ADR-230 Phase 6). */
   carries: NameRef[];
   /**
-   * `containing <name list>` region-membership lines (ADR-236 D2, ratchet
-   * R2) — additive across lines; members are rooms or nested regions. Legal
-   * only on region blocks (the analyzer's gate).
+   * `rooms <stem> <first> to <last>` groups (ADR-360 D1/D2) — legal only on
+   * a region block (the analyzer's gate). The analyzer expands each into
+   * ordinary room blocks placed in this region.
    */
-  containing: NameRef[];
+  roomGroups: RoomGroupDecl[];
   /**
    * `landing <room>` / `landing, <strategy>: <rooms>` (ADR-325 D5) — where
    * something put in the region lands. One per region (the parser rejects
@@ -777,6 +783,8 @@ export interface CreateDecl {
    */
   landing: LandingDecl | null;
   exits: ExitDecl[];
+  /** `exits` / `exits, one-way` tables (ADR-360 D3) — a region's rooms' exits. */
+  exitTables: ExitTableDecl[];
   blockedExits: BlockedExitDecl[];
   /** `<direction> is deadly: <phrase>` lines (ADR-227). */
   deadlyExits: DeadlyExitDecl[];
@@ -1169,6 +1177,34 @@ export interface ConfigSetting {
   span: Span;
 }
 
+/** One number of a `rooms` range, kept as written so a leading zero can be refused. */
+export interface RoomGroupBound {
+  /** The digits as written (`01` stays `01`). */
+  text: string;
+  value: number;
+  span: Span;
+}
+
+/**
+ * `rooms <stem> <first> to <last>` with its indented body (ADR-360 D1/D2):
+ * one room per whole number in the range, named `<stem> <n>`, each taking
+ * the body as its own. The body is parsed as an ordinary create body so
+ * every line keeps its shape; which lines a group admits is the analyzer's
+ * `analysis.room-group-line` gate.
+ */
+export interface RoomGroupDecl {
+  kind: 'room-group';
+  /** The stem words, without an article (`Maze`, `Road to Ruin`). */
+  stem: string[];
+  first: RoomGroupBound;
+  last: RoomGroupBound;
+  /** The indented body; its `name` is the stem and its span the whole group. */
+  body: CreateDecl;
+  /** The `rooms` line alone. */
+  headSpan: Span;
+  span: Span;
+}
+
 export interface Placement {
   kind: 'placement';
   /** 'in' | 'on' | 'starts-in' */
@@ -1194,6 +1230,31 @@ export interface ExitDecl {
    * stories without it stay byte-identical).
    */
   oneWay?: true;
+  span: Span;
+}
+
+/**
+ * One row of a region's exit table (ADR-360 D3): `<room>: <exit>, <exit>, …`.
+ * Each exit is the shared `exit` production; a row holds no blocked exit.
+ */
+export interface ExitRowDecl {
+  kind: 'exit-row';
+  room: NameRef;
+  exits: ExitDecl[];
+  span: Span;
+}
+
+/**
+ * A region's `exits` or `exits, one-way` table (ADR-360 D3). In a one-way
+ * table every exit carries `oneWay`, so the loader infers no reverse. Legal
+ * only in a region block, one of each kind (the analyzer's gates).
+ */
+export interface ExitTableDecl {
+  kind: 'exit-table';
+  oneWay: boolean;
+  rows: ExitRowDecl[];
+  /** The `exits` line alone. */
+  headSpan: Span;
   span: Span;
 }
 

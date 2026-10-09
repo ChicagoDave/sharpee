@@ -3,8 +3,8 @@
  *
  * A line that only one kind can carry compiles to nothing on any other, and
  * a silent no-op is what Chord refuses: a door's location is its room pair,
- * a region's is its member list, so neither takes a placement line;
- * `landing` and `containing` are region lines; `first time` prose is a
+ * a region's is its member rooms, so neither takes a placement line;
+ * `landing` is a region line; `first time` prose is a
  * room's; exits, blocked or deadly, leave a room. Each is reported once, at
  * the offending line, and the resolving builders that follow read the kinds
  * without repeating the question. A gate spanning line kinds, so it runs
@@ -15,7 +15,7 @@
  *
  * References:
  * - ADR-234 D3 — no door placement (the loader places it in room1).
- * - ADR-236 D1/D2 — no region placement; `containing` is region-only.
+ * - ADR-236 D1 — no region placement; ADR-360 D5 — so regions do not nest.
  * - ADR-325 D5 — `landing` is region-only.
  * - Z1 (ADR-211) — `first time` prose is room-only.
  * - ADR-289 D6 — exits are room-only; the loader keeps a defensive throw.
@@ -39,7 +39,7 @@ export const hostGatesBuilder: EntityLineBuilder = {
     if (isRegion && decl.placement) {
       context.diagnostics.error(
         'analysis.region-placement',
-        `A region has no location — its place IS its member list. Remove this line; membership is \`containing <rooms>\`.`,
+        `A region has no location — its place IS its member rooms, so regions do not nest. Remove this line.`,
         decl.placement.span,
       );
     }
@@ -48,13 +48,6 @@ export const hostGatesBuilder: EntityLineBuilder = {
         'analysis.landing-host',
         `\`landing\` declares where things put in a region land — \`${blockName}\` is not a region.`,
         decl.landing.span,
-      );
-    }
-    if (!isRegion && decl.containing.length > 0) {
-      context.diagnostics.error(
-        'analysis.region-containing-host',
-        `\`containing\` declares region membership — \`${blockName}\` is not a region. (Contents are placed with \`in\`/\`on\` lines on the contained entity.)`,
-        decl.containing[0].span,
       );
     }
     const isRoom = kinds.some((k) => k.name === 'room');

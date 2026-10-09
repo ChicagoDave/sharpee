@@ -77,7 +77,6 @@ grounds and stops at the door:
 ```chord
 create the Grounds
   a region
-  containing the Gravel Drive, the Fountain Court
 
   after the player entering
     play ambient night-wind when client has sound
@@ -86,6 +85,18 @@ create the Grounds
   after the player leaving
     stop ambient when client has sound
   end after
+
+create the Gravel Drive
+  a room
+  in the Grounds
+
+  Gravel crunches underfoot.
+
+create the Fountain Court
+  a room
+  in the Grounds
+
+  A dry fountain stands in the middle of the court.
 ```
 
 The [Fernhill walkthrough](/learn/fernhill/browser) shows all three kinds

@@ -58,9 +58,9 @@ function enter(booted: Booted, slug: string): ISemanticEvent[] {
   });
 }
 
-// The Market contains the Gate directly and the Hat Stall through the
-// nested Stalls region. Neither region has a landing. Every room carries
-// the same pair of gated phrases, so what fires IS the membership answer.
+// The Gate is in the Market and the Hat Stall in the Stalls; regions do not
+// nest (ADR-360 D5). Neither region has a landing. Every room carries the
+// same pair of gated phrases, so what fires IS the membership answer.
 const SOURCE = `story
   title: Membership
   authors:
@@ -70,14 +70,13 @@ const SOURCE = `story
 
 create the Market
   a region
-  containing the Gate, the Stalls
 
 create the Stalls
   a region
-  containing the Hat Stall
 
 create the Gate
   a room
+  in the Market
   east to the Hat Stall
   south to the Camp
 
@@ -90,6 +89,7 @@ create the Gate
 
 create the Hat Stall
   a room
+  in the Stalls
   west to the Gate
 
   Hats.
@@ -154,10 +154,10 @@ describe('`is in <region>` is a membership test (GH #339, REAL-PATH)', () => {
     expect(ids).not.toContain('in-stalls');
   });
 
-  it('is transitive through a nested region', () => {
+  it('answers for the room\'s own region only: a Stalls room is not in the Market', () => {
     const booted = boot(SOURCE);
     const ids = messageIdsOf(enter(booted, 'hat-stall'));
-    expect(ids).toContain('in-market');
+    expect(ids).not.toContain('in-market');
     expect(ids).toContain('in-stalls');
   });
 

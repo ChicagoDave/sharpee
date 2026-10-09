@@ -39,14 +39,13 @@ const STORY = `story
 
 create the Garden
   a region
-  containing the Lawn
 
 create the Cellar
   a region
-  containing the Vault
 
 create the Lawn
   a room
+  in the Garden
   down to the Vault
   east to the Roadside
 
@@ -54,6 +53,7 @@ create the Lawn
 
 create the Vault
   a room
+  in the Cellar
   up to the Lawn
 
   A vault.

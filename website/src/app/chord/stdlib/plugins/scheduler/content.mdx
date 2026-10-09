@@ -94,7 +94,7 @@ An `on every turn [while …][, once]` clause (chord-language.md)
 becomes one daemon per clause. Owned by an entity, a trait, or a
 region, it is **presence-gated**: off-stage the clause neither fires,
 rolls dice, nor consumes its `once` (for a region, "present" means
-anywhere in a member room, nesting included). Hosted in the story
+anywhere in a member room). Hosted in the story
 header's own body it is the story's clause, one daemon with **no gate**:
 a background clock that ticks wherever the player is (weather, off-stage
 simulation; ADR-236).
@@ -121,13 +121,13 @@ create the Jetty
 
 create the Lamp Room
   a room
+  in the Lighthouse
   south to the Jetty
 
   Glass on every side, the great lamp turning overhead.
 
 create the Lighthouse
   a region
-  containing the Lamp Room
 
   on every turn
     phrase lamp-hum

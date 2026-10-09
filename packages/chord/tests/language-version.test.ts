@@ -124,7 +124,15 @@ const PINNED = {
   // `declaration`, their productions become a removal note, and the asset
   // note no longer mentions the IR's hatch flag. BREAKING; folds into the same
   // unpublished 4.0.0 set (the number moves at publish).
-  ebnfSha256: '3de8318c4485c175a0a9030f92d9e7b56a2d0c81976a293646008fd22012e389',
+  // Re-pinned 2026-10-09 (session a1c502, ADR-360 D1, D2, D4-D6): `containing`
+  // leaves `create-line` for `room-group` (with `stem` and `group-line`); the
+  // placement line notes region membership and its gates; `name` admits a
+  // trailing NUMBER; `room name` is no longer legal on a region. BREAKING;
+  // folds into the same unpublished 4.0.0 set (the number moves at publish).
+  // Re-pinned 2026-10-09 (session a1c502, ADR-360 D3): the region's
+  // `exit-table` with `exit-row`, and the one shared `exit` production that
+  // the room's exit line now reads. Additive; same unpublished 4.0.0 set.
+  ebnfSha256: '8ef202dfee57ec38f918c000af2793b08d758f6cf039d2b8b44625083e29dc08',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

@@ -126,6 +126,9 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "petting-zoo.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "petting-zoo",
       "initialDescriptionKey": null,
@@ -146,6 +149,9 @@ exports[`zoo-actions IR (§3.4 + ownership package) > matches the golden IR snap
       "name": "Petting Zoo",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 48,

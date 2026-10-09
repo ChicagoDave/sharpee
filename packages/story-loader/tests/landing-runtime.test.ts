@@ -57,25 +57,23 @@ const SOURCE = (landing: string, clause: string) => `story
 
 create the Market
   a region
-  containing the East Gate, the Stalls
   ${landing}
-
-create the Stalls
-  a region
-  containing the Hat Stall, the Grocery Stall
 
 create the East Gate
   a room
+  in the Market
 
   A gate.
 
 create the Hat Stall
   a room
+  in the Market
 
   Hats.
 
 create the Grocery Stall
   a room
+  in the Market
 
   Groceries.
 
@@ -117,7 +115,7 @@ describe('a region with a landing is a place (D5)', () => {
     expect(monkeyRoom(b)).toBe(roomOf(b, 'east-gate'));
   });
 
-  it("`<region>'s location` reads as the landing, through a nested region", () => {
+  it("`<region>'s location` reads as the landing", () => {
     const b = boot(SOURCE('landing the Hat Stall', "move the monkey to the Market's location"));
     enterAlley(b);
     expect(monkeyRoom(b)).toBe(roomOf(b, 'hat-stall'));

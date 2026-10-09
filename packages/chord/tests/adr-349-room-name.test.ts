@@ -207,14 +207,25 @@ create the lamp
       expect(errorCodes(result)).toContain('analysis.room-name-owner');
     });
 
-    it('accepts the block on an enterable thing and on a region', () => {
+    it('refuses the block on a region: a region contributes no heading (ADR-360 D6)', () => {
       const result = compileStory(`create the Underground
   a region
-  containing the Well
   room name:
     underground
 
 create the Well
+  a room
+  in the Underground
+
+  A well.
+
+`);
+
+      expect(errorCodes(result)).toEqual(['analysis.room-name-owner']);
+    });
+
+    it('accepts the block on an enterable thing', () => {
+      const result = compileStory(`create the Well
   a room
 
   A well.

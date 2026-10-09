@@ -17,22 +17,28 @@ const story = (market: string, extra = '', player = '') => `story
 
 create the Market
   a region
-  containing the East Gate, the Stalls
 ${market}
 
 create the Stalls
   a region
-  containing the Hat Stall
 
 create the East Gate
   a room
+  in the Market
 
   A gate.
 
 create the Hat Stall
   a room
+  in the Market
 
   Hats.
+
+create the Shoe Stall
+  a room
+  in the Stalls
+
+  Shoes.
 
 create the Alley
   a room
@@ -73,11 +79,16 @@ describe('the landing line (D5)', () => {
     expect(ir.entities.find((e) => e.id === 'market')!.landing).toMatchObject({ rooms: ['east-gate'], strategy: null });
   });
 
-  it('lowers a strategy list, including a room reached through a nested region', () => {
+  it('lowers a strategy list of the region\'s rooms', () => {
     const ir = ok(story('  landing, randomly: the East Gate, the Hat Stall'));
     expect(ir.entities.find((e) => e.id === 'market')!.landing).toMatchObject({ rooms: ['east-gate', 'hat-stall'], strategy: 'randomly' });
     expect(ok(story('  landing, cycling: the East Gate and the Hat Stall')).entities.find((e) => e.id === 'market')!.landing?.strategy).toBe('cycling');
     expect(ok(story('  landing, stopping: the East Gate, the Hat Stall')).entities.find((e) => e.id === 'market')!.landing?.strategy).toBe('stopping');
+  });
+
+  it('a landing may name a room a `rooms` group created', () => {
+    const ir = ok(story('  landing the Booth 2\n\n  rooms Booth 1 to 3\n\n    A booth.\n'));
+    expect(ir.entities.find((e) => e.id === 'market')!.landing).toMatchObject({ rooms: ['booth-2'], strategy: null });
   });
 
   it('a list must say how to choose; a single room takes no strategy', () => {

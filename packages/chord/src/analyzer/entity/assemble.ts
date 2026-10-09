@@ -83,6 +83,8 @@ export function assembleEntity(draft: EntityDraft): IREntity {
     counters: draft.counters,
     descriptionKey: draft.descriptionKey,
     initialDescriptionKey: draft.initialDescriptionKey,
+    ...(draft.descriptionSource !== undefined ? { descriptionSource: draft.descriptionSource } : {}),
+    ...(draft.roomNameSource !== undefined ? { roomNameSource: draft.roomNameSource } : {}),
     onClauses: draft.onClauses,
     ...(draft.timerClauses !== undefined ? { timerClauses: draft.timerClauses } : {}),
     ...(draft.moveClauses !== undefined ? { moveClauses: draft.moveClauses } : {}),

@@ -2,10 +2,10 @@
  * adr-349-location-names.test.ts — the registration seam.
  *
  * `compileLocationNames` turns the analyzer's numbered `room name` keys into
- * live predicates in world-model's registry (D16 contracts 1 and 2). AC-13 (a
- * region contributes to its members, and a member with no arm of its own renders
- * the region's part alone) and AC-14 (a conditional heading still varies after a
- * save and restore) both live here — AC-14 is the criterion the registry exists
+ * live predicates in world-model's registry (D16 contracts 1 and 2). ADR-360
+ * AC-6 (a member room's heading is its own, since a region contributes none;
+ * it replaced ADR-349 AC-13) and AC-14 (a conditional heading still varies after
+ * a save and restore) both live here — AC-14 is the criterion the registry exists
  * to satisfy, and it fails for any implementation that stores the predicates on
  * a serialized trait.
  */
@@ -189,20 +189,21 @@ create Alex
     });
   });
 
-  describe('AC-13 — a region contributes', () => {
+  // ADR-360 AC-6 replaces ADR-349 AC-13: a region contributes no heading, so
+  // a member room's heading is its own, from its group or its own block.
+  describe('ADR-360 AC-6 — a member room heads with its own name only', () => {
     const MAZE = `create the Maze
   a region
-  containing the maze-1 and the maze-2
-  room name:
-    Maze of twisty little passages, all alike
 
-create the maze-1
+  rooms Maze 1 to 2
+    room name:
+      Maze of twisty little passages, all alike
+
+    You are lost.
+
+create the Dead End
   a room
-
-  You are lost.
-
-create the maze-2
-  a room
+  in the Maze
   room name:
     A dead end
 
@@ -211,29 +212,26 @@ create the maze-2
 create Alex
   a person
   playable
-  starts in the maze-1
+  starts in the Maze 1
 
   You.
 
 `;
 
-    it('a member with no arm of its own renders the region part alone', () => {
+    it("a room created by a group heads with the group's arm, one place part", () => {
       const { world, player } = load(MAZE);
 
       expect(headingOf(world, player)).toEqual([
-        ['region', 'Maze of twisty little passages, all alike'],
+        ['place', 'Maze of twisty little passages, all alike'],
       ]);
     });
 
-    it('a member with its own arm renders both, place before region', () => {
+    it('a one-off member heads with its own arm, one place part', () => {
       const { world, player } = load(MAZE);
-      const deadEnd = world.getAllEntities().find(e => e.name === 'maze-2')!;
+      const deadEnd = world.getAllEntities().find(e => e.name === 'Dead End')!;
       world.moveEntity(player.id, deadEnd.id);
 
-      expect(headingOf(world, player)).toEqual([
-        ['place', 'A dead end'],
-        ['region', 'Maze of twisty little passages, all alike'],
-      ]);
+      expect(headingOf(world, player)).toEqual([['place', 'A dead end']]);
     });
   });
 });

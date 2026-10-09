@@ -48,11 +48,9 @@ create the oil lamp
   north is blocked while the boiler is off: frost-sealed</code></pre>
 <p>The word after the colon names the refusal phrase. An unconditional block works the same way (<code>south is blocked: long-road</code> on the Iron Gates; the cab is gone, so you're not leaving).</p>
 <h2 id="regions-and-crossing-reactions">Regions and crossing reactions</h2>
-<p>Regions group rooms and give them shared behavior. Fernhill has two, and the Grounds narrate every crossing in both directions:</p>
+<p>Regions group rooms and give them shared behavior. Fernhill has two, and the Grounds narrate every crossing in both directions. Each of the six outdoor rooms joins the Grounds with an <code>in the Grounds</code> line in its own block, so the region itself holds only the behavior:</p>
 <pre><code class="language-chord">create the Grounds
   a region
-  containing the Iron Gates, the Gravel Drive, the Fountain Court
-  containing the Greenhouse, the Boiler Shed, Folly Hill
 
   on every turn while one chance in 6
     phrase night-wind
@@ -71,6 +69,7 @@ create the oil lamp
 <h2 id="first-visit-prose">First-visit prose</h2>
 <pre><code class="language-chord">create the Iron Gates
   a room
+  in the Grounds
 
   first time
     The cab is already grinding away down the lane, its lamps swallowed

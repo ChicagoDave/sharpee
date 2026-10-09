@@ -1,13 +1,14 @@
-A region groups rooms and owns behavior for all of them: `containing`
-lists members (additive across lines; regions nest), an `on every turn`
-clause is a region daemon firing only while the player is in a member
-room, and `after the player entering` / `after the player leaving` bind to boundary
+A region groups rooms and owns behavior for all of them. A room joins a
+region with an `in the <region>` line in its own block, and a region can
+declare a set of identical rooms itself with a `rooms` group; a room is in
+at most one region, and regions do not nest. An `on every turn` clause is a
+region daemon firing only while the player is in a member room, and
+`after the player entering` / `after the player leaving` bind to boundary
 crossings in either direction. `leaving` exists only on region blocks.
 
 ```chord
 create the Grounds
   a region
-  containing the Drive, the Hall
   landing the Drive
 
   on every turn while one chance in 6
@@ -21,6 +22,35 @@ create the Grounds
   after the player leaving
     phrase out-of-the-wind
   end after
+
+create the Drive
+  a room
+  in the Grounds
+
+  A gravel drive.
+
+create the Hall
+  a room
+  in the Grounds
+
+  A cold hall.
+```
+
+Identical rooms, such as the rooms of a maze, are declared once with their
+count: `rooms Maze 1 to 12` inside the region creates `the Maze 1` to
+`the Maze 12`, each a member, each taking the group's heading and
+description as its own. A room that needs anything of its own, a clause
+or different text, is written as its own block with an `in` line instead.
+
+```chord
+create the Maze
+  a region
+
+  rooms Maze 1 to 12
+    room name:
+      Maze
+
+    You are in a maze of twisty little passages, all alike.
 ```
 
 A region becomes a *place* once it says where things land. `landing the
@@ -28,9 +58,8 @@ Drive` names the room that `move … to the Grounds` puts an entity in,
 and it is what `the Grounds's location` means. A list must say how to
 choose — `landing, randomly: the Drive, the Hall` — with `cycling` and
 `stopping` as the other two strategy words, drawn on the region's own
-seeded stream. One `landing` line per region, every room in it contained
-by the region (directly or through a nested one), and
-`set the Grounds's landing to the Hall` replaces the whole list with
-that one room. A region with no landing cannot be moved to, but
-`is in the Grounds` is a membership test either way: true in any member
-room, through nested regions, with no `landing` line needed.
+seeded stream. One `landing` line per region, every room in it one of the
+region's members, and `set the Grounds's landing to the Hall` replaces the
+whole list with that one room. A region with no landing cannot be moved
+to, but `is in the Grounds` is a membership test either way: true in any
+member room, with no `landing` line needed.

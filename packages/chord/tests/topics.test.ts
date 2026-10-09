@@ -33,6 +33,8 @@ end before
 create the Lodge
   a room
 
+  A porter's lodge.
+
 create the porter
   a person
   in the Lodge

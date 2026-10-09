@@ -18,6 +18,7 @@ export type {
   IRComposition,
   IRConfigSetting,
   IRPlacement,
+  IRTextSource,
   IRExit,
   IRBlockedExit,
   IROnClause,

@@ -8,16 +8,15 @@ story
 create the Underground
   a region
   aka the deep places
-  containing the Mines and the Round Room
 
   The sunless country beneath the hills.
 
 create the Mines
   a region
-  containing the Shaft Top, the Coal Seam
 
 create the Round Room
   a room
+  in the Underground
   up to the Surface Camp
   north to the Shaft Top
 
@@ -25,6 +24,7 @@ create the Round Room
 
 create the Shaft Top
   a room
+  in the Mines
   south to the Round Room
   down to the Coal Seam
 
@@ -32,6 +32,7 @@ create the Shaft Top
 
 create the Coal Seam
   a room
+  in the Mines
   up to the Shaft Top
 
   Black seams glitter wetly in the lamplight.

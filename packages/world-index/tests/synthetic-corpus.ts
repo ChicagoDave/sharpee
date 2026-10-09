@@ -437,11 +437,13 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
   lines.push('  description: A generated story for World Index scale timing.');
   lines.push('');
 
+  // A room names its region with an `in` line; the region block lists nothing.
+  const regionOf = new Map<number, string>();
   for (const region of plan.regions) {
     lines.push(`create ${region.name}`);
     lines.push('  a region');
-    lines.push(`  containing ${region.rooms.map(roomName).join(', ')}`);
     lines.push('');
+    for (const room of region.rooms) regionOf.set(room, region.name);
   }
 
   const outbound = new Map<number, PlannedEdge[]>();
@@ -455,6 +457,8 @@ export function generateStory(rooms: number, ratios: StoryRatios, shape: CorpusS
   for (let index = 0; index < rooms; index += 1) {
     lines.push(`create ${roomName(index)}`);
     lines.push('  a room');
+    const region = regionOf.get(index);
+    if (region !== undefined) lines.push(`  in ${region}`);
 
     for (const edge of inbound.get(index) ?? []) {
       lines.push(`  ${opposite(edge.direction)} to ${roomName(edge.from)}`);

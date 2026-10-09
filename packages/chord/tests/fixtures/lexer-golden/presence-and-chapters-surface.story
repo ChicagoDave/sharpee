@@ -30,7 +30,6 @@ end chapters
 
 create the Grounds
   a region
-  containing the Market Square, Commerce Street, the Alley
   landing the Market Square
 
   on every turn while one chance in 6 and before alarm
@@ -43,6 +42,7 @@ create the Grounds
 
 create the Market Square
   a room
+  in the Grounds
   east to Commerce Street
   north to the Alley, one-way
 
@@ -50,11 +50,13 @@ create the Market Square
 
 create Commerce Street
   a room
+  in the Grounds
 
   A wider street, paved, with shopfronts instead of stalls.
 
 create the Alley
   a room
+  in the Grounds
 
   Narrow and damp, and nobody comes here on purpose.
 

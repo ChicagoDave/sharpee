@@ -439,23 +439,38 @@ create-line  = "aka" alias { "," alias } NL
                                                               is a run-time fact the start
                                                               block decides, never a create
                                                               line *)
-             | placement NL
+             | placement NL                                (* on a room, `in the <region>`
+                                                              is membership (ADR-360 D4):
+                                                              one region per room
+                                                              (analysis.room-two-regions);
+                                                              a room `in` anything else is
+                                                              analysis.room-in-non-region;
+                                                              a non-room placed in a
+                                                              region is analysis.thing-in-
+                                                              region *)
              | "wears" name NL
              | "carries" name NL                           (* ADR-230 Phase 6: start
                                                               inventory, the missing
                                                               half of `wears` *)
              | landing-line                                (* ADR-325 D5: region
                                                               blocks only *)
-             | "containing" name { [ "," ] [ "and" ] name } NL
-                                                           (* region membership (ADR-236
-                                                              D2, ratchet R2): region
-                                                              blocks only (analyzer gate);
-                                                              additive across lines;
-                                                              members are rooms or nested
-                                                              regions. Placement lines on
-                                                              a region block are a load
-                                                              error *)
-             | DIRECTION "to" name [ "through" name ] [ "," "one-way" ] NL
+             | room-group                                  (* ADR-360 D1/D2: region
+                                                              blocks only (analysis.room-
+                                                              group-owner). Region
+                                                              membership is a group, or a
+                                                              room's own `in the <region>`
+                                                              placement (D4); `containing`
+                                                              is removed (parse.removed-
+                                                              containing) and placement
+                                                              lines on a region block are
+                                                              an error, so regions do not
+                                                              nest (D5) *)
+             | exit-table                                  (* ADR-360 D3: region blocks
+                                                              only (analysis.exit-table-
+                                                              owner); one of each kind
+                                                              (analysis.exit-table-
+                                                              duplicate) *)
+             | exit [ "," "one-way" ] NL
                                                            (* exit; `through the <door>`
                                                               tail (ADR-234 D1, ratchet
                                                               R2) is the ONE door
@@ -897,8 +912,51 @@ room-name-block = "room" "name" [ "while" condition ] ":" NL
                      (analysis.room-name-duplicate-unconditional,
                      analysis.room-name-dead-arm); one text per arm, no `or`
                      variants (analysis.room-name-variants); legal only on a room,
-                     an `enterable` thing, or a region — the three kinds that can
-                     contribute to a heading (analysis.room-name-owner). *)
+                     in a `rooms` group, or on an `enterable` thing — a region
+                     contributes no heading (ADR-360 D6; analysis.room-name-owner). *)
+
+room-group   = "rooms" stem NUMBER "to" NUMBER NL >>> { group-line } ;
+                  (* ADR-360 D1: one room per whole number from the first to the
+                     last, inclusive, named `<stem> <n>` and taking the article
+                     `the`, exactly the room `create the <stem> <n>` makes. The
+                     line is a group only in this shape, so a line that merely
+                     begins with `rooms` is not one. A range that counts down,
+                     a number with a leading zero, or more than 1000 rooms is
+                     analysis.room-group-range; a created name that collides is
+                     analysis.duplicate-entity. *)
+stem         = WORD { WORD | NUMBER } ;                    (* every token between `rooms`
+                                                              and the last three, so a
+                                                              stem may hold `to`: `rooms
+                                                              Road to Ruin 1 to 3` *)
+group-line   = composition { "," composition } NL          (* trait adjectives only; the
+                                                              kind is always `room` *)
+             | "aka" alias { "," alias } NL
+             | room-name-block                             (* copied under each room's
+                                                              own keys (D8) *)
+             | "first" "time" NL >>> prose-paragraph
+             | prose-paragraph ;                           (* one shared description
+                                                              key (D8). Any other line is
+                                                              analysis.room-group-line
+                                                              (D2); a group with no
+                                                              description warns once on
+                                                              its `rooms` line (D7) *)
+
+exit-table   = "exits" [ "," "one-way" ] NL >>> exit-row { exit-row } ;
+                  (* ADR-360 D3: a region's exits, one row per member room. In
+                     `exits, one-way` every exit is one-way; a plain table's exits
+                     infer their reverse. A row's exits join the room's own, so
+                     two in one direction are analysis.duplicate-exit (D3a). *)
+exit-row     = name ":" exit { "," exit } NL ;            (* the row's room must be a
+                                                              member (analysis.exit-row-
+                                                              not-member). A blocked or
+                                                              deadly exit here is
+                                                              parse.exit-row-blocked; a
+                                                              row exit's own `, one-way`
+                                                              is parse.exit-row-one-way *)
+exit         = DIRECTION "to" name [ "through" name ] ;  (* the one exit production: a
+                                                              room's exit line, a table
+                                                              row and ADR-362's `exits:`
+                                                              line all read it *)
 
 composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind noun;
                                                               bare => trait *)
@@ -1673,7 +1731,9 @@ value-expr   = NUMBER | STRING
              | "its" field-words                           (* possessive on `it` *)
              | name [ "'s" field-words ]                   (* the player's location *)
              | WORD { WORD } ;                             (* bare words *)
-name         = [ ARTICLE ] WORD { WORD } ;
+name         = [ ARTICLE ] WORD { WORD } [ NUMBER ] ;      (* a trailing number names
+                                                              a numbered room: `the Maze
+                                                              61` (ADR-360 D1) *)
 ARTICLE      = "the" | "a" | "an" ;
 
 (* Noun phrases stop at: is has holds wears can feels knows was and or then to while with.

@@ -34,7 +34,6 @@ const STORY = `story
 
 create the Underground
   a region
-  containing the Mines, the Round Room
 
   on every turn
     phrase underground-hum
@@ -42,7 +41,6 @@ create the Underground
 
 create the Mines
   a region
-  containing the Shaft Top, the Coal Seam
 
   on every turn
     phrase mine-drip
@@ -58,6 +56,7 @@ create the Mines
 
 create the Round Room
   a room
+  in the Underground
   up to the Surface Camp
   north to the Shaft Top
 
@@ -65,6 +64,7 @@ create the Round Room
 
 create the Shaft Top
   a room
+  in the Mines
   south to the Round Room
   down to the Coal Seam
 
@@ -72,6 +72,7 @@ create the Shaft Top
 
 create the Coal Seam
   a room
+  in the Mines
   up to the Shaft Top
 
   Glittering coal.
@@ -195,15 +196,18 @@ describe('region-owned every-turn daemons (ADR-236 D4, REAL-PATH)', () => {
     expect(messageIdsOf(atRoundRoom)).not.toContain('mine-drip');
     expect(locationOf(atRoundRoom, 'underground-hum')).toBe(story.entityId('underground'));
 
-    // Shaft Top — a room of the nested Mines: in both regions, transitively.
+    // Shaft Top — a room of the Mines, and of no other region (ADR-360 D5).
     go(Direction.NORTH);
     const atShaftTop = tickEvents();
-    expect(messageIdsOf(atShaftTop)).toEqual(expect.arrayContaining(['underground-hum', 'mine-drip']));
+    expect(messageIdsOf(atShaftTop)).toContain('mine-drip');
+    expect(messageIdsOf(atShaftTop)).not.toContain('underground-hum');
     expect(locationOf(atShaftTop, 'mine-drip')).toBe(story.entityId('mines'));
 
-    // Coal Seam — deeper in the Mines: still both.
+    // Coal Seam — deeper in the Mines: the Mines only.
     go(Direction.DOWN);
-    expect(tick()).toEqual(expect.arrayContaining(['underground-hum', 'mine-drip']));
+    const atCoalSeam = tick();
+    expect(atCoalSeam).toContain('mine-drip');
+    expect(atCoalSeam).not.toContain('underground-hum');
 
     // Back out to the Surface Camp: silent again the turn you leave.
     go(Direction.UP);

@@ -94,6 +94,8 @@ import {
   EachStmt,
   EmitStmt,
   ExitDecl,
+  ExitRowDecl,
+  ExitTableDecl,
   GreedySlotDecl,
   MoveStmt,
   WearStmt,
@@ -136,6 +138,8 @@ import {
   Placement,
   Predicate,
   RefuseStmt,
+  RoomGroupBound,
+  RoomGroupDecl,
   ScopeConstraint,
   ScoreDecl,
   CounterDecl,
@@ -339,6 +343,87 @@ function firstWord(line: Line): string | null {
 /** True for `end <keyword>` lines. */
 function isEndLine(line: Line): boolean {
   return firstWord(line) === 'end';
+}
+
+/**
+ * True when the line has the `rooms <stem> <number> to <number>` shape
+ * (ADR-360 D1). The shape, not the word alone, decides, so a composition or
+ * prose line that merely begins with `rooms` is not taken for a group.
+ */
+function isRoomGroupHead(line: Line): boolean {
+  const t = line.tokens;
+  const n = t.length;
+  return (
+    n >= 5 &&
+    t[0].kind === 'word' && t[0].text === 'rooms' &&
+    t[n - 3].kind === 'number' &&
+    t[n - 2].kind === 'word' && t[n - 2].text === 'to' &&
+    t[n - 1].kind === 'number' &&
+    t.slice(1, n - 3).every((tok) => tok.kind === 'word' || tok.kind === 'number')
+  );
+}
+
+/**
+ * True for an exit table's head (ADR-360 D3): `exits` alone, or `exits,
+ * one-way`. `exits:` with a colon is ADR-362's line form, not a table.
+ */
+function isExitTableHead(line: Line): boolean {
+  const t = line.tokens;
+  if (t.length === 1) return true;
+  return t.length === 3 && t[1].kind === 'comma' && t[2].kind === 'word' && t[2].text === 'one-way';
+}
+
+/**
+ * An empty create declaration — the block's lines are appended to it by
+ * `parseCreateBody`.
+ * @param name the block's name (a group body's name is its stem)
+ * @param span the head line's span; the body extends it
+ */
+function newCreateDecl(name: NameRef, span: Span): CreateDecl {
+  return {
+    kind: 'create',
+    name,
+    aka: [],
+    pronouns: [],
+    compositions: [],
+    startsStates: [],
+    placement: null,
+    placementLines: [],
+    wears: [],
+    carries: [],
+    roomGroups: [],
+    landing: null,
+    exits: [],
+    exitTables: [],
+    blockedExits: [],
+    deadlyExits: [],
+    deadly: null,
+    states: [],
+    statesReversible: false,
+    scores: [],
+    counters: [],
+    description: null,
+    initialDescription: null,
+    phraseOverrides: [],
+    onClauses: [],
+    timerClauses: [],
+    moveClauses: [],
+    moods: [],
+    feels: [],
+    knows: [],
+    thinks: [],
+    spreads: [],
+    goals: [],
+    influences: [],
+    resists: [],
+    temperaments: [],
+    nevers: [],
+    obligations: [],
+    codes: [],
+    honors: [],
+    burdens: [],
+    span,
+  };
 }
 
 /**
@@ -1727,51 +1812,22 @@ class Parser {
       );
     }
 
-    const decl: CreateDecl = {
-      kind: 'create',
-      name,
-      aka: [],
-      pronouns: [],
-      compositions: [],
-      startsStates: [],
-      placement: null,
-      wears: [],
-      carries: [],
-      containing: [],
-      landing: null,
-      exits: [],
-      blockedExits: [],
-      deadlyExits: [],
-      deadly: null,
-      states: [],
-      statesReversible: false,
-      scores: [],
-      counters: [],
-      description: null,
-      initialDescription: null,
-      phraseOverrides: [],
-      onClauses: [],
-      timerClauses: [],
-      moveClauses: [],
-      moods: [],
-      feels: [],
-      knows: [],
-      thinks: [],
-      spreads: [],
-      goals: [],
-      influences: [],
-      resists: [],
-      temperaments: [],
-      nevers: [],
-      obligations: [],
-      codes: [],
-      honors: [],
-      burdens: [],
-      span: lineSpan(headLine),
-    };
+    const decl = newCreateDecl(name, lineSpan(headLine));
+    this.parseCreateBody(decl, headLine.indent);
+    return decl;
+  }
 
+  /**
+   * The lines of a create block, appended to `decl`: every following line
+   * indented deeper than `baseIndent`. A `create` block's base is its head
+   * line's indent; a `rooms` group's body (ADR-360 D2) is parsed with the
+   * group line's indent, so a group body is an ordinary create body.
+   * @param decl the declaration the lines are written into
+   * @param baseIndent the indent of the line that opened the block
+   */
+  private parseCreateBody(decl: CreateDecl, baseIndent: number): void {
     let sawBlank = false;
-    while (this.pos < this.lines.length && this.lines[this.pos].indent > 0) {
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > baseIndent) {
       const line = this.lines[this.pos];
       sawBlank = sawBlank || line.afterBlank;
       decl.span = mergeSpans(decl.span, lineSpan(line));
@@ -1782,6 +1838,10 @@ class Parser {
         this.pos++;
         cur.matchWord('aka');
         decl.aka.push(...this.parseCommaWords(cur));
+      } else if (word === 'rooms' && isRoomGroupHead(line)) {
+        // ADR-360 D1: `rooms <stem> <first> to <last>`, its body indented
+        // beneath. Owner, range and body-line gates are the analyzer's.
+        decl.roomGroups.push(this.parseRoomGroup(line));
       } else if (word === 'pronouns') {
         // ADR-242 D5: `pronouns <word>` — one word (a standard set or a
         // `define pronouns` name). Person-only legality, word resolution,
@@ -1933,12 +1993,14 @@ class Parser {
         cur.matchWord('carries');
         decl.carries.push(this.parseNameRef(cur, () => false));
       } else if (word === 'containing') {
-        // ADR-236 D2 (ratchet R2): region membership — `containing the
-        // Clearing, the Forest Path, and the Canyon View`. Additive across
-        // lines; region-block-only legality is the analyzer's gate.
+        // ADR-360 D5: membership is written where the room is, so the
+        // region's member list is gone. The line is consumed whole.
         this.pos++;
-        cur.matchWord('containing');
-        decl.containing.push(...this.parseNameRefList(cur, line));
+        this.diagnostics.error(
+          'parse.removed-containing',
+          '`containing` was removed — a region declares identical rooms with `rooms <name> <first> to <last>`, and any other room joins it with an `in the <region>` line in its own block.',
+          lineSpan(line),
+        );
       } else if (word === 'landing') {
         // ADR-325 D5: `landing <room>` or `landing, <strategy>: <rooms>`.
         this.pos++;
@@ -1960,6 +2022,7 @@ class Parser {
         cur.next();
         cur.next();
         decl.placement = this.finishPlacement('starts-in', cur, line);
+        decl.placementLines.push(decl.placement);
       } else if (word === 'on' && this.isOnClauseHead(line)) {
         // Before the placement branch: `on the player taking` (ADR-327 D1)
         // and `on the table` both open with an article — block structure
@@ -1969,6 +2032,7 @@ class Parser {
         this.pos++;
         cur.next();
         decl.placement = this.finishPlacement(word as 'in' | 'on', cur, line);
+        decl.placementLines.push(decl.placement);
       } else if (word === 'on') {
         decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
       } else if (word === 'after') {
@@ -2038,24 +2102,7 @@ class Parser {
         }
       } else if (word && DIRECTIONS.has(word) && cur.isWord('to', 1)) {
         this.pos++;
-        cur.next();
-        cur.next();
-        // `through` is reserved on exit lines as the door tail (ADR-234 D1,
-        // ratchet R2) — it stops the destination name.
-        const to = this.parseNameRef(cur, (t) => t.kind === 'word' && t.text === 'through');
-        let via: NameRef | null = null;
-        if (cur.matchWord('through')) {
-          const doorRef = this.parseNameRef(cur, () => false);
-          if (doorRef.words.length === 0) {
-            this.diagnostics.error(
-              'parse.exit-through',
-              'Expected a door name after `through` (e.g. `north to the Hall through the oak door`).',
-              lineSpan(line),
-            );
-          } else {
-            via = doorRef;
-          }
-        }
+        const { to, via } = this.parseExitCore(cur, line);
         // `, one-way` (ADR-234 D4's reservation, wired 2026-09-03 for GH
         // #327): the exit is traversable in the written direction only —
         // the loader infers no reverse exit, and a door on the line is
@@ -2088,6 +2135,9 @@ class Parser {
           ...(oneWay ? { oneWay: true as const } : {}),
           span: lineSpan(line),
         } as ExitDecl);
+      } else if (word === 'exits' && isExitTableHead(line)) {
+        // ADR-360 D3: a region's exit table; region-only is the analyzer's gate.
+        decl.exitTables.push(this.parseExitTable(line));
       } else if (word && DIRECTIONS.has(word) && cur.isWord('is', 1) && cur.isWord('blocked', 2)) {
         this.pos++;
         const blocked = this.parseBlockedExit(word, line);
@@ -2134,8 +2184,167 @@ class Parser {
         }
       }
     }
+  }
 
-    return decl;
+  /**
+   * The shared `exit` production (ADR-360 D3): `<direction> to <room>
+   * [through <door>]`, the cursor at the direction. A room's exit line, a
+   * table row and (ADR-362) an `exits:` line all read exits through here, so
+   * the forms cannot drift. `through` is reserved as the door tail (ADR-234
+   * D1, ratchet R2) and stops the destination name; so does any punctuation.
+   * @param c the cursor, at the direction word
+   * @param line the line, for spans
+   * @returns the destination, the door if any, and the span the exit covers
+   */
+  private parseExitCore(c: Cursor, line: Line): { direction: string; to: NameRef; via: NameRef | null; span: Span } {
+    const dirTok = c.next()!;
+    c.next(); // to
+    const to = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'through');
+    let span = mergeSpans(dirTok.span, to.span);
+    let via: NameRef | null = null;
+    if (c.matchWord('through')) {
+      const doorRef = this.parseNameRef(c, () => false);
+      if (doorRef.words.length === 0) {
+        this.diagnostics.error(
+          'parse.exit-through',
+          'Expected a door name after `through` (e.g. `north to the Hall through the oak door`).',
+          lineSpan(line),
+        );
+      } else {
+        via = doorRef;
+        span = mergeSpans(span, doorRef.span);
+      }
+    }
+    return { direction: dirTok.text, to, via, span };
+  }
+
+  /**
+   * An `exits` or `exits, one-way` table and its indented rows (ADR-360 D3).
+   * The caller has checked the head with `isExitTableHead`.
+   * @param line the `exits` line, at `this.pos`
+   */
+  private parseExitTable(line: Line): ExitTableDecl {
+    this.pos++;
+    const oneWay = line.tokens.length === 3;
+    const table: ExitTableDecl = { kind: 'exit-table', oneWay, rows: [], headSpan: lineSpan(line), span: lineSpan(line) };
+    let rowLines = 0;
+    while (this.pos < this.lines.length && this.lines[this.pos].indent > line.indent && !isEndLine(this.lines[this.pos])) {
+      const rowLine = this.lines[this.pos++];
+      rowLines++;
+      table.span = mergeSpans(table.span, lineSpan(rowLine));
+      const row = this.parseExitRow(rowLine, oneWay);
+      if (row) table.rows.push(row);
+    }
+    // A row refused above has its own error; empty means no row was written.
+    if (rowLines === 0) {
+      this.diagnostics.error(
+        'parse.exit-table-empty',
+        'An `exits` table needs its rows indented beneath it: `<room>: <direction> to <room>, …`.',
+        table.headSpan,
+      );
+    }
+    return table;
+  }
+
+  /**
+   * One table row: `<room>: <exit>, <exit>, …`. A row holds only exits that
+   * lead somewhere, so a blocked or deadly exit is an error at the row; and
+   * a row's exits take no `, one-way` of their own, because the table says it.
+   * @param line the row line
+   * @param oneWay the table is `exits, one-way`
+   * @returns the row, or null when it could not be read
+   */
+  private parseExitRow(line: Line, oneWay: boolean): ExitRowDecl | null {
+    const c = new Cursor(line.tokens, line);
+    const room = this.parseNameRef(c, () => false);
+    if (room.words.length === 0 || c.peek()?.kind !== 'colon') {
+      this.diagnostics.error(
+        'parse.exit-row',
+        'An exit table row is `<room>: <direction> to <room>, …` — the room, a colon, then its exits.',
+        lineSpan(line),
+      );
+      return null;
+    }
+    c.next(); // colon
+    const exits: ExitDecl[] = [];
+    for (;;) {
+      const dir = c.peek();
+      const isDirection = dir?.kind === 'word' && DIRECTIONS.has(dir.text);
+      if (isDirection && (c.isWord('is', 1) && (c.isWord('blocked', 2) || c.isWord('deadly', 2)))) {
+        this.diagnostics.error(
+          'parse.exit-row-blocked',
+          `A table row holds only exits that lead somewhere. \`${dir!.text} is ${c.peek(2)!.text}\` belongs in the room's own block: give the room a block with \`in the <region>\` and write the line there.`,
+          lineSpan(line),
+        );
+        return null;
+      }
+      if (!isDirection || !c.isWord('to', 1)) {
+        this.diagnostics.error(
+          'parse.exit-row',
+          `Expected an exit (\`<direction> to <room>\`) here, not \`${restText(c) || 'the end of the line'}\`.`,
+          c.atEnd() ? lineSpan(line) : c.restSpan(),
+        );
+        return null;
+      }
+      const core = this.parseExitCore(c, line);
+      exits.push({
+        kind: 'exit',
+        direction: core.direction,
+        to: core.to,
+        via: core.via,
+        ...(oneWay ? { oneWay: true as const } : {}),
+        span: core.span,
+      } as ExitDecl);
+      if (c.atEnd()) break;
+      if (c.peek()?.kind === 'comma' && c.isWord('one-way', 1)) {
+        this.diagnostics.error(
+          'parse.exit-row-one-way',
+          'An exit in a table row takes no `, one-way` of its own — put the row in an `exits, one-way` table instead.',
+          c.restSpan(),
+        );
+        return null;
+      }
+      if (c.peek()?.kind !== 'comma') {
+        this.diagnostics.error(
+          'parse.exit-trailing',
+          `Unexpected words after this exit: \`${restText(c)}\`. Separate a row's exits with commas.`,
+          c.restSpan(),
+        );
+        return null;
+      }
+      c.next(); // comma
+    }
+    return { kind: 'exit-row', room, exits, span: lineSpan(line) };
+  }
+
+  /**
+   * A `rooms <stem> <first> to <last>` line and its indented body (ADR-360
+   * D1/D2). The caller has checked the line's shape with `isRoomGroupHead`;
+   * the stem is every word between `rooms` and the last three tokens, so a
+   * stem may itself hold `to` (`rooms Road to Ruin 1 to 3`).
+   * @param line the `rooms` line, at `this.pos`
+   */
+  private parseRoomGroup(line: Line): RoomGroupDecl {
+    this.pos++;
+    const tokens = line.tokens;
+    const firstTok = tokens[tokens.length - 3];
+    const lastTok = tokens[tokens.length - 1];
+    const stemTokens = tokens.slice(1, tokens.length - 3);
+    const stemSpan = mergeSpans(stemTokens[0].span, stemTokens[stemTokens.length - 1].span);
+    const stem = stemTokens.map((t) => t.text);
+    const headSpan = lineSpan(line);
+    const body = newCreateDecl({ kind: 'name', article: null, words: stem, span: stemSpan }, headSpan);
+    this.parseCreateBody(body, line.indent);
+    const bound = (t: Token): RoomGroupBound => ({ text: t.text, value: Number(t.text), span: t.span });
+    return {
+      kind: 'room-group',
+      stem,
+      first: bound(firstTok),
+      last: bound(lastTok),
+      body,
+      headSpan,
+      span: body.span,
+    };
   }
 
   /**

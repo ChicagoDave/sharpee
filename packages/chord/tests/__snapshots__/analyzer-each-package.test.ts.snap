@@ -222,6 +222,9 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "deadly": null,
       "deadlyExits": [],
       "descriptionKey": "trophy-barn.description",
+      "descriptionSource": {
+        "from": "own",
+      },
       "exits": [],
       "id": "trophy-barn",
       "initialDescriptionKey": null,
@@ -242,6 +245,9 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "name": "Trophy Barn",
       "onClauses": [],
       "placement": null,
+      "roomNameSource": {
+        "from": "none",
+      },
       "span": {
         "column": 1,
         "endColumn": 44,

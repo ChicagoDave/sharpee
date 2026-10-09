@@ -5,9 +5,9 @@
  * movement through stdlib's REAL goingAction — its report() emits
  * `if.event.region_entered`/`region_exited` per boundary actually crossed
  * (getRegionCrossings), and the runtime's event-clause entry consumes them.
- * All four AC-5 scenarios are asserted on emitted message ids, including
- * the failure-prone one: a move across a child boundary INSIDE the parent
- * must not fire the parent's reaction.
+ * The AC-5 scenarios are asserted on emitted message ids. Regions do not
+ * nest (ADR-360 D5), so the child-inside-parent scenario is now a move
+ * between two adjacent regions, which crosses both boundaries.
  */
 import { beforeEach, describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';
@@ -29,7 +29,6 @@ const STORY = `story
 
 create the Underground
   a region
-  containing the Mines, the Round Room
 
   after the player entering
     phrase under-in
@@ -45,7 +44,6 @@ create the Underground
 
 create the Mines
   a region
-  containing the Shaft Top, the Coal Seam
 
   after the player entering
     phrase mine-in
@@ -57,6 +55,7 @@ create the Mines
 
 create the Round Room
   a room
+  in the Underground
   up to the Surface Camp
   north to the Shaft Top
 
@@ -64,6 +63,7 @@ create the Round Room
 
 create the Shaft Top
   a room
+  in the Mines
   south to the Round Room
   down to the Coal Seam
 
@@ -71,6 +71,7 @@ create the Shaft Top
 
 create the Coal Seam
   a room
+  in the Mines
   up to the Shaft Top
   west to the Surface Camp
 
@@ -170,12 +171,10 @@ describe('region crossing reactions (ADR-236 D6, REAL-PATH)', () => {
     expect(go(Direction.DOWN)).toEqual(['under-in']); // Camp → Round Room
   });
 
-  it('(d) crossing a child boundary inside the parent fires the child only — never the parent', () => {
+  it('(d) a move between two adjacent regions leaves the one and enters the other', () => {
     go(Direction.DOWN); // into the Underground (Round Room)
     const intoMines = go(Direction.NORTH); // Round Room → Shaft Top
-    expect(intoMines).toContain('mine-in');
-    expect(intoMines).not.toContain('under-in'); // parent boundary NOT crossed
-    expect(intoMines).not.toContain('under-out');
+    expect([...intoMines].sort()).toEqual(['mine-in', 'under-out']);
   });
 
   it('(c) a move between two rooms of the same region fires neither side', () => {
@@ -184,22 +183,17 @@ describe('region crossing reactions (ADR-236 D6, REAL-PATH)', () => {
     expect(go(Direction.DOWN)).toEqual([]); // Shaft Top → Coal Seam: same region
   });
 
-  it('(b) crossing out fires the leaving reaction, innermost boundary only', () => {
-    go(Direction.DOWN);
-    go(Direction.NORTH); // Shaft Top
-    const outOfMines = go(Direction.SOUTH); // back to the Round Room
-    expect(outOfMines).toEqual(['mine-out']); // still inside the Underground
+  it('(b) crossing out fires the leaving reaction', () => {
+    go(Direction.DOWN); // Round Room
     const outOfEverything = go(Direction.UP); // Round Room → Camp
     expect(outOfEverything).toEqual(['under-out']);
   });
 
-  it('entering a nested child from outside fires BOTH boundaries actually crossed', () => {
-    const straightIn = go(Direction.EAST); // Camp → Coal Seam (child room, direct)
-    expect(straightIn).toContain('under-in');
-    expect(straightIn).toContain('mine-in');
+  it('a move from outside straight into a region fires only that region\'s boundary', () => {
+    const straightIn = go(Direction.EAST); // Camp → Coal Seam
+    expect(straightIn).toEqual(['mine-in']);
     const straightOut = go(Direction.WEST);
-    expect(straightOut).toContain('mine-out');
-    expect(straightOut).toContain('under-out');
+    expect(straightOut).toEqual(['mine-out']);
   });
 
   it('`while <condition>` composes on a crossing reaction', () => {

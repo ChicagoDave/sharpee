@@ -33,7 +33,6 @@ define image folly-photograph from &quot;images/folly-photograph.png&quot;</code
 <p>An ambient is a looping bed the rooms of a region can share. Start it on arrival and stop it on leaving, and the wind follows the player across the grounds and stops at the door:</p>
 <pre><code class="language-chord">create the Grounds
   a region
-  containing the Gravel Drive, the Fountain Court
 
   after the player entering
     play ambient night-wind when client has sound
@@ -41,5 +40,17 @@ define image folly-photograph from &quot;images/folly-photograph.png&quot;</code
 
   after the player leaving
     stop ambient when client has sound
-  end after</code></pre>
+  end after
+
+create the Gravel Drive
+  a room
+  in the Grounds
+
+  Gravel crunches underfoot.
+
+create the Fountain Court
+  a room
+  in the Grounds
+
+  A dry fountain stands in the middle of the court.</code></pre>
 <p>The <a href="/learn/fernhill/browser">Fernhill walkthrough</a> shows all three kinds wired into a complete story and played in the browser build.</p>
