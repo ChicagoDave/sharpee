@@ -1,6 +1,6 @@
 /**
  * ADR-349 Phase 1 — the location-heading registry (D16 contract 2) and the
- * per-turn projection (D11, D16a).
+ * per-turn projection (D11; regions contribute nothing since ADR-360 D6).
  *
  * AC-9 lives here: a `room name` whose arms all fail falls back exactly as an
  * absent block does, it does not render the last arm, and an unconditional arm
@@ -62,7 +62,7 @@ describe('location-heading registry (ADR-349 D16 contract 2)', () => {
   });
 });
 
-describe('LocationHeadingBehavior.resolve (ADR-349 D11, D16a)', () => {
+describe('LocationHeadingBehavior.resolve (ADR-349 D11)', () => {
   let world: WorldModel;
   let room: IFEntity;
   let player: IFEntity;
@@ -155,13 +155,11 @@ describe('LocationHeadingBehavior.resolve (ADR-349 D11, D16a)', () => {
     });
   });
 
-  describe('contributors and their order (D4, D16a)', () => {
-    it('emits place, then enclosure, then regions innermost-to-outermost', () => {
-      const outer = world.createEntity('The Underground', 'object');
-      outer.add(new RegionTrait({ name: 'The Underground' }));
-      const inner = world.createEntity('The Well Shaft', 'object');
-      inner.add(new RegionTrait({ name: 'The Well Shaft', parentRegionId: outer.id }));
-      world.assignRoom(room.id, inner.id);
+  describe('contributors and their order (D4; ADR-360 D6)', () => {
+    it('emits place, then enclosure — the room\'s region contributes nothing even when named', () => {
+      const shaft = world.createEntity('The Well Shaft', 'object');
+      shaft.add(new RegionTrait({ name: 'The Well Shaft' }));
+      world.assignRoom(room.id, shaft.id);
 
       // A transparent vehicle keeps the room as the place and becomes the
       // enclosure (VisibilityBehavior.getDescribableLocation).
@@ -173,21 +171,35 @@ describe('LocationHeadingBehavior.resolve (ADR-349 D11, D16a)', () => {
 
       registerLocationName(room.id, [{ text: 'Top of Well' }]);
       registerLocationName(bucket.id, [{ text: 'in the bucket' }]);
-      registerLocationName(inner.id, [{ text: 'the shaft' }]);
-      registerLocationName(outer.id, [{ text: 'underground' }]);
+      registerLocationName(shaft.id, [{ text: 'the shaft' }]);
 
       const parts = LocationHeadingBehavior.resolve(player, world);
 
       expect(parts.map(p => [p.role, p.text])).toEqual([
         ['place', 'Top of Well'],
         ['enclosure', 'in the bucket'],
-        ['region', 'the shaft'],
-        ['region', 'underground'],
       ]);
-      expect(parts.map(p => p.ownerId)).toEqual([room.id, bucket.id, inner.id, outer.id]);
+      expect(parts.map(p => p.ownerId)).toEqual([room.id, bucket.id]);
     });
 
-    it('a silent contributor contributes nothing — a region speaks for a nameless room', () => {
+    it('a member room\'s heading has exactly one place part, its own (ADR-360 AC-6)', () => {
+      const maze = world.createEntity('The Maze', 'object');
+      maze.add(new RegionTrait({ name: 'The Maze' }));
+      const cell = world.createEntity('maze-1', 'room');
+      cell.add(new RoomTrait());
+      cell.add(new ContainerTrait());
+      world.assignRoom(cell.id, maze.id);
+      world.moveEntity(player.id, cell.id);
+
+      registerLocationName(maze.id, [{ text: 'Maze of twisty little passages, all alike' }]);
+      registerLocationName(cell.id, [{ text: 'Maze' }]);
+
+      const parts = LocationHeadingBehavior.resolve(player, world);
+
+      expect(parts.map(p => [p.role, p.ownerId, p.text])).toEqual([['place', cell.id, 'Maze']]);
+    });
+
+    it('a nameless member room of a named region yields no parts — the region does not speak for it', () => {
       const maze = world.createEntity('The Maze', 'object');
       maze.add(new RegionTrait({ name: 'The Maze' }));
       const cell = world.createEntity('maze-1', 'room');
@@ -198,12 +210,7 @@ describe('LocationHeadingBehavior.resolve (ADR-349 D11, D16a)', () => {
 
       registerLocationName(maze.id, [{ text: 'Maze of twisty little passages, all alike' }]);
 
-      const parts = LocationHeadingBehavior.resolve(player, world);
-
-      expect(parts).toHaveLength(1);
-      expect(parts[0].role).toBe('region');
-      expect(parts[0].text).toBe('Maze of twisty little passages, all alike');
-      expect(parts.map(p => p.ownerId)).not.toContain(cell.id);
+      expect(LocationHeadingBehavior.resolve(player, world)).toEqual([]);
     });
 
     it('an opaque vehicle is the place and composes with nothing (D4a)', () => {
@@ -224,24 +231,6 @@ describe('LocationHeadingBehavior.resolve (ADR-349 D11, D16a)', () => {
       const parts = LocationHeadingBehavior.resolve(player, world);
 
       expect(parts.map(p => [p.role, p.text])).toEqual([['place', 'Inside the tube']]);
-    });
-
-    it('terminates on a region cycle rather than hanging', () => {
-      const a = world.createEntity('Region A', 'object');
-      a.add(new RegionTrait({ name: 'Region A' }));
-      const b = world.createEntity('Region B', 'object');
-      b.add(new RegionTrait({ name: 'Region B', parentRegionId: a.id }));
-      a.get<RegionTrait>('region')!.parentRegionId = b.id;
-      world.assignRoom(room.id, b.id);
-
-      registerLocationName(room.id, [{ text: 'Top of Well' }]);
-
-      const parts = LocationHeadingBehavior.resolve(player, world);
-
-      // The cycle is walked, contributes nothing (neither region registered a
-      // name), and terminates — without the depth guard this test does not fail,
-      // it never returns.
-      expect(parts.map(p => [p.role, p.text])).toEqual([['place', 'Top of Well']]);
     });
   });
 });

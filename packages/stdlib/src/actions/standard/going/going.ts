@@ -551,25 +551,22 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
         { location: destinationRoom.id })
     ];
 
-    // Emit region boundary crossing events (ADR-149)
+    // Emit region boundary crossing events (ADR-149): at most one region is
+    // left and one entered, since a room is in at most one region (ADR-360 D5).
     const crossings = sharedData.regionCrossings;
-    if (crossings) {
-      // Exit events — innermost first
-      for (const regionId of crossings.exited) {
-        events.push(context.event('if.event.region_exited', {
-          actorId: context.actor.id,
-          regionId,
-          toRegionId: crossings.entered[0],
-        }));
-      }
-      // Entry events — outermost first
-      for (const regionId of crossings.entered) {
-        events.push(context.event('if.event.region_entered', {
-          actorId: context.actor.id,
-          regionId,
-          fromRegionId: crossings.exited[0],
-        }));
-      }
+    if (crossings?.exited) {
+      events.push(context.event('if.event.region_exited', {
+        actorId: context.actor.id,
+        regionId: crossings.exited,
+        toRegionId: crossings.entered,
+      }));
+    }
+    if (crossings?.entered) {
+      events.push(context.event('if.event.region_entered', {
+        actorId: context.actor.id,
+        regionId: crossings.entered,
+        fromRegionId: crossings.exited,
+      }));
     }
 
     // What follows is the mover's own arrival perception — resolver prose,

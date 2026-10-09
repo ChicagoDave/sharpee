@@ -6790,7 +6790,8 @@ export declare class OpenInventoryTrait implements ITrait {
  * Region trait for geographic groupings of rooms (ADR-149).
  *
  * Entities with this trait represent named spatial regions. Rooms declare
- * membership via RoomTrait.regionId. Regions can be nested via parentRegionId.
+ * membership via RoomTrait.regionId, and a room is in at most one region.
+ * Regions do not nest (ADR-360 D5).
  *
  * Public interface: RegionTrait, IRegionData.
  * Owner context: @sharpee/world-model — traits / spatial
@@ -6800,14 +6801,12 @@ import { ITrait } from '../trait.js';
  * Data interface for RegionTrait construction.
  *
  * @param name - Human-readable region name (required).
- * @param parentRegionId - Optional parent region entity ID for nesting.
  * @param ambientSound - Region-wide ambient sound propagated to rooms.
  * @param ambientSmell - Region-wide ambient smell propagated to rooms.
  * @param defaultDark - Whether rooms in this region default to dark.
  */
 export interface IRegionData {
     name: string;
-    parentRegionId?: string;
     ambientSound?: string;
     ambientSmell?: string;
     defaultDark?: boolean;
@@ -6815,17 +6814,14 @@ export interface IRegionData {
 /**
  * Marks an entity as a spatial region that groups rooms.
  *
- * Rooms reference their region via `RoomTrait.regionId`. Regions can form
- * a hierarchy through `parentRegionId` — a room in a child region is
- * implicitly in all ancestor regions.
+ * Rooms reference their region via `RoomTrait.regionId`. A region holds
+ * rooms only, never another region, so a room's region is that one id.
  */
 export declare class RegionTrait implements ITrait, IRegionData {
     static readonly type: "region";
     readonly type: "region";
     /** Human-readable region name. */
     name: string;
-    /** Parent region entity ID for nesting (optional). */
-    parentRegionId?: string;
     /** Region-wide ambient sound propagated to contained rooms. */
     ambientSound?: string;
     /** Region-wide ambient smell propagated to contained rooms. */
@@ -7316,8 +7312,6 @@ export { WorldState, WorldConfig, ContentsOptions, WorldChange } from '@sharpee/
 export interface RegionOptions {
     /** Human-readable region name. */
     name: string;
-    /** Parent region entity ID for nesting. */
-    parentRegionId?: string;
     /** Region-wide ambient sound. */
     ambientSound?: string;
     /** Region-wide ambient smell. */
@@ -7381,14 +7375,18 @@ export interface SceneConditions {
     onEnd?: SceneCallback;
 }
 /**
- * Result of comparing region hierarchies for two rooms (ADR-149).
+ * The region boundary a move between two rooms crosses (ADR-149).
  *
- * @param exited - Region IDs exited, innermost first.
- * @param entered - Region IDs entered, outermost first.
+ * A room is in at most one region and regions do not nest (ADR-360 D5), so a
+ * move leaves at most one region and enters at most one. Both are absent when
+ * the two rooms share a region or neither has one.
+ *
+ * @param exited - The region left, when the source room's region differs.
+ * @param entered - The region entered, when the destination room's region differs.
  */
 export interface RegionCrossings {
-    exited: string[];
-    entered: string[];
+    readonly exited?: string;
+    readonly entered?: string;
 }
 import { ScoreEntry, RankDefinition } from './ScoreLedger.js';
 export { ScoreEntry, RankDefinition } from './ScoreLedger.js';
@@ -8055,33 +8053,32 @@ export declare class WorldModel implements IWorldModel {
      */
     assignRoom(roomId: string, regionId: string): void;
     /**
-     * Tests whether an entity (or its containing room) is in a region,
-     * traversing the parent region hierarchy.
+     * Tests whether an entity (or its containing room) is in a region.
+     *
+     * A room is in at most one region and regions do not nest (ADR-360 D5), so
+     * membership is the room's own `regionId` and nothing else.
      *
      * @param entityId - The entity to test. If it's a room, checks its regionId.
      *                   Otherwise, resolves the entity's containing room first.
      * @param regionId - The region to test membership against.
-     * @returns true if the entity is in the region or any child of it.
+     * @returns true if the room (or the entity's containing room) is in that region.
      */
     isInRegion(entityId: string, regionId: string): boolean;
     /**
-     * Computes which regions are exited and entered when moving between rooms.
-     * Exit list is innermost-first; entry list is outermost-first.
+     * Computes the region boundary crossed when moving between two rooms.
      *
      * @param fromRoomId - The source room entity ID.
      * @param toRoomId - The destination room entity ID.
-     * @returns Region IDs exited and entered. Both empty if same region or no regions.
+     * @returns The region left and the region entered; each is absent when the
+     *   two rooms share a region, or when that side's room has none.
      */
     getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings;
     /**
-     * Builds the ancestry chain for a region: [self, parent, grandparent, ...].
-     * Returns empty array if regionId is undefined or not found.
+     * A room's region, when its `regionId` names an entity that is a region.
+     * A dangling or non-region id reads as no region, so a stale assignment
+     * never fires a crossing for an entity that is not there.
      */
-    private getRegionAncestry;
-    /**
-     * Checks whether a region ancestry chain includes a target region.
-     */
-    private regionAncestryIncludes;
+    private regionOfRoom;
     /**
      * Creates a scene entity with SceneTrait and registers condition closures.
      *
@@ -8441,13 +8438,13 @@ export declare class LocationHeadingBehavior {
     /**
      * Compute the observer's location heading for this turn.
      *
-     * Contributors, in the order their parts are emitted (D16a): the place, then
-     * at most one enclosure, then the place's regions innermost-to-outermost. A
-     * contributor with no registered `room name`, or whose arms all fail, supplies
-     * nothing and is simply absent from the result.
+     * Contributors, in the order their parts are emitted: the place, then at most
+     * one enclosure. A region contributes nothing (ADR-360 D6, superseding
+     * ADR-349 D16a's region parts). A contributor with no registered `room name`,
+     * or whose arms all fail, supplies nothing and is simply absent from the result.
      *
      * @param observer the entity whose location is being named — the player
-     * @param world the world to read the observer's location and regions from
+     * @param world the world to read the observer's location from
      * @returns the parts in emission order; empty when no contributor spoke, which
      *   under D16a is when the consumer falls back to the entity's own name
      */

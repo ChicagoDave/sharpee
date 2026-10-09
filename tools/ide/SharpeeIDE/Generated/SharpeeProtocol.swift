@@ -194,9 +194,14 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         /// is decided by the start block at runtime and is not on the IR.
         let isPlayable: Bool
         let kinds: [ComposeStoryIR.Kind]
-        /// Region membership (`containing …`, ADR-236) — resolved member entity ids,
-        /// non-empty only on region-kind entities.
+        /// Region membership (ADR-360 D4/D5: the region's `rooms` groups and each room's
+        /// `in the <region>` line) — resolved member room ids, non-empty only on
+        /// region-kind entities.
         let containing: [ComposeStoryIR.ContainedMember]?
+        /// Where a room's description comes from (ADR-360 D8). Rooms only.
+        let descriptionSource: ComposeStoryIR.TextSource?
+        /// Where a room's `room name` heading comes from (ADR-360 D8). Rooms only.
+        let roomNameSource: ComposeStoryIR.TextSource?
         let span: DiagnosticSpan
     }
 
@@ -205,9 +210,26 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
         let name: String
     }
 
-    /// One resolved `containing` member (a room or nested region).
+    /// One resolved `containing` member: a room (a region holds rooms only).
     struct ContainedMember: Codable, Equatable, Sendable {
         let id: String
+    }
+
+    /// A room's text source, computed once by the analyzer (ADR-360 D8). The IDE reads it
+    /// and never re-derives it (ADR-322 D8).
+    struct TextSource: Codable, Equatable, Sendable {
+        /// The room's own block, a region's `rooms` group, or nothing written.
+        let from: ComposeStoryIR.TextSource.From
+        /// The region whose group created the room; present only when `from` is 'group'.
+        let regionId: String?
+        /// The group's first and last created names; present only when `from` is 'group'.
+        let group: [String]?
+
+        enum From: String, Codable, Equatable, Sendable {
+            case own
+            case group
+            case none
+        }
     }
 
     /// A `define action` block with its exact span.

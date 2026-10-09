@@ -89,8 +89,6 @@ export {
 export interface RegionOptions {
   /** Human-readable region name. */
   name: string;
-  /** Parent region entity ID for nesting. */
-  parentRegionId?: string;
   /** Region-wide ambient sound. */
   ambientSound?: string;
   /** Region-wide ambient smell. */
@@ -160,14 +158,18 @@ export interface SceneConditions {
 }
 
 /**
- * Result of comparing region hierarchies for two rooms (ADR-149).
+ * The region boundary a move between two rooms crosses (ADR-149).
  *
- * @param exited - Region IDs exited, innermost first.
- * @param entered - Region IDs entered, outermost first.
+ * A room is in at most one region and regions do not nest (ADR-360 D5), so a
+ * move leaves at most one region and enters at most one. Both are absent when
+ * the two rooms share a region or neither has one.
+ *
+ * @param exited - The region left, when the source room's region differs.
+ * @param entered - The region entered, when the destination room's region differs.
  */
 export interface RegionCrossings {
-  exited: string[];
-  entered: string[];
+  readonly exited?: string;
+  readonly entered?: string;
 }
 
 // Score Ledger (ADR-129)
@@ -2063,10 +2065,6 @@ export class WorldModel implements IWorldModel {
     if (this.hasEntity(id)) {
       throw new Error(`createRegion: entity '${id}' already exists`);
     }
-    if (options.parentRegionId && !this.hasEntity(options.parentRegionId)) {
-      throw new Error(`createRegion: parent region '${options.parentRegionId}' not found`);
-    }
-
     const entity = new IFEntity(id, EntityType.REGION, {
       attributes: {
         displayName: options.name,
@@ -2107,117 +2105,56 @@ export class WorldModel implements IWorldModel {
   }
 
   /**
-   * Tests whether an entity (or its containing room) is in a region,
-   * traversing the parent region hierarchy.
+   * Tests whether an entity (or its containing room) is in a region.
+   *
+   * A room is in at most one region and regions do not nest (ADR-360 D5), so
+   * membership is the room's own `regionId` and nothing else.
    *
    * @param entityId - The entity to test. If it's a room, checks its regionId.
    *                   Otherwise, resolves the entity's containing room first.
    * @param regionId - The region to test membership against.
-   * @returns true if the entity is in the region or any child of it.
+   * @returns true if the room (or the entity's containing room) is in that region.
    */
   isInRegion(entityId: string, regionId: string): boolean {
     const entity = this.getEntity(entityId);
     if (!entity) return false;
 
-    // If the entity is a room, use its regionId directly.
-    // Otherwise, resolve the containing room.
-    let roomRegionId: string | undefined;
-    if (entity.type === EntityType.ROOM) {
-      roomRegionId = entity.get<RoomTrait>(TraitType.ROOM)?.regionId;
-    } else {
-      const room = this.getContainingRoom(entityId);
-      if (!room) return false;
-      roomRegionId = room.get<RoomTrait>(TraitType.ROOM)?.regionId;
-    }
+    const room = entity.type === EntityType.ROOM ? entity : this.getContainingRoom(entityId);
+    if (!room) return false;
 
-    if (!roomRegionId) return false;
-
-    // Walk up the parent chain from the room's region
-    return this.regionAncestryIncludes(roomRegionId, regionId);
+    return this.regionOfRoom(room) === regionId;
   }
 
   /**
-   * Computes which regions are exited and entered when moving between rooms.
-   * Exit list is innermost-first; entry list is outermost-first.
+   * Computes the region boundary crossed when moving between two rooms.
    *
    * @param fromRoomId - The source room entity ID.
    * @param toRoomId - The destination room entity ID.
-   * @returns Region IDs exited and entered. Both empty if same region or no regions.
+   * @returns The region left and the region entered; each is absent when the
+   *   two rooms share a region, or when that side's room has none.
    */
   getRegionCrossings(fromRoomId: string, toRoomId: string): RegionCrossings {
     const fromRoom = this.getEntity(fromRoomId);
     const toRoom = this.getEntity(toRoomId);
+    const fromRegion = fromRoom ? this.regionOfRoom(fromRoom) : undefined;
+    const toRegion = toRoom ? this.regionOfRoom(toRoom) : undefined;
 
-    const fromChain = fromRoom
-      ? this.getRegionAncestry(fromRoom.get<RoomTrait>(TraitType.ROOM)?.regionId)
-      : [];
-    const toChain = toRoom
-      ? this.getRegionAncestry(toRoom.get<RoomTrait>(TraitType.ROOM)?.regionId)
-      : [];
-
-    // Convert to sets for fast lookup
-    const fromSet = new Set(fromChain);
-    const toSet = new Set(toChain);
-
-    // Exited: regions in fromChain but not in toChain (innermost first — natural order)
-    const exited = fromChain.filter(id => !toSet.has(id));
-
-    // Entered: regions in toChain but not in fromChain (outermost first — reverse natural order)
-    const entered = toChain.filter(id => !fromSet.has(id)).reverse();
-
-    return { exited, entered };
-  }
-
-  // ── Private region helpers ───────────────────────────────────────────
-
-  /**
-   * Builds the ancestry chain for a region: [self, parent, grandparent, ...].
-   * Returns empty array if regionId is undefined or not found.
-   */
-  private getRegionAncestry(regionId: string | undefined): string[] {
-    const chain: string[] = [];
-    let currentId = regionId;
-    const visited = new Set<string>(); // guard against cycles
-
-    while (currentId) {
-      if (visited.has(currentId)) break;
-      visited.add(currentId);
-
-      const region = this.getEntity(currentId);
-      if (!region) break;
-
-      const trait = region.get<RegionTrait>(TraitType.REGION);
-      if (!trait) break;
-
-      chain.push(currentId);
-      currentId = trait.parentRegionId;
-    }
-
-    return chain;
+    if (fromRegion === toRegion) return {};
+    return {
+      ...(fromRegion ? { exited: fromRegion } : {}),
+      ...(toRegion ? { entered: toRegion } : {}),
+    };
   }
 
   /**
-   * Checks whether a region ancestry chain includes a target region.
+   * A room's region, when its `regionId` names an entity that is a region.
+   * A dangling or non-region id reads as no region, so a stale assignment
+   * never fires a crossing for an entity that is not there.
    */
-  private regionAncestryIncludes(startRegionId: string, targetRegionId: string): boolean {
-    let currentId: string | undefined = startRegionId;
-    const visited = new Set<string>();
-
-    while (currentId) {
-      if (currentId === targetRegionId) return true;
-      if (visited.has(currentId)) return false;
-      visited.add(currentId);
-
-      const region = this.getEntity(currentId);
-      if (!region) return false;
-
-      const trait = region.get<RegionTrait>(TraitType.REGION);
-      if (!trait) return false;
-
-      currentId = trait.parentRegionId;
-    }
-
-    return false;
+  private regionOfRoom(room: IFEntity): string | undefined {
+    const regionId = room.get<RoomTrait>(TraitType.ROOM)?.regionId;
+    if (!regionId) return undefined;
+    return this.getEntity(regionId)?.hasTrait(TraitType.REGION) ? regionId : undefined;
   }
 
   // ── Scene Management (ADR-149) ───────────────────────────────────

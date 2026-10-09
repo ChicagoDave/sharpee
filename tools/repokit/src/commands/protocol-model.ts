@@ -319,6 +319,11 @@ class ModelReader {
     if (ts.isArrayTypeNode(node)) {
       return { kind: 'array', element: this.readType(node.elementType, path, owner) };
     }
+    // `readonly T[]` is a TypeScript-side promise with no wire form: it decodes
+    // as the plain array it is.
+    if (ts.isTypeOperatorNode(node) && node.operator === ts.SyntaxKind.ReadonlyKeyword) {
+      return this.readType(node.type, path, owner);
+    }
     if (ts.isParenthesizedTypeNode(node)) return this.readType(node.type, path, owner);
     if (ts.isUnionTypeNode(node)) return this.readUnion(node, path, owner);
     if (ts.isTypeLiteralNode(node)) return this.readAnonymousShape(node, path, owner);

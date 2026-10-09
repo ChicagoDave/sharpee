@@ -381,8 +381,8 @@ export class Evaluator {
         const place = typeof placeId === 'string' ? ctx.world.getEntity(placeId) : undefined;
         if (typeof placeId !== 'string' || !place) return raw(false);
         // A REGION place is a MEMBERSHIP test (GH #339, ADR-236): rooms are
-        // not contained by their region — membership is RoomTrait.regionId,
-        // transitive through nesting — so the containment walk below would
+        // not contained by their region — membership is RoomTrait.regionId —
+        // so the containment walk below would
         // always answer false. `isInRegion` resolves a non-room subject
         // through its containing room.
         if (place.has(TraitType.REGION)) return raw(ctx.world.isInRegion(subjectId, placeId));

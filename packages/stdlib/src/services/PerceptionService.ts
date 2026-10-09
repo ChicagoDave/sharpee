@@ -128,7 +128,7 @@ export class PerceptionService implements IPerceptionService {
    *
    * Co-location rules (the loader's former `playerPresentAt`): a room means
    * the observer is in that room; a region means the observer is in one of
-   * its member rooms (transitive through nesting, ADR-236 D4); anything else
+   * its member rooms (ADR-236 D4); anything else
    * means the two share a containing room. Presence, not sight — the snake
    * speaks in darkness. A co-located observer carrying a concealed state is
    * `concealed` (ADR-144's eavesdropping case).

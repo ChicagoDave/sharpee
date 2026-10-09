@@ -793,7 +793,6 @@ Examples:
           regions.push({
             id: entity.id,
             name: regionTrait.name,
-            parentRegionId: regionTrait.parentRegionId || null,
           });
         }
       }

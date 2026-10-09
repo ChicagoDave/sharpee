@@ -21,9 +21,6 @@
 import type { HeadingPart } from '@sharpee/if-domain';
 import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from './WorldModel.js';
-import { TraitType } from '../traits/trait-types.js';
-import { RoomTrait } from '../traits/room/roomTrait.js';
-import { RegionTrait } from '../traits/region/regionTrait.js';
 import { VisibilityBehavior } from './VisibilityBehavior.js';
 import { lookupLocationName } from '../location-heading-registry.js';
 
@@ -38,9 +35,6 @@ import { lookupLocationName } from '../location-heading-registry.js';
  * interface would let the projection and the wire drift apart silently.
  */
 export type { HeadingPart };
-
-/** Guards the region walk against a `parentRegionId` cycle an author can write. */
-const MAX_REGION_DEPTH = 64;
 
 /**
  * The first arm whose condition holds, or undefined when the entity registered
@@ -84,13 +78,13 @@ export class LocationHeadingBehavior {
   /**
    * Compute the observer's location heading for this turn.
    *
-   * Contributors, in the order their parts are emitted (D16a): the place, then
-   * at most one enclosure, then the place's regions innermost-to-outermost. A
-   * contributor with no registered `room name`, or whose arms all fail, supplies
-   * nothing and is simply absent from the result.
+   * Contributors, in the order their parts are emitted: the place, then at most
+   * one enclosure. A region contributes nothing (ADR-360 D6, superseding
+   * ADR-349 D16a's region parts). A contributor with no registered `room name`,
+   * or whose arms all fail, supplies nothing and is simply absent from the result.
    *
    * @param observer the entity whose location is being named — the player
-   * @param world the world to read the observer's location and regions from
+   * @param world the world to read the observer's location from
    * @returns the parts in emission order; empty when no contributor spoke, which
    *   under D16a is when the consumer falls back to the entity's own name
    */
@@ -103,17 +97,6 @@ export class LocationHeadingBehavior {
     const parts: HeadingPart[] = [];
     contribute(parts, location.id, 'place');
     if (immediateContainer) contribute(parts, immediateContainer.id, 'enclosure');
-
-    // Regions contribute only where the place is a room — an opaque vehicle
-    // occupies the place slot and composes with nothing (D4a).
-    let regionId = location.get<RoomTrait>(TraitType.ROOM)?.regionId;
-    for (let depth = 0; regionId && depth < MAX_REGION_DEPTH; depth++) {
-      const region = world.getEntity(regionId);
-      if (!region) break;
-      contribute(parts, region.id, 'region');
-      regionId = region.get<RegionTrait>(TraitType.REGION)?.parentRegionId;
-    }
-
     return parts;
   }
 }

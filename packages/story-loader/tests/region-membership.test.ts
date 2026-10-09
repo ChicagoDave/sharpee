@@ -3,9 +3,9 @@
  * REAL loader: a Chord story whose rooms name their regions with `in` lines
  * loads onto the platform seam — region entities exist (RegionTrait), every
  * member room's `RoomTrait.regionId` is set via `assignRoom`, and
- * `world.isInRegion` answers for the room's one region. The rogue-IR cycle
- * case keeps the loader's backstop for nested IR covered until that wiring
- * is removed.
+ * `world.isInRegion` answers for the room's one region. Rogue IR naming a
+ * member that is not a room (another region, or nothing) is the loader's
+ * backstop, since regions do not nest (ADR-360 D5).
  * REAL-PATH per Integration Reality: real @sharpee/chord compile of the
  * region-nesting.story fixture, real createStory/initializeWorld — no
  * stubs; every assertion reads loaded world trait state.
@@ -61,9 +61,8 @@ describe('region loading (ADR-236 AC-1, REAL-PATH)', () => {
     expect(roomRegion('surface-camp')).toBeUndefined();
   });
 
-  // ADR-360 D5: regions no longer nest, so the nesting cases (a child
-  // region's parentRegionId, membership through an ancestor) cannot be
-  // written in Chord. Each room is in at most one region.
+  // ADR-360 D5: regions do not nest, so membership never reaches through
+  // one region to another. Each room is in at most one region.
   it('a room is in its own region and in no other', () => {
     const { world, worldId } = load();
     expect(world.isInRegion(worldId('coal-seam'), worldId('mines'))).toBe(true);
@@ -127,16 +126,29 @@ end before
     expect(world.isInRegion(worldId('coal-seam'), worldId('mines'))).toBe(true);
   });
 
-  it('refuses rogue IR carrying a containment cycle with a LoadError (compiler gate bypassed)', () => {
+  it('refuses rogue IR listing a region as another region\'s member with a LoadError (regions do not nest)', () => {
     const ir = compileSource(FIXTURE);
-    // Hand-corrupt the IR: make each region contain the other.
+    // Hand-corrupt the IR: the compiler cannot produce a region member.
     const mines = ir.entities.find((e) => e.id === 'mines')!;
-    const underground = ir.entities.find((e) => e.id === 'underground')!;
     mines.containing.push({ id: 'underground', span: mines.span });
-    underground.containing.push({ id: 'mines', span: underground.span });
     const story = createStory(ir, { seed: 11 });
     const world = new WorldModel();
-    expect(() => story.initializeWorld(world)).toThrow(LoadError);
-    expect(() => story.initializeWorld(world)).toThrow(/cycle/i);
+    let thrown: unknown;
+    try {
+      story.initializeWorld(world);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(LoadError);
+    expect((thrown as LoadError).message).toMatch(/`underground` is listed as a member of .* but is not a room/);
+  });
+
+  it('refuses rogue IR listing a member id no entity carries with a LoadError', () => {
+    const ir = compileSource(FIXTURE);
+    const mines = ir.entities.find((e) => e.id === 'mines')!;
+    mines.containing.push({ id: 'nowhere', span: mines.span });
+    const story = createStory(ir, { seed: 11 });
+    const world = new WorldModel();
+    expect(() => story.initializeWorld(world)).toThrow(/`nowhere` is listed as a member of .* but is not a room/);
   });
 });

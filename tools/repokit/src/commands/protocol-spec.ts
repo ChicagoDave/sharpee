@@ -94,6 +94,7 @@ export const PROTOCOL_SPEC: ProtocolSpec = {
     { ts: 'IdeIREntity', as: 'Entity', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRKind', as: 'Kind', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRContainedMember', as: 'ContainedMember', nestUnder: 'ComposeStoryIR' },
+    { ts: 'IdeIRTextSource', as: 'TextSource', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRActionDef', as: 'ActionDef', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRPhrases', as: 'PhraseBook', nestUnder: 'ComposeStoryIR' },
     { ts: 'IdeIRPhraseName', as: 'PhraseEntry', nestUnder: 'ComposeStoryIR' },

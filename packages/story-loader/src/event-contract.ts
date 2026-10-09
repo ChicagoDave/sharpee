@@ -48,10 +48,9 @@ export function enteringDestination(data: unknown): ActorMovedEventData['toRoom'
 
 /**
  * Chord event verb → crossing event type when the clause owner is a REGION
- * (ADR-236 D6): going.ts emits one event per boundary actually crossed
- * (`getRegionCrossings` is the source of truth), so nesting transitivity —
- * a parent's reaction fires only when the parent boundary is crossed — is
- * the emitter's guarantee, not a runtime filter.
+ * (ADR-236 D6): going.ts emits one event for the region left and one for the
+ * region entered (`getRegionCrossings` is the source of truth), and none for a
+ * move within one region — the emitter's guarantee, not a runtime filter.
  */
 export const REGION_EVENT_TRIGGERS: Record<string, string> = {
   entering: 'if.event.region_entered',

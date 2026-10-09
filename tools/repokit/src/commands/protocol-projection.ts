@@ -87,11 +87,29 @@ export interface IdeIREntity {
   isPlayable: boolean;
   kinds: IdeIRKind[];
   /**
-   * Region membership (`containing …`, ADR-236) — resolved member entity ids,
-   * non-empty only on region-kind entities.
+   * Region membership (ADR-360 D4/D5: the region's `rooms` groups and each
+   * room's `in the <region>` line) — resolved member room ids, non-empty only
+   * on region-kind entities.
    */
   containing?: IdeIRContainedMember[];
+  /** Where a room's description comes from (ADR-360 D8). Rooms only. */
+  descriptionSource?: IdeIRTextSource;
+  /** Where a room's `room name` heading comes from (ADR-360 D8). Rooms only. */
+  roomNameSource?: IdeIRTextSource;
   span: Span;
+}
+
+/**
+ * A room's text source, computed once by the analyzer (ADR-360 D8). The IDE
+ * reads it and never re-derives it (ADR-322 D8).
+ */
+export interface IdeIRTextSource {
+  /** The room's own block, a region's `rooms` group, or nothing written. */
+  from: 'own' | 'group' | 'none';
+  /** The region whose group created the room; present only when `from` is 'group'. */
+  regionId?: string;
+  /** The group's first and last created names; present only when `from` is 'group'. */
+  group?: readonly string[];
 }
 
 /** A kind membership (`a room`, `a person`, …). */
@@ -99,7 +117,7 @@ export interface IdeIRKind {
   name: string;
 }
 
-/** One resolved `containing` member (a room or nested region). */
+/** One resolved `containing` member: a room (a region holds rooms only). */
 export interface IdeIRContainedMember {
   id: string;
 }

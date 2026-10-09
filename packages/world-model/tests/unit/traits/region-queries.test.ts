@@ -1,8 +1,10 @@
 /**
  * Tests for isInRegion() and getRegionCrossings() (ADR-149 Phase 2).
  *
- * Covers: parent traversal, nested regions, same-region moves,
- * no-region rooms, nonexistent entities, non-room entities.
+ * A room is in at most one region and regions do not nest (ADR-360 D5), so
+ * membership is the room's own region and a move crosses at most one boundary
+ * each way. Covers: direct membership, same-region moves, no-region rooms,
+ * dangling region ids, nonexistent entities, non-room entities.
  * Owner context: @sharpee/world-model — region queries
  */
 
@@ -11,58 +13,43 @@ import { TraitType } from '../../../src/traits/trait-types';
 import { EntityType } from '../../../src/entities/entity-types';
 import { WorldModel } from '../../../src/world/WorldModel';
 
+/** A room assigned to a region, or to none when regionId is omitted. */
+function room(world: WorldModel, name: string, regionId?: string): string {
+  const entity = world.createEntity(name, EntityType.ROOM);
+  entity.add(new RoomTrait());
+  if (regionId) world.assignRoom(entity.id, regionId);
+  return entity.id;
+}
+
 describe('WorldModel — isInRegion()', () => {
   let world: WorldModel;
+  let cellar: string;
+  let coalRoom: string;
+  let limbo: string;
 
   beforeEach(() => {
     world = new WorldModel();
-
-    // Build region hierarchy: underground > coal-mine
     world.createRegion('reg-underground', { name: 'Underground' });
-    world.createRegion('reg-coal-mine', {
-      name: 'Coal Mine',
-      parentRegionId: 'reg-underground',
-    });
+    world.createRegion('reg-coal-mine', { name: 'Coal Mine' });
     world.createRegion('reg-forest', { name: 'Forest' });
 
-    // Rooms
-    const cellar = world.createEntity('Cellar', EntityType.ROOM);
-    cellar.add(new RoomTrait());
-    world.assignRoom(cellar.id, 'reg-underground');
-
-    const coalRoom = world.createEntity('Coal Room', EntityType.ROOM);
-    coalRoom.add(new RoomTrait());
-    world.assignRoom(coalRoom.id, 'reg-coal-mine');
-
-    const clearing = world.createEntity('Clearing', EntityType.ROOM);
-    clearing.add(new RoomTrait());
-    world.assignRoom(clearing.id, 'reg-forest');
-
-    const limbo = world.createEntity('Limbo', EntityType.ROOM);
-    limbo.add(new RoomTrait()); // no region
+    cellar = room(world, 'Cellar', 'reg-underground');
+    coalRoom = room(world, 'Coal Room', 'reg-coal-mine');
+    limbo = room(world, 'Limbo');
   });
 
-  it('should return true for direct region membership', () => {
-    const cellar = world.findByType(EntityType.ROOM).find(r => r.attributes.name === 'Cellar')!;
-    expect(world.isInRegion(cellar.id, 'reg-underground')).toBe(true);
+  it('should return true for the room\'s own region', () => {
+    expect(world.isInRegion(cellar, 'reg-underground')).toBe(true);
   });
 
-  it('should return true for parent region via hierarchy traversal', () => {
-    const coalRoom = world.findByType(EntityType.ROOM).find(r => r.attributes.name === 'Coal Room')!;
-
-    // Coal Room is in reg-coal-mine, which is a child of reg-underground
-    expect(world.isInRegion(coalRoom.id, 'reg-coal-mine')).toBe(true);
-    expect(world.isInRegion(coalRoom.id, 'reg-underground')).toBe(true);
-  });
-
-  it('should return false for unrelated region', () => {
-    const cellar = world.findByType(EntityType.ROOM).find(r => r.attributes.name === 'Cellar')!;
-    expect(world.isInRegion(cellar.id, 'reg-forest')).toBe(false);
+  it('should return false for any other region — membership does not carry to another region', () => {
+    expect(world.isInRegion(coalRoom, 'reg-coal-mine')).toBe(true);
+    expect(world.isInRegion(coalRoom, 'reg-underground')).toBe(false);
+    expect(world.isInRegion(cellar, 'reg-forest')).toBe(false);
   });
 
   it('should return false for room with no region', () => {
-    const limbo = world.findByType(EntityType.ROOM).find(r => r.attributes.name === 'Limbo')!;
-    expect(world.isInRegion(limbo.id, 'reg-underground')).toBe(false);
+    expect(world.isInRegion(limbo, 'reg-underground')).toBe(false);
   });
 
   it('should return false for nonexistent entity', () => {
@@ -70,23 +57,33 @@ describe('WorldModel — isInRegion()', () => {
   });
 
   it('should return false for nonexistent region target', () => {
-    const cellar = world.findByType(EntityType.ROOM).find(r => r.attributes.name === 'Cellar')!;
-    expect(world.isInRegion(cellar.id, 'reg-nonexistent')).toBe(false);
+    expect(world.isInRegion(cellar, 'reg-nonexistent')).toBe(false);
+  });
+
+  it('should return false when the room\'s regionId names no region entity', () => {
+    world.getEntity(limbo)!.get<RoomTrait>(TraitType.ROOM)!.regionId = 'reg-gone';
+    expect(world.isInRegion(limbo, 'reg-gone')).toBe(false);
   });
 
   it('should resolve non-room entities through their containing room', () => {
-    const coalRoom = world.findByType(EntityType.ROOM).find(r => r.attributes.name === 'Coal Room')!;
     const lamp = world.createEntity('Brass Lamp', EntityType.OBJECT);
-    world.moveEntity(lamp.id, coalRoom.id);
+    world.moveEntity(lamp.id, coalRoom);
 
     expect(world.isInRegion(lamp.id, 'reg-coal-mine')).toBe(true);
+    expect(world.isInRegion(lamp.id, 'reg-underground')).toBe(false);
+  });
+
+  it('should follow a non-room entity when it moves to a room in another region', () => {
+    const lamp = world.createEntity('Brass Lamp', EntityType.OBJECT);
+    world.moveEntity(lamp.id, coalRoom);
+    world.moveEntity(lamp.id, cellar);
+
     expect(world.isInRegion(lamp.id, 'reg-underground')).toBe(true);
-    expect(world.isInRegion(lamp.id, 'reg-forest')).toBe(false);
+    expect(world.isInRegion(lamp.id, 'reg-coal-mine')).toBe(false);
   });
 
   it('should return false for non-room entity not in any room', () => {
     const floatingItem = world.createEntity('Ghost Item', EntityType.OBJECT);
-    // Not placed anywhere
     expect(world.isInRegion(floatingItem.id, 'reg-underground')).toBe(false);
   });
 });
@@ -95,127 +92,59 @@ describe('WorldModel — getRegionCrossings()', () => {
   let world: WorldModel;
   let forestRoom: string;
   let cellar: string;
-  let coalRoom: string;
-  let cellar2: string;
+  let darkPassage: string;
   let limbo: string;
 
   beforeEach(() => {
     world = new WorldModel();
-
-    // Hierarchy: underground > coal-mine
     world.createRegion('reg-underground', { name: 'Underground' });
-    world.createRegion('reg-coal-mine', {
-      name: 'Coal Mine',
-      parentRegionId: 'reg-underground',
-    });
     world.createRegion('reg-forest', { name: 'Forest' });
 
-    const r1 = world.createEntity('Forest Clearing', EntityType.ROOM);
-    r1.add(new RoomTrait());
-    world.assignRoom(r1.id, 'reg-forest');
-    forestRoom = r1.id;
-
-    const r2 = world.createEntity('Cellar', EntityType.ROOM);
-    r2.add(new RoomTrait());
-    world.assignRoom(r2.id, 'reg-underground');
-    cellar = r2.id;
-
-    const r3 = world.createEntity('Coal Room', EntityType.ROOM);
-    r3.add(new RoomTrait());
-    world.assignRoom(r3.id, 'reg-coal-mine');
-    coalRoom = r3.id;
-
-    const r4 = world.createEntity('Dark Passage', EntityType.ROOM);
-    r4.add(new RoomTrait());
-    world.assignRoom(r4.id, 'reg-underground');
-    cellar2 = r4.id;
-
-    const r5 = world.createEntity('Limbo', EntityType.ROOM);
-    r5.add(new RoomTrait()); // no region
-    limbo = r5.id;
+    forestRoom = room(world, 'Forest Clearing', 'reg-forest');
+    cellar = room(world, 'Cellar', 'reg-underground');
+    darkPassage = room(world, 'Dark Passage', 'reg-underground');
+    limbo = room(world, 'Limbo');
   });
 
-  it('should detect region exit and entry on cross-region move', () => {
-    // Forest → Underground
-    const result = world.getRegionCrossings(forestRoom, cellar);
-
-    expect(result.exited).toEqual(['reg-forest']);
-    expect(result.entered).toEqual(['reg-underground']);
+  it('should name the region left and the region entered on a cross-region move', () => {
+    expect(world.getRegionCrossings(forestRoom, cellar)).toEqual({
+      exited: 'reg-forest',
+      entered: 'reg-underground',
+    });
   });
 
-  it('should return empty arrays for same-region move', () => {
-    // Cellar → Dark Passage (both in reg-underground)
-    const result = world.getRegionCrossings(cellar, cellar2);
-
-    expect(result.exited).toEqual([]);
-    expect(result.entered).toEqual([]);
+  it('should cross nothing on a same-region move', () => {
+    expect(world.getRegionCrossings(cellar, darkPassage)).toEqual({});
   });
 
-  it('should handle move into nested child region', () => {
-    // Cellar (underground) → Coal Room (coal-mine, child of underground)
-    const result = world.getRegionCrossings(cellar, coalRoom);
-
-    // Still in underground (no exit), entered coal-mine
-    expect(result.exited).toEqual([]);
-    expect(result.entered).toEqual(['reg-coal-mine']);
+  it('should enter only, from a room with no region', () => {
+    expect(world.getRegionCrossings(limbo, forestRoom)).toEqual({ entered: 'reg-forest' });
   });
 
-  it('should handle move out of nested region to parent', () => {
-    // Coal Room (coal-mine) → Cellar (underground)
-    const result = world.getRegionCrossings(coalRoom, cellar);
-
-    // Exited coal-mine (but still in underground via cellar)
-    expect(result.exited).toEqual(['reg-coal-mine']);
-    expect(result.entered).toEqual([]);
+  it('should exit only, into a room with no region', () => {
+    expect(world.getRegionCrossings(forestRoom, limbo)).toEqual({ exited: 'reg-forest' });
   });
 
-  it('should handle move from deepest child to outside all ancestors', () => {
-    // Coal Room (coal-mine > underground) → Forest
-    const result = world.getRegionCrossings(coalRoom, forestRoom);
-
-    // Exited inner-first: coal-mine, then underground
-    expect(result.exited).toEqual(['reg-coal-mine', 'reg-underground']);
-    // Entered outer-first: forest
-    expect(result.entered).toEqual(['reg-forest']);
+  it('should cross nothing when both rooms have no region', () => {
+    const voidRoom = room(world, 'Void');
+    expect(world.getRegionCrossings(limbo, voidRoom)).toEqual({});
   });
 
-  it('should handle move from outside all regions into nested child', () => {
-    // Forest → Coal Room (coal-mine > underground)
-    const result = world.getRegionCrossings(forestRoom, coalRoom);
-
-    expect(result.exited).toEqual(['reg-forest']);
-    // Entered outer-first: underground, then coal-mine
-    expect(result.entered).toEqual(['reg-underground', 'reg-coal-mine']);
+  it('should treat a nonexistent room as having no region', () => {
+    expect(world.getRegionCrossings('nonexistent', forestRoom)).toEqual({ entered: 'reg-forest' });
   });
 
-  it('should handle room with no region to room with region', () => {
-    const result = world.getRegionCrossings(limbo, forestRoom);
-
-    expect(result.exited).toEqual([]);
-    expect(result.entered).toEqual(['reg-forest']);
+  it('should treat a regionId naming no region entity as no region', () => {
+    world.getEntity(limbo)!.get<RoomTrait>(TraitType.ROOM)!.regionId = 'reg-gone';
+    expect(world.getRegionCrossings(limbo, forestRoom)).toEqual({ entered: 'reg-forest' });
+    expect(world.getRegionCrossings(forestRoom, limbo)).toEqual({ exited: 'reg-forest' });
   });
 
-  it('should handle room with region to room with no region', () => {
-    const result = world.getRegionCrossings(forestRoom, limbo);
-
-    expect(result.exited).toEqual(['reg-forest']);
-    expect(result.entered).toEqual([]);
-  });
-
-  it('should return empty arrays when both rooms have no region', () => {
-    const limbo2 = world.createEntity('Void', EntityType.ROOM);
-    limbo2.add(new RoomTrait());
-
-    const result = world.getRegionCrossings(limbo, limbo2.id);
-
-    expect(result.exited).toEqual([]);
-    expect(result.entered).toEqual([]);
-  });
-
-  it('should handle nonexistent room IDs gracefully', () => {
-    const result = world.getRegionCrossings('nonexistent', forestRoom);
-
-    expect(result.exited).toEqual([]);
-    expect(result.entered).toEqual(['reg-forest']);
+  it('should follow a reassignment: a room moved to another region crosses into that one', () => {
+    world.assignRoom(darkPassage, 'reg-forest');
+    expect(world.getRegionCrossings(cellar, darkPassage)).toEqual({
+      exited: 'reg-underground',
+      entered: 'reg-forest',
+    });
   });
 });

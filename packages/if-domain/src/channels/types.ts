@@ -157,18 +157,18 @@ export type ProseChannelId = (typeof PROSE_CHANNEL_IDS)[number];
 /**
  * One contributor's text for the current location heading (ADR-349 D11).
  *
- * A heading is an ordered list of these, emitted place-then-enclosure-then-
- * regions-innermost-to-outermost (D16a). The projection that builds them lives
+ * A heading is an ordered list of these, emitted place then enclosure. A region
+ * contributes no part (ADR-360 D6). The projection that builds them lives
  * in `@sharpee/world-model` (`LocationHeadingBehavior.resolve`); the type lives
  * here because the projection's producer and the wire's consumers are in
  * different packages and must share the shape by import, never by mirroring.
  */
 export interface HeadingPart {
-  /** The entity that supplied this text — the place, the enclosure, or a region. */
+  /** The entity that supplied this text — the place or the enclosure. */
   readonly ownerId: string;
   /** The winning arm's resolved prose, pre-decoration. */
   readonly text: string;
-  readonly role: 'place' | 'enclosure' | 'region';
+  readonly role: 'place' | 'enclosure';
   /**
    * This contributor declared at least one conditional arm, so its text was
    * chosen by consulting the world (ADR-364 D4; amends ADR-349 D11).

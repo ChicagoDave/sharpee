@@ -47,7 +47,6 @@ interface WorldRoom {
 interface WorldRegion {
   id: string;
   name: string;
-  parentRegionId: string | null;
 }
 
 /** Scene entry from --world-json output (ADR-149). */

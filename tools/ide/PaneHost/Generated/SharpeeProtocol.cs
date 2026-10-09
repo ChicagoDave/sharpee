@@ -345,11 +345,20 @@ public sealed record ComposeStoryIREntity
     public required IReadOnlyList<ComposeStoryIRKind> Kinds { get; init; }
 
     /// <summary>
-    /// Region membership (`containing …`, ADR-236) — resolved member entity ids, non-empty only
-    /// on region-kind entities.
+    /// Region membership (ADR-360 D4/D5: the region's `rooms` groups and each room's `in the
+    /// &lt;region&gt;` line) — resolved member room ids, non-empty only on region-kind
+    /// entities.
     /// </summary>
     [JsonPropertyName("containing")]
     public IReadOnlyList<ComposeStoryIRContainedMember>? Containing { get; init; }
+
+    /// <summary>Where a room's description comes from (ADR-360 D8). Rooms only.</summary>
+    [JsonPropertyName("descriptionSource")]
+    public ComposeStoryIRTextSource? DescriptionSource { get; init; }
+
+    /// <summary>Where a room's `room name` heading comes from (ADR-360 D8). Rooms only.</summary>
+    [JsonPropertyName("roomNameSource")]
+    public ComposeStoryIRTextSource? RoomNameSource { get; init; }
 
     [JsonPropertyName("span")]
     public required DiagnosticSpan Span { get; init; }
@@ -362,11 +371,30 @@ public sealed record ComposeStoryIRKind
     public required string Name { get; init; }
 }
 
-/// <summary>One resolved `containing` member (a room or nested region).</summary>
+/// <summary>One resolved `containing` member: a room (a region holds rooms only).</summary>
 public sealed record ComposeStoryIRContainedMember
 {
     [JsonPropertyName("id")]
     public required string Id { get; init; }
+}
+
+/// <summary>
+/// A room's text source, computed once by the analyzer (ADR-360 D8). The IDE reads it and never
+/// re-derives it (ADR-322 D8).
+/// </summary>
+public sealed record ComposeStoryIRTextSource
+{
+    /// <summary>The room's own block, a region's `rooms` group, or nothing written.</summary>
+    [JsonPropertyName("from")]
+    public required ComposeStoryIRTextSourceFrom From { get; init; }
+
+    /// <summary>The region whose group created the room; present only when `from` is 'group'.</summary>
+    [JsonPropertyName("regionId")]
+    public string? RegionId { get; init; }
+
+    /// <summary>The group's first and last created names; present only when `from` is 'group'.</summary>
+    [JsonPropertyName("group")]
+    public IReadOnlyList<string>? Group { get; init; }
 }
 
 /// <summary>A `define action` block with its exact span.</summary>
@@ -397,4 +425,17 @@ public sealed record ComposeStoryIRPhraseEntry
 {
     [JsonPropertyName("span")]
     public DiagnosticSpan? Span { get; init; }
+}
+
+[JsonConverter(typeof(JsonStringEnumConverter))]
+public enum ComposeStoryIRTextSourceFrom
+{
+    [JsonStringEnumMemberName("own")]
+    Own,
+
+    [JsonStringEnumMemberName("group")]
+    Group,
+
+    [JsonStringEnumMemberName("none")]
+    None,
 }

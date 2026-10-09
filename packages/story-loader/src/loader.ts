@@ -346,14 +346,7 @@ export class ChordStory implements Story {
 
     const built: Array<{ ir: IREntity; entity: IFEntity }> = [];
 
-    // Pass 0 — regions, parents before children (ADR-236 D3): a nested
-    // region's `parentRegionId` is validated by `createRegion` at creation,
-    // so the parent's world entity must already exist.
-    for (const irEntity of this.regionsInParentFirstOrder()) {
-      built.push({ ir: irEntity, entity: this.buildEntity(world, irEntity) });
-    }
-
-    // Pass 1 — create every remaining entity. ADR-327 D10: the role-holder is
+    // Pass 1 — create every entity. ADR-327 D10: the role-holder is
     // one of these. There is no player block to skip any more — who holds the
     // role is decided by the start block, after the world exists.
     for (const irEntity of this.ir.entities) {
@@ -400,14 +393,19 @@ export class ChordStory implements Story {
         wearable.wornBy = entity.id;
       }
       // ADR-236 D2: region membership through the platform seam —
-      // `assignRoom` sets RoomTrait.regionId (never touched directly here);
-      // member regions were parented at creation (pass 0), so only room
-      // members remain to wire.
+      // `assignRoom` sets RoomTrait.regionId (never touched directly here).
+      // A region holds rooms only (ADR-360 D5): the compiler builds the member
+      // list from groups and `in` lines, so a member that is not a room is
+      // rogue IR.
       for (const member of irEntity.containing ?? []) {
         const memberIr = this.ir.entities.find((e) => e.id === member.id);
-        if (memberIr && memberIr.kinds.some((k) => k.name === 'room')) {
-          world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
+        if (!memberIr || !memberIr.kinds.some((k) => k.name === 'room')) {
+          throw new LoadError(
+            `\`${member.id}\` is listed as a member of ${irEntity.name} but is not a room.`,
+            irEntity.span,
+          );
         }
+        world.assignRoom(this.requireWorldId(member.id, irEntity), entity.id);
       }
       // ADR-289 D6 backstop (ADR-276 two-layer): exits are gated to rooms at
       // compile (`analysis.exit-non-room`), so a non-room carrying any of the
@@ -1460,47 +1458,6 @@ export class ChordStory implements Story {
 
   // ------------------------------------------------------- entity build
 
-  /** Region IR id → parent region IR id (the parent's `containing` lists the child — ADR-236 D3). */
-  private readonly regionParents = new Map<string, string>();
-
-  /**
-   * Region entities in parent-first order, filling `regionParents` on the
-   * way (ADR-236 D3). The compiler's cycle gate guarantees the walk ends; a
-   * cycle here means rogue IR and is a LoadError, never a hang.
-   */
-  private regionsInParentFirstOrder(): IREntity[] {
-    const regions = this.ir.entities.filter(
-      (e) => e.kinds.some((k) => k.name === 'region'),
-    );
-    const byId = new Map(regions.map((r) => [r.id, r]));
-    this.regionParents.clear();
-    for (const region of regions) {
-      for (const member of region.containing ?? []) {
-        if (byId.has(member.id)) this.regionParents.set(member.id, region.id);
-      }
-    }
-    const ordered: IREntity[] = [];
-    const state = new Map<string, 'visiting' | 'done'>();
-    const visit = (region: IREntity): void => {
-      const s = state.get(region.id);
-      if (s === 'done') return;
-      if (s === 'visiting') {
-        throw new LoadError(
-          `Region containment cycle at \`${region.name}\` — the compiler gate should have refused this story.`,
-          region.span,
-        );
-      }
-      state.set(region.id, 'visiting');
-      const parentId = this.regionParents.get(region.id);
-      const parent = parentId ? byId.get(parentId) : undefined;
-      if (parent) visit(parent);
-      state.set(region.id, 'done');
-      ordered.push(region);
-    };
-    for (const region of regions) visit(region);
-    return ordered;
-  }
-
   private buildEntity(world: WorldModel, irEntity: IREntity): IFEntity {
     if (irEntity.kinds.length > 1) {
       // ADR-276 census 18: the compiler's gate refuses this
@@ -1591,14 +1548,8 @@ export class ChordStory implements Story {
       case 'region': {
         // ADR-236 D1: built on the shipped platform seam — createRegion +
         // assignRoom ARE the shared mechanics (RoomTrait.regionId is never
-        // set directly). Pass 0 built parents first, so a nested child's
-        // parentRegionId resolves here.
-        const parentIr = this.regionParents.get(irEntity.id);
-        const parentRegionId = parentIr ? this.worldIds.get(parentIr) : undefined;
-        entity = world.createRegion(`rg-${irEntity.id}`, {
-          name: irEntity.name,
-          ...(parentRegionId ? { parentRegionId } : {}),
-        });
+        // set directly).
+        entity = world.createRegion(`rg-${irEntity.id}`, { name: irEntity.name });
         // A region block composes like any entity block (aka, description):
         // both live on IdentityTrait; whether any action surfaces them is
         // the platform's business (ADR-236 D1).

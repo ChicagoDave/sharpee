@@ -250,9 +250,9 @@ export class SchedulerConstructsSection {
   /**
    * The region presence gate (ADR-236 D4, restored by ADR-328 D3's 2026-09-06
    * amendment — GH #365): true for every non-region owner, and for a region
-   * owner only while the player stands in one of its member rooms —
-   * `isInRegion` walks the nesting, so a room of a nested child region
-   * counts. A region with no world entity (never lowered) is never present.
+   * owner only while the player stands in one of its member rooms
+   * (`isInRegion`). A region with no world entity (never lowered) is never
+   * present.
    * Checked before the condition, so off-stage the clause neither rolls
    * dice nor spends its `, once`.
    *

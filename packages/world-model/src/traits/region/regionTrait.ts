@@ -2,7 +2,8 @@
  * Region trait for geographic groupings of rooms (ADR-149).
  *
  * Entities with this trait represent named spatial regions. Rooms declare
- * membership via RoomTrait.regionId. Regions can be nested via parentRegionId.
+ * membership via RoomTrait.regionId, and a room is in at most one region.
+ * Regions do not nest (ADR-360 D5).
  *
  * Public interface: RegionTrait, IRegionData.
  * Owner context: @sharpee/world-model — traits / spatial
@@ -15,14 +16,12 @@ import { TraitType } from '../trait-types.js';
  * Data interface for RegionTrait construction.
  *
  * @param name - Human-readable region name (required).
- * @param parentRegionId - Optional parent region entity ID for nesting.
  * @param ambientSound - Region-wide ambient sound propagated to rooms.
  * @param ambientSmell - Region-wide ambient smell propagated to rooms.
  * @param defaultDark - Whether rooms in this region default to dark.
  */
 export interface IRegionData {
   name: string;
-  parentRegionId?: string;
   ambientSound?: string;
   ambientSmell?: string;
   defaultDark?: boolean;
@@ -31,9 +30,8 @@ export interface IRegionData {
 /**
  * Marks an entity as a spatial region that groups rooms.
  *
- * Rooms reference their region via `RoomTrait.regionId`. Regions can form
- * a hierarchy through `parentRegionId` — a room in a child region is
- * implicitly in all ancestor regions.
+ * Rooms reference their region via `RoomTrait.regionId`. A region holds
+ * rooms only, never another region, so a room's region is that one id.
  */
 export class RegionTrait implements ITrait, IRegionData {
   static readonly type = TraitType.REGION;
@@ -41,9 +39,6 @@ export class RegionTrait implements ITrait, IRegionData {
 
   /** Human-readable region name. */
   name: string;
-
-  /** Parent region entity ID for nesting (optional). */
-  parentRegionId?: string;
 
   /** Region-wide ambient sound propagated to contained rooms. */
   ambientSound?: string;
@@ -56,7 +51,6 @@ export class RegionTrait implements ITrait, IRegionData {
 
   constructor(data: IRegionData) {
     this.name = data.name;
-    this.parentRegionId = data.parentRegionId;
     this.ambientSound = data.ambientSound;
     this.ambientSmell = data.ambientSmell;
     this.defaultDark = data.defaultDark ?? false;

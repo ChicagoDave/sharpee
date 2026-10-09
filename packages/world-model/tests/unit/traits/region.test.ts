@@ -30,7 +30,6 @@ describe('RegionTrait', () => {
     it('should accept all optional fields', () => {
       const data: IRegionData = {
         name: 'Coal Mine',
-        parentRegionId: 'reg-underground',
         ambientSound: 'Dripping water echoes.',
         ambientSmell: 'Damp earth and coal dust.',
         defaultDark: true,
@@ -38,7 +37,6 @@ describe('RegionTrait', () => {
       const trait = new RegionTrait(data);
 
       expect(trait.name).toBe('Coal Mine');
-      expect(trait.parentRegionId).toBe('reg-underground');
       expect(trait.ambientSound).toBe('Dripping water echoes.');
       expect(trait.ambientSmell).toBe('Damp earth and coal dust.');
       expect(trait.defaultDark).toBe(true);
@@ -81,17 +79,6 @@ describe('WorldModel — createRegion()', () => {
     expect(trait!.name).toBe('Forest');
   });
 
-  it('should attach RegionTrait with parentRegionId when provided', () => {
-    world.createRegion('reg-underground', { name: 'Underground' });
-    const coalMine = world.createRegion('reg-coal-mine', {
-      name: 'Coal Mine',
-      parentRegionId: 'reg-underground',
-    });
-
-    const trait = coalMine.get<RegionTrait>(TraitType.REGION);
-    expect(trait!.parentRegionId).toBe('reg-underground');
-  });
-
   it('should attach RegionTrait with defaultDark when provided', () => {
     const region = world.createRegion('reg-underground', {
       name: 'Underground',
@@ -116,15 +103,6 @@ describe('WorldModel — createRegion()', () => {
     expect(() => {
       world.createRegion('reg-forest', { name: 'Forest 2' });
     }).toThrow("createRegion: entity 'reg-forest' already exists");
-  });
-
-  it('should throw if parentRegionId references nonexistent entity', () => {
-    expect(() => {
-      world.createRegion('reg-coal-mine', {
-        name: 'Coal Mine',
-        parentRegionId: 'reg-nonexistent',
-      });
-    }).toThrow("createRegion: parent region 'reg-nonexistent' not found");
   });
 });
 

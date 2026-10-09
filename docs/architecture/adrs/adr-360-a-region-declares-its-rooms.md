@@ -4,6 +4,14 @@
 
 **Scope**: `packages/chord` (the `rooms` group, the region exit table, the `in the <region>` membership line, the gates and the warning, the text-source fields in the IR, `chord.ebnf`, the language version), `packages/story-loader` (region wiring without `parentRegionId`), `packages/world-model` (`RegionTrait` and the region queries lose nesting; `LocationHeadingBehavior.resolve` loses its region walk), `packages/ide-protocol` (`story-ir.ts`), `tools/repokit` (`repokit protocol` regenerates the Swift and C# types), `tools/ide` (the generated types, a room lens in the Index tab, and the lexer golden, `SharpeeIDETests/ChordLexerGoldenTests.swift`, AC-12; the editors' lexers serve the real Chord lexer and need no change), `tools/vscode-ext/src/world-explorer.ts` (reads `parentRegionId`), `scripts/bundle-entry.js` (the `--introspect` manifest's region rows emit `parentRegionId`, `:812-824`), `docs/book/v2.0.0` (chapter 9's "Nesting and querying" section, `parts/part-2/09-the-map-and-regions.md:81,120-132`, and its snippet `code-snippets/ch09-the-map-and-regions/04-nesting-and-querying.ts`; v2.0.0 is the edition that tracks HEAD, and v1.5.0 stays pinned as written), `docs/architecture/chord-grammar-changes.md`, and a migration of every `containing` line in the corpus (`branch-stories/fernhill/fernhill.story`; `branch-stories/secret-letter/{night-journey,backdrops,jail,red-gate}.chord`), plus the Secret Letter's one nested region and its guard in `maiden-house.chord` (D5).
 
+**Scope amendment** (2026-10-09, session 2d87ad, David): the platform side of D5 and D6 reaches four places the Scope above does not name.
+- `packages/if-domain/src/channels/types.ts`: `HeadingPart.role` loses `'region'` (D6). The type moved there from world-model before this ADR was implemented.
+- `packages/stdlib/src/actions/standard/going/going.ts`: `RegionCrossings` becomes `{ exited?: string; entered?: string }`, because a move now leaves at most one region and enters at most one. Going emits at most one `region_exited` and one `region_entered`, with the same payloads as before. David chose this shape over keeping the arrays after a review of both (2026-10-09).
+- Five source comments that described nesting: `PerceptionService.ts`, story-loader's `evaluator.ts`, `event-contract.ts` and `runtime/scheduler-constructs.ts`, and `tools/repokit/src/commands/protocol-projection.ts`.
+- The story-loader now refuses rogue IR whose region member is not a room with a `LoadError`, replacing the parent-first region pass and its cycle check.
+
+`packages/lang-en-us` was checked and left unchanged: its heading realizer joins part texts and never reads the role.
+
 ## Date: 2026-10-08
 
 ## Parent

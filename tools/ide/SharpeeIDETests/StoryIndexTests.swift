@@ -19,6 +19,8 @@ final class StoryIndexTests: XCTestCase {
         ComposeStoryIR.Entity(id: name.lowercased(), name: name, isPlayable: isPlayable,
                               kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
                               containing: nil,
+                              descriptionSource: nil,
+                              roomNameSource: nil,
                               span: span(line))
     }
 

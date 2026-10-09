@@ -42,6 +42,8 @@ final class SplitDividerTests: XCTestCase {
             ComposeStoryIR.Entity(id: "e\(n)", name: "Entity Number \(n)", isPlayable: false,
                                   kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
                                   containing: nil,
+                                  descriptionSource: nil,
+                                  roomNameSource: nil,
                                   span: DiagnosticSpan(line: n, column: 1, endLine: n, endColumn: 5))
         }
         return ComposeStoryIR(
