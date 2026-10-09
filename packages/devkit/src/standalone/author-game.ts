@@ -10,7 +10,8 @@
  * goes through `bootstrap.assembleGame` — the single loader invariant
  * (ADR-180: exactly one story-loading implementation).
  *
- * Public interface: findStoryFile(), loadAuthorGame(), requireHatchModule().
+ * Public interface: findStoryFile(), makeFsImportResolver(), compileChordStory(),
+ * loadChordStory(), loadAuthorGame().
  * Owner context: @sharpee/devkit (author tool, ADR-187 — project-relative,
  * no workspace mode detection).
  */
@@ -19,22 +20,13 @@ import { readdirSync, readFileSync } from 'node:fs';
 import type { LoadedGame } from '@sharpee/bootstrap';
 
 /**
- * Hatch resolution lives in `hatch-transpile.ts` (ADR-259 D6, amended): the
- * authored `.ts` beside the `.story` IS the module, transpiled through
- * esbuild. Re-exported here because this module is where callers have always
- * found it.
- */
-import { requireHatchModule } from './hatch-transpile.js';
-export { requireHatchModule } from './hatch-transpile.js';
-
-/**
  * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
  * The compiler appends `.chord` and hands us the full fragment name (e.g.
  * `"regions/harbor.chord"`); we read it relative to the `.story` file's
  * directory. A missing file resolves to `null` (the compiler's
  * unresolved-import contract → `analysis.import-unresolved`); any other fs
  * error propagates. Keeps @sharpee/chord filesystem-free — the host owns
- * the base directory, exactly as `requireHatchModule` does for hatches.
+ * the base directory.
  *
  * @param storyDir directory of the importing `.story` file
  * @returns a resolver mapping `<name>.chord` → source text or null
@@ -100,7 +92,7 @@ export function compileChordStory(storyFile: string): import('@sharpee/chord').S
 
 /**
  * Compile a Chord `.story` file and construct its story via
- * @sharpee/story-loader (hatches bound). Load-time-gate diagnostics abort
+ * @sharpee/story-loader. Load-time-gate diagnostics abort
  * with `.story` line numbers (ADR-210 AC-3).
  *
  * @param storyFile absolute or cwd-relative path to the `.story` file
@@ -110,21 +102,13 @@ export function compileChordStory(storyFile: string): import('@sharpee/chord').S
  * @throws on gate errors, with every diagnostic in the message
  */
 export function loadChordStory(storyFile: string, seed?: number): unknown {
-  const storyDir = path.dirname(path.resolve(storyFile));
-  const result = { ir: compileChordStory(storyFile) };
-
-  const hatchModules: Record<string, Record<string, unknown>> = {};
-  for (const hatch of result.ir.hatches) {
-    if (!(hatch.modulePath in hatchModules)) {
-      hatchModules[hatch.modulePath] = requireHatchModule(storyDir, hatch.modulePath);
-    }
-  }
+  const ir = compileChordStory(storyFile);
 
   const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');
   // ADR-293 D1: the chord evaluator's stream (`one chance in <n>`,
   // `randomly`) derives from the session's master seed — omitting it left
   // chord draws clock-seeded under a pinned seed.
-  return createStory(result.ir, { hatchModules, seed });
+  return createStory(ir, { seed });
 }
 
 /**

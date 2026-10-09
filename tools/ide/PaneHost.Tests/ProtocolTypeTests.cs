@@ -51,14 +51,14 @@ public class ProtocolTypeTests
     }
 
     [Fact]
-    public void hatch_diagnostic_decodes_without_a_span()
+    public void story_config_diagnostic_decodes_without_a_span()
     {
         var payload = Decode<ComposeJsonPayload>("""
-        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"hatch.chord-namespace",
-         "message":"loader-private","file":"/tmp/mod.ts","line":1}]}
+        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"story-config.broken",
+         "message":"probe.config.json is broken","file":"/tmp/probe.config.json","line":1}]}
         """);
 
-        Assert.Equal("hatch.chord-namespace", payload.Diagnostics[0].Code);
+        Assert.Equal("story-config.broken", payload.Diagnostics[0].Code);
         Assert.Null(payload.Diagnostics[0].Span);
     }
 
@@ -80,8 +80,6 @@ public class ProtocolTypeTests
                    "night-wind":{"strategy":null,"variants":[],
                                  "span":{"line":30,"column":3,"endLine":30,"endColumn":14}},
                    "cold-returns":{"strategy":null,"variants":[]}}}},
-               "hatches":[{"name":"weather","modulePath":"./weather.ts","hatchKind":"text",
-                           "span":{"line":40,"column":1,"endLine":40,"endColumn":36}}],
                "unknownFutureField":42}}
         """);
 
@@ -100,10 +98,6 @@ public class ProtocolTypeTests
 
         Assert.Equal("xyzzy", Assert.Single(Present(ir.Actions)).Name);
 
-        var hatch = Assert.Single(Present(ir.Hatches));
-        Assert.Equal("./weather.ts", hatch.ModulePath);
-        Assert.Equal(40, hatch.Span?.Line);
-
         // Phrase KEYS decode; bodies stay opaque, and a span-less entry is fine.
         var locale = Present(ir.Phrases).Locales["en-US"];
         Assert.Equal(new[] { "cold-returns", "night-wind" }, locale.Keys.OrderBy(k => k).ToArray());
@@ -121,7 +115,6 @@ public class ProtocolTypeTests
         """);
 
         Assert.Equal(ProjectManifestGeneratedFrom.Bridge, manifest.GeneratedFrom);
-        Assert.Null(manifest.HatchContextVersion);
         var node = Assert.Single(manifest.Entities);
         Assert.Equal(EntityCategory.Room, node.Category);
         Assert.Equal(new[] { "north" }, Present(node.Traits.Room).Exits);

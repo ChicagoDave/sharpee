@@ -358,7 +358,7 @@ private final class RootViewController: NSViewController {
         mainSplitViewController.setDiagnosisOpenLocation(openLocation)
 
         // Compose pipeline (ADR-258 D5): results feed Problems + editor underlines;
-        // a Problems row opens the exact span (hatch records: file:line).
+        // a Problems row opens the exact span (the story-config record: file:line).
         mainSplitViewController.onComposeOutcome = { [weak self] outcome in
             self?.handleComposeOutcome(outcome)
         }

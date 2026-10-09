@@ -19,7 +19,7 @@ final class IRTreeStateTests: XCTestCase {
                        meta: .init(title: title,
                                    fields: .init(id: nil, storyVersion: nil, authors: ["T"])),
                        grammarFile: nil, entities: [], actions: [],
-                       phrases: nil, hatches: nil)
+                       phrases: nil)
     }
 
     private func okOutcome(_ url: URL, title: String = "OK") -> ComposeScheduler.Outcome {

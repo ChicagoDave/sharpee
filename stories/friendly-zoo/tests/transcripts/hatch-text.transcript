@@ -1,9 +1,7 @@
-title: Zoo golden gate — dynamic-text hatch (cycling parrot flavor)
+title: Zoo golden gate — cycling parrot flavor
 story: friendly-zoo
-description: The ADR-196 Choice producer behind examining the parrot — flavor
-  lines cycle deterministically across examinations. This is the
-  hatch-exercising transcript the AC-2 gate requires (zoo.story binds the
-  producer via define text ... from "./dynamic-text.ts"). Authored against the
+description: Examining the parrot emits the cycling flavor phrase — flavor
+  lines cycle deterministically across examinations. Authored against the
   TS story 2026-07-11, then frozen.
 
 ---

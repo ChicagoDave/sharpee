@@ -108,7 +108,7 @@ export interface StoryIR {
   phrasebooks: IRPhrasebook[];
   // `verbs` REMOVED (ADR-270 D7, 2026-07-26): `define verb` is gone from the
   // language; `extend action` grammar lines carry the capability generally.
-  // `hatches` and `hasHatches` REMOVED (ADR-361 D2, 2026-10-09): Chord has no
+  // The hatch list and its flag REMOVED (ADR-361 D2, 2026-10-09): Chord has no
   // hatches, so every story is pure IR.
   // Phase B (plan phase 3):
   traits: IRTraitDef[];

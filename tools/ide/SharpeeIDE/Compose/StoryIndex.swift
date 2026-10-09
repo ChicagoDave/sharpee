@@ -4,7 +4,7 @@
 // successful build's output (the "little bit of PR" — the story's name in
 // lights plus its numbers), and the Index sections (the granular listings the
 // build output deliberately does NOT carry — full object list, phrase names,
-// actions, hatches — every row span-navigable).
+// actions — every row span-navigable).
 // Pure and view-free; IndexView renders the sections, BuildController prints
 // the report.
 // Public interface: StoryStats, StoryIndex.stats(of:), buildReport(for:),
@@ -21,13 +21,12 @@ struct StoryStats: Equatable {
     let people: Int      // person-kind entities, the player included
     let actions: Int
     let phrases: Int     // default-locale phrase keys
-    let hatches: Int
 }
 
 /// The Index's section identities — each carries its display title; the view
 /// maps a kind to its icon and accent color.
 enum IndexSectionKind: CaseIterable, Equatable {
-    case rooms, regions, things, people, actions, phrases, hatches
+    case rooms, regions, things, people, actions, phrases
 
     var title: String {
         switch self {
@@ -37,12 +36,11 @@ enum IndexSectionKind: CaseIterable, Equatable {
         case .people: return "People"
         case .actions: return "Actions"
         case .phrases: return "Phrases"
-        case .hatches: return "Hatch Modules"
         }
     }
 }
 
-/// One Index section (Rooms, Things, People, Actions, Phrases, Hatches…).
+/// One Index section (Rooms, Things, People, Actions, Phrases…).
 struct IndexSection: Equatable {
     let kind: IndexSectionKind
     let rows: [IndexRow]
@@ -50,7 +48,7 @@ struct IndexSection: Equatable {
     var title: String { kind.title }
 }
 
-/// One Index row: display title, an optional dim detail (kinds, module path),
+/// One Index row: display title, an optional dim detail (kinds, "playable"),
 /// whether the title is a code-like identifier (rendered monospace), and the
 /// authored span when the IR carries one (D6 navigation).
 struct IndexRow: Equatable {
@@ -76,8 +74,7 @@ enum StoryIndex {
                           things: things,
                           people: people,
                           actions: ir.allActions.count,
-                          phrases: authoredPhraseNames(of: ir).count,
-                          hatches: ir.allHatches.count)
+                          phrases: authoredPhraseNames(of: ir).count)
     }
 
     /// The AUTHORED phrase names: dotted keys (`lab.description`) are
@@ -108,7 +105,6 @@ enum StoryIndex {
         add(stats.people, "person", "people")
         add(stats.actions, "action")
         add(stats.phrases, "phrase")
-        add(stats.hatches, "hatch module")
 
         let rule = String(repeating: "─", count: 46)
         // ADR-298: the wire is data-only (`authors: [String]`); the client
@@ -168,14 +164,9 @@ enum StoryIndex {
         let phrases = authoredPhraseNames(of: ir)
             .map { IndexRow(title: $0.key, detail: nil, isCode: true, span: $0.span) }
 
-        let hatches = ir.allHatches
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
-            .map { IndexRow(title: $0.name, detail: $0.modulePath, isCode: true, span: $0.span) }
-
         let all: [(IndexSectionKind, [IndexRow])] = [
             (.rooms, rooms), (.regions, regions), (.things, things),
             (.people, people), (.actions, actions), (.phrases, phrases),
-            (.hatches, hatches),
         ]
         return all.compactMap { kind, rows in
             rows.isEmpty ? nil : IndexSection(kind: kind, rows: rows)

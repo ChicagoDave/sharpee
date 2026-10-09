@@ -98,7 +98,7 @@ if (require.main === module) {
   const transcriptTester = require('../packages/transcript-tester/dist/index.js');
   const bootstrap = require('@sharpee/bootstrap');
   // Chord (ADR-210 Phase A): the CLI is the host layer for `.story` stories —
-  // it compiles the source and owns hatch-module resolution. These live here,
+  // it compiles the source and owns import resolution. These live here,
   // not in bootstrap, because no platform package may depend on @sharpee/chord
   // or @sharpee/story-loader (ADR-210 direction rule).
   const chord = require('../packages/chord/dist/index.js');
@@ -293,32 +293,12 @@ Examples:
     return storyPath.endsWith('.story') ? path.dirname(storyPath) : storyPath;
   }
 
-  // Hatch policy (ADR-210 §5.6, ADR-259 D6 as amended 2026-07-23): `define
-  // text X from "./extras.ts"` names authored TypeScript, and the CLI loads
-  // THAT — transpiled through esbuild, exactly as the browser build does. The
-  // old `<storyDir>/dist/<base>.js` (tsc output) lookup is retired: it forced
-  // every hatched story to carry a package.json and tsconfig.json purely to
-  // emit one file. One implementation, shared with the devkit, so the two
-  // hosts cannot drift.
-  const { requireHatchModule: resolveHatch } =
-    require('../packages/devkit/dist/standalone/hatch-transpile.js');
-  // The same rule for `import "<name>"`: @sharpee/chord is filesystem-free,
-  // so the host supplies the resolver. Devkit's compose/test/play already
+  // `import "<name>"`: @sharpee/chord is filesystem-free, so the host
+  // supplies the resolver. Devkit's compose/test/play already
   // resolve a fragment beside the importing `.story`; the bundle shares that
   // one implementation so the two hosts cannot drift (GH #352).
   const { makeFsImportResolver } =
     require('../packages/devkit/dist/standalone/author-game.js');
-
-  function requireHatchModule(storyDir, modulePath) {
-    try {
-      return resolveHatch(storyDir, modulePath);
-    } catch (err) {
-      // ADR-274 D2: the named environmental error already carries the file and
-      // the remedy — pass it through so its name survives to the author.
-      if (err && err.name === 'HatchTranspileError') throw err;
-      throw new Error(`Hatch module "${modulePath}" for ${storyDir}: ${err.message}`);
-    }
-  }
 
   // Compile a `.story` file and interpret it via @sharpee/story-loader.
   // Load-time-gate diagnostics abort with `.story` line numbers (AC-3).
@@ -335,16 +315,10 @@ Examples:
       );
       throw new Error(`Chord load-time gate failed (${errors.length} error(s)):\n${lines.join('\n')}`);
     }
-    const hatchModules = {};
-    for (const hatch of result.ir.hatches) {
-      if (!(hatch.modulePath in hatchModules)) {
-        hatchModules[hatch.modulePath] = requireHatchModule(storyDir, hatch.modulePath);
-      }
-    }
     // ADR-293 D1: the chord evaluator's stream (`one chance in <n>`,
     // `randomly`) derives from the session's master seed — omitting it here
     // left chord draws clock-seeded under a pinned --seed/seed: header.
-    return storyLoader.createStory(result.ir, { hatchModules, seed });
+    return storyLoader.createStory(result.ir, { seed });
   }
 
   // Single loader (ADR-180): resolve the story module (entry-aware) and assemble

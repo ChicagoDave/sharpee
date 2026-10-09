@@ -16,9 +16,8 @@
  *
  * Public interface: resolveEsbuild().
  *
- * Note: this spawns esbuild as a SUBPROCESS. It is unrelated to ADR-274 D1,
- * which bans inlining esbuild's JS API into the CLI bundle (its buildSync worker
- * handshake deadlocks there) — hatch-transpile.ts owns that path.
+ * Note: this spawns esbuild as a SUBPROCESS; nothing in devkit calls esbuild's
+ * JS API.
  */
 import { existsSync, openSync, readSync, closeSync } from 'node:fs';
 import { dirname, join } from 'node:path';

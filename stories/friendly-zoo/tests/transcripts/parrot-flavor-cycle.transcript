@@ -1,0 +1,42 @@
+title: Zoo — the parrot's flavor cycles and the plaque aside prints once
+story: friendly-zoo
+description: Four examinations of the parrot print the three flavor lines in
+  order and then the first again. The plaque aside prints on the first
+  examination only, as its own paragraph, and its spent variant prints
+  nothing at all — never the word "nothing".
+
+---
+
+> south
+[OK: contains "Main Path"]
+
+> west
+[OK: contains "Aviary"]
+
+# Examination 1: the first flavor line, then the aside as its own paragraph.
+> examine parrot
+[OK: contains "whistles a jaunty tune"]
+[OK: contains]
+text
+whistles a jaunty tune.
+
+(A small plaque notes the macaws are rescues from the illegal pet trade.)
+end text
+
+# Examination 2: the second flavor line; the aside is spent.
+> examine parrot
+[OK: contains "Pretty bird! Pretty bird!"]
+[OK: not contains "rescues from the illegal pet trade"]
+[OK: not contains "nothing"]
+
+# Examination 3: the third flavor line.
+> examine parrot
+[OK: contains "preens one wing"]
+[OK: not contains "rescues from the illegal pet trade"]
+[OK: not contains "nothing"]
+
+# Examination 4: the cycle wraps to the first line again.
+> examine parrot
+[OK: contains "whistles a jaunty tune"]
+[OK: not contains "rescues from the illegal pet trade"]
+[OK: not contains "nothing"]

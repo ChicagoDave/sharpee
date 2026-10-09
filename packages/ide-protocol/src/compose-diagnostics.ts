@@ -2,8 +2,8 @@
  * compose-diagnostics.ts — the `sharpee compose --json` wire contract (ADR-258 D5).
  *
  * Purpose: the versioned payload `compose --json` writes to stdout — the one
- *   diagnostics stream (ADR-276 D4: compile diagnostics with full spans, hatch
- *   findings with file+line and no end-span) plus, when the compile succeeded
+ *   diagnostics stream (ADR-276 D4: compile diagnostics with full spans, the
+ *   story-config record with file+line and no end-span) plus, when the compile succeeded
  *   and the mode emits IR, the Story IR the IDE's project tree is built from
  *   (ADR-258 D6). Gates + IR, never the load-proof.
  * Public interface: COMPOSE_JSON_SCHEMA_VERSION, ComposeDiagnosticRecord,
@@ -29,15 +29,16 @@ export const COMPOSE_JSON_SCHEMA_VERSION = 2 as const;
 
 /**
  * One record in the payload's unified diagnostics stream (ADR-276 D4).
- * `span` is present exactly for compile diagnostics — hatch findings
- * (`hatch.*` codes) carry a file+line site only, no end-span.
+ * `span` is present exactly for compile diagnostics — the story-config
+ * record (`story-config.broken`, ADR-309 D5) carries a file+line site only,
+ * no end-span.
  */
 export interface ComposeDiagnosticRecord {
   severity: DiagnosticSeverity;
-  /** Stable machine code — `parse.*`/`analysis.*`, or `hatch.*` for lint findings. */
+  /** Stable machine code — `parse.*`/`analysis.*`, or `story-config.broken`. */
   code: string;
   message: string;
-  /** Site file: the `.story` file for compile diagnostics, the hatch module for hatch findings. */
+  /** Site file: the `.story` file (or imported fragment) for compile diagnostics, the config sidecar for the story-config record. */
   file: string;
   /** 1-based line of the site. */
   line: number;
@@ -49,7 +50,7 @@ export interface ComposeDiagnosticRecord {
 export interface ComposeJsonPayload {
   /** Equals {@link COMPOSE_JSON_SCHEMA_VERSION} for payloads this package's emitters write. */
   schemaVersion: typeof COMPOSE_JSON_SCHEMA_VERSION;
-  /** The one diagnostics stream: compile diagnostics first, then hatch records. */
+  /** The one diagnostics stream: the story-config record first, then compile diagnostics. */
   diagnostics: ComposeDiagnosticRecord[];
   /**
    * The Story IR the project tree is sourced from (ADR-258 D6). Present iff

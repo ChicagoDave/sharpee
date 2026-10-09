@@ -25,7 +25,6 @@ final class StoryIndexTests: XCTestCase {
     private func ir(entities: [ComposeStoryIR.Entity] = [],
                     actions: [ComposeStoryIR.ActionDef] = [],
                     phrases: ComposeStoryIR.PhraseBook? = nil,
-                    hatches: [ComposeStoryIR.Hatch]? = nil,
                     title: String = "The Folly at Fernhill",
                     fields: ComposeStoryIR.Fields = .init(id: "fernhill",
                                                           storyVersion: "0.3.0",
@@ -34,7 +33,7 @@ final class StoryIndexTests: XCTestCase {
         ComposeStoryIR(format: "story language 2", languageVersion: "3.0.0",
                        meta: .init(title: title, fields: fields),
                        grammarFile: nil, entities: entities, actions: actions,
-                       phrases: phrases, hatches: hatches)
+                       phrases: phrases)
     }
 
     private var sampleIR: ComposeStoryIR {
@@ -54,8 +53,7 @@ final class StoryIndexTests: XCTestCase {
                 "night-wind": .init(span: span(51)),
                 "player.description": .init(span: nil), // platform-synthesized
             ],
-        ]),
-        hatches: [.init(name: "weather", modulePath: "./weather.ts", span: span(60))])
+        ]))
     }
 
     // MARK: - Stats
@@ -63,7 +61,7 @@ final class StoryIndexTests: XCTestCase {
     func testStatsCountByKindWithPlayerAmongPeople() {
         let stats = StoryIndex.stats(of: sampleIR)
         XCTAssertEqual(stats, StoryStats(rooms: 2, regions: 1, things: 1, people: 2,
-                                         actions: 1, phrases: 2, hatches: 1),
+                                         actions: 1, phrases: 2),
                        "phrases counts AUTHORED names only — dotted synthesized keys excluded")
     }
 
@@ -87,7 +85,6 @@ final class StoryIndexTests: XCTestCase {
         XCTAssertTrue(report.contains("2 people"))
         XCTAssertTrue(report.contains("1 thing"))
         XCTAssertTrue(report.contains("2 phrases"))
-        XCTAssertTrue(report.contains("1 hatch module"))
     }
 
     func testBuildReportOmitsZeroCountsAndListings() {
@@ -110,7 +107,7 @@ final class StoryIndexTests: XCTestCase {
     func testSectionsCarryRowsWithSpansAndDetails() throws {
         let sections = StoryIndex.sections(of: sampleIR)
         XCTAssertEqual(sections.map { $0.kind },
-                       [.rooms, .regions, .things, .people, .actions, .phrases, .hatches])
+                       [.rooms, .regions, .things, .people, .actions, .phrases])
 
         let rooms = sections[0]
         XCTAssertEqual(rooms.rows.map { $0.title }, ["Cellar", "Iron Gates"])
@@ -126,10 +123,6 @@ final class StoryIndexTests: XCTestCase {
         XCTAssertEqual(phrases.rows.map { $0.title }, ["cold-returns", "night-wind"])
         XCTAssertEqual(phrases.rows[0].span, span(50))
         XCTAssertTrue(phrases.rows[0].isCode, "phrase keys render monospace")
-
-        let hatches = sections[6]
-        XCTAssertEqual(hatches.rows[0].detail, "./weather.ts")
-        XCTAssertTrue(hatches.rows[0].isCode)
     }
 
     func testEmptySectionsAreOmitted() {

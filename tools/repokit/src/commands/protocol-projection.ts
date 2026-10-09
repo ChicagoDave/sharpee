@@ -48,8 +48,6 @@ export interface IdeStoryIR {
   actions?: IdeIRActionDef[];
   /** The phrasebook — the Index lists KEYS only; bodies stay opaque. */
   phrases?: IdeIRPhrases;
-  /** Declared hatch modules. */
-  hatches?: IdeIRHatch[];
 }
 
 /** Story-block metadata: the title, plus the header fields the shells read. */
@@ -110,13 +108,6 @@ export interface IdeIRContainedMember {
 export interface IdeIRActionDef {
   name: string;
   span: Span;
-}
-
-/** A declared hatch module. */
-export interface IdeIRHatch {
-  name: string;
-  modulePath: string;
-  span?: Span;
 }
 
 /**

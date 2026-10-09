@@ -9,12 +9,7 @@ TypeScript), refusing `no_tool` / `tool_not_held` / `wrong_tool`. An
 openable with no requirement ignores an offered tool. A non-empty
 container's contents are announced by a separate, replaceable piece: the
 `opened-revealed` chain (ADR-094) reacts to `opened` and emits `revealed`.
-A story that wants a different reveal, or none, replaces it with a
-`define chain opened-revealed from "./reveal.ts"` **hatch** — an
-author-supplied TypeScript handler — rather than touching the action.
-(Declaring any hatch makes the story TypeScript-bearing, so it is no
-longer browser-pure — the deliberate boundary for reaching platform
-internals like chains.)
+The chain is platform behavior; a Chord story does not replace it.
 
 **close** (`closing`) parses the verbs `close`, `shut`, and
 `cover`. It refuses `not_closable`, `already_closed`, and

@@ -82,7 +82,7 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// an overlay, so this fires on activation and save, not on edit.
     var onFragmentNeedsCompose: ((URL) -> Void)?
 
-    /// Fired on every edit to ANY document (story, hatch module, browser page) —
+    /// Fired on every edit to ANY document (story, fragment, browser page) —
     /// a source change invalidates the play surface (David's ruling).
     var onDocumentEdited: ((URL) -> Void)?
 
@@ -423,8 +423,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     }
 
     /// Underlines each record in the active document (errors red, warnings
-    /// yellow) and flags their lines in the gutter. Records for other files (hatch
-    /// modules) are ignored. Cleared on the next edit — the following compose
+    /// yellow) and flags their lines in the gutter. Records for other files (the
+    /// story config, an inactive fragment) are ignored. Cleared on the next edit — the following compose
     /// repaints against the new buffer.
     ///
     /// A multi-line span underlines only its FIRST line (see

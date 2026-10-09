@@ -17,10 +17,12 @@ description: Chained full-playthrough, chapter 2 of 5. The parrot's cycling
 [OK: contains "whistles a jaunty tune"]
 [OK: contains "rescues from the illegal pet trade"]
 
-# Examine 2 — cycle variant 1; the once-only aside is gone.
+# Examine 2 — cycle variant 1; the once-only aside is gone, and its
+# `nothing` variant prints no text at all.
 > examine parrot
 [OK: contains "Pretty bird"]
 [OK: not contains "rescues from the illegal pet trade"]
+[OK: not contains "nothing"]
 
 # Save with the cycle counter at 2.
 $save parrot-mid

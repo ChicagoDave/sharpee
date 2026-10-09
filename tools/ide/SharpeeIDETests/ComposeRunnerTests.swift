@@ -146,35 +146,36 @@ final class ComposeRunnerTests: XCTestCase {
         XCTAssertGreaterThan(span.endColumn, span.column, "a real underline range, not a point")
     }
 
-    func testHatchViolationArrivesAsFileLineRecordWithoutSpan() throws {
-        let story = try writeStory(TestToolchain.hatchStory, name: "hatch.story")
-        try TestToolchain.hatchViolationModule.write(
-            to: tempDir.appendingPathComponent("mod.ts"), atomically: true, encoding: .utf8)
+    func testBrokenStoryConfigArrivesAsFileLineRecordWithoutSpan() throws {
+        let story = try writeStory(TestToolchain.cleanStory, name: "probe.story")
+        try "{ not json".write(
+            to: tempDir.appendingPathComponent("probe.config.json"), atomically: true, encoding: .utf8)
         let result = composeReal(story)
 
         guard case .success(let payload) = result else {
             return XCTFail("expected success, got \(String(describing: result))")
         }
-        let record = try XCTUnwrap(payload.diagnostics.first(where: { $0.code == "hatch.chord-namespace" }))
-        XCTAssertNil(record.span, "hatch records carry no end-span (D5)")
-        XCTAssertEqual(URL(fileURLWithPath: record.file).lastPathComponent, "mod.ts",
-                       "hatch site is the module file, not the story")
+        let record = try XCTUnwrap(payload.diagnostics.first(where: { $0.code == "story-config.broken" }))
+        XCTAssertNil(record.span, "the story-config record carries no end-span (D5)")
+        XCTAssertEqual(URL(fileURLWithPath: record.file).lastPathComponent, "probe.config.json",
+                       "the site is the config sidecar, not the story")
         XCTAssertEqual(record.line, 1)
+        XCTAssertNotNil(payload.ir, "the compile succeeded, so the IR still rides the payload")
     }
 
-    /// A story whose hatch module cannot resolve still returns gates + IR —
-    /// the editor path never performs the load-proof (D5/D6 acceptance).
-    func testUnresolvableHatchModuleStillReturnsGatesAndIR() throws {
-        let story = try writeStory(
-            TestToolchain.hatchStory.replacingOccurrences(of: "./mod.ts", with: "./missing.ts"),
-            name: "unresolvable.story")
+    /// A removed text-hatch line is a compile error with a full span, and a
+    /// failed compile never carries an IR.
+    func testRemovedTextHatchLineArrivesAsSpannedCompileError() throws {
+        let story = try writeStory(TestToolchain.removedTextHatchStory, name: "removed.story")
         let result = composeReal(story)
 
         guard case .success(let payload) = result else {
             return XCTFail("expected success, got \(String(describing: result))")
         }
-        XCTAssertTrue(payload.diagnostics.isEmpty)
-        XCTAssertNotNil(payload.ir, "gates + IR despite the unresolvable hatch module")
+        let record = try XCTUnwrap(payload.diagnostics.first(where: { $0.code == "parse.removed-text-hatch" }))
+        XCTAssertNotNil(record.span, "compile diagnostics carry the full span")
+        XCTAssertEqual(record.file, story.path)
+        XCTAssertNil(payload.ir)
     }
 
     /// D6 acceptance: the tree populates for fernhill — the ADR's worked example,

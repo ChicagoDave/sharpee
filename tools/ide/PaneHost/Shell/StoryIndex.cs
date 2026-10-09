@@ -1,4 +1,4 @@
-// The story's index: every room, region, thing, person, action, phrase and hatch the IR
+// The story's index: every room, region, thing, person, action and phrase the IR
 // declares, as rows that carry where they were written.
 //
 // ONE READER OF THE IR, TWO CONSUMERS. The Index tab lists these rows; the build panel's
@@ -39,8 +39,8 @@ internal readonly record struct IndexSpan(string? File, int Line, int Column);
 /// <param name="Span">Where it was written, or null when the IR carries no span.</param>
 internal sealed record IndexRow(string Title, string? Detail, bool IsCode, IndexSpan? Span);
 
-/// <summary>The seven kinds of thing a story declares, in the order they are shown.</summary>
-internal enum IndexSectionKind { Rooms, Regions, Things, People, Actions, Phrases, Hatches }
+/// <summary>The six kinds of thing a story declares, in the order they are shown.</summary>
+internal enum IndexSectionKind { Rooms, Regions, Things, People, Actions, Phrases }
 
 /// <summary>One section of the index — never empty; an empty one is omitted instead.</summary>
 internal sealed record IndexSection(IndexSectionKind Kind, IReadOnlyList<IndexRow> Rows)
@@ -53,8 +53,7 @@ internal sealed record IndexSection(IndexSectionKind Kind, IReadOnlyList<IndexRo
         IndexSectionKind.Things => "Things",
         IndexSectionKind.People => "People",
         IndexSectionKind.Actions => "Actions",
-        IndexSectionKind.Phrases => "Phrases",
-        _ => "Hatch modules",
+        _ => "Phrases",
     };
 
     /// <summary>The singular noun one row of this section is, for the build banner.</summary>
@@ -65,8 +64,7 @@ internal sealed record IndexSection(IndexSectionKind Kind, IReadOnlyList<IndexRo
         IndexSectionKind.Things => "thing",
         IndexSectionKind.People => "person",
         IndexSectionKind.Actions => "action",
-        IndexSectionKind.Phrases => "phrase",
-        _ => "hatch module",
+        _ => "phrase",
     };
 
     /// <summary>Its plural, which is not always the singular plus an s.</summary>
@@ -153,13 +151,6 @@ internal static class StoryIndex
 
         var phrases = AuthoredPhrases(ir).ToArray();
 
-        var hatches = (ir["hatches"] as JsonArray ?? new JsonArray())
-            .Where(h => h is not null)
-            .OrderBy(h => NameOf(h!), StringComparer.OrdinalIgnoreCase)
-            .Select(h => new IndexRow(
-                NameOf(h!), h!["modulePath"]?.GetValue<string>(), true, SpanOf(h["span"])))
-            .ToArray();
-
         var all = new (IndexSectionKind Kind, IReadOnlyList<IndexRow> Rows)[]
         {
             (IndexSectionKind.Rooms, rooms),
@@ -168,7 +159,6 @@ internal static class StoryIndex
             (IndexSectionKind.People, people),
             (IndexSectionKind.Actions, actions),
             (IndexSectionKind.Phrases, phrases),
-            (IndexSectionKind.Hatches, hatches),
         };
 
         return new StoryIndexDocument(

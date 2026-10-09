@@ -122,7 +122,7 @@ const PINNED = {
   // Re-pinned 2026-10-09 (session d8546c, ADR-361 D1): the three hatch
   // forms are removed — `define-text` and `define-hatch` leave
   // `declaration`, their productions become a removal note, and the asset
-  // note no longer mentions `hasHatches`. BREAKING; folds into the same
+  // note no longer mentions the IR's hatch flag. BREAKING; folds into the same
   // unpublished 4.0.0 set (the number moves at publish).
   ebnfSha256: '3de8318c4485c175a0a9030f92d9e7b56a2d0c81976a293646008fd22012e389',
 };

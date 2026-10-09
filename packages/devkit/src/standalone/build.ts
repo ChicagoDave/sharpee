@@ -14,7 +14,6 @@ import { runBuildBrowserCommand } from './build-browser.js';
 import { stampVersion } from './version-stamp.js';
 import { findStoryFile, loadAuthorGame, makeFsImportResolver } from './author-game.js';
 import { StoryConfigError, configPathFor, reconcileHeader } from './story-config.js';
-import { lintHatchSources } from '../hatch-lint.js';
 
 interface SharpeeConfig {
   title?: string;
@@ -246,8 +245,7 @@ export async function runBuildCommand(args: string[], projectDirArg?: string): P
 /**
  * Build a Chord (`.story`) project: run the compiler as the fail-fast
  * validation gate (diagnostics surface here, on the author's machine —
- * never first as a broken page), lint hatch sources, then build the
- * browser client when one is wired and run transcript tests when asked.
+ * never first as a broken page), then build the browser client when one is wired and run transcript tests when asked.
  * Per David's ruling (2026-07-18) the shipped browser bundle carries the
  * `.story` SOURCE + the compiler and compiles at boot — so this build
  * emits no IR artifact; validation is its compile step. The `.sharpee`
@@ -297,18 +295,6 @@ async function runChordBuild(
     console.error(`\n  ${rel} failed the load-time gates (${errors} error(s))`);
     process.exit(1);
   }
-
-  // Hatch source lint (design.md §5.6) — same gate `sharpee compose` runs.
-  const hatchFindings = lintHatchSources(
-    storyDir,
-    result.ir.hatches.map((h) => h.modulePath),
-  );
-  for (const f of hatchFindings) {
-    console.error(
-      `  ${f.file}:${f.line} error [hatch.chord-namespace] \`${f.text}\` — the chord.* state namespace is loader-private`,
-    );
-  }
-  if (hatchFindings.length > 0) process.exit(1);
 
   console.log(`  ${rel} is gate-clean — ${result.ir.entities.length} entities, ${result.ir.actions.length} action(s)\n`);
 

@@ -3,12 +3,9 @@
  * REAL runCompose path (rule 13a — no stubs).
  *
  * Pins: the payload shape (via ide-protocol's own guard — rule 8b, one
- * declaration), full spans on compile diagnostics, file+line-no-span hatch
- * records, both record kinds in one run, IR presence rules (present iff
- * compile ok and no --check; never on failure), exit codes, and the D5
- * core claim: --json performs NO load-proof — a story whose hatch module
- * cannot resolve still succeeds under --json while the default (load-proof)
- * mode fails on the same story.
+ * declaration), full spans on compile diagnostics, the file+line-no-span
+ * story-config record, both record kinds in one run, IR presence rules
+ * (present iff compile ok and no --check; never on failure), and exit codes.
  *
  * Owner context: @sharpee/devkit test suite.
  */
@@ -58,24 +55,13 @@ function storySource(extraLines: string[] = []): string {
   ].join('\n');
 }
 
-const HATCH_STORY_TAIL = [
-  'create the note',
-  '  a thing, readable',
-  '  in the Lab',
-  '',
-  '  A note.',
-  '',
-  '  on the player reading',
-  '    phrase note-text',
-  '  end on',
-  '',
-  'define phrases en-US',
-  '  note-text:',
-  '    It reads: {garbled}',
-  '',
-  'define text garbled from "./garbled.ts"',
-  '',
-];
+/** Write `<stem>.story` with a broken `<stem>.config.json` sidecar beside it. */
+function writeWithBrokenConfig(stem: string, extraLines: string[] = []): string {
+  const file = join(DIR, `${stem}.story`);
+  writeFileSync(file, storySource(extraLines));
+  writeFileSync(join(DIR, `${stem}.config.json`), '{ not json');
+  return file;
+}
 
 /** Run compose capturing stdout/stderr; returns exit code + captured output. */
 async function run(args: string[]): Promise<{ code: number; stdout: string; stderr: string[] }> {
@@ -147,67 +133,33 @@ describe('compose --json — diagnostics', () => {
     }
   });
 
-  it('a hatch finding is a second record type: file+line site, NO span key', async () => {
-    writeFileSync(
-      join(DIR, 'garbled.ts'),
-      "export const garbled = () => ({ kind: 'literal', text: 'chord.private-key' });\n"
-    );
-    const file = join(DIR, 'hatch-violation.story');
-    writeFileSync(file, storySource(HATCH_STORY_TAIL));
+  it('a broken story config is a second record type: file+line site, NO span key', async () => {
+    const file = writeWithBrokenConfig('broken-config');
     const { code, stdout } = await run([file, '--json']);
     expect(code).toBe(1);
     const payload = payloadOf(stdout);
-    const record = payload.diagnostics.find((d) => d.code === 'hatch.chord-namespace');
+    const record = payload.diagnostics.find((d) => d.code === 'story-config.broken');
     expect(record).toBeDefined();
     expect(record!.severity).toBe('error');
-    expect(record!.file).toBe(join(DIR, 'garbled.ts'));
+    expect(record!.file).toBe(join(DIR, 'broken-config.config.json'));
     expect(record!.line).toBe(1);
     expect('span' in record!).toBe(false);
     // Compile was ok — the IR still rides the payload (gate failure ≠ compile failure).
     expect(payload.ir).toBeDefined();
   });
 
-  it('both record kinds arrive in ONE diagnostics array from one run, compile first', async () => {
-    const file = join(DIR, 'both.story');
-    writeFileSync(
-      file,
-      storySource([...HATCH_STORY_TAIL, 'create the widget', '  a thing, frobnicating', '  in the Lab', '', '  A widget.', ''])
-    );
+  it('both record kinds arrive in ONE diagnostics array from one run, story config first', async () => {
+    const file = writeWithBrokenConfig('both', [
+      'create the widget', '  a thing, frobnicating', '  in the Lab', '', '  A widget.', '',
+    ]);
     const { code, stdout } = await run([file, '--json']);
     expect(code).toBe(1);
     const payload = payloadOf(stdout);
+    const configIdx = payload.diagnostics.findIndex((d) => d.code === 'story-config.broken');
     const compileIdx = payload.diagnostics.findIndex((d) => d.code === 'analysis.trait-not-declared');
-    const hatchIdx = payload.diagnostics.findIndex((d) => d.code === 'hatch.chord-namespace');
+    expect(configIdx).toBeGreaterThanOrEqual(0);
     expect(compileIdx).toBeGreaterThanOrEqual(0);
-    expect(hatchIdx).toBeGreaterThanOrEqual(0);
-    expect(compileIdx).toBeLessThan(hatchIdx);
-  });
-});
-
-describe('compose --json — NO load-proof (the D5 core claim)', () => {
-  it('succeeds with gates + IR where the default mode fails resolving the hatch module', async () => {
-    const sub = mkdtempSync(join(DIR, 'noload-'));
-    const file = join(sub, 'unresolvable.story');
-    // Declares "./garbled.ts" which does NOT exist in `sub`: the lint skips
-    // absent files, the compile is clean — only the load-proof would fail.
-    writeFileSync(file, storySource(HATCH_STORY_TAIL));
-
-    const { code, stdout } = await run([file, '--json']);
-    expect(code).toBe(0);
-    const payload = payloadOf(stdout);
-    expect(payload.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    expect(payload.ir).toBeDefined();
-
-    // The same story through the default (load-proof) mode fails — proving
-    // --json genuinely skipped hatch-module resolution rather than surviving it.
-    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
-    const outSpy = vi.spyOn(process.stdout, 'write').mockImplementation((() => true) as never);
-    try {
-      await expect(runCompose([file])).rejects.toThrow(/garbled|hatch|module/i);
-    } finally {
-      outSpy.mockRestore();
-      errSpy.mockRestore();
-    }
+    expect(configIdx).toBeLessThan(compileIdx);
   });
 });
 

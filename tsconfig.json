@@ -3,8 +3,7 @@
   "references": [
     { "path": "packages/core" },
     { "path": "packages/stdlib" },
-    { "path": "packages/extensions/conversation" },
-    { "path": "stories/cloak-of-darkness" }
+    { "path": "packages/extensions/conversation" }
   ],
   "exclude": [
     "archive",

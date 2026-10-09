@@ -198,15 +198,15 @@ public sealed record DiagnosticSpan
 
 /// <summary>
 /// One record in the payload's unified diagnostics stream (ADR-276 D4). `span` is present
-/// exactly for compile diagnostics — hatch findings (`hatch.*` codes) carry a file+line site
-/// only, no end-span.
+/// exactly for compile diagnostics — the story-config record (`story-config.broken`, ADR-309
+/// D5) carries a file+line site only, no end-span.
 /// </summary>
 public sealed record ComposeDiagnosticRecord
 {
     [JsonPropertyName("severity")]
     public required ComposeSeverity Severity { get; init; }
 
-    /// <summary>Stable machine code — `parse.*`/`analysis.*`, or `hatch.*` for lint findings.</summary>
+    /// <summary>Stable machine code — `parse.*`/`analysis.*`, or `story-config.broken`.</summary>
     [JsonPropertyName("code")]
     public required string Code { get; init; }
 
@@ -214,8 +214,8 @@ public sealed record ComposeDiagnosticRecord
     public required string Message { get; init; }
 
     /// <summary>
-    /// Site file: the `.story` file for compile diagnostics, the hatch module for hatch
-    /// findings.
+    /// Site file: the `.story` file (or imported fragment) for compile diagnostics, the config
+    /// sidecar for the story-config record.
     /// </summary>
     [JsonPropertyName("file")]
     public required string File { get; init; }
@@ -236,7 +236,7 @@ public sealed record ComposeJsonPayload
     [JsonPropertyName("schemaVersion")]
     public required int SchemaVersion { get; init; }
 
-    /// <summary>The one diagnostics stream: compile diagnostics first, then hatch records.</summary>
+    /// <summary>The one diagnostics stream: the story-config record first, then compile diagnostics.</summary>
     [JsonPropertyName("diagnostics")]
     public required IReadOnlyList<ComposeDiagnosticRecord> Diagnostics { get; init; }
 
@@ -286,10 +286,6 @@ public sealed record ComposeStoryIR
     /// <summary>The phrasebook — the Index lists KEYS only; bodies stay opaque.</summary>
     [JsonPropertyName("phrases")]
     public ComposeStoryIRPhraseBook? Phrases { get; init; }
-
-    /// <summary>Declared hatch modules.</summary>
-    [JsonPropertyName("hatches")]
-    public IReadOnlyList<ComposeStoryIRHatch>? Hatches { get; init; }
 }
 
 /// <summary>Story-block metadata: the title, plus the header fields the shells read.</summary>
@@ -381,19 +377,6 @@ public sealed record ComposeStoryIRActionDef
 
     [JsonPropertyName("span")]
     public required DiagnosticSpan Span { get; init; }
-}
-
-/// <summary>A declared hatch module.</summary>
-public sealed record ComposeStoryIRHatch
-{
-    [JsonPropertyName("name")]
-    public required string Name { get; init; }
-
-    [JsonPropertyName("modulePath")]
-    public required string ModulePath { get; init; }
-
-    [JsonPropertyName("span")]
-    public DiagnosticSpan? Span { get; init; }
 }
 
 /// <summary>

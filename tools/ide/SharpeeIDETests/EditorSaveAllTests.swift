@@ -60,12 +60,12 @@ final class EditorSaveAllTests: XCTestCase {
 
     func testSaveAllFlushesEveryDirtyDocumentToDisk() throws {
         let story = try makeFile("probe.story", "version: 0.1.0")
-        let hatch = try makeFile("mod.ts", "export const a = 1")
+        let script = try makeFile("mod.ts", "export const a = 1")
         editor.openDocument(at: story)
-        editor.openDocument(at: hatch)
+        editor.openDocument(at: script)
 
         // Dirty the story tab, switch away (it becomes the inactive dirty tab),
-        // then dirty the active hatch tab — both must flush on saveAll.
+        // then dirty the active script tab — both must flush on saveAll.
         editor.switchTo(index: 0)
         try typeIntoActiveDocument("version: 0.2.0")
         editor.switchTo(index: 1)
@@ -75,7 +75,7 @@ final class EditorSaveAllTests: XCTestCase {
 
         XCTAssertEqual(try String(contentsOf: story, encoding: .utf8), "version: 0.2.0",
                        "the INACTIVE dirty tab must flush too — this is the ⌘B precondition")
-        XCTAssertEqual(try String(contentsOf: hatch, encoding: .utf8), "export const a = 2")
+        XCTAssertEqual(try String(contentsOf: script, encoding: .utf8), "export const a = 2")
     }
 
     func testSaveAllWithNothingDirtyIsACleanNoOp() throws {

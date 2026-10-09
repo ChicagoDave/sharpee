@@ -117,15 +117,15 @@ struct DiagnosticSpan: Codable, Equatable, Sendable {
 }
 
 /// One record in the payload's unified diagnostics stream (ADR-276 D4). `span` is present
-/// exactly for compile diagnostics — hatch findings (`hatch.*` codes) carry a file+line
-/// site only, no end-span.
+/// exactly for compile diagnostics — the story-config record (`story-config.broken`,
+/// ADR-309 D5) carries a file+line site only, no end-span.
 struct ComposeDiagnosticRecord: Codable, Equatable, Sendable {
     let severity: ComposeSeverity
-    /// Stable machine code — `parse.*`/`analysis.*`, or `hatch.*` for lint findings.
+    /// Stable machine code — `parse.*`/`analysis.*`, or `story-config.broken`.
     let code: String
     let message: String
-    /// Site file: the `.story` file for compile diagnostics, the hatch module for hatch
-    /// findings.
+    /// Site file: the `.story` file (or imported fragment) for compile diagnostics, the
+    /// config sidecar for the story-config record.
     let file: String
     /// 1-based line of the site.
     let line: Int
@@ -137,7 +137,7 @@ struct ComposeDiagnosticRecord: Codable, Equatable, Sendable {
 struct ComposeJsonPayload: Codable, Equatable, Sendable {
     /// Equals `COMPOSE_JSON_SCHEMA_VERSION` for payloads this package's emitters write.
     let schemaVersion: Int
-    /// The one diagnostics stream: compile diagnostics first, then hatch records.
+    /// The one diagnostics stream: the story-config record first, then compile diagnostics.
     let diagnostics: [ComposeDiagnosticRecord]
     /// The Story IR the project tree is sourced from (ADR-258 D6). Present iff the compile
     /// succeeded AND the mode emits IR (`--json` without `--check`); absent under `--json
@@ -164,8 +164,6 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     let actions: [ComposeStoryIR.ActionDef]?
     /// The phrasebook — the Index lists KEYS only; bodies stay opaque.
     let phrases: ComposeStoryIR.PhraseBook?
-    /// Declared hatch modules.
-    let hatches: [ComposeStoryIR.Hatch]?
 
     /// Story-block metadata: the title, plus the header fields the shells read.
     struct Meta: Codable, Equatable, Sendable {
@@ -216,13 +214,6 @@ struct ComposeStoryIR: Codable, Equatable, Sendable {
     struct ActionDef: Codable, Equatable, Sendable {
         let name: String
         let span: DiagnosticSpan
-    }
-
-    /// A declared hatch module.
-    struct Hatch: Codable, Equatable, Sendable {
-        let name: String
-        let modulePath: String
-        let span: DiagnosticSpan?
     }
 
     /// The phrasebook: locale → phrase key → the phrase's span. Phrase bodies (strategies,

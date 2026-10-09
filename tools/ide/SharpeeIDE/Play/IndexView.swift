@@ -1,7 +1,7 @@
 // IndexView.swift
 // The Index tab (right panel): the story's granular reference — headline stats
-// over SECTION TABS (Rooms / Regions / Things / People / Actions / Phrases /
-// Hatch Modules; David's ruling: tabs, not expanders), each showing a flat,
+// over SECTION TABS (Rooms / Regions / Things / People / Actions / Phrases;
+// David's ruling: tabs, not expanders), each showing a flat,
 // span-navigable list. Live off the same retained IR as everything else, stale-
 // marked with it. Section tabs are rebuilt per story (empty sections omitted);
 // the selected section survives recomposes when it still exists.
@@ -172,7 +172,6 @@ final class IndexView: NSView {
         add(stats.people, "person", "people")
         add(stats.actions, "action")
         add(stats.phrases, "phrase")
-        add(stats.hatches, "hatch module")
         return parts
     }
 
@@ -214,7 +213,6 @@ final class IndexView: NSView {
         case .people: return ("person", Theme.tokenKeyword)
         case .actions: return ("bolt", Theme.accent)
         case .phrases: return ("text.quote", Theme.tokenString)
-        case .hatches: return ("puzzlepiece.extension", Theme.tokenComment)
         }
     }
 

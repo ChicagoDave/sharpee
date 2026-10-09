@@ -26,7 +26,6 @@ public sealed class StoryBuildReportTests
         { "id": "lamp",  "kinds": [{ "name": "thing" }],  "isPlayable": false }
       ],
       "actions": [ { "id": "polish" } ],
-      "hatches": [],
       "phrases": { "defaultLocale": "en-US", "locales": { "en-US": {
         "lamp-lit": "", "hall.description": "", "hall.detail": "" } } }
     }
@@ -56,10 +55,11 @@ public sealed class StoryBuildReportTests
     [Fact]
     public void a_zero_count_is_omitted_rather_than_printed()
     {
-        // hatches is empty, so the report must not mention hatch modules at all.
-        var report = StoryBuildReport.From(Ir);
+        // With no actions declared, the report must not mention actions at all.
+        var report = StoryBuildReport.From(Ir.Replace("""[ { "id": "polish" } ]""", "[]"));
 
-        Assert.DoesNotContain("hatch", report);
+        Assert.NotNull(report);
+        Assert.DoesNotContain("action", report);
         Assert.DoesNotContain("0 ", report);
     }
 

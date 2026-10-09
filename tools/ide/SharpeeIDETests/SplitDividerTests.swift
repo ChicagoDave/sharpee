@@ -56,8 +56,7 @@ final class SplitDividerTests: XCTestCase {
                 "en-US": Dictionary(uniqueKeysWithValues: (1...40).map {
                     ("phrase-key-number-\($0)", ComposeStoryIR.PhraseEntry(span: nil))
                 }),
-            ]),
-            hatches: [.init(name: "weather", modulePath: "./weather.ts", span: nil)])
+            ]))
     }
 
     func testProjectEditorDividerMovesAndSticks() throws {

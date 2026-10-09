@@ -7,8 +7,7 @@ sharpee compose <file.story> [--check] [-o <ir.json>]
 ```
 
 There are two modes. Plain `sharpee compose file.story` runs the gates
-and then goes further: it binds any hatches, builds the world, and
-creates the player, so that "it composed" means "it actually loads."
+and then goes further: it builds the world and creates the player, so that "it composed" means "it actually loads."
 On success it writes the IR as JSON to standard output (or to a file
 with `-o`). `sharpee compose --check file.story` stops after the gates:
 no IR is emitted and no load is attempted. `--check` is the CI form: the
@@ -25,5 +24,5 @@ The exit code is the contract for scripts:
 | Code | Meaning |
 |---|---|
 | `0` | gate-clean (and, in full mode, the IR loaded) |
-| `1` | the story failed the load-time gates, or a hatch source broke a rule |
+| `1` | the story failed the load-time gates, or its story config is broken |
 | `2` | a usage error: no file, missing argument, unknown flag |

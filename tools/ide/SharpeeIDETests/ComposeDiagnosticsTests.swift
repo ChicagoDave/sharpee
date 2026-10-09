@@ -1,7 +1,7 @@
 // ComposeDiagnosticsTests.swift
 // Decoder tests for the compose --json Swift mirror: the schema-version gate
 // (loud rejection BEFORE shape decoding), record shapes (compile spans present,
-// hatch spans absent), and IR presence semantics (`ir` iff the compile succeeded).
+// story-config spans absent), and IR presence semantics (`ir` iff the compile succeeded).
 
 import XCTest
 @testable import SharpeeIDE
@@ -24,12 +24,12 @@ final class ComposeDiagnosticsTests: XCTestCase {
         XCTAssertNil(payload.ir)
     }
 
-    func testDecodesHatchRecordWithoutSpan() throws {
+    func testDecodesStoryConfigRecordWithoutSpan() throws {
         let payload = try ComposeJsonPayload.decode(from: data("""
-        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"hatch.chord-namespace",
-         "message":"loader-private","file":"/tmp/mod.ts","line":1}]}
+        {"schemaVersion":2,"diagnostics":[{"severity":"error","code":"story-config.broken",
+         "message":"probe.config.json is broken","file":"/tmp/probe.config.json","line":1}]}
         """))
-        XCTAssertEqual(payload.diagnostics[0].code, "hatch.chord-namespace")
+        XCTAssertEqual(payload.diagnostics[0].code, "story-config.broken")
         XCTAssertNil(payload.diagnostics[0].span)
     }
 
@@ -49,8 +49,6 @@ final class ComposeDiagnosticsTests: XCTestCase {
                    "night-wind":{"strategy":null,"variants":[],
                                  "span":{"line":30,"column":3,"endLine":30,"endColumn":14}},
                    "cold-returns":{"strategy":null,"variants":[]}}}},
-               "hatches":[{"name":"weather","modulePath":"./weather.ts","hatchKind":"text",
-                           "span":{"line":40,"column":1,"endLine":40,"endColumn":36}}],
                "unknownFutureField":42}}
         """))
         let ir = try XCTUnwrap(payload.ir)
@@ -65,11 +63,6 @@ final class ComposeDiagnosticsTests: XCTestCase {
                        "phrase KEYS decode sorted; bodies stay opaque")
         XCTAssertEqual(names[1].span?.line, 30)
         XCTAssertNil(names[0].span, "a span-less phrase entry decodes without one")
-
-        let hatch = try XCTUnwrap(ir.allHatches.first)
-        XCTAssertEqual(hatch.name, "weather")
-        XCTAssertEqual(hatch.modulePath, "./weather.ts")
-        XCTAssertEqual(hatch.span?.line, 40)
 
         let entity = try XCTUnwrap(ir.allEntities.first)
         XCTAssertEqual(entity.name, "Lab")

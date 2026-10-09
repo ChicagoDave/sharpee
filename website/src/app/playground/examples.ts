@@ -1,7 +1,7 @@
 /**
  * examples.ts — seeded starter + example-picker stories for the playground.
  *
- * Every string here is single-file, hatch-free, and gate-clean under the
+ * Every string here is single-file and gate-clean under the
  * CURRENT (dotless) Chord — verified by `scripts/playground-examples-check.mjs`,
  * which compiles each one with the real @sharpee/chord and exits non-zero on
  * any diagnostic error. Run it after touching anything below.

@@ -8,7 +8,7 @@
 // and a rename that breaks the projection fails `repokit verify` rather than
 // this decoder at runtime.
 // Public interface: ComposeJsonPayload.decode(from:), ComposeStoryIR.allEntities
-// /allActions/allHatches, ComposeStoryIR.Entity.hasKind(_:),
+// /allActions, ComposeStoryIR.Entity.hasKind(_:),
 // ComposeStoryIR.PhraseBook.defaultLocaleNames, ComposeStoryIR.PhraseName.
 // Owner context: tools/ide — Compose.
 
@@ -62,8 +62,6 @@ extension ComposeStoryIR {
     var allEntities: [Entity] { entities ?? [] }
     /// Actions as a non-optional list.
     var allActions: [ActionDef] { actions ?? [] }
-    /// Hatches as a non-optional list.
-    var allHatches: [Hatch] { hatches ?? [] }
 }
 
 extension ComposeStoryIR.Entity {

@@ -22,7 +22,6 @@ import * as path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import type { IRMeta, StoryIR } from '@sharpee/chord';
 import { makeFsImportResolver } from './author-game.js';
-import { requireHatchModule } from './hatch-transpile.js';
 import { resolveEsbuild } from './esbuild-bin.js';
 
 // --------------------------------------------------------------------------
@@ -388,93 +387,6 @@ export const VERSION_INFO = { version: STORY_VERSION, buildDate: BUILD_DATE } as
  * resolving from the env's node_modules. Returns the entry file path.
  */
 /**
- * One hatch module the generated entry must bundle (ADR-259 D2).
- *
- * **The two strings are deliberately different, and conflating them is the
- * single way to get this wrong.**
- *
- * - `mapKey` is the author's `modulePath` VERBATIM (`'./chord-extras.ts'`),
- *   because the loader looks up exactly what the author wrote.
- * - `specifier` is that module resolved against the `.story`'s directory and
- *   re-expressed relative to the GENERATED ENTRY's location — which is a
- *   scratch directory under `dist/.browser-entry/<storyId>/`, not the story
- *   folder. A naive `'./chord-extras.ts'` in the entry would resolve against
- *   the scratch dir and fail.
- */
-interface HatchBinding {
-  mapKey: string;
-  specifier: string;
-  binding: string;
-}
-
-/**
- * Resolve every distinct hatch module to its (mapKey, specifier) pair.
- *
- * @param hatches the IR's hatch declarations
- * @param storyDir directory of the `.story` file — what author paths are relative to
- * @param entryDir directory the generated entry will be written to
- */
-function resolveHatchBindings(
-  hatches: readonly { modulePath: string }[],
-  storyDir: string,
-  entryDir: string,
-): HatchBinding[] {
-  const seen = new Map<string, HatchBinding>();
-  for (const hatch of hatches) {
-    if (seen.has(hatch.modulePath)) continue;
-    const absolute = path.resolve(storyDir, hatch.modulePath);
-    let specifier = path.relative(entryDir, absolute).split(path.sep).join('/');
-    if (!specifier.startsWith('.')) specifier = `./${specifier}`;
-    seen.set(hatch.modulePath, {
-      mapKey: hatch.modulePath,
-      specifier,
-      binding: `__hatch${seen.size}`,
-    });
-  }
-  return [...seen.values()];
-}
-
-/**
- * Write `hatch-modules.ts` beside the entry — generated at build time exactly
- * as `version.ts` is, and imported by the entry the same way.
- *
- * Emitting a sibling module rather than substituting the entry's text is what
- * lets the D4 escape hatch keep hatch support: a hand-written
- * `src/browser-entry.ts` imports `./hatch-modules.js` like any other module,
- * and the build regenerates it in place. A placeholder in the template would
- * have been left literal in a scaffolded entry, which is exactly the bug this
- * shape avoids.
- */
-function stampHatchModules(entryDir: string, hatches: HatchBinding[]): void {
-  const imports = hatches
-    .map((h) => `import * as ${h.binding} from ${JSON.stringify(h.specifier)};`)
-    .join('\n');
-  const entries = hatches
-    .map((h) => `  ${JSON.stringify(h.mapKey)}: ${h.binding} as unknown as Record<string, unknown>,`)
-    .join('\n');
-
-  const source = `/**
- * hatch-modules.ts — GENERATED at build time (ADR-259 D1/D2). Do not edit.
- *
- * The keys are the author's \`from "…"\` paths VERBATIM — that is what the
- * loader looks up. The import specifiers are the same modules resolved
- * relative to THIS file, which lives wherever the entry does rather than
- * beside the \`.story\`; the two strings differ on purpose.
- *
- * A non-empty map means the bundle carries author-written executable code,
- * not merely story data (D3).
- */
-${imports}
-
-export const hatchModules: Record<string, Record<string, unknown>> = {
-${entries}
-};
-`;
-  fs.mkdirSync(entryDir, { recursive: true });
-  fs.writeFileSync(path.join(entryDir, 'hatch-modules.ts'), source);
-}
-
-/**
  * Write `story-ir.ts` beside the entry — the compiled story, embedded.
  *
  * The bundle used to ship the `.story` SOURCE and compile it in the browser at
@@ -486,10 +398,10 @@ ${entries}
  * to compile at boot: the build already ran the load-time gates, so a boot-time
  * gate failure was unreachable by construction.
  *
- * Emitted as a sibling module rather than substituted into the entry text, for
- * the same reason `hatch-modules.ts` is: a hand-written `src/browser-entry.ts`
- * (the D4 escape hatch) imports it like any other module and the build
- * regenerates it in place.
+ * Emitted as a sibling module rather than substituted into the entry text, so
+ * a hand-written `src/browser-entry.ts` (the D4 escape hatch) imports it like
+ * any other module and the build regenerates it in place. A placeholder in
+ * the template would be left literal in a scaffolded entry.
  *
  * The IR travels as a JSON string parsed at boot rather than a JS object
  * literal — one string literal keeps TypeScript from inferring a type over a
@@ -509,55 +421,6 @@ export const storyIR: StoryIR = JSON.parse(${JSON.stringify(JSON.stringify(ir))}
 `;
   fs.mkdirSync(entryDir, { recursive: true });
   fs.writeFileSync(path.join(entryDir, 'story-ir.ts'), source);
-}
-
-/**
- * Bind every hatch in Node and build the world, so "builds" means "binds"
- * (ADR-259 D5).
- *
- * A hatch that names a missing module, a missing export, or an export of the
- * wrong kind is a defect the author should learn about at build time — not
- * one the player discovers in a browser console. The loader already rejects
- * all three atomically, with the `.story` span; this runs that rejection
- * early and surfaces it as a build failure.
- *
- * **The hatch that binds is the hatch that ships**: `requireHatchModule`
- * transpiles the same authored source the browser bundle imports (Phase A's
- * mechanism, second caller). Unminified and Node-loadable by construction —
- * unminified matters beyond readability, because the loader's `chord.*`
- * namespace lint inspects function source and is documented unreliable
- * against minified code.
- *
- * **No `tsc`, no `tsconfig`, no `typescript` anywhere in this path.**
- * Typechecking is the wrong instrument: types erase, so type errors usually
- * still transpile, and the errors that actually break a hatched story are
- * contract errors.
- */
-function checkHatchBindings(ir: StoryIR, storyDir: string, rel: string): void {
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const { WorldModel } = require('@sharpee/world-model') as typeof import('@sharpee/world-model');
-
-  const hatchModules: Record<string, Record<string, unknown>> = {};
-  try {
-    for (const hatch of ir.hatches) {
-      if (!(hatch.modulePath in hatchModules)) {
-        hatchModules[hatch.modulePath] = requireHatchModule(storyDir, hatch.modulePath);
-      }
-    }
-    const story = createStory(ir, { hatchModules });
-    const world = new WorldModel();
-    story.initializeWorld(world);
-    story.createPlayer(world);
-  } catch (error: unknown) {
-    // Surface the loader's own message and its `.story` span — it says more
-    // about a broken hatch than any wrapper could.
-    const span = (error as { span?: { line: number; column: number } }).span;
-    const where = span ? `${rel}:${span.line}:${span.column}` : rel;
-    const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`${where} hatch binding failed: ${message}`);
-  }
 }
 
 function generateEntry(
@@ -599,7 +462,7 @@ function generateEntry(
  * @param env       resolution-mode injection (D5)
  * @param opts      per-invocation knobs
  * @returns the output directory (`<cwd>/dist/web/<id>`)
- * @throws on gate errors, declared hatches, an unknown `client:`, or an empty bundle
+ * @throws on gate errors, an unknown `client:`, or an empty bundle
  */
 export function buildBrowser(
   storyFile: string,
@@ -632,9 +495,6 @@ export function buildBrowser(
   if (!result.ok) {
     throw new Error(`${rel} failed the load-time gates (${errors.length} error(s)).`);
   }
-  // ADR-259 D1: `hasHatches` SELECTS A ROUTE; it does not fail the build.
-  // A hatched story bundles its author-written modules alongside the compiled
-  // IR — see the hatch imports the generated entry receives below.
 
   // --- Metadata + client config, all from the IR (D2/D3). ---
   const meta = readBrowserMeta(result.ir.meta);
@@ -709,29 +569,11 @@ export function buildBrowser(
   const buildDate = opts.buildDate ?? new Date().toISOString().replace(/\.\d+Z$/, 'Z');
   stampBrowserVersion(entryDir, meta, buildDate);
 
-  // hatch-modules.ts (imported by the entry as ./hatch-modules) — ADR-259 D2.
-  // Regenerated for BOTH entry paths, so the D4 escape hatch keeps hatch
-  // support. Specifiers resolve from wherever the entry lives; map keys stay
-  // verbatim — see HatchBinding.
-  const hatchBindings = resolveHatchBindings(result.ir.hatches, storyDir, entryDir);
-  stampHatchModules(entryDir, hatchBindings);
-  if (hatchBindings.length > 0) {
-    log(`  ✓ Wired ${hatchBindings.length} hatch module(s) into the bundle`);
-  }
-
   // story-ir.ts (imported by the entry as ./story-ir) — the compiled story
-  // itself. Stamped for BOTH entry paths, like the two above, so the D4
+  // itself. Stamped for BOTH entry paths, like version.ts, so the D4
   // escape hatch runs the same embedded IR the generated entry does.
   stampStoryIR(entryDir, result.ir);
   log('  ✓ Embedded the compiled story IR into the bundle');
-
-  // --- The bind check (D5): a hatch that does not bind fails the BUILD,
-  //     not the player's browser. ---
-  if (result.ir.hasHatches) {
-    log('  Checking hatch bindings...');
-    checkHatchBindings(result.ir, storyDir, rel);
-    log(`  ✓ ${result.ir.hatches.length} hatch binding(s) resolve`);
-  }
 
   // --- Bundle the entry → dist/web/<id>/game.js (single IIFE payload). ---
   log('  Bundling game.js...');
@@ -857,22 +699,6 @@ export function buildBrowser(
   const sizeKb = (fs.statSync(gameJs).size / 1024).toFixed(1);
   log(`\n✅ Build complete! (game.js ${sizeKb} KB)`);
   log(`Output: ${path.relative(env.esbuildCwd, outDir)}/`);
-
-  // --- Trust reporting (ADR-259 D3). ---
-  // Note what the line actually is. Every per-story bundle is already
-  // story-SPECIFIC — the entry interpolates title, theme, and storage prefix —
-  // so "story-agnostic vs story-specific" is not the distinction worth
-  // reporting. TRUST is: a pure-IR bundle carries story DATA the platform
-  // interprets, while a hatched bundle carries author-written EXECUTABLE CODE
-  // that runs with the platform's own privileges.
-  if (hatchBindings.length > 0) {
-    const modules = hatchBindings.map((h) => h.mapKey).join(', ');
-    log(
-      `\nThis bundle contains author-written executable code, not merely story data:\n` +
-      `  ${hatchBindings.length} hatch module(s) — ${modules}\n` +
-      `  Ship it with the same trust you extend to the story's author.`,
-    );
-  }
 
   return outDir;
 }

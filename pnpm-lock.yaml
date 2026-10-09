@@ -1388,49 +1388,6 @@ importers:
         specifier: ^3.2.4
         version: 3.2.4(@types/debug@4.1.12)(@types/node@24.10.9)(@vitest/ui@3.2.4)(happy-dom@15.11.7)(lightningcss@1.30.2)(terser@5.44.1)
 
-  stories/cloak-of-darkness:
-    dependencies:
-      '@sharpee/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@sharpee/engine':
-        specifier: workspace:*
-        version: link:../../packages/engine
-      '@sharpee/event-processor':
-        specifier: workspace:*
-        version: link:../../packages/event-processor
-      '@sharpee/if-domain':
-        specifier: workspace:*
-        version: link:../../packages/if-domain
-      '@sharpee/lang-en-us':
-        specifier: workspace:*
-        version: link:../../packages/lang-en-us
-      '@sharpee/parser-en-us':
-        specifier: workspace:*
-        version: link:../../packages/parser-en-us
-      '@sharpee/platform-browser':
-        specifier: workspace:*
-        version: link:../../packages/platform-browser
-      '@sharpee/stdlib':
-        specifier: workspace:*
-        version: link:../../packages/stdlib
-      '@sharpee/text-blocks':
-        specifier: workspace:*
-        version: link:../../packages/text-blocks
-      '@sharpee/world-model':
-        specifier: workspace:*
-        version: link:../../packages/world-model
-    devDependencies:
-      '@types/node':
-        specifier: ^20.11.19
-        version: 20.19.27
-      rimraf:
-        specifier: ^5.0.5
-        version: 5.0.10
-      typescript:
-        specifier: ^5.3.3
-        version: 5.9.3
-
   stories/concealment-test:
     dependencies:
       '@sharpee/core':

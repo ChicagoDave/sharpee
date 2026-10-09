@@ -2,8 +2,7 @@
  * bundle.ts — `repokit bundle`: assemble the CLI platform bundle `dist/cli/sharpee.js`.
  *
  * Owner context: @sharpee/repokit (ADR-187 owns the CLI bundle; flag list inherited
- * from the retired build.sh build_bundle). Invariant (ADR-274 D1): esbuild is external —
- * a bundle-inlined esbuild's sync worker cannot answer, so hatch transpiles would hang.
+ * from the retired build.sh build_bundle).
  *
  * Package resolution: esbuild resolves `@sharpee/*` the way Node does — through the
  * workspace links in the root node_modules and each package's `exports` map. Every
@@ -43,9 +42,6 @@ export function runBundle(opts: BundleOptions = {}): void {
     '--target=node18',
     '--outfile=dist/cli/sharpee.js',
     '--external:readline',
-    // ADR-274 D1: esbuild must never be inlined — its buildSync worker handshake dies
-    // inside a bundle (hatch-transpile hangs in Atomics.wait). Resolve it at runtime.
-    '--external:esbuild',
     '--format=cjs',
     '--sourcemap',
   ];
@@ -58,18 +54,6 @@ export function runBundle(opts: BundleOptions = {}): void {
   const out = join(root, 'dist', 'cli', 'sharpee.js');
   if (!existsSync(out) || statSync(out).size === 0) {
     throw new Error('bundle failed: dist/cli/sharpee.js is missing or empty after esbuild');
-  }
-  // ADR-274 D1 invariant, made executable (2026-07-27 incident: a stale repokit
-  // dist bundled without --external:esbuild and every cold hatch transpile hung
-  // in Atomics.wait). ESBUILD_WORKER_THREADS appears only in esbuild's own lib —
-  // its presence means esbuild was inlined and the sync-API worker handshake
-  // would spawn the CLI bundle as its worker.
-  if (readFileSync(out, 'utf-8').includes('ESBUILD_WORKER_THREADS')) {
-    throw new Error(
-      'bundle invariant violated (ADR-274 D1): esbuild is inlined in dist/cli/sharpee.js — ' +
-        'its buildSync worker handshake deadlocks inside a bundle. The --external:esbuild ' +
-        'flag did not take effect; check the bundle step and rebuild.',
-    );
   }
   const violations = findResolutionViolations(readFileSync(out, 'utf-8'));
   if (violations.length > 0) {

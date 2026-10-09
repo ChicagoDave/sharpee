@@ -57,23 +57,13 @@ let lastSource = '';
 function boot(source: string): void {
   const result = compile(source, { importResolver: () => null });
   const errors = result.diagnostics.filter((d) => d.severity === 'error');
-  if (!result.ok || result.ir.hasHatches) {
+  if (!result.ok) {
     const diagnostics: PlaygroundDiagnostic[] = errors.map((d) => ({
       line: d.span.line,
       column: d.span.column,
       code: d.code,
       message: d.message,
     }));
-    if (result.ir?.hasHatches && diagnostics.length === 0) {
-      // A hatch-declaring story is out of playground scope (single-file only).
-      diagnostics.push({
-        line: 1,
-        column: 1,
-        code: 'playground.hatch',
-        message:
-          'This story uses a TypeScript hatch (`define … from "…"`), which the playground cannot run — it is single-file and declarative-only.',
-      });
-    }
     toParent({ type: 'diagnostics', errors: diagnostics });
     return;
   }

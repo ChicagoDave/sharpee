@@ -301,7 +301,7 @@ export interface BrowserBuildOpts {
  * @param env       resolution-mode injection (D5)
  * @param opts      per-invocation knobs
  * @returns the output directory (`<cwd>/dist/web/<id>`)
- * @throws on gate errors, declared hatches, an unknown `client:`, or an empty bundle
+ * @throws on gate errors, an unknown `client:`, or an empty bundle
  */
 export declare function buildBrowser(storyFile: string, env: BrowserBuildEnv, opts?: BrowserBuildOpts): string;
 /** Resolution-mode injection for the playground build (cf. BrowserBuildEnv). */
@@ -339,7 +339,6 @@ export declare function buildPlaygroundBundle(env: PlaygroundBuildEnv, opts?: Br
 
 ```typescript
 import type { LoadedGame } from '@sharpee/bootstrap';
-export { requireHatchModule } from './hatch-transpile.js';
 /**
  * Build an fs-backed `importResolver` for `compile()` (ADR-251 Phase 2).
  * The compiler appends `.chord` and hands us the full fragment name (e.g.
@@ -347,7 +346,7 @@ export { requireHatchModule } from './hatch-transpile.js';
  * directory. A missing file resolves to `null` (the compiler's
  * unresolved-import contract → `analysis.import-unresolved`); any other fs
  * error propagates. Keeps @sharpee/chord filesystem-free — the host owns
- * the base directory, exactly as `requireHatchModule` does for hatches.
+ * the base directory.
  *
  * @param storyDir directory of the importing `.story` file
  * @returns a resolver mapping `<name>.chord` → source text or null
@@ -376,7 +375,7 @@ export declare function findStoryFile(dir: string): string | null;
 export declare function compileChordStory(storyFile: string): import('@sharpee/chord').StoryIR;
 /**
  * Compile a Chord `.story` file and construct its story via
- * @sharpee/story-loader (hatches bound). Load-time-gate diagnostics abort
+ * @sharpee/story-loader. Load-time-gate diagnostics abort
  * with `.story` line numbers (ADR-210 AC-3).
  *
  * @param storyFile absolute or cwd-relative path to the `.story` file

@@ -1,8 +1,8 @@
 // ComposeScheduler.swift
 // The live-editing compose loop (ADR-258 D5/D6): debounces `.story` edit
 // notifications, snapshots an unsaved buffer to a hidden sibling file in the
-// story's own folder (so `use` imports and hatch-lint module paths still resolve
-// against the real directory), runs `compose --json` over it, deletes the
+// story's own folder (so `use` imports still resolve against the real
+// directory), runs `compose --json` over it, deletes the
 // snapshot, and remaps compile-record `file` sites from the snapshot path back
 // to the real story file before publishing the outcome. A buffer that matches
 // disk composes the real file directly — no snapshot.
@@ -78,7 +78,7 @@ final class ComposeScheduler {
         }
 
         // Unsaved buffer: snapshot to a hidden sibling so directory-relative
-        // resolution (imports, hatch modules) matches the real file's.
+        // resolution (imports) matches the real file's.
         let snapshot = storyURL.deletingLastPathComponent()
             .appendingPathComponent(".sharpee-compose.story")
         do {
@@ -98,8 +98,8 @@ final class ComposeScheduler {
     }
 
     /// Rewrites diagnostic `file` sites that name the snapshot back to the real
-    /// story file. Hatch records already carry their own (absolute) module paths
-    /// and pass through untouched.
+    /// story file. Records naming any other file (an imported fragment, the
+    /// story config) pass through untouched.
     private static func remap(_ payload: ComposeJsonPayload,
                               from snapshot: URL, to storyURL: URL) -> ComposeJsonPayload {
         let snapshotPath = snapshot.path

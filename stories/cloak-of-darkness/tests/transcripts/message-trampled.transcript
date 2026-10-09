@@ -1,8 +1,8 @@
 title: Cloak golden gate — trampled message (neutral outcome)
 story: cloak-of-darkness
 description: One dark entry tramples the message (first-time ordinal in the
-  stumble rule); reading it trampled shows the garbled hatch text and the game
-  continues — no ending. ADR-210 AC-1 golden gate (frozen 2026-07-10).
+  stumble rule); reading it trampled shows the half-trampled message and the
+  game continues — no ending. ADR-210 AC-1 golden gate (frozen 2026-07-10).
 
 ---
 
@@ -31,7 +31,7 @@ description: One dark entry tramples the message (first-time ordinal in the
 [OK: contains "Foyer Bar"]
 
 > read message
-[OK: contains "You can just make out"]
+[OK: contains "You can just make out: Y.u h..e w.n"]
 [OK: not contains "You have won"]
 [OK: not contains "You have lost"]
 [EVENT: false, type="story.victory"]

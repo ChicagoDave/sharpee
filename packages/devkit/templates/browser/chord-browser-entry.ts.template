@@ -17,10 +17,8 @@ import { PerceptionService } from '@sharpee/stdlib';
 import { BrowserClient, BROWSER_CAPABILITIES, ThemeManager } from '@sharpee/platform-browser';
 import { createStory } from '@sharpee/story-loader';
 import { STORY_VERSION, BUILD_DATE } from './version.js';
-// The story's TypeScript hatches (ADR-259 D1/D2), generated beside this file
-// at build time exactly as version.ts is. Empty for a pure-IR story.
-import { hatchModules } from './hatch-modules.js';
-// The compiled story, generated beside this file at build time the same way.
+// The compiled story, generated beside this file at build time exactly as
+// version.ts is.
 import { storyIR } from './story-ir.js';
 
 const THEME_STORAGE_KEY = '{{STORAGE_PREFIX}}-theme';
@@ -84,15 +82,11 @@ function applyPinnedPlayForces(engine: GameEngine): void {
  */
 function loadStory(): Story {
   const playSeed = pinnedPlaySeed();
-  // A pure-IR story gets an empty map and is unaffected; a hatched story
-  // gets its author-written modules, bound by the loader against the same
-  // paths the `.story` declares (ADR-259 D2).
   // The chord evaluator's stream (`one chance in <n>`, `randomly`) derives
   // from the session seed (ADR-293 D1) — omitting it leaves chord draws
   // clock-seeded even when the engine runs pinned (the author-game.ts
   // precedent, re-learned here in ADR-299 Phase 5).
   return createStory(storyIR, {
-    hatchModules,
     ...(playSeed !== undefined ? { seed: playSeed } : {}),
   }) as unknown as Story;
 }

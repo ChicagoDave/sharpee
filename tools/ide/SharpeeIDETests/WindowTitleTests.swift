@@ -16,7 +16,7 @@ final class WindowTitleTests: XCTestCase {
             meta: .init(title: title,
                         fields: .init(id: nil, storyVersion: nil, authors: ["A. Author"])),
             grammarFile: grammar ? .init(name: "standard") : nil,
-            entities: nil, actions: nil, phrases: nil, hatches: nil)
+            entities: nil, actions: nil, phrases: nil)
     }
 
     func testAComposedStoryTitlesTheWindow() {

@@ -112,11 +112,12 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     expect(game).toMatch(/config:\s*\{\s*seed:/);
     // 2. The chord evaluator's own stream (`one chance in <n>`, `randomly`)
     //    derives from `createStory`'s `options.seed` (ADR-293 D1) — a
-    //    SEPARATE sink beside `hatchModules`. Without it, story-level draws
-    //    stay clock-seeded even while the engine runs pinned, which reads as
-    //    a flaky replay rather than a missing argument. Matched
-    //    structurally (no minified identifier names).
-    expect(game).toMatch(/hatchModules:[^}]*\{\s*seed:/);
+    //    SEPARATE sink. Without it, story-level draws stay clock-seeded even
+    //    while the engine runs pinned, which reads as a flaky replay rather
+    //    than a missing argument. Matched structurally on the minified
+    //    seed spread (`{...e!==void 0?{seed:e}:{}}`) — identifier names,
+    //    `createStory` included, do not survive minification.
+    expect(game).toMatch(/\{\.\.\.\w+!==void 0\?\{seed:\w+\}:\{\}\}/);
     // ADR-299 D5 forced branches: the IDE replays a counterfactual by handing
     // the page structured force specs, which only work if the built entry
     // actually loads them into the engine's random service. Presence of the
@@ -191,7 +192,7 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
     }
   });
 
-  it('a hatched story is refused legibly for the browser (no boot-dead bundles)', async () => {
+  it('a removed text-hatch line fails the build with its removal error', async () => {
     trapExit();
     const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
     const storyPath = join(projectDir, 'first-light.story');
@@ -200,7 +201,8 @@ describe('browser build: ships the compiled IR, not the source (ADR-284)', () =>
       writeFileSync(storyPath, good + '\ndefine text weather from "./weather.ts"\n');
       await expect(runBuildBrowserCommand([], projectDir)).rejects.toThrow('process.exit(1)');
       const err = stderr.mock.calls.map((c) => c.join(' ')).join('\n');
-      expect(err).toContain('hatch');
+      expect(err).toContain('parse.removed-text-hatch');
+      expect(err).toMatch(/first-light\.story:\d+:\d+/);
     } finally {
       writeFileSync(storyPath, good);
       stderr.mockRestore();

@@ -19,14 +19,13 @@ packages:
   - stories/dungeo
   - stories/channel-service-test
   - stories/concealment-test
-  # ADR-259 D8: `stories/friendly-zoo` is now a pure Chord story — a
-  # `.story`, its hatch, and its transcripts, with no package.json at all
-  # (ADR-252 D2). The TypeScript tutorial that used to share the directory
-  # moved out whole and keeps the workspace membership.
+  # ADR-259 D8: `stories/friendly-zoo` is a pure Chord story — a `.story`
+  # and its transcripts, with no package.json at all (ADR-252 D2). The
+  # TypeScript tutorial that used to share the directory moved out whole and
+  # keeps the workspace membership.
   - stories/family-zoo-tutorial
-  # Chord golden gate (ADR-210 Phase A): membership makes `./repokit build
-  # cloak-of-darkness` emit dist/extras.js (the cloak.story hatch module).
-  - stories/cloak-of-darkness
+  # stories/cloak-of-darkness left the workspace with its hatch module
+  # (ADR-361 D5): it is a pure Chord story with no package.json.
   # tutorials/familyzoo is a standalone book-aligned project that consumes the
   # published @sharpee/* npm packages — it is no longer a workspace member.
   # tools/shite retired 2026-08-13 (David) — it was the same multi-user

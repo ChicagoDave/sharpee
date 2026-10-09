@@ -173,40 +173,10 @@ enum TestToolchain {
     static let analyzerErrorStory = cleanStory
         .replacingOccurrences(of: "starts in the Lab", with: "starts in the Attic")
 
-    /// A story declaring a hatch module; pair with a module file whose source
-    /// carries a quoted `chord.*` literal for a `hatch.chord-namespace` finding.
-    static let hatchStory = """
-    story
-      title: HatchProbe
-      authors:
-        Tests
-      id: hatch-probe
-      story-version: 1.0.0
-      ifid: 7B3F5C88-2D4E-4F60-9BAC-1D2E3F405B6C
-
-    create the Lab
-      a room
-
-      A lab.
-
-    create Alex
-      a person
-      playable
-      starts in the Lab
-
-      You.
-
-    before the game starts
-      change the player to Alex
-    end before
-
+    /// `cleanStory` with a removed text-hatch line appended — one
+    /// `parse.removed-text-hatch` error with a full span.
+    static let removedTextHatchStory = cleanStory + """
     define text warning from "./mod.ts"
-
-    """
-
-    /// Hatch module source that trips the loader-private-namespace lint.
-    static let hatchViolationModule = """
-    export function warning(ctx) { return ctx.get("chord.thing") }
 
     """
 }

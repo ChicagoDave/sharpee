@@ -4,11 +4,11 @@
  * Parses + analyzes the source and reports every diagnostic with `.story`
  * line numbers (load-time gates, AC-3). `--check` stops there — the CI gate
  * mode. The default mode additionally constructs the story via
- * @sharpee/story-loader (hatches bound, world built, player created) to prove
- * the IR actually loads, then emits the IR JSON to stdout (or `-o <file>`).
+ * @sharpee/story-loader (world built, player created) to prove the IR
+ * actually loads, then emits the IR JSON to stdout (or `-o <file>`).
  * Status/diagnostics go to stderr so stdout carries only the IR.
  *
- * Compile diagnostics and hatch-lint findings join ONE in-memory diagnostics
+ * Story-config and compile diagnostics join ONE in-memory diagnostics
  * collection (ADR-276 D4). `--json` (ADR-258 D5) serializes it: gates + IR,
  * NO load-proof — the payload (`ComposeJsonPayload`, wire-typed in
  * @sharpee/ide-protocol) goes to stdout; `--json --check` omits the IR.
@@ -25,11 +25,9 @@ import type { CompileResult } from '@sharpee/chord';
 // of the schema constant is lazy-required in the --json branch so the CLI's
 // startup keeps the lazy-compiler pattern (ide-protocol's barrel pulls chord).
 import type { ComposeDiagnosticRecord, ComposeJsonPayload } from '@sharpee/ide-protocol';
-import { lintHatchSources, type HatchLintFinding } from '../hatch-lint.js';
-// Shared hatch-module resolution + fs import-resolver policy (one
-// implementation — also used by the author-game loader behind
-// `sharpee test`/`play`).
-import { requireHatchModule, makeFsImportResolver } from '../standalone/author-game.js';
+// Shared fs import-resolver policy (one implementation — also used by the
+// author-game loader behind `sharpee test`/`play`).
+import { makeFsImportResolver } from '../standalone/author-game.js';
 import { configPathFor, readStoryConfig } from '../standalone/story-config.js';
 
 const USAGE = 'usage: sharpee compose <file.story> [--check] [--json] [-o <ir.json>]';
@@ -41,29 +39,23 @@ const USAGE = 'usage: sharpee compose <file.story> [--check] [--json] [-o <ir.js
  */
 export type ComposeDiagnostic = ComposeDiagnosticRecord;
 
-/** Result of running compose's gates: compile + hatch lint, one diagnostics stream. */
+/** Result of running compose's gates: story config + compile, one diagnostics stream. */
 export interface ComposeGatesResult {
   /** The raw chord compile result (`ir` meaningful only when `compile.ok`). */
   compile: CompileResult;
-  /** Raw hatch-lint findings (empty when clean). */
-  hatchFindings: HatchLintFinding[];
-  /** The ONE collection (D4): compile diagnostics first, then hatch records. */
+  /** The ONE collection (D4): story-config records first, then compile diagnostics. */
   diagnostics: ComposeDiagnostic[];
-  /** True iff the compile succeeded and the hatch lint found nothing. */
+  /** True iff the compile succeeded and the story config is not broken. */
   ok: boolean;
 }
 
 /**
- * Run compose's gates on a `.story` file: chord compile, then the hatch
- * source lint (design.md §5.6), folding both into one diagnostics
- * collection (ADR-276 D4). The lint runs even when the compile failed —
- * hatch declarations still lower into the IR, so the stream is complete
- * in one pass; text-mode `runCompose` keeps its historical gating and
- * only PRINTS hatch findings after a clean compile.
+ * Run compose's gates on a `.story` file: the story-config read, then the
+ * chord compile, folded into one diagnostics collection (ADR-276 D4).
  *
  * @param file path to the `.story` file, as given (used verbatim as the
  *   compile diagnostics' site file)
- * @returns the compile result, raw findings, and the unified stream
+ * @returns the compile result and the unified stream
  */
 export function runComposeGates(file: string): ComposeGatesResult {
   // Lazy require (introspect.ts pattern): pull the compiler only when composing.
@@ -93,14 +85,6 @@ export function runComposeGates(file: string): ComposeGatesResult {
     importResolver: makeFsImportResolver(storyDir),
   });
 
-  // Hatch source lint (design.md §5.6, authoritative layer): the chord.*
-  // state namespace is loader-private; a quoted literal in hatch source is
-  // a build error in --check and full mode alike. Comments don't trip it.
-  const hatchFindings = lintHatchSources(
-    storyDir,
-    compile.ir.hatches.map((h) => h.modulePath)
-  );
-
   const diagnostics: ComposeDiagnostic[] = [
     ...configDiagnostics,
     ...compile.diagnostics.map((d) => ({
@@ -113,26 +97,18 @@ export function runComposeGates(file: string): ComposeGatesResult {
       line: d.span.line,
       span: d.span,
     })),
-    ...hatchFindings.map((f) => ({
-      severity: 'error' as const,
-      code: 'hatch.chord-namespace',
-      message: `\`${f.text}\` — the chord.* state namespace is loader-private; hatches read the world through their context only (design.md §5.6)`,
-      file: f.file,
-      line: f.line,
-    })),
   ];
 
   return {
     compile,
-    hatchFindings,
     diagnostics,
-    ok: compile.ok && hatchFindings.length === 0 && configDiagnostics.length === 0,
+    ok: compile.ok && configDiagnostics.length === 0,
   };
 }
 
 /**
  * Format one diagnostic record as compose's stderr line. Compile records
- * (span present) include the column; hatch records are file:line only.
+ * (span present) include the column; story-config records are file:line only.
  */
 function formatDiagnostic(r: ComposeDiagnostic): string {
   const site = r.span ? `${r.file}:${r.line}:${r.span.column}` : `${r.file}:${r.line}`;
@@ -179,9 +155,7 @@ export async function runCompose(rest: string[]): Promise<number> {
   const result = gates.compile;
 
   if (json) {
-    // ADR-258 D5: gates + IR, no load-proof — hatch modules are never
-    // resolved on this path (the IDE's editor loop must not require the
-    // author's toolchain). The payload is the whole stdout; nothing else
+    // ADR-258 D5: gates + IR, no load-proof. The payload is the whole stdout; nothing else
     // is printed. `--json --check` omits the `ir` key entirely; a failed
     // compile never carries an IR (atomic load, ADR-210).
     const { COMPOSE_JSON_SCHEMA_VERSION } =
@@ -207,13 +181,9 @@ export async function runCompose(rest: string[]): Promise<number> {
   for (const r of gates.diagnostics) {
     if (!r.span) console.error(formatDiagnostic(r));
   }
-  if (gates.hatchFindings.length > 0) {
-    console.error(`compose: ${file} hatch source references chord.* (${gates.hatchFindings.length} hit(s))`);
-    return 1;
-  }
   if (!gates.ok) {
-    // Compile ok, no hatch findings — the remaining gate is the story config
-    // (ADR-309 D5): broken is a named failure, already printed above.
+    // Compile ok — the remaining gate is the story config (ADR-309 D5):
+    // broken is a named failure, already printed above.
     console.error(`compose: ${file} has a broken story config (story-config.broken)`);
     return 1;
   }
@@ -224,26 +194,17 @@ export async function runCompose(rest: string[]): Promise<number> {
     return 0;
   }
 
-  // Load proof: bind hatches and build the world so "composes" means "loads".
+  // Load proof: build the world so "composes" means "loads".
   const { createStory } = require('@sharpee/story-loader') as typeof import('@sharpee/story-loader');
   const { WorldModel } = require('@sharpee/world-model') as typeof import('@sharpee/world-model');
 
-  const storyDir = path.dirname(path.resolve(file));
-  const hatchModules: Record<string, Record<string, unknown>> = {};
-  for (const hatch of result.ir.hatches) {
-    if (!(hatch.modulePath in hatchModules)) {
-      hatchModules[hatch.modulePath] = requireHatchModule(storyDir, hatch.modulePath);
-    }
-  }
-
-  const story = createStory(result.ir, { hatchModules });
+  const story = createStory(result.ir);
   const world = new WorldModel();
   story.initializeWorld(world);
   story.createPlayer(world);
   console.error(
     `compose: Chord ${result.ir.languageVersion} — ${file} loaded — ${result.ir.entities.length} entities, ` +
-      `${result.ir.traits.length} trait(s), ${result.ir.actions.length} action(s), ` +
-      `${result.ir.hatches.length} hatch(es)`
+      `${result.ir.traits.length} trait(s), ${result.ir.actions.length} action(s)`
   );
 
   const irJson = JSON.stringify(result.ir, null, 2) + '\n';

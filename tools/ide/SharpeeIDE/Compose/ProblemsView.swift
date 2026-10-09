@@ -1,8 +1,8 @@
 // ProblemsView.swift
 // The "Problems" tab (ADR-258 D5): a compact list of structured Chord compose
 // diagnostics — severity dot, stable code, message, file:line site. Compile
-// records carry a full span and clicking one opens the exact range; hatch
-// records (`hatch.*`, no span) open file:line only. Warnings render alongside
+// records carry a full span and clicking one opens the exact range; the
+// story-config record (`story-config.broken`, no span) opens file:line only. Warnings render alongside
 // errors. A compose-pipeline failure (sharpee missing, decode error) renders as
 // a status line instead of rows — Problems never silently goes blank.
 // Public interface: setProblems(_:for:), setStatus(_:), clear(), errorCount,
@@ -94,7 +94,7 @@ final class ProblemsView: NSView {
 
     /// Replaces the list with a compose run's records. `storyURL` resolves any
     /// record whose `file` is not absolute (compile sites are absolute in
-    /// production; hatch sites always are).
+    /// production; the story-config site always is).
     func setProblems(_ records: [ComposeDiagnosticRecord], for storyURL: URL) {
         items = records.map { record in
             let url: URL = record.file.hasPrefix("/")
