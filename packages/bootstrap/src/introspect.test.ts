@@ -87,10 +87,6 @@ describe('buildManifest — header', () => {
     expect(manifest.generatedFrom).toBe('cli');
   });
 
-  it('stamps the hatch staging-surface version (design.md §5.6 IDE contract)', () => {
-    expect(manifest.hatchContextVersion).toBe(1);
-  });
-
   it('emits a manifest that passes the ide-protocol guard', () => {
     expect(isProjectManifest(manifest)).toBe(true);
   });

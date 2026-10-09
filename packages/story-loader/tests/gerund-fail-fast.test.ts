@@ -2,8 +2,8 @@
  * gerund-fail-fast.test.ts — ADR-228 D5: the loader rejects `on <gerund>
  * it` clauses nothing will ever consult, at load time, instead of letting
  * them register and silently die. The valid set is stdlib's wired-action
- * registry (derived from the descriptor table) plus author-owned surfaces
- * (dispatch `after` reactions, `define action X from` hatches).
+ * registry (derived from the descriptor table) plus the author-owned
+ * surface (dispatch `after` reactions).
  */
 import { describe, expect, it } from 'vitest';
 import { compile, StoryIR } from '@sharpee/chord';

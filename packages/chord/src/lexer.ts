@@ -73,7 +73,7 @@ const NUMBER_RE = /^[0-9]+(?:\.[0-9]+)*/;
  * @param diagnostics receives lex errors — tabs in indentation. An unclosed
  *   quote is NOT one: a lone `"` is prose punctuation (multi-line dialogue in
  *   prose blocks), so it lexes as `punct` and the positions that actually
- *   require a string — the header, hatch paths — diagnose it at parse time
+ *   require a string — the header, asset paths — diagnose it at parse time
  *   (ADR-289 D8 L2: this comment claimed a diagnostic the lexer never emitted)
  * @returns non-blank lines in source order
  */
@@ -166,7 +166,7 @@ function tokenizeLine(raw: string, lineNo: number, start: number, diagnostics: D
       if (close === -1) {
         // A lone quote is prose punctuation (multi-line dialogue in prose
         // blocks, e.g. design.md §3.3 PA announcements). Positions that
-        // REQUIRE a string (header, hatch paths) diagnose at parse time.
+        // REQUIRE a string (header, asset paths) diagnose at parse time.
         tokens.push({ kind: 'punct', text: ch, span: spanOf(lineNo, column) });
         pos++;
       } else {

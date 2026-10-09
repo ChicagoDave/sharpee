@@ -46,11 +46,10 @@ describe('`use <extension>` (ADR-215)', () => {
     expect(EXTENSION_MANIFESTS.has('combat')).toBe(true);
   });
 
-  it('compiles the use-combat fixture clean, uses on the IR, hasHatches false (AC-3 pure IR)', () => {
+  it('compiles the use-combat fixture clean, with its use on the IR', () => {
     const result = compile(FIXTURE);
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
     expect(result.ir.uses).toEqual(['combat']);
-    expect(result.ir.hasHatches).toBe(false);
     const troll = result.ir.entities.find((e) => e.id === 'troll')!;
     expect(troll.traits.map((t) => t.name)).toContain('combatant');
     const sword = result.ir.entities.find((e) => e.id === 'elvish-sword')!;
@@ -133,14 +132,15 @@ describe('manifest-gated vocabulary (ADR-215 AC-2 compile half)', () => {
 });
 
 describe('`define behavior` removal (ADR-235 D2)', () => {
-  it('is a parse error with a fix-it naming the live paths', () => {
+  it('is a parse error with a fix-it naming the live path', () => {
     const result = compile(story('', '') + `
 define behavior crowd-control from "./stunts.ts"
 `);
     const diagnostic = result.diagnostics.find((d) => d.code === 'parse.removed-behavior-hatch')!;
     expect(diagnostic).toBeDefined();
     expect(diagnostic.message).toContain('define trait');
-    expect(diagnostic.message).toContain('define action');
+    // ADR-361 D1: the action hatch it used to suggest is gone too.
+    expect(diagnostic.message).not.toContain('define action');
   });
 });
 

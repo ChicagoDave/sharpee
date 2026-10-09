@@ -103,7 +103,7 @@ describe('cloak.story IR', () => {
     expect(Object.keys(table)).toEqual(
       expect.arrayContaining(['cant-leave', 'stumble', 'message-intact', 'message-trampled', 'message-obliterated']),
     );
-    expect(table['message-trampled'].variants[0].markers).toEqual(['garbled']);
+    expect(table['message-trampled'].variants[0]).toMatchObject({ text: 'You can just make out: Y.u h..e w.n', markers: [] });
     expect(ir.phrases.defaultLocale).toBe('en-US');
   });
 
@@ -153,9 +153,8 @@ describe('cloak.story IR', () => {
     ]);
   });
 
-  it('carries the putting extension and the hatch (define verb removed, ADR-270 D7)', () => {
+  it('carries the putting extension (define verb removed, ADR-270 D7)', () => {
     expect(ir.grammarExtensions).toMatchObject([{ action: 'putting' }]);
-    expect(ir.hatches).toMatchObject([{ name: 'garbled', modulePath: './extras.ts' }]);
   });
 
   it('carries no legacy floating-rule arrays (removed in Phase C P4)', () => {

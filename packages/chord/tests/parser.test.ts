@@ -17,7 +17,6 @@ import {
   DefineCondition,
   DefinePhrase,
   DefinePhrases,
-  DefineText,
   ExtendAction,
   OrdinalBlock,
   parse,
@@ -62,7 +61,6 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
       'create', // message
       'extend-action',
       'define-phrases',
-      'define-text',
       'start-block', // ADR-327 D10 — last in cloak.story
     ]);
   });
@@ -196,12 +194,7 @@ describe('cloak.story (design.md §3.1, ownership grammar)', () => {
       form: 'prose',
       text: "Blundering around in the dark isn't a good idea!",
     });
-    expect(phrases.entries[3].value.markers).toMatchObject([{ content: 'garbled' }]);
-  });
-
-  it('parses the garbled hatch declaration', () => {
-    const hatch = decls[10] as DefineText;
-    expect(hatch).toMatchObject({ name: 'garbled', modulePath: './extras.ts' });
+    expect(phrases.entries[3].value).toMatchObject({ text: 'You can just make out: Y.u h..e w.n', markers: [] });
   });
 
   it('matches the golden AST snapshot', () => {
@@ -286,7 +279,7 @@ describe('malformed fixtures — one mistake, one diagnostic, parsing continues'
     // 2026-07-11); positions that REQUIRE a string diagnose at parse time.
     const result = parse(fixture('malformed/unterminated-string.story'));
     const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'parse.text-module' && e.span.line === 8)).toBe(true);
+    expect(errors.some((e) => e.code === 'parse.asset-path' && e.span.line === 8)).toBe(true);
   });
 });
 

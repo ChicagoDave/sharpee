@@ -170,14 +170,11 @@ export class BindSection {
   /**
    * True when an interceptor registered under `if.action.<gerund>` can ever
    * fire: a wired stdlib action consults the id (the ADR-228 D5 registry,
-   * derived from the descriptor table), or the gerund names a `define
-   * action X from` hatch — an author-owned TS Action the loader can't see
-   * inside, which may consult its own id.
+   * derived from the descriptor table).
    * @param gerund the clause's action word (e.g. `taking`)
    */
   isConsultedGerund(gerund: string): boolean {
-    if (interceptorConsultingActionIds.has(`if.action.${gerund}`)) return true;
-    return this.core.ir.hatches.some((h) => h.hatchKind === 'action' && h.name === gerund);
+    return interceptorConsultingActionIds.has(`if.action.${gerund}`);
   }
 
   /** True when the gerund names a `define action` dispatch action. */

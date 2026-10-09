@@ -982,18 +982,6 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       },
     },
     {
-      "hatchKind": "action",
-      "kind": "define-hatch",
-      "modulePath": "./stunts.ts",
-      "name": "juggling",
-      "span": {
-        "column": 1,
-        "endColumn": 42,
-        "endLine": 68,
-        "line": 68,
-      },
-    },
-    {
       "aka": [],
       "blockedExits": [
         {
@@ -1003,8 +991,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 26,
               "endColumn": 37,
-              "endLine": 72,
-              "line": 72,
+              "endLine": 70,
+              "line": 70,
             },
           },
           "direction": "north",
@@ -1013,8 +1001,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 48,
-            "endLine": 72,
-            "line": 72,
+            "endLine": 70,
+            "line": 70,
           },
         },
       ],
@@ -1030,8 +1018,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 9,
-            "endLine": 71,
-            "line": 71,
+            "endLine": 69,
+            "line": 69,
           },
           "words": [
             "room",
@@ -1049,8 +1037,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 40,
-          "endLine": 74,
-          "line": 74,
+          "endLine": 72,
+          "line": 72,
         },
         "text": "Lockers, a kettle, one sagging couch.",
       },
@@ -1071,8 +1059,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 8,
           "endColumn": 22,
-          "endLine": 70,
-          "line": 70,
+          "endLine": 68,
+          "line": 68,
         },
         "words": [
           "Break",
@@ -1090,8 +1078,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 40,
-        "endLine": 74,
-        "line": 70,
+        "endLine": 72,
+        "line": 68,
       },
       "spreads": [],
       "startsStates": [],
@@ -1119,8 +1107,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 10,
-            "endLine": 77,
-            "line": 77,
+            "endLine": 75,
+            "line": 75,
           },
           "words": [
             "thing",
@@ -1138,8 +1126,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 41,
-          "endLine": 81,
-          "line": 81,
+          "endLine": 79,
+          "line": 79,
         },
         "text": "Woven this morning, regretted by noon.",
       },
@@ -1160,8 +1148,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 8,
           "endColumn": 25,
-          "endLine": 76,
-          "line": 76,
+          "endLine": 74,
+          "line": 74,
         },
         "words": [
           "flimsy",
@@ -1180,8 +1168,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 6,
             "endColumn": 20,
-            "endLine": 79,
-            "line": 79,
+            "endLine": 77,
+            "line": 77,
           },
           "words": [
             "Break",
@@ -1192,8 +1180,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 3,
           "endColumn": 20,
-          "endLine": 79,
-          "line": 79,
+          "endLine": 77,
+          "line": 77,
         },
       },
       "pronouns": [],
@@ -1202,8 +1190,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 41,
-        "endLine": 81,
-        "line": 76,
+        "endLine": 79,
+        "line": 74,
       },
       "spreads": [],
       "startsStates": [],
@@ -1221,8 +1209,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 42,
-            "endLine": 85,
-            "line": 84,
+            "endLine": 83,
+            "line": 82,
           },
           "value": {
             "form": "prose",
@@ -1231,8 +1219,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 5,
               "endColumn": 42,
-              "endLine": 85,
-              "line": 85,
+              "endLine": 83,
+              "line": 83,
             },
             "text": "The north door is bolted after hours.",
           },
@@ -1243,8 +1231,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 42,
-        "endLine": 85,
-        "line": 83,
+        "endLine": 83,
+        "line": 81,
       },
     },
     {
@@ -1262,8 +1250,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 88,
-            "line": 88,
+            "endLine": 86,
+            "line": 86,
           },
           "words": [
             "person",
@@ -1277,8 +1265,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 11,
-            "endLine": 89,
-            "line": 89,
+            "endLine": 87,
+            "line": 87,
           },
           "words": [
             "playable",
@@ -1307,8 +1295,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "span": {
           "column": 8,
           "endColumn": 12,
-          "endLine": 87,
-          "line": 87,
+          "endLine": 85,
+          "line": 85,
         },
         "words": [
           "Alex",
@@ -1325,8 +1313,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 89,
-        "line": 87,
+        "endLine": 87,
+        "line": 85,
       },
       "spreads": [],
       "startsStates": [],
@@ -1344,8 +1332,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
           "span": {
             "column": 3,
             "endColumn": 28,
-            "endLine": 92,
-            "line": 92,
+            "endLine": 90,
+            "line": 90,
           },
           "stmtWhen": null,
           "target": {
@@ -1354,8 +1342,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
             "span": {
               "column": 24,
               "endColumn": 28,
-              "endLine": 92,
-              "line": 92,
+              "endLine": 90,
+              "line": 90,
             },
             "words": [
               "Alex",
@@ -1367,8 +1355,8 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 93,
-        "line": 91,
+        "endLine": 91,
+        "line": 89,
       },
     },
   ],
@@ -1382,11 +1370,11 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
         "kind": "literal",
         "span": {
           "column": 3,
-          "endColumn": 114,
+          "endColumn": 105,
           "endLine": 7,
           "line": 7,
         },
-        "value": "design.md 2.2/3.2 + ownership package - data types, trait states, ordering, role binding, hatches.",
+        "value": "design.md 2.2/3.2 + ownership package - data types, trait states, ordering, role binding.",
       },
       "id": "traits-basic",
       "storyVersion": "0.0.1",
@@ -1443,7 +1431,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
   "span": {
     "column": 1,
     "endColumn": 11,
-    "endLine": 93,
+    "endLine": 91,
     "line": 1,
   },
 }

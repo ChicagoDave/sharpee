@@ -15,12 +15,9 @@ import { ChordStory, createStory } from '../src';
 
 const CHORD_FIXTURES = join(__dirname, '..', '..', 'chord', 'tests', 'fixtures');
 
-const garbled = () => ({ kind: 'literal' as const, text: 'swept aside' });
-const CLOAK_MODULES = { './extras.ts': { garbled } };
-
 /** Load a story and project its observable registry contents. */
 function loadAndProject(ir: StoryIR) {
-  const story = createStory(ir, { hatchModules: CLOAK_MODULES });
+  const story = createStory(ir);
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);

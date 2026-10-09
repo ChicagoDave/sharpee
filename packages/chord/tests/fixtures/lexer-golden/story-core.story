@@ -37,7 +37,9 @@ define phrases en-US
   log-entry:
     Day 40: {weather-note} The oil is low; the nights aren't.
 
-define text weather-note from "./weather.ts"
+define phrase weather-note
+  Fog again.
+end phrase
 
 before the game starts
   change the player to Alex

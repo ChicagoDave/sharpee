@@ -72,8 +72,13 @@ const PANELS = ['banded', 'studded', 'panelled', 'plain', 'ribbed', 'braced'];
 const THING_ADJECTIVES = ['worn', 'chipped', 'folded', 'tarnished', 'waxed', 'cracked', 'faded', 'knotted'];
 const THING_NOUNS = ['ledger', 'lantern', 'twine', 'mug', 'chart', 'comb', 'tin', 'bracket'];
 
-/** Compass headings used for branch rooms hung off the spine. */
-const BRANCH_DIRECTIONS = ['east', 'west'] as const;
+/**
+ * Headings for branch rooms hung off the spine, handed out per host in this
+ * order. The spine itself runs north and south, so none of these collides with
+ * it, and a host never gets the same heading twice: a room has one exit per
+ * direction (the compiler's `analysis.duplicate-exit`).
+ */
+const BRANCH_DIRECTIONS = ['east', 'west', 'northeast', 'northwest', 'southeast', 'southwest', 'up', 'down'] as const;
 
 /** The largest story this module can name without repeating a room. */
 const MAX_ROOMS = ROOM_ADJECTIVES.length * ROOM_NOUNS.length;
@@ -202,11 +207,16 @@ export function planStory(rooms: number, ratios: StoryRatios, shape: CorpusShape
   // The bound shape needs a branch hanging off every obstacle, because that is
   // where it hides the opener; the derived shape spreads branches evenly.
   const guarded = obstaclePositions(rooms, spineCount, ratios, shape);
-  const branches = Array.from({ length: branchCount }, (_, offset) => ({
-    index: spineCount + offset,
-    host: shape === 'dense-chain' && offset < guarded.length ? guarded[offset] : offset % spineCount,
-    direction: BRANCH_DIRECTIONS[offset % BRANCH_DIRECTIONS.length],
-  }));
+  const branchesPerHost = new Map<number, number>();
+  const branches = Array.from({ length: branchCount }, (_, offset) => {
+    const host = shape === 'dense-chain' && offset < guarded.length ? guarded[offset] : offset % spineCount;
+    const taken = branchesPerHost.get(host) ?? 0;
+    if (taken >= BRANCH_DIRECTIONS.length) {
+      throw new RangeError(`spine room ${host} would host more than ${BRANCH_DIRECTIONS.length} branches`);
+    }
+    branchesPerHost.set(host, taken + 1);
+    return { index: spineCount + offset, host, direction: BRANCH_DIRECTIONS[taken] };
+  });
 
   const obstacles = planObstacles(guarded, ratios, shape, branches);
 
@@ -526,6 +536,10 @@ function leverSlug(lever: string | null): string {
  * @returns its opposite
  */
 function opposite(direction: string): string {
-  const pairs: Record<string, string> = { north: 'south', south: 'north', east: 'west', west: 'east' };
+  const pairs: Record<string, string> = {
+    north: 'south', south: 'north', east: 'west', west: 'east',
+    northeast: 'southwest', southwest: 'northeast', northwest: 'southeast', southeast: 'northwest',
+    up: 'down', down: 'up',
+  };
   return pairs[direction] ?? direction;
 }

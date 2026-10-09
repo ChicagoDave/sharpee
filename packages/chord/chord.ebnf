@@ -222,8 +222,10 @@ story-on-clause = on-clause ;                              (* ADR-236 D7 (ratche
                                                               `it` unbound (compile error
                                                               analysis.story-clause-it) *)
 declaration  = create | start-block | define-condition | define-phrase | define-phrases
-             | define-text                                 (* define-verb REMOVED — ADR-270 D7 *)
-             | define-trait | define-action | define-hatch
+                                                           (* define-verb REMOVED — ADR-270 D7;
+                                                              define-text and define-hatch
+                                                              REMOVED — ADR-361 D1 *)
+             | define-trait | define-action
              | define-sequence
              | define-counter                              (* ADR-264 *)
              | define-timer                                (* ADR-325 D3a *)
@@ -292,8 +294,16 @@ import-phrasebook   = "import" "phrasebook" STRING NL ;    (* top level; STRING 
                                                               reserved (parked ADR). *)
 
 (* `define behavior … from` was REMOVED (ADR-235 D2, 2026-07-18) — a parse
-   error with a fix-it naming `define trait` + clauses or `define action
-   … from`. *)
+   error with a fix-it naming `define trait` + clauses. *)
+
+(* The hatches were REMOVED (ADR-361 D1, 2026-10-09) — Chord's syntax is
+   closed. Each form is a parse error with a fix-it, so none has a
+   production: `define text … from` (parse.removed-text-hatch: write a
+   `define phrase` with a strategy), `define action … from`
+   (parse.removed-action-hatch: write a `define action` block), and
+   `define chain … from` (parse.removed-chain-hatch: no Chord form yet).
+   The `define action <name>` block and `define sound|image|music … from`
+   are unaffected. *)
 
 (* Removed from the top level (ownership ratchet 2026-07-11) — parse errors
    with owner-attached fix-its, so they have no productions: `when` rules,
@@ -967,15 +977,14 @@ pattern          = pattern-elem { pattern-elem } ;         (* ADR-267 D1: shared
 pattern-elem     = plain-elem | "[" plain-elem "]" ;       (* [x] = optional (D9) *)
 plain-elem       = WORD { "or" WORD } | "the" WORD ;       (* or = alternation, ONE rule (D8);
                                                               "the" WORD = slot (D15) *)
-define-text      = "define" "text" WORD "from" STRING NL ; (* TS hatch; "br" reserved *)
-STRATEGY         = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
+STRATEGY        = "randomly" | "cycling" | "stopping" | "sticky" | "first-time" ;
                    (* Z5: mirrors the Choice selectors 1:1. `ordered`/`once`
                       are retired — load errors naming `stopping`/`first-time`.
                       The RULE modifier `, once` (D5) is a different site and
                       still parses. *)
 
 
-(* ---- Traits, actions, hatches, sequences ------------------------------- *)
+(* ---- Traits, actions, sequences ---------------------------------------- *)
 
 define-trait   = "define" "trait" WORD NL
                  { trait-line }
@@ -1034,13 +1043,6 @@ remove-from-action
                                                               unmatched shape is a load
                                                               error, never a silent no-op *)
 
-define-hatch   = "define" "action" WORD "from" STRING NL   (* action hatch *)
-               | "define" "chain" WORD "from" STRING NL ;  (* chain hatch — ADR-094; WORD is
-                                                              a curated stdlib chain alias
-                                                              (opened-revealed), else
-                                                              analysis.unknown-chain. `define
-                                                              behavior` REMOVED, ADR-235 D2. *)
-
 define-sequence= "define" "sequence" WORD { WORD } NL
                  { sequence-step } "end" "sequence" NL ;
 
@@ -1078,9 +1080,9 @@ machine-on     = ( "on" "enter" | "on" "exit" ) NL
 (* ---- ADR-216 declared assets + custom channels ------------------------- *)
 
 define-asset   = "define" ( "sound" | "image" | "music" )
-                 WORD "from" STRING NL ;                   (* a DATA reference — never a
-                                                              hatch; does not set
-                                                              hasHatches *)
+                 WORD "from" STRING NL ;                   (* a DATA reference, not code —
+                                                              kept when the hatches were
+                                                              removed (ADR-361 D1) *)
 
 define-family-channel                                      (* ADR-241: a named ambient
                                                               bed / image layer; words

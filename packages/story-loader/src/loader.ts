@@ -15,8 +15,8 @@
  *
  * Invariants:
  * - Atomic load: any defect throws LoadError; no partial registration.
- * - No filesystem access: hatch modules arrive pre-loaded via options
- *   (the CLI/devkit owns module resolution and compilation).
+ * - No filesystem access: the loader reads only the IR it is given
+ *   (the CLI/devkit owns compilation and import resolution).
  * - Every phrase key in the IR is registered with the Language Provider
  *   (given 3); blocked-exit/description text is ALSO written where the
  *   platform reads it today (dual-mode, ADR-107).
@@ -74,7 +74,7 @@ import {
   type ActResult,
 } from '@sharpee/stdlib';
 import { type ISemanticEvent, type RandomService } from '@sharpee/core';
-import type { LanguageProvider, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
+import type { LanguageProvider, StoryEndingKind } from '@sharpee/if-domain';
 import { SlotType } from '@sharpee/if-domain';
 import type { Story, StoryConfig, StoryEngine } from '@sharpee/engine';
 import { TURN_BANDS, type TurnPlugin } from '@sharpee/plugins';
@@ -136,19 +136,16 @@ import {
   WeaponTrait,
   WearableTrait,
   WorldModel,
-  type EventChainHandler,
   registerLocationName,
   clearLocationNames,
   type LocationNameArm,
 } from '@sharpee/world-model';
-import { resolveChain } from './chain-map.js';
 import { LoadError } from './errors.js';
 import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
-import { findChordLiteral } from './hatch-context.js';
 import { classifiesAs } from './kind-classification.js';
 import { ChordBehaviorTrait, ChordRuntime, knownTopicsIn, STRATEGY_SELECTOR } from './runtime.js';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, counterKey } from './state-keys.js';
@@ -181,26 +178,13 @@ export class ChordDataTrait implements ITrait {
 
 export interface StoryLoaderOptions {
   /**
-   * Pre-loaded hatch modules keyed by the `.story` module path
-   * (`"./extras.ts"` → its named exports). The host that owns module
-   * resolution (CLI/devkit) supplies these; the loader never touches the
-   * filesystem, so it stays browser-safe and the pure-IR profile can
-   * simply pass none.
-   */
-  hatchModules?: Record<string, Record<string, unknown>>;
-  /**
    * Seed for the story's random stream (`randomly`, `one chance in <n>`).
    * A fixed seed makes repeated runs byte-identical (AC-5); omitted, the
    * stream is time-seeded.
    */
   seed?: number;
-  /**
-   * Load profile (design.md §5.6, AC-4): 'devkit' (default) binds hatches;
-   * 'pure-ir' REFUSES any hatch-bearing story at construction — before any
-   * binding, so no author-supplied code is touched. Hatch-free stories load
-   * identically under both.
-   */
-  profile?: 'devkit' | 'pure-ir';
+  // `hatchModules` and `profile` REMOVED (ADR-361 D2/D3, 2026-10-09): Chord
+  // has no hatches, so there is no module to bind and every story is pure IR.
 }
 
 /**
@@ -224,8 +208,8 @@ function descriptionText(prose: IRProseValue | undefined, ir: StoryIR): string |
 /**
  * Build a `Story` from compiled IR.
  * @param ir a gate-clean Story IR (`compile().ok` was true)
- * @param options hatch modules and host wiring
- * @throws LoadError on format mismatch or unbindable hatch (atomic load)
+ * @param options host wiring (the random seed)
+ * @throws LoadError on format mismatch (atomic load)
  */
 export function createStory(ir: StoryIR, options: StoryLoaderOptions = {}): ChordStory {
   return new ChordStory(ir, options);
@@ -234,12 +218,6 @@ export function createStory(ir: StoryIR, options: StoryLoaderOptions = {}): Chor
 /** The generic Story implementation interpreted from IR. */
 export class ChordStory implements Story {
   readonly config: StoryConfig;
-  /** Bound `define text` producers by hatch name. */
-  readonly producers = new Map<string, PhraseProducer>();
-  /** Bound `define action X from` hatches: four-phase Action objects by name. */
-  readonly boundActions = new Map<string, unknown>();
-  /** Bound `define chain X from` hatches (ADR-094): EventChainHandlers by chain alias. */
-  readonly boundChains = new Map<string, EventChainHandler>();
   /** The turn-by-turn runtime (rules, on-clauses, derived properties). */
   readonly runtime: ChordRuntime;
   /** The condition evaluator — shared with the runtime; Z2 gate thunks close over it. */
@@ -321,7 +299,6 @@ export class ChordStory implements Story {
       // stays absent ("let me decide" is the runner's default).
       ...(ir.meta.fields.autoAssertion !== undefined ? { autoAssertion: ir.meta.fields.autoAssertion } : {}),
     };
-    this.bindHatches(options);
     this.evaluator = new Evaluator(ir, this, options.seed);
     this.runtime = new ChordRuntime(ir, this, this.evaluator);
   }
@@ -342,80 +319,6 @@ export class ChordStory implements Story {
   }
   private playerId: string | undefined;
 
-  private bindHatches(options: StoryLoaderOptions): void {
-    // AC-4, pure-IR profile: refuse hatch-bearing stories BEFORE touching
-    // any module — no author-supplied code is read, called, or bound.
-    if ((options.profile ?? 'devkit') === 'pure-ir' && this.ir.hatches.length > 0) {
-      const names = this.ir.hatches.map((h) => `\`${h.name}\` (${h.modulePath})`).join(', ');
-      throw new LoadError(
-        `This profile runs pure-IR stories only — the story declares ${this.ir.hatches.length} TS hatch(es): ${names}. Load it with the devkit profile, or remove the hatches.`,
-      );
-    }
-
-    for (const hatch of this.ir.hatches) {
-      const module = options.hatchModules?.[hatch.modulePath];
-      if (!module) {
-        throw new LoadError(`Hatch module \`${hatch.modulePath}\` was not provided to the loader.`, hatch.span);
-      }
-      // A chain hatch's alias (`opened-revealed`) is not a JS identifier, so its
-      // module default-exports the handler (falling back to a matching named export).
-      const bound = hatch.hatchKind === 'chain' ? (module[hatch.name] ?? module.default) : module[hatch.name];
-      // Bind-time `'chord.'` lint (design.md §5.6, best-effort backstop —
-      // the staging facade is the wall): the loader-private state namespace
-      // is off-limits to hatches; a quoted literal fails the bind atomically,
-      // like a missing export. The devkit source lint is the authoritative
-      // layer (this one can miss minified code and can trip on a quoted
-      // literal inside a compiled-in comment — reword the comment).
-      const chordLiteral = findChordLiteral(bound);
-      if (chordLiteral !== null) {
-        throw new LoadError(
-          `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` references the loader-private \`chord.*\` state namespace (\`${chordLiteral}\`) — hatches read the world through their context only (design.md §5.6). If the match is inside a comment, reword it.`,
-          hatch.span,
-        );
-      }
-      const kind = hatch.hatchKind ?? 'text';
-      switch (kind) {
-        case 'text': {
-          if (typeof bound !== 'function') {
-            throw new LoadError(
-              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a function'} — expected a dynamic-text producer export.`,
-              hatch.span,
-            );
-          }
-          this.producers.set(hatch.name, bound as PhraseProducer);
-          break;
-        }
-        case 'action': {
-          // Interface Contract 3: the export IS a four-phase Action.
-          const action = bound as { id?: unknown; validate?: unknown; execute?: unknown } | undefined;
-          if (!action || typeof action !== 'object' || typeof action.validate !== 'function' || typeof action.execute !== 'function') {
-            throw new LoadError(
-              `Hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not an Action'} — expected a four-phase Action export (validate/execute/report/blocked).`,
-              hatch.span,
-            );
-          }
-          this.boundActions.set(hatch.name, bound);
-          break;
-        }
-        case 'chain': {
-          // ADR-094: the export IS an EventChainHandler; registered in
-          // initializeWorld to REPLACE the stdlib chain (same key).
-          if (typeof bound !== 'function') {
-            throw new LoadError(
-              `Chain hatch \`${hatch.name}\` in \`${hatch.modulePath}\` is ${bound === undefined ? 'missing' : 'not a function'} — expected an EventChainHandler (the module's default export).`,
-              hatch.span,
-            );
-          }
-          this.boundChains.set(hatch.name, bound as EventChainHandler);
-          break;
-        }
-        // The `behavior` hatch kind was removed (ADR-235 D2, 2026-07-18) —
-        // it carried no binding key and could never fire; the compiler now
-        // refuses the declaration outright.
-      }
-    }
-  }
-
   // ------------------------------------------------------------ lifecycle
 
   initializeWorld(world: WorldModel): void {
@@ -425,20 +328,6 @@ export class ChordStory implements Story {
     // still look like live state are what mislead a debugging session two
     // years out. Also runs on restore — see sweepRetiredSelectKeys.
     sweepRetiredSelectKeys(world);
-
-    // ADR-094 chain hatches: register each replacement handler under its stdlib
-    // chain key. `registerStandardChains` ran at engine init (before installStory →
-    // initializeWorld), so a same-key `chainEvent` REPLACES the stdlib default
-    // in place. Idempotent across restart (keyed replacement).
-    for (const [alias, handler] of this.boundChains) {
-      const reg = resolveChain(alias);
-      if (!reg) {
-        // The chord analyzer's `analysis.unknown-chain` gate catches this first;
-        // this backstops rogue IR reaching the loader.
-        throw new LoadError(`Chain hatch \`${alias}\` names no known stdlib chain.`);
-      }
-      world.chainEvent(reg.trigger, handler, { key: reg.key, priority: reg.priority });
-    }
 
     // ADR-215: `use`-declared trusted extensions register FIRST — their
     // world-side registrations (interceptors, resolvers) must exist before
@@ -1034,12 +923,11 @@ export class ChordStory implements Story {
   // vocabulary-only path (which registered no rule; see ADR-270's Context).
 
   /**
-   * Custom actions for engine registration: `define action` dispatch
-   * actions (Phase B, §5.4) plus `define action X from` hatch Actions
-   * (grammar for hatch actions is the module's own concern).
+   * Custom actions for engine registration: the `define action` dispatch
+   * actions (Phase B, §5.4).
    */
   getCustomActions(): unknown[] {
-    return [...this.runtime.buildDispatchActions(), ...this.boundActions.values()];
+    return [...this.runtime.buildDispatchActions()];
   }
 
   /**
@@ -1813,7 +1701,7 @@ export class ChordStory implements Story {
    * every cuttable entity must register exactly ONE cut implementation —
    * an `on cutting it` clause (entity- or trait-level, loads as an
    * ADR-228 interceptor) or an ADR-090 capability behavior for
-   * `if.action.cutting` (TS/hatch surface). Zero implementations would
+   * `if.action.cutting` (registered by platform code). Zero implementations would
    * silently no-op at runtime; two would double-fire (ADR-228 D6 spirit).
    * Chord surfaces are counted from the IR (precise per entity); the
    * capability surface from the live world.
@@ -1842,18 +1730,17 @@ export class ChordStory implements Story {
             surfaces++;
           }
         }
-        // ADR-090 capability behavior (TS/hatch surface).
+        // ADR-090 capability behavior (registered by platform code).
         const capabilityTrait = findTraitWithCapability(entity, actionId);
         if (capabilityTrait && world.getBehaviorForCapability(capabilityTrait, actionId)) {
           surfaces++;
         }
 
         // ADR-276 census 13: the compiler's gate refuses the pure-Chord
-        // cases (analysis.gerund-implementation) — zero Chord surfaces in a
-        // hatch-free story, or 2+ Chord surfaces anywhere. This check stays
-        // AUTHORITATIVE (not just a backstop) for the ADR-090 capability
-        // surface, which is registered by TS/hatch code the compiler cannot
-        // see (ADR-276 D5 residue boundary).
+        // cases (analysis.gerund-implementation) — zero Chord surfaces, or 2+
+        // anywhere. This check stays AUTHORITATIVE (not just a backstop) for
+        // the ADR-090 capability surface, which platform code registers where
+        // the compiler cannot see it (ADR-276 D5 residue boundary).
         if (surfaces === 0) {
           throw new LoadError(
             `\`${irEntity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
@@ -2436,16 +2323,15 @@ export class ChordStory implements Story {
 
   /**
    * The Z2 marker predicate: `{name}` in a description splices a snippet
-   * when `name` is a declared phrase that is neither the `{br}` line break
-   * nor a hatch. One definition, shared by the template rewrite
+   * when `name` is a declared phrase other than the `{br}` line break.
+   * One definition, shared by the template rewrite
    * (extendLanguage) and the map compile (compileDescriptionSnippets); a
    * verbatim phrase passes here and is refused by the compile with its
    * LoadError.
    */
   private snippetMarkerTest(): (marker: string) => boolean {
     const table = this.ir.phrases.locales[this.ir.phrases.defaultLocale] ?? {};
-    const hatchNames = new Set(this.ir.hatches.map((h) => h.name));
-    return (marker) => marker !== 'br' && !hatchNames.has(marker) && table[marker] !== undefined;
+    return (marker) => marker !== 'br' && table[marker] !== undefined;
   }
 
   /**

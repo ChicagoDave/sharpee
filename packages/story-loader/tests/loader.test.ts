@@ -35,9 +35,6 @@ function compileFixture(name: string): StoryIR {
   return result.ir;
 }
 
-const garbled = () => ({ kind: 'literal', text: 'swept aside' });
-const CLOAK_MODULES = { './extras.ts': { garbled } };
-
 describe('cloak.story loads into a playable world', () => {
   let story: ChordStory;
   let world: WorldModel;
@@ -50,7 +47,7 @@ describe('cloak.story loads into a playable world', () => {
   };
 
   beforeAll(() => {
-    story = createStory(compileFixture('cloak.story'), { hatchModules: CLOAK_MODULES });
+    story = createStory(compileFixture('cloak.story'));
     world = new WorldModel();
     story.initializeWorld(world);
     player = story.createPlayer(world);
@@ -139,7 +136,7 @@ describe('cloak.story loads into a playable world', () => {
     for (const key of ['cant-leave', 'stumble', 'message-intact', 'message-trampled', 'message-obliterated']) {
       expect(registered.has(key), key).toBe(true);
     }
-    expect(registered.get('message-trampled')).toContain('{garbled}');
+    expect(registered.get('message-trampled')).toContain('Y.u h..e w.n');
     expect(registered.get('foyer-of-the-opera-house.description')).toContain('spacious hall');
     expect(registered.get('velvet-cloak.description')).toContain('handsome cloak');
   });
@@ -149,10 +146,6 @@ describe('cloak.story loads into a playable world', () => {
     expect(rules).toContainEqual({ pattern: 'hook :item on :hook', action: 'if.action.putting', tier: 'story' });
     // The vocabulary-only path is gone with the construct.
     expect('getCustomVocabulary' in story).toBe(false);
-  });
-
-  it('binds the garbled hatch producer', () => {
-    expect(story.producers.get('garbled')).toBe(garbled);
   });
 
   it('endings: triggerEnding records the Ending on the world, event carries the contract', () => {
@@ -182,7 +175,7 @@ describe('engine lifecycle order: initializeWorld BEFORE createPlayer (GameEngin
   // worn items and initial darkness must all be settled by the time
   // `createPlayer` returns.
   it('places and equips the player, and darkens the bar', () => {
-    const story = createStory(compileFixture('cloak.story'), { hatchModules: CLOAK_MODULES });
+    const story = createStory(compileFixture('cloak.story'));
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);
@@ -375,8 +368,8 @@ describe('atomic load rejections', () => {
 
   it('rejects an unknown IR format', () => {
     const ir = { ...cloakIr(), format: 'story language 99' } as unknown as StoryIR;
-    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(LoadError);
-    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 5/);
+    expect(() => createStory(ir)).toThrow(LoadError);
+    expect(() => createStory(ir)).toThrow(/story language 5/);
   });
 
   it('rejects the retired `story language 1` (ADR-289 D2, AC6)', () => {
@@ -384,21 +377,6 @@ describe('atomic load rejections', () => {
     // IR wholesale. An author holding a stale compiled artifact gets one
     // clear message, not a per-statement complaint.
     const ir = { ...cloakIr(), format: 'story language 1' } as unknown as StoryIR;
-    expect(() => createStory(ir, { hatchModules: CLOAK_MODULES })).toThrow(/story language 1/);
-  });
-
-  it('rejects a missing hatch module', () => {
-    expect(() => createStory(cloakIr())).toThrow(LoadError);
-    expect(() => createStory(cloakIr())).toThrow(/\.\/extras\.ts/);
-  });
-
-  it('rejects a missing hatch export', () => {
-    expect(() => createStory(cloakIr(), { hatchModules: { './extras.ts': {} } })).toThrow(/missing/);
-  });
-
-  it('rejects a non-function hatch export', () => {
-    expect(() => createStory(cloakIr(), { hatchModules: { './extras.ts': { garbled: 'text' } } })).toThrow(
-      /not a function/,
-    );
+    expect(() => createStory(ir)).toThrow(/story language 1/);
   });
 });

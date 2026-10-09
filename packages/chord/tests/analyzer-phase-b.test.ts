@@ -1,7 +1,7 @@
 /**
  * analyzer-phase-b.test.ts — Phase B analysis under the ownership package:
- * four-phase routing (both halves), role validation, hatch kinds +
- * hasHatches, owner-qualified scores and award resolution, story states,
+ * four-phase routing (both halves), role validation,
+ * owner-qualified scores and award resolution, story states,
  * trait states, must/refuse-when compilation, sequence anchors,
  * open/closed condition classification, and the gate classes.
  */
@@ -105,10 +105,6 @@ describe('zoo-actions IR (§3.4 + ownership package)', () => {
     expect(body[2]).toMatchObject({ kind: 'change', entity: { kind: 'it' }, state: 'content' });
   });
 
-  it('has no hatches', () => {
-    expect(ir.hasHatches).toBe(false);
-  });
-
   it('matches the golden IR snapshot', () => {
     expect(ir).toMatchSnapshot();
   });
@@ -200,13 +196,6 @@ describe('traits-basic IR (§2.2/§3.2 + ownership package)', () => {
     expect(ir.scores).toMatchObject([{ name: 'action.snoozing.napped', worth: 1 }]);
     const snoozing = ir.actions.find((a) => a.name === 'snoozing')!;
     expect(snoozing.scores).toMatchObject([{ name: 'action.snoozing.napped', worth: 1 }]);
-  });
-
-  it('records hatch kinds and hasHatches (`define behavior` removed by ADR-235 D2)', () => {
-    expect(ir.hatches.map((h) => [h.name, h.hatchKind])).toEqual([
-      ['juggling', 'action'],
-    ]);
-    expect(ir.hasHatches).toBe(true);
   });
 
   it('resolves conditional blocked exits against story states (D2)', () => {

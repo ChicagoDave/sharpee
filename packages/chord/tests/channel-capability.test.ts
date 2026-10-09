@@ -52,7 +52,6 @@ describe('define channel (ADR-216, spelling A)', () => {
         span: expect.anything(),
       },
     ]);
-    expect(result.ir.hasHatches).toBe(false); // declaration is pure IR
   });
 
   it('a bad mode → analysis.channel-mode', () => {

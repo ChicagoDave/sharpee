@@ -44,7 +44,6 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
   it('lowers every sugar form onto payloaded media.* emits with resolved src paths', () => {
     const result = compile(FIXTURE);
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    expect(result.ir.hasHatches).toBe(false); // assets are DATA, never hatches
     const body = result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
     expect(body.map((s) => [s.event, s.payload])).toEqual([
       ['media-sound-play', [{ key: 'src', value: { kind: 'literal', value: 'audio/chime.ogg', valueType: 'string' } }]],

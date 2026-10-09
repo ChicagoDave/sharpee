@@ -33,14 +33,8 @@ export interface ProjectManifest {
   generatedFrom: 'cli' | 'bridge';
   /** Every introspected entity, in world-enumeration order. */
   entities: EntityNode[];
-  /**
-   * Version of the narrow staging surface Chord text hatches can touch
-   * (design.md §5.6; story-loader's HATCH_CONTEXT_VERSION). A property of
-   * the emitting platform, stamped by the emitter — lets the IDE state
-   * exactly what a hatch *can* see without reading hatch code. Optional:
-   * absent from manifests emitted before the field existed.
-   */
-  hatchContextVersion?: number;
+  // `hatchContextVersion` REMOVED (ADR-361 D2/D3, 2026-10-09): with no
+  // hatches there is no staging surface to version.
 }
 
 /** Top-level project-tree categories. Doors/exits surface under a room's `exits`. */

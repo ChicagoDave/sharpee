@@ -35,7 +35,7 @@
 import { dialogueTurn, type KindMembership } from '@sharpee/character';
 import type { IRCondition, IRTimerClause, IRTimerDef, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { Choice, PhraseProducer, StoryEndingKind } from '@sharpee/if-domain';
+import type { Choice, StoryEndingKind } from '@sharpee/if-domain';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
 import { type CapabilityEffect, type CapabilityValidationResult, type InterceptorResult, type ITrait, type TemperamentDef, TraitType, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
@@ -131,7 +131,6 @@ export function knownTopicsIn(condition: IRCondition | null): Set<string> {
 export interface RuntimeHost {
   entityId(irId: string): string | undefined;
   irIdOf(worldId: string): string | undefined;
-  producers: Map<string, PhraseProducer>;
   /**
    * Declare the story's ending; `undefined` when it had already ended
    * (first ending wins — ADR-347 D2d).
@@ -175,8 +174,8 @@ export interface ExecContext extends EvalContext {
 
 /**
  * A refusal veto from the validate partition: the fully-qualified message id
- * plus the render params its phrase stages (the strategy Choice, hatch
- * producers, slot bindings). Spread into an `InterceptorResult` /
+ * plus the render params its phrase stages (the strategy Choice, slot
+ * bindings). Spread into an `InterceptorResult` /
  * `ValidationResult` / `CapabilityValidationResult` — all three carry
  * `error` + `params`, and stdlib threads `params` through to the blocked
  * render (lifecycle-engine `vetoOf`).

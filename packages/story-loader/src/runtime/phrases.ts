@@ -2,7 +2,7 @@
  * phrases.ts — the runtime's phrases section.
  *
  * Phrase emission: a phrase key becomes a semantic event carrying its
- * staged params — strategy Choice atoms, hatch producers, slot bindings,
+ * staged params — strategy Choice atoms, slot bindings,
  * counters — and the channel narration (`entered`/`exited`/`disappeared`)
  * enqueued outside a report pass and drained by the next one.
  *
@@ -17,7 +17,6 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice, Literal } from '@sharpee/if-domain';
 import { CharacterModelTrait, type DispositionWord, TraitType, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
-import { stagingRenderContext } from '../hatch-context.js';
 import { withLineBreaks } from '../text.js';
 import { ExecContext, STRATEGY_SELECTOR, type RuntimeCore } from './core.js';
 
@@ -58,8 +57,7 @@ export class PhrasesSection {
 
   /**
    * Build the semantic event for `phrase <key>`: entity-scoped override
-   * resolution (prereq 4), strategy variants as a persistent Choice atom,
-   * and hatch producers bound by marker name.
+   * resolution (prereq 4) and strategy variants as a persistent Choice atom.
    *
    * @param counter Z3 channel counter identity — overrides the default
    *   `('chord', overrideKey)` Choice keying with `(owner, channelKey)`.
@@ -75,8 +73,8 @@ export class PhrasesSection {
     const phrase = table[overrideKey];
     // ADR-250: a key covered only by phrasebooks has no table entry — emit
     // the bare key (the render-path book layer supplies the winning
-    // template and its Choice) but still stage stmt params and any hatch
-    // producers the book entries reference, since staging is emit-time work.
+    // template and its Choice) but still stage stmt params, since staging is
+    // emit-time work.
     const bookVariants: IRPhraseVariant[] | null = phrase ? null : this.core.binding.bookEntriesFor(key).flatMap((e) => e.variants);
     if (!phrase && bookVariants!.length === 0) {
       throw new LoadError(`Phrase \`${key}\` is missing from the IR at emit time.`);
@@ -96,18 +94,17 @@ export class PhrasesSection {
   }
 
   /**
-   * Stage the render params a phrase's template consumes — hatch producers
-   * bound by marker name, grammar-slot bindings, verbatim text, and the
-   * strategy variants as a persistent Choice atom. Shared by `phraseEvent`
+   * Stage the render params a phrase's template consumes — grammar-slot
+   * bindings, verbatim text, and the strategy variants as a persistent
+   * Choice atom. Shared by `phraseEvent`
    * (`phrase <key>` statements) and `refusalOf` (the validate partition's
    * veto path): a refusal keyed to a strategy phrase must carry the same
    * Choice the statement path carries, or the registered `{variants}`
    * template renders its raw placeholder.
    *
    * @param params Mutated in place. Keys already present (authored `with`
-   *   bindings) are overridden by hatch producers but win over grammar-slot
-   *   bindings — exactly the precedence `phraseEvent` had before this was
-   *   extracted.
+   *   bindings) win over grammar-slot bindings — the precedence `phraseEvent`
+   *   had before this was extracted.
    */
   stagePhraseParams(
     params: Record<string, unknown>,
@@ -117,30 +114,10 @@ export class PhrasesSection {
     ctx: ExecContext,
     counter?: { entityId: string; messageKey: string },
   ): void {
-    for (const variant of phrase ? phrase.variants : bookVariants!) {
-      for (const marker of variant.markers) {
-        const producer = this.core.host.producers.get(marker);
-        if (producer) {
-          // Params carry phrase ATOMS, not functions — the template binder
-          // string-coerces anything that isn't a Phrase (ADR-196: producers
-          // are invoked at staging, their atoms realized by the assembler).
-          // The context is the narrow staging facade (design.md §5.6): a
-          // producer reaching outside it fails HERE, named, not as an
-          // anonymous TypeError downstream.
-          try {
-            params[marker] = producer(stagingRenderContext(ctx.world));
-          } catch (error) {
-            throw new LoadError(
-              `Hatch \`${marker}\` threw while staging phrase \`${overrideKey}\`: ${error instanceof Error ? error.message : String(error)}. Hatches see the narrow staging context only (design.md §5.6).`,
-            );
-          }
-        }
-      }
-    }
     // Grammar-slot params (`{the target}` in a dispatch-action or trait
     // clause body, zoo-chain fixes 2026-07-12): the slot entity's name
     // binds as the NounPhrase-default string — the template's own article
-    // hint supplies `the`/`a`. Producers above win on a name collision.
+    // hint supplies `the`/`a`.
     // ADR-275 D2: a WORD binding (semantic value — `direction`, `means`
     // keys) has no entity to resolve and renders VERBATIM — bound as a
     // Literal atom, which the template binder passes through untouched
@@ -161,7 +138,13 @@ export class PhrasesSection {
     } else if (phrase?.strategy) {
       const choice: Choice = {
         kind: 'choice',
-        alternatives: phrase.variants.map((v): Literal => ({ kind: 'literal', text: withLineBreaks(v.text) })),
+        // GH #572 (ADR-361 D5): a `nothing` variant is the explicit empty
+        // variant, as it already is on the description-snippet path — never
+        // the word "nothing" printed to the player.
+        alternatives: phrase.variants.map((v): Literal => ({
+          kind: 'literal',
+          text: v.text === 'nothing' ? '' : withLineBreaks(v.text),
+        })),
         selector: STRATEGY_SELECTOR[phrase.strategy],
         entityId: counter?.entityId ?? 'chord',
         messageKey: counter?.messageKey ?? overrideKey,

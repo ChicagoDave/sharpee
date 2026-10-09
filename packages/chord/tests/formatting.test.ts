@@ -69,11 +69,6 @@ describe('{br} built-in marker', () => {
     expect(errors.some((e) => e.code === 'analysis.reserved-marker')).toBe(true);
   });
 
-  it('reserves `br` as a hatch name', () => {
-    const result = compile(`${HEADER}define text br from "./extras.ts"\n`);
-    const errors = result.diagnostics.filter((d) => d.severity === 'error');
-    expect(errors.some((e) => e.code === 'analysis.reserved-marker')).toBe(true);
-  });
 });
 
 describe('verbatim phrase modifier', () => {

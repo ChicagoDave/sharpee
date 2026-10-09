@@ -3,7 +3,7 @@
  * gates, and Story IR construction.
  *
  * Pass 1 collects declarations (entities + aliases + states, phrases per
- * locale, named conditions, hatches, flags). Pass 2 resolves every
+ * locale, named conditions, flags). Pass 2 resolves every
  * reference with article stripping and builds the IR, reporting the gate
  * classes as errors with `.story` spans:
  *   missing phrase key · unknown predicate value (nearest-valid suggestion)
@@ -88,9 +88,10 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, STDLIB_CHAIN_NAMES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
+import { levenshtein } from './edit-distance.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
 import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, newEntityDraft } from './analyzer/entity/index.js';
@@ -753,7 +754,6 @@ export class Analyzer {
   private entities: EntitySymbol[] = [];
   private byId = new Map<string, EntitySymbol>();
   private conditionNames = new Set<string>();
-  private hatchNames = new Set<string>();
   /** locale → key → IRPhrase */
   private phrases = new Map<string, Map<string, IRPhrase>>();
   /** ADR-255: locale → override alias → IRPhrase (validated against MESSAGE_OVERRIDE_ALIASES). */
@@ -929,7 +929,7 @@ export class Analyzer {
     // A `grammar` header confines the file to define-action grammar surfaces;
     // behavior and story declarations are named errors, never ignored.
     { name: 'checkGrammarFileMode', requires: [], run: (a) => { if (a.ast.grammarHeader) a.checkGrammarFileMode(); } },
-    // Pass 1: entities, aliases, states, phrases, named conditions, hatches.
+    // Pass 1: entities, aliases, states, phrases, named conditions.
     { name: 'collect', requires: [], run: (a) => a.collect() },
     { name: 'validateUses', requires: [], run: (a) => a.validateUses() },
     { name: 'checkScoringUse', requires: ['collect', 'validateUses'], run: (a) => a.checkScoringUse() },
@@ -967,7 +967,6 @@ export class Analyzer {
     { name: 'emitImpliedMainBed', requires: ['buildDeclarations'], run: (a) => a.emitImpliedMainBed() },
     // Phrase conditions resolve during pass 2.
     { name: 'emitPhraseTables', requires: ['buildDeclarations', 'resolveOverrideGates'], run: (a) => a.emitPhraseTables() },
-    { name: 'markHatches', requires: ['buildDeclarations'], run: (a) => a.markHatches() },
     // The `define` tables fold onto their owner entities after every entity is built.
     { name: 'applyTopics', requires: ['buildDeclarations'], run: (a) => a.applyTopics(a.builtIR().entities) },
     { name: 'applyManner', requires: ['buildDeclarations'], run: (a) => a.applyManner(a.builtIR().entities) },
@@ -985,13 +984,14 @@ export class Analyzer {
     // Whole-graph gates: cross-entity lookups need every entity built.
     { name: 'checkRegions', requires: ['buildDeclarations'], run: (a) => a.checkRegions(a.builtIR().entities) },
     { name: 'checkDoors', requires: ['buildDeclarations'], run: (a) => a.checkDoors(a.builtIR().entities) },
+    { name: 'checkDuplicateExits', requires: ['buildDeclarations'], run: (a) => a.checkDuplicateExits(a.builtIR().entities) },
     { name: 'checkCompositionLegality', requires: ['buildDeclarations'], run: (a) => a.checkCompositionLegality(a.builtIR()) },
     // The influencer may be declared after the resister.
     { name: 'checkInfluenceReferences', requires: ['buildDeclarations'], run: (a) => a.checkInfluenceReferences(a.builtIR()) },
     // Inline and override bindings synthesize temperament defs during entity build.
     { name: 'emitTemperaments', requires: ['buildDeclarations'], run: (a) => a.emitTemperaments() },
     { name: 'checkAlterationTargets', requires: ['buildDeclarations'], run: (a) => a.checkAlterationTargets(a.builtIR()) },
-    // Bare `{…}` markers must name a declared hatch or phrase key.
+    // Bare `{…}` markers must name a declared phrase key.
     { name: 'checkMarkers', requires: ['collect', 'buildDeclarations'], run: (a) => a.checkMarkers() },
     { name: 'checkDescriptionMarkers', requires: ['collect'], run: (a) => a.checkDescriptionMarkers() },
     // Header phrase references resolve against the collected phrase table.
@@ -1126,7 +1126,6 @@ export class Analyzer {
       phrases: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       messageOverrides: { defaultLocale: DEFAULT_LOCALE, locales: {} },
       phrasebooks: [],
-      hatches: [],
       traits: [],
       actions: [],
       scores: this.scoreDecls,
@@ -1138,7 +1137,6 @@ export class Analyzer {
       machines: [],
       channels: [],
       pronounSets: [],
-      hasHatches: false,
       // Additive and optional — absent when the story declares no facts.
       ...(this.factDefs.length > 0 ? { facts: this.factDefs } : {}),
       // ADR-330 chapters — additive and optional, present only under `use chapters`.
@@ -1184,20 +1182,6 @@ export class Analyzer {
             condition: this.resolveCondition(decl.condition, { ...TOP_SCOPE, carrierIt: true }),
             span: decl.span,
           });
-          break;
-        case 'define-text':
-          ir.hatches.push({ name: decl.name, modulePath: decl.modulePath, hatchKind: 'text', span: decl.span });
-          break;
-        case 'define-hatch':
-          // ADR-094 chain hatch: the name must be a replaceable stdlib chain.
-          if (decl.hatchKind === 'chain' && !STDLIB_CHAIN_NAMES.has(decl.name)) {
-            this.diagnostics.error(
-              'analysis.unknown-chain',
-              `\`${decl.name}\` is not a replaceable stdlib chain${this.suggestText(decl.name, [...STDLIB_CHAIN_NAMES])}.`,
-              decl.span,
-            );
-          }
-          ir.hatches.push({ name: decl.name, modulePath: decl.modulePath, hatchKind: decl.hatchKind, span: decl.span });
           break;
         case 'define-trait':
           ir.traits.push(this.buildTrait(decl));
@@ -1347,12 +1331,6 @@ export class Analyzer {
     for (const [locale, table] of this.messageOverrides) {
       ir.messageOverrides.locales[locale] = Object.fromEntries(table);
     }
-  }
-
-  /** `hasHatches` is derived: true when any hatch was declared. */
-  private markHatches(): void {
-    const ir = this.builtIR();
-    ir.hasHatches = ir.hatches.length > 0;
   }
 
   /**
@@ -1620,12 +1598,9 @@ export class Analyzer {
 
     // Census 13: tool-gated gerunds (ADR-230 D3c) — exactly one
     // implementation. The Chord surfaces (entity clause, composed-trait
-    // clause) are IR-visible; the ADR-090 capability surface (TS/hatch) is
-    // not. Two-plus Chord surfaces double-fire regardless of any capability
-    // surface, so that half is unconditional; the zero-surface half is
-    // sound only when the story has no hatches at all (a hatch may register
-    // the capability behavior) — with hatches present, the zero case stays
-    // the loader's check (ADR-276 D5 residue boundary).
+    // clause) are the only surfaces a Chord story has: the ADR-090
+    // capability surface was reachable only through a TS hatch, and hatches
+    // are gone (ADR-361), so both halves are decided here.
     const TOOL_GATED_GERUNDS = [
       { adjective: 'cuttable', gerund: 'cutting' },
       { adjective: 'diggable', gerund: 'digging' },
@@ -1648,7 +1623,7 @@ export class Analyzer {
             `\`${entity.name}\` has ${surfaces} ${gerund} implementations — a ${adjective} entity registers exactly one (one \`on ${gerund} it\` clause or one capability behavior).`,
             site.span,
           );
-        } else if (surfaces === 0 && ir.hatches.length === 0) {
+        } else if (surfaces === 0) {
           this.diagnostics.error(
             'analysis.gerund-implementation',
             `\`${entity.name}\` is ${adjective} but registers no ${gerund} implementation — add \`on ${gerund} it:\` (or compose a trait that has one).`,
@@ -1945,6 +1920,58 @@ export class Analyzer {
           'analysis.door-unconnected',
           `Door \`${door.name}\` is never referenced by a \`through\` exit line — an unconnected door is unanswerable (its room pair could never resolve). Add \`<direction> to the <room> through the ${door.name}\` on a room.`,
           door.span,
+        );
+      }
+    }
+  }
+
+  /**
+   * A room has at most one exit per direction (ADR-360 D3a, GH #569).
+   * Reports `analysis.duplicate-exit` for two exit lines in one direction on
+   * one room, and for an explicit exit that contradicts the reverse a plain
+   * exit elsewhere infers — the loader would otherwise keep whichever it
+   * wired last. A reverse that agrees (the Den's own `west to the Hall`
+   * beside the Hall's `east to the Den`) is the same exit stated twice and
+   * passes, which is also what lets a door's mirror line through. A door
+   * exit infers its reverse like a plain one, so doors are checked too; a
+   * direction with no opposite infers nothing.
+   * @param entities every built IR entity
+   */
+  private checkDuplicateExits(entities: IREntity[]): void {
+    const byId = new Map(entities.map((e) => [e.id, e]));
+    const lineOf = (exit: IRExit): string => `line ${exit.span.line}${exit.span.file ? ` of ${exit.span.file}` : ''}`;
+
+    // Two exit lines in one direction on one room.
+    for (const room of entities) {
+      const seen = new Map<string, IRExit>();
+      for (const exit of room.exits) {
+        const earlier = seen.get(exit.direction);
+        if (!earlier) {
+          seen.set(exit.direction, exit);
+          continue;
+        }
+        this.diagnostics.error(
+          'analysis.duplicate-exit',
+          `\`${room.name}\` already has a \`${exit.direction}\` exit (${lineOf(earlier)}) — a room has one exit per direction. Remove one of the two lines.`,
+          exit.span,
+        );
+      }
+    }
+
+    // An explicit exit that contradicts an inferred reverse.
+    for (const owner of entities) {
+      for (const exit of owner.exits) {
+        if (exit.oneWay) continue;
+        const reverseDirection = OPPOSITE_DIRECTION[exit.direction];
+        const target = byId.get(exit.to);
+        if (!reverseDirection || !target) continue;
+        const explicit = target.exits.find((e) => e.direction === reverseDirection);
+        if (!explicit || explicit.to === owner.id) continue;
+        const elsewhere = byId.get(explicit.to)?.name ?? explicit.to;
+        this.diagnostics.error(
+          'analysis.duplicate-exit',
+          `\`${target.name}\`'s \`${reverseDirection}\` exit leads to \`${elsewhere}\`, but \`${owner.name}\`'s \`${exit.direction} to the ${target.name}\` (${lineOf(exit)}) also makes \`${reverseDirection}\` from \`${target.name}\` lead back to \`${owner.name}\`. If that line should not lead back, write it \`${exit.direction} to the ${target.name}, one-way\`.`,
+          explicit.span,
         );
       }
     }
@@ -3336,13 +3363,6 @@ export class Analyzer {
       else if (decl.kind === 'define-condition') {
         this.conditionNames.add(decl.name);
         this.openConditions.set(decl.name, conditionReferencesIt(decl.condition));
-      }
-      else if (decl.kind === 'define-text' || decl.kind === 'define-hatch') {
-        if (decl.name === 'br') {
-          this.diagnostics.error('analysis.reserved-marker', '`br` is reserved for the built-in `{br}` line-break marker — pick another producer name.', decl.span);
-        } else {
-          this.hatchNames.add(decl.name);
-        }
       }
       else if (decl.kind === 'define-counter') {
         // ADR-264: register the story-global counter name; duplicate is an error.
@@ -7683,8 +7703,7 @@ export class Analyzer {
   }
 
   /**
-   * Gate: bare single-word `{…}` markers must name a declared hatch or
-   * phrase key. Formatter-chain forms (uppercase start, spaces, `:`) are
+   * Gate: bare single-word `{…}` markers must name a declared phrase key. Formatter-chain forms (uppercase start, spaces, `:`) are
    * outside the Phase A validation slice.
    */
   private checkMarkers(): void {
@@ -7716,7 +7735,6 @@ export class Analyzer {
       for (const marker of variant.markers) {
         if (!/^[a-z][a-z0-9-]*$/.test(marker)) continue;
         if (marker === 'br') continue; // built-in line break (grammar log 2026-07-10)
-        if (this.hatchNames.has(marker)) continue;
         if (this.phrases.get(DEFAULT_LOCALE)?.has(marker)) {
           // Description-derived entries are not phrase BODIES: room
           // descriptions resolve markers via Z2 snippets, non-room ones
@@ -7738,7 +7756,7 @@ export class Analyzer {
         if (this.bookKeys.has(marker)) continue; // book coverage counts (ADR-250 D4.6)
         this.diagnostics.error(
           'analysis.unbound-marker',
-          `\`{${marker}}\` in phrase \`${label}\` is not a declared text producer or phrase${this.suggestText(marker, [...this.hatchNames])}.`,
+          `\`{${marker}}\` in phrase \`${label}\` is not a declared phrase${this.suggestText(marker, [...(this.phrases.get(DEFAULT_LOCALE)?.keys() ?? [])])}.`,
           phrase.span,
         );
       }
@@ -7768,7 +7786,7 @@ export class Analyzer {
         const desc = table.get(key);
         if (!desc) continue;
         for (const site of descriptionMarkerSites(desc.variants[0]?.text ?? '')) {
-          if (site.marker === 'br' || this.hatchNames.has(site.marker)) continue;
+          if (site.marker === 'br') continue;
           const target = table.get(site.marker);
           if (!target) continue; // unbound → checkMarkers' analysis.unbound-marker
           if (target.verbatim) {
@@ -7906,22 +7924,6 @@ function nearest(input: string, candidates: string[]): string | null {
     }
   }
   return best;
-}
-
-function levenshtein(a: string, b: string): number {
-  const m = a.length;
-  const n = b.length;
-  if (m === 0) return n;
-  if (n === 0) return m;
-  let prev = Array.from({ length: n + 1 }, (_, j) => j);
-  for (let i = 1; i <= m; i++) {
-    const row = [i];
-    for (let j = 1; j <= n; j++) {
-      row.push(Math.min(prev[j] + 1, row[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)));
-    }
-    prev = row;
-  }
-  return prev[n];
 }
 
 

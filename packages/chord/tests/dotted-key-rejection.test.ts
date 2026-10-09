@@ -65,7 +65,7 @@ describe('event-type sites reject dots too (ADR-256 — the ban is uniform)', ()
 
 describe('quoted strings keep their dots (ADR-254 D3 — no false positive)', () => {
   it('a quoted file path with dots does not raise parse.dotted-key', () => {
-    const errors = errorsOf(`${HEADER}define text garbled from "./extras.ts"\n`);
+    const errors = errorsOf(`${HEADER}define sound chime from "./audio/chime.ogg"\n`);
     expect(errors.some((e) => e.code === 'parse.dotted-key')).toBe(false);
   });
 

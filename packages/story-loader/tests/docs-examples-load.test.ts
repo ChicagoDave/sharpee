@@ -29,20 +29,18 @@ const REQUIRED_PAGES = ['define-action', 'extend-action', 'remove-from-action'];
 
 /**
  * Pages whose fences are deliberate PARTIAL snippets (own story headers,
- * entities outside the shared harness, hatch-module imports) — enumerated for
+ * entities outside the shared harness) — enumerated for
  * visibility, not load-tested. Pre-existing state surfaced when ADR-272 D6
  * widened the enumeration; making these stand-alone is not an ADR-272 surface.
  * A new page is load-tested by default — add it here only with a reason.
  */
 const KNOWN_PARTIAL_PAGES = new Set([
   'comments',
-  'define-action-hatches',
   'define-condition',
   'define-phrase',
   'define-phrasebook',
   'define-phrases',
   'define-pronouns',
-  'define-text',
   'define-trait',
   'use',
 ]);

@@ -32,9 +32,8 @@ function compileSource(source: string): StoryIR {
 }
 
 describe('the gatehouse — full S3 stack in one story (elegance parity)', () => {
-  it('compiles pure-IR and loads every subsystem together', () => {
+  it('compiles and loads every subsystem together', () => {
     const ir = compileSource(FIXTURE);
-    expect(ir.hasHatches).toBe(false); // the ENTIRE stack is pure IR
     expect(ir.uses.sort()).toEqual(['combat', 'state-machines']);
 
     // A real engine (ADR-328 D5): installStory runs the story's engine-ready

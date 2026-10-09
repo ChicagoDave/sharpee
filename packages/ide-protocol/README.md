@@ -44,7 +44,7 @@ function handleManifest(payload: unknown): ProjectManifest {
 
 | Type | Role |
 |------|------|
-| `ProjectManifest` | Top-level payload: `schemaVersion`, `story`, `generatedFrom`, `entities`, optional `hatchContextVersion` |
+| `ProjectManifest` | Top-level payload: `schemaVersion`, `story`, `generatedFrom`, `entities` |
 | `EntityNode` | One introspected entity (id, display name, category, traits, source) |
 | `TraitSummary` | Sparse, trait-keyed projection of the IDE-relevant fields |
 | `SourceRef` | Resolved `file:line` of the entity's creation site |

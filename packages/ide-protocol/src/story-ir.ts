@@ -33,7 +33,6 @@ export type {
   IRGrammarExtension,
   IRGrammarRemoval,
   IRPatternPart,
-  IRHatch,
   IRStatement,
   IRSelectArm,
   IRParam,

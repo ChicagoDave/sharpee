@@ -4,8 +4,7 @@
  * Purpose: the loader materializes Chord state (entity states, occurrence
  * counters, the RNG cursor) as ordinary world state so save/restore/undo
  * cover it with no author-written persistence (AC-6). Keys are
- * loader-internal and invisible to authors (design.md §5.5) — and
- * off-limits to TS hatches (hatch legitimacy rule, design.md §5.6).
+ * loader-internal and invisible to authors (design.md §5.5).
  *
  * Public interface: the key constants and prefix builders.
  * Owner context: @sharpee/story-loader.

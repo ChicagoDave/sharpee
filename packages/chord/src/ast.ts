@@ -262,11 +262,9 @@ export type Declaration =
   | DefinePhrases
   // `define verb` REMOVED (ADR-270 D7, 2026-07-26) — `extend action`
   // subsumes it; the parser emits parse.removed-define-verb with a fix-it.
-  | DefineText
   // Phase B (design.md §2.2/§2.3/§2.5/§3.4):
   | DefineTrait
   | DefineAction
-  | DefineHatch
   | DefineSequence
   | DefineTimer
   | DefineChapters
@@ -1408,8 +1406,8 @@ export type PatternPart =
 
 /**
  * `define sound|image|music <name> from "<file>"` (ADR-216) — a declared
- * media asset: a DATA reference (static file path), never a code hatch —
- * it does NOT set `hasHatches` and keeps the pure-IR profile. Referenced
+ * media asset: a DATA reference (static file path), not code — which is
+ * why it stayed when Chord's code hatches were removed (ADR-361). Referenced
  * by name from the media sugar statements (typo-checked at compile).
  */
 export interface DefineAsset {
@@ -1464,14 +1462,6 @@ export interface MediaStmt {
   /** The transition kind word (`transition fade`); null otherwise. */
   transitionKind: string | null;
   stmtWhen: ConditionNode | null;
-  span: Span;
-}
-
-/** `define text <name> from "<module>"` — TS escape hatch declaration. */
-export interface DefineText {
-  kind: 'define-text';
-  name: string;
-  modulePath: string;
   span: Span;
 }
 
@@ -1662,24 +1652,10 @@ export interface ActionRefusal {
   span: Span;
 }
 
-/**
- * `define action X from "./mod.ts"` — TS action hatch. (`define behavior …
- * from` was removed by ADR-235 D2, 2026-07-18 — it had no binding key and
- * could never fire; the parser emits a fix-it error.)
- *
- * `define chain <name> from "./mod.ts"` — TS chain hatch (ADR-094 chains):
- * replaces a stdlib event chain (e.g. `opened-revealed`) with an
- * author-supplied handler. `name` is the curated chain alias; the module
- * default-exports the `EventChainHandler`. Like every hatch, it sets
- * `hasHatches` — a chained story is not browser-pure.
- */
-export interface DefineHatch {
-  kind: 'define-hatch';
-  hatchKind: 'action' | 'chain';
-  name: string;
-  modulePath: string;
-  span: Span;
-}
+// The hatches `define action … from`, `define chain … from` and
+// `define text … from` were removed (ADR-361 D1, 2026-10-09), after
+// `define behavior … from` (ADR-235 D2): Chord's syntax is closed, and the
+// parser emits a fix-it error for each form.
 
 // `define score` (top-level), `once <cond>` rules, and `every N turns`
 // rules were removed (ownership package, ratchet 2026-07-11) — scores

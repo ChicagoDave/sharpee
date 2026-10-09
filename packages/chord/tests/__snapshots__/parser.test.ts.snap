@@ -2177,31 +2177,21 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
           "key": "message-trampled",
           "span": {
             "column": 3,
-            "endColumn": 37,
+            "endColumn": 40,
             "endLine": 100,
             "line": 99,
           },
           "value": {
             "form": "prose",
             "kind": "text",
-            "markers": [
-              {
-                "content": "garbled",
-                "span": {
-                  "column": 28,
-                  "endColumn": 37,
-                  "endLine": 100,
-                  "line": 100,
-                },
-              },
-            ],
+            "markers": [],
             "span": {
               "column": 5,
-              "endColumn": 37,
+              "endColumn": 40,
               "endLine": 100,
               "line": 100,
             },
-            "text": "You can just make out: {garbled}",
+            "text": "You can just make out: Y.u h..e w.n",
           },
         },
         {
@@ -2236,25 +2226,14 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       },
     },
     {
-      "kind": "define-text",
-      "modulePath": "./extras.ts",
-      "name": "garbled",
-      "span": {
-        "column": 1,
-        "endColumn": 39,
-        "endLine": 104,
-        "line": 104,
-      },
-    },
-    {
       "body": [
         {
           "kind": "change-player",
           "span": {
             "column": 3,
             "endColumn": 28,
-            "endLine": 107,
-            "line": 107,
+            "endLine": 105,
+            "line": 105,
           },
           "stmtWhen": null,
           "target": {
@@ -2263,8 +2242,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
             "span": {
               "column": 24,
               "endColumn": 28,
-              "endLine": 107,
-              "line": 107,
+              "endLine": 105,
+              "line": 105,
             },
             "words": [
               "Alex",
@@ -2276,8 +2255,8 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "span": {
         "column": 1,
         "endColumn": 11,
-        "endLine": 108,
-        "line": 106,
+        "endLine": 106,
+        "line": 104,
       },
     },
   ],
@@ -2323,7 +2302,7 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
   "span": {
     "column": 1,
     "endColumn": 11,
-    "endLine": 108,
+    "endLine": 106,
     "line": 1,
   },
 }

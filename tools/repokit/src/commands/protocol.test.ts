@@ -55,7 +55,7 @@ describe('the emission', () => {
 
   it('gives both shells the same wire field set, which is the point of one generator', () => {
     const [swift, csharp] = generateProtocolSources(root);
-    for (const wireName of ['hatchContextVersion', 'isPlayable', 'endColumn', 'modulePath']) {
+    for (const wireName of ['generatedFrom', 'isPlayable', 'endColumn', 'languageVersion']) {
       expect(swift.source).toContain(`let ${wireName}:`);
       expect(csharp.source).toContain(`[JsonPropertyName("${wireName}")]`);
     }
@@ -70,10 +70,10 @@ describe('the emission', () => {
 
   it('carries wire fields that exist only in the TypeScript, proving it reads the source', () => {
     const [swift] = generateProtocolSources(root);
-    // Both were absent from the hand-written Swift this generator replaced:
-    // `hatchContextVersion` was added to the manifest after the mirror was
-    // written, and `Span.file` has never been mirrored at all.
-    expect(swift.source).toContain('let hatchContextVersion: Int?');
+    // Absent from the hand-written Swift this generator replaced: `Span.file`
+    // was never mirrored at all. (The manifest's `hatchContextVersion`, the
+    // other example once cited here, left the contract with the hatches,
+    // ADR-361.)
     expect(swift.source).toContain('let file: String?');
   });
 

@@ -27910,7 +27910,7 @@
     {
       "lineNo": 40,
       "indent": 0,
-      "raw": "define text weather-note from \"./weather.ts\"",
+      "raw": "define phrase weather-note",
       "tokens": [
         {
           "kind": "word",
@@ -27924,12 +27924,12 @@
         },
         {
           "kind": "word",
-          "text": "text",
+          "text": "phrase",
           "span": {
             "line": 40,
             "column": 8,
             "endLine": 40,
-            "endColumn": 12
+            "endColumn": 14
           }
         },
         {
@@ -27937,137 +27937,77 @@
           "text": "weather-note",
           "span": {
             "line": 40,
-            "column": 13,
+            "column": 15,
             "endLine": 40,
-            "endColumn": 25
-          }
-        },
-        {
-          "kind": "word",
-          "text": "from",
-          "span": {
-            "line": 40,
-            "column": 26,
-            "endLine": 40,
-            "endColumn": 30
-          }
-        },
-        {
-          "kind": "string",
-          "text": "./weather.ts",
-          "span": {
-            "line": 40,
-            "column": 31,
-            "endLine": 40,
-            "endColumn": 45
+            "endColumn": 27
           }
         }
       ],
       "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 41,
+      "indent": 2,
+      "raw": "  Fog again.",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "Fog",
+          "span": {
+            "line": 41,
+            "column": 3,
+            "endLine": 41,
+            "endColumn": 6
+          }
+        },
+        {
+          "kind": "word",
+          "text": "again",
+          "span": {
+            "line": 41,
+            "column": 7,
+            "endLine": 41,
+            "endColumn": 12
+          }
+        },
+        {
+          "kind": "punct",
+          "text": ".",
+          "span": {
+            "line": 41,
+            "column": 12,
+            "endLine": 41,
+            "endColumn": 13
+          }
+        }
+      ],
+      "afterBlank": false,
       "comment": false
     },
     {
       "lineNo": 42,
       "indent": 0,
-      "raw": "before the game starts",
+      "raw": "end phrase",
       "tokens": [
         {
           "kind": "word",
-          "text": "before",
+          "text": "end",
           "span": {
             "line": 42,
             "column": 1,
             "endLine": 42,
-            "endColumn": 7
+            "endColumn": 4
           }
         },
         {
           "kind": "word",
-          "text": "the",
+          "text": "phrase",
           "span": {
             "line": 42,
-            "column": 8,
+            "column": 5,
             "endLine": 42,
             "endColumn": 11
-          }
-        },
-        {
-          "kind": "word",
-          "text": "game",
-          "span": {
-            "line": 42,
-            "column": 12,
-            "endLine": 42,
-            "endColumn": 16
-          }
-        },
-        {
-          "kind": "word",
-          "text": "starts",
-          "span": {
-            "line": 42,
-            "column": 17,
-            "endLine": 42,
-            "endColumn": 23
-          }
-        }
-      ],
-      "afterBlank": true,
-      "comment": false
-    },
-    {
-      "lineNo": 43,
-      "indent": 2,
-      "raw": "  change the player to Alex",
-      "tokens": [
-        {
-          "kind": "word",
-          "text": "change",
-          "span": {
-            "line": 43,
-            "column": 3,
-            "endLine": 43,
-            "endColumn": 9
-          }
-        },
-        {
-          "kind": "word",
-          "text": "the",
-          "span": {
-            "line": 43,
-            "column": 10,
-            "endLine": 43,
-            "endColumn": 13
-          }
-        },
-        {
-          "kind": "word",
-          "text": "player",
-          "span": {
-            "line": 43,
-            "column": 14,
-            "endLine": 43,
-            "endColumn": 20
-          }
-        },
-        {
-          "kind": "word",
-          "text": "to",
-          "span": {
-            "line": 43,
-            "column": 21,
-            "endLine": 43,
-            "endColumn": 23
-          }
-        },
-        {
-          "kind": "word",
-          "text": "Alex",
-          "span": {
-            "line": 43,
-            "column": 24,
-            "endLine": 43,
-            "endColumn": 28
           }
         }
       ],
@@ -28077,15 +28017,123 @@
     {
       "lineNo": 44,
       "indent": 0,
+      "raw": "before the game starts",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "before",
+          "span": {
+            "line": 44,
+            "column": 1,
+            "endLine": 44,
+            "endColumn": 7
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 44,
+            "column": 8,
+            "endLine": 44,
+            "endColumn": 11
+          }
+        },
+        {
+          "kind": "word",
+          "text": "game",
+          "span": {
+            "line": 44,
+            "column": 12,
+            "endLine": 44,
+            "endColumn": 16
+          }
+        },
+        {
+          "kind": "word",
+          "text": "starts",
+          "span": {
+            "line": 44,
+            "column": 17,
+            "endLine": 44,
+            "endColumn": 23
+          }
+        }
+      ],
+      "afterBlank": true,
+      "comment": false
+    },
+    {
+      "lineNo": 45,
+      "indent": 2,
+      "raw": "  change the player to Alex",
+      "tokens": [
+        {
+          "kind": "word",
+          "text": "change",
+          "span": {
+            "line": 45,
+            "column": 3,
+            "endLine": 45,
+            "endColumn": 9
+          }
+        },
+        {
+          "kind": "word",
+          "text": "the",
+          "span": {
+            "line": 45,
+            "column": 10,
+            "endLine": 45,
+            "endColumn": 13
+          }
+        },
+        {
+          "kind": "word",
+          "text": "player",
+          "span": {
+            "line": 45,
+            "column": 14,
+            "endLine": 45,
+            "endColumn": 20
+          }
+        },
+        {
+          "kind": "word",
+          "text": "to",
+          "span": {
+            "line": 45,
+            "column": 21,
+            "endLine": 45,
+            "endColumn": 23
+          }
+        },
+        {
+          "kind": "word",
+          "text": "Alex",
+          "span": {
+            "line": 45,
+            "column": 24,
+            "endLine": 45,
+            "endColumn": 28
+          }
+        }
+      ],
+      "afterBlank": false,
+      "comment": false
+    },
+    {
+      "lineNo": 46,
+      "indent": 0,
       "raw": "end before",
       "tokens": [
         {
           "kind": "word",
           "text": "end",
           "span": {
-            "line": 44,
+            "line": 46,
             "column": 1,
-            "endLine": 44,
+            "endLine": 46,
             "endColumn": 4
           }
         },
@@ -28093,9 +28141,9 @@
           "kind": "word",
           "text": "before",
           "span": {
-            "line": 44,
+            "line": 46,
             "column": 5,
-            "endLine": 44,
+            "endLine": 46,
             "endColumn": 11
           }
         }

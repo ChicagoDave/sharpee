@@ -30,9 +30,6 @@ function compileSource(source: string): StoryIR {
   return result.ir;
 }
 
-const garbled = () => ({ kind: 'literal', text: 'swept aside' });
-const CLOAK_MODULES = { './extras.ts': { garbled } };
-
 interface CloakWorld {
   story: ChordStory;
   world: WorldModel;
@@ -40,7 +37,7 @@ interface CloakWorld {
 }
 
 function loadCloak(): CloakWorld {
-  const story = createStory(compileFixture('cloak.story'), { hatchModules: CLOAK_MODULES, seed: 42 });
+  const story = createStory(compileFixture('cloak.story'), { seed: 42 });
   const world = new WorldModel();
   story.initializeWorld(world);
   const player = story.createPlayer(world);
@@ -173,15 +170,15 @@ describe('the on-reading interceptor (ActionInterceptor slice of §5.4)', () => 
     expect(renderers).toEqual([]);
   });
 
-  it('trampled: overrides with message-trampled, binds the garbled producer, no ending', () => {
+  it('trampled: overrides with message-trampled, which stages no params, no ending', () => {
     const cw = loadCloak();
     enterBar(cw); // tramples
     hangCloak(cw);
     const result = readMessage(cw);
     expect(result.override).toMatchObject({ messageId: 'message-trampled' });
-    // Producers are INVOKED at staging — params carry the returned atom,
-    // never the function (the template binder string-coerces non-Phrases).
-    expect((result.override!.params as any).garbled).toEqual({ kind: 'literal', text: 'swept aside' });
+    // The garbled text is the phrase's own literal now (ADR-361 D5), so the
+    // override carries nothing to bind.
+    expect(result.override!.params ?? {}).toEqual({});
     expect(result.emit).toBeUndefined();
     expect(cw.world.getEnding()).toBeUndefined();
   });

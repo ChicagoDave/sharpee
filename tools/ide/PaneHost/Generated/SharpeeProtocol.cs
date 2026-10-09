@@ -36,15 +36,6 @@ public sealed record ProjectManifest
     /// <summary>Every introspected entity, in world-enumeration order.</summary>
     [JsonPropertyName("entities")]
     public required IReadOnlyList<EntityNode> Entities { get; init; }
-
-    /// <summary>
-    /// Version of the narrow staging surface Chord text hatches can touch (design.md §5.6;
-    /// story-loader's HATCH_CONTEXT_VERSION). A property of the emitting platform, stamped by
-    /// the emitter — lets the IDE state exactly what a hatch *can* see without reading hatch
-    /// code. Optional: absent from manifests emitted before the field existed.
-    /// </summary>
-    [JsonPropertyName("hatchContextVersion")]
-    public int? HatchContextVersion { get; init; }
 }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]

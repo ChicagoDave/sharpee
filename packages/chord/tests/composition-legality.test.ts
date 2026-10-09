@@ -112,15 +112,10 @@ describe('census 13 — tool-gated gerunds register exactly one implementation (
   const rope = (traits: string, clauses = '') =>
     story(`create the rope\n  a thing, ${traits}\n  in the Vault\n  states: whole, cut\n\n  A rope.\n${clauses}`);
 
-  it('reports a cuttable with no cutting implementation in a hatch-free story', () => {
+  it('reports a cuttable with no cutting implementation', () => {
     const found = errors(rope('cuttable'));
     expect(found.map((d) => d.code)).toEqual(['analysis.gerund-implementation']);
     expect(found[0].message).toContain('registers no cutting implementation');
-  });
-
-  it('stays silent on zero surfaces when the story declares a hatch (capability surface is invisible to source)', () => {
-    const src = rope('cuttable') + '\ndefine chain opened-revealed from "./reveal.ts"\n';
-    expect(errorCodes(src)).toEqual([]);
   });
 
   it('accepts exactly one entity-level implementation', () => {

@@ -749,20 +749,6 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       },
     },
   ],
-  "hasHatches": true,
-  "hatches": [
-    {
-      "hatchKind": "text",
-      "modulePath": "./extras.ts",
-      "name": "garbled",
-      "span": {
-        "column": 1,
-        "endColumn": 39,
-        "endLine": 104,
-        "line": 104,
-      },
-    },
-  ],
   "languageVersion": "3.6.0",
   "machines": [],
   "messageOverrides": {
@@ -913,17 +899,15 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "message-trampled": {
           "span": {
             "column": 3,
-            "endColumn": 37,
+            "endColumn": 40,
             "endLine": 100,
             "line": 99,
           },
           "strategy": null,
           "variants": [
             {
-              "markers": [
-                "garbled",
-              ],
-              "text": "You can just make out: {garbled}",
+              "markers": [],
+              "text": "You can just make out: Y.u h..e w.n",
             },
           ],
         },
@@ -975,8 +959,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
         "span": {
           "column": 3,
           "endColumn": 28,
-          "endLine": 107,
-          "line": 107,
+          "endLine": 105,
+          "line": 105,
         },
         "stmtWhen": null,
       },
@@ -984,8 +968,8 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
     "span": {
       "column": 1,
       "endColumn": 11,
-      "endLine": 108,
-      "line": 106,
+      "endLine": 106,
+      "line": 104,
     },
   },
   "story": {

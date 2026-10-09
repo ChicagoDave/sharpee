@@ -144,8 +144,10 @@ create the staff gate
   on the player examining
     phrase gate-look
       A sturdy metal gate with a "STAFF ONLY" sign.
-
-      {gate-status}
+    phrase gate-status-closed when the staff gate is closed
+      The staff gate is set into the fence.
+    phrase gate-status-open when the staff gate is open
+      The staff gate is set into the fence, standing wide open.
   end on
 
 create the welcome sign
@@ -581,8 +583,8 @@ create the parrot
     phrase parrot-look
       A magnificent scarlet macaw perched on a rope. It tilts its head and
       watches you with one bright eye.
-
-      {flavor}{aside}
+    phrase flavor
+    phrase aside
   end on
 
   on every turn while after-hours, once
@@ -761,9 +763,19 @@ define phrases en-US
 
     *** You have won ***
 
-define text flavor from "./chord-extras.ts"
-define text aside from "./chord-extras.ts"
-define text gate-status from "./chord-extras.ts"
+define phrase flavor, cycling
+  The parrot ruffles its scarlet feathers and whistles a jaunty tune.
+or
+  The parrot cocks its head and rasps, "Pretty bird! Pretty bird!"
+or
+  The parrot preens one wing, ignoring you with theatrical disdain.
+end phrase
+
+define phrase aside, first-time
+  (A small plaque notes the macaws are rescues from the illegal pet trade.)
+or
+  nothing
+end phrase
 
 before the game starts
   change the player to Alex

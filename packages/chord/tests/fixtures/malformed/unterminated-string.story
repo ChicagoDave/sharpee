@@ -5,7 +5,7 @@ story
   id: unterminated
   story-version: 0.0.1
 
-define text garbled from "./extras.ts
+define sound chime from "./chime.ogg
 
 create Alex
   a person

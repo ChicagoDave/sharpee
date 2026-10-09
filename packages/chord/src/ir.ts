@@ -108,7 +108,8 @@ export interface StoryIR {
   phrasebooks: IRPhrasebook[];
   // `verbs` REMOVED (ADR-270 D7, 2026-07-26): `define verb` is gone from the
   // language; `extend action` grammar lines carry the capability generally.
-  hatches: IRHatch[];
+  // `hatches` and `hasHatches` REMOVED (ADR-361 D2, 2026-10-09): Chord has no
+  // hatches, so every story is pure IR.
   // Phase B (plan phase 3):
   traits: IRTraitDef[];
   actions: IRActionDef[];
@@ -141,8 +142,6 @@ export interface StoryIR {
    * in lang-{locale}, never here.
    */
   pronounSets: IRPronounSetDef[];
-  /** True when any hatch is declared — the pure-IR profile refuses these (AC-4). */
-  hasHatches: boolean;
   /**
    * `define fact` declarations (ADR-310 D14) — closed value sets the
    * compiler checked `thinks` lines against and the loader re-checks at
@@ -1053,19 +1052,6 @@ export type IRPatternPart =
   | { kind: 'word'; word: string; optional?: boolean }
   | { kind: 'slot'; word: string; optional?: boolean }
   | { kind: 'alt'; words: string[]; optional?: boolean };
-
-export interface IRHatch {
-  name: string;
-  modulePath: string;
-  /**
-   * Target interface: dynamic-text producer, Action, or event `chain`
-   * (ADR-094 — a chain hatch replaces a stdlib chain like `opened-revealed`).
-   * (`behavior` was removed by ADR-235 D2 — the hatch had no binding key and
-   * could never fire.)
-   */
-  hatchKind: 'text' | 'action' | 'chain';
-  span: Span;
-}
 
 // --------------------------------------------------------------------------
 // Phase B declarations

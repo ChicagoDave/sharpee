@@ -119,7 +119,12 @@ const PINNED = {
   // that swallowed them; `define-conversation` listed in `declaration`; the
   // header no longer nests a comment. The repokit build's grammar gate
   // (tools/repokit/src/commands/ebnf.ts) pins it.
-  ebnfSha256: 'bf0a33ea4e6eeb5a7451c47200f1c5981e7ba48646e838865cc0661ac1c9a473',
+  // Re-pinned 2026-10-09 (session d8546c, ADR-361 D1): the three hatch
+  // forms are removed — `define-text` and `define-hatch` leave
+  // `declaration`, their productions become a removal note, and the asset
+  // note no longer mentions `hasHatches`. BREAKING; folds into the same
+  // unpublished 4.0.0 set (the number moves at publish).
+  ebnfSha256: '3de8318c4485c175a0a9030f92d9e7b56a2d0c81976a293646008fd22012e389',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

@@ -26,7 +26,6 @@ export type { ParsedPin, PinOperator, PinShape } from './pin-grammar.js';
 export { HIDING_POSITIONS, SETTING_SCHEMA } from './setting-schema.js';
 export type { SettingSpec, SettingValueType } from './setting-schema.js';
 export { EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS, REGION_EVENT_TRIGGERS } from './event-contract.js';
-export { HATCH_CONTEXT_VERSION, stagingRenderContext, findChordLiteral } from './hatch-context.js';
 export { ChordDataTrait, ChordDetailTrait, ChordStory, createStory, StoryLoaderOptions } from './loader.js';
 export { Evaluator, EvalContext, EntityIdResolver } from './evaluator.js';
 export { ChordRuntime, ChordBehaviorTrait } from './runtime.js';

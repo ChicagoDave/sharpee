@@ -80,9 +80,9 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
   });
 
   it('unbound marker in a phrase', () => {
-    // Line 92 (entry line): `{garbled}` → a marker naming no declared hatch
-    // or phrase.
-    const errors = errorsOf(CLOAK.replace('{garbled}', '{garbeld}'));
+    // The trampled message's literal text becomes a marker naming no declared
+    // phrase (Cloak's `{garbled}` hatch became that literal text, ADR-361 D5).
+    const errors = errorsOf(CLOAK.replace('Y.u h..e w.n', '{garbeld}'));
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.unbound-marker');
     // 94: the define-verb → extend-action migration (ADR-270 D7) added two

@@ -97,11 +97,9 @@ define phrases en-US
   message-intact:
     The message, neatly marked in the sawdust, reads... You have won!
   message-trampled:
-    You can just make out: {garbled}
+    You can just make out: Y.u h..e w.n
   message-obliterated:
     The message has been trampled beyond recognition. You have lost!
-
-define text garbled from "./src/extras.ts"
 
 before the game starts
   change the player to Alex

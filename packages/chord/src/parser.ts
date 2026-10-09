@@ -44,7 +44,6 @@ import {
   ExtendAction,
   RemoveFromAction,
   DefineCondition,
-  DefineHatch,
   DefinePhrase,
   DefinePhrasebook,
   DefinePhrases,
@@ -68,7 +67,6 @@ import {
   MediaStmt,
   MachineState,
   MachineTransition,
-  DefineText,
   DefineTopics,
   DefineManner,
   MannerRow,
@@ -173,6 +171,7 @@ import {
 } from './ast.js';
 import { PRONOUN_CASES, STARTS_STATE_PAIRINGS } from './catalog.js';
 import { DiagnosticBag } from './diagnostics.js';
+import { levenshtein } from './edit-distance.js';
 import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
@@ -291,6 +290,28 @@ class Cursor {
     if (t) return mergeSpans(t.span, this.tokens[this.tokens.length - 1].span);
     return lineSpan(this.line);
   }
+}
+
+/**
+ * The source text from the cursor's position to the end of its line, as the
+ * author wrote it, with one leading comma dropped — what a trailing-words
+ * error quotes back.
+ * @param c cursor positioned on the first leftover token
+ * @returns the leftover text, or '' when the cursor is spent
+ */
+function restText(c: Cursor): string {
+  let i = c.i;
+  if (c.tokens[i]?.kind === 'comma') i++;
+  const first = c.tokens[i];
+  if (!first) return '';
+  const last = c.tokens[c.tokens.length - 1];
+  return c.line.raw.slice(first.span.column - 1, last.span.endColumn - 1).trim();
+}
+
+/** True when `text` reads as a misspelling of `one-way` (`one way`, `oneway`, `one-wya`). */
+function nearOneWay(text: string): boolean {
+  const letters = text.toLowerCase().replace(/[^a-z]/g, '');
+  return levenshtein(letters, 'oneway') <= 2;
 }
 
 function lineSpan(line: Line): Span {
@@ -1686,6 +1707,15 @@ class Parser {
     const name = this.parseNameRef(c, () => false);
     if (name.words.length === 0) {
       this.diagnostics.error('parse.create-name', 'Expected an entity name after `create`.', lineSpan(headLine));
+    } else if (!c.atEnd()) {
+      // ADR-362 D5 (GH #573): the head ends where the name ends. Words left
+      // over used to be dropped without a word, so `create the Den, a room`
+      // silently lost its `, a room`.
+      this.diagnostics.error(
+        'parse.create-trailing',
+        `Unexpected words after the name in this \`create\` line: \`${restText(c)}\`. A \`create\` line holds only the name; put each other line on its own line in the block.`,
+        c.restSpan(),
+      );
     }
     // ADR-327 D10: the player is no longer a block you create — it is a role
     // a named character holds. The block named `player` is gone with it.
@@ -2035,6 +2065,20 @@ class Parser {
           cur.next();
           cur.next();
           oneWay = true;
+        }
+        // ADR-362 D5 (GH #573): the exit line ends at its destination, door
+        // and `, one-way`. Words left over used to be dropped, so `, one way`
+        // compiled as a two-way exit.
+        if (!cur.atEnd()) {
+          const leftover = restText(cur);
+          const hint = nearOneWay(leftover)
+            ? ' Did you mean `, one-way`?'
+            : ' An exit line is `<direction> to <room>`, optionally followed by `through <door>` and `, one-way`.';
+          this.diagnostics.error(
+            'parse.exit-trailing',
+            `Unexpected words at the end of this exit line: \`${leftover}\`.${hint}`,
+            cur.restSpan(),
+          );
         }
         decl.exits.push({
           kind: 'exit',
@@ -3396,7 +3440,15 @@ class Parser {
         this.recoverToTopLevel(true);
         return null;
       case 'text':
-        return this.parseDefineText();
+        // ADR-361 D1: the text hatch is removed — Chord's syntax is closed,
+        // so varying text is a phrase with a strategy, written in Chord.
+        this.diagnostics.error(
+          'parse.removed-text-hatch',
+          '`define text … from` was removed — a story\'s text is written in Chord. Write it as a `define phrase`, with a strategy (`cycling`, `first-time`, `randomly`, `sticky`, `stopping`) if it varies.',
+          lineSpan(line),
+        );
+        this.pos++;
+        return null;
       case 'flag':
         // Removed — given 8 (ratchet 2026-07-11).
         this.diagnostics.error(
@@ -3411,14 +3463,24 @@ class Parser {
       case 'action':
         return this.parseDefineAction();
       case 'chain':
-        return this.parseDefineChainHatch();
+        // ADR-361 D1: the chain hatch is removed with the other hatches. Chord
+        // has no way to replace a stdlib event chain, so the message says the
+        // behavior needs support in the language rather than offering a form.
+        this.diagnostics.error(
+          'parse.removed-chain-hatch',
+          '`define chain … from` was removed — a story cannot replace a standard event chain with its own code. Chord has no form for this yet; the behavior needs support in the language.',
+          lineSpan(line),
+        );
+        this.pos++;
+        return null;
       case 'behavior':
         // ADR-235 D2 (removal, 2026-07-18): the behavior hatch carried no
         // trait/action binding key, so it structurally could never fire —
-        // removed rather than repaired.
+        // removed rather than repaired. ADR-361 D1 dropped its pointer to the
+        // action hatch, which went too.
         this.diagnostics.error(
           'parse.removed-behavior-hatch',
-          '`define behavior … from` was removed (ADR-235 D2) — it had no binding key and could never fire. Author the behavior in-language (`define trait <name>` with `on the player <verb>` clauses, composed on the entity), or ship a full action with `define action <name> from "<module>"`.',
+          '`define behavior … from` was removed — it had no binding key and could never fire. Author the behavior in Chord: `define trait <name>` with `on the player <verb>` clauses, composed on the entity.',
           lineSpan(this.lines[this.pos]),
         );
         this.pos++;
@@ -3867,28 +3929,6 @@ class Parser {
     return { kind: 'define-phrases', locale, entries, span };
   }
 
-  private parseDefineText(): DefineText | null {
-    const line = this.lines[this.pos++];
-    const c = new Cursor(line.tokens, line);
-    c.next();
-    c.next(); // define text
-    const name = c.next();
-    if (!name || name.kind !== 'word') {
-      this.diagnostics.error('parse.text-name', 'Expected a producer name after `define text`.', c.restSpan());
-      return null;
-    }
-    if (!c.matchWord('from')) {
-      this.diagnostics.error('parse.text-from', 'Expected `from "<module>"` in the hatch declaration.', c.restSpan());
-      return null;
-    }
-    const mod = c.next();
-    if (!mod || mod.kind !== 'string') {
-      this.diagnostics.error('parse.text-module', 'Expected a quoted module path after `from`.', c.restSpan());
-      return null;
-    }
-    return { kind: 'define-text', name: name.text, modulePath: mod.text, span: lineSpan(line) };
-  }
-
   // -------------------------------------------- Phase B declarations (§2.2/§2.3/§2.5)
 
   /** `define trait <name>` … `end trait` — data, phrases, on-clauses. */
@@ -4035,8 +4075,8 @@ class Parser {
     return fields;
   }
 
-  /** `define action <name>` — dispatch declaration (dedent-terminated) or `from "<mod>"` hatch. */
-  private parseDefineAction(): DefineAction | DefineHatch | null {
+  /** `define action <name>` — a dispatch declaration, dedent-terminated. */
+  private parseDefineAction(): DefineAction | null {
     const headLine = this.lines[this.pos];
     const c = new Cursor(headLine.tokens, headLine);
     c.next();
@@ -4048,7 +4088,15 @@ class Parser {
       return null;
     }
     if (c.isWord('from')) {
-      return this.parseHatchTail(headLine, c, 'action', nameTok.text);
+      // ADR-361 D1: only the `from "<module>"` form is removed; the block
+      // form below is untouched, and `from` after the name tells them apart.
+      this.diagnostics.error(
+        'parse.removed-action-hatch',
+        `\`define action ${nameTok.text} from …\` was removed — an action is written in Chord. Write it as a \`define action ${nameTok.text}\` block with an indented body.`,
+        lineSpan(headLine),
+      );
+      this.pos++;
+      return null;
     }
     this.pos++;
 
@@ -4588,41 +4636,6 @@ class Parser {
       return null;
     }
     return { kind: 'when', slot: null, condition, phraseKey: key, span: lineSpan(line) };
-  }
-
-  /** `define chain <name> from "<module>"` — a TS chain hatch (ADR-094): the
-   *  named stdlib event chain is replaced by the module's handler. */
-  private parseDefineChainHatch(): DefineHatch | null {
-    const line = this.lines[this.pos];
-    const c = new Cursor(line.tokens, line);
-    c.next();
-    c.next(); // define chain
-    const name = this.readLabelKey(c); // curated chain alias, single kebab word (ADR-254)
-    if (!name) {
-      this.diagnostics.error(
-        'parse.chain-hatch-name',
-        'Expected a chain name after `define chain` (e.g. `define chain opened-revealed from "…"`).',
-        c.restSpan(),
-      );
-      this.pos++;
-      return null;
-    }
-    return this.parseHatchTail(line, c, 'chain', name);
-  }
-
-  /** Shared `from "<module>"` tail for action / chain hatches. */
-  private parseHatchTail(line: Line, c: Cursor, hatchKind: 'action' | 'chain', name: string): DefineHatch | null {
-    this.pos++;
-    if (!c.matchWord('from')) {
-      this.diagnostics.error('parse.hatch-from', 'Expected `from "<module>"` in the hatch declaration.', c.restSpan());
-      return null;
-    }
-    const mod = c.next();
-    if (!mod || mod.kind !== 'string') {
-      this.diagnostics.error('parse.hatch-module', 'Expected a quoted module path after `from`.', c.restSpan());
-      return null;
-    }
-    return { kind: 'define-hatch', hatchKind, name, modulePath: mod.text, span: lineSpan(line) };
   }
 
   /** `define sequence <name>` … steps … `end sequence` — timeline (§2.5/§3.3). */

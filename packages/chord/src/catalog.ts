@@ -161,14 +161,6 @@ export const CLIENT_CAPABILITY_FLAGS: ReadonlySet<string> = new Set([
   'author-channels',
 ]);
 
-/**
- * Curated aliases for the stdlib event chains a `define chain … from` hatch may
- * replace (ADR-094). The kebab alias is the Chord-facing name; @sharpee/story-loader
- * maps it to the dotted platform chain key + trigger (Interface Contract, like the
- * message-alias ACL). Chord validates the NAME here (platform-free); an alias absent
- * from this set is `analysis.unknown-chain`. One stdlib chain exists today.
- */
-export const STDLIB_CHAIN_NAMES: ReadonlySet<string> = new Set(['opened-revealed']);
 
 /**
  * ADR-271 D1: the closed set of scope-constraint requirement words —

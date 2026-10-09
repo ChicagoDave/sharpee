@@ -158,10 +158,7 @@ describe('`<direction> is deadly: <phrase>` (deadly exit)', () => {
   });
 
   it('registers no transformer when the story declares no deadly exits', () => {
-    const story = createStory(compileFixture('cloak.story'), {
-      hatchModules: { './extras.ts': { garbled: () => ({ kind: 'literal', text: 'x' }) } },
-      seed: 42,
-    });
+    const story = createStory(compileFixture('cloak.story'), { seed: 42 });
     const world = new WorldModel();
     story.initializeWorld(world);
     const player = story.createPlayer(world);

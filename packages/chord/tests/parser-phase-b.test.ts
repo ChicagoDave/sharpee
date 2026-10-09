@@ -2,7 +2,7 @@
  * parser-phase-b.test.ts — Phase B grammar under the ownership package:
  * define trait/action, trait states, role binding, sequences (wall-clock and
  * becomes-anchored steps), owner-attached scores, must/refuse-when, the
- * statement `when` suffix, hatches, conditional blocked exits, dotted phrase
+ * statement `when` suffix, conditional blocked exits, dotted phrase
  * keys, inline-prose phrase sugar.
  */
 import { readFileSync } from 'node:fs';
@@ -12,7 +12,6 @@ import { parse } from '../src';
 import type {
   CreateDecl,
   DefineAction,
-  DefineHatch,
   DefineSequence,
   DefineTrait,
   PhraseStmt,
@@ -197,13 +196,6 @@ describe('traits-basic.story (design.md §2.2/§3.2 + ownership package)', () =>
     const snoozing = decls.find((d): d is DefineAction => d.kind === 'define-action' && d.name === 'snoozing')!;
     expect(snoozing.patterns[1].cardinality).toEqual(['each', 'quiet', 'corner']);
     expect(snoozing.scores).toMatchObject([{ name: 'napped', worth: 1 }]);
-  });
-
-  it('parses the action hatch (`define behavior` removed by ADR-235 D2)', () => {
-    const hatches = decls.filter((d): d is DefineHatch => d.kind === 'define-hatch');
-    expect(hatches).toMatchObject([
-      { hatchKind: 'action', name: 'juggling', modulePath: './stunts.ts' },
-    ]);
   });
 
   it('parses conditional blocked exits', () => {
