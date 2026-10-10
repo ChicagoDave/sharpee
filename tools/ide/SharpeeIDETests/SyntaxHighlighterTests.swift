@@ -47,6 +47,22 @@ final class SyntaxHighlighterTests: XCTestCase {
         XCTAssertNil(SyntaxHighlighter.color(for: token(.punct, "—")))
     }
 
+    /// ADR-360 AC-12: the region surface's `rooms` group line and `exits`
+    /// table line are not colored. Both words are common in prose, which the
+    /// keyword set leaves out by policy (ADR-258 D7), and the real lexer lexes
+    /// them as ordinary words — nothing in the editor changed for them.
+    func testRegionGroupAndTableWordsStayUncolored() {
+        XCTAssertFalse(SyntaxHighlighter.keywords.contains("rooms"))
+        XCTAssertFalse(SyntaxHighlighter.keywords.contains("exits"))
+        let storage = highlighted("create the Maze\n  a region\n\n  rooms Maze 61 to 71\n    Twisty.\n\n  exits, one-way\n    the Maze 61: east to the Maze 62\n")
+        XCTAssertEqual(color(in: storage, of: "create"), Theme.tokenKeyword)
+        XCTAssertEqual(color(in: storage, of: "rooms"), Theme.foreground,
+                       "the group line's `rooms` stays at base foreground, as prose would")
+        XCTAssertEqual(color(in: storage, of: "exits"), Theme.foreground,
+                       "the table line's `exits` stays at base foreground, as prose would")
+        XCTAssertEqual(color(in: storage, of: "61"), Theme.tokenNumber, "the range numbers still color")
+    }
+
     // MARK: - Real path: lex + color application over Chord source
 
     private func highlighted(_ source: String) -> NSTextStorage {

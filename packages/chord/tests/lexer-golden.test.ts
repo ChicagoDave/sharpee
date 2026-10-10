@@ -9,7 +9,11 @@
  * presence, duration, and chapters surface (ADR-325 timers, ADR-326 move
  * destinations, regions with a landing, `proper`, `, one-way`, `{bare}`,
  * ADR-329 D10 goal steps, the ADR-327 player role, ADR-330 chapters) in
- * `presence-and-chapters-surface.story`; the golden file
+ * `presence-and-chapters-surface.story`, plus the 4.0.0 region surface
+ * (ADR-360: a `rooms` group, `in the <region>` membership, the plain and
+ * one-way exit tables) in `regions-surface.story` and the ADR-362 folds (a
+ * kind on the `create` head, `exits:` and `exits, one-way:` lines) in
+ * `folds-surface.story`; the golden file
  * (`lexer-golden.json`) records `lex()`'s exact `Line[]` output per corpus
  * file. A `lexer.ts` change that alters the stream turns this test red in
  * the CI that exists today — REGENERATE THE GOLDEN deliberately
@@ -139,6 +143,21 @@ describe('ADR-258 D7 — lexer golden conformance pin', () => {
       'goal block': /^ {2}goal [\w-]+, (low|normal|high|critical)$/m,
       'goal perform step': /^ {4}go east$/m,
       'the player role': /^ {2}change the player to \w+$/m,
+      // The 4.0.0 region surface (ADR-360 AC-12): a `rooms` group and both
+      // exit tables. Same drift guard: without these the file could be gutted
+      // with this suite still green.
+      'rooms group': /^ {2}rooms \w+ \d+ to \d+$/m,
+      'group room name block': /^ {4}room name:$/m,
+      'group first time': /^ {4}first time$/m,
+      'region membership': /^ {2}in the \w+$/m,
+      'exit table': /^ {2}exits$/m,
+      'exit table, one-way': /^ {2}exits, one-way$/m,
+      'exit row': /^ {4}the \w+ \d+: \w+ to the \w+ \d+/m,
+      // The ADR-362 folds (AC-6): a kind on the `create` head and both
+      // `exits:` lines. Same drift guard.
+      'folded create head': /^create .+, an? \w+/m,
+      'exits line': /^ {2}exits: \w+ to /m,
+      'exits line, one-way': /^ {2}exits, one-way: \w+ to /m,
     };
     for (const [construct, pattern] of Object.entries(constructs)) {
       expect(pattern.test(all), `corpus no longer exercises: ${construct}`).toBe(true);

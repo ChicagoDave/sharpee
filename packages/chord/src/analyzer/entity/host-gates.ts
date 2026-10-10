@@ -59,7 +59,21 @@ export const hostGatesBuilder: EntityLineBuilder = {
       );
     }
     if (!isRoom) {
-      const strayExit = decl.exits[0] ?? decl.blockedExits[0] ?? decl.deadlyExits[0];
+      // ADR-362 D2: an `exits:` line is named as a line, once, so a region
+      // that meant the exit table is pointed at it.
+      const foldedExit = decl.exits.find((e) => e.exitsLine);
+      if (foldedExit) {
+        context.diagnostics.error(
+          'analysis.exit-line-owner',
+          `An \`exits:\` line belongs in a room — \`${blockName}\` is not one.${
+            isRegion
+              ? ' A region writes its rooms\' exits in an `exits` table, one row per room.'
+              : ' Remove the line, or make this block `a room`.'
+          }`,
+          foldedExit.exitsLine!,
+        );
+      }
+      const strayExit = decl.exits.find((e) => !e.exitsLine) ?? decl.blockedExits[0] ?? decl.deadlyExits[0];
       if (strayExit) {
         context.diagnostics.error(
           'analysis.exit-non-room',

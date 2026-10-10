@@ -83,16 +83,16 @@ describe('parse.exit-trailing', () => {
 });
 
 describe('parse.create-trailing', () => {
-  it('quotes the words after the name', () => {
-    const found = errors(compileStory(hall('east to the Den') + 'create the Den, by the sea\n  a room\n\n  A den.\n\n'));
+  it('quotes the words after a folded kind (ADR-362 D1 landed in plan Phase 10)', () => {
+    const found = errors(compileStory(hall('east to the Den') + 'create the Den, a room by the sea\n\n  A den.\n\n'));
     expect(found.map((d) => d.code)).toEqual(['parse.create-trailing']);
     expect(found[0].message).toContain('`by the sea`');
   });
 
-  it('reports a folded kind line as trailing words until the fold exists', () => {
-    const found = errors(compileStory(hall('east to the Den') + 'create the Den, a room\n\n  A den.\n\n'));
-    expect(found.map((d) => d.code)).toContain('parse.create-trailing');
-    expect(found.find((d) => d.code === 'parse.create-trailing')!.message).toContain('`a room`');
+  it('a folded kind alone is clean, and a trait term keeps its words (`very impulsive`, ADR-310)', () => {
+    expect(errors(compileStory(hall('east to the Den') + 'create the Den, a room\n\n  A den.\n\n'))).toEqual([]);
+    const r = compileStory(hall('east to the Den') + DEN + 'create Brutus, a person, proper, very impulsive\n  starts in the Den\n\n  Brutus.\n\n');
+    expect(errors(r)).toEqual([]);
   });
 
   it('leaves a quoted name to parse.create-name alone', () => {

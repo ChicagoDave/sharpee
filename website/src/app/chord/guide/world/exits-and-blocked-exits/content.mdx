@@ -37,3 +37,44 @@ create the Orchard
 
   Apple trees stand in crooked rows.
 ```
+
+## Exits on one line
+
+A room with several exits can list them on one `exits:` line, separated
+by commas. Each is the same `<direction> to <room>` as a single line,
+with `through <door>` allowed, and a plain `exits:` line infers the
+return exits just as single lines do. `exits, one-way:` makes every exit
+on the line one-way, which is how a port of an older game transcribes its
+exit table exactly, with no phantom ways back. A blocked exit keeps its
+own line beside the `exits:` line and guards that one direction:
+
+```chord
+create the Mine Entrance, a room
+  exits, one-way: northeast to the Upper Tunnel, southeast to the Lower Tunnel, up to the Mine
+  down is blocked: too-dark
+
+  You are at the entrance to an abandoned mine. A dark corridor is below.
+
+create the Upper Tunnel, a room
+  exits: south to the Lower Tunnel
+
+  A tunnel, sloping down.
+
+create the Lower Tunnel, a room
+
+  A tunnel, going nowhere.
+
+create the Mine, a room
+
+  The mine proper: timber, damp, and silence.
+
+define phrases en-US
+  too-dark:
+    The corridor below is too dark to try.
+```
+
+A per-exit `, one-way` is not allowed inside an `exits:` line, because a
+comma there already separates exits. A room that mixes the two writes an
+`exits:` line and an `exits, one-way:` line, or single lines. An
+`exits:` line belongs in a room block; a region lists its rooms' exits
+in an `exits` table instead.

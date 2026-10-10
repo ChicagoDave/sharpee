@@ -5,10 +5,13 @@
 // lights plus its numbers), and the Index sections (the granular listings the
 // build output deliberately does NOT carry — full object list, phrase names,
 // actions — every row span-navigable).
+// The Rooms section also carries the room lens: where each room's heading and
+// description come from, read off the IR's text-source fields and never
+// re-derived here (ADR-360 D8, ADR-322 D8).
 // Pure and view-free; IndexView renders the sections, BuildController prints
 // the report.
 // Public interface: StoryStats, StoryIndex.stats(of:), buildReport(for:),
-// sections(of:), IndexSection, IndexRow.
+// sections(of:), roomLens(of:), IndexSection, IndexRow, RoomLens.
 // Owner context: tools/ide — Compose.
 
 import Foundation
@@ -48,14 +51,70 @@ struct IndexSection: Equatable {
     var title: String { kind.title }
 }
 
-/// One Index row: display title, an optional dim detail (kinds, "playable"),
-/// whether the title is a code-like identifier (rendered monospace), and the
-/// authored span when the IR carries one (D6 navigation).
+/// One Index row: display title, an optional dim detail (kinds, "playable",
+/// the room lens), whether the title is a code-like identifier (rendered
+/// monospace), whether the detail marks something the author still owes (a
+/// room with no description), and the authored span when the IR carries one
+/// (D6 navigation).
 struct IndexRow: Equatable {
     let title: String
     let detail: String?
     var isCode: Bool = false
+    var isWarning: Bool = false
     var span: DiagnosticSpan?
+}
+
+/// Where one room's heading and description come from (ADR-360 D8). Built
+/// from the IR's `roomNameSource` and `descriptionSource` fields alone: the
+/// analyzer decided these once, and the IDE shows them without looking at
+/// the phrasebook or the region (ADR-360 AC-9).
+struct RoomLens: Equatable {
+
+    /// One text's origin.
+    enum Source: Equatable {
+        /// Written in the room's own block.
+        case own
+        /// Shared by a region's `rooms` group, named by its first and last room.
+        case group(first: String, last: String)
+        /// Nothing written: a heading falls back to the room's name, and a
+        /// description leaves LOOK showing only that name (the D7 warning).
+        case missing
+    }
+
+    let heading: Source
+    let description: Source
+
+    /// The D7 warning's case, which the Index marks.
+    var hasNoDescription: Bool { description == .missing }
+
+    /// The one-line reading of both sources, for the row's detail.
+    var summary: String {
+        switch (heading, description) {
+        case (.own, .own):
+            return "own heading and description"
+        case (.group(let first, let last), .group(let descFirst, let descLast))
+            where first == descFirst && last == descLast:
+            return "heading and description from \(first) … \(last)"
+        default:
+            return "\(headingPhrase) · \(descriptionPhrase)"
+        }
+    }
+
+    private var headingPhrase: String {
+        switch heading {
+        case .own: return "own heading"
+        case .group(let first, let last): return "heading from \(first) … \(last)"
+        case .missing: return "heading from its name"
+        }
+    }
+
+    private var descriptionPhrase: String {
+        switch description {
+        case .own: return "own description"
+        case .group(let first, let last): return "description from \(first) … \(last)"
+        case .missing: return "no description"
+        }
+    }
 }
 
 enum StoryIndex {
@@ -141,8 +200,11 @@ enum StoryIndex {
             if entity.hasKind("room") {
                 let extra = entity.kinds.filter { $0.name != "room" }.map { $0.name }
                     .joined(separator: ", ")
+                let lens = roomLens(of: entity)
+                let parts = [extra.isEmpty ? nil : extra, lens?.summary].compactMap { $0 }
                 rooms.append(IndexRow(title: entity.name,
-                                      detail: extra.isEmpty ? nil : extra,
+                                      detail: parts.isEmpty ? nil : parts.joined(separator: " · "),
+                                      isWarning: lens?.hasNoDescription ?? false,
                                       span: entity.span))
             } else if entity.hasKind("region") {
                 regions.append(IndexRow(title: entity.name, detail: nil, span: entity.span))
@@ -170,6 +232,33 @@ enum StoryIndex {
         ]
         return all.compactMap { kind, rows in
             rows.isEmpty ? nil : IndexSection(kind: kind, rows: rows)
+        }
+    }
+
+    /// The room lens for `entity`, read off its two text-source fields.
+    ///
+    /// - Parameter entity: an IR entity; rooms carry both fields.
+    /// - Returns: the lens, or nil when the IR carries neither field (a
+    ///   non-room, or a payload compiled before ADR-360).
+    static func roomLens(of entity: ComposeStoryIR.Entity) -> RoomLens? {
+        guard let heading = entity.roomNameSource, let description = entity.descriptionSource else {
+            return nil
+        }
+        return RoomLens(heading: source(heading), description: source(description))
+    }
+
+    private static func source(_ wire: ComposeStoryIR.TextSource) -> RoomLens.Source {
+        switch wire.from {
+        case .own:
+            return .own
+        case .group:
+            // The analyzer writes the pair whenever `from` is 'group'; a short
+            // list is a wire defect, shown as a group with no names rather
+            // than hidden.
+            let names = wire.group ?? []
+            return .group(first: names.first ?? "", last: names.last ?? "")
+        case .none:
+            return .missing
         }
     }
 }

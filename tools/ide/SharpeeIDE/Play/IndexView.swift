@@ -250,9 +250,12 @@ extension IndexView: NSTableViewDelegate {
             let detailFont: NSFont = row.isCode
                 ? .monospacedSystemFont(ofSize: smaller, weight: .regular)
                 : FontPreference.family.font(size: smaller)
+            // A warning row (a room with no description, ADR-360 D7) reads in
+            // the same yellow as the stale banner: something the author owes.
+            let detailColor: NSColor = row.isWarning ? .systemYellow : Theme.foregroundFaint
             text.append(NSAttributedString(
                 string: "   \(detail)",
-                attributes: [.foregroundColor: Theme.foregroundFaint, .font: detailFont]))
+                attributes: [.foregroundColor: detailColor, .font: detailFont]))
         }
         cell.textField?.attributedStringValue = Self.singleLine(text)
         return cell

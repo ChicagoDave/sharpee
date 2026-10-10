@@ -92,7 +92,13 @@ function refusedBodyLines(body: CreateDecl): Array<{ what: string; span: Span }>
   add('a kind', body.compositions.filter((c) => c.article));
   add('a `starts` state', body.startsStates);
   add('a placement', body.placementLines);
-  add('an exit', body.exits);
+  add('an exit', body.exits.filter((e) => !e.exitsLine));
+  // An `exits:` line (ADR-362 D2) is refused once, as the line, not per exit.
+  const exitsLines = new Map<string, Span>();
+  for (const e of body.exits) {
+    if (e.exitsLine) exitsLines.set(`${e.exitsLine.line}:${e.exitsLine.column}`, e.exitsLine);
+  }
+  add('an `exits:` line', [...exitsLines.values()].map((span) => ({ span })));
   add('an exit table', body.exitTables);
   add('a blocked exit', body.blockedExits);
   add('a deadly exit', body.deadlyExits);

@@ -132,7 +132,11 @@ const PINNED = {
   // Re-pinned 2026-10-09 (session a1c502, ADR-360 D3): the region's
   // `exit-table` with `exit-row`, and the one shared `exit` production that
   // the room's exit line now reads. Additive; same unpublished 4.0.0 set.
-  ebnfSha256: '8ef202dfee57ec38f918c000af2793b08d758f6cf039d2b8b44625083e29dc08',
+  // Re-pinned 2026-10-09 (session 5978bb, ADR-362 D1, D2): the kind line may
+  // fold onto the `create` head (`[ "," composition { "," composition } ]`),
+  // and `exits-line` (`exits:` / `exits, one-way:`) joins `create-line`,
+  // reading the shared `exit` production. Additive; same unpublished 4.0.0 set.
+  ebnfSha256: 'ef053a7079af4e76394ffdbaa2bba3c6da0857b7f903c0056efb4660466c11fc',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

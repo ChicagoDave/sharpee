@@ -18,3 +18,25 @@ story, resolution tries the exact name first, then an exact alias, then
 a unique in-order word subset (`the can` finds `the watering can` if
 nothing else matches). Ambiguity or a miss is a load error with a
 suggestion; Chord never guesses.
+
+The kind line can ride the `create` line after a comma. `create the
+watering can, a thing` is the same block as the two lines above, and it
+works for every kind: a room, a region, a person. The kind still leads
+the block, a trait can follow it on the same line (`a thing,
+switchable`), and everything else stays on its own line:
+
+```chord
+create the Potting Shed, a room
+
+  Clay pots in stacks, and a smell of damp earth.
+
+create the watering can, a thing
+  aka can, tin can, sprinkler
+  in the Potting Shed
+
+  A dented tin watering can with a long spout.
+```
+
+A name cannot contain a comma, so the first comma ends it. Words after
+the kind that are not a trait are an error that quotes them, so a stray
+`create the Den, a room by the sea` never loses its tail in silence.

@@ -15,14 +15,23 @@ final class StoryIndexTests: XCTestCase {
     }
 
     private func entity(_ name: String, kinds: [String] = [], isPlayable: Bool = false,
-                        line: Int = 1) -> ComposeStoryIR.Entity {
+                        line: Int = 1,
+                        heading: ComposeStoryIR.TextSource? = nil,
+                        description: ComposeStoryIR.TextSource? = nil) -> ComposeStoryIR.Entity {
         ComposeStoryIR.Entity(id: name.lowercased(), name: name, isPlayable: isPlayable,
                               kinds: kinds.map { ComposeStoryIR.Kind(name: $0) },
                               containing: nil,
-                              descriptionSource: nil,
-                              roomNameSource: nil,
+                              descriptionSource: description,
+                              roomNameSource: heading,
                               span: span(line))
     }
+
+    private let own = ComposeStoryIR.TextSource(from: .own, regionId: nil, group: nil)
+    private let none = ComposeStoryIR.TextSource(from: .none, regionId: nil, group: nil)
+    private let mazeGroup = ComposeStoryIR.TextSource(from: .group, regionId: "maze",
+                                                      group: ["the Maze 61", "the Maze 71"])
+    private let deadEndGroup = ComposeStoryIR.TextSource(from: .group, regionId: "maze",
+                                                         group: ["the Dead End 72", "the Dead End 76"])
 
     private func ir(entities: [ComposeStoryIR.Entity] = [],
                     actions: [ComposeStoryIR.ActionDef] = [],
@@ -130,6 +139,84 @@ final class StoryIndexTests: XCTestCase {
     func testEmptySectionsAreOmitted() {
         let sections = StoryIndex.sections(of: ir(entities: [entity("Lab", kinds: ["room"])]))
         XCTAssertEqual(sections.map { $0.kind }, [.rooms])
+    }
+
+    // MARK: - The room lens (ADR-360 D8)
+
+    /// The lens is the IR's two fields, read as written: own text, a group's
+    /// shared text named by its first and last room, or nothing.
+    func testRoomLensReadsBothTextSourcesOffTheIR() {
+        XCTAssertEqual(StoryIndex.roomLens(of: entity("Sphere Room", kinds: ["room"],
+                                                      heading: own, description: own)),
+                       RoomLens(heading: .own, description: .own))
+        XCTAssertEqual(StoryIndex.roomLens(of: entity("Maze 61", kinds: ["room"],
+                                                      heading: mazeGroup, description: mazeGroup)),
+                       RoomLens(heading: .group(first: "the Maze 61", last: "the Maze 71"),
+                                description: .group(first: "the Maze 61", last: "the Maze 71")))
+        XCTAssertEqual(StoryIndex.roomLens(of: entity("Lab", kinds: ["room"],
+                                                      heading: none, description: none)),
+                       RoomLens(heading: .missing, description: .missing))
+    }
+
+    /// A payload without the fields (a non-room, or one compiled before
+    /// ADR-360) has no lens — the IDE never fills one in from the phrasebook.
+    func testRoomLensIsAbsentWhenTheIRCarriesNoTextSources() {
+        XCTAssertNil(StoryIndex.roomLens(of: entity("Cellar", kinds: ["room"])))
+        XCTAssertNil(StoryIndex.roomLens(of: entity("Cellar", kinds: ["room"], heading: own)),
+                     "one field alone is not a lens")
+        XCTAssertNil(StoryIndex.roomLens(of: entity("lamp")))
+    }
+
+    func testRoomLensSummaryReadsAsOneLine() {
+        XCTAssertEqual(RoomLens(heading: .own, description: .own).summary,
+                       "own heading and description")
+        XCTAssertEqual(RoomLens(heading: .group(first: "the Maze 61", last: "the Maze 71"),
+                                description: .group(first: "the Maze 61", last: "the Maze 71")).summary,
+                       "heading and description from the Maze 61 … the Maze 71",
+                       "the same group for both collapses to one phrase naming the group")
+        XCTAssertEqual(RoomLens(heading: .missing, description: .own).summary,
+                       "heading from its name · own description")
+        XCTAssertEqual(RoomLens(heading: .own, description: .missing).summary,
+                       "own heading · no description")
+        XCTAssertEqual(RoomLens(heading: .missing, description: .missing).summary,
+                       "heading from its name · no description")
+    }
+
+    /// The Rooms rows carry the lens after the extra kinds, and the D7 case
+    /// (no description) marks the row.
+    func testRoomRowsCarryTheLensAndMarkTheMissingDescription() throws {
+        let sections = StoryIndex.sections(of: ir(entities: [
+            entity("Cellar", kinds: ["room", "dark"], line: 10, heading: own, description: own),
+            entity("Maze 61", kinds: ["room"], line: 20, heading: mazeGroup, description: mazeGroup),
+            entity("Dead End 72", kinds: ["room"], line: 21, heading: deadEndGroup, description: deadEndGroup),
+            entity("Lab", kinds: ["room"], line: 30, heading: none, description: none),
+            entity("Room 33", kinds: ["room"], line: 40, heading: none, description: own),
+        ]))
+        let rooms = try XCTUnwrap(sections.first { $0.kind == .rooms }).rows
+        let byTitle = Dictionary(uniqueKeysWithValues: rooms.map { ($0.title, $0) })
+
+        XCTAssertEqual(byTitle["Cellar"]?.detail, "dark · own heading and description",
+                       "the kinds stay first; the lens follows")
+        XCTAssertEqual(byTitle["Maze 61"]?.detail,
+                       "heading and description from the Maze 61 … the Maze 71")
+        XCTAssertEqual(byTitle["Dead End 72"]?.detail,
+                       "heading and description from the Dead End 72 … the Dead End 76",
+                       "two groups in one region are two kinds of room, each named by its own range")
+        XCTAssertEqual(byTitle["Lab"]?.detail, "heading from its name · no description")
+        XCTAssertEqual(byTitle["Room 33"]?.detail, "heading from its name · own description")
+
+        XCTAssertEqual(byTitle["Lab"]?.isWarning, true, "the D7 case is marked")
+        XCTAssertEqual(byTitle["Cellar"]?.isWarning, false)
+        XCTAssertEqual(byTitle["Maze 61"]?.isWarning, false)
+        XCTAssertEqual(byTitle["Room 33"]?.isWarning, false,
+                       "a heading from the room's name is ordinary, not a warning")
+    }
+
+    /// Rooms without the fields render exactly as before ADR-360: kinds only.
+    func testRoomRowsWithoutTextSourcesKeepTheirPlainDetail() throws {
+        let rooms = try XCTUnwrap(StoryIndex.sections(of: sampleIR).first { $0.kind == .rooms }).rows
+        XCTAssertEqual(rooms.map { $0.detail }, ["dark", nil])
+        XCTAssertFalse(rooms.contains { $0.isWarning })
     }
 
     // MARK: - Stats line (Index header)

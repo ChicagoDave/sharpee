@@ -413,13 +413,24 @@ start-block  = "before" "the" "game" "starts" NL >>> { statement } "end" "before
 
 (* ---- create ------------------------------------------------------------ *)
 
-create       = "create" name NL >>> { create-line } ;   (* ADR-359 D1: every block names
+create       = "create" name [ "," composition { "," composition } ] NL
+               >>> { create-line } ;                       (* ADR-359 D1: every block names
                                                               exactly one kind, and the kind
                                                               leads the block — the first
                                                               composition line opens with
                                                               ARTICLE KIND-NOUN
                                                               (analysis.missing-kind-noun,
-                                                              analysis.kind-not-first) *)
+                                                              analysis.kind-not-first).
+                                                              ADR-362 D1: that line may fold
+                                                              onto the head after a comma
+                                                              (`create the Den, a room`); it
+                                                              is the block's first
+                                                              composition line, nothing else
+                                                              folds (D3), and a folded term
+                                                              is one word — words after it
+                                                              are parse.create-trailing (D5,
+                                                              as are words after an unfolded
+                                                              name) *)
 create-line  = "aka" alias { "," alias } NL
              | "pronouns" WORD NL                          (* ADR-242 D5 (ratchet H2):
                                                               person blocks only (analyzer
@@ -492,6 +503,8 @@ create-line  = "aka" alias { "," alias } NL
                                                               (loader places it in the
                                                               declaring room; present at
                                                               BOTH rooms, ADR-238) *)
+             | exits-line                                  (* ADR-362 D2: the room's
+                                                              exits on one line *)
              | DIRECTION "is" "blocked" [ "while" condition ] ":" phrase-key NL
                                                            (* blocked exit *)
              | phrase-override                             (* per-entity override, CP3/Z3b *)
@@ -953,6 +966,16 @@ exit-row     = name ":" exit { "," exit } NL ;            (* the row's room must
                                                               parse.exit-row-blocked; a
                                                               row exit's own `, one-way`
                                                               is parse.exit-row-one-way *)
+exits-line   = "exits" [ "," "one-way" ] ":" exit { "," exit } NL ;
+                  (* ADR-362 D2: the same exits as one per line, each the shared `exit`
+                     production with a span of its own (D4). `exits, one-way:` makes
+                     every exit on the line one-way; a per-exit `, one-way` is
+                     parse.exits-line-one-way, a blocked or deadly exit on the line is
+                     parse.exits-line-blocked, leftover words are parse.exit-trailing, and
+                     an empty line is parse.exits-line-empty. Legal only in a room block
+                     (analysis.exit-line-owner); in a `rooms` group body it is
+                     analysis.room-group-line. The colon tells it from ADR-360's table. A
+                     blocked line beside it guards that exit as it would a single line. *)
 exit         = DIRECTION "to" name [ "through" name ] ;  (* the one exit production: a
                                                               room's exit line, a table
                                                               row and ADR-362's `exits:`

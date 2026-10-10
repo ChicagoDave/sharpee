@@ -364,6 +364,16 @@ function isRoomGroupHead(line: Line): boolean {
 }
 
 /**
+ * True for an `exits:` line's head (ADR-362 D2): `exits:` or `exits,
+ * one-way:` — the colon is what tells the line from ADR-360's table.
+ */
+function isExitsLineHead(line: Line): boolean {
+  const t = line.tokens;
+  if (t[1]?.kind === 'colon') return true;
+  return t[1]?.kind === 'comma' && t[2]?.kind === 'word' && t[2].text === 'one-way' && t[3]?.kind === 'colon';
+}
+
+/**
  * True for an exit table's head (ADR-360 D3): `exits` alone, or `exits,
  * one-way`. `exits:` with a colon is ADR-362's line form, not a table.
  */
@@ -1790,17 +1800,28 @@ class Parser {
     const c = new Cursor(headLine.tokens, headLine);
     c.matchWord('create');
     const name = this.parseNameRef(c, () => false);
+    const decl = newCreateDecl(name, lineSpan(headLine));
     if (name.words.length === 0) {
       this.diagnostics.error('parse.create-name', 'Expected an entity name after `create`.', lineSpan(headLine));
+    } else if (c.peek()?.kind === 'comma') {
+      // ADR-362 D1: the kind line folds onto the head. `create the Den, a
+      // room` is `create the Den` followed by `a room` as the block's first
+      // composition line, so the kind still leads the block (ADR-359 D1).
+      // A name holds no comma, so the first comma ends it.
+      c.next();
+      if (c.atEnd()) {
+        this.diagnostics.error(
+          'parse.composition',
+          'Expected a kind or trait name after the comma (`create the Den, a room`).',
+          lineSpan(headLine),
+        );
+      } else {
+        decl.compositions.push(...this.parseCompositionLine(c, headLine, decl.startsStates, 'folded-head'));
+      }
     } else if (!c.atEnd()) {
       // ADR-362 D5 (GH #573): the head ends where the name ends. Words left
-      // over used to be dropped without a word, so `create the Den, a room`
-      // silently lost its `, a room`.
-      this.diagnostics.error(
-        'parse.create-trailing',
-        `Unexpected words after the name in this \`create\` line: \`${restText(c)}\`. A \`create\` line holds only the name; put each other line on its own line in the block.`,
-        c.restSpan(),
-      );
+      // over used to be dropped without a word.
+      this.createTrailing(c);
     }
     // ADR-327 D10: the player is no longer a block you create — it is a role
     // a named character holds. The block named `player` is gone with it.
@@ -1812,9 +1833,21 @@ class Parser {
       );
     }
 
-    const decl = newCreateDecl(name, lineSpan(headLine));
     this.parseCreateBody(decl, headLine.indent);
     return decl;
+  }
+
+  /**
+   * `parse.create-trailing` (ADR-362 D5): the words the cursor has left on a
+   * `create` head, after the name or after the one folded composition line.
+   * @param c the cursor, at the first leftover token
+   */
+  private createTrailing(c: Cursor): void {
+    this.diagnostics.error(
+      'parse.create-trailing',
+      `Unexpected words at the end of this \`create\` line: \`${restText(c)}\`. A \`create\` line holds the name and, after a comma, one composition line (\`create the Den, a room\`); every other line goes on its own line in the block.`,
+      c.restSpan(),
+    );
   }
 
   /**
@@ -2135,6 +2168,10 @@ class Parser {
           ...(oneWay ? { oneWay: true as const } : {}),
           span: lineSpan(line),
         } as ExitDecl);
+      } else if (word === 'exits' && isExitsLineHead(line)) {
+        // ADR-362 D2: a room's exits on one line; room-only is the analyzer's gate.
+        this.pos++;
+        this.parseExitsLine(line, decl);
       } else if (word === 'exits' && isExitTableHead(line)) {
         // ADR-360 D3: a region's exit table; region-only is the analyzer's gate.
         decl.exitTables.push(this.parseExitTable(line));
@@ -2216,6 +2253,86 @@ class Parser {
       }
     }
     return { direction: dirTok.text, to, via, span };
+  }
+
+  /**
+   * An `exits:` or `exits, one-way:` line (ADR-362 D2): the room's exits,
+   * comma-separated, each the shared `exit` production, appended to the
+   * block's exits exactly as single lines would be. Each exit's span is its
+   * own stretch of the line (D4); every exit on an `exits, one-way:` line is
+   * one-way. A per-exit `, one-way`, a blocked or deadly exit, and leftover
+   * words are each refused at the spot. The caller has checked the head with
+   * `isExitsLineHead` and advanced past the line.
+   * @param line the `exits:` line
+   * @param decl the block the exits belong to
+   */
+  private parseExitsLine(line: Line, decl: CreateDecl): void {
+    const c = new Cursor(line.tokens, line);
+    c.next(); // exits
+    const oneWay = c.peek()?.kind === 'comma';
+    if (oneWay) {
+      c.next(); // comma
+      c.next(); // one-way
+    }
+    const colon = c.next()!;
+    const exitsLine = mergeSpans(line.tokens[0].span, colon.span);
+    const form = oneWay ? 'exits, one-way:' : 'exits:';
+    if (c.atEnd()) {
+      this.diagnostics.error(
+        'parse.exits-line-empty',
+        `An \`${form}\` line needs at least one exit after the colon: \`${form} north to the Hall, east to the Den\`.`,
+        exitsLine,
+      );
+      return;
+    }
+    for (;;) {
+      const dir = c.peek();
+      const isDirection = dir?.kind === 'word' && DIRECTIONS.has(dir.text);
+      if (isDirection && c.isWord('is', 1) && (c.isWord('blocked', 2) || c.isWord('deadly', 2))) {
+        this.diagnostics.error(
+          'parse.exits-line-blocked',
+          `An \`exits:\` line holds only exits that lead somewhere. \`${dir!.text} is ${c.peek(2)!.text}\` carries a condition and a phrase, so it stays on a line of its own, beside the \`exits:\` line.`,
+          c.restSpan(),
+        );
+        return;
+      }
+      if (!isDirection || !c.isWord('to', 1)) {
+        this.diagnostics.error(
+          'parse.exits-line',
+          `Expected an exit (\`<direction> to <room>\`) here, not \`${restText(c) || 'the end of the line'}\`.`,
+          c.atEnd() ? exitsLine : c.restSpan(),
+        );
+        return;
+      }
+      const core = this.parseExitCore(c, line);
+      decl.exits.push({
+        kind: 'exit',
+        direction: core.direction,
+        to: core.to,
+        via: core.via,
+        ...(oneWay ? { oneWay: true as const } : {}),
+        exitsLine,
+        span: core.span,
+      } as ExitDecl);
+      if (c.atEnd()) return;
+      if (c.peek()?.kind === 'comma' && c.isWord('one-way', 1)) {
+        this.diagnostics.error(
+          'parse.exits-line-one-way',
+          'An exit on an `exits:` line takes no `, one-way` of its own — a comma there separates exits. Put the one-way exits on an `exits, one-way:` line instead.',
+          c.restSpan(),
+        );
+        return;
+      }
+      if (c.peek()?.kind !== 'comma') {
+        this.diagnostics.error(
+          'parse.exit-trailing',
+          `Unexpected words after this exit: \`${restText(c)}\`. Separate the exits on an \`${form}\` line with commas.`,
+          c.restSpan(),
+        );
+        return;
+      }
+      c.next(); // comma
+    }
   }
 
   /**
@@ -3142,7 +3259,27 @@ class Parser {
     return { kind: 'deadly-exit', direction, phraseKey: key, condition, span: lineSpan(line) };
   }
 
-  private parseCompositionLine(c: Cursor, line: Line, startsStates: StartsStateDecl[]): CompositionItem[] {
+  /**
+   * A composition line: comma-separated kind and trait terms, each with an
+   * optional `with` configuration and `while` condition, plus `starts
+   * <state>` initializers. On a folded `create` head (ADR-362 D1) the kind
+   * term ends at its noun, so the words after it are `parse.create-trailing`
+   * (D5: `create the Den, a room by the sea` quotes `by the sea`); trait
+   * terms read as they do on any line, several words included. An unfolded
+   * kind line keeps reading words as it always has, and reports the whole
+   * run as an unknown kind noun.
+   * @param c the cursor, at the first term
+   * @param line the line, for spans
+   * @param startsStates where `starts <state>` initializers are collected
+   * @param mode `'line'` for a line of the block, `'folded-head'` after the
+   *   comma on a `create` line
+   */
+  private parseCompositionLine(
+    c: Cursor,
+    line: Line,
+    startsStates: StartsStateDecl[],
+    mode: 'line' | 'folded-head' = 'line',
+  ): CompositionItem[] {
     const items: CompositionItem[] = [];
     while (!c.atEnd()) {
       const startTok = c.peek()!;
@@ -3196,10 +3333,18 @@ class Parser {
         c.next();
       }
       const words: string[] = [];
+      // A kind noun is one word; a trait term may be several (`very
+      // impulsive`, ADR-310). On a folded head the kind term therefore ends
+      // at its noun, and words after it are trailing (D5).
+      const oneWord = mode === 'folded-head' && article !== null;
       while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('with') && !c.isWord('while')) {
         if (c.peek()!.kind !== 'word') break;
         words.push(c.next()!.text);
-        if (c.peek()?.kind === 'comma') break;
+        if (c.peek()?.kind === 'comma' || oneWord) break;
+      }
+      if (oneWord && c.peek()?.kind === 'word' && !c.isWord('with') && !c.isWord('while')) {
+        this.createTrailing(c);
+        while (!c.atEnd()) c.next();
       }
       const config: ConfigSetting[] = [];
       let condition: ConditionNode | null = null;
@@ -3226,7 +3371,8 @@ class Parser {
       else break;
     }
     if (!c.atEnd()) {
-      this.diagnostics.error('parse.composition-trailing', `Unexpected trailing text in composition line: \`${c.peek()!.text}\`.`, c.restSpan());
+      if (mode === 'folded-head') this.createTrailing(c);
+      else this.diagnostics.error('parse.composition-trailing', `Unexpected trailing text in composition line: \`${c.peek()!.text}\`.`, c.restSpan());
     }
     return items;
   }

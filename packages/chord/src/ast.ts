@@ -1230,6 +1230,13 @@ export interface ExitDecl {
    * stories without it stay byte-identical).
    */
   oneWay?: true;
+  /**
+   * The head of the `exits:` / `exits, one-way:` line this exit was folded
+   * onto (ADR-362 D2) — absent on a single exit line and a table row. The
+   * exit itself is the same; the analyzer's owner gate and the group-body
+   * refusal name the line, and `span` is the one exit on it (D4).
+   */
+  exitsLine?: Span;
   span: Span;
 }
 
