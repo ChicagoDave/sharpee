@@ -2,7 +2,7 @@
 
 **Created**: 2026-10-02
 **Plan Status**: ACTIVE
-**Superseded by**: docs/work/chord-syntax-round/plan-20261009-adr-360-362.md (set aside "still live" on hold at Phase 6b, David, 2026-10-09)
+**Superseded by**: docs/work/archive/chord-syntax-round/plan-20261009-adr-360-362.md (archived 2026-10-10; set aside "still live" on hold at Phase 6b, David, 2026-10-09)
 **Resumed**: 2026-10-05 (session f8ef32) at Phase 6b, after the ADR-359 D1 plan (`docs/work/archive/adr-359-kind-line/plan-20261005-d1.md`) finished; it had set this plan aside "still live" (David, 2026-10-05).
 **Serves objective**: author-narrative-testing (`docs/objectives/author-narrative-testing.md`, O-1, due 2026-10-15; checkpoints 2026-10-06 and 2026-10-13)
 **Overall scope**: Re-count the closing table of `docs/work/testing-narrative/narrative-20260926-author-testing.md`, ready the harness for David's 60-room story, and plan the four rows not yet shipped. Three of the four need a ruling from David before any build. No story content is planned; David invents and writes the story himself.

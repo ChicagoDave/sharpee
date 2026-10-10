@@ -41,12 +41,12 @@ describe('ebnfDefects', () => {
 
   it('refuses a rule nothing reaches', () => {
     const orphan = OK.replace('declaration = create | define ;', 'declaration = create ;');
-    expect(defects(orphan)).toEqual(['rule `define` is unreachable from story-file / grammar-file']);
+    expect(defects(orphan)).toEqual(['rule `define` is unreachable from story-file / grammar-file / claims-file']);
   });
 
   it('refuses alternatives swallowed by a comment (their rule becomes unreachable)', () => {
     const swallowed = OK.replace('declaration = create | define ;', 'declaration = create (* note\n  | define *) ;');
-    expect(defects(swallowed)).toEqual(['rule `define` is unreachable from story-file / grammar-file']);
+    expect(defects(swallowed)).toEqual(['rule `define` is unreachable from story-file / grammar-file / claims-file']);
   });
 
   it('refuses a rule defined twice', () => {
