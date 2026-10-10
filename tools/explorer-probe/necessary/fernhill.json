@@ -1,0 +1,44 @@
+{
+  "story": "fernhill",
+  "source": "the file's set is the winning line in branch-stories/fernhill/WALKTHROUGH.txt (29 commands), read off by hand 2026-10-10; each claim that needs less declares its own set",
+  "rooms": [
+    "iron-gates", "gravel-drive", "fountain-court", "boiler-shed",
+    "entrance-hall", "kitchen", "greenhouse", "folly-hill", "folly"
+  ],
+  "things": [
+    "tobias", "stopcock", "primer-plunger", "boiler",
+    "garden-shears", "sherry-bottle", "mrs-kettle",
+    "vine", "silver-locket", "folly-door", "fuse", "deed-box", "deed"
+  ],
+  "verbs": [
+    "ask", "turn", "push", "switch on", "turn on", "take", "give", "prune", "open", "cut"
+  ],
+  "claims": [
+    { "name": "the story can be won", "ending": { "kind": "victory" } },
+    { "name": "the deed is in hand", "placement": { "thing": "deed", "in": "player" } },
+    {
+      "name": "Tobias has been asked about the folly",
+      "event": { "type": "if.event.asked", "target": "tobias", "topic": "folly" },
+      "needs": { "rooms": ["iron-gates", "gravel-drive"], "things": ["tobias"], "verbs": ["ask"] }
+    },
+    {
+      "name": "the diary page has been read",
+      "state": { "entity": "diary-page", "value": "read" },
+      "needs": {
+        "rooms": ["iron-gates", "gravel-drive", "fountain-court", "entrance-hall", "kitchen", "study"],
+        "things": ["sherry-bottle", "mrs-kettle", "travelling-trunk", "diary-page"],
+        "verbs": ["take", "give", "open", "read"]
+      }
+    },
+    {
+      "name": "the deed box leaves the Folly",
+      "never": true,
+      "placement": { "thing": "deed-box", "notIn": "folly" },
+      "needs": {
+        "rooms": ["iron-gates", "gravel-drive", "fountain-court", "boiler-shed", "greenhouse", "folly-hill", "folly"],
+        "things": ["tobias", "stopcock", "primer-plunger", "boiler", "folly-door", "deed-box"],
+        "verbs": ["ask", "turn", "push", "turn on", "open", "take"]
+      }
+    }
+  ]
+}
