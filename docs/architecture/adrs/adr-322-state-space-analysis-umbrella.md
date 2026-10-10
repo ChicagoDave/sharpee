@@ -124,6 +124,12 @@ rules, the budget, the soundness contract, and what is consumed. Which analyses
 ship, in what order, with what output, is the working document's business and its
 children's.
 
+> **Note (2026-10-10, ADR-365 landing, Phase 3).** The first check the children
+> decided is ADR-365's claims runner: claims under a necessary set, walked over
+> the forked real engine by `packages/branch-tester` (ADR-365 D10) and reported
+> as held, violated or unproven. It is D1's L4 row made concrete. D10 itself is
+> unchanged: it still decides nothing about which check comes next.
+
 ---
 
 ## Non-goals
@@ -272,6 +278,17 @@ the one who turned it off last Tuesday and forgot.
 now; a per-claim downgrade is the construct that rots quietly, and D5 says syntax
 is decided last. Syntax for the disposition itself likewise stays a sketch in the
 working document.
+
+> **Note (2026-10-10, ADR-365 landing, Phase 3).** ADR-365 D9 supersedes two
+> particulars of this decision. The binding disposition is not adopted: claims
+> never gate, at any disposition, so the table's `error` row has no
+> implementation and no disposition syntax ships. And verdicts are reported by
+> the branch-tester claims runner's report (`runClaims`, `formatClaimsRun`),
+> not as compiler diagnostics on ADR-276's channel — the runner walks a booted
+> story, which the compiler never does. What survives unchanged: the three
+> outcomes are the runner's verdicts, unproven is never reported as held, and
+> "every build prints the claim tally" survives as ADR-365 D6's ratio of claims
+> held over claims declared, printed on every claims run.
 
 **Scope note.** D1's L4 row now reads *"build failure when the author asks for
 one"*, and D2's "a claim fails the build when violated" describes the binding

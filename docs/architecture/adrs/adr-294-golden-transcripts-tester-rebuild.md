@@ -268,7 +268,13 @@ commitments carry forward unchanged, and the rest is retired:
   `tools/explorer-probe/lens-declared-state.js` — shipped as a static check that
   runs nothing; the original wording covered only the executed case.)*
 - **The walker's room reachability is the shared substrate.** Lenses borrow it
-  through the walk's `onRoomFirstSeen` hook; none re-derives it.
+  through the walk's `onRoomFirstSeen` hook; none re-derives it. *(Note,
+  2026-10-10, session c11fcd, ADR-365's landing: the walk now has a package
+  home — `packages/branch-tester/src/claims/claims-walk.ts`, the claims runner's
+  breadth-first walk over the engine's own save/restore, which `sharpee test`
+  runs (ADR-365 D10). When a lens moves out of `tools/explorer-probe/`, it
+  borrows that walk rather than the spike's; the spike's `--necessary` mode
+  already calls it.)*
 
 **The first lens has shipped**: mentioned-but-not-examinable,
 `tools/explorer-probe/lens-examinable.js` (2026-09-23). For every reachable room it

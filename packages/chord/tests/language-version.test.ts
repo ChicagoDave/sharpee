@@ -136,7 +136,12 @@ const PINNED = {
   // fold onto the `create` head (`[ "," composition { "," composition } ]`),
   // and `exits-line` (`exits:` / `exits, one-way:`) joins `create-line`,
   // reading the shared `exit` production. Additive; same unpublished 4.0.0 set.
-  ebnfSha256: 'ef053a7079af4e76394ffdbaa2bba3c6da0857b7f903c0056efb4660466c11fc',
+  // Re-pinned 2026-10-10 (session c11fcd, ADR-365 D7): the claims fragment —
+  // `claims-file` as a third start symbol, `claims-block`, `needs-line`,
+  // `verb-phrase`, `claim-decl` and `claim-predicate`. Additive, and outside
+  // the story file entirely (a block met in a story is analysis.claims-in-story);
+  // same unpublished 4.0.0 set (the number moves at publish, David's ruling).
+  ebnfSha256: '8040e4a007dd20b6c4ff8bbc941e638d2c836aad7d8948bf0e3aa042816531c7',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

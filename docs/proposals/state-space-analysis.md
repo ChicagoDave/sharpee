@@ -587,6 +587,8 @@ ADR-321 D22's existing `<story>.world-ignore.json`, per ADR-322 D4.
 
 ### L4 — claims (prescriptive; disposition authored, advisory by default — ADR-322 D11)
 
+> **Superseded in place (2026-10-10, ADR-365 D1/D7, landed in plan `adr-365-claims-landing` Phase 4).** The `claims` block that shipped is ADR-365's: claims under a necessary set, each one of seven predicate kinds, in a `.chord` fragment the test tree's manifest selects and the story never imports, settled by a walk of the forked engine rather than a build-time sweep. There is no disposition key — claims never gate (ADR-365 D9) — and the open-vocabulary standard library sketched below is not what landed. The sketch stays as the record of what was considered.
+
 The acceptance-criteria section — a defined block, verified on every build.
 
 The block's **first line is a disposition key** — it lives inside `claims`, not in the

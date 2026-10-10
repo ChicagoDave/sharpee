@@ -1,0 +1,10 @@
+{
+  "story": "claim-bits-fixture",
+  "source": "the same set as claims.json with one negative claim the fixture breaks on its first command: the author says the note is never read, and `read note` is the witness",
+  "rooms": ["hall", "landing"],
+  "things": ["note"],
+  "verbs": ["read"],
+  "claims": [
+    { "name": "the note is read", "never": true, "flag": { "thing": "note", "trait": "readable", "field": "hasBeenRead" } }
+  ]
+}

@@ -1,4 +1,5 @@
 {
+  "claims": "fernhill.claims.chord",
   "seed": 42,
   "story": "fernhill",
   "version": 3

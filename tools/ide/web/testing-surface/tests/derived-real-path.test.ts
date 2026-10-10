@@ -15,13 +15,13 @@
  *
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
-import { spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { derivedReportLines, groupDerivedRows } from '../src/derived';
 import { beginRun, createRunState, finishRun, foldRunLine } from '../src/run';
+import { spawnCli } from './spawn-cli';
 
 const testsDir = fileURLToPath(new URL('.', import.meta.url));
 const repoRoot = resolve(testsDir, '../../../../..');
@@ -32,13 +32,12 @@ const fernhillStory = join(fernhillDir, 'fernhill.story');
 const available = existsSync(devkitCli) && existsSync(fernhillStory);
 
 describe.skipIf(!available)('the derived tier from a real fernhill run', () => {
-  it('folds every derived-branch and the summary, and the tab\'s report lines are the CLI\'s stderr tail', () => {
+  it('folds every derived-branch and the summary, and the tab\'s report lines are the CLI\'s stderr tail', async () => {
     // The Testing tab's exact spawn (TestRunner.treeRunArguments; the
     // Avalonia head's RunTreeTestsForSurfaceAsync).
-    const run = spawnSync(
-      'node',
+    const run = await spawnCli(
       [devkitCli, 'test', fernhillStory, '--tree', '--capture-output', '--capture-world', '--json'],
-      { cwd: fernhillDir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+      fernhillDir,
     );
     expect(run.error).toBeUndefined();
 
@@ -73,7 +72,10 @@ describe.skipIf(!available)('the derived tier from a real fernhill run', () => {
     while (stderrLines.length > 0 && stderrLines[stderrLines.length - 1] === '') stderrLines.pop();
     const at = stderrLines.findIndex(line => line.startsWith('Branches exercised:'));
     expect(at).toBeGreaterThan(0);
-    const cliTail = stderrLines.slice(at - 1);
-    expect(derivedReportLines(summary, 'fernhill.story')).toEqual(cliTail);
+    const expected = derivedReportLines(summary, 'fernhill.story');
+    expect(stderrLines.slice(at - 1, at - 1 + expected.length)).toEqual(expected);
+    // What follows on stderr is the claims tier's report (ADR-365 D10), which
+    // fernhill's manifest selects and the tab does not read yet (GH #555).
+    expect(stderrLines.slice(at - 1 + expected.length, at + 1 + expected.length)).toEqual(['', 'Claims: fernhill.claims.chord']);
   }, 300_000);
 });

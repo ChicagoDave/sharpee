@@ -25,6 +25,11 @@
  * it the endings its END STATE cards proved and the rooms its replays walked,
  * for D5's endings and rooms ratios.
  *
+ * The claims tier (ADR-365 D9/D10) runs after the derived tier, at the same
+ * seed, only when the manifest names a claims fragment, through
+ * `test-claims.ts`: a claim's verdict never changes the exit code, a claims
+ * file the command cannot run exits 2 like a tree it cannot read.
+ *
  * Public interface: findTreeDirectory(projectDir), readTreeFiles(treePath),
  * runTreeDocumentCommand(options) → process exit code.
  * Owner context: @sharpee/devkit (author tool).
@@ -34,6 +39,7 @@ import * as path from 'node:path';
 import type { TreeFiles } from '@sharpee/branch-tester';
 import { loadAuthorGame } from '../standalone/author-game.js';
 import { runDerivedTests } from './test-derived.js';
+import { runClaimsTests } from './test-claims.js';
 
 /**
  * Find a project's test tree: the `<story-id>.tests/` directory beside the
@@ -114,10 +120,12 @@ export interface TreeDocumentTestOptions {
  * Run `sharpee test` over a test tree.
  *
  * @param options resolved project directory, the tree directory, and run flags.
- * @returns process exit code — 0 all lines and every derived branch passed,
- *   1 failures or errored lines or a failed derived branch, 2 the tree was
- *   refused, malformed, not in canonical form, or has card-position defects
- *   (nothing ran), 3 the story failed to load. Never calls `process.exit()`;
+ * @returns process exit code — 0 all lines and every derived branch passed
+ *   (claims verdicts never count), 1 failures or errored lines or a failed
+ *   derived branch, 2 the tree was refused, malformed, not in canonical
+ *   form, or has card-position defects (nothing ran), or the claims file the
+ *   manifest names is missing or does not compile, 3 the story failed to
+ *   load. Never calls `process.exit()`;
  *   the caller owns the process.
  */
 export async function runTreeDocumentCommand(
@@ -290,7 +298,13 @@ export async function runTreeDocumentCommand(
     // before `run-end` (GH #524); no other event moves.
     stream,
   });
-  const code = Math.max(treeCode, derivedCode);
+  // ADR-365 D9/D10: the claims tier, only when the manifest names a file.
+  // Verdicts never move the exit code; a claims file that cannot run does.
+  const claimsCode =
+    document.claims === undefined
+      ? 0
+      : await runClaimsTests({ dir, claimsFile: document.claims, seed: document.seed, json, verbose });
+  const code = Math.max(treeCode, derivedCode, claimsCode);
 
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);
   stream?.runEnd(aggregateTestRun(results), code, blockedCount);

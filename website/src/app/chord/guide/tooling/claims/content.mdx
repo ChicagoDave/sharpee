@@ -1,0 +1,111 @@
+A claim is a test you write before the story: what the finished story can
+reach, and what it can never reach. Claims live in a `.chord` file of their
+own, named by your test tree's manifest, and the story never imports it, so
+a claim never ships with the story. The claims runner proves each claim by
+playing the story breadth-first through the real engine, trying every
+command the claim's **necessary set** allows, and reports each one as
+**held**, **violated** or **unproven**. A red claim is the point: the first
+run of a story written claims-first is mostly red, and you write toward
+green.
+
+## The necessary set
+
+Brute force over a whole story does not finish. A claim narrows the walk to
+what is load-bearing on the way: the rooms it may enter, the things it may
+touch, the verbs it may type. Nothing else is tried, so a claim is proved
+*under its set* — a path that needs something outside the set is reported
+as unproven, never as impossible. Declaring the set is cheap: it is the
+walkthrough, read off as nouns and verbs.
+
+```chord
+claims
+  needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Entrance Hall, the Kitchen, the Greenhouse, the Folly Hill, the Folly
+  needs things: Tobias, the stopcock, the primer plunger, the boiler, the garden shears, the sherry bottle, Mrs Kettle, the vine, the silver locket, the folly door, the fuse, the deed box, the deed
+  needs verbs: ask, turn, push, turn on, take, give, prune, open, cut
+
+  claim the story can be won
+    the story ends in victory
+
+  claim the deed is in hand
+    the player has the deed
+
+  claim Tobias has been asked about the folly
+    Tobias was asked about "the folly"
+    needs rooms: the Iron Gates, the Gravel Drive
+    needs things: Tobias
+    needs verbs: ask
+
+  never the deed box leaves the Folly
+    the deed box is not in the Folly
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Greenhouse, the Folly Hill, the Folly
+    needs things: Tobias, the stopcock, the primer plunger, the boiler, the folly door, the deed box
+    needs verbs: ask, turn, push, turn on, open, take
+end claims
+```
+
+The `needs` lines at the top are the shared set. A claim that needs less
+declares its own `needs` lines: each key it names replaces the shared key,
+and the rest is inherited. Claims with the same effective set share one
+walk.
+
+## What a claim can say
+
+Each `claim` or `never` head is followed by one indented line stating what
+holds. Where Chord already has a condition for it, that is the line:
+
+- `the diary page is read` — a state the thing declares, or one of the
+  platform's words: `open`/`closed`, `locked`/`unlocked`, `on`/`off`,
+  `lit`/`unlit`, `worn`/`unworn`, `read`/`unread`.
+- `the note is in the box`, `the deed box is not in the Folly` — where a
+  thing is, or the room it has left.
+- `the player is in the Study` — the room the player reaches.
+- `the player has the deed` — what the player carries.
+- `the story is midnight` — the story's own state.
+
+Three forms only a claim can say:
+
+- `the story ends in victory` or `the story ends in defeat`; `the story has
+  ended` for any ending.
+- `Tobias was asked about "the folly"` — a person was asked a topic, quoted
+  as in the topic table.
+- `the stopcock has been turned` — one of the thing's own `on` clauses has
+  fired. The word is matched to the clauses the thing declares, so a thing
+  with no `on turning` says so.
+
+`never` heads the negative claim. It is violated by the first path that
+satisfies it, with that path printed as the witness, and held only when the
+walk has tried every state its set allows. A walk that stops at its budget
+first leaves the claim unproven, never held.
+
+## Selecting the file
+
+The test tree's manifest, `<story-id>.tests/manifest.json`, names the
+fragment relative to the story file:
+
+```json
+{
+  "claims": "fernhill.claims.chord",
+  "seed": 42,
+  "story": "fernhill",
+  "version": 3
+}
+```
+
+Leave the key out and no claims run. Point it at a different file and the
+run uses different claims, with the story untouched. A `claims` block met
+inside a story, or in a fragment the story imports, is a compile error:
+claims are selected, never imported.
+
+## Reading the report
+
+`sharpee test` runs the claims after the derived rule tests whenever the
+manifest names a file, at the tree's seed, and prints the report after the
+rooms ratio. A violated or unproven claim never changes the exit code; a
+claims file that is missing or does not compile does, with the reason
+named. Every run prints the tally first — how many claims held of how many
+declared — then each walk's cost, then each claim with its witness or the
+reason it stayed open. A positive claim held prints the first path that
+reached it, which is the shortest under its set. A negative claim unproven
+prints the budget that stopped the walk and how many things its set
+carried: the states to exhaust double with every independent thing, so the
+remedy is a tighter set, not a larger budget.

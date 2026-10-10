@@ -20,12 +20,18 @@
  * for the testing-explorer's lenses: `explore()` is exported and takes an
  * `onRoomFirstSeen` hook (see its doc comment). The CLI is unchanged.
  *
+ * Claims under a necessary set (ADR-365) were measured here first and then
+ * landed in `@sharpee/branch-tester` (2026-10-10). `--necessary <file>` now
+ * drives that package's claims runner over its built output; the spike keeps
+ * no claims code of its own.
+ *
  * Public interface: CLI — `node tools/explorer-probe/explore.js <story> [opts]`;
  * module — `explore(storyPath, opts)`.
  * Owner context: tools/ — a spike, outside the published packages.
  */
 
 const path = require('node:path');
+const fs = require('node:fs');
 const crypto = require('node:crypto');
 
 const REPO = path.resolve(__dirname, '..', '..');
@@ -77,34 +83,18 @@ function irIdOf(entity) {
  * Derived from exits plus each in-scope entity's traits — the trait IS the
  * affordance, which is what makes this cheaper than grammar x vocabulary.
  *
- * With a necessary set (`--necessary`), the list is cut to what the author
- * declared load-bearing: an exit is kept only when it leads to a necessary
- * room, and every other command is kept only when its verb is a necessary
- * verb and every entity it names is a necessary thing. The cut is the
- * author's claim that nothing else is on the way to any ending; the walk
- * reports under that claim and never beyond it.
- *
  * @param world     the live world model
  * @param breadth   'basic' (one verb per affordance) or 'full' (adds the
  *                  combinatorial put-in/put-on and lock/unlock pairs)
  * @param vocab     the story-declared vocabulary (see `deriveCommandVocabulary`)
  * @param nameByIrId runtime names keyed by IR id, for topic references
- * @param necessary optional `{ rooms, things, verbs }` — rooms and things are
- *                  Sets of IR ids, verbs an array of command prefixes
  * @returns command strings, deduplicated, in a stable order
  */
-function candidates(world, breadth, vocab, nameByIrId, necessary) {
+function candidates(world, breadth, vocab, nameByIrId) {
   const player = world.getPlayer();
   const room = world.getContainingRoom(player.id);
   const out = [];
-  /** Which entities each command names — the necessary filter reads this. */
-  const names = new Map();
-  const emit = (cmd, ...entities) => {
-    out.push(cmd);
-    const set = names.get(cmd) || new Set();
-    for (const entity of entities) if (entity) set.add(entity);
-    names.set(cmd, set);
-  };
+  const emit = (cmd) => { out.push(cmd); };
 
   const exits = (room && room.get && room.get(T.ROOM) && room.get(T.ROOM).exits) || {};
   for (const dir of exitCommands(world, room)) {
@@ -219,19 +209,7 @@ function candidates(world, breadth, vocab, nameByIrId, necessary) {
     }
   }
 
-  const unique = [...new Set(out)];
-  if (!necessary) return unique;
-
-  return unique.filter((cmd) => {
-    const entities = [...(names.get(cmd) || [])];
-    if (exits[cmd] || exits[cmd.toUpperCase()]) {
-      // An exit: kept only when it leads into a necessary room.
-      return entities.some((dest) => dest && necessary.rooms.has(irIdOf(dest)));
-    }
-    if (!necessary.verbs.some((v) => cmd === v || cmd.startsWith(v + ' '))) return false;
-    if (entities.length === 0) return false;
-    return entities.every((entity) => necessary.things.has(irIdOf(entity)));
-  });
+  return [...new Set(out)];
 }
 
 // ---------------------------------------------------------------------------
@@ -368,10 +346,7 @@ function stateHash(world, mode, profile, sig) {
   if (mode === 'full') return sha1(world.toJSON());
 
   const snap = JSON.parse(world.toJSON());
-  // `necessary` is the factored rule over the author's declared set instead
-  // of the IR-derived one: placement and state are hashed for necessary
-  // things only. Same projection, narrower signature.
-  if (mode === 'declared' || mode === 'necessary') return declaredHash(snap, sig, profile);
+  if (mode === 'declared') return declaredHash(snap, sig, profile);
 
   const state = { ...(snap.state || {}) };
   for (const key of VOLATILE_STATE_KEYS) delete state[key];
@@ -476,203 +451,6 @@ async function restoreSave(platform, payload) {
 }
 
 /**
- * Read a necessary set: the author's declaration of what is load-bearing on
- * the way to an ending. JSON of the shape
- * `{ "rooms": [irId…], "things": [irId…], "verbs": ["take", "cut", …] }`,
- * ids as the compiled IR spells them. The walk prunes candidates to this
- * set and hashes only these things' placement and state, so a claim it
- * proves is proved UNDER the set; a path that needs something outside it is
- * reported as not found, never as impossible.
- *
- * @param file path to the JSON file
- * @returns `{ rooms: Set, things: Set, verbs: string[] }`
- * @throws when the file is missing or any of the three keys is not an array
- */
-function loadNecessarySet(file) {
-  const raw = JSON.parse(require('node:fs').readFileSync(path.resolve(file), 'utf8'));
-  for (const key of ['rooms', 'things', 'verbs']) {
-    if (!Array.isArray(raw[key])) throw new Error('necessary set ' + file + ': "' + key + '" must be an array');
-  }
-  const defaults = { rooms: raw.rooms.map(String), things: raw.things.map(String), verbs: raw.verbs.map(String) };
-  const claims = (raw.claims || []).map((c, i) => {
-    if (!c || typeof c.name !== 'string') throw new Error('necessary set ' + file + ': claim ' + i + ' needs a "name"');
-    const kinds = CLAIM_KINDS.filter((k) => c[k] !== undefined);
-    if (kinds.length !== 1) throw new Error('necessary set ' + file + ': claim "' + c.name + '" needs exactly one of ' + CLAIM_KINDS.join(', '));
-    // A claim's own set: each key it names replaces the file's; the rest
-    // are inherited. Claims with the same effective set share one walk.
-    const needs = c.needs || {};
-    const set = {};
-    for (const key of ['rooms', 'things', 'verbs']) {
-      if (needs[key] !== undefined && !Array.isArray(needs[key])) throw new Error('necessary set ' + file + ': claim "' + c.name + '" needs.' + key + ' must be an array');
-      set[key] = (needs[key] !== undefined ? needs[key] : defaults[key]).map(String);
-    }
-    return { index: i, name: c.name, never: !!c.never, kind: kinds[0], spec: c[kinds[0]], set, ownSet: !!c.needs };
-  });
-  return {
-    file,
-    rooms: new Set(defaults.rooms), things: new Set(defaults.things), verbs: defaults.verbs,
-    claims,
-  };
-}
-
-/**
- * Group a file's claims by their effective set, so each distinct set gets
- * one walk carrying every claim that declared it. The file's own set is a
- * group too, holding the claims that declared no `needs`.
- *
- * @param necessary the result of {@link loadNecessarySet}
- * @returns one `{ label, rooms, things, verbs, claims, file }` per distinct set
- */
-function groupClaimsBySet(necessary) {
-  const groups = new Map();
-  for (const claim of necessary.claims) {
-    const key = JSON.stringify([claim.set.rooms, claim.set.things, claim.set.verbs]);
-    if (!groups.has(key)) {
-      groups.set(key, {
-        label: claim.ownSet ? 'set of "' + claim.name + '"' : 'the file\'s set',
-        file: necessary.file,
-        rooms: new Set(claim.set.rooms), things: new Set(claim.set.things), verbs: claim.set.verbs,
-        claims: [],
-      });
-    }
-    groups.get(key).claims.push(claim);
-  }
-  return [...groups.values()];
-}
-
-/**
- * Run one walk per distinct claim set and gather the verdicts.
- *
- * Each walk boots the story afresh at the pinned seed, prunes to its set,
- * and stops as soon as its claims are settled; the per-walk budgets are the
- * CLI's. A file with no claims is one plain walk under its set.
- *
- * @param storyPath absolute path to the `.story` file
- * @param opts      the CLI options; `opts.necessary` names the file
- * @returns `{ story, file, totalWalkMs, walks: [...walk reports], claims: [...verdicts with the walk's label] }`
- */
-async function exploreClaims(storyPath, opts) {
-  const necessary = loadNecessarySet(opts.necessary);
-  const groups = necessary.claims.length ? groupClaimsBySet(necessary) : [{ ...necessary, label: 'the file\'s set' }];
-  const walks = [];
-  const claims = [];
-  for (const group of groups) {
-    const report = await explore(storyPath, { ...opts, necessary: null, necessarySet: group });
-    walks.push({ set: group.label, ...report });
-    for (const claim of report.claims || []) claims.push({ set: group.label, ...claim });
-  }
-  return {
-    story: path.basename(storyPath),
-    file: necessary.file,
-    totalWalkMs: walks.reduce((n, w) => n + w.walkMs, 0),
-    walks,
-    claims,
-  };
-}
-
-// ---------------------------------------------------------------------------
-// Claims — what the author says the story can (or can never) reach
-// ---------------------------------------------------------------------------
-
-/**
- * The seven things a claim can be about. Each is something the engine
- * already records, so a claim needs no new instrumentation:
- *
- *   ending     `{ kind?, messageId?, cause? }` — the story has ended so
- *   room       `"<room ir id>"` — the player is there
- *   placement  `{ thing, in? , notIn? }` — where a thing is: `in` is
- *              `"player"` or an entity ir id; `notIn` is a room the thing's
- *              containing room must differ from
- *   state      `{ entity, value }` — a Chord state (`entity: "story"` for
- *              the story's own state)
- *   flag       `{ thing, trait, field, value? }` — a trait field, such as
- *              the readable trait's `hasBeenRead`; `value` defaults to true
- *   fired      `"<text>"` — a Chord occurrence counter whose key contains
- *              the text is above zero (a rule or `on` clause has fired)
- *   event      `{ type, target?, topic? }` — the turn that produced this
- *              state emitted the event; `target` is an entity ir id matched
- *              against the event's `targetId`, `topic` a case-insensitive
- *              substring of the event's `topic`
- *
- * A claim with `never: true` is negative: it is violated by the first state
- * that satisfies it, and held only when the walk exhausts its frontier.
- */
-const CLAIM_KINDS = ['ending', 'room', 'placement', 'state', 'flag', 'fired', 'event'];
-
-/**
- * Does one claim's predicate hold in the state just reached?
- *
- * @param claim a normalized claim from {@link loadNecessarySet}
- * @param ctx   `{ world, snap, events, entityByIr }` — the live world, its
- *              parsed snapshot, the events of the turn that reached it, and
- *              runtime entities keyed by IR id
- * @returns true when the predicate holds
- */
-function claimHolds(claim, ctx) {
-  const { world, snap, events, entityByIr } = ctx;
-  const spec = claim.spec;
-  const byIr = (id) => entityByIr.get(id) || null;
-  switch (claim.kind) {
-    case 'ending': {
-      const ending = world.storyEnding || (world.getStoryEnding && world.getStoryEnding());
-      if (!ending || typeof ending === 'string') return !!ending && (!spec.kind || ending === spec.kind);
-      return (!spec.kind || ending.kind === spec.kind)
-        && (!spec.messageId || ending.messageId === spec.messageId)
-        && (!spec.cause || ending.cause === spec.cause);
-    }
-    case 'room': {
-      const player = world.getPlayer();
-      const room = player && world.getContainingRoom(player.id);
-      return !!room && irIdOf(room) === spec;
-    }
-    case 'placement': {
-      const thing = byIr(spec.thing);
-      if (!thing) return false;
-      if (spec.notIn !== undefined) {
-        const room = world.getContainingRoom(thing.id);
-        return !!room && irIdOf(room) !== spec.notIn;
-      }
-      const location = world.getLocation(thing.id);
-      if (spec.in === 'player') return location === world.getPlayer().id;
-      const target = byIr(spec.in);
-      if (!target) return false;
-      if (location === target.id) return true;
-      const room = world.getContainingRoom(thing.id);
-      return !!room && room.id === target.id;
-    }
-    case 'state': {
-      const key = spec.entity === 'story' ? CHORD_STORY_STATE_KEY : CHORD_STATE_PREFIX + spec.entity;
-      return (snap.state || {})[key] === spec.value;
-    }
-    case 'flag': {
-      const thing = byIr(spec.thing);
-      const trait = thing && thing.get && thing.get(spec.trait);
-      if (!trait) return false;
-      return trait[spec.field] === (spec.value === undefined ? true : spec.value);
-    }
-    case 'fired': {
-      for (const [key, value] of Object.entries(snap.state || {})) {
-        if (key.startsWith(OCCURRENCE_PREFIX) && key.includes(spec) && Number(value) > 0) return true;
-      }
-      return false;
-    }
-    case 'event': {
-      const target = spec.target ? byIr(spec.target) : null;
-      if (spec.target && !target) return false;
-      return (events || []).some((ev) => {
-        if (!ev || ev.type !== spec.type) return false;
-        const data = ev.data || {};
-        if (target && data.targetId !== target.id) return false;
-        if (spec.topic && !String(data.topic || '').toLowerCase().includes(String(spec.topic).toLowerCase())) return false;
-        return true;
-      });
-    }
-    default:
-      return false;
-  }
-}
-
-/**
  * How many rooms the story declares. Measured IR shape (fernhill,
  * 2026-09-23): `entity.kinds[]` is a list of `{name, config, condition}`
  * records and a room is the entity whose kinds include `room`.
@@ -767,9 +545,7 @@ async function explore(storyPath, opts) {
   let vocab = null;
   let roomsDeclared = null;
   const nameByIrId = new Map();
-  const necessary = opts.necessarySet || (opts.necessary ? loadNecessarySet(opts.necessary) : null);
-  if (necessary) opts.hash = 'necessary';
-  if (opts.hash === 'declared' || opts.hash === 'necessary' || opts.declaredVocab) {
+  if (opts.hash === 'declared' || opts.declaredVocab) {
     const ir = loadStoryIR(storyPath);
     vocab = deriveCommandVocabulary(ir);
     vocab.verbTemplates = actionVerbTemplates(
@@ -787,56 +563,13 @@ async function explore(storyPath, opts) {
     // total (ADR-322 D7: a report never implies exhaustiveness).
     roomsDeclared = countDeclaredRooms(ir);
   }
-  if (necessary) {
-    // The author's set replaces the IR-derived signature: only necessary
-    // things have a placement or a state worth telling two worlds apart by.
-    sig = { placement: new Set(necessary.things), state: new Set(necessary.things) };
-  }
 
-  // Claims. A positive claim is settled by the first state that satisfies
-  // it (the path is the witness); a negative one is violated by that state
-  // and held only on exhaustion. Which positive claims a path has satisfied
-  // is part of the state's identity, so two worlds that differ only in
-  // whether the diary was read on the way never merge — the walk keeps the
-  // first path to each claim and merges everything after it.
-  const claims = (necessary && necessary.claims) || [];
-  const entityByIr = new Map();
-  for (const e of world.getAllEntities() || []) {
-    const irId = irIdOf(e);
-    if (irId) entityByIr.set(irId, e);
-  }
-  const witnesses = {};   // claim index -> path (first satisfying state)
-  /** Evaluate every unsettled claim against the state just reached; returns the path's claim bits. */
-  const noteClaims = (cmdPath, events, inherited) => {
-    if (claims.length === 0) return '';
-    const snap = JSON.parse(world.toJSON());
-    const bits = new Set(inherited ? inherited.split(',').filter(Boolean).map(Number) : []);
-    for (const claim of claims) {
-      if (witnesses[claim.index] !== undefined) {
-        if (!claim.never) bits.add(claim.index);
-        continue;
-      }
-      if (!claim.never && bits.has(claim.index)) continue;
-      if (!claimHolds(claim, { world, snap, events, entityByIr })) continue;
-      witnesses[claim.index] = cmdPath;
-      if (!claim.never) bits.add(claim.index);
-    }
-    return [...bits].sort((a, b) => a - b).join(',');
-  };
-  const positiveClaimsSettled = () =>
-    claims.every((c) => c.never || witnesses[c.index] !== undefined);
-  const negativeClaimsPending = () =>
-    claims.some((c) => c.never && witnesses[c.index] === undefined);
-  const allClaimsSettled = () =>
-    claims.length > 0 && positiveClaimsSettled() && !negativeClaimsPending();
-
-  const rootBits = noteClaims([], [], '');
-  const rootHash = stateHash(world, opts.hash, profile, sig) + (claims.length ? '|' + rootBits : '');
+  const rootHash = stateHash(world, opts.hash, profile, sig);
   const allRoomsSeen = () =>
     opts.stopWhenAllRoomsSeen && roomsDeclared !== null && roomsSeen.size >= roomsDeclared;
 
   const seen = new Set([rootHash]);
-  let queue = [{ save: rootSave, path: [], depth: 0, bits: rootBits }];
+  let queue = [{ save: rootSave, path: [], depth: 0 }];
 
   let commandsExecuted = 0;
   let restores = 0;
@@ -847,7 +580,6 @@ async function explore(storyPath, opts) {
   let stopReason = 'frontier-exhausted';
 
   if (allRoomsSeen()) { stopReason = 'all-rooms-reached'; queue = []; }
-  if (allClaimsSettled()) { stopReason = 'all-claims-settled'; queue = []; }
 
   while (queue.length > 0) {
     const elapsed = (Date.now() - walkStart) / 1000;
@@ -859,7 +591,7 @@ async function explore(storyPath, opts) {
 
     await restoreSave(platform, node.save);
     restores++;
-    const cmds = candidates(world, opts.breadth, vocab, nameByIrId, necessary);
+    const cmds = candidates(world, opts.breadth, vocab, nameByIrId);
     if (cmds.length === 0) deadEnds++;
 
     for (const cmd of cmds) {
@@ -868,21 +600,16 @@ async function explore(storyPath, opts) {
 
       await restoreSave(platform, node.save);
       restores++;
-      let turnEvents = [];
       try {
-        // The engine's own turn entry, so the turn's events come back for
-        // event claims; the bootstrap wrapper returns only the prose.
-        const result = await platform.executeTurn(cmd);
-        turnEvents = (result && result.events) || [];
+        await platform.executeTurn(cmd);
       } catch (err) {
         // A refused turn is information, not a crash of the walk.
       }
       commandsExecuted++;
       const cmdPath = [...node.path, cmd];
       const newRoom = noteFacts(cmdPath);
-      const bits = noteClaims(cmdPath, turnEvents, node.bits);
 
-      const h = stateHash(world, opts.hash, profile, sig) + (claims.length ? '|' + bits : '');
+      const h = stateHash(world, opts.hash, profile, sig);
       let save = null;
       if (!seen.has(h)) {
         seen.add(h);
@@ -890,9 +617,8 @@ async function explore(storyPath, opts) {
         saves++;
         const depth = node.depth + 1;
         frontierByDepth[depth] = (frontierByDepth[depth] || 0) + 1;
-        queue.push({ save, path: cmdPath, depth, bits });
+        queue.push({ save, path: cmdPath, depth });
       }
-      if (allClaimsSettled()) { stopReason = 'all-claims-settled'; queue = []; break; }
 
       // The hook runs AFTER the new state's save is in the queue, so whatever
       // it does to the world cannot reach the frontier; the next iteration
@@ -909,16 +635,6 @@ async function explore(storyPath, opts) {
 
   const walkMs = Date.now() - walkStart;
 
-  // Each claim's verdict (ADR-322 D11's three outcomes). A negative claim
-  // is held only by exhaustion: a budget stop leaves it unproven.
-  const exhausted = stopReason === 'frontier-exhausted' || stopReason === 'all-claims-settled';
-  const claimReport = claims.map((c) => {
-    const witness = witnesses[c.index];
-    let verdict;
-    if (c.never) verdict = witness !== undefined ? 'violated' : (exhausted && !negativeClaimsPending() ? 'held' : 'unproven');
-    else verdict = witness !== undefined ? 'held' : 'unproven';
-    return { name: c.name, never: c.never, kind: c.kind, verdict, ...(witness ? { depth: witness.length, witness } : {}) };
-  });
   return {
     story: path.basename(storyPath),
     seed: opts.seed,
@@ -941,11 +657,6 @@ async function explore(storyPath, opts) {
     rooms: [...roomsSeen].sort(),
     endingsReached: [...endings],
     endingPaths,
-    ...(necessary ? { necessary: {
-      file: necessary.file || opts.necessary,
-      rooms: necessary.rooms.size, things: necessary.things.size, verbs: necessary.verbs.length,
-    } } : {}),
-    ...(claims.length ? { claims: claimReport } : {}),
     frontierByDepth,
     ...(dims ? { dimensions: {
       declared: dims.dimensionsDeclared,
@@ -989,26 +700,23 @@ function parseArgs(argv) {
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
   if (!opts.story) {
-    console.error('usage: node tools/explorer-probe/explore.js <story.story> [--seed N] [--hash full|coarse] [--breadth basic|full] [--max-states N] [--max-seconds N] [--max-depth N] [--json]');
+    console.error('usage: node tools/explorer-probe/explore.js <story.story> [--seed N] [--hash full|coarse|declared] [--breadth basic|full] [--max-states N] [--max-seconds N] [--max-depth N] [--necessary claims.json] [--json]');
     process.exit(2);
   }
   if (opts.necessary) {
-    const result = await exploreClaims(path.resolve(opts.story), opts);
+    // Claims under a necessary set: the branch-tester runner over its built
+    // output, booted the way this spike boots everything else. The JSON
+    // file's shape is the runner's `ClaimSetDeclaration`.
+    const { normalizeClaimSet, runClaims, formatClaimsRun } = require(path.join(REPO, 'packages/branch-tester/dist/index.js'));
+    const storyPath = path.resolve(opts.story);
+    const claimSet = normalizeClaimSet(JSON.parse(fs.readFileSync(path.resolve(opts.necessary), 'utf8')), opts.necessary);
+    const result = await runClaims(loadStoryIR(storyPath), claimSet, () => loadAuthorGame(storyPath, { seed: opts.seed }), {
+      seed: opts.seed, breadth: opts.breadth, maxStates: opts.maxStates, maxSeconds: opts.maxSeconds, maxDepth: opts.maxDepth,
+    });
     if (opts.json) { console.log(JSON.stringify(result, null, 2)); return; }
     console.log('');
-    console.log('story             ' + result.story + '  (' + result.file + ')');
-    console.log('walks             ' + result.walks.length + '   total ' + (result.totalWalkMs / 1000).toFixed(1) + 's');
-    for (const walk of result.walks) {
-      console.log('');
-      console.log('walk under ' + walk.set + ': ' + walk.necessary.rooms + ' rooms, ' + walk.necessary.things + ' things, ' + walk.necessary.verbs + ' verbs');
-      console.log('  stopped because ' + walk.stopReason + '   states ' + walk.statesDiscovered + '   commands ' + walk.commandsExecuted + '   ' + (walk.walkMs / 1000).toFixed(1) + 's');
-    }
-    for (const claim of result.claims) {
-      console.log('');
-      console.log('claim ' + JSON.stringify(claim.name) + (claim.never ? ' (never)' : '') + ': ' + claim.verdict.toUpperCase()
-        + (claim.witness ? ' at depth ' + claim.depth : ''));
-      if (claim.witness) console.log('  ' + claim.witness.join(' / '));
-    }
+    console.log('story             ' + path.basename(storyPath) + '  (' + opts.necessary + ')');
+    console.log(formatClaimsRun(result));
     console.log('');
     return;
   }
@@ -1028,19 +736,10 @@ async function main() {
   console.log('queue remaining   ' + result.queueRemaining);
   console.log('rooms reached     ' + result.roomsReached);
   console.log('endings reached   ' + (result.endingsReached.length || 0));
-  if (result.necessary) {
-    console.log('necessary set     ' + result.necessary.rooms + ' rooms, ' + result.necessary.things + ' things, ' + result.necessary.verbs + ' verbs  (' + result.necessary.file + ')');
-  }
   for (const [ending, cmdPath] of Object.entries(result.endingPaths || {})) {
     console.log('');
     console.log('ending ' + ending + ' at depth ' + cmdPath.length + ':');
     console.log('  ' + cmdPath.join(' / '));
-  }
-  for (const claim of result.claims || []) {
-    console.log('');
-    console.log('claim ' + JSON.stringify(claim.name) + (claim.never ? ' (never)' : '') + ': ' + claim.verdict.toUpperCase()
-      + (claim.witness ? ' at depth ' + claim.depth : ''));
-    if (claim.witness) console.log('  ' + claim.witness.join(' / '));
   }
   console.log('');
   console.log('frontier by depth');
@@ -1050,7 +749,6 @@ async function main() {
 
 module.exports.__candidates = candidates;
 module.exports.explore = explore;
-module.exports.exploreClaims = exploreClaims;
 
 if (require.main === module) {
   main().catch((e) => { console.error(e && e.stack || e); process.exit(1); });

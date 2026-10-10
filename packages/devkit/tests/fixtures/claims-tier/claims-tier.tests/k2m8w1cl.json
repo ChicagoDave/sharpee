@@ -1,0 +1,19 @@
+{
+  "cards": [
+    {
+      "assertions": {},
+      "id": "r7t3p9ax",
+      "type": "opening"
+    },
+    {
+      "assertions": {
+        "states": [
+          "the note is pinned"
+        ]
+      },
+      "id": "d4n6v2qe",
+      "type": "boot"
+    }
+  ],
+  "id": "k2m8w1cl"
+}

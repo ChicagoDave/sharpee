@@ -100,6 +100,86 @@ grammar-file   = [ comment-run ] grammar-header
 grammar-header = "grammar" STRING NL ;            (* no `by`, no indented body
                                                      (parse.grammar-header-body) *)
 
+claims-file  = [ comment-run ] claims-block { comment-run } ;
+                                                  (* ADR-365 D7: the claims fragment — a
+                                                     `.chord` file the test tree's
+                                                     manifest names (`"claims": "<path>"`,
+                                                     relative to the story file) and the
+                                                     story never imports. Compiled only by
+                                                     compileClaims(story, fragment): one
+                                                     block and nothing else
+                                                     (claims.fragment-content /
+                                                     claims.fragment-empty /
+                                                     claims.fragment-duplicate; a story
+                                                     header is claims.fragment-story).
+                                                     The parser reads a `claims` block
+                                                     wherever it stands; one met in a
+                                                     story or an imported fragment is
+                                                     analysis.claims-in-story, so a claim
+                                                     never reaches the published IR.
+                                                     Distinct from the `, claims <fact> is
+                                                     <value>` phrase tag (ADR-318 D9). *)
+claims-block = "claims" NL                        (* parse.claims-head: nothing after it *)
+                 >>> { needs-line } claim-decl { claim-decl }
+               "end" "claims" NL ;                (* parse.claims-empty: no claim;
+                                                     parse.claims-line: a line the block
+                                                     does not know *)
+needs-line   = "needs" ( "rooms" | "things" ) ":" name { "," [ "and" ] name } NL
+             | "needs" "verbs" ":" verb-phrase { "," verb-phrase } NL ;
+                                                  (* ADR-365 D2: one key of the necessary
+                                                     set. At block level the shared set;
+                                                     under a claim, its own — a key named
+                                                     replaces the shared key, the rest is
+                                                     inherited, and claims with the same
+                                                     effective set share one walk. Rooms
+                                                     must be rooms (claims.needs-room-
+                                                     kind), things must not be
+                                                     (claims.needs-thing-kind), the player
+                                                     is never listed (claims.needs-player).
+                                                     Empty or ill-formed: parse.claim-needs *)
+verb-phrase  = WORD { WORD } ;                     (* a command prefix the walk may type:
+                                                     `turn on` *)
+claim-decl   = ( "claim" | "never" ) rest-of-line NL
+                                                  (* the name is the sentence the report
+                                                     prints (parse.claim-name when absent);
+                                                     `never` heads the negative claim —
+                                                     violated by its first witness, held
+                                                     only when the walk exhausts its set
+                                                     (ADR-365 D3) *)
+                 >>> claim-predicate { needs-line } ;
+                                                  (* exactly one predicate line:
+                                                     parse.claim-no-predicate /
+                                                     parse.claim-two-predicates *)
+claim-predicate = "the" "story" "ends" "in" WORD NL  (* `victory` | `defeat`
+                                                     (claims.ending-kind); parse.claim-
+                                                     ending when `in <kind>` is missing *)
+                | "the" "story" "has" "ended" NL   (* any ending *)
+                | name "was" "asked" "about" STRING NL
+                                                  (* a person was asked the quoted topic
+                                                     (if.event.asked); parse.claim-asked *)
+                | name "has" "been" WORD NL        (* an `on` clause of the thing has
+                                                     fired: the participle is matched to
+                                                     the thing's clause gerunds
+                                                     (claims.action-unknown names what it
+                                                     answers to; claims.action-owner for
+                                                     the player) *)
+                | condition NL ;                   (* a Chord condition, one of:
+                                                     `<thing> is <state>` — a declared
+                                                     state first, else a platform flag
+                                                     word (open/closed, locked/unlocked,
+                                                     on/off, lit/unlit, worn/unworn,
+                                                     read/unread; claims.state-unknown
+                                                     otherwise); `<thing> is in <place>`;
+                                                     `<thing> is not in <room>`
+                                                     (claims.room-expected); `the player
+                                                     is in <room>`; `the player has
+                                                     <thing>`; `the story is <state>`.
+                                                     `is not <state>` is claims.predicate-
+                                                     negated (head the claim `never`);
+                                                     anything else is claims.predicate-
+                                                     unsupported. parse.claim-predicate:
+                                                     words after the condition *)
+
 story-header = "story" NL                         (* ADR-298: positional
                                                      `story STRING ["by" STRING]`
                                                      removed

@@ -1289,6 +1289,8 @@ export class Analyzer {
           break; // collected in pass 1; built before entities (buildFacts/buildProfiles/custom vocabulary)
         case 'define-topics':
           break; // applied onto owners after all entities are built (applyTopics)
+        case 'claims':
+          break; // never reaches the analyzer: compile() reports and drops it (analysis.claims-in-story)
         case 'define-manner':
         case 'define-greetings':
           break; // applied onto owners after all entities are built (applyManner/applyGreetings)

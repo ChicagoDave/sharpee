@@ -36,7 +36,9 @@ const USAGE =
  *   `actualOutput`, not only failures), and `--capture-world` (world
  *   snapshots on command results).
  * @returns process exit code — 0 all lines passed, 1 failures or errored
- *   lines, 2 usage error or refused/malformed document, 3 story load error.
+ *   lines, 2 usage error, refused/malformed document, or a claims file the
+ *   manifest names that is missing or does not compile, 3 story load error.
+ *   A claim's verdict never changes the code (ADR-365 D9).
  *   Never calls `process.exit()` — a piped `--json` stream must flush
  *   completely (the 64KB-pipe gotcha, see cli.ts).
  */

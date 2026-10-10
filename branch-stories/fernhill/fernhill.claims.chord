@@ -1,0 +1,59 @@
+## Fernhill's claims: what the finished story can reach and what it can never
+## reach, each under the rooms, things and verbs that are load-bearing on the
+## way. The test tree's manifest names this file; the story never imports it.
+## The shared set is the winning line (WALKTHROUGH.txt); a claim that needs
+## less declares its own.
+
+claims
+  needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Entrance Hall, the Kitchen, the Greenhouse, the Folly Hill, the Folly
+  needs things: Tobias, the stopcock, the primer plunger, the boiler, the garden shears, the sherry bottle, Mrs Kettle, the vine, the silver locket, the folly door, the fuse, the deed box, the deed
+  needs verbs: ask, turn, push, switch on, turn on, take, give, prune, open, cut
+
+  claim the story can be won
+    the story ends in victory
+
+  claim the deed is in hand
+    the player has the deed
+
+  claim Tobias has been asked about the folly
+    Tobias was asked about "the folly"
+    needs rooms: the Iron Gates, the Gravel Drive
+    needs things: Tobias
+    needs verbs: ask
+
+  claim the diary page has been read
+    the diary page is read
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Entrance Hall, the Kitchen, the Study
+    needs things: the sherry bottle, Mrs Kettle, the travelling trunk, the diary page
+    needs verbs: take, give, open, read
+
+  never the deed box leaves the Folly
+    the deed box is not in the Folly
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Greenhouse, the Folly Hill, the Folly
+    needs things: Tobias, the stopcock, the primer plunger, the boiler, the folly door, the deed box
+    needs verbs: ask, turn, push, turn on, open, take
+
+  claim the Study is reached
+    the player is in the Study
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Entrance Hall, the Kitchen, the Study
+    needs things: the sherry bottle, Mrs Kettle
+    needs verbs: take, give
+
+  never the Study is reached without the sherry
+    the player is in the Study
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Entrance Hall, the Kitchen, the Study
+    needs things: the garden shears, Mrs Kettle
+    needs verbs: take, give
+
+  claim the auction notice has been read
+    the auction notice is read
+    needs rooms: the Iron Gates
+    needs things: the auction notice
+    needs verbs: read
+
+  claim the stopcock has been turned
+    the stopcock has been turned
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed
+    needs things: the stopcock
+    needs verbs: turn
+end claims

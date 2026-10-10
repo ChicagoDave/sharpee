@@ -15,7 +15,8 @@
  * a continuation segment. Each segment names the segment it descends from
  * and the fork ordinal it descends at — 0 for the continuation, 1..n for the
  * branches in sibling order (D4). The manifest holds `version`, `story` and
- * `seed` only, so it changes when those do and never when the tree does.
+ * `seed`, plus the optional `claims` path (ADR-365 D7), so it changes when
+ * those do and never when the tree does.
  *
  * Every segment carries an opaque id, generated once and persisted (D5):
  * the root segment's is the document's `id`, a branch's is its `id`, and a
@@ -103,6 +104,13 @@ export interface TreeDocument {
   story: string;
   /** The pinned master seed — the whole tree replays at this seed (D5). */
   seed: number;
+  /**
+   * The claims fragment the claims runner compiles beside the story, as a
+   * path relative to the story file (ADR-365 D7). Absent means no claims
+   * run; the story never imports the fragment. The one optional key the
+   * manifest carries beyond ADR-355 D4's three.
+   */
+  claims?: string;
   /** The root segment's id: the main line's identity (ADR-355 D5). */
   id: string;
   /** The main line, in play order: opening, boot look, then typed turns. */
@@ -325,6 +333,7 @@ export function segmentTree(document: TreeDocument): TreeFiles {
     version: TREE_DOCUMENT_VERSION,
     story: document.story,
     seed: document.seed,
+    ...(document.claims !== undefined ? { claims: document.claims } : {}),
   });
 
   const cardIds = new Set<string>();
@@ -440,6 +449,7 @@ export function assembleTree(files: TreeFiles): TreeDocumentReadResult {
       version: TREE_DOCUMENT_VERSION,
       story: manifest.story,
       seed: manifest.seed,
+      ...(manifest.claims !== undefined ? { claims: manifest.claims } : {}),
       id: shape.root.id,
       cards: build(shape.root),
     },
@@ -693,7 +703,7 @@ function parseJson(text: string): { ok: true; value: unknown } | { ok: false; me
 function readManifest(
   text: string,
 ):
-  | { status: 'ok'; story: string; seed: number }
+  | { status: 'ok'; story: string; seed: number; claims?: string }
   | { status: 'refused'; message: string }
   | { status: 'malformed'; message: string } {
   const parsed = parseJson(text);
@@ -722,7 +732,7 @@ function readManifest(
     return { status: 'malformed', message: `unknown test tree version ${version}` };
   }
 
-  const unknownKey = firstUnknownKey(manifest, ['version', 'story', 'seed']);
+  const unknownKey = firstUnknownKey(manifest, ['version', 'story', 'seed', 'claims']);
   if (unknownKey !== undefined) {
     return { status: 'malformed', message: `unknown key '${unknownKey}' in ${TREE_MANIFEST_FILE_NAME}` };
   }
@@ -734,7 +744,14 @@ function readManifest(
   if (typeof seed !== 'number' || !Number.isInteger(seed)) {
     return { status: 'malformed', message: `'seed' must be an integer` };
   }
-  return { status: 'ok', story, seed };
+  // ADR-365 D7: the claims fragment, optional; a path the runner resolves
+  // relative to the story file. Whether it exists is the runner's load-time
+  // error, named against this manifest — not a reader concern.
+  const claims = manifest['claims'];
+  if (claims !== undefined && (typeof claims !== 'string' || claims === '')) {
+    return { status: 'malformed', message: `'claims' must be a non-empty path when present` };
+  }
+  return { status: 'ok', story, seed, ...(claims !== undefined ? { claims } : {}) };
 }
 
 /** The segment the file holds, or a problem description. */

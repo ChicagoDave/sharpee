@@ -90,9 +90,33 @@ export function compile(source: string, options?: CompileOptions): CompileResult
   const bag = new DiagnosticBag();
   const ast = parseStory(source, bag);
   resolveImports(ast, options, bag);
+  rejectClaims(ast, bag);
   const ir = analyze(ast, bag);
   return { ast, ir, diagnostics: bag.all(), ok: !bag.hasErrors() };
 }
+
+/**
+ * A `claims` block never compiles as part of a story (ADR-365 D7): it lives in
+ * the fragment the test manifest selects, which `compileClaims` reads, so a
+ * claim cannot reach the published IR by any route. Runs after the import
+ * splice, so a block in an imported fragment is caught too; the block is
+ * reported and dropped, and the analyzer never sees one.
+ */
+function rejectClaims(ast: StoryFile, bag: DiagnosticBag): void {
+  if (!ast.declarations.some((d) => d.kind === 'claims')) return;
+  for (const decl of ast.declarations) {
+    if (decl.kind !== 'claims') continue;
+    bag.error(
+      'analysis.claims-in-story',
+      'A `claims` block lives in its own fragment, named by the test tree\'s manifest — it is never part of the story or imported by it.',
+      decl.span,
+    );
+  }
+  ast.declarations = ast.declarations.filter((d) => d.kind !== 'claims');
+}
+
+export { compileClaims } from './claims.js';
+export type { ClaimsCompileResult, CompileClaimsOptions, IRClaim, IRClaimNeeds, IRClaimSet } from './claims.js';
 
 /**
  * Splice each `import "<file>"` declaration with the imported fragment's

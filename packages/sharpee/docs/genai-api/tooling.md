@@ -2444,10 +2444,13 @@ export {};
  * Budget: 10 × declared class count by default (uniform prior — D12's ~10×
  *   inverse probability with p ≈ 1/classCount), caller-overridable per use;
  *   measured per use, never declared on the point.
- * Public interface: `searchOutcome`, `SearchTarget`, `SearchResult`.
+ * Public interface: `searchOutcome`, `SearchTarget`, `SearchResult`; the
+ *   in-memory save fork `captureSave` / `restoreSave` over a
+ *   `SaveForkPlatform`, shared with the claims walk in branch-tester
+ *   (ADR-340 D3: one owner, never a copy; ADR-365 D10).
  * Owner context: @sharpee/transcript-tester (testing tooling).
  */
-import { type RandomForceSpec } from '@sharpee/core';
+import { type ISaveData, type RandomForceSpec } from '@sharpee/core';
 import type { Transcript } from './types.js';
 /** The searched-for outcome: a declared point and one of its declared classes. */
 export interface SearchTarget {
@@ -2474,6 +2477,19 @@ export interface SearchResult {
     /** On failure: why — 'budget-exhausted', 'never-fires', or a validation message. */
     reason?: string;
 }
+/**
+ * The engine slice an in-memory save fork needs: the hook registration the
+ * platform routes `save`/`restore` through. The real `GameEngine` satisfies
+ * it structurally.
+ */
+export interface SaveForkPlatform {
+    registerSaveRestoreHooks(hooks: {
+        onSaveRequested?: (data: ISaveData) => Promise<void>;
+        onRestoreRequested?: () => Promise<ISaveData | null>;
+    }): void;
+    save(): Promise<boolean>;
+    restore(): Promise<boolean>;
+}
 /** The engine-wrapper slice the search drives (same shape the runner uses). */
 interface SearchEngine {
     executeCommand(input: string): Promise<string> | string;
@@ -2481,13 +2497,7 @@ interface SearchEngine {
         type: string;
         data?: unknown;
     }>;
-    engine?: {
-        registerSaveRestoreHooks(hooks: {
-            onSaveRequested(data: unknown): Promise<void>;
-            onRestoreRequested(): Promise<unknown | null>;
-        }): void;
-        save(): Promise<boolean>;
-        restore(): Promise<boolean>;
+    engine?: SaveForkPlatform & {
         getMasterSeed?(): number;
         getRandomService?(): {
             loadForces(specs: readonly RandomForceSpec[]): void;
@@ -2517,6 +2527,25 @@ interface SearchEngine {
 export declare function searchOutcome(transcript: Transcript, engine: SearchEngine, target: SearchTarget, options?: {
     budget?: number;
 }): Promise<SearchResult>;
+/**
+ * Capture the engine's current save payload in memory (the runner's D18
+ * pattern). The payload is opaque: it is only ever handed back to
+ * {@link restoreSave} on the same engine.
+ *
+ * @param platform the engine to fork
+ * @returns the save payload, or null when the engine refused to save
+ */
+export declare function captureSave(platform: SaveForkPlatform): Promise<unknown>;
+/**
+ * Restore the engine from an in-memory save payload taken by
+ * {@link captureSave}. Entity INSTANCES are replaced by a restore; ids
+ * survive, so a caller holding an entity resolves it through the world again.
+ *
+ * @param platform the engine to restore
+ * @param payload a payload from `captureSave` on the same engine
+ * @returns whether the engine accepted the restore
+ */
+export declare function restoreSave(platform: SaveForkPlatform, payload: unknown): Promise<boolean>;
 export {};
 ```
 

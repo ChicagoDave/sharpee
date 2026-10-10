@@ -311,7 +311,61 @@ export type Declaration =
   | ExtendAction
   | RemoveFromAction
   // ADR-327 D10 the start block (David 2026-08-26):
-  | StartBlockDecl;
+  | StartBlockDecl
+  // ADR-365 D7 the claims block (David 2026-10-10):
+  | ClaimsDecl;
+
+/**
+ * `needs rooms: …` / `needs things: …` / `needs verbs: …` (ADR-365 D2) — one
+ * key of a necessary set. Rooms and things are entity names; verbs are the
+ * command prefixes the walk may type, each item the words between commas.
+ */
+export interface ClaimNeedsLine {
+  kind: 'claim-needs';
+  key: 'rooms' | 'things' | 'verbs';
+  names: NameRef[];
+  verbs: string[];
+  span: Span;
+}
+
+/**
+ * What a claim says holds (ADR-365 D1). A Chord condition where one exists
+ * (`the deed box is not in the Folly`, `the player has the deed`, `the diary
+ * page is read`, `the player is in the Study`), and three forms only a claim
+ * can say: the story's ending, a person asked about a topic, and an action
+ * a thing has answered to.
+ */
+export type ClaimPredicateNode =
+  | { kind: 'condition'; condition: ConditionNode; span: Span }
+  /** `the story ends in victory|defeat` / `the story has ended`. */
+  | { kind: 'ends'; ending: string | null; span: Span }
+  /** `<person> was asked about "<topic>"`. */
+  | { kind: 'asked'; who: NameRef; topic: string; span: Span }
+  /** `<thing> has been <participle>` — an `on` clause of the thing has fired. */
+  | { kind: 'has-been'; thing: NameRef; participle: string; span: Span };
+
+/** `claim <name>` / `never <name>` with its predicate line and its own `needs`. */
+export interface ClaimDecl {
+  kind: 'claim';
+  name: string;
+  never: boolean;
+  /** Null only after a parse error that already reported the missing line. */
+  predicate: ClaimPredicateNode | null;
+  needs: ClaimNeedsLine[];
+  span: Span;
+}
+
+/**
+ * `claims … end claims` (ADR-365 D7): the shared necessary set and the
+ * claims under it. Legal only in the claims fragment the test manifest
+ * selects; in a story or an imported fragment it is `analysis.claims-in-story`.
+ */
+export interface ClaimsDecl {
+  kind: 'claims';
+  needs: ClaimNeedsLine[];
+  claims: ClaimDecl[];
+  span: Span;
+}
 
 /**
  * `before the game starts … end before` (ADR-327 D10) — the one place a

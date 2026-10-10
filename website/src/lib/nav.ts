@@ -178,6 +178,7 @@ export const NAV: NavSection[] = [
             children: [
               { title: 'sharpee compose', href: '/chord/guide/tooling/sharpee-compose' },
               { title: 'sharpee test', href: '/chord/guide/tooling/sharpee-test' },
+              { title: 'Claims', href: '/chord/guide/tooling/claims' },
               { title: 'Reading diagnostics', href: '/chord/guide/tooling/reading-diagnostics' },
               { title: 'Migrating from removed constructs', href: '/chord/guide/tooling/migrating-from-removed-constructs' },
             ],

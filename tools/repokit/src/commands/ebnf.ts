@@ -35,8 +35,8 @@ import type { Command } from './command';
 /** The grammar file, repo-relative. */
 export const EBNF_PATH = 'packages/chord/chord.ebnf';
 
-/** Start symbols: a file is a story or a grammar. */
-const START_RULES = ['story-file', 'grammar-file'];
+/** Start symbols: a file is a story, a grammar, or a claims fragment (ADR-365 D7). */
+const START_RULES = ['story-file', 'grammar-file', 'claims-file'];
 
 /** Lexical rules that live inside prose, so no production references them. */
 export const EXPECTED_UNREACHABLE: readonly string[] = ['MARKER'];

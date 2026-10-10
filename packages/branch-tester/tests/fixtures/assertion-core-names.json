@@ -1,8 +1,9 @@
 {
-  "description": "Functions of the assertion core (ADR-340 D1/D3). Each is defined once, in @sharpee/transcript-tester; branch-tester imports them and never redefines one. A second copy of any name here fails assertion-core-ownership.test.ts by name.",
+  "description": "Functions of the assertion core (ADR-340 D1/D3) and the in-memory save fork (ADR-365 D10). Each is defined once, in @sharpee/transcript-tester; branch-tester imports them and never redefines one. A second copy of any name here fails assertion-core-ownership.test.ts by name.",
   "names": [
     "aggregateTestRun",
     "captureEntityTraits",
+    "captureSave",
     "captureWorldSnapshot",
     "channelsReferencedBy",
     "checkAssertion",
@@ -24,6 +25,7 @@
     "proseTextLinesOf",
     "resolveChannelPath",
     "resolveValue",
+    "restoreSave",
     "runCommand",
     "synthesizePolicyAssertions",
     "unfiredForceError",

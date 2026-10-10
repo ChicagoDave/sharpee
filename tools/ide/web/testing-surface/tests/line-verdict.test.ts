@@ -14,7 +14,6 @@
  *
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
-import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -23,6 +22,7 @@ import { describe, expect, it } from 'vitest';
 import { copyStoryToScratch, editTree, readTree } from '../../../../../scripts/__tests__/support/scratch-story';
 import { rollUpVerdicts, verdictOfResult, type LineVerdict } from '../src/line-verdict';
 import { outlineOf, type Outline } from '../src/outline';
+import { spawnCli } from './spawn-cli';
 import {
   beginRun,
   createRunState,
@@ -84,11 +84,10 @@ const available = existsSync(devkitCli) && existsSync(join(fernhillDir, 'fernhil
 const PLANTED = 'a sentence fernhill never prints, planted to fail';
 
 /** The Testing tab's exact spawn (TestRunner.treeRunArguments), folded the way the tab folds it. */
-function runAndFold(storyDir: string): { state: RunColumnState; status: number | null; events: number } {
-  const run = spawnSync(
-    'node',
+async function runAndFold(storyDir: string): Promise<{ state: RunColumnState; status: number | null; events: number }> {
+  const run = await spawnCli(
     [devkitCli, 'test', join(storyDir, 'fernhill.story'), '--tree', '--capture-output', '--capture-world', '--json'],
-    { cwd: storyDir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 },
+    storyDir,
   );
   expect(run.error).toBeUndefined();
   const lines = run.stdout.split('\n').filter((line) => line.trim() !== '');
@@ -105,7 +104,7 @@ function lineIdsOf(outline: Outline): string[] {
 }
 
 describe.skipIf(!available)('AC-1 — the tint from a real fernhill run with one planted failure', () => {
-  it('reads the planted line and its fork heading as fail, and every other line as pass', () => {
+  it('reads the planted line and its fork heading as fail, and every other line as pass', async () => {
     const scratch = copyStoryToScratch(fernhillDir, 'ts-verdict-');
     try {
       const treeDir = join(scratch.dir, 'fernhill.tests');
@@ -119,7 +118,7 @@ describe.skipIf(!available)('AC-1 — the tint from a real fernhill run with one
         return branch.id;
       });
 
-      const { state, events } = runAndFold(scratch.dir);
+      const { state, events } = await runAndFold(scratch.dir);
       // The run happened before anything about the tint is believed: a refused
       // tree produces no events, and every line would read "no result".
       expect(events).toBeGreaterThan(0);
@@ -144,7 +143,7 @@ describe.skipIf(!available)('AC-1 — the tint from a real fernhill run with one
     }
   }, 300_000);
 
-  it('a run the CLI refuses leaves every line untinted and carries the pipeline note', () => {
+  it('a run the CLI refuses leaves every line untinted and carries the pipeline note', async () => {
     const scratch = copyStoryToScratch(fernhillDir, 'ts-verdict-refused-');
     try {
       const treeDir = join(scratch.dir, 'fernhill.tests');
@@ -154,7 +153,7 @@ describe.skipIf(!available)('AC-1 — the tint from a real fernhill run with one
       const text = readFileSync(join(treeDir, segment), 'utf8');
       writeFileSync(join(treeDir, segment), JSON.stringify(JSON.parse(text), null, 4));
 
-      const { state, status, events } = runAndFold(scratch.dir);
+      const { state, status, events } = await runAndFold(scratch.dir);
       expect(status).not.toBe(0);
       expect(events).toBe(0);
 

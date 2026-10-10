@@ -940,3 +940,39 @@ describe('END STATE cards (ADR-356 D4) — carried through segmentation unchange
     expect(endingIdsDeclaredBy(emptyTreeDocument('mini', 1, 'root0000'))).toEqual([]);
   });
 });
+
+describe('the manifest\'s `claims` path (ADR-365 D7) — the one optional key beyond ADR-355 D4\'s three', () => {
+  const withClaims = (): TreeDocument => ({ ...multiLevelTree(), claims: 'fernhill.claims.chord' });
+
+  it('is written only when the document carries it, and read back where it was', () => {
+    const files = segmentTree(withClaims());
+    expect(JSON.parse(files[TREE_MANIFEST_FILE_NAME])).toEqual({
+      claims: 'fernhill.claims.chord',
+      seed: 42,
+      story: 'fernhill',
+      version: TREE_DOCUMENT_VERSION,
+    });
+    expect(assembled(files).claims).toBe('fernhill.claims.chord');
+    expect(assembled(segmentTree(multiLevelTree())).claims).toBeUndefined();
+  });
+
+  it('round-trips byte for byte, and the segments do not change when the claims path does', () => {
+    const files = segmentTree(withClaims());
+    expect(segmentTree(assembled(files))).toEqual(files);
+    const { [TREE_MANIFEST_FILE_NAME]: _manifest, ...segments } = files;
+    const { [TREE_MANIFEST_FILE_NAME]: _plain, ...plainSegments } = segmentTree(multiLevelTree());
+    expect(segments).toEqual(plainSegments);
+  });
+
+  it('must be a non-empty string when present', () => {
+    for (const bad of [42, '', null]) {
+      const files = segmentTree(multiLevelTree());
+      const manifest = JSON.parse(files[TREE_MANIFEST_FILE_NAME]) as Record<string, unknown>;
+      manifest['claims'] = bad;
+      files[TREE_MANIFEST_FILE_NAME] = JSON.stringify(manifest);
+      const read = assembleTree(files);
+      expect(read.status).toBe('malformed');
+      if (read.status === 'malformed') expect(read.message).toMatch(/'claims' must be a non-empty path when present/);
+    }
+  });
+});

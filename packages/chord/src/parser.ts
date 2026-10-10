@@ -34,6 +34,10 @@ import {
   ChangePlayerStmt,
   ChangeMoodStmt,
   ChangeFeelingStmt,
+  ClaimDecl,
+  ClaimNeedsLine,
+  ClaimPredicateNode,
+  ClaimsDecl,
   CompositionItem,
   ConditionNode,
   ConfigSetting,
@@ -252,6 +256,8 @@ const TOP_KEYWORDS = new Set([
   'extend', 'remove',
   // ADR-327 D10: `before the game starts … end before`.
   'before',
+  // ADR-365 D7: `claims … end claims`, the claims fragment's one block.
+  'claims',
 ]);
 
 /**
@@ -583,6 +589,11 @@ class Parser {
           if (d) declarations.push(d);
           break;
         }
+        case 'claims':
+          // ADR-365 D7: the claims block. Parsed wherever it appears; the
+          // compile entry decides whether this file may carry one.
+          declarations.push(this.parseClaims());
+          break;
         case 'override': {
           // ADR-255: `override message <alias>` / `override messages <locale>`.
           const d = this.parseOverride();
@@ -4167,6 +4178,190 @@ class Parser {
    * `import` (the removed `phrasebook` sub-word, or anything else) or a
    * missing string is `parse.import-form`.
    */
+  // ---------------------------------------------------------------- claims
+
+  /**
+   * `claims … end claims` (ADR-365 D7): `needs` lines for the shared
+   * necessary set at the block's indent, and `claim <name>` / `never <name>`
+   * heads each followed by a deeper-indented body — one predicate line and
+   * any `needs` lines of its own.
+   */
+  private parseClaims(): ClaimsDecl {
+    const headLine = this.lines[this.pos++];
+    const hc = new Cursor(headLine.tokens, headLine);
+    hc.next(); // claims
+    if (!hc.atEnd()) {
+      this.diagnostics.error('parse.claims-head', `A claims block opens with \`claims\` alone — \`${restText(hc)}\` does not belong on this line.`, hc.restSpan());
+    }
+    const decl: ClaimsDecl = { kind: 'claims', needs: [], claims: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      const word = firstWord(line);
+      const lc = new Cursor(line.tokens, line);
+      if (word === 'end' && lc.isWord('claims', 1)) {
+        this.pos++;
+        decl.span = mergeSpans(decl.span, lineSpan(line));
+        if (decl.claims.length === 0) {
+          this.diagnostics.error('parse.claims-empty', 'This `claims` block declares no claims — add `claim <name>` or `never <name>` heads, or remove the block.', decl.span);
+        }
+        return decl;
+      }
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent === 0) break; // dedent without `end claims` — reported below
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      if (word === 'needs') {
+        const needs = this.parseClaimNeeds(line);
+        if (needs) decl.needs.push(needs);
+        this.pos++;
+        continue;
+      }
+      if (word === 'claim' || word === 'never') {
+        decl.claims.push(this.parseClaim(line));
+        continue;
+      }
+      this.diagnostics.error(
+        'parse.claims-line',
+        `Unrecognized line in \`claims\`: \`${line.raw.trim()}\` — expected \`needs rooms|things|verbs: …\`, \`claim <name>\`, \`never <name>\` or \`end claims\`.`,
+        lineSpan(line),
+      );
+      this.pos++;
+    }
+    this.diagnostics.error('parse.claims-end', 'Expected `end claims` to close the block.', decl.span);
+    return decl;
+  }
+
+  /**
+   * `needs rooms: <name>, <name>, …` / `needs things: …` / `needs verbs: <verb>,
+   * <verb>, …`. Rooms and things are entity names; a verb is the words between
+   * commas (`turn on`). An empty list is an error.
+   */
+  private parseClaimNeeds(line: Line): ClaimNeedsLine | null {
+    const c = new Cursor(line.tokens, line);
+    c.next(); // needs
+    const keyTok = c.next();
+    const key = keyTok?.kind === 'word' ? keyTok.text : '';
+    if ((key !== 'rooms' && key !== 'things' && key !== 'verbs') || c.peek()?.kind !== 'colon') {
+      this.diagnostics.error('parse.claim-needs', 'Expected `needs rooms:`, `needs things:` or `needs verbs:` followed by a comma-separated list.', lineSpan(line));
+      return null;
+    }
+    c.next(); // colon
+    if (c.atEnd()) {
+      this.diagnostics.error('parse.claim-needs', `\`needs ${key}:\` lists nothing — name at least one ${key === 'verbs' ? 'verb' : key === 'rooms' ? 'room' : 'thing'}, or drop the line.`, lineSpan(line));
+      return null;
+    }
+    const needs: ClaimNeedsLine = { kind: 'claim-needs', key, names: [], verbs: [], span: lineSpan(line) };
+    if (key === 'verbs') {
+      let words: string[] = [];
+      const flush = (at: Span) => {
+        if (words.length === 0) this.diagnostics.error('parse.claim-needs', 'Expected a verb between the commas.', at);
+        else needs.verbs.push(words.join(' '));
+        words = [];
+      };
+      while (!c.atEnd()) {
+        const t = c.next()!;
+        if (t.kind === 'comma') flush(t.span);
+        else if (t.kind === 'word') words.push(t.text);
+        else this.diagnostics.error('parse.claim-needs', `Unexpected \`${t.text}\` in a verb list — verbs are plain words separated by commas.`, t.span);
+      }
+      flush(c.restSpan());
+      return needs;
+    }
+    needs.names = this.parseNameRefList(c, line);
+    return needs;
+  }
+
+  /**
+   * `claim <name>` / `never <name>` and its body: exactly one predicate line,
+   * plus `needs` lines that replace the keys they name in the shared set.
+   */
+  private parseClaim(headLine: Line): ClaimDecl {
+    this.pos++;
+    const hc = new Cursor(headLine.tokens, headLine);
+    const keyword = hc.next()!; // claim | never
+    const nameWords: string[] = [];
+    while (!hc.atEnd()) nameWords.push(hc.next()!.text);
+    if (nameWords.length === 0) {
+      this.diagnostics.error('parse.claim-name', `A claim needs a name after \`${keyword.text}\` — the sentence the report prints, such as \`claim the story can be won\`.`, lineSpan(headLine));
+    }
+    const decl: ClaimDecl = { kind: 'claim', name: nameWords.join(' '), never: keyword.text === 'never', predicate: null, needs: [], span: lineSpan(headLine) };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      if (line.indent <= headLine.indent) break;
+      decl.span = mergeSpans(decl.span, lineSpan(line));
+      if (firstWord(line) === 'needs') {
+        const needs = this.parseClaimNeeds(line);
+        if (needs) decl.needs.push(needs);
+      } else if (decl.predicate) {
+        this.diagnostics.error('parse.claim-two-predicates', `\`${decl.name}\` already says what holds — a claim has one predicate line; make a second claim for \`${line.raw.trim()}\`.`, lineSpan(line));
+      } else {
+        decl.predicate = this.parseClaimPredicate(line);
+      }
+      this.pos++;
+    }
+    if (!decl.predicate) {
+      this.diagnostics.error('parse.claim-no-predicate', `\`${decl.name || keyword.text}\` says nothing — add one indented line stating what holds, such as \`the player has the deed\`.`, decl.span);
+    }
+    return decl;
+  }
+
+  /**
+   * The predicate line: the three claim-only forms first, then an ordinary
+   * condition. `the story ends in <kind>` / `the story has ended`;
+   * `<person> was asked about "<topic>"`; `<thing> has been <participle>`.
+   */
+  private parseClaimPredicate(line: Line): ClaimPredicateNode {
+    const tokens = line.tokens;
+    const span = lineSpan(line);
+    const word = (i: number) => (tokens[i]?.kind === 'word' ? tokens[i].text : null);
+    const c = new Cursor(tokens, line);
+
+    if ((word(0) === 'the' && word(1) === 'story') && (word(2) === 'ends' || (word(2) === 'has' && word(3) === 'ended'))) {
+      const afterVerb = word(2) === 'ends' ? 3 : 4;
+      if (tokens.length === afterVerb) {
+        if (word(2) === 'ends') {
+          this.diagnostics.error('parse.claim-ending', 'Expected `the story ends in victory` or `the story ends in defeat`; `the story has ended` claims any ending.', span);
+        }
+        return { kind: 'ends', ending: null, span };
+      }
+      const ending = word(afterVerb + 1);
+      if (word(afterVerb) !== 'in' || ending === null || tokens.length !== afterVerb + 2) {
+        this.diagnostics.error('parse.claim-ending', 'Expected `the story ends in victory` or `the story ends in defeat`; `the story has ended` claims any ending.', span);
+        return { kind: 'ends', ending: null, span };
+      }
+      return { kind: 'ends', ending, span };
+    }
+
+    const asked = tokens.findIndex((t, i) => t.kind === 'word' && t.text === 'was' && word(i + 1) === 'asked' && word(i + 2) === 'about');
+    if (asked > 0) {
+      const who = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'was');
+      const topic = tokens[asked + 3];
+      if (!topic || topic.kind !== 'string' || topic.text.trim() === '' || tokens.length !== asked + 4) {
+        this.diagnostics.error('parse.claim-asked', 'Expected `<person> was asked about "<topic>"` — the topic is quoted, as in the topic table.', span);
+        return { kind: 'asked', who, topic: topic?.kind === 'string' ? topic.text : '', span };
+      }
+      return { kind: 'asked', who, topic: topic.text, span };
+    }
+
+    const n = tokens.length;
+    if (n >= 4 && word(n - 3) === 'has' && word(n - 2) === 'been' && word(n - 1) !== null) {
+      const thing = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'has' && c.peek(1)?.text === 'been');
+      return { kind: 'has-been', thing, participle: word(n - 1)!, span };
+    }
+
+    const condition = this.parseCondition(c, line);
+    if (!c.atEnd()) {
+      this.diagnostics.error('parse.claim-predicate', `Unexpected \`${restText(c)}\` after the condition.`, c.restSpan());
+    }
+    return { kind: 'condition', condition, span };
+  }
+
   private parseImport(): ImportDecl | null {
     const line = this.lines[this.pos++];
     const c = new Cursor(line.tokens, line);

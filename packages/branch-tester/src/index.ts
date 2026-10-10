@@ -120,3 +120,34 @@ export type {
   NegativeRead,
 } from './derived-runner.js';
 export { aggregateTestRun } from '@sharpee/transcript-tester';
+
+// The claims runner (ADR-365 D10): claims under a necessary set, settled by
+// a breadth-first walk of the forked real engine. The walk is exported so a
+// lens can borrow it; the model is typed input — a Chord `claims` block or a
+// test fixture is normalized into it before any engine boots.
+export {
+  CLAIM_KINDS,
+  normalizeClaimSet,
+  groupClaimsBySet,
+  type Claim,
+  type ClaimDeclaration,
+  type ClaimGroup,
+  type ClaimKind,
+  type ClaimPredicate,
+  type ClaimSet,
+  type ClaimSetDeclaration,
+  type NecessarySet,
+} from './claims/claim-set.js';
+export { claimHolds, type ClaimContext } from './claims/claim-predicates.js';
+export { candidateCommands, deriveCommandVocabulary, type CandidateBreadth, type CommandVocabulary } from './claims/claim-candidates.js';
+export {
+  walkClaims,
+  necessaryIdentity,
+  type ClaimOutcome,
+  type ClaimVerdict,
+  type ClaimsWalkOptions,
+  type ClaimsWalkReport,
+  type WalkStopReason,
+} from './claims/claims-walk.js';
+export { runClaims, formatClaimsRun, type ClaimsRunOptions, type ClaimsRunResult } from './claims/claims-runner.js';
+export type { ClaimsEngine, ClaimsEntity, ClaimsGame, ClaimsGameLoader, ClaimsTurnEvent, ClaimsWorld, WorldSnapshot } from './claims/claims-game.js';

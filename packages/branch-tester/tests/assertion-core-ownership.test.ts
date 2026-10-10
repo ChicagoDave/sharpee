@@ -26,10 +26,17 @@ const fixture = JSON.parse(
   readFileSync(join(here, 'fixtures/assertion-core-names.json'), 'utf-8'),
 ) as { names: string[] };
 
-/** Every `.ts` source file of this package, with its text. */
-const sources = readdirSync(srcDir)
-  .filter((file) => file.endsWith('.ts'))
-  .map((file) => ({ file, text: readFileSync(join(srcDir, file), 'utf-8') }));
+/** Every `.ts` source file under `src/`, subdirectories included, with its text. */
+function sourceFiles(dir: string, prefix = ''): Array<{ file: string; text: string }> {
+  const found: Array<{ file: string; text: string }> = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const relative = `${prefix}${entry.name}`;
+    if (entry.isDirectory()) found.push(...sourceFiles(join(dir, entry.name), `${relative}/`));
+    else if (entry.name.endsWith('.ts')) found.push({ file: relative, text: readFileSync(join(dir, entry.name), 'utf-8') });
+  }
+  return found;
+}
+const sources = sourceFiles(srcDir);
 
 /** A top-level declaration of `name` — function, const, let, or class. */
 function declares(text: string, name: string): boolean {

@@ -1,0 +1,8 @@
+{
+  "story": "claim-bits-fixture",
+  "source": "the same set as claims.json with no claims: the baseline walk, whose identity carries no claim bits",
+  "rooms": ["hall", "landing"],
+  "things": ["note"],
+  "verbs": ["read"],
+  "claims": []
+}
