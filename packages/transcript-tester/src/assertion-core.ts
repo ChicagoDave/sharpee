@@ -59,6 +59,8 @@ export interface WorldModel {
   getLocation?(entityId: string): string | undefined;
   getContents?(containerId: string): any[];
   getPlayer?(): any;
+  /** Region membership (ADR-149): whether the entity's containing room is in the region. A `location` claim over a region reads this. */
+  isInRegion?(entityId: string, regionId: string): boolean;
   /** World-state lookup — carries the Chord story phase (`story.state` claims). */
   getStateValue?(key: string): unknown;
   /** The Ending the world carries once the story has ended (ADR-347 D2a). */
@@ -411,7 +413,10 @@ export function checkStateAssertion(
  * parser, read here and written by `arrange()`); this function owns only
  * what each recognized form MEANS as a claim. The forms:
  *   story.state = value / story.state != value        (the story's phase)
- *   entity.location = value, entity.property = value (and != for both)
+ *   entity.location = value, entity.property = value (and != for both;
+ *     a location whose value names a REGION is membership — the entity's
+ *     room is one of the region's rooms — read through the world's own
+ *     `isInRegion`, as the loader's evaluator reads `is in` — GH #538)
  *   entity.collection contains item / not-contains item
  *   [the] name is state / [the] name is not state     (a Chord entity's own
  *     `states:`, spelled the way Chord spells the condition — GH #355;
@@ -478,6 +483,28 @@ export function evaluateStateExpression(
 
     const actualValue = getEntityProperty(entity, property, world);
     const expectedResolved = resolveValue(expectedValue, world, idAttribute);
+
+    // A region is never anything's location: it holds rooms by membership,
+    // not by containment, so the claim is "the entity's room is in it".
+    if (property === 'location' && typeof expectedResolved === 'string' && world.isInRegion) {
+      const expectedEntity = world.getEntity?.(expectedResolved);
+      if (expectedEntity?.has?.('region') || expectedEntity?.hasTrait?.('region')) {
+        const inRegion = world.isInRegion(entity.id, expectedResolved);
+        const regionName = describeValue(expectedResolved, world);
+        if (pin.operator === '=') {
+          return {
+            matches: inRegion,
+            details: inRegion
+              ? undefined
+              : `${entityName}.location is "${actualValue == null ? 'offstage' : describeValue(actualValue, world)}", which is not in "${regionName}"`
+          };
+        }
+        return {
+          matches: !inRegion,
+          details: !inRegion ? undefined : `${entityName}.location should not be in "${regionName}"`
+        };
+      }
+    }
 
     const isEqual = actualValue === expectedResolved ||
                     (actualValue?.id && actualValue.id === expectedResolved) ||

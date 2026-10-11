@@ -18,7 +18,11 @@
  *                                               the trait (the evaluator reads those words
  *                                               off the trait, so the write goes there too)
  *   the story is <state>                      → the story-phase key
- *   <entity>.location = <place>               → a placement
+ *   <entity>.location = <place>               → a placement — into the place, or, when
+ *                                               the place is a region, into the first
+ *                                               room declared in it (the documented
+ *                                               witness, as an `or` is arranged by its
+ *                                               leftmost operand; GH #538)
  *   <entity>.inventory|contents contains <x>  → a placement into the entity
  *   <entity>.isOpen|isLocked|isOn = true|false → the trait flag
  *   <timer> has started|expired               → the timer's record
@@ -78,6 +82,7 @@ import {
   IdentityTrait,
   LockableTrait,
   OpenableTrait,
+  RoomTrait,
   SwitchableTrait,
   TraitType,
   type IFEntity,
@@ -238,12 +243,25 @@ function arrangeDeclaredState(world: WorldModel, name: string, state: string): A
 /**
  * A placement: `thing` goes into `place` through the author model, and a
  * gone flag on the thing is cleared, as the runtime's `move` clears it.
+ *
+ * A region is a place a thing can be IN (the evaluator answers `is in
+ * <region>` by membership) but not a place a thing can be MOVED to: rooms
+ * join it by `RoomTrait.regionId`, and nothing is contained by it. So the
+ * write lands in the region's first room — the first, in the world's own
+ * order, which is the loader's declaration order — one witness, stated
+ * here, never chosen afresh. A region holding no rooms is refused by name.
  */
 function arrangePlacement(world: WorldModel, thingName: string, placeName: string): ArrangeResult {
   const thing = resolveEntity(world, thingName);
   if (!thing) return unrecognized(`entity "${thingName}" not found`);
-  const place = resolveEntity(world, placeName);
+  let place = resolveEntity(world, placeName);
   if (!place) return unrecognized(`entity "${placeName}" not found`);
+  if (place.has(TraitType.REGION)) {
+    const regionId = place.id;
+    const firstRoom = world.getAllEntities().find((entity) => (entity.get(TraitType.ROOM) as RoomTrait | undefined)?.regionId === regionId);
+    if (!firstRoom) return unrecognized(`"${placeName}" is a region holding no rooms`);
+    place = firstRoom;
+  }
   const author = new AuthorModel(world.getDataStore(), world);
   author.moveEntity(thing.id, place.id);
   const irId = thing.attributes[CHORD_IR_ID_ATTRIBUTE];

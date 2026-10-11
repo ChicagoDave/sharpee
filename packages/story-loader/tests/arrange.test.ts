@@ -78,6 +78,21 @@ create the pebble
 
   A pebble.
 
+create the Grounds
+  a region
+
+create the Yard
+  a room
+  in the Grounds
+
+  A yard.
+
+create the Orchard
+  a room
+  in the Grounds
+
+  An orchard.
+
 create Alex
   a person, proper
   playable
@@ -403,5 +418,34 @@ end before
   it('an adjective of a trait the entity lacks is a declared state as before', () => {
     expect(arrange(stoveWorld, 'the lantern is locked')).toEqual({ arranged: true });
     expect(stoveWorld.getStateValue(CHORD_STATE_PREFIX + 'lantern')).toBe('locked');
+  });
+});
+
+describe('arrange — a region place lands in its first room (GH #549 Phase 5, GH #538)', () => {
+  it('`<entity>.location = <region>` moves the entity into the first room declared in the region, by display name and by IR id', () => {
+    const yard = byIrId('yard');
+    const orchard = byIrId('orchard');
+    expect(world.getLocation(player.id)).not.toBe(yard.id);
+
+    expect(arrange(world, 'player.location = Grounds')).toEqual({ arranged: true });
+    expect(world.getLocation(player.id)).toBe(yard.id);
+    expect(world.getLocation(player.id)).not.toBe(orchard.id);
+    expect(world.isInRegion(player.id, byIrId('grounds').id)).toBe(true);
+
+    const pebble = byIrId('pebble');
+    expect(arrange(world, 'pebble.location = grounds')).toEqual({ arranged: true });
+    expect(world.getLocation(pebble.id)).toBe(yard.id);
+  });
+
+  it('a region holding no rooms is refused by name, and nothing moves', () => {
+    // Chord refuses to compile a memberless region, so one is built on the world directly.
+    world.createRegion('rg-void', { name: 'Void' });
+    const before = world.getLocation(player.id);
+    expect(arrange(world, 'player.location = Void')).toEqual({
+      arranged: false,
+      shape: 'unrecognized',
+      detail: '"Void" is a region holding no rooms',
+    });
+    expect(world.getLocation(player.id)).toBe(before);
   });
 });

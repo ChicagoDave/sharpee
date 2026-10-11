@@ -8,7 +8,7 @@
  * Owner context: transcript-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
-import { IdentityTrait, OpenableTrait, WorldModel } from '@sharpee/world-model';
+import { IdentityTrait, OpenableTrait, RoomTrait, WorldModel } from '@sharpee/world-model';
 import { evaluateStateExpression } from '../src/index.js';
 import type { StoryStateKeys } from '../src/index.js';
 
@@ -243,5 +243,58 @@ describe('a declared state named `gone` reads as the gone claim (GH #549 Phase 3
     w.setStateValue(keys.entityStatePrefix + 'jacobs', 'gone');
     expect(evaluateStateExpression('jacobs is gone', w, keys).matches).toBe(true);
     expect(evaluateStateExpression('jacobs is not gone', w, keys).matches).toBe(false);
+  });
+});
+
+describe('a location pin over a region reads membership, not containment (GH #549 Phase 5, GH #538)', () => {
+  /** A hall outside the Grounds; an east yard and a west yard inside it; the player in the hall holding a coin. */
+  function estate() {
+    const w = new WorldModel();
+    const hall = w.createEntity('hall', 'room');
+    const east = w.createEntity('east yard', 'room');
+    const west = w.createEntity('west yard', 'room');
+    for (const room of [hall, east, west]) room.add(new RoomTrait());
+    const grounds = w.createRegion('rg-grounds', { name: 'Grounds' });
+    w.assignRoom(east.id, grounds.id);
+    w.assignRoom(west.id, grounds.id);
+    const player = w.createEntity('player', 'actor');
+    w.moveEntity(player.id, hall.id);
+    w.setPlayer(player.id);
+    const coin = w.createEntity('coin', 'item');
+    w.moveEntity(coin.id, player.id);
+    return { w, hall, east, west, grounds, player, coin };
+  }
+
+  it('holds for an entity whose room is in the region, and for one carried there, in either yard', () => {
+    const { w, east, west, player } = estate();
+    w.moveEntity(player.id, east.id);
+    expect(evaluateStateExpression('player.location = Grounds', w).matches).toBe(true);
+    expect(evaluateStateExpression('coin.location = Grounds', w).matches).toBe(true);
+    expect(evaluateStateExpression('player.location != Grounds', w).matches).toBe(false);
+    w.moveEntity(player.id, west.id);
+    expect(evaluateStateExpression('player.location = Grounds', w).matches).toBe(true);
+  });
+
+  it('misses outside the region, naming the room the entity is in and the region expected', () => {
+    const { w, hall } = estate();
+    const miss = evaluateStateExpression('player.location = Grounds', w);
+    expect(miss.matches).toBe(false);
+    expect(miss.details).toBe('player.location is "hall", which is not in "Grounds"');
+    expect(miss.details).not.toContain(hall.id);
+    expect(evaluateStateExpression('player.location != Grounds', w).matches).toBe(true);
+  });
+
+  it('a negated region pin that fails names the region the entity should not be in', () => {
+    const { w, east, player } = estate();
+    w.moveEntity(player.id, east.id);
+    const miss = evaluateStateExpression('player.location != Grounds', w);
+    expect(miss.matches).toBe(false);
+    expect(miss.details).toBe('player.location should not be in "Grounds"');
+  });
+
+  it('a region named by its id reads the same way', () => {
+    const { w, east, player, grounds } = estate();
+    w.moveEntity(player.id, east.id);
+    expect(evaluateStateExpression(`player.location = ${grounds.id}`, w).matches).toBe(true);
   });
 });

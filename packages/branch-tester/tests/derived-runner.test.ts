@@ -563,3 +563,39 @@ describe('selecting state — intercepting guards, guard order, two-valued negat
     expect(grumble.claims).toEqual([{ claim: 'emitted weather-grumble', passed: true }]);
   }, 30_000);
 });
+
+describe('region guards — `is in <region>` is membership, written and read (GH #549 Phase 5, GH #538)', () => {
+  it('writes a region as its first room, reads membership through the containing room, and names the negation it cannot write', async () => {
+    const { ir, run } = await runFixture('region-guard');
+    expect(run.total).toBe(collectClauseBranches(ir).length);
+    expect(run.outcomes.length).toBe(run.total);
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'gate · on examining · refused gate-from-inside': 'passed',
+      'gate · on examining': 'skipped',
+      'story · define action whistling · refused hush': 'passed',
+      'story · define action whistling': 'passed',
+      'story · before the game starts': 'passed',
+    });
+
+    // The write: the region pin lands the player in the region's first room, and the guard fires.
+    const hush = outcome(run, 'refused hush');
+    expect(hush.arranged).toEqual(['player.location = grounds']);
+    expect(hush.claims).toEqual([{ claim: 'emitted hush', passed: true }]);
+    expect(run.roomsEntered).toContain('east-yard');
+
+    // The same write stands the player with the gate — nothing else places the player.
+    const inside = outcome(run, 'refused gate-from-inside');
+    expect(inside.arranged).toEqual(['player.location = grounds']);
+    expect(inside.claims).toEqual([{ claim: 'emitted gate-from-inside', passed: true }]);
+
+    // The read: the player placed with the gate IS in the Grounds, so `not in the Grounds` is a negation no write satisfies — never a false run.
+    const outside = run.outcomes.find((o) => o.label === 'gate · on examining')!;
+    expect(outside.shape).toBe('negation');
+    expect(outside.detail).toBe('`player.location = grounds` already holds in the arranged world');
+
+    // Outside the region, the through-line runs as written.
+    const free = run.outcomes.find((o) => o.label === 'story · define action whistling')!;
+    expect(free.claims).toEqual([{ claim: 'emitted whistle-free', passed: true }]);
+  }, 30_000);
+});
