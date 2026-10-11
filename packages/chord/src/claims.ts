@@ -16,12 +16,19 @@
  * forms are claim-only: the story's ending, a person asked about a topic,
  * and a thing answering an action it declares an `on` clause for.
  *
+ * After a clean lowering each claim's set is checked against its cone of
+ * influence (`claims-cone.ts`, ADR-365 D12): a thing the claim can never
+ * depend on under that set is reported as a warning on the `needs things:`
+ * line, with the trimmed line proposed. The set the runner takes is never
+ * changed by it.
+ *
  * Public interface: `compileClaims`, `IRClaimSet`, `IRClaim`,
  *   `ClaimsCompileResult`, `CompileClaimsOptions`.
  * Owner context: Chord language frontend. Browser-safe, filesystem-free.
  */
 
 import type { ClaimDecl, ClaimNeedsLine, ClaimPredicateNode, ClaimsDecl, ConditionNode, NameRef, StoryFile, ValueExpr } from './ast.js';
+import { claimCone } from './claims-cone.js';
 import { Diagnostic, DiagnosticBag } from './diagnostics.js';
 import type { IREntity, StoryIR } from './ir.js';
 import { parseStory } from './parser.js';
@@ -138,8 +145,43 @@ export function compileClaims(storySource: string, claimsSource: string, options
     return { ast: story.ast, ir: story.ir, claims: null, diagnostics: bag.all(), ok: false };
   }
 
-  const lowered = new ClaimsLowering(story.ir, bag, prefix).lower(blocks[0]);
-  return { ast: story.ast, ir: story.ir, claims: bag.hasErrors() ? null : lowered, diagnostics: bag.all(), ok: !bag.hasErrors() };
+  const { set, thingsLines } = new ClaimsLowering(story.ir, bag, prefix).lower(blocks[0]);
+  if (!bag.hasErrors()) reportInertNeeds(story.ir, set, thingsLines, bag, prefix);
+  return { ast: story.ast, ir: story.ir, claims: bag.hasErrors() ? null : set, diagnostics: bag.all(), ok: !bag.hasErrors() };
+}
+
+/** Where each `needs things:` line is: the block's, and each claim's own or null. */
+interface ThingsLines {
+  block: Span | null;
+  claims: Array<Span | null>;
+}
+
+/**
+ * The D12 finding: for each claim whose effective set carries things its
+ * predicate can never depend on, a warning on the `needs things:` line that
+ * supplies the set, naming the inert things and proposing the trimmed line.
+ * A warning, never an error — claims never gate (ADR-365 D9) — and nothing
+ * about the lowered set changes: the walk runs the set as written (D2).
+ */
+function reportInertNeeds(ir: StoryIR, set: IRClaimSet, thingsLines: ThingsLines, bag: DiagnosticBag, prefix: string): void {
+  const nameOf = new Map(ir.entities.map((e) => [e.id, e.name]));
+  set.claims.forEach((claim, index) => {
+    const things = claim.needs?.things ?? set.things;
+    if (things.length === 0) return;
+    const span = claim.needs?.things ? thingsLines.claims[index] : thingsLines.block;
+    if (!span) return;
+    const effective = { rooms: claim.needs?.rooms ?? set.rooms, things, verbs: claim.needs?.verbs ?? set.verbs };
+    const cone = claimCone(ir, claim, effective);
+    if (cone.inert.length === 0) return;
+    const names = (ids: readonly string[]) => ids.map((id) => nameOf.get(id) ?? id).join(', ');
+    const count = cone.inert.length === things.length ? `none of the ${things.length} things` : `${things.length - cone.inert.length} of the ${things.length} things`;
+    const proposal = cone.trimmedThings.length ? `a trimmed line: \`needs things: ${names(cone.trimmedThings)}\`` : 'the line can go';
+    bag.warning(
+      'analysis.claim-inert-needs',
+      `${prefix}\`${claim.name}\` depends on ${count} in its set — under this set nothing it depends on reads ${names(cone.inert)}. The walk still runs the set as written; ${proposal}.`,
+      span,
+    );
+  });
 }
 
 interface EntityIndex {
@@ -164,14 +206,17 @@ class ClaimsLowering {
     }));
   }
 
-  lower(block: ClaimsDecl): IRClaimSet {
+  /** Lower the block to the runner's shape, remembering where each `needs things:` line is for the D12 finding. */
+  lower(block: ClaimsDecl): { set: IRClaimSet; thingsLines: ThingsLines } {
     const shared = this.needsOf(block.needs);
-    return {
+    const set: IRClaimSet = {
       rooms: shared.rooms ?? [],
       things: shared.things ?? [],
       verbs: shared.verbs ?? [],
       claims: block.claims.map((claim) => this.lowerClaim(claim)),
     };
+    const thingsLine = (lines: readonly ClaimNeedsLine[]) => lines.find((line) => line.key === 'things')?.span ?? null;
+    return { set, thingsLines: { block: thingsLine(block.needs), claims: block.claims.map((claim) => thingsLine(claim.needs)) } };
   }
 
   private error(code: string, message: string, span: Span): void {
