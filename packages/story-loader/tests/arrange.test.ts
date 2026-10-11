@@ -321,3 +321,87 @@ describe('arrange — a story that declares no phases', () => {
     expect(bare.world.getStateValue(CHORD_STORY_STATE_KEY)).toBeUndefined();
   });
 });
+
+describe('arrange — a state adjective is the trait flag, not a declared state (GH #549 Phase 3)', () => {
+  const STOVE_STORY = `story
+  title: Arrange Adjectives
+  authors:
+    Sharpee
+  id: arrange-adjectives
+  story-version: 0.0.1
+
+create the Cellar
+  a room
+
+  A cellar.
+
+create the stove
+  a container, openable
+  in the Cellar
+  states, reversible: cold, hot
+
+  A stove.
+
+create the strongbox
+  a container, openable, lockable with the small key, starts locked
+  in the Cellar
+
+  A strongbox.
+
+create the small key
+  a thing
+  in the Cellar
+
+  A key.
+
+create the lantern
+  a thing, switchable
+  in the Cellar
+  states: dusty, polished
+
+  A lantern.
+
+create Alex
+  a person, proper
+  playable
+  starts in the Cellar
+
+before the game starts
+  change the player to Alex
+end before
+`;
+  let stoveWorld: WorldModel;
+  const stoveById = (irId: string): IFEntity => {
+    const hit = stoveWorld.getAllEntities().find((e) => e.attributes[CHORD_IR_ID_ATTRIBUTE] === irId);
+    if (!hit) throw new Error(`no entity stamped ${irId}`);
+    return hit;
+  };
+  beforeEach(() => {
+    ({ world: stoveWorld } = bootEngine(STOVE_STORY, 7));
+  });
+
+  it('`is closed` / `is open` write the openable flag and leave the declared state where it was', () => {
+    expect(arrange(stoveWorld, 'the stove is hot')).toEqual({ arranged: true });
+    expect(arrange(stoveWorld, 'the stove is closed')).toEqual({ arranged: true });
+    expect((stoveById('stove').get(TraitType.OPENABLE) as OpenableTrait).isOpen).toBe(false);
+    expect(stoveWorld.getStateValue(CHORD_STATE_PREFIX + 'stove')).toBe('hot');
+    expect(arrange(stoveWorld, 'the stove is open')).toEqual({ arranged: true });
+    expect((stoveById('stove').get(TraitType.OPENABLE) as OpenableTrait).isOpen).toBe(true);
+    expect(stoveWorld.getStateValue(CHORD_STATE_PREFIX + 'stove')).toBe('hot');
+  });
+
+  it('`is unlocked` / `is locked` and `is on` / `is off` write their flags the same way', () => {
+    expect(arrange(stoveWorld, 'the strongbox is unlocked')).toEqual({ arranged: true });
+    expect((stoveById('strongbox').get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(false);
+    expect(arrange(stoveWorld, 'the strongbox is locked')).toEqual({ arranged: true });
+    expect((stoveById('strongbox').get(TraitType.LOCKABLE) as LockableTrait).isLocked).toBe(true);
+    expect(arrange(stoveWorld, 'the lantern is on')).toEqual({ arranged: true });
+    expect((stoveById('lantern').get(TraitType.SWITCHABLE) as SwitchableTrait).isOn).toBe(true);
+    expect(stoveWorld.getStateValue(CHORD_STATE_PREFIX + 'lantern')).toBe('dusty');
+  });
+
+  it('an adjective of a trait the entity lacks is a declared state as before', () => {
+    expect(arrange(stoveWorld, 'the lantern is locked')).toEqual({ arranged: true });
+    expect(stoveWorld.getStateValue(CHORD_STATE_PREFIX + 'lantern')).toBe('locked');
+  });
+});

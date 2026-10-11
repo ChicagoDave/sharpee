@@ -92,8 +92,13 @@ export type ArrangeTerm =
   | { kind: 'player-to-subject'; subject: string }
   /** Every closed (and locked) container between the subject and its room is opened, so the command can reach it. Implicit. */
   | { kind: 'reach-subject'; subject: string }
-  /** The standard action's own preconditions on the subject's flags (a door must be closed to open, a tool held to cut). Implicit. */
-  | { kind: 'action-preconditions'; action: string; subject: string }
+  /**
+   * The standard action's own preconditions on the subject's flags (a door
+   * must be closed to open, a tool held to cut). Implicit; `keep` names the
+   * state adjectives the clause itself pins on the subject, which this term
+   * never overrides (a `refuse when locked` on opening keeps the lock).
+   */
+  | { kind: 'action-preconditions'; action: string; subject: string; keep: string[] }
   /**
    * A noun the command names is where the standard action needs it: `held`
    * puts it in the player's hands, `present` brings it into the player's
@@ -122,8 +127,8 @@ type ResolvableTerm = Exclude<ArrangeTerm, { kind: 'some-fails' }>;
 export interface SlotFiller {
   token: '[something]' | '[someone]';
   entity: string | null;
-  /** What the slot must be, when the pattern says: the `in` / `on` of inserting and putting. */
-  role?: 'container' | 'supporter';
+  /** What the slot must be, when the pattern says: the `in` / `on` of inserting and putting, the `with` of a lock. */
+  role?: 'container' | 'supporter' | 'key';
 }
 
 /**
@@ -222,6 +227,9 @@ interface TraitFlags {
   isOn?: boolean;
   toolId?: string;
   keyId?: string;
+  /** The identity trait's parser-facing words. */
+  name?: string;
+  aliases?: string[];
 }
 
 /** An entity as the runner reads it. `name` is what the parser resolves a typed noun against. */
@@ -296,6 +304,24 @@ const HELD_ACTIONS = new Set(['wearing', 'giving', 'showing', 'dropping', 'putti
 
 /** The slot tokens a language pattern can carry. */
 const SLOT_TOKEN = /\[(something|someone)\]/g;
+
+/** Standard actions whose `with [something]` slot is the lockable's key. */
+const KEYED_ACTIONS = new Set(['locking', 'unlocking']);
+
+/**
+ * The state adjectives the floor writes as trait flags, each with the trait
+ * that carries it and its complement. A negated adjective is two-valued, so
+ * it is written as its complement rather than checked (the floor's
+ * never-write-a-negation policy is about states with more than two values).
+ */
+const STATE_ADJECTIVES: Record<string, { trait: string; complement: string }> = {
+  open: { trait: 'openable', complement: 'closed' },
+  closed: { trait: 'openable', complement: 'open' },
+  locked: { trait: 'lockable', complement: 'unlocked' },
+  unlocked: { trait: 'lockable', complement: 'locked' },
+  on: { trait: 'switchable', complement: 'off' },
+  off: { trait: 'switchable', complement: 'on' },
+};
 
 /** Effects that mutate the world — the ones a refusal's negative space reads. */
 const MUTATING_EFFECTS = new Set(['change', 'move', 'remove', 'change-player', 'award', 'raise', 'lower']);
@@ -404,7 +430,17 @@ export function planBranch(
       }
     }
     if (branch.command.kind === 'action' && STANDARD_PRECONDITIONS.has(branch.command.action) && !ir.actions.some((action) => action.name === (branch.command as { action: string }).action)) {
-      terms.push({ kind: 'action-preconditions', action: branch.command.action, subject: reachTarget });
+      // The adjectives the clause pins on its subject, as they will hold
+      // once arranged: a pinned `locked` stays locked, a negated `locked`
+      // becomes `unlocked`.
+      const keep: string[] = [];
+      for (const term of terms) {
+        if (term.kind !== 'pin') continue;
+        const pin = parsePin(term.expression);
+        if (pin.kind !== 'declared-state' || pin.name !== reachTarget || !(pin.state in STATE_ADJECTIVES)) continue;
+        keep.push(term.mustHold !== pin.negated ? pin.state : STATE_ADJECTIVES[pin.state].complement);
+      }
+      terms.push({ kind: 'action-preconditions', action: branch.command.action, subject: reachTarget, keep });
     }
     // A thing the standard action acts on is where the action needs it —
     // in the player's hands, or in the room when another actor holds it —
@@ -698,17 +734,28 @@ function commandPlan(
         subjectToken = '[something]';
         pattern = fewestWith(subjectToken);
       }
+      // A lock is typed with its `with` slot: the key is decided from the
+      // lockable at run time, and the slot is dropped when it names none.
+      if (KEYED_ACTIONS.has(command.action)) {
+        const keyed = patterns.find((candidate) => slotsOf(candidate).includes(subjectToken) && / with \[something\]$/.test(candidate));
+        if (keyed) pattern = keyed;
+      }
       if (!pattern) {
         return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has a slot for its subject` };
       }
       const input = pattern.replace(subjectToken, objectName).trim();
       // The preposition before a slot names what fills it: `in` / `into` a
-      // container, `on` / `onto` a supporter. Any other slot takes any thing.
+      // container, `on` / `onto` a supporter, `with` the lockable's key for
+      // locking and unlocking. Any other slot takes any thing.
       const fillers: SlotFiller[] = [];
-      for (const match of input.matchAll(/(?:\b(in|into|on|onto)\s+)?(\[(?:something|someone)\])/g)) {
+      for (const match of input.matchAll(/(?:\b(in|into|on|onto|with)\s+)?(\[(?:something|someone)\])/g)) {
         const token = match[2] as SlotFiller['token'];
         const preposition = match[1];
-        const role = preposition === 'in' || preposition === 'into' ? 'container' : preposition === 'on' || preposition === 'onto' ? 'supporter' : undefined;
+        const role =
+          preposition === 'in' || preposition === 'into' ? 'container'
+          : preposition === 'on' || preposition === 'onto' ? 'supporter'
+          : preposition === 'with' && KEYED_ACTIONS.has(command.action) ? 'key'
+          : undefined;
         fillers.push(role ? { token, entity: null, role } : { token, entity: null });
       }
       return fillers.length > 0 ? { kind: 'typed', input, fillers } : { kind: 'typed', input };
@@ -976,6 +1023,15 @@ export async function runDerivedBranch(
   const writesInOrder = [...plan.arrange.filter((term) => !isHereWrite(term)), ...plan.arrange.filter(isHereWrite)];
   let reachTarget: string | null = null;
   for (const term of writesInOrder) {
+    // A negated state adjective on an entity that carries the trait is
+    // two-valued: written as its complement, not left to a read.
+    const complement = term.kind === 'pin' && !term.mustHold ? adjectiveComplement(term.expression, world) : undefined;
+    if (complement !== undefined) {
+      const result = arrange(world as never, complement, { turn: game.engine?.getContext?.().currentTurn });
+      if (!result.arranged) return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? complement, arranged };
+      arranged.push(complement);
+      continue;
+    }
     if (term.kind === 'some-fails' || ((term.kind === 'pin' || term.kind === 'with-player') && !term.mustHold)) {
       checks.push(term);
       continue;
@@ -1000,8 +1056,24 @@ export async function runDerivedBranch(
   // a negation the floor does not arrange.
   for (const check of checks) {
     if (check.kind === 'some-fails') {
-      const held = termHolds(check, world);
+      let held = termHolds(check, world);
       if ('shape' in held) return { ...base, status: 'skipped', shape: held.shape, detail: held.detail, arranged };
+      if (!held.holds) {
+        // Every operand holds. A failed `and` is still never chosen among
+        // many-valued states — but an operand that is one state adjective
+        // is two-valued, and its complement is the one write that makes
+        // the conjunction fail: the leftmost such operand is written.
+        const witness = check.operands
+          .map((operand) => (operand.length === 1 && operand[0].kind === 'pin' && operand[0].mustHold ? adjectiveComplement(operand[0].expression, world) : undefined))
+          .find((complement) => complement !== undefined);
+        if (witness !== undefined) {
+          const result = arrange(world as never, witness, { turn: game.engine?.getContext?.().currentTurn });
+          if (!result.arranged) return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? witness, arranged };
+          arranged.push(witness);
+          held = termHolds(check, world);
+          if ('shape' in held) return { ...base, status: 'skipped', shape: held.shape, detail: held.detail, arranged };
+        }
+      }
       if (!held.holds) {
         const conjunction = check.operands.map((operand) => describeTerms(operand)).join(' and ');
         return { ...base, status: 'skipped', shape: 'negation', detail: `every operand of \`${conjunction}\` holds in the arranged world`, arranged };
@@ -1034,9 +1106,17 @@ export async function runDerivedBranch(
   // typed — a slot nothing fills is a named gap, never a parse failure.
   let input = plan.command.kind === 'typed' ? plan.command.input : undefined;
   if (plan.command.kind === 'typed') {
+    const action = branch.command.kind === 'action' ? branch.command.action : null;
+    const intercepts = (irId: string): boolean =>
+      action !== null &&
+      branches.some((other) => other.subject === irId && other.clause.kind === 'on' && other.command.kind === 'action' && other.command.action === action);
     for (const filler of plan.command.fillers ?? []) {
-      const chosen = chooseFiller(filler, plan, ir, world, reachTarget);
+      const chosen = chooseFiller(filler, plan, ir, world, reachTarget, intercepts);
       if ('shape' in chosen) return { ...base, status: 'skipped', shape: chosen.shape, detail: chosen.detail, arranged };
+      if ('omit' in chosen) {
+        input = input!.replace(new RegExp(`\\s+\\w+\\s+${filler.token.replace(/[[\]]/g, '\\$&')}$`), '').trim();
+        continue;
+      }
       for (const expression of chosen.expressions) {
         const result = arrange(world as never, expression, { turn: game.engine?.getContext?.().currentTurn });
         if (!result.arranged) {
@@ -1049,7 +1129,19 @@ export async function runDerivedBranch(
       if (player && chosenId && !world.canSee(player.id, chosenId)) {
         return { ...base, status: 'skipped', shape: 'object-unreachable', detail: `${chosen.entity} is not in the player's sight after arranging`, arranged };
       }
-      input = input!.replace(filler.token, chosen.name);
+      const phrase = chosenId ? typedPhrase(world, chosenId) : { phrase: chosen.name };
+      if ('shape' in phrase) return { ...base, status: 'skipped', shape: phrase.shape, detail: phrase.detail, arranged };
+      input = input!.replace(filler.token, phrase.phrase);
+    }
+    // The subject, too, is typed by a name nothing else in sight answers to.
+    if (reachTarget !== null && branch.command.kind === 'action') {
+      const subjectId = worldIdOf(world, reachTarget);
+      const written = entityName(ir, reachTarget);
+      if (subjectId && written !== undefined) {
+        const phrase = typedPhrase(world, subjectId);
+        if ('shape' in phrase) return { ...base, status: 'skipped', shape: phrase.shape, detail: phrase.detail, arranged };
+        if (phrase.phrase !== written) input = input!.replace(written, phrase.phrase);
+      }
     }
   }
 
@@ -1257,7 +1349,7 @@ function resolveTerm(
       if (!subjectId) return { shape: 'unrecognized', detail: `entity "${term.subject}" not found` };
       const entity = world.getEntity(subjectId);
       if (!entity) return { shape: 'unrecognized', detail: `entity "${term.subject}" not found` };
-      return { expressions: standardPreconditions(term.action, entity), mustHold: true };
+      return { expressions: standardPreconditions(term.action, entity, term.keep), mustHold: true };
     }
     case 'reach-noun': {
       const player = world.getPlayer();
@@ -1277,6 +1369,21 @@ function resolveTerm(
   }
 }
 
+/**
+ * For a declared-state pin naming a state adjective of a trait the entity
+ * carries, the pin that writes its complement (`stove is closed` →
+ * `stove is open`); undefined for any other expression.
+ */
+function adjectiveComplement(expression: string, world: DerivedWorld): string | undefined {
+  const pin = parsePin(expression);
+  if (pin.kind !== 'declared-state' || pin.negated || pin.name === 'story') return undefined;
+  const adjective = STATE_ADJECTIVES[pin.state];
+  if (!adjective) return undefined;
+  const entityId = worldIdOf(world, pin.name);
+  if (!entityId || world.getEntity(entityId)?.get(adjective.trait) === undefined) return undefined;
+  return `${pin.name} is ${adjective.complement}`;
+}
+
 /** Whether an actor other than `playerId` holds the entity, anywhere up its holder chain. */
 function heldByAnotherActor(world: DerivedWorld, entityId: string, playerId: string): boolean {
   let holder = world.getLocation(entityId) ?? null;
@@ -1287,6 +1394,42 @@ function heldByAnotherActor(world: DerivedWorld, entityId: string, playerId: str
     holder = world.getLocation(holder) ?? null;
   }
   return false;
+}
+
+/**
+ * The words the parser matches a typed noun against: the identity name and
+ * every alias, lowercased. The parser's first tier is an exact match on any
+ * of these across everything in scope, so a phrase is typed safely when no
+ * other entity in sight has it as an exact name or alias.
+ */
+function parserNames(entity: DerivedEntity): string[] {
+  const identity = entity.get('identity');
+  const names = [identity?.name ?? entity.name, ...(identity?.aliases ?? [])];
+  return names.map((name) => name.toLowerCase());
+}
+
+/**
+ * The phrase to type for an entity: its name when nothing else in the
+ * player's sight answers to it exactly, else the first alias nothing else
+ * answers to. A noun every one of whose names is also another's is a named
+ * gap — the parser would prompt, and a prompt is not the rule under test.
+ */
+function typedPhrase(world: DerivedWorld, entityId: string): { phrase: string } | { shape: string; detail: string } {
+  const player = world.getPlayer();
+  const target = world.getEntity(entityId);
+  if (!player || !target) return { phrase: entityId };
+  const others = world.getAllEntities().filter((other) => other.id !== entityId && other.id !== player.id && world.canSee(player.id, other.id));
+  const taken = new Map<string, DerivedEntity>();
+  for (const other of others) for (const name of parserNames(other)) if (!taken.has(name)) taken.set(name, other);
+  const identity = target.get('identity');
+  const candidates = [identity?.name ?? target.name, ...(identity?.aliases ?? [])];
+  const colliders: string[] = [];
+  for (const candidate of candidates) {
+    const collider = taken.get(candidate.toLowerCase());
+    if (!collider) return { phrase: candidate };
+    colliders.push(`"${candidate}" is also ${collider.name}`);
+  }
+  return { shape: 'name-ambiguous', detail: `every name of ${target.name} is another's in sight: ${colliders.join('; ')}` };
 }
 
 /** The IR id of a world entity, when the loader stamped one. */
@@ -1312,12 +1455,24 @@ function chooseFiller(
   plan: Extract<DerivedPlan, { kind: 'run' }>,
   ir: StoryIR,
   world: DerivedWorld,
-  subject: string | null
-): { entity: string; name: string; expressions: string[] } | { shape: string; detail: string } {
+  subject: string | null,
+  intercepts: (irId: string) => boolean
+): { entity: string; name: string; expressions: string[] } | { omit: true } | { shape: string; detail: string } {
   const player = world.getPlayer();
   if (!player) return { shape: 'player-offstage', detail: 'the player is in no room' };
   const named = (irId: string): string => entityName(ir, irId) ?? irId;
   if (filler.entity !== null) return { entity: filler.entity, name: named(filler.entity), expressions: [] };
+
+  if (filler.role === 'key') {
+    // The lockable names its key, or the slot is dropped: `unlock X` alone.
+    const subjectId = subject === null ? undefined : worldIdOf(world, subject);
+    const keyId = subjectId ? world.getEntity(subjectId)?.get('lockable')?.keyId : undefined;
+    const key = keyId ? world.getEntity(keyId) : undefined;
+    if (!key) return { omit: true };
+    const irId = irIdOf(key) ?? key.id;
+    const name = irIdOf(key) ? named(irId) : key.name;
+    return { entity: irId, name, expressions: world.getLocation(key.id) === player.id ? [] : [`player.inventory contains ${irId}`] };
+  }
 
   if (filler.role !== undefined) {
     // A holder the pattern asks for: the first container (or supporter) in
@@ -1341,16 +1496,23 @@ function chooseFiller(
   }
 
   if (filler.token === '[something]') {
+    // A thing with its own clause on this action would answer instead of
+    // the subject's clause (giving the purse to Pieter is the purse's
+    // refusal, not Pieter's), so such a thing fills the slot only when
+    // nothing else the player holds can.
+    const candidates: string[] = [];
     for (const term of plan.arrange) {
       const held = term.kind === 'pin' && term.mustHold ? /^player\.inventory contains (\S+)$/.exec(term.expression) : null;
-      if (held && held[1] !== subject) return { entity: held[1], name: named(held[1]), expressions: [] };
+      if (held && held[1] !== subject) candidates.push(held[1]);
     }
     for (const entity of world.getAllEntities()) {
       const irId = irIdOf(entity);
       if (irId !== undefined && irId !== subject && entity.get('actor') === undefined && world.getLocation(entity.id) === player.id) {
-        return { entity: irId, name: named(irId), expressions: [] };
+        candidates.push(irId);
       }
     }
+    const chosen = candidates.find((irId) => !intercepts(irId)) ?? candidates[0];
+    if (chosen !== undefined) return { entity: chosen, name: named(chosen), expressions: [] };
     return { shape: 'object-unreachable', detail: 'nothing fills [something]: the player holds nothing and no precondition names an item' };
   }
 
@@ -1376,34 +1538,36 @@ function chooseFiller(
  * pin expressions — a door must be closed and unlocked to open, a key held
  * to lock or unlock, a tool held to cut or dig. Nothing for an entity that
  * lacks the trait: the action will refuse and the derived test will say so.
+ * A flag whose adjective the clause pins itself (`keep`) is left as pinned.
  */
-function standardPreconditions(action: string, entity: DerivedEntity): string[] {
+function standardPreconditions(action: string, entity: DerivedEntity, keep: string[] = []): string[] {
   const expressions: string[] = [];
   const openable = entity.get('openable');
   const lockable = entity.get('lockable');
   const switchable = entity.get('switchable');
+  const kept = (adjective: string): boolean => keep.includes(adjective);
   switch (action) {
     case 'opening':
-      if (lockable && lockable.isLocked === true) expressions.push(`${entity.id}.isLocked = false`);
-      if (openable && openable.isOpen === true) expressions.push(`${entity.id}.isOpen = false`);
+      if (lockable && lockable.isLocked === true && !kept('locked')) expressions.push(`${entity.id}.isLocked = false`);
+      if (openable && openable.isOpen === true && !kept('open')) expressions.push(`${entity.id}.isOpen = false`);
       break;
     case 'closing':
-      if (openable && openable.isOpen === false) expressions.push(`${entity.id}.isOpen = true`);
+      if (openable && openable.isOpen === false && !kept('closed')) expressions.push(`${entity.id}.isOpen = true`);
       break;
     case 'locking':
-      if (openable && openable.isOpen === true) expressions.push(`${entity.id}.isOpen = false`);
-      if (lockable && lockable.isLocked === true) expressions.push(`${entity.id}.isLocked = false`);
+      if (openable && openable.isOpen === true && !kept('open')) expressions.push(`${entity.id}.isOpen = false`);
+      if (lockable && lockable.isLocked === true && !kept('locked')) expressions.push(`${entity.id}.isLocked = false`);
       if (lockable?.keyId) expressions.push(`player.inventory contains ${lockable.keyId}`);
       break;
     case 'unlocking':
-      if (lockable && lockable.isLocked === false) expressions.push(`${entity.id}.isLocked = true`);
+      if (lockable && lockable.isLocked === false && !kept('unlocked')) expressions.push(`${entity.id}.isLocked = true`);
       if (lockable?.keyId) expressions.push(`player.inventory contains ${lockable.keyId}`);
       break;
     case 'switching_on':
-      if (switchable && switchable.isOn === true) expressions.push(`${entity.id}.isOn = false`);
+      if (switchable && switchable.isOn === true && !kept('on')) expressions.push(`${entity.id}.isOn = false`);
       break;
     case 'switching_off':
-      if (switchable && switchable.isOn === false) expressions.push(`${entity.id}.isOn = true`);
+      if (switchable && switchable.isOn === false && !kept('off')) expressions.push(`${entity.id}.isOn = true`);
       break;
     case 'cutting':
     case 'digging': {

@@ -547,7 +547,12 @@ export function evaluateStateExpression(
     if (typeof irId !== 'string') {
       return { matches: false, details: `the ${pin.name}: not a Chord entity (no IR id), so it cannot be gone` };
     }
-    const gone = world.getStateValue?.(storyStateKeys.entityGonePrefix + irId) === true;
+    // Removed from the world by `remove`, or in a declared state the author
+    // named `gone` (`change Jacobs to gone`): the grammar reads both as the
+    // one claim, since the sentence is the same.
+    const gone =
+      world.getStateValue?.(storyStateKeys.entityGonePrefix + irId) === true ||
+      world.getStateValue?.(storyStateKeys.entityStatePrefix + irId) === 'gone';
     if (!pin.negated) {
       return { matches: gone, details: gone ? undefined : `the ${pin.name} is not gone` };
     }
@@ -599,6 +604,11 @@ function evaluateChordStateClaim(
       return { matches: false, details: `${label}: not a Chord entity (no IR id), so it has no states` };
     }
     actual = world.getStateValue?.(keys.entityStatePrefix + irId);
+    // A state adjective (open/closed, locked/unlocked, on/off) is read off
+    // the trait, as the story's own evaluator reads it, unless the declared
+    // state itself is that word. The actual then names the flag's word.
+    const adjective = actual === expected ? undefined : stateAdjective(entity, expected);
+    if (adjective !== undefined) actual = adjective;
     if (actual === undefined) {
       return { matches: false, details: `${label}: declares no states` };
     }
@@ -608,6 +618,34 @@ function evaluateChordStateClaim(
     return { matches: isEqual, details: isEqual ? undefined : `${label} is "${actual}", expected "${expected}"` };
   }
   return { matches: !isEqual, details: !isEqual ? undefined : `${label} should not be "${expected}"` };
+}
+
+/**
+ * The word a trait's flag currently spells, when `word` is a state
+ * adjective of a trait the entity carries: `open`/`closed` off the openable
+ * flag, `locked`/`unlocked` off the lockable, `on`/`off` off the
+ * switchable. Undefined when `word` is no such adjective or the entity
+ * lacks the trait.
+ */
+function stateAdjective(entity: { get?(traitType: string): unknown }, word: string): string | undefined {
+  const read = (traitType: string, flag: string, whenTrue: string, whenFalse: string): string | undefined => {
+    const trait = entity.get?.(traitType) as Record<string, unknown> | undefined;
+    if (!trait) return undefined;
+    return trait[flag] === true ? whenTrue : whenFalse;
+  };
+  switch (word) {
+    case 'open':
+    case 'closed':
+      return read('openable', 'isOpen', 'open', 'closed');
+    case 'locked':
+    case 'unlocked':
+      return read('lockable', 'isLocked', 'locked', 'unlocked');
+    case 'on':
+    case 'off':
+      return read('switchable', 'isOn', 'on', 'off');
+    default:
+      return undefined;
+  }
 }
 
 /**

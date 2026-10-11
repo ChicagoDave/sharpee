@@ -197,3 +197,51 @@ describe('what is not a claim', () => {
     });
   });
 });
+
+describe('a state adjective reads the trait flag beside a declared state (GH #549 Phase 3)', () => {
+  function cellar() {
+    const w = new WorldModel();
+    const room = w.createEntity('cellar', 'room');
+    const player = w.createEntity('player', 'actor');
+    w.moveEntity(player.id, room.id);
+    w.setPlayer(player.id);
+    const stove = w.createEntity('stove', 'container');
+    stove.add(new OpenableTrait({ isOpen: false }));
+    stove.attributes[KEYS.entityIdAttribute] = 'stove';
+    w.setStateValue(KEYS.entityStatePrefix + 'stove', 'hot');
+    w.moveEntity(stove.id, room.id);
+    return { w, stove };
+  }
+
+  it('`is closed` holds off the openable flag while the declared state stays `hot`', () => {
+    const { w } = cellar();
+    expect(evaluateStateExpression('the stove is hot', w, KEYS).matches).toBe(true);
+    expect(evaluateStateExpression('the stove is closed', w, KEYS).matches).toBe(true);
+    expect(evaluateStateExpression('the stove is not closed', w, KEYS)).toEqual({ matches: false, details: 'the stove should not be "closed"' });
+    expect(evaluateStateExpression('the stove is open', w, KEYS)).toEqual({ matches: false, details: 'the stove is "closed", expected "open"' });
+  });
+
+  it('an adjective of a trait the entity lacks misses against the declared state, as before', () => {
+    const { w } = cellar();
+    expect(evaluateStateExpression('the stove is locked', w, KEYS)).toEqual({ matches: false, details: 'the stove is "hot", expected "locked"' });
+  });
+});
+
+describe('a declared state named `gone` reads as the gone claim (GH #549 Phase 3)', () => {
+  it('holds for `change X to gone` as it does for a removed entity', () => {
+    const w = new WorldModel();
+    const room = w.createEntity('cell', 'room');
+    const player = w.createEntity('player', 'actor');
+    w.moveEntity(player.id, room.id);
+    w.setPlayer(player.id);
+    const jacobs = w.createEntity('Jacobs', 'actor');
+    jacobs.attributes[KEYS.entityIdAttribute] = 'jacobs';
+    w.moveEntity(jacobs.id, room.id);
+    const keys: StoryStateKeys = { ...KEYS, entityGonePrefix: 'test.gone.' };
+    w.setStateValue(keys.entityStatePrefix + 'jacobs', 'straining');
+    expect(evaluateStateExpression('jacobs is gone', w, keys).matches).toBe(false);
+    w.setStateValue(keys.entityStatePrefix + 'jacobs', 'gone');
+    expect(evaluateStateExpression('jacobs is gone', w, keys).matches).toBe(true);
+    expect(evaluateStateExpression('jacobs is not gone', w, keys).matches).toBe(false);
+  });
+});

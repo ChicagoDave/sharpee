@@ -372,6 +372,7 @@ describe('reach for every noun the command names (GH #549 Phase 2)', () => {
       'guard · on giving': 'passed',
       'ghost · on showing': 'skipped',
       'plank · on inserting': 'passed',
+      'coin · on giving': 'passed',
       'story · before the game starts': 'passed',
     });
 
@@ -380,7 +381,8 @@ describe('reach for every noun the command names (GH #549 Phase 2)', () => {
     expect(showClerk.command).toBe('show coin to clerk');
     expect(showClerk.arranged).toEqual([expect.stringMatching(/^player\.location = /)]);
     expect(showClerk.claims).toEqual([{ claim: 'emitted clerk-shrug', passed: true }]);
-    expect(outcome(run, 'clerk · on giving').command).toBe('give coin to clerk');
+    // The coin has a giving clause of its own, which would answer instead of the clerk's: the button fills the slot.
+    expect(outcome(run, 'clerk · on giving').command).toBe('give button to clerk');
 
     // The clerk carries the apron: wearing needs it in the player's hands.
     const apron = outcome(run, 'on wearing');
@@ -411,7 +413,7 @@ describe('reach for every noun the command names (GH #549 Phase 2)', () => {
     expect(medal.arranged![2].slice('clerk.location = '.length)).toBe(medal.arranged![0].slice('player.location = '.length));
     expect(medal.claims).toEqual([{ claim: 'emitted medal-shine', passed: true }]);
 
-    expect(outcome(run, 'guard · on giving').command).toBe('give coin to guard');
+    expect(outcome(run, 'guard · on giving').command).toBe('give button to guard');
     expect(outcome(run, 'ghost · on showing').shape).toBe('subject-offstage');
 
     // The `in` slot wants a container: the crate, not the coin the player holds.
@@ -429,5 +431,53 @@ describe('reach for every noun the command names (GH #549 Phase 2)', () => {
     expect(medal.detail).toContain('[someone]');
     expect(medal.command).toBeUndefined();
     expect(run.total).toBe(run.outcomes.length);
+  }, 30_000);
+});
+
+describe('keys, typed names, and trait words (GH #549 Phase 3)', () => {
+  it('types the key, drops the slot a lock does not name, picks the alias nothing else answers to, and writes a flag word as the flag', async () => {
+    const { run } = await runFixture('keys-and-names');
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'cellar door · after unlocking': 'passed',
+      'padlock · on unlocking': 'passed',
+      'strongbox · on opening · refused box-locked': 'passed',
+      'strongbox · on opening': 'skipped',
+      'pear · on taking': 'passed',
+      'shadow · on examining': 'skipped',
+      'stove · on examining · refused stove-hot-closed': 'passed',
+      'stove · on examining · refused stove-hot-open': 'passed',
+      'stove · on examining': 'skipped',
+      'story · before the game starts': 'passed',
+    });
+
+    const door = outcome(run, 'cellar door · after unlocking');
+    expect(door.command).toBe('unlock cellar door with iron key');
+    expect(door.arranged).toEqual([expect.stringMatching(/^player\.location = /), expect.stringMatching(/^player\.inventory contains /)]);
+    expect(door.claims).toEqual([{ claim: 'cellar-door is swung', passed: true }]);
+
+    expect(outcome(run, 'padlock · on unlocking').command).toBe('unlock padlock');
+
+    // The clause pins `locked`; the implicit unlock-to-open must not undo it.
+    const boxLocked = outcome(run, 'refused box-locked');
+    expect(boxLocked.arranged).toEqual(['strongbox is locked', expect.stringMatching(/^player\.location = /)]);
+    expect(boxLocked.claims).toEqual([{ claim: 'emitted box-locked', passed: true }]);
+    expect(outcome(run, 'pear · on taking').command).toBe('take green pear');
+
+    const shadow = outcome(run, 'shadow · on examining');
+    expect(shadow.shape).toBe('name-ambiguous');
+    expect(shadow.detail).toContain('figure');
+    expect(shadow.command).toBeUndefined();
+
+    // `stove is closed` is the openable flag: written as the flag, the declared state `hot` survives it.
+    const hotClosed = outcome(run, 'refused stove-hot-closed');
+    expect(hotClosed.arranged).toEqual(['stove is hot', 'stove is closed', expect.stringMatching(/^player\.location = /)]);
+    expect(hotClosed.claims).toEqual([{ claim: 'emitted stove-hot-closed', passed: true }]);
+    // `not (hot and closed)` with `hot` held: `closed` is two-valued, so the
+    // conjunction is made to fail by writing `open` — in the check pass, after
+    // every write — never left to a read that would skip the branch.
+    const hotOpen = outcome(run, 'refused stove-hot-open');
+    expect(hotOpen.arranged).toEqual(['stove is hot', expect.stringMatching(/^player\.location = /), 'stove is open']);
+    expect(hotOpen.claims).toEqual([{ claim: 'emitted stove-hot-open', passed: true }]);
   }, 30_000);
 });

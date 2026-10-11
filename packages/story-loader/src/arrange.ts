@@ -12,7 +12,11 @@
  *
  * The floor, and exactly the floor:
  *   story.state = <phase>                     → the story-phase key
- *   [the] <name> is <state>                   → the entity's declared-state key
+ *   [the] <name> is <state>                   → the entity's declared-state key — or the
+ *                                               trait flag, when <state> is open/closed,
+ *                                               locked/unlocked, on/off and the entity has
+ *                                               the trait (the evaluator reads those words
+ *                                               off the trait, so the write goes there too)
  *   the story is <state>                      → the story-phase key
  *   <entity>.location = <place>               → a placement
  *   <entity>.inventory|contents contains <x>  → a placement into the entity
@@ -195,10 +199,31 @@ function arrangeStoryState(world: WorldModel, state: string): ArrangeResult {
   return { arranged: true };
 }
 
-/** `[the] <name> is <state>` — only for a Chord entity that declares states. */
+/**
+ * The state adjectives the evaluator reads off a trait, never off the
+ * declared-state key (ratchet D1): each as the flag it is and the value
+ * that makes it hold. Arranging one writes that flag, so the declared
+ * state beside it — a furnace's `hot` next to its `closed` — survives.
+ */
+const STATE_ADJECTIVES: Record<string, { flag: keyof typeof FLAG_WRITERS; value: boolean }> = {
+  open: { flag: 'isOpen', value: true },
+  closed: { flag: 'isOpen', value: false },
+  locked: { flag: 'isLocked', value: true },
+  unlocked: { flag: 'isLocked', value: false },
+  on: { flag: 'isOn', value: true },
+  off: { flag: 'isOn', value: false },
+};
+
+/**
+ * `[the] <name> is <state>` — the trait flag when the word is a state
+ * adjective of a trait the entity carries, else the declared-state key of
+ * a Chord entity that declares states.
+ */
 function arrangeDeclaredState(world: WorldModel, name: string, state: string): ArrangeResult {
   const entity = resolveEntity(world, name);
   if (!entity) return unrecognized(`entity "${name}" not found`);
+  const adjective = STATE_ADJECTIVES[state];
+  if (adjective && FLAG_WRITERS[adjective.flag](entity, adjective.value)) return { arranged: true };
   const irId = entity.attributes[CHORD_IR_ID_ATTRIBUTE];
   if (typeof irId !== 'string') {
     return unrecognized(`"${name}" is not a Chord entity (no IR id), so it has no states`);

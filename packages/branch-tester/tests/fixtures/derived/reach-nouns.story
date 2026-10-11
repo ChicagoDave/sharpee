@@ -2,7 +2,8 @@
 ## command names (GH #549 Phase 2): a clerk who carries an apron and dough
 ## (wearing needs the apron held; touching needs the dough in the room), two
 ## clauses on the clerk as the viewer and recipient (the item slot is
-## unnamed — the coin the player carries fills it), a locket whose viewer is
+## unnamed — the coin the player carries fills it for showing; for giving
+## the coin has a clause of its own, so the button fills it), a locket whose viewer is
 ## unnamed with the clerk already present, a medal in a room with nobody in
 ## it (the first declared person is brought in), a guard in the Pantry
 ## receiving the coin, a plank whose inserting clause needs a container the
@@ -113,6 +114,15 @@ create the coin
 
   A coin.
 
+  on the player giving
+    refuse coin-keep
+  end on
+
+create the button
+  a thing
+
+  A button.
+
 create the crate
   a container, openable
   in the Hall
@@ -153,12 +163,16 @@ end phrase
 define phrase plank-no
   The plank will not fit.
 end phrase
+define phrase coin-keep
+  You keep the coin.
+end phrase
 
 create Alex
   a person, proper
   playable
   starts in the Hall
   carries the coin
+  carries the button
 
 before the game starts
   change the player to Alex

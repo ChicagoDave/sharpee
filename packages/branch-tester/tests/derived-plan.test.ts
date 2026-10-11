@@ -350,3 +350,23 @@ describe('planBranch — the subject fills the slot of its kind, and the rest ar
     });
   });
 });
+
+describe('planBranch — a lock that may name a key is typed with its `with` slot (GH #549 Phase 3)', () => {
+  const keysIr = fixture('keys-and-names');
+  const keysBranches = collectClauseBranches(keysIr);
+  const keysLanguage: ActionPatterns = (() => {
+    const game = assembleGame(createStory(keysIr, { seed: 7 }), { seed: 7 });
+    const provider = game.engine.getLanguageProvider();
+    return (actionId) => provider.getActionPatterns(actionId);
+  })();
+
+  it('unlocking takes the two-slot pattern; the second slot is the key, decided at run time', () => {
+    const door = keysBranches.find((candidate) => derivedBranchLabel(candidate, keysIr) === 'cellar door · after unlocking')!;
+    const plan = planBranch(door, keysIr, keysBranches, keysLanguage);
+    expect(plan.kind === 'run' && plan.command).toEqual({
+      kind: 'typed',
+      input: 'unlock cellar door with [something]',
+      fillers: [{ token: '[something]', entity: null, role: 'key' }],
+    });
+  });
+});
