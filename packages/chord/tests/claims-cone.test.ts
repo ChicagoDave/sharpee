@@ -286,6 +286,21 @@ end claims
     expect(result.ir).toEqual(compile(story()).ir);
   });
 
+  it('AC-9 shape 3 — a ware whose state guards an exit is kept with the guard line named; a decorative ware beside it is reported inert on the needs things line', () => {
+    const source = story({ laneExtra: '  east is blocked while the loaf is shelved: loaf-guard\n' });
+    const fragment = 'claims\n  needs rooms: the Square, the Lane, the Gate\n  needs things: the loaf, the pebble\n  needs verbs: take\n\n  never the player reaches the Gate\n    the player is in the Gate\nend claims\n';
+    const result = compileClaims(source, fragment, { claimsFile: 'guard.claims.chord' });
+    expect(result.ok).toBe(true);
+    const finding = result.diagnostics.find((d) => d.code === 'analysis.claim-inert-needs')!;
+    expect([finding.span.file, finding.span.line]).toEqual(['guard.claims.chord', 3]);
+    expect(finding.message).toContain('nothing it depends on reads pebble.');
+    expect(finding.message).toContain('a trimmed line: `needs things: loaf`');
+    const guardLine = lineOf(source, 'east is blocked while the loaf is shelved');
+    const cone = claimCone(result.ir, result.claims!.claims[0], { rooms: ['square', 'lane', 'gate'], things: ['loaf', 'pebble'], verbs: ['take'] });
+    expect(cone.inert).toEqual(['pebble']);
+    expect(cone.kept).toEqual([{ thing: 'loaf', reason: `the guard on Lane's east exit (the story:${guardLine})`, span: expect.objectContaining({ line: guardLine }) }]);
+  });
+
   it('when every thing is inert the finding says the line can go', () => {
     const fragment = 'claims\n  needs rooms: the Square, the Lane, the Gate\n  needs things: the pebble, the loaf\n  needs verbs: take\n\n  never the player reaches the Gate\n    the player is in the Gate\nend claims\n';
     const result = compileClaims(story(), fragment);

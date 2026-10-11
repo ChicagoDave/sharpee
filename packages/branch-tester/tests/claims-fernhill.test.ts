@@ -24,7 +24,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { compile, type StoryIR } from '@sharpee/chord';
+import { claimCone, compile, type StoryIR } from '@sharpee/chord';
 import { createStory } from '@sharpee/story-loader';
 import { assembleGame } from '@sharpee/bootstrap';
 import { normalizeClaimSet } from '../src/claims/claim-set.js';
@@ -122,5 +122,34 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       'north', 'north', 'east', 'turn stopcock', 'push primer plunger', 'turn on boiler', 'west',
       'ask Tobias about the folly', 'west', 'north', 'open folly door', 'north', 'take deed box', 'south',
     ]);
+  }, 300_000);
+
+  it('AC-9 (ADR-365 D12): nothing a witness touches is reported inert, each verdict carries its cone\'s count, and the inert things are the ones the story says are off the path', async () => {
+    const result = await fernhill();
+    const ir = compileStory(STORY!);
+    const sidecar = JSON.parse(readFileSync(CLAIMS, 'utf8'));
+    const spellings = new Map(ir.entities.map((entity) => [entity.id, [entity.name, ...entity.aka].map((s) => s.toLowerCase())]));
+    const inertByClaim: Record<string, string[]> = {};
+    for (const claim of sidecar.claims) {
+      const set = { rooms: claim.needs?.rooms ?? sidecar.rooms, things: claim.needs?.things ?? sidecar.things, verbs: claim.needs?.verbs ?? sidecar.verbs };
+      const cone = claimCone(ir, claim, set);
+      inertByClaim[claim.name] = cone.inert;
+      const verdict = result.claims.find((v) => v.name === claim.name)!;
+      expect(verdict.inertInSet).toBe(cone.inert.length);
+      for (const command of verdict.witness ?? []) {
+        for (const id of cone.inert) for (const spelling of spellings.get(id) ?? []) expect(command.toLowerCase(), `${claim.name}: "${command}" touches inert ${id}`).not.toContain(spelling);
+      }
+    }
+    expect(inertByClaim).toEqual({
+      'the story can be won': ['sherry-bottle', 'mrs-kettle'],
+      'the deed is in hand': ['sherry-bottle', 'mrs-kettle'],
+      'Tobias has been asked about the folly': [],
+      'the diary page has been read': [],
+      'the deed box leaves the Folly': [],
+      'the Study is reached': [],
+      'the Study is reached without the sherry': ['garden-shears'],
+      'the auction notice has been read': [],
+      'the stopcock has been turned': [],
+    });
   }, 300_000);
 });
