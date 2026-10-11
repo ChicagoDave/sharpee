@@ -112,7 +112,9 @@ export type BranchLeaf =
   | { kind: 'refused'; guard: 'must' | 'refuse-when' | 'without'; phraseKey: string; slot?: string }
   | { kind: 'arm'; value: string }
   | { kind: 'ordinal'; ordinal: number }
-  | { kind: 'alternative'; id: string; index: number };
+  | { kind: 'alternative'; id: string; index: number }
+  /** A topic row's response: the first `phrase` whose `when` holds answers, so each phrase is its own leaf. */
+  | { kind: 'response'; phraseKey: string };
 
 /** One term of what must be true for a branch to be the path taken. */
 export type BranchPrecondition =
@@ -253,21 +255,54 @@ function armTerm(subject: unknown, value: string, itBinding: string | undefined)
  * through-leaf with one leaf per arm or alternative, each carrying the
  * level's straight statements around its own. An ordinal adds leaves and
  * leaves the through-leaf in place, since the rest of the level still runs.
+ * In a response ladder (a topic row with more than one phrase, or one with
+ * a `when`), each `phrase` is a leaf of its own: the dialogue runtime
+ * answers with the first whose `when` holds, so a phrase's leaf carries
+ * every earlier `when` failing and its own holding, and a phrase behind an
+ * unconditional one has no leaf — it never answers.
  *
  * @param body the statements, in source order
  * @param path the precondition terms already on the way here
  * @param itBinding the entity `it` refers to here, if any
+ * @param ladder whether the body's phrases are a first-match response ladder
  * @returns the leaves, in source order of the construct that produced each
  */
-function leavesOf(body: IRStatement[], path: BranchPrecondition[], itBinding: string | undefined): Leaf[] {
+function leavesOf(body: IRStatement[], path: BranchPrecondition[], itBinding: string | undefined, ladder = false): Leaf[] {
   const straight: IRStatement[] = [];
   const guardLeaves: Leaf[] = [];
   /** Leaves from selects and ordinals, with where in `straight` their own effects belong. */
   const nested: Array<{ leaf: Leaf; at: number }> = [];
   let pre = path;
   let branched = false;
+  /** In a response ladder: the `when` of every phrase passed so far, each to fail for a later phrase to answer. */
+  const earlierWhens: BranchPrecondition[] = [];
+  let answered = false;
+  // A row with one unconditional phrase has nothing to select: its phrase
+  // stays a straight effect of the through-leaf, as every other body's.
+  const phrases = body.filter((statement) => statement.kind === 'phrase');
+  const selects = ladder && (phrases.length > 1 || phrases.some((statement) => (statement as IRStatement & { stmtWhen?: IRCondition | null }).stmtWhen));
 
   for (const statement of body) {
+    if (selects && statement.kind === 'phrase') {
+      // The dialogue runtime answers with the first phrase whose `when`
+      // holds; a phrase after an unconditional one never answers at all.
+      if (answered) continue;
+      const when = (statement as IRStatement & { stmtWhen?: IRCondition | null }).stmtWhen ?? null;
+      const { stmtWhen: _dropped, ...unguarded } = statement as IRStatement & { stmtWhen?: IRCondition | null };
+      branched = true;
+      nested.push({
+        leaf: {
+          leaf: { kind: 'response', phraseKey: statement.phraseKey },
+          pre: [...pre, ...earlierWhens, ...(when ? [{ kind: 'condition' as const, condition: when, holds: true }] : [])],
+          effects: [unguarded as IRStatement],
+          span: spanOf(statement as unknown as IRNode),
+        },
+        at: straight.length,
+      });
+      if (when) earlierWhens.push({ kind: 'condition', condition: when, holds: false });
+      else answered = true;
+      continue;
+    }
     switch (statement.kind) {
       case 'must': {
         const { condition, phraseKey } = statement;
@@ -383,7 +418,7 @@ interface ClauseFrame {
  * @param into the accumulator to append to
  */
 function emitClause(frame: ClauseFrame, into: ClauseBranch[]): void {
-  for (const leaf of leavesOf(frame.body, frame.pre, frame.subject ?? undefined)) {
+  for (const leaf of leavesOf(frame.body, frame.pre, frame.subject ?? undefined, frame.clause.kind === 'topic')) {
     const span = leaf.span ?? frame.span;
     into.push({
       clause: frame.clause,
@@ -444,9 +479,12 @@ const isSequenceDef = (n: IRNode): boolean => Array.isArray(n.steps) && typeof n
 const isTimerDef = (n: IRNode): boolean => typeof n.qualified === 'string' && 'meanwhile' in n;
 
 /**
- * Every branch of a `define action`: its `must` lines and `refuse when`
- * lines are guards ahead of the body, and each `without` refusal is a leaf
- * of its own, since it fires on the command's shape rather than on state.
+ * Every branch of a `define action`: its `refuse when` lines and then its
+ * `must` lines are guards ahead of the body — in the order the loader runs
+ * them (`dispatch-verbs.ts`: the refusal ladder first, the requirements
+ * after it, whatever order the source wrote them in) — and each `without`
+ * refusal is a leaf of its own, since it fires on the command's shape
+ * rather than on state.
  */
 function emitActionDef(node: IRNode, owner: WriterOwner, into: ClauseBranch[]): void {
   const action = String(node.name);
@@ -454,12 +492,17 @@ function emitActionDef(node: IRNode, owner: WriterOwner, into: ClauseBranch[]): 
   const command: BranchCommand = { kind: 'action', actor: 'player', action, object: null, role: null };
   const span = spanOf(node);
   const guards: IRStatement[] = [];
+  for (const refusal of node.refusals as IRNode[]) {
+    if (refusal.kind === 'when') {
+      guards.push({ kind: 'refuse-when', condition: refusal.condition as IRCondition, phraseKey: String(refusal.phraseKey), span: refusal.span as Span });
+    }
+  }
   for (const must of node.musts as IRNode[]) {
     guards.push({ kind: 'must', condition: must.condition as IRCondition, phraseKey: String(must.phraseKey), span: must.span as Span });
   }
   for (const refusal of node.refusals as IRNode[]) {
     if (refusal.kind === 'when') {
-      guards.push({ kind: 'refuse-when', condition: refusal.condition as IRCondition, phraseKey: String(refusal.phraseKey), span: refusal.span as Span });
+      continue;
     } else if (refusal.kind === 'without') {
       const phraseKey = String(refusal.phraseKey);
       const refuse: IRStatement = { kind: 'refuse', phraseKey, params: [], span: refusal.span as Span };

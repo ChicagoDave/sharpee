@@ -353,7 +353,11 @@ export function planBranch(
 ): DerivedPlan {
   const siblings = branches.filter((candidate) => sameClause(candidate, branch));
   const terms: ArrangeTerm[] = [];
-  for (const precondition of [...interceptingGuards(branch, branches), ...branch.precondition]) {
+  const intercepting = interceptingGuards(branch, branches);
+  if ('intercepted' in intercepting) {
+    return { kind: 'skip', shape: 'intercepted', detail: `\`${intercepting.intercepted}\` refuses every ${branch.clause.kind === 'on' ? branch.clause.action : 'firing'} of ${branch.subject ?? 'the story'} before the reaction` };
+  }
+  for (const precondition of [...intercepting.guards, ...branch.precondition]) {
     const mapped = preconditionTerms(precondition, { ir, subject: branch.subject, reading: false, expanding: [] });
     if ('shape' in mapped) return { kind: 'skip', shape: mapped.shape, detail: mapped.detail };
     terms.push(...mapped.terms);
@@ -459,24 +463,29 @@ export function planBranch(
 }
 
 /**
- * For an `after` clause, the guards of every `on` clause intercepting the
- * same action on the same subject, each flipped to "must hold" — the
- * reaction fires only once every interception let the action through.
+ * For an `after` clause, what every `on` clause intercepting the same
+ * action on the same subject needs in order to let the action through: the
+ * guard of each refused leaf — its last precondition, the condition that
+ * fires that refusal — flipped so it does NOT fire (a `refuse when` guard
+ * must fail; a `must` requirement must hold). An `on` clause that refuses
+ * unconditionally intercepts every firing, and the reaction can never run.
  */
-function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): BranchPrecondition[] {
-  if (branch.clause.kind !== 'on' || branch.clause.clauseKind !== 'after') return [];
+function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): { guards: BranchPrecondition[] } | { intercepted: string } {
+  if (branch.clause.kind !== 'on' || branch.clause.clauseKind !== 'after') return { guards: [] };
   const action = branch.clause.action;
   const guards: BranchPrecondition[] = [];
   for (const candidate of branches) {
-    if (candidate.subject !== branch.subject || candidate.leaf.kind !== 'refused') continue;
+    if (candidate.subject !== branch.subject) continue;
     if (candidate.clause.kind !== 'on' || candidate.clause.clauseKind !== 'on' || candidate.clause.action !== action) continue;
-    for (const precondition of candidate.precondition) {
-      if (precondition.kind === 'condition' && !precondition.holds) {
-        guards.push({ kind: 'condition', condition: precondition.condition, holds: true });
-      }
+    if (candidate.leaf.kind === 'refused') {
+      const own = candidate.precondition[candidate.precondition.length - 1];
+      if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
+      continue;
     }
+    const refusal = candidate.effects.find((effect) => effect.kind === 'refuse' && !('stmtWhen' in effect && effect.stmtWhen));
+    if (refusal && refusal.kind === 'refuse') return { intercepted: refusal.phraseKey };
   }
-  return guards;
+  return { guards };
 }
 
 /** What a condition is mapped within: the story, the clause subject `it` binds to, and how the terms will be used. */
@@ -903,6 +912,7 @@ export function derivedBranchLabel(branch: ClauseBranch, ir: StoryIR): string {
     leaf.kind === 'refused' ? ` · refused ${leaf.phraseKey}` :
     leaf.kind === 'arm' ? ` · when ${leaf.value}` :
     leaf.kind === 'ordinal' ? ` · the ${leaf.ordinal}th time` :
+    leaf.kind === 'response' ? ` · answers ${leaf.phraseKey}` :
     ` · alternative ${leaf.index}`;
   return `${subject} · ${clauseText}${leafText}`;
 }
@@ -1022,10 +1032,13 @@ export async function runDerivedBranch(
   const isHereWrite = (term: ArrangeTerm): boolean => term.kind === 'with-player' && term.mustHold;
   const writesInOrder = [...plan.arrange.filter((term) => !isHereWrite(term)), ...plan.arrange.filter(isHereWrite)];
   let reachTarget: string | null = null;
+  /** Whether the plan pins this very state to hold: a negation of it is then a contradiction the check pass names, never a write to undo. */
+  const pinnedToHold = (expression: string): boolean => plan.arrange.some((other) => other.kind === 'pin' && other.mustHold && other.expression === expression);
   for (const term of writesInOrder) {
-    // A negated state adjective on an entity that carries the trait is
-    // two-valued: written as its complement, not left to a read.
-    const complement = term.kind === 'pin' && !term.mustHold ? adjectiveComplement(term.expression, world) : undefined;
+    // A negated two-valued state (a state adjective, a two-state entity, a
+    // two-phase story) is written as its complement, not left to a read —
+    // unless the same state is pinned to hold elsewhere in the plan.
+    const complement = term.kind === 'pin' && !term.mustHold && !pinnedToHold(term.expression) ? pinComplement(term.expression, world, ir) : undefined;
     if (complement !== undefined) {
       const result = arrange(world as never, complement, { turn: game.engine?.getContext?.().currentTurn });
       if (!result.arranged) return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? complement, arranged };
@@ -1060,11 +1073,16 @@ export async function runDerivedBranch(
       if ('shape' in held) return { ...base, status: 'skipped', shape: held.shape, detail: held.detail, arranged };
       if (!held.holds) {
         // Every operand holds. A failed `and` is still never chosen among
-        // many-valued states — but an operand that is one state adjective
-        // is two-valued, and its complement is the one write that makes
-        // the conjunction fail: the leftmost such operand is written.
+        // many-valued states — but an operand whose state is two-valued (a
+        // state adjective, a two-state entity, a two-phase story) has one
+        // complement, the one write that makes the conjunction fail: the
+        // leftmost such operand is written.
         const witness = check.operands
-          .map((operand) => (operand.length === 1 && operand[0].kind === 'pin' && operand[0].mustHold ? adjectiveComplement(operand[0].expression, world) : undefined))
+          .map((operand) =>
+            operand.length === 1 && operand[0].kind === 'pin' && operand[0].mustHold && !pinnedToHold(operand[0].expression)
+              ? pinComplement(operand[0].expression, world, ir)
+              : undefined
+          )
           .find((complement) => complement !== undefined);
         if (witness !== undefined) {
           const result = arrange(world as never, witness, { turn: game.engine?.getContext?.().currentTurn });
@@ -1183,6 +1201,15 @@ export async function runDerivedBranch(
     if (parseFailure) {
       return { ...base, status: 'failed', detail: `parse failure: ${String(parseFailure.data?.reason ?? 'command.failed')}`, command, arranged, rooms };
     }
+    // A topic the character model withheld (ADR-310's arbitration answered
+    // "unknown topic") is gated by a model the floor has no form for. Named
+    // from the turn's own events — the one skip decided after the command.
+    if (branch.command.kind === 'ask' && events.some((event) => event.type === 'character.author.arbitration')) {
+      const asked = events.find((event) => event.type === 'if.event.asked');
+      if (asked && asked.data?.messageId === 'if.action.asking.unknown_topic') {
+        return { ...base, status: 'skipped', shape: 'topic-arbitrated', detail: `the character model withheld ${entityName(ir, branch.command.owner) ?? branch.command.owner}'s answer (arbitration, then unknown topic); not a floor form`, command, arranged, rooms };
+      }
+    }
     if (result.error) {
       return { ...base, status: 'error', detail: result.error, command, arranged, rooms };
     }
@@ -1230,10 +1257,20 @@ export async function runDerivedBranch(
   });
 
   const failed = claims.some((claim) => !claim.passed);
+  // When the standard action itself refused (its blocked event carries a
+  // reason and a stdlib message id), the body behind it never ran: say so,
+  // so the red line names the cause and not only the state that stayed.
+  const refusal = failed
+    ? events.find((event) => typeof event.data?.reason === 'string' && String(event.data?.messageId ?? '').startsWith('if.action.'))
+    : undefined;
+  const details = [
+    ...(refusal ? [`the standard action refused first: ${String(refusal.data?.messageId)}`] : []),
+    ...(plan.unmapped.length > 0 ? [`not asserted: ${plan.unmapped.join(', ')}`] : []),
+  ];
   return {
     ...base,
     status: failed ? 'failed' : 'passed',
-    ...(plan.unmapped.length > 0 ? { detail: `not asserted: ${plan.unmapped.join(', ')}` } : {}),
+    ...(details.length > 0 ? { detail: details.join('; ') } : {}),
     ...(command !== undefined ? { command } : {}),
     arranged,
     claims,
@@ -1370,18 +1407,31 @@ function resolveTerm(
 }
 
 /**
- * For a declared-state pin naming a state adjective of a trait the entity
- * carries, the pin that writes its complement (`stove is closed` →
- * `stove is open`); undefined for any other expression.
+ * The one write that makes a negated pin hold, when its state is
+ * two-valued: a state adjective of a trait the entity carries (`stove is
+ * closed` → `stove is open`), a declared state of an entity that declares
+ * exactly two (`stove is cold` → `stove is hot`), or the story's own phase
+ * when it declares exactly two. Undefined for any other expression — a
+ * many-valued state has no complement to choose.
  */
-function adjectiveComplement(expression: string, world: DerivedWorld): string | undefined {
+function pinComplement(expression: string, world: DerivedWorld, ir: StoryIR): string | undefined {
   const pin = parsePin(expression);
+  if (pin.kind === 'story-state') {
+    if (pin.operator !== '=') return undefined;
+    const other = ir.story.states.length === 2 ? ir.story.states.find((state) => state !== pin.state) : undefined;
+    return other === undefined ? undefined : `story.state = ${other}`;
+  }
   if (pin.kind !== 'declared-state' || pin.negated || pin.name === 'story') return undefined;
   const adjective = STATE_ADJECTIVES[pin.state];
-  if (!adjective) return undefined;
   const entityId = worldIdOf(world, pin.name);
-  if (!entityId || world.getEntity(entityId)?.get(adjective.trait) === undefined) return undefined;
-  return `${pin.name} is ${adjective.complement}`;
+  if (adjective && entityId && world.getEntity(entityId)?.get(adjective.trait) !== undefined) {
+    return `${pin.name} is ${adjective.complement}`;
+  }
+  const declared = ir.entities.find((entity) => entity.id === pin.name)?.states ?? [];
+  if (declared.length === 2 && declared.includes(pin.state)) {
+    return `${pin.name} is ${declared.find((state) => state !== pin.state)}`;
+  }
+  return undefined;
 }
 
 /** Whether an actor other than `playerId` holds the entity, anywhere up its holder chain. */

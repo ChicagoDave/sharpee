@@ -302,10 +302,18 @@ export function streamableDerivedSummary(
   };
 }
 
-/** The first failing claim of an outcome, or its detail (a parse failure), for the failure row. */
+/**
+ * The first failing claim of an outcome, or its detail (a parse failure),
+ * for the failure row. When the standard action refused before the body
+ * could run, the row says so beside the claim: the state that stayed is the
+ * symptom, the refusal the cause.
+ */
 function firstFailureOf(outcome: DerivedOutcome): string | undefined {
   const claim = outcome.claims.find((candidate) => !candidate.passed);
-  if (claim) return `${claim.claim}${claim.message !== undefined ? `: ${claim.message}` : ''}`;
+  if (claim) {
+    const refusal = outcome.detail?.split('; ').find((part) => part.startsWith('the standard action refused first:'));
+    return `${claim.claim}${claim.message !== undefined ? `: ${claim.message}` : ''}${refusal !== undefined ? ` — ${refusal}` : ''}`;
+  }
   return outcome.detail;
 }
 

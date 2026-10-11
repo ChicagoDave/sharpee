@@ -392,18 +392,23 @@ describe('clause kinds beyond `on`', () => {
     expect(clause.effects.map((e) => e.kind)).toEqual(['change']);
   });
 
-  it('a `define action` yields a `without` leaf per missing slot, then its guards and through-path', () => {
+  it('a `define action` yields a `without` leaf per missing slot, then its guards in the loader\'s order (refuse-when before must) and the through-path', () => {
     const action = of('action');
     expect(action.map((b) => b.leaf)).toEqual([
       { kind: 'refused', guard: 'without', phraseKey: 'nope', slot: 'target' },
-      { kind: 'refused', guard: 'must', phraseKey: 'need-shears' },
       { kind: 'refused', guard: 'refuse-when', phraseKey: 'clank' },
+      { kind: 'refused', guard: 'must', phraseKey: 'need-shears' },
       { kind: 'through' },
     ]);
     expect(action[0].effects).toEqual([expect.objectContaining({ kind: 'refuse', phraseKey: 'nope' })]);
-    expect(action[3].precondition).toEqual([
-      { kind: 'condition', condition: expect.objectContaining({ pred: 'holds' }), holds: true },
+    // The `must` leaf runs behind the refusal ladder, so its precondition carries the ladder passed.
+    expect(action[2].precondition).toEqual([
       { kind: 'condition', condition: expect.objectContaining({ pred: 'is' }), holds: false },
+      { kind: 'condition', condition: expect.objectContaining({ pred: 'holds' }), holds: false },
+    ]);
+    expect(action[3].precondition).toEqual([
+      { kind: 'condition', condition: expect.objectContaining({ pred: 'is' }), holds: false },
+      { kind: 'condition', condition: expect.objectContaining({ pred: 'holds' }), holds: true },
     ]);
     for (const branch of action) {
       expect(branch.command).toEqual({ kind: 'action', actor: 'player', action: 'pruning', object: null, role: null });

@@ -288,7 +288,7 @@ describe('condition compositions — the compose fixture, end to end', () => {
       'lamp · on switching_on · refused lamp-flickers': 'passed',
       'lamp · on switching_on': 'skipped',
       'bell · on examining · refused too-dark': 'passed',
-      'bell · on examining': 'skipped',
+      'bell · on examining': 'passed',
       'bell · on ringing · refused bell-outside': 'passed',
       'bell · on ringing · refused ring-done': 'passed',
       'bell · on ringing · refused ring-quiet': 'passed',
@@ -298,7 +298,7 @@ describe('condition compositions — the compose fixture, end to end', () => {
       'story · before the game starts': 'passed',
       'story · define action ringing': 'skipped',
     });
-    expect([run.total, run.passed, run.failed, run.skipped, run.errored]).toEqual([14, 10, 0, 4, 0]);
+    expect([run.total, run.passed, run.failed, run.skipped, run.errored]).toEqual([14, 11, 0, 3, 0]);
   }, 30_000);
 
   it('a thing that must be `here` is placed after the player: the cat reaches the gong\'s room, not the boot room', async () => {
@@ -329,8 +329,9 @@ describe('condition compositions — the compose fixture, end to end', () => {
     const quiet = outcome(run, 'refused ring-quiet');
     expect(quiet.arranged).toEqual(['lamp is warm', expect.stringMatching(/^player\.location = /)]);
     expect(quiet.claims).toContainEqual({ claim: 'emitted ring-quiet', passed: true });
+    // The through leaf's negated guards are two-state entities: each is written as its complement, not read.
     const through = run.outcomes.find((o) => o.label === 'bell · on ringing')!;
-    expect(through.arranged).toEqual([expect.stringMatching(/^player\.location = /)]);
+    expect(through.arranged).toEqual(['lamp is cold', 'bell is still', expect.stringMatching(/^player\.location = /)]);
     expect(through.claims).toContainEqual({ claim: 'bell is rung', passed: true });
   }, 30_000);
 
@@ -345,11 +346,12 @@ describe('condition compositions — the compose fixture, end to end', () => {
     expect(contradiction.command).toBeUndefined();
   }, 30_000);
 
-  it('an `and` whose every operand already holds is SKIPPED naming the conjunction, and the witness skips an operand that maps to nothing', async () => {
+  it('an `and` whose every operand already holds is made to fail by its leftmost two-valued operand, and the witness skips an operand that maps to nothing', async () => {
     const { run } = await runFixture('compose');
+    // `not (bell is still and lamp is cold)`: both hold at boot, both are two-state entities; the leftmost is written.
     const examine = run.outcomes.find((o) => o.label === 'bell · on examining')!;
-    expect(examine.shape).toBe('negation');
-    expect(examine.detail).toBe('every operand of `bell is still and lamp is cold` holds in the arranged world');
+    expect(examine.status).toBe('passed');
+    expect(examine.arranged).toContain('bell is rung');
     const flickers = outcome(run, 'refused lamp-flickers');
     expect(flickers.arranged).toContain('bell is still');
     expect(flickers.claims).toContainEqual({ claim: 'emitted lamp-flickers', passed: true });
@@ -479,5 +481,85 @@ describe('keys, typed names, and trait words (GH #549 Phase 3)', () => {
     const hotOpen = outcome(run, 'refused stove-hot-open');
     expect(hotOpen.arranged).toEqual(['stove is hot', expect.stringMatching(/^player\.location = /), 'stove is open']);
     expect(hotOpen.claims).toEqual([{ claim: 'emitted stove-hot-open', passed: true }]);
+  }, 30_000);
+});
+
+describe('selecting state — intercepting guards, guard order, two-valued negations, response ladders (GH #549 Phase 4)', () => {
+  it('an after clause arranges its on clause\'s refusals to NOT fire, writes two-valued complements, and names what it cannot', async () => {
+    const { run } = await runFixture('intercepting');
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'banana · on taking · refused banana-blocked': 'passed',
+      'banana · on taking': 'skipped',
+      'banana · after taking': 'skipped',
+      'crate · on opening · refused crate-stuck': 'passed',
+      'crate · on opening': 'skipped',
+      'crate · after opening': 'passed',
+      'lamp · on examining · refused too-dark': 'passed',
+      'lamp · on examining': 'skipped',
+      'lamp · after examining': 'passed',
+      'relic · on taking': 'passed',
+      'relic · after taking': 'skipped',
+      'story · before the game starts': 'passed',
+    });
+
+    // Three story phases: `not calm` has no complement, so the reaction is a named gap — not blocked by a guard the runner itself arranged.
+    const banana = outcome(run, 'banana · after taking');
+    expect(banana.shape).toBe('negation');
+    expect(banana.detail).toBe('`story.state = calm` already holds in the arranged world');
+    expect(banana.arranged).not.toContain('story.state = calm');
+
+    // `not locked` is a flag: written as unlocked, and the reaction runs.
+    const crate = outcome(run, 'crate · after opening');
+    expect(crate.arranged[0]).toBe('crate is unlocked');
+    expect(crate.claims).toEqual([{ claim: 'crate is breached', passed: true }]);
+
+    // `not dim` on a two-state entity: written as bright.
+    const lamp = outcome(run, 'lamp · after examining');
+    expect(lamp.arranged[0]).toBe('lamp is bright');
+    expect(lamp.claims).toEqual([{ claim: 'lamp is dim', passed: true }]);
+
+    // An unconditional refusal intercepts every firing: the reaction can never run.
+    const relic = outcome(run, 'relic · after taking');
+    expect(relic.shape).toBe('intercepted');
+    expect(relic.detail).toContain('relic-cursed');
+  }, 30_000);
+
+  it('a define action\'s must line is tested behind its refuse-when ladder, as the loader runs it', async () => {
+    const { run } = await runFixture('must-order');
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'story · define action bathing · refused water-cold': 'passed',
+      'story · define action bathing · refused nowhere-to-bathe': 'passed',
+      'story · define action bathing': 'passed',
+      'story · before the game starts': 'passed',
+    });
+    const must = outcome(run, 'refused nowhere-to-bathe');
+    expect(must.arranged).toEqual(['stove is hot']);
+    expect(must.claims).toEqual([{ claim: 'emitted nowhere-to-bathe', passed: true }]);
+    const through = run.outcomes.find((o) => o.label === 'story · define action bathing')!;
+    expect(through.arranged).toEqual(['stove is hot', expect.stringMatching(/^player\.location = /)]);
+    expect(through.claims).toEqual([{ claim: 'emitted the-bath', passed: true }]);
+  }, 30_000);
+
+  it('a mutating on body behind a standard refusal stays red, and the line names the refusal', async () => {
+    const { run } = await runFixture('refused-body');
+    const dishes = outcome(run, 'dishes · on taking');
+    expect(dishes.status).toBe('failed');
+    expect(dishes.detail).toContain('the standard action refused first: if.action.taking.fixed_in_place');
+    expect(dishes.claims).toContainEqual({ claim: 'dishes is clean', passed: false, message: 'the dishes is "dirty", expected "clean"' });
+  }, 30_000);
+
+  it('a topic row answers with its first phrase whose when holds: each phrase is a leaf, guarded by the earlier whens failing', async () => {
+    const { run } = await runFixture('phrase-ladder');
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'clerk · topic the weather · answers weather-fine': 'passed',
+      'clerk · topic the weather · answers weather-grumble': 'passed',
+      'story · before the game starts': 'passed',
+    });
+    const grumble = outcome(run, 'answers weather-grumble');
+    expect(grumble.arranged).toEqual(['clerk is cross', expect.stringMatching(/^player\.location = /)]);
+    expect(grumble.claims).toEqual([{ claim: 'emitted weather-grumble', passed: true }]);
   }, 30_000);
 });
