@@ -1,7 +1,7 @@
 # Session Plan: Occurrence ordinals arrange shape for derived rule tests (ADR-356 D2)
 
 **Created**: 2026-10-11 (session ce4e4c)
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Let the ADR-356 derived runner arrange "this clause has already fired N-1 times" so a Chord `second time` ... `fifth time` ordinal body is exercised by the derived tier instead of SKIPPED `occurrence`. Planning only; every `packages/` change is a platform change gated on David's discussion.
 **Bounded contexts touched**: N/A — test infrastructure (`packages/story-loader`, `packages/world-index`, `packages/branch-tester`, possibly `packages/transcript-tester`).
 **Key domain language**: arrange (ADR-356 D2), pin grammar, occurrence counter, ordinal body, SKIPPED shape.
