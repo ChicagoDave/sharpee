@@ -25,16 +25,26 @@
  * command and asserts the arithmetic. Endings and the player role are read
  * off the world the same way.
  *
- * Four implicit arrange terms make the typed command reachable, since the
+ * Five implicit arrange terms make the typed command reachable, since the
  * enumerator records only what the clause itself guards: every closed
  * container enclosing the subject is opened (unlocked first), the player is
  * placed in the subject's room unless a term already places the player, a
  * standard action's own flag preconditions are satisfied (a door closed
- * and unlocked to open, a tool held to cut), and the thing an entity-keyed
+ * and unlocked to open, a tool held to cut), the thing an entity-keyed
  * topic asks about is placed in the room with the speaker, since the parser
- * resolves it against what the player can see. A subject still out of the
- * player's sight after that — darkness, concealment — is SKIPPED
+ * resolves it against what the player can see, and the thing a standard
+ * action acts on is put where that action needs it — in the player's hands
+ * for wearing, giving, showing and the other held-object actions, in the
+ * player's room when another actor holds it otherwise. A subject still out
+ * of the player's sight after that — darkness, concealment — is SKIPPED
  * `subject-unreachable`, never reported as a parse failure of the story.
+ *
+ * The typed command is the language pattern whose slots the subject can
+ * fill: a person takes `[someone]`, anything else `[something]`. A slot the
+ * clause leaves unnamed is filled from the arranged world before the
+ * command is typed — the item a `must have` precondition holds, else what
+ * the player carries; a person in the room, else the first declared person
+ * brought in — and a slot nothing fills is SKIPPED `object-unreachable`.
  *
  * Three compositions of floor forms are arranged as compositions, not
  * named as shapes: a named condition expands to its body with `it` bound
@@ -85,6 +95,14 @@ export type ArrangeTerm =
   /** The standard action's own preconditions on the subject's flags (a door must be closed to open, a tool held to cut). Implicit. */
   | { kind: 'action-preconditions'; action: string; subject: string }
   /**
+   * A noun the command names is where the standard action needs it: `held`
+   * puts it in the player's hands, `present` brings it into the player's
+   * room when another actor holds it. Resolved against the live world after
+   * the player is placed. Implicit; an explicit term that places the noun
+   * wins.
+   */
+  | { kind: 'reach-noun'; entity: string; want: 'held' | 'present' }
+  /**
    * An `and` that must fail: each operand as the terms that make it HOLD.
    * Never written — checked after every write, and satisfied when at least
    * one operand does not hold.
@@ -94,8 +112,26 @@ export type ArrangeTerm =
 /** A term that resolves to pin expressions against the live world — every kind but the read-only `some-fails`. */
 type ResolvableTerm = Exclude<ArrangeTerm, { kind: 'some-fails' }>;
 
-/** What drives the test: one typed command, or nothing (a boot branch asserts the booted world). */
-export type CommandPlan = { kind: 'typed'; input: string } | { kind: 'none' };
+/**
+ * A pattern slot the clause leaves unnamed, filled from the live world at
+ * run time: `[something]` by a thing the player holds (the `must have` item
+ * a precondition already arranged, else the first in the boot inventory),
+ * `[someone]` by a person in the player's room, else the first declared
+ * person brought in. `entity` is the IR id when the plan already chose.
+ */
+export interface SlotFiller {
+  token: '[something]' | '[someone]';
+  entity: string | null;
+  /** What the slot must be, when the pattern says: the `in` / `on` of inserting and putting. */
+  role?: 'container' | 'supporter';
+}
+
+/**
+ * What drives the test: one typed command, or nothing (a boot branch asserts
+ * the booted world). A standard-action command carries its unfilled slots
+ * as `fillers`, resolved and substituted before the command is typed.
+ */
+export type CommandPlan = { kind: 'typed'; input: string; fillers?: SlotFiller[] } | { kind: 'none' };
 
 /** One claim the body's effects map to (ADR-356 D3's table). */
 export type ClaimPlan =
@@ -188,9 +224,10 @@ interface TraitFlags {
   keyId?: string;
 }
 
-/** An entity as the runner reads it. */
+/** An entity as the runner reads it. `name` is what the parser resolves a typed noun against. */
 export interface DerivedEntity {
   id: string;
+  name: string;
   attributes: Record<string, unknown>;
   get(traitType: string): TraitFlags | undefined;
 }
@@ -249,6 +286,16 @@ const STANDARD_PRECONDITIONS = new Set(['opening', 'closing', 'locking', 'unlock
 
 /** Room-lifecycle clauses fire on movement, not on a typed verb naming the room. */
 const LIFECYCLE_ACTIONS = new Set(['entering', 'leaving']);
+
+/**
+ * Standard actions whose validate phase needs the thing acted on in the
+ * player's hands (stdlib's `not_held` / `not_carrying` refusals). Every
+ * other action reaches a thing in the room.
+ */
+const HELD_ACTIONS = new Set(['wearing', 'giving', 'showing', 'dropping', 'putting', 'inserting', 'throwing']);
+
+/** The slot tokens a language pattern can carry. */
+const SLOT_TOKEN = /\[(something|someone)\]/g;
 
 /** Effects that mutate the world — the ones a refusal's negative space reads. */
 const MUTATING_EFFECTS = new Set(['change', 'move', 'remove', 'change-player', 'award', 'raise', 'lower']);
@@ -358,6 +405,17 @@ export function planBranch(
     }
     if (branch.command.kind === 'action' && STANDARD_PRECONDITIONS.has(branch.command.action) && !ir.actions.some((action) => action.name === (branch.command as { action: string }).action)) {
       terms.push({ kind: 'action-preconditions', action: branch.command.action, subject: reachTarget });
+    }
+    // A thing the standard action acts on is where the action needs it —
+    // in the player's hands, or in the room when another actor holds it —
+    // unless a term already places it. A person subject (the viewer, the
+    // recipient) stands in its own room, where the player was just placed.
+    const standardAction = branch.command.kind === 'action' && !ir.actions.some((action) => action.name === (branch.command as { action: string }).action);
+    if (standardAction && branch.command.kind === 'action' && !isPerson(ir, reachTarget)) {
+      const placed = new RegExp(`^(${reachTarget}\\.location\\s*=|player\\.inventory contains ${reachTarget}$)`);
+      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placed.test(term.expression))) {
+        terms.push({ kind: 'reach-noun', entity: reachTarget, want: HELD_ACTIONS.has(branch.command.action) ? 'held' : 'present' });
+      }
     }
   }
 
@@ -612,12 +670,48 @@ function commandPlan(
       if (!patterns || patterns.length === 0) {
         return { kind: 'no-vocabulary', detail: `no language pattern for ${actionId}` };
       }
-      const wanted = objectName === null ? 0 : 1;
-      const pattern = patterns.find((candidate) => (candidate.match(/\[something\]/g) ?? []).length === wanted);
-      if (!pattern) {
-        return { kind: 'skip', shape: 'command-shape', detail: `no ${wanted}-object pattern for ${actionId}` };
+      const slotsOf = (pattern: string): string[] => pattern.match(SLOT_TOKEN) ?? [];
+      if (objectName === null || command.object === null) {
+        const bare = patterns.find((candidate) => slotsOf(candidate).length === 0);
+        if (!bare) return { kind: 'skip', shape: 'command-shape', detail: `no 0-object pattern for ${actionId}` };
+        return { kind: 'typed', input: bare.trim() };
       }
-      return { kind: 'typed', input: pattern.replace('[something]', objectName ?? '').trim() };
+      // The subject takes the slot of its kind — a person is `[someone]`,
+      // anything else `[something]` — in the pattern with the fewest slots
+      // that has one (the first such on ties, so the choice reads off the
+      // language file). Every other slot is a filler the run chooses.
+      // A person falls back to `[something]` when no pattern of the action
+      // has a `[someone]` slot (attacking, examining, listening): a person
+      // is a thing to those verbs.
+      const fewestWith = (token: string): string | undefined => {
+        let pattern: string | undefined;
+        for (const candidate of patterns) {
+          const slots = slotsOf(candidate);
+          if (!slots.includes(token)) continue;
+          if (pattern === undefined || slots.length < slotsOf(pattern).length) pattern = candidate;
+        }
+        return pattern;
+      };
+      let subjectToken = isPerson(ir, command.object) ? '[someone]' : '[something]';
+      let pattern = fewestWith(subjectToken);
+      if (!pattern && subjectToken === '[someone]') {
+        subjectToken = '[something]';
+        pattern = fewestWith(subjectToken);
+      }
+      if (!pattern) {
+        return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has a slot for its subject` };
+      }
+      const input = pattern.replace(subjectToken, objectName).trim();
+      // The preposition before a slot names what fills it: `in` / `into` a
+      // container, `on` / `onto` a supporter. Any other slot takes any thing.
+      const fillers: SlotFiller[] = [];
+      for (const match of input.matchAll(/(?:\b(in|into|on|onto)\s+)?(\[(?:something|someone)\])/g)) {
+        const token = match[2] as SlotFiller['token'];
+        const preposition = match[1];
+        const role = preposition === 'in' || preposition === 'into' ? 'container' : preposition === 'on' || preposition === 'onto' ? 'supporter' : undefined;
+        fillers.push(role ? { token, entity: null, role } : { token, entity: null });
+      }
+      return fillers.length > 0 ? { kind: 'typed', input, fillers } : { kind: 'typed', input };
     }
     default:
       return { kind: 'skip', shape: `command-${command.kind}`, detail: 'no player command fires this branch' };
@@ -702,6 +796,11 @@ function negativeRead(effect: IRStatement, subject: string | null, ir: StoryIR):
 }
 
 /** Whether an IR entity is a room or a region. */
+/** Whether the IR declares the entity `a person` — the kind that fills a `[someone]` slot. */
+function isPerson(ir: StoryIR, irId: string): boolean {
+  return ir.entities.find((entity) => entity.id === irId)?.kinds.some((kind) => kind.name === 'person') ?? false;
+}
+
 function isPlace(ir: StoryIR, irId: string): boolean {
   const entity = ir.entities.find((candidate) => candidate.id === irId);
   return entity !== undefined && entity.kinds.some((kind) => kind.name === 'room' || kind.name === 'region');
@@ -930,6 +1029,30 @@ export async function runDerivedBranch(
     }
   }
 
+  // ── Fillers: the slots the clause leaves unnamed, chosen from the arranged world
+  // Each is chosen, arranged, and read for sight before the command is
+  // typed — a slot nothing fills is a named gap, never a parse failure.
+  let input = plan.command.kind === 'typed' ? plan.command.input : undefined;
+  if (plan.command.kind === 'typed') {
+    for (const filler of plan.command.fillers ?? []) {
+      const chosen = chooseFiller(filler, plan, ir, world, reachTarget);
+      if ('shape' in chosen) return { ...base, status: 'skipped', shape: chosen.shape, detail: chosen.detail, arranged };
+      for (const expression of chosen.expressions) {
+        const result = arrange(world as never, expression, { turn: game.engine?.getContext?.().currentTurn });
+        if (!result.arranged) {
+          return { ...base, status: 'skipped', shape: result.shape, detail: result.detail ?? expression, arranged };
+        }
+        arranged.push(expression);
+      }
+      const player = world.getPlayer();
+      const chosenId = worldIdOf(world, chosen.entity);
+      if (player && chosenId && !world.canSee(player.id, chosenId)) {
+        return { ...base, status: 'skipped', shape: 'object-unreachable', detail: `${chosen.entity} is not in the player's sight after arranging`, arranged };
+      }
+      input = input!.replace(filler.token, chosen.name);
+    }
+  }
+
   // ── Rooms (ADR-356 D5): where arranging put the player, then where the command left them
   const rooms: string[] = [];
   const noteRoom = (): void => {
@@ -953,8 +1076,8 @@ export async function runDerivedBranch(
   const claims: DerivedClaimResult[] = [];
   let command: string | undefined;
   let events: TestEventInfo[] = [];
-  if (plan.command.kind === 'typed') {
-    command = plan.command.input;
+  if (plan.command.kind === 'typed' && input !== undefined) {
+    command = input;
     const transcriptCommand: TranscriptCommand = { lineNumber: 0, input: command, expectedOutput: [], assertions: pinAssertions };
     let result: Awaited<ReturnType<typeof runCommand>>;
     try {
@@ -1136,7 +1259,116 @@ function resolveTerm(
       if (!entity) return { shape: 'unrecognized', detail: `entity "${term.subject}" not found` };
       return { expressions: standardPreconditions(term.action, entity), mustHold: true };
     }
+    case 'reach-noun': {
+      const player = world.getPlayer();
+      const nounId = worldIdOf(world, term.entity);
+      if (!player || !nounId) return { shape: 'unrecognized', detail: `entity "${term.entity}" not found` };
+      if (term.want === 'held') {
+        return { expressions: world.getLocation(nounId) === player.id ? [] : [`player.inventory contains ${term.entity}`], mustHold: true };
+      }
+      // `present`: only a thing another actor holds (directly, or in
+      // something they carry) is out of the room's reach; it comes to the
+      // room the player now stands in.
+      if (!heldByAnotherActor(world, nounId, player.id)) return { expressions: [], mustHold: true };
+      const room = world.getContainingRoom(player.id);
+      if (!room) return { shape: 'player-offstage', detail: 'the player is in no room' };
+      return { expressions: [`${term.entity}.location = ${room.id}`], mustHold: true };
+    }
   }
+}
+
+/** Whether an actor other than `playerId` holds the entity, anywhere up its holder chain. */
+function heldByAnotherActor(world: DerivedWorld, entityId: string, playerId: string): boolean {
+  let holder = world.getLocation(entityId) ?? null;
+  while (holder) {
+    const entity = world.getEntity(holder);
+    if (!entity) return false;
+    if (entity.get('actor') !== undefined) return holder !== playerId;
+    holder = world.getLocation(holder) ?? null;
+  }
+  return false;
+}
+
+/** The IR id of a world entity, when the loader stamped one. */
+function irIdOf(entity: DerivedEntity): string | undefined {
+  const irId = entity.attributes[CHORD_IR_ID_ATTRIBUTE];
+  return typeof irId === 'string' ? irId : undefined;
+}
+
+/**
+ * Choose what fills one unnamed slot, from the arranged world — never from
+ * the parse that would follow. `[something]`: the entity the plan chose, else
+ * the thing a `must have` precondition already put in the player's hands,
+ * else the first thing the player holds. `[someone]`: a person already in the
+ * player's room, else the first person the story declares, to be brought in.
+ * Deterministic: world order for what is held or present, declaration order
+ * for who is brought.
+ *
+ * @returns the IR id, the name to type, and the expressions to arrange
+ *   first; or the shape of a slot nothing fills
+ */
+function chooseFiller(
+  filler: SlotFiller,
+  plan: Extract<DerivedPlan, { kind: 'run' }>,
+  ir: StoryIR,
+  world: DerivedWorld,
+  subject: string | null
+): { entity: string; name: string; expressions: string[] } | { shape: string; detail: string } {
+  const player = world.getPlayer();
+  if (!player) return { shape: 'player-offstage', detail: 'the player is in no room' };
+  const named = (irId: string): string => entityName(ir, irId) ?? irId;
+  if (filler.entity !== null) return { entity: filler.entity, name: named(filler.entity), expressions: [] };
+
+  if (filler.role !== undefined) {
+    // A holder the pattern asks for: the first container (or supporter) in
+    // the player's room that is not the subject and not someone's hands.
+    const room = world.getContainingRoom(player.id);
+    if (!room) return { shape: 'player-offstage', detail: 'the player is in no room' };
+    for (const entity of world.getAllEntities()) {
+      const irId = irIdOf(entity);
+      if (irId === undefined || irId === subject || entity.id === player.id || entity.get('actor') !== undefined) continue;
+      if (entity.get(filler.role) === undefined || world.getContainingRoom(entity.id)?.id !== room.id || heldByAnotherActor(world, entity.id, player.id)) continue;
+      // A closed container takes nothing: open it (unlocked first), the way
+      // `reach-subject` opens what encloses the subject.
+      const expressions: string[] = [];
+      if (entity.get('openable')?.isOpen === false) {
+        if (entity.get('lockable')?.isLocked === true) expressions.push(`${irId}.isLocked = false`);
+        expressions.push(`${irId}.isOpen = true`);
+      }
+      return { entity: irId, name: named(irId), expressions };
+    }
+    return { shape: 'object-unreachable', detail: `nothing fills ${filler.token}: no ${filler.role} stands in the player's room` };
+  }
+
+  if (filler.token === '[something]') {
+    for (const term of plan.arrange) {
+      const held = term.kind === 'pin' && term.mustHold ? /^player\.inventory contains (\S+)$/.exec(term.expression) : null;
+      if (held && held[1] !== subject) return { entity: held[1], name: named(held[1]), expressions: [] };
+    }
+    for (const entity of world.getAllEntities()) {
+      const irId = irIdOf(entity);
+      if (irId !== undefined && irId !== subject && entity.get('actor') === undefined && world.getLocation(entity.id) === player.id) {
+        return { entity: irId, name: named(irId), expressions: [] };
+      }
+    }
+    return { shape: 'object-unreachable', detail: 'nothing fills [something]: the player holds nothing and no precondition names an item' };
+  }
+
+  const room = world.getContainingRoom(player.id);
+  if (!room) return { shape: 'player-offstage', detail: 'the player is in no room' };
+  for (const entity of world.getAllEntities()) {
+    const irId = irIdOf(entity);
+    if (irId !== undefined && irId !== subject && entity.id !== player.id && entity.get('actor') !== undefined && world.getContainingRoom(entity.id)?.id === room.id) {
+      return { entity: irId, name: named(irId), expressions: [] };
+    }
+  }
+  const playerIrId = irIdOf(player);
+  for (const entity of ir.entities) {
+    if (entity.id !== subject && entity.id !== playerIrId && isPerson(ir, entity.id) && worldIdOf(world, entity.id) !== undefined) {
+      return { entity: entity.id, name: named(entity.id), expressions: [`${entity.id}.location = ${room.id}`] };
+    }
+  }
+  return { shape: 'object-unreachable', detail: 'nothing fills [someone]: no person stands in the room and the story declares no other' };
 }
 
 /**

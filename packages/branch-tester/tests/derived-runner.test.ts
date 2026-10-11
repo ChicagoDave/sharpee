@@ -357,3 +357,77 @@ describe('condition compositions — the compose fixture, end to end', () => {
     expect(lampThrough.shape).toBe('condition-chance');
   }, 30_000);
 });
+
+describe('reach for every noun the command names (GH #549 Phase 2)', () => {
+  it('fills the unnamed slot, holds what must be held, brings what must be present, and names the gap it cannot fill', async () => {
+    const { run } = await runFixture('reach-nouns');
+    const byStatus = Object.fromEntries(run.outcomes.map((o) => [o.label, o.status]));
+    expect(byStatus).toEqual({
+      'clerk · on showing': 'passed',
+      'clerk · on giving': 'passed',
+      'apron · on wearing': 'passed',
+      'dough · on touching': 'passed',
+      'locket · on showing': 'passed',
+      'medal · on showing': 'passed',
+      'guard · on giving': 'passed',
+      'ghost · on showing': 'skipped',
+      'plank · on inserting': 'passed',
+      'story · before the game starts': 'passed',
+    });
+
+    // The clerk is the viewer; the coin the player carries fills the item slot.
+    const showClerk = outcome(run, 'clerk · on showing');
+    expect(showClerk.command).toBe('show coin to clerk');
+    expect(showClerk.arranged).toEqual([expect.stringMatching(/^player\.location = /)]);
+    expect(showClerk.claims).toEqual([{ claim: 'emitted clerk-shrug', passed: true }]);
+    expect(outcome(run, 'clerk · on giving').command).toBe('give coin to clerk');
+
+    // The clerk carries the apron: wearing needs it in the player's hands.
+    const apron = outcome(run, 'on wearing');
+    expect(apron.command).toBe('wear apron');
+    expect(apron.arranged).toEqual([expect.stringMatching(/^player\.location = /), 'player.inventory contains apron']);
+    expect(apron.claims).toEqual([{ claim: 'emitted apron-no', passed: true }]);
+
+    // The clerk carries the dough: touching needs it in the player's room, not their hands.
+    const dough = outcome(run, 'on touching');
+    expect(dough.command).toBe('touch dough');
+    expect(dough.arranged).toEqual([expect.stringMatching(/^player\.location = /), expect.stringMatching(/^dough\.location = /)]);
+    expect(dough.arranged![1].slice('dough.location = '.length)).toBe(dough.arranged![0].slice('player.location = '.length));
+    expect(dough.claims).toEqual([{ claim: 'emitted dough-no', passed: true }]);
+
+    // The locket is the item; the clerk, already in the room, is the viewer.
+    const locket = outcome(run, 'locket · on showing');
+    expect(locket.command).toBe('show locket to clerk');
+    expect(locket.arranged).toEqual([expect.stringMatching(/^player\.location = /), 'player.inventory contains locket']);
+
+    // Nobody is in the Attic: the first declared person is brought to the medal.
+    const medal = outcome(run, 'medal · on showing');
+    expect(medal.command).toBe('show medal to clerk');
+    expect(medal.arranged).toEqual([
+      expect.stringMatching(/^player\.location = /),
+      'player.inventory contains medal',
+      expect.stringMatching(/^clerk\.location = /),
+    ]);
+    expect(medal.arranged![2].slice('clerk.location = '.length)).toBe(medal.arranged![0].slice('player.location = '.length));
+    expect(medal.claims).toEqual([{ claim: 'emitted medal-shine', passed: true }]);
+
+    expect(outcome(run, 'guard · on giving').command).toBe('give coin to guard');
+    expect(outcome(run, 'ghost · on showing').shape).toBe('subject-offstage');
+
+    // The `in` slot wants a container: the crate, not the coin the player holds.
+    const plank = outcome(run, 'plank · on inserting');
+    expect(plank.command).toBe('insert plank in crate');
+    expect(plank.arranged).toEqual([expect.stringMatching(/^player\.location = /), 'player.inventory contains plank', 'crate.isOpen = true']);
+    expect(plank.claims).toEqual([{ claim: 'emitted plank-no', passed: true }]);
+  }, 30_000);
+
+  it('a slot nothing can fill is SKIPPED object-unreachable before any command is typed', async () => {
+    const { run } = await runFixture('reach-nobody');
+    const medal = outcome(run, 'medal · on showing');
+    expect(medal.status).toBe('skipped');
+    expect(medal.shape).toBe('object-unreachable');
+    expect(medal.detail).toContain('[someone]');
+    expect(medal.command).toBeUndefined();
+    expect(run.total).toBe(run.outcomes.length);
+  }, 30_000);
+});

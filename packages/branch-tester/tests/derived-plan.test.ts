@@ -135,6 +135,7 @@ describe('planBranch — the other shapes in the fixture', () => {
     expect(plan.kind === 'run' && plan.arrange).toEqual([
       { kind: 'reach-subject', subject: 'silver-locket' },
       { kind: 'player-to-subject', subject: 'silver-locket' },
+      { kind: 'reach-noun', entity: 'silver-locket', want: 'present' },
     ]);
     expect(plan.kind === 'run' && plan.claims).toEqual([
       { kind: 'pin', expression: 'silver-locket is gone' },
@@ -298,6 +299,54 @@ describe('planBranch — `here` is a with-player term, placed after the implicit
       { kind: 'with-player', entity: 'cat', mustHold: true },
       { kind: 'reach-subject', subject: 'gong' },
       { kind: 'player-to-subject', subject: 'gong' },
+      { kind: 'reach-noun', entity: 'gong', want: 'present' },
     ]);
+  });
+});
+
+describe('planBranch — the subject fills the slot of its kind, and the rest are fillers (GH #549 Phase 2)', () => {
+  const nounsIr = fixture('reach-nouns');
+  const nounsBranches = collectClauseBranches(nounsIr);
+  const nounsLanguage: ActionPatterns = (() => {
+    const game = assembleGame(createStory(nounsIr, { seed: 7 }), { seed: 7 });
+    const provider = game.engine.getLanguageProvider();
+    return (actionId) => provider.getActionPatterns(actionId);
+  })();
+  const nounsBranch = (labelPart: string): ClauseBranch => {
+    const hits = nounsBranches.filter((candidate) => derivedBranchLabel(candidate, nounsIr).includes(labelPart));
+    if (hits.length !== 1) throw new Error(`${hits.length} branches match "${labelPart}"`);
+    return hits[0];
+  };
+
+  it('a person subject takes the [someone] slot and leaves [something] to be filled at run time', () => {
+    const plan = planBranch(nounsBranch('clerk · on showing'), nounsIr, nounsBranches, nounsLanguage);
+    expect(plan.kind === 'run' && plan.command).toEqual({
+      kind: 'typed',
+      input: 'show [something] to clerk',
+      fillers: [{ token: '[something]', entity: null }],
+    });
+  });
+
+  it('a thing subject takes [something]; wearing wants it held, touching wants it present', () => {
+    const wear = planBranch(nounsBranch('apron · on wearing'), nounsIr, nounsBranches, nounsLanguage);
+    expect(wear.kind === 'run' && wear.command).toEqual({ kind: 'typed', input: 'wear apron' });
+    expect(wear.kind === 'run' && wear.arrange).toContainEqual({ kind: 'reach-noun', entity: 'apron', want: 'held' });
+
+    const touch = planBranch(nounsBranch('dough · on touching'), nounsIr, nounsBranches, nounsLanguage);
+    expect(touch.kind === 'run' && touch.arrange).toContainEqual({ kind: 'reach-noun', entity: 'dough', want: 'present' });
+
+    const insert = planBranch(nounsBranch('plank · on inserting'), nounsIr, nounsBranches, nounsLanguage);
+    expect(insert.kind === 'run' && insert.command).toEqual({
+      kind: 'typed',
+      input: 'insert plank in [something]',
+      fillers: [{ token: '[something]', entity: null, role: 'container' }],
+    });
+
+    const show = planBranch(nounsBranch('locket · on showing'), nounsIr, nounsBranches, nounsLanguage);
+    expect(show.kind === 'run' && show.command).toEqual({
+      kind: 'typed',
+      input: 'show locket to [someone]',
+      fillers: [{ token: '[someone]', entity: null }],
+    });
   });
 });
