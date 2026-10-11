@@ -1,7 +1,7 @@
 # Session Plan: Derived rule tests arrange what the rule depends on (GH #549)
 
 **Created**: 2026-10-10 (session 71fa21)
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
 **Overall scope**: Teach the ADR-356 derived runner (`packages/branch-tester/src/derived-runner.ts`) to arrange what a rule's command needs before it fires — reach for the nouns it names, keys and tools, the state that selects the expected response, the player's place after climbing or entering — and to name a SKIPPED shape for whatever it still cannot arrange, so Secret Letter's 53 and The Alderman's derived failures fall to real causes only.
 **Bounded contexts touched**: N/A — test infrastructure. `packages/branch-tester` (runner), possibly `packages/transcript-tester` (assertion core, only if the #538 read side is approved), `docs/` and the Chord guide. No domain model is introduced; framing is plain technical.
 **Key domain language**: arrange (ADR-356 D2), pin grammar, floor, SKIPPED shape, derived branch.
