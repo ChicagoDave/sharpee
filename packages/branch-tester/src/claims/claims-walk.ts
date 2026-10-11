@@ -18,6 +18,11 @@
  * is exhausted without one, and unproven when a budget stopped the walk
  * first (D3) — a budget stop can never hold a negative claim.
  *
+ * Each verdict also carries how many of the set's things the claim can
+ * never depend on under that set — the compiler's cone of influence (D12),
+ * computed once before the walk. It is report data for the author who
+ * trims the set; the walk, the identity, and the candidates never read it.
+ *
  * Public interface: `walkClaims`, `necessaryIdentity`, `ClaimsWalkOptions`,
  *   `ClaimsWalkReport`, `ClaimVerdict`, `ClaimOutcome`, `WalkStopReason`.
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
@@ -26,8 +31,8 @@
 import { createHash } from 'node:crypto';
 import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { captureSave, restoreSave } from '@sharpee/transcript-tester';
-import type { StoryIR } from '@sharpee/chord';
-import type { ClaimGroup, ClaimKind, NecessarySet } from './claim-set.js';
+import { claimCone, type IRClaim, type StoryIR } from '@sharpee/chord';
+import type { Claim, ClaimGroup, ClaimKind, NecessarySet } from './claim-set.js';
 import { claimHolds } from './claim-predicates.js';
 import { candidateCommands, deriveCommandVocabulary, type CandidateBreadth } from './claim-candidates.js';
 import type { ClaimsGame, ClaimsTurnEvent, WorldSnapshot } from './claims-game.js';
@@ -54,6 +59,8 @@ export interface ClaimVerdict {
   readonly depth?: number;
   /** How many things the claim's set carries — each independent one doubles the states to exhaust. */
   readonly thingsInSet: number;
+  /** How many of those things the claim can never depend on under this set (ADR-365 D12) — the ones to trim. */
+  readonly inertInSet: number;
 }
 
 /** The budgets and breadth of one walk. */
@@ -172,11 +179,46 @@ export function necessaryIdentity(snapshot: WorldSnapshot, set: NecessarySet): s
  * @param options budgets and breadth; the defaults are the explorer's
  * @returns the walk's report with one verdict per claim
  */
+/** The runner's discriminated predicate as the compiler's flat `IRClaim`, which the cone takes. */
+function irClaimOf(claim: Claim): IRClaim {
+  const out: IRClaim = { name: claim.name };
+  if (claim.never) out.never = true;
+  const predicate = claim.predicate;
+  switch (predicate.kind) {
+    case 'ending':
+      out.ending = predicate.ending.kind ? { kind: predicate.ending.kind } : {};
+      break;
+    case 'room':
+      out.room = predicate.room;
+      break;
+    case 'placement':
+      out.placement = { ...predicate.placement };
+      break;
+    case 'state':
+      out.state = { ...predicate.state };
+      break;
+    case 'flag':
+      out.flag = { thing: predicate.flag.thing, trait: predicate.flag.trait, field: predicate.flag.field, ...(typeof predicate.flag.value === 'boolean' ? { value: predicate.flag.value } : {}) };
+      break;
+    case 'fired':
+      out.fired = predicate.fired;
+      break;
+    case 'event':
+      out.event = { ...predicate.event };
+      break;
+  }
+  return out;
+}
+
 export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGroup, options: ClaimsWalkOptions = {}): Promise<ClaimsWalkReport> {
   const { breadth, maxStates, maxSeconds, maxDepth } = { ...DEFAULT_OPTIONS, ...options };
   const { world, engine } = game;
   const set = group.set;
   const claims = group.claims;
+
+  // D12: how many of the set's things each claim can never depend on. Computed
+  // once here, before the walk, and read by nothing but the verdict.
+  const inertByIndex = new Map(claims.map((claim) => [claim.index, claimCone(ir, irClaimOf(claim), set).inert.length]));
 
   // The opening turn, so the walk starts from the state a player sees.
   await game.executeCommand('look');
@@ -290,7 +332,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
   const exhausted = stopReason === 'frontier-exhausted' || stopReason === 'all-claims-settled';
   const verdicts: ClaimVerdict[] = claims.map((claim) => {
     const witness = witnesses.get(claim.index);
-    const base = { set: group.label, index: claim.index, name: claim.name, never: claim.never, kind: claim.predicate.kind, thingsInSet: set.things.length };
+    const base = { set: group.label, index: claim.index, name: claim.name, never: claim.never, kind: claim.predicate.kind, thingsInSet: set.things.length, inertInSet: inertByIndex.get(claim.index) ?? 0 };
     if (witness !== undefined) {
       return { ...base, verdict: claim.never ? 'violated' : 'held', settledBy: 'witness', witness, depth: witness.length };
     }

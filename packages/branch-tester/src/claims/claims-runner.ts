@@ -12,8 +12,9 @@
  * The cost of a negative claim is the cost of exhausting its set, and the
  * states to exhaust double with every independent thing the set carries
  * (D11, measured on Secret Letter's market). So an unproven negative claim
- * is reported with the number of things its set carried and the budget
- * that stopped the walk, which is what the author tightens.
+ * is reported with the number of things its set carried, how many of them
+ * the claim can never depend on (D12, the compiler's cone of influence),
+ * and the budget that stopped the walk, which is what the author tightens.
  *
  * Public interface: `runClaims`, `formatClaimsRun`, `ClaimsRunOptions`,
  *   `ClaimsRunResult`.
@@ -103,7 +104,11 @@ export function formatClaimsRun(result: ClaimsRunResult): string {
     } else {
       const walk = walkBySet.get(claim.set);
       const stopped = walk ? `${walk.stopReason} after ${walk.statesDiscovered} states` : 'a budget';
-      lines.push(`${head} — the walk stopped at ${stopped}; its set carries ${claim.thingsInSet} things, and each independent thing doubles the states to exhaust`);
+      const cost =
+        claim.inertInSet > 0
+          ? `its set carries ${claim.thingsInSet} things, ${claim.inertInSet} of which the claim's rules never reach; each independent thing doubles the states to exhaust`
+          : `its set carries ${claim.thingsInSet} things, and each independent thing doubles the states to exhaust`;
+      lines.push(`${head} — the walk stopped at ${stopped}; ${cost}`);
     }
   }
   return lines.join('\n');

@@ -1,0 +1,10 @@
+{
+  "story": "inert-line-fixture",
+  "source": "a set padded with the pebble, which the note's placement can never depend on: one inert thing for the runner's unproven line to count, and one doubling of the states for the walk to pay",
+  "rooms": ["hall", "landing"],
+  "things": ["note", "pebble"],
+  "verbs": ["read", "take"],
+  "claims": [
+    { "name": "the note leaves the Hall", "never": true, "placement": { "thing": "note", "notIn": "hall" } }
+  ]
+}
