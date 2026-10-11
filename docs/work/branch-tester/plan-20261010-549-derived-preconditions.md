@@ -1,0 +1,125 @@
+# Session Plan: Derived rule tests arrange what the rule depends on (GH #549)
+
+**Created**: 2026-10-10 (session 71fa21)
+**Plan Status**: ACTIVE
+**Overall scope**: Teach the ADR-356 derived runner (`packages/branch-tester/src/derived-runner.ts`) to arrange what a rule's command needs before it fires — reach for the nouns it names, keys and tools, the state that selects the expected response, the player's place after climbing or entering — and to name a SKIPPED shape for whatever it still cannot arrange, so Secret Letter's 53 and The Alderman's derived failures fall to real causes only.
+**Bounded contexts touched**: N/A — test infrastructure. `packages/branch-tester` (runner), possibly `packages/transcript-tester` (assertion core, only if the #538 read side is approved), `docs/` and the Chord guide. No domain model is introduced; framing is plain technical.
+**Key domain language**: arrange (ADR-356 D2), pin grammar, floor, SKIPPED shape, derived branch.
+**Related plan**: `docs/work/author-narrative-testing/plan-20261002-remaining-rows.md` (set aside "still live", already stamped `**Superseded by**`; no supersession disposition needed). This plan serves its objective O-1 (`docs/objectives/author-narrative-testing.md`, due 2026-10-15, grade GREEN): a clean test report at story scale.
+**Location note**: written at David's requested path (`plan-YYYYMMDD-{name}.md` in the work target), not the planner's default `docs/work/<slug>/plan.md`; `.current-plan` points here.
+**Gate**: every phase marked "gated on David's approval" edits `packages/**` and must not start until David approves that phase (CLAUDE.md platform rule; ADR-356 Consequences: "each Affected module gets its own discussion").
+
+## Measured baseline (2026-10-10, seed 1209, `./sharpee test branch-stories/secret-letter/secret-letter.story`)
+- Authored tree: 1469 cards, 2652 assertions, 0 failures. Derived: 1650 branches, 837 exercised, 784 passing, **53 failing**, 813 SKIPPED. Endings 6/9, rooms 85/92. Exit 1 from derived failures alone.
+- The 53 sort into #549's shapes: 30 `ENTITY_NOT_FOUND`, 10 blocked-before-the-rule, 8 state-never-changed, 5 location-mismatch. (The 3 offstage-pin failures were #548, which is CLOSED; they are out.)
+- The Alderman: 2026-09-29 baseline had 4 derived failures ("different response fired", `thealderman.story:280`); measured 2026-10-10 22:25 (`./sharpee test stories/thealderman/chord/thealderman.story`, seed 42): still 4, all "different response fired" (Ross Bielack, John Barber, Catherine Shelby, Chelsea Sumner topics), 36 of 69 branches exercised; plus the one authored-card `a05`/`a04` npcId pin the issue rules out of scope.
+- Skip shapes today: no-claims 206, command-shape 153, subject-offstage 114, command-none 70, command-lifecycle 65, subject-unreachable 62, negation 36, command-timer-expires 34, condition-chapter 24, condition-chance 16, select-alternative 14, occurrence 5, tail 1-3 each.
+
+## References consulted
+- `docs/architecture/adrs/adr-356-the-story-is-the-test-suite.md` — D2: arrange the floor directly, never play to it; floor is `story.state`, `.location`, `inventory contains`, declared state, openable/lockable/switchable flags; unarrangeable = SKIPPED with named shape. D3: real parser and engine, one command. AC-4: SKIPPED counts in the denominator. AC-7: unresolvable command is a FAILED parse. Consequences: each Affected module is discussed before a phase touches it. Amendments are dated inline (2026-09-27 pattern) — shape changes that move the floor are recorded there.
+- `docs/architecture/adrs/adr-355-the-test-tree-is-segmented.md` — the tree is separate from the derived tier; this plan does not touch tree format, segmentation, or the authored cards.
+- `docs/architecture/adrs/adr-340-testing-assertion-core.md` — D3: claim kinds live in the assertion core and are imported; any new read (region location) belongs in `transcript-tester`, not beside the runner.
+- `docs/architecture/adrs/adr-293-choice-points-per-point-streams.md` — D12: real path only; no stubs of the parser/engine; pinned seed, one run suffices.
+- `docs/objectives/author-narrative-testing.md` — O-1: clean story-scale report; a coverage gap must stay listed by name, never absent.
+- `docs/work/author-narrative-testing/plan-20261002-remaining-rows.md` — on hold, still live; its O-1 rulings (effect-less bodies and command-none rows DEFERRED, stay SKIPPED by name) are not reopened here.
+- GH #549 — the issue: five shapes, acceptance = a fixture test per shape (pass or named SKIPPED) and a residual real-cause list posted on the issue.
+- GH #538 — region guards read as `player.location = <region>`; explains the `Grubber's Market · on entering · refused merc-held` failure; read side lives in `transcript-tester`, write side in `story-loader` (both platform).
+- GH #548 — offstage pins; CLOSED; the 3 failures are excluded and stay out.
+- GH #522 — secret-letter derived rule-test failures (first-cut measurement); history for the shapes.
+- GH #525 — "next arrange shapes ranked by SKIPPED count"; the plan's precedent for the by-number ordering and for amending ADR-356 inline.
+- `packages/stdlib/CLAUDE.md` — standard actions' own preconditions (unlock needs key held, wear needs item held, give/show need item held and recipient present, touch needs reach).
+- `packages/branch-tester/src/derived-runner.ts`, `packages/branch-tester/tests/derived-runner.test.ts` and `tests/fixtures/derived/*.story` — existing four implicit arrange terms, two-pass arranging, fixture-story pattern (compile with `@sharpee/chord`, load with `story-loader`, assemble with `bootstrap`, seed 7). `packages/branch-tester/CLAUDE.md` does not exist.
+- Product ADRs not consulted (no Scope intersection): none flagged (no ADR in this repository carries `**Kind**: product` with a Scope intersecting `packages/branch-tester`).
+
+## Standing constraints for every phase
+- **Never play to it; arrange** (ADR-356 D2). New capabilities are new arrange terms or new pin writes within the floor, resolved against the live world.
+- **AC-7 is not weakened.** A parse failure stays a FAILED test. A new SKIPPED shape may be decided only from a pre-run read of the arranged world (as `subject-unreachable` already is, via `canSee`); it is never decided by matching the parse error after the command ran.
+- **AC-4**: `total` still equals the enumerator's count; every shape change keeps SKIPPED in the denominator. Each phase's test asserts this on its fixture.
+- **Rule 13a**: every capability has a REAL-PATH test on a small dedicated fixture story under `packages/branch-tester/tests/fixtures/derived/`, run through the real parser and engine at a pinned seed. No stubs. Never modify a real story for a platform test; the real-story re-measure is a read-only run.
+- Rule 12/13: Behavior Statement before tests; each DOES/REJECTS WHEN line is an assertion. Rule 15: `mutation-verification` after each source phase.
+- Rule 9/9a: headers and method headers on new public functions; the file's existing density otherwise.
+- No auto-retry of failed builds/tests: report and wait.
+- Build sequence for runtime proof: `tsf`-build the touched packages, then `./sharpee test` (the CJS path reads `dist/`).
+
+## Phases
+
+### Phase 1: Triage — reproduce each shape, classify all failures, post the findings
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: Measurement. No `packages/` edit; fixtures and probes live in the scratchpad; the classification record is a doc.
+- **Entry state**: `./repokit build` current; `./sharpee test branch-stories/secret-letter/secret-letter.story` reproduces 53 failures; The Alderman's story runs.
+- **Deliverable**: (a) A scratch fixture per shape (reach for wear/give/show/touch; key-gated unlock; disambiguation; selecting state; climbing/entering location; region guard) reproducing the failure through the current runner. (b) A classification of every Secret Letter failure (53) and every Alderman derived failure into: **arrangeable → pass**, **name a SKIPPED shape**, or **real story finding**, each with the one-line cause, written to `docs/work/branch-tester/549-triage-20261010.md`. (c) For the 30 `ENTITY_NOT_FOUND` cases: per case, why the noun is out of scope for the parser (offstage, wrong room, inside a closed/locked container, `scenery`, held-vs-reachable, the indirect object never arranged) — this decides Phase 2's rule. (d) Decision on #538: which of the 53 it explains (expected: `merc-held` on Grubber's Market entering), and whether Phase 5 takes it. (e) The Alderman's current derived failure count and shapes. (f) The classification posted as a comment on #549.
+- **Exit state**: every one of the 53 (and the Alderman's) carries exactly one disposition; each of Phases 2-5 has a concrete case list and a predicted post-phase failure count; David has seen the classification before approving Phase 2.
+- **Demonstration**: the triage doc's table row count equals 53 + the Alderman's count, with the per-disposition totals; the #549 comment URL; each scratch repro run with its output showing the failure the issue names.
+- **Demonstrated**: 2026-10-10 (session 71fa21). `docs/work/branch-tester/549-triage-20261010.md` carries 53 Secret Letter rows + 4 Alderman rows = 57, each with one disposition: 39 arrangeable, 4 SKIPPED by name, 10 real story findings (Secret Letter); 4 SKIPPED (The Alderman). Per-shape fixtures: eleven scratch stories under the session scratchpad `fixtures/<shape>/` (reach-held, show-give, keyed-unlock, trait-word-state, on-body-refused, climbable-nowhere, intercepting-guard, must-order, region-guard, disambiguation, phrase-fallthrough), each run through `./sharpee test` with the failure line the issue names (lines quoted in the record). Probe evidence per row from `probe.cjs` (devkit `loadAuthorGame` → story-loader `arrange` → transcript-tester `runCommand`), events quoted in the record. #538 explains exactly one row (`merc-held`); Phase 5 takes it as its only row. #548's three rows are absent from the 53. The Alderman: 4 failures, shapes named. Classification posted: https://github.com/ChicagoDave/sharpee/issues/549#issuecomment-6105246026. Phases 2-5 annotated below with their case lists and predicted counts. [reported by session, unverified]
+- **Status**: DONE
+
+### Phase 2: Reach — the nouns a command names are in the player's reach (gated on David's approval)
+- **Tier**: Large
+- **Budget**: ~400 tool calls
+- **Domain focus**: `derived-runner.ts` arrange terms `reach-subject` / `player-to-subject` and a new term for the command's other nouns (indirect object, held-item objects).
+- **Phase 1 case list** (triage rows 1-30, all arrangeable; predicted 53 → 23): 26 show/give rows where `commandPlan` types `[someone]` literally and leaves the item unnamed (rows 1-26: Dame Sandler, Pieter ×4, Chorus Brothers ×4, Widow Fiona ×4, Jacobs ×2, guards ×2, string quartet ×2, waiters ×2, wooden box ×3, collected documents); 2 wear rows and 2 touch rows whose subject an NPC carries (dress, fashionable hat, mound of dough, silver platters). Rule the rows need: the subject fills `[someone]` when it is a person, else `[something]`; an unnamed `[something]` is the `must have` item, else a thing in the boot inventory, else one brought in; an unnamed `[someone]` is a person in the room, else the first declared person brought in (rows 23-26 need Widow Shannon). Wearing arranges the subject held; touching arranges it into the room. Rows 3-6 also need Phase 3's typed-name rule (`purse` is ambiguous with the satchel). Gate decision 1 of the triage record (fillers choose vs. skip).
+- **Entry state**: Phase 1 done; David approved this phase and the per-action reach table.
+- **Deliverable**: Fixture story + tests first (Behavior Statement, then red), then the term. A per-action reach table: wear/give/show/put need the item in the player's inventory; give/show also need the recipient in the player's room; touch/examine need scope; the indirect object is arranged the same way. The arrange uses only floor forms (`player.inventory contains X`, `X.location = <room>`, closed-container opening). After arranging, a pre-run `canSee`/scope read decides: reachable → run; still unreachable → SKIPPED `object-unreachable` (the existing `subject-unreachable` extended to non-subject nouns), decided before the command is typed. Parse failures that remain after a successful reach read stay FAILED (AC-7). Fixtures cover: wear, give with recipient, show, touch, a noun inside a closed container, a noun offstage (SKIPPED by name), and AC-7's no-vocabulary fixture unchanged.
+- **Exit state**: on Secret Letter, the `ENTITY_NOT_FOUND` cases Phase 1 marked arrangeable pass; the rest are SKIPPED `object-unreachable` or real findings listed with cause; no `ENTITY_NOT_FOUND` failure remains un-dispositioned; AC-4's total equals the enumerator's count.
+- **Demonstration**: `pnpm --filter '@sharpee/branch-tester' test derived-runner` green with the new fixture tests (each passing, plus the SKIPPED-by-name and AC-7 tests); `./sharpee test branch-stories/secret-letter/secret-letter.story` shows the `ENTITY_NOT_FOUND` count down to the predicted figure and the skipped count up by exactly the named-shape figure.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 3: Keys, tools, and the typed name — beyond `standardPreconditions` (gated on David's approval)
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: `standardPreconditions()` and `commandPlan` in `derived-runner.ts`.
+- **Phase 1 case list** (triage rows 31-38, all arrangeable; predicted 23 → 15): 4 unlock rows (`keyId` IS satisfied — the key is held — but the one-object pattern never types it and stdlib answers `no_key`; type `unlock X with <key>`); 2 kello fruit rows (disambiguation prompt, #522: type an alias unique in the arranged scope); 2 furnace rows (`arrange("furnace is closed")` wrote the declared state over `hot`; the read of `is closed` ignores the openable flag). Trait-word states (`open/closed/locked/unlocked`) map to the flags when no state of that name is declared, on write (story-loader `arrange`) and read (transcript-tester, ADR-340 D3) — a cross-package change to name at this gate; a flag word's negation is a write. Gate decision 3.
+- **Entry state**: Phase 2 done and approved.
+- **Deliverable**: From Phase 1's list, whatever of the "blocked before the rule" set is a missing key, tool or ambiguous noun: the key a lock needs when it is declared by a story relation rather than the lockable trait's `keyId` (the Red Gate Estate gates, cell doors — Phase 1 settles why `keyId` did not satisfy them); a typed name that disambiguates (kello fruit) instead of an ambiguous noun; any further standard action whose validate phase reads held tools. Fixtures for: a key declared on the trait, a key declared another way, an ambiguous noun. A precondition the floor cannot write becomes a named SKIPPED shape decided from the pre-run world.
+- **Exit state**: those blocked cases pass, skip by name, or are listed as real findings; the furnace-examining case dispositioned.
+- **Demonstration**: new fixture tests green; Secret Letter derived failures reduced by the predicted count, with the unlocking and kello-fruit rows named passing in the run output.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 4: Selecting state — the response the rule is written for fires (gated on David's approval)
+- **Tier**: Large
+- **Budget**: ~400 tool calls
+- **Domain focus**: `preconditionTerms` / `conditionTerms` and the intercepting-guard composition in `planBranch`.
+- **Phase 1 case list** (triage rows 39-47 and A1-A4; predicted 15 → 11 on Secret Letter, 4 → 0 failures on The Alderman with 4 new skips): row 41 passes after `world-index` `emitActionDef` orders guards as the loader runs them (refusals, then musts); rows 39, 40, 42 become SKIPPED `negation` once `interceptingGuards` is corrected (today it arranges the `on` refusal's own guard — inverted); rows 43-47 are real findings (a mutating `on` body behind a standard refusal) and leave this phase red, with the Phase 6 line improvement naming the standard refusal. A1/A2: `phrase … when` before an unconditional phrase is first-match selection; `world-index` must make the fallthrough a guarded leaf, after which the guards (threat field, `feels likes`) are not floor forms → SKIPPED. A3/A4: `unknown_topic` with `character.author.arbitration` → new shape `topic-arbitrated`. Two of the three changes here are `packages/world-index`, not branch-tester.
+- **Entry state**: Phase 3 done and approved.
+- **Deliverable**: The "state never changed" set (8: banana and kello fruit nicked, dishes clean, wooden box taken, metal grate x4 across open/push/pull/take), the `changing-outfit` / `bathing` defined actions emitting a different refusal, and The Alderman's "different response fired" topics. Phase 1 names the cause of each; the likely mechanism is that a guard the planner does not know about (a sibling `on` clause, a refuse-when on another clause, a topic with a state-selecting `select`) fires first. Extend the existing `interceptingGuards` idea (guards of sibling clauses on the same action/subject must be made to pass) from `after` clauses to the clause kinds Phase 1 shows need it; where a sibling's guard cannot be arranged, SKIPPED with the sibling named. Fixtures: a second clause that intercepts first; a topic whose response is selected by a state.
+- **Exit state**: the state-never-changed and selecting-state rows pass or skip by name; The Alderman's derived failures are cleared or listed as real findings.
+- **Demonstration**: fixture tests green; both stories re-run showing the predicted failure counts; the metal-grate rows listed with outcome.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 5: Location after climbing and entering — and region guards (#538), if approved (gated on David's approval)
+- **Tier**: Medium
+- **Budget**: ~250 tool calls
+- **Domain focus**: player-location arrangement (`player-to-subject`) and claim reading for `change-player`/`player.location` claims; `conditionTerms` `is-in` over a region.
+- **Phase 1 decision**: the five location-mismatch rows are all real story findings (four `climbable` without `enterable` → stdlib `climb_nowhere`; `enter Red Gate Estate` → a door is `not_enterable`), so the climbing/entering capability has no row and is dropped. Phase 5 is #538 only: row 53 (`merc-held`), predicted SKIPPED either way (`subject-unreachable` region-aware, or `predicate-is-in-region` floor); the stronger reason to do it is the `region-guard` fixture's FALSE PASS when the body's move targets the subject's own room. Predicted 11 → 10.
+- **Entry state**: Phase 4 done and approved; Phase 1's decision on #538 recorded.
+- **Deliverable**: The 5 location-mismatch rows (Red Gate Estate on entering; stone steps, steep steps, stone stairs in night-journey.chord; the jail.chord ladder): Phase 1 decides whether the cause is the runner arranging the player into the wrong room of the subject's pair (a place with two sides), a climbing target the arranged player is already in, or a real story finding. For #538: the honest floor is `conditionTerms` naming `predicate-is-in-region` and SKIPPING (runner only, in branch-tester); the useful form — the assertion core reading `<entity>.location = <region>` as "in one of the region's rooms" and `arrange` writing the region's first room — changes `transcript-tester` and `story-loader` and needs David's separate approval in this phase's gate. Fixture stories for a climb/enter pair and for a region guard.
+- **Exit state**: location rows pass or are listed with cause; `Grubber's Market · on entering · refused merc-held` passes (region-aware) or is SKIPPED `predicate-is-in-region` per David's choice; #538 updated.
+- **Demonstration**: fixture tests green; Secret Letter's location-mismatch rows and the merc-held row shown in the run output with their new outcome.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+### Phase 6: Re-measure both stories, post the residual, update the records
+- **Tier**: Small
+- **Budget**: ~100 tool calls
+- **Domain focus**: Closing the issue's acceptance. Docs and ADR only; no `packages/` edit, so not gated.
+- **Entry state**: Phases 2-5 done.
+- **Deliverable**: Re-run `./sharpee test` on Secret Letter and The Alderman (one run each; seed pinned) and record counts beside the 2026-10-10 baseline. Post on #549 the residual real-cause list (each remaining failure with its cause) and the per-shape fixture-test names that satisfy its acceptance. If any phase moved the floor or added a shape, add a dated amendment to ADR-356 D2 (and its Affected/AC lines if a criterion changed); check `website/src/app/chord/guide/tooling/claims/content.mdx` (the one guide page naming the derived tier) and `.../sharpee-test/content.mdx` and update only if their text now misstates behavior. Update O-1's evidence in the objective if the clean-report count changes. Close #549 when the residual list is posted and accepted by David.
+- **Exit state**: #549 carries the residual list; the ADR/guide match the code; exit code of the derived tier on Secret Letter reflects only real findings.
+- **Demonstration**: the two `./sharpee test` summaries (before/after counts); the #549 comment URL; `git diff` of the ADR amendment, if any.
+- **Demonstrated**: 
+- **Status**: PENDING
+
+## Plan review (self-run, planner)
+Checked every phase against the references listed above.
+
+- **TENSION — AC-7 vs. the 30 `ENTITY_NOT_FOUND` cases.** ADR-356 D3 and AC-7 make an unresolvable command a FAILED parse. Converting any of the 30 to SKIPPED reads as weakening it. Resolution built into Phase 2 and the standing constraints: the SKIPPED decision is made only from a pre-run read of the arranged world (the existing `subject-unreachable` precedent), never by matching the parse error afterwards, and AC-7's own fixture stays unchanged and green. Needs David's agreement at the Phase 2 gate, and the new `object-unreachable` shape likely warrants a dated ADR-356 amendment (Phase 6).
+- **TENSION — #538 crosses packages.** The ADR-340 D3 rule puts any new claim read in `transcript-tester` and the arrange write in `story-loader`. Only the SKIPPED-by-name floor stays inside `branch-tester`. Phase 5 therefore carries a separate approval; the plan does not assume the region-aware form.
+- **TENSION — #548 is closed, yet the task treats its 3 failures as excluded.** Consistent (they are out of the 53), but if the offstage-pin fix is not yet in the built bundle those 3 still show in raw output; Phase 1 verifies the 53 excludes them.
+- **TENSION — ADR-356 D2 floor.** Reach and key arranging use only existing pin forms; no new pin form is proposed. If Phase 3 shows a lock whose key relation is not a floor form, the choice is SKIP-by-name, not extending the grammar without an ADR amendment.
+- **Count caveat.** The shape counts (30/10/8/5) come from the task's measurement and the issue; Phase 1 re-derives them rather than inheriting them. The Alderman count was measured at plan time (4, above); Phase 1 re-derives the shapes.
+- **No CONTRADICTION found** with ADR-355, ADR-340, ADR-293 D12, or the author-narrative-testing plan (its deferred rows stay SKIPPED by name). No supersession disposition (rule 18b): the pointer was absent and the related plan is already stamped.
+- Plan-file location deviates from the planner default, at David's instruction.
