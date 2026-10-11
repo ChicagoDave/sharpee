@@ -48,6 +48,25 @@ declares its own `needs` lines: each key it names replaces the shared key,
 and the rest is inherited. Claims with the same effective set share one
 walk.
 
+A set that lists more than a claim needs is still sound, only slower, and
+the compiler says which of it is padding. For each claim it follows every
+rule that could change what the claim reads, and every guard those rules
+read, and reports the things in the set that nothing on that path ever
+touches, as a warning on the `needs things:` line with a trimmed line to
+paste in:
+
+```text
+fernhill.claims.chord:9: `the story can be won` depends on 11 of the 13
+things in its set — under this set nothing it depends on reads sherry
+bottle, Mrs Kettle. The walk still runs the set as written; a trimmed line:
+`needs things: Tobias, stopcock, primer plunger, boiler, garden shears,
+vine, silver locket, folly door, fuse, deed box, deed`.
+```
+
+The finding is a proposal: the walk runs the set exactly as written until
+you edit the line. It is also conservative — a thing the compiler cannot
+rule out stays in — so trimming what it names never changes a verdict.
+
 ## What a claim can say
 
 Each `claim` or `never` head is followed by one indented line stating what
@@ -106,6 +125,7 @@ named. Every run prints the tally first — how many claims held of how many
 declared — then each walk's cost, then each claim with its witness or the
 reason it stayed open. A positive claim held prints the first path that
 reached it, which is the shortest under its set. A negative claim unproven
-prints the budget that stopped the walk and how many things its set
-carried: the states to exhaust double with every independent thing, so the
-remedy is a tighter set, not a larger budget.
+prints the budget that stopped the walk, how many things its set carried,
+and how many of them the claim's rules never reach: the states to exhaust
+double with every independent thing, so the remedy is a tighter set, not a
+larger budget, and the count says how much tighter it can be.
