@@ -428,7 +428,7 @@ describe('AC-2 — one document, two consumers (tab-authored suite through the r
     // detail row alongside the card's passing ones…
     const tabRow = run.state.results.get(model.mainLine);
     expect(tabRow?.status).toBe('failed');
-    expect(tabRow?.firstFailure?.endsWith(message)).toBe(true);
+    expect(tabRow?.firstFailure?.message).toBe(message);
     const failing = failedMessagesOf(run.state, model.mainLine);
     expect(failing.some((entry) => entry.includes('no roses at all'))).toBe(true);
     // …the branch is unaffected and the tally counts lines.

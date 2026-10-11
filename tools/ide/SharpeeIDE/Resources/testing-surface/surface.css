@@ -477,6 +477,9 @@ body.ts-active .sharpee-window { display: none; }
 .ts-run-row .ts-badge.ts-pass { color: var(--ts-assert); font-weight: 700; }
 .ts-run-row .ts-badge.ts-fail { color: var(--ts-fail); font-weight: 700; }
 .ts-run-row .ts-why { font-size: 10.5px; color: var(--ts-fg-dim); margin-top: 2px; }
+/* A failed row visits its line (ADR-357 D8 step 2): it reads as a button. */
+.ts-run-row-visit { cursor: pointer; margin: 0 -6px; padding-left: 6px; padding-right: 6px; border-radius: 4px; }
+.ts-run-row-visit:hover, .ts-run-row-visit:focus-visible { background: rgba(127, 127, 127, 0.12); outline: none; }
 /* Run detail (David 2026-08-10: every card and its assertions): one command
    row per executed card, each assertion's verdict indented beneath it. */
 .ts-run-cmd {

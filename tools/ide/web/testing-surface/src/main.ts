@@ -394,6 +394,9 @@ const cards = new CardsView(model, {
   onSelectLine(lineId) {
     void selectLine(lineId);
   },
+  onVisitFailure(lineId) {
+    void visitFailure(lineId);
+  },
   onRun() {
     // One run at a time, and never during a driver replay — the run reads
     // the document on disk, which a mid-replay session hasn't finished
@@ -908,6 +911,21 @@ async function selectLine(lineId: string): Promise<void> {
   currentLine = lineId;
   update();                     // the view switches on retained cards
   await visitLine(lineId);
+}
+
+/**
+ * The run-column click (ADR-357 D8 step 2): a failed row visits its line
+ * and lands at the top of that line — the opening for the main line, the
+ * first own card for a branch. A click on the line already in view only
+ * scrolls. Once D9's card id rides the wire, this lands on the failing card.
+ */
+async function visitFailure(lineId: string): Promise<void> {
+  if (replayActive || driverBusy) return;
+  if (lineId !== model.activeLine) {
+    await selectLine(lineId);
+    if (model.activeLine !== lineId) return;   // the line no longer exists
+  }
+  cards.scrollToLineTop(lineId);
 }
 
 /** Chip ✕: the branch, its descendants, and their cards go. Deleting the

@@ -1046,6 +1046,20 @@
   function restatesTextClaim(message) {
     return message.startsWith("Output ");
   }
+  function bootLookIndex(commands, hasBootCard) {
+    if (!hasBootCard) return void 0;
+    const index = commands.findIndex((command) => command.input !== "(opening)");
+    return index < 0 ? void 0 : index;
+  }
+  function commandRowText(command, bootLook) {
+    if (command.input === "(opening)") return "(opening)";
+    if (bootLook) return "(boot look)";
+    return `> ${command.input}`;
+  }
+  function firstFailureText(failure, bootLook) {
+    const where = failure.where !== void 0 ? `${failure.where}${bootLook ? " \xB7 boot" : ""}` : bootLook ? "boot look" : void 0;
+    return where !== void 0 ? `${where} \u2014 ${failure.message}` : failure.message;
+  }
   function createRunState() {
     return {
       inFlight: false,
@@ -1124,7 +1138,11 @@
           passed: 0,
           failed: 1,
           commands: [],
-          firstFailure: where !== void 0 ? `${where} \u2014 ${message}` : message,
+          firstFailure: {
+            ...where !== void 0 ? { where } : {},
+            message,
+            command: pending.length - 1
+          },
           moreFailures: existing?.moreFailures ?? 0,
           ...label !== void 0 ? { label } : {}
         });
@@ -1150,10 +1168,12 @@
         if (label !== void 0) result.label = label;
         if (partial?.firstFailure !== void 0) result.firstFailure = partial.firstFailure;
         else if (event.status === "error" && event.errorMessage !== void 0) {
-          result.firstFailure = event.errorMessage;
+          result.firstFailure = { message: event.errorMessage };
         } else if (event.status === "unreached") {
           const blocker = event.blockedBy !== void 0 ? stemOf(event.blockedBy) : void 0;
-          result.firstFailure = blocker !== void 0 ? `blocked by ${state.labels.get(blocker) ?? blocker}` : "blocked by an ancestor";
+          result.firstFailure = {
+            message: blocker !== void 0 ? `blocked by ${state.labels.get(blocker) ?? blocker}` : "blocked by an ancestor"
+          };
         }
         state.results.set(stem, result);
         return;
@@ -1242,6 +1262,10 @@
       rows.push({ kind: "unrun", lineId: line.id, label: line.label, why });
     }
     return rows;
+  }
+  function runRowVisitTarget(row) {
+    if (row.kind !== "result") return void 0;
+    return row.result.status === "failed" || row.result.status === "error" ? row.lineId : void 0;
   }
 
   // tools/ide/web/testing-surface/src/cards.ts
@@ -1877,9 +1901,22 @@
           true
         ));
       }
-      const row = (badgeText, badgeClass, title, why) => {
+      const row = (badgeText, badgeClass, title, why, visit) => {
         const line = document.createElement("div");
-        line.className = "ts-run-row";
+        line.className = `ts-run-row${visit !== void 0 ? " ts-run-row-visit" : ""}`;
+        if (visit !== void 0) {
+          line.setAttribute("role", "button");
+          line.tabIndex = 0;
+          line.title = "Visit this line";
+          const go = () => this.delegate.onVisitFailure(visit);
+          line.addEventListener("click", go);
+          line.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              go();
+            }
+          });
+        }
         const badge = document.createElement("span");
         badge.className = `ts-badge${badgeClass ? ` ${badgeClass}` : ""}`;
         badge.textContent = badgeText;
@@ -1892,18 +1929,19 @@
         line.append(badge, name, why_);
         results.appendChild(line);
       };
-      const detail = (result) => {
-        for (const command of result.commands) {
+      const hasBootCard = (lineId) => lineId === this.model.mainLine && this.model.document.cards.some((card) => card.type === "boot");
+      const detail = (result, bootLook) => {
+        result.commands.forEach((command, index) => {
           const commandRow = document.createElement("div");
           commandRow.className = "ts-run-cmd";
-          commandRow.textContent = command.input === "(opening)" ? "(opening)" : `> ${command.input}`;
+          commandRow.textContent = commandRowText(command, index === bootLook);
           results.appendChild(commandRow);
           if (command.skipped) {
             const skipRow = document.createElement("div");
             skipRow.className = "ts-run-assert";
             skipRow.textContent = "\u2014 skipped";
             results.appendChild(skipRow);
-            continue;
+            return;
           }
           const printed = command.passed ? void 0 : command.output;
           const showOutput = printed !== void 0;
@@ -1935,7 +1973,7 @@
             output.textContent = printed;
             results.appendChild(output);
           }
-        }
+        });
       };
       const columnLines = lineIds.map((id) => ({
         id,
@@ -1949,21 +1987,24 @@
           continue;
         }
         const result = entry.result;
+        const bootLook = bootLookIndex(result.commands, hasBootCard(entry.lineId));
+        const failure = result.firstFailure;
+        const failureText = failure === void 0 ? void 0 : firstFailureText(failure, failure.command !== void 0 && failure.command === bootLook);
         switch (result.status) {
           case "passed":
             row("PASS", "ts-pass", label, "");
-            detail(result);
+            detail(result, bootLook);
             break;
           case "skipped":
             row("\u2014", "", label, "no commands \u2014 ran as a skip");
             break;
           case "unreached":
-            row("\u2014", "", label, result.firstFailure ?? "blocked by an ancestor");
+            row("\u2014", "", label, failureText ?? "blocked by an ancestor");
             break;
           default: {
             const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : "";
-            row("FAIL", "ts-fail", label, `${result.firstFailure ?? "failed"}${more}`);
-            detail(result);
+            row("FAIL", "ts-fail", label, `${failureText ?? "failed"}${more}`, runRowVisitTarget(entry));
+            detail(result, bootLook);
           }
         }
       }
@@ -2281,6 +2322,26 @@
     }
     scrollToLatest() {
       this.session.scrollTop = this.session.scrollHeight;
+    }
+    /**
+     * Scroll the pane to the top of line `lineId`: the main line's top is the
+     * opening; a branch's top is its first own card. Where the line's first
+     * card is not on the board, the pane goes to its top rather than nowhere.
+     * (ADR-357 D8 step 2: the run-column click lands here until D9's card id
+     * lets it land on the failing card.)
+     */
+    scrollToLineTop(lineId) {
+      if (lineId === this.model.mainLine) {
+        this.session.scrollTop = 0;
+        return;
+      }
+      const first = this.model.visibleOrdinals().find((ordinal) => {
+        const at = this.model.turnIndexOf(ordinal);
+        return at !== void 0 && at.lineId === lineId && at.index === 0;
+      });
+      const target = first !== void 0 ? this.cards.get(first)?.row : void 0;
+      if (target) target.scrollIntoView({ block: "start" });
+      else this.session.scrollTop = 0;
     }
   };
 
@@ -3699,6 +3760,9 @@
     onSelectLine(lineId) {
       void selectLine(lineId);
     },
+    onVisitFailure(lineId) {
+      void visitFailure(lineId);
+    },
     onRun() {
       if (runState.inFlight || driverBusy || replayActive) return;
       beginRun(runState);
@@ -4065,6 +4129,14 @@
     currentLine = lineId;
     update();
     await visitLine(lineId);
+  }
+  async function visitFailure(lineId) {
+    if (replayActive || driverBusy) return;
+    if (lineId !== model.activeLine) {
+      await selectLine(lineId);
+      if (model.activeLine !== lineId) return;
+    }
+    cards.scrollToLineTop(lineId);
   }
   async function performDeleteBranch(lineId) {
     if (replayActive || driverBusy) return;

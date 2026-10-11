@@ -10,7 +10,10 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 import { describe, expect, it } from 'vitest';
-import { beginRun, createRunState, finishRun, foldRunLine, resetRun, restatesTextClaim, runRowsOf } from '../src/run';
+import {
+  beginRun, bootLookIndex, commandRowText, createRunState, finishRun, firstFailureText, foldRunLine,
+  resetRun, restatesTextClaim, runRowVisitTarget, runRowsOf, type CommandOutcome,
+} from '../src/run';
 
 let seq = 0;
 const line = (event: Record<string, unknown>): string =>
@@ -62,7 +65,7 @@ describe('foldRunLine', () => {
 
     const result = state.results.get('arrival');
     expect(result?.status).toBe('failed');
-    expect(result?.firstFailure).toBe('turn 3 — Output does not contain "boiler"');
+    expect(result?.firstFailure).toEqual({ where: 'turn 3', message: 'Output does not contain "boiler"', command: 0 });
     expect(result?.moreFailures).toBe(1);
   });
 
@@ -113,7 +116,7 @@ describe('foldRunLine', () => {
       end(A, { status: 'failed', passed: 0, failed: 1 }),
     ]) foldRunLine(state, raw);
 
-    expect(state.results.get('arrival')?.firstFailure).toBe('line 4 — engine exploded');
+    expect(state.results.get('arrival')?.firstFailure).toEqual({ where: 'line 4', message: 'engine exploded', command: 0 });
   });
 
   it("a document run's failure (no turn, line 0) shows the message alone — never 'line 0 —'", () => {
@@ -125,7 +128,40 @@ describe('foldRunLine', () => {
       end('opening-den', { status: 'failed', passed: 0, failed: 1 }),
     ]) foldRunLine(state, raw);
 
-    expect(state.results.get('opening-den')?.firstFailure).toBe('Output does not contain "roses"');
+    const failure = state.results.get('opening-den')?.firstFailure;
+    expect(failure).toEqual({ message: 'Output does not contain "roses"', command: 0 });
+    expect(firstFailureText(failure!, false)).toBe('Output does not contain "roses"');
+  });
+
+  it("the first failure's command index counts the opening row, so the header can tell the boot look (F-13)", () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start('main'),
+      command('main', { input: '(opening)', line: 0, passed: true }),
+      command('main', { input: 'look', line: 0, passed: false, turn: 1, failure: 'Output does not contain "rattles"' }),
+      command('main', { input: 'look', line: 0, passed: false, turn: 2, failure: 'Output does not contain "rattles"' }),
+      end('main', { status: 'failed', passed: 1, failed: 2 }),
+    ]) foldRunLine(state, raw);
+
+    const result = state.results.get('main');
+    expect(result?.firstFailure).toEqual({ where: 'turn 1', message: 'Output does not contain "rattles"', command: 1 });
+    expect(bootLookIndex(result!.commands, true)).toBe(1);
+    expect(firstFailureText(result!.firstFailure!, true)).toBe('turn 1 · boot — Output does not contain "rattles"');
+    expect(result!.commands.map((c, i) => commandRowText(c, i === 1))).toEqual(['(opening)', '(boot look)', '> look']);
+  });
+
+  it('a line with no boot card has no boot look, and the row text is the typed command (F-13)', () => {
+    const commands: CommandOutcome[] = [
+      { input: '(opening)', passed: true, skipped: false, assertions: [] },
+      { input: 'look', passed: true, skipped: false, assertions: [] },
+    ];
+    expect(bootLookIndex(commands, false)).toBeUndefined();
+    expect(bootLookIndex([commands[0]], true)).toBeUndefined();
+    expect(bootLookIndex(commands.slice(1), true)).toBe(0);
+    expect(commandRowText(commands[1], false)).toBe('> look');
+    expect(firstFailureText({ message: 'engine exploded' }, true)).toBe('boot look — engine exploded');
+    expect(firstFailureText({ where: 'turn 3', message: 'no satchel' }, false)).toBe('turn 3 — no satchel');
   });
 
   it('a replayed execution is never a row, and the authored one still is', () => {
@@ -154,8 +190,8 @@ describe('foldRunLine', () => {
       end(B, { status: 'unreached', passed: 0, failed: 0, blockedBy: A }),
     ]) foldRunLine(state, raw);
 
-    expect(state.results.get('arrival')?.firstFailure).toBe('2 parse error(s)');
-    expect(state.results.get('boiler-east-1')?.firstFailure).toBe('blocked by arrival');
+    expect(state.results.get('arrival')?.firstFailure).toEqual({ message: '2 parse error(s)' });
+    expect(state.results.get('boiler-east-1')?.firstFailure).toEqual({ message: 'blocked by arrival' });
   });
 
   it('run-end closes the run with a tally counting CARDS and ASSERTIONS from the detail; undecodable lines never throw', () => {
@@ -398,7 +434,7 @@ describe('tree lines keyed by id, titled by label (ADR-355 D5, GH #494)', () => 
     expect(state.results.get(SECOND)).toMatchObject({
       status: 'failed',
       label: SHARED,
-      firstFailure: 'turn 2 — Output does not contain "shed"',
+      firstFailure: { where: 'turn 2', message: 'Output does not contain "shed"', command: 0 },
     });
     expect(state.results.get(FIRST)?.commands).toHaveLength(1);
     expect(state.results.get(SECOND)?.commands).toHaveLength(1);
@@ -414,7 +450,7 @@ describe('tree lines keyed by id, titled by label (ADR-355 D5, GH #494)', () => 
       end(FIRST, { status: 'unreached', blockedBy: MAIN }),
     ]) foldRunLine(state, raw);
 
-    expect(state.results.get(FIRST)?.firstFailure).toBe('blocked by opening-den');
+    expect(state.results.get(FIRST)?.firstFailure).toEqual({ message: 'blocked by opening-den' });
   });
 
   it('beginRun and resetRun clear the announced labels', () => {
@@ -483,5 +519,36 @@ describe('runRowsOf — an unvisited line reads as unvisited, never as its names
     ]) foldRunLine(state, raw);
 
     expect(runRowsOf(state, []).map((row) => row.label)).toEqual(['hall · west', 'bare0001']);
+  });
+});
+
+describe('runRowVisitTarget — the run-column click (ADR-357 D8 step 2, AC-4)', () => {
+  const MAIN = 'root0000';
+  const FAILED = 'branch01';
+  const ERRORED = 'branch02';
+  const BLOCKED = 'branch03';
+  const SKIPPED = 'branch04';
+  const UNRUN = 'branch05';
+
+  it('a failed or errored row visits its line; passed, skipped, unreached and unrun rows are inert', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(MAIN), command(MAIN), end(MAIN),
+      start(FAILED), command(FAILED, { passed: false, turn: 2, failure: 'no shed' }),
+      end(FAILED, { status: 'failed', passed: 0, failed: 1 }),
+      start(ERRORED), end(ERRORED, { status: 'error', passed: 0, failed: 0, errorMessage: '2 parse error(s)' }),
+      start(BLOCKED), end(BLOCKED, { status: 'unreached', passed: 0, failed: 0, blockedBy: ERRORED }),
+      start(SKIPPED), end(SKIPPED, { status: 'skipped', passed: 0, failed: 0 }),
+    ]) foldRunLine(state, raw);
+
+    const rows = runRowsOf(state, [{ id: UNRUN, label: 'den · up', pending: false }]);
+    const targets = new Map(rows.map((row) => [row.lineId, runRowVisitTarget(row)]));
+    expect(targets.get(MAIN)).toBeUndefined();
+    expect(targets.get(FAILED)).toBe(FAILED);
+    expect(targets.get(ERRORED)).toBe(ERRORED);
+    expect(targets.get(BLOCKED)).toBeUndefined();
+    expect(targets.get(SKIPPED)).toBeUndefined();
+    expect(targets.get(UNRUN)).toBeUndefined();
   });
 });

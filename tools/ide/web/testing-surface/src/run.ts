@@ -10,7 +10,9 @@
  *   `transcript-start` announced for display, and, inside each line, EVERY
  *   executed command with every assertion's verdict (David 2026-08-10: the
  *   run shows every card and its assertions). A failed line also carries its
- *   FIRST failure one-line for the header; a closing tally counts lines.
+ *   FIRST failure as data for the header — the column composes the line,
+ *   marking the main line's boot look so it never reads as a typed turn
+ *   (UPPS finding F-13); a closing tally counts lines.
  *   The derived tier (ADR-356, GH #524) rides the same stream after the
  *   tree's lines: one `derived-branch` row per clause branch in arrival
  *   order, its status kept as the wire's four values (a SKIPPED branch is
@@ -18,9 +20,10 @@
  *   the latest seen. Decoding goes through the wire's own `isRunEvent`
  *   guard (DEVARCH 8b — the shapes are imported, never mirrored).
  *
- * Public interface: RunColumnState, TranscriptRunResult, createRunState,
- *   beginRun, foldRunLine, finishRun, resetRun, runRowsOf, RunColumnLine,
- *   RunColumnRow.
+ * Public interface: RunColumnState, TranscriptRunResult, FirstFailure,
+ *   createRunState, beginRun, foldRunLine, finishRun, resetRun, runRowsOf,
+ *   RunColumnLine, RunColumnRow, runRowVisitTarget, restatesTextClaim,
+ *   bootLookIndex, commandRowText, firstFailureText.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -67,6 +70,64 @@ export function restatesTextClaim(message: string): boolean {
   return message.startsWith('Output ');
 }
 
+/**
+ * A line's first failure, kept as wire data: where it happened, what the
+ * runner said, and which executed command it belongs to. The column turns
+ * this into its header line (`firstFailureText`), because only the column
+ * knows the document — the wire cannot say which `look` was the boot look.
+ */
+export interface FirstFailure {
+  /**
+   * The position: `turn N` from the wire's engine turn, else `line N` for a
+   * transcript's source line. Absent for a document card with no source
+   * line, a load error, or a blocker — the message then stands alone.
+   */
+  where?: string;
+  /** The runner's words — a failed claim's message, a runtime error, a blocker's name. */
+  message: string;
+  /** Index into the line's `commands` of the failing command; absent when the failure is the line's, not a command's. */
+  command?: number;
+}
+
+/**
+ * The boot look's index among a line's executed rows (UPPS finding F-13).
+ * The walker plays a document's boot card as a real `look` (branch-tester's
+ * tree-walker `commandOf`), so the wire reports it as `input: 'look'` and
+ * the author sees `> look` twice when they typed one. The boot look is the
+ * first executed row after the opening, and only on a line whose cards carry
+ * a boot card — the main line. Absent when the line has none.
+ */
+export function bootLookIndex(commands: readonly CommandOutcome[], hasBootCard: boolean): number | undefined {
+  if (!hasBootCard) return undefined;
+  const index = commands.findIndex((command) => command.input !== '(opening)');
+  return index < 0 ? undefined : index;
+}
+
+/**
+ * One executed row's title in the detail: the opening and the boot look in
+ * parentheses, because nothing was typed for them; a typed command behind
+ * the prompt it was typed at.
+ */
+export function commandRowText(command: CommandOutcome, bootLook: boolean): string {
+  if (command.input === '(opening)') return '(opening)';
+  if (bootLook) return '(boot look)';
+  return `> ${command.input}`;
+}
+
+/**
+ * A line's first failure as its header reads it: `turn N — <message>`, the
+ * position marked `· boot` when the failing command is the boot look
+ * (F-13: the card column calls that card `turn 1 · boot`, and the header
+ * now agrees instead of reading as a typed turn 1). A failure with no
+ * position is the message alone.
+ */
+export function firstFailureText(failure: FirstFailure, bootLook: boolean): string {
+  const where = failure.where !== undefined
+    ? `${failure.where}${bootLook ? ' · boot' : ''}`
+    : bootLook ? 'boot look' : undefined;
+  return where !== undefined ? `${where} — ${failure.message}` : failure.message;
+}
+
 /** One line's outcome, as the column shows it. */
 export interface TranscriptRunResult {
   /** The wire's per-line status, verbatim. */
@@ -77,12 +138,12 @@ export interface TranscriptRunResult {
   /** Per-command detail, in execution order — the detail view's spine. */
   commands: CommandOutcome[];
   /**
-   * The file's first failure, one line: `turn N — <message>`. Filled from
-   * the first failed `command-result` (its `failure` message, else its
-   * runtime `error`); an error-status file carries its `errorMessage`, an
-   * unreached file names its blocker.
+   * The file's first failure, as data — the column composes its one line
+   * with `firstFailureText`. Filled from the first failed `command-result`
+   * (its `failure` message, else its runtime `error`); an error-status file
+   * carries its `errorMessage`, an unreached file names its blocker.
    */
-  firstFailure?: string;
+  firstFailure?: FirstFailure;
   /** Failed turns beyond the first (`+n more`). */
   moreFailures: number;
   /** The display name `transcript-start` announced (a tree line's derived
@@ -216,9 +277,9 @@ function fold(state: RunColumnState, event: RunEvent): void {
         return;
       }
       const message = failureMessage ?? 'failed';
-      // Position prefix: turn number when the wire has one, source line for
-      // the transcript world. A document run's cards have no source lines
-      // (the wire carries `line: 0`) — the message stands alone.
+      // Position: turn number when the wire has one, source line for the
+      // transcript world. A document run's cards have no source lines (the
+      // wire carries `line: 0`) — the message stands alone.
       const where =
         event.turn !== undefined ? `turn ${event.turn}`
         : event.line > 0 ? `line ${event.line}`
@@ -229,7 +290,11 @@ function fold(state: RunColumnState, event: RunEvent): void {
         passed: 0,
         failed: 1,
         commands: [],
-        firstFailure: where !== undefined ? `${where} — ${message}` : message,
+        firstFailure: {
+          ...(where !== undefined ? { where } : {}),
+          message,
+          command: pending.length - 1,
+        },
         moreFailures: existing?.moreFailures ?? 0,
         ...(label !== undefined ? { label } : {}),
       });
@@ -255,13 +320,15 @@ function fold(state: RunColumnState, event: RunEvent): void {
       if (label !== undefined) result.label = label;
       if (partial?.firstFailure !== undefined) result.firstFailure = partial.firstFailure;
       else if (event.status === 'error' && event.errorMessage !== undefined) {
-        result.firstFailure = event.errorMessage;
+        result.firstFailure = { message: event.errorMessage };
       } else if (event.status === 'unreached') {
         // The blocker is named the way its own row is: its label, else its key.
         const blocker = event.blockedBy !== undefined ? stemOf(event.blockedBy) : undefined;
-        result.firstFailure = blocker !== undefined
-          ? `blocked by ${state.labels.get(blocker) ?? blocker}`
-          : 'blocked by an ancestor';
+        result.firstFailure = {
+          message: blocker !== undefined
+            ? `blocked by ${state.labels.get(blocker) ?? blocker}`
+            : 'blocked by an ancestor',
+        };
       }
       state.results.set(stem, result);
       return;
@@ -410,4 +477,15 @@ export function runRowsOf(state: RunColumnState, lines: readonly RunColumnLine[]
     rows.push({ kind: 'unrun', lineId: line.id, label: line.label, why });
   }
   return rows;
+}
+
+/**
+ * The line a run-column row visits when clicked (ADR-357 D8 step 2, AC-4):
+ * a FAILED row — a failed or errored result — visits its line; every other
+ * row is inert. Until D9's card id is on the wire the visit lands at the
+ * top of the line, so the rule is line-level by design, not by omission.
+ */
+export function runRowVisitTarget(row: RunColumnRow): string | undefined {
+  if (row.kind !== 'result') return undefined;
+  return row.result.status === 'failed' || row.result.status === 'error' ? row.lineId : undefined;
 }

@@ -117,6 +117,8 @@ David ran his tree in Chord Writer's Testing tab with `TEST-001-Y` copied over `
 
 **Belongs to**: the Testing tab's run results (`tools/ide/web/testing-surface/src/cards.ts`, `detail`), and the runner's label for the boot card.
 
+**Addressed in the tab** (2026-10-11, session 10f6b3): the main line's boot row is titled `(boot look)`, parallel to `(opening)`, and a failing boot look's header reads `turn 1 · boot — …`, the card column's own label. The runner still reports the boot card as `look` on the wire; the CLI reporter is unchanged.
+
 ## F-14: A failed claim's explanation repeats the claim (2026-10-07)
 
 **Observed**: under `✗ contains "<text>"` the explanation reads `Output does not contain "<text>"`. The second line adds nothing to the first; it is where the actual output (F-10) would go.

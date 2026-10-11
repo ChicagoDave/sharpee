@@ -14,7 +14,7 @@
  *   this layer only renders and forwards gestures.
  *
  * Public interface: CardsView (ensureLayout, addTurnCard, clear, render,
- *   scrollToLatest, setNotice), CardsDelegate.
+ *   scrollToLatest, scrollToLineTop, setNotice), CardsDelegate.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -30,7 +30,10 @@ import {
   type SourceSpan,
 } from './derived';
 import type { BranchPoint, TreeSessionModel } from './model';
-import { restatesTextClaim, runRowsOf, type RunColumnState, type TranscriptRunResult } from './run';
+import {
+  bootLookIndex, commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf,
+  type RunColumnState, type TranscriptRunResult,
+} from './run';
 
 /** Chip labels interpolate model strings into innerHTML — escape them. */
 function escapeHtml(text: string): string {
@@ -55,6 +58,10 @@ export interface CardsDelegate {
   onBranch(ordinal: number, command: string): void;
   /** A sibling chip was clicked — replay that line live and view it. */
   onSelectLine(lineId: string): void;
+  /** A failed row in the run column was clicked — visit its line and land
+   *  at the top of the line (ADR-357 D8 step 2; the card itself once D9's
+   *  card id is on the wire). */
+  onVisitFailure(lineId: string): void;
   /** The Run button: run the story's tree document at the pinned seed. */
   onRun(): void;
   /** The run column's current state — main.ts owns the fold. */
@@ -884,9 +891,21 @@ export class CardsView {
       ));
     }
 
-    const row = (badgeText: string, badgeClass: string, title: string, why: string): void => {
+    /** One header row. With `visit`, the row is a button that visits that
+     *  line (the run-column click, ADR-357 D8 step 2). */
+    const row = (badgeText: string, badgeClass: string, title: string, why: string, visit?: string): void => {
       const line = document.createElement('div');
-      line.className = 'ts-run-row';
+      line.className = `ts-run-row${visit !== undefined ? ' ts-run-row-visit' : ''}`;
+      if (visit !== undefined) {
+        line.setAttribute('role', 'button');
+        line.tabIndex = 0;
+        line.title = 'Visit this line';
+        const go = (): void => this.delegate.onVisitFailure(visit);
+        line.addEventListener('click', go);
+        line.addEventListener('keydown', (event) => {
+          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); go(); }
+        });
+      }
       const badge = document.createElement('span');
       badge.className = `ts-badge${badgeClass ? ` ${badgeClass}` : ''}`;
       badge.textContent = badgeText;
@@ -900,19 +919,26 @@ export class CardsView {
       results.appendChild(line);
     };
 
-    /** One command's detail block: the command, then each assertion's verdict. */
-    const detail = (result: TranscriptRunResult): void => {
-      for (const command of result.commands) {
+    /** Whether `lineId`'s executed rows include the boot look: only the main
+     *  line plays the boot card, and only when the document has one (F-13). */
+    const hasBootCard = (lineId: string): boolean =>
+      lineId === this.model.mainLine
+      && this.model.document.cards.some((card) => card.type === 'boot');
+
+    /** One command's detail block: the command, then each assertion's verdict.
+     *  The boot look is titled as what it is, not as a second `> look`. */
+    const detail = (result: TranscriptRunResult, bootLook: number | undefined): void => {
+      result.commands.forEach((command, index) => {
         const commandRow = document.createElement('div');
         commandRow.className = 'ts-run-cmd';
-        commandRow.textContent = command.input === '(opening)' ? '(opening)' : `> ${command.input}`;
+        commandRow.textContent = commandRowText(command, index === bootLook);
         results.appendChild(commandRow);
         if (command.skipped) {
           const skipRow = document.createElement('div');
           skipRow.className = 'ts-run-assert';
           skipRow.textContent = '— skipped';
           results.appendChild(skipRow);
-          continue;
+          return;
         }
         // A failed command's output is shown once, under its claims, when the
         // wire carried it (F-10). A text claim's "why" line only restates the
@@ -951,7 +977,7 @@ export class CardsView {
           output.textContent = printed;
           results.appendChild(output);
         }
-      }
+      });
     };
 
     // Every line the run touched, in run order, then this session's lines it
@@ -971,23 +997,28 @@ export class CardsView {
         continue;
       }
       const result = entry.result;
+      const bootLook = bootLookIndex(result.commands, hasBootCard(entry.lineId));
+      const failure = result.firstFailure;
+      const failureText = failure === undefined
+        ? undefined
+        : firstFailureText(failure, failure.command !== undefined && failure.command === bootLook);
       switch (result.status) {
         case 'passed':
           // No turn count: turns have no meaning unless the author gives
           // them meaning (David 2026-08-10). PASS is the information.
           row('PASS', 'ts-pass', label, '');
-          detail(result);
+          detail(result, bootLook);
           break;
         case 'skipped':
           row('—', '', label, 'no commands — ran as a skip');
           break;
         case 'unreached':
-          row('—', '', label, result.firstFailure ?? 'blocked by an ancestor');
+          row('—', '', label, failureText ?? 'blocked by an ancestor');
           break;
         default: {
           const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : '';
-          row('FAIL', 'ts-fail', label, `${result.firstFailure ?? 'failed'}${more}`);
-          detail(result);
+          row('FAIL', 'ts-fail', label, `${failureText ?? 'failed'}${more}`, runRowVisitTarget(entry));
+          detail(result, bootLook);
         }
       }
     }
@@ -1352,5 +1383,26 @@ export class CardsView {
 
   scrollToLatest(): void {
     this.session.scrollTop = this.session.scrollHeight;
+  }
+
+  /**
+   * Scroll the pane to the top of line `lineId`: the main line's top is the
+   * opening; a branch's top is its first own card. Where the line's first
+   * card is not on the board, the pane goes to its top rather than nowhere.
+   * (ADR-357 D8 step 2: the run-column click lands here until D9's card id
+   * lets it land on the failing card.)
+   */
+  scrollToLineTop(lineId: string): void {
+    if (lineId === this.model.mainLine) {
+      this.session.scrollTop = 0;
+      return;
+    }
+    const first = this.model.visibleOrdinals().find((ordinal) => {
+      const at = this.model.turnIndexOf(ordinal);
+      return at !== undefined && at.lineId === lineId && at.index === 0;
+    });
+    const target = first !== undefined ? this.cards.get(first)?.row : undefined;
+    if (target) target.scrollIntoView({ block: 'start' });
+    else this.session.scrollTop = 0;
   }
 }
