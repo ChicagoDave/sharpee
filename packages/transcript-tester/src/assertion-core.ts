@@ -435,9 +435,10 @@ export function checkStateAssertion(
  * (a session without a story runtime that declares states) neither form is
  * recognized: `story.state` is then read as the entity form (an entity
  * named `story`, its `state` property) and the Chord-spelled form is not a
- * claim at all. The three shapes the grammar names but the floor does not
- * write (occurrence, topic history, timer position) are not claims either:
- * no read of them is defined here. `emitted` is read by
+ * claim at all. The two shapes the grammar names but the floor does not
+ * write (topic history, timer position) are not claims either: no read of
+ * them is defined here. A clause's occurrence is read when the keys carry
+ * `clauseOccurrencePrefix` (2026-10-11). `emitted` is read by
  * `checkEmittedAssertion`, which has the events this function does not.
  *
  * @param expression - The pin text from a tree-document card or a `[STATE:]` line
@@ -596,6 +597,32 @@ export function evaluateStateExpression(
     const phase = record?.phase ?? 'idle';
     const holds = pin.what === 'started' ? phase !== 'idle' : phase === 'expired';
     return { matches: holds, details: holds ? undefined : `${pin.timer} has not ${pin.what} (${phase})` };
+  }
+
+  // "[the] <owner> [trait <t>] clause <n> occurrence = <k>" (ADR-356 D2 as
+  // amended 2026-10-11): the clause's firing counter, composed from the
+  // loader's prefix and the clause's identity — the owner's runtime id (or
+  // `story`), the trait, the clause number — never through a loader import.
+  if (pin.kind === 'occurrence' && storyStateKeys?.clauseOccurrencePrefix) {
+    const label = `${pin.owner}${pin.trait === undefined ? '' : ` trait ${pin.trait}`} clause ${pin.clause}`;
+    let owner: string;
+    if (pin.owner === 'story') {
+      owner = 'story';
+    } else {
+      const entity = findEntity(pin.owner, world, idAttribute);
+      if (!entity) {
+        return { matches: false, details: `Entity "${pin.owner}" not found` };
+      }
+      const irId = entity.attributes?.[storyStateKeys.entityIdAttribute];
+      if (typeof irId !== 'string') {
+        return { matches: false, details: `${label}: not a Chord entity (no IR id), so it has no clauses` };
+      }
+      owner = irId;
+    }
+    const key = `${storyStateKeys.clauseOccurrencePrefix}${owner}${pin.trait === undefined ? '' : `.${pin.trait}`}.${pin.clause}`;
+    const actual = (world.getStateValue?.(key) as number | undefined) ?? 0;
+    const isEqual = actual === pin.count;
+    return { matches: isEqual, details: isEqual ? undefined : `${label} has fired ${actual} times, expected ${pin.count}` };
   }
 
   return { matches: false, details: `Could not parse expression: ${expression}` };

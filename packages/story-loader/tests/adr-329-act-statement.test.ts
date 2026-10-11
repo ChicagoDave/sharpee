@@ -17,7 +17,7 @@ import { EnglishParser } from '@sharpee/parser-en-us';
 import { IFActions, PerceptionService } from '@sharpee/stdlib';
 import { WorldModel, type IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
-import { CHORD_OCCURRENCE_PREFIX } from '../src/state-keys';
+import { clauseOccurrenceKey } from '../src/state-keys';
 import { compileSource } from './helpers/boot-engine';
 
 interface Slots { yard?: string; guards?: string; sword?: string; player?: string; top?: string; swordPlace?: string; playerStart?: string }
@@ -110,8 +110,8 @@ async function boot(source: string, seed = 11): Promise<Booted> {
   return { engine, story, world, player: world.getPlayer()!, stream, id, at: (irId) => world.getLocation(id(irId)) };
 }
 
-/** An entity-owned clause's firing count — the lifecycle path's key shape (`on.<entity>.<action>.<kind>.<index>`). */
-const occurrence = (b: Booted, key: string) => b.world.getStateValue(`${CHORD_OCCURRENCE_PREFIX}on.${key}`);
+/** The sword's n-th clause's firing count, by the clause's position in the sword's block. */
+const occurrence = (b: Booted, clause: number) => b.world.getStateValue(clauseOccurrenceKey('sword', clause));
 const takenBy = (b: Booted, actorIrId: string) =>
   b.stream.filter((e) => e.type === 'if.event.taken' && e.entities.actor === b.id(actorIrId));
 /** The reason an executor-caught error reports — on the stream (a nested act) or on the turn's own result (the outer action). */
@@ -131,8 +131,8 @@ describe('the guards take the sword — ADR-329 Acceptance item 2, through a rea
     // World state: the guards hold the sword.
     expect(b.at('sword')).toBe(b.id('guards'));
     // Heads: the guards' `after` fired once; the player's never did.
-    expect(occurrence(b, 'sword.taking.after.0')).toBe(1);
-    expect(occurrence(b, 'sword.taking.after.1')).toBeUndefined();
+    expect(occurrence(b, 1)).toBe(1); // after the guards taking
+    expect(occurrence(b, 2)).toBeUndefined(); // after the player taking
 
     // Stream: the take carries the guards as actor, is witnessed (Alex is in
     // the Yard), and comes AFTER the player's own movement report.
@@ -149,7 +149,7 @@ describe('the guards take the sword — ADR-329 Acceptance item 2, through a rea
     const result = await b.engine.executeTurn('east');
     expect(result.success).toBe(true);
     expect(b.at('sword')).toBe(b.id('yard'));
-    expect(occurrence(b, 'sword.taking.after.1')).toBeUndefined();
+    expect(occurrence(b, 2)).toBeUndefined(); // after the guards taking, the sword's second clause
     expect(takenBy(b, 'guards')).toHaveLength(0);
     const blocked = b.stream.find((e) => e.type === 'if.event.take_blocked' && e.entities.actor === b.id('guards'));
     expect(blocked, 'the refused act narrates as any witnessed refusal would').toBeDefined();

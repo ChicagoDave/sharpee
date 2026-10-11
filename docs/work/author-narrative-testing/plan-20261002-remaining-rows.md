@@ -141,7 +141,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: G1 IN; discussion held (platform change in `packages/branch-tester`)
 - **Deliverable**: occurrence ordinals arrangeable; an ADR-356 D2 amendment note; secret-letter exercised count re-measured against 392 of 721
 - **Exit state**: row complete; GH #525 updated
-- **Status**: PENDING
+- **Status**: DONE (2026-10-11, session ce4e4c) — carried out by `docs/work/branch-tester/plan-20261011-occurrence-ordinals.md` (option (a), structural clause identity; David's choice). The measure moved with the denominator since this line was written: Secret Letter 955 → 959 of 1656 exercised, 12 failing before and after, zero `occurrence` SKIPPED. ADR-356 D2 amended 2026-10-11; GH #525 commented.
 
 ### Phase 8: Effect-less bodies and command-none rows (only if G1 says IN)
 - **Tier**: Large

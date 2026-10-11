@@ -21,7 +21,7 @@ import { type ActionInterceptor, type CapabilityEffect, IFEntity, type Intercept
 import { DecisionLedger, type DecisionRecord } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../event-contract.js';
-import { CHORD_OCCURRENCE_PREFIX } from '../state-keys.js';
+import { clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, toEffect, type RuntimeCore } from './core.js';
 
 export class OnClausesSection {
@@ -277,7 +277,7 @@ export class OnClausesSection {
     const isMine = (target: IFEntity, world: WorldModel, actorId: string): boolean =>
       target.id === runtime.core.host.entityId(entity.id) &&
       (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world));
-    const occurrenceKey = CHORD_OCCURRENCE_PREFIX + `on.${ns}`;
+    const occurrenceKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {

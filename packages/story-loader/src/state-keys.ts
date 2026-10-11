@@ -23,6 +23,33 @@ export const CHORD_IR_ID_ATTRIBUTE = 'chordIrId';
 /** Rule/on-clause occurrence counters (ordinals): `chord.occurrence.<key>`. */
 export const CHORD_OCCURRENCE_PREFIX = 'chord.occurrence.';
 
+/**
+ * An `on`/`after` clause's firing counter: `chord.occurrence.clause.<root>.<n>`,
+ * where `<root>` is the owning entity's IR id, `<entity-id>.<trait>` for a
+ * trait clause as composed by that entity (a trait clause counts per
+ * carrier), or `story`, and `<n>` is the clause's 1-based position in its
+ * root's `onClauses`, in source order. One key for every firing site —
+ * the every-turn daemons, the verb interceptors, the dispatch-verb
+ * capabilities, the event clauses and the timer-side `after` clauses —
+ * so that the derived rule test's arrange step and the assertion core can
+ * name the same counter from the clause's identity alone (ADR-356 D2,
+ * occurrence ordinals). The assertion core composes it from this prefix
+ * and never imports the function.
+ */
+export const CHORD_CLAUSE_OCCURRENCE_PREFIX = `${CHORD_OCCURRENCE_PREFIX}clause.`;
+
+/**
+ * The firing-counter key of one `on`/`after` clause.
+ *
+ * @param owner the owning entity's IR id, or `story`
+ * @param clause the clause's 1-based position in its root's `onClauses`
+ * @param trait the trait the clause is declared on, when it is a trait clause
+ * @returns the world-state key
+ */
+export function clauseOccurrenceKey(owner: string, clause: number, trait?: string): string {
+  return `${CHORD_CLAUSE_OCCURRENCE_PREFIX}${owner}${trait === undefined ? '' : `.${trait}`}.${clause}`;
+}
+
 /** The seeded-RNG cursor (persists the chance stream across save/restore). */
 export const CHORD_RNG_KEY = 'chord.rng';
 

@@ -15,7 +15,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LockableTrait, OpenableTrait, SwitchableTrait, TraitType, type IFEntity, type WorldModel } from '@sharpee/world-model';
 import { arrange } from '../src/arrange';
-import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, timerKey } from '../src/state-keys';
+import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, clauseOccurrenceKey, timerKey } from '../src/state-keys';
 import { bootEngine } from './helpers/boot-engine';
 
 const STORY = `story
@@ -239,9 +239,31 @@ describe('arrange — a timer phase writes the timer record as the runtime verbs
   });
 });
 
-describe('arrange — the three shapes named and not written', () => {
+describe('arrange — a clause occurrence sets the firing counter (ADR-356 D2 as amended 2026-10-11)', () => {
+  it('writes an entity clause\'s counter by IR id and by display name, so the next firing is the (k+1)-th', () => {
+    expect(world.getStateValue(clauseOccurrenceKey('vine', 1))).toBeUndefined();
+    expect(arrange(world, 'vine clause 1 occurrence = 2')).toEqual({ arranged: true });
+    expect(world.getStateValue(clauseOccurrenceKey('vine', 1))).toBe(2);
+    expect(arrange(world, 'the garden shears clause 2 occurrence = 1')).toEqual({ arranged: true });
+    expect(world.getStateValue(clauseOccurrenceKey('garden-shears', 2))).toBe(1);
+  });
+
+  it('writes the story\'s own clause counter', () => {
+    expect(arrange(world, 'story clause 1 occurrence = 3')).toEqual({ arranged: true });
+    expect(world.getStateValue(clauseOccurrenceKey('story', 1))).toBe(3);
+  });
+
+  it('refuses, by name and writing nothing, an unknown owner, a trait the owner does not carry, and a clause number below 1', () => {
+    const before = JSON.stringify(world.getState());
+    expect(arrange(world, 'gazebo clause 1 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: 'entity "gazebo" not found' });
+    expect(arrange(world, 'vine trait prunable clause 1 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: '"vine" does not carry the trait prunable' });
+    expect(arrange(world, 'vine clause 0 occurrence = 1')).toEqual({ arranged: false, shape: 'unrecognized', detail: '"0" is not a clause number (the first clause is 1)' });
+    expect(JSON.stringify(world.getState())).toBe(before);
+  });
+});
+
+describe('arrange — the two shapes named and not written', () => {
   it.each([
-    ['vine.pruning occurrence = 2', 'occurrence'],
     ['the weather asked once', 'topic-history'],
     ['player.bell at dusk', 'timer-position'],
   ])('%s → SKIPPED as %s, nothing written', (expression, shape) => {

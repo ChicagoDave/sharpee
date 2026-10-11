@@ -12,6 +12,7 @@
  * Owner context: branch-tester test suite (tooling).
  */
 import { describe, expect, it } from 'vitest';
+import { clauseOccurrenceKey } from '@sharpee/story-loader';
 import { claimHolds, type ClaimContext } from '../src/claims/claim-predicates.js';
 import { normalizeClaimSet, type Claim } from '../src/claims/claim-set.js';
 import type { ClaimsEntity, ClaimsWorld } from '../src/claims/claims-game.js';
@@ -64,6 +65,8 @@ function context(shape: Shape): ClaimContext {
     snapshot: { state: shape.state ?? {} },
     events: shape.events ?? [],
     entityIdByIr: new Map(Object.values(ENTITIES).map((e) => [e.name, e.id])),
+    // The stopcock's `on turning` is its first clause, and a second `after turning` its third.
+    clauseKeysByFired: new Map([['stopcock.turning', [clauseOccurrenceKey('stopcock', 1), clauseOccurrenceKey('stopcock', 3)]]]),
   };
 }
 
@@ -114,10 +117,14 @@ describe('claimHolds — the seven predicates', () => {
     expect(claimHolds(claim({ flag: { thing: 'box', trait: 'lockable', field: 'isLocked' } }), context({}))).toBe(false);
   });
 
-  it('fired: an occurrence counter whose key contains the text is above zero', () => {
-    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { 'chord.occurrence.on.stopcock.turning.on.0': 1 } }))).toBe(true);
-    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { 'chord.occurrence.on.stopcock.turning.on.0': 0 } }))).toBe(false);
+  it('fired: one of the thing\'s own clauses for the action has a counter above zero, read by clause identity and never by substring', () => {
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 1)]: 1 } }))).toBe(true);
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 3)]: 2 } }))).toBe(true);
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 1)]: 0 } }))).toBe(false);
+    // Another clause of the same thing, and a key that merely contains the text, are not this claim.
+    expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { [clauseOccurrenceKey('stopcock', 2)]: 1 } }))).toBe(false);
     expect(claimHolds(claim({ fired: 'stopcock.turning' }), context({ state: { 'chord.state.stopcock.turning': 3 } }))).toBe(false);
+    expect(claimHolds(claim({ fired: 'primer.pushing' }), context({ state: { [clauseOccurrenceKey('primer', 1)]: 1 } }))).toBe(false);
   });
 
   it('event: the turn emitted the type, with the target entity and a topic substring when given', () => {

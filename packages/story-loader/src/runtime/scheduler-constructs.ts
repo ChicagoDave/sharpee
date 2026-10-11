@@ -15,7 +15,7 @@
 import type { IREntity, IROnClause, IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { HealthTrait, WorldModel } from '@sharpee/world-model';
-import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX } from '../state-keys.js';
+import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, SchedulerDaemon, knownTopicsIn, type RuntimeCore } from './core.js';
 
 export class SchedulerConstructsSection {
@@ -106,7 +106,7 @@ export class SchedulerConstructsSection {
     // (the analyzer's story-clause-it gate refused it at compile).
     (this.core.ir.story.onClauses ?? []).forEach((clause, clauseIndex) => {
       if (clause.binding !== 'every-turn') return;
-      const key = `${CHORD_OCCURRENCE_PREFIX}story-turn.${clauseIndex}`;
+      const key = clauseOccurrenceKey('story', clauseIndex + 1);
       daemons.push({
         id: `chord.story-turn.${clauseIndex}`,
         name: 'on every turn (story)',
@@ -151,7 +151,7 @@ export class SchedulerConstructsSection {
               const evalCtx: ExecContext = { world: ctx.world, it: irEntity.id };
               if (comp.condition && !this.core.evaluator.evalCondition(comp.condition, evalCtx)) continue;
               if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, evalCtx)) continue;
-              const key = `${CHORD_OCCURRENCE_PREFIX}trait-turn.${trait.name}.${clauseIndex}.${irEntity.id}`;
+              const key = clauseOccurrenceKey(irEntity.id, clauseIndex + 1, trait.name);
               const fired = ((ctx.world.getStateValue(key) as number | undefined) ?? 0) + 1;
               if (clause.once && fired > 1) continue; // `, once` (D5)
               ctx.world.setStateValue(key, fired);
@@ -233,7 +233,7 @@ export class SchedulerConstructsSection {
    * @returns the clause's events, or none when a gate holds it
    */
   private runEntityTurnClause(irEntity: IREntity, clause: IROnClause, clauseIndex: number, world: WorldModel): ISemanticEvent[] {
-    const key = `${CHORD_OCCURRENCE_PREFIX}entity-turn.${irEntity.id}.${clauseIndex}`;
+    const key = clauseOccurrenceKey(irEntity.id, clauseIndex + 1);
     if (this.storyOver(world)) return [];
     if (this.core.timers.holdsPlayerRole(world, irEntity.id)) return [];
     if (!this.playerPresentInRegionOwner(world, irEntity)) return [];

@@ -460,3 +460,33 @@ describe('clause kinds beyond `on`', () => {
     expect(start.span?.line).toBe(lineOf('before the game starts'));
   });
 });
+
+describe('clause identity — root and position (ADR-356 D2, occurrence ordinals)', () => {
+  it('an entity clause carries its entity and its 1-based position among the entity\'s clauses, in source order', () => {
+    const pushing = onClause('pushing', 'tom');
+    const prodding = onClause('prodding', 'tom');
+    const kicking = onClause('kicking', 'tom');
+    expect(pushing[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, clause: 1 });
+    expect(prodding[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, clause: 2 });
+    expect(kicking[0].clause).toMatchObject({ kind: 'on', root: { kind: 'entity', id: 'tom' }, clause: 3 });
+    // Every leaf of one clause shares the identity.
+    expect(new Set(prodding.map((b) => (b.clause as { clause?: number }).clause))).toEqual(new Set([2]));
+  });
+
+  it('a trait clause carries the trait and the composing entity, once per carrier', () => {
+    const roots = collectClauseBranches(ir)
+      .filter((b) => b.clause.kind === 'on' && b.clause.action === 'pruning')
+      .map((b) => (b.clause as { root: unknown; clause?: number }));
+    expect(roots.map((c) => c.root)).toEqual(expect.arrayContaining([
+      { kind: 'trait', name: 'prunable', entity: 'vine' },
+      { kind: 'trait', name: 'prunable', entity: 'rose' },
+    ]));
+    expect(new Set(roots.map((c) => c.clause))).toEqual(new Set([1]));
+  });
+
+  it('a story every-turn clause is the story\'s clause 1', () => {
+    const story = collectClauseBranches(ir).filter((b) => b.clause.kind === 'on' && b.clause.binding === 'every-turn' && b.owner.kind === 'story');
+    expect(story.length).toBeGreaterThan(0);
+    expect(story[0].clause).toMatchObject({ root: { kind: 'story' }, clause: 1 });
+  });
+});

@@ -19,7 +19,7 @@
  * ADR-294 D2/D5, GH #355 (the Chord-spelled state claim).
  */
 
-import { CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TIMER_PREFIX } from '@sharpee/story-loader';
+import { CHORD_CLAUSE_OCCURRENCE_PREFIX, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TIMER_PREFIX } from '@sharpee/story-loader';
 import {
   checkAssertion,
   configureRandomInstruments,
@@ -55,6 +55,7 @@ export const CHORD_STORY_STATE_KEYS: StoryStateKeys = {
   entityIdAttribute: CHORD_IR_ID_ATTRIBUTE,
   entityGonePrefix: CHORD_GONE_PREFIX,
   timerPrefix: CHORD_TIMER_PREFIX,
+  clauseOccurrencePrefix: CHORD_CLAUSE_OCCURRENCE_PREFIX,
 };
 
 /**

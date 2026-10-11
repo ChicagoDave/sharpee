@@ -13,12 +13,12 @@
  * References:
  * - ADR-335 D1 — one module per runtime section over a shared core.
  */
-import type { IRActionDef, IROnClause, Span } from '@sharpee/chord';
+import type { IRActionDef, IROnClause, IRTraitDef, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { Choice } from '@sharpee/if-domain';
 import { type ActionInterceptor, type CapabilityBehavior, type CapabilityEffect, type CapabilitySharedData, type CapabilityValidationResult, Direction, IFEntity, type InterceptorReportResult, type InterceptorResult, type InterceptorSharedData, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
-import { CHORD_OCCURRENCE_PREFIX, CHORD_TRAIT_PREFIX } from '../state-keys.js';
+import { CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, toEffect, type RuntimeCore } from './core.js';
 
 export class DispatchVerbsSection {
@@ -56,7 +56,7 @@ export class DispatchVerbsSection {
           world.registerCapabilityBehavior(
             traitType,
             `chord.action.${clause.action}`,
-            this.buildCapabilityBehavior(trait.name, clause),
+            this.buildCapabilityBehavior(trait, clause),
           );
         } else {
           // D5 fail-fast (ADR-228): the analyzer routed this clause to the
@@ -75,7 +75,7 @@ export class DispatchVerbsSection {
           traitType,
           `if.action.${action}`,
           this.core.onClauses.mergeArms(actionClauses.map((clause, index) =>
-            this.buildTraitInterceptor(clause, `${trait.name}.${action}.${clause.clauseKind}.${index}`),
+            this.buildTraitInterceptor(trait, clause, `${trait.name}.${action}.${clause.clauseKind}.${index}`),
           )),
         );
       }
@@ -102,8 +102,10 @@ export class DispatchVerbsSection {
    * bump and decision snapshot stashed in sharedData), mutations in
    * execute, phrase/emit/win/lose in report.
    */
-  private buildCapabilityBehavior(traitName: string, clause: IROnClause): CapabilityBehavior {
+  private buildCapabilityBehavior(trait: IRTraitDef, clause: IROnClause): CapabilityBehavior {
     const runtime = this;
+    // The counter is per carrier: the clause's position on the trait, keyed under the entity.
+    const clauseNumber = trait.onClauses.indexOf(clause) + 1;
     const ctxOf = (
       entity: IFEntity,
       world: WorldModel,
@@ -143,7 +145,7 @@ export class DispatchVerbsSection {
           data.chordSkip = true;
           return { valid: true };
         }
-        const key = `${CHORD_OCCURRENCE_PREFIX}trait.${traitName}.${clause.action}.${runtime.core.host.irIdOf(entity.id)}`;
+        const key = clauseOccurrenceKey(runtime.core.host.irIdOf(entity.id) ?? entity.id, clauseNumber, trait.name);
         const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
         if (clause.once && occurrence > 1) {
           data.chordSkip = true; // `, once` — one lifetime firing (D5)
@@ -179,10 +181,12 @@ export class DispatchVerbsSection {
    * ActionInterceptor registered under the trait type (ADR-118 resolves it
    * for every entity carrying the trait).
    */
-  private buildTraitInterceptor(clause: IROnClause, ns: string): ActionInterceptor {
+  private buildTraitInterceptor(trait: IRTraitDef, clause: IROnClause, ns: string): ActionInterceptor {
     const runtime = this;
     const itOf = (target: IFEntity) => runtime.core.host.irIdOf(target.id) ?? target.id;
-    const occurrenceKeyOf = (target: IFEntity) => `${CHORD_OCCURRENCE_PREFIX}trait.${ns}.${itOf(target)}`;
+    // The counter is per carrier: the clause's position on the trait, keyed under the target.
+    const clauseNumber = trait.onClauses.indexOf(clause) + 1;
+    const occurrenceKeyOf = (target: IFEntity) => clauseOccurrenceKey(itOf(target), clauseNumber, trait.name);
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {

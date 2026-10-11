@@ -72,6 +72,15 @@ import { forEachStatementRoot, targetOf, type WriterOwner } from './statements.j
 // Records
 // ---------------------------------------------------------------------------
 
+/**
+ * What owns an `on`/`after` clause's `onClauses` list: an entity, a trait as
+ * composed by one entity (a trait clause counts per carrier), or the story.
+ */
+export type ClauseRoot =
+  | { kind: 'entity'; id: string }
+  | { kind: 'trait'; name: string; entity: string }
+  | { kind: 'story' };
+
 /** The clause a branch belongs to — what fires its body. */
 export type BranchClause =
   | {
@@ -82,6 +91,15 @@ export type BranchClause =
       binding: 'object' | 'role' | 'every-turn' | 'self';
       role: string | null;
       once: boolean;
+      /** What owns the clause's list. */
+      root: ClauseRoot;
+      /**
+       * The clause's 1-based position in its root's `onClauses`, in source
+       * order — with `root`, the identity a later firing is arranged by
+       * (ADR-356 D2, occurrence ordinals). Absent only when the clause was
+       * not reached through an `onClauses` list, which the walk never does.
+       */
+      clause?: number;
     }
   | { kind: 'timer-clause'; timer: string }
   | { kind: 'move-clause'; mover: IRValue }
@@ -637,11 +655,21 @@ function emitTimerDef(node: IRNode, storyOwner: WriterOwner, into: ClauseBranch[
  * @param owner what must be reachable for clauses here to fire
  * @param subject the entity `it` refers to here, if any
  * @param into the accumulator to append to
+ * @param root what owns the `onClauses` list clauses here belong to
+ * @param clause the 1-based position of `node` in that list, when `node` was reached through it
  */
-function classify(node: unknown, path: string, owner: WriterOwner, subject: string | null, into: ClauseBranch[]): void {
+function classify(
+  node: unknown,
+  path: string,
+  owner: WriterOwner,
+  subject: string | null,
+  into: ClauseBranch[],
+  root: ClauseRoot,
+  clause?: number,
+): void {
   if (!isWalkable(node)) return;
   if (Array.isArray(node)) {
-    node.forEach((child, index) => classify(child, `${path}[${index}]`, owner, subject, into));
+    node.forEach((child, index) => classify(child, `${path}[${index}]`, owner, subject, into, root));
     return;
   }
   const n = node as IRNode;
@@ -658,6 +686,8 @@ function classify(node: unknown, path: string, owner: WriterOwner, subject: stri
           binding: n.binding as 'object' | 'role' | 'every-turn' | 'self',
           role: (n.role as string | null) ?? null,
           once: n.once === true,
+          root,
+          ...(clause === undefined ? {} : { clause }),
         },
         owner,
         subject,
@@ -719,8 +749,12 @@ function classify(node: unknown, path: string, owner: WriterOwner, subject: stri
         { clause: { kind: 'surface', surface }, owner, subject, command: { kind: 'none', surface }, pre: guardTerms(n.condition), body: value, span },
         into,
       );
+    } else if (key === 'onClauses' && Array.isArray(value)) {
+      // The one list whose position is an identity: a clause is the n-th
+      // of its root's `on` clauses, in source order.
+      value.forEach((child, index) => classify(child, `${path}.${key}[${index}]`, owner, subject, into, root, index + 1));
     } else {
-      classify(value, `${path}.${key}`, owner, subject, into);
+      classify(value, `${path}.${key}`, owner, subject, into, root);
     }
   }
 }
@@ -755,9 +789,30 @@ export function collectClauseBranches(ir: StoryIR): ClauseBranch[] {
       return;
     }
     const label = rootLabel(ir, root, owner, itBinding);
-    classify(root, label, owner, itBinding ?? null, branches);
+    classify(root, label, owner, itBinding ?? null, branches, clauseRootOf(ir, root, owner, itBinding));
   });
   return branches;
+}
+
+/**
+ * What owns the `onClauses` list under a root: the entity, the trait as
+ * composed by `itBinding`, or the story (machines carry no `on` clauses, so
+ * a machine root is the story's for this purpose — nothing under it reads
+ * the value).
+ *
+ * @param ir the story IR
+ * @param root the subtree being visited
+ * @param owner its owner
+ * @param itBinding the entity `it` refers to there, if any
+ * @returns the clause root
+ */
+function clauseRootOf(ir: StoryIR, root: unknown, owner: WriterOwner, itBinding: string | undefined): ClauseRoot {
+  if (owner.kind === 'entity') {
+    const trait = (ir.traits ?? []).find((candidate) => candidate === root);
+    if (trait) return { kind: 'trait', name: trait.name, entity: itBinding ?? owner.id };
+    return { kind: 'entity', id: owner.id };
+  }
+  return { kind: 'story' };
 }
 
 /**

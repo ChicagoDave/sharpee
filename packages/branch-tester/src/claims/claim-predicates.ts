@@ -15,7 +15,7 @@
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
-import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import type { Claim } from './claim-set.js';
 import type { ClaimsEntity, ClaimsTurnEvent, ClaimsWorld, WorldSnapshot } from './claims-game.js';
 import { irIdOf } from './claims-game.js';
@@ -27,6 +27,14 @@ export interface ClaimContext {
   readonly events: readonly ClaimsTurnEvent[];
   /** Runtime entity id by IR id, built at boot. */
   readonly entityIdByIr: ReadonlyMap<string, string>;
+  /**
+   * The firing-counter keys of a thing's own `on` clauses for one action,
+   * by the compiler's `fired` text (`<thing-id>.<action>`), built once from
+   * the IR: a `has been <participle>` claim holds when any of them is above
+   * zero. The keys are the loader's, composed by its own function — never
+   * matched by substring.
+   */
+  readonly clauseKeysByFired: ReadonlyMap<string, readonly string[]>;
 }
 
 function entityByIr(ctx: ClaimContext, irId: string): ClaimsEntity | undefined {
@@ -92,10 +100,8 @@ export function claimHolds(claim: Claim, ctx: ClaimContext): boolean {
       return actual === (want.value === undefined ? true : want.value);
     }
     case 'fired': {
-      for (const [key, value] of Object.entries(snapshot.state ?? {})) {
-        if (key.startsWith(CHORD_OCCURRENCE_PREFIX) && key.includes(predicate.fired) && Number(value) > 0) return true;
-      }
-      return false;
+      const state = snapshot.state ?? {};
+      return (ctx.clauseKeysByFired.get(predicate.fired) ?? []).some((key) => Number(state[key]) > 0);
     }
     case 'event': {
       const want = predicate.event;

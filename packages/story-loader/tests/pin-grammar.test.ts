@@ -67,9 +67,14 @@ describe('parsePin — the five floor forms', () => {
   });
 });
 
-describe('parsePin — the four shapes named and not written', () => {
-  it('occurrence', () => {
-    expect(parsePin('vine.pruning occurrence = 2')).toEqual({ kind: 'occurrence', key: 'vine.pruning', count: 2 });
+describe('parsePin — the clause counter (a floor form since 2026-10-11) and the shapes named and not written', () => {
+  it('occurrence — owner, optional trait, clause number, count', () => {
+    expect(parsePin('vine clause 1 occurrence = 2')).toEqual({ kind: 'occurrence', owner: 'vine', clause: 1, count: 2 });
+    expect(parsePin('the group of mercenaries clause 3 occurrence = 4')).toEqual({ kind: 'occurrence', owner: 'group of mercenaries', clause: 3, count: 4 });
+    expect(parsePin('vine trait prunable clause 1 occurrence = 2')).toEqual({ kind: 'occurrence', owner: 'vine', trait: 'prunable', clause: 1, count: 2 });
+    expect(parsePin('story clause 2 occurrence = 0')).toEqual({ kind: 'occurrence', owner: 'story', clause: 2, count: 0 });
+    // The retired key form is no form at all.
+    expect(parsePin('vine.pruning occurrence = 2')).toEqual({ kind: 'unrecognized' });
   });
 
   it('topic-history', () => {

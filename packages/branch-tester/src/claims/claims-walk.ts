@@ -29,7 +29,7 @@
  */
 
 import { createHash } from 'node:crypto';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, clauseOccurrenceKey } from '@sharpee/story-loader';
 import { captureSave, restoreSave } from '@sharpee/transcript-tester';
 import { claimCone, type IRClaim, type StoryIR } from '@sharpee/chord';
 import type { Claim, ClaimGroup, ClaimKind, NecessarySet } from './claim-set.js';
@@ -232,6 +232,18 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
     nameByIrId.set(irId, entity.name);
     entityIdByIr.set(irId, entity.id);
   }
+  // `<thing> has been <participle>` → the counters of the thing's own `on`
+  // clauses for that action, by clause position (the compiler's `fired`
+  // text names the thing and the action; the loader's key names the clause).
+  const clauseKeysByFired = new Map<string, string[]>();
+  for (const entity of ir.entities) {
+    entity.onClauses.forEach((clause, index) => {
+      const fired = `${entity.id}.${clause.action}`;
+      const keys = clauseKeysByFired.get(fired) ?? [];
+      keys.push(clauseOccurrenceKey(entity.id, index + 1));
+      clauseKeysByFired.set(fired, keys);
+    });
+  }
 
   const roomsSeen = new Set<string>();
   const noteRoom = () => {
@@ -252,7 +264,7 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
         continue;
       }
       if (!claim.never && bits.has(claim.index)) continue;
-      if (!claimHolds(claim, { world, snapshot, events, entityIdByIr })) continue;
+      if (!claimHolds(claim, { world, snapshot, events, entityIdByIr, clauseKeysByFired })) continue;
       witnesses.set(claim.index, path);
       if (!claim.never) bits.add(claim.index);
     }

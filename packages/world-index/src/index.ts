@@ -45,6 +45,7 @@ export type {
   BranchLeaf,
   BranchPrecondition,
   ClauseBranch,
+  ClauseRoot,
   SpanSource,
 } from './branches.js';
 

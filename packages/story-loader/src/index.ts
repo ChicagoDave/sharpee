@@ -32,6 +32,7 @@ export { ChordRuntime, ChordBehaviorTrait } from './runtime.js';
 export { PHRASEBOOK_DATA } from './phrasebook-data.js';
 export type { PhrasebookData } from './phrasebook-data.js';
 export {
+  CHORD_CLAUSE_OCCURRENCE_PREFIX,
   CHORD_GONE_PREFIX,
   CHORD_OCCURRENCE_PREFIX,
   CHORD_RNG_KEY,
@@ -42,6 +43,7 @@ export {
   CHORD_TIMER_PREFIX,
   CHORD_TRAIT_PREFIX,
   RETIRED_SELECT_KEY,
+  clauseOccurrenceKey,
   counterKey,
   selectOccurrenceKey,
   timerKey,

@@ -74,7 +74,7 @@
  */
 
 import type { IRCondition, IRStatement, IRValue, Span, StoryIR } from '@sharpee/chord';
-import { collectClauseBranches, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
+import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
 import { CHORD_STORY_STATE_KEYS } from './runner.js';
@@ -358,7 +358,7 @@ export function planBranch(
     return { kind: 'skip', shape: 'intercepted', detail: `\`${intercepting.intercepted}\` refuses every ${branch.clause.kind === 'on' ? branch.clause.action : 'firing'} of ${branch.subject ?? 'the story'} before the reaction` };
   }
   for (const precondition of [...intercepting.guards, ...branch.precondition]) {
-    const mapped = preconditionTerms(precondition, { ir, subject: branch.subject, reading: false, expanding: [] });
+    const mapped = preconditionTerms(precondition, { ir, subject: branch.subject, reading: false, expanding: [], clause: branch.clause });
     if ('shape' in mapped) return { kind: 'skip', shape: mapped.shape, detail: mapped.detail };
     terms.push(...mapped.terms);
   }
@@ -501,6 +501,8 @@ interface ConditionScope {
   reading: boolean;
   /** Named conditions being expanded, so a condition that names itself is a named shape and not a stack overflow. */
   expanding: string[];
+  /** The branch's clause, when it has one — an ordinal is arranged by the clause's identity. */
+  clause?: BranchClause;
 }
 
 /** The arrange terms one precondition record needs, or the shape it cannot be expressed in. */
@@ -517,12 +519,20 @@ function preconditionTerms(
       return { terms: [{ kind: 'pin', expression: `story.state = ${precondition.state}`, mustHold: true }] };
     case 'value':
       return { shape: 'select-value', detail: 'a `select on` over something other than a state' };
-    case 'ordinal':
-      // The first firing is what a fresh world gives; any later one is an
-      // occurrence count the floor does not arrange.
-      return precondition.ordinal <= 1
-        ? { terms: [] }
-        : { shape: 'occurrence', detail: `the ${precondition.ordinal}th firing` };
+    case 'ordinal': {
+      // The first firing is what a fresh world gives. A later one is the
+      // clause's counter set to N-1 on that fresh world — the earlier
+      // bodies never ran, which is the state the Nth body is proved in
+      // (ADR-356 D2: arrange, never play to it).
+      if (precondition.ordinal <= 1) return { terms: [] };
+      const clause = scope.clause;
+      if (clause === undefined || clause.kind !== 'on' || clause.clause === undefined) {
+        return { shape: 'occurrence', detail: `the ${ordinalWord(precondition.ordinal)} firing of a clause with no position` };
+      }
+      const root = clause.root;
+      const owner = root.kind === 'story' ? 'story' : root.kind === 'entity' ? root.id : `${root.entity} trait ${root.name}`;
+      return { terms: [{ kind: 'pin', expression: `${owner} clause ${clause.clause} occurrence = ${precondition.ordinal - 1}`, mustHold: true }] };
+    }
     case 'unfired':
       return { terms: [] };
     case 'alternative':
@@ -862,6 +872,13 @@ function isPlace(ir: StoryIR, irId: string): boolean {
   return entity !== undefined && entity.kinds.some((kind) => kind.name === 'room' || kind.name === 'region');
 }
 
+const ORDINAL_WORDS = ['first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth', 'eleventh', 'twelfth'];
+
+/** `first` … `twelfth` as Chord spells an ordinal block; past those, `13th`. */
+function ordinalWord(ordinal: number): string {
+  return ORDINAL_WORDS[ordinal - 1] ?? `${ordinal}th`;
+}
+
 /** The display name of an IR entity, or undefined when the id names none. */
 function entityName(ir: StoryIR, irId: string): string | undefined {
   return ir.entities.find((entity) => entity.id === irId)?.name;
@@ -911,7 +928,7 @@ export function derivedBranchLabel(branch: ClauseBranch, ir: StoryIR): string {
     leaf.kind === 'through' ? '' :
     leaf.kind === 'refused' ? ` · refused ${leaf.phraseKey}` :
     leaf.kind === 'arm' ? ` · when ${leaf.value}` :
-    leaf.kind === 'ordinal' ? ` · the ${leaf.ordinal}th time` :
+    leaf.kind === 'ordinal' ? ` · the ${ordinalWord(leaf.ordinal)} time` :
     leaf.kind === 'response' ? ` · answers ${leaf.phraseKey}` :
     ` · alternative ${leaf.index}`;
   return `${subject} · ${clauseText}${leafText}`;

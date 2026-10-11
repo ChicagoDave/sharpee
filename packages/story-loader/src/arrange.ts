@@ -26,6 +26,10 @@
  *   <entity>.inventory|contents contains <x>  → a placement into the entity
  *   <entity>.isOpen|isLocked|isOn = true|false → the trait flag
  *   <timer> has started|expired               → the timer's record
+ *   [the] <owner> [trait <t>] clause <n> occurrence = <k>
+ *                                             → the clause's firing counter, so its
+ *                                               next firing is the (k+1)-th (ordinal
+ *                                               bodies; 2026-10-11)
  *
  * A timer write mirrors the runtime's own verbs (`runtime/timers.ts`).
  * `has started` on an idle timer writes a running record stamped with the
@@ -48,8 +52,8 @@
  *
  * `arrange` never throws and never guesses. A result is `{ arranged: true }`
  * or `{ arranged: false, shape, detail? }`, where `shape` names the form:
- * one of the three non-floor shapes the grammar recognizes and this floor
- * does not write (`occurrence`, `topic-history`, `timer-position`), or the
+ * one of the two non-floor shapes the grammar recognizes and this floor
+ * does not write (`topic-history`, `timer-position`), or the
  * two read-only claim kinds (`emitted`, `gone`);
  * `negation` for a negated form, which names no single
  * state to arrange; or `unrecognized`, for text no form matches and for a
@@ -94,14 +98,15 @@ import {
   CHORD_IR_ID_ATTRIBUTE,
   CHORD_STATE_PREFIX,
   CHORD_STORY_STATE_KEY,
+  CHORD_TRAIT_PREFIX,
   IDLE_TIMER_RECORD,
+  clauseOccurrenceKey,
   timerKey,
   type TimerRecord,
 } from './state-keys.js';
 
 /** The named reasons an expression is not arranged. */
 export type ArrangeShape =
-  | 'occurrence'
   | 'topic-history'
   | 'timer-position'
   | 'emitted'
@@ -155,12 +160,13 @@ export function arrange(world: WorldModel, expression: string, context: ArrangeC
   switch (pin.kind) {
     case 'unrecognized':
       return { arranged: false, shape: 'unrecognized', detail: `no form matches "${expression}"` };
-    case 'occurrence':
     case 'topic-history':
     case 'timer-position':
       return { arranged: false, shape: pin.kind };
     case 'timer-phase':
       return arrangeTimerPhase(world, pin, context);
+    case 'occurrence':
+      return arrangeOccurrence(world, pin);
     case 'emitted':
     case 'gone':
       // Claims the assertion core reads (ADR-356 D3); nothing arranges them.
@@ -292,6 +298,35 @@ function arrangeTimerPhase(world: WorldModel, pin: Extract<ParsedPin, { kind: 't
   if (record.phase === 'expired') return { arranged: true };
   const expired: TimerRecord = { ...record, phase: 'expired' };
   world.setStateValue(key, expired);
+  return { arranged: true };
+}
+
+/**
+ * `[the] <owner> [trait <trait>] clause <n> occurrence = <k>`: the clause's
+ * firing counter set to k, so its next firing is the (k+1)-th. The owner
+ * is `story` or an entity the loader built; a trait clause's owner must
+ * carry the trait. The clause number is honoured as named — a world holds
+ * no clause list to check it against, and a caller's expressions come from
+ * the IR, which numbers every clause they name.
+ */
+function arrangeOccurrence(world: WorldModel, pin: Extract<ParsedPin, { kind: 'occurrence' }>): ArrangeResult {
+  if (!Number.isInteger(pin.clause) || pin.clause < 1) {
+    return unrecognized(`"${pin.clause}" is not a clause number (the first clause is 1)`);
+  }
+  let owner: string;
+  if (pin.owner === 'story') {
+    owner = 'story';
+  } else {
+    const entity = resolveEntity(world, pin.owner);
+    if (!entity) return unrecognized(`entity "${pin.owner}" not found`);
+    const irId = entity.attributes[CHORD_IR_ID_ATTRIBUTE];
+    if (typeof irId !== 'string') return unrecognized(`"${pin.owner}" is not a Chord entity, so it has no clauses`);
+    if (pin.trait !== undefined && !entity.has(CHORD_TRAIT_PREFIX + pin.trait)) {
+      return unrecognized(`"${pin.owner}" does not carry the trait ${pin.trait}`);
+    }
+    owner = irId;
+  }
+  world.setStateValue(clauseOccurrenceKey(owner, pin.clause, pin.trait), pin.count);
   return { arranged: true };
 }
 

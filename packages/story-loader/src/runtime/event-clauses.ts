@@ -16,7 +16,7 @@ import type { IREntity, IROnClause } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { WorldModel } from '@sharpee/world-model';
 import { crossingRegionId, enteringDestination, EVENT_TRIGGERS, movedActorId, REGION_EVENT_TRIGGERS } from '../event-contract.js';
-import { CHORD_OCCURRENCE_PREFIX, CHORD_VISITED_PREFIX } from '../state-keys.js';
+import { CHORD_VISITED_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, type RuntimeCore } from './core.js';
 
 export class EventClausesSection {
@@ -115,7 +115,7 @@ export class EventClausesSection {
     const ctx: ExecContext = { world, it: entity.id };
     if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, ctx)) return null;
 
-    const occKey = CHORD_OCCURRENCE_PREFIX + key;
+    const occKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
     const occurrence = ((world.getStateValue(occKey) as number | undefined) ?? 0) + 1;
     if (clause.once && occurrence > 1) return null; // `, once` — one lifetime firing (D5)
     world.setStateValue(occKey, occurrence);

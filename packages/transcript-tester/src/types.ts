@@ -549,6 +549,14 @@ export interface StoryStateKeys {
    * recognized.
    */
   timerPrefix?: string;
+  /**
+   * Prefix joined with a clause's identity — `<owner-ir-id>[.<trait>].<n>`,
+   * or `story.<n>` — → that clause's firing counter, which the
+   * `[the] <owner> [trait <trait>] clause <n> occurrence = <k>` claim reads
+   * (ADR-356 D2 as amended 2026-10-11). An absent counter is 0. Absent
+   * prefix → the claim is not recognized.
+   */
+  clauseOccurrencePrefix?: string;
 }
 
 /**

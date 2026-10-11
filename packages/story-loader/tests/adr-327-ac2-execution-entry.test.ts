@@ -22,7 +22,7 @@ import { IFActions, StandardActionRegistry, standardActions } from '@sharpee/std
 import { WorldModel } from '@sharpee/world-model';
 import type { IFEntity } from '@sharpee/world-model';
 import { ChordStory, createStory } from '../src';
-import { CHORD_OCCURRENCE_PREFIX } from '../src/state-keys';
+import { clauseOccurrenceKey } from '../src/state-keys';
 
 function compileSource(source: string): StoryIR {
   const result = compile(source);
@@ -156,7 +156,8 @@ const NARRATING = `  after the player taking
   end after
 `;
 
-const occurrence = (b: Booted, ns: string) => b.world.getStateValue(`${CHORD_OCCURRENCE_PREFIX}on.${ns}`);
+/** The sword's n-th clause's firing counter: with NARRATING, 1 is `after the player taking`, 2 is `after the guards taking`. */
+const occurrence = (b: Booted, clause: number) => b.world.getStateValue(clauseOccurrenceKey('sword', clause));
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 const blockedReason = (events: ISemanticEvent[]) =>
@@ -197,8 +198,8 @@ describe('ADR-327 AC-2 through the execution entry — the head names who acts',
     const ids = messageIdsOf(result.events);
     expect(ids).toContain('they-take');
     expect(ids).not.toContain('you-take');
-    expect(occurrence(b, 'sword.taking.after.1')).toBe(1);
-    expect(occurrence(b, 'sword.taking.after.0')).toBeUndefined();
+    expect(occurrence(b, 2)).toBe(1);
+    expect(occurrence(b, 1)).toBeUndefined();
     const taken = result.events.find((e) => e.type === 'if.event.taken')!;
     expect(taken.entities.actor).toBe(b.id('guards'));
   });
@@ -214,7 +215,7 @@ describe('ADR-327 AC-2 through the execution entry — the head names who acts',
     const ids = messageIdsOf(result.events);
     expect(ids).toContain('you-take');
     expect(ids).not.toContain('they-take');
-    expect(occurrence(b, 'sword.taking.after.0')).toBe(1);
-    expect(occurrence(b, 'sword.taking.after.1')).toBeUndefined();
+    expect(occurrence(b, 1)).toBe(1);
+    expect(occurrence(b, 2)).toBeUndefined();
   });
 });

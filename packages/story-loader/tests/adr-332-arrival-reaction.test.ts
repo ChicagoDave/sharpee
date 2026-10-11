@@ -25,7 +25,7 @@ import { EnglishLanguageProvider } from '@sharpee/lang-en-us';
 import { EnglishParser } from '@sharpee/parser-en-us';
 import { PerceptionService } from '@sharpee/stdlib';
 import { CharacterModelTrait, TraitType, WorldModel, type IFEntity } from '@sharpee/world-model';
-import { ChordStory, createStory } from '../src';
+import { ChordStory, clauseOccurrenceKey, createStory } from '../src';
 import { compileSource } from './helpers/boot-engine';
 
 /**
@@ -87,8 +87,8 @@ before the game starts
 end before
 `;
 
-/** Kemp's one every-turn clause is his clause 0. */
-const ONCE_KEY = 'chord.occurrence.entity-turn.kemp.0';
+/** Kemp's one every-turn clause is his clause 1. */
+const ONCE_KEY = clauseOccurrenceKey('kemp', 1);
 
 interface Booted {
   engine: GameEngine;

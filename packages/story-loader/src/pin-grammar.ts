@@ -17,7 +17,7 @@
  * The forms, tried in this order (a timer is its one-token qualified key,
  * `player.bell`; a topic is a name):
  *   story.state = <phase> / story.state != <phase>         → story-state
- *   <key> occurrence = <n>                                 → occurrence
+ *   [the] <owner> [trait <trait>] clause <n> occurrence = <k> → occurrence
  *   <topic> asked once|again|many times                    → topic-history
  *   <topic> was discussed                                  → topic-history
  *   <timer> has started / <timer> has expired              → timer-phase
@@ -33,12 +33,15 @@
  * An entity head in the dotted forms is any text up to the LAST dot before
  * the property — a display name with spaces (`silver brooch.location`, the
  * Chord spelling), a single word (`player`, `lamp`), or a compiled IR id
- * (`silver-brooch`); `\w+` admitted neither of the first two (GH #375). Three
- * non-floor shapes (occurrence, topic-history, timer-position) are
- * recognized so that a consumer can NAME them; no consumer writes them
- * yet, and the assertion core does not read them. `timer-phase` left that
- * list on 2026-09-27 (ADR-356 D2 as amended): the assertion core reads it
- * and `arrange` writes it. `emitted` and `gone` are
+ * (`silver-brooch`); `\w+` admitted neither of the first two (GH #375). Two
+ * non-floor shapes (topic-history, timer-position) are recognized so that
+ * a consumer can NAME them; no consumer writes them yet, and the assertion
+ * core does not read them. `timer-phase` left that list on 2026-09-27 and
+ * `occurrence` on 2026-10-11 (ADR-356 D2 as amended): the assertion core
+ * reads each and `arrange` writes each. An occurrence names a clause by its
+ * owner (an entity, or `story`), the trait it is declared on when it is a
+ * trait clause, and its 1-based position in that root's clause list; the
+ * count is the number of firings so far. `emitted` and `gone` are
  * the two claim kinds ADR-356 D3 adds: read by the assertion core (`gone`
  * off the world, `emitted` off the turn's events), written by nothing —
  * `arrange` names them as it names the non-floor shapes.
@@ -75,8 +78,8 @@ export type ParsedPin =
   | { kind: 'emitted'; messageId: string }
   /** `[the] <name> is [not] gone` — a Chord `remove` has taken the entity out of play (ADR-356 D3). Read, not written. */
   | { kind: 'gone'; name: string; negated: boolean }
-  /** `<key> occurrence = <n>` — an ordinal (`once`, `first-time`). Named, not written. */
-  | { kind: 'occurrence'; key: string; count: number }
+  /** `[the] <owner> [trait <trait>] clause <n> occurrence = <k>` — a clause's firing counter (ordinals). A floor form since 2026-10-11. */
+  | { kind: 'occurrence'; owner: string; trait?: string; clause: number; count: number }
   /** `<topic> asked once|again|many times` / `<topic> was discussed`. Named, not written. */
   | { kind: 'topic-history'; topic: string; history: 'once' | 'again' | 'many-times' | 'discussed' }
   /** `<timer> has started|expired` — the timer's phase. A floor form since 2026-09-27. */
@@ -87,7 +90,7 @@ export type ParsedPin =
   | { kind: 'unrecognized' };
 
 const STORY_STATE = /^story\.state\s*(=|!=)\s*(\S+)$/;
-const OCCURRENCE = /^(\S+)\s+occurrence\s*=\s*(\d+)$/;
+const OCCURRENCE = /^(?:the\s+)?(.+?)(?:\s+trait\s+([\w-]+))?\s+clause\s+(\d+)\s+occurrence\s*=\s*(\d+)$/;
 const ASKED = /^(.+?)\s+asked\s+(once|again|many times)$/;
 const DISCUSSED = /^(.+?)\s+was\s+discussed$/;
 const TIMER_PHASE = /^([\w.-]+)\s+has\s+(started|expired)$/;
@@ -116,7 +119,13 @@ export function parsePin(expression: string): ParsedPin {
 
   const occurrence = expression.match(OCCURRENCE);
   if (occurrence) {
-    return { kind: 'occurrence', key: occurrence[1], count: Number(occurrence[2]) };
+    return {
+      kind: 'occurrence',
+      owner: occurrence[1].trim(),
+      ...(occurrence[2] === undefined ? {} : { trait: occurrence[2] }),
+      clause: Number(occurrence[3]),
+      count: Number(occurrence[4]),
+    };
   }
   const asked = expression.match(ASKED);
   if (asked) {

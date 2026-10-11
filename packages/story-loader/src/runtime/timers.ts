@@ -18,7 +18,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
 import { Direction, type DirectionType, IFEntity, WorldModel } from '@sharpee/world-model';
 import { LoadError } from '../errors.js';
-import { CHORD_OCCURRENCE_PREFIX, timerKey, type TimerRecord } from '../state-keys.js';
+import { clauseOccurrenceKey, timerKey, type TimerRecord } from '../state-keys.js';
 import { ExecContext, SchedulerTick, ACT_DEPTH_CAP, type RuntimeCore } from './core.js';
 
 export class TimersSection {
@@ -270,7 +270,7 @@ export class TimersSection {
       if (!this.core.moveClauses.actorMatches(clause.actor, actorId, world)) return;
       const ctx: ExecContext = { world, it: targetIrId };
       if (clause.condition && !this.core.evaluator.evalCondition(clause.condition, ctx)) return;
-      const key = `${CHORD_OCCURRENCE_PREFIX}after.${irEntity.id}.${actionName}.${clauseIndex}`;
+      const key = clauseOccurrenceKey(irEntity.id, clauseIndex + 1);
       const occurrence = ((world.getStateValue(key) as number | undefined) ?? 0) + 1;
       if (clause.once && occurrence > 1) return; // `, once` (D5)
       world.setStateValue(key, occurrence);
