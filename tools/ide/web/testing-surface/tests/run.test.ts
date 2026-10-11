@@ -10,7 +10,7 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 import { describe, expect, it } from 'vitest';
-import { beginRun, createRunState, finishRun, foldRunLine, resetRun, runRowsOf } from '../src/run';
+import { beginRun, createRunState, finishRun, foldRunLine, resetRun, restatesTextClaim, runRowsOf } from '../src/run';
 
 let seq = 0;
 const line = (event: Record<string, unknown>): string =>
@@ -64,6 +64,44 @@ describe('foldRunLine', () => {
     expect(result?.status).toBe('failed');
     expect(result?.firstFailure).toBe('turn 3 — Output does not contain "boiler"');
     expect(result?.moreFailures).toBe(1);
+  });
+
+  it("a failed command keeps what the story printed; a passing one and an empty string carry none (F-10)", () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(A),
+      command(A, { input: 'look', passed: true }),
+      command(A, {
+        input: 'wear satchel', passed: false, turn: 3,
+        failure: 'Output does not contain "You put on the mail satchel."',
+        actualOutput: "You can't see any such thing.",
+        assertionResults: [
+          { description: 'contains "You put on the mail satchel."', passed: false,
+            message: 'Output does not contain "You put on the mail satchel."' },
+        ],
+      }),
+      command(A, { input: 'inventory', passed: false, turn: 3, failure: 'engine exploded', actualOutput: '' }),
+      end(A, { status: 'failed', passed: 1, failed: 2 }),
+    ]) foldRunLine(state, raw);
+
+    const commands = state.results.get('arrival')?.commands ?? [];
+    expect(commands.map((c) => c.output)).toEqual([
+      undefined,
+      "You can't see any such thing.",
+      undefined,
+    ]);
+    // The claim's own message still rides the verdict; the renderer decides.
+    expect(commands[1]?.assertions[0]?.message).toBe('Output does not contain "You put on the mail satchel."');
+  });
+
+  it('only a text claim\'s message restates the claim; a state claim\'s message carries its actual value (F-14)', () => {
+    expect(restatesTextClaim('Output does not contain "rattles"')).toBe(true);
+    expect(restatesTextClaim('Output should not contain "rattles"')).toBe(true);
+    expect(restatesTextClaim('Output did not match expected')).toBe(true);
+    expect(restatesTextClaim('Output does not contain the text block fragment')).toBe(true);
+    expect(restatesTextClaim('player.location = dock (actual: sorting-room)')).toBe(false);
+    expect(restatesTextClaim('Channel "status.score" does not contain "10" (0)')).toBe(false);
   });
 
   it('a runtime throw without an assertion message falls back to the error text and source line', () => {

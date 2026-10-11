@@ -493,6 +493,16 @@ body.ts-active .sharpee-window { display: none; }
   padding: 0 0 2px 24px; font-size: 10px; color: var(--ts-fail);
   white-space: pre-wrap;
 }
+/* What the story printed for a failed card (F-10): once per command, under
+   its claims, in the foreground colour — it is the evidence, not a verdict. */
+.ts-run-output-label {
+  padding: 2px 0 0 24px; font-size: 10px; color: var(--ts-fg-dim); font-style: italic;
+}
+.ts-run-output {
+  margin: 1px 0 4px 24px; padding: 2px 0 2px 8px; font-size: 10px;
+  color: var(--ts-fg); white-space: pre-wrap;
+  border-left: 2px solid var(--ts-border);
+}
 .ts-run-tally {
   padding: 8px 0 2px; font-size: 10.5px; font-weight: 700;
   color: var(--ts-fg-dim); border-top: 1px solid var(--ts-border); margin-top: 6px;

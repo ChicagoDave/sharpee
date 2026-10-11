@@ -30,7 +30,7 @@ import {
   type SourceSpan,
 } from './derived';
 import type { BranchPoint, TreeSessionModel } from './model';
-import { runRowsOf, type RunColumnState, type TranscriptRunResult } from './run';
+import { restatesTextClaim, runRowsOf, type RunColumnState, type TranscriptRunResult } from './run';
 
 /** Chip labels interpolate model strings into innerHTML — escape them. */
 function escapeHtml(text: string): string {
@@ -914,12 +914,19 @@ export class CardsView {
           results.appendChild(skipRow);
           continue;
         }
+        // A failed command's output is shown once, under its claims, when the
+        // wire carried it (F-10). A text claim's "why" line only restates the
+        // claim (F-14), so with the output present it is dropped; a state or
+        // channel claim's "why" carries the actual value and stays.
+        const printed = command.passed ? undefined : command.output;
+        const showOutput = printed !== undefined;
         for (const assertion of command.assertions) {
           const assertRow = document.createElement('div');
           assertRow.className = `ts-run-assert ${assertion.passed ? 'ts-pass' : 'ts-fail'}`;
           assertRow.textContent = `${assertion.passed ? '✓' : '✗'} ${assertion.description}`;
           results.appendChild(assertRow);
-          if (!assertion.passed && assertion.message !== undefined) {
+          if (!assertion.passed && assertion.message !== undefined
+              && !(showOutput && restatesTextClaim(assertion.message))) {
             const why = document.createElement('div');
             why.className = 'ts-run-assert-why';
             why.textContent = assertion.message;
@@ -933,6 +940,16 @@ export class CardsView {
           why.className = 'ts-run-assert ts-fail';
           why.textContent = `✗ ${command.failure}`;
           results.appendChild(why);
+        }
+        if (printed !== undefined) {
+          const label = document.createElement('div');
+          label.className = 'ts-run-output-label';
+          label.textContent = 'the story printed';
+          results.appendChild(label);
+          const output = document.createElement('div');
+          output.className = 'ts-run-output';
+          output.textContent = printed;
+          results.appendChild(output);
         }
       }
     };

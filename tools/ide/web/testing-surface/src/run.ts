@@ -44,6 +44,27 @@ export interface CommandOutcome {
   assertions: AssertionVerdict[];
   /** The command's failure (first failed assertion or runtime error). */
   failure?: string;
+  /**
+   * What the story printed for this command, when the wire carried it. The
+   * wire carries it on every FAILED result by default (and on every result
+   * under `--capture-output`), so a failed claim can be read against the
+   * text it was checked on (UPPS finding F-10). Absent when the producer
+   * sent none, or sent an empty string — an empty block says nothing.
+   */
+  output?: string;
+}
+
+/**
+ * Whether a failed assertion's message only restates the claim against the
+ * output — `Output does not contain "…"`, `Output should not contain "…"`,
+ * `Output did not match expected` (the assertion core's three text-claim
+ * messages, which all begin `Output `). Under a claim row that already names
+ * the expected text, such a line adds nothing (UPPS finding F-14); the
+ * output itself is what the author needs. A state or channel claim's message
+ * carries the actual value (`player.location = … (actual: …)`) and is kept.
+ */
+export function restatesTextClaim(message: string): boolean {
+  return message.startsWith('Output ');
 }
 
 /** One line's outcome, as the column shows it. */
@@ -180,6 +201,9 @@ function fold(state: RunColumnState, event: RunEvent): void {
           ...(entry.message !== undefined ? { message: entry.message } : {}),
         })),
         ...(failureMessage !== undefined && !event.passed ? { failure: failureMessage } : {}),
+        ...(event.actualOutput !== undefined && event.actualOutput.length > 0
+          ? { output: event.actualOutput }
+          : {}),
       };
       const pending = state.pendingCommands.get(stem) ?? [];
       pending.push(outcome);

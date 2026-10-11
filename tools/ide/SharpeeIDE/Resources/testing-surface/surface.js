@@ -455,7 +455,8 @@
     files[TREE_MANIFEST_FILE_NAME] = canonicalJson({
       version: TREE_DOCUMENT_VERSION,
       story: document2.story,
-      seed: document2.seed
+      seed: document2.seed,
+      ...document2.claims !== void 0 ? { claims: document2.claims } : {}
     });
     const cardIds = /* @__PURE__ */ new Set();
     const emit = (id, cards2, parent) => {
@@ -552,6 +553,7 @@
         version: TREE_DOCUMENT_VERSION,
         story: manifest.story,
         seed: manifest.seed,
+        ...manifest.claims !== void 0 ? { claims: manifest.claims } : {},
         id: shape.root.id,
         cards: build(shape.root)
       }
@@ -617,7 +619,7 @@
     if (version < TREE_DOCUMENT_VERSION) {
       return { status: "malformed", message: `unknown test tree version ${version}` };
     }
-    const unknownKey = firstUnknownKey(manifest, ["version", "story", "seed"]);
+    const unknownKey = firstUnknownKey(manifest, ["version", "story", "seed", "claims"]);
     if (unknownKey !== void 0) {
       return { status: "malformed", message: `unknown key '${unknownKey}' in ${TREE_MANIFEST_FILE_NAME}` };
     }
@@ -629,7 +631,11 @@
     if (typeof seed2 !== "number" || !Number.isInteger(seed2)) {
       return { status: "malformed", message: `'seed' must be an integer` };
     }
-    return { status: "ok", story, seed: seed2 };
+    const claims = manifest["claims"];
+    if (claims !== void 0 && (typeof claims !== "string" || claims === "")) {
+      return { status: "malformed", message: `'claims' must be a non-empty path when present` };
+    }
+    return { status: "ok", story, seed: seed2, ...claims !== void 0 ? { claims } : {} };
   }
   function readSegment(name, text3) {
     const id = name.endsWith(".json") ? name.slice(0, -".json".length) : "";
@@ -1037,6 +1043,9 @@
   }
 
   // tools/ide/web/testing-surface/src/run.ts
+  function restatesTextClaim(message) {
+    return message.startsWith("Output ");
+  }
   function createRunState() {
     return {
       inFlight: false,
@@ -1095,7 +1104,8 @@
             passed: entry.passed,
             ...entry.message !== void 0 ? { message: entry.message } : {}
           })),
-          ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {}
+          ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {},
+          ...event.actualOutput !== void 0 && event.actualOutput.length > 0 ? { output: event.actualOutput } : {}
         };
         const pending = state.pendingCommands.get(stem) ?? [];
         pending.push(outcome);
@@ -1895,12 +1905,14 @@
             results.appendChild(skipRow);
             continue;
           }
+          const printed = command.passed ? void 0 : command.output;
+          const showOutput = printed !== void 0;
           for (const assertion of command.assertions) {
             const assertRow = document.createElement("div");
             assertRow.className = `ts-run-assert ${assertion.passed ? "ts-pass" : "ts-fail"}`;
             assertRow.textContent = `${assertion.passed ? "\u2713" : "\u2717"} ${assertion.description}`;
             results.appendChild(assertRow);
-            if (!assertion.passed && assertion.message !== void 0) {
+            if (!assertion.passed && assertion.message !== void 0 && !(showOutput && restatesTextClaim(assertion.message))) {
               const why = document.createElement("div");
               why.className = "ts-run-assert-why";
               why.textContent = assertion.message;
@@ -1912,6 +1924,16 @@
             why.className = "ts-run-assert ts-fail";
             why.textContent = `\u2717 ${command.failure}`;
             results.appendChild(why);
+          }
+          if (printed !== void 0) {
+            const label = document.createElement("div");
+            label.className = "ts-run-output-label";
+            label.textContent = "the story printed";
+            results.appendChild(label);
+            const output = document.createElement("div");
+            output.className = "ts-run-output";
+            output.textContent = printed;
+            results.appendChild(output);
           }
         }
       };
