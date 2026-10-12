@@ -78,7 +78,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: Phases 1 and 3 done; whatever of the story exists (may be partial)
 - **Deliverable**: `sharpee test <story>` report and the narrative suites run against it, closing table re-counted against 11 of 15; failures reported, not fixed. No story authored by the agent.
 - **Exit state**: checkpoint result recorded in the objective
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-12)
 
 ### Phase 5: Gate G2 — ADR-357 open-questions interview (testing navigation; ADR-357 superseded ADR-308 on 2026-10-03)
 - **Tier**: Small
