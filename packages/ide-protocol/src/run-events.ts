@@ -196,6 +196,29 @@ export interface AssertionOutcome {
   message?: string;
 }
 
+/**
+ * Why the engine refused a command, in the author's terms (UPPS finding
+ * F-15). The producer joins the turn's refusal with the story's Reach
+ * findings and composes both sentences, so the CLI reporter and the Testing
+ * tab say the same words; a consumer prints `says` and `fix` and never
+ * recomposes them. Present only on a FAILED result the producer could
+ * explain; a refusal no rule covers carries none.
+ */
+export interface CommandCause {
+  /** Which rule explained it. */
+  kind: 'placed-nowhere' | 'not-wearable';
+  /** IR id of the entity behind the refusal. */
+  entity: string;
+  /** Its display name, without article. */
+  name: string;
+  /** The word of the command that named it. */
+  word: string;
+  /** The sentence that says what is wrong. */
+  says: string;
+  /** The sentence that says what to do. */
+  fix: string;
+}
+
 /** One command's outcome, emitted as the command completes. */
 export interface CommandResultEvent extends RunEventEnvelope {
   type: 'command-result';
@@ -269,6 +292,12 @@ export interface CommandResultEvent extends RunEventEnvelope {
    * field or evaluated nothing.
    */
   assertionResults?: AssertionOutcome[];
+  /**
+   * The cause behind this command's refusal, when the producer could name
+   * one (UPPS finding F-15). Failed results only; absent when the refusal
+   * was not explained or the producer predates the field.
+   */
+  cause?: CommandCause;
 }
 
 /**
@@ -570,7 +599,21 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
       value.ending === 'quit') &&
     (value.failure === undefined || typeof value.failure === 'string') &&
     (value.world === undefined || isWorldSnapshot(value.world)) &&
-    (value.assertionResults === undefined || isAssertionOutcomeArray(value.assertionResults))
+    (value.assertionResults === undefined || isAssertionOutcomeArray(value.assertionResults)) &&
+    (value.cause === undefined || isCommandCause(value.cause))
+  );
+}
+
+/** Narrow a value to a valid {@link CommandCause}. */
+export function isCommandCause(value: unknown): value is CommandCause {
+  if (!isObject(value)) return false;
+  return (
+    (value.kind === 'placed-nowhere' || value.kind === 'not-wearable') &&
+    typeof value.entity === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.word === 'string' &&
+    typeof value.says === 'string' &&
+    typeof value.fix === 'string'
   );
 }
 

@@ -61,6 +61,7 @@ export {
   type TreeLineObserver,
   type TreeDocumentRunResult,
   type TreeDocumentRunOptions,
+  type RefusalExplainer,
   type TreeWalkerGame,
   type TreeGameLoader,
 } from './tree-walker.js';

@@ -136,3 +136,19 @@ With Postman's `starts in` removed, the tab's run reports the load error verbati
 ### Testing tab check, `TEST-001-A` (2026-10-07)
 
 With the machine's kind missing, the compiler error (`analysis.missing-kind-noun`, line 33) shows in Problems and in Diagnosis on reload, before any run. Run refuses, and the same error shows in Diagnosis. The compiler tier (A to P) is readable in the IDE without the tab's help.
+
+## F-15: The tab says what failed, not what to do (2026-10-11)
+
+**Observed**: David ran `TEST-001-T` in the Testing tab with F-10, F-13 and F-14 landed. The failed card reads `> wear satchel` / `✗ contains "You put on the mail satchel."` / the story printed `You can't see any such thing.` His verdict: "none of that tells me what to do." The cause is one missing line, `in the Sorting Room`, under the satchel, and nothing in the tab points at it.
+
+The platform already knows. `./sharpee world-index` over the same build (2026-10-11):
+
+```
+stranded: mail-satchel — "placed nowhere and never moved into play"
+```
+
+That is the World tab's Reach view, under "Things play can never hold" (`tools/ide/SharpeeIDE/World/WorldReachView.swift`). The diagnosis exists one tab over; the Testing tab never connects its failure to it, and an author reading a parser refusal has no reason to go and look.
+
+**Belongs to**: the testing surface, with a platform half. The failed command names a noun (`satchel`), the reply is the parser's "can't see" refusal, and the World Index holds a stranded thing whose name or `aka` matches the noun. When the three line up, the failed card should say so and name the fix. Handing the Reach findings to the surface is a host plus `tools/ide` change; matching a refusal to its cause is new logic whose home is the platform (branch-tester or world-index), so that `sharpee test` prints the same sentence. The platform half needs David's discussion first. The same join would cover `TEST-001-Q` (unplaced player, F-7) and `TEST-001-U` (missing `wearable`, matched by the "You can't wear" reply).
+
+**Addressed** (2026-10-11, session 487a1f): the failed card now ends with the cause and the fix, in the CLI and the tab alike — `"satchel" is the mail satchel, which is placed nowhere and never moved into play.` / `Give it a place (in the Sorting Room) or move it into play.` The words are composed in `world-index` (`explainRefusal`, beside `deriveReach`) from the turn's events and the Reach findings, ride the wire as `command-result.cause`, and both reporters print them unchanged. Two rules so far: placed nowhere (seed `T`) and not declared wearable (seed `U`); a refusal neither explains, such as seed `W`'s removed alias, shows as before. Real-path test: `scripts/__tests__/narrative-names-the-cause.test.ts`.

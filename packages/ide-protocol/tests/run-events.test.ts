@@ -107,6 +107,31 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, line: '7' })).toBe(false);
   });
 
+  it('accepts a failed command-result with a cause, rejecting one missing its sentences or with an unknown kind (F-15)', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: 'main',
+      line: 0,
+      input: 'wear satchel',
+      passed: false,
+      expectedFailure: false,
+      skipped: false,
+      actualOutput: "You can't see any such thing.",
+    };
+    const cause = {
+      kind: 'placed-nowhere',
+      entity: 'mail-satchel',
+      name: 'mail satchel',
+      word: 'satchel',
+      says: '"satchel" is the mail satchel, which is placed nowhere and never moved into play.',
+      fix: 'Give it a place (in the Sorting Room) or move it into play.',
+    };
+    expect(isCommandResultEvent({ ...base, cause })).toBe(true);
+    expect(isCommandResultEvent({ ...base, cause: { ...cause, fix: undefined } })).toBe(false);
+    expect(isCommandResultEvent({ ...base, cause: { ...cause, kind: 'cursed' } })).toBe(false);
+  });
+
   it('accepts a command-result with and without an engine turn, rejecting a non-numeric one', () => {
     const base: CommandResultEvent = {
       ...envelope,

@@ -53,6 +53,8 @@ export { holdsAtStart, canBeFalsified } from './conditions.js';
 export type { Truth, ConditionWorld } from './conditions.js';
 
 export { deriveReach } from './reach.js';
+export { explainRefusal } from './refusal.js';
+export type { RefusalCause, RefusedTurn, TurnEvent } from './refusal.js';
 export type {
   ReachResult,
   LiftedObstacle,

@@ -68,6 +68,7 @@ export type {
   RunEvent,
   WorldEntityRef,
   WorldSnapshot,
+  CommandCause,
 } from './run-events.js';
 export {
   RUN_EVENT_SCHEMA_VERSION,
@@ -75,6 +76,7 @@ export {
   isPhaseEvent,
   isTranscriptStartEvent,
   isCommandResultEvent,
+  isCommandCause,
   isTranscriptEndEvent,
   isProgressEvent,
   isCoverageEvent,

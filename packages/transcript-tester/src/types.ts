@@ -15,6 +15,7 @@
  */
 
 import type { RandomForceSpec } from '@sharpee/core';
+import type { CommandCause } from '@sharpee/ide-protocol';
 import type { CoverageTracker } from './coverage.js';
 
 // ============================================================================
@@ -471,6 +472,14 @@ export interface CommandResult {
    * never crosses the wire. Runtime throws keep riding `error` instead.
    */
   failure?: string;
+
+  /**
+   * Why the engine refused this command, in the author's terms (UPPS
+   * finding F-15). The runner never fills it: the tree walker attaches it
+   * after joining the turn's events with the story's Reach findings, and the
+   * wire carries it as `command-result.cause`. Failed results only.
+   */
+  cause?: CommandCause;
 
   /**
    * The world AFTER this command (ADR-307 R3), captured under

@@ -70,7 +70,8 @@ import {
   TranscriptResult,
   RunnerOptions,
 } from './types.js';
-import { captureWorldSnapshot } from '@sharpee/transcript-tester';
+import { captureWorldSnapshot, type CommandResult } from '@sharpee/transcript-tester';
+import type { CommandCause } from '@sharpee/ide-protocol';
 import { CHORD_IR_ID_ATTRIBUTE } from '@sharpee/story-loader';
 import { runTranscript } from './runner.js';
 import {
@@ -202,9 +203,25 @@ export interface TreeLineObserver {
   onLineBlocked?(info: { line: TreeLine; outcome: TreeLineOutcome }): void;
 }
 
+/**
+ * Explain one refused card (UPPS finding F-15): the command typed, the turn's
+ * events, and the IR id of the room the player stood in. Returns the cause
+ * the result then carries as `cause`, or `undefined` to leave the refusal as
+ * it stands. The CLI builds one over the story's IR and Reach findings
+ * (`explainRefusal` in `@sharpee/world-index`); a caller with no IR passes
+ * none, and no card carries a cause.
+ */
+export type RefusalExplainer = (turn: {
+  input: string;
+  events: readonly { type: string; data?: Record<string, unknown> }[];
+  room?: string;
+}) => CommandCause | undefined;
+
 /** Runner options plus the line-shaped observation the runner has no concept of. */
 export type TreeDocumentRunOptions = RunnerOptions & {
   lineObserver?: TreeLineObserver;
+  /** Names the cause behind a failed card's refusal, when one rule can (F-15). */
+  explain?: RefusalExplainer;
 };
 
 /** The outcome of running one document. */
@@ -454,6 +471,7 @@ export async function runTreeDocument(
         // runner's own snapshot names rooms, not IR ids.
         onCommandResult: (commandResult) => {
           noteRoom();
+          attachCause(commandResult, playerRoomIrIdOf(game), options.explain);
           options.observer?.onCommandResult?.(commandResult);
         },
       },
@@ -538,6 +556,10 @@ export function formatTreeDocumentRun(run: TreeDocumentRunResult): string[] {
       case 'failed': {
         const cite = firstFailureOf(line.result);
         rows.push(`✗ ${line.label}${cite !== undefined ? ` — ${cite}` : ''}`);
+        // The cause behind the first failed card, when the walker named one
+        // (F-15): the same two sentences the Testing tab shows.
+        const cause = firstCauseOf(line.result);
+        if (cause !== undefined) rows.push(`  ${cause.says}`, `  ${cause.fix}`);
         break;
       }
       case 'blocked': {
@@ -826,6 +848,37 @@ function playerRoomIrIdOf(game: TreeWalkerGame): string | undefined {
 function blockedLabelOf(line: TreeLine): string {
   if (line.parentId === undefined) return 'opening';
   return branchLineLabelOf(undefined, line.ordinal!, line.firstCommand);
+}
+
+/**
+ * Name the cause behind a failed card's refusal and set it on the result
+ * (F-15). The card must have failed and the explainer must know the cause;
+ * otherwise the result is left exactly as the runner built it. Runs inside
+ * the runner's observer so the live stream and the final rows carry one
+ * and the same object.
+ */
+function attachCause(
+  commandResult: CommandResult,
+  room: string | undefined,
+  explain: RefusalExplainer | undefined,
+): void {
+  if (explain === undefined || commandResult.passed || commandResult.skipped) return;
+  const cause = explain({
+    input: commandResult.command.input,
+    events: commandResult.actualEvents,
+    ...(room !== undefined ? { room } : {}),
+  });
+  if (cause !== undefined) commandResult.cause = cause;
+}
+
+/** The first failed row's cause, when the walker named one (F-15). */
+function firstCauseOf(result: TranscriptResult | undefined): CommandCause | undefined {
+  if (result === undefined) return undefined;
+  for (const row of result.commands) {
+    if (row.passed || row.skipped || row.expectedFailure) continue;
+    return row.cause;
+  }
+  return undefined;
 }
 
 /** The line's one-line failure citation: the first failed row's own message. */

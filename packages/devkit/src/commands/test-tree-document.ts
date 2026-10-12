@@ -36,8 +36,9 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import * as path from 'node:path';
-import type { TreeFiles } from '@sharpee/branch-tester';
-import { loadAuthorGame } from '../standalone/author-game.js';
+import type { RefusalExplainer, TreeFiles } from '@sharpee/branch-tester';
+import { deriveReach, explainRefusal } from '@sharpee/world-index';
+import { compileChordStory, findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
 import { runDerivedTests } from './test-derived.js';
 import { runClaimsTests } from './test-claims.js';
 
@@ -201,6 +202,9 @@ export async function runTreeDocumentCommand(
       seed: document.seed,
       channels,
     });
+  // The cause behind a refused card (UPPS finding F-15), named over the
+  // story's IR and Reach findings — the same words the Testing tab shows.
+  const explain = refusalExplainerFor(dir);
 
   // Lines are announced on the stream by their id — the id of the segment
   // each begins with (ADR-355 D5) — in the wire's `file` field, the same
@@ -218,6 +222,7 @@ export async function runTreeDocumentCommand(
       verbose,
       stopOnFailure,
       captureWorld,
+      ...(explain !== undefined ? { explain } : {}),
       observer: stream && {
         // The run detail view's rows (David 2026-08-10): every assertion's
         // verdict rides the wire, described in the tab's claim idiom.
@@ -309,4 +314,26 @@ export async function runTreeDocumentCommand(
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);
   stream?.runEnd(aggregateTestRun(results), code, blockedCount);
   return code;
+}
+
+/**
+ * Build the explainer that names the cause behind a refused card (UPPS
+ * finding F-15): the story compiled from source, as the derived tier
+ * compiles it, and its Reach findings derived once for the run.
+ *
+ * @param dir resolved project directory (absolute)
+ * @returns the explainer, or `undefined` for a module project (no `.story`
+ *   file, so no IR) or a story that does not compile — the game load that
+ *   follows reports that failure in its own words, and no card carries a cause
+ */
+function refusalExplainerFor(dir: string): RefusalExplainer | undefined {
+  try {
+    const storyFile = findStoryFile(dir);
+    if (storyFile === null) return undefined;
+    const ir = compileChordStory(storyFile);
+    const reach = deriveReach(ir);
+    return (turn) => explainRefusal(ir, reach, turn);
+  } catch {
+    return undefined;
+  }
 }

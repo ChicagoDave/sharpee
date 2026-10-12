@@ -27,7 +27,7 @@
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
-import { isRunEvent, type RunEvent } from '@sharpee/ide-protocol/run-events';
+import { isRunEvent, type CommandCause, type RunEvent } from '@sharpee/ide-protocol/run-events';
 import { derivedRowOf, derivedSummaryOf, type DerivedBranchRow, type DerivedSummary } from './derived';
 
 /** One assertion's verdict, as the wire carried it (the detail view's row). */
@@ -55,6 +55,12 @@ export interface CommandOutcome {
    * sent none, or sent an empty string — an empty block says nothing.
    */
   output?: string;
+  /**
+   * Why the engine refused the command, when the producer could name it
+   * (UPPS finding F-15): two sentences, what is wrong and what to do,
+   * composed on the wire so the CLI says the same. Failed results only.
+   */
+  cause?: CommandCause;
 }
 
 /**
@@ -265,6 +271,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
         ...(event.actualOutput !== undefined && event.actualOutput.length > 0
           ? { output: event.actualOutput }
           : {}),
+        ...(event.cause !== undefined && !event.passed ? { cause: event.cause } : {}),
       };
       const pending = state.pendingCommands.get(stem) ?? [];
       pending.push(outcome);

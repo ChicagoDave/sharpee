@@ -506,6 +506,11 @@ body.ts-active .sharpee-window { display: none; }
   color: var(--ts-fg); white-space: pre-wrap;
   border-left: 2px solid var(--ts-border);
 }
+/* F-15: the cause behind a refusal, two plain sentences under what the story printed. */
+.ts-run-cause {
+  margin: 0 0 1px 24px; font-size: 10px; color: var(--ts-fg); line-height: 1.4;
+}
+.ts-run-cause:last-child { margin-bottom: 4px; }
 .ts-run-tally {
   padding: 8px 0 2px; font-size: 10.5px; font-weight: 700;
   color: var(--ts-fg-dim); border-top: 1px solid var(--ts-border); margin-top: 6px;

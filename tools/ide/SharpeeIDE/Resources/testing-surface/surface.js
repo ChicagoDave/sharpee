@@ -970,7 +970,11 @@
   }
   function isCommandResultEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults));
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults)) && (value.cause === void 0 || isCommandCause(value.cause));
+  }
+  function isCommandCause(value) {
+    if (!isObject(value)) return false;
+    return (value.kind === "placed-nowhere" || value.kind === "not-wearable") && typeof value.entity === "string" && typeof value.name === "string" && typeof value.word === "string" && typeof value.says === "string" && typeof value.fix === "string";
   }
   function isAssertionOutcomeArray(value) {
     return Array.isArray(value) && value.every(
@@ -1119,7 +1123,8 @@
             ...entry.message !== void 0 ? { message: entry.message } : {}
           })),
           ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {},
-          ...event.actualOutput !== void 0 && event.actualOutput.length > 0 ? { output: event.actualOutput } : {}
+          ...event.actualOutput !== void 0 && event.actualOutput.length > 0 ? { output: event.actualOutput } : {},
+          ...event.cause !== void 0 && !event.passed ? { cause: event.cause } : {}
         };
         const pending = state.pendingCommands.get(stem) ?? [];
         pending.push(outcome);
@@ -1973,6 +1978,14 @@
             output.textContent = printed;
             results.appendChild(output);
           }
+          if (!command.passed && command.cause !== void 0) {
+            for (const sentence of [command.cause.says, command.cause.fix]) {
+              const line = document.createElement("div");
+              line.className = "ts-run-cause";
+              line.textContent = sentence;
+              results.appendChild(line);
+            }
+          }
         });
       };
       const columnLines = lineIds.map((id) => ({
@@ -2214,7 +2227,7 @@
      */
     renderDerivedRows(results, rows) {
       const groups = groupDerivedRows(rows);
-      const counts = [[`${groups.passed}`, "ts-count-pass"]];
+      const counts = groups.passed > 0 ? [[`${groups.passed} pass`, "ts-count-pass"]] : [];
       if (groups.failed > 0) counts.push([`${groups.failed} \u2717`, "ts-count-fail"]);
       if (groups.errors > 0) counts.push([`${groups.errors} error${groups.errors === 1 ? "" : "s"}`, "ts-count-fail"]);
       if (groups.skipped > 0) counts.push([`${groups.skipped} \u25CC`, "ts-count-skip"]);

@@ -31,6 +31,7 @@ import type {
   DerivedBranchEvent,
   DerivedRunSummaryEvent,
   RunEventEnvelope,
+  CommandCause,
 } from '@sharpee/ide-protocol';
 
 /**
@@ -85,6 +86,12 @@ export interface StreamableCommandResult {
    * a result without it emits an event without one.
    */
   failure?: string;
+  /**
+   * Why the engine refused the command (UPPS finding F-15), composed by the
+   * tree walker from the turn's events and the story's Reach findings. The
+   * wire only moves it. Failed results only.
+   */
+  cause?: CommandCause;
   /**
    * The world after this command (R3), captured under `--capture-world`.
    * Carried verbatim; structurally the wire's `WorldSnapshot`.
@@ -257,6 +264,7 @@ export class RunEventStream {
       ...(result.turn !== undefined ? { turn: result.turn } : {}),
       ...(result.ending !== undefined ? { ending: result.ending } : {}),
       ...(result.failure !== undefined ? { failure: result.failure } : {}),
+      ...(result.cause !== undefined && !result.passed ? { cause: result.cause } : {}),
       ...(result.world !== undefined ? { world: result.world } : {}),
       ...(result.assertionResults !== undefined
         ? { assertionResults: result.assertionResults }

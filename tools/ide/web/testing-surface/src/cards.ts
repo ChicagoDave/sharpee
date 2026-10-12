@@ -977,6 +977,17 @@ export class CardsView {
           output.textContent = printed;
           results.appendChild(output);
         }
+        // The cause behind the refusal, when the wire named one (F-15): what
+        // is wrong, then what to do — the next sentences after what the
+        // story printed, with no label of their own.
+        if (!command.passed && command.cause !== undefined) {
+          for (const sentence of [command.cause.says, command.cause.fix]) {
+            const line = document.createElement('div');
+            line.className = 'ts-run-cause';
+            line.textContent = sentence;
+            results.appendChild(line);
+          }
+        }
       });
     };
 
@@ -1259,7 +1270,7 @@ export class CardsView {
    */
   private renderDerivedRows(results: HTMLElement, rows: DerivedBranchRow[]): void {
     const groups = groupDerivedRows(rows);
-    const counts: Array<[string, string]> = [[`${groups.passed}`, 'ts-count-pass']];
+    const counts: Array<[string, string]> = groups.passed > 0 ? [[`${groups.passed} pass`, 'ts-count-pass']] : [];
     if (groups.failed > 0) counts.push([`${groups.failed} ✗`, 'ts-count-fail']);
     if (groups.errors > 0) counts.push([`${groups.errors} error${groups.errors === 1 ? '' : 's'}`, 'ts-count-fail']);
     if (groups.skipped > 0) counts.push([`${groups.skipped} ◌`, 'ts-count-skip']);

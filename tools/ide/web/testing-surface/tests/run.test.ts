@@ -98,6 +98,34 @@ describe('foldRunLine', () => {
     expect(commands[1]?.assertions[0]?.message).toBe('Output does not contain "You put on the mail satchel."');
   });
 
+  it('a failed command keeps the cause the wire named; a passing one never carries it (F-15)', () => {
+    const cause = {
+      kind: 'placed-nowhere' as const,
+      entity: 'mail-satchel',
+      name: 'mail satchel',
+      word: 'satchel',
+      says: '"satchel" is the mail satchel, which is placed nowhere and never moved into play.',
+      fix: 'Give it a place (in the Sorting Room) or move it into play.',
+    };
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(A),
+      command(A, { input: 'look', passed: true, cause }),
+      command(A, {
+        input: 'wear satchel', passed: false, turn: 3,
+        failure: 'Output does not contain "You put on the mail satchel."',
+        actualOutput: "You can't see any such thing.",
+        cause,
+      }),
+      end(A, { status: 'failed', passed: 1, failed: 1 }),
+    ]) foldRunLine(state, raw);
+
+    const commands = state.results.get('arrival')?.commands ?? [];
+    expect(commands.map((c) => c.cause)).toEqual([undefined, cause]);
+    expect(commands[1]?.cause?.says).toBe('"satchel" is the mail satchel, which is placed nowhere and never moved into play.');
+  });
+
   it('only a text claim\'s message restates the claim; a state claim\'s message carries its actual value (F-14)', () => {
     expect(restatesTextClaim('Output does not contain "rattles"')).toBe(true);
     expect(restatesTextClaim('Output should not contain "rattles"')).toBe(true);
