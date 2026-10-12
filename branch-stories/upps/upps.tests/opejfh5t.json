@@ -155,6 +155,122 @@
       "command": "west",
       "id": "22lyi4nf",
       "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock",
+          "A hangar of cold air and sodium light. The courier ship squats on its skids in the middle of the bay, its boarding ramp drawn up tight. A loader robot waits beside the ramp, and empty mail crates are stacked along the west wall. The depot is back through the door to the west."
+        ]
+      },
+      "command": "east",
+      "id": "dmtxmdwc",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The route card is the one thing on this dock that is yours to keep."
+        ]
+      },
+      "command": "give card to robot",
+      "id": "xuuofu0y",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The satchel stays on your shoulder. A carrier without a satchel is just somebody in grey."
+        ]
+      },
+      "command": "give satchel to robot",
+      "id": "m9gen3bs",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loader robot unfolds its arms, takes the bundle as gently as an egg, and rolls to the Sparrow. The ramp comes down with a hiss of hydraulics, and the robot trundles up it and back out, empty. Its brow light turns green."
+        ]
+      },
+      "command": "give bundle to robot",
+      "id": "9kzb6wpg",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold",
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock.",
+          "You can see a suit locker and a mail bundle here."
+        ]
+      },
+      "command": "up",
+      "id": "w0j072t7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The cockpit hatch is dogged shut, and the placard says why."
+        ]
+      },
+      "command": "north",
+      "id": "bbdf10j3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the suit locker.\n\nIn the suit locker you see a space suit."
+        ]
+      },
+      "command": "open locker",
+      "id": "rkqsbidr",
+      "type": "turn"
+    },
+    {
+      "command": "take suit",
+      "id": "ja056ehf",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You put on the space suit."
+        ]
+      },
+      "command": "wear suit",
+      "id": "1gbfyy3x",
+      "type": "turn"
+    },
+    {
+      "command": "take bundle",
+      "id": "2n2lwn6p",
+      "skip": true,
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock",
+          "A hangar of cold air and sodium light. The courier ship squats on its skids in the middle of the bay, its boarding ramp drawn up tight. A loader robot waits beside the ramp, and empty mail crates are stacked along the west wall. The depot is back through the door to the west."
+        ]
+      },
+      "command": "down",
+      "id": "yrv1rk03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "unfolds its arms"
+        ]
+      },
+      "command": "give bundle to robot",
+      "id": "aeifssmz",
+      "type": "turn"
     }
   ],
   "id": "opejfh5t"

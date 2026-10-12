@@ -118,6 +118,41 @@ Room 2's tree was recorded on 2026-10-12 (seven cards after room 1's eight; the 
 
 Every tree catch above names the turn, never the line (F-8), and the summary line names only the first failing card (F-11). The three linking errors (`O`, `R`, `V`) read identically in the tree; only Reach separates a door that never clears from a room with no door.
 
+## Room 3 catalog
+
+Written and seeded 2026-10-12 (session ed5f9d) in `branch-stories/upps/seeded/room-03/`, `TEST-003-A` to `V` plus `Z`; letter, error and expected catch in that folder's `README.md`. Room 3 is the Hold, the Sparrow's cargo bay, reached by `up` from the Loading Dock once the loader robot has loaded the mail bundle. It adds the constructs rooms 1 and 2 lacked: a `person` the player gives to, `after the player giving` with statement-level `when` guards, `on the player giving` refusals (satchel, route card), a `while` on `up` that a `change` lifts, an `openable` container holding a `wearable`, a `move` into an unentered room, and a second blocked exit. Every file was compiled on 2026-10-12; the gate-clean ones were run through a 21-turn scripted `./sharpee play` diffed against `Z`, then against room 3's tree once it was recorded.
+
+Two findings came out of the write itself, before any seed: a head-level `while` on the robot's `after` clause never fires (F-21), and the derived tier skips the robot's branch under either form of the guard (F-22). A third came out of seed `J`: `, once` is consumed by a firing in which every guard was false (F-23).
+
+### Caught by the compiler (4)
+
+`D`, `H`, `K`, `U`. Each names a code and a `file:line:col`, and the three misspellings carry "did you mean". Fewer than rooms 1 and 2 because room 3's new constructs are mostly behavior, and the compiler checks names and states, not what happens.
+
+### Compiles clean, and is not an error (5)
+
+`C`, `F`, `Q`, `S`, `T`. An exit written on one side makes its return (`F`, `Q`, as room 2's `M` and `N`); `holds` is `has` (`T`); a room's `on the player entering` behaves as its `after` (`S`); and the robot's guards are redundant while the only other giveable things refuse (`C`). They stay in the sequence as a record of what an author might think is a mistake and is not.
+
+### Compiles clean, and something else must catch it (13)
+
+Room 3's tree was recorded on 2026-10-12, later the same day (twelve cards after room 2's seven; the turns and claims are listed in the seed folder's `README.md`), and each row below was run against a scratch copy carrying it. The correct story reports 25 cards passing, 34 assertions passing, rooms 3 of 3.
+
+| Error | What catches it today |
+|---|---|
+| `A`: the robot is a thing | the tree, on `give bundle to robot` ("You can only give things to people."), then every hold turn: 6 cards failing, `Rooms entered: 2 / 3` |
+| `B`: head-`while` guard (F-21) | the tree, exactly as `A`: the gift is taken, the phrase never comes, 6 cards failing, `Rooms entered: 2 / 3` |
+| `E`: the `change` removed | the tree, on `up` after the gift: 5 cards failing, `Rooms entered: 2 / 3` (the loading phrase passes, so the first failing card is one turn later than `A` and `B`) |
+| `G`: the blocked `up` removed | the tree, on `up` before the gift: 9 cards failing (every dock turn after it is displaced), `Rooms entered: 3 / 3` |
+| `I`: the `move` removed | the tree, on `up`: the Hold's listing claim, 1 card failing |
+| `J`: the card's refusal removed (F-23) | the tree, on `give card to robot`, then the bundle gift does nothing and the hold is never entered: 7 cards failing, `Rooms entered: 2 / 3` |
+| `L`, `M`: locker not openable / starts open | the tree, on `open locker`, 1 card failing each |
+| `N`: suit placed on the floor | the tree, on `up` (the listing) and `open locker` ("which is empty"), 2 cards failing |
+| `O`: suit not wearable | the tree, on `wear suit`, 1 card failing |
+| `P`: the blocked `north` removed | the tree, on `north`, 1 card failing |
+| `R`: `given` for `giving` | the runner at load, exit 3, with the line (F-18): `compose --check` passed it |
+| `V`: `, once` dropped | the tree, on the second `give bundle to robot` (`not contains "unfolds its arms"`), 1 card failing |
+
+Every tree catch names the turn, never the line (F-8), and the summary line names only the first failing card (F-11). `A` and `B` read identically in the tree (a thing that cannot receive, and a guard that never holds); `E` and `J` differ from them only by which card fails first. Before the tree existed, only `G` was caught, and the four seeds that keep the player out of the hold (`A`, `B`, `E`, `J`) reported `Rooms entered: 2 / 3` exactly as the correct story did (F-16).
+
 ## What this already says about O-1
 
 Of the rows that compile clean:
