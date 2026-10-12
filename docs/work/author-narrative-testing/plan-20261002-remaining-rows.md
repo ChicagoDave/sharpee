@@ -78,7 +78,8 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: Phases 1 and 3 done; whatever of the story exists (may be partial)
 - **Deliverable**: `sharpee test <story>` report and the narrative suites run against it, closing table re-counted against 11 of 15; failures reported, not fixed. No story authored by the agent.
 - **Exit state**: checkpoint result recorded in the objective
-- **Status**: CURRENT (since 2026-10-12)
+- **Demonstrated** (2026-10-12 14:45 CDT, session eb1023): run six days after its date, on UPPS at room 1. `./sharpee test branch-stories/upps/upps.story` → 8 cards passing, 10 assertions passing, 1 of 1 branches, 1 of 1 rooms, exit 0. `NARRATIVE_STORY=branch-stories/upps pnpm test:scripts narrative-holds narrative-support` → 41 passing, 3 failures; every `upps` case green; the 3 failures are fernhill-only and the GH #587 condition (`narrative-support` two 60 s timeouts on the ~104 s fernhill claims walk, `narrative-holds:166` stderr byte-compare broken by the walk's wall-clock line), reported not fixed. Re-count against 11 of 15: 13 of 15 shipped, 2 deferred, 13 of 13 counted; recorded in the objective's Progress line and the narrative's closing table (three rows and the date). [reported by session: both runs made this session; the narrative suite's vitest output is the evidence]
+- **Status**: DONE
 
 ### Phase 5: Gate G2 — ADR-357 open-questions interview (testing navigation; ADR-357 superseded ADR-308 on 2026-10-03)
 - **Tier**: Small
