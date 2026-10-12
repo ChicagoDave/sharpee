@@ -82,6 +82,79 @@
       "command": "east",
       "id": "nzjkdbi6",
       "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine gives a satisfied clunk. On the east wall, the panel beside the dock door flips from red to green, and the door rolls up into the ceiling."
+        ]
+      },
+      "command": "take bundle",
+      "id": "c7h17fr9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop bundle",
+      "id": "f0fql18c",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "satisfied clunk"
+        ]
+      },
+      "command": "take bundle",
+      "id": "8n0ep8wz",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Loading Dock",
+          "A hangar of cold air and sodium light. The courier ship squats on its skids in the middle of the bay, its boarding ramp drawn up tight. A loader robot waits beside the ramp, and empty mail crates are stacked along the west wall. The depot is back through the door to the west.",
+          "Your boots ring on the deck plates. Somewhere above, a fan the size of a house turns over once and stops."
+        ]
+      },
+      "command": "east",
+      "id": "qh80o65s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Sparrow's ramp stays up. The loader robot's amber light blinks at you, patient as a clock."
+        ]
+      },
+      "command": "up",
+      "id": "9wa8sg88",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A snub-nosed UPPS courier, the Sparrow, dented along one flank where some asteroid got the last word. Its boarding ramp is drawn up, and the hull plating is cold to the touch."
+        ]
+      },
+      "command": "examine sparrow",
+      "id": "zd9fll96",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Sorting Room",
+          "Pigeonholes climb every wall of the depot, each one stencilled with the name of a world: Ceres, Titan, Kepler Station, places you have only seen as postmarks. The sorting machine hums in the middle of the floor. East, the loading dock door is shut."
+        ]
+      },
+      "command": "west",
+      "id": "22lyi4nf",
+      "type": "turn"
     }
   ],
   "id": "opejfh5t"

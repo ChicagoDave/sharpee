@@ -152,3 +152,33 @@ That is the World tab's Reach view, under "Things play can never hold" (`tools/i
 **Belongs to**: the testing surface, with a platform half. The failed command names a noun (`satchel`), the reply is the parser's "can't see" refusal, and the World Index holds a stranded thing whose name or `aka` matches the noun. When the three line up, the failed card should say so and name the fix. Handing the Reach findings to the surface is a host plus `tools/ide` change; matching a refusal to its cause is new logic whose home is the platform (branch-tester or world-index), so that `sharpee test` prints the same sentence. The platform half needs David's discussion first. The same join would cover `TEST-001-Q` (unplaced player, F-7) and `TEST-001-U` (missing `wearable`, matched by the "You can't wear" reply).
 
 **Addressed** (2026-10-11, session 487a1f): the failed card now ends with the cause and the fix, in the CLI and the tab alike — `"satchel" is the mail satchel, which is placed nowhere and never moved into play.` / `Give it a place (in the Sorting Room) or move it into play.` The words are composed in `world-index` (`explainRefusal`, beside `deriveReach`) from the turn's events and the Reach findings, ride the wire as `command-result.cause`, and both reporters print them unchanged. Two rules so far: placed nowhere (seed `T`) and not declared wearable (seed `U`); a refusal neither explains, such as seed `W`'s removed alias, shows as before. Real-path test: `scripts/__tests__/narrative-names-the-cause.test.ts`.
+
+## F-16: `sharpee test` cannot tell "not entered yet" from "cannot be entered" (2026-10-12)
+
+**Observed** on room 2's seeds `R` (the exit's `while` dropped, blocked for good) and `V` (the room linked from neither side): `./sharpee test` prints `Rooms entered: 1 / 2` and names `loading-dock`, exactly what the correct story prints while room 2's tree is unrecorded. The World tab's Reach knows the difference: on `R` it reports the exit "blocked with no condition that lifts it" at line 19, the room unreached and three things stranded; on `V` the room unreached and the things stranded, with no line, because a `DIRECTION is blocked while …` line with no destination is not a finding anywhere. An author reading the test report sees a coverage gap to fill by recording a turn, when no turn can fill it.
+
+**Belongs to**: the same join as F-15. The room-coverage line could say "no play reaches it" when Reach says so, with Reach's line; `sharpee test` and the tab alike. The dangling blocked line is the analyzer's: a `while` condition on a direction the room never leads anywhere by is worth a diagnostic.
+
+## F-17: a misspelled link raises a second, cascading error with an empty name (2026-10-12)
+
+**Observed** on seed `A` (`east to the Loading Dok`): `analysis.unknown-entity` with "did you mean `loading dock`", correct, then `analysis.duplicate-exit` on the same line: "`Sorting Room`'s `east` exit leads to ``, but `Loading Dock`'s `west to the Sorting Room` (line 85) also makes `east` from `Sorting Room` lead back to `Loading Dock`." The second error is a consequence of the first and shows an empty destination. One error, two lines of red; the fix is the first one.
+
+**Belongs to**: the Chord analyzer: an exit whose destination failed to resolve should not take part in the duplicate-exit check.
+
+## F-18: the compiler passes an `after … leaving` on a room that the runner refuses at load (2026-10-12)
+
+**Observed** on seed `T` (`after the player leaving, once` on the Loading Dock): `sharpee compose --check` reports gate-clean. `sharpee test` then stops before any card: "Error running the tree: `after the player leaving` — `leaving` is a region crossing reaction (ADR-236), and `Loading Dock` is not a region. Put the clause on the region block whose boundary it reacts to. (line 94)", exit 3. The message is good and carries the line; it comes from the wrong gate. In the IDE this shows as a run failure, not in Problems (compare F-7, where the load error carried no line at all).
+
+**Belongs to**: the Chord analyzer, which has the same information at compile time.
+
+## F-19: `contains` is case-insensitive, so a room-name claim passes on a refusal that names the room (2026-10-12)
+
+**Observed** on room 2's seeds `O` (the `change` line removed) and `R` (the `while` dropped) with room 2's tree recorded: `east` prints the refusal "The loading dock door stays shut until your shift is cleared to launch." The card's first claim, `contains "Loading Dock"`, passes, because `packages/transcript-tester/src/assertion-core.ts:120` lowercases both sides; only the second claim, the room description, fails. The claim the tab records on every room entry (the room's name) is the one a refusal can satisfy by naming the door. Seed `V`, where the refusal is "There are no obvious exits.", fails on the name claim as expected, so the two seeds that keep the door report one assertion fewer than the one that loses the exit.
+
+**Belongs to**: the claim. An auto-recorded room-name claim should match the room heading, not any run of letters; either `contains` grows a case-sensitive form or the entry claim becomes a `channel` or `states` claim on the location.
+
+## F-20: the card header is the engine's turn counter, and a refused turn on a stale build records as a card (2026-10-12)
+
+**Observed** while recording room 2's tree in the Testing tab. The tab's engine is the bundle loaded at the last ⌘B; typing `take bundle` before rebuilding got "You can't see any such thing." from the pre-room-2 story, and that refusal was recorded as a claimless card like any other turn. After ⌘B the tab replayed the tree on the new build, and cards typed after a tail-cut carry headers `TURN 30`, `31`, `32` for the tenth, eleventh and twelfth cards: the header is the engine's turn counter across replays, not the card's position in the line (compare F-13, where the opening card is called turn 1). Room-entry turns record a `contains` on the room name and description without any gesture; every other turn records with no claim and shows `[SKIP]` until the author selects text (Add contains) or presses a card button.
+
+**Belongs to**: the Testing tab. The header should count cards; a turn typed against a build older than the saved story should say so on the card.

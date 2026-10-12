@@ -194,7 +194,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: story as far as it exists; whichever of Phases 6-9 were IN are done
 - **Deliverable**: both evidence sources run, table re-counted, rows ruled out recorded as such, results for the 2026-10-15 grade
 - **Exit state**: objective ready to grade
-- **Status**: PENDING
+- **Status**: CURRENT (since 2026-10-12)
 
 ## Ordering notes
 - Phases 1, 3 do not depend on David's rulings and are ready now; Phase 2 is a gate, and it decides whether 5-9 happen at all.
