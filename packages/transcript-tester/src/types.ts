@@ -342,6 +342,14 @@ export interface TranscriptCommand {
   input: string;
   expectedOutput: string[];
   assertions: Assertion[];
+  /**
+   * The id of the tree card this command came from (ADR-357 D9). Set by the
+   * tree walker, which builds a transcript per line from cards that carry
+   * stable ids; a `.transcript` file has no cards and never sets it. Rides
+   * the result so a consumer lands on the card without re-deriving the
+   * walker's command-to-card rule.
+   */
+  cardId?: string;
 }
 
 /**
@@ -362,6 +370,12 @@ export interface Transcript {
    * claim about the opening, which is nearly all of them.
    */
   opening?: Assertion[];
+  /**
+   * The id of the tree card whose claims `opening` holds (ADR-357 D9). The
+   * runner puts it on the `(opening)` row it synthesizes, so that row names
+   * its card like every typed command does. Absent for `.transcript` files.
+   */
+  openingCardId?: string;
   goals?: GoalDefinition[];              // Parsed goal segments
   comments: string[];
 

@@ -123,6 +123,8 @@ Before 2026-10-15, plan Phase 6 ships the outline tint (D4), failure navigation 
 
 The field is additive and optional, so a consumer that does not know it ignores it, the two heads need not move on the same day, and transcript runs are unchanged. It is a platform change across three packages and gets its own discussion before it is built (CLAUDE.md).
 
+**Built 2026-10-12 (session ef7e8e, after the discussion; David: "go"), with one correction of record.** The `(opening)` row the walker's runs carry is synthesized by branch-tester's own runner (`packages/branch-tester/src/runner.ts`), not transcript-tester's as the list above says — the walker imports `./runner.js`, and that runner also synthesizes the opening's default claims when the card has none. The id is therefore threaded there, and the walker names the opening card whether or not it carries authored claims. transcript-tester's runner carries the same contract so the two runners agree, though a `.transcript` file never sets it. Everything else landed as listed.
+
 **What it buys.** A result names its card, so no rule is needed in the surface, including no special case for the opening. A failed opening claim lands on the opening card. Staleness (D11) can check the card directly: does this id still exist, and has the card changed? A `sharpee test` report line can carry the same id the IDE shows, so the two can be linked.
 
 **Rejected:**

@@ -14,7 +14,7 @@
  *   this layer only renders and forwards gestures.
  *
  * Public interface: CardsView (ensureLayout, addTurnCard, clear, render,
- *   scrollToLatest, scrollToLineTop, setNotice), CardsDelegate.
+ *   scrollToLatest, scrollToCard, scrollToLineTop, setNotice), CardsDelegate.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -31,7 +31,7 @@ import {
 } from './derived';
 import type { BranchPoint, TreeSessionModel } from './model';
 import {
-  bootLookIndex, commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf,
+  bootLookIndex, commandRowText, firstFailureText, restatesTextClaim, runRowVisitTarget, runRowsOf, type RunVisitTarget,
   type RunColumnState, type TranscriptRunResult,
 } from './run';
 
@@ -59,9 +59,9 @@ export interface CardsDelegate {
   /** A sibling chip was clicked — replay that line live and view it. */
   onSelectLine(lineId: string): void;
   /** A failed row in the run column was clicked — visit its line and land
-   *  at the top of the line (ADR-357 D8 step 2; the card itself once D9's
-   *  card id is on the wire). */
-  onVisitFailure(lineId: string): void;
+   *  on the failing card when the wire named it, else at the top of the
+   *  line (ADR-357 D8 step 2, D9). */
+  onVisitFailure(target: RunVisitTarget): void;
   /** The Run button: run the story's tree document at the pinned seed. */
   onRun(): void;
   /** The run column's current state — main.ts owns the fold. */
@@ -893,7 +893,7 @@ export class CardsView {
 
     /** One header row. With `visit`, the row is a button that visits that
      *  line (the run-column click, ADR-357 D8 step 2). */
-    const row = (badgeText: string, badgeClass: string, title: string, why: string, visit?: string): void => {
+    const row = (badgeText: string, badgeClass: string, title: string, why: string, visit?: RunVisitTarget): void => {
       const line = document.createElement('div');
       line.className = `ts-run-row${visit !== undefined ? ' ts-run-row-visit' : ''}`;
       if (visit !== undefined) {
@@ -1414,11 +1414,33 @@ export class CardsView {
   }
 
   /**
+   * Scroll the pane to the card with stable id `cardId` on the active path
+   * (ADR-357 D9: the run-column click lands on the failing card). Returns
+   * false when no card on the board carries the id — the caller falls back
+   * to the line's top.
+   */
+  scrollToCard(cardId: string): boolean {
+    const ordinal = this.model.ordinalOfCardId(cardId);
+    const target = ordinal !== undefined ? this.cards.get(ordinal)?.row : undefined;
+    if (!target) return false;
+    // The landed card is marked so the eye finds it (and the real-path test
+    // can tell a landing from the line-top fallback); one mark at a time.
+    for (const marked of this.session.querySelectorAll('.ts-card-landed')) {
+      marked.classList.remove('ts-card-landed');
+      delete (marked as HTMLElement).dataset.landedCard;
+    }
+    target.classList.add('ts-card-landed');
+    target.dataset.landedCard = cardId;
+    target.scrollIntoView({ block: 'start' });
+    return true;
+  }
+
+  /**
    * Scroll the pane to the top of line `lineId`: the main line's top is the
    * opening; a branch's top is its first own card. Where the line's first
    * card is not on the board, the pane goes to its top rather than nowhere.
-   * (ADR-357 D8 step 2: the run-column click lands here until D9's card id
-   * lets it land on the failing card.)
+   * (ADR-357 D8 step 2: where a run-column click lands when the wire named
+   * no card.)
    */
   scrollToLineTop(lineId: string): void {
     if (lineId === this.model.mainLine) {

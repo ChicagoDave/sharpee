@@ -22,7 +22,7 @@
  *
  * Public interface: RunColumnState, TranscriptRunResult, FirstFailure,
  *   createRunState, beginRun, foldRunLine, finishRun, resetRun, runRowsOf,
- *   RunColumnLine, RunColumnRow, runRowVisitTarget, restatesTextClaim,
+ *   RunColumnLine, RunColumnRow, RunVisitTarget, runRowVisitTarget, restatesTextClaim,
  *   bootLookIndex, commandRowText, firstFailureText.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
@@ -62,6 +62,13 @@ export interface CommandOutcome {
    * composed on the wire so the CLI says the same. Failed results only.
    */
   cause?: CommandCause;
+  /**
+   * The tree card this result came from, when the wire named it (ADR-357
+   * D9): the card whose command ran, or the opening card for the `(opening)`
+   * row. What lets a failure visit land on the card itself. Absent for a
+   * `.transcript` run or a producer that predates the field.
+   */
+  cardId?: string;
 }
 
 /**
@@ -94,6 +101,14 @@ export interface FirstFailure {
   message: string;
   /** Index into the line's `commands` of the failing command; absent when the failure is the line's, not a command's. */
   command?: number;
+  /** The failing command's tree card, when the wire named it (ADR-357 D9) — where a visit lands. */
+  cardId?: string;
+}
+
+/** Where a run-column click lands: the line, and the failing card when the wire named one (ADR-357 D9). */
+export interface RunVisitTarget {
+  lineId: string;
+  cardId?: string;
 }
 
 /**
@@ -289,6 +304,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
           ? { output: event.actualOutput }
           : {}),
         ...(event.cause !== undefined && !event.passed ? { cause: event.cause } : {}),
+        ...(event.cardId !== undefined ? { cardId: event.cardId } : {}),
       };
       const pending = state.pendingCommands.get(stem) ?? [];
       pending.push(outcome);
@@ -318,6 +334,7 @@ function fold(state: RunColumnState, event: RunEvent): void {
           ...(where !== undefined ? { where } : {}),
           message,
           command: pending.length - 1,
+          ...(event.cardId !== undefined ? { cardId: event.cardId } : {}),
         },
         moreFailures: existing?.moreFailures ?? 0,
         ...(label !== undefined ? { label } : {}),
@@ -506,12 +523,15 @@ export function runRowsOf(state: RunColumnState, lines: readonly RunColumnLine[]
 }
 
 /**
- * The line a run-column row visits when clicked (ADR-357 D8 step 2, AC-4):
- * a FAILED row — a failed or errored result — visits its line; every other
- * row is inert. Until D9's card id is on the wire the visit lands at the
- * top of the line, so the rule is line-level by design, not by omission.
+ * Where a run-column row visits when clicked (ADR-357 D8 step 2, AC-4): a
+ * FAILED row — a failed or errored result — visits its line, and lands on
+ * the failing card when the wire named it (D9); every other row is inert.
+ * An errored line, or a producer that sent no card id, lands at the top of
+ * the line.
  */
-export function runRowVisitTarget(row: RunColumnRow): string | undefined {
+export function runRowVisitTarget(row: RunColumnRow): RunVisitTarget | undefined {
   if (row.kind !== 'result') return undefined;
-  return row.result.status === 'failed' || row.result.status === 'error' ? row.lineId : undefined;
+  if (row.result.status !== 'failed' && row.result.status !== 'error') return undefined;
+  const cardId = row.result.firstFailure?.cardId;
+  return { lineId: row.lineId, ...(cardId !== undefined ? { cardId } : {}) };
 }

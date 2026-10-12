@@ -1553,6 +1553,40 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         return project
     }
 
+    /// ADR-357 D9 on the real page and the real CLI: the run's `command-result`
+    /// events name their cards, so the FAIL row's click lands on the failing
+    /// card itself — marked `.ts-card-landed` with the card's id — rather than
+    /// at the top of the line, which is where the pre-D9 fallback lands and
+    /// which sets no mark.
+    func testRunColumnClickLandsOnTheFailingCardTheWireNamed() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        _ = try await bootAndRunMiniProject()
+
+        // Which card fails first is the fixture's business: the opening claim
+        // the page recorded from the fixture's prologue (card0001) when the
+        // real story does not say it, else `take lamp`'s claim (card0003).
+        let why = try await surface.evaluateInSurface("""
+        (function () {
+          var row = document.querySelector('.ts-run-row-visit');
+          return row ? row.querySelector('.ts-why').textContent : '';
+        })()
+        """) as? String ?? ""
+        XCTAssertFalse(why.isEmpty, "the main line's FAIL row is a visit button with its failure")
+        let expected = why.contains("no such text anywhere") ? "card0003" : "card0001"
+
+        let markedBefore = try await surface.evaluateInSurface("document.querySelectorAll('.ts-card-landed').length") as? Int
+        XCTAssertEqual(markedBefore, 0, "nothing is marked landed before the click")
+        _ = try await surface.evaluateInSurface("document.querySelector('.ts-run-row-visit').click(); true")
+        try await waitFor("!!document.querySelector('.ts-card-landed')", "the click landed on a card")
+
+        let landed = try await surface.evaluateInSurface(
+            "document.querySelector('.ts-card-landed').dataset.landedCard") as? String
+        XCTAssertEqual(landed, expected, "the landed card is the one the wire named for the first failure (why: \(why))")
+        let markedAfter = try await surface.evaluateInSurface("document.querySelectorAll('.ts-card-landed').length") as? Int
+        XCTAssertEqual(markedAfter, 1, "one landing mark at a time")
+    }
+
     /// The D11 contract on the real page, the real CLI and the real sidecar:
     /// after a run, authoring a claim on the fork card makes both lines
     /// through it stale without clearing them, ⌘Z makes them current again, a

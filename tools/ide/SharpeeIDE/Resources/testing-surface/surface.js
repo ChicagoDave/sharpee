@@ -971,7 +971,7 @@
   }
   function isCommandResultEvent(value) {
     if (!isObject(value)) return false;
-    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults)) && (value.cause === void 0 || isCommandCause(value.cause));
+    return hasEnvelopeAndType(value, "command-result") && typeof value.file === "string" && typeof value.line === "number" && typeof value.input === "string" && typeof value.passed === "boolean" && typeof value.expectedFailure === "boolean" && typeof value.skipped === "boolean" && (value.cardId === void 0 || typeof value.cardId === "string") && (value.error === void 0 || typeof value.error === "string") && (value.actualOutput === void 0 || typeof value.actualOutput === "string") && (value.turn === void 0 || typeof value.turn === "number") && (value.ending === void 0 || value.ending === "victory" || value.ending === "defeat" || value.ending === "quit") && (value.failure === void 0 || typeof value.failure === "string") && (value.world === void 0 || isWorldSnapshot(value.world)) && (value.assertionResults === void 0 || isAssertionOutcomeArray(value.assertionResults)) && (value.cause === void 0 || isCommandCause(value.cause));
   }
   function isCommandCause(value) {
     if (!isObject(value)) return false;
@@ -1127,7 +1127,8 @@
           })),
           ...failureMessage !== void 0 && !event.passed ? { failure: failureMessage } : {},
           ...event.actualOutput !== void 0 && event.actualOutput.length > 0 ? { output: event.actualOutput } : {},
-          ...event.cause !== void 0 && !event.passed ? { cause: event.cause } : {}
+          ...event.cause !== void 0 && !event.passed ? { cause: event.cause } : {},
+          ...event.cardId !== void 0 ? { cardId: event.cardId } : {}
         };
         const pending = state.pendingCommands.get(stem) ?? [];
         pending.push(outcome);
@@ -1149,7 +1150,8 @@
           firstFailure: {
             ...where !== void 0 ? { where } : {},
             message,
-            command: pending.length - 1
+            command: pending.length - 1,
+            ...event.cardId !== void 0 ? { cardId: event.cardId } : {}
           },
           moreFailures: existing?.moreFailures ?? 0,
           ...label !== void 0 ? { label } : {}
@@ -1262,7 +1264,9 @@
   }
   function runRowVisitTarget(row) {
     if (row.kind !== "result") return void 0;
-    return row.result.status === "failed" || row.result.status === "error" ? row.lineId : void 0;
+    if (row.result.status !== "failed" && row.result.status !== "error") return void 0;
+    const cardId = row.result.firstFailure?.cardId;
+    return { lineId: row.lineId, ...cardId !== void 0 ? { cardId } : {} };
   }
 
   // tools/ide/web/testing-surface/src/cards.ts
@@ -2339,11 +2343,30 @@
       this.session.scrollTop = this.session.scrollHeight;
     }
     /**
+     * Scroll the pane to the card with stable id `cardId` on the active path
+     * (ADR-357 D9: the run-column click lands on the failing card). Returns
+     * false when no card on the board carries the id — the caller falls back
+     * to the line's top.
+     */
+    scrollToCard(cardId) {
+      const ordinal = this.model.ordinalOfCardId(cardId);
+      const target = ordinal !== void 0 ? this.cards.get(ordinal)?.row : void 0;
+      if (!target) return false;
+      for (const marked of this.session.querySelectorAll(".ts-card-landed")) {
+        marked.classList.remove("ts-card-landed");
+        delete marked.dataset.landedCard;
+      }
+      target.classList.add("ts-card-landed");
+      target.dataset.landedCard = cardId;
+      target.scrollIntoView({ block: "start" });
+      return true;
+    }
+    /**
      * Scroll the pane to the top of line `lineId`: the main line's top is the
      * opening; a branch's top is its first own card. Where the line's first
      * card is not on the board, the pane goes to its top rather than nowhere.
-     * (ADR-357 D8 step 2: the run-column click lands here until D9's card id
-     * lets it land on the failing card.)
+     * (ADR-357 D8 step 2: where a run-column click lands when the wire named
+     * no card.)
      */
     scrollToLineTop(lineId) {
       if (lineId === this.model.mainLine) {
@@ -2946,6 +2969,18 @@
     }
     ordinalOf(card) {
       return this.ordinalByCard.get(card);
+    }
+    /**
+     * The ordinal of the card with stable id `cardId` on the ACTIVE path, or
+     * undefined when no visible card carries it (the card was deleted, or sits
+     * on a line that is not in view). What a failure visit lands on once its
+     * line is active (ADR-357 D9).
+     */
+    ordinalOfCardId(cardId) {
+      for (const ordinal of this.visibleOrdinals()) {
+        if (this.cardByOrdinal.get(ordinal)?.id === cardId) return ordinal;
+      }
+      return void 0;
     }
     roomOf(ordinal) {
       return this.roomByOrdinal.get(ordinal);
@@ -3906,8 +3941,8 @@
     onSelectLine(lineId) {
       void selectLine(lineId);
     },
-    onVisitFailure(lineId) {
-      void visitFailure(lineId);
+    onVisitFailure(target) {
+      void visitFailure(target);
     },
     onRun() {
       if (runState.inFlight || driverBusy || replayActive) return;
@@ -4296,12 +4331,14 @@
     update();
     await visitLine(lineId);
   }
-  async function visitFailure(lineId) {
+  async function visitFailure(target) {
     if (replayActive || driverBusy) return;
+    const { lineId, cardId } = target;
     if (lineId !== model.activeLine) {
       await selectLine(lineId);
       if (model.activeLine !== lineId) return;
     }
+    if (cardId !== void 0 && cards.scrollToCard(cardId)) return;
     cards.scrollToLineTop(lineId);
   }
   async function performDeleteBranch(lineId) {

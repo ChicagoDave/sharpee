@@ -39,6 +39,27 @@ const summary: StreamableDerivedSummary = {
   rooms: { declared: 1, entered: 1, unentered: [] },
 };
 
+describe('RunEventStream — command-result names its card (ADR-357 D9)', () => {
+  const base = {
+    passed: false,
+    expectedFailure: false,
+    skipped: false,
+    actualOutput: 'You cannot go that way.',
+  };
+
+  it('writes cardId when the command carries one and omits the key when it does not', () => {
+    const { events, stream } = recorder();
+    stream.commandResult('main', { ...base, command: { input: 'north', lineNumber: 0, cardId: 'c-north' } });
+    stream.commandResult('/t/a.transcript', { ...base, command: { input: 'north', lineNumber: 7 } });
+
+    const [withCard, withoutCard] = events as Array<Record<string, unknown>>;
+    expect(withCard.type).toBe('command-result');
+    expect(withCard.cardId).toBe('c-north');
+    expect(withoutCard.type).toBe('command-result');
+    expect('cardId' in withoutCard).toBe(false);
+  });
+});
+
 describe('RunEventStream — derived-branch and derived-summary', () => {
   it('writes each derived event with the envelope and the payload verbatim, omitting absent optionals', () => {
     const { events, stream, tick } = recorder();

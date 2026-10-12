@@ -61,7 +61,8 @@ export type StreamableDerivedSummary = Omit<DerivedRunSummaryEvent, keyof RunEve
  * the honest parameter is the set of fields actually used.
  */
 export interface StreamableCommandResult {
-  command: { input: string; lineNumber: number };
+  /** `cardId` is the tree card the command came from (ADR-357 D9); a `.transcript` command has none. */
+  command: { input: string; lineNumber: number; cardId?: string };
   passed: boolean;
   expectedFailure: boolean;
   skipped: boolean;
@@ -259,6 +260,7 @@ export class RunEventStream {
       passed: result.passed,
       expectedFailure: result.expectedFailure,
       skipped: result.skipped,
+      ...(result.command.cardId !== undefined ? { cardId: result.command.cardId } : {}),
       ...(result.error !== undefined ? { error: result.error } : {}),
       ...(captureOutput || !result.passed ? { actualOutput: result.actualOutput } : {}),
       ...(result.turn !== undefined ? { turn: result.turn } : {}),

@@ -393,6 +393,26 @@ describe('branching (D2/D5) — the fork lives ON the card', () => {
     ]);
   });
 
+  it('ordinalOfCardId finds a card on the active path by its stable id and nothing off it (ADR-357 D9)', () => {
+    const model = bootedModel();
+    const took = play(model, 'take lamp');
+    const north = play(model, 'north', 'Garden');
+    model.branch(took, 'east')!;
+    const alt = play(model, 'east', 'Shed');
+    model.files();   // mints every card's id
+
+    const idOf = (ordinal: number): string => model.cardAt(ordinal)!.id!;
+    // The branch is active: its own card is found, the hidden main continuation is not.
+    expect(model.ordinalOfCardId(idOf(alt))).toBe(alt);
+    expect(model.ordinalOfCardId(idOf(took))).toBe(took);
+    expect(model.ordinalOfCardId(idOf(north))).toBeUndefined();
+    expect(model.ordinalOfCardId('no-such-card')).toBeUndefined();
+
+    model.activateLine(model.mainLine);
+    expect(model.ordinalOfCardId(idOf(north))).toBe(north);
+    expect(model.ordinalOfCardId(idOf(alt))).toBeUndefined();
+  });
+
   it('replay scripts: prefix through the fork card, own commands after', () => {
     const model = bootedModel();
     const took = play(model, 'take lamp');

@@ -120,13 +120,17 @@ export async function runTranscript(
 function openingResult(
   opening: Assertion[],
   engine: GameEngine,
-  firstCommandOutput: string
+  firstCommandOutput: string,
+  openingCardId?: string
 ): CommandResult {
+  // The row names the opening card (ADR-357 D9) so a consumer lands on it
+  // without an index rule — this row is result 0 whenever it exists.
   const command: TranscriptCommand = {
     lineNumber: 0,
     input: '(opening)',
     expectedOutput: [],
-    assertions: opening
+    assertions: opening,
+    ...(openingCardId !== undefined ? { cardId: openingCardId } : {})
   };
 
   /** Every human-readable string a channel value carries: prose trees via
@@ -282,7 +286,7 @@ async function runAssertion(
               ...(engine.bootChannelValues ?? {}),
             });
       if (openingClaims.length > 0) {
-        record(openingResult(openingClaims, engine, result.actualOutput));
+        record(openingResult(openingClaims, engine, result.actualOutput, transcript.openingCardId));
       }
     }
 

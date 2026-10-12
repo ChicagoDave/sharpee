@@ -440,6 +440,7 @@ export declare function loadAuthorGame(target: string, opts?: {
  * (testing tooling).
  */
 import type { RandomForceSpec } from '@sharpee/core';
+import type { CommandCause } from '@sharpee/ide-protocol';
 import type { CoverageTracker } from './coverage.js';
 /**
  * Directive kinds surviving ADR-294 D4. The control-flow/condition layer
@@ -724,6 +725,14 @@ export interface TranscriptCommand {
     input: string;
     expectedOutput: string[];
     assertions: Assertion[];
+    /**
+     * The id of the tree card this command came from (ADR-357 D9). Set by the
+     * tree walker, which builds a transcript per line from cards that carry
+     * stable ids; a `.transcript` file has no cards and never sets it. Rides
+     * the result so a consumer lands on the card without re-deriving the
+     * walker's command-to-card rule.
+     */
+    cardId?: string;
 }
 /**
  * A fully parsed transcript file
@@ -742,6 +751,12 @@ export interface Transcript {
      * claim about the opening, which is nearly all of them.
      */
     opening?: Assertion[];
+    /**
+     * The id of the tree card whose claims `opening` holds (ADR-357 D9). The
+     * runner puts it on the `(opening)` row it synthesizes, so that row names
+     * its card like every typed command does. Absent for `.transcript` files.
+     */
+    openingCardId?: string;
     goals?: GoalDefinition[];
     comments: string[];
     /**
@@ -845,6 +860,13 @@ export interface CommandResult {
      */
     failure?: string;
     /**
+     * Why the engine refused this command, in the author's terms (UPPS
+     * finding F-15). The runner never fills it: the tree walker attaches it
+     * after joining the turn's events with the story's Reach findings, and the
+     * wire carries it as `command-result.cause`. Failed results only.
+     */
+    cause?: CommandCause;
+    /**
      * The world AFTER this command (ADR-307 R3), captured under
      * `captureWorld`: player location and inventory, each named with a display
      * name and the single token a `[STATE:]` expression resolves back to the
@@ -913,6 +935,14 @@ export interface StoryStateKeys {
      * recognized.
      */
     timerPrefix?: string;
+    /**
+     * Prefix joined with a clause's identity — `<owner-ir-id>[.<trait>].<n>`,
+     * or `story.<n>` — → that clause's firing counter, which the
+     * `[the] <owner> [trait <trait>] clause <n> occurrence = <k>` claim reads
+     * (ADR-356 D2 as amended 2026-10-11). An absent counter is 0. Absent
+     * prefix → the claim is not recognized.
+     */
+    clauseOccurrencePrefix?: string;
 }
 /**
  * Result of a single assertion check
@@ -1310,6 +1340,8 @@ export interface WorldModel {
     getLocation?(entityId: string): string | undefined;
     getContents?(containerId: string): any[];
     getPlayer?(): any;
+    /** Region membership (ADR-149): whether the entity's containing room is in the region. A `location` claim over a region reads this. */
+    isInRegion?(entityId: string, regionId: string): boolean;
     /** World-state lookup — carries the Chord story phase (`story.state` claims). */
     getStateValue?(key: string): unknown;
     /** The Ending the world carries once the story has ended (ADR-347 D2a). */
@@ -1398,7 +1430,10 @@ export declare function checkStateAssertion(assertion: Assertion, world?: WorldM
  * parser, read here and written by `arrange()`); this function owns only
  * what each recognized form MEANS as a claim. The forms:
  *   story.state = value / story.state != value        (the story's phase)
- *   entity.location = value, entity.property = value (and != for both)
+ *   entity.location = value, entity.property = value (and != for both;
+ *     a location whose value names a REGION is membership — the entity's
+ *     room is one of the region's rooms — read through the world's own
+ *     `isInRegion`, as the loader's evaluator reads `is in` — GH #538)
  *   entity.collection contains item / not-contains item
  *   [the] name is state / [the] name is not state     (a Chord entity's own
  *     `states:`, spelled the way Chord spells the condition — GH #355;
@@ -1417,9 +1452,10 @@ export declare function checkStateAssertion(assertion: Assertion, world?: WorldM
  * (a session without a story runtime that declares states) neither form is
  * recognized: `story.state` is then read as the entity form (an entity
  * named `story`, its `state` property) and the Chord-spelled form is not a
- * claim at all. The three shapes the grammar names but the floor does not
- * write (occurrence, topic history, timer position) are not claims either:
- * no read of them is defined here. `emitted` is read by
+ * claim at all. The two shapes the grammar names but the floor does not
+ * write (topic history, timer position) are not claims either: no read of
+ * them is defined here. A clause's occurrence is read when the keys carry
+ * `clauseOccurrencePrefix` (2026-10-11). `emitted` is read by
  * `checkEmittedAssertion`, which has the events this function does not.
  *
  * @param expression - The pin text from a tree-document card or a `[STATE:]` line
@@ -2043,7 +2079,7 @@ export declare function writeReportToFile(result: TestRunResult, outputDir: stri
  *   stream, because records built from a completed result cannot announce a
  *   transcript before it runs.
  */
-import type { RunEvent, RunMode, BudgetUse, ProgressEvent, DerivedBranchEvent, DerivedRunSummaryEvent, RunEventEnvelope } from '@sharpee/ide-protocol';
+import type { RunEvent, RunMode, BudgetUse, ProgressEvent, DerivedBranchEvent, DerivedRunSummaryEvent, RunEventEnvelope, CommandCause } from '@sharpee/ide-protocol';
 /**
  * One derived branch's outcome as the wire carries it (ADR-356 D1 to D3):
  * the `derived-branch` payload without its envelope. `branch-tester`'s
@@ -2069,9 +2105,11 @@ export type StreamableDerivedSummary = Omit<DerivedRunSummaryEvent, keyof RunEve
  * the honest parameter is the set of fields actually used.
  */
 export interface StreamableCommandResult {
+    /** `cardId` is the tree card the command came from (ADR-357 D9); a `.transcript` command has none. */
     command: {
         input: string;
         lineNumber: number;
+        cardId?: string;
     };
     passed: boolean;
     expectedFailure: boolean;
@@ -2097,6 +2135,12 @@ export interface StreamableCommandResult {
      * a result without it emits an event without one.
      */
     failure?: string;
+    /**
+     * Why the engine refused the command (UPPS finding F-15), composed by the
+     * tree walker from the turn's events and the story's Reach findings. The
+     * wire only moves it. Failed results only.
+     */
+    cause?: CommandCause;
     /**
      * The world after this command (R3), captured under `--capture-world`.
      * Carried verbatim; structurally the wire's `WorldSnapshot`.

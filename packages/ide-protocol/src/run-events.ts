@@ -230,6 +230,15 @@ export interface CommandResultEvent extends RunEventEnvelope {
   /** The command was marked `[FAIL: …]` — failure is the expectation. */
   expectedFailure: boolean;
   skipped: boolean;
+  /**
+   * The id of the tree card this result came from (ADR-357 D9): the card
+   * whose command ran, or the opening card for the `(opening)` row. What
+   * lets a consumer land on the failing card without re-deriving the
+   * walker's command-to-card rule, which is off by one whenever the
+   * opening card has claims. Absent for `.transcript` runs, which have no
+   * cards, and when the producer predates the field.
+   */
+  cardId?: string;
   /** Runtime error text when the command threw rather than merely failing. */
   error?: string;
   /**
@@ -590,6 +599,7 @@ export function isCommandResultEvent(value: unknown): value is CommandResultEven
     typeof value.passed === 'boolean' &&
     typeof value.expectedFailure === 'boolean' &&
     typeof value.skipped === 'boolean' &&
+    (value.cardId === undefined || typeof value.cardId === 'string') &&
     (value.error === undefined || typeof value.error === 'string') &&
     (value.actualOutput === undefined || typeof value.actualOutput === 'string') &&
     (value.turn === undefined || typeof value.turn === 'number') &&

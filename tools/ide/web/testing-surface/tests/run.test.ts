@@ -573,10 +573,42 @@ describe('runRowVisitTarget — the run-column click (ADR-357 D8 step 2, AC-4)',
     const rows = runRowsOf(state, [{ id: UNRUN, label: 'den · up', pending: false }]);
     const targets = new Map(rows.map((row) => [row.lineId, runRowVisitTarget(row)]));
     expect(targets.get(MAIN)).toBeUndefined();
-    expect(targets.get(FAILED)).toBe(FAILED);
-    expect(targets.get(ERRORED)).toBe(ERRORED);
+    expect(targets.get(FAILED)).toEqual({ lineId: FAILED });
+    expect(targets.get(ERRORED)).toEqual({ lineId: ERRORED });
     expect(targets.get(BLOCKED)).toBeUndefined();
     expect(targets.get(SKIPPED)).toBeUndefined();
     expect(targets.get(UNRUN)).toBeUndefined();
+  });
+
+  it('a failed row visits the FIRST failing card the wire named, not a later failure and not the line top (D9)', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(FAILED),
+      command(FAILED, { input: '(opening)', line: 0, passed: true, cardId: 'c-open' }),
+      command(FAILED, { passed: false, turn: 2, failure: 'no shed', cardId: 'c-shed' }),
+      command(FAILED, { passed: false, turn: 3, failure: 'no lamp', cardId: 'c-lamp' }),
+      end(FAILED, { status: 'failed', passed: 1, failed: 2 }),
+    ]) foldRunLine(state, raw);
+
+    const result = state.results.get(FAILED)!;
+    expect(result.commands.map((c) => c.cardId)).toEqual(['c-open', 'c-shed', 'c-lamp']);
+    expect(result.firstFailure).toEqual({ where: 'turn 2', message: 'no shed', command: 1, cardId: 'c-shed' });
+    const [row] = runRowsOf(state, []);
+    expect(runRowVisitTarget(row)).toEqual({ lineId: FAILED, cardId: 'c-shed' });
+  });
+
+  it('a failed opening claim lands on the opening card — result 0, the case that broke the index rule (D9)', () => {
+    const state = createRunState();
+    beginRun(state);
+    for (const raw of [
+      start(MAIN),
+      command(MAIN, { input: '(opening)', line: 0, passed: false, failure: 'no banner', cardId: 'c-open' }),
+      command(MAIN, { passed: true, turn: 1, cardId: 'c-boot' }),
+      end(MAIN, { status: 'failed', passed: 1, failed: 1 }),
+    ]) foldRunLine(state, raw);
+
+    const [row] = runRowsOf(state, []);
+    expect(runRowVisitTarget(row)).toEqual({ lineId: MAIN, cardId: 'c-open' });
   });
 });

@@ -30,7 +30,7 @@
  * further turns append (the author keeps playing).
  *
  * Public interface: TreeSessionModel (document, mainLine, files, load, reset,
- *   beginRebindAll, beginRebind, addTurn, hasOpening, cardAt, ordinalOf, roomOf,
+ *   beginRebindAll, beginRebind, addTurn, hasOpening, cardAt, ordinalOf, ordinalOfCardId, roomOf,
  *   isTurnVisible, visibleOrdinals, pathCardsOf, prefixCommandsOf,
  *   ownCommandsOf, lineIds, activeLine, activateLine, lineParentOf,
  *   labelOf, branchPointsOnPath, canBranch, branch, deleteBranch, tailCut,
@@ -318,6 +318,19 @@ export class TreeSessionModel {
 
   ordinalOf(card: TreeCard): number | undefined {
     return this.ordinalByCard.get(card);
+  }
+
+  /**
+   * The ordinal of the card with stable id `cardId` on the ACTIVE path, or
+   * undefined when no visible card carries it (the card was deleted, or sits
+   * on a line that is not in view). What a failure visit lands on once its
+   * line is active (ADR-357 D9).
+   */
+  ordinalOfCardId(cardId: string): number | undefined {
+    for (const ordinal of this.visibleOrdinals()) {
+      if (this.cardByOrdinal.get(ordinal)?.id === cardId) return ordinal;
+    }
+    return undefined;
   }
 
   roomOf(ordinal: number): string | undefined {

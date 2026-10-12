@@ -443,13 +443,15 @@ async function executeForGolden(
  */
 function openingResult(
   opening: Assertion[],
-  engine: GameEngine
+  engine: GameEngine,
+  openingCardId?: string
 ): CommandResult {
   const command: TranscriptCommand = {
     lineNumber: 0,
     input: '(opening)',
     expectedOutput: [],
-    assertions: opening
+    assertions: opening,
+    ...(openingCardId !== undefined ? { cardId: openingCardId } : {})
   };
 
   const assertionResults = opening.map((assertion) =>
@@ -659,7 +661,7 @@ async function runAssertion(
     // ahead of the command that flushed them because that is where they read.
     if (!openingChecked) {
       openingChecked = true;
-      record(openingResult(transcript.opening!, engine));
+      record(openingResult(transcript.opening!, engine, transcript.openingCardId));
     }
 
     record(result);

@@ -132,6 +132,22 @@ describe('per-variant round trips', () => {
     expect(isCommandResultEvent({ ...base, cause: { ...cause, kind: 'cursed' } })).toBe(false);
   });
 
+  it('accepts a command-result with and without a card id, rejecting a non-string one (ADR-357 D9)', () => {
+    const base: CommandResultEvent = {
+      ...envelope,
+      type: 'command-result',
+      file: 'main',
+      line: 0,
+      input: '(opening)',
+      passed: false,
+      expectedFailure: false,
+      skipped: false,
+    };
+    expect(isCommandResultEvent({ ...base, cardId: 'c-open' })).toBe(true);
+    expect(isCommandResultEvent(base)).toBe(true);
+    expect(isCommandResultEvent({ ...base, cardId: 3 })).toBe(false);
+  });
+
   it('accepts a command-result with and without an engine turn, rejecting a non-numeric one', () => {
     const base: CommandResultEvent = {
       ...envelope,

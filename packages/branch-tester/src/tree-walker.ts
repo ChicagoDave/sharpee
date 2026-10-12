@@ -709,6 +709,7 @@ function transcriptOfLine(line: TreeLine, capturedChannels: readonly string[]): 
   const commands: TranscriptCommand[] = [];
   const cardIndexOfCommand: number[] = [];
   let opening: Assertion[] | undefined;
+  let openingCardId: string | undefined;
 
   // Through the END STATE card only (ADR-356 D4): what follows it is never
   // typed — a stopped engine refuses it, and the outcome names the cut-off.
@@ -718,13 +719,20 @@ function transcriptOfLine(line: TreeLine, capturedChannels: readonly string[]): 
     if (card.type === 'opening') {
       const assertions = assertionsOfCard(card, capturedChannels);
       if (assertions.length > 0) opening = assertions;
+      // Named whether or not the card has authored claims: the runner
+      // synthesizes the opening's default claims when it has none, and that
+      // row must name its card too (ADR-357 D9).
+      openingCardId = card.id;
       return;
     }
+    // Every result names its card (ADR-357 D9): the consumer lands on the
+    // card itself rather than re-deriving this loop's command-to-card rule.
     const command: TranscriptCommand = {
       lineNumber: 0,
       input: commandOf(card)!,
       expectedOutput: [],
       assertions: assertionsOfCard(card, capturedChannels),
+      ...(card.id !== undefined ? { cardId: card.id } : {}),
     };
     commands.push(command);
     cardIndexOfCommand.push(cardIndex);
@@ -739,6 +747,7 @@ function transcriptOfLine(line: TreeLine, capturedChannels: readonly string[]): 
       items,
       comments: [],
       ...(opening !== undefined ? { opening } : {}),
+      ...(openingCardId !== undefined ? { openingCardId } : {}),
     },
     cardIndexOfCommand,
   };

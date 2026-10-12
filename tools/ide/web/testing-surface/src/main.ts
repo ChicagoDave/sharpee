@@ -52,7 +52,7 @@ import {
 import { TreeSessionModel, type AuthoringMemento } from './model';
 import { diffTreeFiles, type TreeFiles } from '@sharpee/branch-tester/tree-document';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
-import { beginRun, createRunState, finishRun, foldRunLine } from './run';
+import { beginRun, createRunState, finishRun, foldRunLine, type RunVisitTarget } from './run';
 import { captureBaseline, evaluateStaleness as judgeStaleness, restoreRun, storedRunOf, type StoredRun } from './staleness';
 import { busyLabel } from './busy';
 
@@ -417,8 +417,8 @@ const cards = new CardsView(model, {
   onSelectLine(lineId) {
     void selectLine(lineId);
   },
-  onVisitFailure(lineId) {
-    void visitFailure(lineId);
+  onVisitFailure(target) {
+    void visitFailure(target);
   },
   onRun() {
     // One run at a time, and never during a driver replay — the run reads
@@ -979,12 +979,17 @@ async function selectLine(lineId: string): Promise<void> {
  * first own card for a branch. A click on the line already in view only
  * scrolls. Once D9's card id rides the wire, this lands on the failing card.
  */
-async function visitFailure(lineId: string): Promise<void> {
+/** The run-column click (ADR-357 D8 step 2, D9): make the line live, then
+ *  land on the failing card the wire named; the line's top when it named
+ *  none or the card is no longer on the board. */
+async function visitFailure(target: RunVisitTarget): Promise<void> {
   if (replayActive || driverBusy) return;
+  const { lineId, cardId } = target;
   if (lineId !== model.activeLine) {
     await selectLine(lineId);
     if (model.activeLine !== lineId) return;   // the line no longer exists
   }
+  if (cardId !== undefined && cards.scrollToCard(cardId)) return;
   cards.scrollToLineTop(lineId);
 }
 

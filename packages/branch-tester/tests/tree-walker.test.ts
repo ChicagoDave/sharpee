@@ -248,6 +248,41 @@ describe('runTreeDocument — replay, labels, seams, blocking (ADR-307 D4/D5)', 
     expect(run.authoredCommands).toBe(3);
   });
 
+  it('every result names its card, the (opening) row included, so no index rule is needed (ADR-357 D9)', async () => {
+    const harness = stubHarness();
+    const run = await runTreeDocument(
+      doc([
+        { ...opening({ contains: ['Fernhill Manor'] }), id: 'c-open' },
+        { ...okBoot(), id: 'c-boot' },
+        { ...okTurn('north'), id: 'c-north' },
+        { ...okTurn('take lamp'), id: 'c-lamp' },
+      ]),
+      harness.load,
+    );
+
+    const rows = run.lines[0].result!.commands.map((r) => [r.command.input, r.command.cardId]);
+    // The opening row is result 0 and names the opening card — the case that
+    // put the exported index rule off by one on the main line.
+    expect(rows).toEqual([
+      ['(opening)', 'c-open'],
+      ['look', 'c-boot'],
+      ['north', 'c-north'],
+      ['take lamp', 'c-lamp'],
+    ]);
+  });
+
+  it('a card without an id yields a result without a cardId, and an opening without claims names no card', async () => {
+    const harness = stubHarness();
+    const run = await runTreeDocument(
+      doc([opening(), okBoot(), okTurn('north')]),
+      harness.load,
+    );
+
+    const rows = run.lines[0].result!.commands;
+    expect(rows.map((r) => r.command.input)).toEqual(['look', 'north']);
+    expect(rows.every((r) => r.command.cardId === undefined)).toBe(true);
+  });
+
   it('boots a branch fresh, replays its prefix verbatim, and labels it fork-room · command', async () => {
     const harness = stubHarness({ movesTo: { north: 'Gravel Drive' } });
     const run = await runTreeDocument(
