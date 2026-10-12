@@ -108,7 +108,7 @@ create the courier ship
   a thing, scenery
   in the Loading Dock
   aka ship, courier, sparrow, ramp, skids
-  states: buttoned, boarding
+  states: buttoned, boarding, underway
 
   A snub-nosed UPPS courier, the Sparrow, dented along one flank where
   some asteroid got the last word. Its boarding ramp is drawn up, and
@@ -143,7 +143,8 @@ create the Hold
   a room
   aka cargo hold, sparrow's hold, cargo bay
   down to the Loading Dock
-  north is blocked: hatch-latched
+  north to the Cockpit
+  north is blocked while the cockpit hatch is dogged: hatch-latched
 
   The Sparrow's hold, a steel room no wider than a corridor, ribbed
   with cargo netting. A suit locker stands bolted to the aft bulkhead,
@@ -179,13 +180,80 @@ create the space suit
   A pressure suit in UPPS grey, the wing-and-planet badge on the
   shoulder. The helmet ring is scuffed from a hundred dockings.
 
+  after the player wearing, once
+    change the cockpit hatch to free
+    phrase preflight-complete
+  end after
+
 create the cockpit hatch
   a thing, scenery
   in the Hold
-  aka hatch, ladder, cockpit
+  aka hatch, ladder
+  states: dogged, free
 
   A round hatch at the top of the ladder, dogged shut with four
   latches. A placard beneath it reads: PRE-FLIGHT INCOMPLETE.
+
+## Room 4 — pre-flight, and the cockpit beyond the hatch.
+
+create the Cockpit
+  a room
+  aka flight deck, bridge, nose
+  south to the Hold
+
+  The Sparrow's nose, two steps across. A flight couch faces a
+  console of switches and a single dark viewport, and the ladder
+  drops back through the hatch to the hold. Everything in here is
+  worn to bare metal by somebody's gloves.
+
+  after the player entering, once
+    phrase cockpit-arrival
+  end after
+
+create the flight couch
+  a thing, enterable, scenery
+  in the Cockpit
+  aka couch, seat, pilot seat, chair, harness
+
+  A pilot's couch with a five-point harness, the padding cracked
+  along one arm where a hundred shifts have rested the same elbow.
+
+create the console
+  a thing, scenery
+  in the Cockpit
+  aka controls, switches, panel, instruments
+
+  Rows of guarded switches, most of them taped over with a crew's
+  handwriting. One sits apart under a red cover, labelled FOLD.
+
+create the fold drive
+  a thing, switchable, scenery
+  in the Cockpit
+  aka drive, fold, fold switch, red switch, switch
+
+  The red-covered switch that wakes the Sparrow's fold drive. Route 7
+  runs on it: Ceres is a long way to go the slow way.
+
+  on the player switching_on
+    the player must be in the flight couch: not-strapped-in
+  end on
+
+  after the player switching_on, once
+    change the courier ship to underway
+    phrase fold-begins
+  end after
+
+  on the player switching_off
+    refuse fold-no-abort
+  end on
+
+create the viewport
+  a thing, scenery
+  in the Cockpit
+  aka port, window, glass
+
+  A single pane of layered glass, dark with the hangar's shadow and
+  scored by a decade of dust at speed.
 
 define phrase dock-sealed
   The loading dock door stays shut until your shift is cleared to
@@ -231,4 +299,32 @@ end phrase
 
 define phrase hatch-latched
   The cockpit hatch is dogged shut, and the placard says why.
+end phrase
+
+define phrase preflight-complete
+  The suit seals at the neck with a click you feel in your teeth. Up
+  the ladder, four latches knock back one after another, and the
+  placard flips over: PRE-FLIGHT COMPLETE.
+end phrase
+
+define phrase cockpit-arrival
+  Your helmet brushes the overhead. Somebody has taped a photograph
+  of a dog to the edge of the console.
+end phrase
+
+define phrase not-strapped-in
+  The Sparrow will not fold with its pilot standing up. Get in the
+  couch.
+end phrase
+
+define phrase fold-begins
+  You flip up the red cover and throw the switch. The console lights
+  from left to right, the hull hums up through the couch into your
+  spine, and outside the viewport the hangar folds away like a
+  letter.
+end phrase
+
+define phrase fold-no-abort
+  Once the fold drive is lit there is no switching it off. The
+  Sparrow goes where the mail goes.
 end phrase

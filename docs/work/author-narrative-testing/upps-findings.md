@@ -200,3 +200,27 @@ That is the World tab's Reach view, under "Things play can never hold" (`tools/i
 **Observed** on room 3's seed `J` (the route card's giving refusal removed). The robot's reaction is `after the player giving, once` with three statements each guarded `when the loader robot has the mail bundle`. Giving the card first is accepted (nothing refuses it), the clause fires, every guard is false, nothing is spoken or changed, and the clause's one lifetime firing is spent: giving the bundle afterwards prints "You give the mail bundle to the loader robot." and nothing else; the ramp never comes down. The occurrence is bumped at validate time before the body runs (`packages/story-loader/src/runtime/on-clauses.ts:320`, `postValidate` writing the occurrence), so a firing counts whether or not any statement acted. With the head-`while` form the gate sits the clause out before the count (line 311), which is the behavior an author wants here, but that form reads the pre-commit world (F-21), so neither form expresses "once, the first time the guard holds".
 
 **Belongs to**: the language. Either `, once` should count a firing only when some statement ran, or there should be a way to say the condition on the head that is evaluated after the action commits. Until then, an `after … , once` whose effects are all guarded is safe only when nothing else can trigger the clause first; room 3 relies on the satchel's and the card's refusals for that, which is exactly what `J` removes. Nothing reports it: the compiler passes it, the derived tier skips the branch (F-22), and only a card that gives the card first and then the bundle shows the ramp staying up.
+
+## F-24: a two-word action head is spelled with the action id's underscore, and nothing says so (2026-10-12)
+
+**Observed** writing room 4's fold drive. The natural head `on the player switching on` fails with `analysis.head-actor`: "`the player switching` is not the player or a character. A head is `on <who acts> <action>`: the actor first, then the action word (here `on`)". The parser takes the last head word as the gerund (`packages/chord/src/parser.ts:6300`), and the loader builds the action id from that word directly (`packages/story-loader/src/runtime/on-clauses.ts:118`, `if.action.${action}`), so the working spelling is `on the player switching_on`, the id's own suffix. The guide's "what a clause can bind" page says the verb "is a single word in its -ing form" and shows no two-word verb; the only example of the spelling in the repository is a branch-tester fixture. Room 4 seed `M` records the diagnostic.
+
+**Belongs to**: the language and the guide. Either the head should accept the words the cookbook teaches the player to type (`switching on`, `switching off`, `taking off`), or the diagnostic should say "did you mean `switching_on`" and the guide should list the two-word verbs.
+
+## F-25: the "Rooms entered" count includes rooms the derived tier placed the player in (2026-10-12)
+
+**Observed** on room 4's seeds `B` and `G`, where the hatch is never freed and the tree's `north` card fails every time: the summary still reads `Rooms entered: 4 / 4`. The devkit merges the derived run's rooms into the tree's before counting (`packages/devkit/src/commands/test-derived.ts:135`), and the derived tier exercises the fold drive by placing the player in the Cockpit, so the room counts as entered whether or not any card can reach it. The same line reported room 3's seeds `A`, `B`, `E`, `J` as `Rooms entered: 2 / 3` only because room 3 had no derived row that placed the player in the Hold.
+
+**Belongs to**: the CLI report. The reachability figure an author reads should come from the tree alone, or the two sources should be shown apart ("4 / 4, 3 by the tree"), since a room only the derived tier can enter is exactly the kind of room O-1's falsifier describes.
+
+## F-26: an `on` reaction that speaks a phrase drops the standard action's line (2026-10-12)
+
+**Observed** on room 4's seed `C`, the suit's reaction written `on the player wearing, once … end on` instead of `after`: the hatch is freed and the pre-flight phrase spoken, but "You put on the space suit." is no longer printed. Room 3's write saw the same with the robot (an `on` form spoke `robot-loads` and dropped "You give the mail bundle to the loader robot.") and did not file it. Only a card that claims the standard line sees it; the compiler and the derived tier both pass the form.
+
+**Belongs to**: the loader. An `on` clause that neither refuses nor requires lets the action commit, and its `phrase` should sit beside the action's own report rather than replace it, or the guide should say that a phrase in an `on` body is the action's whole report.
+
+## F-27: the negated-requirement gate reads only a leading `not` (2026-10-12)
+
+**Observed** on room 4's seed `K`: `refuse when the player is not in the flight couch: not-strapped-in` compiles clean and behaves exactly as `the player must be in the flight couch: not-strapped-in`. The guide's refusals page says a negated refusal is flagged `analysis.negated-requirement`; the gate tests the condition node's kind for a top-level `not` (`packages/chord/src/analyzer.ts:6412`), so predicate-level negation (`is not`, `has not`, `does not wear`) passes. The guide's own conditions page says every predicate takes `not` after `is`, which is the form the gate misses.
+
+**Belongs to**: the compiler. Either the gate should read a negated predicate as well, or the guide should narrow its claim to `refuse when not …`.

@@ -153,6 +153,42 @@ Room 3's tree was recorded on 2026-10-12, later the same day (twelve cards after
 
 Every tree catch names the turn, never the line (F-8), and the summary line names only the first failing card (F-11). `A` and `B` read identically in the tree (a thing that cannot receive, and a guard that never holds); `E` and `J` differ from them only by which card fails first. Before the tree existed, only `G` was caught, and the four seeds that keep the player out of the hold (`A`, `B`, `E`, `J`) reported `Rooms entered: 2 / 3` exactly as the correct story did (F-16).
 
+## Room 4 catalog
+
+Written and seeded 2026-10-12 (session 4b14c1) in `branch-stories/upps/seeded/room-04/`, `TEST-004-A` to `V` plus `Z`; letter, error and expected catch in that folder's `README.md`. Room 4 is the Cockpit, the Sparrow's nose, reached by `north` from the Hold once the player wears the space suit: the suit's `after the player wearing, once` changes the hatch from `dogged` to `free`, which lifts the `while` on the Hold's `north`. It adds the constructs rooms 1 to 3 lacked: a reaction on wearing, a `change` on one entity that opens another room's exit, an `enterable` scenery couch, a `switchable` scenery drive, a `must` requirement in an `on` body, a two-word action head spelled `switching_on`, and a bare `refuse` on `switching_off`. Every file was compiled on 2026-10-12; the gate-clean ones were run against the tree in scratch copies, and `I` and `N` were also played to capture their refusal lines.
+
+Four findings came out of the write and the seeds: a two-word head must be spelled with the action id's underscore and nothing says so (F-24); the "Rooms entered" count includes rooms the derived tier placed the player in (F-25); an `on` reaction that speaks a phrase drops the standard line (F-26, seen in room 3 and recorded here); and the negated-requirement gate reads only a leading `not` (F-27). The one gate catch during the write, `undogged` refused as a negated state (`analysis.negated-state`), was the compiler working as the guide says.
+
+### Caught by the compiler (5)
+
+`D`, `H`, `L`, `M`, `S`. The two missing states and the misspelling carry a code and a `file:line:col`, `H` with "did you mean"; `L` is the `after`-body refusal the guide promises; `M` names the actor fragment and the stray action word `on` but never the spelling it wanted (F-24).
+
+### Compiles clean, and is not an error (4)
+
+`E`, `T`, `K`, `O`. An exit written on one side makes its return (`E`, `T`, as the earlier rooms' pairs); the predicate-negated refusal behaves exactly as the `must` line (`K`, which the guide says is flagged — F-27); and `, once` is redundant on a reaction whose action can never recur (`O`).
+
+### Compiles clean, and something else must catch it (14)
+
+Room 4's ten cards were added to the tree on 2026-10-12 (listed in the seed folder's `README.md`), and the existing `wear suit` card gained the pre-flight claim. The correct story reports 35 cards passing, 54 assertions passing, rooms 4 of 4.
+
+| Error | What catches it today |
+|---|---|
+| `A`: `wear` for `wearing` | the runner at load, exit 3, with the line (F-18): `compose --check` passed it |
+| `B`: the hatch `change` removed | the tree, on `north` after the suit: 9 cards failing; `Rooms entered: 4 / 4` regardless (F-25) |
+| `C`: the suit's reaction as `on` | the tree, on `wear suit`: the standard line is gone (F-26), 1 card failing |
+| `F`: the blocked `north` removed | the tree, on `north` before the suit: 6 cards failing |
+| `G`: the `while` dropped | the tree, exactly as `B`: 9 cards failing |
+| `I`: the couch not enterable | the tree, on `enter couch`, 4 cards failing |
+| `J`: the `must` removed | the tree, on the standing `switch on drive`, 2 cards failing |
+| `N`: the drive not switchable | the tree, on the seated `switch on drive`, 2 cards failing; the derived tier's `after switching_on` row also fails |
+| `P`: the switching-off refusal removed | the tree, on `switch off drive`, 2 cards failing |
+| `Q`: the fold phrase removed | the tree, on the seated `switch on drive`, 1 card failing |
+| `R`: the ship `change` removed | the tree's state claim on the seated `switch on drive` ("boarding", expected "underway"), 1 card failing |
+| `U`: the viewport in the Hold | the tree, on `examine viewport`, 1 card failing |
+| `V`: the reaction on the wrong owner | the tree, on `wear suit`, 10 cards failing; and the derived tier, with a line: "suit locker · after wearing, once — the standard action refused first: if.action.wearing.not_wearable (upps.story:175)" |
+
+`V` is the first seed in four rooms that a tool catches at its source line without a card: the derived tier synthesized `wear the suit locker`, the standard action refused it, and the report says which clause and which line. `B` and `G` read identically in the tree; `R` is the first catch by a state claim, which is the only thing that sees a `change` with no prose of its own.
+
 ## What this already says about O-1
 
 Of the rows that compile clean:
@@ -163,3 +199,5 @@ Of the rows that compile clean:
 Each is a falsifier O-1 names: "caught without pointing at its cause", and missed.
 
 Room 2 (2026-10-12) adds, of its seven clean-compiling rows: six caught by the tree, naming the turn (F-8), three of them indistinguishable from one another (`O`, `R`, `V`) without Reach; one caught at load with a line the compiler already had (F-18); and one claim that passes when it should not (F-19). None is missed outright once the tree exists; before the tree exists, `R` and `V` are invisible to `sharpee test` (F-16).
+
+Room 4 (2026-10-12) adds, of its fourteen clean-compiling rows: twelve caught by the tree, naming the turn (F-8), two of them identical in the tree (`B`, `G`); one caught at load with a line (`A`, F-18); and one caught by the derived tier at its source line (`V`), the first in four rooms. One catch needs a state claim (`R`), which no tab gesture records on its own. One row the guide says the compiler flags is passed (`K`, F-27), and the reachability line is wrong in every row where the Cockpit is unreachable (F-25).
