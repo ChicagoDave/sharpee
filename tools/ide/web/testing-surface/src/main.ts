@@ -52,7 +52,8 @@ import {
 import { TreeSessionModel, type AuthoringMemento } from './model';
 import { diffTreeFiles, type TreeFiles } from '@sharpee/branch-tester/tree-document';
 import { showListPicker, showStatePicker, type StateFact } from './picker';
-import { beginRun, createRunState, finishRun, foldRunLine, resetRun } from './run';
+import { beginRun, createRunState, finishRun, foldRunLine } from './run';
+import { captureBaseline, evaluateStaleness as judgeStaleness, restoreRun, storedRunOf, type StoredRun } from './staleness';
 import { busyLabel } from './busy';
 
 /** One world-digest entity as the feed carries it. */
@@ -98,7 +99,18 @@ interface BootSession {
     active?: string;
     dialogs?: [string, DialogOutcome][];
     collapsed?: string[];
+    /** The last run and its baseline (ADR-357 D11), restored on boot and
+     *  judged against the tree and build this page boots with. Opaque to
+     *  the host; `staleness.ts` reads it. */
+    lastRun?: unknown;
   };
+  /**
+   * The host's current build id (ADR-357 D11): a hash over the story's
+   * source files and the CLI the host spawns. Compared with the baseline's
+   * to judge staleness; absent when the host computes none, and then no
+   * result is ever stale by build.
+   */
+  build?: string;
   /** The story id (the document's `story` field for a fresh tree). */
   story?: string;
   /** The pinned master seed (D5). */
@@ -115,6 +127,15 @@ interface DeliverShim {
   runLine?(text: string): void;
   /** The run process exited; `ok` false with no run-end is a pipeline death. */
   runExit?(ok: boolean, note?: string): void;
+  /**
+   * The host is about to spawn the run it was asked for, and this is the
+   * build id it computed first (ADR-357 D11). Becomes the baseline's build
+   * id; a host that never calls this leaves the baseline with the id the
+   * page knew at the click.
+   */
+  runStart?(build: string): void;
+  /** The host's current build id changed — a story source file was saved. */
+  buildChanged?(build: string): void;
 }
 
 const surfaceWindow = window as unknown as {
@@ -143,6 +164,8 @@ let bootRecordOrdinal: number | undefined;
 const regionByRoom: Record<string, string> = bootSession?.regions ?? {};
 /** Collapsed region-group keys (view-state ephemera, D7). */
 const collapsedRegions = new Set<string>(bootSession?.view?.collapsed ?? []);
+/** The host's current build id (ADR-357 D11); refreshed on every source save. */
+let currentBuild: string | undefined = bootSession?.build;
 
 /** The line newly delivered visible turns fold into. */
 let currentLine = model.mainLine;
@@ -403,6 +426,10 @@ const cards = new CardsView(model, {
     // writing.
     if (runState.inFlight || driverBusy || replayActive) return;
     beginRun(runState);
+    // The baseline (ADR-357 D11): what this run runs against. The build id
+    // is the one the page knows now; the host overwrites it through
+    // `runStart` with the id it hashes just before the spawn.
+    runState.baseline = captureBaseline(model, currentBuild);
     cards.render();
     postToBridge({ run: true });
   },
@@ -455,8 +482,31 @@ function deliverRunLine(text: string): void {
 
 function deliverRunExit(ok: boolean, note?: string): void {
   finishRun(runState, ok, note);
+  // The finished run is judged at once (the author may have edited while
+  // it ran) and stored in the sidecar, so a reload brings it back (D11).
+  evaluateStaleness();
   cards.render();
   renderOutline();
+  postState();
+}
+
+/** The host hashed the build it is about to run (D11): that id is the baseline's. */
+function deliverRunStart(build: string): void {
+  currentBuild = build;
+  if (runState.baseline !== undefined) runState.baseline.build = build;
+}
+
+/** A story source file was saved (D11): results may now describe an older story. */
+function deliverBuildChanged(build: string): void {
+  currentBuild = build;
+  evaluateStaleness();
+  cards.render();
+  renderOutline();
+}
+
+/** Re-judge the run column against the tree and build now in front of the author (D11). */
+function evaluateStaleness(): void {
+  judgeStaleness(runState, model, currentBuild);
 }
 
 /**
@@ -480,9 +530,10 @@ function postToBridge(payload: Record<string, unknown>): void {
  * changed — the segment files whose bytes differ, the names to remove, the
  * manifest only when it changed (ADR-355 AC-1: an edit to one run of cards
  * is one file's diff) — and the view-state sidecar (D7). A change to the
- * suite resets the run column — its results describe a tree that no longer
- * exists. A refused tree write-locks the session (AC-4: an older writer
- * must never clobber a newer tree).
+ * suite re-judges the run column (ADR-357 D11): a result whose line moved
+ * goes stale and stays visible; it is never cleared. A refused tree
+ * write-locks the session (AC-4: an older writer must never clobber a
+ * newer tree).
  */
 function update(): void {
   if (!driverBusy) {
@@ -491,7 +542,7 @@ function update(): void {
     if (Object.keys(written).length > 0 || removed.length > 0) {
       lastTreeFiles = files;
       if (!documentWriteLocked) postToBridge({ tree: { written, removed } });
-      if (!runState.inFlight) resetRun(runState);
+      evaluateStaleness();
     }
     cards.render();
     renderOutline();
@@ -506,14 +557,23 @@ function update(): void {
  *  collapsed region groups — session ephemera only; everything else lives
  *  in the document. */
 function postState(): void {
+  // The last finished run rides the sidecar too (ADR-357 D11): verdicts,
+  // failures and the baseline, never passing commands. While a run is in
+  // flight the previous stored run is kept as it was.
+  const lastRun = storedRunOf(runState) ?? lastStoredRun;
+  lastStoredRun = lastRun;
   postToBridge({
     state: {
       active: model.activeLine,
       dialogs: [...dialogOutcomes],
       collapsed: [...collapsedRegions],
+      ...(lastRun !== undefined ? { lastRun } : {}),
     },
   });
 }
+
+/** The last run the sidecar holds, carried across posts made mid-run. */
+let lastStoredRun: StoredRun | undefined;
 
 // ── dialogs (D7): record as the author plays, drive under replay ──────────
 
@@ -1026,6 +1086,8 @@ surfaceWindow.__sharpeeTestingSurface = {
   deliver,
   runLine: deliverRunLine,
   runExit: deliverRunExit,
+  runStart: deliverRunStart,
+  buildChanged: deliverBuildChanged,
 };
 
 cards.ensureLayout();
@@ -1055,6 +1117,13 @@ if (admission.document) {
   currentLine = model.mainLine;
   dialogOutcomes = new Map(bootSession?.view?.dialogs ?? []);
   loadedDocument = true;
+  // The last run survives the reload (ADR-357 D11): restored from the
+  // sidecar and judged against this tree and build. A sidecar that does not
+  // read as a stored run restores nothing — unknown, shown as no result.
+  if (restoreRun(runState, bootSession?.view?.lastRun)) {
+    lastStoredRun = storedRunOf(runState);
+    evaluateStaleness();
+  }
 }
 // AC-4 / GH #540: a refused tree — newer than this build reads, or pinned at
 // a seed the engine did not boot at — is named and never written; the

@@ -309,6 +309,9 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
         if let viewState = sessionStore.viewState { session["view"] = viewState }
         if let policy { session["policy"] = policy }
         if !regionByRoom.isEmpty { session["regions"] = regionByRoom }
+        // The current build id (ADR-357 D11): the page judges the run it
+        // restores from the sidecar against it.
+        if let build = currentBuildIdentity() { session["build"] = build }
         let sessionJSON = (try? JSONSerialization.data(withJSONObject: session))
             .flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
 
@@ -418,6 +421,10 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
             relayRunExit(ok: false, note: "A document could not be saved, so the run did not start.")
             return
         }
+        // The build id BEFORE the spawn (ADR-357 D11): it becomes the run's
+        // baseline. A save between here and the spawn then marks the result
+        // stale, never current — the safe direction.
+        if let build = currentBuildIdentity() { relayBuild(build, entry: "runStart") }
         if let executable = sharpeeExecutableOverride {
             // Through `env node`, not exec'd directly: a freshly compiled
             // dist/cli.js carries no execute bit (the tab's real-path suite
@@ -429,6 +436,37 @@ final class TestingSurfaceViewController: NSViewController, WKScriptMessageHandl
                              environment: ShellEnvironment.buildEnvironment())
         } else {
             testRunner.runTests(storyFile: storyFile)
+        }
+    }
+
+    /// The build id for the story the surface is wired to (ADR-357 D11): its
+    /// source files under the project root and the CLI a run would spawn.
+    /// nil with no story wired or no source file to hash.
+    func currentBuildIdentity() -> String? {
+        guard let storyFile else { return nil }
+        let executable = sharpeeExecutableOverride ?? ComposeRunner.resolveSharpee(near: storyFile)
+        return TestingBuildIdentity.compute(projectRoot: storyFile.deletingLastPathComponent(),
+                                            executable: executable)
+    }
+
+    /// A story source file was saved (ADR-357 D11): hand the page the build
+    /// id it now has, so its last run is re-judged against it.
+    func noteSourceSaved() {
+        guard let build = currentBuildIdentity() else { return }
+        relayBuild(build, entry: "buildChanged")
+    }
+
+    /// Hands the page a build id through one of its two build entries,
+    /// `runStart` or `buildChanged`.
+    private func relayBuild(_ build: String, entry: String) {
+        guard let data = try? JSONSerialization.data(withJSONObject: build, options: .fragmentsAllowed),
+              let literal = String(data: data, encoding: .utf8) else { return }
+        // The call's own value is void; `; true` keeps WebKit from reporting an
+        // unsupported result type as an error for a call that ran.
+        let script = "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.\(entry) && window.__sharpeeTestingSurface.\(entry)(\(literal)); true"
+        Task {
+            do { _ = try await evaluateInSurface(script) }
+            catch { NSLog("[testing-surface] %@ not delivered: %@", entry, String(describing: error)) }
         }
     }
 

@@ -11,8 +11,8 @@
  * - `fail`      a claim failed, or the line errored
  * - `unreached` the run tried and could not get there — a finding
  * - `stale`     the result describes a tree or build that has since changed
- *               (ADR-357 D11; nothing produces it until the staleness
- *               contract lands)
+ *               (ADR-357 D11; `staleness.ts` decides, `run.ts` carries the
+ *               flag on the result)
  * - `none`      no result: never run, skipped, or added since the run —
  *               unknown, not a finding
  *
@@ -41,6 +41,10 @@ const SEVERITY: readonly LineVerdict[] = ['fail', 'unreached', 'stale', 'none', 
  */
 export function verdictOfResult(result: TranscriptRunResult | undefined): LineVerdict {
   if (result === undefined) return 'none';
+  // A result the tree or build has moved out from under is unverified
+  // whatever it said (ADR-357 D11) — the tint says "edited since", not pass
+  // or fail; the run column still shows what it said.
+  if (result.stale) return 'stale';
   switch (result.status) {
     case 'passed':
       return 'pass';

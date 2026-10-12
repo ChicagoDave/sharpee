@@ -130,6 +130,7 @@
   var SEVERITY = ["fail", "unreached", "stale", "none", "pass"];
   function verdictOfResult(result) {
     if (result === void 0) return "none";
+    if (result.stale) return "stale";
     switch (result.status) {
       case "passed":
         return "pass";
@@ -1084,6 +1085,8 @@
     delete state.derivedSummary;
     delete state.tally;
     delete state.note;
+    delete state.baseline;
+    delete state.derivedStale;
   }
   function stemOf(file) {
     const base = file.split("/").at(-1) ?? file;
@@ -1235,17 +1238,6 @@
       default:
         return;
     }
-  }
-  function resetRun(state) {
-    state.inFlight = false;
-    state.results.clear();
-    state.labels.clear();
-    state.pendingCommands.clear();
-    state.replaying.clear();
-    state.derived = [];
-    delete state.derivedSummary;
-    delete state.tally;
-    delete state.note;
   }
   function finishRun(state, ok, note) {
     state.inFlight = false;
@@ -1896,7 +1888,7 @@
         note.textContent = run.note;
         results.appendChild(note);
       }
-      if (run.derivedSummary) this.renderCoverageStrip(results, run.derivedSummary);
+      if (run.derivedSummary) this.renderCoverageStrip(results, run.derivedSummary, run.derivedStale === true);
       if (run.derived.length > 0) {
         const tally = [...run.results.values()];
         const passing = tally.filter((result) => result.status === "passed").length;
@@ -2003,25 +1995,28 @@
         const bootLook = bootLookIndex(result.commands, hasBootCard(entry.lineId));
         const failure = result.firstFailure;
         const failureText = failure === void 0 ? void 0 : firstFailureText(failure, failure.command !== void 0 && failure.command === bootLook);
+        const staleClass = result.stale ? " ts-stale" : "";
+        const staleNote = result.stale ? "edited since this run \u2014 unverified" : void 0;
+        const why = (text3) => staleNote === void 0 ? text3 : text3.length > 0 ? `${staleNote} \xB7 ${text3}` : staleNote;
         switch (result.status) {
           case "passed":
-            row("PASS", "ts-pass", label, "");
+            row("PASS", `ts-pass${staleClass}`, label, why(""));
             detail(result, bootLook);
             break;
           case "skipped":
-            row("\u2014", "", label, "no commands \u2014 ran as a skip");
+            row("\u2014", staleClass.trim(), label, why("no commands \u2014 ran as a skip"));
             break;
           case "unreached":
-            row("\u2014", "", label, failureText ?? "blocked by an ancestor");
+            row("\u2014", staleClass.trim(), label, why(failureText ?? "blocked by an ancestor"));
             break;
           default: {
             const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : "";
-            row("FAIL", "ts-fail", label, `${failureText ?? "failed"}${more}`, runRowVisitTarget(entry));
+            row("FAIL", `ts-fail${staleClass}`, label, why(`${failureText ?? "failed"}${more}`), runRowVisitTarget(entry));
             detail(result, bootLook);
           }
         }
       }
-      if (run.derived.length > 0) this.renderDerivedRows(results, run.derived);
+      if (run.derived.length > 0) this.renderDerivedRows(results, run.derived, run.derivedStale === true);
       if (run.tally) {
         const tally = document.createElement("div");
         tally.className = "ts-run-tally";
@@ -2087,13 +2082,19 @@
      * unreached endings by span, the unentered rooms by id. Open by default
      * while a row has gaps; a full row has nothing to open.
      */
-    renderCoverageStrip(results, summary) {
+    renderCoverageStrip(results, summary, stale = false) {
       const strip = document.createElement("div");
       strip.className = "ts-cov";
       const title = document.createElement("div");
       title.className = "ts-cov-title";
       title.textContent = "coverage";
       strip.appendChild(title);
+      if (stale) {
+        const note = document.createElement("div");
+        note.className = "ts-cov-stale";
+        note.textContent = "story rebuilt since this run \u2014 unverified";
+        strip.appendChild(note);
+      }
       const ratioRow = (key, name, numerator, denominator, failed, hasDetail) => {
         const open = hasDetail && !this.closedCoverage.has(key);
         const rowEl = document.createElement("button");
@@ -2225,12 +2226,13 @@
      * each group closed until opened. A SKIPPED row shows its shape and is
      * never styled as a failure (D5a).
      */
-    renderDerivedRows(results, rows) {
+    renderDerivedRows(results, rows, stale = false) {
       const groups = groupDerivedRows(rows);
       const counts = groups.passed > 0 ? [[`${groups.passed} pass`, "ts-count-pass"]] : [];
       if (groups.failed > 0) counts.push([`${groups.failed} \u2717`, "ts-count-fail"]);
       if (groups.errors > 0) counts.push([`${groups.errors} error${groups.errors === 1 ? "" : "s"}`, "ts-count-fail"]);
       if (groups.skipped > 0) counts.push([`${groups.skipped} \u25CC`, "ts-count-skip"]);
+      if (stale) counts.push(["story rebuilt since \u2014 unverified", "ts-count-skip"]);
       results.appendChild(this.sectionHeader(`derived rules \xB7 ${rows.length}`, counts));
       for (const failure of groups.failures) {
         const rowEl = document.createElement("div");
@@ -3585,6 +3587,136 @@
     filter.focus();
   }
 
+  // tools/ide/web/testing-surface/src/staleness.ts
+  function cardFingerprint(card) {
+    const { branches: _branches, continuation: _continuation, ...own } = card;
+    return JSON.stringify(sortKeysDeep2(own));
+  }
+  function captureBaseline(tree, build) {
+    const paths = {};
+    const fingerprints = {};
+    for (const lineId of tree.lineIds()) {
+      const cards2 = tree.pathCardsOf(lineId);
+      paths[lineId] = cards2.map((card, index) => cardIdOf(card, index));
+      cards2.forEach((card, index) => {
+        fingerprints[cardIdOf(card, index)] = cardFingerprint(card);
+      });
+    }
+    return { ...build !== void 0 ? { build } : {}, paths, fingerprints };
+  }
+  function isLineStale(baseline, tree, lineId, currentBuild2) {
+    if (buildDiffers(baseline.build, currentBuild2)) return true;
+    const was = baseline.paths[lineId];
+    if (was === void 0) return false;
+    const cards2 = tree.pathCardsOf(lineId);
+    if (cards2.length !== was.length) return true;
+    for (let index = 0; index < cards2.length; index += 1) {
+      const id = cardIdOf(cards2[index], index);
+      if (id !== was[index]) return true;
+      if (cardFingerprint(cards2[index]) !== baseline.fingerprints[id]) return true;
+    }
+    return false;
+  }
+  function areDerivedStale(baseline, currentBuild2) {
+    return buildDiffers(baseline.build, currentBuild2);
+  }
+  function evaluateStaleness(state, tree, currentBuild2) {
+    const baseline = state.baseline;
+    if (baseline === void 0 || state.inFlight) return false;
+    for (const [lineId, result] of state.results) {
+      if (isLineStale(baseline, tree, lineId, currentBuild2)) result.stale = true;
+      else delete result.stale;
+    }
+    if (areDerivedStale(baseline, currentBuild2)) state.derivedStale = true;
+    else delete state.derivedStale;
+    return true;
+  }
+  function buildDiffers(was, now) {
+    return was !== void 0 && now !== void 0 && was !== now;
+  }
+  function storedRunOf(state) {
+    if (state.inFlight || state.baseline === void 0) return void 0;
+    if (state.results.size === 0 && state.derived.length === 0) return void 0;
+    const lines = [];
+    for (const [id, result] of state.results) {
+      lines.push({
+        id,
+        status: result.status,
+        passed: result.passed,
+        failed: result.failed,
+        ...result.firstFailure !== void 0 ? { firstFailure: result.firstFailure } : {},
+        moreFailures: result.moreFailures,
+        ...result.label !== void 0 ? { label: result.label } : {}
+      });
+    }
+    return {
+      version: 1,
+      baseline: state.baseline,
+      lines,
+      derived: state.derived.filter((row) => row.status === "failed" || row.status === "error"),
+      ...state.derivedSummary !== void 0 ? { derivedSummary: state.derivedSummary } : {}
+    };
+  }
+  function restoreRun(state, stored) {
+    if (!isStoredRun(stored)) return false;
+    state.inFlight = false;
+    state.results.clear();
+    state.labels.clear();
+    state.pendingCommands.clear();
+    state.replaying.clear();
+    for (const line of stored.lines) {
+      state.results.set(line.id, {
+        status: line.status,
+        passed: line.passed,
+        failed: line.failed,
+        commands: [],
+        ...line.firstFailure !== void 0 ? { firstFailure: line.firstFailure } : {},
+        moreFailures: line.moreFailures,
+        ...line.label !== void 0 ? { label: line.label } : {}
+      });
+      if (line.label !== void 0) state.labels.set(line.id, line.label);
+    }
+    state.derived = [...stored.derived];
+    if (stored.derivedSummary !== void 0) state.derivedSummary = stored.derivedSummary;
+    else delete state.derivedSummary;
+    state.baseline = stored.baseline;
+    delete state.tally;
+    delete state.note;
+    return true;
+  }
+  var LINE_STATUSES = /* @__PURE__ */ new Set(["passed", "failed", "error", "unreached", "skipped"]);
+  function isStoredRun(value) {
+    if (typeof value !== "object" || value === null) return false;
+    const run = value;
+    if (run.version !== 1) return false;
+    const baseline = run.baseline;
+    if (typeof baseline !== "object" || baseline === null) return false;
+    if (typeof baseline.paths !== "object" || baseline.paths === null) return false;
+    if (typeof baseline.fingerprints !== "object" || baseline.fingerprints === null) return false;
+    if (baseline.build !== void 0 && typeof baseline.build !== "string") return false;
+    if (!Array.isArray(run.lines) || !Array.isArray(run.derived)) return false;
+    return run.lines.every((line) => {
+      if (typeof line !== "object" || line === null) return false;
+      const entry = line;
+      return typeof entry.id === "string" && typeof entry.status === "string" && LINE_STATUSES.has(entry.status) && typeof entry.passed === "number" && typeof entry.failed === "number" && typeof entry.moreFailures === "number";
+    });
+  }
+  function cardIdOf(card, index) {
+    return card.id ?? `#${index}`;
+  }
+  function sortKeysDeep2(value) {
+    if (Array.isArray(value)) return value.map(sortKeysDeep2);
+    if (typeof value === "object" && value !== null) {
+      const sorted = {};
+      for (const key of Object.keys(value).sort()) {
+        const entry = value[key];
+        if (entry !== void 0) sorted[key] = sortKeysDeep2(entry);
+      }
+      return sorted;
+    }
+    return value;
+  }
+
   // tools/ide/web/testing-surface/src/busy.ts
   function busyLabel(kind, done, total) {
     const verb = kind === "restore" ? "Restoring session" : "Replaying line";
@@ -3604,6 +3736,7 @@
   var bootRecordOrdinal;
   var regionByRoom = bootSession?.regions ?? {};
   var collapsedRegions = new Set(bootSession?.view?.collapsed ?? []);
+  var currentBuild = bootSession?.build;
   var currentLine = model.mainLine;
   var dialogOutcomes = /* @__PURE__ */ new Map();
   var dropBeforeFence = false;
@@ -3779,6 +3912,7 @@
     onRun() {
       if (runState.inFlight || driverBusy || replayActive) return;
       beginRun(runState);
+      runState.baseline = captureBaseline(model, currentBuild);
       cards.render();
       postToBridge({ run: true });
     },
@@ -3816,8 +3950,23 @@
   }
   function deliverRunExit(ok, note) {
     finishRun(runState, ok, note);
+    evaluateStaleness2();
     cards.render();
     renderOutline();
+    postState();
+  }
+  function deliverRunStart(build) {
+    currentBuild = build;
+    if (runState.baseline !== void 0) runState.baseline.build = build;
+  }
+  function deliverBuildChanged(build) {
+    currentBuild = build;
+    evaluateStaleness2();
+    cards.render();
+    renderOutline();
+  }
+  function evaluateStaleness2() {
+    evaluateStaleness(runState, model, currentBuild);
   }
   function trace(what) {
     postToHost("testingConsole", "driver: " + what);
@@ -3832,7 +3981,7 @@
       if (Object.keys(written).length > 0 || removed.length > 0) {
         lastTreeFiles = files;
         if (!documentWriteLocked) postToBridge({ tree: { written, removed } });
-        if (!runState.inFlight) resetRun(runState);
+        evaluateStaleness2();
       }
       cards.render();
       renderOutline();
@@ -3843,14 +3992,18 @@
     }
   }
   function postState() {
+    const lastRun = storedRunOf(runState) ?? lastStoredRun;
+    lastStoredRun = lastRun;
     postToBridge({
       state: {
         active: model.activeLine,
         dialogs: [...dialogOutcomes],
-        collapsed: [...collapsedRegions]
+        collapsed: [...collapsedRegions],
+        ...lastRun !== void 0 ? { lastRun } : {}
       }
     });
   }
+  var lastStoredRun;
   var pendingDialogOutcome = null;
   function installDialogHooks() {
     const saveDialog = document.getElementById("save-dialog");
@@ -4218,7 +4371,9 @@
   surfaceWindow.__sharpeeTestingSurface = {
     deliver,
     runLine: deliverRunLine,
-    runExit: deliverRunExit
+    runExit: deliverRunExit,
+    runStart: deliverRunStart,
+    buildChanged: deliverBuildChanged
   };
   cards.ensureLayout();
   attachOutline();
@@ -4238,6 +4393,10 @@
     currentLine = model.mainLine;
     dialogOutcomes = new Map(bootSession?.view?.dialogs ?? []);
     loadedDocument = true;
+    if (restoreRun(runState, bootSession?.view?.lastRun)) {
+      lastStoredRun = storedRunOf(runState);
+      evaluateStaleness2();
+    }
   }
   if (admission.writeLocked) documentWriteLocked = true;
   if (admission.notice) cards.setNotice(admission.notice);

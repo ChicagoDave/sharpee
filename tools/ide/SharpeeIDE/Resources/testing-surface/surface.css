@@ -476,6 +476,9 @@ body.ts-active .sharpee-window { display: none; }
 .ts-run-row .ts-badge { float: right; font-size: 10.5px; color: var(--ts-fg-faint); }
 .ts-run-row .ts-badge.ts-pass { color: var(--ts-assert); font-weight: 700; }
 .ts-run-row .ts-badge.ts-fail { color: var(--ts-fail); font-weight: 700; }
+/* ADR-357 D11: a stale result keeps its badge but dims it — unverified since an edit, not gone. */
+.ts-cov-stale { font-size: 10px; color: var(--ts-fg-faint); font-style: italic; padding: 0 0 2px; }
+.ts-run-row .ts-badge.ts-stale { opacity: 0.45; text-decoration: underline dotted; }
 .ts-run-row .ts-why { font-size: 10.5px; color: var(--ts-fg-dim); margin-top: 2px; }
 /* A failed row visits its line (ADR-357 D8 step 2): it reads as a button. */
 .ts-run-row-visit { cursor: pointer; margin: 0 -6px; padding-left: 6px; padding-right: 6px; border-radius: 4px; }

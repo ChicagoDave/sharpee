@@ -905,6 +905,13 @@ private final class MainSplitViewController: NSSplitViewController {
                   let content = try? String(contentsOf: storyURL, encoding: .utf8) else { return }
             self.composeScheduler.composeNow(storyURL: storyURL, content: content)
         }
+        editorViewController.onDocumentSaved = { [weak self] url in
+            // A saved source file moves the Testing tab's build id (ADR-357
+            // D11): the surface re-judges its last run against it, so a
+            // result for the older story reads as stale, not current.
+            guard let self, url.pathExtension == "story" || url.pathExtension == "chord" else { return }
+            self.rightPanelViewController.testingSurface?.noteSourceSaved()
+        }
         editorViewController.onDocumentEdited = { [weak self] url in
             // A source change invalidates the whole play surface (David's
             // ruling): any edited document inside the open story's folder means

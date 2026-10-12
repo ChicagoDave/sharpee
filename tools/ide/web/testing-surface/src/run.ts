@@ -29,6 +29,7 @@
 
 import { isRunEvent, type CommandCause, type RunEvent } from '@sharpee/ide-protocol/run-events';
 import { derivedRowOf, derivedSummaryOf, type DerivedBranchRow, type DerivedSummary } from './derived';
+import type { RunBaseline } from './staleness';
 
 /** One assertion's verdict, as the wire carried it (the detail view's row). */
 export interface AssertionVerdict {
@@ -155,6 +156,12 @@ export interface TranscriptRunResult {
   /** The display name `transcript-start` announced (a tree line's derived
    *  label); absent when the key is its own name. Display only. */
   label?: string;
+  /**
+   * The result describes a tree or build that has since changed (ADR-357
+   * D11): still shown, tinted as unverified, never dropped. Set by the
+   * staleness evaluation, never by the fold — a fresh result is current.
+   */
+  stale?: boolean;
 }
 
 /** The whole column's state: per-line results and the closing tally. */
@@ -190,6 +197,14 @@ export interface RunColumnState {
   derived: DerivedBranchRow[];
   /** The run's three ratios — the latest `derived-summary` (one per run). */
   derivedSummary?: DerivedSummary;
+  /**
+   * What the run ran against (ADR-357 D11): captured by the caller at run
+   * start, restored with a stored run, cleared by `resetRun`. Absent means
+   * no run has a baseline, so nothing can be judged stale.
+   */
+  baseline?: RunBaseline;
+  /** The derived tier's results describe a build that has since changed (D11). */
+  derivedStale?: boolean;
 }
 
 /** A column that has never run. */
@@ -215,6 +230,8 @@ export function beginRun(state: RunColumnState): void {
   delete state.derivedSummary;
   delete state.tally;
   delete state.note;
+  delete state.baseline;
+  delete state.derivedStale;
 }
 
 /** The wire's `file` field as the column's row key: a tree line's id passes
@@ -422,6 +439,8 @@ export function resetRun(state: RunColumnState): void {
   delete state.derivedSummary;
   delete state.tally;
   delete state.note;
+  delete state.baseline;
+  delete state.derivedStale;
 }
 
 /**

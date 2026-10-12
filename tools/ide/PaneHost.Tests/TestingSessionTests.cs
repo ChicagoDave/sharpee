@@ -82,4 +82,65 @@ public sealed class TestingSessionTests : IDisposable
     {
         Assert.Null(TestingSession.ReadTree(Path.Combine(_root, "absent.tests")));
     }
+
+    // ADR-357 D11: the build id hashes what a run executes — the story's source files and the
+    // CLI — and nothing else, so an edit to either moves it and nothing else does.
+
+    private string SeedProject()
+    {
+        var folder = Path.Combine(_root, "upps");
+        Directory.CreateDirectory(Path.Combine(folder, "parts"));
+        Directory.CreateDirectory(Path.Combine(folder, "upps.tests"));
+        Directory.CreateDirectory(Path.Combine(folder, "dist", "web"));
+        File.WriteAllText(Path.Combine(folder, "upps.story"), "story \"UPPS\"\n");
+        File.WriteAllText(Path.Combine(folder, "parts", "satchel.chord"), "create the satchel\n");
+        File.WriteAllText(Path.Combine(folder, "upps.tests", "manifest.json"), "{}");
+        File.WriteAllText(Path.Combine(folder, "dist", "web", "game.js"), "built");
+        File.WriteAllText(Path.Combine(_root, "sharpee"), "#!/bin/sh\n");
+        return folder;
+    }
+
+    [Fact]
+    public void the_build_id_is_stable_and_rides_the_session()
+    {
+        var folder = SeedProject();
+        var shim = Path.Combine(_root, "sharpee");
+
+        var first = TestingSession.BuildIdentity(folder, shim);
+        var second = TestingSession.BuildIdentity(folder, shim);
+
+        Assert.NotNull(first);
+        Assert.Equal(64, first!.Length);
+        Assert.Equal(first, second);
+        Assert.Equal(first, (string)TestingSession.Build("upps", null, first)["build"]!);
+        Assert.Null(TestingSession.Build("upps", null)["build"]);
+    }
+
+    [Fact]
+    public void the_build_id_moves_on_a_source_or_cli_change_and_on_nothing_else()
+    {
+        var folder = SeedProject();
+        var shim = Path.Combine(_root, "sharpee");
+        var before = TestingSession.BuildIdentity(folder, shim);
+
+        File.WriteAllText(Path.Combine(folder, "upps.tests", "manifest.json"), "{\"seed\": 7}");
+        File.WriteAllText(Path.Combine(folder, "dist", "web", "game.js"), "rebuilt");
+        File.WriteAllText(Path.Combine(folder, "README.md"), "notes");
+        Assert.Equal(before, TestingSession.BuildIdentity(folder, shim));
+
+        File.WriteAllText(Path.Combine(folder, "parts", "satchel.chord"), "create the satchel\n  wearable\n");
+        var afterChord = TestingSession.BuildIdentity(folder, shim);
+        Assert.NotEqual(before, afterChord);
+
+        File.WriteAllText(Path.Combine(_root, "sharpee"), "#!/bin/sh\necho rebuilt\n");
+        Assert.NotEqual(afterChord, TestingSession.BuildIdentity(folder, shim));
+    }
+
+    [Fact]
+    public void a_folder_with_no_story_source_has_no_build_id()
+    {
+        var empty = Path.Combine(_root, "empty");
+        Directory.CreateDirectory(empty);
+        Assert.Null(TestingSession.BuildIdentity(empty, null));
+    }
 }

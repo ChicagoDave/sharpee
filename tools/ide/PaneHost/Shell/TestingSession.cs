@@ -31,7 +31,7 @@ internal static class TestingSession
     /// <param name="storyId">The story's id — a fresh tree's `story` field.</param>
     /// <param name="tree">The tree directory's files by name (<see cref="ReadTree"/>), or null when the story has none.</param>
     /// <returns>The session object the boot script reads `seed` from and the surface reads whole.</returns>
-    public static JsonObject Build(string storyId, JsonObject? tree)
+    public static JsonObject Build(string storyId, JsonObject? tree, string? build = null)
     {
         var seed = tree?[ManifestFileName] is JsonValue manifest && manifest.TryGetValue<string>(out var text)
             ? ManifestSeed(text)
@@ -42,7 +42,70 @@ internal static class TestingSession
             ["seed"] = seed ?? FreshTreeSeed,
         };
         if (tree is not null) session["tree"] = tree;
+        // The host's current build id (ADR-357 D11), compared with a run's
+        // baseline to judge staleness; absent when the project has no source.
+        if (build is not null) session["build"] = build;
         return session;
+    }
+
+    /// <summary>Directories a project may hold that are never story source.</summary>
+    private static readonly HashSet<string> SkippedDirectories = new(StringComparer.Ordinal) { "node_modules", "dist", ".git", "bin", "obj" };
+
+    /// <summary>
+    /// The build id the staleness contract compares (ADR-357 D11): a SHA-256 hex digest over
+    /// every story source file under the project — the `.story` file and every `.chord` file,
+    /// by relative path and bytes, imports not followed — then the CLI the host spawns,
+    /// resolved to its file: path, size and modification time. What a run executes, not the
+    /// web bundle. Computed BEFORE a spawn, so a save in between marks the result stale, the
+    /// safe direction.
+    /// </summary>
+    /// <param name="folder">The directory holding the .story file.</param>
+    /// <param name="executable">The CLI shim the host spawns, or null to hash the sources alone.</param>
+    /// <returns>The digest, or null when the folder holds no story source at all.</returns>
+    public static string? BuildIdentity(string folder, string? executable)
+    {
+        var root = Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar;
+        var files = SourceFiles(root);
+        if (files.Count == 0) return null;
+        using var hasher = System.Security.Cryptography.IncrementalHash.CreateHash(System.Security.Cryptography.HashAlgorithmName.SHA256);
+        foreach (var file in files)
+        {
+            hasher.AppendData(System.Text.Encoding.UTF8.GetBytes(file.Substring(root.Length).Replace('\\', '/')));
+            hasher.AppendData(new byte[] { 0 });
+            hasher.AppendData(File.ReadAllBytes(file));
+            hasher.AppendData(new byte[] { 0 });
+        }
+        if (executable is not null)
+        {
+            var info = new FileInfo(executable);
+            var size = info.Exists ? info.Length : -1;
+            var modified = info.Exists ? info.LastWriteTimeUtc.Ticks : -1;
+            hasher.AppendData(System.Text.Encoding.UTF8.GetBytes($"{Path.GetFullPath(executable)}\0{size}\0{modified}"));
+        }
+        return Convert.ToHexString(hasher.GetHashAndReset()).ToLowerInvariant();
+    }
+
+    /// <summary>The story source files under a root, sorted by relative path.</summary>
+    private static List<string> SourceFiles(string root)
+    {
+        var files = new List<string>();
+        void Walk(string directory)
+        {
+            foreach (var child in Directory.EnumerateDirectories(directory))
+            {
+                var name = Path.GetFileName(child);
+                if (name.StartsWith('.') || SkippedDirectories.Contains(name) || name.EndsWith(".tests", StringComparison.Ordinal)) continue;
+                Walk(child);
+            }
+            foreach (var file in Directory.EnumerateFiles(directory))
+            {
+                var ext = Path.GetExtension(file);
+                if (ext is ".story" or ".chord") files.Add(file);
+            }
+        }
+        Walk(root);
+        files.Sort((a, b) => string.CompareOrdinal(a.Substring(root.Length), b.Substring(root.Length)));
+        return files;
     }
 
     /// <summary>

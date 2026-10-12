@@ -1393,4 +1393,271 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertFalse(surface.isLoaded,
                        "a pre-ADR-306 bundle has no testing page — the surface must not load index.html")
     }
+
+    // MARK: - ADR-357 D11: a result goes stale, it never vanishes
+
+    /// A small story and its canonical tree document under `tmp/proj`: a
+    /// main line whose `take lamp` claim fails, and a passing branch off it.
+    private func writeMiniProject() throws -> (story: URL, tree: URL) {
+        let project = tmp.appendingPathComponent("proj", isDirectory: true)
+        try FileManager.default.createDirectory(at: project, withIntermediateDirectories: true)
+        let story = """
+        story
+          title: Mini
+          authors:
+            T
+          id: mini
+          story-version: 0.0.1
+          ifid: CF7091CC-6182-43A4-8FE0-516273849FA0
+
+        create the Den
+          a room
+
+          A small square den.
+
+        create the brass lamp
+          a thing
+          in the Den
+
+          It gleams dully.
+
+        create Alex
+          a person
+          playable
+          starts in the Den
+
+          You.
+
+        before the game starts
+          change the player to Alex
+        end before
+
+        """
+        let storyURL = project.appendingPathComponent("mini.story")
+        try Data(story.utf8).write(to: storyURL)
+        let tree = project.appendingPathComponent("mini.tests", isDirectory: true)
+        try FileManager.default.createDirectory(at: tree, withIntermediateDirectories: true)
+        try Data("""
+        {
+          "seed": 42,
+          "story": "mini",
+          "version": 3
+        }
+
+        """.utf8).write(to: tree.appendingPathComponent("manifest.json"))
+        try Data("""
+        {
+          "cards": [
+            {
+              "id": "card0001",
+              "type": "opening"
+            },
+            {
+              "assertions": {
+                "contains": [
+                  "A small square den"
+                ]
+              },
+              "id": "card0002",
+              "type": "boot"
+            },
+            {
+              "assertions": {
+                "contains": [
+                  "no such text anywhere"
+                ]
+              },
+              "command": "take lamp",
+              "id": "card0003",
+              "type": "turn"
+            }
+          ],
+          "id": "root0000"
+        }
+
+        """.utf8).write(to: tree.appendingPathComponent("root0000.json"))
+        try Data("""
+        {
+          "cards": [
+            {
+              "assertions": {
+                "contains": [
+                  "A small square den"
+                ]
+              },
+              "command": "look",
+              "id": "card0004",
+              "type": "turn"
+            }
+          ],
+          "id": "branch01",
+          "ordinal": 1,
+          "parent": "root0000"
+        }
+
+        """.utf8).write(to: tree.appendingPathComponent("branch01.json"))
+        return (storyURL, tree)
+    }
+
+    /// What the run column and the outline say about staleness right now.
+    private func stalenessProbe() async throws -> [String: Any] {
+        let json = try await surface.evaluateInSurface("""
+        (function () {
+          var rows = Array.from(document.querySelectorAll('.ts-run-row')).filter(function (row) {
+            var badge = row.querySelector('.ts-badge').textContent;
+            return badge === 'PASS' || badge === 'FAIL';
+          });
+          var header = Array.from(document.querySelectorAll('.ts-run-section, .ts-cov'))
+            .map(function (e) { return e.textContent; }).join('|');
+          return JSON.stringify({
+            rows: rows.length,
+            stale: rows.filter(function (row) { return row.querySelector('.ts-badge').classList.contains('ts-stale'); }).length,
+            whys: rows.map(function (row) { return row.querySelector('.ts-why').textContent; }),
+            derivedStale: header.indexOf('story rebuilt since') >= 0,
+            stalePills: document.querySelectorAll('.ts-outline-pill.ts-verdict-stale').length
+          });
+        })()
+        """) as? String
+        let data = Data((json ?? "{}").utf8)
+        return (try? JSONSerialization.jsonObject(with: data) as? [String: Any]) ?? [:]
+    }
+
+    /// Polls the staleness probe until `check` holds.
+    private func waitForStaleness(_ what: String, _ check: ([String: Any]) -> Bool) async throws {
+        for _ in 0..<160 {
+            if let probe = try? await stalenessProbe(), check(probe) { return }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
+        XCTFail("timed out waiting for \(what): \(String(describing: try? await stalenessProbe()))")
+    }
+
+    /// Boots the page over the project's OWN tree (as the IDE does), runs it on
+    /// the real CLI, and waits for the tally.
+    private func bootAndRunMiniProject() async throws -> (story: URL, tree: URL) {
+        let project = try writeMiniProject()
+        surface = TestingSurfaceViewController(
+            sessionStore: TestingSessionStore(fileURL: sidecarURL))
+        _ = surface.view
+        surface.testTreeURL = project.tree
+        surface.storyFile = project.story
+        surface.sharpeeExecutableOverride = TestToolchain.devkitCLI
+        surface.load(bundleDirectory: bundleDir)
+        try await waitFor("window.bootProbeReady === true", "fixture boot")
+        try await waitForIdleInput()
+        _ = try await surface.evaluateInSurface("document.getElementById('ts-run-btn').click();")
+        for _ in 0..<1200 {
+            if let done = try? await surface.evaluateInSurface(
+                "!!document.querySelector('.ts-run-tally')"), done as? Bool == true { break }
+            try await Task.sleep(nanoseconds: 100_000_000)
+        }
+        return project
+    }
+
+    /// The D11 contract on the real page, the real CLI and the real sidecar:
+    /// after a run, authoring a claim on the fork card makes both lines
+    /// through it stale without clearing them, ⌘Z makes them current again, a
+    /// saved source file makes every row and the derived tier stale until the
+    /// source is put back, and a reload restores the last run from the sidecar
+    /// and judges it against the build it boots with.
+    func testRunResultsGoStaleOnEditAndOnSaveAndSurviveReload() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        let project = try await bootAndRunMiniProject()
+
+        var probe = try await stalenessProbe()
+        XCTAssertEqual(probe["rows"] as? Int, 2, "both lines ran: \(probe)")
+        XCTAssertEqual(probe["stale"] as? Int, 0, "a fresh run is current: \(probe)")
+        XCTAssertEqual(probe["derivedStale"] as? Bool, false)
+        XCTAssertEqual(probe["stalePills"] as? Int, 0)
+
+        // An edit: a claim authored on the fork card (`take lamp`, ordinal 2).
+        // Both lines pass through that card, so both go stale — and stay.
+        try await clickAction(2, "Not contains…")
+        try await commitActionPrompt(2, "a grue")
+        try await waitForStaleness("both lines stale after the edit") { ($0["stale"] as? Int) == 2 }
+        probe = try await stalenessProbe()
+        XCTAssertEqual(probe["rows"] as? Int, 2, "nothing vanished: \(probe)")
+        let whys = (probe["whys"] as? [String]) ?? []
+        XCTAssertTrue(whys.allSatisfy { $0.hasPrefix("edited since this run — unverified") }, "rows say why: \(whys)")
+        // The main line's first failure still reads under the stale note. (It
+        // is the opening claim the page recorded from the fixture's prologue,
+        // which the real story does not say — not `take lamp`'s; which claim
+        // fails first is the fixture's business, that it stays is D11's.)
+        XCTAssertTrue(whys.first.map { $0.count > "edited since this run — unverified · ".count } == true,
+                      "the failure still reads under the stale note: \(whys)")
+        XCTAssertGreaterThan(probe["stalePills"] as? Int ?? 0, 0, "the outline tints stale: \(probe)")
+        XCTAssertEqual(probe["derivedStale"] as? Bool, false, "a tree edit never stales the derived tier")
+
+        // ⌘Z puts the card back as the run saw it: current again.
+        _ = try await surface.evaluateInSurface("""
+        document.dispatchEvent(new KeyboardEvent('keydown',
+          { key: 'z', metaKey: true, bubbles: true, cancelable: true }));
+        """)
+        try await waitForStaleness("current again after undo") { ($0["stale"] as? Int) == 0 }
+
+        // A saved source file moves the build id: every row and the derived
+        // tier are stale until the source is put back.
+        let extra = project.story.deletingLastPathComponent().appendingPathComponent("extra.chord")
+        try Data("create the extra thing\n  a thing\n".utf8).write(to: extra)
+        surface.noteSourceSaved()
+        try await waitForStaleness("every row stale after a source save") {
+            ($0["stale"] as? Int) == 2 && ($0["derivedStale"] as? Bool) == true
+        }
+        try FileManager.default.removeItem(at: extra)
+        surface.noteSourceSaved()
+        try await waitForStaleness("current again with the source restored") {
+            ($0["stale"] as? Int) == 0 && ($0["derivedStale"] as? Bool) == false
+        }
+
+        // A reload: the last run comes back from the sidecar, judged against
+        // this build — current, since the source is as the run saw it. The
+        // old page stays up until the navigation commits, so a marker on it
+        // tells the new page apart, and the surface bundle must have booted
+        // (its real entries installed) before anything is read.
+        _ = try await surface.evaluateInSurface("window.__oldPage = true; true")
+        surface.load(bundleDirectory: bundleDir)
+        try await waitFor("""
+        window.__oldPage === undefined && window.bootProbeReady === true &&
+        !!window.__sharpeeTestingSurface && typeof window.__sharpeeTestingSurface.buildChanged === 'function'
+        """, "the NEW page booted with the surface's entries")
+        try await waitForIdleInput()
+        try await waitForStaleness("the last run restored and current") {
+            ($0["rows"] as? Int) == 2 && ($0["stale"] as? Int) == 0
+        }
+        probe = try await stalenessProbe()
+        XCTAssertTrue(((probe["whys"] as? [String]) ?? []).first.map { !$0.isEmpty } == true,
+                      "the restored failure keeps its message: \(probe)")
+        // The sidecar carried the baseline's build id through the reload.
+        let sidecar = try JSONSerialization.jsonObject(with: Data(contentsOf: sidecarURL)) as? [String: Any]
+        let storedBaseline = ((sidecar?["view"] as? [String: Any])?["lastRun"] as? [String: Any])?["baseline"] as? [String: Any]
+        XCTAssertEqual(storedBaseline?["build"] as? String, surface.currentBuildIdentity(),
+                       "the stored baseline's build id is the current one: \(String(describing: storedBaseline?["build"]))")
+
+        // And the same build change after the reload stales the restored run.
+        // The page's entry is wrapped to record what the host handed it.
+        _ = try await surface.evaluateInSurface("""
+        (function () {
+          var entry = window.__sharpeeTestingSurface.buildChanged;
+          window.__lastBuildChanged = null;
+          window.__sharpeeTestingSurface.buildChanged = function (b) { window.__lastBuildChanged = b; return entry(b); };
+        })();
+        """)
+        try Data("create the extra thing\n  a thing\n".utf8).write(to: extra)
+        surface.noteSourceSaved()
+        try await waitForStaleness("the restored run stale after a source save") {
+            ($0["stale"] as? Int) == 2 && ($0["derivedStale"] as? Bool) == true
+        }
+        let handed = try await surface.evaluateInSurface("window.__lastBuildChanged") as? String
+        XCTAssertEqual(handed, surface.currentBuildIdentity(), "the host handed the page the new build id")
+        if handed == nil {
+            // Split host from page: drive the page's entry directly with the id
+            // the host computed. If this stales the rows, the page is right and
+            // the host's relay is what did not arrive.
+            let id = try XCTUnwrap(surface.currentBuildIdentity())
+            _ = try await surface.evaluateInSurface("window.__sharpeeTestingSurface.buildChanged(\(jsString(id))); true")
+            try await waitForStaleness("the page's own entry staling the restored run") {
+                ($0["stale"] as? Int) == 2 && ($0["derivedStale"] as? Bool) == true
+            }
+        }
+    }
 }

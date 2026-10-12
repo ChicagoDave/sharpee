@@ -86,6 +86,12 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// a source change invalidates the play surface (David's ruling).
     var onDocumentEdited: ((URL) -> Void)?
 
+    /// Fired after ANY document is saved to disk, whatever the save path
+    /// (⌘S, save-on-close, save-all before a run). The Testing tab's build id
+    /// hashes the story's source files on disk (ADR-357 D11), so a save is
+    /// the moment it can move.
+    var onDocumentSaved: ((URL) -> Void)?
+
     /// Fired after saving a `.story` whose identity reconciliation changed the
     /// file, or whose config sidecar is broken (ADR-309) — the compose pipeline
     /// re-runs against the REAL file.
@@ -641,6 +647,8 @@ final class EditorViewController: NSViewController, NSTextViewDelegate {
     /// was reconciled, or its config is broken and only an on-disk compose can
     /// raise the row.
     private func noteStoryReconciled(_ doc: Document, _ outcome: Document.SaveOutcome) {
+        // Every save path reports here, so this is where "saved" is announced.
+        onDocumentSaved?(doc.url)
         // `.story` only: a fragment has no identity line to reconcile (ADR-251 D3).
         guard ChordSource.isStoryFile(doc.url),
               outcome.contentChanged || outcome.brokenConfig != nil else { return }

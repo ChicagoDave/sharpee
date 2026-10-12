@@ -878,7 +878,7 @@ export class CardsView {
 
     // The three ratios first (ADR-356 D5): the run's headline, above the
     // detail that produced it. Present once the summary has arrived.
-    if (run.derivedSummary) this.renderCoverageStrip(results, run.derivedSummary);
+    if (run.derivedSummary) this.renderCoverageStrip(results, run.derivedSummary, run.derivedStale === true);
     // Two kinds of row from here on — name the tree's when the derived
     // tier's follow, so the column reads as two sections, not one list.
     if (run.derived.length > 0) {
@@ -1013,28 +1013,33 @@ export class CardsView {
       const failureText = failure === undefined
         ? undefined
         : firstFailureText(failure, failure.command !== undefined && failure.command === bootLook);
+      // A stale result keeps its verdict and its detail (ADR-357 D11) — the
+      // badge dims and the row says the result is unverified since an edit.
+      const staleClass = result.stale ? ' ts-stale' : '';
+      const staleNote = result.stale ? 'edited since this run — unverified' : undefined;
+      const why = (text: string): string => staleNote === undefined ? text : text.length > 0 ? `${staleNote} · ${text}` : staleNote;
       switch (result.status) {
         case 'passed':
           // No turn count: turns have no meaning unless the author gives
           // them meaning (David 2026-08-10). PASS is the information.
-          row('PASS', 'ts-pass', label, '');
+          row('PASS', `ts-pass${staleClass}`, label, why(''));
           detail(result, bootLook);
           break;
         case 'skipped':
-          row('—', '', label, 'no commands — ran as a skip');
+          row('—', staleClass.trim(), label, why('no commands — ran as a skip'));
           break;
         case 'unreached':
-          row('—', '', label, failureText ?? 'blocked by an ancestor');
+          row('—', staleClass.trim(), label, why(failureText ?? 'blocked by an ancestor'));
           break;
         default: {
           const more = result.moreFailures > 0 ? ` +${result.moreFailures} more` : '';
-          row('FAIL', 'ts-fail', label, `${failureText ?? 'failed'}${more}`, runRowVisitTarget(entry));
+          row('FAIL', `ts-fail${staleClass}`, label, why(`${failureText ?? 'failed'}${more}`), runRowVisitTarget(entry));
           detail(result, bootLook);
         }
       }
     }
 
-    if (run.derived.length > 0) this.renderDerivedRows(results, run.derived);
+    if (run.derived.length > 0) this.renderDerivedRows(results, run.derived, run.derivedStale === true);
 
     if (run.tally) {
       const tally = document.createElement('div');
@@ -1113,13 +1118,22 @@ export class CardsView {
    * unreached endings by span, the unentered rooms by id. Open by default
    * while a row has gaps; a full row has nothing to open.
    */
-  private renderCoverageStrip(results: HTMLElement, summary: DerivedSummary): void {
+  private renderCoverageStrip(results: HTMLElement, summary: DerivedSummary, stale = false): void {
     const strip = document.createElement('div');
     strip.className = 'ts-cov';
     const title = document.createElement('div');
     title.className = 'ts-cov-title';
     title.textContent = 'coverage';
     strip.appendChild(title);
+    // The ratios describe the story the run compiled; a build change since
+    // makes them unverified (ADR-357 D11). Said here because a restored run
+    // keeps no passing derived rows, so the headline may be all there is.
+    if (stale) {
+      const note = document.createElement('div');
+      note.className = 'ts-cov-stale';
+      note.textContent = 'story rebuilt since this run — unverified';
+      strip.appendChild(note);
+    }
 
     const ratioRow = (
       key: string,
@@ -1268,12 +1282,15 @@ export class CardsView {
    * each group closed until opened. A SKIPPED row shows its shape and is
    * never styled as a failure (D5a).
    */
-  private renderDerivedRows(results: HTMLElement, rows: DerivedBranchRow[]): void {
+  private renderDerivedRows(results: HTMLElement, rows: DerivedBranchRow[], stale = false): void {
     const groups = groupDerivedRows(rows);
     const counts: Array<[string, string]> = groups.passed > 0 ? [[`${groups.passed} pass`, 'ts-count-pass']] : [];
     if (groups.failed > 0) counts.push([`${groups.failed} ✗`, 'ts-count-fail']);
     if (groups.errors > 0) counts.push([`${groups.errors} error${groups.errors === 1 ? '' : 's'}`, 'ts-count-fail']);
     if (groups.skipped > 0) counts.push([`${groups.skipped} ◌`, 'ts-count-skip']);
+    // The derived tier reads the story, so only a build change makes its
+    // results stale (ADR-357 D11); the header says so once, not per row.
+    if (stale) counts.push(['story rebuilt since — unverified', 'ts-count-skip']);
     results.appendChild(this.sectionHeader(`derived rules · ${rows.length}`, counts));
 
     for (const failure of groups.failures) {

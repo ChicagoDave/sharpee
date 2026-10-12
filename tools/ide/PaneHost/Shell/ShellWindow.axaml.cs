@@ -807,6 +807,15 @@ public partial class ShellWindow : Window
         // A saved story is a story whose built output is now behind its source.
         if (_project is not null && string.Equals(path, _project.StoryFile, StringComparison.Ordinal))
             BuildPill.Text = "unbuilt changes";
+        // A saved source file moves the build id (ADR-357 D11): the testing pane re-judges
+        // its last run against it, so a result for the older story reads as stale.
+        if (_project is { } saved && (path.EndsWith(".story", StringComparison.Ordinal) || path.EndsWith(".chord", StringComparison.Ordinal))
+            && TestingSession.BuildIdentity(saved.Folder, HostServices.Current.ToolchainShim) is { } build)
+        {
+            await _door.EvaluateAsync(TestingWeb,
+                "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.buildChanged"
+                + " && window.__sharpeeTestingSurface.buildChanged(" + System.Text.Json.JsonSerializer.Serialize(build) + ")");
+        }
     }
 
     /// <summary>Shows the open story's folder in Finder, so the author can reach their own files.</summary>
@@ -861,7 +870,10 @@ public partial class ShellWindow : Window
         // plays, so the session carries no tree rather than refusing to open the panes.
         var tree = project.TestsTree is { } treePath ? TestingSession.ReadTree(treePath) : null;
 
-        var session = TestingSession.Build(project.Id, tree);
+        // The current build id rides the session (ADR-357 D11): the page judges a restored
+        // run against it, and the run start refreshes it just before the spawn.
+        var session = TestingSession.Build(project.Id, tree,
+            TestingSession.BuildIdentity(project.Folder, HostServices.Current.ToolchainShim));
 
         _door.Open(new PaneServer(built, RepoPaths.TestingSurface, RepoPaths.DocsTab, session.ToJsonString()));
         _log.Line($"panes: door open for {project.Id} — {_door.Mechanism}");
@@ -1225,6 +1237,15 @@ public partial class ShellWindow : Window
 
         // The run reads disk, so unsaved edits would test stale source.
         await SaveAsync();
+
+        // The build id BEFORE the spawn (ADR-357 D11): it becomes the run's baseline, so a
+        // save between here and the spawn marks the result stale rather than current.
+        if (TestingSession.BuildIdentity(project.Folder, shim) is { } build)
+        {
+            await _door.EvaluateAsync(TestingWeb,
+                "window.__sharpeeTestingSurface && window.__sharpeeTestingSurface.runStart"
+                + " && window.__sharpeeTestingSurface.runStart(" + System.Text.Json.JsonSerializer.Serialize(build) + ")");
+        }
 
         _running = true;
         _commandCts = new CancellationTokenSource();
