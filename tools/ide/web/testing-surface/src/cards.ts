@@ -14,7 +14,8 @@
  *   this layer only renders and forwards gestures.
  *
  * Public interface: CardsView (ensureLayout, addTurnCard, clear, render,
- *   scrollToLatest, scrollToCard, scrollToLineTop, setNotice), CardsDelegate.
+ *   scrollToLatest, scrollToCard, scrollToLineTop, focusDerivedRow, setNotice),
+ *   CardsDelegate, FailureNavState.
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -66,6 +67,14 @@ export interface CardsDelegate {
   onRun(): void;
   /** The run column's current state — main.ts owns the fold. */
   runColumn(): RunColumnState;
+  /** Next (`1`) or previous (`-1`) failure (ADR-357 D6/D10) — main.ts walks the list. */
+  onStepFailure(delta: 1 | -1): void;
+  /** The "failures only" switch moved. */
+  onFailuresOnly(on: boolean): void;
+  /** The text in the switch's filter field changed. */
+  onFailureFilter(query: string): void;
+  /** What the failure header shows — main.ts owns the walk's state. */
+  failureNav(): FailureNavState;
   /** A span in the run column was clicked: open the editor there. `file`
    *  is relative to the story file's directory, null for the story file. */
   onOpenSource(file: string | null, line: number): void;
@@ -92,6 +101,17 @@ export interface CardsDelegate {
 }
 
 /** Per-turn DOM handles, keyed by ordinal. */
+/** The failure header's state, as main.ts holds it (ADR-357 D6). */
+export interface FailureNavState {
+  /** `no failures`, `3 failing`, `3 failing, 1 edited since run`. */
+  count: string;
+  /** Whether next/previous have anywhere to go. */
+  canStep: boolean;
+  /** The switch is on: the outline is narrowed and the filter field shows. */
+  only: boolean;
+  query: string;
+}
+
 interface CardRow {
   row: HTMLElement;
   /** The END STATE mark in the card's meta line (ADR-356 D4), shown while
@@ -216,11 +236,26 @@ export class CardsView {
           <button class="ts-run-btn" id="ts-run-btn"
                   title="Run the story's test tree at the pinned seed">Run</button>
         </div>
+        <div class="ts-fail-nav" id="ts-fail-nav">
+          <button type="button" class="ts-fail-step" id="ts-fail-prev" title="Previous failure (Shift+F8)" disabled>‹</button>
+          <button type="button" class="ts-fail-step" id="ts-fail-next" title="Next failure (F8)" disabled>›</button>
+          <span class="ts-fail-count" id="ts-fail-count">no failures</span>
+          <label class="ts-fail-only-label"><input type="checkbox" id="ts-fail-only"> failures only</label>
+          <input type="search" class="ts-fail-filter" id="ts-fail-filter" placeholder="filter failures" aria-label="filter failures" hidden>
+        </div>
         <div id="ts-run-results"><span class="ts-pending-note">not run yet</span></div>
       </div>`;
     document.body.appendChild(root);
     document.getElementById('ts-run-btn')!
       .addEventListener('click', () => this.delegate.onRun());
+    // Failure navigation (ADR-357 D6/D10): next/previous step the one list,
+    // the switch narrows the outline, the field narrows by failure text.
+    document.getElementById('ts-fail-prev')!.addEventListener('click', () => this.delegate.onStepFailure(-1));
+    document.getElementById('ts-fail-next')!.addEventListener('click', () => this.delegate.onStepFailure(1));
+    document.getElementById('ts-fail-only')!.addEventListener('change', (event) =>
+      this.delegate.onFailuresOnly((event.target as HTMLInputElement).checked));
+    document.getElementById('ts-fail-filter')!.addEventListener('input', (event) =>
+      this.delegate.onFailureFilter((event.target as HTMLInputElement).value));
 
     const inputBar = document.getElementById('input-area');
     if (inputBar) root.querySelector('.ts-input-row')!.appendChild(inputBar);
@@ -859,6 +894,7 @@ export class CardsView {
       button.disabled = run.inFlight;
       button.textContent = run.inFlight ? 'Running…' : 'Run';
     }
+    this.renderFailureNav();
 
     const lineIds = this.model.lineIds().filter(id =>
       id === this.model.mainLine ? this.model.hasOpening : true);
@@ -1282,6 +1318,38 @@ export class CardsView {
    * each group closed until opened. A SKIPPED row shows its shape and is
    * never styled as a failure (D5a).
    */
+  /** The failure header: count, step buttons, the switch and its field (ADR-357 D6). */
+  private renderFailureNav(): void {
+    const nav = this.delegate.failureNav();
+    const count = document.getElementById('ts-fail-count');
+    if (count) count.textContent = nav.count;
+    for (const id of ['ts-fail-prev', 'ts-fail-next']) {
+      const step = document.getElementById(id) as HTMLButtonElement | null;
+      if (step) step.disabled = !nav.canStep;
+    }
+    const only = document.getElementById('ts-fail-only') as HTMLInputElement | null;
+    if (only && only.checked !== nav.only) only.checked = nav.only;
+    const filter = document.getElementById('ts-fail-filter') as HTMLInputElement | null;
+    if (filter) {
+      filter.hidden = !nav.only;
+      if (filter.value !== nav.query) filter.value = nav.query;
+    }
+  }
+
+  /**
+   * Focus the derived-tier row at `index` in the run's `derived` rows and
+   * scroll it into view (ADR-357 D10: a derived step stays in the Testing
+   * tab). Returns false when no such row is rendered — only failures and
+   * errors have rows.
+   */
+  focusDerivedRow(index: number): boolean {
+    const row = document.querySelector<HTMLElement>(`.ts-derived-row[data-ts-derived-index="${index}"]`);
+    if (!row) return false;
+    row.focus();
+    row.scrollIntoView({ block: 'nearest' });
+    return true;
+  }
+
   private renderDerivedRows(results: HTMLElement, rows: DerivedBranchRow[], stale = false): void {
     const groups = groupDerivedRows(rows);
     const counts: Array<[string, string]> = groups.passed > 0 ? [[`${groups.passed} pass`, 'ts-count-pass']] : [];
@@ -1297,6 +1365,16 @@ export class CardsView {
       const rowEl = document.createElement('div');
       rowEl.className = 'ts-derived-row';
       rowEl.dataset.tsDerived = failure.status;
+      // A stop for next/previous (ADR-357 D10): focusable in place, and
+      // Enter opens the editor at the span — the explicit action, never
+      // the step itself.
+      rowEl.dataset.tsDerivedIndex = String(rows.indexOf(failure));
+      rowEl.tabIndex = -1;
+      rowEl.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        rowEl.querySelector<HTMLElement>('.ts-site .ts-src')?.click();
+      });
       const head = document.createElement('div');
       head.className = 'ts-head';
       const name = document.createElement('span');

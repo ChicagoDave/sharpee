@@ -39,6 +39,7 @@ import { endingOf, endingIdOf, blocksCommand } from './ending.js';
 import { visitPlanOf, type LineVisit, type ReplayStep } from './visit.js';
 import { verdictOfResult } from './line-verdict.js';
 import { outlineOf, positionOf } from './outline.js';
+import { failureCountText, failureStopsOf, filterStops, narrowedLineIds, stepIndex } from './failures.js';
 import { OutlineView, renderPosition } from './outline-view.js';
 import type { AutoAssertionPolicy } from '@sharpee/branch-tester/types';
 import { admitBootDocument } from './boot-document';
@@ -315,7 +316,8 @@ function attachOutline(): void {
  */
 function renderOutline(): void {
   const manifest = outlineOf(model.document);
-  outline.render(manifest, model.activeLine, (lineId) => verdictOfResult(runState.results.get(lineId)));
+  const keep = failNav.only ? narrowedLineIds(runState, failNav.query) : undefined;
+  outline.render(manifest, model.activeLine, (lineId) => verdictOfResult(runState.results.get(lineId)), keep);
   const position = document.getElementById('ts-position');
   if (position) renderPosition(position, positionOf(manifest, model.activeLine));
 }
@@ -420,11 +422,31 @@ const cards = new CardsView(model, {
   onVisitFailure(target) {
     void visitFailure(target);
   },
+  onStepFailure(delta) {
+    void stepFailure(delta);
+  },
+  onFailuresOnly(on) {
+    failNav.only = on;
+    if (!on) failNav.query = '';
+    cards.render();
+    renderOutline();
+  },
+  onFailureFilter(query) {
+    failNav.query = query;
+    failNav.index = undefined;   // the filtered list is a new walk
+    cards.render();
+    renderOutline();
+  },
+  failureNav() {
+    const stops = filterStops(failureStopsOf(runState), failNav.query);
+    return { count: failureCountText(stops), canStep: stops.length > 0, only: failNav.only, query: failNav.query };
+  },
   onRun() {
     // One run at a time, and never during a driver replay — the run reads
     // the document on disk, which a mid-replay session hasn't finished
     // writing.
     if (runState.inFlight || driverBusy || replayActive) return;
+    failNav.index = undefined;   // a new run is a new list
     beginRun(runState);
     // The baseline (ADR-357 D11): what this run runs against. The build id
     // is the one the page knows now; the host overwrites it through
@@ -473,6 +495,10 @@ const cards = new CardsView(model, {
 // ── the run column: fold the relayed NDJSON stream ────────────────────────
 
 const runState = createRunState();
+/** Where next/previous failure stands (ADR-357 D6/D10) and what the switch
+ *  shows. `index` is into the FILTERED stop list; undefined means no walk
+ *  has started (next goes to the first stop, previous to the last). */
+const failNav: { index: number | undefined; only: boolean; query: string } = { index: undefined, only: false, query: '' };
 
 function deliverRunLine(text: string): void {
   foldRunLine(runState, text);
@@ -979,6 +1005,24 @@ async function selectLine(lineId: string): Promise<void> {
  * first own card for a branch. A click on the line already in view only
  * scrolls. Once D9's card id rides the wire, this lands on the failing card.
  */
+/** Next (`1`) or previous (`-1`) failure: one list, derived failures first
+ *  (D10). A card stop is the D9 landing — the line made live, the card
+ *  scrolled and marked. A derived stop focuses its run-column row and stays
+ *  in the Testing tab. Inert on an empty list (AC-9). */
+async function stepFailure(delta: 1 | -1): Promise<void> {
+  if (replayActive || driverBusy) return;
+  const stops = filterStops(failureStopsOf(runState), failNav.query);
+  const index = stepIndex(stops.length, failNav.index, delta);
+  if (index === undefined) return;
+  failNav.index = index;
+  const stop = stops[index];
+  if (stop.kind === 'derived') {
+    cards.focusDerivedRow(stop.index);
+    return;
+  }
+  await visitFailure({ lineId: stop.lineId, ...(stop.cardId !== undefined ? { cardId: stop.cardId } : {}) });
+}
+
 /** The run-column click (ADR-357 D8 step 2, D9): make the line live, then
  *  land on the failing card the wire named; the line's top when it named
  *  none or the card is no longer on the board. */
@@ -1106,6 +1150,16 @@ document.addEventListener('keydown', event => {
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
   event.preventDefault();
   performUndo();
+});
+// F8 / Shift+F8 — next / previous failure (ADR-357 D6, D10), a Testing-tab
+// command: it never leaves the tab, and it is not bound while a text field
+// has focus.
+document.addEventListener('keydown', event => {
+  if (event.key !== 'F8' || event.metaKey || event.ctrlKey || event.altKey) return;
+  const target = event.target as HTMLElement | null;
+  if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) return;
+  event.preventDefault();
+  void stepFailure(event.shiftKey ? -1 : 1);
 });
 
 // Adopt the persisted tree BEFORE draining the queue, so the boot look binds

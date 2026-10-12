@@ -483,6 +483,15 @@ body.ts-active .sharpee-window { display: none; }
 /* A failed row visits its line (ADR-357 D8 step 2): it reads as a button. */
 .ts-run-row-visit { cursor: pointer; margin: 0 -6px; padding-left: 6px; padding-right: 6px; border-radius: 4px; }
 .ts-run-row-visit:hover, .ts-run-row-visit:focus-visible { background: rgba(127, 127, 127, 0.12); outline: none; }
+/* Failure navigation (ADR-357 D6/D10): next/previous, the count, the switch and its filter. */
+.ts-fail-nav { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; padding: 6px 12px; border-bottom: 1px solid var(--ts-border); font-size: 10.5px; color: var(--ts-fg-dim); }
+.ts-fail-step { font: inherit; font-size: 13px; line-height: 1; padding: 0 6px; border: 1px solid var(--ts-border); border-radius: 4px; background: transparent; color: inherit; cursor: pointer; }
+.ts-fail-step:disabled { opacity: 0.35; cursor: default; }
+.ts-fail-count { flex: 1; }
+.ts-fail-only-label { white-space: nowrap; cursor: pointer; }
+.ts-fail-filter { flex-basis: 100%; font: inherit; font-size: 10.5px; padding: 2px 6px; border: 1px solid var(--ts-border); border-radius: 4px; background: transparent; color: inherit; }
+.ts-derived-row:focus { outline: none; box-shadow: 0 0 0 2px rgba(255, 150, 60, 0.9); border-radius: 4px; }
+.ts-outline-narrowed { font-weight: 700; }
 /* The card a run-column click landed on (ADR-357 D9): a fading ring so the eye finds it. */
 .ts-card-landed { animation: ts-landed 1.6s ease-out 1; }
 @keyframes ts-landed { 0% { box-shadow: 0 0 0 3px rgba(255, 150, 60, 0.9); } 100% { box-shadow: 0 0 0 3px rgba(255, 150, 60, 0); } }

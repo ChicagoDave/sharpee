@@ -21,7 +21,7 @@
  */
 
 import { rollUpVerdicts, type LineVerdict } from './line-verdict.js';
-import type { Outline, OutlineFork, OutlineLine, OutlinePosition } from './outline.js';
+import { narrowOutline, type Outline, type OutlineFork, type OutlineLine, type OutlinePosition } from './outline.js';
 
 /** What the column asks the surface to do. */
 export interface OutlineDelegate {
@@ -50,18 +50,26 @@ export class OutlineView {
    *   `none` (untinted) when omitted
    */
   render(
-    outline: Outline,
+    full: Outline,
     activeLine: string,
     verdictOf: (lineId: string) => LineVerdict = () => 'none',
+    keep?: ReadonlySet<string>,
   ): void {
     if (!this.host) return;
     this.host.replaceChildren();
 
-    this.host.appendChild(this.summary(outline));
-    this.host.appendChild(tinted(this.rootPill(outline.root, activeLine), verdictOf(outline.root.lineId)));
+    // The "failures only" switch (ADR-357 D6, AC-8): only the kept lines and
+    // the fork headings above them, every kept fork open so the lines show.
+    const narrowed = keep !== undefined ? narrowOutline(full, keep) : undefined;
+    const outline = narrowed?.outline ?? full;
+
+    this.host.appendChild(narrowed !== undefined ? this.narrowedSummary(outline) : this.summary(outline));
+    if (narrowed === undefined || narrowed.rootKept) {
+      this.host.appendChild(tinted(this.rootPill(outline.root, activeLine), verdictOf(outline.root.lineId)));
+    }
 
     outline.forks.forEach((fork, index) => {
-      const open = this.expanded.has(index);
+      const open = narrowed !== undefined || this.expanded.has(index);
       // A closed heading still shows a failure under it (ADR-357 D4).
       const heading = rollUpVerdicts(fork.lines.map((line) => verdictOf(line.lineId)));
       this.host!.appendChild(tinted(this.forkPill(fork, index, open), heading));
@@ -81,6 +89,16 @@ export class OutlineView {
     el.textContent =
       `${outline.lineCount} line${outline.lineCount === 1 ? '' : 's'} · ` +
       `${forks} fork point${forks === 1 ? '' : 's'}`;
+    return el;
+  }
+
+  /** The switch's one line: how many lines failed, or that none did (AC-8). */
+  private narrowedSummary(outline: Outline): HTMLElement {
+    const el = document.createElement('div');
+    el.className = 'ts-outline-summary ts-outline-narrowed';
+    el.textContent = outline.lineCount === 0
+      ? 'no failures'
+      : `${outline.lineCount} failing line${outline.lineCount === 1 ? '' : 's'}`;
     return el;
   }
 

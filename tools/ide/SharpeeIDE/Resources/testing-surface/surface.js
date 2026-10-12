@@ -151,6 +151,12 @@
   }
 
   // tools/ide/web/testing-surface/src/outline.ts
+  function narrowOutline(outline2, keep) {
+    const forks = outline2.forks.map((fork) => ({ ...fork, lines: fork.lines.filter((line) => keep.has(line.lineId)) })).filter((fork) => fork.lines.length > 0);
+    const rootKept = keep.has(outline2.root.lineId);
+    const lineCount = forks.reduce((n, fork) => n + fork.lines.length, rootKept ? 1 : 0);
+    return { outline: { root: outline2.root, forks, lineCount }, rootKept };
+  }
   var PLAYER_LOCATION = /^\s*player\.location\s*=\s*(.+?)\s*$/;
   var DISTINCTIVE_SHARE = 1 / 3;
   var SHAPE_RUNS = 5;
@@ -250,6 +256,75 @@
     return { steps };
   }
 
+  // tools/ide/web/testing-surface/src/failures.ts
+  function failureStopsOf(run) {
+    const stops = [];
+    run.derived.forEach((row, index) => {
+      if (row.status !== "failed" && row.status !== "error") return;
+      const message = row.status === "error" ? `error${row.detail !== void 0 ? `: ${row.detail}` : ""}` : row.failure ?? row.detail ?? "failed";
+      stops.push({ kind: "derived", index, label: row.label, message, stale: run.derivedStale === true });
+    });
+    for (const [lineId, result] of run.results) {
+      if (result.status !== "failed" && result.status !== "error") continue;
+      const label = result.label ?? run.labels.get(lineId) ?? lineId;
+      const stale = result.stale === true;
+      const failing = result.commands.map((command, index) => ({ command, index })).filter(({ command }) => isFailingCard(command));
+      if (failing.length === 0) {
+        stops.push({ kind: "card", lineId, label, message: result.firstFailure?.message ?? result.status, stale });
+        continue;
+      }
+      for (const { command, index } of failing) {
+        stops.push({
+          kind: "card",
+          lineId,
+          ...command.cardId !== void 0 ? { cardId: command.cardId } : {},
+          command: index,
+          label: `${label} \xB7 ${command.input}`,
+          message: command.failure ?? "failed",
+          stale
+        });
+      }
+    }
+    return stops;
+  }
+  function isFailingCard(command) {
+    return !command.passed && !command.skipped;
+  }
+  function filterStops(stops, query) {
+    const needle = query.trim().toLowerCase();
+    if (needle.length === 0) return [...stops];
+    return stops.filter((stop) => stop.label.toLowerCase().includes(needle) || stop.message.toLowerCase().includes(needle));
+  }
+  function stepIndex(count, current, delta) {
+    if (count <= 0) return void 0;
+    if (current === void 0 || current < 0 || current >= count) return delta === 1 ? 0 : count - 1;
+    return (current + delta + count) % count;
+  }
+  function failureCountText(stops) {
+    if (stops.length === 0) return "no failures";
+    const stale = stops.filter((stop) => stop.stale).length;
+    const text3 = `${stops.length} failing`;
+    return stale > 0 ? `${text3}, ${stale} edited since run` : text3;
+  }
+  function narrowedLineIds(run, query) {
+    const needle = query.trim().toLowerCase();
+    const kept = /* @__PURE__ */ new Set();
+    if (needle.length === 0) {
+      for (const [lineId, result] of run.results) if (isNarrowable(result)) kept.add(lineId);
+      return kept;
+    }
+    for (const stop of filterStops(failureStopsOf(run), query)) {
+      if (stop.kind === "card") kept.add(stop.lineId);
+    }
+    for (const [lineId, result] of run.results) {
+      if (result.status === "unreached" && (result.firstFailure?.message ?? "").toLowerCase().includes(needle)) kept.add(lineId);
+    }
+    return kept;
+  }
+  function isNarrowable(result) {
+    return result.status === "failed" || result.status === "error" || result.status === "unreached";
+  }
+
   // tools/ide/web/testing-surface/src/outline-view.ts
   var OutlineView = class {
     constructor(delegate) {
@@ -270,13 +345,17 @@
      * @param verdictOf  each line's verdict from the last run; every line is
      *   `none` (untinted) when omitted
      */
-    render(outline2, activeLine, verdictOf = () => "none") {
+    render(full, activeLine, verdictOf = () => "none", keep) {
       if (!this.host) return;
       this.host.replaceChildren();
-      this.host.appendChild(this.summary(outline2));
-      this.host.appendChild(tinted(this.rootPill(outline2.root, activeLine), verdictOf(outline2.root.lineId)));
+      const narrowed = keep !== void 0 ? narrowOutline(full, keep) : void 0;
+      const outline2 = narrowed?.outline ?? full;
+      this.host.appendChild(narrowed !== void 0 ? this.narrowedSummary(outline2) : this.summary(outline2));
+      if (narrowed === void 0 || narrowed.rootKept) {
+        this.host.appendChild(tinted(this.rootPill(outline2.root, activeLine), verdictOf(outline2.root.lineId)));
+      }
       outline2.forks.forEach((fork, index) => {
-        const open = this.expanded.has(index);
+        const open = narrowed !== void 0 || this.expanded.has(index);
         const heading = rollUpVerdicts(fork.lines.map((line) => verdictOf(line.lineId)));
         this.host.appendChild(tinted(this.forkPill(fork, index, open), heading));
         if (!open) return;
@@ -293,6 +372,13 @@
       el.className = "ts-outline-summary";
       const forks = outline2.forks.length;
       el.textContent = `${outline2.lineCount} line${outline2.lineCount === 1 ? "" : "s"} \xB7 ${forks} fork point${forks === 1 ? "" : "s"}`;
+      return el;
+    }
+    /** The switch's one line: how many lines failed, or that none did (AC-8). */
+    narrowedSummary(outline2) {
+      const el = document.createElement("div");
+      el.className = "ts-outline-summary ts-outline-narrowed";
+      el.textContent = outline2.lineCount === 0 ? "no failures" : `${outline2.lineCount} failing line${outline2.lineCount === 1 ? "" : "s"}`;
       return el;
     }
     rootPill(root, activeLine) {
@@ -1349,10 +1435,21 @@
           <button class="ts-run-btn" id="ts-run-btn"
                   title="Run the story's test tree at the pinned seed">Run</button>
         </div>
+        <div class="ts-fail-nav" id="ts-fail-nav">
+          <button type="button" class="ts-fail-step" id="ts-fail-prev" title="Previous failure (Shift+F8)" disabled>\u2039</button>
+          <button type="button" class="ts-fail-step" id="ts-fail-next" title="Next failure (F8)" disabled>\u203A</button>
+          <span class="ts-fail-count" id="ts-fail-count">no failures</span>
+          <label class="ts-fail-only-label"><input type="checkbox" id="ts-fail-only"> failures only</label>
+          <input type="search" class="ts-fail-filter" id="ts-fail-filter" placeholder="filter failures" aria-label="filter failures" hidden>
+        </div>
         <div id="ts-run-results"><span class="ts-pending-note">not run yet</span></div>
       </div>`;
       document.body.appendChild(root);
       document.getElementById("ts-run-btn").addEventListener("click", () => this.delegate.onRun());
+      document.getElementById("ts-fail-prev").addEventListener("click", () => this.delegate.onStepFailure(-1));
+      document.getElementById("ts-fail-next").addEventListener("click", () => this.delegate.onStepFailure(1));
+      document.getElementById("ts-fail-only").addEventListener("change", (event) => this.delegate.onFailuresOnly(event.target.checked));
+      document.getElementById("ts-fail-filter").addEventListener("input", (event) => this.delegate.onFailureFilter(event.target.value));
       const inputBar = document.getElementById("input-area");
       if (inputBar) root.querySelector(".ts-input-row").appendChild(inputBar);
       this.host = document.getElementById("ts-cards");
@@ -1880,6 +1977,7 @@
         button.disabled = run.inFlight;
         button.textContent = run.inFlight ? "Running\u2026" : "Run";
       }
+      this.renderFailureNav();
       const lineIds = this.model.lineIds().filter((id) => id === this.model.mainLine ? this.model.hasOpening : true);
       results.innerHTML = "";
       if (!this.model.hasOpening && run.results.size === 0 && run.derived.length === 0 && run.derivedSummary === void 0) {
@@ -2230,6 +2328,36 @@
      * each group closed until opened. A SKIPPED row shows its shape and is
      * never styled as a failure (D5a).
      */
+    /** The failure header: count, step buttons, the switch and its field (ADR-357 D6). */
+    renderFailureNav() {
+      const nav = this.delegate.failureNav();
+      const count = document.getElementById("ts-fail-count");
+      if (count) count.textContent = nav.count;
+      for (const id of ["ts-fail-prev", "ts-fail-next"]) {
+        const step = document.getElementById(id);
+        if (step) step.disabled = !nav.canStep;
+      }
+      const only = document.getElementById("ts-fail-only");
+      if (only && only.checked !== nav.only) only.checked = nav.only;
+      const filter = document.getElementById("ts-fail-filter");
+      if (filter) {
+        filter.hidden = !nav.only;
+        if (filter.value !== nav.query) filter.value = nav.query;
+      }
+    }
+    /**
+     * Focus the derived-tier row at `index` in the run's `derived` rows and
+     * scroll it into view (ADR-357 D10: a derived step stays in the Testing
+     * tab). Returns false when no such row is rendered — only failures and
+     * errors have rows.
+     */
+    focusDerivedRow(index) {
+      const row = document.querySelector(`.ts-derived-row[data-ts-derived-index="${index}"]`);
+      if (!row) return false;
+      row.focus();
+      row.scrollIntoView({ block: "nearest" });
+      return true;
+    }
     renderDerivedRows(results, rows, stale = false) {
       const groups = groupDerivedRows(rows);
       const counts = groups.passed > 0 ? [[`${groups.passed} pass`, "ts-count-pass"]] : [];
@@ -2242,6 +2370,13 @@
         const rowEl = document.createElement("div");
         rowEl.className = "ts-derived-row";
         rowEl.dataset.tsDerived = failure.status;
+        rowEl.dataset.tsDerivedIndex = String(rows.indexOf(failure));
+        rowEl.tabIndex = -1;
+        rowEl.addEventListener("keydown", (event) => {
+          if (event.key !== "Enter") return;
+          event.preventDefault();
+          rowEl.querySelector(".ts-site .ts-src")?.click();
+        });
         const head = document.createElement("div");
         head.className = "ts-head";
         const name = document.createElement("span");
@@ -3861,7 +3996,8 @@
   }
   function renderOutline() {
     const manifest = outlineOf(model.document);
-    outline.render(manifest, model.activeLine, (lineId) => verdictOfResult(runState.results.get(lineId)));
+    const keep = failNav.only ? narrowedLineIds(runState, failNav.query) : void 0;
+    outline.render(manifest, model.activeLine, (lineId) => verdictOfResult(runState.results.get(lineId)), keep);
     const position = document.getElementById("ts-position");
     if (position) renderPosition(position, positionOf(manifest, model.activeLine));
   }
@@ -3944,8 +4080,28 @@
     onVisitFailure(target) {
       void visitFailure(target);
     },
+    onStepFailure(delta) {
+      void stepFailure(delta);
+    },
+    onFailuresOnly(on) {
+      failNav.only = on;
+      if (!on) failNav.query = "";
+      cards.render();
+      renderOutline();
+    },
+    onFailureFilter(query) {
+      failNav.query = query;
+      failNav.index = void 0;
+      cards.render();
+      renderOutline();
+    },
+    failureNav() {
+      const stops = filterStops(failureStopsOf(runState), failNav.query);
+      return { count: failureCountText(stops), canStep: stops.length > 0, only: failNav.only, query: failNav.query };
+    },
     onRun() {
       if (runState.inFlight || driverBusy || replayActive) return;
+      failNav.index = void 0;
       beginRun(runState);
       runState.baseline = captureBaseline(model, currentBuild);
       cards.render();
@@ -3978,6 +4134,7 @@
     }
   });
   var runState = createRunState();
+  var failNav = { index: void 0, only: false, query: "" };
   function deliverRunLine(text3) {
     foldRunLine(runState, text3);
     cards.render();
@@ -4331,6 +4488,19 @@
     update();
     await visitLine(lineId);
   }
+  async function stepFailure(delta) {
+    if (replayActive || driverBusy) return;
+    const stops = filterStops(failureStopsOf(runState), failNav.query);
+    const index = stepIndex(stops.length, failNav.index, delta);
+    if (index === void 0) return;
+    failNav.index = index;
+    const stop = stops[index];
+    if (stop.kind === "derived") {
+      cards.focusDerivedRow(stop.index);
+      return;
+    }
+    await visitFailure({ lineId: stop.lineId, ...stop.cardId !== void 0 ? { cardId: stop.cardId } : {} });
+  }
   async function visitFailure(target) {
     if (replayActive || driverBusy) return;
     const { lineId, cardId } = target;
@@ -4421,6 +4591,13 @@
     if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
     event.preventDefault();
     performUndo();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "F8" || event.metaKey || event.ctrlKey || event.altKey) return;
+    const target = event.target;
+    if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA")) return;
+    event.preventDefault();
+    void stepFailure(event.shiftKey ? -1 : 1);
   });
   var loadedDocument = false;
   var admission = admitBootDocument(bootSession?.tree, seed);

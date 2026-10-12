@@ -36,7 +36,7 @@
  * every line has, unlike the rooms the pane captures only on visit.
  *
  * Public interface: OutlineLine, OutlineFork, Outline, outlineOf(),
- *   OutlinePositionStep, OutlinePosition, positionOf().
+ *   narrowOutline(), OutlinePositionStep, OutlinePosition, positionOf().
  * Owner context: tools/ide — the testing play surface's web bundle.
  */
 
@@ -109,6 +109,27 @@ export interface Outline {
   forks: OutlineFork[];
   /** Lines in the tree, the root included. */
   lineCount: number;
+}
+
+/**
+ * The outline narrowed to the lines in `keep` (ADR-357 D6, the "failures
+ * only" switch; D5's narrowing shape): a fork heading stays exactly when one
+ * of its lines stays, so each kept line still shows where it sits among the
+ * forks. The root is kept by id like any line; `lineCount` becomes the kept
+ * count, so the summary reads the narrowed tree. `root` is always present
+ * because the view needs one — `rootKept` says whether to show it.
+ *
+ * @param outline the full manifest
+ * @param keep    the ids of the lines to show
+ * @returns the narrowed manifest and whether the root line is among the kept
+ */
+export function narrowOutline(outline: Outline, keep: ReadonlySet<string>): { outline: Outline; rootKept: boolean } {
+  const forks = outline.forks
+    .map((fork) => ({ ...fork, lines: fork.lines.filter((line) => keep.has(line.lineId)) }))
+    .filter((fork) => fork.lines.length > 0);
+  const rootKept = keep.has(outline.root.lineId);
+  const lineCount = forks.reduce((n, fork) => n + fork.lines.length, rootKept ? 1 : 0);
+  return { outline: { root: outline.root, forks, lineCount }, rootKept };
 }
 
 /** `player.location = Northwest Junction` → `Northwest Junction`. */

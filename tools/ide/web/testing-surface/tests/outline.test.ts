@@ -30,7 +30,7 @@ import {
   type TreeDocument,
   type TreeFiles,
 } from '@sharpee/branch-tester/tree-document';
-import { outlineOf, positionOf } from '../src/outline';
+import { narrowOutline, outlineOf, positionOf } from '../src/outline';
 
 const turn = (command: string, extra: Record<string, unknown> = {}) =>
   ({ type: 'turn' as const, command, ...extra });
@@ -347,5 +347,39 @@ describe('positionOf — where a line sits (ADR-357 D7)', () => {
 
   it('gives an id the outline does not hold no steps', () => {
     expect(positionOf(outlineOf(nested), 'nosuchid').steps).toEqual([]);
+  });
+});
+
+describe('narrowOutline — the failures-only switch keeps lines and the forks above them (ADR-357 D6, AC-8)', () => {
+  const tree = doc([
+    { type: 'opening' },
+    { type: 'boot' },
+    { ...turn('take lamp'), ...forkOf(['east', 'look'], ['west']) },
+    turn('north'),
+  ]);
+
+  it('keeps a kept line with its fork heading, drops a fork whose lines all go, and counts the kept', () => {
+    const full = outlineOf(tree);
+    expect(full.lineCount).toBe(3);
+
+    const { outline, rootKept } = narrowOutline(full, new Set(['branch02']));
+    expect(rootKept).toBe(false);
+    expect(outline.forks).toHaveLength(1);
+    expect(outline.forks[0].lines.map((line) => line.lineId)).toEqual(['branch02']);
+    expect(outline.forks[0].command).toBe('take lamp');
+    expect(outline.lineCount).toBe(1);
+  });
+
+  it('keeps the root by its id and counts it; an empty set keeps nothing', () => {
+    const full = outlineOf(tree);
+    const rootOnly = narrowOutline(full, new Set(['root0000']));
+    expect(rootOnly.rootKept).toBe(true);
+    expect(rootOnly.outline.forks).toEqual([]);
+    expect(rootOnly.outline.lineCount).toBe(1);
+
+    const none = narrowOutline(full, new Set());
+    expect(none.rootKept).toBe(false);
+    expect(none.outline.forks).toEqual([]);
+    expect(none.outline.lineCount).toBe(0);
   });
 });

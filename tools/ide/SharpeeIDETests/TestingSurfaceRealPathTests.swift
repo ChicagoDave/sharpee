@@ -1587,6 +1587,73 @@ final class TestingSurfaceRealPathTests: XCTestCase {
         XCTAssertEqual(markedAfter, 1, "one landing mark at a time")
     }
 
+    /// ADR-357 D6/D10 on the real page and the real CLI: after a run, the
+    /// failure header counts the failures, next (the button and F8) lands on
+    /// the first failing card and marks it, the "failures only" switch narrows
+    /// the outline to the one failing line and shows the filter field, and a
+    /// filter nothing matches leaves "no failures" with next/previous inert.
+    func testNextFailureAndTheFailuresOnlySwitchOnARealRun() async throws {
+        try XCTSkipUnless(FileManager.default.fileExists(atPath: TestToolchain.devkitCLI.path),
+                          "devkit CLI not built — run `./repokit build`")
+        _ = try await bootAndRunMiniProject()
+
+        let count = try await surface.evaluateInSurface("document.getElementById('ts-fail-count').textContent") as? String ?? ""
+        XCTAssertTrue(count.hasSuffix(" failing") && !count.hasPrefix("no"), "the header counts the run's failures: \(count)")
+        let nextDisabled = try await surface.evaluateInSurface("document.getElementById('ts-fail-next').disabled") as? Bool
+        XCTAssertEqual(nextDisabled, false, "next is live when failures exist")
+
+        // The first stop is the first failing card: the opening claim the page
+        // recorded from the prologue (card0001) when the real story does not
+        // say it, else `take lamp`'s claim (card0003) — the fixture's business.
+        let why = try await surface.evaluateInSurface("""
+        (function () { var r = document.querySelector('.ts-run-row-visit'); return r ? r.querySelector('.ts-why').textContent : ''; })()
+        """) as? String ?? ""
+        let expected = why.contains("no such text anywhere") ? "card0003" : "card0001"
+        _ = try await surface.evaluateInSurface("document.getElementById('ts-fail-next').click(); true")
+        try await waitFor("!!document.querySelector('.ts-card-landed')", "next landed on a card")
+        let landed = try await surface.evaluateInSurface("document.querySelector('.ts-card-landed').dataset.landedCard") as? String
+        XCTAssertEqual(landed, expected, "next lands on the first failing card (why: \(why))")
+
+        // F8 is the same step from the keyboard, and the walk wraps on one stop.
+        _ = try await surface.evaluateInSurface("""
+        document.querySelectorAll('.ts-card-landed').forEach(function (e) { e.classList.remove('ts-card-landed'); });
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'F8', bubbles: true, cancelable: true })); true
+        """)
+        try await waitFor("!!document.querySelector('.ts-card-landed')", "F8 landed on a card")
+
+        // The switch: the outline keeps the failing line and says so; the filter shows.
+        _ = try await surface.evaluateInSurface("document.getElementById('ts-fail-only').click(); true")
+        try await waitFor("!!document.querySelector('.ts-outline-narrowed')", "the outline narrowed")
+        let narrowed = try await surface.evaluateInSurface("""
+        JSON.stringify({
+          summary: document.querySelector('.ts-outline-narrowed').textContent,
+          lines: document.querySelectorAll('.ts-outline-pill.ts-outline-root, .ts-outline-pill.ts-outline-line').length,
+          filterShown: !document.getElementById('ts-fail-filter').hidden
+        })
+        """) as? String ?? "{}"
+        let probe = (try? JSONSerialization.jsonObject(with: Data(narrowed.utf8)) as? [String: Any]) ?? [:]
+        XCTAssertEqual(probe["summary"] as? String, "1 failing line", "the main line is the one failing line: \(probe)")
+        XCTAssertEqual(probe["lines"] as? Int, 1, "only the failing line is listed: \(probe)")
+        XCTAssertEqual(probe["filterShown"] as? Bool, true)
+
+        // A filter nothing matches: no lines, the count says so, stepping is inert.
+        _ = try await surface.evaluateInSurface("""
+        (function () { var f = document.getElementById('ts-fail-filter'); f.value = 'nothing matches this'; f.dispatchEvent(new Event('input', { bubbles: true })); })(); true
+        """)
+        try await waitFor("document.querySelector('.ts-outline-narrowed').textContent === 'no failures'", "the filter emptied the outline")
+        let after = try await surface.evaluateInSurface("""
+        JSON.stringify({
+          count: document.getElementById('ts-fail-count').textContent,
+          disabled: document.getElementById('ts-fail-next').disabled,
+          lines: document.querySelectorAll('.ts-outline-pill.ts-outline-root, .ts-outline-pill.ts-outline-line').length
+        })
+        """) as? String ?? "{}"
+        let afterProbe = (try? JSONSerialization.jsonObject(with: Data(after.utf8)) as? [String: Any]) ?? [:]
+        XCTAssertEqual(afterProbe["count"] as? String, "no failures", "\(afterProbe)")
+        XCTAssertEqual(afterProbe["disabled"] as? Bool, true, "\(afterProbe)")
+        XCTAssertEqual(afterProbe["lines"] as? Int, 0, "\(afterProbe)")
+    }
+
     /// The D11 contract on the real page, the real CLI and the real sidecar:
     /// after a run, authoring a claim on the fork card makes both lines
     /// through it stale without clearing them, ⌘Z makes them current again, a
