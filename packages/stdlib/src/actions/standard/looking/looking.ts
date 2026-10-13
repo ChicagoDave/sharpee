@@ -84,7 +84,6 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
   id: IFActions.LOOKING,
   requiredMessages: [
     'room_description',
-    'room_description_brief',
     'room_dark',
     'contents_list',
     'nothing_special',

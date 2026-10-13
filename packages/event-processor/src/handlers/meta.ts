@@ -89,7 +89,6 @@ export function handleHelpDisplayed(event: ISemanticEvent, world: any): void {
     generalHelp?: boolean;
     firstTime?: boolean;
     sections?: string[];
-    hintsAvailable?: boolean;
   };
 
   // Mark that help has been requested

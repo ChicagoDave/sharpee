@@ -25,10 +25,12 @@ describe('MetaCommandRegistry', () => {
       expect(MetaCommandRegistry.isMeta('if.action.help')).toBe(true);
     });
     
-    it('should have transcript commands registered', () => {
-      expect(MetaCommandRegistry.isMeta('transcript')).toBe(true);
-      expect(MetaCommandRegistry.isMeta('transcript_on')).toBe(true);
-      expect(MetaCommandRegistry.isMeta('transcript_off')).toBe(true);
+    it('carries no teletype-era preference or transcript ids', () => {
+      // Dropped 2026-10-13: transcript, verbose, brief, superbrief and notify
+      // were bare strings no action id ever matched.
+      for (const id of ['transcript', 'transcript_on', 'transcript_off', 'verbose', 'brief', 'superbrief', 'notify']) {
+        expect(MetaCommandRegistry.isMeta(id)).toBe(false);
+      }
     });
     
     it('should not have regular game commands registered', () => {

@@ -13,7 +13,6 @@ export interface HelpDisplayedEventData {
   params?: {
     topic?: string;
     sections?: string[];
-    hintsAvailable?: boolean;
   };
 
   // Domain data
@@ -34,9 +33,6 @@ export interface HelpDisplayedEventData {
 
   /** Available help sections */
   sections?: string[];
-
-  /** Whether hints are available in the game */
-  hintsAvailable?: boolean;
 
   /** Whether this is a blocked/error case */
   blocked?: boolean;

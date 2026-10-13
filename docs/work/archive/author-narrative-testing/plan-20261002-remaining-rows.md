@@ -1,7 +1,8 @@
 # Session Plan: Close the remaining rows of the author testing narrative's table
 
 **Created**: 2026-10-02
-**Plan Status**: ACTIVE
+**Plan Status**: DONE
+**Disposition**: done but unmarked (David, 2026-10-13, session 326e9e) — every in-scope phase DONE through the 2026-10-13 checkpoint; Phases 8 and 9 stay DEFERRED by the G1 ruling and live on in the objective's scope rulings and GH #525; moved to the archive so the Chord 4.0 plan can take `.current-plan`.
 **Superseded by**: docs/work/archive/chord-syntax-round/plan-20261009-adr-360-362.md (archived 2026-10-10; set aside "still live" on hold at Phase 6b, David, 2026-10-09)
 **Resumed**: 2026-10-05 (session f8ef32) at Phase 6b, after the ADR-359 D1 plan (`docs/work/archive/adr-359-kind-line/plan-20261005-d1.md`) finished; it had set this plan aside "still live" (David, 2026-10-05).
 **Serves objective**: author-narrative-testing (`docs/objectives/author-narrative-testing.md`, O-1, due 2026-10-15; checkpoints 2026-10-06 and 2026-10-13)
@@ -176,7 +177,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: G1 IN; an ADR-356 amendment or new ADR decided with David first (no design exists; this is a decision gate disguised as a phase, and its first deliverable is the amendment, not code); platform discussion
 - **Deliverable**: the amendment, then a plan of its own. This phase will not be sized further until the decision exists.
 - **Exit state**: decision recorded; a follow-on plan written or the row ruled out
-- **Status**: DEFERRED (2026-10-03, G1) — out of scope for O-1; the rows stay listed as SKIPPED; design after 2026-10-15
+- **Status**: DONE as DEFERRED (closed 2026-10-13 with the plan; G1 ruling of 2026-10-03) — out of scope for O-1; the rows stay listed as SKIPPED; design after 2026-10-15, tracked by GH #525
 
 ### Phase 9: Promote the explorer lenses to an author surface (only if G1 says IN)
 - **Tier**: Medium
@@ -185,7 +186,7 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: G1 IN; David has said where authors meet the lenses (a subcommand, a World tab view, a report section); platform discussion
 - **Deliverable**: the two lenses reachable by an author, with `narrative-*` coverage
 - **Exit state**: row shipped
-- **Status**: DEFERRED (2026-10-03, G1) — out of scope for O-1; the lenses stay developer tools and remain a roadmap item
+- **Status**: DONE as DEFERRED (closed 2026-10-13 with the plan; G1 ruling of 2026-10-03) — out of scope for O-1; the lenses stay developer tools and remain a roadmap item
 
 ### Phase 10: Checkpoint 2026-10-13 and final re-count
 - **Tier**: Small

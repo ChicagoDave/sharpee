@@ -7,7 +7,6 @@
 export const LookingMessages = {
   // Success messages
   ROOM_DESCRIPTION: 'room_description',
-  ROOM_DESCRIPTION_BRIEF: 'room_description_brief',
   ROOM_DARK: 'room_dark',
   CONTENTS_LIST: 'contents_list',
   NOTHING_SPECIAL: 'nothing_special',

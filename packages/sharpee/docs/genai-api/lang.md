@@ -292,7 +292,6 @@ export declare const IFActions: {
     readonly PUSHING: "if.action.pushing";
     readonly PULLING: "if.action.pulling";
     readonly TURNING: "if.action.turning";
-    readonly USING: "if.action.using";
     readonly GIVING: "if.action.giving";
     readonly SHOWING: "if.action.showing";
     readonly THROWING: "if.action.throwing";
@@ -609,7 +608,6 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         room_description: string;
-        room_description_brief: string;
         in_container: string;
         on_supporter: string;
         examine_surroundings: string;
@@ -1694,8 +1692,6 @@ export declare const standardActionLanguage: ({
         help_objects: string;
         help_special: string;
         first_time: string;
-        hints_available: string;
-        hints_disabled: string;
         stuck_help: string;
         help_footer: string;
     };

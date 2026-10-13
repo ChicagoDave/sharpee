@@ -44,7 +44,7 @@
 | listening, smelling, touching | **none**: `AcousticTrait` is not exposed; prose answers come from phrase overrides | yes | **react only** | 5.0: per-sense prose lines on a thing (sound, smell, feel) lowered to the platform's sensory traits; the reaction clause is the idiom until then |
 | sleeping, waking | **none** | yes | **react only** | out: sayable by a declared state and a reaction clause; no object-side word is warranted (David, 2026-10-12) |
 
-Declared in `constants.ts` and the manifest with **no implementation** (14 ids, accepted as gerunds but nothing fires): consulting, emptying, entering_room, hints, jumping, kissing, looking_behind, looking_under, revealing, setting, tasting, using, verifying, waving. These are rows in section C where Inform has them.
+Declared in `constants.ts` and the manifest with **no implementation** (13 ids, accepted as gerunds but nothing fires): consulting, emptying, hints, jumping, kissing, looking_behind, looking_under, setting, tasting, using, verifying, waving, and entering_room. These are rows in section C where Inform has them. **Corrected 2026-10-13 (session 326e9e, Phase 1 of the 4.0 plan)**: the baseline listed 14 and included `revealing`, which is implemented (`packages/stdlib/src/actions/standard/hiding/revealing.ts`, five grammar patterns, its own language entry); and `entering_room` is not a verb but the ADR-126 interceptor seam that the lifecycle registry derives and Dungeo's gas-room interceptor registers under, so it stays declared with no grammar by design. Retired from `constants.ts` on 2026-10-13: `using`, `verifying`, `looking_behind`, `hints` (and hints' two orphan help messages). The manifest now carries 67 ids.
 
 **Section A count**: 58 rows; 49 sayable today (43 player actions, 1 internal, counted as the table's grouped lines expand); 9 react only (lowering, raising, turning, throwing, listening, smelling, touching, sleeping, waking).
 
@@ -145,22 +145,57 @@ The disposition pass ran in session 1f771c (rulings dated 2026-10-12, completed 
 |---|---|---|---|---|---|
 | A. stdlib actions (9) | 3 | 4 | 0 | 2 | 0 |
 | B. unreached traits (12) | 7 | 2 | 1 | 2 | 0 |
-| C. Inform's additions (32) | 21 | 3 | 1 | 7 | 1 (described / undescribed: `unlisted` is the word) |
-| **Total (53)** | **31** | **9** | **2** | **11** | **1** |
+| C. Inform's additions (33) | 20 | 3 | 1 | 8 | 1 (described / undescribed: `unlisted` is the word) |
+| **Total (54)** | **30** | **9** | **2** | **12** | **1** |
 
-**The 4.0 slice (31 rows)**: lowering, raising, throwing (targeted); vehicle, attached, breakable, destructible, exit (custom-command passages), listener, night-vision; Looking under, Consulting it about, Asking it for, Throwing it at, Kissing, Waving, Saying yes/no/sorry, Burning, Tying it to, Setting it to, Buying, Jumping, Pushing it to, Emptying; `in`/`out` exits (GH #568), backdrop, vehicle (kind), transparent container, pushable between rooms, container capacity.
+**Count corrected 2026-10-13 (session 326e9e, Phase 1 of the 4.0 plan).** The pass summary said section C had 21 rows at 4.0 and 7 out, for a slice of 31. Re-counting section C's two tables row by row gives 24 action rows and 9 kind rows that were not sayable at the baseline (33, not 32; the baseline's "9 sayable" was 8: Getting off plus seven kind rows), of which 20 are at 4.0 and 8 are out (the player's holdall is the eighth). So the baseline is 114 rows, 60 sayable, 54 not; the 4.0 slice is 30 rows; out is 12. Every row still carries David's ruling; only the arithmetic moved.
+
+**The 4.0 slice (30 rows)**: lowering, raising, throwing (targeted); vehicle, attached, breakable, destructible, exit (custom-command passages), listener, night-vision; Looking under, Consulting it about, Asking it for, Throwing it at, Kissing, Waving, Saying yes/no/sorry, Burning, Tying it to, Setting it to, Buying, Jumping, Pushing it to, Emptying; `in`/`out` exits (GH #568), backdrop, vehicle (kind), transparent container, pushable between rooms, container capacity.
 
 **Deferred to 5.0 (9)**: turning; listening, smelling, touching, tasting (the senses, together); acoustic; equipped; Squeezing, Rubbing, Swinging; Hints.
 
 **Deferred to 6.0 (2)**: scene, in both tables, reconciled with chapters and sequences.
 
-**Out (11)**: sleeping, waking; button; moveable-scenery; Thinking; Using; transcript on/off; brief/superbrief/verbose; score notification; pronoun meanings; player's holdall; Verifying.
+**Out (12)**: sleeping, waking; button; moveable-scenery; Thinking; Using; transcript on/off; brief/superbrief/verbose; score notification; pronoun meanings; player's holdall; Verifying.
 
-**What the pass settles about the dead ids.** Of the 14 declared-but-unimplemented action ids: 7 get implemented at 4.0 (consulting, emptying, jumping, kissing, looking_under, setting, waving); 2 wait for 5.0 (hints, tasting), with hints' two orphan help aliases retired at 4.0; 2 are retired from the manifest at 4.0 (using, verifying); 3 have no Inform row and are a stdlib cleanup on their own (entering_room, looking_behind, revealing). Seven meta ids are dropped with their rows: `transcript`, `transcript_on`, `transcript_off`, `verbose`, `brief`, `superbrief`, `notify`, and the looking action's brief-mode TODO goes with them.
+**What the pass settles about the dead ids** (corrected 2026-10-13; see section A's note). Of the 13 declared-but-unimplemented action ids: 7 get implemented at 4.0 (consulting, emptying, jumping, kissing, looking_under, setting, waving); 2 wait for 5.0 (hints, tasting), with hints' id and its two orphan help messages retired at 4.0 (done 2026-10-13); 3 are retired from the manifest at 4.0 (using, verifying, looking_behind; done 2026-10-13); 1 is the ADR-126 interceptor seam and stays (entering_room). `revealing` was never dead. Seven meta ids are dropped with their rows (done 2026-10-13): `transcript`, `transcript_on`, `transcript_off`, `verbose`, `brief`, `superbrief`, `notify` were bare strings in `MetaCommandRegistry` that no action id ever matched, and the looking action's brief-mode TODO and its `room_description_brief` message went with them.
+
+## 4.0 evidence
+
+One row per item in the 4.0 slice. The plan phase that makes the row sayable fills **Exercised by** with the UPPS card or fernhill line that plays it; O-3 is measured against this table at publish.
+
+| Row | Plan phase | Exercised by |
+|---|---|---|
+| lowering, raising (object side) | 6 | |
+| throwing (targeted) / Throwing it at | 7 | |
+| vehicle (trait and kind) | 11, 14 | |
+| attached / Tying it to | 8 | |
+| breakable, destructible | 8 | |
+| exit (custom-command passages) | 13 | |
+| listener | 9 | |
+| night-vision | 9 | |
+| Looking under | 5 | |
+| Consulting it about | 7 | |
+| Asking it for | 7 | |
+| Kissing | 5 | |
+| Waving, Waving hands | 5 | |
+| Saying yes, no, sorry | 5 | |
+| Burning / `flammable with` | 6 | |
+| Setting it to / `settable to` | 6 | |
+| Buying / `costs` | 7 | |
+| Jumping | 5 | |
+| Pushing it to / pushable between rooms | 13 | |
+| Emptying | 5 | |
+| `in` / `out` exits (GH #568) | 4 | |
+| backdrop | 9 | |
+| transparent container | 4 | |
+| container capacity (`holds <n>`) | 4 | |
+
+The table has 24 lines for 30 rows because the slice counts throwing, vehicle, destructible, Tying it to and pushable between rooms twice across sections A, B and C, and it is one evidence line per thing an author writes.
 
 ## Notes on the count
 
 - Grouped lines in section A (opening and closing, the twelve meta actions) count each action once; the 58 is the directory count.
-- The 14 declared-but-unimplemented ids are a platform finding on their own: an author's `on the player kissing` compiles and never fires. Whether to implement or retire them is a row in C where Inform has the action, and a stdlib cleanup otherwise.
+- The 13 declared-but-unimplemented ids are a platform finding on their own: an author's `on the player kissing` compiles and never fires. Whether to implement or retire them is a row in C where Inform has the action, and a stdlib cleanup otherwise.
 - `in`/`out` as exit directions (GH #568) is the only direction row; Inform's extensible direction kind is not proposed.
 - The state-dependent exit destination UPPS surfaced on 2026-10-12 is not an Inform row; it is the vehicle row seen from the ship, and O-2 owns it.

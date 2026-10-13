@@ -35,10 +35,6 @@ export const helpLanguage = {
     // First time help — key matches if.action.help.first_time
     'first_time': "New to Interactive Fiction? Try these commands to get started:\n- LOOK to see where you are\n- INVENTORY to see what you're carrying\n- EXAMINE interesting objects\n- Go in compass directions (NORTH, SOUTH, etc.)",
     
-    // Hints availability
-    'hints_available': "Hints are available. Type HINTS to see them.",
-    'hints_disabled': "Hints are not available in this game.",
-    
     // Context-sensitive help
     'stuck_help': "If you're stuck, try:\n- LOOK around carefully\n- EXAMINE everything\n- Check your INVENTORY\n- Try different verbs with objects",
     

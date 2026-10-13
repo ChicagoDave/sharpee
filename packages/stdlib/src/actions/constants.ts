@@ -37,7 +37,6 @@ export const IFActions = {
   EXAMINING: 'if.action.examining',
   SEARCHING: 'if.action.searching',
   LOOKING_UNDER: 'if.action.looking_under',
-  LOOKING_BEHIND: 'if.action.looking_behind',
   LISTENING: 'if.action.listening',
   SMELLING: 'if.action.smelling',
   TOUCHING: 'if.action.touching',
@@ -103,8 +102,7 @@ export const IFActions = {
   LOWERING: 'if.action.lowering',
   RAISING: 'if.action.raising',
   
-  // Using actions
-  // USING: 'if.action.using', // Removed - USE is not idiomatic IF
+  // Reference actions
   CONSULTING: 'if.action.consulting',
   READING: 'if.action.reading',
   
@@ -120,10 +118,8 @@ export const IFActions = {
   UNDOING: 'if.action.undoing',
   AGAIN: 'if.action.again',
   SCORING: 'if.action.scoring',
-  VERIFYING: 'if.action.verifying',
   VERSION: 'if.action.version',
   HELP: 'if.action.help',
-  HINTS: 'if.action.hints',
   ABOUT: 'if.action.about',
 } as const;
 

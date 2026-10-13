@@ -1122,7 +1122,6 @@ export declare const IFActions: {
     readonly EXAMINING: "if.action.examining";
     readonly SEARCHING: "if.action.searching";
     readonly LOOKING_UNDER: "if.action.looking_under";
-    readonly LOOKING_BEHIND: "if.action.looking_behind";
     readonly LISTENING: "if.action.listening";
     readonly SMELLING: "if.action.smelling";
     readonly TOUCHING: "if.action.touching";
@@ -1177,10 +1176,8 @@ export declare const IFActions: {
     readonly UNDOING: "if.action.undoing";
     readonly AGAIN: "if.action.again";
     readonly SCORING: "if.action.scoring";
-    readonly VERIFYING: "if.action.verifying";
     readonly VERSION: "if.action.version";
     readonly HELP: "if.action.help";
-    readonly HINTS: "if.action.hints";
     readonly ABOUT: "if.action.about";
 };
 export type IFActionType = typeof IFActions[keyof typeof IFActions];

@@ -39,8 +39,7 @@ export const IFActions = {
   PUSHING: 'if.action.pushing',
   PULLING: 'if.action.pulling',
   TURNING: 'if.action.turning',
-  USING: 'if.action.using',
-  
+
   // Social actions
   GIVING: 'if.action.giving',
   SHOWING: 'if.action.showing',
