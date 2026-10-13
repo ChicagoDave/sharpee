@@ -131,7 +131,7 @@ You never transcribe a rule into a test. You never commit a generated test file.
 
 ## Where each beat stands today
 
-| Beat | Status on 2026-10-12 (checkpoint re-count; 13 of 15 shipped, 2 deferred from O-1 by David on 2026-10-03, so 13 of 13 counted) | Carried by |
+| Beat | Status on 2026-10-12 (the 2026-10-13 checkpoint re-count, run a day early on UPPS at room 4: 13 of 15 shipped, 2 deferred from O-1 by David on 2026-10-03, so 13 of 13 counted; unchanged since the 2026-10-06 re-count) | Carried by |
 | --- | --- | --- |
 | Map, Reach and Incomplete views in the World tab | Shipped in the macOS IDE; the analysis behind them walked by `narrative-world-tab.test.ts` through `sharpee world-index`; the views themselves are IDE only, not CLI-observable | ADR-321 D4 to D7, D11 to D13 |
 | Testing tab as a play surface with cards, default room-name-and-description claims, Add contains, state picker, region groups | Shipped; the cards' claims and verdicts walked by `narrative-pinned-prose.test.ts`; the gestures (Add contains, the picker) are IDE only, not CLI-observable | ADR-306, ADR-307 |

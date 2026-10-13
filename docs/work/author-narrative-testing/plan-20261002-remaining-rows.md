@@ -194,7 +194,8 @@ Baseline "10 of 15" becomes **11 of 15** after the segmented tree row. Checkpoin
 - **Entry state**: story as far as it exists; whichever of Phases 6-9 were IN are done
 - **Deliverable**: both evidence sources run, table re-counted, rows ruled out recorded as such, results for the 2026-10-15 grade
 - **Exit state**: objective ready to grade
-- **Status**: CURRENT (since 2026-10-12)
+- **Demonstrated** (2026-10-12, session 4b14c1, run a day early at David's request): on UPPS at room 4. `./sharpee test branch-stories/upps/upps.story` → 35 cards passing, 54 assertions passing, 8 of 13 branches with the 5 gaps listed by span, 4 of 4 rooms, 0 of 0 endings, exit 0. `NARRATIVE_STORY=branch-stories/upps pnpm test:scripts narrative-holds narrative-support` → 41 passing, 3 failures; all 14 UPPS cases green; the 3 failures are the fernhill-only GH #587 condition, as on 2026-10-06, reported not fixed. The story's history shows room-sized commits with the tree passing at each. Table re-counted: unchanged, 13 of 15 shipped, 2 deferred, 13 of 13 counted; recorded in the objective's Progress line and the narrative's table header. Results for the 2026-10-15 grade are in the objective: every counted row holds at 4 rooms; the 60-room size clause will not be met by the date. [reported by session: both runs made this session]
+- **Status**: DONE
 
 ## Ordering notes
 - Phases 1, 3 do not depend on David's rulings and are ready now; Phase 2 is a gate, and it decides whether 5-9 happen at all.
