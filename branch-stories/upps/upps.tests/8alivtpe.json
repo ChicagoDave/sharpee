@@ -1,0 +1,54 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Airlock",
+          "The deck plates here are scored where a thousand parcels have been dragged across them. Your boots fit the grooves."
+        ]
+      },
+      "command": "west",
+      "id": "tvoio410",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The outer hatch stays shut while the Sparrow sits in the dock."
+        ],
+        "notContains": [
+          "You open the outer hatch."
+        ]
+      },
+      "command": "open hatch",
+      "id": "ego9r2hd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The outer hatch is shut."
+        ],
+        "notContains": [
+          "Landing Pad"
+        ]
+      },
+      "command": "west",
+      "id": "ckvktaj2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold"
+        ]
+      },
+      "command": "east",
+      "id": "eueo4ya9",
+      "type": "turn"
+    }
+  ],
+  "id": "8alivtpe",
+  "ordinal": 1,
+  "parent": "opejfh5t"
+}

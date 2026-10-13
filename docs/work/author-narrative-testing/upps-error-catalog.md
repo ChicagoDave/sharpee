@@ -189,6 +189,83 @@ Room 4's ten cards were added to the tree on 2026-10-12 (listed in the seed fold
 
 `V` is the first seed in four rooms that a tool catches at its source line without a card: the derived tier synthesized `wear the suit locker`, the standard action refused it, and the report says which clause and which line. `B` and `G` read identically in the tree; `R` is the first catch by a state claim, which is the only thing that sees a `change` with no prose of its own.
 
+## Room 5 catalog
+
+Written and seeded 2026-10-12 (session 4b14c1) in `branch-stories/upps/seeded/room-05/`, `TEST-005-A` to `V` plus `Z`; letter, error and expected catch in that folder's `README.md`. Room 5 is the Airlock, a closet off the Hold's port side, reached by `west` through an exit declared on the Airlock only (`east to the Hold`). The fold lands the Sparrow at Ceres by a `define sequence` anchored on `when the courier ship becomes underway`, with one `5 turns later` step that changes the ship to `landed` and speaks the landing. The outer hatch is `openable` scenery: `refuse when …: hatch-in-dock` while the ship is `buttoned` or `boarding`, and one `after the player opening, once` reaction that kills the player when the ship is `underway` and speaks the Ceres paragraph when it is `landed`. The room has a `first time` paragraph. It is the story's first ending, so the tree forked for the first time: two fork points, three lines, and an END STATE card on the death. Every file was compiled on 2026-10-12; the gate-clean ones were run against the tree in scratch copies, and `G` was also played to read its runtime line.
+
+Two catches came during the write, both compiler fix-its that read as the guide promises: `refuse <key> when <condition>` is `parse.refuse-order` ("The condition comes first"), and two `after opening` clauses on one thing is `analysis.duplicate-clause` ("Merge the bodies"). Both became seeds (`A`, `B`). Four findings came out of the seeds: two refusals sharing a key produce two identical derived rows (F-28); a line that forks from inside an enterable thing is labelled by the thing (`flight-couch · exit`), not the room (F-29); the sequence anchor rejects a switchable thing's built-in `on` while a `when` guard accepts `is on` (F-30); and a `change` that fails at runtime against a forward-only state set prints a rule-failure line with the story line in play, which the tester never surfaces (F-31).
+
+### Caught by the compiler (5)
+
+`A`, `B`, `C`, `S`, `T`. All five carry a code and a `file:line:col`; `A` and `B` print the fix; `C` and `S` are the familiar unknown-value and missing-phrase catches; `T` says `on` is not a declared state of the drive and nothing more (F-30).
+
+### Compiles clean, and is not an error (2)
+
+`J`, `Q`. The `, once` is redundant for every line the tree has, since none closes and reopens the hatch (`J`); the `buttoned` refusal can never fire, because the Hold is unreachable while the ship is buttoned (`Q`) — the derived tier arranges that state and passes the row, so a guard that play can never reach reads as covered.
+
+### Compiles clean, and something else must catch it (15)
+
+The tree was forked and room 5's cards added on 2026-10-12 (listed in the seed folder's `README.md`). The correct story reports 3 lines, 49 cards passing, 82 assertions passing, endings 1 of 1, rooms 5 of 5.
+
+| Error | What catches it today |
+|---|---|
+| `D`: the `landed` change removed | the tree's state claim on `west` ("underway", expected "landed"); 3 cards failing, since the main line's `open hatch` now kills the player |
+| `E`: `4 turns later` | the tree, twice: `west` lacks the landing line (it printed on `south`), and the death card's ending is not reached, because the step fires before the hatch opens; 2 cards failing |
+| `F`: `6 turns later` | the tree, on `west` (the landing prints on `look`); 1 card failing |
+| `G`: the anchor on `boarding` | the tree, on the seated `switch on drive`: the standard line is gone, because the `change … to underway` failed against a forward-only set already at `landed`. Play prints the cause with its line, "One of the story's rules failed here: … (line 242)"; the tester prints only the missing text (F-31); 4 cards failing |
+| `H`: the kill unguarded | the tree, on the main line's `open hatch` (the player dies at Ceres); 2 cards failing |
+| `I`: the phrase unguarded | the tree, on the death card (the Ceres paragraph prints after the kill); 1 card failing |
+| `K`: the `first time` paragraph removed | the tree, on every line's `west`; 3 cards failing |
+| `L`: the hatch not `openable` | the tree, on `open hatch` in two lines; 3 cards failing. The derived refusal rows still pass: the story's refusal runs before the standard openable check |
+| `M`: the exit removed | the tree, on every line's `west`; 12 cards failing; `Rooms entered: 5 / 5` regardless (F-25) |
+| `N`: the landing phrase removed | the tree, on `west`; 1 card failing, the state claim passing |
+| `O`: both refusals removed | the tree, on the dock line's `open hatch`; 1 card failing |
+| `P`: the `boarding` refusal removed | the tree, exactly as `O`; 1 card failing |
+| `R`: `kill the player` with no key | the tree, on the death card: "the story ended with defeat (killed)"; and the report: `Endings reached: 0 / 0`, "Endings declared without an id (1) — no END STATE card can name them" |
+| `U`: the gauge in the Hold | the tree, on `examine gauge` in two lines; 2 cards failing |
+| `V`: the reaction on the gauge | the tree, on `open hatch` in two lines; 2 cards failing. The derived tier reads "pressure gauge · after opening, once — SKIPPED no-claims", because both statements are conditional (F-22), so the wrong owner is not caught at its line as room 4's `V` was |
+
+The sequence is the first construct whose errors the tree catches by timing: `E`, `F` and `G` each move the landing by turns, and the tree sees it only because the landing line was claimed on the one card where it belongs. The derived tier reports the sequence's two steps as SKIPPED (`no-claims` for the empty anchor step, `command-schedule` for the timed one), so without the card the fold's timing is tested by nothing. `R` is the first seed the report itself catches, by naming an ending no card can name.
+
+## Room 6 catalog
+
+Written and seeded 2026-10-12 (session 4b14c1) in `branch-stories/upps/seeded/room-06/`, `TEST-006-A` to `V` plus `Z`; letter, error and expected catch in that folder's `README.md`. Room 6 is the Landing Pad, Ceres pad 14, through the open hatch `west` of the Airlock. It introduces the story's villain (David, 2026-10-12: the story "can't be just Bureaucracy in Space"): the Kepler Station parcel is a court summons for Aurelio Vance, who has bought the route, and the pad master Dolores Quint is his first hand. She blocks the tram `north` (`north is blocked while the pad master is unconvinced`, with no destination yet) until shown the route card (`after the player showing while the player is in the Landing Pad, once` on the card, which changes her state), answers three `define topics` keys (quoted spellings; the parcel, Vance, the dome), and signs for the bundle if given it (`lose parcel-signed-away when the pad master has the mail bundle`), the story's second ending and its first `lose`. The Airlock's `west` is blocked while the hatch is closed; the Hold's `down` is sealed while the ship is `underway` or `landed`.
+
+Room 6 is the first room that reached back: the Hold's ramp stayed open to the depot after the fold, and the loader robot's `after giving, once` kept the bundle after a second give (room 3's cards give twice on purpose), so the main line arrived on Ceres with no mail to lose. The robot's reaction lost its `, once` and gained `and`-guards by ship state and a second phrase for the reload; the Hold gained two blocked lines. Every earlier card passed unchanged, and the room-3 give card gained a claim on the reload line. That is one data point against O-1's "going back to rework the tests of rooms already written": a story hole found by a later room was fixed without reworking a test.
+
+Three compiler catches came during the write, all fix-its: a topic key cannot mix an entity with quoted spellings (`parse.topics-colon`, seed `A`); a quoted spelling that an entity-tier row already resolves is `analysis.topic-entity-collision` ("Remove one", seed `B`); and the tree loader refuses a child segment under a card with no sibling ("whose last card is not a fork"), so a continuation is the parent's own cards. Two findings came out of the seeds: a card's `ending` names the phrase and not the kind, so `win` for `lose` passes (F-32); and a `showing` reaction on the recipient fires in play but the derived tier reports it unreachable (F-33). Eight of twenty-two seeds pass silently, the most in six rooms; four are not errors, and four (`F`, `G`, `H`, `I`) are coverage the tree does not have.
+
+### Caught by the compiler (4)
+
+`A`, `B`, `C`, `K`. `A` and `B` are the write's own catches; `C`'s undeclared state is reported at the route card's `change` (line 66), one room away from the `states:` line it is missing from, because that is the first use the analyzer meets; `K` is the familiar missing phrase.
+
+### Compiles clean, and is not an error (4)
+
+`M`, `N`, `T`, `V`. The exits pair from either side even beside a blocked line (`M`, `N`); a topics block may name the entity by an alias (`T`); and a giving reaction fires on the thing given as on the recipient (`V`).
+
+### Compiles clean, and nothing catches it (4)
+
+`F`, `G`, `H`, `I`. The block that never lifts (`F`) and the reaction that fires anywhere (`G`) are not wrong for any line the tree has; they would need a card north of Quint after the showing, and a card showing the route card somewhere else. `H` works in play and is reported `object-unreachable` by the derived tier, so its only trace is the count dropping from 14 to 13 of 25 (F-33). `I` is the wrong ending kind, which no card can claim (F-32).
+
+### Compiles clean, and something else must catch it (10)
+
+Room 6's fifteen cards and the dock line's hatch-shut card were added on 2026-10-12 (listed in the seed folder's `README.md`). The correct story reports 3 lines, 65 cards passing, 112 assertions passing, endings 2 of 2, rooms 6 of 6.
+
+| Error | What catches it today |
+|---|---|
+| `D`: the state change removed | the tree's state claim on `show card to quint`; 1 card failing |
+| `E`: the block removed | the tree, on `north`; 1 card failing |
+| `J`: the Vance topic removed | the tree, on `ask quint about vance` (the default reply); 1 card failing, and one derived row fewer |
+| `L`: the pad master in the Airlock | the tree, on `west` (not listed) and on six cards after it; one ✗ line for seven cards (F-11). `north` still passes: the block reads her state, not where she is |
+| `O`: the hatch-shut block removed | the tree, on the dock line's `west`; 1 card failing |
+| `P`: the landed ramp block removed | the tree, on `down`, then on the four cards that depended on being in the Hold; 5 cards failing |
+| `Q`: the first-load guard on the wrong state | the tree, on both give cards (paragraph missing, then present); 2 cards failing |
+| `R`: the `move` removed | the tree, on `up` (the bundle not listed), then downstream; 5 cards failing |
+| `S`: the reload phrase removed | the tree, on the second give's new claim; 1 card failing |
+| `U`: the tram line in the Airlock | the tree, on `examine tram`; 1 card failing |
+
+`L` and `P` and `R` each fail five or more cards and print one line (F-11); an author reading the report sees the first card and a count, and the tab shows the rest. `C` is the first compiler catch reported in a different room from its cause.
+
 ## What this already says about O-1
 
 Of the rows that compile clean:

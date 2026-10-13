@@ -1,0 +1,299 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Once the fold drive is lit there is no switching it off."
+        ],
+        "notContains": [
+          "You switch off"
+        ]
+      },
+      "command": "switch off drive",
+      "id": "ra9yjsyq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The fold drive is already on."
+        ],
+        "notContains": [
+          "folds away"
+        ]
+      },
+      "command": "switch on drive",
+      "id": "p7l3712o",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the flight couch."
+        ]
+      },
+      "command": "exit",
+      "id": "e4q97cc9",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold",
+          "The Sparrow's hold, a steel room no wider than a corridor, ribbed with cargo netting. A suit locker stands bolted to the aft bulkhead, and a ladder climbs to the cockpit hatch at the forward end. The ramp slopes down to the dock."
+        ]
+      },
+      "command": "south",
+      "id": "82r2p7km",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock",
+          "The deck plates here are scored where a thousand parcels have been dragged across them. Your boots fit the grooves.",
+          "The Sparrow settles with a thump you feel in your boots."
+        ],
+        "states": [
+          "the courier ship is landed"
+        ]
+      },
+      "command": "west",
+      "id": "ogm92oz8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock",
+          "A closet of a room in the Sparrow's port side, big enough for one carrier in a suit and not much else. The inner door stands open to the hold. The outer hatch is a slab of grey steel with a wheel at chest height, a pressure gauge beside it, and a placard: CHECK THE GAUGE. THEN THE WINDOW. THEN THE WHEEL."
+        ]
+      },
+      "command": "look",
+      "id": "31nlqrlh",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Grey steel a hand's width thick"
+        ]
+      },
+      "command": "examine hatch",
+      "id": "ewlt6sbq",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A brass-rimmed dial under scratched glass."
+        ]
+      },
+      "command": "examine gauge",
+      "id": "ar02bdcu",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the outer hatch.",
+          "numbered 14 in paint"
+        ],
+        "notContains": [
+          "Route 7 will be reassigned."
+        ]
+      },
+      "command": "open hatch",
+      "id": "iwy2iq7d",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The outer hatch is already open."
+        ],
+        "notContains": [
+          "numbered 14"
+        ]
+      },
+      "command": "open hatch",
+      "id": "ktd21ah7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Landing Pad",
+          "Pad 14 is a circle of old cement under a black sky, its number touched up by hand. Ceres curves away in every direction, close and grey, and a tram line runs north toward the lit dome of Piazzi Town. The Sparrow's hatch is behind you to the east.",
+          "You can see a pad master here.",
+          "A woman in a patched suit is already walking toward you from the tram."
+        ]
+      },
+      "command": "west",
+      "id": "tpyumtv3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dolores Quint, pad master of 14"
+        ]
+      },
+      "command": "examine quint",
+      "id": "yfocys0i",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "A single open car sits at the pad end with its brake set."
+        ]
+      },
+      "command": "examine tram",
+      "id": "0beworrd",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Nobody rides north off my pad until I've signed for what's come in.\""
+        ],
+        "notContains": [
+          "You can't go that way."
+        ]
+      },
+      "command": "north",
+      "id": "z3ogl75p",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"Everything that lands on 14 gets signed for by me. That's the rule.\""
+        ]
+      },
+      "command": "ask quint about the mail",
+      "id": "4klj79ui",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "I don't know any Vance."
+        ],
+        "notContains": [
+          "I don't know anything about that."
+        ]
+      },
+      "command": "ask quint about vance",
+      "id": "01rreqtx",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "\"It isn't saying.\""
+        ]
+      },
+      "command": "ask quint about the dome",
+      "id": "aryzbst2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You show the route card to the pad master.",
+          "\"Route 7. Addressee delivery, no proxy signature.\""
+        ],
+        "states": [
+          "the pad master is waved-through"
+        ]
+      },
+      "command": "show card to quint",
+      "id": "amoxx3xo",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock"
+        ]
+      },
+      "command": "east",
+      "id": "ku62m66z",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold",
+          "You can see a suit locker and a mail bundle here."
+        ]
+      },
+      "command": "east",
+      "id": "eiunxym5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp has been sealed since the fold."
+        ],
+        "notContains": [
+          "Loading Dock"
+        ]
+      },
+      "command": "down",
+      "id": "0yrho4bt",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take bundle",
+      "id": "hidi4tne",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock"
+        ]
+      },
+      "command": "west",
+      "id": "250grjrn",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Landing Pad"
+        ]
+      },
+      "command": "west",
+      "id": "1n7gmrah",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You give the mail bundle to the pad master.",
+          "Route 7 has nothing left to deliver."
+        ],
+        "notContains": [
+          "Tram's that way."
+        ]
+      },
+      "command": "give bundle to quint",
+      "ending": "parcel-signed-away",
+      "id": "25ds4nyx",
+      "type": "turn"
+    }
+  ],
+  "id": "w7eqlqnb",
+  "ordinal": 0,
+  "parent": "7nlk6n1g"
+}

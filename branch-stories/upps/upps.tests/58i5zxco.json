@@ -1,0 +1,66 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the flight couch."
+        ]
+      },
+      "command": "exit",
+      "id": "mc4ncnmv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Hold"
+        ]
+      },
+      "command": "south",
+      "id": "192us42a",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Airlock",
+          "The deck plates here are scored where a thousand parcels have been dragged across them. Your boots fit the grooves."
+        ],
+        "notContains": [
+          "The Sparrow settles with a thump you feel in your boots."
+        ]
+      },
+      "command": "west",
+      "id": "1ajb9832",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "there is nothing out there to press."
+        ]
+      },
+      "command": "examine gauge",
+      "id": "zvny54jv",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You open the outer hatch.",
+          "Route 7 will be reassigned."
+        ],
+        "notContains": [
+          "numbered 14"
+        ]
+      },
+      "command": "open hatch",
+      "ending": "hatch-into-the-fold",
+      "id": "a30ak6aq",
+      "type": "turn"
+    }
+  ],
+  "id": "58i5zxco",
+  "ordinal": 1,
+  "parent": "7nlk6n1g"
+}

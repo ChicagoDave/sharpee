@@ -224,3 +224,40 @@ That is the World tab's Reach view, under "Things play can never hold" (`tools/i
 **Observed** on room 4's seed `K`: `refuse when the player is not in the flight couch: not-strapped-in` compiles clean and behaves exactly as `the player must be in the flight couch: not-strapped-in`. The guide's refusals page says a negated refusal is flagged `analysis.negated-requirement`; the gate tests the condition node's kind for a top-level `not` (`packages/chord/src/analyzer.ts:6412`), so predicate-level negation (`is not`, `has not`, `does not wear`) passes. The guide's own conditions page says every predicate takes `not` after `is`, which is the form the gate misses.
 
 **Belongs to**: the compiler. Either the gate should read a negated predicate as well, or the guide should narrow its claim to `refuse when not …`.
+
+## F-28: two refusals sharing a key produce two identical derived rows (2026-10-12)
+
+**Observed** on room 5's outer hatch, whose `on the player opening` has `refuse when the courier ship is buttoned: hatch-in-dock` and `refuse when the courier ship is boarding: hatch-in-dock`. The derived tier prints `✓ outer hatch · on opening · refused hatch-in-dock` twice, with no condition and no line, so the two rows cannot be told apart in the report or the tab, and a failure in one would not say which guard it was. Seed `Q` (the `buttoned` guard removed, a guard that play can never reach) shows the row count drop from two to one and nothing else.
+
+**Belongs to**: the derived tier's row label (`packages/branch-tester`). The label should carry the guard's condition, or the line, when the key alone does not distinguish the rows.
+
+## F-29: a line that forks from inside an enterable thing is labelled by the thing (2026-10-12)
+
+**Observed** on room 5's death branch, which forks after the seated `switch on drive` while the player is in the flight couch. The line is labelled `flight-couch · exit`: the player's container, as if the couch were a room, where every other line is labelled by its room (`hold · west`). An author reading the Testing tab's outline or the report sees a place that is not on the Map.
+
+**Belongs to**: the line label (`transcript-start`'s derived name). The label should use the room, or name both ("cockpit, in the flight couch").
+
+## F-30: the sequence anchor rejects a switchable thing's built-in `on`, while a guard accepts it (2026-10-12)
+
+**Observed** on room 5's seed `T`: `when the fold drive becomes on` as a `define sequence` anchor fails `analysis.undeclared-state` ("`on` is not a declared state of fold drive"), but `phrase ceres-outside when the fold drive is on` compiles gate-clean. The built-in states of `switchable` (and presumably `openable`, `lockable`) are conditions but not anchors, and the diagnostic reads as if the author had misspelled a declared state rather than reached a construct that does not take built-ins.
+
+**Belongs to**: the language and the compiler. Either anchors take the built-in state words the guards take, or the diagnostic says that a sequence anchors only on declared `states:` and suggests the guard form.
+
+## F-31: a runtime rule failure prints its cause with a line in play, and the tester shows only the missing text (2026-10-12)
+
+**Observed** on room 5's seed `G`, where the fold sequence anchored on `boarding` lands the ship before the drive is lit, so the drive's `change the courier ship to underway` moves a forward-only state set backward. `sharpee play` prints "One of the story's rules failed here: `change` to `underway` moves courier-ship backward in a forward-only set (currently `landed`) — add `, reversible` to the `states:` line to permit back-transitions (D4). (line 242)": the cause, the fix and the story line, in place of the action's standard line. `sharpee test` reports the same turn as "Output does not contain "The fold drive hums to life."", and no more. The best diagnostic the platform has produced in five rooms reaches the player and not the tester.
+
+**Belongs to**: the tester (`packages/branch-tester`, and the surface). A card whose turn carried a rule failure should print that line under the failed claim, as F-10's actual-output line would, and the derived tier could report it as a row of its own.
+
+## F-32: a card's `ending` names the phrase, never the kind (2026-10-12)
+
+**Observed** on room 6's seed `I`: `lose parcel-signed-away when …` rewritten as `win parcel-signed-away when …` passes the whole tree, 65 cards, and the report says `Endings reached: 2 / 2`. The END STATE card carries `"ending": "parcel-signed-away"`, which is the phrase key; the ending's kind (win, lose, death) is not on the card and not in the report line. The claims file grammar has `the story has ended in <kind>` (`claims.ending-kind`), so the engine records the kind; the card format cannot ask for it.
+
+**Belongs to**: the tree card format and the Testing tab's END STATE card. The card should carry the kind beside the key, or the ending key should imply it from the statement that declared it and the report should name it ("lose · parcel-signed-away").
+
+## F-33: a `showing` reaction on the recipient fires in play and is unreachable to the derived tier (2026-10-12)
+
+**Observed** on room 6's seed `H`: the route card's `after the player showing while the player is in the Landing Pad, once` moved onto the pad master. Play fires it when the card is shown to her, so every card passes. The derived tier reports "pad master · after showing, once — SKIPPED object-unreachable: nothing fills [something]: the player holds nothing and no precondition names an item", so the branch count drops from 14 to 13 of 25 and nothing says the reaction works. On the card (the correct story) the same reaction is arranged and passes. The giving reaction has the same two owners (seed `V`, on the bundle) and is SKIPPED either way, because its body is all conditional (F-22).
+
+**Belongs to**: the derived tier's arrange step (`packages/branch-tester`). A reaction on a person for a two-object action should arrange an item in the player's hands, any item, when nothing names one, or the skip should say "put this reaction on the thing shown".
+
