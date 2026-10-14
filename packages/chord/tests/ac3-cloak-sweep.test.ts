@@ -76,7 +76,7 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors).toHaveLength(1);
     expect(errors[0].code).toBe('analysis.refusal-misplaced');
     expect(errors[0].message).toContain('select');
-    expect(errors[0].span.line).toBe(81);
+    expect(errors[0].span.line).toBe(82); // +1 since the hook's `holds 1` line (ADR-369 D2)
   });
 
   it('unbound marker in a phrase', () => {
@@ -87,6 +87,6 @@ describe('AC-3 sweep: gates fire on cloak.story-shaped sources', () => {
     expect(errors[0].code).toBe('analysis.unbound-marker');
     // 94: the define-verb → extend-action migration (ADR-270 D7) added two
     // lines above this site in the cloak-shaped source.
-    expect(errors[0].span.line).toBe(99);
+    expect(errors[0].span.line).toBe(100); // +1 since the hook's `holds 1` line (ADR-369 D2)
   });
 });

@@ -347,6 +347,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'inserting-container-closed': 'if.action.inserting.container_closed',
   'inserting-inserted': 'if.action.inserting.inserted',
   'inserting-no-destination': 'if.action.inserting.no_destination',
+  'inserting-no-room': 'if.action.inserting.no_room',
   'inserting-no-target': 'if.action.inserting.no_target',
   'inserting-not-container': 'if.action.inserting.not_container',
   'inserting-not-held': 'if.action.inserting.not_held',

@@ -97,7 +97,7 @@ create the Maze, a region
 
     A cell.
 
-create the chest, a container with capacity 3
+create the chest, a container, readable with text "KEEP OUT"
   in the Hall
 
   A chest.

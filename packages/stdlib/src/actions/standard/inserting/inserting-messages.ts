@@ -12,6 +12,8 @@ export const InsertingMessages = {
   INSERTED: 'inserted',
   WONT_FIT: 'wont_fit',
   CONTAINER_CLOSED: 'container_closed',
+  /** The delegated putting validate refused on capacity (ADR-369 D2); rendered under inserting's id. */
+  NO_ROOM: 'no_room',
   CANT_INSERT: 'cant_insert',
   NOTHING_TO_INSERT: 'nothing_to_insert'
 } as const;

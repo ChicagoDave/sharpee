@@ -6,16 +6,35 @@ distinguished by the article: `a room` and `a supporter` are kind nouns
 
 ```chord
 create the workbench
-  a supporter with capacity 3
-  scenery
+  a supporter, scenery
+  holds 3
   in the Root Cellar
 
   A scarred oak workbench.
 ```
 
-`with` attaches settings. The last token of each setting is its value
-and the words before it are the key (`capacity 3`); several settings
-join with `and`. When a keyed value is an entity name, the article marks
+A kind noun takes no settings of its own. What a container or supporter
+can hold is its own line, `holds <n>`, a whole number of things; without
+the line it is unbounded. A container that shows what is inside it even
+when closed is `transparent`:
+
+```chord
+create the specimen jar
+  a container, openable, transparent
+  holds 2
+  in the Hold
+
+  A squat glass jar with a screw lid.
+```
+
+`transparent` belongs to containers only, and `holds` to containers and
+supporters; on anything else each is an error that names the kind it
+found. The old `with max items N`, `with max weight N` and `with
+capacity N` settings are errors whose message shows the `holds` line.
+
+`with` attaches settings to a trait adjective. The last token of each
+setting is its value and the words before it are the key; several
+settings join with `and`. When a keyed value is an entity name, the article marks
 where the name starts (`feedable with food the handful of feed`, where the
 keyword names an authored trait's data field). The built-in capability
 adjectives take their entity *directly* after `with` and use no keyword:

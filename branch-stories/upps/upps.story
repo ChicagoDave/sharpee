@@ -193,6 +193,31 @@ create the space suit
     phrase preflight-complete
   end after
 
+create the specimen jar
+  a container, openable, transparent
+  holds 2
+  in the Hold
+  aka jar, sample jar, glass jar
+
+  A squat glass jar with a screw lid and a UPPS biohazard sticker half
+  peeled off the side. Whatever is inside is on show whether the lid
+  is on or off.
+
+create the beetle
+  a thing
+  in the specimen jar
+  aka bug, insect, specimen
+
+  A beetle the size of a thumbnail, iridescent green, very dead, and
+  addressed to a laboratory on Titan.
+
+create the coil of strapping
+  a thing, unlisted
+  in the Hold
+  aka strap, straps, strapping, coil
+
+  A coil of cargo strapping, the kind the robot cuts to length.
+
 create the cockpit hatch
   a thing, scenery
   in the Hold
@@ -225,6 +250,15 @@ create the flight couch
 
   A pilot's couch with a five-point harness, the padding cracked
   along one arm where a hundred shifts have rested the same elbow.
+
+create the card slot
+  a container, scenery
+  holds 1
+  in the Cockpit
+  aka slot, reader, card reader
+
+  A slot in the console the width of a route card, and no wider. The
+  Sparrow reads one route at a time.
 
 create the console
   a thing, scenery
@@ -269,8 +303,8 @@ create the Airlock
   a room
   aka lock, port lock, port airlock
   east to the Hold
-  west to the Landing Pad
-  west is blocked while the outer hatch is closed: hatch-shut
+  out to the Landing Pad
+  out is blocked while the outer hatch is closed: hatch-shut
 
   A closet of a room in the Sparrow's port side, big enough for one
   carrier in a suit and not much else. The inner door stands open to
@@ -321,13 +355,13 @@ end sequence
 create the Landing Pad
   a room
   aka pad, pad 14, pad fourteen, ceres, cement
-  east to the Airlock
+  in to the Airlock
   north is blocked while the pad master is unconvinced: quint-blocks
 
   Pad 14 is a circle of old cement under a black sky, its number
   touched up by hand. Ceres curves away in every direction, close and
   grey, and a tram line runs north toward the lit dome of Piazzi
-  Town. The Sparrow's hatch is behind you to the east.
+  Town. The Sparrow's open hatch is behind you.
 
   after the player entering, once
     phrase pad-arrival

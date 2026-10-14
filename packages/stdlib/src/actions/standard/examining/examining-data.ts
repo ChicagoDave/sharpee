@@ -9,7 +9,7 @@ import { type Phrase } from '@sharpee/if-domain';
 import { ActionDataBuilder, ActionDataConfig } from '../../data-builder-types.js';
 import { ActionContext } from '../../enhanced-types.js';
 import { WorldModel, TraitType, IFEntity, IdentityTrait, ReadableTrait, WallEntity } from '@sharpee/world-model';
-import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior, VisibilityBehavior } from '@sharpee/world-model';
+import { OpenableBehavior, SwitchableBehavior, LockableBehavior, WearableBehavior, VisibilityBehavior, ContainerBehavior } from '@sharpee/world-model';
 import { captureEntitySnapshot, captureEntitySnapshots } from '../../base/snapshot-utils.js';
 import { ExaminedEventData } from './examining-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -129,8 +129,11 @@ export const buildExaminingData: ActionDataBuilder<Record<string, unknown>> = (
     } else {
       eventData.isOpen = true; // Containers without openable trait are always open
     }
+    // ADR-369 D1a: a transparent container shows its contents closed — the
+    // same flag VisibilityBehavior and searching read.
+    eventData.isTransparent = ContainerBehavior.isTransparent(noun);
   }
-  
+
   // Supporter trait
   if (noun.has(TraitType.SUPPORTER)) {
     // Shared visibility read: same rule as the container branch above
@@ -287,8 +290,9 @@ export function buildExaminingMessageParams(
       messageId = 'examined_container';
       params.isOpen = eventData.isOpen;
 
-      // Add contents message if container is open and has contents
-      if (eventData.isOpen && eventData.hasContents && eventData.contents) {
+      // Add contents message if the contents can be seen — the container is
+      // open, or transparent (ADR-369 D1a) — and there are any
+      if ((eventData.isOpen || eventData.isTransparent) && eventData.hasContents && eventData.contents) {
         contentsMessage = {
           messageId: 'container_contents',
           params: {

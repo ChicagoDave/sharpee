@@ -397,6 +397,13 @@ states-line  = "states" [ "," "reversible" ] ":" WORD { "," WORD } NL ;
                (* legal in story header, create blocks, define trait blocks *)
 score-line   = "score" WORD "worth" NUMBER NL ;
                (* legal in story header, create, define trait, define action *)
+holds-line   = "holds" NUMBER NL ;                         (* ADR-369 D2: the item
+                                                              capacity of a container
+                                                              or supporter (analysis.
+                                                              holds-owner elsewhere);
+                                                              NUMBER >= 1 (parse.holds-
+                                                              number); at most one
+                                                              (analysis.holds-duplicate) *)
 counter-line = "counter" WORD [ "starts" NUMBER ]
                          [ "between" NUMBER "and" NUMBER ] NL ;
                (* ADR-264 D1: a per-entity numeric counter, legal in a create
@@ -534,7 +541,15 @@ create-line  = "aka" alias { "," alias } NL
              | states-line
              | score-line
              | counter-line                                (* ADR-264 D1 *)
-             | composition { "," composition } NL          (* pre-blank paragraph only *)
+             | holds-line                                  (* ADR-369 D2 *)
+             | composition { "," composition } NL          (* pre-blank paragraph only;
+                                                              a kind noun takes no `with`
+                                                              settings — parse.kind-
+                                                              setting, or parse.removed-
+                                                              capacity-setting for the
+                                                              retired `max items`, `max
+                                                              weight`, `capacity` (ADR-369
+                                                              D2a) *)
              | "playable" NL                             (* ADR-327 D10: this character may
                                                               hold the player role. Person
                                                               blocks only (analysis.playable-
@@ -1129,7 +1144,11 @@ placement    = ( "in" | "on" ) ARTICLE name                (* on + article = pla
              | "starts" "in" name ;                        (* on + bare word = on-clause *)
 DIRECTION    = "north" | "south" | "east" | "west"
              | "northeast" | "northwest" | "southeast" | "southwest"
-             | "up" | "down" ;
+             | "up" | "down"
+             | "in" | "out" ;                                 (* ADR-369 D3: `in to <room>`
+                                                              is an exit, `in the <room>`
+                                                              is placement — the article
+                                                              decides, as it does for `on` *)
 
 
 (* ---- define ------------------------------------------------------------ *)

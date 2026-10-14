@@ -209,7 +209,22 @@ export function layoutMap(ir: StoryIR, options: LayoutOptions = {}): MapResult {
       const here = positions.get(roomId) as Cell;
       for (const edge of outgoing.get(roomId) ?? []) {
         const step = STEP[edge.direction];
-        if (step === undefined) continue;
+        if (step === undefined) {
+          // ADR-369 D3b: `in` and `out` have no bearing. A room reached only
+          // that way is placed in the first free cell beside this one rather
+          // than left unplaced; the edge is drawn like any other connection.
+          if (!positions.has(edge.to)) {
+            const beside = nearestFreeCell(here, taken);
+            if (beside === undefined) continue;
+            displaced.add(edge.to);
+            place(edge.to, beside);
+          }
+          if (!queued.has(edge.to)) {
+            queued.add(edge.to);
+            queue.push(edge.to);
+          }
+          continue;
+        }
         const wanted = { x: here.x + step.x, y: here.y + step.y, z: here.z + step.z };
 
         const already = positions.get(edge.to);

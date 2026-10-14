@@ -33,7 +33,7 @@
           "Landing Pad"
         ]
       },
-      "command": "west",
+      "command": "out",
       "id": "ckvktaj2",
       "type": "turn"
     },

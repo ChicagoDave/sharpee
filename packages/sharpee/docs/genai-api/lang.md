@@ -568,6 +568,26 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        no_destination: string;
+        not_held: string;
+        not_insertable: string;
+        not_container: string;
+        already_there: string;
+        inserted: string;
+        wont_fit: string;
+        container_closed: string;
+        no_room: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         cant_take_self: string;
         already_have: string;
         cant_take_room: string;
@@ -774,25 +794,6 @@ export declare const standardActionLanguage: ({
         cant_put_on_itself: string;
         no_room: string;
         no_space: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        no_destination: string;
-        not_held: string;
-        not_insertable: string;
-        not_container: string;
-        already_there: string;
-        inserted: string;
-        wont_fit: string;
-        container_closed: string;
     };
     help: {
         description: string;

@@ -316,6 +316,12 @@ export interface IREntity {
   statesReversible: boolean;
   /** Per-entity numeric counters (ADR-264 D1) — one value per instance. */
   counters: IRCounterDecl[];
+  /**
+   * `holds <n>` (ADR-369 D2): how many things a container or supporter can
+   * hold, lowered to its trait's `capacity.maxItems`. Additive and optional;
+   * absent means unbounded.
+   */
+  holds?: number;
   /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
   timerClauses?: IRTimerClause[];
   /** `when <entity> moves` clauses on this owner (ADR-325 D3h). */

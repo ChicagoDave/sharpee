@@ -21,6 +21,7 @@ import { characterLinesBuilder } from './character-lines.js';
 import { clausesBuilder } from './clauses.js';
 import { compositionsBuilder } from './compositions.js';
 import { countersBuilder } from './counters.js';
+import { holdsBuilder } from './holds.js';
 import { exitsBuilder } from './exits.js';
 import { hostGatesBuilder } from './host-gates.js';
 import { identityBuilder } from './identity.js';
@@ -50,6 +51,7 @@ export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   exitsBuilder,
   statesBuilder,
   countersBuilder,
+  holdsBuilder,
   proseBuilder,
   clausesBuilder,
 ];

@@ -109,21 +109,21 @@ Rows that Inform has and sections A and B do not already carry. "Sharpee" says w
 
 | Inform kind or property | Sharpee | Chord | Disposition |
 |---|---|---|---|
-| direction (as a kind the author extends) | fixed direction set; `in`/`out` missing from exits (GH #568) | partial | 4.0: `in to <Room>` and `out to <Room>` as exit lines (GH #568); the extensible direction kind stays out, `define action` covers ship vocabulary (David, 2026-10-12) |
+| direction (as a kind the author extends) | fixed direction set; `in`/`out` landed as exit directions (ADR-369 D3, 2026-10-13) | yes for `in`/`out` | 4.0: `in to <Room>` and `out to <Room>` as exit lines (GH #568); the extensible direction kind stays out, `define action` covers ship vocabulary (David, 2026-10-12). **Sayable 2026-10-13** (ADR-369 D3): UPPS Airlock `out to the Landing Pad`, pad `in to the Airlock` |
 | backdrop (one thing present in many rooms) | none | none; a thing lives in one place | 4.0: a scenery thing `in <Room>, <Room> and <Room>` or `in the <region>`, on ADR-360's room groups; UPPS's sea, sky and the view of Ceres exercise it (David, 2026-10-12) |
 | device | `switchable` | yes | today |
 | vehicle | `VehicleTrait`, half-wired | none | 4.0 (O-2) |
 | player's holdall (auto-stowing container) | none | none | out: Sharpee imposes no inventory limit, so there is nothing to soften; a `container, wearable` bag the player fills by hand is the default (David, 2026-10-12) |
 | scene | `SceneTrait`, unexposed | `define sequence`, `define chapters` overlap | 6.0 (with section B's scene row) |
 | man, woman, animal (person subkinds) | `a person` with `pronouns` | yes | today |
-| transparent / opaque container | implemented: `ContainerTrait.isTransparent`, read by `VisibilityBehavior` (a closed transparent container shows its contents) | none: no adjective or setting, the loader builds every container bare, so every Chord container is opaque | 4.0: a `transparent` adjective on a container, lowered to the field the visibility behavior already reads; UPPS's specimen jars exercise it (David, 2026-10-12) |
+| transparent / opaque container | implemented: `ContainerTrait.isTransparent`, read by `VisibilityBehavior`, and since 2026-10-13 by searching and examining too (ADR-369 D1a) | yes: `transparent` adjective (ADR-369 D1) | 4.0: a `transparent` adjective on a container, lowered to the field the visibility behavior already reads; UPPS's specimen jars exercise it (David, 2026-10-12). **Sayable 2026-10-13**: UPPS specimen jar `a container, openable, transparent` |
 | portable / fixed in place | `scenery` | yes | today |
 | pushable between rooms | none | none | 4.0 (with the Pushing it to row above) |
-| described / undescribed | `unlisted` covers contents; a thing hidden from the room list, partly | partial | today: `unlisted` is the word; that it covers a loose thing in a room (not only contents) is a UPPS test line to write, not a 4.0 item (David, 2026-10-12) |
+| described / undescribed | `unlisted` covers a holder's contents only; a loose `unlisted` thing in a room is still listed (confirmed 2026-10-13, UPPS Hold: "You can see … a coil of strapping …", I-589) | partial — contents only | today: `unlisted` is the word; that it covers a loose thing in a room (not only contents) is a UPPS test line to write, not a 4.0 item (David, 2026-10-12). **Written 2026-10-13: it does not.** Hiding a loose thing from the room list is not sayable; left as a finding, not scheduled |
 | handled, visited (derived facts) | `first time`, occurrence counters | yes | today |
 | lit / unlit, dark / lighted | `light-source`, `dark` | yes | today |
 | privately-named, plural-named, proper-named | `aka`, `plural`, `proper` | yes | today |
-| container capacity (carrying capacity) | `ContainerTrait` has capacity; loader builds it bare (ADR-350 D8) | none | 4.0: a `holds <n>` setting on a container, lowered to the field inserting already checks; UPPS's card slots and single-berth lockers exercise it (David, 2026-10-12) |
+| container capacity (carrying capacity) | `ContainerTrait` and `SupporterTrait` have `capacity.maxItems`, checked by putting and inserting | yes: `holds <n>` line (ADR-369 D2). *Correction 2026-10-13*: this row said "none", but `a container with max items N` and `a supporter with capacity N` were accepted by the analyzer and read by the loader (fernhill, the zoo and Cloak used them); ADR-369 D2a retired both for the one line | 4.0: a `holds <n>` setting on a container, lowered to the field inserting already checks; UPPS's card slots and single-berth lockers exercise it (David, 2026-10-12). **Sayable 2026-10-13**: UPPS card slot `holds 1`, specimen jar `holds 2` |
 | wearable, edible, openable, lockable, enterable, scenery | yes | yes | today |
 
 **Section C count**: 41 rows; 9 sayable today; 32 not (16 react-only or partial, 16 with nothing on either side).
@@ -145,7 +145,7 @@ The disposition pass ran in session 1f771c (rulings dated 2026-10-12, completed 
 |---|---|---|---|---|---|
 | A. stdlib actions (9) | 3 | 4 | 0 | 2 | 0 |
 | B. unreached traits (12) | 7 | 2 | 1 | 2 | 0 |
-| C. Inform's additions (33) | 20 | 3 | 1 | 8 | 1 (described / undescribed: `unlisted` is the word) |
+| C. Inform's additions (33) | 20 | 3 | 1 | 8 | 1 (described / undescribed: `unlisted` is the word for contents; a loose thing is not hideable, confirmed 2026-10-13) |
 | **Total (54)** | **30** | **9** | **2** | **12** | **1** |
 
 **Count corrected 2026-10-13 (session 326e9e, Phase 1 of the 4.0 plan).** The pass summary said section C had 21 rows at 4.0 and 7 out, for a slice of 31. Re-counting section C's two tables row by row gives 24 action rows and 9 kind rows that were not sayable at the baseline (33, not 32; the baseline's "9 sayable" was 8: Getting off plus seven kind rows), of which 20 are at 4.0 and 8 are out (the player's holdall is the eighth). So the baseline is 114 rows, 60 sayable, 54 not; the 4.0 slice is 30 rows; out is 12. Every row still carries David's ruling; only the arithmetic moved.
@@ -186,10 +186,10 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 | Jumping | 5 | |
 | Pushing it to / pushable between rooms | 13 | |
 | Emptying | 5 | |
-| `in` / `out` exits (GH #568) | 4 | |
+| `in` / `out` exits (GH #568) | 4 | UPPS `upps.tests/w7eqlqnb.json`: `out` from the Airlock to the pad (card tpyumtv3), `in` back (ku62m66z); `8alivtpe.json` card ckvktaj2: `out` refused while the hatch is shut |
 | backdrop | 9 | |
-| transparent container | 4 | |
-| container capacity (`holds <n>`) | 4 | |
+| transparent container | 4 | UPPS `upps.tests/k3hldz9q.json`: `look in jar` (q3lkinjr) and `examine jar` (q4exjar1) list the beetle through the closed lid |
+| container capacity (`holds <n>`) | 4 | UPPS `upps.tests/k3hldz9q.json`: `put jar in slot` (q9ptjar0) fills the one-card slot, `put beetle in slot` (qaptbtl0) refuses "There's no room in the card slot." |
 
 The table has 24 lines for 30 rows because the slice counts throwing, vehicle, destructible, Tying it to and pushable between rooms twice across sections A, B and C, and it is one evidence line per thing an author writes.
 

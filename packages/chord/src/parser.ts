@@ -147,6 +147,7 @@ import {
   ScopeConstraint,
   ScoreDecl,
   CounterDecl,
+  HoldsDecl,
   DefineCounter,
   CounterMutateStmt,
   TimerVerbStmt,
@@ -229,7 +230,10 @@ const DIRECTIONS = new Set([
   'north', 'south', 'east', 'west',
   'northeast', 'northwest', 'southeast', 'southwest',
   'up', 'down',
+  'in', 'out', // ADR-369 D3: `in to <room>` is an exit; `in the <room>` stays placement (the article decides)
 ]);
+/** The kind-noun settings the loader once read (ADR-369 D2a) — each a parse error naming `holds <n>`. */
+const REMOVED_CAPACITY_SETTINGS = new Set(['max items', 'max weight', 'capacity']);
 /** Z5 strategy adverbs (ADR-211 Decision 4). `ordered`/`once` are retired — load errors naming their replacement. */
 const STRATEGIES = new Set(['randomly', 'cycling', 'stopping', 'sticky', 'first-time']);
 /** Retired strategy adverb → its replacement, for the AC-13 fix-it diagnostic. */
@@ -418,6 +422,7 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     statesReversible: false,
     scores: [],
     counters: [],
+    holds: [],
     description: null,
     initialDescription: null,
     phraseOverrides: [],
@@ -1760,6 +1765,24 @@ class Parser {
   }
 
   /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
+  /**
+   * `holds <n>` (ADR-369 D2): one whole number of one or more. Anything
+   * else — a word, zero, a negative, a fraction, trailing words — is
+   * `parse.holds-number`. Which kinds may carry the line is the analyzer's
+   * gate (`analysis.holds-owner`).
+   */
+  private parseHoldsLine(line: Line): HoldsDecl | null {
+    const c = new Cursor(line.tokens, line);
+    c.matchWord('holds');
+    const tok = c.next();
+    const count = tok && tok.kind === 'number' ? Number(tok.text) : NaN;
+    if (!Number.isInteger(count) || count < 1 || !c.atEnd()) {
+      this.diagnostics.error('parse.holds-number', '`holds` takes a whole number of one or more: `holds 2`.', tok ? mergeSpans(tok.span, c.restSpan()) : c.restSpan());
+      return null;
+    }
+    return { kind: 'holds', count, span: lineSpan(line) };
+  }
+
   private parseCounterLine(line: Line): CounterDecl | null {
     const c = new Cursor(line.tokens, line);
     c.matchWord('counter');
@@ -2029,6 +2052,11 @@ class Parser {
         this.pos++;
         const cc = this.parseCounterLine(line);
         if (cc) decl.counters.push(cc);
+      } else if (word === 'holds') {
+        // ADR-369 D2: the item capacity of a container or supporter.
+        this.pos++;
+        const h = this.parseHoldsLine(line);
+        if (h) decl.holds.push(h);
       } else if (word === 'wears') {
         this.pos++;
         cur.matchWord('wears');
@@ -3363,7 +3391,15 @@ class Parser {
       const config: ConfigSetting[] = [];
       let condition: ConditionNode | null = null;
       if (c.matchWord('with')) {
-        config.push(...this.parseConfigSettings(c, line));
+        const settings = this.parseConfigSettings(c, line);
+        if (article !== null) {
+          // ADR-369 D2a: a kind noun takes no `with` settings. The three the
+          // loader once read get a fix-it naming the `holds <n>` line; any
+          // other names the mistake.
+          this.reportKindSetting(words.join(' '), settings, line);
+        } else {
+          config.push(...settings);
+        }
       }
       if (c.matchWord('while') || c.isWord('during')) {
         condition = this.parseCondition(c, line);
@@ -3389,6 +3425,33 @@ class Parser {
       else this.diagnostics.error('parse.composition-trailing', `Unexpected trailing text in composition line: \`${c.peek()!.text}\`.`, c.restSpan());
     }
     return items;
+  }
+
+  /**
+   * ADR-369 D2a: `a <kind> with …` is an error. `max items`, `max weight`
+   * and `capacity` were the settings the loader read and are
+   * `parse.removed-capacity-setting`, whose fix-it is the `holds <n>` line;
+   * any other setting on a kind noun is `parse.kind-setting`.
+   */
+  private reportKindSetting(kindWord: string, settings: ConfigSetting[], line: Line): void {
+    const first = settings[0];
+    const span = first ? mergeSpans(first.span, settings[settings.length - 1].span) : lineSpan(line);
+    const key = first ? first.key.join(' ') : '';
+    if (REMOVED_CAPACITY_SETTINGS.has(key)) {
+      const count = /^\d+$/.test(first.value) ? first.value : '<n>';
+      const weight = key === 'max weight' ? ' Weight is not a Chord concept; `holds` counts things.' : '';
+      this.diagnostics.error(
+        'parse.removed-capacity-setting',
+        `\`with ${key}\` was removed — write the capacity as its own line: \`holds ${count}\`.${weight}`,
+        span,
+      );
+      return;
+    }
+    this.diagnostics.error(
+      'parse.kind-setting',
+      `A kind takes no \`with\` settings — \`${kindWord}\` is a kind. A setting belongs to an adjective (\`lockable with the iron key\`); a capacity is its own line (\`holds <n>\`).`,
+      span,
+    );
   }
 
   private parseConfigSettings(c: Cursor, line: Line): ConfigSetting[] {

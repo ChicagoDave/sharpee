@@ -144,7 +144,12 @@ const PINNED = {
   // Re-pinned 2026-10-13 (session 92017b, ADR-368 D1): a clause head lists
   // its gerunds — `head` gains `{ "," gerund }` on both forms, one clause per
   // gerund. Additive; same unpublished 4.0.0 set (the number moves at publish).
-  ebnfSha256: '4aaf86753e993b269d6f94b92a96e3689b1aeb32b26b6f50022df10adba7898c',
+  // Re-pinned 2026-10-13 (session 92017b, ADR-369 D2, D2a, D3): `holds-line`
+  // joins `create-line`; `DIRECTION` gains `in` and `out`; the composition
+  // note records that a kind noun takes no `with` settings (the three the
+  // loader read are a removal with a fix-it). Additive plus one removal;
+  // same unpublished 4.0.0 set (the number moves at publish).
+  ebnfSha256: '92444e86e9531fc889be94a4b79486e52f147d4a9fa407734d3733f0bb68c6c7',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

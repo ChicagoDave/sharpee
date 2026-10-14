@@ -124,12 +124,12 @@
       "assertions": {
         "contains": [
           "Landing Pad",
-          "Pad 14 is a circle of old cement under a black sky, its number touched up by hand. Ceres curves away in every direction, close and grey, and a tram line runs north toward the lit dome of Piazzi Town. The Sparrow's hatch is behind you to the east.",
+          "Pad 14 is a circle of old cement under a black sky, its number touched up by hand. Ceres curves away in every direction, close and grey, and a tram line runs north toward the lit dome of Piazzi Town. The Sparrow's open hatch is behind you.",
           "You can see a pad master here.",
           "A woman in a patched suit is already walking toward you from the tram."
         ]
       },
-      "command": "west",
+      "command": "out",
       "id": "tpyumtv3",
       "type": "turn"
     },
@@ -219,7 +219,7 @@
           "Airlock"
         ]
       },
-      "command": "east",
+      "command": "in",
       "id": "ku62m66z",
       "type": "turn"
     },
@@ -227,7 +227,7 @@
       "assertions": {
         "contains": [
           "Hold",
-          "You can see a suit locker and a mail bundle here."
+          "You can see a suit locker, a specimen jar, a coil of strapping, and a mail bundle here."
         ]
       },
       "command": "east",
@@ -273,7 +273,7 @@
           "Landing Pad"
         ]
       },
-      "command": "west",
+      "command": "out",
       "id": "1n7gmrah",
       "type": "turn"
     },

@@ -1,9 +1,11 @@
-Rooms connect with direction lines. Ten directions exist: the eight
-compass points plus `up` and `down`. A plain exit connects both ways: the
-return exit is inferred in the opposite direction, so `north to the Herb
-Garden` on the Rose Walk also puts a `south` exit on the Herb Garden. Write
-`, one-way` for an exit with no way back — a landing the story reaches only
-by moving the player there, and leaves by walking:
+Rooms connect with direction lines. Twelve directions exist: the eight
+compass points, `up` and `down`, and `in` and `out`. A plain exit connects
+both ways: the return exit is inferred in the opposite direction, so
+`north to the Herb Garden` on the Rose Walk also puts a `south` exit on
+the Herb Garden, and `in to the Potting Shed` on the Rose Walk puts an
+`out` exit on the shed. Write `, one-way` for an exit with no way back — a
+landing the story reaches only by moving the player there, and leaves by
+walking:
 
 ```chord
 create Behind the Fruit Stall
@@ -22,6 +24,18 @@ create the Rose Walk
   south is blocked: hedge-too-thick
 
   Gravel crunches underfoot between the rose beds.
+```
+
+`in` and `out` are exits like any other, and take `, one-way`, `through
+<door>` and a blocked line the same way. `in the Potting Shed` with an
+article is placement, not an exit; `in to the Potting Shed` with `to` is
+the exit. A player types `in`, `inside`, `out` or `outside` to use them:
+
+```chord
+create the Rose Walk
+  a room
+  in to the Potting Shed
+  in is blocked while the shed door is locked: shed-locked
 ```
 
 A blocked exit refuses travel and speaks the named phrase (the key after

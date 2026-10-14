@@ -21,7 +21,8 @@ export const insertingLanguage = {
     'already_there': "{capitalize the item} {verb:is item} already in {the destination}.",
     'inserted': "{You} {insert} {the item} into {the container}.",
     'wont_fit': "{capitalize the item} won't fit in {the container}.",
-    'container_closed': "{capitalize the container} {verb:is container} closed."
+    'container_closed': "{capitalize the container} {verb:is container} closed.",
+    'no_room': "There's no room in {the container}."
   },
   
   help: {

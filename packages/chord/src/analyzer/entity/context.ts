@@ -126,6 +126,8 @@ export interface EntityDraft {
   deadly: IRDeadlyRoom | null;
   states: string[];
   counters: IRCounterDecl[];
+  /** `holds <n>` (ADR-369 D2); undefined when the block has no line. */
+  holds?: number;
   descriptionKey: string | null;
   initialDescriptionKey: string | null;
   descriptionSource?: IRTextSource;

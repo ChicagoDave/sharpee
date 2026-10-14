@@ -1,19 +1,20 @@
 **container** (`a container`, a kind noun, so it takes the article).
 Holds things inside; composes on one line with `openable`, `lockable`,
 and `scenery` (`a container, openable, scenery`). The putting example
-shows one in play. Settings: `with max items N` and `with max
-weight N` limit capacity; capacity counts what is directly inside, and a
-container "bears the weight" of nested contents rather than passing it
-up. It is read by putting, inserting, removing, searching,
-opening/closing, dropping, throwing, and looking. Data fields beyond Chord's reach today
-(TypeScript territory): `isTransparent` (contents visible while closed),
-`allowedTypes`/`excludedTypes`, and the liquid fields (`containsLiquid`,
-`liquidType`, `liquidAmount`; see drinking).
+shows one in play. A `holds N` line bounds how many things fit directly
+inside; putting or inserting into a full one refuses with "There's no
+room". The `transparent` adjective keeps the contents visible while the
+container is closed, so examining it lists them and `search` or `look in`
+shows them instead of refusing. It is read by putting, inserting,
+removing, searching, opening/closing, dropping, throwing, and looking.
+Data fields beyond Chord's reach today (TypeScript territory):
+`allowedTypes`/`excludedTypes`, the weight and volume limits, and the
+liquid fields (`containsLiquid`, `liquidType`, `liquidAmount`; see
+drinking).
 
 **supporter** (`a supporter`). Holds things on top; see the putting
-example. Setting: `with capacity N`, the number of items it holds
-(the Cloak of Darkness brass hook is `a supporter with capacity 1`).
-Unlike containers, a supporter's weight math includes nested contents
+example. A `holds N` line bounds the number of items it holds. Unlike
+containers, a supporter's weight math includes nested contents
 recursively. It is read by putting, removing, climbing, dropping, and
 looking.
 

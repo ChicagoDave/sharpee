@@ -136,3 +136,20 @@ describe('a room the walk cannot reach', () => {
     expect(map.positions.has('pantry')).toBe(false);
   });
 });
+
+describe('`in` and `out` exits (ADR-369 D3b)', () => {
+  it('places a room reached only by `in`/`out` beside its neighbour instead of leaving it unplaced', () => {
+    const faulted = faultable(alderman);
+    const foyer = entity(faulted, 'foyer');
+    const bar = entity(faulted, 'bar');
+    for (const exit of foyer.exits) if (exit.to === 'bar') exit.direction = 'in';
+    for (const exit of bar.exits) if (exit.to === 'foyer') exit.direction = 'out';
+    const map = layoutMap(faulted);
+
+    expect(map.unplaced).toEqual([]);
+    const placed = map.positions.get('bar');
+    expect(placed).toBeDefined();
+    expect(distance(map.positions.get('foyer') as Cell, placed as Cell)).toBe(1);
+    expect(map.connections.some((c) => c.rooms.includes('bar') && c.rooms.includes('foyer'))).toBe(true);
+  });
+});

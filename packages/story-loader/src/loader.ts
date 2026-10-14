@@ -1503,8 +1503,8 @@ export class ChordStory implements Story {
         // everywhere — `starts open` is the author's escape hatch.
         entity = world.createEntity(irEntity.name, 'object');
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
-        entity.add(new ContainerTrait());
-        this.applyContainerConfig(entity, irEntity.kinds[0]);
+        // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
+        entity.add(new ContainerTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
         break;
       }
       case 'person': {
@@ -1542,7 +1542,8 @@ export class ChordStory implements Story {
       case 'supporter': {
         entity = world.createEntity(irEntity.name, 'object');
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
-        entity.add(new SupporterTrait({ capacity: supporterCapacity(irEntity.kinds[0]) }));
+        // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
+        entity.add(new SupporterTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
         break;
       }
       case 'region': {
@@ -1867,6 +1868,14 @@ export class ChordStory implements Story {
           if (identity) identity.contentsUnlisted = true;
           break;
         }
+        case 'transparent': {
+          // ADR-369 D1: marker adjective — a closed container still shows its
+          // contents (ContainerTrait.isTransparent, read by VisibilityBehavior
+          // and searching). The analyzer admits it on containers only.
+          const container = entity.get(TraitType.CONTAINER) as ContainerTrait | undefined;
+          if (container) container.isTransparent = true;
+          break;
+        }
         case 'hiding-spot': {
           // Ratchet G3 (2026-07-17): bare = the actor may hide at any
           // position; `with position <word>` narrows to exactly one. The
@@ -2152,18 +2161,6 @@ export class ChordStory implements Story {
       }
     }
     return values;
-  }
-
-  private applyContainerConfig(entity: IFEntity, kind: IRComposition): void {
-    const maxItems = configValue(kind, 'max items');
-    const maxWeight = configValue(kind, 'max weight');
-    if (maxItems === undefined && maxWeight === undefined) return;
-    const container = entity.get(TraitType.CONTAINER) as ContainerTrait | undefined;
-    if (!container) return;
-    container.capacity = {
-      ...(maxItems !== undefined ? { maxItems: Number(maxItems) } : {}),
-      ...(maxWeight !== undefined ? { maxWeight: Number(maxWeight) } : {}),
-    };
   }
 
   // -------------------------------------------------------------- helpers
@@ -2547,12 +2544,6 @@ function toDirection(word: string, at?: IREntity): DirectionType {
   // direction-conformance test).
   if (!dir) throw new LoadError(`Unknown direction \`${word}\`.`, at?.span);
   return dir;
-}
-
-/** `with capacity N` on a supporter kind. */
-function supporterCapacity(kind: IRComposition): { maxItems?: number } {
-  const capacity = configValue(kind, 'capacity');
-  return capacity !== undefined ? { maxItems: Number(capacity) } : {};
 }
 
 function configValue(comp: IRComposition, key: string): string | undefined {

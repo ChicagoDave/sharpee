@@ -1476,6 +1476,28 @@ export class Analyzer {
           }
           continue;
         }
+        // ADR-369 D1: `transparent` is a container word, and unconditional —
+        // the flag is a property of the thing, not a state the story toggles.
+        // Checked ahead of the generic conditional gate so its message wins.
+        if (comp.name === 'transparent') {
+          const kind = entity.kinds[0]?.name ?? 'thing';
+          if (kind !== 'container') {
+            this.diagnostics.error(
+              'analysis.transparent-not-container',
+              `\`transparent\` is a container word — \`${entity.name}\` is a ${kind}. A thing that shows what is inside it is \`a container, transparent\`.`,
+              comp.span,
+            );
+            continue;
+          }
+          if (comp.condition !== null) {
+            this.diagnostics.error(
+              'analysis.transparent-conditional',
+              `\`transparent\` is what \`${entity.name}\` is, not a state it changes — write it without \`while\`.`,
+              comp.span,
+            );
+            continue;
+          }
+        }
         // Census 14: conditional composition legality — room-`dark`, or a
         // declared trait whose clauses are ALL NPC-behavior-shaped (`on
         // every turn …`). `proper` has its own earlier gates (ADR-242 D1).

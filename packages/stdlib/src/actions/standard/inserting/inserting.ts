@@ -126,7 +126,8 @@ export const insertingAction: Action & { metadata: ActionMetadata } = {
     'already_there',
     'inserted',
     'wont_fit',
-    'container_closed'
+    'container_closed',
+    'no_room'
   ],
   group: 'object_manipulation',
 

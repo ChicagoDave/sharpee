@@ -18,7 +18,8 @@ import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  OpenableBehavior
+  OpenableBehavior,
+  ContainerBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { SearchedEventData } from './searching-events.js';
@@ -100,9 +101,11 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject?.entity;
 
     // If no target, we'll search the current location (always valid).
-    // The container-open check only applies to a targeted search.
+    // The container-open check only applies to a targeted search, and only
+    // to an opaque container: a transparent one shows its contents closed
+    // (ADR-369 D1a, the same flag VisibilityBehavior reads).
     if (target && target.has(TraitType.CONTAINER) && target.has(TraitType.OPENABLE)) {
-      if (!OpenableBehavior.isOpen(target)) {
+      if (!OpenableBehavior.isOpen(target) && !ContainerBehavior.isTransparent(target)) {
         return {
           valid: false,
           error: 'container_closed',

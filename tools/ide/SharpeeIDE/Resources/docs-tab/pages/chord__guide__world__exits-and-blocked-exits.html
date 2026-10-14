@@ -1,4 +1,4 @@
-<p>Rooms connect with direction lines. Ten directions exist: the eight compass points plus <code>up</code> and <code>down</code>. A plain exit connects both ways: the return exit is inferred in the opposite direction, so <code>north to the Herb Garden</code> on the Rose Walk also puts a <code>south</code> exit on the Herb Garden. Write <code>, one-way</code> for an exit with no way back — a landing the story reaches only by moving the player there, and leaves by walking:</p>
+<p>Rooms connect with direction lines. Twelve directions exist: the eight compass points, <code>up</code> and <code>down</code>, and <code>in</code> and <code>out</code>. A plain exit connects both ways: the return exit is inferred in the opposite direction, so <code>north to the Herb Garden</code> on the Rose Walk also puts a <code>south</code> exit on the Herb Garden, and <code>in to the Potting Shed</code> on the Rose Walk puts an <code>out</code> exit on the shed. Write <code>, one-way</code> for an exit with no way back — a landing the story reaches only by moving the player there, and leaves by walking:</p>
 <pre><code class="language-chord">create Behind the Fruit Stall
   a room
   southwest to the Fruit Stall, one-way</code></pre>
@@ -10,6 +10,11 @@
   south is blocked: hedge-too-thick
 
   Gravel crunches underfoot between the rose beds.</code></pre>
+<p><code>in</code> and <code>out</code> are exits like any other, and take <code>, one-way</code>, <code>through &lt;door&gt;</code> and a blocked line the same way. <code>in the Potting Shed</code> with an article is placement, not an exit; <code>in to the Potting Shed</code> with <code>to</code> is the exit. A player types <code>in</code>, <code>inside</code>, <code>out</code> or <code>outside</code> to use them:</p>
+<pre><code class="language-chord">create the Rose Walk
+  a room
+  in to the Potting Shed
+  in is blocked while the shed door is locked: shed-locked</code></pre>
 <p>A blocked exit refuses travel and speaks the named phrase (the key after the colon names a phrase the story defines, a single kebab-case word; dots are illegal, ADR-254). The block can be conditional:</p>
 <pre><code class="language-chord">create the Orchard
   a room

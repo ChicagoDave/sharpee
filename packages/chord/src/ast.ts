@@ -255,6 +255,14 @@ export interface CounterDecl {
   span: Span;
 }
 
+/** `holds <n>` (ADR-369 D2) — the item capacity of a container or supporter. */
+export interface HoldsDecl {
+  kind: 'holds';
+  /** A whole number of one or more (the parser refuses anything else). */
+  count: number;
+  span: Span;
+}
+
 export type Declaration =
   | CreateDecl
   | DefineCondition
@@ -852,6 +860,8 @@ export interface CreateDecl {
   scores: ScoreDecl[];
   /** `counter <name> …` lines — per-entity numeric counters (ADR-264 D1). */
   counters: CounterDecl[];
+  /** `holds <n>` lines (ADR-369 D2) — collected so the analyzer can refuse a second one. */
+  holds: HoldsDecl[];
   /** First bare indented paragraph. */
   description: TextValue | null;
   /**

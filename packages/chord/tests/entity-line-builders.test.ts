@@ -36,6 +36,7 @@ describe('ENTITY_LINE_BUILDERS order', () => {
       'exits',
       'states',
       'counters',
+      'holds',
       'prose',
       'clauses',
     ]);

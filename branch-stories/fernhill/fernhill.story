@@ -352,8 +352,8 @@ create the solicitor's letter
 
 create the travelling trunk
   aka trunk
-  a container with max items 3
-  openable
+  a container, openable
+  holds 3
   in the Study
 
   Verity's old travelling trunk, papered with steamer labels from
@@ -386,7 +386,8 @@ create the half-burned letter
 
 create the mantel
   aka mantelpiece, shelf
-  a supporter with capacity 2, scenery
+  a supporter, scenery
+  holds 2
   in the Entrance Hall
 
   A wide stone mantel over the dead fireplace, dusted but bare except

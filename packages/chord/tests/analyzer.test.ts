@@ -85,7 +85,8 @@ describe('cloak.story IR', () => {
       },
     ]);
     const hook = ir.entities[5];
-    expect(hook.kinds).toMatchObject([{ name: 'supporter', config: [{ key: 'capacity', value: '1', valueKind: 'number' }] }]);
+    expect(hook.kinds).toMatchObject([{ name: 'supporter', config: [] }]);
+    expect(hook.holds).toBe(1);
     expect(hook.traits).toMatchObject([{ name: 'scenery' }]);
   });
 

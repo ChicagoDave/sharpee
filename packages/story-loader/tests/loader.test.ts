@@ -83,7 +83,7 @@ describe('cloak.story loads into a playable world', () => {
     expect(foyerRoom.blockedExits?.[Direction.NORTH]).toBeUndefined();
   });
 
-  it('builds the hook as scenery supporter with capacity 1, in the cloakroom', () => {
+  it('builds the hook as a scenery supporter that holds 1, in the cloakroom', () => {
     const hook = entity('brass-hook');
     expect(hook.has(TraitType.SCENERY)).toBe(true);
     const supporter = hook.get(TraitType.SUPPORTER) as SupporterTrait;
@@ -213,7 +213,7 @@ describe('coverage: container config, plural, non-wearable wears', () => {
     return result.ir;
   };
 
-  it('applies max items / max weight config to a container kind', () => {
+  it('applies `holds <n>` to a container kind as its item capacity (ADR-369 D2)', () => {
     const ir = compileSource(`story
   title: Coverage
   authors:
@@ -227,7 +227,8 @@ create the Pantry
   A pantry.
 
 create the bread box
-  a container with max items 5 and max weight 20
+  a container
+  holds 5
   in the Pantry
 
   A box.
@@ -257,7 +258,7 @@ end before
 
     const box = world.getEntity(story.entityId('bread-box')!)!;
     const container = box.get(TraitType.CONTAINER) as ContainerTrait;
-    expect(container.capacity).toMatchObject({ maxItems: 5, maxWeight: 20 });
+    expect(container.capacity).toEqual({ maxItems: 5 });
 
     const signs = world.getEntity(story.entityId('direction-signs')!)!;
     const identity = signs.get(TraitType.IDENTITY) as IdentityTrait;

@@ -60,7 +60,8 @@ create the velvet cloak
 
 create the brass hook
   aka hook, peg
-  a supporter with capacity 1, scenery
+  a supporter, scenery
+  holds 1
   in the Cloakroom
 
   It's just a small brass hook, screwed to the wall.
