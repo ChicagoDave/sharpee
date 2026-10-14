@@ -365,7 +365,7 @@ class InternalActionContext implements ActionContext {
    * `event.data.data` is dereferenced nowhere in packages/ source (engine
    * prose pipeline, event-processor, if-services, channel-service, chord,
    * story-loader all read top-level fields); capability-dispatch effect
-   * payloads (`capability-dispatch.ts` effectsToEvents) and lifecycle
+   * payloads (`standard/dispatch-shared.ts` effectsToEvents) and lifecycle
    * interceptor emissions are flat `{messageId, ...}` shapes that the wrap
    * actively broke under this context. The tolerant readers
    * (`tests/test-utils` expectEvent, searching-interceptor's

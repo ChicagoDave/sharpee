@@ -746,7 +746,9 @@ Capability dispatch allows entities to handle generic actions (like "lower" or "
 1. **Trait declares capabilities**: A trait lists which action IDs it can handle
 2. **Behavior implements 4-phase pattern**: validate/execute/report/blocked
 3. **Story registers behaviors**: Connect trait+capability to behavior
-4. **Stdlib action dispatches**: Finds trait, delegates to behavior
+4. **The action dispatches**: finds the trait, runs its behavior
+
+There are two dispatch paths. For an ordinary action (taking, going), the engine's **universal dispatch** lets a claiming trait's behavior replace the action outright — that is how the troll blocks going. For a verb with no standard semantics (lowering, raising, setting, turning, cutting, digging, burning), the action **dispatches itself**: it finds the target's behavior and runs it inside its own phases, so the target's interceptors — a Chord `on the player lowering` clause — are still consulted around it, and a behavior and a clause on one thing can both fire (ADR-371 D1a). Such an action carries `dispatchesImplementations: true`, and the engine's universal dispatch steps aside for it.
 
 ### Example: Basket Elevator
 
@@ -798,32 +800,35 @@ const BasketLoweringBehavior: CapabilityBehavior = {
   }
 };
 
-// 3. Register behavior at story initialization
-import { registerCapabilityBehavior, hasCapabilityBehavior } from '@sharpee/world-model';
-
-if (!hasCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering')) {
-  registerCapabilityBehavior(
-    BasketElevatorTrait.type,
-    'if.action.lowering',
-    BasketLoweringBehavior
-  );
-}
+// 3. Register behavior at story initialization — on the world instance
+// (ADR-207: a per-world binding map, idempotent, so no already-registered guard)
+world.registerCapabilityBehavior(
+  BasketElevatorTrait.type,
+  'if.action.lowering',
+  BasketLoweringBehavior
+);
 ```
 
-### Creating Capability-Dispatch Actions
+### Creating a Dispatching Verb
 
-The stdlib provides `createCapabilityDispatchAction()` for creating these actions:
+A story that needs a verb with no standard semantics builds it with `createImplementationDispatchingAction()`, the same builder lowering, raising and setting use (ADR-371). The action mutates nothing itself: it finds the target's capability behavior or a claiming interceptor, runs the behavior inside its own phases, consults the target's interceptors around them, and refuses with `cantDoThat` when the target has neither.
 
 ```typescript
-import { createCapabilityDispatchAction } from '@sharpee/stdlib';
+import { createImplementationDispatchingAction } from '@sharpee/stdlib';
 
-export const loweringAction = createCapabilityDispatchAction({
-  actionId: 'if.action.lowering',
+const winding = createImplementationDispatchingAction({
+  actionId: 'dungeo.action.winding',
   group: 'manipulation',
-  noTargetError: 'if.lower.no_target',
-  cantDoThatError: 'if.lower.cant_lower_that'
+  reportEventType: 'dungeo.event.wound',     // the standard event, interceptor surface
+  blockedEventType: 'dungeo.event.wind_blocked',
+  messages: { noTarget: 'no_target', cantDoThat: 'cant_wind_that', done: 'wound' }
 });
+
+export const windingAction = winding.action;       // register with the engine
+export const windingLifecycle = winding.lifecycle; // the interceptor surface
 ```
+
+`earlyRefusal`, `seed` and `reportParams` cover what a verb needs beyond its target: `setting` refuses a missing value early and seeds the typed value into the behavior's shared data. A behavior's effect message ids must be fully qualified (`dungeo.wind.wound`); they are forwarded unchanged.
 
 ### When to Use Capability Dispatch
 
@@ -838,9 +843,10 @@ Don't use when:
 
 ### Key Files
 
-- Registry: `/packages/world-model/src/capabilities/capability-registry.ts`
+- Registry: `/packages/world-model/src/capabilities/capability-binding.ts` (per-world bindings, ADR-207)
 - Helpers: `/packages/world-model/src/capabilities/capability-helpers.ts`
-- Dispatch factory: `/packages/stdlib/src/actions/capability-dispatch.ts`
+- Dispatching-verb builder: `/packages/stdlib/src/actions/standard/dispatch-shared.ts` (`createImplementationDispatchingAction`, `hasInterceptorImplementation`)
+- Universal dispatch: `/packages/engine/src/command/capability-dispatch-helper.ts`, called from `command-executor.ts`
 
 ## Scope System
 

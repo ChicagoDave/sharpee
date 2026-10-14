@@ -1903,6 +1903,7 @@ export * from './restarting/index.js';
 export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
+export { createImplementationDispatchingAction, hasInterceptorImplementation, type ImplementationDispatchSpec } from './dispatch-shared.js';
 export * from './jumping/index.js';
 export * from './kissing/index.js';
 export * from './waving/index.js';

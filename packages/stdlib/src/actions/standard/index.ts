@@ -166,6 +166,13 @@ import { sayingNoAction } from './saying_no/index.js';
 import { sayingSorryAction } from './saying_sorry/index.js';
 import { lookingUnderAction } from './looking_under/index.js';
 import { emptyingAction } from './emptying/index.js';
+// ADR-371: the builder for implementation-dispatching verbs, public so a
+// story can build its own (a verb with no standard semantics).
+export {
+  createImplementationDispatchingAction,
+  hasInterceptorImplementation,
+  type ImplementationDispatchSpec
+} from './dispatch-shared.js';
 // ADR-371: object-side adjectives
 import { burningAction } from './burning/index.js';
 import { settingAction } from './setting/index.js';

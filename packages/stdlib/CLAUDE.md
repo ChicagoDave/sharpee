@@ -89,11 +89,20 @@ world.registerCapabilityBehavior(BasketElevatorTrait.type, 'if.action.lowering',
 
 **Capability-effect messageIds MUST be fully-qualified** (decision 2026-07-02, dungeo
 regression findings P1). The engine's universal dispatch forwards effect payloads
-unchanged — it does NOT auto-prefix short keys the way `createCapabilityDispatchAction`
-does, and the universal path always wins when a binding exists, so short keys render
-blank. Emit story-registered IDs like `'dungeo.basket.lowered'` from
-`report()`/`blocked()` and from `validate()` error codes; never bare keys like
-`'lowered'`. The factory's short-key prefixing is legacy — do not rely on it.
+unchanged and does NOT auto-prefix short keys, and neither does the self-dispatching
+builder (`createImplementationDispatchingAction`, `standard/dispatch-shared.ts`, ADR-371),
+so short keys render blank. Emit story-registered IDs like `'dungeo.basket.lowered'`
+from `report()`/`blocked()` and from `validate()` error codes; never bare keys like
+`'lowered'`.
+
+**Self-dispatching actions (ADR-371 D1a).** Lowering, raising, setting, turning,
+cutting, digging and burning carry `dispatchesImplementations: true`: the engine's
+universal dispatch steps aside, the action runs the target's behavior inside its own
+phases, and the phase runner still consults the target's interceptors. A new verb with
+no standard semantics is built with `createImplementationDispatchingAction` (public from
+`@sharpee/stdlib`); its implementation check, `hasInterceptorImplementation`, reads
+`ActionInterceptor.claims` so an interceptor on a shared marker trait counts only for
+the entities it claims.
 
 ### Action Interceptors (ADR-118 hooks, ADR-208 registration)
 
