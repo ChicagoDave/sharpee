@@ -362,6 +362,30 @@ define action asking
     inquire of the recipient about the topic
   the topic is a topic
 
+## A request for a thing, distinct from asking about a topic by its literal
+## `for`. Recipient-first forms only: the parser seats the first slot as the
+## direct object, and the person is the direct object here.
+
+define action asking_for
+  grammar
+    ask the recipient for the item
+    beg the recipient for the item
+
+## Looking a topic up in a readable thing; its topic table answers.
+
+define action consulting
+  grammar
+    consult the source about the topic
+    look up the topic in the source
+    read about the topic in the source
+  the topic is a topic
+
+define action buying
+  grammar
+    buy the item
+    purchase the item
+    pay for the item
+
 ## GH #300: the player's farewell closes the live conversation. The literal
 ## `say goodbye` forms outrank answering's `say the response` by literal
 ## specificity (ADR-268 D3), so `say goodbye` is never an exchange answer.

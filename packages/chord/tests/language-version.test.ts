@@ -151,7 +151,11 @@ const PINNED = {
   // same unpublished 4.0.0 set (the number moves at publish).
   // Re-recorded 2026-10-14 (ADR-371 D4, session 8196a4): the `to <value>`
   // head tail. Additive, on the unpublished 4.0 surface — no bump.
-  ebnfSha256: 'fce916edc824d578f6f16f9d0de66c02e3958eed76936ab7c8b43c9f1fc4d5ec',
+  // Re-recorded 2026-10-14 (ADR-372 D1, D5, session a0b591): the counterpart
+  // tail on a clause head (and `to <name>` as a counterpart) and the
+  // `costs <amount> <currency>` composition. Additive, on the unpublished
+  // 4.0 surface — no bump.
+  ebnfSha256: 'da10eb636592f16af834a1d2c77c9418298181cfa73051f2ecd81f1455273f43',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

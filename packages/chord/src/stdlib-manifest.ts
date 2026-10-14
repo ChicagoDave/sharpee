@@ -36,6 +36,11 @@ export interface StdlibManifest {
   settingSchema: Readonly<Record<string, Readonly<Record<string, 'boolean' | 'number' | 'entity-ref' | 'rooms'>>>>;
   /** The closed hiding-position domain (ratchet G3) — listing order is the message order. */
   hidingPositions: readonly string[];
+  /**
+   * Two-noun action ids whose slots name a counterpart (ADR-372 D1) — the
+   * gerunds a head may narrow with a counterpart tail. From stdlib's registry.
+   */
+  counterpartActions: ReadonlySet<string>;
   /** Locale-owned facts, keyed by locale id (ADR-276 Q-2). */
   locales: Readonly<Record<string, StdlibLocaleFacts>>;
 }
@@ -46,8 +51,10 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "if.action.again",
     "if.action.answering",
     "if.action.asking",
+    "if.action.asking_for",
     "if.action.attacking",
     "if.action.burning",
+    "if.action.buying",
     "if.action.climbing",
     "if.action.closing",
     "if.action.consulting",
@@ -128,6 +135,7 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "diggable": { "tool": "entity-ref" },
   },
   hidingPositions: ["behind", "under", "on", "inside"],
+  counterpartActions: new Set(["if.action.asking_for", "if.action.giving", "if.action.inserting", "if.action.putting", "if.action.showing", "if.action.throwing"]),
   locales: {
     'en-US': {
       grammarShapes: {
@@ -135,10 +143,13 @@ export const STDLIB_MANIFEST: StdlibManifest = {
         "if.action.again": ["again", "g"],
         "if.action.answering": ["answer :response", "reply :response", "respond :response", "say :response"],
         "if.action.asking": ["ask :recipient about :topic", "question :recipient about :topic", "inquire of :recipient about :topic"],
+        "if.action.asking_for": ["ask :recipient for :item", "beg :recipient for :item"],
         "if.action.attacking": ["attack :target", "kill :target", "fight :target", "slay :target", "murder :target", "hit :target", "strike :target", "break :target", "smash :target", "destroy :target", "attack :target with|using :weapon", "kill :target with|using :weapon", "hit :target with|using :weapon", "strike :target with|using :weapon"],
         "if.action.burning": ["burn :target", "burn :target with|using :tool", "ignite :target", "set fire to :target"],
+        "if.action.buying": ["buy :item", "purchase :item", "pay for :item"],
         "if.action.climbing": ["climb :target", "climb up :target", "climb down :target", "scale :target", "ascend :target", "descend :target"],
         "if.action.closing": ["close :door", "shut :door", "cover :door"],
+        "if.action.consulting": ["consult :source about :topic", "look up :topic in :source", "read about :topic in :source"],
         "if.action.cutting": ["cut :object with|using :tool", "cut :target", "slice :target", "chop :target"],
         "if.action.digging": ["dig :location with|using :tool", "dig :target"],
         "if.action.drinking": ["drink :item", "sip :item", "quaff :item", "swallow :item", "imbibe :item", "drink from :target", "sip from :target"],

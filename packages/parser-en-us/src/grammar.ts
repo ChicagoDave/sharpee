@@ -227,6 +227,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("ask :recipient about :topic").mapsTo("if.action.asking").topic("topic").build();
   grammar.define("question :recipient about :topic").mapsTo("if.action.asking").topic("topic").build();
   grammar.define("inquire of :recipient about :topic").mapsTo("if.action.asking").topic("topic").build();
+  grammar.define("ask :recipient for :item").mapsTo("if.action.asking_for").build();
+  grammar.define("beg :recipient for :item").mapsTo("if.action.asking_for").build();
+  grammar.define("consult :source about :topic").mapsTo("if.action.consulting").topic("topic").build();
+  grammar.define("look up :topic in :source").mapsTo("if.action.consulting").topic("topic").build();
+  grammar.define("read about :topic in :source").mapsTo("if.action.consulting").topic("topic").build();
+  grammar.define("buy :item").mapsTo("if.action.buying").build();
+  grammar.define("purchase :item").mapsTo("if.action.buying").build();
+  grammar.define("pay for :item").mapsTo("if.action.buying").build();
   grammar.define("goodbye").mapsTo("if.action.saying_goodbye").build();
   grammar.define("bye").mapsTo("if.action.saying_goodbye").build();
   grammar.define("farewell").mapsTo("if.action.saying_goodbye").build();

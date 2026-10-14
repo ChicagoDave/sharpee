@@ -22,6 +22,7 @@ import { LockableTrait } from './lockable/lockableTrait.js';
 import { CuttableTrait } from './cuttable/cuttableTrait.js';
 import { DiggableTrait } from './diggable/diggableTrait.js';
 import { FlammableTrait } from './flammable/flammableTrait.js';
+import { PurchasableTrait } from './purchasable/purchasableTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { ReadableTrait } from './readable/readableTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
@@ -100,6 +101,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.CUTTABLE]: CuttableTrait,
   [TraitType.DIGGABLE]: DiggableTrait,
   [TraitType.FLAMMABLE]: FlammableTrait,
+  [TraitType.PURCHASABLE]: PurchasableTrait,
   [TraitType.SWITCHABLE]: SwitchableTrait,
   [TraitType.READABLE]: ReadableTrait,
   [TraitType.LIGHT_SOURCE]: LightSourceTrait,
@@ -237,6 +239,7 @@ export {
   CuttableTrait,
   DiggableTrait,
   FlammableTrait,
+  PurchasableTrait,
   SwitchableTrait,
   ReadableTrait,
   LightSourceTrait,

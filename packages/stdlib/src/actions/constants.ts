@@ -82,6 +82,7 @@ export const IFActions = {
   // Communication actions
   TALKING: 'if.action.talking',
   ASKING: 'if.action.asking',
+  ASKING_FOR: 'if.action.asking_for', // ADR-372 D3
   TELLING: 'if.action.telling',
   ANSWERING: 'if.action.answering',
   SAYING_GOODBYE: 'if.action.saying_goodbye',
@@ -91,6 +92,7 @@ export const IFActions = {
   SAYING_SORRY: 'if.action.saying_sorry',
   SHOWING: 'if.action.showing',
   GIVING: 'if.action.giving',
+  BUYING: 'if.action.buying', // ADR-372 D5
   
   // Combat/interaction actions
   ATTACKING: 'if.action.attacking',

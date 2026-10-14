@@ -22,7 +22,7 @@ import { DecisionLedger, type DecisionRecord } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../event-contract.js';
 import { clauseOccurrenceKey } from '../state-keys.js';
-import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, toEffect, type RuntimeCore } from './core.js';
+import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, topicGerundServes, toEffect, type RuntimeCore } from './core.js';
 
 /** A typed setting value in the state register: lowercased, spaces as hyphens (ADR-371 D3). */
 function normalizeTailValue(value: unknown): string | undefined {
@@ -108,7 +108,7 @@ export class OnClausesSection {
     // unconditional unknown_topic/not_interested default stands).
     for (const gerund of TOPIC_GERUNDS) {
       for (const entity of this.core.ir.entities) {
-        if (!(entity.topics ?? []).length) continue;
+        if (!(entity.topics ?? []).length || !topicGerundServes(gerund, entity)) continue;
         const list = byAction.get(gerund) ?? [];
         if (!list.some((c) => c.entity.id === entity.id)) {
           this.prepareTopicTarget(world, entity);
@@ -239,7 +239,7 @@ export class OnClausesSection {
         this.buildInterceptor(entity, clause, `${entity.id}.${action}.${clause.clauseKind}.${index}`),
       );
       const catchAll = built.length ? this.mergeArms(built) : undefined;
-      const interceptor = isTopicAction && (entity.topics ?? []).length
+      const interceptor = isTopicAction && (entity.topics ?? []).length && topicGerundServes(action, entity)
         ? this.core.threads.buildTopicArm(entity, catchAll, action)
         : catchAll ?? {};
       return { entity, interceptor };
@@ -289,7 +289,10 @@ export class OnClausesSection {
     const isMine = (target: IFEntity, world: WorldModel, actorId: string, data?: InterceptorSharedData): boolean =>
       target.id === runtime.core.host.entityId(entity.id) &&
       (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world)) &&
-      (clause.valueTail === undefined || normalizeTailValue(data?.value) === clause.valueTail);
+      (clause.valueTail === undefined || normalizeTailValue(data?.value) === clause.valueTail) &&
+      // ADR-372 D1: a counterpart tail fires only when the command's other
+      // noun — seeded by the slot as `counterpartId` — is the named thing.
+      (clause.counterpart === undefined || data?.counterpartId === runtime.core.host.entityId(clause.counterpart));
     const occurrenceKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
 
     return {

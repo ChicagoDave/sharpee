@@ -1862,6 +1862,11 @@ export class ChordStory implements Story {
           // adds the capability trait and registers the setting behavior at
           // bind, reading the states from the IR.
           break;
+        case 'costs':
+          // ADR-372 D5: the price. Nothing lowers here; the runtime's
+          // purchasable section adds PurchasableTrait from the `price` and
+          // `currency` settings and registers the buying behavior at bind.
+          break;
         case 'concealed': {
           // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
           // view until searching reveals it (IdentityTrait.concealed).

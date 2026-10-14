@@ -95,6 +95,15 @@ export function generateManifestModule(root: string): { source: string; actionId
     SETTING_SCHEMA: ReadonlyMap<string, ReadonlyMap<string, { value: string }>>;
     HIDING_POSITIONS: readonly string[];
   };
+  // Counterpart slice (ADR-372 D1): the two-noun actions a Chord head may
+  // narrow by naming the other noun — stdlib's registry derives the set from
+  // the lifecycle descriptors' `counterpart` slots, required from its BUILT
+  // dist for the same reason as the setting schema above.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { counterpartActionIds } = require(join(root, 'packages/stdlib/dist/index.js')) as {
+    counterpartActionIds: ReadonlySet<string>;
+  };
+  const counterpartActions = [...counterpartActionIds].sort();
   const settingSchema: Array<[string, Array<[string, string]>]> = [];
   for (const [trait, entries] of SETTING_SCHEMA) {
     settingSchema.push([trait, [...entries].map(([key, spec]) => [key, spec.value])]);
@@ -139,6 +148,11 @@ export function generateManifestModule(root: string): { source: string; actionId
   lines.push("  settingSchema: Readonly<Record<string, Readonly<Record<string, 'boolean' | 'number' | 'entity-ref' | 'rooms'>>>>;");
   lines.push('  /** The closed hiding-position domain (ratchet G3) — listing order is the message order. */');
   lines.push('  hidingPositions: readonly string[];');
+  lines.push('  /**');
+  lines.push("   * Two-noun action ids whose slots name a counterpart (ADR-372 D1) — the");
+  lines.push("   * gerunds a head may narrow with a counterpart tail. From stdlib's registry.");
+  lines.push('   */');
+  lines.push('  counterpartActions: ReadonlySet<string>;');
   lines.push('  /** Locale-owned facts, keyed by locale id (ADR-276 Q-2). */');
   lines.push('  locales: Readonly<Record<string, StdlibLocaleFacts>>;');
   lines.push('}');
@@ -157,6 +171,7 @@ export function generateManifestModule(root: string): { source: string; actionId
   }
   lines.push('  },');
   lines.push(`  hidingPositions: [${HIDING_POSITIONS.map((p) => JSON.stringify(p)).join(', ')}],`);
+  lines.push(`  counterpartActions: new Set([${counterpartActions.map((id) => JSON.stringify(id)).join(', ')}]),`);
   lines.push('  locales: {');
   lines.push("    'en-US': {");
   lines.push('      grammarShapes: {');
@@ -300,6 +315,7 @@ export const DIST_MODULES: ReadonlyArray<[path: string, exports: readonly string
   // any prior build's compiler will do, so only loading is required.
   ['packages/chord/dist/index.js', []],
   ['packages/story-loader/dist/setting-schema.js', ['SETTING_SCHEMA', 'HIDING_POSITIONS']],
+  ['packages/stdlib/dist/index.js', ['counterpartActionIds']],
   [
     'packages/world-model/dist/traits/character-model/character-vocabulary.js',
     [

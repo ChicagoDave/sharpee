@@ -48,6 +48,7 @@ export * from './traits/openable/index.js';
 export * from './traits/lockable/index.js';
 export * from './traits/cuttable/index.js';
 export * from './traits/flammable/index.js';
+export * from './traits/purchasable/index.js';
 export * from './traits/diggable/index.js';
 export * from './traits/readable/index.js';
 export * from './traits/light-source/index.js';

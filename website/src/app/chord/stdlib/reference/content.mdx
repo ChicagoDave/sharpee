@@ -115,6 +115,30 @@ asking-earned-trust               earned_trust                            {capit
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.ask_blocked` (ADR-052).
 
+## ask for, beg for — `if.action.asking_for`
+
+**Group** `social` · **Slots** `recipient`, `item` · **Emits** `if.event.ask_for_blocked`, `if.event.asked_for`
+
+<GrammarBlock action="if.action.asking_for" />
+
+ASK FOR - Ask someone for a thing. Stories decide whether they hand it over. Example: ASK THE GROCER FOR THE APPLE
+
+A request, distinct from asking about a topic (ADR-372): it changes nothing and refuses by default. A Chord `on the player asking_for` clause on the person or on the thing answers in its place; name the other noun on the head to narrow it — `on the player asking_for the ration bar` in the grocer's block. The clause body does any handing over (`move the ration bar to the player`).
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+asking-for-no-target              no_target                               Ask whom?
+asking-for-no-item                no_item                                 Ask {the recipient} for what?
+asking-for-not-visible            not_visible                             {You} {can't} see {the recipient}.
+asking-for-too-far                too_far                                 {capitalize the recipient} {verb:is recipient} too far away.
+asking-for-not-actor              not_actor                               {You} can only ask people for things.
+asking-for-self                   self                                    {You} can't ask {yourself} for things.
+asking-for-already-have           already_have                            {You} already {have} {the item}.
+asking-for-refused                refused                                 {capitalize the recipient} {verb:doesn't recipient} seem inclined to hand over {the item}.
+```
+
 ## attack, kill, fight, slay — `if.action.attacking`
 
 **Group** `interaction` · direct object required · **Slots** `target`, `weapon` · **Emits** `if.event.attacked`, `if.event.death`, `if.event.dropped`, `if.event.exit_revealed`, `if.event.knocked_out`
@@ -227,6 +251,27 @@ burning-wrong-tool                wrong_tool                              {capit
 burning-burned                    burned                                  {You} {set} fire to {the item}.
 ```
 
+## buy, purchase, pay for — `if.action.buying`
+
+**Group** `social` · **Slots** `target` · **Emits** `if.event.buy_blocked`, `if.event.bought`
+
+<GrammarBlock action="if.action.buying" />
+
+BUY - Buy something that has a price, if you can afford it. Example: BUY THE RATION BAR
+
+A thing with a price (`costs 3 credits`) can be bought (ADR-372). The price spends the buyer's own counter of that name — the player character's `counter credits starts 10` — and the thing moves to the buyer; short of credits is `cant_afford`, and a thing with no price is not for sale. An `on the player buying` clause on the thing may refuse or add.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+buying-no-target                  no_target                               Buy what?
+buying-not-for-sale               not_for_sale                            {capitalize the target} {verb:isn't target} for sale.
+buying-already-have               already_have                            {You} already {have} {the target}.
+buying-cant-afford                cant_afford                             {You} can't afford {the target}.
+buying-bought                     bought                                  {You} {buy} {the target}.
+```
+
 ## climb, climb up, climb down, scale — `if.action.climbing`
 
 **Group** `movement` · **Slots** `target` · **Emits** `if.event.climbed`, `if.event.entered`, `if.event.moved`
@@ -277,6 +322,26 @@ closing-prevents-closing          prevents_closing                        {You} 
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.close_blocked` (ADR-052).
+
+## consult about, look up in, read about in — `if.action.consulting`
+
+**Group** `observation` · **Slots** `source` · **Emits** `if.event.consult_blocked`, `if.event.consulted`
+
+<GrammarBlock action="if.action.consulting" />
+
+CONSULT - Look a topic up in a book, a directory or a manual. Example: CONSULT THE DIRECTORY ABOUT VANCE
+
+A `readable` thing answers from its own `define topics` table, matched exactly as a person's is for `ask` (ADR-372); an unmatched topic speaks the stock line. A readable thing's table holds plain `about …:` rows only — exchanges and threads stay with people.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+consulting-no-target              no_target                               Consult what?
+consulting-no-topic               no_topic                                Look up what in {the source}?
+consulting-not-consultable        not_consultable                         {capitalize the source} {verb:isn't source} something {you} can look things up in.
+consulting-nothing-found          nothing_found                           {You} {find} nothing about that in {the source}.
+```
 
 ## cut with, cut using, cut, slice — `if.action.cutting`
 

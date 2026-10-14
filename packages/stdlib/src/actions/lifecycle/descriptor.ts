@@ -92,6 +92,22 @@ export interface EntitySlotSpec {
     entity: IFEntity,
     multiObjectItem?: IFEntity
   ): Record<string, unknown>;
+
+  /**
+   * The noun on the other side of a two-noun command, as seen from this
+   * slot (the target for the thrown item, the item for the target). The
+   * engine seeds its id into the consultation's sharedData as
+   * `counterpartId`, so a hook can fire only for one counterpart — a Chord
+   * head's counterpart tail (`on the player throwing at the gong`) is the
+   * consumer. Declaring it on a descriptor's slots is what makes an action
+   * a counterpart action (`counterpartActionIds` in the registry).
+   *
+   * @param context - The action context.
+   * @param multiObjectItem - As for `seedData`: the item of a per-item
+   *   resolution, when this slot is the shared one.
+   * @returns The other noun, or `undefined` when the command has none.
+   */
+  counterpart?(context: ActionContext, multiObjectItem?: IFEntity): IFEntity | undefined;
 }
 
 /**

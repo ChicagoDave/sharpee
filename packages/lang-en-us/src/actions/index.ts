@@ -142,6 +142,10 @@ import { emptyingLanguage } from './emptying.js';
 // ADR-371: object-side adjectives
 import { burningLanguage } from './burning.js';
 import { settingLanguage } from './setting.js';
+// ADR-372: two-noun and conversation-shaped clauses
+import { askingForLanguage } from './asking-for.js';
+import { consultingLanguage } from './consulting.js';
+import { buyingLanguage } from './buying.js';
 export * from './jumping.js';
 export * from './kissing.js';
 export * from './waving.js';
@@ -152,6 +156,9 @@ export * from './looking-under.js';
 export * from './emptying.js';
 export * from './burning.js';
 export * from './setting.js';
+export * from './asking-for.js';
+export * from './consulting.js';
+export * from './buying.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { wakingLanguage } from './waking.js';
@@ -264,4 +271,8 @@ export const standardActionLanguage = [
   // ADR-371: object-side adjectives
   burningLanguage,
   settingLanguage,
+  // ADR-372: two-noun and conversation-shaped clauses
+  askingForLanguage,
+  consultingLanguage,
+  buyingLanguage,
 ];

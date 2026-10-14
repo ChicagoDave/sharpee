@@ -185,6 +185,10 @@ import { lex, Line, Token } from './lexer.js';
 import { mergeSpans, Span, spanOf } from './span.js';
 
 const ARTICLES = new Set(['the', 'a', 'an']);
+/** ADR-372 D1: prepositions that may stand before a counterpart's article (`throwing at the gong`). */
+const COUNTERPART_PREPOSITIONS = new Set(['at', 'for', 'from', 'about', 'in']);
+/** ADR-372 D1: prepositions that open a counterpart with no article (`throwing at Tobias`). */
+const COUNTERPART_BARE_PREPOSITIONS = new Set(['at', 'for', 'from']);
 
 /**
  * The inflections a written verb may stand for (ADR-329 D1/Q-1: the author
@@ -3368,6 +3372,42 @@ class Parser {
         break;
       }
 
+      // ADR-372 D5: `costs <amount> <currency>` — a price, spent from the
+      // buyer's own counter named by the currency word. Lowered to the
+      // `costs` adjective with `price` and `currency` settings.
+      if (c.isWord('costs')) {
+        const costsTok = c.next()!;
+        const amountTok = c.peek();
+        const currencyTok = c.peek(1);
+        if (amountTok?.kind === 'number' && currencyTok?.kind === 'word') {
+          c.next();
+          c.next();
+          items.push({
+            kind: 'composition',
+            article: null,
+            words: ['costs'],
+            config: [
+              { key: ['price'], value: amountTok.text, valueKind: 'number', span: amountTok.span },
+              { key: ['currency'], value: currencyTok.text, valueKind: 'word', span: currencyTok.span },
+            ],
+            condition: null,
+            span: mergeSpans(costsTok.span, currencyTok.span),
+          });
+          if (c.peek()?.kind === 'comma') {
+            c.next();
+            continue;
+          }
+          break;
+        }
+        this.diagnostics.error(
+          'parse.costs',
+          'Expected `costs <amount> <currency>` — a whole number and the counter it spends, e.g. `costs 3 credits`.',
+          amountTok ? amountTok.span : costsTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
       let article: string | null = null;
       const first = c.peek();
       if (first && first.kind === 'word' && ARTICLES.has(first.text)) {
@@ -6353,6 +6393,7 @@ class Parser {
     let binding: OnClause['binding'] = 'object';
     let role: string | null = null;
     let valueTail: string | null = null;
+    let counterpart: ValueExpr | null = null;
     let condition: ConditionNode | null = null;
     let once = false;
     let ordering: OnClause['ordering'] = null;
@@ -6374,6 +6415,12 @@ class Parser {
         if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything' || t.text === 'to') break;
         headWords.push(t);
         c.next();
+      }
+      // ADR-372 D1: a counterpart tail, read from the end of the head.
+      const tail = headWords.length > 0 ? splitCounterpartTail(headWords) : null;
+      if (tail) {
+        counterpart = this.headActorExpr(headWords.slice(tail.nameStart));
+        headWords.length = tail.start;
       }
       if (headWords.length === 0) {
         this.diagnostics.error('parse.on-head', `Expected \`${clauseKind} <who acts> <action>\` — e.g. \`${clauseKind} the player taking\`.`, c.restSpan());
@@ -6404,13 +6451,29 @@ class Parser {
         this.parseGerundList(c, actionWord, moreGerunds);
         // ADR-371 D4: `to <value>` — the clause fires only for that value
         // (legal on a `setting` head; the analyzer gates the gerund).
+        // ADR-372 D1: several words after `to`, or an article, are a
+        // counterpart (`giving to Mrs Kettle`); one word stays a value tail,
+        // which the analyzer reads as a counterpart on a two-noun gerund.
         if (c.matchWord('to')) {
-          const valueTok = c.next();
-          if (valueTok && valueTok.kind === 'word') {
-            valueTail = valueTok.text;
-          } else {
-            this.diagnostics.error('parse.head-value-tail', `Expected a value after \`to\` — e.g. \`${clauseKind} the player setting to high\`.`, valueTok?.span ?? c.restSpan());
+          const toWords: Token[] = [];
+          while (!c.atEnd()) {
+            const t = c.peek()!;
+            if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+            toWords.push(t);
+            c.next();
           }
+          if (toWords.length === 0) {
+            this.diagnostics.error('parse.head-value-tail', `Expected a value after \`to\` — e.g. \`${clauseKind} the player setting to high\`.`, c.peek()?.span ?? c.restSpan());
+          } else if (counterpart !== null) {
+            this.diagnostics.error('parse.head-counterpart-twice', `This head already names the other noun — write one: \`${clauseKind} the player ${actionWord} to ${toWords.map((t) => t.text).join(' ')}\`.`, mergeSpans(toWords[0].span, toWords[toWords.length - 1].span));
+          } else if (toWords.length === 1 && !ARTICLES.has(toWords[0].text)) {
+            valueTail = toWords[0].text;
+          } else {
+            counterpart = this.headActorExpr(toWords);
+          }
+        }
+        if (counterpart !== null && moreGerunds.length > 0) {
+          this.diagnostics.error('parse.head-counterpart-list', `A head that names the other noun takes one action word — split it into one clause per action.`, counterpart.span);
         }
       }
 
@@ -6485,6 +6548,7 @@ class Parser {
       binding,
       role,
       ...(valueTail !== null ? { valueTail } : {}),
+      ...(counterpart !== null ? { counterpart } : {}),
       condition,
       once,
       ordering,
@@ -9180,4 +9244,29 @@ class Parser {
     c.next();
     return { kind: 'condition-ref', name: t.text, span: t.span };
   }
+}
+
+/**
+ * ADR-372 D1: where a head's counterpart tail starts, read from the end.
+ * The tail opens at the head's last article, extended one word left over a
+ * preposition standing before it (`at the gong`); with no usable article, at
+ * the last bare preposition (`at Tobias`). A tail is taken only when an
+ * actor and a gerund — two words — stand before it, so `the player giving`
+ * and `the wandering mercenaries giving` take none. Syntactic, never guessed.
+ *
+ * @param words - The head's words (actor, gerund, tail), `to` excluded.
+ * @returns `start` (first tail word, preposition included) and `nameStart`
+ *   (first word of the counterpart's name), or null when the head has none.
+ */
+export function splitCounterpartTail(words: readonly Token[]): { start: number; nameStart: number } | null {
+  const last = words.length - 1;
+  for (let i = last - 1; i >= 2; i--) {
+    if (!ARTICLES.has(words[i].text)) continue;
+    const start = COUNTERPART_PREPOSITIONS.has(words[i - 1].text) && i - 1 >= 2 ? i - 1 : i;
+    return { start, nameStart: i };
+  }
+  for (let i = last - 1; i >= 2; i--) {
+    if (COUNTERPART_BARE_PREPOSITIONS.has(words[i].text)) return { start: i, nameStart: i + 1 };
+  }
+  return null;
 }

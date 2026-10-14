@@ -1440,6 +1440,13 @@ export interface OnClause {
    * value set is this word. Legal only on a `setting` head (analyzer gate).
    */
   valueTail?: string | null;
+  /**
+   * The counterpart tail (ADR-372 D1): the noun on the other side of a
+   * two-noun action (`throwing at the gong`, `giving the sherry bottle`).
+   * The clause fires only when the command's other noun is this one. Legal
+   * only on a single two-noun gerund (analyzer gate).
+   */
+  counterpart?: ValueExpr | null;
   /** `while <condition>` qualifier (all bindings since the ownership package). */
   condition: ConditionNode | null;
   /** `, once` clause modifier — one lifetime firing (ratchet D5). */

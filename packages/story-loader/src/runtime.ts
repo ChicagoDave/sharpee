@@ -40,6 +40,7 @@ import { OnClausesSection } from './runtime/on-clauses.js';
 import { PhrasesSection } from './runtime/phrases.js';
 import { SchedulerConstructsSection } from './runtime/scheduler-constructs.js';
 import { SettableSection } from './runtime/settable.js';
+import { PurchasableSection } from './runtime/purchasable.js';
 import { StatementsSection } from './runtime/statements.js';
 import { TimersSection } from './runtime/timers.js';
 import { TopicTablesSection } from './runtime/topic-tables.js';
@@ -59,6 +60,7 @@ export class ChordRuntime extends RuntimeCore {
     this.threads = new ConversationThreadsSection(this);
     this.dispatchVerbs = new DispatchVerbsSection(this);
     this.settable = new SettableSection(this);
+    this.purchasable = new PurchasableSection(this);
     this.scheduler = new SchedulerConstructsSection(this);
     this.timers = new TimersSection(this);
     this.derived = new DerivedSection(this);
@@ -236,6 +238,8 @@ export const RUNTIME_BIND_STEPS: readonly RuntimeBindStep[] = [
   { name: 'trait-clauses', requires: [], run: (r, w) => r.dispatchVerbs.bindTraitClauses(w) },
   // ADR-371 D3: every `settable` thing gets the setting implementation.
   { name: 'settable', requires: [], run: (r, w) => r.settable.bindSettable(w) },
+  // ADR-372 D5: every priced thing gets PurchasableTrait and the buying implementation.
+  { name: 'purchasable', requires: [], run: (r, w) => r.purchasable.bindPrices(w) },
   // Derived properties (`dark while`, blocked exits) — ADR-240: registered
   // as live evaluators consulted at point of use. Nothing is stamped and
   // nothing recomputes: mutations are instant, every reader sees current

@@ -176,6 +176,10 @@ export {
 // ADR-371: object-side adjectives
 import { burningAction } from './burning/index.js';
 import { settingAction } from './setting/index.js';
+// ADR-372: two-noun and conversation-shaped clauses
+import { askingForAction } from './asking_for/index.js';
+import { consultingAction } from './consulting/index.js';
+import { buyingAction } from './buying/index.js';
 export * from './jumping/index.js';
 export * from './kissing/index.js';
 export * from './waving/index.js';
@@ -186,6 +190,9 @@ export * from './looking_under/index.js';
 export * from './emptying/index.js';
 export * from './burning/index.js';
 export * from './setting/index.js';
+export * from './asking_for/index.js';
+export * from './consulting/index.js';
+export * from './buying/index.js';
 
 // Import author/debug actions
 import { TraceAction } from '../author/index.js';
@@ -266,6 +273,10 @@ export const standardActions = [
   // ADR-371: object-side adjectives
   burningAction,
   settingAction,
+  // ADR-372: two-noun and conversation-shaped clauses
+  askingForAction,
+  consultingAction,
+  buyingAction,
   // Author/debug actions
   traceAction
 ];

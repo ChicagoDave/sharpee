@@ -69,6 +69,7 @@ export const puttingLifecycle: ActionLifecycleDescriptor = {
       id: 'item',
       actionIds: [IFActions.PUTTING],
       resolve: (ctx) => ctx.command.directObject?.entity,
+      counterpart: (ctx) => ctx.command.indirectObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: entity.id,
         itemName: entity.name,
@@ -81,6 +82,7 @@ export const puttingLifecycle: ActionLifecycleDescriptor = {
       id: 'container',
       actionIds: [IFActions.PUTTING],
       resolve: (ctx) => ctx.command.indirectObject?.entity,
+      counterpart: (ctx, multiObjectItem) => multiObjectItem ?? ctx.command.directObject?.entity,
       seedData: (ctx, entity, multiObjectItem) => {
         const item = multiObjectItem ?? ctx.command.directObject?.entity;
         return {

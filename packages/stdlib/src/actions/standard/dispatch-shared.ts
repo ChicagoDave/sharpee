@@ -58,6 +58,11 @@ export interface ImplementationDispatchSpec {
   reportEventType: string;
   /** The blocked event (`if.event.lower_blocked`). */
   blockedEventType: string;
+  /**
+   * How near the target must be (default REACHABLE). Buying passes VISIBLE:
+   * a seller's goods are in their hands, not the buyer's reach.
+   */
+  targetScope?: ScopeLevel;
   /** Message ids: no target, no implementation, and the standard success line. */
   messages: { noTarget: string; cantDoThat: string; done: string };
   /** Other message ids the action may emit (declared for the language gate). */
@@ -102,6 +107,7 @@ export function createImplementationDispatchingAction(spec: ImplementationDispat
   lifecycle: ActionLifecycleDescriptor;
 } {
   const dispatchKey = `${spec.actionId}.dispatch`;
+  const targetScope = spec.targetScope ?? ScopeLevel.REACHABLE;
 
   const lifecycle: ActionLifecycleDescriptor = {
     actionId: spec.actionId,
@@ -125,7 +131,7 @@ export function createImplementationDispatchingAction(spec: ImplementationDispat
     id: spec.actionId,
 
     defaultScope: {
-      target: ScopeLevel.REACHABLE
+      target: targetScope
     },
 
     requiresHolding: false,
@@ -143,7 +149,7 @@ export function createImplementationDispatchingAction(spec: ImplementationDispat
     metadata: {
       requiresDirectObject: true,
       requiresIndirectObject: false,
-      directObjectScope: ScopeLevel.REACHABLE
+      directObjectScope: targetScope
     },
 
     group: spec.group,
@@ -154,7 +160,7 @@ export function createImplementationDispatchingAction(spec: ImplementationDispat
         return { valid: false, error: spec.messages.noTarget };
       }
 
-      const scopeCheck = context.requireScope(noun, ScopeLevel.REACHABLE);
+      const scopeCheck = context.requireScope(noun, targetScope);
       if (!scopeCheck.ok) {
         return scopeCheck.error!;
       }

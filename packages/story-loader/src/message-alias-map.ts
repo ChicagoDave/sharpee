@@ -63,6 +63,15 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'asking-shrugs': 'if.action.asking.shrugs',
   'asking-too-far': 'if.action.asking.too_far',
   'asking-unknown-topic': 'if.action.asking.unknown_topic',
+  // if.action.asking_for (ADR-372)
+  'asking-for-already-have': 'if.action.asking_for.already_have',
+  'asking-for-no-item': 'if.action.asking_for.no_item',
+  'asking-for-no-target': 'if.action.asking_for.no_target',
+  'asking-for-not-actor': 'if.action.asking_for.not_actor',
+  'asking-for-not-visible': 'if.action.asking_for.not_visible',
+  'asking-for-refused': 'if.action.asking_for.refused',
+  'asking-for-self': 'if.action.asking_for.self',
+  'asking-for-too-far': 'if.action.asking_for.too_far',
   // if.action.attacking
   'attacking-already-dead': 'if.action.attacking.already_dead',
   'attacking-attack-ineffective': 'if.action.attacking.attack_ineffective',
@@ -145,6 +154,12 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'burning-not-flammable': 'if.action.burning.not_flammable',
   'burning-tool-not-held': 'if.action.burning.tool_not_held',
   'burning-wrong-tool': 'if.action.burning.wrong_tool',
+  // if.action.buying (ADR-372)
+  'buying-already-have': 'if.action.buying.already_have',
+  'buying-bought': 'if.action.buying.bought',
+  'buying-cant-afford': 'if.action.buying.cant_afford',
+  'buying-no-target': 'if.action.buying.no_target',
+  'buying-not-for-sale': 'if.action.buying.not_for_sale',
   // if.action.climbing
   'climbing-already-there': 'if.action.climbing.already_there',
   'climbing-cant-go-that-way': 'if.action.climbing.cant_go_that_way',
@@ -166,6 +181,11 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'closing-no-target': 'if.action.closing.no_target',
   'closing-not-closable': 'if.action.closing.not_closable',
   'closing-prevents-closing': 'if.action.closing.prevents_closing',
+  // if.action.consulting (ADR-372)
+  'consulting-no-target': 'if.action.consulting.no_target',
+  'consulting-no-topic': 'if.action.consulting.no_topic',
+  'consulting-not-consultable': 'if.action.consulting.not_consultable',
+  'consulting-nothing-found': 'if.action.consulting.nothing_found',
   // if.action.cutting
   'cutting-cant-cut': 'if.action.cutting.cant_cut',
   'cutting-cut': 'if.action.cutting.cut',

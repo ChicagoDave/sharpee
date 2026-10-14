@@ -81,6 +81,10 @@ export const IFActions = {
   EMPTYING: 'if.action.emptying',
   BURNING: 'if.action.burning',
   SETTING: 'if.action.setting',
+  // Two-noun and conversation-shaped clauses (ADR-372)
+  ASKING_FOR: 'if.action.asking_for',
+  CONSULTING: 'if.action.consulting',
+  BUYING: 'if.action.buying',
 
   // Meta actions
   INVENTORY: 'if.action.inventory',
@@ -380,6 +384,22 @@ export const englishVerbs: VerbDefinition[] = [
     // `set` shares its word with `set fire to`; the grammar's literals decide.
     action: IFActions.SETTING,
     verbs: ['set', 'adjust'],
+    requiresObject: true
+  },
+  {
+    // `ask` shares its word with asking; the grammar's literal `for` decides.
+    action: IFActions.ASKING_FOR,
+    verbs: ['ask', 'beg'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.CONSULTING,
+    verbs: ['consult', 'look up', 'read about'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.BUYING,
+    verbs: ['buy', 'purchase', 'pay for'],
     requiresObject: true
   },
   

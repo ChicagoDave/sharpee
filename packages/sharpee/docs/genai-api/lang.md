@@ -322,6 +322,9 @@ export declare const IFActions: {
     readonly EMPTYING: "if.action.emptying";
     readonly BURNING: "if.action.burning";
     readonly SETTING: "if.action.setting";
+    readonly ASKING_FOR: "if.action.asking_for";
+    readonly CONSULTING: "if.action.consulting";
+    readonly BUYING: "if.action.buying";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
@@ -580,28 +583,13 @@ export * from './looking-under.js';
 export * from './emptying.js';
 export * from './burning.js';
 export * from './setting.js';
+export * from './asking-for.js';
+export * from './consulting.js';
+export * from './buying.js';
 /**
  * All standard action language definitions
  */
 export declare const standardActionLanguage: ({
-    actionId: string;
-    patterns: string[];
-    messages: {
-        no_target: string;
-        not_flammable: string;
-        cant_burn: string;
-        no_tool: string;
-        needs_tool: string;
-        tool_not_held: string;
-        wrong_tool: string;
-        burned: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
     actionId: string;
     patterns: string[];
     messages: {
@@ -2036,10 +2024,75 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        not_flammable: string;
+        cant_burn: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        burned: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         no_value: string;
         cant_set_that: string;
         not_a_setting: string;
         set: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_item: string;
+        not_visible: string;
+        too_far: string;
+        not_actor: string;
+        self: string;
+        already_have: string;
+        refused: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_topic: string;
+        not_consultable: string;
+        nothing_found: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_for_sale: string;
+        already_have: string;
+        cant_afford: string;
+        bought: string;
     };
     help: {
         description: string;

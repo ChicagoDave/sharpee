@@ -429,11 +429,23 @@ on-clause    = ( "on" | "after" ) clause-form
                { "," clause-modifier } NL
                >>> { statement } "end" ( "on" | "after" ) NL ;
                                         (* terminator matches the opener *)
-clause-form  = head [ "to" WORD ]                     (* ADR-371 D4: the value
+clause-form  = head [ counterpart ]                  (* ADR-372 D1: the other
+                                                        noun of a two-noun action
+                                                        — the clause fires only
+                                                        when the command's other
+                                                        noun is this thing *)
+               [ "to" WORD                            (* ADR-371 D4: the value
                                                         tail — a `setting` head
                                                         fires only for this
                                                         state word (analysis.
-                                                        head-value-tail elsewhere) *)
+                                                        head-value-tail elsewhere);
+                                                        on a two-noun gerund the
+                                                        one word is a counterpart
+                                                        (`giving to Tobias`) *)
+               | "to" name ]                          (* ADR-372 D1: several words
+                                                        or an article after `to`
+                                                        are a counterpart (`giving
+                                                        to Mrs Kettle`) *)
                [ "anything" "as" "the" WORD ]          (* role tail: the owner is
                                                         the named role *)
              | "every" "turn" ;                      (* `on` only *)
@@ -471,6 +483,26 @@ gerund       = WORD ;                                (* the LAST head word — s
                                                         (D3); `<gerund> it` is the
                                                         removed pre-ADR-327 spelling,
                                                         parse.removed-head-it *)
+counterpart  = [ "at" | "for" | "from" | "about" | "in" ] ARTICLE name
+             | ( "at" | "for" | "from" ) name ;      (* ADR-372 D1: read from the
+                                                        END of the head — the tail
+                                                        opens at the last article,
+                                                        one preposition before it
+                                                        included; with none, at the
+                                                        last bare `at`/`for`/`from`.
+                                                        Taken only when an actor and
+                                                        a gerund stand before it.
+                                                        One gerund only (parse.head-
+                                                        counterpart-list); the
+                                                        gerund's action consults two
+                                                        nouns (analysis.head-
+                                                        counterpart-one-noun); the
+                                                        name is a thing (…-unknown)
+                                                        and not the owner (…-is-
+                                                        owner). A bare proper name
+                                                        after the gerund is
+                                                        analysis.head-counterpart-
+                                                        bare-name. *)
 clause-modifier = "once"                          (* D5: one lifetime firing *)
              | ( "before" | "after" ) WORD ;      (* trait ordering *)
 
@@ -1097,6 +1129,16 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               bare => trait *)
                [ "with" setting { "and" setting } ]
                [ "while" condition ]
+             | "costs" NUMBER WORD                         (* ADR-372 D5: a price — a
+                                                              whole number (analysis.
+                                                              costs-price) of a currency
+                                                              some playable character
+                                                              carries as a counter
+                                                              (analysis.costs-counter-
+                                                              unknown); the buying
+                                                              behavior spends the buyer's
+                                                              own counter. Malformed is
+                                                              parse.costs *)
              | "starts" STATE-INIT ;                       (* ADR-231 D5a initializer:
                                                               sets the paired trait's
                                                               initial value; pairing

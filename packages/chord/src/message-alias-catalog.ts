@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 778 aliases across 69 actions.
+ * 795 aliases across 72 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -70,6 +70,15 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'asking-shrugs',
   'asking-too-far',
   'asking-unknown-topic',
+  // if.action.asking_for
+  'asking-for-already-have',
+  'asking-for-no-item',
+  'asking-for-no-target',
+  'asking-for-not-actor',
+  'asking-for-not-visible',
+  'asking-for-refused',
+  'asking-for-self',
+  'asking-for-too-far',
   // if.action.attacking
   'attacking-already-dead',
   'attacking-attack-ineffective',
@@ -152,6 +161,12 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'burning-not-flammable',
   'burning-tool-not-held',
   'burning-wrong-tool',
+  // if.action.buying
+  'buying-already-have',
+  'buying-bought',
+  'buying-cant-afford',
+  'buying-no-target',
+  'buying-not-for-sale',
   // if.action.climbing
   'climbing-already-there',
   'climbing-cant-go-that-way',
@@ -173,6 +188,11 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'closing-no-target',
   'closing-not-closable',
   'closing-prevents-closing',
+  // if.action.consulting
+  'consulting-no-target',
+  'consulting-no-topic',
+  'consulting-not-consultable',
+  'consulting-nothing-found',
   // if.action.cutting
   'cutting-cant-cut',
   'cutting-cut',

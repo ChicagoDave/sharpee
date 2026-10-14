@@ -25,6 +25,7 @@ export const TraitType = {
   CUTTABLE: 'cuttable',
   DIGGABLE: 'diggable',
   FLAMMABLE: 'flammable',
+  PURCHASABLE: 'purchasable', // ADR-372 D5
   SWITCHABLE: 'switchable',
   READABLE: 'readable',
   LIGHT_SOURCE: 'lightSource',
@@ -126,6 +127,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.CUTTABLE]: TraitCategory.INTERACTIVE,
   [TraitType.DIGGABLE]: TraitCategory.INTERACTIVE,
   [TraitType.FLAMMABLE]: TraitCategory.INTERACTIVE,
+  [TraitType.PURCHASABLE]: TraitCategory.INTERACTIVE,
   [TraitType.SWITCHABLE]: TraitCategory.INTERACTIVE,
   [TraitType.READABLE]: TraitCategory.INTERACTIVE,
   [TraitType.LIGHT_SOURCE]: TraitCategory.INTERACTIVE,

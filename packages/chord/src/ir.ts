@@ -953,6 +953,12 @@ export interface IROnClause {
    * consultation's seeded `value` is this word. Additive and optional.
    */
   valueTail?: string;
+  /**
+   * The counterpart tail (ADR-372 D1) — the IR id of the other noun; the
+   * hook fires only when the consultation's seeded `counterpartId` is it.
+   * Additive and optional.
+   */
+  counterpart?: string;
   /** `while` qualifier (every-turn clauses). */
   condition: IRCondition | null;
   /** Explicit `before`/`after` ordering between traits on the same action. */

@@ -1161,6 +1161,7 @@ export declare const IFActions: {
     readonly DRINKING: "if.action.drinking";
     readonly TALKING: "if.action.talking";
     readonly ASKING: "if.action.asking";
+    readonly ASKING_FOR: "if.action.asking_for";
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
     readonly SAYING_GOODBYE: "if.action.saying_goodbye";
@@ -1169,6 +1170,7 @@ export declare const IFActions: {
     readonly SAYING_SORRY: "if.action.saying_sorry";
     readonly SHOWING: "if.action.showing";
     readonly GIVING: "if.action.giving";
+    readonly BUYING: "if.action.buying";
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
     readonly BURNING: "if.action.burning";
@@ -1285,6 +1287,21 @@ export interface EntitySlotSpec {
      *   itself (where `entity` IS the item).
      */
     seedData?(context: ActionContext, entity: IFEntity, multiObjectItem?: IFEntity): Record<string, unknown>;
+    /**
+     * The noun on the other side of a two-noun command, as seen from this
+     * slot (the target for the thrown item, the item for the target). The
+     * engine seeds its id into the consultation's sharedData as
+     * `counterpartId`, so a hook can fire only for one counterpart — a Chord
+     * head's counterpart tail (`on the player throwing at the gong`) is the
+     * consumer. Declaring it on a descriptor's slots is what makes an action
+     * a counterpart action (`counterpartActionIds` in the registry).
+     *
+     * @param context - The action context.
+     * @param multiObjectItem - As for `seedData`: the item of a per-item
+     *   resolution, when this slot is the shared one.
+     * @returns The other noun, or `undefined` when the command has none.
+     */
+    counterpart?(context: ActionContext, multiObjectItem?: IFEntity): IFEntity | undefined;
 }
 /**
  * Rare, explicit special contracts (ADR-228 D7.3). A contract changes the
@@ -1731,7 +1748,7 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  * registered under a given action id will ever be consulted.
  *
  * Public interface: `actionLifecycleDescriptors`,
- * `interceptorConsultingActionIds`, `lifecycleDescriptorFor`.
+ * `interceptorConsultingActionIds`, `counterpartActionIds`, `lifecycleDescriptorFor`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  *
  * NOTE: this module is deliberately NOT exported from `./index.ts` (the
@@ -1741,11 +1758,12 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
- * The descriptor table: all 54 entity-keyed standard actions (33 per
+ * The descriptor table: all 57 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
  * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
- * and setting per ADR-371, 2026-10-14). Structural exemptions
+ * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
+ * per ADR-372, 2026-10-14). Structural exemptions
  * (no entity to key on: about, waiting, looking, …) are absent by design — see
  * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
@@ -1760,6 +1778,12 @@ export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescrip
  */
 export declare function lifecycleDescriptorFor(actionId: string): ActionLifecycleDescriptor | undefined;
 export declare const interceptorConsultingActionIds: ReadonlySet<string>;
+/**
+ * Action ids whose descriptor declares a `counterpart` on a slot (ADR-372
+ * D1): the two-noun actions a Chord head may narrow by naming the other
+ * noun. The Chord manifest's `counterpartActions` is generated from this.
+ */
+export declare const counterpartActionIds: ReadonlySet<string>;
 ```
 
 ### actions/lifecycle/phase-runner
@@ -1914,6 +1938,9 @@ export * from './looking_under/index.js';
 export * from './emptying/index.js';
 export * from './burning/index.js';
 export * from './setting/index.js';
+export * from './asking_for/index.js';
+export * from './consulting/index.js';
+export * from './buying/index.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```

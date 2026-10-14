@@ -2110,6 +2110,7 @@ export declare const TraitType: {
     readonly CUTTABLE: "cuttable";
     readonly DIGGABLE: "diggable";
     readonly FLAMMABLE: "flammable";
+    readonly PURCHASABLE: "purchasable";
     readonly SWITCHABLE: "switchable";
     readonly READABLE: "readable";
     readonly LIGHT_SOURCE: "lightSource";
@@ -2207,6 +2208,7 @@ import { LockableTrait } from './lockable/lockableTrait.js';
 import { CuttableTrait } from './cuttable/cuttableTrait.js';
 import { DiggableTrait } from './diggable/diggableTrait.js';
 import { FlammableTrait } from './flammable/flammableTrait.js';
+import { PurchasableTrait } from './purchasable/purchasableTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { ReadableTrait } from './readable/readableTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
@@ -2270,7 +2272,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -3326,6 +3328,42 @@ export declare class FlammableBehavior extends Behavior {
      * @returns true when the tool is declared for it
      */
     static canBurnWith(entity: IFEntity, toolId: EntityId): boolean;
+}
+```
+
+### traits/purchasable/purchasableTrait
+
+```typescript
+/**
+ * Purchasable trait (ADR-372 D5) — marks a thing the buying action may
+ * target and carries its price. The money itself is not here: whoever
+ * registers the buying capability behavior on this trait owns the purse
+ * (the Chord story-loader spends a counter on the buyer named by
+ * `currency`; a TypeScript story registers its own).
+ *
+ * Public interface: PurchasableTrait, IPurchasableData.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { ITrait } from '../trait.js';
+/** Data for the purchasable trait: a price in one named currency. */
+export interface IPurchasableData {
+    /** What the thing costs, a non-negative whole number */
+    price: number;
+    /** The currency word the price is in (`credits`) — the purse the behavior spends */
+    currency: string;
+}
+/**
+ * Purchasable trait — eligibility and price only. The sale's outcome is the
+ * thing's registered implementation of `if.action.buying` (an ADR-090
+ * capability behavior); the standard buying action never mutates state.
+ */
+export declare class PurchasableTrait implements ITrait, IPurchasableData {
+    static readonly type: "purchasable";
+    static readonly capabilities: readonly ["if.action.buying"];
+    readonly type: "purchasable";
+    price: number;
+    currency: string;
+    constructor(data: IPurchasableData);
 }
 ```
 

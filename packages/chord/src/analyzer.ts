@@ -1565,6 +1565,25 @@ export class Analyzer {
             comp.span,
           );
         }
+        // ADR-372 D5: a price is a whole number in a currency some playable
+        // character carries as a counter — the buyer's own purse.
+        if (comp.name === 'costs') {
+          const price = comp.config.find((c) => c.key === 'price');
+          const currency = comp.config.find((c) => c.key === 'currency');
+          if (price && !/^\d+$/.test(price.value)) {
+            this.diagnostics.error(
+              'analysis.costs-price',
+              `\`costs ${price.value}\` — a price is a whole number of a currency, e.g. \`costs 3 credits\`.`,
+              comp.span,
+            );
+          } else if (price && currency && !ir.entities.some((e) => e.isPlayable && e.counters.some((k) => k.name === currency.value))) {
+            this.diagnostics.error(
+              'analysis.costs-counter-unknown',
+              `\`costs ${price.value} ${currency.value}\` on \`${entity.name}\` — no playable character carries a \`${currency.value}\` counter, so nothing could pay. Give the player character \`counter ${currency.value} starts <n>\`.`,
+              comp.span,
+            );
+          }
+        }
         // Census 15: neither a v1 adjective, nor extension vocabulary, nor
         // a declared `define trait`.
         if (!TRAIT_ADJECTIVES.has(comp.name) && !manifestForAdjective(comp.name) && !traitDefs.has(comp.name)) {
@@ -2093,14 +2112,32 @@ export class Analyzer {
       }
       blockOwners.set(ownerId, decl.span);
 
-      if (!owner.kinds.some((k) => k.name === 'person')) {
+      // ADR-372 D4: a readable thing answers `consult` from its table, as a
+      // person answers `ask`/`tell`.
+      const isPerson = owner.kinds.some((k) => k.name === 'person');
+      const isReadable = owner.traits.some((t) => t.name === 'readable');
+      if (!isPerson && !isReadable) {
         const kind = owner.kinds[0] ? `a ${owner.kinds[0].name}` : 'a thing';
         this.diagnostics.error(
           'analysis.topics-host',
-          `\`define topics\` needs a person — \`${owner.name}\` is ${kind}, and only people answer \`ask\`/\`tell\` (a table here could never be reached).`,
+          `\`define topics\` needs a person or a readable thing — \`${owner.name}\` is ${kind}; people answer \`ask\`/\`tell\` and readable things answer \`consult\` (a table here could never be reached).`,
           decl.span,
         );
         continue;
+      }
+      if (!isPerson) {
+        // A book has no memory of being asked: its rows are plain responses.
+        for (const row of decl.rows) {
+          for (const stmt of row.body) {
+            if (stmt.kind === 'then-open' || stmt.kind === 'deflect' || stmt.kind === 'leave') {
+              this.diagnostics.error(
+                'analysis.topics-readable-conversation',
+                `\`${owner.name}\` is a readable thing, not a person — its topic rows answer \`consult\` with plain lines; conversation statements (\`then asks\`, \`deflect to\`, \`leave\`) belong in a person's table.`,
+                stmt.span,
+              );
+            }
+          }
+        }
       }
 
       // Entity-tier refs resolve once, up front: the cross-tier collision
@@ -5337,6 +5374,63 @@ export class Analyzer {
    * @returns the actor IRValue (`player` | `entity`), or null for a bare or
    *   every-turn head — and for an unresolvable actor, already reported.
    */
+  /**
+   * ADR-372 D1: resolve a head's counterpart tail to the other noun's id.
+   * Reports a tail on a one-noun gerund, a name that is no thing, and a
+   * counterpart that is the clause's own owner.
+   *
+   * @returns The counterpart's IR id, or undefined when reported.
+   */
+  private resolveHeadCounterpart(clause: OnClause, expr: ValueExpr, ownerKey: string, isCounterpartAction: boolean): string | undefined {
+    const text = valueExprText(expr);
+    if (!isCounterpartAction) {
+      this.diagnostics.error(
+        'analysis.head-counterpart-one-noun',
+        `\`${clause.action}\` acts on one thing, so this head cannot name \`${text}\` as a second. A head's other noun is read from its end: the last \`the\`, \`a\` or \`an\` opens it (with \`at\`, \`for\`, \`from\`, \`about\` or \`in\` before it). If \`${text}\` is part of a name, refer to that thing by an alias without the article.`,
+        expr.span,
+      );
+      return undefined;
+    }
+    const sym = expr.kind === 'ref' ? this.findEntitySilent(expr.ref) : null;
+    if (!sym) {
+      this.diagnostics.error(
+        'analysis.head-counterpart-unknown',
+        `\`${text}\` is not a thing in this story — a head's other noun names a thing, as in \`${clause.clauseKind} the player ${clause.action} the brass key\`.`,
+        expr.span,
+      );
+      return undefined;
+    }
+    if (sym.id === ownerKey) {
+      this.diagnostics.error(
+        'analysis.head-counterpart-is-owner',
+        `\`${text}\` is this block's own owner — the owner is already one noun of \`${clause.action}\`; the tail names the other.`,
+        expr.span,
+      );
+      return undefined;
+    }
+    return sym.id;
+  }
+
+  /**
+   * ADR-372 D1: a proper-named counterpart written with no article or
+   * preposition (`throwing Excalibur`) reads as the action word, leaving the
+   * real gerund in the actor. Caught here, at compile time, with the fix.
+   *
+   * @returns true when reported (the actor is then not resolved again).
+   */
+  private checkBareCounterpartName(clause: OnClause): boolean {
+    if (clause.actor === null || clause.actor.kind !== 'ref' || clause.counterpart) return false;
+    const actorWords = clause.actor.ref.words;
+    const before = actorWords[actorWords.length - 1]?.toLowerCase();
+    if (!before || actorWords.length < 2 || !STDLIB_MANIFEST.counterpartActions.has(`if.action.${before}`)) return false;
+    this.diagnostics.error(
+      'analysis.head-counterpart-bare-name',
+      `\`${clause.action}\` follows \`${before}\` with no article or preposition, so it reads as the action word. Name the other noun with \`the\`, or with \`at\`, \`for\` or \`from\`: \`${clause.clauseKind} ${valueExprText(clause.actor)} at ${clause.action}\`.`,
+      clause.actionSpan,
+    );
+    return true;
+  }
+
   private resolveHeadActor(clause: OnClause, scope: Scope): IRValue | null {
     if (clause.binding === 'every-turn') return null;
     const owner = scope.owner;
@@ -5429,25 +5523,37 @@ export class Analyzer {
     }
     const clauseScope: Scope = { ...scope, slots: extraSlots.size ? extraSlots : scope.slots };
 
+    // ADR-372 D1: the counterpart tail. One word after `to` on a two-noun
+    // gerund names the other noun (`giving to Tobias`), not a value.
+    const isCounterpartAction = STDLIB_MANIFEST.counterpartActions.has(`if.action.${clause.action}`);
+    let valueTail = clause.valueTail ?? undefined;
+    let counterpartExpr = clause.counterpart ?? null;
+    if (valueTail && isCounterpartAction && !counterpartExpr) {
+      counterpartExpr = { kind: 'ref', ref: { kind: 'name', article: null, words: [valueTail], span: clause.actionSpan }, span: clause.actionSpan };
+      valueTail = undefined;
+    }
+    const counterpartId = counterpartExpr ? this.resolveHeadCounterpart(clause, counterpartExpr, ownerKey, isCounterpartAction) : undefined;
+    const bareNameAfterGerund = this.checkBareCounterpartName(clause);
+
     // ADR-371 D4: the `to <value>` tail belongs to a `setting` head on a
     // thing's own block, and names one of that thing's states.
-    if (clause.valueTail) {
+    if (valueTail) {
       const ownerSym = this.entities.find((e) => e.id === ownerKey);
       if (clause.action !== 'setting' || !ownerSym) {
         this.diagnostics.error(
           'analysis.head-value-tail',
-          `\`to ${clause.valueTail}\` on a \`${clause.action}\` head — only \`setting\` takes a value, and only in the thing's own block. To fire on a state, write \`while <thing> is ${clause.valueTail}\`.`,
+          `\`to ${valueTail}\` on a \`${clause.action}\` head — only \`setting\` takes a value, and only in the thing's own block. To fire on a state, write \`while <thing> is ${valueTail}\`.`,
           clause.actionSpan,
         );
-      } else if (!ownerSym.states.includes(clause.valueTail)) {
+      } else if (!ownerSym.states.includes(valueTail)) {
         this.diagnostics.error(
           'analysis.setting-tail-unknown',
-          `\`to ${clause.valueTail}\` — ${entityDisplayName(ownerSym)} has no state \`${clause.valueTail}\`; its states are ${ownerSym.states.join(', ') || '(none)'}.`,
+          `\`to ${valueTail}\` — ${entityDisplayName(ownerSym)} has no state \`${valueTail}\`; its states are ${ownerSym.states.join(', ') || '(none)'}.`,
           clause.actionSpan,
         );
       }
     }
-    const actor = this.resolveHeadActor(clause, scope);
+    const actor = bareNameAfterGerund ? null : this.resolveHeadActor(clause, scope);
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
     const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
     const body = clause.body.map((s, i) => this.resolveStatement(s, clauseScope, `${clausePath}.${i}`));
@@ -5460,7 +5566,8 @@ export class Analyzer {
       actor,
       binding: clause.binding,
       role: clause.role,
-      ...(clause.valueTail ? { valueTail: clause.valueTail } : {}),
+      ...(valueTail ? { valueTail } : {}),
+      ...(counterpartId ? { counterpart: counterpartId } : {}),
       condition,
       ordering: clause.ordering,
       routing,

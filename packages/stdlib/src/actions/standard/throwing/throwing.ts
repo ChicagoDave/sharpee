@@ -68,6 +68,7 @@ export const throwingLifecycle: ActionLifecycleDescriptor = {
       id: 'item',
       actionIds: [IFActions.THROWING],
       resolve: (ctx) => ctx.command.directObject?.entity,
+      counterpart: (ctx) => ctx.command.indirectObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: entity.id,
         itemName: entity.name,
@@ -79,6 +80,7 @@ export const throwingLifecycle: ActionLifecycleDescriptor = {
       id: 'target',
       actionIds: [IFActions.THROWING],
       resolve: (ctx) => ctx.command.indirectObject?.entity,
+      counterpart: (ctx, multiObjectItem) => multiObjectItem ?? ctx.command.directObject?.entity,
       seedData: (ctx, entity) => ({
         itemId: ctx.command.directObject?.entity?.id,
         itemName: ctx.command.directObject?.entity?.name,

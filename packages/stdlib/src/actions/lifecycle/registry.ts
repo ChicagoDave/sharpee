@@ -10,7 +10,7 @@
  * registered under a given action id will ever be consulted.
  *
  * Public interface: `actionLifecycleDescriptors`,
- * `interceptorConsultingActionIds`, `lifecycleDescriptorFor`.
+ * `interceptorConsultingActionIds`, `counterpartActionIds`, `lifecycleDescriptorFor`.
  * Owner: stdlib standard-action infrastructure (ADR-228).
  *
  * NOTE: this module is deliberately NOT exported from `./index.ts` (the
@@ -77,13 +77,18 @@ import { loweringLifecycle } from '../standard/lowering/lowering.js';
 import { raisingLifecycle } from '../standard/raising/raising.js';
 import { burningLifecycle } from '../standard/burning/burning.js';
 import { settingLifecycle } from '../standard/setting/setting.js';
+// ADR-372: two-noun and conversation-shaped clauses
+import { askingForLifecycle } from '../standard/asking_for/asking-for.js';
+import { consultingLifecycle } from '../standard/consulting/consulting.js';
+import { buyingLifecycle } from '../standard/buying/buying.js';
 
 /**
- * The descriptor table: all 54 entity-keyed standard actions (33 per
+ * The descriptor table: all 57 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
  * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
- * and setting per ADR-371, 2026-10-14). Structural exemptions
+ * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
+ * per ADR-372, 2026-10-14). Structural exemptions
  * (no entity to key on: about, waiting, looking, …) are absent by design — see
  * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
@@ -143,7 +148,11 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   loweringLifecycle,
   raisingLifecycle,
   burningLifecycle,
-  settingLifecycle
+  settingLifecycle,
+  // ADR-372
+  askingForLifecycle,
+  consultingLifecycle,
+  buyingLifecycle
 ]);
 
 // Invariant: one descriptor per action — a duplicate primary id means two
@@ -188,4 +197,15 @@ export const interceptorConsultingActionIds: ReadonlySet<string> = new Set(
   actionLifecycleDescriptors.flatMap((descriptor) =>
     descriptor.slots.flatMap((slot) => slot.actionIds)
   )
+);
+
+/**
+ * Action ids whose descriptor declares a `counterpart` on a slot (ADR-372
+ * D1): the two-noun actions a Chord head may narrow by naming the other
+ * noun. The Chord manifest's `counterpartActions` is generated from this.
+ */
+export const counterpartActionIds: ReadonlySet<string> = new Set(
+  actionLifecycleDescriptors
+    .filter((descriptor) => descriptor.slots.some((slot) => slot.counterpart !== undefined))
+    .map((descriptor) => descriptor.actionId)
 );
