@@ -290,7 +290,7 @@ const MAPPED_EFFECTS = new Set([
  * satisfy (ADR-356 D2). Read off the live trait at run time; an entity
  * without the trait gets no term.
  */
-const STANDARD_PRECONDITIONS = new Set(['opening', 'closing', 'locking', 'unlocking', 'switching_on', 'switching_off', 'cutting', 'digging']);
+const STANDARD_PRECONDITIONS = new Set(['opening', 'closing', 'locking', 'unlocking', 'switching_on', 'switching_off', 'cutting', 'digging', 'burning']);
 
 /** Room-lifecycle clauses fire on movement, not on a typed verb naming the room. */
 const LIFECYCLE_ACTIONS = new Set(['entering', 'leaving']);
@@ -403,7 +403,7 @@ export function planBranch(
 
   // Only a branch with something to claim needs a command; a body with
   // nothing to assert is named as such whatever its command looks like.
-  const command = commandPlan(branch, ir, actionPatterns);
+  const command = commandPlan(branch, ir, actionPatterns, settingValue(branch, ir, branches));
   if (command.kind === 'skip' || command.kind === 'no-vocabulary') return command;
 
   if (command.kind === 'none' && claims.some((claim) => claim.kind === 'pin' && claim.expression.startsWith('emitted '))) {
@@ -477,6 +477,10 @@ function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): { g
   for (const candidate of branches) {
     if (candidate.subject !== branch.subject) continue;
     if (candidate.clause.kind !== 'on' || candidate.clause.clauseKind !== 'on' || candidate.clause.action !== action) continue;
+    // ADR-371 D4: a `to <value>` refusal intercepts only that value. The
+    // run types the branch's own tail, or a value no tail names, so a
+    // refusal tailed to another value never fires on it.
+    if (candidate.clause.valueTail !== undefined && candidate.clause.valueTail !== branch.clause.valueTail) continue;
     if (candidate.leaf.kind === 'refused') {
       const own = candidate.precondition[candidate.precondition.length - 1];
       if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
@@ -674,10 +678,34 @@ function valueName(value: IRValue, subject: string | null): string | null {
 }
 
 /** The command that fires the branch, or the named reason none can be typed. */
+/**
+ * The value a `setting` branch types (ADR-371 D4): the clause's own tail;
+ * else the subject's first state that no tailed sibling clause on the same
+ * subject names, so an untailed reaction is reached without tripping a
+ * refusal tailed to another value. Undefined for every other action.
+ * @param branch the branch being planned
+ * @param ir the story
+ * @param branches every branch of the story
+ * @returns the state word to type after `to`
+ */
+function settingValue(branch: ClauseBranch, ir: StoryIR, branches: ClauseBranch[]): string | undefined {
+  if (branch.clause.kind !== 'on' || branch.clause.action !== 'setting') return undefined;
+  if (branch.clause.valueTail !== undefined) return branch.clause.valueTail;
+  const states = ir.entities.find((entity) => entity.id === branch.subject)?.states ?? [];
+  const tailed = new Set(
+    branches
+      .filter((candidate) => candidate.subject === branch.subject && candidate.clause.kind === 'on' && candidate.clause.action === 'setting')
+      .map((candidate) => (candidate.clause.kind === 'on' ? candidate.clause.valueTail : undefined))
+      .filter((tail): tail is string => tail !== undefined),
+  );
+  return states.find((state) => !tailed.has(state)) ?? states[0];
+}
+
 function commandPlan(
   branch: ClauseBranch,
   ir: StoryIR,
-  actionPatterns: ActionPatterns
+  actionPatterns: ActionPatterns,
+  value?: string
 ): CommandPlan | { kind: 'skip'; shape: string; detail: string } | { kind: 'no-vocabulary'; detail: string } {
   const command = branch.command;
   switch (command.kind) {
@@ -762,7 +790,8 @@ function commandPlan(
       if (!pattern) {
         return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has a slot for its subject` };
       }
-      const input = pattern.replace(subjectToken, objectName).trim();
+      // ADR-371 D4: a setting pattern's `[value]` takes the planned state word.
+      const input = pattern.replace(subjectToken, objectName).replace('[value]', value ?? '[value]').trim();
       // The preposition before a slot names what fills it: `in` / `into` a
       // container, `on` / `onto` a supporter, `with` the lockable's key for
       // locking and unlocking. Any other slot takes any thing.
@@ -1637,8 +1666,10 @@ function standardPreconditions(action: string, entity: DerivedEntity, keep: stri
       if (switchable && switchable.isOn === false && !kept('off')) expressions.push(`${entity.id}.isOn = true`);
       break;
     case 'cutting':
-    case 'digging': {
-      const gated = entity.get(action === 'cutting' ? 'cuttable' : 'diggable');
+    case 'digging':
+    case 'burning': {
+      // ADR-371 D2: burning is cutting's shape — the declared tool in hand.
+      const gated = entity.get(action === 'cutting' ? 'cuttable' : action === 'digging' ? 'diggable' : 'flammable');
       if (gated?.toolId) expressions.push(`player.inventory contains ${gated.toolId}`);
       break;
     }

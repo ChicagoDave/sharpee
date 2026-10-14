@@ -429,7 +429,12 @@ on-clause    = ( "on" | "after" ) clause-form
                { "," clause-modifier } NL
                >>> { statement } "end" ( "on" | "after" ) NL ;
                                         (* terminator matches the opener *)
-clause-form  = head [ "anything" "as" "the" WORD ]   (* role tail: the owner is
+clause-form  = head [ "to" WORD ]                     (* ADR-371 D4: the value
+                                                        tail — a `setting` head
+                                                        fires only for this
+                                                        state word (analysis.
+                                                        head-value-tail elsewhere) *)
+               [ "anything" "as" "the" WORD ]          (* role tail: the owner is
                                                         the named role *)
              | "every" "turn" ;                      (* `on` only *)
 head         = actor gerund { "," gerund }           (* explicit actor — ADR-327 D1:

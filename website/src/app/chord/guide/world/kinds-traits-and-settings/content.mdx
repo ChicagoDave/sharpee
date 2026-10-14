@@ -48,7 +48,36 @@ holding; with no implement named, any attempt reaches the entity. What the cut o
 actually *does* is never platform policy: a cuttable entity must carry
 exactly one implementation, an `on the player cutting` clause, its own or
 from a composed trait. The story fails to load with none, or with
-two. The same rule binds `diggable` to `on the player digging`.
+two. The same rule binds `diggable` to `on the player digging`, and
+`flammable` to `on the player burning` (`flammable with the disposal torch`
+names what it takes to light it; a thing that is not flammable prints
+"isn't something you can burn").
+
+A fourth adjective makes a dial out of states. `settable` on a thing whose
+states are `reversible` lets the player `set`, `turn` or `adjust` it to any
+of them: `set selector to titan` writes the same state `change the selector
+to titan` would, so `while the selector is titan`, `select on` and the verb
+all read one value. A value that is not one of the states answers with the
+list ("The guidance selector goes to ceres, titan, or kepler"). `settable`
+without a `states, reversible:` line is an error that names the line.
+
+```chord
+create the guidance selector
+  a thing, scenery, settable
+  in the Cockpit
+  aka selector, dial
+  states, reversible: ceres, titan, kepler
+
+  A three-position selector under the viewport.
+
+  on the player setting to kepler
+    refuse selector-kepler-last
+  end on
+
+  after the player setting
+    phrase selector-clicks
+  end after
+```
 
 ```chord
 create the straw bale

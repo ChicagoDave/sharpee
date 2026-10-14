@@ -91,6 +91,11 @@ export type BranchClause =
       binding: 'object' | 'role' | 'every-turn' | 'self';
       role: string | null;
       once: boolean;
+      /**
+       * The `to <value>` head tail (ADR-371 D4): the clause fires only when
+       * the value set is this word. Absent on every other clause.
+       */
+      valueTail?: string;
       /** What owns the clause's list. */
       root: ClauseRoot;
       /**
@@ -686,6 +691,7 @@ function classify(
           binding: n.binding as 'object' | 'role' | 'every-turn' | 'self',
           role: (n.role as string | null) ?? null,
           once: n.once === true,
+          ...(typeof n.valueTail === 'string' ? { valueTail: n.valueTail } : {}),
           root,
           ...(clause === undefined ? {} : { clause }),
         },

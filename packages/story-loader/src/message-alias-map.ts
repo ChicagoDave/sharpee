@@ -136,6 +136,15 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'attacking-unnecessary-violence': 'if.action.attacking.unnecessary_violence',
   'attacking-violence-not-the-answer': 'if.action.attacking.violence_not_the_answer',
   'attacking-wrong-weapon-type': 'if.action.attacking.wrong_weapon_type',
+  // if.action.burning (ADR-371)
+  'burning-burned': 'if.action.burning.burned',
+  'burning-cant-burn': 'if.action.burning.cant_burn',
+  'burning-needs-tool': 'if.action.burning.needs_tool',
+  'burning-no-target': 'if.action.burning.no_target',
+  'burning-no-tool': 'if.action.burning.no_tool',
+  'burning-not-flammable': 'if.action.burning.not_flammable',
+  'burning-tool-not-held': 'if.action.burning.tool_not_held',
+  'burning-wrong-tool': 'if.action.burning.wrong_tool',
   // if.action.climbing
   'climbing-already-there': 'if.action.climbing.already_there',
   'climbing-cant-go-that-way': 'if.action.climbing.cant_go_that_way',
@@ -605,6 +614,12 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'searching-searched-location': 'if.action.searching.searched_location',
   'searching-searched-object': 'if.action.searching.searched_object',
   'searching-supporter-contents': 'if.action.searching.supporter_contents',
+  // if.action.setting (ADR-371)
+  'setting-cant-set-that': 'if.action.setting.cant_set_that',
+  'setting-no-target': 'if.action.setting.no_target',
+  'setting-no-value': 'if.action.setting.no_value',
+  'setting-not-a-setting': 'if.action.setting.not_a_setting',
+  'setting-set': 'if.action.setting.set',
   // if.action.showing
   'showing-no-item': 'if.action.showing.no_item',
   'showing-no-viewer': 'if.action.showing.no_viewer',

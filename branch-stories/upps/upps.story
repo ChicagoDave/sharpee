@@ -92,12 +92,25 @@ create the returns bin
   end after
 
 create the dead letter
-  a thing
+  a thing, flammable with the disposal torch
   in the returns bin
   aka letter, envelope
 
   A grey envelope addressed to no world anyone has heard of, stamped
   twice: UNKNOWN and RETURN TO SENDER.
+
+  on the player burning
+    remove the dead letter
+    phrase letter-burned
+  end on
+
+create the disposal torch
+  a thing
+  in the Sorting Room
+  aka torch, burner, disposal
+
+  A stubby hand torch for undeliverables, its trigger worn to the
+  metal. Depot rules say every dead letter ends in it.
 
 create the dock door
   a thing, scenery
@@ -150,6 +163,10 @@ create the courier ship
   A snub-nosed UPPS courier, the Sparrow, dented along one flank where
   some asteroid got the last word. Its boarding ramp is drawn up, and
   the hull plating is cold to the touch.
+
+  on the player lowering, raising
+    phrase ramp-is-the-robots
+  end on
 
 create the loader robot
   a person
@@ -290,6 +307,34 @@ create the flight couch
 
   A pilot's couch with a five-point harness, the padding cracked
   along one arm where a hundred shifts have rested the same elbow.
+
+create the guidance selector
+  a thing, scenery, settable
+  in the Cockpit
+  aka selector, guidance, destination selector, dial
+  states, reversible: ceres, titan, kepler
+
+  A three-position selector under the viewport, its pointer worn
+  bright at every stop.
+
+  after the player examining
+    select on the guidance selector
+      when ceres
+        phrase selector-reads-ceres
+      when titan
+        phrase selector-reads-titan
+      when kepler
+        phrase selector-reads-kepler
+    end select
+  end after
+
+  on the player setting to kepler
+    refuse selector-kepler-last
+  end on
+
+  after the player setting
+    phrase selector-clicks
+  end after
 
 create the card slot
   a container, scenery
@@ -462,6 +507,37 @@ end phrase
 define phrase robot-kissed
   The loader's status light goes red, then amber again. It has filed
   a report.
+end phrase
+
+define phrase letter-burned
+  The dead letter goes up in a flat orange sheet and is gone before
+  the smell reaches you. Nobody will miss it.
+end phrase
+
+define phrase ramp-is-the-robots
+  The ramp is the loader's to work, and the loader does not take
+  requests from carriers.
+end phrase
+
+define phrase selector-kepler-last
+  Kepler Station is the last stop on Route 7. The card says Ceres
+  first.
+end phrase
+
+define phrase selector-reads-ceres
+  The pointer rests on CERES.
+end phrase
+
+define phrase selector-reads-titan
+  The pointer rests on TITAN.
+end phrase
+
+define phrase selector-reads-kepler
+  The pointer rests on KEPLER.
+end phrase
+
+define phrase selector-clicks
+  The selector clicks home and the console takes a moment to agree.
 end phrase
 
 define phrase bin-emptied

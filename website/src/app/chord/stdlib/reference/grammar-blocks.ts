@@ -78,4 +78,6 @@ export const grammarBlocks: Record<string, string> = {
   "if.action.saying_sorry": "define action saying_sorry\n  grammar\n    sorry\n    apologize\n    apologise",
   "if.action.looking_under": "define action looking_under\n  grammar\n    look under the target\n    look beneath the target\n    look underneath the target",
   "if.action.emptying": "define action emptying\n  grammar\n    empty the target\n    empty out the target\n    empty the target into or in or onto or on the destination",
+  "if.action.burning": "define action burning\n  grammar\n    burn the target\n    burn the target with or using the tool\n    ignite the target\n    set fire to the target\n  the tool is an instrument",
+  "if.action.setting": "define action setting\n  grammar\n    set the target to the value\n    turn the target to the value\n    adjust the target to the value\n    set the target\n  the value is a topic",
 };

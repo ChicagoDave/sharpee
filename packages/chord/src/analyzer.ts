@@ -1479,6 +1479,26 @@ export class Analyzer {
         // ADR-369 D1: `transparent` is a container word, and unconditional —
         // the flag is a property of the thing, not a state the story toggles.
         // Checked ahead of the generic conditional gate so its message wins.
+        // ADR-371 D3: `settable` reads the thing's own `states, reversible:`
+        // line — a dial goes anywhere; a forward-only set is a phase, not a dial.
+        if (comp.name === 'settable') {
+          if (entity.states.length === 0) {
+            this.diagnostics.error(
+              'analysis.settable-states',
+              `\`settable\` needs the values to set \`${entity.name}\` to — add a \`states, reversible: <first>, <second>, …\` line to its block.`,
+              comp.span,
+            );
+            continue;
+          }
+          if (!entity.statesReversible) {
+            this.diagnostics.error(
+              'analysis.settable-irreversible',
+              `\`${entity.name}\` is settable but its states march forward only — a dial goes anywhere, so write \`states, reversible: …\`.`,
+              comp.span,
+            );
+            continue;
+          }
+        }
         if (comp.name === 'transparent') {
           const kind = entity.kinds[0]?.name ?? 'thing';
           if (kind !== 'container') {
@@ -1630,6 +1650,7 @@ export class Analyzer {
     const TOOL_GATED_GERUNDS = [
       { adjective: 'cuttable', gerund: 'cutting' },
       { adjective: 'diggable', gerund: 'digging' },
+      { adjective: 'flammable', gerund: 'burning' }, // ADR-371 D2
     ] as const;
     const gerundSurface = (c: IROnClause, gerund: string): boolean =>
       c.clauseKind === 'on' && c.action === gerund && c.binding !== 'every-turn';
@@ -5408,6 +5429,24 @@ export class Analyzer {
     }
     const clauseScope: Scope = { ...scope, slots: extraSlots.size ? extraSlots : scope.slots };
 
+    // ADR-371 D4: the `to <value>` tail belongs to a `setting` head on a
+    // thing's own block, and names one of that thing's states.
+    if (clause.valueTail) {
+      const ownerSym = this.entities.find((e) => e.id === ownerKey);
+      if (clause.action !== 'setting' || !ownerSym) {
+        this.diagnostics.error(
+          'analysis.head-value-tail',
+          `\`to ${clause.valueTail}\` on a \`${clause.action}\` head — only \`setting\` takes a value, and only in the thing's own block. To fire on a state, write \`while <thing> is ${clause.valueTail}\`.`,
+          clause.actionSpan,
+        );
+      } else if (!ownerSym.states.includes(clause.valueTail)) {
+        this.diagnostics.error(
+          'analysis.setting-tail-unknown',
+          `\`to ${clause.valueTail}\` — ${entityDisplayName(ownerSym)} has no state \`${clause.valueTail}\`; its states are ${ownerSym.states.join(', ') || '(none)'}.`,
+          clause.actionSpan,
+        );
+      }
+    }
     const actor = this.resolveHeadActor(clause, scope);
     const condition = clause.condition ? this.resolveCondition(clause.condition, clauseScope) : null;
     const clausePath = `${ownerKey}.${clause.clauseKind}-${clause.action}-${clauseIndex}`;
@@ -5421,6 +5460,7 @@ export class Analyzer {
       actor,
       binding: clause.binding,
       role: clause.role,
+      ...(clause.valueTail ? { valueTail: clause.valueTail } : {}),
       condition,
       ordering: clause.ordering,
       routing,

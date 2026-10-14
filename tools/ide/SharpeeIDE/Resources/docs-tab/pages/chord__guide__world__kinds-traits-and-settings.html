@@ -14,7 +14,23 @@
   A squat glass jar with a screw lid.</code></pre>
 <p><code>transparent</code> belongs to containers only, and <code>holds</code> to containers and supporters; on anything else each is an error that names the kind it found. The old <code>with max items N</code>, <code>with max weight N</code> and <code>with capacity N</code> settings are errors whose message shows the <code>holds</code> line.</p>
 <p><code>with</code> attaches settings to a trait adjective. The last token of each setting is its value and the words before it are the key; several settings join with <code>and</code>. When a keyed value is an entity name, the article marks where the name starts (<code>feedable with food the handful of feed</code>, where the keyword names an authored trait's data field). The built-in capability adjectives take their entity <em>directly</em> after <code>with</code> and use no keyword: <code>lockable with the staff keycard</code> (ratchet R3, 2026-07-18: the old <code>key</code>/<code>tool</code> keywords are load errors with fix-its).</p>
-<p>Two trait adjectives carry a contract along with their data: <code>cuttable</code> and <code>diggable</code>. Each takes an optional implement named directly after <code>with</code> (<code>cuttable with the rusty knife</code>) that the player must be holding; with no implement named, any attempt reaches the entity. What the cut or dig actually <em>does</em> is never platform policy: a cuttable entity must carry exactly one implementation, an <code>on the player cutting</code> clause, its own or from a composed trait. The story fails to load with none, or with two. The same rule binds <code>diggable</code> to <code>on the player digging</code>.</p>
+<p>Two trait adjectives carry a contract along with their data: <code>cuttable</code> and <code>diggable</code>. Each takes an optional implement named directly after <code>with</code> (<code>cuttable with the rusty knife</code>) that the player must be holding; with no implement named, any attempt reaches the entity. What the cut or dig actually <em>does</em> is never platform policy: a cuttable entity must carry exactly one implementation, an <code>on the player cutting</code> clause, its own or from a composed trait. The story fails to load with none, or with two. The same rule binds <code>diggable</code> to <code>on the player digging</code>, and <code>flammable</code> to <code>on the player burning</code> (<code>flammable with the disposal torch</code> names what it takes to light it; a thing that is not flammable prints &quot;isn't something you can burn&quot;).</p>
+<p>A fourth adjective makes a dial out of states. <code>settable</code> on a thing whose states are <code>reversible</code> lets the player <code>set</code>, <code>turn</code> or <code>adjust</code> it to any of them: <code>set selector to titan</code> writes the same state <code>change the selector to titan</code> would, so <code>while the selector is titan</code>, <code>select on</code> and the verb all read one value. A value that is not one of the states answers with the list (&quot;The guidance selector goes to ceres, titan, or kepler&quot;). <code>settable</code> without a <code>states, reversible:</code> line is an error that names the line.</p>
+<pre><code class="language-chord">create the guidance selector
+  a thing, scenery, settable
+  in the Cockpit
+  aka selector, dial
+  states, reversible: ceres, titan, kepler
+
+  A three-position selector under the viewport.
+
+  on the player setting to kepler
+    refuse selector-kepler-last
+  end on
+
+  after the player setting
+    phrase selector-clicks
+  end after</code></pre>
 <pre><code class="language-chord">create the straw bale
   aka bale, twine
   a thing, cuttable with the rusty knife

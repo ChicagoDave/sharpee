@@ -13,6 +13,7 @@ export * from './room/index.js';
 export * from './openable/index.js';
 export * from './lockable/index.js';
 export * from './cuttable/index.js';
+export * from './flammable/index.js';
 export * from './diggable/index.js';
 export * from './readable/index.js';
 export * from './light-source/index.js';

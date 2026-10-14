@@ -467,17 +467,24 @@ export class CommandExecutor {
       command.directObject?.entity,
       command.indirectObject?.entity
     ];
-    const capabilityCheck = checkCapabilityDispatchMulti(
-      world,
-      command.actionId,
-      involvedEntities
-    );
+    // ADR-371 D1a: an action that dispatches to the target's implementation
+    // itself (turning, cutting, …) is never pre-empted — the behavior runs
+    // inside it and the target's interceptors are still consulted.
+    const selfDispatching = (action as { dispatchesImplementations?: boolean }).dispatchesImplementations === true;
+    const capabilityCheck = selfDispatching
+      ? { shouldDispatch: false }
+      : checkCapabilityDispatchMulti(
+          world,
+          command.actionId,
+          involvedEntities
+        );
 
     // Run action's four phases: validate → execute → report (or blocked).
     // The phase runner puts the interceptor lifecycle (ADR-228) around each
     // phase for every wired action — this is the one call site (ADR-337
     // D1). If capability dispatch applies, the capability behavior replaces
-    // the action's phases outright and consults no interceptors, as before.
+    // the action's phases outright and consults no interceptors — except for
+    // the self-dispatching actions above (ADR-371 D1a).
     let actionValidation = capabilityCheck.shouldDispatch
       ? executeCapabilityValidate(capabilityCheck, actionContext)
       : runValidatePhase(action, actionContext);
@@ -547,11 +554,13 @@ export class CommandExecutor {
             inferenceResult.inferredTarget,
             command.indirectObject?.entity
           ];
-          const inferredCapabilityCheck = checkCapabilityDispatchMulti(
-            world,
-            command.actionId,
-            inferredInvolvedEntities
-          );
+          const inferredCapabilityCheck = selfDispatching
+            ? { shouldDispatch: false }
+            : checkCapabilityDispatchMulti(
+                world,
+                command.actionId,
+                inferredInvolvedEntities
+              );
 
           // Re-validate with inferred target (using capability dispatch if applicable)
           const retryValidation = inferredCapabilityCheck.shouldDispatch

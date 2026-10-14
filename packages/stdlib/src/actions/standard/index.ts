@@ -166,6 +166,9 @@ import { sayingNoAction } from './saying_no/index.js';
 import { sayingSorryAction } from './saying_sorry/index.js';
 import { lookingUnderAction } from './looking_under/index.js';
 import { emptyingAction } from './emptying/index.js';
+// ADR-371: object-side adjectives
+import { burningAction } from './burning/index.js';
+import { settingAction } from './setting/index.js';
 export * from './jumping/index.js';
 export * from './kissing/index.js';
 export * from './waving/index.js';
@@ -174,6 +177,8 @@ export * from './saying_no/index.js';
 export * from './saying_sorry/index.js';
 export * from './looking_under/index.js';
 export * from './emptying/index.js';
+export * from './burning/index.js';
+export * from './setting/index.js';
 
 // Import author/debug actions
 import { TraceAction } from '../author/index.js';
@@ -251,6 +256,9 @@ export const standardActions = [
   sayingSorryAction,
   lookingUnderAction,
   emptyingAction,
+  // ADR-371: object-side adjectives
+  burningAction,
+  settingAction,
   // Author/debug actions
   traceAction
 ];

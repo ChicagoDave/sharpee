@@ -1435,6 +1435,11 @@ export interface OnClause {
   binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for `anything as the <role>` clauses. */
   role: string | null;
+  /**
+   * The `to <value>` head tail (ADR-371 D4): the clause fires only when the
+   * value set is this word. Legal only on a `setting` head (analyzer gate).
+   */
+  valueTail?: string | null;
   /** `while <condition>` qualifier (all bindings since the ownership package). */
   condition: ConditionNode | null;
   /** `, once` clause modifier — one lifetime firing (ratchet D5). */

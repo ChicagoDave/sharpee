@@ -35,6 +35,7 @@ import {
   type CapabilitySharedData
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { hasInterceptorImplementation } from '../dispatch-shared.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { TurningMessages } from './turning-messages.js';
@@ -93,6 +94,9 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
 
   requiresHolding: false,
 
+  // ADR-371 D1a: this action dispatches to the target's implementation itself.
+  dispatchesImplementations: true,
+
   requiredMessages: [
     'no_target',
     'cant_turn_that',
@@ -123,7 +127,7 @@ export const turningAction: Action & { metadata: ActionMetadata } = {
     const behavior = capabilityTrait
       ? context.world.getBehaviorForCapability(capabilityTrait, IFActions.TURNING)
       : undefined;
-    const hasInterceptor = !!context.world.getInterceptorForAction(noun, IFActions.TURNING);
+    const hasInterceptor = hasInterceptorImplementation(context.world, noun, IFActions.TURNING);
 
     if (!behavior && !hasInterceptor) {
       return {

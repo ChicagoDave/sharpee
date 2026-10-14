@@ -42,6 +42,7 @@ import { DecisionLedger } from '../decisions.js';
 import { EvalContext, Evaluator } from '../evaluator.js';
 import type { ConversationThreadsSection } from './conversation-threads.js';
 import type { DispatchVerbsSection } from './dispatch-verbs.js';
+import type { SettableSection } from './settable.js';
 import type { DialogueSection } from './dialogue.js';
 import type { TopicTablesSection } from './topic-tables.js';
 import type { BindSection } from './bind.js';
@@ -231,6 +232,7 @@ export class RuntimeCore {
   dialogue!: DialogueSection;
   /** The dispatch verbs section; assigned by the facade that constructs it. */
   dispatchVerbs!: DispatchVerbsSection;
+  settable!: SettableSection;
   /** The conversation threads section; assigned by the facade that constructs it. */
   threads!: ConversationThreadsSection;
   /** Cross-turn counter: numbers every runtime-raised event id. A restore resets it. */

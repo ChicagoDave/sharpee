@@ -56,6 +56,103 @@
     {
       "assertions": {
         "contains": [
+          "The pointer rests on CERES."
+        ]
+      },
+      "command": "examine selector",
+      "id": "a371sel1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The guidance selector goes to ceres, titan, or kepler."
+        ]
+      },
+      "command": "set selector to mars",
+      "id": "a371set1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Set the guidance selector to what?"
+        ]
+      },
+      "command": "set selector",
+      "id": "a371set2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The flight couch isn't something you can set."
+        ]
+      },
+      "command": "set couch to titan",
+      "id": "a371set3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You set the guidance selector to titan.",
+          "The selector clicks home and the console takes a moment to agree."
+        ]
+      },
+      "command": "set selector to titan",
+      "id": "a371set4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pointer rests on TITAN."
+        ],
+        "notContains": [
+          "CERES."
+        ]
+      },
+      "command": "examine selector",
+      "id": "a371sel2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Kepler Station is the last stop on Route 7. The card says Ceres first."
+        ],
+        "notContains": [
+          "You set the guidance selector"
+        ]
+      },
+      "command": "set selector to kepler",
+      "id": "a371set5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pointer rests on TITAN."
+        ]
+      },
+      "command": "examine selector",
+      "id": "a371sel3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You set the guidance selector to ceres."
+        ]
+      },
+      "command": "turn selector to ceres",
+      "id": "a371set6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "A single pane of layered glass"
         ]
       },

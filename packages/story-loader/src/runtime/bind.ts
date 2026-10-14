@@ -185,18 +185,12 @@ export class BindSection {
   /**
    * Load-time diagnostic for a clause whose gerund nothing will ever
    * consult (ADR-228 D5): a typo or an unimplemented action word would
-   * otherwise register and silently die. lowering/raising get the pointed
-   * capability-dispatch message (they are full-delegation by design).
+   * otherwise register and silently die. (Lowering and raising joined the
+   * consulted set with ADR-371 D1; the pointed message they had is gone.)
    * @param clause the dead clause (its action's span anchors the diagnostic, ADR-368 D3)
    */
   deadGerundError(clause: IROnClause): LoadError {
     const phrase = `${clause.clauseKind} ${clause.action} it`;
-    if (clause.action === 'lowering' || clause.action === 'raising') {
-      return new LoadError(
-        `\`${phrase}\` — \`${clause.action}\` is a full-delegation capability action by design (ADR-118): the standard action never consults interceptors. Use a capability behavior or a Chord dispatch action (\`define action ${clause.action}\`) instead.`,
-        clause.actionSpan ?? clause.span,
-      );
-    }
     return new LoadError(
       `\`${phrase}\` — no standard action consults \`if.action.${clause.action}\`, so this clause would never fire. Check the action word's spelling, or create the verb with \`define action ${clause.action}\`.`,
       clause.actionSpan ?? clause.span,

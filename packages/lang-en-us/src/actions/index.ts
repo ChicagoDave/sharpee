@@ -139,6 +139,9 @@ import { sayingNoLanguage } from './saying-no.js';
 import { sayingSorryLanguage } from './saying-sorry.js';
 import { lookingUnderLanguage } from './looking-under.js';
 import { emptyingLanguage } from './emptying.js';
+// ADR-371: object-side adjectives
+import { burningLanguage } from './burning.js';
+import { settingLanguage } from './setting.js';
 export * from './jumping.js';
 export * from './kissing.js';
 export * from './waving.js';
@@ -147,6 +150,8 @@ export * from './saying-no.js';
 export * from './saying-sorry.js';
 export * from './looking-under.js';
 export * from './emptying.js';
+export * from './burning.js';
+export * from './setting.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { wakingLanguage } from './waking.js';
@@ -256,4 +261,7 @@ export const standardActionLanguage = [
   sayingSorryLanguage,
   lookingUnderLanguage,
   emptyingLanguage,
+  // ADR-371: object-side adjectives
+  burningLanguage,
+  settingLanguage,
 ];

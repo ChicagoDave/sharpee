@@ -2109,6 +2109,7 @@ export declare const TraitType: {
     readonly LOCKABLE: "lockable";
     readonly CUTTABLE: "cuttable";
     readonly DIGGABLE: "diggable";
+    readonly FLAMMABLE: "flammable";
     readonly SWITCHABLE: "switchable";
     readonly READABLE: "readable";
     readonly LIGHT_SOURCE: "lightSource";
@@ -2205,6 +2206,7 @@ import { OpenableTrait } from './openable/openableTrait.js';
 import { LockableTrait } from './lockable/lockableTrait.js';
 import { CuttableTrait } from './cuttable/cuttableTrait.js';
 import { DiggableTrait } from './diggable/diggableTrait.js';
+import { FlammableTrait } from './flammable/flammableTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { ReadableTrait } from './readable/readableTrait.js';
 import { LightSourceTrait } from './light-source/lightSourceTrait.js';
@@ -2268,7 +2270,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -3243,6 +3245,87 @@ export declare class CuttableBehavior extends Behavior {
      * Check if a tool can cut this entity (mirrors LockableBehavior.canUnlockWith)
      */
     static canCutWith(entity: IFEntity, toolId: EntityId): boolean;
+}
+```
+
+### traits/flammable/flammableTrait
+
+```typescript
+/**
+ * Flammable trait (ADR-371 D2) — marks an entity the burning action may
+ * target, and carries its tool requirement. Cuttable's shape, for burning.
+ *
+ * Public interface: FlammableTrait, IFlammableData.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { type EntityId } from '@sharpee/core';
+import { ITrait } from '../trait.js';
+/**
+ * Data for the flammable trait. A declared requirement makes the burning
+ * action refuse wrong or missing tools; no requirement means any explicit
+ * tool (or none) passes validation.
+ */
+export interface IFlammableData {
+    /** Single tool entity required to burn this (mirrors ICuttableData.toolId) */
+    toolId?: EntityId;
+    /** Multiple tool entities that can burn this (mirrors ICuttableData.toolIds) */
+    toolIds?: EntityId[];
+}
+/**
+ * Flammable trait — eligibility and tool data only. The burn OUTCOME is the
+ * entity's own registered implementation (an ADR-090 capability behavior, or
+ * a Chord `on the player burning` interceptor) — the standard burning action
+ * never mutates state itself. A flammable entity with no implementation is an
+ * authoring error (load-time in Chord; runtime safety-net refusal otherwise).
+ */
+export declare class FlammableTrait implements ITrait, IFlammableData {
+    static readonly type: "flammable";
+    readonly type: "flammable";
+    toolId?: EntityId;
+    toolIds?: EntityId[];
+    constructor(data?: IFlammableData);
+}
+```
+
+### traits/flammable/flammableBehavior
+
+```typescript
+/**
+ * Behavior for flammable entities (ADR-371 D2).
+ *
+ * Pure predicates only — the burning action's validate() consults these;
+ * the burn mutation itself belongs to the entity's registered
+ * implementation, never here. Mirrors CuttableBehavior.
+ *
+ * Public interface: FlammableBehavior.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { type EntityId } from '@sharpee/core';
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+export declare class FlammableBehavior extends Behavior {
+    static requiredTraits: "flammable"[];
+    /**
+     * Whether this entity requires a tool to burn.
+     * @param entity the flammable entity
+     * @returns true when a tool is declared
+     */
+    static requiresTool(entity: IFEntity): boolean;
+    /**
+     * The declared tools that burn this entity, in declaration order — empty
+     * when it needs none. The implicit-instrument resolution (GH #241) reads
+     * this to find a held tool the player did not name.
+     * @param entity the flammable entity
+     * @returns the tool ids
+     */
+    static requiredTools(entity: IFEntity): EntityId[];
+    /**
+     * Whether a tool can burn this entity.
+     * @param entity the flammable entity
+     * @param toolId the offered tool
+     * @returns true when the tool is declared for it
+     */
+    static canBurnWith(entity: IFEntity, toolId: EntityId): boolean;
 }
 ```
 
@@ -9779,6 +9862,18 @@ export interface ActionInterceptor {
      * }
      */
     onBlocked?(entity: IFEntity, world: WorldModel, actorId: string, error: string, sharedData: InterceptorSharedData, random?: RandomService): InterceptorBlockedResult | null;
+    /**
+     * Whether this interceptor implements the action for this entity
+     * (ADR-371 D1a). An implementation-dispatching action (turning, cutting,
+     * lowering, …) counts an interceptor as the entity's implementation only
+     * when this answers true. One interceptor registered on a shared marker
+     * trait can serve many entities and implement the action for only some;
+     * absent means it implements the action for every entity that carries it.
+     *
+     * @param entity - The entity the action targets
+     * @returns true when this interceptor owns the action's outcome for it
+     */
+    claims?(entity: IFEntity): boolean;
 }
 ```
 

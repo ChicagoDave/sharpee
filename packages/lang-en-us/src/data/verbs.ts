@@ -79,6 +79,8 @@ export const IFActions = {
   SAYING_SORRY: 'if.action.saying_sorry',
   LOOKING_UNDER: 'if.action.looking_under',
   EMPTYING: 'if.action.emptying',
+  BURNING: 'if.action.burning',
+  SETTING: 'if.action.setting',
 
   // Meta actions
   INVENTORY: 'if.action.inventory',
@@ -366,6 +368,18 @@ export const englishVerbs: VerbDefinition[] = [
   {
     action: IFActions.EMPTYING,
     verbs: ['empty'],
+    requiresObject: true
+  },
+  // ADR-371: object-side adjectives
+  {
+    action: IFActions.BURNING,
+    verbs: ['burn', 'ignite', 'set fire to'],
+    requiresObject: true
+  },
+  {
+    // `set` shares its word with `set fire to`; the grammar's literals decide.
+    action: IFActions.SETTING,
+    verbs: ['set', 'adjust'],
     requiresObject: true
   },
   

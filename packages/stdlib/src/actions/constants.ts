@@ -95,6 +95,7 @@ export const IFActions = {
   // Combat/interaction actions
   ATTACKING: 'if.action.attacking',
   KISSING: 'if.action.kissing',
+  BURNING: 'if.action.burning', // ADR-371 D2
   WAVING: 'if.action.waving',
 
   // Concealment actions (ADR-148)

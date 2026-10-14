@@ -24,6 +24,11 @@ import { EVENT_TRIGGERS, REGION_EVENT_TRIGGERS } from '../event-contract.js';
 import { clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, ChordBehaviorTrait, TOPIC_GERUNDS, toEffect, type RuntimeCore } from './core.js';
 
+/** A typed setting value in the state register: lowercased, spaces as hyphens (ADR-371 D3). */
+function normalizeTailValue(value: unknown): string | undefined {
+  return typeof value === 'string' ? value.trim().toLowerCase().replace(/\s+/g, '-') : undefined;
+}
+
 export class OnClausesSection {
   constructor(private readonly core: RuntimeCore) {}
 
@@ -247,6 +252,11 @@ export class OnClausesSection {
       arms.find((a) => runtime.core.host.entityId(a.entity.id) === target.id)?.interceptor;
 
     return {
+      // ADR-371 D1a: this interceptor rides the marker trait every clause
+      // owner shares, so it implements the action only for owners with an arm.
+      claims(target: IFEntity): boolean {
+        return armFor(target) !== undefined;
+      },
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
         return armFor(target)?.preValidate?.(target, world, actorId, data) ?? null;
       },
@@ -274,14 +284,17 @@ export class OnClausesSection {
     // ADR-327 D1: the hook's target is always the owner — consulted as the
     // action's object (explicit head: fire when the head's actor is acting)
     // or as the actor itself (bare head: fire when the owner is the actor).
-    const isMine = (target: IFEntity, world: WorldModel, actorId: string): boolean =>
+    // ADR-371 D4: a `to <value>` tail fires the clause only for that value,
+    // read from the consultation's seeded `value` (the setting action's slot).
+    const isMine = (target: IFEntity, world: WorldModel, actorId: string, data?: InterceptorSharedData): boolean =>
       target.id === runtime.core.host.entityId(entity.id) &&
-      (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world));
+      (clause.binding === 'self' ? actorId === target.id : runtime.core.moveClauses.actorMatches(clause.actor, actorId, world)) &&
+      (clause.valueTail === undefined || normalizeTailValue(data?.value) === clause.valueTail);
     const occurrenceKey = clauseOccurrenceKey(entity.id, entity.onClauses.indexOf(clause) + 1);
 
     return {
       preValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (!isMine(target, world, actorId) || clause.clauseKind === 'after') return null;
+        if (!isMine(target, world, actorId, data) || clause.clauseKind === 'after') return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8 (ADR-228): the `while` gate is evaluated once per firing, at
@@ -304,7 +317,7 @@ export class OnClausesSection {
       },
 
       postValidate(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorResult | null {
-        if (!isMine(target, world, actorId)) return null;
+        if (!isMine(target, world, actorId, data)) return null;
         const bag = runtime.clauseBag(data, ns);
         const ctx: ExecContext = { world, it: entity.id };
         // D8: same gate, same evaluation point (see preValidate).
@@ -325,14 +338,14 @@ export class OnClausesSection {
 
       postExecute(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): void {
         const bag = runtime.clauseBag(data, ns);
-        if (!isMine(target, world, actorId) || bag.skip === true) return;
+        if (!isMine(target, world, actorId, data) || bag.skip === true) return;
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'mutations');
         runtime.core.statements.execStatements(clause.body, ctx, 'mutations');
       },
 
       postReport(target: IFEntity, world: WorldModel, actorId: string, data: InterceptorSharedData): InterceptorReportResult {
         const bag = runtime.clauseBag(data, ns);
-        if (!isMine(target, world, actorId) || bag.skip === true) return {};
+        if (!isMine(target, world, actorId, data) || bag.skip === true) return {};
         const ctx = runtime.restoreCtx(world, entity.id, bag, 'reports');
         const reports = runtime.core.statements.execStatements(clause.body, ctx, 'reports');
 

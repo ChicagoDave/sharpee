@@ -948,6 +948,11 @@ export interface IROnClause {
   binding: 'object' | 'role' | 'every-turn' | 'self';
   /** Role name for role-bound clauses (validated against the action's roles). */
   role: string | null;
+  /**
+   * The `to <value>` head tail (ADR-371 D4) — the hook fires only when the
+   * consultation's seeded `value` is this word. Additive and optional.
+   */
+  valueTail?: string;
   /** `while` qualifier (every-turn clauses). */
   condition: IRCondition | null;
   /** Explicit `before`/`after` ordering between traits on the same action. */

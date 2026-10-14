@@ -72,16 +72,20 @@ import { sayingNoLifecycle } from '../standard/saying_no/saying-no.js';
 import { sayingSorryLifecycle } from '../standard/saying_sorry/saying-sorry.js';
 import { lookingUnderLifecycle } from '../standard/looking_under/looking-under.js';
 import { emptyingLifecycle } from '../standard/emptying/emptying.js';
+// ADR-371: object-side adjectives
+import { loweringLifecycle } from '../standard/lowering/lowering.js';
+import { raisingLifecycle } from '../standard/raising/raising.js';
+import { burningLifecycle } from '../standard/burning/burning.js';
+import { settingLifecycle } from '../standard/setting/setting.js';
 
 /**
- * The descriptor table: all 50 entity-keyed standard actions (33 per
+ * The descriptor table: all 54 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
- * + the eight ADR-370 stock verbs, 2026-10-13).
- * Structural exemptions
- * (no entity to key on: about, waiting, looking, … and the full-delegation
- * capability actions lowering/raising) are absent by design — see ADR-228
- * Context.
+ * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
+ * and setting per ADR-371, 2026-10-14). Structural exemptions
+ * (no entity to key on: about, waiting, looking, …) are absent by design — see
+ * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
 export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = Object.freeze([
   answeringLifecycle,
@@ -134,7 +138,12 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   sayingNoLifecycle,
   sayingSorryLifecycle,
   lookingUnderLifecycle,
-  emptyingLifecycle
+  emptyingLifecycle,
+  // ADR-371: object-side adjectives
+  loweringLifecycle,
+  raisingLifecycle,
+  burningLifecycle,
+  settingLifecycle
 ]);
 
 // Invariant: one descriptor per action — a duplicate primary id means two

@@ -628,6 +628,16 @@ export interface Action {
      */
     requiresHolding?: boolean;
     /**
+     * The action finds and runs the target's capability behavior itself
+     * (ADR-371 D1a): turning, cutting, digging, burning, lowering, raising,
+     * setting. The executor's universal capability dispatch skips such an
+     * action, so the behavior runs inside it and the phase runner still
+     * consults the target's interceptors (its Chord clauses) around it —
+     * a behavior and a clause on one thing for one verb both fire, and the
+     * action's own gates (cutting's tool check) are never bypassed.
+     */
+    dispatchesImplementations?: boolean;
+    /**
      * Whether to allow implicit inference for this action.
      *
      * When true (default), if the target doesn't meet targetRequirements
@@ -1161,6 +1171,7 @@ export declare const IFActions: {
     readonly GIVING: "if.action.giving";
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
+    readonly BURNING: "if.action.burning";
     readonly WAVING: "if.action.waving";
     readonly HIDING: "if.action.hiding";
     readonly REVEALING: "if.action.revealing";
@@ -1730,14 +1741,13 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
- * The descriptor table: all 50 entity-keyed standard actions (33 per
+ * The descriptor table: all 54 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
- * + the eight ADR-370 stock verbs, 2026-10-13).
- * Structural exemptions
- * (no entity to key on: about, waiting, looking, … and the full-delegation
- * capability actions lowering/raising) are absent by design — see ADR-228
- * Context.
+ * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
+ * and setting per ADR-371, 2026-10-14). Structural exemptions
+ * (no entity to key on: about, waiting, looking, …) are absent by design — see
+ * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
 export declare const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[];
 /**
@@ -1901,6 +1911,8 @@ export * from './saying_no/index.js';
 export * from './saying_sorry/index.js';
 export * from './looking_under/index.js';
 export * from './emptying/index.js';
+export * from './burning/index.js';
+export * from './setting/index.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```

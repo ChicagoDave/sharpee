@@ -149,7 +149,9 @@ const PINNED = {
   // note records that a kind noun takes no `with` settings (the three the
   // loader read are a removal with a fix-it). Additive plus one removal;
   // same unpublished 4.0.0 set (the number moves at publish).
-  ebnfSha256: '92444e86e9531fc889be94a4b79486e52f147d4a9fa407734d3733f0bb68c6c7',
+  // Re-recorded 2026-10-14 (ADR-371 D4, session 8196a4): the `to <value>`
+  // head tail. Additive, on the unpublished 4.0 surface — no bump.
+  ebnfSha256: 'fce916edc824d578f6f16f9d0de66c02e3958eed76936ab7c8b43c9f1fc4d5ec',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

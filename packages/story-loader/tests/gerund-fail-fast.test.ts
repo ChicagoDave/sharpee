@@ -84,7 +84,7 @@ create the biscuit
     expect(() => loadStory(source)).toThrowError(/no standard action consults `if\.action\.tasting`/);
   });
 
-  it('rejects lowering/raising with the pointed capability-dispatch message', () => {
+  it('accepts lowering (ADR-371 D1: the clause body is the implementation)', () => {
     const source = storyWith(`create the Shed
   a room
 
@@ -99,7 +99,7 @@ create the basket
   on the player lowering
     phrase nope
   end on`);
-    expect(() => loadStory(source)).toThrowError(/full-delegation capability action/);
+    expect(() => loadStory(source)).not.toThrow();
   });
 
   it('rejects a trait clause whose gerund no standard action consults', () => {

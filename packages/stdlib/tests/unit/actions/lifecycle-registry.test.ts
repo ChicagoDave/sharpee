@@ -21,13 +21,14 @@ import { IFActions } from '../../../src/actions/constants';
 import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
-  test('covers all 50 entity-keyed standard actions with unique primary ids', () => {
+  test('covers all 54 entity-keyed standard actions with unique primary ids', () => {
     // 33 per ADR-228 Consequences + cutting (ADR-230 D3c) + digging,
     // asking, telling (ADR-230 Phase 6) + turning (chord go-live G1
     // shortlist, 2026-07-17) + the eight ADR-370 stock verbs (2026-10-13)
-    expect(actionLifecycleDescriptors).toHaveLength(50);
+    // + lowering, raising, burning, setting (ADR-371, 2026-10-14)
+    expect(actionLifecycleDescriptors).toHaveLength(54);
     const primaryIds = actionLifecycleDescriptors.map((d) => d.actionId);
-    expect(new Set(primaryIds).size).toBe(50);
+    expect(new Set(primaryIds).size).toBe(54);
     for (const descriptor of actionLifecycleDescriptors) {
       expect(descriptor.slots.length).toBeGreaterThan(0);
       for (const slot of descriptor.slots) {
@@ -68,9 +69,9 @@ describe('wired-action registry (ADR-228 D5)', () => {
     expect(interceptorConsultingActionIds.has(IFActions.ENTERING_ROOM)).toBe(true);
   });
 
-  test('excludes full-delegation capability actions and unimplemented constants', () => {
-    expect(interceptorConsultingActionIds.has(IFActions.LOWERING)).toBe(false);
-    expect(interceptorConsultingActionIds.has(IFActions.RAISING)).toBe(false);
+  test('includes lowering and raising (ADR-371 D1) and excludes unimplemented constants', () => {
+    expect(interceptorConsultingActionIds.has(IFActions.LOWERING)).toBe(true);
+    expect(interceptorConsultingActionIds.has(IFActions.RAISING)).toBe(true);
     expect(interceptorConsultingActionIds.has('if.action.tasting')).toBe(false);
     expect(interceptorConsultingActionIds.has('if.action.looking')).toBe(false);
   });

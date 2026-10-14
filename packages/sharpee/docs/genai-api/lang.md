@@ -320,6 +320,8 @@ export declare const IFActions: {
     readonly SAYING_SORRY: "if.action.saying_sorry";
     readonly LOOKING_UNDER: "if.action.looking_under";
     readonly EMPTYING: "if.action.emptying";
+    readonly BURNING: "if.action.burning";
+    readonly SETTING: "if.action.setting";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
@@ -576,6 +578,8 @@ export * from './saying-no.js';
 export * from './saying-sorry.js';
 export * from './looking-under.js';
 export * from './emptying.js';
+export * from './burning.js';
+export * from './setting.js';
 /**
  * All standard action language definitions
  */
@@ -584,15 +588,13 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        not_a_container: string;
-        container_closed: string;
-        already_empty: string;
-        into_itself: string;
-        cant_empty_into: string;
-        destination_closed: string;
-        emptied_here: string;
-        emptied_into: string;
-        destination_full: string;
+        not_flammable: string;
+        cant_burn: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        burned: string;
     };
     help: {
         description: string;
@@ -2003,6 +2005,41 @@ export declare const standardActionLanguage: ({
         no_target: string;
         nothing_under: string;
         found_under: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_a_container: string;
+        container_closed: string;
+        already_empty: string;
+        into_itself: string;
+        cant_empty_into: string;
+        destination_closed: string;
+        emptied_here: string;
+        emptied_into: string;
+        destination_full: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_value: string;
+        cant_set_that: string;
+        not_a_setting: string;
+        set: string;
     };
     help: {
         description: string;

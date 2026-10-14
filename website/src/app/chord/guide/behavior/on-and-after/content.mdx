@@ -157,3 +157,12 @@ held. `look under <thing>` reveals the `concealed` things it holds, as
 another container with `empty <thing> into <other>`, and both take a clause
 in the container's block (`on the player looking_under`, `after the player
 emptying`).
+
+## A value on the head
+
+`set <thing> to <value>` carries a word, and a `setting` head can name it:
+`on the player setting to kepler` fires only when that is the value set,
+and `after the player setting` with no tail fires for every value. The tail
+is for `setting` alone (`on the player taking to x` is an error naming
+`while <thing> is x` as the form for other verbs), and the word must be one
+of the thing's states.

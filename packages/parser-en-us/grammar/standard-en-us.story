@@ -587,3 +587,25 @@ define action emptying
     empty the target
     empty out the target
     empty the target into or in or onto or on the destination
+
+## ADR-371 — object-side adjectives (2026-10-14). Burning is cutting's
+## shape: `flammable [with the <tool>]` gates it, the tool is an instrument.
+## Not `light the target`: `light lamp` must stay a switching form. Setting
+## carries the typed value as a topic; the thing's implementation decides
+## whether it is one of its settings. `set the target` alone refuses no_value.
+
+define action burning
+  grammar
+    burn the target
+    burn the target with or using the tool
+    ignite the target
+    set fire to the target
+  the tool is an instrument
+
+define action setting
+  grammar
+    set the target to the value
+    turn the target to the value
+    adjust the target to the value
+    set the target
+  the value is a topic

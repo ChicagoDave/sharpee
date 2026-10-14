@@ -203,6 +203,59 @@
     {
       "assertions": {
         "contains": [
+          "The disposal torch isn't something you can burn."
+        ]
+      },
+      "command": "burn torch",
+      "id": "a371brn1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You need the disposal torch to burn the dead letter."
+        ],
+        "notContains": [
+          "flat orange sheet"
+        ]
+      },
+      "command": "burn letter",
+      "id": "a371brn2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take torch",
+      "id": "a371tak1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The dead letter goes up in a flat orange sheet and is gone before the smell reaches you."
+        ]
+      },
+      "command": "burn letter",
+      "id": "a371brn3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dropped."
+        ]
+      },
+      "command": "drop torch",
+      "id": "a371drp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "The loading dock door stays shut until your shift is cleared to launch."
         ]
       },
@@ -276,6 +329,36 @@
       },
       "command": "kiss robot",
       "id": "a370kis2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp is the loader's to work, and the loader does not take requests from carriers."
+        ]
+      },
+      "command": "lower ramp",
+      "id": "a371low1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The ramp is the loader's to work, and the loader does not take requests from carriers."
+        ]
+      },
+      "command": "raise ship",
+      "id": "a371rai1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't lower the mail crates."
+        ]
+      },
+      "command": "lower crates",
+      "id": "a371low2",
       "type": "turn"
     },
     {

@@ -1,1 +1,1 @@
-export { loweringAction } from './lowering.js';
+export { loweringAction, loweringLifecycle, LoweringMessages } from './lowering.js';

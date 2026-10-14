@@ -474,4 +474,12 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("empty :target").mapsTo("if.action.emptying").build();
   grammar.define("empty out :target").mapsTo("if.action.emptying").build();
   grammar.define("empty :target into|in|onto|on :destination").mapsTo("if.action.emptying").build();
+  grammar.define("burn :target").mapsTo("if.action.burning").build();
+  grammar.define("burn :target with|using :tool").mapsTo("if.action.burning").instrument("tool").build();
+  grammar.define("ignite :target").mapsTo("if.action.burning").build();
+  grammar.define("set fire to :target").mapsTo("if.action.burning").build();
+  grammar.define("set :target to :value").mapsTo("if.action.setting").topic("value").build();
+  grammar.define("turn :target to :value").mapsTo("if.action.setting").topic("value").build();
+  grammar.define("adjust :target to :value").mapsTo("if.action.setting").topic("value").build();
+  grammar.define("set :target").mapsTo("if.action.setting").build();
 }

@@ -6352,6 +6352,7 @@ class Parser {
     let actor: ValueExpr | null = null;
     let binding: OnClause['binding'] = 'object';
     let role: string | null = null;
+    let valueTail: string | null = null;
     let condition: ConditionNode | null = null;
     let once = false;
     let ordering: OnClause['ordering'] = null;
@@ -6370,7 +6371,7 @@ class Parser {
       const headWords: Token[] = [];
       while (!c.atEnd()) {
         const t = c.peek()!;
-        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything' || t.text === 'to') break;
         headWords.push(t);
         c.next();
       }
@@ -6401,6 +6402,16 @@ class Parser {
         actionWord = gerundTok.text;
         actionSpan = gerundTok.span;
         this.parseGerundList(c, actionWord, moreGerunds);
+        // ADR-371 D4: `to <value>` — the clause fires only for that value
+        // (legal on a `setting` head; the analyzer gates the gerund).
+        if (c.matchWord('to')) {
+          const valueTok = c.next();
+          if (valueTok && valueTok.kind === 'word') {
+            valueTail = valueTok.text;
+          } else {
+            this.diagnostics.error('parse.head-value-tail', `Expected a value after \`to\` — e.g. \`${clauseKind} the player setting to high\`.`, valueTok?.span ?? c.restSpan());
+          }
+        }
       }
 
       if (c.matchWord('anything')) {
@@ -6473,6 +6484,7 @@ class Parser {
       actor,
       binding,
       role,
+      ...(valueTail !== null ? { valueTail } : {}),
       condition,
       once,
       ordering,
@@ -6500,7 +6512,7 @@ class Parser {
       const item: Token[] = [];
       while (!c.atEnd()) {
         const t = c.peek()!;
-        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything' || t.text === 'to') break;
         item.push(t);
         c.next();
       }

@@ -31,6 +31,7 @@ import {
   IFEntity
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { hasInterceptorImplementation } from '../dispatch-shared.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { CuttingMessages } from './cutting-messages.js';
@@ -108,6 +109,9 @@ export const cuttingAction: Action & { metadata: ActionMetadata } = {
 
   requiresHolding: false,
 
+  // ADR-371 D1a: this action dispatches to the target's implementation itself.
+  dispatchesImplementations: true,
+
   requiredMessages: [
     'no_target',
     'not_cuttable',
@@ -169,7 +173,7 @@ export const cuttingAction: Action & { metadata: ActionMetadata } = {
     const behavior = capabilityTrait
       ? context.world.getBehaviorForCapability(capabilityTrait, IFActions.CUTTING)
       : undefined;
-    const hasInterceptor = !!context.world.getInterceptorForAction(noun, IFActions.CUTTING);
+    const hasInterceptor = hasInterceptorImplementation(context.world, noun, IFActions.CUTTING);
 
     if (!behavior && !hasInterceptor) {
       // Runtime safety net — the Chord loader's post-load check is the

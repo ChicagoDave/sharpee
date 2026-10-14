@@ -166,7 +166,7 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 
 | Row | Plan phase | Exercised by |
 |---|---|---|
-| lowering, raising (object side) | 6 | |
+| lowering, raising (object side) | 6 | UPPS `upps.tests/opejfh5t.json`: `lower ramp` (a371low1) and `raise ship` (a371rai1) fire the courier ship's clause; `lower crates` (a371low2) refuses "You can't lower the mail crates."; derived tests `courier ship · on lowering` / `on raising` pass |
 | throwing (targeted) / Throwing it at | 7 | |
 | vehicle (trait and kind) | 11, 14 | |
 | attached / Tying it to | 8 | |
@@ -180,8 +180,8 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 | Kissing | 5 | UPPS `opejfh5t.json`: `kiss machine` (a370kis1) stock thing line, `kiss robot` (a370kis2) fires the robot's clause; `a370pad1.json`: `kiss quint` (a370kis3) stock person line |
 | Waving, Waving hands | 5 | UPPS `opejfh5t.json`: `wave` (a370wav1) hands line, `wave card` (a370wav2) held-thing line; `a370pad1.json`: `wave card` on the pad (a370wav4) fires the card's `while` clause, bare `wave` (a370wav3) stock |
 | Saying yes, no, sorry | 5 | UPPS `opejfh5t.json`: `yes`/`no` (a370yes1, a370no01) fire the depot room clause, `sorry` (a370sry1) stock; `a370pad1.json`: `yes`/`no`/`sorry` while Quint is unconvinced (a370yes2, a370no02, a370sry2) fire the pad clauses, and after `show card` (a370yes3, a370sry3) the stock lines return. The speaker path (a live scene) is pinned by the stdlib test only: UPPS has no conversation block yet |
-| Burning / `flammable with` | 6 | |
-| Setting it to / `settable to` | 6 | |
+| Burning / `flammable with` | 6 | UPPS `opejfh5t.json`: `burn torch` (a371brn1) stock refusal, `burn letter` without the torch (a371brn2) "You need the disposal torch…", with it (a371brn3) the letter's body runs and it is gone; derived test `dead letter · on burning` passes |
+| Setting it to / `settable to` | 6 | UPPS `upps.tests/7nlk6n1g.json` (cockpit line): `set selector to mars` (a371set1) names the values, bare `set selector` (a371set2) asks to what, `set couch to titan` (a371set3) refuses, `set selector to titan` (a371set4) sets and fires the `after` line, `examine selector` (a371sel2) reads TITAN through `select on`, `set selector to kepler` (a371set5) is refused by the tailed clause and the state stays (a371sel3); derived tests `guidance selector · on setting` / `after setting` pass |
 | Buying / `costs` | 7 | |
 | Jumping | 5 | UPPS `opejfh5t.json`: `jump` (a370jmp1) fires the depot room clause; `a370pad1.json`: `jump` (a370jmp2) stock line |
 | Pushing it to / pushable between rooms | 13 | |

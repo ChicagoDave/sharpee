@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 765 aliases across 67 actions.
+ * 778 aliases across 69 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -143,6 +143,15 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'attacking-unnecessary-violence',
   'attacking-violence-not-the-answer',
   'attacking-wrong-weapon-type',
+  // if.action.burning
+  'burning-burned',
+  'burning-cant-burn',
+  'burning-needs-tool',
+  'burning-no-target',
+  'burning-no-tool',
+  'burning-not-flammable',
+  'burning-tool-not-held',
+  'burning-wrong-tool',
   // if.action.climbing
   'climbing-already-there',
   'climbing-cant-go-that-way',
@@ -610,6 +619,12 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'searching-searched-location',
   'searching-searched-object',
   'searching-supporter-contents',
+  // if.action.setting
+  'setting-cant-set-that',
+  'setting-no-target',
+  'setting-no-value',
+  'setting-not-a-setting',
+  'setting-set',
   // if.action.showing
   'showing-no-item',
   'showing-no-viewer',

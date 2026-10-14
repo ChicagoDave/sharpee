@@ -106,6 +106,7 @@ import {
   AuthorModel,
   CuttableTrait,
   DiggableTrait,
+  FlammableTrait,
   DeadlyRoomTrait,
   Direction,
   DoorTrait,
@@ -1662,6 +1663,7 @@ export class ChordStory implements Story {
     const toolGatedGerunds: Array<{ adjective: string; gerund: string; actionId: string }> = [
       { adjective: 'cuttable', gerund: 'cutting', actionId: 'if.action.cutting' },
       { adjective: 'diggable', gerund: 'digging', actionId: 'if.action.digging' }, // ADR-230 Phase 6
+      { adjective: 'flammable', gerund: 'burning', actionId: 'if.action.burning' }, // ADR-371 D2
     ];
     for (const { adjective, gerund, actionId } of toolGatedGerunds) {
       for (const irEntity of this.ir.entities) {
@@ -1802,13 +1804,14 @@ export class ChordStory implements Story {
           break;
         }
         case 'cuttable':
-        case 'diggable': {
+        case 'diggable':
+        case 'flammable': {
           // ADR-230 D3c / Phase 6. Tool names resolve name → IR entity here
           // and IR → world id after every entity is built (forward refs are
           // legal) — do NOT copy the lockable raw-string config bug.
-          const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : TraitType.DIGGABLE;
+          const traitType = trait.name === 'cuttable' ? TraitType.CUTTABLE : trait.name === 'diggable' ? TraitType.DIGGABLE : TraitType.FLAMMABLE;
           if (entity.has(traitType)) break;
-          const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : new DiggableTrait();
+          const toolGated = trait.name === 'cuttable' ? new CuttableTrait() : trait.name === 'diggable' ? new DiggableTrait() : new FlammableTrait();
           const toolName = entityConfigValue(trait);
           if (toolName !== undefined) {
             this.pendingEntityRefs.push(
@@ -1853,6 +1856,12 @@ export class ChordStory implements Story {
           entity.add(new OpenInventoryTrait());
           break;
         }
+        case 'settable':
+          // ADR-371 D3: marker adjective — the thing's own reversible states
+          // are its dial. Nothing lowers here; the runtime's settable section
+          // adds the capability trait and registers the setting behavior at
+          // bind, reading the states from the IR.
+          break;
         case 'concealed': {
           // Ratchet G2 (2026-07-17): marker adjective — hidden from normal
           // view until searching reveals it (IdentityTrait.concealed).
