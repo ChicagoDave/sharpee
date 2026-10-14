@@ -1154,6 +1154,9 @@ export declare const IFActions: {
     readonly TELLING: "if.action.telling";
     readonly ANSWERING: "if.action.answering";
     readonly SAYING_GOODBYE: "if.action.saying_goodbye";
+    readonly SAYING_YES: "if.action.saying_yes";
+    readonly SAYING_NO: "if.action.saying_no";
+    readonly SAYING_SORRY: "if.action.saying_sorry";
     readonly SHOWING: "if.action.showing";
     readonly GIVING: "if.action.giving";
     readonly ATTACKING: "if.action.attacking";
@@ -1727,9 +1730,10 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
- * The descriptor table: all 38 entity-keyed standard actions (33 per
+ * The descriptor table: all 50 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
- * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
+ * + the eight ADR-370 stock verbs, 2026-10-13).
  * Structural exemptions
  * (no entity to key on: about, waiting, looking, … and the full-delegation
  * capability actions lowering/raising) are absent by design — see ADR-228
@@ -1889,6 +1893,14 @@ export * from './restarting/index.js';
 export * from './undoing/index.js';
 export * from './again/index.js';
 export * from './hiding/index.js';
+export * from './jumping/index.js';
+export * from './kissing/index.js';
+export * from './waving/index.js';
+export * from './saying_yes/index.js';
+export * from './saying_no/index.js';
+export * from './saying_sorry/index.js';
+export * from './looking_under/index.js';
+export * from './emptying/index.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```

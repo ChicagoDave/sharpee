@@ -65,3 +65,28 @@ create the ledger
     refuse view-too-far
   end on</code></pre>
 <p>The list works on <code>after</code> heads and bare heads too, and anything after it applies to every action listed: <code>on taking, dropping while the shop is closed, once</code>. Commas are the only separator; <code>taking, touching or pushing</code> is an error that shows the comma form, and an action listed twice on one head is an error at the repeated word. A diagnostic about one of the listed actions points at that word in the list.</p>
+<h2 id="verbs-with-nothing-to-act-on">Verbs with nothing to act on</h2>
+<p>Some verbs have no object side, or need none: <code>jump</code>, <code>yes</code>, <code>no</code>, <code>sorry</code>, <code>wave</code>. Each exists in the standard library with a stock line (&quot;You jump on the spot. Nothing comes of it.&quot;), and a clause speaks in its place. A verb with no object is written on the <strong>room</strong> the player is in; a verb with one goes in the thing's block as usual.</p>
+<pre><code class="language-chord">create the Landing Pad
+  a room
+  aka pad, pad 14
+
+  Pad 14 is a circle of old cement under a black sky.
+
+  on the player jumping
+    phrase pad-jump
+  end on
+
+create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player saying_yes while the pad master is unconvinced
+    phrase quint-takes-yes-as-the-card
+  end on
+
+  on the player saying_no, saying_sorry
+    phrase quint-shrugs
+  end on</code></pre>
+<p><code>yes</code>, <code>no</code> and <code>sorry</code> go in the block of the person the player is talking to — the clause fires while a conversation with them is live — or on a room, for an answer given to nobody. Inside an open <code>define exchange</code>, <code>yes</code> and <code>no</code> are the exchange's answer and never reach these clauses. Two-word verbs are written with an underscore, as <code>switching_on</code> and <code>taking_off</code> are: <code>saying_yes</code>, <code>saying_no</code>, <code>saying_sorry</code>, <code>looking_under</code>. <code>wave</code> on its own consults the room; <code>wave &lt;thing&gt;</code> consults the thing, which must be held. <code>look under &lt;thing&gt;</code> reveals the <code>concealed</code> things it holds, as <code>search</code> does; <code>empty &lt;thing&gt;</code> spills a container onto the floor, or into another container with <code>empty &lt;thing&gt; into &lt;other&gt;</code>, and both take a clause in the container's block (<code>on the player looking_under</code>, <code>after the player emptying</code>).</p>

@@ -70,6 +70,16 @@ export const IFActions = {
   HIDING: 'if.action.hiding',
   REVEALING: 'if.action.revealing',
 
+  // Stock verbs without an object side (ADR-370)
+  JUMPING: 'if.action.jumping',
+  KISSING: 'if.action.kissing',
+  WAVING: 'if.action.waving',
+  SAYING_YES: 'if.action.saying_yes',
+  SAYING_NO: 'if.action.saying_no',
+  SAYING_SORRY: 'if.action.saying_sorry',
+  LOOKING_UNDER: 'if.action.looking_under',
+  EMPTYING: 'if.action.emptying',
+
   // Meta actions
   INVENTORY: 'if.action.inventory',
   WAITING: 'if.action.waiting',
@@ -313,6 +323,50 @@ export const englishVerbs: VerbDefinition[] = [
     action: IFActions.SAYING_GOODBYE,
     verbs: ['goodbye', 'bye', 'farewell'],
     requiresObject: false
+  },
+
+  // Stock verbs without an object side (ADR-370)
+  {
+    action: IFActions.JUMPING,
+    verbs: ['jump', 'leap', 'hop'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.KISSING,
+    verbs: ['kiss', 'hug', 'embrace'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.WAVING,
+    verbs: ['wave'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SAYING_YES,
+    verbs: ['yes'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SAYING_NO,
+    verbs: ['no'],
+    requiresObject: false
+  },
+  {
+    action: IFActions.SAYING_SORRY,
+    verbs: ['sorry', 'apologize', 'apologise'],
+    requiresObject: false
+  },
+  {
+    // `look under` shares `look` with looking/examining/searching; the
+    // grammar's literal `under` decides.
+    action: IFActions.LOOKING_UNDER,
+    verbs: ['look under', 'look beneath', 'look underneath'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.EMPTYING,
+    verbs: ['empty'],
+    requiresObject: true
   },
   
   // Meta commands

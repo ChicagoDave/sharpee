@@ -312,6 +312,14 @@ export declare const IFActions: {
     readonly REMOVING: "if.action.removing";
     readonly HIDING: "if.action.hiding";
     readonly REVEALING: "if.action.revealing";
+    readonly JUMPING: "if.action.jumping";
+    readonly KISSING: "if.action.kissing";
+    readonly WAVING: "if.action.waving";
+    readonly SAYING_YES: "if.action.saying_yes";
+    readonly SAYING_NO: "if.action.saying_no";
+    readonly SAYING_SORRY: "if.action.saying_sorry";
+    readonly LOOKING_UNDER: "if.action.looking_under";
+    readonly EMPTYING: "if.action.emptying";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
@@ -560,6 +568,14 @@ export * from './quitting.js';
 export * from './restarting.js';
 export * from './undoing.js';
 export * from './again.js';
+export * from './jumping.js';
+export * from './kissing.js';
+export * from './waving.js';
+export * from './saying-yes.js';
+export * from './saying-no.js';
+export * from './saying-sorry.js';
+export * from './looking-under.js';
+export * from './emptying.js';
 /**
  * All standard action language definitions
  */
@@ -568,15 +584,15 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
-        no_destination: string;
-        not_held: string;
-        not_insertable: string;
-        not_container: string;
-        already_there: string;
-        inserted: string;
-        wont_fit: string;
+        not_a_container: string;
         container_closed: string;
-        no_room: string;
+        already_empty: string;
+        into_itself: string;
+        cant_empty_into: string;
+        destination_closed: string;
+        emptied_here: string;
+        emptied_into: string;
+        destination_full: string;
     };
     help: {
         description: string;
@@ -794,6 +810,26 @@ export declare const standardActionLanguage: ({
         cant_put_on_itself: string;
         no_room: string;
         no_space: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_destination: string;
+        not_held: string;
+        not_insertable: string;
+        not_container: string;
+        already_there: string;
+        inserted: string;
+        wont_fit: string;
+        container_closed: string;
+        no_room: string;
     };
     help: {
         description: string;
@@ -1895,6 +1931,78 @@ export declare const standardActionLanguage: ({
     messages: {
         revealed: string;
         not_hidden: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        jumped: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        kissed_person: string;
+        kissed_thing: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        not_held: string;
+        waved_hands: string;
+        waved: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        nobody_asked: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        nothing_to_apologize_for: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        nothing_under: string;
+        found_under: string;
     };
     help: {
         description: string;

@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 742 aliases across 59 actions.
+ * 765 aliases across 67 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -240,6 +240,17 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'eating-still-hungry',
   'eating-tasted',
   'eating-tasty',
+  // if.action.emptying
+  'emptying-already-empty',
+  'emptying-cant-empty-into',
+  'emptying-container-closed',
+  'emptying-destination-closed',
+  'emptying-destination-full',
+  'emptying-emptied-here',
+  'emptying-emptied-into',
+  'emptying-into-itself',
+  'emptying-no-target',
+  'emptying-not-a-container',
   // if.action.entering
   'entering-already-inside',
   'entering-cant-enter',
@@ -378,6 +389,12 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'inventory-wearing',
   'inventory-wearing-count',
   'inventory-worn-list',
+  // if.action.jumping
+  'jumping-jumped',
+  // if.action.kissing
+  'kissing-kissed-person',
+  'kissing-kissed-thing',
+  'kissing-no-target',
   // if.action.listening
   'listening-active-devices',
   'listening-ambient-sounds',
@@ -414,6 +431,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'looking-hidden-at',
   'looking-surface-contents',
   'looking-you-see',
+  // if.action.looking_under
+  'looking-under-found-under',
+  'looking-under-no-target',
+  'looking-under-nothing-under',
   // if.action.lowering
   'lowering-already-down',
   'lowering-cant-lower-that',
@@ -559,6 +580,12 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'saying-goodbye-not-talking',
   'saying-goodbye-not-talking-to',
   'saying-goodbye-said-goodbye',
+  // if.action.saying_no
+  'saying-no-nobody-asked',
+  // if.action.saying_sorry
+  'saying-sorry-nothing-to-apologize-for',
+  // if.action.saying_yes
+  'saying-yes-nobody-asked',
   // if.action.hunger
   'hunger-crossed',
   'hunger-starved',
@@ -817,6 +844,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'waiting-waited-patiently',
   // if.action.waking
   'waking-already-awake',
+  // if.action.waving
+  'waving-not-held',
+  'waving-waved',
+  'waving-waved-hands',
   // if.action.wearing
   'wearing-already-wearing',
   'wearing-cant-wear-that',

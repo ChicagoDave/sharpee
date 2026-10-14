@@ -70,4 +70,12 @@ export const grammarBlocks: Record<string, string> = {
   "if.action.again": "define action again\n  grammar\n    again\n    g",
   "if.action.hiding": "define action hiding\n  grammar\n    hide behind the target\n      means position behind\n    duck behind the target\n      means position behind\n    crouch behind the target\n      means position behind\n    hide under the target\n      means position under\n    duck under the target\n      means position under\n    crouch under the target\n      means position under\n    hide on the target\n      means position on\n    hide in the target\n      means position inside\n    hide inside the target\n      means position inside\n    duck inside the target\n      means position inside",
   "if.action.revealing": "define action revealing\n  grammar\n    stand up\n    come out\n    reveal myself\n    unhide\n    stop hiding",
+  "if.action.jumping": "define action jumping\n  grammar\n    jump\n    leap\n    hop\n    jump up",
+  "if.action.kissing": "define action kissing\n  grammar\n    kiss the target\n    hug the target\n    embrace the target",
+  "if.action.waving": "define action waving\n  grammar\n    wave\n    wave hands\n    wave hand\n    wave the target",
+  "if.action.saying_yes": "define action saying_yes\n  grammar\n    yes",
+  "if.action.saying_no": "define action saying_no\n  grammar\n    no",
+  "if.action.saying_sorry": "define action saying_sorry\n  grammar\n    sorry\n    apologize\n    apologise",
+  "if.action.looking_under": "define action looking_under\n  grammar\n    look under the target\n    look beneath the target\n    look underneath the target",
+  "if.action.emptying": "define action emptying\n  grammar\n    empty the target\n    empty out the target\n    empty the target into or in or onto or on the destination",
 };

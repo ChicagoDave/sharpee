@@ -452,4 +452,26 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("reveal myself").mapsTo("if.action.revealing").build();
   grammar.define("unhide").mapsTo("if.action.revealing").build();
   grammar.define("stop hiding").mapsTo("if.action.revealing").build();
+  grammar.define("jump").mapsTo("if.action.jumping").build();
+  grammar.define("leap").mapsTo("if.action.jumping").build();
+  grammar.define("hop").mapsTo("if.action.jumping").build();
+  grammar.define("jump up").mapsTo("if.action.jumping").build();
+  grammar.define("kiss :target").mapsTo("if.action.kissing").build();
+  grammar.define("hug :target").mapsTo("if.action.kissing").build();
+  grammar.define("embrace :target").mapsTo("if.action.kissing").build();
+  grammar.define("wave").mapsTo("if.action.waving").build();
+  grammar.define("wave hands").mapsTo("if.action.waving").build();
+  grammar.define("wave hand").mapsTo("if.action.waving").build();
+  grammar.define("wave :target").mapsTo("if.action.waving").build();
+  grammar.define("yes").mapsTo("if.action.saying_yes").build();
+  grammar.define("no").mapsTo("if.action.saying_no").build();
+  grammar.define("sorry").mapsTo("if.action.saying_sorry").build();
+  grammar.define("apologize").mapsTo("if.action.saying_sorry").build();
+  grammar.define("apologise").mapsTo("if.action.saying_sorry").build();
+  grammar.define("look under :target").mapsTo("if.action.looking_under").build();
+  grammar.define("look beneath :target").mapsTo("if.action.looking_under").build();
+  grammar.define("look underneath :target").mapsTo("if.action.looking_under").build();
+  grammar.define("empty :target").mapsTo("if.action.emptying").build();
+  grammar.define("empty out :target").mapsTo("if.action.emptying").build();
+  grammar.define("empty :target into|in|onto|on :destination").mapsTo("if.action.emptying").build();
 }

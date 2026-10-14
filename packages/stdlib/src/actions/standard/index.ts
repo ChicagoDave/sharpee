@@ -157,6 +157,23 @@ import { deadlyRoomDeathAction } from './deadly-room-death/index.js';
 // Concealment actions (ADR-148)
 import { hidingAction } from './hiding/index.js';
 import { revealingAction } from './hiding/index.js';
+// ADR-370: stock verbs without an object side
+import { jumpingAction } from './jumping/index.js';
+import { kissingAction } from './kissing/index.js';
+import { wavingAction } from './waving/index.js';
+import { sayingYesAction } from './saying_yes/index.js';
+import { sayingNoAction } from './saying_no/index.js';
+import { sayingSorryAction } from './saying_sorry/index.js';
+import { lookingUnderAction } from './looking_under/index.js';
+import { emptyingAction } from './emptying/index.js';
+export * from './jumping/index.js';
+export * from './kissing/index.js';
+export * from './waving/index.js';
+export * from './saying_yes/index.js';
+export * from './saying_no/index.js';
+export * from './saying_sorry/index.js';
+export * from './looking_under/index.js';
+export * from './emptying/index.js';
 
 // Import author/debug actions
 import { TraceAction } from '../author/index.js';
@@ -225,6 +242,15 @@ export const standardActions = [
   // Concealment actions (ADR-148)
   hidingAction,
   revealingAction,
+  // ADR-370: stock verbs without an object side
+  jumpingAction,
+  kissingAction,
+  wavingAction,
+  sayingYesAction,
+  sayingNoAction,
+  sayingSorryAction,
+  lookingUnderAction,
+  emptyingAction,
   // Author/debug actions
   traceAction
 ];

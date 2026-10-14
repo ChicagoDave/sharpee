@@ -111,3 +111,49 @@ closed, once`. Commas are the only separator; `taking, touching or
 pushing` is an error that shows the comma form, and an action listed twice
 on one head is an error at the repeated word. A diagnostic about one of the
 listed actions points at that word in the list.
+
+## Verbs with nothing to act on
+
+Some verbs have no object side, or need none: `jump`, `yes`, `no`, `sorry`,
+`wave`. Each exists in the standard library with a stock line ("You jump on
+the spot. Nothing comes of it."), and a clause speaks in its place. A verb
+with no object is written on the **room** the player is in; a verb with one
+goes in the thing's block as usual.
+
+```chord
+create the Landing Pad
+  a room
+  aka pad, pad 14
+
+  Pad 14 is a circle of old cement under a black sky.
+
+  on the player jumping
+    phrase pad-jump
+  end on
+
+create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player saying_yes while the pad master is unconvinced
+    phrase quint-takes-yes-as-the-card
+  end on
+
+  on the player saying_no, saying_sorry
+    phrase quint-shrugs
+  end on
+```
+
+`yes`, `no` and `sorry` go in the block of the person the player is talking
+to — the clause fires while a conversation with them is live — or on a room,
+for an answer given to nobody. Inside an open `define exchange`, `yes` and
+`no` are the exchange's answer and never reach these clauses. Two-word
+verbs are written with an underscore, as `switching_on` and `taking_off`
+are: `saying_yes`, `saying_no`, `saying_sorry`, `looking_under`. `wave` on
+its own consults the room; `wave <thing>` consults the thing, which must be
+held. `look under <thing>` reveals the `concealed` things it holds, as
+`search` does; `empty <thing>` spills a container onto the floor, or into
+another container with `empty <thing> into <other>`, and both take a clause
+in the container's block (`on the player looking_under`, `after the player
+emptying`).

@@ -23,6 +23,14 @@ create the Sorting Room
   only seen as postmarks. The sorting machine hums in the middle of the
   floor. East, the loading dock door is shut.
 
+  on the player jumping
+    phrase depot-jump
+  end on
+
+  on the player saying_yes, saying_no
+    phrase depot-answer
+  end on
+
 create Postman
   a person
   playable
@@ -62,10 +70,34 @@ create the route card
     refuse card-is-yours
   end on
 
+  on the player waving while the player is in the Landing Pad
+    phrase quint-waved-at
+  end on
+
   after the player showing while the player is in the Landing Pad, once
     change the pad master to waved-through
     phrase quint-waved
   end after
+
+create the returns bin
+  a container, scenery
+  in the Sorting Room
+  aka bin, returns, return bin
+
+  A steel bin under the pigeonholes, stencilled RETURNS. Anything the
+  sorter cannot place ends up here.
+
+  after the player emptying
+    phrase bin-emptied
+  end after
+
+create the dead letter
+  a thing
+  in the returns bin
+  aka letter, envelope
+
+  A grey envelope addressed to no world anyone has heard of, stamped
+  twice: UNKNOWN and RETURN TO SENDER.
 
 create the dock door
   a thing, scenery
@@ -128,6 +160,10 @@ create the loader robot
   its chest. A status light on its brow blinks amber, which means it
   is waiting for something.
 
+  on the player kissing
+    phrase robot-kissed
+  end on
+
   after the player giving
     phrase robot-loads when the loader robot has the mail bundle and the courier ship is buttoned
     phrase robot-reloads when the loader robot has the mail bundle and the courier ship is boarding
@@ -142,6 +178,10 @@ create the mail crates
 
   Empty mail crates stacked three high along the west wall, every one
   stencilled UPPS and scuffed grey from the holds of a hundred ships.
+
+  on the player looking_under
+    phrase crates-underneath
+  end on
 
 ## Room 3 — the robot loads the mail, and the ramp comes down.
 
@@ -367,6 +407,18 @@ create the Landing Pad
     phrase pad-arrival
   end after
 
+  on the player saying_yes while the pad master is unconvinced
+    phrase quint-takes-yes-as-the-card
+  end on
+
+  on the player saying_no, saying_sorry while the pad master is unconvinced
+    phrase quint-shrugs
+  end on
+
+## Quint has no conversation block yet, so an answer on the pad is an answer
+## to nobody and the room hears it (the two clauses above). When her thread
+## lands, they move into her block and fire only while the talk is live.
+
 create the pad master
   a person
   in the Landing Pad
@@ -394,6 +446,40 @@ create the tram line
 
   Two rails in a bed of grey dust, running north to the dome. A
   single open car sits at the pad end with its brake set.
+
+define phrase depot-jump
+  The sorting machine pauses mid-chuckle, then goes on without you.
+end phrase
+
+define phrase depot-answer
+  The sorting machine takes that as addressed to it, and files it.
+end phrase
+
+define phrase crates-underneath
+  Dust, a bent staple, and the floor.
+end phrase
+
+define phrase robot-kissed
+  The loader's status light goes red, then amber again. It has filed
+  a report.
+end phrase
+
+define phrase bin-emptied
+  The sorting machine stops chuckling for a moment, as if it had
+  been counting on that one.
+end phrase
+
+define phrase quint-takes-yes-as-the-card
+  "Yes what? Yes you have a route card?" She holds out her hand.
+end phrase
+
+define phrase quint-shrugs
+  Quint shrugs. "Nobody asked you anything."
+end phrase
+
+define phrase quint-waved-at
+  Quint does not wave back. The clipboard stays where it is.
+end phrase
 
 define phrase dock-sealed
   The loading dock door stays shut until your shift is cleared to

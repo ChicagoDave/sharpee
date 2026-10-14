@@ -85,6 +85,10 @@ export const IFActions = {
   TELLING: 'if.action.telling',
   ANSWERING: 'if.action.answering',
   SAYING_GOODBYE: 'if.action.saying_goodbye',
+  // ADR-370 D2: bare yes / no / sorry outside an open exchange
+  SAYING_YES: 'if.action.saying_yes',
+  SAYING_NO: 'if.action.saying_no',
+  SAYING_SORRY: 'if.action.saying_sorry',
   SHOWING: 'if.action.showing',
   GIVING: 'if.action.giving',
   

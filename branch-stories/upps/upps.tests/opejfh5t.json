@@ -76,6 +76,133 @@
     {
       "assertions": {
         "contains": [
+          "The sorting machine pauses mid-chuckle, then goes on without you."
+        ],
+        "notContains": [
+          "Nothing comes of it."
+        ]
+      },
+      "command": "jump",
+      "id": "a370jmp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine takes that as addressed to it, and files it."
+        ],
+        "notContains": [
+          "Nobody asked"
+        ]
+      },
+      "command": "yes",
+      "id": "a370yes1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine takes that as addressed to it, and files it."
+        ]
+      },
+      "command": "no",
+      "id": "a370no01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "There is nothing to apologize for."
+        ]
+      },
+      "command": "sorry",
+      "id": "a370sry1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wave. Nobody waves back."
+        ]
+      },
+      "command": "wave",
+      "id": "a370wav1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing under the sorting machine."
+        ]
+      },
+      "command": "look under machine",
+      "id": "a370lku1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The mail satchel is already empty."
+        ]
+      },
+      "command": "empty satchel",
+      "id": "a370emp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You kiss the sorting machine. Nothing comes of it."
+        ]
+      },
+      "command": "kiss machine",
+      "id": "a370kis1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You wave the route card about. Nothing happens."
+        ]
+      },
+      "command": "wave card",
+      "id": "a370wav2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing under the returns bin."
+        ]
+      },
+      "command": "look under bin",
+      "id": "a370lku4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You empty the returns bin onto the floor: a dead letter.",
+          "The sorting machine stops chuckling for a moment, as if it had been counting on that one."
+        ]
+      },
+      "command": "empty bin",
+      "id": "a370emp7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The returns bin is already empty."
+        ]
+      },
+      "command": "empty bin",
+      "id": "a370emp8",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "The loading dock door stays shut until your shift is cleared to launch."
         ]
       },
@@ -123,6 +250,32 @@
       },
       "command": "east",
       "id": "qh80o65s",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Dust, a bent staple, and the floor."
+        ],
+        "notContains": [
+          "nothing under"
+        ]
+      },
+      "command": "look under crates",
+      "id": "a370lku2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The loader's status light goes red, then amber again. It has filed a report."
+        ],
+        "notContains": [
+          "having none of that"
+        ]
+      },
+      "command": "kiss robot",
+      "id": "a370kis2",
       "type": "turn"
     },
     {

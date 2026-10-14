@@ -233,6 +233,17 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'eating-still-hungry': 'if.action.eating.still_hungry',
   'eating-tasted': 'if.action.eating.tasted',
   'eating-tasty': 'if.action.eating.tasty',
+  // if.action.emptying (ADR-370)
+  'emptying-already-empty': 'if.action.emptying.already_empty',
+  'emptying-cant-empty-into': 'if.action.emptying.cant_empty_into',
+  'emptying-container-closed': 'if.action.emptying.container_closed',
+  'emptying-destination-closed': 'if.action.emptying.destination_closed',
+  'emptying-destination-full': 'if.action.emptying.destination_full',
+  'emptying-emptied-here': 'if.action.emptying.emptied_here',
+  'emptying-emptied-into': 'if.action.emptying.emptied_into',
+  'emptying-into-itself': 'if.action.emptying.into_itself',
+  'emptying-no-target': 'if.action.emptying.no_target',
+  'emptying-not-a-container': 'if.action.emptying.not_a_container',
   // if.action.entering
   'entering-already-inside': 'if.action.entering.already_inside',
   'entering-cant-enter': 'if.action.entering.cant_enter',
@@ -371,6 +382,12 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'inventory-wearing': 'if.action.inventory.wearing',
   'inventory-wearing-count': 'if.action.inventory.wearing_count',
   'inventory-worn-list': 'if.action.inventory.worn_list',
+  // if.action.jumping (ADR-370)
+  'jumping-jumped': 'if.action.jumping.jumped',
+  // if.action.kissing (ADR-370)
+  'kissing-kissed-person': 'if.action.kissing.kissed_person',
+  'kissing-kissed-thing': 'if.action.kissing.kissed_thing',
+  'kissing-no-target': 'if.action.kissing.no_target',
   // if.action.listening
   'listening-active-devices': 'if.action.listening.active_devices',
   'listening-ambient-sounds': 'if.action.listening.ambient_sounds',
@@ -407,6 +424,10 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'looking-hidden-at': 'if.action.looking.hidden_at',
   'looking-surface-contents': 'if.action.looking.surface_contents',
   'looking-you-see': 'if.action.looking.you_see',
+  // if.action.looking_under (ADR-370)
+  'looking-under-found-under': 'if.action.looking_under.found_under',
+  'looking-under-no-target': 'if.action.looking_under.no_target',
+  'looking-under-nothing-under': 'if.action.looking_under.nothing_under',
   // if.action.lowering
   'lowering-already-down': 'if.action.lowering.already_down',
   'lowering-cant-lower-that': 'if.action.lowering.cant_lower_that',
@@ -552,6 +573,12 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'saying-goodbye-not-talking': 'if.action.saying_goodbye.not_talking',
   'saying-goodbye-not-talking-to': 'if.action.saying_goodbye.not_talking_to',
   'saying-goodbye-said-goodbye': 'if.action.saying_goodbye.said_goodbye',
+  // if.action.saying_no (ADR-370)
+  'saying-no-nobody-asked': 'if.action.saying_no.nobody_asked',
+  // if.action.saying_sorry (ADR-370)
+  'saying-sorry-nothing-to-apologize-for': 'if.action.saying_sorry.nothing_to_apologize_for',
+  // if.action.saying_yes (ADR-370)
+  'saying-yes-nobody-asked': 'if.action.saying_yes.nobody_asked',
   // if.action.scoring — pruned in parallel with the chord catalog
   // (ADR-260 D4). Drift between the two tables is a live-alias/dead-target
   // bug, so they move together.
@@ -812,6 +839,10 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'waiting-waited-patiently': 'if.action.waiting.waited_patiently',
   // if.action.waking
   'waking-already-awake': 'if.action.waking.already_awake',
+  // if.action.waving (ADR-370)
+  'waving-not-held': 'if.action.waving.not_held',
+  'waving-waved': 'if.action.waving.waved',
+  'waving-waved-hands': 'if.action.waving.waved_hands',
   // if.action.wearing
   'wearing-already-wearing': 'if.action.wearing.already_wearing',
   'wearing-cant-wear-that': 'if.action.wearing.cant_wear_that',

@@ -533,3 +533,57 @@ define action revealing
     reveal myself
     unhide
     stop hiding
+
+## ADR-370 — stock verbs without an object side (2026-10-13). Each is a
+## signal action: the stock line is the success message, a Chord reaction
+## speaks in its place. `wave hands` is a literal line beside `wave the
+## target`, so specificity picks it over a slot match on the word `hands`.
+## Bare `yes`/`no` are offered to an open exchange BEFORE the parse (the
+## engine's exchange-offer stage, GH #346); these lines see only what no
+## exchange claims. `say yes` stays an answering form (above).
+
+define action jumping
+  grammar
+    jump
+    leap
+    hop
+    jump up
+
+define action kissing
+  grammar
+    kiss the target
+    hug the target
+    embrace the target
+
+define action waving
+  grammar
+    wave
+    wave hands
+    wave hand
+    wave the target
+
+define action saying_yes
+  grammar
+    yes
+
+define action saying_no
+  grammar
+    no
+
+define action saying_sorry
+  grammar
+    sorry
+    apologize
+    apologise
+
+define action looking_under
+  grammar
+    look under the target
+    look beneath the target
+    look underneath the target
+
+define action emptying
+  grammar
+    empty the target
+    empty out the target
+    empty the target into or in or onto or on the destination

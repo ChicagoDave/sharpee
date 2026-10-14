@@ -63,11 +63,21 @@ import { wakingLifecycle } from '../standard/waking/waking.js';
 import { turningLifecycle } from '../standard/turning/turning.js';
 import { unlockingLifecycle } from '../standard/unlocking/unlocking.js';
 import { wearingLifecycle } from '../standard/wearing/wearing.js';
+// ADR-370: stock verbs without an object side
+import { jumpingLifecycle } from '../standard/jumping/jumping.js';
+import { kissingLifecycle } from '../standard/kissing/kissing.js';
+import { wavingLifecycle } from '../standard/waving/waving.js';
+import { sayingYesLifecycle } from '../standard/saying_yes/saying-yes.js';
+import { sayingNoLifecycle } from '../standard/saying_no/saying-no.js';
+import { sayingSorryLifecycle } from '../standard/saying_sorry/saying-sorry.js';
+import { lookingUnderLifecycle } from '../standard/looking_under/looking-under.js';
+import { emptyingLifecycle } from '../standard/emptying/emptying.js';
 
 /**
- * The descriptor table: all 38 entity-keyed standard actions (33 per
+ * The descriptor table: all 50 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
- * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17).
+ * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
+ * + the eight ADR-370 stock verbs, 2026-10-13).
  * Structural exemptions
  * (no entity to key on: about, waiting, looking, … and the full-delegation
  * capability actions lowering/raising) are absent by design — see ADR-228
@@ -115,7 +125,16 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   wakingLifecycle,
   turningLifecycle,
   unlockingLifecycle,
-  wearingLifecycle
+  wearingLifecycle,
+  // ADR-370: stock verbs without an object side
+  jumpingLifecycle,
+  kissingLifecycle,
+  wavingLifecycle,
+  sayingYesLifecycle,
+  sayingNoLifecycle,
+  sayingSorryLifecycle,
+  lookingUnderLifecycle,
+  emptyingLifecycle
 ]);
 
 // Invariant: one descriptor per action — a duplicate primary id means two

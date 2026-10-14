@@ -130,6 +130,23 @@ import { eatingLanguage } from './eating.js';
 import { drinkingLanguage } from './drinking.js';
 import { attackingLanguage } from './attacking.js';
 import { hidingLanguage, revealingLanguage } from './hiding.js';
+// ADR-370: stock verbs without an object side
+import { jumpingLanguage } from './jumping.js';
+import { kissingLanguage } from './kissing.js';
+import { wavingLanguage } from './waving.js';
+import { sayingYesLanguage } from './saying-yes.js';
+import { sayingNoLanguage } from './saying-no.js';
+import { sayingSorryLanguage } from './saying-sorry.js';
+import { lookingUnderLanguage } from './looking-under.js';
+import { emptyingLanguage } from './emptying.js';
+export * from './jumping.js';
+export * from './kissing.js';
+export * from './waving.js';
+export * from './saying-yes.js';
+export * from './saying-no.js';
+export * from './saying-sorry.js';
+export * from './looking-under.js';
+export * from './emptying.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { wakingLanguage } from './waking.js';
@@ -230,4 +247,13 @@ export const standardActionLanguage = [
   // Concealment actions (ADR-148)
   hidingLanguage,
   revealingLanguage,
+  // ADR-370: stock verbs without an object side
+  jumpingLanguage,
+  kissingLanguage,
+  wavingLanguage,
+  sayingYesLanguage,
+  sayingNoLanguage,
+  sayingSorryLanguage,
+  lookingUnderLanguage,
+  emptyingLanguage,
 ];

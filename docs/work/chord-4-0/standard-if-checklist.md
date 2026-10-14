@@ -174,18 +174,18 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 | exit (custom-command passages) | 13 | |
 | listener | 9 | |
 | night-vision | 9 | |
-| Looking under | 5 | |
+| Looking under | 5 | UPPS `upps.tests/opejfh5t.json`: `look under machine` (a370lku1) and `look under bin` (a370lku4) speak the stock line; `look under crates` (a370lku2) fires the crates' clause; `a370hold.json` card a370lku3 |
 | Consulting it about | 7 | |
 | Asking it for | 7 | |
-| Kissing | 5 | |
-| Waving, Waving hands | 5 | |
-| Saying yes, no, sorry | 5 | |
+| Kissing | 5 | UPPS `opejfh5t.json`: `kiss machine` (a370kis1) stock thing line, `kiss robot` (a370kis2) fires the robot's clause; `a370pad1.json`: `kiss quint` (a370kis3) stock person line |
+| Waving, Waving hands | 5 | UPPS `opejfh5t.json`: `wave` (a370wav1) hands line, `wave card` (a370wav2) held-thing line; `a370pad1.json`: `wave card` on the pad (a370wav4) fires the card's `while` clause, bare `wave` (a370wav3) stock |
+| Saying yes, no, sorry | 5 | UPPS `opejfh5t.json`: `yes`/`no` (a370yes1, a370no01) fire the depot room clause, `sorry` (a370sry1) stock; `a370pad1.json`: `yes`/`no`/`sorry` while Quint is unconvinced (a370yes2, a370no02, a370sry2) fire the pad clauses, and after `show card` (a370yes3, a370sry3) the stock lines return. The speaker path (a live scene) is pinned by the stdlib test only: UPPS has no conversation block yet |
 | Burning / `flammable with` | 6 | |
 | Setting it to / `settable to` | 6 | |
 | Buying / `costs` | 7 | |
-| Jumping | 5 | |
+| Jumping | 5 | UPPS `opejfh5t.json`: `jump` (a370jmp1) fires the depot room clause; `a370pad1.json`: `jump` (a370jmp2) stock line |
 | Pushing it to / pushable between rooms | 13 | |
-| Emptying | 5 | |
+| Emptying | 5 | UPPS `opejfh5t.json`: `empty satchel` (a370emp1) already_empty, `empty bin` (a370emp7) spills the dead letter and fires the bin's `after` clause, again (a370emp8) already_empty; `a370hold.json`: closed source (a370emp2), closed destination (a370emp3), `empty jar into locker` (a370emp4), not a container (a370emp6) |
 | `in` / `out` exits (GH #568) | 4 | UPPS `upps.tests/w7eqlqnb.json`: `out` from the Airlock to the pad (card tpyumtv3), `in` back (ku62m66z); `8alivtpe.json` card ckvktaj2: `out` refused while the hatch is shut |
 | backdrop | 9 | |
 | transparent container | 4 | UPPS `upps.tests/k3hldz9q.json`: `look in jar` (q3lkinjr) and `examine jar` (q4exjar1) list the beetle through the closed lid |
