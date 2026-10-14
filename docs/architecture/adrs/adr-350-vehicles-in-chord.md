@@ -1,6 +1,6 @@
 # ADR-350: Vehicles in Chord — native composition or gated extension
 
-**Status**: **RESEARCH — NOT SCHEDULED** (David's ruling, 2026-09-14, session 4ca16b: "I have no plans to tackle chord vehicles now — file the ADR as research and as a gh feature". Tracked as a feature request; see the Session note for the issue number.
+**Status**: **SUPERSEDED by ADR-366** (2026-10-13, session 326e9e, at David's acceptance of `adr-366-a-vehicle-is-a-kind-with-a-movement-model.md`, which answers each of the seven Open Questions below and replaces D7's "motion is a state machine" with declared movement models; the measurements here stand and were re-taken there). Previously **RESEARCH — NOT SCHEDULED** (David's ruling, 2026-09-14, session 4ca16b: "I have no plans to tackle chord vehicles now — file the ADR as research and as a gh feature". Tracked as a feature request; see the Session note for the issue number.
 
 This document is a **measured record of the vehicle model as it stands and of the design space around it**, not a decision awaiting acceptance. Its D1–D8 are the shape a future session would start from, not obligations on anyone now. **No `adr-review` has run, nothing is accepted, and no implementation is authorized.** The Open Questions section is non-empty and stays that way deliberately — under rule 11a this document is not ACCEPTED and no open-questions interview is owed, because the premise question (should this be built, and when) is answered "not now" rather than left open.
 
