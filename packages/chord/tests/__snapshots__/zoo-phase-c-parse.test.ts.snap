@@ -444,6 +444,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 43,
+            "line": 43,
+          },
           "actor": {
             "kind": "player",
           },
@@ -545,6 +551,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 59,
+            "line": 59,
+          },
           "actor": {
             "kind": "player",
           },
@@ -581,6 +593,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 63,
+            "line": 63,
+          },
           "actor": {
             "kind": "player",
           },
@@ -621,6 +639,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 68,
+            "line": 68,
+          },
           "actor": {
             "kind": "player",
           },
@@ -747,6 +771,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 86,
+            "line": 86,
+          },
           "actor": {
             "kind": "player",
           },
@@ -837,6 +867,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 100,
+            "line": 100,
+          },
           "actor": {
             "kind": "player",
           },
@@ -938,6 +974,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 113,
+            "line": 113,
+          },
           "actor": {
             "kind": "player",
           },
@@ -1183,6 +1225,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "examining",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 26,
+            "endLine": 144,
+            "line": 144,
+          },
           "actor": {
             "kind": "player",
           },
@@ -2291,6 +2339,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 253,
+            "line": 253,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -2711,6 +2765,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "reading",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 300,
+            "line": 300,
+          },
           "actor": {
             "kind": "player",
           },
@@ -2823,6 +2883,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "reading",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 316,
+            "line": 316,
+          },
           "actor": {
             "kind": "player",
           },
@@ -2936,6 +3002,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "reading",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 332,
+            "line": 332,
+          },
           "actor": {
             "kind": "player",
           },
@@ -3050,6 +3122,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "reading",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 347,
+            "line": 347,
+          },
           "actor": {
             "kind": "player",
           },
@@ -3166,6 +3244,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "taking",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 26,
+            "endLine": 360,
+            "line": 360,
+          },
           "actor": {
             "kind": "player",
           },
@@ -3976,6 +4060,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 553,
+            "line": 553,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -4099,6 +4189,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "examining",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 26,
+            "endLine": 582,
+            "line": 582,
+          },
           "actor": {
             "kind": "player",
           },
@@ -4157,6 +4253,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 590,
+            "line": 590,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -4305,6 +4407,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 27,
+            "endLine": 622,
+            "line": 622,
+          },
           "actor": {
             "kind": "player",
           },
@@ -4341,6 +4449,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 626,
+            "line": 626,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -4511,6 +4625,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 27,
+            "endLine": 655,
+            "line": 655,
+          },
           "actor": {
             "kind": "player",
           },
@@ -4547,6 +4667,12 @@ exports[`zoo-phase-c.story (migrated Zoo, ownership package) > matches the golde
         },
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 659,
+            "line": 659,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -6749,6 +6875,12 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "onClauses": [
         {
           "action": "petting",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 451,
+            "line": 451,
+          },
           "actor": {
             "kind": "player",
           },
@@ -6817,6 +6949,12 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 470,
+            "line": 470,
+          },
           "actor": {
             "kind": "player",
           },
@@ -6942,6 +7080,12 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 38,
+            "endLine": 480,
+            "line": 480,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -6992,6 +7136,12 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 38,
+            "endLine": 486,
+            "line": 486,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -7042,6 +7192,12 @@ HOLLAND LOP RABBITS — Known for their floppy ears. Our pair, Biscuit and Marma
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 35,
+            "endLine": 497,
+            "line": 497,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [

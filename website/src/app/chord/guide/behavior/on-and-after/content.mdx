@@ -85,3 +85,29 @@ create Marguerite
 That bare head is her own going. Outside a person's block it is an error
 (`analysis.head-bare-outside-actor`) — a hive box does not open things, so
 `on opening` there has no one to mean.
+
+## One head, several actions
+
+When several actions get the same response, list them on one head with
+commas. The head means one clause per action, each with the same actor,
+condition, modifiers and body.
+
+```chord
+create the farmland view
+  aka view, meadows, farms
+  a thing, scenery
+  in the Top of the Post
+
+  The view is spectacular, but you don't have time to waste gawking.
+
+  on the player taking, touching, pushing, pulling, climbing, searching
+    refuse view-too-far
+  end on
+```
+
+The list works on `after` heads and bare heads too, and anything after it
+applies to every action listed: `on taking, dropping while the shop is
+closed, once`. Commas are the only separator; `taking, touching or
+pushing` is an error that shows the comma form, and an action listed twice
+on one head is an error at the repeated word. A diagnostic about one of the
+listed actions points at that word in the list.

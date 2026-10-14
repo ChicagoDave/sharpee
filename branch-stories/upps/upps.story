@@ -58,7 +58,7 @@ create the route card
 
   A laminated card printed with today's route.
 
-  on the player giving
+  on the player giving, dropping
     refuse card-is-yours
   end on
 

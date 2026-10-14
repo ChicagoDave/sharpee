@@ -59,7 +59,7 @@ export class OnClausesSection {
           // interceptor (GH #341), bound below like any other gerund.
           throw new LoadError(
             `\`${clause.clauseKind} the player ${clause.action}\` — \`${clause.action}\` is a region crossing reaction (ADR-236), and \`${entity.name}\` is not a region. Put the clause on the region block whose boundary it reacts to.`,
-            clause.span,
+            clause.actionSpan ?? clause.span,
           );
         }
         // ADR-327 D1: a bare head is the owner's own action, reached through
@@ -69,7 +69,7 @@ export class OnClausesSection {
         if (clause.binding === 'self' && this.core.binding.isDispatchAction(clause.action)) {
           throw new LoadError(
             `\`${clause.clauseKind} ${clause.action}\` in \`${entity.name}\`'s block — \`${clause.action}\` is a Chord dispatch action, which consults no actor, so a bare head could never fire. React on the thing acted on instead: \`after the player ${clause.action}\` in its block.`,
-            clause.span,
+            clause.actionSpan ?? clause.span,
           );
         }
         // D5 fail-fast (ADR-228): only bind clauses something will consult.
@@ -82,7 +82,7 @@ export class OnClausesSection {
             // …but an entity `on` clause has no dispatch surface at all.
             throw new LoadError(
               `\`on the player ${clause.action}\` — \`${clause.action}\` is a Chord dispatch action, and entity \`on\` clauses never fire on the dispatch path. Move the clause into a trait (\`define trait … on the player ${clause.action}\`) and compose the trait, or react with \`after the player ${clause.action}\`.`,
-              clause.span,
+              clause.actionSpan ?? clause.span,
             );
           }
           throw this.core.binding.deadGerundError(clause);

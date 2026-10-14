@@ -210,6 +210,12 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 37,
+            "line": 37,
+          },
           "actor": {
             "kind": "player",
           },
@@ -560,6 +566,12 @@ exports[`cloak.story IR > matches the golden IR snapshot 1`] = `
       "onClauses": [
         {
           "action": "reading",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 74,
+            "line": 74,
+          },
           "actor": {
             "kind": "player",
           },

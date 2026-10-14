@@ -10,6 +10,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "opening",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 22,
+            "line": 22,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -473,6 +479,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "opening",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 38,
+            "line": 38,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -703,6 +715,12 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "onClauses": [
         {
           "action": "taking",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 23,
+            "endLine": 52,
+            "line": 52,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -2087,6 +2105,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "petting",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 64,
+            "line": 64,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -2473,6 +2497,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 92,
+            "line": 92,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -2958,6 +2988,12 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 27,
+            "endLine": 111,
+            "line": 111,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -3768,6 +3804,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 64,
+            "endLine": 23,
+            "line": 23,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -3891,6 +3933,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 64,
+            "endLine": 29,
+            "line": 29,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [
@@ -4659,6 +4707,12 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "onClauses": [
         {
           "action": "every-turn",
+          "actionSpan": {
+            "column": 3,
+            "endColumn": 40,
+            "endLine": 99,
+            "line": 99,
+          },
           "actor": null,
           "binding": "every-turn",
           "body": [

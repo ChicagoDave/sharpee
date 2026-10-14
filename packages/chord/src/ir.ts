@@ -919,6 +919,13 @@ export interface IROnClause {
   /** Action word as written (gerund), e.g. `reading`; `every-turn` for `on every turn`. */
   action: string;
   /**
+   * The gerund's own span (ADR-368 D3): where a load error about this
+   * clause's action points. A head that lists gerunds expands to one clause
+   * per gerund sharing `span`, so `span` alone would name the whole head.
+   * Additive and optional; absent in IR compiled before it existed.
+   */
+  actionSpan?: Span;
+  /**
    * Who acts (ADR-327 D1): `{kind:'player'}` for the player ROLE — the loader
    * resolves it against `world.getPlayer()` at fire time, never a compile-time
    * entity — or `{kind:'entity'}` for a named character. Null for `self`

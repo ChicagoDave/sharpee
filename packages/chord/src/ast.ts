@@ -1404,6 +1404,12 @@ export interface OnClause {
   /** The action word as written (gerund), e.g. `reading`; `every turn` clauses use 'every-turn'. */
   action: string;
   /**
+   * The gerund's own span (ADR-368 D3). A head that lists gerunds expands to
+   * one node per gerund, all sharing `span`; a diagnostic about this node's
+   * action lands here, on the word in the list. The head line for `every turn`.
+   */
+  actionSpan: Span;
+  /**
    * Who acts (ADR-327 D1): the words before the gerund — `the player` or a
    * character's name — as a value expression the analyzer resolves. Null for
    * a bare head (`self`) and for `every turn`.

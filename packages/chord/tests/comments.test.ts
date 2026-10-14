@@ -23,7 +23,7 @@ const stripSpans = (value: unknown): unknown => {
   if (value && typeof value === 'object') {
     return Object.fromEntries(
       Object.entries(value as Record<string, unknown>)
-        .filter(([k]) => k !== 'span')
+        .filter(([k]) => k !== 'span' && k !== 'actionSpan')
         .map(([k, v]) => [k, stripSpans(v)]),
     );
   }

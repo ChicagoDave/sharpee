@@ -411,6 +411,12 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "onClauses": [
         {
           "action": "feeding",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 27,
+            "endLine": 68,
+            "line": 68,
+          },
           "actor": {
             "kind": "player",
           },
@@ -834,6 +840,12 @@ exports[`each-compile.story — E1/E2/E3 + must-be-any IR (each package P3) > ma
       "onClauses": [
         {
           "action": "prodding",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 25,
+            "endLine": 22,
+            "line": 22,
+          },
           "actor": {
             "kind": "player",
           },

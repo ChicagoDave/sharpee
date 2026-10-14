@@ -124,7 +124,7 @@ function comparable(value: unknown): unknown {
   if (value && typeof value === 'object') {
     const out: Record<string, unknown> = {};
     for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
-      if (key === 'span') continue;
+      if (key === 'span' || key === 'actionSpan') continue;
       const k = stableKey(key);
       if (k === 'exits' && Array.isArray(v)) {
         out[k] = (v as Array<Record<string, unknown>>)

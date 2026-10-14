@@ -3037,7 +3037,7 @@ export class Analyzer {
         this.diagnostics.error(
           'analysis.duplicate-clause',
           `A \`${clause.clauseKind} ${clause.action}\` clause is already declared on ${ownerDesc} at line ${first.span.line} — a second one would silently mask it. Merge the bodies (or split intercept/react across \`on\`/\`after\`).`,
-          clause.span,
+          clause.actionSpan,
         );
         continue;
       }
@@ -5379,7 +5379,7 @@ export class Analyzer {
         this.diagnostics.error(
           'analysis.unknown-role',
           `\`${clause.role}\` is not a role of \`${clause.action}\` — roles: ${[...roles].join(', ') || '(none)'}${this.suggestText(clause.role, [...roles])}.`,
-          clause.span,
+          clause.actionSpan,
         );
       }
       extraSlots.add(clause.role);
@@ -5395,6 +5395,7 @@ export class Analyzer {
       clauseKind: clause.clauseKind,
       once: clause.once,
       action: clause.action,
+      actionSpan: clause.actionSpan,
       actor,
       binding: clause.binding,
       role: clause.role,

@@ -882,13 +882,16 @@ class Parser {
         continue;
       }
       if (peekedWord === 'on' || peekedWord === 'after') {
-        const clause = this.parseOnClause(peeked.indent, peekedWord);
-        span = mergeSpans(span, clause.span);
+        const clauses = this.parseOnClauses(peeked.indent, peekedWord);
+        span = mergeSpans(span, clauses[0].span);
+        // A listed head expands to several clauses sharing one span; the
+        // story-clause error is about the head, so report it once.
+        const clause = clauses[0];
         if (clause.clauseKind === 'on' && clause.binding === 'every-turn') {
           onClauses.push(clause);
         } else if (!(clause.clauseKind === 'after' && clause.binding === 'every-turn')) {
           // (`after every turn` already got its own parse error inside
-          // parseOnClause — don't stack a second diagnostic on it.)
+          // parseOnClauses — don't stack a second diagnostic on it.)
           this.diagnostics.error(
             'parse.story-clause',
             'The story header hosts only `on every turn` clauses (ADR-236 D7) — action and event clauses belong to the entity they are about.',
@@ -2071,16 +2074,16 @@ class Parser {
         // Before the placement branch: `on the player taking` (ADR-327 D1)
         // and `on the table` both open with an article — block structure
         // tells them apart, not the article.
-        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
+        decl.onClauses.push(...this.parseOnClauses(line.indent, 'on'));
       } else if ((word === 'in' || word === 'on') && line.tokens[1] && line.tokens[1].kind === 'word' && ARTICLES.has(line.tokens[1].text)) {
         this.pos++;
         cur.next();
         decl.placement = this.finishPlacement(word as 'in' | 'on', cur, line);
         decl.placementLines.push(decl.placement);
       } else if (word === 'on') {
-        decl.onClauses.push(this.parseOnClause(line.indent, 'on'));
+        decl.onClauses.push(...this.parseOnClauses(line.indent, 'on'));
       } else if (word === 'after') {
-        decl.onClauses.push(this.parseOnClause(line.indent, 'after'));
+        decl.onClauses.push(...this.parseOnClauses(line.indent, 'after'));
       } else if (this.isTimerClauseHead(line)) {
         decl.timerClauses.push(this.parseTimerClause());
       } else if (this.isMoveClauseHead(line)) {
@@ -4537,9 +4540,9 @@ class Parser {
         this.pos++;
         phrases = this.parsePhrasesBlock(line, 1);
       } else if (word === 'on') {
-        onClauses.push(this.parseOnClause(line.indent, 'on'));
+        onClauses.push(...this.parseOnClauses(line.indent, 'on'));
       } else if (word === 'after') {
-        onClauses.push(this.parseOnClause(line.indent, 'after'));
+        onClauses.push(...this.parseOnClauses(line.indent, 'after'));
       } else {
         this.diagnostics.error('parse.trait-section', `Unrecognized line in \`define trait\`: \`${line.raw.trim()}\` — expected data, states, score, phrases, or an \`on\`/\`after\` clause.`, lineSpan(line));
         this.pos++;
@@ -6262,13 +6265,27 @@ class Parser {
    * trailing `it` is the removed pre-ADR-327 spelling (`parse.removed-head-it`);
    * the rest of the clause still parses so one migration line yields one
    * diagnostic.
+   *
+   * A head may list gerunds after the first, comma-separated (ADR-368 D1):
+   * `on the player taking, touching, pushing`. The list ends at a modifier
+   * comma (`, once`, `, before <trait>`, `, after <trait>`), `anything`,
+   * `while`, `during` or the end of the line. The head expands to one
+   * clause per gerund, in the order written, sharing actor, tail, modifiers,
+   * body and `span`; each carries its own `actionSpan`. A repeated gerund is
+   * `parse.head-gerund-repeated`; a comma item that is neither one word nor
+   * a modifier is `parse.head-gerund`. `on every turn` takes no list.
+   *
+   * Returns at least one clause.
    */
-  private parseOnClause(indent: number, clauseKind: 'on' | 'after'): OnClause {
+  private parseOnClauses(indent: number, clauseKind: 'on' | 'after'): OnClause[] {
     const headLine = this.lines[this.pos++];
     const c = new Cursor(headLine.tokens, headLine);
     c.matchWord(clauseKind);
 
     let actionWord = '';
+    let actionSpan: Span = lineSpan(headLine);
+    /** ADR-368 D1: the gerunds after the first, each with its own span. */
+    const moreGerunds: Array<{ text: string; span: Span }> = [];
     let actor: ValueExpr | null = null;
     let binding: OnClause['binding'] = 'object';
     let role: string | null = null;
@@ -6319,6 +6336,8 @@ class Parser {
           binding = 'self';
         }
         actionWord = gerundTok.text;
+        actionSpan = gerundTok.span;
+        this.parseGerundList(c, actionWord, moreGerunds);
       }
 
       if (c.matchWord('anything')) {
@@ -6377,11 +6396,17 @@ class Parser {
       ? this.parseStatements(headLine.indent, 'every-turn', 'on every turn')
       : this.parseStatements(headLine.indent, clauseKind);
     const endSpan = this.consumeEnd(clauseKind, headLine);
+    const span = mergeSpans(lineSpan(headLine), endSpan);
 
-    return {
-      kind: 'on-clause',
+    // ADR-368 D3: one node per listed gerund, sharing everything but the
+    // action and its span. The body is shared, not cloned — the analyzer
+    // reads statements and never writes into them.
+    const gerunds = [{ text: actionWord, span: actionSpan }, ...moreGerunds];
+    return gerunds.map((g) => ({
+      kind: 'on-clause' as const,
       clauseKind,
-      action: actionWord,
+      action: g.text,
+      actionSpan: g.span,
       actor,
       binding,
       role,
@@ -6389,8 +6414,61 @@ class Parser {
       once,
       ordering,
       body,
-      span: mergeSpans(lineSpan(headLine), endSpan),
+      span,
+    }));
+  }
+
+  /**
+   * The comma-separated gerunds after a head's first (ADR-368 D1), read
+   * until a modifier comma, `anything`, `while`, `during` or EOL. Appends to
+   * `into`; the cursor is left on the first token not consumed. `first` is
+   * the head's first gerund, for the repeat check.
+   */
+  private parseGerundList(c: Cursor, first: string, into: Array<{ text: string; span: Span }>): void {
+    const seen = new Set<string>([first]);
+    const isModifierItem = (): boolean => {
+      const w = c.peek(1);
+      if (!w || w.kind !== 'word') return false;
+      if (w.text === 'once') return true;
+      return (w.text === 'before' || w.text === 'after') && c.peek(2)?.kind === 'word';
     };
+    while (c.peek()?.kind === 'comma' && !isModifierItem()) {
+      c.next(); // the comma
+      const item: Token[] = [];
+      while (!c.atEnd()) {
+        const t = c.peek()!;
+        if (t.kind !== 'word' || t.text === 'while' || t.text === 'during' || t.text === 'anything') break;
+        item.push(t);
+        c.next();
+      }
+      if (item.length === 1) {
+        const word = item[0].text;
+        if (seen.has(word)) {
+          this.diagnostics.error('parse.head-gerund-repeated', `\`${word}\` is listed twice on this head.`, item[0].span);
+          continue;
+        }
+        seen.add(word);
+        into.push({ text: word, span: item[0].span });
+        continue;
+      }
+      if (item.length === 0) {
+        this.diagnostics.error('parse.head-gerund', 'Expected an action word after the comma.', c.restSpan());
+        return;
+      }
+      // More than one word: quote from the first `and`/`or` when there is
+      // one (`touching or pushing` → `or pushing`), else the whole item, and
+      // show the comma form built from the words.
+      const joinAt = item.findIndex((t) => t.text === 'and' || t.text === 'or');
+      const quoted = (joinAt > 0 ? item.slice(joinAt) : item).map((t) => t.text).join(' ');
+      const words = item.filter((t) => t.text !== 'and' && t.text !== 'or').map((t) => t.text);
+      const listed = [first, ...into.map((g) => g.text), ...words].join(', ');
+      this.diagnostics.error(
+        'parse.head-gerund',
+        `Expected one action word after the comma, not \`${quoted}\`. List the actions with commas: \`${listed}\`.`,
+        mergeSpans(item[0].span, item[item.length - 1].span),
+      );
+      return;
+    }
   }
 
   /**

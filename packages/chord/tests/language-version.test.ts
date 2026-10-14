@@ -141,7 +141,10 @@ const PINNED = {
   // `verb-phrase`, `claim-decl` and `claim-predicate`. Additive, and outside
   // the story file entirely (a block met in a story is analysis.claims-in-story);
   // same unpublished 4.0.0 set (the number moves at publish, David's ruling).
-  ebnfSha256: '8040e4a007dd20b6c4ff8bbc941e638d2c836aad7d8948bf0e3aa042816531c7',
+  // Re-pinned 2026-10-13 (session 92017b, ADR-368 D1): a clause head lists
+  // its gerunds — `head` gains `{ "," gerund }` on both forms, one clause per
+  // gerund. Additive; same unpublished 4.0.0 set (the number moves at publish).
+  ebnfSha256: '4aaf86753e993b269d6f94b92a96e3689b1aeb32b26b6f50022df10adba7898c',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

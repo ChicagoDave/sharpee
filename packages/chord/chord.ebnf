@@ -425,14 +425,26 @@ on-clause    = ( "on" | "after" ) clause-form
 clause-form  = head [ "anything" "as" "the" WORD ]   (* role tail: the owner is
                                                         the named role *)
              | "every" "turn" ;                      (* `on` only *)
-head         = actor gerund                          (* explicit actor — ADR-327 D1:
+head         = actor gerund { "," gerund }           (* explicit actor — ADR-327 D1:
                                                         the owner is the action's
                                                         object *)
-             | gerund ;                              (* bare — the owner's own
+             | gerund { "," gerund } ;               (* bare — the owner's own
                                                         action; legal only in the
                                                         player's or a person's
                                                         block (analysis.head-bare-
                                                         outside-actor) *)
+                                                     (* ADR-368 D1: a head may list
+                                                        gerunds; it means one clause
+                                                        per gerund, same actor, tail,
+                                                        modifiers and body. The list
+                                                        ends at a modifier comma,
+                                                        `anything`, `while`, `during`
+                                                        or EOL. A repeat is parse.head-
+                                                        gerund-repeated; a comma item
+                                                        that is not one word is
+                                                        parse.head-gerund (`and`/`or`
+                                                        are not separators). `on every
+                                                        turn` takes no list. *)
 actor        = "the" "player"                        (* the ROLE — resolved at fire
                                                         time, never a compile-time
                                                         entity *)

@@ -98,6 +98,12 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 15,
+            "line": 15,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -267,6 +273,12 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 25,
+            "line": 25,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -320,6 +332,12 @@ exports[`ac5-random.story (determinism fixture) > matches the golden AST snapsho
         },
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 29,
+            "line": 29,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -1198,6 +1216,12 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [
         {
           "action": "entering",
+          "actionSpan": {
+            "column": 20,
+            "endColumn": 28,
+            "endLine": 37,
+            "line": 37,
+          },
           "actor": {
             "kind": "ref",
             "ref": {
@@ -1880,6 +1904,12 @@ exports[`cloak.story (design.md §3.1, ownership grammar) > matches the golden A
       "onClauses": [
         {
           "action": "reading",
+          "actionSpan": {
+            "column": 17,
+            "endColumn": 24,
+            "endLine": 74,
+            "line": 74,
+          },
           "actor": {
             "kind": "ref",
             "ref": {

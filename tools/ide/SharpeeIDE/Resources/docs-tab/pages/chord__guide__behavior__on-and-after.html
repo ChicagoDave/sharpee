@@ -52,3 +52,16 @@ create the ledger
     refuse she-will-not-leave-the-ledger
   end on</code></pre>
 <p>That bare head is her own going. Outside a person's block it is an error (<code>analysis.head-bare-outside-actor</code>) — a hive box does not open things, so <code>on opening</code> there has no one to mean.</p>
+<h2 id="one-head-several-actions">One head, several actions</h2>
+<p>When several actions get the same response, list them on one head with commas. The head means one clause per action, each with the same actor, condition, modifiers and body.</p>
+<pre><code class="language-chord">create the farmland view
+  aka view, meadows, farms
+  a thing, scenery
+  in the Top of the Post
+
+  The view is spectacular, but you don't have time to waste gawking.
+
+  on the player taking, touching, pushing, pulling, climbing, searching
+    refuse view-too-far
+  end on</code></pre>
+<p>The list works on <code>after</code> heads and bare heads too, and anything after it applies to every action listed: <code>on taking, dropping while the shop is closed, once</code>. Commas are the only separator; <code>taking, touching or pushing</code> is an error that shows the comma form, and an action listed twice on one head is an error at the repeated word. A diagnostic about one of the listed actions points at that word in the list.</p>
