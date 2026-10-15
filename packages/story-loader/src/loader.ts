@@ -97,6 +97,8 @@ import {
 import {
   ActorTrait,
   addPlayerRoleVocabulary,
+  AttachedTrait,
+  BreakableTrait,
   ClimbableTrait,
   CombatantTrait,
   ConcealmentTrait,
@@ -1890,6 +1892,38 @@ export class ChordStory implements Story {
           if (container) container.isTransparent = true;
           break;
         }
+        case 'attached': {
+          // ADR-373 D1: the anchor resolves name → world id after every
+          // entity is built (forward refs legal). `detachable` is read from
+          // the sibling word here, so the two compose in either order.
+          if (entity.has(TraitType.ATTACHED)) break;
+          const attached = new AttachedTrait({
+            attachmentType: 'stuck',
+            detachable: irEntity.traits.some((t) => t.name === 'detachable'),
+          });
+          const anchorName = entityConfigValue(trait);
+          if (anchorName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(anchorName, 'anchor', irEntity, trait.span, (worldId) => {
+                attached.attachedTo = worldId;
+              }),
+            );
+          }
+          entity.add(attached);
+          break;
+        }
+        case 'breakable':
+          // ADR-373 D2/D4: `fragile` is read from the sibling word, so the
+          // two compose in either order. `starts broken` runs after
+          // composition (applyStartsStates).
+          if (!entity.has(TraitType.BREAKABLE)) {
+            entity.add(new BreakableTrait({ fragile: irEntity.traits.some((t) => t.name === 'fragile') }));
+          }
+          break;
+        case 'detachable':
+        case 'fragile':
+          // ADR-373: qualifiers, applied by `attached` and `breakable` above.
+          break;
         case 'hiding-spot': {
           // Ratchet G3 (2026-07-17): bare = the actor may hide at any
           // position; `with position <word>` narrows to exactly one. The
@@ -2546,6 +2580,7 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
   ['open', { traitType: TraitType.OPENABLE, traitName: 'openable', field: 'isOpen', value: true }],
   ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: false }],
   ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: true }],
+  ['broken', { traitType: TraitType.BREAKABLE, traitName: 'breakable', field: 'broken', value: true }], // ADR-373 D7
 ]);
 
 /** Chord direction word → world-model DirectionType. */

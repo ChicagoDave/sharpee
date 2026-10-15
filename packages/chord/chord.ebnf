@@ -1139,6 +1139,19 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               behavior spends the buyer's
                                                               own counter. Malformed is
                                                               parse.costs *)
+             | "attached" "to" ARTICLE name                (* ADR-373 D1: the anchor, the
+                                                              adjective's single-entity
+                                                              value (analysis.setting-
+                                                              names-no-entity); taking
+                                                              refuses the thing, pulling
+                                                              frees it when `detachable`
+                                                              sits beside it (alone that
+                                                              is analysis.detachable-not-
+                                                              attached; `fragile` without
+                                                              `breakable` is analysis.
+                                                              fragile-not-breakable).
+                                                              Malformed is parse.
+                                                              attached-to *)
              | "starts" STATE-INIT ;                       (* ADR-231 D5a initializer:
                                                               sets the paired trait's
                                                               initial value; pairing
@@ -1148,7 +1161,8 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               word after "starts" is a
                                                               parse error *)
 STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
-             | "off" | "on" ;
+             | "off" | "on" | "broken" ;                   (* ADR-373 D7: `broken` pairs
+                                                              with `breakable` *)
 KIND-NOUN    = "thing" | "room" | "door" | "person"
              | "container" | "supporter" | "region" ;      (* ADR-359 D1: the WORD of a kind
                                                               composition; any other word

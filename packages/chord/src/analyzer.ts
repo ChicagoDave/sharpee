@@ -1518,6 +1518,34 @@ export class Analyzer {
             continue;
           }
         }
+        // ADR-373 D1/D4: `detachable` qualifies `attached to`, `fragile`
+        // qualifies `breakable` — neither means anything alone.
+        if (comp.name === 'detachable' && !entity.traits.some((t) => t.name === 'attached')) {
+          this.diagnostics.error(
+            'analysis.detachable-not-attached',
+            `\`detachable\` says how \`${entity.name}\` comes free of what holds it — add \`attached to <the thing>\` beside it.`,
+            comp.span,
+          );
+          continue;
+        }
+        if (comp.name === 'fragile' && !entity.traits.some((t) => t.name === 'breakable')) {
+          this.diagnostics.error(
+            'analysis.fragile-not-breakable',
+            `\`fragile\` says \`${entity.name}\` breaks when dropped or thrown — add \`breakable\` beside it.`,
+            comp.span,
+          );
+          continue;
+        }
+        if (comp.name === 'attached') {
+          const anchor = comp.config.find((c) => c.key === '' && c.valueKind === 'name')?.value;
+          if (anchor !== undefined && !this.resolveConfigEntity(ir, anchor)) {
+            this.diagnostics.error(
+              'analysis.setting-names-no-entity',
+              `\`${anchor}\` (what \`${entity.name}\` is attached to) names no entity.`,
+              comp.span,
+            );
+          }
+        }
         // Census 14: conditional composition legality — room-`dark`, or a
         // declared trait whose clauses are ALL NPC-behavior-shaped (`on
         // every turn …`). `proper` has its own earlier gates (ADR-242 D1).
@@ -5501,6 +5529,15 @@ export class Analyzer {
     // §5.4 compiler rule, both halves: clauses on dispatch verbs (`define
     // action` names) compile to CapabilityBehaviors; clauses on standard-
     // semantics actions compile to ActionInterceptors (the Phase A path).
+    // ADR-373 D3: breaking is a consequence another action fires once the
+    // thing has broken — nothing is left to refuse, so only `after` reacts.
+    if (clause.clauseKind === 'on' && clause.action === 'breaking' && clause.binding !== 'every-turn') {
+      this.diagnostics.error(
+        'analysis.breaking-after-only',
+        '`on … breaking` would refuse a break that has already happened — react with `after the player breaking`, or refuse the cause with `on the player attacking` (or dropping, throwing).',
+        clause.actionSpan,
+      );
+    }
     let routing: IROnClause['routing'] = null;
     if (clause.binding !== 'every-turn') {
       routing = this.actionSlots.has(clause.action) ? 'capability' : 'interceptor';

@@ -55,6 +55,18 @@ create the ration bar
   after the player buying
     phrase kiosk-vends
   end after</code></pre>
+<p>A thing can be fixed to another. <code>attached to the sorting machine</code> names what holds it: taking it refuses (&quot;The route placard is fixed to the sorting machine.&quot;) and it stays where it is. Add <code>detachable</code> and the player can <code>pull</code> it free, after which it can be taken; without it, pulling &quot;won't budge&quot;. <code>while the placard is attached</code> reads whether it is still held. The player can make the same bond in play: <code>tie twine to machine</code> attaches the held thing, and <code>untie twine</code> frees it.</p>
+<pre><code class="language-chord">create the route placard
+  a thing, attached to the sorting machine, detachable
+  in the Sorting Room</code></pre>
+<p>A thing can break. <code>breakable</code> lets attacking break it, and it stays where it was, broken. Add <code>fragile</code> and it also breaks when dropped on the floor or thrown; dropped into a container or onto a supporter it is safe. <code>while the jar is broken</code> reads it, and <code>starts broken</code> begins it that way. Because the platform keeps this state, a thing does not declare <code>states: whole, broken</code> of its own; Chord reports that and names <code>breakable</code>. To react to the break, whatever caused it, write <code>after the player breaking</code> in the thing's block (see <a href="/chord/guide/behavior/on-and-after">on and after</a>).</p>
+<pre><code class="language-chord">create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+
+  after the player breaking
+    phrase jar-spills
+  end after</code></pre>
 <p>A trait can be conditional: <code>while</code> puts it under the control of a condition, live at play time.</p>
 <pre><code class="language-chord">create the Root Cellar
   a room, dark while the oil lantern is not lit

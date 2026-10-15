@@ -7,7 +7,7 @@ story
 
 create the vase
   a thing, scenery
-  states: whole, broken
+  states: sealed, cracked
 
 create the Parlor
   a room
@@ -15,7 +15,7 @@ create the Parlor
   A quiet parlor.
 
   after the player entering
-    change the vase to whole
+    change the vase to sealed
   end after
 
 create Alex

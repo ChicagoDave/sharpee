@@ -319,6 +319,13 @@ const THING_ROLE_SLOT = /\[(target|object|thing|weapon|container|clothing)\]/g;
 const KEYED_ACTIONS = new Set(['locking', 'unlocking']);
 
 /**
+ * Consequence ids with no grammar of their own, each typed as the verb that
+ * causes it: a break is fired by attacking (or dropping a fragile thing, or
+ * throwing it), and attacking needs nothing in hand (ADR-373 D3).
+ */
+const CONSEQUENCE_CAUSES: ReadonlyMap<string, string> = new Map([['breaking', 'attacking']]);
+
+/**
  * The state adjectives the floor writes as trait flags, each with the trait
  * that carries it and its complement. A negated adjective is two-valued, so
  * it is written as its complement rather than checked (the floor's
@@ -772,7 +779,7 @@ function commandPlan(
         }
         return { kind: 'typed', input: words.join(' ') };
       }
-      const actionId = `if.action.${command.action}`;
+      const actionId = `if.action.${CONSEQUENCE_CAUSES.get(command.action) ?? command.action}`;
       const patterns = actionPatterns(actionId);
       if (!patterns || patterns.length === 0) {
         return { kind: 'no-vocabulary', detail: `no language pattern for ${actionId}` };

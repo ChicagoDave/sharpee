@@ -48,6 +48,47 @@ create the sorting machine
   A squat steel cabinet the size of a shuttle engine, chuckling to
   itself as it reads addresses. Its out tray is empty for now.
 
+create the route placard
+  a thing, attached to the sorting machine, detachable
+  in the Sorting Room
+  aka placard, tin placard
+
+  A tin placard clipped to the machine's flank: ROUTES 4-9. The clip
+  has been bent and rebent by every carrier who ever wanted it.
+
+create the inspection plate
+  a thing, attached to the sorting machine
+  in the Sorting Room
+  aka plate, brass plate
+
+  A brass plate welded to the machine's base: INSPECTED, CERES
+  AUTHORITY. The weld is older than the depot.
+
+create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+  aka jar, customs jar
+  states, reversible: sealed, spilled
+
+  A customs sample jar of Titan sand, labelled HOLD FOR INSPECTION in
+  three languages.
+
+  after the player breaking
+    change the sample jar to spilled
+    phrase jar-spills
+  end after
+
+create the parcel twine
+  a thing
+  in the Sorting Room
+  aka twine, string
+
+  A hank of waxed UPPS parcel twine, regulation brown.
+
+  on the player tying to the sorting machine
+    phrase twine-on-machine
+  end on
+
 create the mail satchel
   a container, wearable
   in the Sorting Room
@@ -823,3 +864,13 @@ define phrase quint-hands-token
   you. "One fare. Don't make me regret it."
 end phrase
 
+
+define phrase jar-spills
+  Titan sand hisses out across the depot floor, orange and finer than
+  flour. Somebody in customs is going to want a form.
+end phrase
+
+define phrase twine-on-machine
+  The sorting machine stops chuckling long enough to register that it
+  has been tied to something, then decides it has not.
+end phrase

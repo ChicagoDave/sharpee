@@ -58,6 +58,10 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'flammable', // ADR-371 D2 — composes FlammableTrait; `with the <tool>` config; requires exactly one burning implementation (cutting's shape)
   'settable', // ADR-371 D3 — marker: the thing's own `states, reversible:` line is its dial; the loader registers the setting behavior; requires that line (analyzer gates)
   'transparent', // ADR-369 D1 — marker: ContainerTrait.isTransparent = true; container blocks only, unconditional (analyzer gates); a closed one still shows its contents
+  'attached', // ADR-373 D1 — `attached to <the thing>`: composes AttachedTrait; taking refuses it, pulling detaches it when detachable
+  'detachable', // ADR-373 D1 — marker beside `attached to` only (analyzer gate): AttachedTrait.detachable = true
+  'breakable', // ADR-373 D2 — composes BreakableTrait; attacking breaks it; `broken` reads it
+  'fragile', // ADR-373 D4 — marker beside `breakable` only (analyzer gate): BreakableTrait.fragile = true; dropping on a floor or throwing breaks it
 ]);
 
 /**
@@ -90,6 +94,8 @@ export const STATE_ADJECTIVES: ReadonlySet<string> = new Set([
   'off',
   'worn',
   'lit',
+  'broken', // ADR-373 D2 — BreakableTrait.broken
+  'attached', // ADR-373 D1 — AttachedTrait.attachedTo set and not loose
 ]);
 
 /**
@@ -103,6 +109,7 @@ export const PLATFORM_STATE_PAIRS: ReadonlyArray<{ pair: [string, string]; trait
   { pair: ['on', 'off'], trait: 'switchable' },
   { pair: ['lit', 'unlit'], trait: 'light-source' },
   { pair: ['worn', 'unworn'], trait: 'wearable' },
+  { pair: ['whole', 'broken'], trait: 'breakable' }, // ADR-373 D2
 ];
 
 /**
@@ -123,6 +130,7 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
   ['open', 'openable'],
   ['off', 'switchable'],
   ['on', 'switchable'],
+  ['broken', 'breakable'], // ADR-373 D7
 ]);
 
 /**

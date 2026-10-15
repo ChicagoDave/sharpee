@@ -372,6 +372,133 @@
     {
       "assertions": {
         "contains": [
+          "The route placard is fixed to the sorting machine."
+        ]
+      },
+      "command": "take placard",
+      "id": "a373tak1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You pull the route placard free of the sorting machine."
+        ]
+      },
+      "command": "pull placard",
+      "id": "a373pul1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take placard",
+      "id": "a373tak2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The inspection plate is fixed to the sorting machine."
+        ]
+      },
+      "command": "take plate",
+      "id": "a373tak3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The inspection plate won't budge."
+        ]
+      },
+      "command": "pull plate",
+      "id": "a373pul2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take jar",
+      "id": "a373tak4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sample jar hits the floor and breaks.",
+          "Titan sand hisses out across the depot floor"
+        ],
+        "states": [
+          "the sample jar is spilled"
+        ]
+      },
+      "command": "drop jar",
+      "id": "a373drp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take twine",
+      "id": "a373tak5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine stops chuckling long enough to register that it has been tied to something, then decides it has not."
+        ],
+        "notContains": [
+          "You tie the parcel twine"
+        ]
+      },
+      "command": "tie twine to machine",
+      "id": "a373tie1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The parcel twine is fixed to the sorting machine."
+        ]
+      },
+      "command": "take twine",
+      "id": "a373tak6",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You untie the parcel twine."
+        ]
+      },
+      "command": "untie twine",
+      "id": "a373unt1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take twine",
+      "id": "a373tak7",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "The loading dock door stays shut until your shift is cleared to launch."
         ]
       },

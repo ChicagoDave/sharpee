@@ -138,9 +138,9 @@ describe('change legality (D4)', () => {
 
   it('a reversible set permits the back-transition', () => {
     const errors = errorsOf(
-      `${HEADER}create the vase\n  a thing, scenery\n  states, reversible: whole, broken\n\n` +
+      `${HEADER}create the vase\n  a thing, scenery\n  states, reversible: sealed, cracked\n\n` +
         `create the Parlor\n  a room\n\n  A parlor.\n\n` +
-        `  after the player entering\n    change the vase to whole\n  end after\n\ncreate Alex\n  a person\n  playable\n  starts in the Parlor\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
+        `  after the player entering\n    change the vase to sealed\n  end after\n\ncreate Alex\n  a person\n  playable\n  starts in the Parlor\n\n  You.\n\nbefore the game starts\n  change the player to Alex\nend before\n`,
     );
     expect(errors).toEqual([]);
   });

@@ -169,8 +169,8 @@ of the thing's states.
 
 ## The other noun on the head
 
-Throwing, giving, showing, putting, inserting and asking for a thing each
-involve two nouns, and a clause on either one fires. `on the player
+Throwing, giving, showing, putting, inserting, tying and asking for a
+thing each involve two nouns, and a clause on either one fires. `on the player
 throwing` in a bin's block fires for anything thrown at the bin; to say
 *which* thing, name it at the end of the head. The clause then fires only
 when that noun is the one in the command.
@@ -224,3 +224,29 @@ create the pad master
     phrase quint-hands-token
   end on
 ```
+
+## Reacting to a break
+
+A `breakable` thing can break more than one way: attacking it, and
+dropping or throwing it when it is also `fragile`. Each of those fires
+`breaking` on the thing after its own line, so one clause in the thing's
+block reacts to all of them. Its phrase speaks after the action's line,
+and its body changes the world: sweep up the pieces, spill what was
+inside.
+
+```chord
+create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+  states, reversible: sealed, spilled
+
+  after the player breaking
+    change the sample jar to spilled
+    phrase jar-spills
+  end after
+```
+
+Only `after` works here. By the time `breaking` fires the thing is
+already broken, so there is nothing for `on` to refuse; Chord reports
+`on the player breaking` and points you at the clause that can still
+stop it, `on the player attacking` (or dropping, or throwing).

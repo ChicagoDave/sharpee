@@ -15,9 +15,10 @@ create the safe
   A squat floor safe with a brass keyhole.
 ```
 
-Six state words are accepted, each paired with the trait it
+Seven state words are accepted, each paired with the trait it
 initializes: `locked` and `unlocked` set `lockable`, `closed` and
-`open` set `openable`, `off` and `on` set `switchable`. The pairing is
+`open` set `openable`, `off` and `on` set `switchable`, and `broken`
+sets `breakable`. The pairing is
 enforced: `starts locked` on an entity that does not compose
 `lockable` is a load error (`analysis.starts-state-pairing`), never a
 silent no-op. Any other word after `starts` is a parse error

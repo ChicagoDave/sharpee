@@ -1171,9 +1171,12 @@ export declare const IFActions: {
     readonly SHOWING: "if.action.showing";
     readonly GIVING: "if.action.giving";
     readonly BUYING: "if.action.buying";
+    readonly TYING: "if.action.tying";
+    readonly UNTYING: "if.action.untying";
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
     readonly BURNING: "if.action.burning";
+    readonly BREAKING: "if.action.breaking";
     readonly WAVING: "if.action.waving";
     readonly HIDING: "if.action.hiding";
     readonly REVEALING: "if.action.revealing";
@@ -1341,6 +1344,14 @@ export interface LifecycleContracts {
      * executor still runs them for the action's single-object commands.
      */
     handlesMultiObject?: boolean;
+    /**
+     * The id has no grammar and is never executed: another action fires its
+     * lifecycle as a consequence of its own outcome — breaking, fired by
+     * attacking, dropping and throwing when the thing breaks (ADR-373 D3),
+     * through `runBreakingLifecycle`, which runs postExecute and postReport
+     * only. The executor never runs this descriptor's hooks.
+     */
+    firedAsConsequence?: boolean;
 }
 /**
  * An action's declarative interceptor surface (ADR-228 D0-B).
@@ -1758,12 +1769,13 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
- * The descriptor table: all 57 entity-keyed standard actions (33 per
+ * The descriptor table: all 60 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
  * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
  * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
- * per ADR-372, 2026-10-14). Structural exemptions
+ * per ADR-372, 2026-10-14, + breaking (a consequence id, fired by the action
+ * that broke the thing), tying and untying per ADR-373, 2026-10-14). Structural exemptions
  * (no entity to key on: about, waiting, looking, …) are absent by design — see
  * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
@@ -1905,7 +1917,7 @@ export type { RemovingEventMap } from './removing/removing-events.js';
 export * from './giving/index.js';
 export * from './showing/index.js';
 export { throwingAction } from './throwing/index.js';
-export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events.js';
+export type { ThrownEventData } from './throwing/throwing-events.js';
 export * from './pushing/index.js';
 export * from './pulling/index.js';
 export * from './lowering/index.js';
@@ -1941,6 +1953,9 @@ export * from './setting/index.js';
 export * from './asking_for/index.js';
 export * from './consulting/index.js';
 export * from './buying/index.js';
+export * from './breaking/index.js';
+export * from './tying/index.js';
+export * from './untying/index.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```

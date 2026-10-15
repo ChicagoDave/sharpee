@@ -169,8 +169,8 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 | lowering, raising (object side) | 6 | UPPS `upps.tests/opejfh5t.json`: `lower ramp` (a371low1) and `raise ship` (a371rai1) fire the courier ship's clause; `lower crates` (a371low2) refuses "You can't lower the mail crates."; derived tests `courier ship · on lowering` / `on raising` pass |
 | throwing (targeted) / Throwing it at | 7 | UPPS `upps.tests/opejfh5t.json`: bare `throw letter` (a372thr1) is the stock toss, neither tailed clause fires; `throw letter at machine` (a372thr2) fires the letter's `on the player throwing at the sorting machine`; `throw letter at bin` (a372thr3) fires the bin's `on the player throwing the dead letter` and the letter lands in the bin; derived tests type the counterpart tails (`packages/branch-tester/tests/derived-counterpart.test.ts`) |
 | vehicle (trait and kind) | 11, 14 | |
-| attached / Tying it to | 8 | |
-| breakable, destructible | 8 | |
+| attached / Tying it to | 8 | UPPS `upps.tests/opejfh5t.json`: `take placard` (a373tak1) refuses "The route placard is fixed to the sorting machine."; `pull placard` (a373pul1) frees the detachable placard and `take placard` (a373tak2) then succeeds; the welded `inspection plate` refuses taking (a373tak3) and pulling, "won't budge" (a373pul2); `tie twine to machine` (a373tie1) fires the twine's `on the player tying to the sorting machine`, after which `take twine` (a373tak6) refuses as fixed, `untie twine` (a373unt1) frees it and `take twine` (a373tak7) succeeds; derived test `parcel twine · on tying` passes |
+| breakable, destructible | 8 | UPPS `upps.tests/opejfh5t.json`: `drop jar` (a373drp1) breaks the fragile sample jar on the depot floor and its `after the player breaking` body runs (the jar is spilled, `jar-spills` speaks); derived test `sample jar · after breaking` passes, reaching the branch by `attack sample jar`. Destructible closes as covered by `breakable` and the breaking clause (ADR-373 D5) |
 | exit (custom-command passages) | 13 | |
 | listener | 9 | |
 | night-vision | 9 | |

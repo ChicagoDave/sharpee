@@ -405,7 +405,8 @@ dropping-dropped                  dropped                                 Droppe
 dropping-still-worn               still_worn                              {You}'ll need to take off {the item} first.
 dropping-dropped-in               dropped_in                              {You} {put} {the item} in {the container}.
 dropping-dropped-on               dropped_on                              {You} {put} {the item} on {the surface}.
-dropping-dropped-multi            dropped_multi                           {item}: Dropped.</code></pre>
+dropping-dropped-multi            dropped_multi                           {item}: Dropped.
+dropping-dropped-breaks           dropped_breaks                          {capitalize the item} {verb:hits item} the floor and {verb:breaks item}.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.drop_blocked</code> (ADR-052).</p>
 <h2 id="eat-consume-devour-munch-if-action-eating">eat, consume, devour, munch — <code>if.action.eating</code></h2>
 <p><strong>Group</strong> <code>interaction</code> · direct object required · <strong>Slots</strong> <code>item</code> · <strong>Emits</strong> <code>if.event.eaten</code>, <code>if.event.taken</code></p>
@@ -905,8 +906,10 @@ pulling-not-reachable             not_reachable                           {You} 
 pulling-cant-pull-that            cant_pull_that                          {capitalize the target} {verb:is target} not something {you} can pull.
 pulling-worn                      worn                                    {You} {can't} pull {the target} while wearing it.
 pulling-already-pulled            already_pulled                          {capitalize the target} has already been pulled.
+pulling-wont-budge                wont_budge                              {capitalize the target} won't budge.
 pulling-pulled                    pulled                                  {You} {pull} {the target}.
-pulling-nothing-happens           nothing_happens                         {You} {pull} {the target}, but nothing happens.</code></pre>
+pulling-nothing-happens           nothing_happens                         {You} {pull} {the target}, but nothing happens.
+pulling-detached                  detached                                {You} {pull} {the target} free of {the anchor}.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.detached</code> (ADR-052).</p>
 <h2 id="push-press-shove-move-if-action-pushing">push, press, shove, move — <code>if.action.pushing</code></h2>
 <p><strong>Group</strong> <code>device_manipulation</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.pushed</code></p>
@@ -1059,7 +1062,8 @@ removing-container-closed         container_closed                        {capit
 removing-removed-from             removed_from                            {You} {take} {the item} from {the container}.
 removing-removed-from-surface     removed_from_surface                    {You} {take} {the item} from {the surface}.
 removing-cant-reach               cant_reach                              {You} {can't} reach {the item}.
-removing-already-have             already_have                            {You} already {have} {the item}.</code></pre>
+removing-already-have             already_have                            {You} already {have} {the item}.
+removing-attached                 attached                                {capitalize the item} {verb:is item} fixed to {the anchor}.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.remove_blocked</code> (ADR-052).</p>
 <h2 id="restart-if-action-restarting">restart — <code>if.action.restarting</code></h2>
 <p><strong>Group</strong> <code>meta</code> · <strong>Emits</strong> <code>if.event.restart_blocked</code>, <code>if.event.restart_requested</code></p>
@@ -1422,6 +1426,7 @@ taking-cant-take-self             cant_take_self                          {You} 
 taking-already-have               already_have                            {You} already {have} {the item}.
 taking-cant-take-room             cant_take_room                          {You} {can't} take {the item}.
 taking-fixed-in-place             fixed_in_place                          {capitalize the item} {verb:is item} fixed in place.
+taking-attached                   attached                                {capitalize the item} {verb:is item} fixed to {the anchor}.
 taking-container-full             container_full                          {You're} carrying too much already.
 taking-too-heavy                  too_heavy                               Your load is too heavy. You will have to leave something behind.
 taking-cannot-take                cannot_take                             {You} {can't} take {the item}.
@@ -1532,7 +1537,6 @@ throwing-too-heavy                too_heavy                               {capit
 throwing-self                     self                                    {You} {can't} throw things at {yourself}.
 throwing-thrown                   thrown                                  {You} {throw} {the item}.
 throwing-thrown-down              thrown_down                             {You} {toss} {the item} to the ground.
-throwing-thrown-gently            thrown_gently                           {You} gently {toss} {the item}.
 throwing-thrown-at                thrown_at                               {You} {throw} {the item} at {the target}.
 throwing-hits-target              hits_target                             {You} {throw} {the item} at {the target}. It hits!
 throwing-misses-target            misses_target                           {You} {throw} {the item} at {the target}, but miss.
@@ -1547,7 +1551,24 @@ throwing-fragile-breaks           fragile_breaks                          The fr
 throwing-target-ducks             target_ducks                            {capitalize the target} ducks out of the way.
 throwing-target-catches           target_catches                          {capitalize the target} catches {the item}!
 throwing-target-angry             target_angry                            {capitalize the target} doesn't appreciate being hit with {the item}.</code></pre>
-<p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.item_destroyed</code> (ADR-052).</p>
+<p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · <code>after the player breaking</code> on a fragile thing, which a break fires (ADR-373) · an event handler on <code>if.event.thrown</code> (ADR-052).</p>
+<h2 id="tie-fasten-attach-if-action-tying">tie, fasten, attach — <code>if.action.tying</code></h2>
+<p><strong>Group</strong> <code>object_manipulation</code> · <strong>Slots</strong> <code>item</code>, <code>anchor</code> · <strong>Emits</strong> <code>if.event.tie_blocked</code>, <code>if.event.tied</code></p>
+<pre><code class="language-chord">define action tying
+  grammar
+    tie the item to the anchor
+    fasten the item to the anchor
+    attach the item to the anchor
+    tie the item</code></pre>
+<p>TIE - Tie a thing to something. It stays there until you untie it. Example: TIE ROPE TO RAILING</p>
+<p>Tying takes the thing if it is not held, puts it where the anchor is, and attaches it there (ADR-373): taking it then refuses with <code>attached</code> until it is untied or pulled free. Anything can be tied to anything but itself or a person. Both nouns are consulted, so <code>on the player tying to the cleat</code> in the line's block names the anchor.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+tying-no-target                   no_target                               Tie what?
+tying-no-anchor                   no_anchor                               What do {you} want to tie {the item} to?
+tying-self                        self                                    {You} can't tie {the item} to itself.
+tying-not-to-people               not_to_people                           {You} can't tie things to people.
+tying-tied                        tied                                    {You} {tie} {the item} to {the anchor}.</code></pre>
 <h2 id="touch-rub-feel-pat-if-action-touching">touch, rub, feel, pat — <code>if.action.touching</code></h2>
 <p><strong>Group</strong> <code>sensory</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.touch_blocked</code>, <code>if.event.touched</code></p>
 <pre><code class="language-chord">define action touching
@@ -1653,6 +1674,20 @@ unlocking-cant-reach              cant_reach                              {You} 
 unlocking-key-not-held            key_not_held                            {You} {need} to be holding {the key}.
 unlocking-still-locked            still_locked                            {capitalize the item} {verb:is item} locked.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.unlock_blocked</code> (ADR-052).</p>
+<h2 id="untie-untie-from-unfasten-if-action-untying">untie, untie from, unfasten — <code>if.action.untying</code></h2>
+<p><strong>Group</strong> <code>object_manipulation</code> · <strong>Slots</strong> <code>item</code> · <strong>Emits</strong> <code>if.event.untie_blocked</code>, <code>if.event.untied</code></p>
+<pre><code class="language-chord">define action untying
+  grammar
+    untie the item
+    untie the item from the anchor
+    unfasten the item</code></pre>
+<p>UNTIE - Untie a tied thing. Example: UNTIE ROPE</p>
+<p>Untying frees a thing that was tied and leaves it where it is (ADR-373). Only a tied thing unties: a thing <code>attached to</code> something comes free by pulling, when it is <code>detachable</code>.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+untying-no-target                 no_target                               Untie what?
+untying-not-tied                  not_tied                                {capitalize the item} {verb:isn't item} tied to anything.
+untying-untied                    untied                                  {You} {untie} {the item}.</code></pre>
 <h2 id="version-if-action-version">version — <code>if.action.version</code></h2>
 <p><strong>Group</strong> <code>meta</code> · <strong>Emits</strong> <code>if.event.version_displayed</code></p>
 <pre><code class="language-chord">define action version

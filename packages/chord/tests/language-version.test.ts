@@ -155,7 +155,10 @@ const PINNED = {
   // tail on a clause head (and `to <name>` as a counterpart) and the
   // `costs <amount> <currency>` composition. Additive, on the unpublished
   // 4.0 surface — no bump.
-  ebnfSha256: 'da10eb636592f16af834a1d2c77c9418298181cfa73051f2ecd81f1455273f43',
+  // Re-recorded 2026-10-14 (ADR-373 D1, D7, session 39d4c7): the
+  // `attached to <the thing>` composition and `starts broken`. Additive, on
+  // the unpublished 4.0 surface — no bump.
+  ebnfSha256: '809985f182bfce26316a8db2f0f3617c688ed15425fc67564983b07a3f08b096',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

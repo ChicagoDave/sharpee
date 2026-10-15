@@ -120,6 +120,15 @@ Play, with the stock lines where nothing is authored:
 8. `runBreakingLifecycle` runs once per break and never on a failed or ineffective attack (stdlib test counting hook calls); `lifecycle-call-site.test.ts` lists dropping and throwing under `consequence`; the derived runner reaches the UPPS breaking branch with no derived failure.
 9. Grammar, manifest and alias `--check` gates fresh; Dungeo chain green with its changed answers listed.
 
+## Implementation notes
+
+- The breaking lifecycle and `runBreakingLifecycle` live in `stdlib/src/actions/standard/breaking/`, beside the actions, not in `lifecycle/` as D3 drafted.
+- A fragile thing thrown at a target breaks and stays where a whole one would have landed, as D4 says; it is not removed.
+- Chord: `attached to <the thing>` parses as its own composition branch (like `costs`) and lowers to the `attached` adjective with the anchor under the empty config key, resolved after every entity is built. `detachable` and `fragile` are read from their sibling word by the `attached` and `breakable` lowerings, so either order composes. The anchor is checked at compile (`analysis.setting-names-no-entity`).
+- An `on the player tying to …` clause's phrase stands in for the stock "You tie …" line, as every `on` clause's phrase does (ADR-371); the ADR's play sample showing both lines is illustrative.
+- The derived runner types an `after the player breaking` branch as attacking the thing (`CONSEQUENCE_CAUSES` in `branch-tester/src/derived-runner.ts`). World-index needed no change: the breaking branch already enumerates as a player action.
+- Dungeo defines its own `tie`, `fasten`, `attach`, `untie` and `unfasten` grammar, so the stock tying answers never reach it, and none of its things carry `AttachedTrait`. Its only changed answers are D4's.
+
 ## Session
 
-Session 1ef153, 2026-10-14, branch `chord-4-0`.
+Session 1ef153, 2026-10-14, branch `chord-4-0`. Chord side implemented in session 39d4c7.

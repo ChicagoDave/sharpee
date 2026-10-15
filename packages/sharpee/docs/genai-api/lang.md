@@ -325,6 +325,8 @@ export declare const IFActions: {
     readonly ASKING_FOR: "if.action.asking_for";
     readonly CONSULTING: "if.action.consulting";
     readonly BUYING: "if.action.buying";
+    readonly TYING: "if.action.tying";
+    readonly UNTYING: "if.action.untying";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
@@ -586,6 +588,8 @@ export * from './setting.js';
 export * from './asking-for.js';
 export * from './consulting.js';
 export * from './buying.js';
+export * from './tying.js';
+export * from './untying.js';
 /**
  * All standard action language definitions
  */
@@ -598,6 +602,7 @@ export declare const standardActionLanguage: ({
         already_have: string;
         cant_take_room: string;
         fixed_in_place: string;
+        attached: string;
         container_full: string;
         too_heavy: string;
         cannot_take: string;
@@ -623,6 +628,7 @@ export declare const standardActionLanguage: ({
         dropped_in: string;
         dropped_on: string;
         dropped_multi: string;
+        dropped_breaks: string;
     };
     help: {
         description: string;
@@ -839,6 +845,7 @@ export declare const standardActionLanguage: ({
         removed_from_surface: string;
         cant_reach: string;
         already_have: string;
+        attached: string;
     };
     help: {
         description: string;
@@ -1214,8 +1221,10 @@ export declare const standardActionLanguage: ({
         cant_pull_that: string;
         worn: string;
         already_pulled: string;
+        wont_budge: string;
         pulled: string;
         nothing_happens: string;
+        detached: string;
     };
     help: {
         description: string;
@@ -1453,7 +1462,6 @@ export declare const standardActionLanguage: ({
         self: string;
         thrown: string;
         thrown_down: string;
-        thrown_gently: string;
         thrown_at: string;
         hits_target: string;
         misses_target: string;
@@ -2093,6 +2101,34 @@ export declare const standardActionLanguage: ({
         already_have: string;
         cant_afford: string;
         bought: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        no_anchor: string;
+        self: string;
+        not_to_people: string;
+        tied: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_tied: string;
+        untied: string;
     };
     help: {
         description: string;

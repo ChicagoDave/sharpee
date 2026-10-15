@@ -3408,6 +3408,47 @@ class Parser {
         break;
       }
 
+      // ADR-373 D1: `attached to <the thing>` — the anchor is the adjective's
+      // single-entity value (the keyless `with` form, spelled `to`). Lowered
+      // to the `attached` adjective with that value under the empty key.
+      if (c.isWord('attached')) {
+        const attachedTok = c.next()!;
+        const toTok = c.peek();
+        const articleTok = c.peek(1);
+        if (toTok?.kind === 'word' && toTok.text === 'to' && articleTok?.kind === 'word' && ARTICLES.has(articleTok.text)) {
+          c.next(); // to
+          c.next(); // article
+          const nameWords: string[] = [];
+          let lastTok = articleTok;
+          while (!c.atEnd() && c.peek()!.kind === 'word') {
+            lastTok = c.next()!;
+            nameWords.push(lastTok.text);
+          }
+          if (nameWords.length > 0) {
+            items.push({
+              kind: 'composition',
+              article: null,
+              words: ['attached'],
+              config: [{ key: [], value: nameWords.join(' '), valueKind: 'name', span: mergeSpans(articleTok.span, lastTok.span) }],
+              condition: null,
+              span: mergeSpans(attachedTok.span, lastTok.span),
+            });
+            if (c.peek()?.kind === 'comma') {
+              c.next();
+              continue;
+            }
+            break;
+          }
+        }
+        this.diagnostics.error(
+          'parse.attached-to',
+          'Expected `attached to <the thing>` — the thing it is fixed to, e.g. `attached to the sorting machine`.',
+          toTok ? toTok.span : attachedTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
       let article: string | null = null;
       const first = c.peek();
       if (first && first.kind === 'word' && ARTICLES.has(first.text)) {

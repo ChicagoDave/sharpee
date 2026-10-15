@@ -1306,6 +1306,13 @@ export declare class BreakableBehavior extends Behavior {
      */
     static break(entity: IFEntity, world: WorldModel): IBreakResult;
     /**
+     * Whether a fall or a throw breaks the entity (ADR-373 D4): breakable,
+     * declared fragile, and not already broken.
+     * @param entity The entity to test
+     * @returns true when dropping it on a floor or throwing it would break it
+     */
+    static isFragile(entity: IFEntity): boolean;
+    /**
      * Check if entity is broken
      */
     static isBroken(entity: IFEntity): boolean;
@@ -4592,6 +4599,74 @@ export declare class AttachedTrait implements ITrait, IAttachedData {
 }
 ```
 
+### traits/attached/attachedBehavior
+
+```typescript
+/**
+ * Behavior for attached entities (ADR-373 D1, D6) — the one owner of an
+ * attachment's mutations: tying or fastening a thing to an anchor, and
+ * pulling or untying it free.
+ *
+ * Public interface: AttachedBehavior (isAttached, isDetachable, anchorOf,
+ * attach, detach), IDetachResult.
+ * Owner context: @sharpee/world-model / traits
+ */
+import { Behavior } from '../../behaviors/behavior.js';
+import { IFEntity } from '../../entities/if-entity.js';
+import { IAttachedData } from './attachedTrait.js';
+/** Result of detaching an entity. */
+export interface IDetachResult {
+    /** Whether the entity was freed */
+    success: boolean;
+    /** The anchor it was attached to, when it was attached */
+    anchorId?: string;
+    /** Why it was not freed: not attached at all, or attached and not detachable */
+    reason?: 'not_attached' | 'not_detachable';
+}
+/**
+ * Attachment rules. An entity is attached while its `AttachedTrait` names an
+ * anchor and is not `loose`; detaching clears the anchor and leaves the
+ * entity where it is.
+ */
+export declare class AttachedBehavior extends Behavior {
+    static requiredTraits: "attached"[];
+    /**
+     * Whether the entity is held fast to an anchor.
+     * @param entity The entity to test
+     * @returns true when it carries an anchor and is not loose
+     */
+    static isAttached(entity: IFEntity): boolean;
+    /**
+     * Whether an attached entity can be pulled or untied free.
+     * @param entity The entity to test
+     * @returns true when it is attached and detachable
+     */
+    static isDetachable(entity: IFEntity): boolean;
+    /**
+     * The anchor's entity id, when the entity is attached.
+     * @param entity The entity to read
+     * @returns The anchor id, or undefined
+     */
+    static anchorOf(entity: IFEntity): string | undefined;
+    /**
+     * Attach the entity to an anchor, adding the trait when it has none.
+     * @param entity The entity to attach
+     * @param anchorId The anchor's entity id
+     * @param attachmentType How it is attached
+     * @param detachable Whether it can be pulled or untied free
+     * @throws Error when the entity would be attached to itself
+     */
+    static attach(entity: IFEntity, anchorId: string, attachmentType: NonNullable<IAttachedData['attachmentType']>, detachable: boolean): void;
+    /**
+     * Free a detachable attached entity: clears its anchor, leaves it in place.
+     * @param entity The entity to free
+     * @returns success with the former anchor, or the refusal reason; nothing
+     *          changes on a refusal
+     */
+    static detach(entity: IFEntity): IDetachResult;
+}
+```
+
 ### traits/button/buttonTrait
 
 ```typescript
@@ -7095,6 +7170,8 @@ import { ITrait } from '../trait.js';
 export interface IBreakableData {
     /** Whether this object is already broken */
     broken?: boolean;
+    /** Whether dropping it on a floor or throwing it breaks it (ADR-373 D4) */
+    fragile?: boolean;
 }
 /**
  * Breakable trait indicates an entity can be broken with a single hit.
@@ -7107,6 +7184,7 @@ export declare class BreakableTrait implements ITrait, IBreakableData {
     static readonly type: "breakable";
     readonly type: "breakable";
     broken: boolean;
+    fragile: boolean;
     constructor(data?: IBreakableData);
 }
 ```

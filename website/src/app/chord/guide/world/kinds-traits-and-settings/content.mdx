@@ -117,6 +117,41 @@ create the ration bar
   end after
 ```
 
+A thing can be fixed to another. `attached to the sorting machine`
+names what holds it: taking it refuses ("The route placard is fixed to
+the sorting machine.") and it stays where it is. Add `detachable` and
+the player can `pull` it free, after which it can be taken; without
+it, pulling "won't budge". `while the placard is attached` reads
+whether it is still held. The player can make the same bond in play:
+`tie twine to machine` attaches the held thing, and `untie twine`
+frees it.
+
+```chord
+create the route placard
+  a thing, attached to the sorting machine, detachable
+  in the Sorting Room
+```
+
+A thing can break. `breakable` lets attacking break it, and it stays
+where it was, broken. Add `fragile` and it also breaks when dropped on
+the floor or thrown; dropped into a container or onto a supporter it
+is safe. `while the jar is broken` reads it, and `starts broken`
+begins it that way. Because the platform keeps this state, a thing
+does not declare `states: whole, broken` of its own; Chord reports
+that and names `breakable`. To react to the break, whatever caused
+it, write `after the player breaking` in the thing's block (see
+[on and after](/chord/guide/behavior/on-and-after)).
+
+```chord
+create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+
+  after the player breaking
+    phrase jar-spills
+  end after
+```
+
 A trait can be conditional: `while` puts it under the control of a
 condition, live at play time.
 

@@ -22,6 +22,8 @@ import { createSeededRandom, type RandomService, type SeededRandom } from '@shar
 import { exitBlockedKey } from '@sharpee/stdlib';
 import { classifiesAs } from './kind-classification.js';
 import {
+  AttachedBehavior,
+  BreakableTrait,
   CharacterModelTrait,
   LightSourceTrait,
   LockableBehavior,
@@ -509,7 +511,7 @@ export class Evaluator {
 
   /**
    * State adjectives (ratchet D1): `open`/`closed`, `locked`/`unlocked`,
-   * `on`/`off`, `worn`, `lit` — pure reads of world trait state. Null when
+   * `on`/`off`, `worn`, `lit`, `broken`, `attached` — pure reads of world trait state. Null when
    * `symbol` is not a state adjective (or the trait is absent, so the
    * adjective cannot hold either way).
    */
@@ -543,6 +545,16 @@ export class Evaluator {
         if (!source) return null;
         return source.isLit === true;
       }
+      case 'broken': {
+        // ADR-373 D2: the trait attacking, dropping and throwing write.
+        const breakable = entity.get(TraitType.BREAKABLE) as BreakableTrait | undefined;
+        if (!breakable) return null;
+        return breakable.broken === true;
+      }
+      case 'attached':
+        // ADR-373 D1: one reading of "attached", shared with taking and pulling.
+        if (!entity.has(TraitType.ATTACHED)) return null;
+        return AttachedBehavior.isAttached(entity);
       default:
         return null;
     }

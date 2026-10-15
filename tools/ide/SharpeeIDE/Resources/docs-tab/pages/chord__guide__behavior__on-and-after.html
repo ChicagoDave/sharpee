@@ -93,7 +93,7 @@ create the pad master
 <h2 id="a-value-on-the-head">A value on the head</h2>
 <p><code>set &lt;thing&gt; to &lt;value&gt;</code> carries a word, and a <code>setting</code> head can name it: <code>on the player setting to kepler</code> fires only when that is the value set, and <code>after the player setting</code> with no tail fires for every value. The tail is for <code>setting</code> alone (<code>on the player taking to x</code> is an error naming <code>while &lt;thing&gt; is x</code> as the form for other verbs), and the word must be one of the thing's states.</p>
 <h2 id="the-other-noun-on-the-head">The other noun on the head</h2>
-<p>Throwing, giving, showing, putting, inserting and asking for a thing each involve two nouns, and a clause on either one fires. <code>on the player throwing</code> in a bin's block fires for anything thrown at the bin; to say <em>which</em> thing, name it at the end of the head. The clause then fires only when that noun is the one in the command.</p>
+<p>Throwing, giving, showing, putting, inserting, tying and asking for a thing each involve two nouns, and a clause on either one fires. <code>on the player throwing</code> in a bin's block fires for anything thrown at the bin; to say <em>which</em> thing, name it at the end of the head. The clause then fires only when that noun is the one in the command.</p>
 <pre><code class="language-chord">create the returns bin
   a container, scenery
   in the Sorting Room
@@ -123,3 +123,15 @@ create the dead letter
     move the tram token to the player
     phrase quint-hands-token
   end on</code></pre>
+<h2 id="reacting-to-a-break">Reacting to a break</h2>
+<p>A <code>breakable</code> thing can break more than one way: attacking it, and dropping or throwing it when it is also <code>fragile</code>. Each of those fires <code>breaking</code> on the thing after its own line, so one clause in the thing's block reacts to all of them. Its phrase speaks after the action's line, and its body changes the world: sweep up the pieces, spill what was inside.</p>
+<pre><code class="language-chord">create the sample jar
+  a container, transparent, breakable, fragile
+  in the Sorting Room
+  states, reversible: sealed, spilled
+
+  after the player breaking
+    change the sample jar to spilled
+    phrase jar-spills
+  end after</code></pre>
+<p>Only <code>after</code> works here. By the time <code>breaking</code> fires the thing is already broken, so there is nothing for <code>on</code> to refuse; Chord reports <code>on the player breaking</code> and points you at the clause that can still stop it, <code>on the player attacking</code> (or dropping, or throwing).</p>
