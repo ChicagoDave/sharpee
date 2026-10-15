@@ -232,6 +232,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'drinking-thirst-quenched': 'if.action.drinking.thirst_quenched',
   // if.action.dropping
   'dropping-dropped': 'if.action.dropping.dropped',
+  'dropping-dropped-breaks': 'if.action.dropping.dropped_breaks',
   'dropping-dropped-in': 'if.action.dropping.dropped_in',
   'dropping-dropped-multi': 'if.action.dropping.dropped_multi',
   'dropping-dropped-on': 'if.action.dropping.dropped_on',
@@ -478,12 +479,14 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   // if.action.pulling
   'pulling-already-pulled': 'if.action.pulling.already_pulled',
   'pulling-cant-pull-that': 'if.action.pulling.cant_pull_that',
+  'pulling-detached': 'if.action.pulling.detached',
   'pulling-no-target': 'if.action.pulling.no_target',
   'pulling-not-reachable': 'if.action.pulling.not_reachable',
   'pulling-not-visible': 'if.action.pulling.not_visible',
   'pulling-nothing-happens': 'if.action.pulling.nothing_happens',
   'pulling-pulled': 'if.action.pulling.pulled',
   'pulling-worn': 'if.action.pulling.worn',
+  'pulling-wont-budge': 'if.action.pulling.wont_budge',
   // if.action.pushing
   'pushing-button-clicks': 'if.action.pushing.button_clicks',
   'pushing-button-pushed': 'if.action.pushing.button_pushed',
@@ -540,6 +543,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'reading-what-to-read': 'if.action.reading.what_to_read',
   // if.action.removing
   'removing-already-have': 'if.action.removing.already_have',
+  'removing-attached': 'if.action.removing.attached',
   'removing-cant-reach': 'if.action.removing.cant_reach',
   'removing-container-closed': 'if.action.removing.container_closed',
   'removing-no-source': 'if.action.removing.no_source',
@@ -715,6 +719,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'switching-on-temporary-activation': 'if.action.switching_on.temporary_activation',
   'switching-on-with-sound': 'if.action.switching_on.with_sound',
   // if.action.taking
+  'taking-attached': 'if.action.taking.attached',
   'taking-already-have': 'if.action.taking.already_have',
   'taking-cannot-take': 'if.action.taking.cannot_take',
   'taking-cant-take-room': 'if.action.taking.cant_take_room',
@@ -791,8 +796,13 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'throwing-thrown-at': 'if.action.throwing.thrown_at',
   'throwing-thrown-direction': 'if.action.throwing.thrown_direction',
   'throwing-thrown-down': 'if.action.throwing.thrown_down',
-  'throwing-thrown-gently': 'if.action.throwing.thrown_gently',
   'throwing-too-heavy': 'if.action.throwing.too_heavy',
+  // if.action.tying (ADR-373)
+  'tying-no-anchor': 'if.action.tying.no_anchor',
+  'tying-no-target': 'if.action.tying.no_target',
+  'tying-not-to-people': 'if.action.tying.not_to_people',
+  'tying-self': 'if.action.tying.self',
+  'tying-tied': 'if.action.tying.tied',
   // if.action.touching
   'touching-device-vibrating': 'if.action.touching.device_vibrating',
   'touching-feels-hard': 'if.action.touching.feels_hard',
@@ -855,6 +865,10 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'unlocking-unlocked': 'if.action.unlocking.unlocked',
   'unlocking-unlocked-with': 'if.action.unlocking.unlocked_with',
   'unlocking-wrong-key': 'if.action.unlocking.wrong_key',
+  // if.action.untying (ADR-373)
+  'untying-no-target': 'if.action.untying.no_target',
+  'untying-not-tied': 'if.action.untying.not_tied',
+  'untying-untied': 'if.action.untying.untied',
   // if.action.version
   'version-version-compact': 'if.action.version.version_compact',
   'version-version-full': 'if.action.version.version_full',

@@ -18,19 +18,17 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent, definePoint } from '@sharpee/core';
 
 // Choice points (ADR-293 D2): every throwing draw goes through a declared
-// point on its own stream. Grouping ruled at implementation time: the three
-// fragile-break rolls are ONE point (same outcome class — "did it break" —
-// with the branch context supplying the message), the two hit rolls stay
-// split (hitting an actor and hitting a stationary target are distinct
-// coverage rows an author play-tests separately).
+// point on its own stream. The two hit rolls stay split (hitting an actor
+// and hitting a stationary target are distinct coverage rows an author
+// play-tests separately). Breaking is not a roll: a declared-fragile thing
+// always breaks (ADR-373 D4 retired the `stdlib.throwing.breaks` point).
 const HIT_ACTOR_POINT = definePoint('stdlib.throwing.hit-actor', { classes: ['yes', 'no'] });
 const CATCH_POINT = definePoint('stdlib.throwing.catch', { classes: ['yes', 'no'] });
 const HIT_STATIONARY_POINT = definePoint('stdlib.throwing.hit-stationary', { classes: ['yes', 'no'] });
-const BREAKS_POINT = definePoint('stdlib.throwing.breaks', { classes: ['yes', 'no'] });
 import {
   TraitType,
-  IdentityTrait,
   IdentityBehavior,
+  BreakableBehavior,
   ActorBehavior,
   RoomBehavior,
   OpenableBehavior,
@@ -42,6 +40,7 @@ import {
   type ITrait
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { runBreakingLifecycle } from '../breaking/breaking.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { ThrowingEventMap } from './throwing-events.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -182,7 +181,6 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     'self',
     'thrown',
     'thrown_down',
-    'thrown_gently',
     'thrown_at',
     'hits_target',
     'misses_target',
@@ -301,14 +299,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Check item properties
     sharedData.weight = IdentityBehavior.getWeight(item);
 
-    // Check if item is fragile
-    const itemName = item.name.toLowerCase();
-    const identity = item.getTrait(IdentityTrait);
-    const description = (identity?.description || '').toLowerCase();
-    const fragileKeywords = ['glass', 'crystal', 'delicate', 'fragile', 'bottle', 'vase', 'china', 'porcelain'];
-    sharedData.isFragile = fragileKeywords.some(keyword =>
-      itemName.includes(keyword) || description.includes(keyword)
-    );
+    // Fragility is declared on the breakable trait, never guessed from
+    // the name (ADR-373 D4)
+    sharedData.isFragile = BreakableBehavior.isFragile(item);
 
     // Initialize params — EntityInfo for formatter chain (ADR-158)
     sharedData.params = { item: nounPhraseFor(item) };
@@ -361,10 +354,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
         sharedData.targetAngry = target.has(TraitType.ACTOR);
 
         if (sharedData.isFragile) {
-          sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.8);
-          if (sharedData.willBreak) {
-            sharedData.messageId = 'breaks_against';
-          }
+          sharedData.willBreak = true;
+          sharedData.messageId = 'breaks_against';
         }
 
         // Check if item lands on/in target
@@ -400,10 +391,8 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
           sharedData.messageId = 'sails_through';
 
           if (sharedData.isFragile) {
-            sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.5);
-            if (sharedData.willBreak) {
-              sharedData.messageId = 'breaks_on_impact';
-            }
+            sharedData.willBreak = true;
+            sharedData.messageId = 'breaks_on_impact';
           }
         } else {
           sharedData.messageId = 'thrown_direction';
@@ -412,28 +401,24 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     } else {
       // General throw
       if (sharedData.isFragile) {
-        sharedData.willBreak = context.random.chance(BREAKS_POINT, 0.3);
-        if (sharedData.willBreak) {
-          sharedData.messageId = 'fragile_breaks';
-        } else {
-          sharedData.messageId = 'thrown_gently';
-        }
+        sharedData.willBreak = true;
+        sharedData.messageId = 'fragile_breaks';
       } else {
         sharedData.messageId = 'thrown_down';
       }
     }
 
-    sharedData.finalLocation = sharedData.willBreak ? null : finalLocation;
+    sharedData.finalLocation = finalLocation;
 
-    // Perform the actual move - this is the critical mutation!
-    // Move to final location, or remove from world if destroyed
+    // Perform the actual move - this is the critical mutation! A broken
+    // thing is still a thing: it lands where it falls, broken, and removing
+    // it is the story's call in an `after the player breaking` body
+    // (ADR-373 D4)
     if (sharedData.finalLocation) {
       context.world.moveEntity(item.id, sharedData.finalLocation);
-    } else if (sharedData.willBreak) {
-      // Item is destroyed - move to limbo/remove from play
-      // For now, we'll mark it as destroyed by setting location to null
-      // The event system will handle actual removal if needed
-      context.world.moveEntity(item.id, ''); // Empty string = nowhere
+    }
+    if (sharedData.willBreak) {
+      BreakableBehavior.break(item, context.world);
     }
 
   },
@@ -510,14 +495,11 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     // Create THROWN event with messageId
     events.push(context.event('if.event.thrown', eventData));
 
-    // If item breaks, create ITEM_DESTROYED event
+    // The throw broke it: fire the breaking id after the throw's own line
+    // (ADR-373 D3)
     if (sharedData.willBreak) {
-      const destroyedData: ThrowingEventMap['if.event.item_destroyed'] = {
-        item: sharedData.itemId,
-        itemName: sharedData.itemName,
-        cause: 'thrown'
-      };
-      events.push(context.event('if.event.item_destroyed', destroyedData));
+      const item = context.world.getEntity(sharedData.itemId);
+      if (item) events.push(...runBreakingLifecycle(context, item));
     }
 
     // Add target reaction for actors as additional event

@@ -31,6 +31,7 @@ import {
   HealthBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
+import { runBreakingLifecycle } from '../breaking/breaking.js';
 import { killPlayer } from '../../../death/index.js';
 import { AttackedEventData } from './attacking-events.js';
 import { AttackingSharedData, AttackResult } from './attacking-types.js';
@@ -547,6 +548,12 @@ export const attackingAction: Action & { metadata: ActionMetadata } = {
     // smoke). postReport may override the if.event.attacked messageId or
     // emit additional narration events (ISSUE-074 / ADR-228).
     if (state) runPostReport(context, state, events, 'if.event.attacked');
+
+    // The blow broke a breakable thing: fire the breaking id after the
+    // attack's own line (ADR-373 D3)
+    if (result.type === 'broke') {
+      events.push(...runBreakingLifecycle(context, target));
+    }
 
     // For killed targets, emit a death event.
     if (result.targetKilled) {

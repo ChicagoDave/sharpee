@@ -20,6 +20,7 @@ export const takingLanguage = {
     'already_have': "{You} already {have} {the item}.",
     'cant_take_room': "{You} {can't} take {the item}.",
     'fixed_in_place': "{capitalize the item} {verb:is item} fixed in place.",
+    'attached': "{capitalize the item} {verb:is item} fixed to {the anchor}.",
     'container_full': "{You're} carrying too much already.",
     'too_heavy': "{Your} load is too heavy. {You} will have to leave something behind.",
     'cannot_take': "{You} {can't} take {the item}.",

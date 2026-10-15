@@ -11,7 +11,7 @@
 import { describe, test, expect } from 'vitest';
 import { droppingAction } from '../../../src/actions/standard/dropping'; // Now from folder
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, IParsedCommand } from '@sharpee/world-model';
+import { TraitType, IParsedCommand, BreakableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   setupBasicWorld,
@@ -274,14 +274,10 @@ describe('droppingAction (Golden Pattern)', () => {
   });
 
   describe('Message Variations', () => {
-    test('should use careful message for glass items', () => {
+    test('a thing named glass drops whole unless declared fragile (ADR-373 D4)', () => {
       const { world, player, room } = setupBasicWorld();
       
       const glass = world.createEntity('glass vase', 'object');
-      glass.add({
-        type: TraitType.IDENTITY,
-        name: 'glass vase'
-      });
       world.moveEntity(glass.id, player.id);
       
       const command = createCommand(IFActions.DROPPING, {
@@ -294,8 +290,50 @@ describe('droppingAction (Golden Pattern)', () => {
       const events = executeWithValidation(droppingAction, context);
 
       expectEvent(events, 'if.event.dropped', {
-        messageId: expect.stringContaining('dropped_quietly')
+        messageId: expect.stringMatching(/\.dropped$/)
       });
+      expect(world.getLocation(glass.id)).toBe(room.id);
+      expect(events.some(e => e.type === 'if.event.broken')).toBe(false);
+    });
+
+    test('a declared-fragile thing dropped on a floor breaks and fires breaking (ADR-373 D4)', () => {
+      const { world, player, room } = setupBasicWorld();
+      const jar = world.createEntity('specimen jar', 'object');
+      jar.add(new BreakableTrait({ fragile: true }));
+      world.moveEntity(jar.id, player.id);
+
+      const command = createCommand(IFActions.DROPPING, { entity: jar });
+      command.parsed.structure = { verb: { text: 'drop' } } as unknown as IParsedCommand['structure'];
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const events = executeWithValidation(droppingAction, context);
+
+      expectEvent(events, 'if.event.dropped', { messageId: expect.stringContaining('dropped_breaks') });
+      expectEvent(events, 'if.event.broken', { targetId: jar.id, causeActionId: IFActions.DROPPING });
+      expect(jar.get<BreakableTrait>(TraitType.BREAKABLE)!.broken).toBe(true);
+      expect(world.getLocation(jar.id)).toBe(room.id);
+    });
+
+    test('a fragile thing dropped while the actor is inside a container does not break', () => {
+      const { world, player, room } = setupBasicWorld();
+      const crate = world.createEntity('crate', 'object');
+      crate.add({ type: TraitType.CONTAINER });
+      crate.add({ type: TraitType.ENTERABLE });
+      world.moveEntity(crate.id, room.id);
+      world.moveEntity(player.id, crate.id);
+      const jar = world.createEntity('specimen jar', 'object');
+      jar.add(new BreakableTrait({ fragile: true }));
+      world.moveEntity(jar.id, player.id);
+
+      const command = createCommand(IFActions.DROPPING, { entity: jar });
+      command.parsed.structure = { verb: { text: 'drop' } } as unknown as IParsedCommand['structure'];
+      const context = createRealTestContext(droppingAction, world, command);
+
+      const events = executeWithValidation(droppingAction, context);
+
+      expect(jar.get<BreakableTrait>(TraitType.BREAKABLE)!.broken).toBe(false);
+      expect(world.getLocation(jar.id)).toBe(crate.id);
+      expect(events.some(e => e.type === 'if.event.broken')).toBe(false);
     });
 
     test('should use careless message for discard verb', () => {

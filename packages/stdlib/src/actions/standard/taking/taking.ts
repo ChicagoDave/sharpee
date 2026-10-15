@@ -29,6 +29,7 @@ import { TraitType, SceneryBehavior, ActorBehavior, WearableBehavior, ContainerB
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { TakingMessages } from './taking-messages.js';
+import { attachedRefusal } from '../attachment-shared.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import {
   ActionLifecycleDescriptor,
@@ -110,6 +111,11 @@ function validateSingleEntity(context: ActionContext, noun: IFEntity): Validatio
       params: { item: nounPhraseFor(noun) }
     };
   }
+
+  // Held fast to an anchor until pulled or untied free (ADR-373 D1) —
+  // before scenery, so a fixed thing names what holds it
+  const attached = attachedRefusal(context, noun);
+  if (attached) return attached;
 
   // Can't take scenery (fixed in place)
   if (noun.has(TraitType.SCENERY)) {
@@ -324,6 +330,7 @@ export const takingAction: Action & { metadata: ActionMetadata } = {
     'already_have',
     'cant_take_room',
     'fixed_in_place',
+    'attached',
     'container_full',
     'too_heavy',
     'taken',

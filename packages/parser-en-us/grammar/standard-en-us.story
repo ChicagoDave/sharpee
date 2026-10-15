@@ -633,3 +633,20 @@ define action setting
     adjust the target to the value
     set the target
   the value is a topic
+
+## ADR-373 — tying attaches a held thing to an anchor; untying frees a tied
+## one. A story's own `tie` grammar (Dungeo's balloon) is story-tier and
+## outranks these stock lines.
+
+define action tying
+  grammar
+    tie the item to the anchor
+    fasten the item to the anchor
+    attach the item to the anchor
+    tie the item
+
+define action untying
+  grammar
+    untie the item
+    untie the item from the anchor
+    unfasten the item

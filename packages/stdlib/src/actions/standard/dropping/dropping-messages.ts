@@ -16,7 +16,7 @@ export const DroppingMessages = {
   DROPPED: 'dropped',
   DROPPED_IN: 'dropped_in',
   DROPPED_ON: 'dropped_on',
-  DROPPED_QUIETLY: 'dropped_quietly',
+  DROPPED_BREAKS: 'dropped_breaks',  // a fragile thing hit the floor (ADR-373 D4)
   DROPPED_CARELESSLY: 'dropped_carelessly',
   DROPPED_MULTI: 'dropped_multi',  // Compact format for multi-object: "{item}: Dropped."
 } as const;

@@ -93,11 +93,14 @@ export const IFActions = {
   SHOWING: 'if.action.showing',
   GIVING: 'if.action.giving',
   BUYING: 'if.action.buying', // ADR-372 D5
+  TYING: 'if.action.tying', // ADR-373 D6
+  UNTYING: 'if.action.untying', // ADR-373 D6
   
   // Combat/interaction actions
   ATTACKING: 'if.action.attacking',
   KISSING: 'if.action.kissing',
   BURNING: 'if.action.burning', // ADR-371 D2
+  BREAKING: 'if.action.breaking', // ADR-373 D3: no grammar; fired by the action that broke the thing
   WAVING: 'if.action.waving',
 
   // Concealment actions (ADR-148)

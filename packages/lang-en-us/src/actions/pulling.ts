@@ -27,10 +27,12 @@ export const pullingLanguage = {
     'cant_pull_that': "{capitalize the target} {verb:is target} not something {you} can pull.",
     'worn': "{You} {can't} pull {the target} while wearing it.",
     'already_pulled': "{capitalize the target} has already been pulled.",
+    'wont_budge': "{capitalize the target} won't budge.",
 
     // Success messages
     'pulled': "{You} {pull} {the target}.",
-    'nothing_happens': "{You} {pull} {the target}, but nothing happens."
+    'nothing_happens': "{You} {pull} {the target}, but nothing happens.",
+    'detached': "{You} {pull} {the target} free of {the anchor}."
   },
   
   help: {

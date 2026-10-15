@@ -79,6 +79,17 @@ export class BreakableBehavior extends Behavior {
   }
   
   /**
+   * Whether a fall or a throw breaks the entity (ADR-373 D4): breakable,
+   * declared fragile, and not already broken.
+   * @param entity The entity to test
+   * @returns true when dropping it on a floor or throwing it would break it
+   */
+  static isFragile(entity: IFEntity): boolean {
+    const breakable = entity.get<BreakableTrait>(TraitType.BREAKABLE);
+    return !!breakable && breakable.fragile && !breakable.broken;
+  }
+
+  /**
    * Check if entity is broken
    */
   static isBroken(entity: IFEntity): boolean {

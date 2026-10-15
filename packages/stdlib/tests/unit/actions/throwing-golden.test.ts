@@ -14,7 +14,7 @@
 import { describe, test, expect, beforeEach, vi } from 'vitest';
 import { throwingAction } from '../../../src/actions/standard/throwing';
 import { IFActions } from '../../../src/actions/constants';
-import { TraitType, WorldModel, Direction, ITrait, IdentityTrait } from '@sharpee/world-model';
+import { TraitType, WorldModel, Direction, ITrait, IdentityTrait, BreakableTrait } from '@sharpee/world-model';
 import {
   createRealTestContext,
   expectEvent,
@@ -44,7 +44,8 @@ describe('throwingAction (Golden Pattern)', () => {
       // Success messages - general
       expect(throwingAction.requiredMessages).toContain('thrown');
       expect(throwingAction.requiredMessages).toContain('thrown_down');
-      expect(throwingAction.requiredMessages).toContain('thrown_gently');
+      // thrown_gently retired with the fragility roll (ADR-373 D4)
+      expect(throwingAction.requiredMessages).not.toContain('thrown_gently');
       
       // Success messages - targeted
       expect(throwingAction.requiredMessages).toContain('thrown_at');
@@ -177,8 +178,8 @@ describe('throwingAction (Golden Pattern)', () => {
       });
     });
 
-    test('should handle fragile items gently thrown', () => {
-      const { world, player, item: vase } = TestData.withInventoryItem('glass vase', {
+    test('a thing named glass is not fragile unless declared so (ADR-373 D4)', () => {
+      const { world, room, item: vase } = TestData.withInventoryItem('glass vase', {
         [TraitType.IDENTITY]: {
           type: TraitType.IDENTITY,
           name: 'glass vase',
@@ -191,51 +192,43 @@ describe('throwingAction (Golden Pattern)', () => {
           entity: vase
         })
       );
-      forceRandom(context, [0.4]); // chance(0.3) break roll: 0.4 >= 0.3 -> will not break
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event with thrown_gently message
       expectEvent(events, 'if.event.thrown', {
         item: vase.id,
         throwType: 'general',
-        isFragile: true,
+        isFragile: false,
         willBreak: false,
-        messageId: expect.stringContaining('thrown_gently')
-      });    });
-
-    test('should break fragile item when dropped carelessly', () => {
-      const { world, player, item: bottle } = TestData.withInventoryItem('wine bottle', {
-        [TraitType.IDENTITY]: {
-          type: TraitType.IDENTITY,
-          name: 'wine bottle'
-        }
+        messageId: expect.stringContaining('thrown_down')
       });
+      expect(world.getLocation(vase.id)).toBe(room.id);
+      expect(events.some(e => e.type === 'if.event.broken')).toBe(false);
+    });
+
+    test('a declared-fragile thing thrown down breaks, stays where it fell, and fires breaking', () => {
+      const { world, room, item: bottle } = TestData.withInventoryItem('wine bottle');
+      bottle.add(new BreakableTrait({ fragile: true }));
       
       const context = createRealTestContext(throwingAction, world,
         createCommand(IFActions.THROWING, {
           entity: bottle
         })
       );
-      forceRandom(context, [0.2]); // chance(0.3) break roll: 0.2 < 0.3 -> will break
       
       const events = executeWithValidation(throwingAction, context);
       
-      // Should emit THROWN event with fragile_breaks message
       expectEvent(events, 'if.event.thrown', {
         item: bottle.id,
         isFragile: true,
         willBreak: true,
-        finalLocation: null,
+        finalLocation: room.id,
         messageId: expect.stringContaining('fragile_breaks')
       });
-      
-      // Should emit destruction event
-      expectEvent(events, 'if.event.item_destroyed', {
-        item: bottle.id,
-        itemName: 'wine bottle',
-        cause: 'thrown'
-      });    });
+      expect(bottle.get<BreakableTrait>(TraitType.BREAKABLE)!.broken).toBe(true);
+      expect(world.getLocation(bottle.id)).toBe(room.id);
+      expectEvent(events, 'if.event.broken', { targetId: bottle.id, causeActionId: IFActions.THROWING });
+    });
   });
 
   describe('Targeted Throwing', () => {
@@ -419,6 +412,7 @@ describe('throwingAction (Golden Pattern)', () => {
           name: 'fragile ornament'
         }
       });
+      ornament.add(new BreakableTrait({ fragile: true }));
       const wall = world.createEntity('brick wall', 'object');
       world.moveEntity(wall.id, room.id);
       
@@ -430,8 +424,9 @@ describe('throwingAction (Golden Pattern)', () => {
         })
       );
       
-      // Force two rolls: hit (chance(0.9): 0.5 < 0.9), break (chance(0.8): 0.7 < 0.8)
-      forceRandom(context, [0.5, 0.7]);
+      // One roll: hit (chance(0.9): 0.5 < 0.9); a declared-fragile thing
+      // that hits always breaks (ADR-373 D4)
+      forceRandom(context, [0.5]);
 
 
       const events = executeWithValidation(throwingAction, context);
@@ -444,11 +439,11 @@ describe('throwingAction (Golden Pattern)', () => {
         messageId: expect.stringContaining('breaks_against')
       });
       
-      // Should emit destruction event
-      expectEvent(events, 'if.event.item_destroyed', {
-        item: ornament.id,
-        cause: 'thrown'
-      });    });
+      // It broke, stays in the room, and the breaking id fired
+      expect(ornament.get<BreakableTrait>(TraitType.BREAKABLE)!.broken).toBe(true);
+      expect(world.getLocation(ornament.id)).toBe(room.id);
+      expectEvent(events, 'if.event.broken', { targetId: ornament.id });
+    });
 
     test('should anger hit NPC', () => {
       const { world, player, room, item: rock } = TestData.withInventoryItem('heavy rock');

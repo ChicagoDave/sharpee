@@ -22,7 +22,8 @@ export const droppingLanguage = {
     'dropped_in': "{You} {put} {the item} in {the container}.",
     'dropped_on': "{You} {put} {the item} on {the surface}.",
     // Multi-drop label format: rendered without article per IF convention
-    'dropped_multi': "{item}: Dropped."
+    'dropped_multi': "{item}: Dropped.",
+    'dropped_breaks': "{capitalize the item} {verb:hits item} the floor and {verb:breaks item}."
   },
   
   help: {

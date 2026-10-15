@@ -15,6 +15,8 @@ import { type EntityId } from '@sharpee/core';
 export interface DroppingItemScratch {
   /** Where the item was dropped to */
   dropLocation?: EntityId;
+  /** Set when the item was fragile and broke on a floor (ADR-373 D4) */
+  brokeOnDrop?: boolean;
 }
 
 /**

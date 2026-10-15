@@ -16,7 +16,7 @@
 
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, PullableTrait, WearableTrait } from '@sharpee/world-model';
+import { TraitType, PullableTrait, WearableTrait, AttachedBehavior } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { PulledEventData } from './pulling-events.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -52,6 +52,8 @@ interface PullingSharedData {
   targetName: string;
   pullCount: number;
   pullType?: 'lever' | 'cord' | 'attached' | 'heavy';
+  /** Set when the pull freed an attached thing (ADR-373 D1) */
+  detachedFrom?: string;
 }
 
 function getPullingSharedData(context: ActionContext): PullingSharedData {
@@ -82,7 +84,9 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     'worn',
     'pulled',
     'nothing_happens',
-    'already_pulled'
+    'already_pulled',
+    'detached',
+    'wont_budge'
   ],
 
   validate(context: ActionContext): ValidationResult {
@@ -97,6 +101,15 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     const scopeCheck = context.requireScope(target, ScopeLevel.REACHABLE);
     if (!scopeCheck.ok) {
       return scopeCheck.error!;
+    }
+
+    // An attached thing comes free if it is detachable and otherwise won't
+    // budge, pullable or not (ADR-373 D1)
+    if (AttachedBehavior.isAttached(target)) {
+      if (!AttachedBehavior.isDetachable(target)) {
+        return { valid: false, error: 'wont_budge', params: { target: nounPhraseFor(target) } };
+      }
+      return { valid: true };
     }
 
     // Check if object is pullable
@@ -127,8 +140,17 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
    */
   execute(context: ActionContext): void {
     const target = context.command.directObject!.entity!;
-    const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
     const sharedData = getPullingSharedData(context);
+
+    // Pulling an attached thing frees it and moves nothing else
+    if (AttachedBehavior.isAttached(target)) {
+      sharedData.targetId = target.id;
+      sharedData.targetName = target.name;
+      sharedData.detachedFrom = AttachedBehavior.detach(target).anchorId;
+      return;
+    }
+
+    const pullable = target.get(TraitType.PULLABLE) as PullableTrait;
 
     // Store data for report phase (before mutation)
     sharedData.targetId = target.id;
@@ -168,6 +190,22 @@ export const pullingAction: Action & { metadata: ActionMetadata } = {
     const events: ISemanticEvent[] = [];
     const sharedData = getPullingSharedData(context);
     const target = context.command.directObject?.entity;
+
+    if (sharedData.detachedFrom) {
+      const anchor = context.world.getEntity(sharedData.detachedFrom);
+      events.push(context.event('if.event.detached', {
+        messageId: `${context.action.id}.detached`,
+        // params carry EntityInfo for the formatter chain (ADR-158)
+        params: {
+          target: target ? nounPhraseFor(target) : { name: sharedData.targetName },
+          anchor: anchor ? nounPhraseFor(anchor) : undefined
+        },
+        targetId: sharedData.targetId,
+        targetName: sharedData.targetName,
+        anchorId: sharedData.detachedFrom
+      }));
+      return events;
+    }
 
     // Emit pulled event with messageId for text rendering
     events.push(context.event('if.event.pulled', {

@@ -7,6 +7,9 @@ import { ITrait } from '../trait.js';
 export interface IBreakableData {
   /** Whether this object is already broken */
   broken?: boolean;
+
+  /** Whether dropping it on a floor or throwing it breaks it (ADR-373 D4) */
+  fragile?: boolean;
 }
 
 /**
@@ -22,9 +25,11 @@ export class BreakableTrait implements ITrait, IBreakableData {
   
   // BreakableData properties
   broken: boolean;
+  fragile: boolean;
   
   constructor(data: IBreakableData = {}) {
     // Set defaults and merge with provided data
     this.broken = data.broken ?? false;
+    this.fragile = data.fragile ?? false;
   }
 }

@@ -53,6 +53,7 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "if.action.asking",
     "if.action.asking_for",
     "if.action.attacking",
+    "if.action.breaking",
     "if.action.burning",
     "if.action.buying",
     "if.action.climbing",
@@ -113,8 +114,10 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "if.action.throwing",
     "if.action.touching",
     "if.action.turning",
+    "if.action.tying",
     "if.action.undoing",
     "if.action.unlocking",
+    "if.action.untying",
     "if.action.version",
     "if.action.waiting",
     "if.action.waking",
@@ -135,7 +138,7 @@ export const STDLIB_MANIFEST: StdlibManifest = {
     "diggable": { "tool": "entity-ref" },
   },
   hidingPositions: ["behind", "under", "on", "inside"],
-  counterpartActions: new Set(["if.action.asking_for", "if.action.giving", "if.action.inserting", "if.action.putting", "if.action.showing", "if.action.throwing"]),
+  counterpartActions: new Set(["if.action.asking_for", "if.action.giving", "if.action.inserting", "if.action.putting", "if.action.showing", "if.action.throwing", "if.action.tying"]),
   locales: {
     'en-US': {
       grammarShapes: {
@@ -203,8 +206,10 @@ export const STDLIB_MANIFEST: StdlibManifest = {
         "if.action.throwing": ["throw :item at :target", "throw :item", "toss :item", "hurl :item", "throw :item to :recipient", "toss :item at :target", "toss :item to :recipient", "hurl :item at :target", "hurl :item to :recipient"],
         "if.action.touching": ["touch :target", "rub :target", "feel :target", "pat :target", "stroke :target", "poke :target", "prod :target"],
         "if.action.turning": ["turn :target", "rotate :target", "twist :target"],
+        "if.action.tying": ["tie :item to :anchor", "fasten :item to :anchor", "attach :item to :anchor", "tie :item"],
         "if.action.undoing": ["undo"],
         "if.action.unlocking": ["unlock :door with|using :key", "unlock :target", "unsecure :target"],
+        "if.action.untying": ["untie :item", "untie :item from :anchor", "unfasten :item"],
         "if.action.version": ["version"],
         "if.action.waiting": ["wait", "z"],
         "if.action.waking": ["wake", "wake up"],

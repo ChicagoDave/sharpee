@@ -21,11 +21,13 @@ import {
   ContainerBehavior,
   WearableBehavior,
   ActorBehavior,
+  BreakableBehavior,
   type IDropItemResult,
   IFEntity
 } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types.js';
 import { IFActions } from '../../constants.js';
+import { runBreakingLifecycle } from '../breaking/breaking.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
@@ -156,6 +158,22 @@ function executeSingleEntity(
   if (dropLocation) {
     context.world.moveEntity(noun.id, dropLocation);
   }
+  scratch.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
+}
+
+/**
+ * A declared-fragile thing dropped onto a room's floor breaks (ADR-373 D4);
+ * dropped while inside a container or on a supporter, it does not.
+ *
+ * @param context The action context
+ * @param noun The dropped entity
+ * @param dropLocation Where it landed
+ * @returns true when it broke
+ */
+function breakIfFragileOnFloor(context: ActionContext, noun: IFEntity, dropLocation: string | undefined): boolean {
+  if (!dropLocation || !BreakableBehavior.isFragile(noun)) return false;
+  if (!context.world.getEntity(dropLocation)?.has(TraitType.ROOM)) return false;
+  return BreakableBehavior.break(noun, context.world).success;
 }
 
 /**
@@ -202,7 +220,9 @@ function reportSingleSuccess(
   }
 
   // Use compact format for multi-object commands
-  if (isMultiObject) {
+  if (scratch.brokeOnDrop) {
+    messageKey = DroppingMessages.DROPPED_BREAKS;
+  } else if (isMultiObject) {
     messageKey = DroppingMessages.DROPPED_MULTI;
   } else if (toContainer) {
     messageKey = DroppingMessages.DROPPED_IN;
@@ -228,6 +248,11 @@ function reportSingleSuccess(
     toSupporter,
     toRoom
   }));
+
+  // The fall broke it: fire the breaking id after the drop's own line (ADR-373 D3)
+  if (scratch.brokeOnDrop) {
+    events.push(...runBreakingLifecycle(context, noun));
+  }
 }
 
 /**
@@ -277,6 +302,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     'dropped',
     'dropped_in',
     'dropped_on',
+    'dropped_breaks',
     'nothing_to_drop'
   ],
 
@@ -348,6 +374,7 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     if (dropLocation) {
       context.world.moveEntity(noun.id, dropLocation);
     }
+    sharedData.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
 
     // Store result for report phase using sharedData
     sharedData.dropResult = result;
@@ -394,6 +421,11 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
         actorId: actor.id
       })
     ];
+
+    // The fall broke it: fire the breaking id after the drop's own line (ADR-373 D3)
+    if (getDroppingSharedData(context).brokeOnDrop) {
+      events.push(...runBreakingLifecycle(context, noun));
+    }
 
     return events;
   },

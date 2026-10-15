@@ -23,7 +23,8 @@ export const removingLanguage = {
     'removed_from': "{You} {take} {the item} from {the container}.",
     'removed_from_surface': "{You} {take} {the item} from {the surface}.",
     'cant_reach': "{You} {can't} reach {the item}.",
-    'already_have': "{You} already {have} {the item}."
+    'already_have': "{You} already {have} {the item}.",
+    'attached': "{capitalize the item} {verb:is item} fixed to {the anchor}."
   },
   
   help: {

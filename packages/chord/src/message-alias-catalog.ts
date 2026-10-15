@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 795 aliases across 72 actions.
+ * 807 aliases across 74 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -239,6 +239,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'drinking-thirst-quenched',
   // if.action.dropping
   'dropping-dropped',
+  'dropping-dropped-breaks',
   'dropping-dropped-in',
   'dropping-dropped-multi',
   'dropping-dropped-on',
@@ -485,12 +486,14 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   // if.action.pulling
   'pulling-already-pulled',
   'pulling-cant-pull-that',
+  'pulling-detached',
   'pulling-no-target',
   'pulling-not-reachable',
   'pulling-not-visible',
   'pulling-nothing-happens',
   'pulling-pulled',
   'pulling-worn',
+  'pulling-wont-budge',
   // if.action.pushing
   'pushing-button-clicks',
   'pushing-button-pushed',
@@ -547,6 +550,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'reading-what-to-read',
   // if.action.removing
   'removing-already-have',
+  'removing-attached',
   'removing-cant-reach',
   'removing-container-closed',
   'removing-no-source',
@@ -720,6 +724,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'switching-on-temporary-activation',
   'switching-on-with-sound',
   // if.action.taking
+  'taking-attached',
   'taking-already-have',
   'taking-cannot-take',
   'taking-cant-take-room',
@@ -796,8 +801,13 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'throwing-thrown-at',
   'throwing-thrown-direction',
   'throwing-thrown-down',
-  'throwing-thrown-gently',
   'throwing-too-heavy',
+  // if.action.tying
+  'tying-no-anchor',
+  'tying-no-target',
+  'tying-not-to-people',
+  'tying-self',
+  'tying-tied',
   // if.action.touching
   'touching-device-vibrating',
   'touching-feels-hard',
@@ -860,6 +870,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'unlocking-unlocked',
   'unlocking-unlocked-with',
   'unlocking-wrong-key',
+  // if.action.untying
+  'untying-no-target',
+  'untying-not-tied',
+  'untying-untied',
   // if.action.version
   'version-version-compact',
   'version-version-full',

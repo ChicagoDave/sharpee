@@ -32,7 +32,6 @@ export const throwingLanguage = {
     // Success messages - general throw
     'thrown': "{You} {throw} {the item}.",
     'thrown_down': "{You} {toss} {the item} to the ground.",
-    'thrown_gently': "{You} gently {toss} {the item}.",
 
     // Success messages - at target
     'thrown_at': "{You} {throw} {the item} at {the target}.",

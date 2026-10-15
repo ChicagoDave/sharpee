@@ -466,6 +466,7 @@ dropping-still-worn               still_worn                              {You}'
 dropping-dropped-in               dropped_in                              {You} {put} {the item} in {the container}.
 dropping-dropped-on               dropped_on                              {You} {put} {the item} on {the surface}.
 dropping-dropped-multi            dropped_multi                           {item}: Dropped.
+dropping-dropped-breaks           dropped_breaks                          {capitalize the item} {verb:hits item} the floor and {verb:breaks item}.
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.drop_blocked` (ADR-052).
@@ -1003,8 +1004,10 @@ pulling-not-reachable             not_reachable                           {You} 
 pulling-cant-pull-that            cant_pull_that                          {capitalize the target} {verb:is target} not something {you} can pull.
 pulling-worn                      worn                                    {You} {can't} pull {the target} while wearing it.
 pulling-already-pulled            already_pulled                          {capitalize the target} has already been pulled.
+pulling-wont-budge                wont_budge                              {capitalize the target} won't budge.
 pulling-pulled                    pulled                                  {You} {pull} {the target}.
 pulling-nothing-happens           nothing_happens                         {You} {pull} {the target}, but nothing happens.
+pulling-detached                  detached                                {You} {pull} {the target} free of {the anchor}.
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.detached` (ADR-052).
@@ -1159,6 +1162,7 @@ removing-removed-from             removed_from                            {You} 
 removing-removed-from-surface     removed_from_surface                    {You} {take} {the item} from {the surface}.
 removing-cant-reach               cant_reach                              {You} {can't} reach {the item}.
 removing-already-have             already_have                            {You} already {have} {the item}.
+removing-attached                 attached                                {capitalize the item} {verb:is item} fixed to {the anchor}.
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.remove_blocked` (ADR-052).
@@ -1585,6 +1589,7 @@ taking-cant-take-self             cant_take_self                          {You} 
 taking-already-have               already_have                            {You} already {have} {the item}.
 taking-cant-take-room             cant_take_room                          {You} {can't} take {the item}.
 taking-fixed-in-place             fixed_in_place                          {capitalize the item} {verb:is item} fixed in place.
+taking-attached                   attached                                {capitalize the item} {verb:is item} fixed to {the anchor}.
 taking-container-full             container_full                          {You're} carrying too much already.
 taking-too-heavy                  too_heavy                               Your load is too heavy. You will have to leave something behind.
 taking-cannot-take                cannot_take                             {You} {can't} take {the item}.
@@ -1703,7 +1708,6 @@ throwing-too-heavy                too_heavy                               {capit
 throwing-self                     self                                    {You} {can't} throw things at {yourself}.
 throwing-thrown                   thrown                                  {You} {throw} {the item}.
 throwing-thrown-down              thrown_down                             {You} {toss} {the item} to the ground.
-throwing-thrown-gently            thrown_gently                           {You} gently {toss} {the item}.
 throwing-thrown-at                thrown_at                               {You} {throw} {the item} at {the target}.
 throwing-hits-target              hits_target                             {You} {throw} {the item} at {the target}. It hits!
 throwing-misses-target            misses_target                           {You} {throw} {the item} at {the target}, but miss.
@@ -1720,7 +1724,28 @@ throwing-target-catches           target_catches                          {capit
 throwing-target-angry             target_angry                            {capitalize the target} doesn't appreciate being hit with {the item}.
 ```
 
-**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.item_destroyed` (ADR-052).
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · `after the player breaking` on a fragile thing, which a break fires (ADR-373) · an event handler on `if.event.thrown` (ADR-052).
+
+## tie, fasten, attach — `if.action.tying`
+
+**Group** `object_manipulation` · **Slots** `item`, `anchor` · **Emits** `if.event.tie_blocked`, `if.event.tied`
+
+<GrammarBlock action="if.action.tying" />
+
+TIE - Tie a thing to something. It stays there until you untie it. Example: TIE ROPE TO RAILING
+
+Tying takes the thing if it is not held, puts it where the anchor is, and attaches it there (ADR-373): taking it then refuses with `attached` until it is untied or pulled free. Anything can be tied to anything but itself or a person. Both nouns are consulted, so `on the player tying to the cleat` in the line's block names the anchor.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+tying-no-target                   no_target                               Tie what?
+tying-no-anchor                   no_anchor                               What do {you} want to tie {the item} to?
+tying-self                        self                                    {You} can't tie {the item} to itself.
+tying-not-to-people               not_to_people                           {You} can't tie things to people.
+tying-tied                        tied                                    {You} {tie} {the item} to {the anchor}.
+```
 
 ## touch, rub, feel, pat — `if.action.touching`
 
@@ -1843,6 +1868,25 @@ unlocking-still-locked            still_locked                            {capit
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.unlock_blocked` (ADR-052).
+
+## untie, untie from, unfasten — `if.action.untying`
+
+**Group** `object_manipulation` · **Slots** `item` · **Emits** `if.event.untie_blocked`, `if.event.untied`
+
+<GrammarBlock action="if.action.untying" />
+
+UNTIE - Untie a tied thing. Example: UNTIE ROPE
+
+Untying frees a thing that was tied and leaves it where it is (ADR-373). Only a tied thing unties: a thing `attached to` something comes free by pulling, when it is `detachable`.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+untying-no-target                 no_target                               Untie what?
+untying-not-tied                  not_tied                                {capitalize the item} {verb:isn't item} tied to anything.
+untying-untied                    untied                                  {You} {untie} {the item}.
+```
 
 ## version — `if.action.version`
 

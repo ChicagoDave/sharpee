@@ -19,7 +19,7 @@ const PRIMITIVES = ['runMultiObjectValidate', 'runMultiObjectExecute', 'runMulti
  * backed by a descriptor declaration this test checks; a new name here
  * without one fails below.
  */
-const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject' | 'delegation'> = {
+const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject' | 'delegation' | 'consequence'> = {
   attacking: 'runsOwnHooks',      // postExecute is the combat resolution; postReport precedes death events
   answering: 'runsOwnHooks',      // post hooks only when the exchange has not gripped the response
   asking: 'runsOwnHooks',
@@ -29,8 +29,12 @@ const DECLARED_HOOK_CALLERS: Record<string, 'runsOwnHooks' | 'handlesMultiObject
   dropping: 'handlesMultiObject',
   putting: 'handlesMultiObject',
   removing: 'handlesMultiObject',
-  inserting: 'delegation'         // runs PUTTING's hooks around the phases it delegates into
+  inserting: 'delegation',        // runs PUTTING's hooks around the phases it delegates into
+  breaking: 'consequence'         // runBreakingLifecycle: fired by the action that broke the thing (ADR-373 D3)
 };
+
+/** The actions whose outcome can break a thing, and so fire the breaking id (ADR-373 D3). */
+const BREAKING_CAUSES = ['attacking', 'dropping', 'throwing'];
 
 function actionSources(): Map<string, string> {
   const standardDir = path.join(__dirname, '../../../src/actions/standard');
@@ -78,6 +82,8 @@ describe('the lifecycle call site is the executor (ADR-337 D1)', () => {
         expect(descriptor!.contracts?.runsOwnHooks, `${file} must declare contracts.runsOwnHooks`).toEqual(expected);
       } else if (reason === 'handlesMultiObject') {
         expect(descriptor!.contracts?.handlesMultiObject, `${file} must declare contracts.handlesMultiObject`).toBe(true);
+      } else if (reason === 'consequence') {
+        expect(descriptor!.contracts?.firedAsConsequence, `${file} must declare contracts.firedAsConsequence`).toBe(true);
       }
     }
     // The other direction: every declared caller still calls something
@@ -85,6 +91,14 @@ describe('the lifecycle call site is the executor (ADR-337 D1)', () => {
     for (const dir of Object.keys(DECLARED_HOOK_CALLERS)) {
       expect(callers, `${dir} is declared but calls no hook`).toContain(dir);
     }
+  });
+
+  test('exactly the breaking causes fire the breaking lifecycle (ADR-373 D3)', () => {
+    const callers = new Set<string>();
+    for (const [file, source] of actionSources()) {
+      if (/\brunBreakingLifecycle\(/.test(source) && !file.startsWith('breaking/')) callers.add(file.split('/')[0]);
+    }
+    expect([...callers].sort()).toEqual(BREAKING_CAUSES);
   });
 
   test('the four multi-object actions call all three per-item primitives; no other action imports them', () => {

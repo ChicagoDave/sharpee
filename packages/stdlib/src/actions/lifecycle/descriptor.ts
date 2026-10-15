@@ -150,6 +150,15 @@ export interface LifecycleContracts {
    * executor still runs them for the action's single-object commands.
    */
   handlesMultiObject?: boolean;
+
+  /**
+   * The id has no grammar and is never executed: another action fires its
+   * lifecycle as a consequence of its own outcome — breaking, fired by
+   * attacking, dropping and throwing when the thing breaks (ADR-373 D3),
+   * through `runBreakingLifecycle`, which runs postExecute and postReport
+   * only. The executor never runs this descriptor's hooks.
+   */
+  firedAsConsequence?: boolean;
 }
 
 /**

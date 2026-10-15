@@ -490,4 +490,11 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("turn :target to :value").mapsTo("if.action.setting").topic("value").build();
   grammar.define("adjust :target to :value").mapsTo("if.action.setting").topic("value").build();
   grammar.define("set :target").mapsTo("if.action.setting").build();
+  grammar.define("tie :item to :anchor").mapsTo("if.action.tying").build();
+  grammar.define("fasten :item to :anchor").mapsTo("if.action.tying").build();
+  grammar.define("attach :item to :anchor").mapsTo("if.action.tying").build();
+  grammar.define("tie :item").mapsTo("if.action.tying").build();
+  grammar.define("untie :item").mapsTo("if.action.untying").build();
+  grammar.define("untie :item from :anchor").mapsTo("if.action.untying").build();
+  grammar.define("unfasten :item").mapsTo("if.action.untying").build();
 }

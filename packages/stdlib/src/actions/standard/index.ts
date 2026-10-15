@@ -52,7 +52,7 @@ export * from './showing/index.js';
 
 // Throwing action with its unique events
 export { throwingAction } from './throwing/index.js';
-export type { ThrownEventData, ItemDestroyedEventData } from './throwing/throwing-events.js';
+export type { ThrownEventData } from './throwing/throwing-events.js';
 
 export * from './pushing/index.js';
 export * from './pulling/index.js';
@@ -180,6 +180,9 @@ import { settingAction } from './setting/index.js';
 import { askingForAction } from './asking_for/index.js';
 import { consultingAction } from './consulting/index.js';
 import { buyingAction } from './buying/index.js';
+// ADR-373: physical state the platform enforces
+import { tyingAction } from './tying/index.js';
+import { untyingAction } from './untying/index.js';
 export * from './jumping/index.js';
 export * from './kissing/index.js';
 export * from './waving/index.js';
@@ -193,6 +196,9 @@ export * from './setting/index.js';
 export * from './asking_for/index.js';
 export * from './consulting/index.js';
 export * from './buying/index.js';
+export * from './breaking/index.js';
+export * from './tying/index.js';
+export * from './untying/index.js';
 
 // Import author/debug actions
 import { TraceAction } from '../author/index.js';
@@ -277,6 +283,9 @@ export const standardActions = [
   askingForAction,
   consultingAction,
   buyingAction,
+  // ADR-373: physical state the platform enforces
+  tyingAction,
+  untyingAction,
   // Author/debug actions
   traceAction
 ];

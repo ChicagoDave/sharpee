@@ -35,6 +35,7 @@ import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/index.js';
 import { RemovingEventMap } from './removing-events.js';
 import { RemovingMessages } from './removing-messages.js';
+import { attachedRefusal } from '../attachment-shared.js';
 
 // Import types
 import { getRemovingSharedData, RemovingItemScratch } from './removing-types.js';
@@ -186,6 +187,10 @@ function validateSingleEntity(
       };
     }
   }
+
+  // Held fast to an anchor until pulled or untied free (ADR-373 D1)
+  const attached = attachedRefusal(context, item);
+  if (attached) return attached;
 
   // Container-specific checks using behavior
   if (source.has(TraitType.CONTAINER)) {
@@ -376,7 +381,8 @@ export const removingAction: Action & { metadata: ActionMetadata } = {
     'removed_from',
     'removed_from_surface',
     'cant_reach',
-    'already_have'
+    'already_have',
+    'attached'
   ],
   group: 'object_manipulation',
 

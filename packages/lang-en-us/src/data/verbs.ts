@@ -85,6 +85,9 @@ export const IFActions = {
   ASKING_FOR: 'if.action.asking_for',
   CONSULTING: 'if.action.consulting',
   BUYING: 'if.action.buying',
+  // Physical state (ADR-373)
+  TYING: 'if.action.tying',
+  UNTYING: 'if.action.untying',
 
   // Meta actions
   INVENTORY: 'if.action.inventory',
@@ -400,6 +403,16 @@ export const englishVerbs: VerbDefinition[] = [
   {
     action: IFActions.BUYING,
     verbs: ['buy', 'purchase', 'pay for'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.TYING,
+    verbs: ['tie', 'fasten', 'attach'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.UNTYING,
+    verbs: ['untie', 'unfasten'],
     requiresObject: true
   },
   
