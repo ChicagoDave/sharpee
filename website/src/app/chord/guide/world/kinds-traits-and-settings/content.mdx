@@ -94,6 +94,29 @@ create the straw bale
   end on
 ```
 
+A price is a setting too. `costs 3 credits` lets the player `buy`,
+`purchase` or `pay for` the thing: the price comes off the buyer's own
+`credits` counter and the thing moves to them. Short of the price, the
+player "can't afford" it and nothing changes; a thing with no price
+"isn't for sale". The word after the number names a counter that some
+playable character must carry (`counter credits starts 5`), so each
+character the player becomes spends from a purse of its own. `on the
+player buying` and `after the player buying` work as on any action.
+
+```chord
+create the courier
+  a person, playable
+  counter credits starts 5
+
+create the ration bar
+  a thing, costs 3 credits
+  in the canteen kiosk
+
+  after the player buying
+    phrase kiosk-vends
+  end after
+```
+
 A trait can be conditional: `while` puts it under the control of a
 condition, live at play time.
 

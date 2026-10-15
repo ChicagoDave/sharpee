@@ -24,3 +24,26 @@ A row can also be gated on how recently a topic came up — see
 which extends this same `define topics` block, and
 [Characters & Conversation](/chord/guide/characters-and-conversation) for
 the wider dialogue layers built on it.
+
+A **readable thing** can carry a topic table too, and then `consult <thing>
+about <topic>`, `look up <topic> in <thing>` and `read about <topic> in
+<thing>` answer from its rows, matched the same way. With no matching row
+the player finds "nothing about that" in it, and a thing that is not
+readable is not something to look things up in. A book has no memory of
+being asked, so its table is plain `about` rows: exchanges, threads and
+`knows` gating are for people, and an error names the line that uses one.
+
+```chord
+create the flight manual
+  a thing, readable with text "UPPS COURIER FLIGHT MANUAL, REV. 9"
+  in the Cockpit
+  aka manual
+
+define topics for the flight manual
+  about "the fold", "the fold drive", "folding": phrase manual-fold
+  about "the airlock", "the outer hatch": phrase manual-airlock
+end topics
+```
+
+`on the player consulting` in the source's block is consulted first, as
+`on the player asking` is for a person.

@@ -167,7 +167,7 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 | Row | Plan phase | Exercised by |
 |---|---|---|
 | lowering, raising (object side) | 6 | UPPS `upps.tests/opejfh5t.json`: `lower ramp` (a371low1) and `raise ship` (a371rai1) fire the courier ship's clause; `lower crates` (a371low2) refuses "You can't lower the mail crates."; derived tests `courier ship · on lowering` / `on raising` pass |
-| throwing (targeted) / Throwing it at | 7 | |
+| throwing (targeted) / Throwing it at | 7 | UPPS `upps.tests/opejfh5t.json`: bare `throw letter` (a372thr1) is the stock toss, neither tailed clause fires; `throw letter at machine` (a372thr2) fires the letter's `on the player throwing at the sorting machine`; `throw letter at bin` (a372thr3) fires the bin's `on the player throwing the dead letter` and the letter lands in the bin; derived tests type the counterpart tails (`packages/branch-tester/tests/derived-counterpart.test.ts`) |
 | vehicle (trait and kind) | 11, 14 | |
 | attached / Tying it to | 8 | |
 | breakable, destructible | 8 | |
@@ -175,14 +175,14 @@ One row per item in the 4.0 slice. The plan phase that makes the row sayable fil
 | listener | 9 | |
 | night-vision | 9 | |
 | Looking under | 5 | UPPS `upps.tests/opejfh5t.json`: `look under machine` (a370lku1) and `look under bin` (a370lku4) speak the stock line; `look under crates` (a370lku2) fires the crates' clause; `a370hold.json` card a370lku3 |
-| Consulting it about | 7 | |
-| Asking it for | 7 | |
+| Consulting it about | 7 | UPPS `upps.tests/7nlk6n1g.json` (cockpit line): `consult manual about the fold` (a372cns1), `look up hatch in manual` (a372cns2) and `read about guidance in manual` (a372cns3) answer from the flight manual's `define topics` rows; `consult manual about vance` (a372cns4) is `nothing_found`; `consult couch about the fold` (a372cns5) is `not_consultable`; stdlib `adr-372-request-consult-buy.test.ts` |
+| Asking it for | 7 | UPPS `upps.tests/a370pad1.json`: `ask quint for token` while she is unconvinced (a372ask1) is refused by her tailed clause; `ask quint for tram` (a372ask2) is the stock refusal; after `show card to quint` (a372ask3) the clause hands the token over; again (a372ask4) is `already_have`; stdlib `adr-372-request-consult-buy.test.ts` asserts an unauthored request moves nothing |
 | Kissing | 5 | UPPS `opejfh5t.json`: `kiss machine` (a370kis1) stock thing line, `kiss robot` (a370kis2) fires the robot's clause; `a370pad1.json`: `kiss quint` (a370kis3) stock person line |
 | Waving, Waving hands | 5 | UPPS `opejfh5t.json`: `wave` (a370wav1) hands line, `wave card` (a370wav2) held-thing line; `a370pad1.json`: `wave card` on the pad (a370wav4) fires the card's `while` clause, bare `wave` (a370wav3) stock |
 | Saying yes, no, sorry | 5 | UPPS `opejfh5t.json`: `yes`/`no` (a370yes1, a370no01) fire the depot room clause, `sorry` (a370sry1) stock; `a370pad1.json`: `yes`/`no`/`sorry` while Quint is unconvinced (a370yes2, a370no02, a370sry2) fire the pad clauses, and after `show card` (a370yes3, a370sry3) the stock lines return. The speaker path (a live scene) is pinned by the stdlib test only: UPPS has no conversation block yet |
 | Burning / `flammable with` | 6 | UPPS `opejfh5t.json`: `burn torch` (a371brn1) stock refusal, `burn letter` without the torch (a371brn2) "You need the disposal torch…", with it (a371brn3) the letter's body runs and it is gone; derived test `dead letter · on burning` passes |
 | Setting it to / `settable to` | 6 | UPPS `upps.tests/7nlk6n1g.json` (cockpit line): `set selector to mars` (a371set1) names the values, bare `set selector` (a371set2) asks to what, `set couch to titan` (a371set3) refuses, `set selector to titan` (a371set4) sets and fires the `after` line, `examine selector` (a371sel2) reads TITAN through `select on`, `set selector to kepler` (a371set5) is refused by the tailed clause and the state stays (a371sel3); derived tests `guidance selector · on setting` / `after setting` pass |
-| Buying / `costs` | 7 | |
+| Buying / `costs` | 7 | UPPS `upps.tests/opejfh5t.json`: `buy torch` (a372buy1) is `not_for_sale`; `buy bar` (a372buy2) spends 3 of the courier's 5 credits and fires the bar's `after the player buying`; `buy coffee` (a372buy3) at 4 credits with 2 left is `cant_afford`; `buy bar` again (a372buy4) is `already_have`; story-loader `adr-372-request-consult-buy-runtime.test.ts` asserts the location and the counter value; stdlib `adr-372-request-consult-buy.test.ts` |
 | Jumping | 5 | UPPS `opejfh5t.json`: `jump` (a370jmp1) fires the depot room clause; `a370pad1.json`: `jump` (a370jmp2) stock line |
 | Pushing it to / pushable between rooms | 13 | |
 | Emptying | 5 | UPPS `opejfh5t.json`: `empty satchel` (a370emp1) already_empty, `empty bin` (a370emp7) spills the dead letter and fires the bin's `after` clause, again (a370emp8) already_empty; `a370hold.json`: closed source (a370emp2), closed destination (a370emp3), `empty jar into locker` (a370emp4), not a container (a370emp6) |

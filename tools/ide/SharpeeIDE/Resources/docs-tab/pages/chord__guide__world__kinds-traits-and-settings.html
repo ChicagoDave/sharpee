@@ -43,6 +43,18 @@
     change the straw bale to loose
     phrase twine-cut
   end on</code></pre>
+<p>A price is a setting too. <code>costs 3 credits</code> lets the player <code>buy</code>, <code>purchase</code> or <code>pay for</code> the thing: the price comes off the buyer's own <code>credits</code> counter and the thing moves to them. Short of the price, the player &quot;can't afford&quot; it and nothing changes; a thing with no price &quot;isn't for sale&quot;. The word after the number names a counter that some playable character must carry (<code>counter credits starts 5</code>), so each character the player becomes spends from a purse of its own. <code>on the player buying</code> and <code>after the player buying</code> work as on any action.</p>
+<pre><code class="language-chord">create the courier
+  a person, playable
+  counter credits starts 5
+
+create the ration bar
+  a thing, costs 3 credits
+  in the canteen kiosk
+
+  after the player buying
+    phrase kiosk-vends
+  end after</code></pre>
 <p>A trait can be conditional: <code>while</code> puts it under the control of a condition, live at play time.</p>
 <pre><code class="language-chord">create the Root Cellar
   a room, dark while the oil lantern is not lit

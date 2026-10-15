@@ -92,3 +92,34 @@ create the pad master
 <p><code>yes</code>, <code>no</code> and <code>sorry</code> go in the block of the person the player is talking to — the clause fires while a conversation with them is live — or on a room, for an answer given to nobody. Inside an open <code>define exchange</code>, <code>yes</code> and <code>no</code> are the exchange's answer and never reach these clauses. Two-word verbs are written with an underscore, as <code>switching_on</code> and <code>taking_off</code> are: <code>saying_yes</code>, <code>saying_no</code>, <code>saying_sorry</code>, <code>looking_under</code>. <code>wave</code> on its own consults the room; <code>wave &lt;thing&gt;</code> consults the thing, which must be held. <code>look under &lt;thing&gt;</code> reveals the <code>concealed</code> things it holds, as <code>search</code> does; <code>empty &lt;thing&gt;</code> spills a container onto the floor, or into another container with <code>empty &lt;thing&gt; into &lt;other&gt;</code>, and both take a clause in the container's block (<code>on the player looking_under</code>, <code>after the player emptying</code>).</p>
 <h2 id="a-value-on-the-head">A value on the head</h2>
 <p><code>set &lt;thing&gt; to &lt;value&gt;</code> carries a word, and a <code>setting</code> head can name it: <code>on the player setting to kepler</code> fires only when that is the value set, and <code>after the player setting</code> with no tail fires for every value. The tail is for <code>setting</code> alone (<code>on the player taking to x</code> is an error naming <code>while &lt;thing&gt; is x</code> as the form for other verbs), and the word must be one of the thing's states.</p>
+<h2 id="the-other-noun-on-the-head">The other noun on the head</h2>
+<p>Throwing, giving, showing, putting, inserting and asking for a thing each involve two nouns, and a clause on either one fires. <code>on the player throwing</code> in a bin's block fires for anything thrown at the bin; to say <em>which</em> thing, name it at the end of the head. The clause then fires only when that noun is the one in the command.</p>
+<pre><code class="language-chord">create the returns bin
+  a container, scenery
+  in the Sorting Room
+
+  on the player throwing the dead letter
+    move the dead letter to the returns bin
+    phrase letter-returned
+  end on
+
+create the dead letter
+  a thing
+  in the returns bin
+
+  on the player throwing at the sorting machine
+    phrase machine-spits-letter
+  end on</code></pre>
+<p>The tail is read from the end of the head. The last <code>the</code>, <code>a</code> or <code>an</code> opens it, and a preposition just before that article (<code>at</code>, <code>for</code>, <code>from</code>, <code>about</code>, <code>in</code>) goes with it; <code>at</code>, <code>for</code> and <code>from</code> open a tail on their own when the name has no article (<code>at Tobias</code>), and <code>giving to Tobias</code> works as you would read it. The preposition is there for reading and changes nothing. A tail goes on a head with one action only, names a thing in the story, and is never the block's own owner; each of those is an error that says so. If a name has an article inside it (<code>the king of the hill</code>), the tail splits at the inner one; refer to the thing by an alias without the article.</p>
+<p>There is no word in the body for the other noun: the tail is how a clause names it, and then the body can name it too.</p>
+<p><code>ask &lt;person&gt; for &lt;thing&gt;</code> is its own action, <code>asking_for</code>, separate from <code>ask &lt;person&gt; about &lt;topic&gt;</code>. Nothing is handed over unless a clause does it; with none, the person &quot;doesn't seem inclined to hand over&quot; the thing.</p>
+<pre><code class="language-chord">create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player asking_for the tram token
+    refuse when the pad master is unconvinced: quint-no-token
+    move the tram token to the player
+    phrase quint-hands-token
+  end on</code></pre>

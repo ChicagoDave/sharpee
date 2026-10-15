@@ -89,6 +89,24 @@ asking-not-yet                    not_yet                                 {capit
 asking-must-do-first              must_do_first                           {capitalize the target} {verb:says target}, &quot;There's something you need to do first.&quot;
 asking-earned-trust               earned_trust                            {capitalize the target} {verb:says target}, &quot;Since you've proven yourself, I'll tell you...&quot;</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.ask_blocked</code> (ADR-052).</p>
+<h2 id="ask-for-beg-for-if-action-asking-for">ask for, beg for — <code>if.action.asking_for</code></h2>
+<p><strong>Group</strong> <code>social</code> · <strong>Slots</strong> <code>recipient</code>, <code>item</code> · <strong>Emits</strong> <code>if.event.ask_for_blocked</code>, <code>if.event.asked_for</code></p>
+<pre><code class="language-chord">define action asking_for
+  grammar
+    ask the recipient for the item
+    beg the recipient for the item</code></pre>
+<p>ASK FOR - Ask someone for a thing. Stories decide whether they hand it over. Example: ASK THE GROCER FOR THE APPLE</p>
+<p>A request, distinct from asking about a topic (ADR-372): it changes nothing and refuses by default. A Chord <code>on the player asking_for</code> clause on the person or on the thing answers in its place; name the other noun on the head to narrow it — <code>on the player asking_for the ration bar</code> in the grocer's block. The clause body does any handing over (<code>move the ration bar to the player</code>).</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+asking-for-no-target              no_target                               Ask whom?
+asking-for-no-item                no_item                                 Ask {the recipient} for what?
+asking-for-not-visible            not_visible                             {You} {can't} see {the recipient}.
+asking-for-too-far                too_far                                 {capitalize the recipient} {verb:is recipient} too far away.
+asking-for-not-actor              not_actor                               {You} can only ask people for things.
+asking-for-self                   self                                    {You} can't ask {yourself} for things.
+asking-for-already-have           already_have                            {You} already {have} {the item}.
+asking-for-refused                refused                                 {capitalize the recipient} {verb:doesn't recipient} seem inclined to hand over {the item}.</code></pre>
 <h2 id="attack-kill-fight-slay-if-action-attacking">attack, kill, fight, slay — <code>if.action.attacking</code></h2>
 <p><strong>Group</strong> <code>interaction</code> · direct object required · <strong>Slots</strong> <code>target</code>, <code>weapon</code> · <strong>Emits</strong> <code>if.event.attacked</code>, <code>if.event.death</code>, <code>if.event.dropped</code>, <code>if.event.exit_revealed</code>, <code>if.event.knocked_out</code></p>
 <pre><code class="language-chord">define action attacking
@@ -205,6 +223,22 @@ burning-needs-tool                needs_tool                              {You} 
 burning-tool-not-held             tool_not_held                           {You} {aren't} holding {the tool}.
 burning-wrong-tool                wrong_tool                              {capitalize the tool} won't burn {the item}.
 burning-burned                    burned                                  {You} {set} fire to {the item}.</code></pre>
+<h2 id="buy-purchase-pay-for-if-action-buying">buy, purchase, pay for — <code>if.action.buying</code></h2>
+<p><strong>Group</strong> <code>social</code> · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.buy_blocked</code>, <code>if.event.bought</code></p>
+<pre><code class="language-chord">define action buying
+  grammar
+    buy the item
+    purchase the item
+    pay for the item</code></pre>
+<p>BUY - Buy something that has a price, if you can afford it. Example: BUY THE RATION BAR</p>
+<p>A thing with a price (<code>costs 3 credits</code>) can be bought (ADR-372). The price spends the buyer's own counter of that name — the player character's <code>counter credits starts 10</code> — and the thing moves to the buyer; short of credits is <code>cant_afford</code>, and a thing with no price is not for sale. An <code>on the player buying</code> clause on the thing may refuse or add.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+buying-no-target                  no_target                               Buy what?
+buying-not-for-sale               not_for_sale                            {capitalize the target} {verb:isn't target} for sale.
+buying-already-have               already_have                            {You} already {have} {the target}.
+buying-cant-afford                cant_afford                             {You} can't afford {the target}.
+buying-bought                     bought                                  {You} {buy} {the target}.</code></pre>
 <h2 id="climb-climb-up-climb-down-scale-if-action-climbing">climb, climb up, climb down, scale — <code>if.action.climbing</code></h2>
 <p><strong>Group</strong> <code>movement</code> · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.climbed</code>, <code>if.event.entered</code>, <code>if.event.moved</code></p>
 <pre><code class="language-chord">define action climbing
@@ -249,6 +283,22 @@ closing-closed                    closed                                  {You} 
 closing-cant-reach                cant_reach                              {You} {can't} reach {the item}.
 closing-prevents-closing          prevents_closing                        {You} {can't} close {the item} while {obstacle} {verb:is obstacle} in the way.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.close_blocked</code> (ADR-052).</p>
+<h2 id="consult-about-look-up-in-read-about-in-if-action-consulting">consult about, look up in, read about in — <code>if.action.consulting</code></h2>
+<p><strong>Group</strong> <code>observation</code> · <strong>Slots</strong> <code>source</code> · <strong>Emits</strong> <code>if.event.consult_blocked</code>, <code>if.event.consulted</code></p>
+<pre><code class="language-chord">define action consulting
+  grammar
+    consult the source about the topic
+    look up the topic in the source
+    read about the topic in the source
+  the topic is a topic</code></pre>
+<p>CONSULT - Look a topic up in a book, a directory or a manual. Example: CONSULT THE DIRECTORY ABOUT VANCE</p>
+<p>A <code>readable</code> thing answers from its own <code>define topics</code> table, matched exactly as a person's is for <code>ask</code> (ADR-372); an unmatched topic speaks the stock line. A readable thing's table holds plain <code>about …:</code> rows only — exchanges and threads stay with people.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+consulting-no-target              no_target                               Consult what?
+consulting-no-topic               no_topic                                Look up what in {the source}?
+consulting-not-consultable        not_consultable                         {capitalize the source} {verb:isn't source} something {you} can look things up in.
+consulting-nothing-found          nothing_found                           {You} {find} nothing about that in {the source}.</code></pre>
 <h2 id="cut-with-cut-using-cut-slice-if-action-cutting">cut with, cut using, cut, slice — <code>if.action.cutting</code></h2>
 <p><strong>Group</strong> <code>manipulation</code> · direct object required · <strong>Slots</strong> <code>target</code>, <code>tool</code> · <strong>Emits</strong> <code>if.event.cut</code>, <code>if.event.cut_blocked</code></p>
 <pre><code class="language-chord">define action cutting

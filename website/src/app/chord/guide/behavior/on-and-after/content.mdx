@@ -166,3 +166,61 @@ and `after the player setting` with no tail fires for every value. The tail
 is for `setting` alone (`on the player taking to x` is an error naming
 `while <thing> is x` as the form for other verbs), and the word must be one
 of the thing's states.
+
+## The other noun on the head
+
+Throwing, giving, showing, putting, inserting and asking for a thing each
+involve two nouns, and a clause on either one fires. `on the player
+throwing` in a bin's block fires for anything thrown at the bin; to say
+*which* thing, name it at the end of the head. The clause then fires only
+when that noun is the one in the command.
+
+```chord
+create the returns bin
+  a container, scenery
+  in the Sorting Room
+
+  on the player throwing the dead letter
+    move the dead letter to the returns bin
+    phrase letter-returned
+  end on
+
+create the dead letter
+  a thing
+  in the returns bin
+
+  on the player throwing at the sorting machine
+    phrase machine-spits-letter
+  end on
+```
+
+The tail is read from the end of the head. The last `the`, `a` or `an`
+opens it, and a preposition just before that article (`at`, `for`,
+`from`, `about`, `in`) goes with it; `at`, `for` and `from` open a tail
+on their own when the name has no article (`at Tobias`), and `giving to
+Tobias` works as you would read it. The preposition is there for
+reading and changes nothing. A tail goes on a head with one action only,
+names a thing in the story, and is never the block's own owner; each of
+those is an error that says so. If a name has an article inside it (`the
+king of the hill`), the tail splits at the inner one; refer to the thing
+by an alias without the article.
+
+There is no word in the body for the other noun: the tail is how a clause
+names it, and then the body can name it too.
+
+`ask <person> for <thing>` is its own action, `asking_for`, separate from
+`ask <person> about <topic>`. Nothing is handed over unless a clause does
+it; with none, the person "doesn't seem inclined to hand over" the thing.
+
+```chord
+create the pad master
+  a person
+  in the Landing Pad
+  states: unconvinced, waved-through
+
+  on the player asking_for the tram token
+    refuse when the pad master is unconvinced: quint-no-token
+    move the tram token to the player
+    phrase quint-hands-token
+  end on
+```
