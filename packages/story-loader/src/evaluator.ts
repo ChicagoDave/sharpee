@@ -25,9 +25,10 @@ import {
   AttachedBehavior,
   BreakableTrait,
   CharacterModelTrait,
-  LightSourceTrait,
+  LightSourceBehavior,
   LockableBehavior,
   LockableTrait,
+  PresenceBehavior,
   RoomBehavior,
   type DirectionType,
   MOOD_AXES,
@@ -401,6 +402,9 @@ export class Evaluator {
         if (subjectId === playerId) return raw(true);
         const playerRoom = ctx.world.getContainingRoom(playerId)?.id ?? ctx.world.getLocation(playerId);
         if (ctx.world.getEntity(subjectId)?.has(TraitType.ROOM)) return raw(playerRoom === subjectId);
+        // A door or backdrop is here wherever it is present (ADR-374 D1).
+        const subject = ctx.world.getEntity(subjectId);
+        if (subject && playerRoom !== undefined && PresenceBehavior.roomsBeyondHome(subject).includes(playerRoom)) return raw(true);
         const subjectRoom = ctx.world.getContainingRoom(subjectId)?.id ?? ctx.world.getLocation(subjectId);
         return raw(subjectRoom !== undefined && subjectRoom === playerRoom);
       }
@@ -423,14 +427,11 @@ export class Evaluator {
       }
       case 'can-see':
       case 'can-reach': {
-        // Phase B semantics: co-location — subject and object share a
-        // containing room. (Full perception/reach services are a later
-        // refinement; this matches the Zoo constructs' intent.)
+        // ADR-374 D4: the platform's own answers — light, night vision,
+        // containers, presence in many rooms — not co-location.
         const subjectId = this.entityValue(cond.subject, ctx);
         const objectId = this.entityValue(cond.object, ctx);
-        const subjectRoom = ctx.world.getContainingRoom(subjectId)?.id ?? ctx.world.getLocation(subjectId);
-        const objectRoom = ctx.world.getContainingRoom(objectId)?.id ?? ctx.world.getLocation(objectId);
-        return raw(subjectRoom !== undefined && subjectRoom === objectRoom);
+        return raw(cond.pred === 'can-see' ? ctx.world.canSee(subjectId, objectId) : ctx.world.canReach(subjectId, objectId));
       }
     }
   }
@@ -456,7 +457,7 @@ export class Evaluator {
           const state = ctx.world.getStateValue(CHORD_STATE_PREFIX + irId);
           if (state !== undefined && state === symbol) return true;
         }
-        const adjective = this.stateAdjectiveHolds(entity, symbol);
+        const adjective = this.stateAdjectiveHolds(entity, symbol, ctx.world);
         if (adjective !== null) return adjective;
         // ADR-310 D16 / ADR-318: interior classification — mood, threat,
         // and pressure-band words read the character-model trait, the
@@ -515,7 +516,7 @@ export class Evaluator {
    * `symbol` is not a state adjective (or the trait is absent, so the
    * adjective cannot hold either way).
    */
-  private stateAdjectiveHolds(entity: NonNullable<ReturnType<WorldModel['getEntity']>>, symbol: string): boolean | null {
+  private stateAdjectiveHolds(entity: NonNullable<ReturnType<WorldModel['getEntity']>>, symbol: string, world: WorldModel): boolean | null {
     switch (symbol) {
       case 'open':
       case 'closed': {
@@ -540,11 +541,11 @@ export class Evaluator {
         if (!wearable) return null;
         return wearable.worn === true;
       }
-      case 'lit': {
-        const source = entity.get(TraitType.LIGHT_SOURCE) as LightSourceTrait | undefined;
-        if (!source) return null;
-        return source.isLit === true;
-      }
+      case 'lit':
+        // ADR-374 D10: the one reading of "gives light" — lit, switched on
+        // and powered — that the room's light check uses.
+        if (!entity.has(TraitType.LIGHT_SOURCE)) return null;
+        return LightSourceBehavior.givesLight(entity, world);
       case 'broken': {
         // ADR-373 D2: the trait attacking, dropping and throwing write.
         const breakable = entity.get(TraitType.BREAKABLE) as BreakableTrait | undefined;

@@ -149,6 +149,9 @@ import { buyingLanguage } from './buying.js';
 // ADR-373: tying
 import { tyingLanguage } from './tying.js';
 import { untyingLanguage } from './untying.js';
+// ADR-374: lamps that work as lamps
+import { lightingLanguage } from './lighting.js';
+import { extinguishingLanguage } from './extinguishing.js';
 export * from './jumping.js';
 export * from './kissing.js';
 export * from './waving.js';
@@ -164,6 +167,8 @@ export * from './consulting.js';
 export * from './buying.js';
 export * from './tying.js';
 export * from './untying.js';
+export * from './lighting.js';
+export * from './extinguishing.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { wakingLanguage } from './waking.js';
@@ -283,4 +288,7 @@ export const standardActionLanguage = [
   // ADR-373: tying
   tyingLanguage,
   untyingLanguage,
+  // ADR-374: lamps that work as lamps
+  lightingLanguage,
+  extinguishingLanguage,
 ];

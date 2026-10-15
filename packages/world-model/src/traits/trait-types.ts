@@ -18,6 +18,8 @@ export const TraitType = {
   SCENERY: 'scenery',
   /** Sees in the dark (ADR-328 D5) — presence is the fact */
   NIGHT_VISION: 'if.trait.night_vision',
+  /** Present in many rooms (ADR-374 D1) */
+  BACKDROP: 'if.trait.backdrop',
 
   // Interactive traits
   OPENABLE: 'openable',
@@ -120,6 +122,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.EDIBLE]: TraitCategory.STANDARD,
   [TraitType.SCENERY]: TraitCategory.STANDARD,
   [TraitType.NIGHT_VISION]: TraitCategory.STANDARD,
+  [TraitType.BACKDROP]: TraitCategory.STANDARD,
 
   // Interactive
   [TraitType.OPENABLE]: TraitCategory.INTERACTIVE,

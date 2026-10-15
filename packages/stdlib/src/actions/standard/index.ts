@@ -183,6 +183,9 @@ import { buyingAction } from './buying/index.js';
 // ADR-373: physical state the platform enforces
 import { tyingAction } from './tying/index.js';
 import { untyingAction } from './untying/index.js';
+// ADR-374: lamps that work as lamps
+import { lightingAction } from './lighting/index.js';
+import { extinguishingAction } from './extinguishing/index.js';
 export * from './jumping/index.js';
 export * from './kissing/index.js';
 export * from './waving/index.js';
@@ -199,6 +202,8 @@ export * from './buying/index.js';
 export * from './breaking/index.js';
 export * from './tying/index.js';
 export * from './untying/index.js';
+export * from './lighting/index.js';
+export * from './extinguishing/index.js';
 
 // Import author/debug actions
 import { TraceAction } from '../author/index.js';
@@ -286,6 +291,9 @@ export const standardActions = [
   // ADR-373: physical state the platform enforces
   tyingAction,
   untyingAction,
+  // ADR-374: lamps that work as lamps
+  lightingAction,
+  extinguishingAction,
   // Author/debug actions
   traceAction
 ];

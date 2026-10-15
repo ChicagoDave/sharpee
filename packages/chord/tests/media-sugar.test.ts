@@ -44,9 +44,13 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
   it('lowers every sugar form onto payloaded media.* emits with resolved src paths', () => {
     const result = compile(FIXTURE);
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    const body = result.ir.story.onClauses[0].body as Extract<IRStatement, { kind: 'emit' }>[];
-    expect(body.map((s) => [s.event, s.payload])).toEqual([
-      ['media-sound-play', [{ key: 'src', value: { kind: 'literal', value: 'audio/chime.ogg', valueType: 'string' } }]],
+    const body = result.ir.story.onClauses[0].body;
+    // ADR-374 D6: `play sound` is no longer pure sugar — it is a sound in the
+    // world as well as a cue, so it lowers to its own statement carrying the
+    // cue's resolved src.
+    expect(body[0]).toMatchObject({ kind: 'play-sound', sound: 'chime', src: 'audio/chime.ogg' });
+    const emits = body.slice(1) as Extract<IRStatement, { kind: 'emit' }>[];
+    expect(emits.map((s) => [s.event, s.payload])).toEqual([
       [
         'media-music-play',
         [
@@ -61,15 +65,16 @@ describe('media sugar + declared assets (ADR-216 AC-2)', () => {
           { key: 'layer', value: { kind: 'literal', value: 'background', valueType: 'string' } },
         ],
       ],
-      ['media-sound-play', undefined] as never, // placeholder — replaced below
-      ['media-transition', [{ key: 'kind', value: { kind: 'literal', value: 'fade', valueType: 'string' } }]],
-    ].map((entry, i) => (i === 3
-      ? ['media-ambient-play', [
+      [
+        'media-ambient-play',
+        [
           { key: 'src', value: { kind: 'literal', value: 'audio/rain.ogg', valueType: 'string' } },
           // ADR-241 D3: ambient emits always carry the bed word (`main` default)
           { key: 'channel', value: { kind: 'literal', value: 'main', valueType: 'string' } },
-        ]]
-      : entry)));
+        ],
+      ],
+      ['media-transition', [{ key: 'kind', value: { kind: 'literal', value: 'fade', valueType: 'string' } }]],
+    ]);
     // ADR-241 D4: the implied `main` bed joins the channel manifest.
     expect(result.ir.channels).toEqual([
       { name: 'main', family: 'ambient', span: expect.anything() },

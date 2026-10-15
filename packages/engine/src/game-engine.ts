@@ -16,6 +16,7 @@ import {
   StoryInfoTrait,
 } from '@sharpee/world-model';
 import { EventProcessor, type Effect } from '@sharpee/event-processor';
+import { withWorldReactions } from './events/world-reactions.js';
 import {
   type ActionRegistry,
   StandardActionRegistry,
@@ -1027,6 +1028,7 @@ export class GameEngine implements StoryEngine {
         stored.push(...events);
       },
       clearTurnEvents: (turn) => { engine.turnEvents.set(turn, []); },
+      withWorldReactions: (events, turn) => withWorldReactions(engine.eventProcessor, events, turn),
       get pendingPlatformOps() { return engine.pendingPlatformOps; },
       get soundBuffer() { return engine.soundBuffer; },
       get soundDispatcher() { return engine.soundDispatcher; },

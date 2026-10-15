@@ -582,8 +582,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       events.push(...resolution.events);
     }
 
-    // Check if destination is dark (no usable light source)
-    const isDark = VisibilityBehavior.isDark(destinationRoom, context.world);
+    // Check if destination is dark to this actor (no usable light source,
+    // and no night vision — ADR-374 D5)
+    const isDark = VisibilityBehavior.isDarkFor(context.actor, destinationRoom, context.world);
 
     if (isDark) {
       // Dark room with no light - emit went event with darkness messageId.

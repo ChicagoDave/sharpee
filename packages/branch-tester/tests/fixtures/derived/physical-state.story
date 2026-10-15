@@ -54,6 +54,42 @@ create the mooring line
     phrase line-made-fast
   end on
 
+create the call button
+  a thing, scenery, pushable
+  in the Specimen Room
+  aka button
+
+  A button.
+
+  after the player pushing
+    play sound bell
+  end after
+
+create the Back Room
+  a room
+  west to the Specimen Room
+
+  A back room.
+
+create the porter
+  a person, listener
+  in the Specimen Room
+  aka porter
+
+  A porter.
+
+  after hearing the bell
+    move the porter to the Back Room
+    move the porter to the Specimen Room
+    phrase porter-answers
+  end after
+
+define sound bell
+
+define phrase porter-answers
+  The porter looks in and out again.
+end phrase
+
 define phrase shards
   Shards.
 end phrase

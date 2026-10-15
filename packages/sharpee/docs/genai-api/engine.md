@@ -1819,6 +1819,12 @@ export interface TurnEngine {
     turnEventsOf(turn: number): ISemanticEvent[];
     /** Append events to a turn's stored list, rendered at turn end and cleared after. */
     storeTurnEvents(turn: number, events: readonly ISemanticEvent[]): void;
+    /**
+     * Apply events through the world's handlers (ADR-052), as an action's
+     * events are applied: the events, then the reactions, then a
+     * `command.failed` per handler that threw (events/world-reactions.ts).
+     */
+    withWorldReactions(events: ISemanticEvent[], turn: number): ISemanticEvent[];
     /** Empty a turn's stored list once it has been rendered. */
     clearTurnEvents(turn: number): void;
     /** Emit one of the engine's lifecycle events. */

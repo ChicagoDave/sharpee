@@ -21,4 +21,10 @@ end before</code></pre>
 <pre><code class="language-chord">create the pack horse
   a person, open-inventory
   carries the saddlebags</code></pre>
+<p>A piece of scenery can be in several rooms at once: a ceiling that runs over two rooms, the sky over a landing field. List the rooms, with commas between them and <code>and</code> before the last, or name a region to mean every room in it. The thing can be examined from each of those rooms, is never listed among their contents, and is out of reach everywhere else; in a dark room it is as unseen as anything else there. Only scenery can be in more than one place, since a thing the player could pick up cannot be in two places at once.</p>
+<pre><code class="language-chord">create the sodium lights
+  a thing, scenery
+  in the Sorting Room and the Loading Dock
+
+  Sodium lamps hang in rows from girders far overhead.</code></pre>
 <p>Note the disambiguation: <code>on</code> followed by an article is placement (<code>on the potting table</code>); <code>on</code> followed by a bare word opens a behavior clause (<code>on the player watching</code>).</p>

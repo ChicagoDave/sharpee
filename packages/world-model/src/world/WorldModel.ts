@@ -10,6 +10,7 @@ import { RoomBehavior } from '../traits/room/roomBehavior.js';
 import { RegionTrait, IRegionData } from '../traits/region/regionTrait.js';
 import { SceneTrait } from '../traits/scene/sceneTrait.js';
 import { DoorTrait } from '../traits/door/index.js';
+import { PresenceBehavior } from './PresenceBehavior.js';
 import { SceneryTrait } from '../traits/scenery/index.js';
 import { DEFAULT_TRAITS } from './default-trait-registry.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
@@ -1787,20 +1788,18 @@ export class WorldModel implements IWorldModel {
       source: 'core'
     });
 
-    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
-    // 2026-07-18): referenceable from either side. Only the door enters
-    // scope this way — the far room and its contents never do.
+    // A door is present at both of its rooms (David's ruling 2026-07-18),
+    // a backdrop at every room of its list (ADR-374 D1): referenceable from
+    // each. Only the thing itself enters scope this way — the far room and
+    // its contents never do. Keyed on the actor's room, so an actor in a
+    // box or on a seat still finds them.
     this.addScopeRule({
-      id: 'default_door_visibility',
+      id: 'default_presence_visibility',
       fromLocations: '*',
-      includeEntities: (context) =>
-        this.findByTrait(TraitType.DOOR)
-          .filter((door) => {
-            const doorTrait = door.get(TraitType.DOOR) as DoorTrait | undefined;
-            return doorTrait !== undefined
-              && (doorTrait.room1 === context.currentLocation || doorTrait.room2 === context.currentLocation);
-          })
-          .map((door) => door.id),
+      includeEntities: (context) => {
+        const roomId = this.getContainingRoom(context.actorId)?.id ?? context.currentLocation;
+        return PresenceBehavior.presentAt(roomId, this).map((entity) => entity.id);
+      },
       priority: 50,
       source: 'core'
     });

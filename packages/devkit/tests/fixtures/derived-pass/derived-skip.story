@@ -12,7 +12,7 @@ story
   id: derived-skip
   story-version: 0.0.1
 
-define timer flicker for the brass lamp
+define timer flicker for the brass bell
   turning
 end timer
 
@@ -21,24 +21,24 @@ create the Hall
 
   A hall.
 
-create the brass lamp
+create the brass bell
   a thing, scenery
-  aka lamp
-  states, reversible: dark, lit
+  aka bell
+  states, reversible: still, ringing
   in the Hall
 
-  A lamp.
+  A bell.
 
   on the player examining while flicker has expired
-    phrase lamp-after
+    phrase bell-after
   end on
 
   on the player smelling while flicker is turning
-    phrase lamp-mid
+    phrase bell-mid
   end on
 
   on the player touching
-    change the brass lamp to lit
+    change the brass bell to ringing
   end on
 
 create Alex
@@ -46,11 +46,11 @@ create Alex
   playable
   starts in the Hall
 
-define phrase lamp-after
+define phrase bell-after
   After the flicker.
 end phrase
 
-define phrase lamp-mid
+define phrase bell-mid
   Mid-flicker.
 end phrase
 

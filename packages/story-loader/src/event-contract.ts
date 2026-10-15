@@ -9,10 +9,12 @@
  * tests/event-selector.test.ts and the golden transcript gates.
  *
  * Public interface: EVENT_TRIGGERS, EVENT_PAYLOAD_FIELDS,
- * enteringDestination, movedActorId.
+ * enteringDestination, movedActorId, LISTENER_EVENT_TRIGGERS, heardSound.
  * Owner context: @sharpee/story-loader (type-only stdlib dep; erased at emit).
  */
 import type { ActorMovedEventData } from '@sharpee/stdlib';
+import type { ISemanticEvent } from '@sharpee/core';
+import { SOUND_EVENT_TYPES, type IAudibilityEvent } from '@sharpee/if-domain';
 
 /**
  * Chord event verb → stdlib event type it binds to. Gerund register since
@@ -93,4 +95,34 @@ export function movedActorId(event: { entities?: Record<string, unknown>; data?:
   if (typeof actor !== 'object' || actor === null) return undefined;
   const id = (actor as Record<string, unknown>).id;
   return typeof id === 'string' ? id : undefined;
+}
+
+/**
+ * Chord event verb → event type when the clause owner is a LISTENER (ADR-374
+ * D6): `after hearing the <sound>` rides ADR-172's per-listener delivery,
+ * whatever kind of thing the listener is.
+ */
+export const LISTENER_EVENT_TRIGGERS: Record<string, string> = {
+  hearing: SOUND_EVENT_TYPES.AUDIBILITY_HEARD,
+};
+
+/** The heard-event payload field the hearing filter reads; a compile-time probe on the if-domain shape. */
+export const HEARD_PAYLOAD_FIELDS: { kind: keyof IAudibilityEvent & 'kind' } = {
+  kind: 'kind',
+};
+
+/**
+ * Type-guarded read of a heard event (ADR-374 D6): who heard it — the
+ * dispatcher names the listener as the envelope's `entities.target` — and
+ * the sound's kind from the payload. No blind casts at the seam.
+ *
+ * @param event a `sound.audibility.heard` event
+ * @returns the listener's world id and the sound's kind, or undefined when mis-shaped
+ */
+export function heardSound(event: ISemanticEvent): { listenerId: string; kind: IAudibilityEvent['kind'] } | undefined {
+  const listenerId = event.entities?.target;
+  const data = event.data;
+  if (typeof listenerId !== 'string' || typeof data !== 'object' || data === null) return undefined;
+  const kind = (data as Record<string, unknown>)[HEARD_PAYLOAD_FIELDS.kind];
+  return typeof kind === 'string' ? { listenerId, kind } : undefined;
 }

@@ -27,6 +27,7 @@ import { ReadableTrait } from './readable/readableTrait.js';
 import { RoomTrait } from './room/roomTrait.js';
 import { SceneryTrait } from './scenery/sceneryTrait.js';
 import { NightVisionTrait } from './night-vision/nightVisionTrait.js';
+import { BackdropTrait } from './backdrop/backdropTrait.js';
 import { SupporterTrait } from './supporter/supporterTrait.js';
 import { SwitchableTrait } from './switchable/switchableTrait.js';
 import { WearableTrait } from './wearable/wearableTrait.js';
@@ -59,6 +60,7 @@ export const Traits = {
   RoomTrait,
   SceneryTrait,
   NightVisionTrait,
+  BackdropTrait,
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
@@ -92,6 +94,7 @@ export type {
   RoomTrait,
   SceneryTrait,
   NightVisionTrait,
+  BackdropTrait,
   SupporterTrait,
   SwitchableTrait,
   WearableTrait,
@@ -125,6 +128,7 @@ export type AnyTrait =
   | RoomTrait
   | SceneryTrait
   | NightVisionTrait
+  | BackdropTrait
   | SupporterTrait
   | SwitchableTrait
   | WearableTrait
@@ -187,6 +191,10 @@ export function isSceneryTrait(trait: any): trait is SceneryTrait {
 
 export function isNightVisionTrait(trait: any): trait is NightVisionTrait {
   return trait?.type === 'if.trait.night_vision';
+}
+
+export function isBackdropTrait(trait: any): trait is BackdropTrait {
+  return trait?.type === 'if.trait.backdrop';
 }
 
 export function isSupporterTrait(trait: any): trait is SupporterTrait {

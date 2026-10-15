@@ -1274,6 +1274,11 @@ export interface Placement {
   /** 'in' | 'on' | 'starts-in' */
   relation: 'in' | 'on' | 'starts-in';
   place: NameRef;
+  /**
+   * ADR-374 D2: the rest of a list placement (`in the Pad, the Platform and
+   * the Gate`), after `place`. Absent on a one-place line.
+   */
+  more?: NameRef[];
   span: Span;
 }
 
@@ -1564,7 +1569,8 @@ export interface DefineAsset {
   kind: 'define-asset';
   assetKind: 'sound' | 'image' | 'music';
   name: string;
-  path: string;
+  /** The file. Optional for a sound only: one with none is heard in the world and played to no speaker (ADR-374 D6). */
+  path: string | null;
   span: Span;
 }
 

@@ -158,7 +158,12 @@ const PINNED = {
   // Re-recorded 2026-10-14 (ADR-373 D1, D7, session 39d4c7): the
   // `attached to <the thing>` composition and `starts broken`. Additive, on
   // the unpublished 4.0 surface — no bump.
-  ebnfSha256: '809985f182bfce26316a8db2f0f3617c688ed15425fc67564983b07a3f08b096',
+  // Re-recorded 2026-10-15 (ADR-374 D2, D6, D9, D10, session 39d4c7): list
+  // and region placements for a backdrop, `hearing the <sound>` heads,
+  // `define sound` without a file, `play sound` as its own statement,
+  // `powered by`, and `starts lit`/`unlit`. Additive, on the unpublished
+  // 4.0 surface — no bump.
+  ebnfSha256: '181c0c60e2acb05e6f87df9cb7c750e06d311e8c188d8b3f7313e7c4bbf4305e',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

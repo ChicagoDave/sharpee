@@ -869,6 +869,11 @@ export interface IRPlacement {
   relation: 'in' | 'on' | 'starts-in';
   /** Entity ID of the containing place. */
   place: string;
+  /**
+   * ADR-374 D1–D2: a backdrop's rooms, `place` first — every room a listed
+   * or region placement names. Absent on a one-place placement.
+   */
+  places?: string[];
   span: Span;
 }
 
@@ -959,6 +964,11 @@ export interface IROnClause {
    * Additive and optional.
    */
   counterpart?: string;
+  /**
+   * The sound a listener's `after hearing the <sound>` reacts to (ADR-374
+   * D6) — the declared `define sound` name, which is the world sound's kind.
+   */
+  sound?: string;
   /** `while` qualifier (every-turn clauses). */
   condition: IRCondition | null;
   /** Explicit `before`/`after` ordering between traits on the same action. */
@@ -1508,6 +1518,14 @@ export type IRStatement =
   | { kind: 'phrase'; phraseKey: string; params: IRParam[]; stmtWhen?: IRCondition | null; span: Span }
   /** Payload present only when authored (`with …`, ADR-216) — additive field. */
   | { kind: 'emit'; event: string; payload?: IREmitField[]; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `play sound <name>` (ADR-374 D6): one sound, two sides — the cue `src`
+   * when the sound has a file (the ADR-216 media event), and always a sound
+   * in the world, made from the clause owner's room, which listeners hear
+   * through ADR-172's propagation. `sound` is the declared name, the world
+   * sound's kind.
+   */
+  | { kind: 'play-sound'; sound: string; src?: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'set'; target: IRValue; value: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'change'; entity: IRValue; state: string; stmtWhen?: IRCondition | null; span: Span }
   /**

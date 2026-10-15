@@ -4,15 +4,14 @@ import { Behavior } from '../behaviors/behavior.js';
 import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from './WorldModel.js';
 import { TraitType } from '../traits/trait-types.js';
-import { SwitchableBehavior } from '../traits/switchable/switchableBehavior.js';
+import { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior.js';
 import { VehicleTrait } from '../traits/vehicle/vehicleTrait.js';
 import { RoomTrait } from '../traits/room/roomTrait.js';
 import { ContainerTrait } from '../traits/container/containerTrait.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
-import { LightSourceTrait } from '../traits/light-source/lightSourceTrait.js';
 import { SceneryTrait } from '../traits/scenery/sceneryTrait.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
-import { DoorTrait } from '../traits/door/doorTrait.js';
+import { PresenceBehavior } from './PresenceBehavior.js';
 import { findTraitWithCapability } from '../capabilities/index.js';
 
 /**
@@ -64,37 +63,25 @@ export class VisibilityBehavior extends Behavior {
     return observer.hasTrait(TraitType.NIGHT_VISION);
   }
 
+  /**
+   * Whether a room is dark to this observer: dark, and the observer does
+   * not see in the dark (ADR-374 D5). Looking and the perception filter
+   * ask this; `isDark` stays the room's own fact.
+   *
+   * @param observer - The one looking
+   * @param room - The room it is in
+   * @param world - The world model
+   * @returns true when the observer cannot see the room
+   */
+  static isDarkFor(observer: IFEntity, room: IFEntity, world: WorldModel): boolean {
+    return !this.seesInDark(observer) && this.isDark(room, world);
+  }
+
   static isDark(room: IFEntity, world: WorldModel): boolean {
     if (!this.roomRequiresLight(room, world)) {
       return false; // Room isn't dark (live evaluator or static trait fact)
     }
     return !this.hasLightSource(room, world);
-  }
-
-  /**
-   * Determines if a light source entity is currently providing light.
-   * Checks isLit property first, falls back to switchable state, defaults to lit.
-   *
-   * Priority order:
-   * 1. Explicit isLit property (e.g., lit torch, extinguished candle)
-   * 2. Switchable trait state (e.g., flashlight isOn: true)
-   * 3. Default to lit (e.g., glowing gems, phosphorescent moss)
-   */
-  private static isLightActive(entity: IFEntity): boolean {
-    const lightTrait = entity.getTrait(LightSourceTrait);
-
-    // Explicit isLit property takes precedence
-    if (lightTrait?.isLit !== undefined) {
-      return lightTrait.isLit === true;
-    }
-
-    // Fall back to switchable state
-    if (entity.hasTrait(TraitType.SWITCHABLE)) {
-      return SwitchableBehavior.isOn(entity);
-    }
-
-    // Default: light sources without explicit state are lit
-    return true;
   }
 
   /**
@@ -194,14 +181,13 @@ export class VisibilityBehavior extends Behavior {
       return false;
     }
 
-    // A door is present at BOTH of its rooms (ADR-234 AC-3; David's ruling
-    // 2026-07-18): visible from either side. Only the door itself is
-    // two-sided — the far room and its contents stay unseen.
-    const targetDoor = target.getTrait(DoorTrait);
-    const doorPresent = !!targetDoor && !!observerRoom &&
-      (targetDoor.room1 === observerRoom.id || targetDoor.room2 === observerRoom.id);
+    // A door is present at both of its rooms (David's ruling 2026-07-18),
+    // a backdrop at every room of its list (ADR-374 D1): visible from each.
+    // Only the thing itself is present — the far room and its contents
+    // stay unseen.
+    const presentHere = !!observerRoom && PresenceBehavior.roomsBeyondHome(target).includes(observerRoom.id);
 
-    if (!observerRoom || (!doorPresent && observerRoom.id !== targetRoom?.id)) {
+    if (!observerRoom || (!presentHere && observerRoom.id !== targetRoom?.id)) {
       return false;
     }
 
@@ -211,9 +197,8 @@ export class VisibilityBehavior extends Behavior {
       // In a dark room, need light to see
       if (!this.hasLightSource(observerRoom, world)) {
         // Special cases in darkness:
-        // 1. Can see lit light sources
-        if (target.hasTrait(TraitType.LIGHT_SOURCE) &&
-            target.getTrait(LightSourceTrait)?.isLit === true) {
+        // 1. Can see a light that is giving light
+        if (target.hasTrait(TraitType.LIGHT_SOURCE) && LightSourceBehavior.givesLight(target, world)) {
           return true;
         }
         // 2. Can see items you're carrying (by feel)
@@ -226,9 +211,9 @@ export class VisibilityBehavior extends Behavior {
       }
     }
 
-    // A far-side door sits at the room boundary — container occlusion
-    // cannot apply across it.
-    if (doorPresent && observerRoom.id !== targetRoom?.id) {
+    // A far-side door sits at the room boundary, and a backdrop away from
+    // its home room stands in the open — container occlusion cannot apply.
+    if (presentHere && observerRoom.id !== targetRoom?.id) {
       return true;
     }
 
@@ -269,15 +254,12 @@ export class VisibilityBehavior extends Behavior {
         }
       }
       
-      // Add any lit light sources in the room
+      // Add any light in the room that is giving light (ADR-374 D10)
       const roomContents = world.getAllContents(observerRoom.id, { recursive: true });
       for (const entity of roomContents) {
-        if (entity.hasTrait(TraitType.LIGHT_SOURCE)) {
-          const light = entity.getTrait(LightSourceTrait);
-          if (light && light.isLit === true && !seen.has(entity.id)) {
-            visible.push(entity);
-            seen.add(entity.id);
-          }
+        if (entity.hasTrait(TraitType.LIGHT_SOURCE) && LightSourceBehavior.givesLight(entity, world) && !seen.has(entity.id)) {
+          visible.push(entity);
+          seen.add(entity.id);
         }
       }
       return visible;
@@ -306,15 +288,13 @@ export class VisibilityBehavior extends Behavior {
       }
     }
     
-    // Doors of this room whose spatial home is the far side (ADR-234 AC-3;
-    // David's ruling 2026-07-18): a door is present at both of its rooms.
-    for (const door of world.findByTrait(TraitType.DOOR)) {
-      if (seen.has(door.id)) continue;
-      const doorTrait = door.getTrait(DoorTrait);
-      if (!doorTrait || (doorTrait.room1 !== observerRoom.id && doorTrait.room2 !== observerRoom.id)) continue;
-      if (this.canSee(observer, door, world)) {
-        visible.push(door);
-        seen.add(door.id);
+    // Doors and backdrops present here though their home is elsewhere
+    // (David's ruling 2026-07-18; ADR-374 D1).
+    for (const present of PresenceBehavior.presentAt(observerRoom.id, world)) {
+      if (seen.has(present.id)) continue;
+      if (this.canSee(observer, present, world)) {
+        visible.push(present);
+        seen.add(present.id);
       }
     }
 
@@ -414,8 +394,8 @@ export class VisibilityBehavior extends Behavior {
     for (const entity of contents) {
       if (!entity.hasTrait(TraitType.LIGHT_SOURCE)) continue;
 
-      // Check if light is active (isLit, switchable, or default)
-      if (!this.isLightActive(entity)) continue;
+      // Is it giving light — lit, switched on, powered (ADR-374 D10)
+      if (!LightSourceBehavior.givesLight(entity, world)) continue;
 
       // Check if the light is accessible (not in a closed container)
       if (!this.isAccessible(entity.id, room.id, world)) continue;

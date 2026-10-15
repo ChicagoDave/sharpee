@@ -170,7 +170,7 @@ export const pushingAction: Action & { metadata: ActionMetadata } = {
           sharedData.newState = !switchable.isOn;
 
           // Perform the toggle (world mutation)
-          SwitchableBehavior.toggle(target);
+          SwitchableBehavior.toggle(target, context.world);
 
           // Choose message based on whether it has BUTTON trait
           if (target.has(TraitType.BUTTON)) {

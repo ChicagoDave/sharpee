@@ -61,6 +61,9 @@ export const TRAIT_ADJECTIVES: ReadonlySet<string> = new Set([
   'attached', // ADR-373 D1 — `attached to <the thing>`: composes AttachedTrait; taking refuses it, pulling detaches it when detachable
   'detachable', // ADR-373 D1 — marker beside `attached to` only (analyzer gate): AttachedTrait.detachable = true
   'breakable', // ADR-373 D2 — composes BreakableTrait; attacking breaks it; `broken` reads it
+  'powered', // ADR-374 D10 — `powered by <the thing> [and <the thing>]`: SwitchableTrait.powerSourceIds; switchable containers only (analyzer gates); has power while every source is inside it
+  'listener', // ADR-374 D6 — composes ListenerTrait (ADR-172): it hears the story's sounds; `after hearing the <sound>` reacts
+  'night-vision', // ADR-374 D3 — person-only, unconditional marker: NightVisionTrait; the visibility gates and the observer's own view read it
   'fragile', // ADR-373 D4 — marker beside `breakable` only (analyzer gate): BreakableTrait.fragile = true; dropping on a floor or throwing breaks it
 ]);
 
@@ -131,6 +134,8 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
   ['off', 'switchable'],
   ['on', 'switchable'],
   ['broken', 'breakable'], // ADR-373 D7
+  ['lit', 'light-source'], // ADR-374 D9 — a flame light can begin lit or not
+  ['unlit', 'light-source'],
 ]);
 
 /**
@@ -141,7 +146,16 @@ export const STARTS_STATE_PAIRINGS: ReadonlyMap<string, string> = new Map([
  * `leaving` (ratchet R3, ADR-236 D6) exists only as a region crossing
  * reaction — the loader refuses it on any other owner.
  */
-export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering', 'leaving']);
+export const EVENT_VERBS: ReadonlySet<string> = new Set(['entering', 'leaving', 'hearing']);
+
+/**
+ * Event verbs whose clause names its object as a tail with no actor before
+ * it (ADR-374 D6): `after hearing the depot-klaxon` in a listener's own
+ * block — the hearer is the owner, so there is no actor to write. The one
+ * exception to the head rule that a tail needs an actor and a gerund
+ * before it (parser `splitCounterpartTail`); a closed list, never guessed.
+ */
+export const TAILED_EVENT_VERBS: ReadonlySet<string> = new Set(['hearing']);
 
 /**
  * Client capability flags (ADR-216 `client has <capability>` and channel

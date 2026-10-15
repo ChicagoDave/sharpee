@@ -22,6 +22,7 @@ export * from './exit/index.js';
 export * from './climbable/index.js';
 export * from './scenery/index.js';
 export * from './night-vision/index.js';
+export * from './backdrop/index.js';
 export * from './supporter/index.js';
 export * from './switchable/index.js';
 export * from './wearable/index.js';

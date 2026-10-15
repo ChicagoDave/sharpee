@@ -88,7 +88,7 @@ import {
   UsePhrasebookDecl,
   ValueExpr,
 } from './ast.js';
-import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
+import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
 import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
@@ -110,6 +110,7 @@ import {
   IRActionDef,
   IRCondition,
   IREntity,
+  IRPlacement,
   IRExit,
   IRDataChannelDef,
   IRChannelReturn,
@@ -1499,6 +1500,47 @@ export class Analyzer {
             continue;
           }
         }
+        // ADR-374 D10: power is what is inside a device — so a switchable
+        // container, nothing else.
+        if (comp.name === 'powered') {
+          if (!entity.traits.some((t) => t.name === 'switchable')) {
+            this.diagnostics.error(
+              'analysis.powered-not-switchable',
+              `\`powered by\` says what \`${entity.name}\` needs inside it to run — a thing that runs is \`switchable\`. Add it beside \`powered by\`.`,
+              comp.span,
+            );
+            continue;
+          }
+          if ((entity.kinds[0]?.name ?? 'thing') !== 'container') {
+            this.diagnostics.error(
+              'analysis.powered-not-container',
+              `\`${entity.name}\` holds its power inside it, so it is \`a container\` — write \`a container, switchable, powered by …\`.`,
+              comp.span,
+            );
+            continue;
+          }
+        }
+        // ADR-374 D3: night vision is a property of whoever looks — a
+        // person, and unconditionally.
+        if (comp.name === 'night-vision') {
+          const kind = entity.kinds[0]?.name ?? 'thing';
+          if (kind !== 'person') {
+            this.diagnostics.error(
+              'analysis.night-vision-not-person',
+              `\`night-vision\` is how a person sees — \`${entity.name}\` is a ${kind}. Give it to the one who looks.`,
+              comp.span,
+            );
+            continue;
+          }
+          if (comp.condition !== null) {
+            this.diagnostics.error(
+              'analysis.conditional-composition-unsupported',
+              `\`night-vision\` is what \`${entity.name}\` is, not a state it changes — write it without \`while\`.`,
+              comp.span,
+            );
+            continue;
+          }
+        }
         if (comp.name === 'transparent') {
           const kind = entity.kinds[0]?.name ?? 'thing';
           if (kind !== 'container') {
@@ -1535,16 +1577,6 @@ export class Analyzer {
             comp.span,
           );
           continue;
-        }
-        if (comp.name === 'attached') {
-          const anchor = comp.config.find((c) => c.key === '' && c.valueKind === 'name')?.value;
-          if (anchor !== undefined && !this.resolveConfigEntity(ir, anchor)) {
-            this.diagnostics.error(
-              'analysis.setting-names-no-entity',
-              `\`${anchor}\` (what \`${entity.name}\` is attached to) names no entity.`,
-              comp.span,
-            );
-          }
         }
         // Census 14: conditional composition legality — room-`dark`, or a
         // declared trait whose clauses are ALL NPC-behavior-shaped (`on
@@ -1694,6 +1726,20 @@ export class Analyzer {
     // clause) are the only surfaces a Chord story has: the ADR-090
     // capability surface was reachable only through a TS hatch, and hatches
     // are gone (ADR-361), so both halves are decided here.
+    // ADR-374 D6: only a listener hears — `after hearing` on anything else
+    // would never fire.
+    for (const entity of ir.entities) {
+      if (entity.traits.some((t) => t.name === 'listener')) continue;
+      for (const clause of entity.onClauses) {
+        if (clause.action !== 'hearing' || clause.binding === 'every-turn') continue;
+        this.diagnostics.error(
+          'analysis.hearing-not-listener',
+          `\`${entity.name}\` reacts to a sound but cannot hear one — add \`listener\` to it.`,
+          clause.span,
+        );
+      }
+    }
+
     const TOOL_GATED_GERUNDS = [
       { adjective: 'cuttable', gerund: 'cutting' },
       { adjective: 'diggable', gerund: 'digging' },
@@ -1807,15 +1853,29 @@ export class Analyzer {
   private collectRegionMembers(entities: IREntity[]): void {
     const byId = new Map(entities.map((e) => [e.id, e]));
     const isRegionEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'region');
+    const isRoomEntity = (e: IREntity) => e.kinds.some((k) => k.name === 'room');
+    const isScenery = (e: IREntity) => e.traits.some((t) => t.name === 'scenery');
+    // ADR-374 D2: a scenery thing `in the <region>` is a backdrop of the
+    // region's rooms — expanded once every room has joined.
+    const regionBackdrops: Array<[IREntity, IREntity]> = [];
     for (const entity of entities) {
       const placement = entity.placement;
       if (!placement || placement.place === '') continue; // none, or unresolved (already reported)
+      if (placement.places && !this.checkBackdropList(entity, placement, byId, isRoomEntity, isScenery)) {
+        delete placement.places;
+        continue;
+      }
+      if (placement.places) continue; // a backdrop's list names rooms only
       const place = byId.get(placement.place);
       if (!place) continue;
-      const isRoom = entity.kinds.some((k) => k.name === 'room');
+      const isRoom = isRoomEntity(entity);
       if (!isRoom) {
         // A region or a door placed anywhere already has its own host gate.
         const hasOwnGate = entity.kinds.some((k) => k.name === 'region' || k.name === 'door');
+        if (isRegionEntity(place) && !hasOwnGate && isScenery(entity) && placement.relation === 'in') {
+          regionBackdrops.push([entity, place]);
+          continue;
+        }
         if (isRegionEntity(place) && !hasOwnGate) {
           this.diagnostics.error(
             'analysis.thing-in-region',
@@ -1846,6 +1906,52 @@ export class Analyzer {
       place.containing.push({ id: entity.id, span: placement.span });
       entity.placement = null;
     }
+    for (const [entity, region] of regionBackdrops) {
+      const members = region.containing.map((m) => m.id);
+      if (members.length === 0 || !entity.placement) continue; // a memberless region is its own diagnostic
+      entity.placement = { ...entity.placement, place: members[0], places: members };
+    }
+  }
+
+  /**
+   * ADR-374 D2: a list placement makes a backdrop — a scenery thing `in`
+   * rooms, every one of them a room. Reports each breach once.
+   *
+   * @returns true when the list stands
+   */
+  private checkBackdropList(
+    entity: IREntity,
+    placement: IRPlacement,
+    byId: Map<string, IREntity>,
+    isRoomEntity: (e: IREntity) => boolean,
+    isScenery: (e: IREntity) => boolean,
+  ): boolean {
+    if (placement.relation !== 'in') {
+      this.diagnostics.error(
+        'analysis.placement-list-relation',
+        `\`${placement.relation === 'on' ? 'on' : 'starts in'}\` names one place — only \`in\` takes a list, for a backdrop present in several rooms.`,
+        placement.span,
+      );
+      return false;
+    }
+    if (isRoomEntity(entity) || !isScenery(entity)) {
+      this.diagnostics.error(
+        'analysis.backdrop-not-scenery',
+        `\`${entity.name}\` is placed in several rooms — only scenery can be in more than one place (a thing the player could take cannot). Add \`scenery\`, or name one room.`,
+        placement.span,
+      );
+      return false;
+    }
+    const notRooms = (placement.places ?? []).filter((id) => id !== '' && !isRoomEntity(byId.get(id)!));
+    if (notRooms.length > 0) {
+      this.diagnostics.error(
+        'analysis.backdrop-not-room',
+        `\`${byId.get(notRooms[0])!.name}\` is not a room — a backdrop's list names the rooms it is present in.`,
+        placement.span,
+      );
+      return false;
+    }
+    return !(placement.places ?? []).includes('');
   }
 
   /**
@@ -2819,6 +2925,7 @@ export class Analyzer {
             case 'refuse':
             case 'phrase':
             case 'emit':
+            case 'play-sound':
             case 'set':
             case 'change':
             case 'change-player':
@@ -2938,7 +3045,7 @@ export class Analyzer {
   private readonly machineNames = new Set<string>();
 
   /** Declared media assets (ADR-216): name → kind + path. */
-  private readonly assets = new Map<string, { kind: 'sound' | 'image' | 'music'; path: string; span: Span }>();
+  private readonly assets = new Map<string, { kind: 'sound' | 'image' | 'music'; path: string | null; span: Span }>();
 
   /**
    * Build one `define machine` (ADR-215 `use state-machines` depth):
@@ -3136,7 +3243,13 @@ export class Analyzer {
       // `on the player taking` and `on the guards taking` on one owner are
       // two clauses, each firing for its own actor (Acceptance item 2).
       const actor = clause.actor ? valueExprText(clause.actor).toLowerCase() : '';
-      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}|${actor}`;
+      // A head's tail is part of its identity: the runtime gates each clause
+      // on its own tail (on-clauses.ts), so `throwing at the gong` and
+      // `throwing at the bin` on one owner are two clauses (ADR-372 D1), as
+      // are `setting to titan` / `to ceres` (ADR-371 D4) and two sounds
+      // heard (ADR-374 D6).
+      const tail = `${clause.counterpart ? valueExprText(clause.counterpart).toLowerCase() : ''}|${clause.valueTail ?? ''}`;
+      let key = `${clause.clauseKind}|${clause.action}|${clause.binding}|${clause.role ?? ''}|${actor}|${tail}`;
       if (EVENT_VERBS.has(clause.action)) {
         key += `|${clause.condition ? conditionFingerprint(clause.condition) : ''}`;
       }
@@ -4171,6 +4284,17 @@ export class Analyzer {
       return;
     }
     this.checkStateSet(decl.states, nameWords.join(' ').toLowerCase());
+    // ADR-374 D8 (GH #537): `<thing> is dark` reads room darkness, so a
+    // declared state named `dark` off a room could never be read.
+    const isRoomDecl = decl.compositions.some((c) => c.article !== null && c.words.join(' ') === 'room');
+    const darkState = isRoomDecl ? undefined : decl.states.find((st) => st.name === 'dark');
+    if (darkState) {
+      this.diagnostics.error(
+        'analysis.dark-state-reserved',
+        `\`dark\` is the platform's word for a room without light — \`${nameWords.join(' ')} is dark\` would read that, never this state. A thing that gives light is not dark by declaration: compose \`light-source\` (with \`switchable\` for one that switches on and off) and test \`is lit\`. For anything else, name the state for what it is.`,
+        darkState.span,
+      );
+    }
     const sym: EntitySymbol = {
       id,
       nameLower: nameWords.join(' ').toLowerCase(),
@@ -5446,6 +5570,54 @@ export class Analyzer {
    *
    * @returns true when reported (the actor is then not resolved again).
    */
+  /**
+   * ADR-374 D6: a listener's `after hearing the <sound>` — the hearer is the
+   * block's owner, so the head names no actor; the tail names a declared
+   * sound, the world sound's kind. Reports each breach once.
+   *
+   * @returns the sound's name, or undefined when the head is not usable
+   */
+  private resolveHeardSound(clause: OnClause): string | undefined {
+    if (clause.clauseKind === 'on') {
+      this.diagnostics.error(
+        'analysis.hearing-after-only',
+        '`on hearing` would refuse a sound that has already been made — react with `after hearing the <sound>`.',
+        clause.actionSpan,
+      );
+      return undefined;
+    }
+    if (clause.actor) {
+      this.diagnostics.error(
+        'analysis.hearing-actor',
+        `\`after ${valueExprText(clause.actor)} hearing …\` — the one who hears is this block's owner, a listener; write \`after hearing the <sound>\` in its block.`,
+        clause.actionSpan,
+      );
+      return undefined;
+    }
+    const tail = clause.counterpart;
+    if (!tail) {
+      this.diagnostics.error(
+        'analysis.hearing-needs-sound',
+        '`after hearing` names the sound it reacts to — `after hearing the depot-klaxon`.',
+        clause.actionSpan,
+      );
+      return undefined;
+    }
+    // The parsed name carries its article apart from its words.
+    const name = tail.kind === 'ref' && tail.ref.kind === 'name' ? tail.ref.words.join(' ') : valueExprText(tail);
+    const asset = this.assets.get(name);
+    if (!asset || asset.kind !== 'sound') {
+      const sounds = [...this.assets.entries()].filter(([, a]) => a.kind === 'sound').map(([n]) => n);
+      this.diagnostics.error(
+        'analysis.hearing-unknown-sound',
+        `\`${name}\` is not a declared sound${this.suggestText(name, sounds)}. Declare it: \`define sound ${name}\` (with \`from "<file>"\` to play it on a speaker too).`,
+        tail.span,
+      );
+      return undefined;
+    }
+    return name;
+  }
+
   private checkBareCounterpartName(clause: OnClause): boolean {
     if (clause.actor === null || clause.actor.kind !== 'ref' || clause.counterpart) return false;
     const actorWords = clause.actor.ref.words;
@@ -5461,6 +5633,18 @@ export class Analyzer {
 
   private resolveHeadActor(clause: OnClause, scope: Scope): IRValue | null {
     if (clause.binding === 'every-turn') return null;
+    // ADR-374 D6: the hearer is the block's owner, whatever it is — a person
+    // or a device; resolveHeardSound owns this head's rules.
+    if (clause.action === 'hearing') return null;
+    // `after hearing klaxon` reads `hearing` as the actor; name the form.
+    if (clause.actor && TAILED_EVENT_VERBS.has(valueExprText(clause.actor).toLowerCase())) {
+      this.diagnostics.error(
+        'analysis.hearing-needs-article',
+        `\`${clause.clauseKind} ${valueExprText(clause.actor)} ${clause.action}\` — name the sound with its article: \`after hearing the ${clause.action}\`.`,
+        clause.span,
+      );
+      return null;
+    }
     const owner = scope.owner;
     const explicit = `${clause.clauseKind} the player ${clause.action}`;
 
@@ -5562,9 +5746,13 @@ export class Analyzer {
 
     // ADR-372 D1: the counterpart tail. One word after `to` on a two-noun
     // gerund names the other noun (`giving to Tobias`), not a value.
+    // ADR-374 D6: a listener's `after hearing the <sound>` names a declared
+    // sound in its tail, not an entity — resolved here, never as a counterpart.
+    const isHearing = clause.action === 'hearing' && clause.binding !== 'every-turn';
+    const sound = isHearing ? this.resolveHeardSound(clause) : undefined;
     const isCounterpartAction = STDLIB_MANIFEST.counterpartActions.has(`if.action.${clause.action}`);
     let valueTail = clause.valueTail ?? undefined;
-    let counterpartExpr = clause.counterpart ?? null;
+    let counterpartExpr = isHearing ? null : clause.counterpart ?? null;
     if (valueTail && isCounterpartAction && !counterpartExpr) {
       counterpartExpr = { kind: 'ref', ref: { kind: 'name', article: null, words: [valueTail], span: clause.actionSpan }, span: clause.actionSpan };
       valueTail = undefined;
@@ -5605,6 +5793,7 @@ export class Analyzer {
       role: clause.role,
       ...(valueTail ? { valueTail } : {}),
       ...(counterpartId ? { counterpart: counterpartId } : {}),
+      ...(sound ? { sound } : {}),
       condition,
       ordering: clause.ordering,
       routing,
@@ -6719,8 +6908,8 @@ export class Analyzer {
     const stmtWhen = this.resolveStmtWhen(stmt.stmtWhen, scope);
     const fields: IREmitField[] = [];
     let event = '';
-    const requireAsset = (expected: 'sound' | 'image' | 'music'): void => {
-      if (!stmt.asset) return; // the parser already reported
+    const findAsset = (expected: 'sound' | 'image' | 'music') => {
+      if (!stmt.asset) return undefined; // the parser already reported
       const found = this.assets.get(stmt.asset);
       if (!found) {
         this.diagnostics.error(
@@ -6728,7 +6917,7 @@ export class Analyzer {
           `\`${stmt.asset}\` names no declared asset${this.suggestText(stmt.asset, [...this.assets.keys()])}. Declare it: \`define ${expected} ${stmt.asset} from "<file>"\`.`,
           stmt.span,
         );
-        return;
+        return undefined;
       }
       if (found.kind !== expected) {
         this.diagnostics.error(
@@ -6736,15 +6925,37 @@ export class Analyzer {
           `\`${stmt.asset}\` is a ${found.kind} asset — this statement needs a ${expected} asset.`,
           stmt.span,
         );
+        return undefined;
+      }
+      return found;
+    };
+    const requireAsset = (expected: 'sound' | 'image' | 'music'): void => {
+      const found = findAsset(expected);
+      if (!found) return;
+      if (found.path === null) {
+        // Only a sound may go without a file, and only `play sound` plays one
+        // (ADR-374 D6): an ambient bed is a file looping on a speaker.
+        this.diagnostics.error(
+          'analysis.asset-no-file',
+          `\`${stmt.asset}\` is a sound in the world with no file — an ambient bed needs one: \`define sound ${stmt.asset} from "<file>"\`.`,
+          stmt.span,
+        );
         return;
       }
       fields.push({ key: 'src', value: { kind: 'literal', value: found.path, valueType: 'string' } });
     };
     switch (stmt.form) {
-      case 'play-sound':
-        event = 'media-sound-play';
-        requireAsset('sound');
-        break;
+      case 'play-sound': {
+        // ADR-374 D6: one sound, two sides — its own IR statement.
+        const found = findAsset('sound');
+        return {
+          kind: 'play-sound',
+          sound: stmt.asset ?? '',
+          ...(found?.path ? { src: found.path } : {}),
+          stmtWhen,
+          span: stmt.span,
+        };
+      }
       case 'play-music':
         event = 'media-music-play';
         requireAsset('music');

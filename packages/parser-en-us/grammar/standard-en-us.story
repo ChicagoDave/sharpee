@@ -614,7 +614,8 @@ define action emptying
 
 ## ADR-371 — object-side adjectives (2026-10-14). Burning is cutting's
 ## shape: `flammable [with the <tool>]` gates it, the tool is an instrument.
-## Not `light the target`: `light lamp` must stay a switching form. Setting
+## Not `light the target`: that is lighting (ADR-374 D9), which switches a
+## switchable light on and lights a flame. Setting
 ## carries the typed value as a topic; the thing's implementation decides
 ## whether it is one of its settings. `set the target` alone refuses no_value.
 
@@ -650,3 +651,24 @@ define action untying
     untie the item
     untie the item from the anchor
     unfasten the item
+
+## ADR-374 D9 — lighting and putting out a light. A switchable light is
+## switched on or off (the actions delegate); a flame is lit, with its tool
+## when it needs one, or put out. `ignite` stays burning's.
+
+define action lighting
+  grammar
+    light the target
+    light the target with or using the tool
+  the tool is an instrument
+
+define action extinguishing
+  grammar
+    extinguish the target
+    put out the target
+    put the target out
+    blow out the target
+    blow the target out
+    snuff the target
+    snuff out the target
+    douse the target

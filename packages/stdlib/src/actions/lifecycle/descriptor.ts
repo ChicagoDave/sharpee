@@ -157,8 +157,12 @@ export interface LifecycleContracts {
    * attacking, dropping and throwing when the thing breaks (ADR-373 D3),
    * through `runBreakingLifecycle`, which runs postExecute and postReport
    * only. The executor never runs this descriptor's hooks.
+   *
+   * `causes` is the one declaration of which actions fire it, the most
+   * direct first: the call-site test holds the code to it, and tooling that
+   * must reach the id through play (the derived runner) reads it.
    */
-  firedAsConsequence?: boolean;
+  firedAsConsequence?: { readonly causes: readonly string[] };
 }
 
 /**

@@ -698,6 +698,15 @@ class RuleExtractor {
         return { writes: [{ fact: 'ending', value: null }], reads: [] };
       case 'emit':
         return { writes: [{ fact: `event:${stmt.event}`, value: null }], reads: [] };
+      case 'play-sound':
+        // ADR-374 D6: the world sound always; the cue too when it has a file.
+        return {
+          writes: [
+            { fact: 'event:sound-emitted', value: null },
+            ...(stmt.src ? [{ fact: 'event:media-sound-play', value: null }] : []),
+          ],
+          reads: [],
+        };
       case 'leave':
         return { writes: [{ fact: `place:${binding.owner ?? ANY}`, value: ANY_ROOM }], reads: [] };
       case 'award':

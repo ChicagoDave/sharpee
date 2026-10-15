@@ -243,9 +243,11 @@ describe('D3 row 6 — readable is a superset of startable', () => {
       expect(isStartableStateWord(word)).toBe(true);
       expect(isPlatformStateWord(word)).toBe(true);
     }
-    // `lit` is derived from world state, so it is readable but cannot be seeded.
-    expect(isPlatformStateWord('lit')).toBe(true);
-    expect(isStartableStateWord('lit')).toBe(false);
+    // `worn` is read from the worn relation, which a `wears` line sets, so it
+    // is readable but not a `starts` word. (`lit` was the example until
+    // ADR-374 D9 made `starts lit`/`unlit` a lantern's starting state.)
+    expect(isPlatformStateWord('worn')).toBe(true);
+    expect(isStartableStateWord('worn')).toBe(false);
   });
 
   it('keeps the two catalogs from silently becoming the same set', () => {

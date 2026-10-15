@@ -19,12 +19,10 @@ import { ActionMetadata } from '../../../validation/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
-  RoomTrait,
   SwitchableTrait,
   OpenableTrait,
   SwitchableBehavior,
-  LightSourceBehavior,
-  VisibilityBehavior
+  LightSourceBehavior
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ScopeLevel } from '../../../scope/index.js';
@@ -32,7 +30,7 @@ import { SwitchedOnEventData } from './switching_on-events.js';
 import { analyzeSwitchingContext, determineSwitchingMessage } from '../switching-shared.js';
 import { MESSAGES } from './switching_on-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
-import { captureRoomSnapshot, captureEntitySnapshots, RoomSnapshot, EntitySnapshot } from '../../base/snapshot-utils.js';
+import { RevealedRoom, darkForActor, captureRevealedRoom, revealedRoomEvents } from '../illumination-shared.js';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -68,8 +66,7 @@ interface SwitchingOnSharedData {
   willIlluminateLocation?: boolean;
   // Auto-LOOK: Room was dark before turning on light
   wasDarkBefore?: boolean;
-  roomSnapshot?: RoomSnapshot;
-  visibleSnapshots?: EntitySnapshot[];
+  revealed?: RevealedRoom;
   // Temporary activation
   autoOffTime?: number;
   temporary?: boolean;
@@ -132,12 +129,12 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: MESSAGES.NOT_SWITCHABLE, params: { target: nounPhraseFor(noun) } };
     }
 
-    if (!SwitchableBehavior.canSwitchOn(noun)) {
+    if (!SwitchableBehavior.canSwitchOn(noun, context.world)) {
       const switchable = noun.getTrait(SwitchableTrait);
       if (switchable?.isOn) {
         return { valid: false, error: MESSAGES.ALREADY_ON, params: { target: nounPhraseFor(noun) } };
       }
-      if (switchable?.requiresPower && !switchable.hasPower) {
+      if (!SwitchableBehavior.hasPower(noun, context.world)) {
         return { valid: false, error: MESSAGES.NO_POWER, params: { target: nounPhraseFor(noun) } };
       }
     }
@@ -153,14 +150,12 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
     sharedData.targetId = noun.id;
     sharedData.targetName = noun.name;
 
-    // Check if room is currently dark BEFORE turning on the light
-    // This is needed to determine if we should auto-LOOK after illuminating
-    const actorRoom = context.world.getContainingRoom(context.actor.id);
-    const wasDarkBefore = actorRoom ? VisibilityBehavior.isDark(actorRoom, context.world) : false;
-    sharedData.wasDarkBefore = wasDarkBefore;
+    // Was the room dark to the actor BEFORE the light came on? Decides the
+    // auto-LOOK (illumination-shared.ts; ADR-374 D5 asks the actor).
+    sharedData.wasDarkBefore = darkForActor(context);
 
     // Delegate state change to behavior
-    const result = SwitchableBehavior.switchOn(noun);
+    const result = SwitchableBehavior.switchOn(noun, context.world);
 
     // Coordinate with LightSourceBehavior if applicable
     if (noun.has(TraitType.LIGHT_SOURCE)) {
@@ -201,15 +196,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       }
     }
 
-    // If we illuminated a dark room, capture room data for auto-LOOK description
+    // If we illuminated a dark room, capture it for the auto-LOOK
     if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore) {
-      const room = context.world.getContainingRoom(context.actor.id);
-      if (room) {
-        sharedData.roomSnapshot = captureRoomSnapshot(room, context.world, false);
-        const contents = context.world.getContents(room.id)
-          .filter(e => e.id !== context.actor.id);
-        sharedData.visibleSnapshots = captureEntitySnapshots(contents, context.world);
-      }
+      sharedData.revealed = captureRevealedRoom(context);
     }
 
     // Check for temporary activation
@@ -299,58 +288,9 @@ export const switchingOnAction: Action & { metadata: ActionMetadata } = {
       })
     ];
 
-    // If we illuminated a dark room, add room description events (auto-LOOK)
-    // These use looking action's message IDs since they're room descriptions
-    if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.roomSnapshot) {
-      const room = sharedData.roomSnapshot;
-      const contents = context.world.getContents(room.id)
-        .filter(e => e.id !== context.actor.id);
-
-      // Emit room description domain event exactly the way the looking action
-      // does: NO messageId — the engine's specialized room handler renders the
-      // title/description. Adding the looking messageId here routed the event
-      // through the ADR-097 domain-message template path instead, whose {name}
-      // formatter articles the bare room title ("a Shaft Room").
-      // ADR-209: the live room entity carries the snippet map (the snapshot
-      // doesn't); its presence triggers the engine handler's splice pass.
-      const roomEntity = context.world.getEntity(room.id);
-      const roomSnippets = roomEntity?.getTrait(RoomTrait)?.snippets;
-      events.push(context.event('if.event.room.description', {
-        // Domain data (for event listeners / handlers)
-        room: room,
-        visibleItems: sharedData.visibleSnapshots || [],
-        roomId: room.id,
-        roomName: room.name,
-        roomDescription: room.description,
-        ...(roomSnippets ? { roomSnippets } : {}),
-        includeContents: true,
-        verbose: true
-      }));
-
-      // Emit contents list if there are visible items. Scenery is excluded,
-      // as in the looking and going actions: fixed furnishings belong to the
-      // room's description prose (ADR-209 snippets), not the "You can see …"
-      // enumeration.
-      const listableContents = contents.filter(
-        e => !e.hasTrait(TraitType.SCENERY)
-      );
-      if (listableContents.length > 0) {
-        // Bind a PhraseList of NounPhrases (ADR-192), matching looking-data.ts:
-        // the Assembler's list authority renders articles, grouping, and the
-        // locale conjunction. A bare NounPhrase[] stringifies each item to
-        // "[object Object]" in the {list:items} formatter.
-        events.push(context.event('if.event.list.contents', {
-          messageId: 'if.action.looking.contents_list',
-          params: {
-            items: {
-              kind: 'list' as const,
-              conj: 'and' as const,
-              items: listableContents.map(e => nounPhraseFor(e)),
-            },
-            count: listableContents.length
-          }
-        }));
-      }
+    // If we illuminated a dark room, describe it as a look would
+    if (sharedData.willIlluminateLocation && sharedData.wasDarkBefore && sharedData.revealed) {
+      events.push(...revealedRoomEvents(context, sharedData.revealed));
     }
 
     return events;

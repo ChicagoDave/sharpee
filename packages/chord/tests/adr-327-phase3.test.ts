@@ -158,11 +158,11 @@ describe('D9 — `change the player to <character>`', () => {
 
   it('`change <entity> to <state>` still reads as a state change', () => {
     const ir = ok(
-      whole('create the lamp\n  a thing\n  in the Hall\n  states: lit, dark\n\n  A lamp.\n\n  on the player pulling\n    change the lamp to dark\n  end on\n\n'),
+      whole('create the bell\n  a thing\n  in the Hall\n  states: still, ringing\n\n  A bell.\n\n  on the player pulling\n    change the bell to ringing\n  end on\n\n'),
     );
-    expect(ir.entities.find((e) => e.id === 'lamp')!.onClauses[0].body[0]).toMatchObject({
+    expect(ir.entities.find((e) => e.id === 'bell')!.onClauses[0].body[0]).toMatchObject({
       kind: 'change',
-      state: 'dark',
+      state: 'ringing',
     });
   });
 });

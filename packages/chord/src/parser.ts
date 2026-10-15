@@ -178,7 +178,7 @@ import {
   TextValue,
   ValueExpr,
 } from './ast.js';
-import { PRONOUN_CASES, STARTS_STATE_PAIRINGS } from './catalog.js';
+import { PRONOUN_CASES, STARTS_STATE_PAIRINGS, TAILED_EVENT_VERBS } from './catalog.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { levenshtein } from './edit-distance.js';
 import { lex, Line, Token } from './lexer.js';
@@ -3246,11 +3246,26 @@ class Parser {
   }
 
   private finishPlacement(relation: Placement['relation'], c: Cursor, line: Line): Placement {
-    const place = this.parseNameRef(c, () => false);
-    if (place.words.length === 0) {
+    // ADR-374 D2: a placement may list places — `, ` between them and a
+    // final `and`. Which relation and which thing may take a list is the
+    // analyzer's question; a one-place line is unchanged.
+    const isAnd = (t: Token) => t.kind === 'word' && t.text === 'and';
+    const places: NameRef[] = [];
+    for (;;) {
+      const place = this.parseNameRef(c, isAnd);
+      places.push(place);
+      if (c.peek()?.kind === 'comma') {
+        c.next();
+        c.matchWord('and'); // Oxford `and` after the comma
+      } else if (!c.matchWord('and')) {
+        break;
+      }
+    }
+    if (places.some((p) => p.words.length === 0)) {
       this.diagnostics.error('parse.placement', 'Expected a place name.', lineSpan(line));
     }
-    return { kind: 'placement', relation, place, span: lineSpan(line) };
+    const [place, ...more] = places;
+    return more.length > 0 ? { kind: 'placement', relation, place, more, span: lineSpan(line) } : { kind: 'placement', relation, place, span: lineSpan(line) };
   }
 
   private parseBlockedExit(direction: string, line: Line): BlockedExitDecl | null {
@@ -3444,6 +3459,56 @@ class Parser {
           'parse.attached-to',
           'Expected `attached to <the thing>` — the thing it is fixed to, e.g. `attached to the sorting machine`.',
           toTok ? toTok.span : attachedTok.span,
+        );
+        while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
+        break;
+      }
+
+      // ADR-374 D10: `powered by <the thing> [and <the thing>]` — the device
+      // has power while every named thing is inside it. Lowered to the
+      // `powered` adjective, one keyless entity value per power source.
+      if (c.isWord('powered')) {
+        const poweredTok = c.next()!;
+        const byTok = c.peek();
+        const sources: ConfigSetting[] = [];
+        let lastTok = poweredTok;
+        if (byTok?.kind === 'word' && byTok.text === 'by') {
+          c.next(); // by
+          for (;;) {
+            const articleTok = c.peek();
+            if (!(articleTok?.kind === 'word' && ARTICLES.has(articleTok.text))) break;
+            c.next();
+            const nameWords: string[] = [];
+            let nameEnd = articleTok;
+            while (!c.atEnd() && c.peek()!.kind === 'word' && !c.isWord('and')) {
+              nameEnd = c.next()!;
+              nameWords.push(nameEnd.text);
+            }
+            if (nameWords.length === 0) break;
+            sources.push({ key: [], value: nameWords.join(' '), valueKind: 'name', span: mergeSpans(articleTok.span, nameEnd.span) });
+            lastTok = nameEnd;
+            if (!c.matchWord('and')) break;
+          }
+        }
+        if (sources.length > 0 && (c.atEnd() || c.peek()?.kind === 'comma')) {
+          items.push({
+            kind: 'composition',
+            article: null,
+            words: ['powered'],
+            config: sources,
+            condition: null,
+            span: mergeSpans(poweredTok.span, lastTok.span),
+          });
+          if (c.peek()?.kind === 'comma') {
+            c.next();
+            continue;
+          }
+          break;
+        }
+        this.diagnostics.error(
+          'parse.powered-by',
+          'Expected `powered by <the thing>` — what it needs inside it to run, e.g. `powered by the battery` or `powered by the cell and the spare cell`.',
+          byTok ? byTok.span : poweredTok.span,
         );
         while (!c.atEnd()) c.next(); // resynchronize: one mistake, one diagnostic
         break;
@@ -7449,6 +7514,10 @@ class Parser {
       return null;
     }
     if (!c.matchWord('from')) {
+      // ADR-374 D6: a sound may be a sound in the world only, with no file.
+      if (assetKind === 'sound' && c.atEnd()) {
+        return { kind: 'define-asset', assetKind, name: nameTok.text, path: null, span: lineSpan(line) };
+      }
       this.diagnostics.error('parse.asset-from', `Expected \`from "<file>"\` in the ${assetKind} declaration.`, c.restSpan());
       return null;
     }
@@ -9294,12 +9363,18 @@ class Parser {
  * the last bare preposition (`at Tobias`). A tail is taken only when an
  * actor and a gerund — two words — stand before it, so `the player giving`
  * and `the wandering mercenaries giving` take none. Syntactic, never guessed.
+ * The one exception is a tailed event verb (ADR-374 D6, `TAILED_EVENT_VERBS`)
+ * standing alone and followed by an article: `hearing the depot-klaxon`,
+ * where the hearer is the block's owner and has no word of its own.
  *
  * @param words - The head's words (actor, gerund, tail), `to` excluded.
  * @returns `start` (first tail word, preposition included) and `nameStart`
  *   (first word of the counterpart's name), or null when the head has none.
  */
 export function splitCounterpartTail(words: readonly Token[]): { start: number; nameStart: number } | null {
+  if (words.length >= 3 && TAILED_EVENT_VERBS.has(words[0].text) && ARTICLES.has(words[1].text)) {
+    return { start: 1, nameStart: 2 };
+  }
   const last = words.length - 1;
   for (let i = last - 1; i >= 2; i--) {
     if (!ARTICLES.has(words[i].text)) continue;

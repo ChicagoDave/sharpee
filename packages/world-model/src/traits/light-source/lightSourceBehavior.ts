@@ -5,6 +5,7 @@ import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
 import { LightSourceTrait } from './lightSourceTrait.js';
 import { SwitchableBehavior } from '../switchable/switchableBehavior.js';
+import type { WorldModel } from '../../world/WorldModel.js';
 
 /**
  * Behavior for light source entities.
@@ -63,6 +64,53 @@ export class LightSourceBehavior extends Behavior {
     return true;
   }
   
+  /**
+   * Whether lighting this needs a tool (ADR-374 D9; FlammableBehavior's shape).
+   * @param source the light source
+   * @returns true when a tool is declared
+   */
+  static requiresTool(source: IFEntity): boolean {
+    const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
+    return !!(trait.toolId || trait.toolIds?.length);
+  }
+
+  /**
+   * The declared tools that light this, in declaration order — empty when it
+   * needs none. The implicit-instrument resolution (GH #241) reads it.
+   * @param source the light source
+   * @returns the tool ids
+   */
+  static requiredTools(source: IFEntity): string[] {
+    const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
+    return [...(trait.toolId ? [trait.toolId] : []), ...(trait.toolIds ?? [])];
+  }
+
+  /**
+   * Whether a tool lights this.
+   * @param source the light source
+   * @param toolId the offered tool
+   * @returns true when the tool is declared for it
+   */
+  static canLightWith(source: IFEntity, toolId: string): boolean {
+    const trait = LightSourceBehavior.require<LightSourceTrait>(source, TraitType.LIGHT_SOURCE);
+    return trait.toolId === toolId || !!trait.toolIds?.includes(toolId);
+  }
+
+  /**
+   * Whether the light is giving light now — the one reading of it (ADR-374
+   * D10), for the room's light check and for seeing a lit lamp in the dark.
+   * A switchable light that needs power and has none gives no light, whatever
+   * its switch says; otherwise the light's own state (`isLit`).
+   *
+   * @param source - The light source
+   * @param world - The world, for a powered device's power sources
+   * @returns true when it is lighting its surroundings
+   */
+  static givesLight(source: IFEntity, world: WorldModel): boolean {
+    if (source.hasTrait(TraitType.SWITCHABLE) && !SwitchableBehavior.hasPower(source, world)) return false;
+    return LightSourceBehavior.isLit(source);
+  }
+
   /**
    * Get the brightness level
    */

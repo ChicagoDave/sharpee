@@ -565,6 +565,28 @@ exiting-not-on-that               not_on_that                             But {y
 exiting-exit-blocked              exit_blocked                            The way out is blocked.
 exiting-must-stand-first          must_stand_first                        {You}'ll need to stand up first.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.exited</code> (ADR-052).</p>
+<h2 id="extinguish-put-out-blow-out-snuff-if-action-extinguishing">extinguish, put out, blow out, snuff — <code>if.action.extinguishing</code></h2>
+<p><strong>Group</strong> <code>device_manipulation</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.extinguish_blocked</code>, <code>if.event.extinguished</code></p>
+<pre><code class="language-chord">define action extinguishing
+  grammar
+    extinguish the target
+    put out the target
+    put the target out
+    blow out the target
+    blow the target out
+    snuff the target
+    snuff out the target
+    douse the target</code></pre>
+<p>EXTINGUISH - Put out a lantern, a candle or a flame. Example: BLOW OUT THE CANDLE</p>
+<p>Puts out a lit <code>light-source</code> (ADR-374 D9). A <code>switchable</code> light is switched off instead — extinguishing hands it to switching off, so switching off's lines, refusals and <code>on the player switching_off</code> clauses all apply. When the room goes dark for the player, the line says so.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+extinguishing-no-target           no_target                               Put out what?
+extinguishing-not-light-source    not_light_source                        {capitalize the target} isn't something {you} can put out.
+extinguishing-not-lit             not_lit                                 {capitalize the target} {verb:isn't target} lit.
+extinguishing-extinguished        extinguished                            {You} {put} out {the target}.
+extinguishing-extinguished-into-darkness extinguished_into_darkness       {You} {put} out {the target}, and darkness closes in.</code></pre>
+<p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.extinguished</code> (ADR-052).</p>
 <h2 id="give-to-give-offer-to-hand-to-if-action-giving">give to, give, offer to, hand to — <code>if.action.giving</code></h2>
 <p><strong>Group</strong> <code>social</code> · direct object required · indirect object required · <strong>Slots</strong> <code>item</code>, <code>recipient</code> · <strong>Emits</strong> <code>if.event.give_blocked</code>, <code>if.event.given</code></p>
 <pre><code class="language-chord">define action giving
@@ -771,6 +793,28 @@ jumping-jumped                    jumped                                  {You} 
 kissing-no-target                 no_target                               Kiss what?
 kissing-kissed-person             kissed_person                           {capitalize the target} {verb:is target} having none of that.
 kissing-kissed-thing              kissed_thing                            {You} {kiss} {the target}. Nothing comes of it.</code></pre>
+<h2 id="light-light-with-if-action-lighting">light, light with — <code>if.action.lighting</code></h2>
+<p><strong>Group</strong> <code>device_manipulation</code> · direct object required · <strong>Slots</strong> <code>target</code>, <code>tool</code> · <strong>Emits</strong> <code>if.event.light_blocked</code>, <code>if.event.lit</code></p>
+<pre><code class="language-chord">define action lighting
+  grammar
+    light the target
+    light the target with or using the tool
+  the tool is an instrument</code></pre>
+<p>LIGHT - Light a lantern, a candle or a lamp. Example: LIGHT THE CANDLE WITH THE MATCH</p>
+<p>Lights an unlit <code>light-source</code> (ADR-374 D9); <code>light-source with the &lt;tool&gt;</code> names what it takes, by the same rule as burning's tools. A <code>switchable</code> light is switched on instead — lighting hands it to switching on, so its power, its lines and <code>on the player switching_on</code> clauses all apply. Lighting a dark room describes it, as switching on a lamp does. <code>ignite</code> is burning's.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                             message id                              text
+lighting-no-target                no_target                               Light what?
+lighting-not-light-source         not_light_source                        {capitalize the target} isn't something {you} can light.
+lighting-already-lit              already_lit                             {capitalize the target} {verb:is target} already lit.
+lighting-no-fuel                  no_fuel                                 {capitalize the target} won't light; it has nothing left to burn.
+lighting-no-tool                  no_tool                                 {You} {need} something to light {the item} with.
+lighting-needs-tool               needs_tool                              {You} {need} {the tool} to light {the item}.
+lighting-tool-not-held            tool_not_held                           {You} {aren't} holding {the tool}.
+lighting-wrong-tool               wrong_tool                              {capitalize the tool} won't light {the item}.
+lighting-lit                      lit                                     {You} {light} {the target}.
+lighting-lit-in-darkness          lit_in_darkness                         {You} {light} {the target}, and the darkness draws back.</code></pre>
+<p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.lit</code> (ADR-052).</p>
 <h2 id="hear-listen-listen-to-if-action-listening">hear, listen, listen to — <code>if.action.listening</code></h2>
 <p><strong>Group</strong> <code>sensory</code> · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.listen_blocked</code>, <code>if.event.listened</code></p>
 <pre><code class="language-chord">define action listening

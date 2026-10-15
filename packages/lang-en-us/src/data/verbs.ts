@@ -88,6 +88,8 @@ export const IFActions = {
   // Physical state (ADR-373)
   TYING: 'if.action.tying',
   UNTYING: 'if.action.untying',
+  LIGHTING: 'if.action.lighting',
+  EXTINGUISHING: 'if.action.extinguishing',
 
   // Meta actions
   INVENTORY: 'if.action.inventory',
@@ -413,6 +415,16 @@ export const englishVerbs: VerbDefinition[] = [
   {
     action: IFActions.UNTYING,
     verbs: ['untie', 'unfasten'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.LIGHTING,
+    verbs: ['light'],
+    requiresObject: true
+  },
+  {
+    action: IFActions.EXTINGUISHING,
+    verbs: ['extinguish', 'put out', 'blow out', 'snuff', 'douse'],
     requiresObject: true
   },
   

@@ -21,15 +21,15 @@ import { IFActions } from '../../../src/actions/constants';
 import { standardActions } from '../../../src/actions/standard';
 
 describe('wired-action registry (ADR-228 D5)', () => {
-  test('covers all 60 entity-keyed standard actions with unique primary ids', () => {
+  test('covers all 62 entity-keyed standard actions with unique primary ids', () => {
     // 33 per ADR-228 Consequences + cutting (ADR-230 D3c) + digging,
     // asking, telling (ADR-230 Phase 6) + turning (chord go-live G1
     // shortlist, 2026-07-17) + the eight ADR-370 stock verbs (2026-10-13)
     // + lowering, raising, burning, setting (ADR-371, 2026-10-14)
     // + asking_for, consulting, buying (ADR-372, 2026-10-14)
-    expect(actionLifecycleDescriptors).toHaveLength(60);
+    expect(actionLifecycleDescriptors).toHaveLength(62);
     const primaryIds = actionLifecycleDescriptors.map((d) => d.actionId);
-    expect(new Set(primaryIds).size).toBe(60);
+    expect(new Set(primaryIds).size).toBe(62);
     for (const descriptor of actionLifecycleDescriptors) {
       expect(descriptor.slots.length).toBeGreaterThan(0);
       for (const slot of descriptor.slots) {

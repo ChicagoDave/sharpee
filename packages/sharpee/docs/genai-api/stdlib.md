@@ -1173,6 +1173,8 @@ export declare const IFActions: {
     readonly BUYING: "if.action.buying";
     readonly TYING: "if.action.tying";
     readonly UNTYING: "if.action.untying";
+    readonly LIGHTING: "if.action.lighting";
+    readonly EXTINGUISHING: "if.action.extinguishing";
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
     readonly BURNING: "if.action.burning";
@@ -1350,8 +1352,14 @@ export interface LifecycleContracts {
      * attacking, dropping and throwing when the thing breaks (ADR-373 D3),
      * through `runBreakingLifecycle`, which runs postExecute and postReport
      * only. The executor never runs this descriptor's hooks.
+     *
+     * `causes` is the one declaration of which actions fire it, the most
+     * direct first: the call-site test holds the code to it, and tooling that
+     * must reach the id through play (the derived runner) reads it.
      */
-    firedAsConsequence?: boolean;
+    firedAsConsequence?: {
+        readonly causes: readonly string[];
+    };
 }
 /**
  * An action's declarative interceptor surface (ADR-228 D0-B).
@@ -1769,13 +1777,14 @@ export declare function runMultiObjectReport(context: ActionContext, itemStates:
  */
 import { ActionLifecycleDescriptor } from './descriptor.js';
 /**
- * The descriptor table: all 60 entity-keyed standard actions (33 per
+ * The descriptor table: all 62 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
  * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
  * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
  * per ADR-372, 2026-10-14, + breaking (a consequence id, fired by the action
- * that broke the thing), tying and untying per ADR-373, 2026-10-14). Structural exemptions
+ * that broke the thing), tying and untying per ADR-373, 2026-10-14, + lighting
+ * and extinguishing per ADR-374 D9, 2026-10-15). Structural exemptions
  * (no entity to key on: about, waiting, looking, …) are absent by design — see
  * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
@@ -1956,8 +1965,10 @@ export * from './buying/index.js';
 export * from './breaking/index.js';
 export * from './tying/index.js';
 export * from './untying/index.js';
+export * from './lighting/index.js';
+export * from './extinguishing/index.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
+export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
 ```
 
 ### actions/author/trace
@@ -4838,22 +4849,12 @@ export type MediaChannelId = (typeof MEDIA_CHANNEL_IDS)[keyof typeof MEDIA_CHANN
  * @see ADR-163 — Channel-Service Platform §6, §7 (closure-per-channel)
  */
 import type { IOChannel } from '@sharpee/if-domain';
-import type { IAudibilityEvent } from '@sharpee/if-domain';
+import { type IAudibilityEvent } from '@sharpee/if-domain';
 /**
- * Semantic-event types emitted by the sound subsystem. Phase 6's
- * dispatcher fires `AUDIBILITY_HEARD` once per listener per propagated
- * sound; the event's `data` field carries the listener-specific
- * `IAudibilityEvent` payload.
+ * Semantic-event types of the sound subsystem. Defined in if-domain, the
+ * one package both the engine (which fires them) and stdlib share.
  */
-export declare const SOUND_EVENT_TYPES: {
-    /**
-     * A listener perceived a propagated sound. Event `data` is an
-     * `IAudibilityEvent` (per-listener tier, source-room, optional
-     * crossing wall, content if content-bearing).
-     */
-    readonly AUDIBILITY_HEARD: "sound.audibility.heard";
-};
-export type SoundEventType = typeof SOUND_EVENT_TYPES[keyof typeof SOUND_EVENT_TYPES];
+export { SOUND_EVENT_TYPES, type SoundEventType } from '@sharpee/if-domain';
 /**
  * `audibility` — append-mode channel carrying every `AudibilityEvent`
  * delivered to listeners during the turn just executed.

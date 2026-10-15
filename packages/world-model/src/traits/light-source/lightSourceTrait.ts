@@ -24,6 +24,15 @@ export class LightSourceTrait implements ITrait {
    */
   isLit?: boolean;
   
+  /**
+   * Single tool that lights it — a match for a lantern (ADR-374 D9; the
+   * shape of FlammableTrait.toolId). Absent: lighting needs no tool.
+   */
+  toolId?: string;
+
+  /** Several tools that light it (mirrors FlammableTrait.toolIds). */
+  toolIds?: string[];
+
   /** Optional fuel/battery remaining (undefined = infinite) */
   fuelRemaining?: number;
   

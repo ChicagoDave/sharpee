@@ -12,13 +12,14 @@ import { captureRoomSnapshot, captureEntitySnapshots } from '../../base/snapshot
 import { nounPhraseFor } from '../../../utils/index.js';
 
 /**
- * Check if a location is dark (needs light but has none).
- * Delegates to VisibilityBehavior.isDark() as the single source of truth.
+ * Check if the actor's room is dark to the actor: dark, and the actor
+ * does not see in the dark (ADR-374 D5). Delegates to
+ * VisibilityBehavior.isDarkFor() as the single source of truth.
  */
 function checkIfDark(context: ActionContext): boolean {
   const room = context.world.getContainingRoom(context.actor.id);
   if (!room) return false;
-  return VisibilityBehavior.isDark(room, context.world);
+  return VisibilityBehavior.isDarkFor(context.actor, room, context.world);
 }
 
 /**

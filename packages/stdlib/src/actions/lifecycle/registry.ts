@@ -85,15 +85,18 @@ import { buyingLifecycle } from '../standard/buying/buying.js';
 import { breakingLifecycle } from '../standard/breaking/breaking.js';
 import { tyingLifecycle } from '../standard/tying/tying.js';
 import { untyingLifecycle } from '../standard/untying/untying.js';
+import { lightingLifecycle } from '../standard/lighting/lighting.js';
+import { extinguishingLifecycle } from '../standard/extinguishing/extinguishing.js';
 
 /**
- * The descriptor table: all 60 entity-keyed standard actions (33 per
+ * The descriptor table: all 62 entity-keyed standard actions (33 per
  * ADR-228 Consequences + cutting per ADR-230 D3c + digging + asking/telling per
  * ADR-230 Phase 6 + turning per the chord go-live G1 shortlist, 2026-07-17,
  * + the eight ADR-370 stock verbs, 2026-10-13, + lowering, raising, burning
  * and setting per ADR-371, 2026-10-14, + asking_for, consulting and buying
  * per ADR-372, 2026-10-14, + breaking (a consequence id, fired by the action
- * that broke the thing), tying and untying per ADR-373, 2026-10-14). Structural exemptions
+ * that broke the thing), tying and untying per ADR-373, 2026-10-14, + lighting
+ * and extinguishing per ADR-374 D9, 2026-10-15). Structural exemptions
  * (no entity to key on: about, waiting, looking, …) are absent by design — see
  * ADR-228 Context; lowering and raising joined with ADR-371 D1.
  */
@@ -161,7 +164,9 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   // ADR-373
   breakingLifecycle,
   tyingLifecycle,
-  untyingLifecycle
+  untyingLifecycle,
+  lightingLifecycle,
+  extinguishingLifecycle
 ]);
 
 // Invariant: one descriptor per action — a duplicate primary id means two

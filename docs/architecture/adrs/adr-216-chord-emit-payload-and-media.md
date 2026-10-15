@@ -2,6 +2,8 @@
 
 ## Status: ACCEPTED (2026-07-14 — direction fixed by ADR-214 §6/OQ3; designed via interview the same session; all six open questions resolved)
 
+**Amended 2026-10-15 by ADR-374 D6** (session 39d4c7): `play sound` is no longer compile-time sugar for a `media-sound-play` emit. A sound is also heard in the world, so `play sound` lowers to its own IR statement, `play-sound`, which the loader carries out as this ADR's cue (when the sound has a file) and as an ADR-172 world sound. `define sound <name>` may omit `from` for a sound heard in the world only. The other media forms are unchanged.
+
 > **`define channel` syntax superseded in part by ADR-253 (2026-07-22).** The
 > `from event <key>` + `take <field>` lines are replaced by one `return
 > <construct> from <event>` clause (`take` removed; the return construct may be

@@ -5,6 +5,27 @@ define sound boiler-thump from &quot;audio/boiler-thump.wav&quot;
 define music dawn-theme from &quot;audio/dawn-theme.wav&quot;
 define image folly-photograph from &quot;images/folly-photograph.png&quot;</code></pre>
 <p>Three kinds: a <strong>sound</strong> is a one-shot cue, <strong>music</strong> is a track, an <strong>image</strong> is a picture. The path is relative to <code>assets/</code>. Every <code>play</code> or <code>show</code> names one of these declarations, and the compiler checks the name and the kind — a <code>play music</code> of a <code>define sound</code> is a diagnostic, and a misspelled asset carries a nearest-match suggestion.</p>
+<h2 id="sounds-in-the-world">Sounds in the world</h2>
+<p>A sound is heard in the world as well as on the player's speakers. <code>play sound</code> plays the file, if it has one, and also makes the sound in the room of the block it is written in. A <code>listener</code>, which can be a person or a thing, reacts with <code>after hearing the &lt;sound&gt;</code> in its own block, in the same turn, if the sound carries far enough to reach it. A sound with no file is heard in the world and played on no speaker.</p>
+<pre><code class="language-chord">define sound depot-klaxon
+
+create the call button
+  a thing, scenery, pushable
+  in the Loading Dock
+
+  after the player pushing
+    play sound depot-klaxon
+  end after
+
+create the loader robot
+  a person, listener
+  in the Loading Dock
+
+  after hearing the depot-klaxon
+    move the mail sack to the Loading Dock
+    phrase robot-fetches-sack
+  end after</code></pre>
+<p>How far a sound carries, through open exits and past walls, is the platform's to work out; a story only says who listens. <code>hearing</code> takes no <code>on</code> form, since a sound cannot be refused after it was made. A <code>play sound</code> written <code>when client has sound</code> is a sound the world hears only on clients that play audio, so leave that condition off a sound something in the story must hear.</p>
 <h2 id="playing-and-showing">Playing and showing</h2>
 <pre><code class="language-chord">create the primer plunger
   aka plunger

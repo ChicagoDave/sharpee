@@ -102,6 +102,11 @@ export type BranchClause =
        * Absent on every other clause.
        */
       counterpart?: string;
+      /**
+       * The sound a listener's `after hearing the <sound>` reacts to (ADR-374
+       * D6). Absent on every other clause.
+       */
+      sound?: string;
       /** What owns the clause's list. */
       root: ClauseRoot;
       /**
@@ -699,6 +704,7 @@ function classify(
           once: n.once === true,
           ...(typeof n.valueTail === 'string' ? { valueTail: n.valueTail } : {}),
           ...(typeof n.counterpart === 'string' ? { counterpart: n.counterpart } : {}),
+          ...(typeof n.sound === 'string' ? { sound: n.sound } : {}),
           root,
           ...(clause === undefined ? {} : { clause }),
         },
@@ -804,7 +810,47 @@ export function collectClauseBranches(ir: StoryIR): ClauseBranch[] {
     const label = rootLabel(ir, root, owner, itBinding);
     classify(root, label, owner, itBinding ?? null, branches, clauseRootOf(ir, root, owner, itBinding));
   });
-  return branches;
+  const heardBy = soundCommands(ir);
+  return branches.map((branch) => {
+    const c = branch.clause;
+    if (c.kind !== 'on' || c.action !== 'hearing' || c.sound === undefined) return branch;
+    return { ...branch, command: heardBy.get(c.sound) ?? { kind: 'none', surface: `hearing ${c.sound}` } };
+  });
+}
+
+/**
+ * ADR-374 D6: a listener's `after hearing the <sound>` has no command of its
+ * own — it fires when the player does what plays that sound. Each sound maps
+ * to the command of the first player clause, in story order, whose body plays
+ * it anywhere within (a nested arm included).
+ *
+ * @param ir the story IR
+ * @returns sound name → the player command that makes it
+ */
+function soundCommands(ir: StoryIR): Map<string, BranchCommand> {
+  const found = new Map<string, BranchCommand>();
+  const playsIn = (node: unknown, into: Set<string>): void => {
+    if (!isWalkable(node)) return;
+    if (Array.isArray(node)) {
+      for (const child of node) playsIn(child, into);
+      return;
+    }
+    const n = node as IRNode;
+    if (n.kind === 'play-sound' && typeof n.sound === 'string') into.add(n.sound);
+    for (const value of Object.values(n)) playsIn(value, into);
+  };
+  for (const entity of ir.entities) {
+    for (const clause of entity.onClauses) {
+      const byPlayer = clause.actor === null ? clause.binding === 'object' : clause.actor.kind === 'player';
+      if (!byPlayer || clause.binding === 'every-turn' || clause.binding === 'self') continue;
+      const sounds = new Set<string>();
+      playsIn(clause.body, sounds);
+      for (const sound of sounds) {
+        if (!found.has(sound)) found.set(sound, { kind: 'action', actor: 'player', action: clause.action, object: entity.id, role: null });
+      }
+    }
+  }
+  return found;
 }
 
 /**

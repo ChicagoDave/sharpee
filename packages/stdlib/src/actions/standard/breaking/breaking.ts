@@ -42,7 +42,7 @@ export const breakingLifecycle: ActionLifecycleDescriptor = {
   actionId: IFActions.BREAKING,
   reportEventType: 'if.event.broken',
   blockedEventType: 'if.event.break_blocked',
-  contracts: { firedAsConsequence: true },
+  contracts: { firedAsConsequence: { causes: [IFActions.ATTACKING, IFActions.DROPPING, IFActions.THROWING] } },
   slots: [
     {
       id: 'target',

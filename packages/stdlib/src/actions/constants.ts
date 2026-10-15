@@ -95,6 +95,8 @@ export const IFActions = {
   BUYING: 'if.action.buying', // ADR-372 D5
   TYING: 'if.action.tying', // ADR-373 D6
   UNTYING: 'if.action.untying', // ADR-373 D6
+  LIGHTING: 'if.action.lighting', // ADR-374 D9
+  EXTINGUISHING: 'if.action.extinguishing', // ADR-374 D9
   
   // Combat/interaction actions
   ATTACKING: 'if.action.attacking',

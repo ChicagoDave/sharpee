@@ -59,14 +59,14 @@ describe('AC-8 — the report names unexercised branches by span', () => {
     const [gap] = coverage.gaps;
     expect(gap.status).toBe('skipped');
     expect(gap.shape).toBe('predicate-is');
-    expect(gap.label).toBe('brass lamp · on smelling');
+    expect(gap.label).toBe('brass bell · on smelling');
     expect(gap.span?.line).toBe(lineOf(source, 'on the player smelling while flicker is turning'));
 
     const report = formatDerivedRun(run, 'skip.story');
     expect(report).toContain('Branches exercised: 3 / 4');
     expect(report).toContain('Not exercised (1):');
-    expect(report.at(-1)).toBe(`  skip.story:${gap.span!.line} · brass lamp · on smelling — predicate-is (a predicate over something other than a named entity)`);
-    expect(report.some((line) => line.startsWith('✓ brass lamp · on touching'))).toBe(true);
+    expect(report.at(-1)).toBe(`  skip.story:${gap.span!.line} · brass bell · on smelling — predicate-is (a predicate over something other than a named entity)`);
+    expect(report.some((line) => line.startsWith('✓ brass bell · on touching'))).toBe(true);
     expect(report.some((line) => line.startsWith('Derived failures'))).toBe(false);
   }, 30_000);
 

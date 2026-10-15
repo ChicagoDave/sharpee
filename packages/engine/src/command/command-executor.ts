@@ -24,6 +24,7 @@ import { adaptParser, type EngineParser } from '../ports/parser-interface.js';
 import { SharedDataKeys, EngineSharedData } from './shared-data-keys.js';
 import { WorldModel } from '@sharpee/world-model';
 import { EventProcessor } from '@sharpee/event-processor';
+import { withWorldReactions } from '../events/world-reactions.js';
 import {
   CommandValidator,
   type ActionRegistry,
@@ -630,32 +631,10 @@ export class CommandExecutor {
       executionTime = Date.now() - executionStart;
     }
 
-    // Process events and collect reactions (ADR-052 entity handlers)
-    let allEvents = events;
-    if (events.length > 0) {
-      const processed = this.eventProcessor.processEvents(events);
-      // Add reaction events from entity handlers
-      if (processed.reactions && processed.reactions.length > 0) {
-        allEvents = [...events, ...processed.reactions];
-      }
-      // An event whose application threw — a chain handler raising a runtime
-      // diagnostic (the loader's `runtime.*` LoadErrors) — surfaces on the
-      // same `command.failed` event this executor's own catch produces. The
-      // processor records the failure; nothing read it, so a diagnostic
-      // raised from a chain-fired clause vanished (found 2026-08-29, ADR-329
-      // Phase 9b). The command itself stands: the action ran; a reaction did not.
-      for (const failure of processed.failed) {
-        allEvents = [...allEvents, {
-          id: `cmd_failed_${turn}_${Date.now()}_${allEvents.length}`,
-          type: 'command.failed',
-          timestamp: Date.now(),
-          entities: {},
-          // A chain-fired clause's failure is a story rule's diagnostic by
-          // construction (GH #345): rendered as such, never as a parse failure.
-          data: { reason: failure.reason, input, eventType: failure.event.type, storyRule: true }
-        }];
-      }
-    }
+    // Process events and collect reactions (ADR-052 entity handlers). A
+    // reaction that throws surfaces as `command.failed`; the command itself
+    // stands — the action ran, a reaction did not (ADR-329 Phase 9b).
+    const allEvents = withWorldReactions(this.eventProcessor, events, turn, input);
 
     const result: TurnResult = {
       turn,

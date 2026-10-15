@@ -221,6 +221,7 @@ create the Loading Dock
   aka dock, loading bay, bay
   west to the Sorting Room
   up to the Hold
+  down to the Cable Trench
   up is blocked while the courier ship is buttoned: ramp-up
 
   A hangar of cold air and sodium light. The courier ship squats on
@@ -248,7 +249,7 @@ create the courier ship
   end on
 
 create the loader robot
-  a person
+  a person, listener, night-vision
   in the Loading Dock
   aka robot, loader, unit
 
@@ -266,6 +267,84 @@ create the loader robot
     change the courier ship to boarding when the loader robot has the mail bundle and the courier ship is buttoned
     move the mail bundle to the Hold when the loader robot has the mail bundle
   end after
+
+  after hearing the depot-klaxon
+    move the loader robot to the Cable Trench
+    move the mail sack to the Loading Dock when the loader robot can see the mail sack
+    move the loader robot to the Loading Dock
+    phrase robot-fetches-sack
+  end after
+
+create the sodium lights
+  a thing, scenery
+  in the Sorting Room and the Loading Dock
+  aka lights, lamps, sodium lamps, girders
+
+  Sodium lamps hang in rows from girders far overhead, buzzing, and
+  turn everything under them the colour of weak tea.
+
+create the call button
+  a thing, scenery, pushable
+  in the Loading Dock
+  aka button, call, red button
+
+  A red button the size of a palm, set in a yellow plate: CALL LOADER.
+
+  after the player pushing
+    play sound depot-klaxon
+  end after
+
+create the floor grating
+  a thing, scenery
+  in the Loading Dock
+  aka grating, grate, trench
+
+  A steel grating in the floor, propped open on a cable trench. It is
+  black down there.
+
+create the Cable Trench
+  a room, dark
+  up to the Loading Dock
+
+  A trench under the dock floor, just deep enough to stand in, where
+  power cables run in bundles along both walls. The grating is
+  overhead.
+
+create the mail sack
+  a thing
+  in the Cable Trench
+  aka sack, dropped sack
+
+  A canvas mail sack, dropped through the grating some shift ago and
+  never missed.
+
+create the blackout lantern
+  a thing, light-source with the flint striker, starts unlit
+  in the Loading Dock
+  aka lantern, blackout lamp
+
+  A paraffin lantern kept for power cuts, the glass sooted at the top.
+
+create the flint striker
+  a thing
+  in the Loading Dock
+  aka striker, flint
+
+  A steel striker on a loop of string.
+
+create the work lamp
+  a container, light-source, switchable, powered by the power cell
+  in the Loading Dock
+  aka lamp, work light
+
+  A heavy yellow work lamp with a battery bay in its handle.
+
+create the power cell
+  a thing
+  in the Loading Dock
+  aka cell, battery
+
+  A fat UPPS power cell, charge light green.
 
 create the mail crates
   a thing, scenery
@@ -873,4 +952,12 @@ end phrase
 define phrase twine-on-machine
   The sorting machine stops chuckling long enough to register that it
   has been tied to something, then decides it has not.
+end phrase
+
+define sound depot-klaxon
+
+define phrase robot-fetches-sack
+  The loader robot rolls to the grating, drops into the trench without
+  slowing, and comes back up a moment later with a mail sack hooked on
+  one arm. It sets the sack down beside you and resumes waiting.
 end phrase

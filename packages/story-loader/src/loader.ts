@@ -98,7 +98,10 @@ import {
   ActorTrait,
   addPlayerRoleVocabulary,
   AttachedTrait,
+  BackdropTrait,
   BreakableTrait,
+  NightVisionTrait,
+  ListenerTrait,
   ClimbableTrait,
   CombatantTrait,
   ConcealmentTrait,
@@ -373,6 +376,11 @@ export class ChordStory implements Story {
       // `starts in <room>`.
       if (irEntity.placement) {
         author.moveEntity(entity.id, this.requireWorldId(irEntity.placement.place, irEntity));
+        // ADR-374 D1: a backdrop lives in its first room and is present at
+        // every room of its list.
+        if (irEntity.placement.places) {
+          entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => this.requireWorldId(id, irEntity)) }));
+        }
       }
       // `carries the X` / `wears the X` are facts about the holder, whoever it
       // is — a character's inventory is world construction exactly as its
@@ -1920,6 +1928,14 @@ export class ChordStory implements Story {
             entity.add(new BreakableTrait({ fragile: irEntity.traits.some((t) => t.name === 'fragile') }));
           }
           break;
+        case 'listener':
+          // ADR-374 D6: ADR-172's listener — what it hears reaches it.
+          if (!entity.has(TraitType.LISTENER)) entity.add(new ListenerTrait());
+          break;
+        case 'night-vision':
+          // ADR-374 D3: the observer-side darkness marker (ADR-328 D5).
+          if (!entity.has(TraitType.NIGHT_VISION)) entity.add(new NightVisionTrait());
+          break;
         case 'detachable':
         case 'fragile':
           // ADR-373: qualifiers, applied by `attached` and `breakable` above.
@@ -1954,8 +1970,34 @@ export class ChordStory implements Story {
         case 'climbable': // ADR-218 §1a (ratchet F2) — default config
           if (!entity.has(TraitType.CLIMBABLE)) entity.add(new ClimbableTrait());
           break;
-        case 'light-source':
-          entity.add(new LightSourceTrait());
+        case 'light-source': {
+          // ADR-374 D9: `light-source with the <tool>` — lighting needs that
+          // tool held; resolved after every entity is built.
+          if (entity.has(TraitType.LIGHT_SOURCE)) break;
+          const lightSource = new LightSourceTrait();
+          const toolName = entityConfigValue(trait);
+          if (toolName !== undefined) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(toolName, 'tool', irEntity, trait.span, (worldId) => {
+                lightSource.toolId = worldId;
+              }),
+            );
+          }
+          entity.add(lightSource);
+          break;
+        }
+        case 'powered':
+          // ADR-374 D10: each power source resolves after every entity is
+          // built — by then `switchable` is composed whatever the order.
+          for (const source of trait.config.filter((c) => c.key === '' && c.valueKind === 'name')) {
+            this.pendingEntityRefs.push(
+              this.entityRefFor(source.value, 'source', irEntity, trait.span, (worldId) => {
+                const switchable = entity.get(TraitType.SWITCHABLE) as SwitchableTrait;
+                switchable.powerSourceIds = [...(switchable.powerSourceIds ?? []), worldId];
+                switchable.requiresPower = true;
+              }),
+            );
+          }
           break;
         case 'guard':
         case 'passive':
@@ -2581,6 +2623,8 @@ const STARTS_STATE_TRAIT_FIELDS: ReadonlyMap<
   ['off', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: false }],
   ['on', { traitType: TraitType.SWITCHABLE, traitName: 'switchable', field: 'isOn', value: true }],
   ['broken', { traitType: TraitType.BREAKABLE, traitName: 'breakable', field: 'broken', value: true }], // ADR-373 D7
+  ['lit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: true }], // ADR-374 D9
+  ['unlit', { traitType: TraitType.LIGHT_SOURCE, traitName: 'light-source', field: 'isLit', value: false }],
 ]);
 
 /** Chord direction word → world-model DirectionType. */

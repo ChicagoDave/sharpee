@@ -22,13 +22,13 @@ import { CHORD_STORY_STATE_KEYS } from '../src/runner.js';
 const evaluateStateExpression = (expression: string, world: WorldModel) =>
   evaluateCore(expression, world, CHORD_STORY_STATE_KEYS);
 
-/** A world the loader could have built: a stamped lamp in `dark`, a stamped partner in `waiting`, the story `calm`. */
+/** A world the loader could have built: a stamped bell in `still`, a stamped partner in `waiting`, the story `calm`. */
 function ballroom(): WorldModel {
   const world = new WorldModel();
-  const lamp = world.createEntity('brass lamp', 'scenery');
-  lamp.add(new IdentityTrait({ name: 'brass lamp', aliases: ['lamp'] }));
-  lamp.attributes[CHORD_IR_ID_ATTRIBUTE] = 'brass-lamp';
-  world.setStateValue(CHORD_STATE_PREFIX + 'brass-lamp', 'dark');
+  const bell = world.createEntity('brass bell', 'scenery');
+  bell.add(new IdentityTrait({ name: 'brass bell', aliases: ['bell'] }));
+  bell.attributes[CHORD_IR_ID_ATTRIBUTE] = 'brass-bell';
+  world.setStateValue(CHORD_STATE_PREFIX + 'brass-bell', 'still');
 
   const partner = world.createEntity('first partner', 'actor');
   partner.add(new IdentityTrait({ name: 'first partner', aliases: ['first'] }));
@@ -49,8 +49,8 @@ function ballroom(): WorldModel {
 describe('Chord-spelled state claims — `the <name> is <state>`', () => {
   it('holds when the entity is in the named state, article or not', () => {
     const world = ballroom();
-    expect(evaluateStateExpression('the brass lamp is dark', world).matches).toBe(true);
-    expect(evaluateStateExpression('brass lamp is dark', world).matches).toBe(true);
+    expect(evaluateStateExpression('the brass bell is still', world).matches).toBe(true);
+    expect(evaluateStateExpression('brass bell is still', world).matches).toBe(true);
   });
 
   it('addresses a multi-word name', () => {
@@ -59,22 +59,22 @@ describe('Chord-spelled state claims — `the <name> is <state>`', () => {
   });
 
   it('resolves an alias', () => {
-    expect(evaluateStateExpression('the lamp is dark', ballroom()).matches).toBe(true);
+    expect(evaluateStateExpression('the bell is still', ballroom()).matches).toBe(true);
     expect(evaluateStateExpression('first is waiting', ballroom()).matches).toBe(true);
   });
 
   it('fails, naming the actual state, when the entity is elsewhere', () => {
-    const result = evaluateStateExpression('the brass lamp is lit', ballroom());
+    const result = evaluateStateExpression('the brass bell is ringing', ballroom());
     expect(result.matches).toBe(false);
-    expect(result.details).toBe('the brass lamp is "dark", expected "lit"');
+    expect(result.details).toBe('the brass bell is "still", expected "ringing"');
   });
 
   it('supports the negated form', () => {
     const world = ballroom();
-    expect(evaluateStateExpression('the brass lamp is not lit', world).matches).toBe(true);
-    const result = evaluateStateExpression('the brass lamp is not dark', world);
+    expect(evaluateStateExpression('the brass bell is not ringing', world).matches).toBe(true);
+    const result = evaluateStateExpression('the brass bell is not still', world);
     expect(result.matches).toBe(false);
-    expect(result.details).toBe('the brass lamp should not be "dark"');
+    expect(result.details).toBe('the brass bell should not be "still"');
   });
 
   it('follows the state as it moves', () => {
@@ -91,7 +91,7 @@ describe('Chord-spelled state claims — `the <name> is <state>`', () => {
   });
 
   it('fails, not crashes, on a Chord entity that declares no states', () => {
-    const result = evaluateStateExpression('the pebble is lit', ballroom());
+    const result = evaluateStateExpression('the pebble is ringing', ballroom());
     expect(result.matches).toBe(false);
     expect(result.details).toBe('the pebble: declares no states');
   });
@@ -126,38 +126,38 @@ describe('Chord-spelled state claims — `the story is <state>`', () => {
 });
 
 describe('dotted claims — a multi-word or kebab-case head (GH #375)', () => {
-  /** The ballroom with a room, the partner in it holding the lamp. */
+  /** The ballroom with a room, the partner in it holding the bell. */
   function seated(): WorldModel {
     const world = ballroom();
     const hall = world.createEntity('Great Hall', 'room');
     hall.add(new IdentityTrait({ name: 'Great Hall' }));
     hall.attributes[CHORD_IR_ID_ATTRIBUTE] = 'great-hall';
     const partner = world.getAllEntities().find((e) => e.name === 'first partner')!;
-    const lamp = world.getAllEntities().find((e) => e.name === 'brass lamp')!;
+    const bell = world.getAllEntities().find((e) => e.name === 'brass bell')!;
     world.moveEntity(partner.id, hall.id);
-    world.moveEntity(lamp.id, partner.id);
+    world.moveEntity(bell.id, partner.id);
     return world;
   }
 
   it('reads a location claim whose head has spaces — the Chord spelling', () => {
     const world = seated();
     expect(evaluateStateExpression('first partner.location = Great Hall', world).matches).toBe(true);
-    expect(evaluateStateExpression('brass lamp.location = first partner', world).matches).toBe(true);
-    const wrong = evaluateStateExpression('brass lamp.location = Great Hall', world);
+    expect(evaluateStateExpression('brass bell.location = first partner', world).matches).toBe(true);
+    const wrong = evaluateStateExpression('brass bell.location = Great Hall', world);
     expect(wrong.matches).toBe(false);
-    expect(wrong.details).toContain('brass lamp.location is');
+    expect(wrong.details).toContain('brass bell.location is');
   });
 
   it('reads the same claim through the kebab-case IR id the loader stamps', () => {
     const world = seated();
     expect(evaluateStateExpression('first-partner.location = great-hall', world).matches).toBe(true);
-    expect(evaluateStateExpression('brass-lamp.location = first-partner', world).matches).toBe(true);
-    expect(evaluateStateExpression('brass-lamp.location != great-hall', world).matches).toBe(true);
+    expect(evaluateStateExpression('brass-bell.location = first-partner', world).matches).toBe(true);
+    expect(evaluateStateExpression('brass-bell.location != great-hall', world).matches).toBe(true);
   });
 
   it('reads a contains claim with a multi-word head', () => {
     const world = seated();
-    expect(evaluateStateExpression('first partner.inventory contains brass lamp', world).matches).toBe(true);
+    expect(evaluateStateExpression('first partner.inventory contains brass bell', world).matches).toBe(true);
     expect(evaluateStateExpression('first-partner.contents not-contains pebble', world).matches).toBe(true);
   });
 

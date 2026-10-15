@@ -56,6 +56,7 @@ function* walk(body: IRStatement[]): Generator<IRStatement> {
       case 'refuse':
       case 'phrase':
       case 'emit':
+      case 'play-sound':
       case 'set':
       case 'change':
       case 'change-player':

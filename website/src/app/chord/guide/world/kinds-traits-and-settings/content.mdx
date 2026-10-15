@@ -132,6 +132,29 @@ create the route placard
   in the Sorting Room
 ```
 
+A light can be lit and put out. A plain `light-source` gives light;
+`starts unlit` begins it dark, and the player lights it with `light
+lantern` and puts it out with `put out`, `blow out` or `extinguish`.
+`light-source with the flint striker` means lighting it takes that
+tool in hand. A `switchable` light is switched on and off instead, and
+`light torch` does just that. A switchable container can need power:
+`powered by the power cell` (or several things joined with `and`) means
+it runs only while every one of them is inside it, so taking the cell
+out of a lit lamp leaves the switch on and the room dark. `while the
+lamp is lit` reads whether it is giving light right now.
+
+```chord
+create the blackout lantern
+  a thing, light-source with the flint striker, starts unlit
+
+create the work lamp
+  a container, light-source, switchable, powered by the power cell
+```
+
+A person can see in the dark: `night-vision` lets them examine and take
+things in a dark room, and see the room itself when they look or arrive,
+while everyone else there sees nothing.
+
 A thing can break. `breakable` lets attacking break it, and it stays
 where it was, broken. Add `fragile` and it also breaks when dropped on
 the floor or thrown; dropped into a container or onto a supporter it

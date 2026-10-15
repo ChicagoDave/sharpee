@@ -452,11 +452,21 @@ clause-form  = head [ counterpart ]                  (* ADR-372 D1: the other
 head         = actor gerund { "," gerund }           (* explicit actor — ADR-327 D1:
                                                         the owner is the action's
                                                         object *)
-             | gerund { "," gerund } ;               (* bare — the owner's own
+             | gerund { "," gerund }                 (* bare — the owner's own
                                                         action; legal only in the
                                                         player's or a person's
                                                         block (analysis.head-bare-
                                                         outside-actor) *)
+             | "hearing" ARTICLE WORD ;              (* ADR-374 D6: a listener's
+                                                        reaction, `after` only — the
+                                                        hearer is the block's owner
+                                                        (a person or a thing), the
+                                                        WORD a declared sound. The
+                                                        one tailed event verb: no
+                                                        actor stands before its tail.
+                                                        analysis.hearing-not-listener,
+                                                        -unknown-sound, -after-only,
+                                                        -actor, -needs-article *)
                                                      (* ADR-368 D1: a head may list
                                                         gerunds; it means one clause
                                                         per gerund, same actor, tail,
@@ -1139,6 +1149,15 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               behavior spends the buyer's
                                                               own counter. Malformed is
                                                               parse.costs *)
+             | "powered" "by" ARTICLE name
+               { "and" ARTICLE name }                      (* ADR-374 D10: power
+                                                              sources — it runs while
+                                                              every one is inside it;
+                                                              a switchable container
+                                                              only (analysis.powered-
+                                                              not-switchable, -not-
+                                                              container). Malformed is
+                                                              parse.powered-by *)
              | "attached" "to" ARTICLE name                (* ADR-373 D1: the anchor, the
                                                               adjective's single-entity
                                                               value (analysis.setting-
@@ -1161,8 +1180,10 @@ composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind no
                                                               word after "starts" is a
                                                               parse error *)
 STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
-             | "off" | "on" | "broken" ;                   (* ADR-373 D7: `broken` pairs
+             | "off" | "on" | "broken"                     (* ADR-373 D7: `broken` pairs
                                                               with `breakable` *)
+             | "lit" | "unlit" ;                           (* ADR-374 D9: pair with
+                                                              `light-source` *)
 KIND-NOUN    = "thing" | "room" | "door" | "person"
              | "container" | "supporter" | "region" ;      (* ADR-359 D1: the WORD of a kind
                                                               composition; any other word
@@ -1202,6 +1223,18 @@ name-list-value = "[" name { "," name } "]" ;              (* ADR-215: only wher
                                                               field (patrol route,
                                                               allowed-rooms, …) *)
 placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement; *)
+             | "in" ARTICLE name { "," ARTICLE name }
+               "and" ARTICLE name                          (* ADR-374 D2: a backdrop,
+                                                              present in every listed
+                                                              room; scenery, rooms and
+                                                              `in` only (analysis.
+                                                              backdrop-not-scenery,
+                                                              -not-room, placement-list-
+                                                              relation). `in the <region>`
+                                                              on scenery places it in
+                                                              every member room. `and`
+                                                              separates places as in every
+                                                              name list *)
              | "starts" "in" name ;                        (* on + bare word = on-clause *)
 DIRECTION    = "north" | "south" | "east" | "west"
              | "northeast" | "northwest" | "southeast" | "southwest"
@@ -1333,9 +1366,14 @@ machine-on     = ( "on" "enter" | "on" "exit" ) NL
 (* ---- ADR-216 declared assets + custom channels ------------------------- *)
 
 define-asset   = "define" ( "sound" | "image" | "music" )
-                 WORD "from" STRING NL ;                   (* a DATA reference, not code —
+                 WORD "from" STRING NL                     (* a DATA reference, not code —
                                                               kept when the hatches were
                                                               removed (ADR-361 D1) *)
+               | "define" "sound" WORD NL ;                (* ADR-374 D6: a sound in the
+                                                              world only, played to no
+                                                              speaker; an ambient bed
+                                                              still needs a file
+                                                              (analysis.asset-no-file) *)
 
 define-family-channel                                      (* ADR-241: a named ambient
                                                               bed / image layer; words
@@ -1806,7 +1844,12 @@ emit-value   = NUMBER | STRING                             (* literals *)
 media-statement                                            (* each lowers at compile
                                                               onto a payloaded media.*
                                                               emit; stmt-when composes *)
-             = "play" "sound" WORD [ stmt-when ] NL
+             = "play" "sound" WORD [ stmt-when ] NL        (* ADR-374 D6: its own IR
+                                                              statement — the cue when
+                                                              the sound has a file, and
+                                                              always a sound in the world
+                                                              from the owner's room,
+                                                              heard by listeners *)
              | "play" "music" WORD [ "looping" ] [ stmt-when ] NL
              | "play" "ambient" WORD [ "in" WORD ]
                [ stmt-when ] NL                            (* plays a SOUND asset; the

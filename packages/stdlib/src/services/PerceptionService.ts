@@ -173,10 +173,11 @@ export class PerceptionService implements IPerceptionService {
       return false;
     }
 
-    // Check environmental darkness
-    // Note: VisibilityBehavior.isDark expects a concrete WorldModel
+    // Check environmental darkness, as this actor meets it: a night-vision
+    // observer sees its own dark room (ADR-374 D5).
+    // Note: VisibilityBehavior expects a concrete WorldModel
     // We cast here since IWorldModel is compatible
-    if (VisibilityBehavior.isDark(location, world as WorldModel)) {
+    if (VisibilityBehavior.isDarkFor(actor, location, world as WorldModel)) {
       return false;
     }
 
@@ -308,7 +309,7 @@ export class PerceptionService implements IPerceptionService {
       return 'blindfolded';
     }
 
-    if (VisibilityBehavior.isDark(location, world as WorldModel)) {
+    if (VisibilityBehavior.isDarkFor(actor, location, world as WorldModel)) {
       return 'darkness';
     }
 

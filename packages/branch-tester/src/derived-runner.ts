@@ -81,6 +81,7 @@ import type { IRCondition, IRStatement, IRValue, Span, StoryIR } from '@sharpee/
 import { collectClauseBranches, type BranchClause, type BranchPrecondition, type ClauseBranch } from '@sharpee/world-index';
 import { arrange, CHORD_GONE_PREFIX, CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, counterKey, parsePin } from '@sharpee/story-loader';
 import { evaluateStateExpression, runCommand, type AssertionResult, type TestEventInfo, type TranscriptCommand } from '@sharpee/transcript-tester';
+import { lifecycleDescriptorFor, SOUND_EVENT_TYPES } from '@sharpee/stdlib';
 import { CHORD_STORY_STATE_KEYS } from './runner.js';
 
 // ---------------------------------------------------------------------------
@@ -289,6 +290,7 @@ export interface DerivedRunOptions {
 /** IR statement kinds whose effects the table maps; anything else is `unmapped`. */
 const MAPPED_EFFECTS = new Set([
   'change', 'move', 'remove', 'change-player', 'win', 'lose', 'kill', 'phrase', 'refuse', 'emit', 'award', 'raise', 'lower',
+  'play-sound',
 ]);
 
 /**
@@ -319,11 +321,14 @@ const THING_ROLE_SLOT = /\[(target|object|thing|weapon|container|clothing)\]/g;
 const KEYED_ACTIONS = new Set(['locking', 'unlocking']);
 
 /**
- * Consequence ids with no grammar of their own, each typed as the verb that
- * causes it: a break is fired by attacking (or dropping a fragile thing, or
- * throwing it), and attacking needs nothing in hand (ADR-373 D3).
+ * The action a branch is typed as. An id fired only as a consequence (a
+ * break, ADR-373 D3) has no grammar of its own, so the runner types its
+ * most direct declared cause — the descriptor's own list, not a copy here.
  */
-const CONSEQUENCE_CAUSES: ReadonlyMap<string, string> = new Map([['breaking', 'attacking']]);
+function typedActionId(action: string): string {
+  const actionId = `if.action.${action}`;
+  return lifecycleDescriptorFor(actionId)?.contracts?.firedAsConsequence?.causes[0] ?? actionId;
+}
 
 /**
  * The state adjectives the floor writes as trait flags, each with the trait
@@ -396,7 +401,17 @@ export function planBranch(
       }
     }
   } else {
+    // A body that writes one fact twice (a robot sent into the trench and
+    // back) leaves only the last write standing when the turn ends, so only
+    // the last write is a claim; an earlier one is neither claimed nor unmapped.
+    const lastWriter = new Map<string, IRStatement>();
     for (const effect of branch.effects) {
+      const fact = writtenFact(effect, branch.subject);
+      if (fact !== null) lastWriter.set(fact, effect);
+    }
+    for (const effect of branch.effects) {
+      const fact = writtenFact(effect, branch.subject);
+      if (fact !== null && lastWriter.get(fact) !== effect) continue;
       if (!MAPPED_EFFECTS.has(effect.kind)) {
         unmapped.push(effect.kind);
         continue;
@@ -779,7 +794,7 @@ function commandPlan(
         }
         return { kind: 'typed', input: words.join(' ') };
       }
-      const actionId = `if.action.${CONSEQUENCE_CAUSES.get(command.action) ?? command.action}`;
+      const actionId = typedActionId(command.action);
       const patterns = actionPatterns(actionId);
       if (!patterns || patterns.length === 0) {
         return { kind: 'no-vocabulary', detail: `no language pattern for ${actionId}` };
@@ -870,6 +885,24 @@ function commandPlan(
   }
 }
 
+/**
+ * The world fact an unconditional effect writes — a thing's place or its
+ * state — or null for anything else (a conditional write may not happen, so
+ * it supersedes nothing).
+ */
+function writtenFact(effect: IRStatement, subject: string | null): string | null {
+  if ('stmtWhen' in effect && effect.stmtWhen) return null;
+  if (effect.kind === 'change') {
+    const entity = valueName(effect.entity, subject);
+    return entity ? `state:${entity}` : null;
+  }
+  if (effect.kind === 'move' || effect.kind === 'remove') {
+    const entity = valueName(effect.entity, subject);
+    return entity ? `place:${entity}` : null;
+  }
+  return null;
+}
+
 /** The claim one effect statement maps to (ADR-356 D3's table), or null when it has none. */
 function effectClaim(effect: IRStatement, subject: string | null, ir: StoryIR): ClaimPlan | null {
   switch (effect.kind) {
@@ -904,6 +937,9 @@ function effectClaim(effect: IRStatement, subject: string | null, ir: StoryIR): 
       return { kind: 'pin', expression: `emitted ${effect.phraseKey}` };
     case 'emit':
       return { kind: 'pin', expression: `emitted ${effect.event}` };
+    case 'play-sound':
+      // ADR-374 D6: the world sound is always made; the cue only with a file.
+      return { kind: 'pin', expression: `emitted ${SOUND_EVENT_TYPES.EMITTED}` };
     case 'award': {
       if (effect.expression.length !== 1) return null;
       const name = effect.expression[0];

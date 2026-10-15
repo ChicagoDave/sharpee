@@ -49,6 +49,7 @@ export { bandOf } from './band.js';
 export { SpatialIndex } from './SpatialIndex.js';
 export { VisibilityBehavior, darkKey } from './VisibilityBehavior.js';
 export { ReachabilityBehavior } from './ReachabilityBehavior.js';
+export { PresenceBehavior } from './PresenceBehavior.js';
 
 // The per-turn location-heading projection (ADR-349 D3/D11)
 export { LocationHeadingBehavior } from './LocationHeadingBehavior.js';

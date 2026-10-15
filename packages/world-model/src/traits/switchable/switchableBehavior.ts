@@ -7,6 +7,7 @@ import { SwitchableTrait } from './switchableTrait.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import { IFEvents } from '../../constants/if-events.js';
 import { ActionFailureReason } from '../../constants/action-failures.js';
+import type { WorldModel } from '../../world/WorldModel.js';
 
 export interface ISwitchOnResult {
   success: boolean;
@@ -35,13 +36,43 @@ export class SwitchableBehavior extends Behavior {
   static requiredTraits = [TraitType.SWITCHABLE];
   
   /**
+   * Whether the device has power (ADR-374 D10). With power sources declared,
+   * that is every one of them directly inside it — the battery goes in and
+   * comes out by ordinary containment; without, the story's own `hasPower`
+   * flag. A device that does not require power always has it.
+   *
+   * @param entity - The switchable device
+   * @param world - The world, for where its power sources are
+   * @returns true when the device can run
+   */
+  static hasPower(entity: IFEntity, world: WorldModel): boolean {
+    const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
+    if (!switchable.requiresPower) return true;
+    if (switchable.powerSourceIds && switchable.powerSourceIds.length > 0) {
+      return switchable.powerSourceIds.every((id) => world.getLocation(id) === entity.id);
+    }
+    return switchable.hasPower;
+  }
+
+  /**
+   * Whether the device is on and has power — running, not merely switched on.
+   *
+   * @param entity - The switchable device
+   * @param world - The world, for its power sources
+   * @returns true when it is on and powered
+   */
+  static isRunning(entity: IFEntity, world: WorldModel): boolean {
+    return SwitchableBehavior.isOn(entity) && SwitchableBehavior.hasPower(entity, world);
+  }
+
+  /**
    * Check if the device can be turned on
    */
-  static canSwitchOn(entity: IFEntity): boolean {
+  static canSwitchOn(entity: IFEntity, world: WorldModel): boolean {
     const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
     
     if (switchable.isOn) return false;
-    if (switchable.requiresPower && !switchable.hasPower) return false;
+    if (!SwitchableBehavior.hasPower(entity, world)) return false;
     
     return true;
   }
@@ -58,7 +89,7 @@ export class SwitchableBehavior extends Behavior {
    * Turn the entity on
    * @returns Result object describing what happened
    */
-  static switchOn(entity: IFEntity): ISwitchOnResult {
+  static switchOn(entity: IFEntity, world: WorldModel): ISwitchOnResult {
     const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
     
     if (switchable.isOn) {
@@ -68,7 +99,7 @@ export class SwitchableBehavior extends Behavior {
       };
     }
     
-    if (switchable.requiresPower && !switchable.hasPower) {
+    if (!SwitchableBehavior.hasPower(entity, world)) {
       return {
         success: false,
         noPower: true
@@ -122,13 +153,13 @@ export class SwitchableBehavior extends Behavior {
    * Toggle on/off state
    * @returns Result from either switch on or off
    */
-  static toggle(entity: IFEntity): ISwitchOnResult | ISwitchOffResult {
+  static toggle(entity: IFEntity, world: WorldModel): ISwitchOnResult | ISwitchOffResult {
     const switchable = SwitchableBehavior.require<SwitchableTrait>(entity, TraitType.SWITCHABLE);
     
     if (switchable.isOn) {
       return this.switchOff(entity);
     } else {
-      return this.switchOn(entity);
+      return this.switchOn(entity, world);
     }
   }
   

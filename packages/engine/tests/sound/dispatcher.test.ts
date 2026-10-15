@@ -26,7 +26,8 @@ import {
 } from '@sharpee/world-model';
 import type { IAudibilityEvent, ISound } from '@sharpee/if-domain';
 
-import { SoundDispatcher, AUDIBILITY_HEARD_EVENT_TYPE } from '../../src/sound/dispatcher';
+import { SoundDispatcher } from '../../src/sound/dispatcher';
+import { SOUND_EVENT_TYPES } from '@sharpee/if-domain';
 
 // =============================================================================
 // Test fixtures
@@ -122,7 +123,7 @@ describe('SoundDispatcher (ADR-172 Phase 6 Step 6.2)', () => {
 
     expect(events).toHaveLength(4); // 2 sounds × 2 listeners
     for (const e of events) {
-      expect(e.type).toBe(AUDIBILITY_HEARD_EVENT_TYPE);
+      expect(e.type).toBe(SOUND_EVENT_TYPES.AUDIBILITY_HEARD);
       expect(e.type).toBe('sound.audibility.heard');
     }
   });
@@ -223,7 +224,7 @@ describe('SoundDispatcher (ADR-172 Phase 6 Step 6.2)', () => {
 
     expect(events).toHaveLength(1);
     const e = events[0];
-    expect(e.type).toBe(AUDIBILITY_HEARD_EVENT_TYPE);
+    expect(e.type).toBe(SOUND_EVENT_TYPES.AUDIBILITY_HEARD);
     expect(e.data).toEqual(audibility);
     expect(e.entities).toEqual({
       actor: 'e-emitter',

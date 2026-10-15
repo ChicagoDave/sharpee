@@ -17,20 +17,30 @@
  * - ADR-230 Phase 6 — `carries` beside `wears`.
  * - ADR-360 D4 — a room joins a region with `in the <region>`.
  * - ADR-325 D5 — a region's `landing`.
+ * - ADR-374 D2 — a backdrop's list placement.
  */
-import type { EntityLineBuilder } from './context.js';
+import type { Placement } from '../../ast.js';
+import type { IRPlacement } from '../../ir.js';
+import type { EntityLineBuilder, EntityBuildContext } from './context.js';
+
+/**
+ * Resolve a placement line. A list (ADR-374 D2) resolves every place. `and`
+ * separates places here exactly as it separates names in every Chord name
+ * list, so a thing whose name contains `and` is placed into by an alias.
+ */
+function placementOf(line: Placement, context: EntityBuildContext): IRPlacement {
+  const base = { relation: line.relation, span: line.span };
+  const place = context.resolveEntityId(line.place) ?? '';
+  if (!line.more) return { ...base, place };
+  const rest = line.more.map((ref) => context.resolveEntityId(ref) ?? '');
+  return { ...base, place, places: [place, ...rest] };
+}
 
 export const placementBuilder: EntityLineBuilder = {
   name: 'placement',
   requires: ['compositions'],
   build(decl, entity, context) {
-    entity.placement = decl.placement
-      ? {
-          relation: decl.placement.relation,
-          place: context.resolveEntityId(decl.placement.place) ?? '',
-          span: decl.placement.span,
-        }
-      : null;
+    entity.placement = decl.placement ? placementOf(decl.placement, context) : null;
     entity.wears = decl.wears.map((w) => context.resolveEntityId(w) ?? '').filter((w) => w !== '');
     entity.carries = decl.carries.map((c) => context.resolveEntityId(c) ?? '').filter((c) => c !== '');
     const isRegion = entity.kinds.some((k) => k.name === 'region');

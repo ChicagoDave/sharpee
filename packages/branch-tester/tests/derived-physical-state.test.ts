@@ -6,7 +6,9 @@
  *   an `after the player breaking` branch has no grammar of its own, so it
  *     is typed as attacking the thing, and the body's change holds;
  *   an `on the player tying to <anchor>` branch types the two-slot pattern
- *     naming both nouns, and the body's change holds.
+ *     naming both nouns, and the body's change holds;
+ *   an `after hearing the <sound>` branch is typed as the player command whose
+ *     clause plays that sound, and a fact written twice is claimed once, last.
  *
  * Owner context: branch-tester test suite (tooling).
  */
@@ -47,6 +49,21 @@ describe('derived runner — breaking and tying (ADR-373)', async () => {
     expect(jar.claims.map((claim) => [claim.claim, claim.passed])).toEqual(
       expect.arrayContaining([['specimen-jar is swept', true]]),
     );
+  });
+
+  it('reaches an after-hearing branch through the clause that plays the sound, claiming only the last move (ADR-374 D6)', () => {
+    const porter = outcome('porter · after hearing');
+    expect(porter.status).toBe('passed');
+    expect(porter.command).toBe('push call button');
+    const claims = porter.claims.map((claim) => claim.claim);
+    expect(claims).toContain('porter.location = specimen-room');
+    expect(claims).not.toContain('porter.location = back-room');
+  });
+
+  it('claims the world sound for the clause that plays it', () => {
+    const button = outcome('call button · after pushing');
+    expect(button.status).toBe('passed');
+    expect(button.claims.map((claim) => [claim.claim, claim.passed])).toEqual([['emitted sound.emitted', true]]);
   });
 
   it('types a counterpart-tailed tying branch with both nouns, and the body\'s change holds', () => {

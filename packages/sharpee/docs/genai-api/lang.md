@@ -327,6 +327,8 @@ export declare const IFActions: {
     readonly BUYING: "if.action.buying";
     readonly TYING: "if.action.tying";
     readonly UNTYING: "if.action.untying";
+    readonly LIGHTING: "if.action.lighting";
+    readonly EXTINGUISHING: "if.action.extinguishing";
     readonly INVENTORY: "if.action.inventory";
     readonly WAITING: "if.action.waiting";
     readonly SLEEPING: "if.action.sleeping";
@@ -590,6 +592,8 @@ export * from './consulting.js';
 export * from './buying.js';
 export * from './tying.js';
 export * from './untying.js';
+export * from './lighting.js';
+export * from './extinguishing.js';
 /**
  * All standard action language definitions
  */
@@ -2129,6 +2133,41 @@ export declare const standardActionLanguage: ({
         no_target: string;
         not_tied: string;
         untied: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_light_source: string;
+        already_lit: string;
+        no_fuel: string;
+        no_tool: string;
+        needs_tool: string;
+        tool_not_held: string;
+        wrong_tool: string;
+        lit: string;
+        lit_in_darkness: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
+        not_light_source: string;
+        not_lit: string;
+        extinguished: string;
+        extinguished_into_darkness: string;
     };
     help: {
         description: string;

@@ -85,4 +85,6 @@ export const grammarBlocks: Record<string, string> = {
   "if.action.setting": "define action setting\n  grammar\n    set the target to the value\n    turn the target to the value\n    adjust the target to the value\n    set the target\n  the value is a topic",
   "if.action.tying": "define action tying\n  grammar\n    tie the item to the anchor\n    fasten the item to the anchor\n    attach the item to the anchor\n    tie the item",
   "if.action.untying": "define action untying\n  grammar\n    untie the item\n    untie the item from the anchor\n    unfasten the item",
+  "if.action.lighting": "define action lighting\n  grammar\n    light the target\n    light the target with or using the tool\n  the tool is an instrument",
+  "if.action.extinguishing": "define action extinguishing\n  grammar\n    extinguish the target\n    put out the target\n    put the target out\n    blow out the target\n    blow the target out\n    snuff the target\n    snuff out the target\n    douse the target",
 };

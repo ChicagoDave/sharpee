@@ -879,6 +879,7 @@ export declare class ReadableBehavior {
 ```typescript
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
+import type { WorldModel } from '../../world/WorldModel.js';
 /**
  * Behavior for light source entities.
  *
@@ -904,6 +905,37 @@ export declare class LightSourceBehavior extends Behavior {
      * 3. Default to lit (for inherently glowing items)
      */
     static isLit(source: IFEntity): boolean;
+    /**
+     * Whether lighting this needs a tool (ADR-374 D9; FlammableBehavior's shape).
+     * @param source the light source
+     * @returns true when a tool is declared
+     */
+    static requiresTool(source: IFEntity): boolean;
+    /**
+     * The declared tools that light this, in declaration order — empty when it
+     * needs none. The implicit-instrument resolution (GH #241) reads it.
+     * @param source the light source
+     * @returns the tool ids
+     */
+    static requiredTools(source: IFEntity): string[];
+    /**
+     * Whether a tool lights this.
+     * @param source the light source
+     * @param toolId the offered tool
+     * @returns true when the tool is declared for it
+     */
+    static canLightWith(source: IFEntity, toolId: string): boolean;
+    /**
+     * Whether the light is giving light now — the one reading of it (ADR-374
+     * D10), for the room's light check and for seeing a lit lamp in the dark.
+     * A switchable light that needs power and has none gives no light, whatever
+     * its switch says; otherwise the light's own state (`isLit`).
+     *
+     * @param source - The light source
+     * @param world - The world, for a powered device's power sources
+     * @returns true when it is lighting its surroundings
+     */
+    static givesLight(source: IFEntity, world: WorldModel): boolean;
     /**
      * Get the brightness level
      */
@@ -2112,6 +2144,8 @@ export declare const TraitType: {
     readonly SCENERY: "scenery";
     /** Sees in the dark (ADR-328 D5) — presence is the fact */
     readonly NIGHT_VISION: "if.trait.night_vision";
+    /** Present in many rooms (ADR-374 D1) */
+    readonly BACKDROP: "if.trait.backdrop";
     readonly OPENABLE: "openable";
     readonly LOCKABLE: "lockable";
     readonly CUTTABLE: "cuttable";
@@ -3511,6 +3545,13 @@ export declare class LightSourceTrait implements ITrait {
      * - undefined: use switchable state or default to lit
      */
     isLit?: boolean;
+    /**
+     * Single tool that lights it — a match for a lantern (ADR-374 D9; the
+     * shape of FlammableTrait.toolId). Absent: lighting needs no tool.
+     */
+    toolId?: string;
+    /** Several tools that light it (mirrors FlammableTrait.toolIds). */
+    toolIds?: string[];
     /** Optional fuel/battery remaining (undefined = infinite) */
     fuelRemaining?: number;
     /** Maximum fuel capacity (for refillable lights) */
@@ -3664,13 +3705,42 @@ import { ITrait } from '../trait.js';
  * a cat, a creature of the deep. Its presence is the fact; there is no data.
  *
  * Checked by `VisibilityBehavior` at the two darkness gates (`canSee`,
- * `getVisible`). It says nothing about light itself: a room stays dark for
- * everyone else, and the observer's own arrival description still reads as
- * a dark room's.
+ * `getVisible`) and by `isDarkFor`, which looking, arrival and the
+ * perception filter ask, so a night-vision observer also sees the dark room
+ * it stands in (ADR-374 D5). It says nothing about light itself: the room
+ * stays dark for everyone else, and `isDark(room)` is unchanged.
  */
 export declare class NightVisionTrait implements ITrait {
     static readonly type: "if.trait.night_vision";
     readonly type: "if.trait.night_vision";
+}
+```
+
+### traits/backdrop/backdropTrait
+
+```typescript
+import { ITrait } from '../trait.js';
+/**
+ * Initialization data for a backdrop.
+ */
+export interface IBackdropData {
+    /** Every room the backdrop is present at, the first being where it lives. */
+    roomIds?: string[];
+}
+/**
+ * A backdrop is one scenery thing present in many rooms (ADR-374 D1): the
+ * sky over a landing field, the sea along a coast. It lives in the first
+ * room of its list, like any thing, and is present at the others the way a
+ * door is present at its far side — visible and reachable, never listed.
+ *
+ * Read by `PresenceBehavior`, which the scope rule and the visibility gates
+ * consult. Carries no state of its own beyond the room list.
+ */
+export declare class BackdropTrait implements ITrait, IBackdropData {
+    static readonly type: "if.trait.backdrop";
+    readonly type: "if.trait.backdrop";
+    roomIds: string[];
+    constructor(data?: IBackdropData);
 }
 ```
 
@@ -3804,8 +3874,13 @@ export interface ISwitchableData {
     powerConsumption?: number;
     /** Whether this requires power to operate */
     requiresPower?: boolean;
-    /** Whether power is currently available */
+    /** Whether power is currently available (a story's own flag; ignored when power sources are declared) */
     hasPower?: boolean;
+    /**
+     * The things that power it (ADR-374 D10): it has power exactly while every
+     * one of them is directly inside it. Declaring any implies `requiresPower`.
+     */
+    powerSourceIds?: string[];
     /** Custom message when turning on */
     onMessage?: string;
     /** Custom message when turning off */
@@ -3854,6 +3929,7 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
     powerConsumption: number;
     requiresPower: boolean;
     hasPower: boolean;
+    powerSourceIds?: string[];
     onMessage?: string;
     offMessage?: string;
     alreadyOnMessage?: string;
@@ -3877,6 +3953,7 @@ export declare class SwitchableTrait implements ITrait, ISwitchableData {
 import { Behavior } from '../../behaviors/behavior.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { type ISemanticEvent } from '@sharpee/core';
+import type { WorldModel } from '../../world/WorldModel.js';
 export interface ISwitchOnResult {
     success: boolean;
     wasOn?: boolean;
@@ -3901,9 +3978,28 @@ export interface ISwitchOffResult {
 export declare class SwitchableBehavior extends Behavior {
     static requiredTraits: "switchable"[];
     /**
+     * Whether the device has power (ADR-374 D10). With power sources declared,
+     * that is every one of them directly inside it — the battery goes in and
+     * comes out by ordinary containment; without, the story's own `hasPower`
+     * flag. A device that does not require power always has it.
+     *
+     * @param entity - The switchable device
+     * @param world - The world, for where its power sources are
+     * @returns true when the device can run
+     */
+    static hasPower(entity: IFEntity, world: WorldModel): boolean;
+    /**
+     * Whether the device is on and has power — running, not merely switched on.
+     *
+     * @param entity - The switchable device
+     * @param world - The world, for its power sources
+     * @returns true when it is on and powered
+     */
+    static isRunning(entity: IFEntity, world: WorldModel): boolean;
+    /**
      * Check if the device can be turned on
      */
-    static canSwitchOn(entity: IFEntity): boolean;
+    static canSwitchOn(entity: IFEntity, world: WorldModel): boolean;
     /**
      * Check if the device can be turned off
      */
@@ -3912,7 +4008,7 @@ export declare class SwitchableBehavior extends Behavior {
      * Turn the entity on
      * @returns Result object describing what happened
      */
-    static switchOn(entity: IFEntity): ISwitchOnResult;
+    static switchOn(entity: IFEntity, world: WorldModel): ISwitchOnResult;
     /**
      * Turn the entity off
      * @returns Result object describing what happened
@@ -3922,7 +4018,7 @@ export declare class SwitchableBehavior extends Behavior {
      * Toggle on/off state
      * @returns Result from either switch on or off
      */
-    static toggle(entity: IFEntity): ISwitchOnResult | ISwitchOffResult;
+    static toggle(entity: IFEntity, world: WorldModel): ISwitchOnResult | ISwitchOffResult;
     /**
      * Update power state
      * @returns Events if device was forced off due to power loss
@@ -8409,17 +8505,18 @@ export declare class VisibilityBehavior extends Behavior {
      */
     /** Whether the observer sees without light — carries `NightVisionTrait`. */
     private static seesInDark;
-    static isDark(room: IFEntity, world: WorldModel): boolean;
     /**
-     * Determines if a light source entity is currently providing light.
-     * Checks isLit property first, falls back to switchable state, defaults to lit.
+     * Whether a room is dark to this observer: dark, and the observer does
+     * not see in the dark (ADR-374 D5). Looking and the perception filter
+     * ask this; `isDark` stays the room's own fact.
      *
-     * Priority order:
-     * 1. Explicit isLit property (e.g., lit torch, extinguished candle)
-     * 2. Switchable trait state (e.g., flashlight isOn: true)
-     * 3. Default to lit (e.g., glowing gems, phosphorescent moss)
+     * @param observer - The one looking
+     * @param room - The room it is in
+     * @param world - The world model
+     * @returns true when the observer cannot see the room
      */
-    private static isLightActive;
+    static isDarkFor(observer: IFEntity, room: IFEntity, world: WorldModel): boolean;
+    static isDark(room: IFEntity, world: WorldModel): boolean;
     /**
      * Whether an entity is still concealed (hidden until SEARCH or a game event
      * reveals it). This is the SINGLE shared definition of item concealment for
@@ -8586,6 +8683,55 @@ export declare class ReachabilityBehavior extends Behavior {
      * @returns Array of entities that are physically reachable
      */
     static getReachable(observer: IFEntity, world: WorldModel): IFEntity[];
+}
+```
+
+### world/PresenceBehavior
+
+```typescript
+/**
+ * PresenceBehavior — where a thing is present beyond the one room that
+ * contains it (ADR-374 D1).
+ *
+ * A thing lives in one place. Two kinds are present at more rooms than
+ * that: a door at both of its rooms (David's ruling 2026-07-18), and a
+ * backdrop at every room of its list. This is the one rule for both; the
+ * scope rule and the visibility gates read it instead of re-deriving the
+ * door case.
+ *
+ * Public interface: PresenceBehavior.roomsBeyondHome, isPresentAt, presentAt.
+ * Owner context: world-model — scope and visibility.
+ */
+import { IFEntity } from '../entities/if-entity.js';
+import type { WorldModel } from './WorldModel.js';
+export declare class PresenceBehavior {
+    /**
+     * The rooms an entity is present at by its own nature: a door's two
+     * rooms, a backdrop's list. Empty for everything else.
+     *
+     * @param entity - The entity to ask about
+     * @returns Room ids (may include the room that contains it)
+     */
+    static roomsBeyondHome(entity: IFEntity): readonly string[];
+    /**
+     * Whether an entity is present at a room: contained in it, or a door or
+     * backdrop that lists it.
+     *
+     * @param entity - The entity to ask about
+     * @param roomId - The room
+     * @param world - The world model
+     * @returns true when the entity is present at the room
+     */
+    static isPresentAt(entity: IFEntity, roomId: string, world: WorldModel): boolean;
+    /**
+     * The doors and backdrops present at a room by their own nature —
+     * including any whose home is that room.
+     *
+     * @param roomId - The room
+     * @param world - The world model
+     * @returns The entities, doors first
+     */
+    static presentAt(roomId: string, world: WorldModel): IFEntity[];
 }
 ```
 

@@ -17,7 +17,7 @@
 import { authoredInitiativeFor } from '@sharpee/character';
 import type { IRCondition, IRStatement, IRValue, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import type { Choice } from '@sharpee/if-domain';
+import { SOUND_EVENT_TYPES, type Choice, type ISound } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
 import { TraitType, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
@@ -106,6 +106,23 @@ export class StatementsSection {
           // through). Not inside rawEvent — that also mints the internal
           // `chord.phrase` event, which must not be translated.
           if (phase !== 'mutations' && holds) events.push(this.core.rawEvent(translateEventId(stmt.event), this.core.phrases.emitPayload(stmt.payload, ctx)));
+          break;
+        case 'play-sound':
+          // ADR-374 D6: one sound, two sides. The cue plays when the sound
+          // has a file (ADR-216); the world sound is always made, from the
+          // owner's room — a story-level clause plays where the player is —
+          // and the engine's sound stage carries it to listeners (ADR-172).
+          if (phase !== 'mutations' && holds) {
+            if (stmt.src) events.push(this.core.rawEvent(translateEventId('media-sound-play'), { src: stmt.src }));
+            const owner: IRValue = ctx.it ? { kind: 'it' } : { kind: 'player' };
+            const sound: ISound = {
+              sourceEntity: this.core.evaluator.entityValue(owner, ctx),
+              sourceLocation: this.core.evaluator.evalValue({ kind: 'field', base: owner, field: 'location' }, ctx) as string,
+              kind: stmt.sound,
+              volumeTier: 'normal',
+            };
+            events.push(this.core.rawEvent(SOUND_EVENT_TYPES.EMITTED, { ...sound }));
+          }
           break;
         case 'win':
         case 'lose':

@@ -165,7 +165,7 @@ describe('AC-4 — a precondition the floor cannot arrange', () => {
     expect(guarded.arranged).toEqual([]);
     expect(guarded.span).toEqual(guarded.branch.span);
 
-    expect(outcome(run, 'on touching')).toMatchObject({ status: 'passed', command: 'touch brass lamp', claims: [{ claim: 'brass-lamp is lit', passed: true }] });
+    expect(outcome(run, 'on touching')).toMatchObject({ status: 'passed', command: 'touch brass bell', claims: [{ claim: 'brass-bell is ringing', passed: true }] });
 
     expect(run.total).toBe(collectClauseBranches(ir).length);
     expect(run.outcomes.length).toBe(run.total);
@@ -174,12 +174,12 @@ describe('AC-4 — a precondition the floor cannot arrange', () => {
 });
 
 describe('a timer phase is arranged, not skipped (ADR-356 D2 as amended 2026-09-27)', () => {
-  it('arranges `has expired` on the lamp\'s timer and proves the guarded clause fires', async () => {
+  it('arranges `has expired` on the bell\'s timer and proves the guarded clause fires', async () => {
     const { run } = await runFixture('skip');
     const guarded = outcome(run, 'on examining');
     expect(guarded.status).toBe('passed');
-    expect(guarded.arranged).toContain('brass-lamp.flicker has expired');
-    expect(guarded.claims).toEqual([{ claim: 'emitted lamp-after', passed: true }]);
+    expect(guarded.arranged).toContain('brass-bell.flicker has expired');
+    expect(guarded.claims).toEqual([{ claim: 'emitted bell-after', passed: true }]);
   }, 30_000);
 });
 

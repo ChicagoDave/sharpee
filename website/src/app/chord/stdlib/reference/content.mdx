@@ -629,6 +629,29 @@ exiting-must-stand-first          must_stand_first                        {You}'
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.exited` (ADR-052).
 
+## extinguish, put out, blow out, snuff — `if.action.extinguishing`
+
+**Group** `device_manipulation` · direct object required · **Slots** `target` · **Emits** `if.event.extinguish_blocked`, `if.event.extinguished`
+
+<GrammarBlock action="if.action.extinguishing" />
+
+EXTINGUISH - Put out a lantern, a candle or a flame. Example: BLOW OUT THE CANDLE
+
+Puts out a lit `light-source` (ADR-374 D9). A `switchable` light is switched off instead — extinguishing hands it to switching off, so switching off's lines, refusals and `on the player switching_off` clauses all apply. When the room goes dark for the player, the line says so.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+extinguishing-no-target           no_target                               Put out what?
+extinguishing-not-light-source    not_light_source                        {capitalize the target} isn't something {you} can put out.
+extinguishing-not-lit             not_lit                                 {capitalize the target} {verb:isn't target} lit.
+extinguishing-extinguished        extinguished                            {You} {put} out {the target}.
+extinguishing-extinguished-into-darkness extinguished_into_darkness       {You} {put} out {the target}, and darkness closes in.
+```
+
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.extinguished` (ADR-052).
+
 ## give to, give, offer to, hand to — `if.action.giving`
 
 **Group** `social` · direct object required · indirect object required · **Slots** `item`, `recipient` · **Emits** `if.event.give_blocked`, `if.event.given`
@@ -840,6 +863,34 @@ kissing-no-target                 no_target                               Kiss w
 kissing-kissed-person             kissed_person                           {capitalize the target} {verb:is target} having none of that.
 kissing-kissed-thing              kissed_thing                            {You} {kiss} {the target}. Nothing comes of it.
 ```
+
+## light, light with — `if.action.lighting`
+
+**Group** `device_manipulation` · direct object required · **Slots** `target`, `tool` · **Emits** `if.event.light_blocked`, `if.event.lit`
+
+<GrammarBlock action="if.action.lighting" />
+
+LIGHT - Light a lantern, a candle or a lamp. Example: LIGHT THE CANDLE WITH THE MATCH
+
+Lights an unlit `light-source` (ADR-374 D9); `light-source with the <tool>` names what it takes, by the same rule as burning's tools. A `switchable` light is switched on instead — lighting hands it to switching on, so its power, its lines and `on the player switching_on` clauses all apply. Lighting a dark room describes it, as switching on a lamp does. `ignite` is burning's.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                             message id                              text
+lighting-no-target                no_target                               Light what?
+lighting-not-light-source         not_light_source                        {capitalize the target} isn't something {you} can light.
+lighting-already-lit              already_lit                             {capitalize the target} {verb:is target} already lit.
+lighting-no-fuel                  no_fuel                                 {capitalize the target} won't light; it has nothing left to burn.
+lighting-no-tool                  no_tool                                 {You} {need} something to light {the item} with.
+lighting-needs-tool               needs_tool                              {You} {need} {the tool} to light {the item}.
+lighting-tool-not-held            tool_not_held                           {You} {aren't} holding {the tool}.
+lighting-wrong-tool               wrong_tool                              {capitalize the tool} won't light {the item}.
+lighting-lit                      lit                                     {You} {light} {the target}.
+lighting-lit-in-darkness          lit_in_darkness                         {You} {light} {the target}, and the darkness draws back.
+```
+
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.lit` (ADR-052).
 
 ## hear, listen, listen to — `if.action.listening`
 

@@ -497,4 +497,14 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("untie :item").mapsTo("if.action.untying").build();
   grammar.define("untie :item from :anchor").mapsTo("if.action.untying").build();
   grammar.define("unfasten :item").mapsTo("if.action.untying").build();
+  grammar.define("light :target").mapsTo("if.action.lighting").build();
+  grammar.define("light :target with|using :tool").mapsTo("if.action.lighting").instrument("tool").build();
+  grammar.define("extinguish :target").mapsTo("if.action.extinguishing").build();
+  grammar.define("put out :target").mapsTo("if.action.extinguishing").build();
+  grammar.define("put :target out").mapsTo("if.action.extinguishing").build();
+  grammar.define("blow out :target").mapsTo("if.action.extinguishing").build();
+  grammar.define("blow :target out").mapsTo("if.action.extinguishing").build();
+  grammar.define("snuff :target").mapsTo("if.action.extinguishing").build();
+  grammar.define("snuff out :target").mapsTo("if.action.extinguishing").build();
+  grammar.define("douse :target").mapsTo("if.action.extinguishing").build();
 }
