@@ -45,6 +45,10 @@
  * command is typed — the item a `must have` precondition holds, else what
  * the player carries; a person in the room, else the first declared person
  * brought in — and a slot nothing fills is SKIPPED `object-unreachable`.
+ * A clause with a counterpart tail types the two-slot pattern naming both
+ * nouns, the counterpart in hand when the subject is fixed (throwing the
+ * letter at the bin); a readable thing's topics are typed as consulting,
+ * a person's as asking.
  *
  * Three compositions of floor forms are arranged as compositions, not
  * named as shapes: a named condition expands to its body with `it` bound
@@ -136,7 +140,10 @@ export interface SlotFiller {
  * the booted world). A standard-action command carries its unfilled slots
  * as `fillers`, resolved and substituted before the command is typed.
  */
-export type CommandPlan = { kind: 'typed'; input: string; fillers?: SlotFiller[] } | { kind: 'none' };
+export type CommandPlan =
+  /** `counterpartLeads`: a counterpart tail's other noun takes the first slot, the one a held-object action needs in hand (ADR-372 D1). */
+  | { kind: 'typed'; input: string; fillers?: SlotFiller[]; counterpartLeads?: boolean }
+  | { kind: 'none' };
 
 /** One claim the body's effects map to (ADR-356 D3's table). */
 export type ClaimPlan =
@@ -305,6 +312,9 @@ const HELD_ACTIONS = new Set(['wearing', 'giving', 'showing', 'dropping', 'putti
 /** The slot tokens a language pattern can carry. */
 const SLOT_TOKEN = /\[(something|someone)\]/g;
 
+/** Language slots that name a thing by its role in the action; any thing fills them. */
+const THING_ROLE_SLOT = /\[(target|object|thing|weapon|container|clothing)\]/g;
+
 /** Standard actions whose `with [something]` slot is the lockable's key. */
 const KEYED_ACTIONS = new Set(['locking', 'unlocking']);
 
@@ -451,10 +461,19 @@ export function planBranch(
     // unless a term already places it. A person subject (the viewer, the
     // recipient) stands in its own room, where the player was just placed.
     const standardAction = branch.command.kind === 'action' && !ir.actions.some((action) => action.name === (branch.command as { action: string }).action);
+    // When a counterpart leads, it is the thing in hand and the subject is
+    // only reached (ADR-372 D1).
+    const leads = command.kind === 'typed' && command.counterpartLeads === true;
+    const counterpart = branch.clause.kind === 'on' ? branch.clause.counterpart : undefined;
+    const placedPin = (entity: string): RegExp => new RegExp(`^(${entity}\\.location\\s*=|player\\.inventory contains ${entity}$)`);
     if (standardAction && branch.command.kind === 'action' && !isPerson(ir, reachTarget)) {
-      const placed = new RegExp(`^(${reachTarget}\\.location\\s*=|player\\.inventory contains ${reachTarget}$)`);
-      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placed.test(term.expression))) {
-        terms.push({ kind: 'reach-noun', entity: reachTarget, want: HELD_ACTIONS.has(branch.command.action) ? 'held' : 'present' });
+      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placedPin(reachTarget).test(term.expression))) {
+        terms.push({ kind: 'reach-noun', entity: reachTarget, want: HELD_ACTIONS.has(branch.command.action) && !leads ? 'held' : 'present' });
+      }
+    }
+    if (standardAction && branch.command.kind === 'action' && leads && counterpart !== undefined && HELD_ACTIONS.has(branch.command.action)) {
+      if (!terms.some((term) => term.kind === 'pin' && term.mustHold && placedPin(counterpart).test(term.expression))) {
+        terms.push({ kind: 'reach-noun', entity: counterpart, want: 'held' });
       }
     }
   }
@@ -481,6 +500,9 @@ function interceptingGuards(branch: ClauseBranch, branches: ClauseBranch[]): { g
     // run types the branch's own tail, or a value no tail names, so a
     // refusal tailed to another value never fires on it.
     if (candidate.clause.valueTail !== undefined && candidate.clause.valueTail !== branch.clause.valueTail) continue;
+    // ADR-372 D1: likewise a counterpart-tailed refusal intercepts only
+    // commands naming that other noun.
+    if (candidate.clause.counterpart !== undefined && candidate.clause.counterpart !== branch.clause.counterpart) continue;
     if (candidate.leaf.kind === 'refused') {
       const own = candidate.precondition[candidate.precondition.length - 1];
       if (own?.kind === 'condition') guards.push({ kind: 'condition', condition: own.condition, holds: !own.holds });
@@ -716,7 +738,9 @@ function commandPlan(
     case 'ask': {
       const owner = entityName(ir, command.owner) ?? command.owner;
       const topic = command.filter.kind === 'text' ? command.filter.primary : entityName(ir, command.filter.id) ?? command.filter.id;
-      return { kind: 'typed', input: `ask ${owner} about ${topic}` };
+      // ADR-372 D4: a readable thing's topics answer consulting; asking is
+      // a person's verb and refuses a book as no one to talk to.
+      return { kind: 'typed', input: isPerson(ir, command.owner) ? `ask ${owner} about ${topic}` : `consult ${owner} about ${topic}` };
     }
     case 'action': {
       if (command.actor !== 'player') {
@@ -789,6 +813,32 @@ function commandPlan(
       }
       if (!pattern) {
         return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has a slot for its subject` };
+      }
+      // ADR-372 D1: a counterpart tail names the other noun, so the command
+      // is a two-slot pattern with the counterpart in the slot the subject
+      // does not take. Between two `[something]` slots the first is the
+      // thing in hand: a fixed subject (scenery, a person, a place) takes the
+      // second and the counterpart leads; any other subject leads.
+      const counterpart = branch.clause.kind === 'on' ? branch.clause.counterpart : undefined;
+      if (counterpart !== undefined) {
+        const counterpartToken = isPerson(ir, counterpart) ? '[someone]' : '[something]';
+        const wanted = [subjectToken, counterpartToken].sort().join(' ');
+        // The language names some thing slots by role (`throw [something]
+        // at [target]`); each is a `[something]` to the typed command.
+        const paired = patterns
+          .map((candidate) => candidate.replace(THING_ROLE_SLOT, '[something]'))
+          .find((candidate) => [...slotsOf(candidate)].sort().join(' ') === wanted);
+        if (!paired) {
+          return { kind: 'skip', shape: 'command-shape', detail: `no pattern of ${actionId} has slots for its subject and ${counterpart}` };
+        }
+        const slots = slotsOf(paired);
+        const subjectAt =
+          subjectToken !== counterpartToken ? slots.indexOf(subjectToken)
+          : isFixed(ir, command.object) && !isFixed(ir, counterpart) ? 1
+          : 0;
+        let at = 0;
+        const typed = paired.replace(SLOT_TOKEN, (token) => (at++ === subjectAt ? objectName : token)).trim();
+        return { kind: 'typed', input: typed, fillers: [{ token: counterpartToken, entity: counterpart }], counterpartLeads: subjectAt !== 0 };
       }
       // ADR-371 D4: a setting pattern's `[value]` takes the planned state word.
       const input = pattern.replace(subjectToken, objectName).replace('[value]', value ?? '[value]').trim();
@@ -894,6 +944,12 @@ function negativeRead(effect: IRStatement, subject: string | null, ir: StoryIR):
 /** Whether the IR declares the entity `a person` — the kind that fills a `[someone]` slot. */
 function isPerson(ir: StoryIR, irId: string): boolean {
   return ir.entities.find((entity) => entity.id === irId)?.kinds.some((kind) => kind.name === 'person') ?? false;
+}
+
+/** Whether the entity stays put for a held-object verb: scenery, a person, or a place. */
+function isFixed(ir: StoryIR, irId: string): boolean {
+  const entity = ir.entities.find((candidate) => candidate.id === irId);
+  return entity !== undefined && (isPerson(ir, irId) || isPlace(ir, irId) || entity.traits.some((trait) => trait.name === 'scenery'));
 }
 
 function isPlace(ir: StoryIR, irId: string): boolean {

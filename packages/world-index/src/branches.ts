@@ -96,6 +96,12 @@ export type BranchClause =
        * the value set is this word. Absent on every other clause.
        */
       valueTail?: string;
+      /**
+       * The counterpart tail (ADR-372 D1): the IR id of the other noun; the
+       * clause fires only when the command's other slot holds this thing.
+       * Absent on every other clause.
+       */
+      counterpart?: string;
       /** What owns the clause's list. */
       root: ClauseRoot;
       /**
@@ -692,6 +698,7 @@ function classify(
           role: (n.role as string | null) ?? null,
           once: n.once === true,
           ...(typeof n.valueTail === 'string' ? { valueTail: n.valueTail } : {}),
+          ...(typeof n.counterpart === 'string' ? { counterpart: n.counterpart } : {}),
           root,
           ...(clause === undefined ? {} : { clause }),
         },

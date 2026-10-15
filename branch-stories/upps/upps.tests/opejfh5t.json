@@ -172,6 +172,78 @@
     {
       "assertions": {
         "contains": [
+          "You take the dead letter from the returns bin."
+        ]
+      },
+      "command": "take letter",
+      "id": "a372tak1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You toss the dead letter to the ground."
+        ],
+        "notContains": [
+          "find their way back",
+          "spits it back"
+        ]
+      },
+      "command": "throw letter",
+      "id": "a372thr1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take letter",
+      "id": "a372tak2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The sorting machine snatches the letter out of the air, reads the address, finds no world by that name, and spits it back onto the floor."
+        ],
+        "notContains": [
+          "find their way back",
+          "It hits!"
+        ]
+      },
+      "command": "throw letter at machine",
+      "id": "a372thr2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Taken."
+        ]
+      },
+      "command": "take letter",
+      "id": "a372tak3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The dead letter skims across the floor and drops into the returns bin as if it knew the way."
+        ],
+        "notContains": [
+          "It hits!",
+          "spits it back"
+        ]
+      },
+      "command": "throw letter at bin",
+      "id": "a372thr3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "You find nothing under the returns bin."
         ]
       },
@@ -251,6 +323,50 @@
       },
       "command": "drop torch",
       "id": "a371drp1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The disposal torch isn't for sale."
+        ]
+      },
+      "command": "buy torch",
+      "id": "a372buy1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You buy the ration bar.",
+          "The kiosk counts your credits twice, grudgingly, and lets go of what you paid for."
+        ]
+      },
+      "command": "buy bar",
+      "id": "a372buy2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't afford the flask of coffee."
+        ]
+      },
+      "command": "buy coffee",
+      "id": "a372buy3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You already have the ration bar."
+        ],
+        "notContains": [
+          "counts your credits"
+        ]
+      },
+      "command": "buy bar",
+      "id": "a372buy4",
       "type": "turn"
     },
     {

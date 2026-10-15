@@ -82,11 +82,57 @@
     {
       "assertions": {
         "contains": [
+          "\"Tokens are for people I've signed off.\""
+        ],
+        "notContains": [
+          "flicks it to you"
+        ]
+      },
+      "command": "ask quint for token",
+      "id": "a372ask1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The pad master doesn't seem inclined to hand over the tram line."
+        ]
+      },
+      "command": "ask quint for tram",
+      "id": "a372ask2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "Route 7. Addressee delivery, no proxy signature."
         ]
       },
       "command": "show card to quint",
       "id": "a370shw1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Quint fishes a brass token out of a patch pocket and flicks it to you."
+        ]
+      },
+      "command": "ask quint for token",
+      "id": "a372ask3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You already have the tram token."
+        ],
+        "notContains": [
+          "flicks it to you"
+        ]
+      },
+      "command": "ask quint for token",
+      "id": "a372ask4",
       "type": "turn"
     },
     {

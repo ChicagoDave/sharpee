@@ -36,6 +36,7 @@ create Postman
   playable
   proper
   starts in the Sorting Room
+  counter credits starts 5
 
   A carrier of the United Planetary Postal Service, in regulation grey.
 
@@ -91,6 +92,39 @@ create the returns bin
     phrase bin-emptied
   end after
 
+  on the player throwing the dead letter
+    move the dead letter to the returns bin
+    phrase letter-returned
+  end on
+
+create the canteen kiosk
+  a container, scenery, unlisted
+  in the Sorting Room
+  aka kiosk, canteen, vending kiosk
+
+  A dented vending kiosk bolted beside the pigeonholes, its glass
+  front scratched to frost. A card on the coin slot reads: CREW
+  CREDITS ONLY. Behind the glass sit a ration bar and a flask of
+  depot coffee.
+
+create the ration bar
+  a thing, costs 3 credits
+  in the canteen kiosk
+  aka bar, ration
+
+  A foil-wrapped UPPS ration bar, flavour unstated.
+
+  after the player buying
+    phrase kiosk-vends
+  end after
+
+create the flask of coffee
+  a thing, costs 4 credits
+  in the canteen kiosk
+  aka flask, coffee, depot coffee
+
+  A dented steel flask of depot coffee, still warm through the glass.
+
 create the dead letter
   a thing, flammable with the disposal torch
   in the returns bin
@@ -102,6 +136,10 @@ create the dead letter
   on the player burning
     remove the dead letter
     phrase letter-burned
+  end on
+
+  on the player throwing at the sorting machine
+    phrase machine-spits-letter
   end on
 
 create the disposal torch
@@ -374,6 +412,14 @@ create the fold drive
     refuse fold-no-abort
   end on
 
+create the flight manual
+  a thing, readable with text "UPPS COURIER, SPARROW CLASS: PILOT'S HANDBOOK. Consult the index for the system you need."
+  in the Cockpit
+  aka manual, handbook, pilot's handbook
+
+  A ring-bound handbook, its corners soft from a decade of gloves.
+  The index runs to six pages.
+
 create the viewport
   a thing, scenery
   in the Cockpit
@@ -428,6 +474,12 @@ create the pressure gauge
   A brass-rimmed dial under scratched glass. In a fold it reads nothing
   at all, which is the point: there is nothing out there to press.
 
+define topics for the flight manual
+  about "the fold", "the fold drive", "folding": phrase manual-fold
+  about "the airlock", "the outer hatch", "the hatch": phrase manual-airlock
+  about "the selector", "guidance": phrase manual-selector
+end topics
+
 define sequence the fold
   when the courier ship becomes underway
   5 turns later
@@ -469,6 +521,7 @@ create the pad master
   in the Landing Pad
   aka quint, dolores, master, dolores quint, pad master quint
   states: unconvinced, waved-through
+  carries the tram token
 
   Dolores Quint, pad master of 14, in a suit with more patches than
   suit. She carries a clipboard, which on Ceres means she has a job,
@@ -477,6 +530,19 @@ create the pad master
   after the player giving
     lose parcel-signed-away when the pad master has the mail bundle
   end after
+
+  on the player asking_for the tram token
+    refuse when the pad master is unconvinced: quint-no-token
+    move the tram token to the player
+    phrase quint-hands-token
+  end on
+
+create the tram token
+  a thing
+  aka token, brass token, fare token
+
+  A brass disc stamped PIAZZI TRANSIT, ONE FARE, worn smooth on the
+  side that goes into the turnstile.
 
 define topics for the pad master
   about "the parcel", "the bundle", "the mail": phrase quint-parcel
@@ -712,5 +778,48 @@ end phrase
 define phrase ramp-sealed
   The ramp has been sealed since the fold. Whatever is on the other
   side of it now, it is not the depot.
+end phrase
+
+define phrase letter-returned
+  The dead letter skims across the floor and drops into the returns
+  bin as if it knew the way. Undeliverables always find their way
+  back.
+end phrase
+
+define phrase machine-spits-letter
+  The sorting machine snatches the letter out of the air, reads the
+  address, finds no world by that name, and spits it back onto the
+  floor.
+end phrase
+
+define phrase kiosk-vends
+  The kiosk counts your credits twice, grudgingly, and lets go of
+  what you paid for.
+end phrase
+
+define phrase manual-fold
+  FOLD DRIVE, p. 41: "The drive will not engage without a seated,
+  harnessed pilot. Once engaged, the fold cannot be aborted. Do not
+  open any hatch while folding."
+end phrase
+
+define phrase manual-airlock
+  PORT AIRLOCK, p. 58: "Check the gauge. Then the window. Then the
+  wheel. A gauge reading of nothing means you are still in the fold."
+end phrase
+
+define phrase manual-selector
+  GUIDANCE SELECTOR, p. 12: "The selector holds one destination. Set
+  it to the first stop on the route card before engaging the drive."
+end phrase
+
+define phrase quint-no-token
+  "Tokens are for people I've signed off." Quint taps the clipboard.
+  "You're not signed off."
+end phrase
+
+define phrase quint-hands-token
+  Quint fishes a brass token out of a patch pocket and flicks it to
+  you. "One fare. Don't make me regret it."
 end phrase
 

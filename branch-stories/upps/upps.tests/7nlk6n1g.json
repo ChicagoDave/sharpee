@@ -163,6 +163,56 @@
     {
       "assertions": {
         "contains": [
+          "FOLD DRIVE, p. 41"
+        ]
+      },
+      "command": "consult manual about the fold",
+      "id": "a372cns1",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "PORT AIRLOCK, p. 58"
+        ]
+      },
+      "command": "look up hatch in manual",
+      "id": "a372cns2",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "GUIDANCE SELECTOR, p. 12"
+        ]
+      },
+      "command": "read about guidance in manual",
+      "id": "a372cns3",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You find nothing about that in the flight manual."
+        ]
+      },
+      "command": "consult manual about vance",
+      "id": "a372cns4",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The flight couch isn't something you can look things up in."
+        ]
+      },
+      "command": "consult couch about the fold",
+      "id": "a372cns5",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
           "The Sparrow will not fold with its pilot standing up."
         ],
         "notContains": [
