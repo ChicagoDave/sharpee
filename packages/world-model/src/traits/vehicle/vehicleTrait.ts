@@ -1,97 +1,80 @@
 /**
- * Vehicle Trait - For enterable containers that transport actors
+ * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Vehicles are enterable containers (bucket, boat, basket, balloon) where:
- * - Actor enters the vehicle (ENTER BUCKET)
- * - Vehicle moves, taking its contents with it
- * - Actor exits the vehicle (EXIT BUCKET)
+ * Public interface: `VehicleTrait` (data: the movement model), the model
+ * types `VehicleModel`, `VehicleLineModel`, `VehicleStreetsModel`, the type
+ * guard `isVehicleTrait`, and the factory `createVehicleTrait`.
  *
- * Based on Infocom's vehicle concept from Zork.
+ * Owner context: world-model traits. The trait carries exactly what the
+ * language can write about a vehicle and nothing else (ADR-366 D8): its
+ * movement model. Where the vehicle is, which stop it is at, and whether it
+ * holds its riders in or on are read from the world (the vehicle's location,
+ * D9) and from `EnterableTrait.preposition`, never copied here.
+ *
+ * Moving a vehicle moves what it holds (D4): containment is relational, so
+ * `WorldModel.moveEntity` on the vehicle carries every held entity at every
+ * depth, with no vehicle-specific move.
  */
 
 import { TraitType } from '../trait-types.js';
 import { ITrait } from '../trait.js';
 
 /**
- * Vehicle type determines movement behavior
+ * The line (ADR-366 D5a): ordered stops the story drives the vehicle between.
+ * GO from inside is refused; the player rides, the story drives.
  */
-export type VehicleType =
-  | 'counterweight'  // Bucket - moves based on water weight
-  | 'watercraft'     // Boat - floats on water, affected by current
-  | 'aircraft'       // Balloon - rises/descends based on heat
-  | 'cable'          // Basket - raised/lowered by mechanism
-  | 'generic';       // Custom vehicle behavior
+export interface VehicleLineModel {
+  kind: 'line';
+  /** Room ids of the stops, in line order. At least two, no repeats. */
+  stops: string[];
+  /** True for `runs from ... to ...`: the line is travelled one way only. */
+  oneWay: boolean;
+}
 
 /**
- * Trait for vehicles - enterable containers that transport actors
+ * The streets (ADR-366 D5b): GO from inside moves the vehicle along the
+ * current room's exit when the destination room admits it.
+ */
+export interface VehicleStreetsModel {
+  kind: 'streets';
+}
+
+/**
+ * How a vehicle moves. A vehicle with no model does not move under the
+ * player's GO (a bathtub, a crate the player can sit in).
+ */
+export type VehicleModel = VehicleLineModel | VehicleStreetsModel;
+
+/**
+ * Configuration options for VehicleTrait
+ */
+export interface VehicleTraitConfig {
+  model?: VehicleModel;
+}
+
+/**
+ * Trait for vehicles - enterable things that transport what they hold
  */
 export class VehicleTrait implements ITrait {
   static readonly type = TraitType.VEHICLE;
   readonly type = TraitType.VEHICLE;
 
-  /** Type of vehicle determines default behavior */
-  vehicleType: VehicleType;
+  /** The movement model; undefined means the vehicle does not move under GO. */
+  model?: VehicleModel;
 
-  /**
-   * When vehicle moves, all contents (including actors) move with it.
-   * This is always true for vehicles.
-   */
-  readonly movesWithContents: boolean = true;
-
-  /**
-   * If true, actor cannot use GO/walk commands while in vehicle.
-   * Movement must be through vehicle-specific actions.
-   * - Bucket: POUR/FILL moves it
-   * - Boat: row, current moves it
-   * - Balloon: burn/release moves it
-   */
-  blocksWalkingMovement: boolean;
-
-  /**
-   * If true, actor must EXIT vehicle before leaving the room on foot.
-   * Prevents "GO EAST" while sitting in a bucket.
-   */
-  requiresExitBeforeLeaving: boolean;
-
-  /**
-   * Current location/state of the vehicle (e.g., 'top', 'bottom', 'river-1')
-   * Used by vehicle-specific logic to track position.
-   */
-  currentPosition?: string;
-
-  /**
-   * Map of position names to room IDs.
-   * e.g., { 'top': 'top-of-well', 'bottom': 'well-bottom' }
-   */
-  positionRooms?: Record<string, string>;
-
-  /**
-   * Whether the vehicle is currently operational/usable.
-   * Boat might need to be inflated, balloon might need fuel.
-   */
-  isOperational: boolean;
-
-  /**
-   * Reason the vehicle is not operational (for error messages).
-   */
-  notOperationalReason?: string;
-
-  /**
-   * If true, visibility passes through to the containing room.
-   * - Bucket, raft, boat: transparent (can see the room you're in)
-   * - Airplane, submarine: not transparent (see vehicle interior only)
-   */
-  transparent: boolean;
-
-  constructor(options: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>> = {}) {
-    this.vehicleType = options.vehicleType ?? 'generic';
-    this.blocksWalkingMovement = options.blocksWalkingMovement ?? true;
-    this.requiresExitBeforeLeaving = options.requiresExitBeforeLeaving ?? true;
-    this.currentPosition = options.currentPosition;
-    this.positionRooms = options.positionRooms;
-    this.isOperational = options.isOperational ?? true;
-    this.notOperationalReason = options.notOperationalReason;
-    this.transparent = options.transparent ?? true; // Default to transparent for most IF vehicles
+  constructor(config: VehicleTraitConfig = {}) {
+    if (config.model?.kind === 'line') {
+      const { stops } = config.model;
+      if (stops.length < 2) {
+        throw new Error('VehicleTrait: a line needs at least two stops');
+      }
+      if (new Set(stops).size !== stops.length) {
+        throw new Error('VehicleTrait: a line names each stop once');
+      }
+      this.model = { kind: 'line', stops: [...stops], oneWay: config.model.oneWay };
+    } else if (config.model) {
+      this.model = { ...config.model };
+    }
   }
 }
 
@@ -105,8 +88,6 @@ export function isVehicleTrait(trait: ITrait): trait is VehicleTrait {
 /**
  * Factory function for creating VehicleTrait
  */
-export function createVehicleTrait(
-  options: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>> = {}
-): VehicleTrait {
-  return new VehicleTrait(options);
+export function createVehicleTrait(config: VehicleTraitConfig = {}): VehicleTrait {
+  return new VehicleTrait(config);
 }

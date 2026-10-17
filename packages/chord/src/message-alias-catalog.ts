@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 822 aliases across 76 actions.
+ * 825 aliases across 76 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -374,6 +374,9 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'going-nowhere-to-go',
   'going-room-description',
   'going-too-dark',
+  'going-vehicle-cannot-go',
+  'going-vehicle-cannot-walk',
+  'going-vehicle-ride',
   'going-went',
   // if.action.help
   'help-first-time',

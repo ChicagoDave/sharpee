@@ -1968,7 +1968,7 @@ export * from './untying/index.js';
 export * from './lighting/index.js';
 export * from './extinguishing/index.js';
 import { TraceAction } from '../author/index.js';
-export declare const standardActions: (TraceAction | import("../enhanced-types.js").Action)[];
+export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```
 
 ### actions/author/trace

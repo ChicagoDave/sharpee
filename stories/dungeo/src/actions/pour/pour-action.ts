@@ -7,10 +7,10 @@
 
 import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 import { type ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, VehicleTrait } from '@sharpee/world-model';
-import { moveVehicle, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity } from '@sharpee/world-model';
+import { currentStop, moveVehicleToStop, isActorInVehicle, getActorVehicle } from '@sharpee/world-model';
 import { POUR_ACTION_ID, PourMessages } from './types';
-import { BucketTrait } from '../../traits';
+import { BucketTrait, wellStops } from '../../traits';
 
 /**
  * Find water in player's inventory (directly or in bottle)
@@ -105,9 +105,9 @@ export const pourAction: Action = {
 
     // If pouring into bucket at well
     if (bucket) {
-      const vehicleTrait = bucket.get(VehicleTrait);
+      const stops = wellStops(bucket);
 
-      if (vehicleTrait && vehicleTrait.vehicleType === 'counterweight') {
+      if (stops) {
         // Move water into bucket
         world.moveEntity(water.id, bucket.id);
         const bucketTrait = bucket.get(BucketTrait);
@@ -117,26 +117,19 @@ export const pourAction: Action = {
         sharedData.pouredIntoBucket = true;
 
         // If bucket is at bottom and water was poured in, it rises
-        if (vehicleTrait.currentPosition === 'bottom' && vehicleTrait.positionRooms) {
-          const topRoomId = vehicleTrait.positionRooms['top'];
+        const at = currentStop(world, bucket);
+        if (at === stops.bottom) {
+          // Move bucket to top, carrying whoever rides in it
+          moveVehicleToStop(world, bucket, stops.top);
+          sharedData.bucketRose = true;
 
-          if (topRoomId) {
-            // Track source room before moving
-            const fromRoomId = world.getLocation(bucket.id);
-
-            // Move bucket to top
-            moveVehicle(world, bucket.id, topRoomId);
-            vehicleTrait.currentPosition = 'top';
-            sharedData.bucketRose = true;
-
-            // If player was in bucket, track for room scoring
-            if (isActorInVehicle(world, player.id)) {
-              sharedData.playerRose = true;
-              sharedData.fromRoomId = fromRoomId;
-              sharedData.toRoomId = topRoomId;
-            }
+          // If player was in bucket, track for room scoring
+          if (isActorInVehicle(world, player.id)) {
+            sharedData.playerRose = true;
+            sharedData.fromRoomId = stops.bottom;
+            sharedData.toRoomId = stops.top;
           }
-        } else if (vehicleTrait.currentPosition === 'top') {
+        } else if (at === stops.top) {
           // Bucket already at top
           sharedData.bucketAlreadyAtTop = true;
         }

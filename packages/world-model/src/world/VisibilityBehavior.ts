@@ -5,7 +5,7 @@ import { IFEntity } from '../entities/if-entity.js';
 import { WorldModel } from './WorldModel.js';
 import { TraitType } from '../traits/trait-types.js';
 import { LightSourceBehavior } from '../traits/light-source/lightSourceBehavior.js';
-import { VehicleTrait } from '../traits/vehicle/vehicleTrait.js';
+import { EnterableTrait } from '../traits/enterable/enterableTrait.js';
 import { RoomTrait } from '../traits/room/roomTrait.js';
 import { ContainerTrait } from '../traits/container/containerTrait.js';
 import { OpenableTrait } from '../traits/openable/openableTrait.js';
@@ -350,18 +350,9 @@ export class VisibilityBehavior extends Behavior {
     seen: Set<string>,
     world: WorldModel
   ): void {
-    // Check if we can see inside this container
-    if (container.hasTrait(TraitType.CONTAINER)) {
-      const containerTrait = container.getTrait(ContainerTrait);
-      const isTransparent = containerTrait?.isTransparent ?? false;
-
-      if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
-        const openable = container.getTrait(OpenableTrait);
-        const isOpen = openable?.isOpen ?? false;
-        if (!isOpen) {
-          return; // Can't see inside closed opaque container
-        }
-      }
+    // Can't see inside a closed opaque container
+    if (this.blocksSight(container)) {
+      return;
     }
 
     // Contents that pass the shared per-entity filter (concealed, invisible
@@ -447,16 +438,8 @@ export class VisibilityBehavior extends Behavior {
       }
 
       // Opaque + closed containers block the path
-      if (container.hasTrait(TraitType.CONTAINER)) {
-        const containerTrait = container.getTrait(ContainerTrait);
-        const isTransparent = containerTrait?.isTransparent ?? false;
-        if (!isTransparent && container.hasTrait(TraitType.OPENABLE)) {
-          const openable = container.getTrait(OpenableTrait);
-          const isOpen = openable?.isOpen ?? false;
-          if (!isOpen) {
-            return false;
-          }
-        }
+      if (this.blocksSight(container)) {
+        return false;
       }
 
       // Stop at rooms (natural top of containment)
@@ -517,10 +500,9 @@ export class VisibilityBehavior extends Behavior {
 
   /**
    * Gets the location that should be described when an observer looks around.
-   * Accounts for vehicle/container transparency:
-   * - In a transparent vehicle → describe the room
-   * - In an open container → describe the room
-   * - In a closed container → describe the container
+   * One rule over any enclosure (container, supporter, vehicle):
+   * - In or on an enclosure that does not block sight → describe the room
+   * - In a closed, opaque, openable container → describe the container
    * - In a room → describe the room
    *
    * @returns The entity to describe and optionally the immediate container
@@ -545,38 +527,37 @@ export class VisibilityBehavior extends Behavior {
       return { location: immediateLocation, immediateContainer: null };
     }
 
-    // Check if we're in a vehicle
-    if (immediateLocation.hasTrait(TraitType.VEHICLE)) {
-      const vehicleTrait = immediateLocation.getTrait(VehicleTrait);
-      if (vehicleTrait?.transparent) {
-        // Transparent vehicle - describe the room
-        const room = world.getContainingRoom(observer.id);
-        if (room) {
-          return { location: room, immediateContainer: immediateLocation };
-        }
+    // One rule for any enclosure the observer is in (ADR-366 D3): they see
+    // out unless it blocks sight, and then the enclosure is the place.
+    if (this.isEnclosure(immediateLocation) && !this.blocksSight(immediateLocation)) {
+      const room = world.getContainingRoom(observer.id);
+      if (room) {
+        return { location: room, immediateContainer: immediateLocation };
       }
-      // Opaque vehicle - describe the vehicle interior
-      return { location: immediateLocation, immediateContainer: null };
     }
 
-    // Check if we're in a container
-    if (immediateLocation.hasTrait(TraitType.CONTAINER)) {
-      // Check if container is open (visibility passes through)
-      if (immediateLocation.hasTrait(TraitType.OPENABLE)) {
-        const openable = immediateLocation.getTrait(OpenableTrait);
-        if (openable?.isOpen) {
-          // Open container - describe the room
-          const room = world.getContainingRoom(observer.id);
-          if (room) {
-            return { location: room, immediateContainer: immediateLocation };
-          }
-        }
-      }
-      // Closed container - describe the container
-      return { location: immediateLocation, immediateContainer: null };
-    }
-
-    // Default: describe what we're in
     return { location: immediateLocation, immediateContainer: null };
+  }
+
+  /** Something an actor can be in or on: a container, a supporter or a vehicle. */
+  private static isEnclosure(entity: IFEntity): boolean {
+    return entity.hasTrait(TraitType.CONTAINER)
+      || entity.hasTrait(TraitType.SUPPORTER)
+      || entity.hasTrait(TraitType.VEHICLE);
+  }
+
+  /**
+   * Whether an entity blocks sight between its inside and outside: a
+   * container that is openable, closed and not transparent. Anything held
+   * on top (a supporter, a vehicle ridden `on`) never does, nor does an
+   * open, lidless or transparent container. The one definition for
+   * scope, reach and the describable location.
+   */
+  private static blocksSight(entity: IFEntity): boolean {
+    if (!entity.hasTrait(TraitType.CONTAINER)) return false;
+    if (entity.getTrait(EnterableTrait)?.preposition === 'on') return false;
+    if (entity.getTrait(ContainerTrait)?.isTransparent) return false;
+    if (!entity.hasTrait(TraitType.OPENABLE)) return false;
+    return !(entity.getTrait(OpenableTrait)?.isOpen ?? false);
   }
 }

@@ -8,7 +8,7 @@
  * This trait persists through checkpoint save/restore, unlike custom properties.
  */
 
-import { type ITrait, type ITraitConstructor } from '@sharpee/world-model';
+import { type IFEntity, type ITrait, type ITraitConstructor, type WorldModel, VehicleTrait } from '@sharpee/world-model';
 
 /**
  * Balloon position in the volcano shaft
@@ -22,6 +22,39 @@ export type BalloonPosition =
   | 'ledg2'   // Ledge 2 - dockable, W to Narrow Ledge
   | 'ledg3'   // Ledge 3 - dockable
   | 'ledg4';  // Ledge 4 - dockable, W to Wide Ledge
+
+/**
+ * The balloon's positions in the order its line lists their rooms: the
+ * line's stops are written in this order, so a position names a stop by
+ * index and no position is stored anywhere.
+ */
+export const BALLOON_POSITIONS: readonly BalloonPosition[] = [
+  'vlbot', 'vair1', 'vair2', 'vair3', 'vair4', 'ledg2', 'ledg3', 'ledg4'
+];
+
+function balloonStops(balloon: IFEntity): string[] | undefined {
+  const model = balloon.get(VehicleTrait)?.model;
+  return model?.kind === 'line' ? model.stops : undefined;
+}
+
+/**
+ * The balloon's position, read from its location.
+ *
+ * @returns the position, or null when the balloon is not at one of its stops
+ */
+export function balloonPosition(world: WorldModel, balloon: IFEntity): BalloonPosition | null {
+  const index = balloonStops(balloon)?.indexOf(world.getLocation(balloon.id) ?? '') ?? -1;
+  return index >= 0 ? BALLOON_POSITIONS[index] : null;
+}
+
+/**
+ * The room id of one of the balloon's positions.
+ *
+ * @returns the stop's room id, or undefined when the balloon has no line
+ */
+export function balloonPositionRoom(balloon: IFEntity, position: BalloonPosition): string | undefined {
+  return balloonStops(balloon)?.[BALLOON_POSITIONS.indexOf(position)];
+}
 
 /**
  * Configuration for the balloon state trait
@@ -43,7 +76,7 @@ export interface BalloonStateTraitConfig {
  * - Burning object providing heat
  * - Daemon enabled state
  *
- * Position is tracked by VehicleTrait.currentPosition (authoritative).
+ * Position is the balloon's location on its line (`balloonPosition`).
  * The balloon daemon and handlers check this trait for non-position state.
  */
 export class BalloonStateTrait implements ITrait {

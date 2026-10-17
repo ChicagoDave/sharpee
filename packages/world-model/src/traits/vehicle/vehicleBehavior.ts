@@ -1,16 +1,22 @@
 /**
- * Vehicle Behavior - Handles vehicle movement and actor transport
+ * Vehicle Behavior - the rules a vehicle's movement model decides
  *
- * Provides utilities for:
- * - Moving a vehicle (and its contents) between rooms
- * - Checking if an actor is in a vehicle
- * - Getting the vehicle an actor is in
+ * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
+ * `getVehicleOccupants` (where an actor rides), `goingFromVehicle` (what GO
+ * means from inside, ADR-366 D5), `admitsVehicle` (D6), and the line
+ * model's `isStop`, `currentStop` and `moveVehicleToStop` (D5a).
+ *
+ * Owner context: world-model vehicle behavior. Every answer is read from
+ * the world and the trait's model; nothing here keeps a position of its own
+ * (D9). Moving a vehicle is `WorldModel.moveEntity`, which carries what the
+ * vehicle holds because containment is relational (D4).
  */
 
 import { WorldModel } from '../../world/WorldModel.js';
 import { IFEntity } from '../../entities/if-entity.js';
 import { TraitType } from '../trait-types.js';
-import { VehicleTrait } from './vehicleTrait.js';
+import { RoomTrait } from '../room/roomTrait.js';
+import { VehicleTrait, VehicleLineModel } from './vehicleTrait.js';
 
 /**
  * Check if an entity is a vehicle
@@ -23,13 +29,7 @@ export function isVehicle(entity: IFEntity): boolean {
  * Check if an actor is currently inside a vehicle
  */
 export function isActorInVehicle(world: WorldModel, actorId: string): boolean {
-  const location = world.getLocation(actorId);
-  if (!location) return false;
-
-  const locationEntity = world.getEntity(location);
-  if (!locationEntity) return false;
-
-  return isVehicle(locationEntity);
+  return getActorVehicle(world, actorId) !== undefined;
 }
 
 /**
@@ -42,11 +42,7 @@ export function getActorVehicle(world: WorldModel, actorId: string): IFEntity | 
   const locationEntity = world.getEntity(location);
   if (!locationEntity) return undefined;
 
-  if (isVehicle(locationEntity)) {
-    return locationEntity;
-  }
-
-  return undefined;
+  return isVehicle(locationEntity) ? locationEntity : undefined;
 }
 
 /**
@@ -58,113 +54,85 @@ export function getVehicleOccupants(world: WorldModel, vehicleId: string): IFEnt
 }
 
 /**
- * Move a vehicle to a new room, transporting all contents with it.
- * Returns true if movement succeeded.
+ * What GO means for an actor, decided by the vehicle they are in (D5).
+ * `on-foot`: not in a vehicle, GO is walking. `steers`: GO moves the
+ * vehicle (the destination still has to admit it, `admitsVehicle`).
+ * `rides`: a line vehicle; the player rides and the story drives.
+ * `stays`: a vehicle with no movement model does not move under GO.
+ */
+export type VehicleGoing =
+  | { kind: 'on-foot' }
+  | { kind: 'steers'; vehicle: IFEntity }
+  | { kind: 'rides'; vehicle: IFEntity }
+  | { kind: 'stays'; vehicle: IFEntity };
+
+/**
+ * Decide what GO means for an actor from where they are.
  *
- * This is the core vehicle transport function - when a vehicle moves,
- * everything inside it (including actors) moves with it.
+ * @param world - The world model
+ * @param actorId - The actor trying to go
+ * @returns on-foot when the actor is not in a vehicle; otherwise the model's answer
  */
-export function moveVehicle(
-  world: WorldModel,
-  vehicleId: string,
-  destinationRoomId: string
-): boolean {
-  const vehicle = world.getEntity(vehicleId);
-  if (!vehicle) return false;
-
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) return false;
-
-  // Move the vehicle to the new room
-  world.moveEntity(vehicleId, destinationRoomId);
-
-  // Update vehicle position if using position tracking
-  if (vehicleTrait.positionRooms) {
-    // Find position name for this room
-    const positionEntry = Object.entries(vehicleTrait.positionRooms)
-      .find(([_, roomId]) => roomId === destinationRoomId);
-
-    if (positionEntry) {
-      vehicleTrait.currentPosition = positionEntry[0];
-    }
-  }
-
-  return true;
-}
-
-/**
- * Check if a vehicle can move (is operational)
- */
-export function canVehicleMove(vehicle: IFEntity): { canMove: boolean; reason?: string } {
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) {
-    return { canMove: false, reason: 'Not a vehicle' };
-  }
-
-  if (!vehicleTrait.isOperational) {
-    return {
-      canMove: false,
-      reason: vehicleTrait.notOperationalReason ?? 'The vehicle is not operational'
-    };
-  }
-
-  return { canMove: true };
-}
-
-/**
- * Check if an actor can exit their current location.
- * If in a vehicle that requires exit, they cannot simply walk out.
- */
-export function canActorLeaveLocation(
-  world: WorldModel,
-  actorId: string
-): { canLeave: boolean; mustExitVehicle?: IFEntity } {
+export function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoing {
   const vehicle = getActorVehicle(world, actorId);
+  if (!vehicle) return { kind: 'on-foot' };
 
-  if (!vehicle) {
-    return { canLeave: true };
-  }
-
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) {
-    return { canLeave: true };
-  }
-
-  if (vehicleTrait.requiresExitBeforeLeaving) {
-    return { canLeave: false, mustExitVehicle: vehicle };
-  }
-
-  return { canLeave: true };
+  const model = vehicle.get(VehicleTrait)?.model;
+  if (model?.kind === 'streets') return { kind: 'steers', vehicle };
+  if (model?.kind === 'line') return { kind: 'rides', vehicle };
+  return { kind: 'stays', vehicle };
 }
 
 /**
- * Check if an actor in a vehicle can use GO/walk commands.
- * Some vehicles block walking movement entirely.
+ * Whether a room admits a vehicle (D6). A room admits no vehicle unless it
+ * names it.
  *
- * Returns:
- * - canWalk: true if actor can use GO commands (not in vehicle, or in walkable vehicle)
- * - vehicle: the vehicle entity if actor is in one (undefined if not in a vehicle)
+ * @param room - The room the vehicle would land in
+ * @param vehicle - The vehicle
  */
-export function canActorWalkInVehicle(
-  world: WorldModel,
-  actorId: string
-): { canWalk: boolean; vehicle?: IFEntity } {
-  const vehicle = getActorVehicle(world, actorId);
+export function admitsVehicle(room: IFEntity, vehicle: IFEntity): boolean {
+  return room.get(RoomTrait)?.admits.includes(vehicle.id) ?? false;
+}
 
-  if (!vehicle) {
-    return { canWalk: true };
+function lineOf(vehicle: IFEntity): VehicleLineModel | undefined {
+  const model = vehicle.get(VehicleTrait)?.model;
+  return model?.kind === 'line' ? model : undefined;
+}
+
+/**
+ * Whether a room is one of a line vehicle's stops.
+ *
+ * @param vehicle - A vehicle; false when it has no line model
+ * @param roomId - The room to test
+ */
+export function isStop(vehicle: IFEntity, roomId: string): boolean {
+  return lineOf(vehicle)?.stops.includes(roomId) ?? false;
+}
+
+/**
+ * The stop a line vehicle is at, read from its location (D9).
+ *
+ * @returns the stop's room id, or undefined when the vehicle has no line or is between stops
+ */
+export function currentStop(world: WorldModel, vehicle: IFEntity): string | undefined {
+  const location = world.getLocation(vehicle.id);
+  return location !== undefined && isStop(vehicle, location) ? location : undefined;
+}
+
+/**
+ * Move a line vehicle, and everything it holds, to one of its stops (D5a).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle with a line model
+ * @param stopId - The stop to move to
+ * @throws when the vehicle has no line or the room is not one of its stops
+ */
+export function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, stopId: string): void {
+  if (!lineOf(vehicle)) {
+    throw new Error(`moveVehicleToStop: ${vehicle.id} has no line`);
   }
-
-  const vehicleTrait = vehicle.get(TraitType.VEHICLE) as VehicleTrait | undefined;
-  if (!vehicleTrait) {
-    // In something with no VehicleTrait - treat as blocking container
-    return { canWalk: false, vehicle };
+  if (!isStop(vehicle, stopId)) {
+    throw new Error(`moveVehicleToStop: ${stopId} is not a stop of ${vehicle.id}`);
   }
-
-  if (vehicleTrait.blocksWalkingMovement) {
-    return { canWalk: false, vehicle };
-  }
-
-  // In a walkable vehicle - return the vehicle so caller knows player is in one
-  return { canWalk: true, vehicle };
+  world.moveEntity(vehicle.id, stopId);
 }

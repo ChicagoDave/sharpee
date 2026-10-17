@@ -2856,6 +2856,12 @@ export interface IRoomData {
     walls?: string[];
     /** Tags for categorizing rooms */
     tags?: string[];
+    /**
+     * Ids of the vehicles this room admits (ADR-366 D6). Read when a
+     * vehicle steered by GO would land here; a room admits no vehicle by
+     * default.
+     */
+    admits?: string[];
     /** Capacity constraints for the room (optional) */
     capacity?: {
         /** Maximum total weight the room can hold (in kg) */
@@ -2895,6 +2901,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     regionId?: string;
     walls: string[];
     tags: string[];
+    admits: string[];
     capacity?: {
         maxWeight?: number;
         maxVolume?: number;
@@ -5197,72 +5204,61 @@ export declare class NpcTrait implements ITrait, INpcData {
 
 ```typescript
 /**
- * Vehicle Trait - For enterable containers that transport actors
+ * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Vehicles are enterable containers (bucket, boat, basket, balloon) where:
- * - Actor enters the vehicle (ENTER BUCKET)
- * - Vehicle moves, taking its contents with it
- * - Actor exits the vehicle (EXIT BUCKET)
+ * Public interface: `VehicleTrait` (data: the movement model), the model
+ * types `VehicleModel`, `VehicleLineModel`, `VehicleStreetsModel`, the type
+ * guard `isVehicleTrait`, and the factory `createVehicleTrait`.
  *
- * Based on Infocom's vehicle concept from Zork.
+ * Owner context: world-model traits. The trait carries exactly what the
+ * language can write about a vehicle and nothing else (ADR-366 D8): its
+ * movement model. Where the vehicle is, which stop it is at, and whether it
+ * holds its riders in or on are read from the world (the vehicle's location,
+ * D9) and from `EnterableTrait.preposition`, never copied here.
+ *
+ * Moving a vehicle moves what it holds (D4): containment is relational, so
+ * `WorldModel.moveEntity` on the vehicle carries every held entity at every
+ * depth, with no vehicle-specific move.
  */
 import { ITrait } from '../trait.js';
 /**
- * Vehicle type determines movement behavior
+ * The line (ADR-366 D5a): ordered stops the story drives the vehicle between.
+ * GO from inside is refused; the player rides, the story drives.
  */
-export type VehicleType = 'counterweight' | 'watercraft' | 'aircraft' | 'cable' | 'generic';
+export interface VehicleLineModel {
+    kind: 'line';
+    /** Room ids of the stops, in line order. At least two, no repeats. */
+    stops: string[];
+    /** True for `runs from ... to ...`: the line is travelled one way only. */
+    oneWay: boolean;
+}
 /**
- * Trait for vehicles - enterable containers that transport actors
+ * The streets (ADR-366 D5b): GO from inside moves the vehicle along the
+ * current room's exit when the destination room admits it.
+ */
+export interface VehicleStreetsModel {
+    kind: 'streets';
+}
+/**
+ * How a vehicle moves. A vehicle with no model does not move under the
+ * player's GO (a bathtub, a crate the player can sit in).
+ */
+export type VehicleModel = VehicleLineModel | VehicleStreetsModel;
+/**
+ * Configuration options for VehicleTrait
+ */
+export interface VehicleTraitConfig {
+    model?: VehicleModel;
+}
+/**
+ * Trait for vehicles - enterable things that transport what they hold
  */
 export declare class VehicleTrait implements ITrait {
     static readonly type: "vehicle";
     readonly type: "vehicle";
-    /** Type of vehicle determines default behavior */
-    vehicleType: VehicleType;
-    /**
-     * When vehicle moves, all contents (including actors) move with it.
-     * This is always true for vehicles.
-     */
-    readonly movesWithContents: boolean;
-    /**
-     * If true, actor cannot use GO/walk commands while in vehicle.
-     * Movement must be through vehicle-specific actions.
-     * - Bucket: POUR/FILL moves it
-     * - Boat: row, current moves it
-     * - Balloon: burn/release moves it
-     */
-    blocksWalkingMovement: boolean;
-    /**
-     * If true, actor must EXIT vehicle before leaving the room on foot.
-     * Prevents "GO EAST" while sitting in a bucket.
-     */
-    requiresExitBeforeLeaving: boolean;
-    /**
-     * Current location/state of the vehicle (e.g., 'top', 'bottom', 'river-1')
-     * Used by vehicle-specific logic to track position.
-     */
-    currentPosition?: string;
-    /**
-     * Map of position names to room IDs.
-     * e.g., { 'top': 'top-of-well', 'bottom': 'well-bottom' }
-     */
-    positionRooms?: Record<string, string>;
-    /**
-     * Whether the vehicle is currently operational/usable.
-     * Boat might need to be inflated, balloon might need fuel.
-     */
-    isOperational: boolean;
-    /**
-     * Reason the vehicle is not operational (for error messages).
-     */
-    notOperationalReason?: string;
-    /**
-     * If true, visibility passes through to the containing room.
-     * - Bucket, raft, boat: transparent (can see the room you're in)
-     * - Airplane, submarine: not transparent (see vehicle interior only)
-     */
-    transparent: boolean;
-    constructor(options?: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>>);
+    /** The movement model; undefined means the vehicle does not move under GO. */
+    model?: VehicleModel;
+    constructor(config?: VehicleTraitConfig);
 }
 /**
  * Type guard for VehicleTrait
@@ -5271,19 +5267,24 @@ export declare function isVehicleTrait(trait: ITrait): trait is VehicleTrait;
 /**
  * Factory function for creating VehicleTrait
  */
-export declare function createVehicleTrait(options?: Partial<Omit<VehicleTrait, 'type' | 'movesWithContents'>>): VehicleTrait;
+export declare function createVehicleTrait(config?: VehicleTraitConfig): VehicleTrait;
 ```
 
 ### traits/vehicle/vehicleBehavior
 
 ```typescript
 /**
- * Vehicle Behavior - Handles vehicle movement and actor transport
+ * Vehicle Behavior - the rules a vehicle's movement model decides
  *
- * Provides utilities for:
- * - Moving a vehicle (and its contents) between rooms
- * - Checking if an actor is in a vehicle
- * - Getting the vehicle an actor is in
+ * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
+ * `getVehicleOccupants` (where an actor rides), `goingFromVehicle` (what GO
+ * means from inside, ADR-366 D5), `admitsVehicle` (D6), and the line
+ * model's `isStop`, `currentStop` and `moveVehicleToStop` (D5a).
+ *
+ * Owner context: world-model vehicle behavior. Every answer is read from
+ * the world and the trait's model; nothing here keeps a position of its own
+ * (D9). Moving a vehicle is `WorldModel.moveEntity`, which carries what the
+ * vehicle holds because containment is relational (D4).
  */
 import { WorldModel } from '../../world/WorldModel.js';
 import { IFEntity } from '../../entities/if-entity.js';
@@ -5304,40 +5305,62 @@ export declare function getActorVehicle(world: WorldModel, actorId: string): IFE
  */
 export declare function getVehicleOccupants(world: WorldModel, vehicleId: string): IFEntity[];
 /**
- * Move a vehicle to a new room, transporting all contents with it.
- * Returns true if movement succeeded.
+ * What GO means for an actor, decided by the vehicle they are in (D5).
+ * `on-foot`: not in a vehicle, GO is walking. `steers`: GO moves the
+ * vehicle (the destination still has to admit it, `admitsVehicle`).
+ * `rides`: a line vehicle; the player rides and the story drives.
+ * `stays`: a vehicle with no movement model does not move under GO.
+ */
+export type VehicleGoing = {
+    kind: 'on-foot';
+} | {
+    kind: 'steers';
+    vehicle: IFEntity;
+} | {
+    kind: 'rides';
+    vehicle: IFEntity;
+} | {
+    kind: 'stays';
+    vehicle: IFEntity;
+};
+/**
+ * Decide what GO means for an actor from where they are.
  *
- * This is the core vehicle transport function - when a vehicle moves,
- * everything inside it (including actors) moves with it.
+ * @param world - The world model
+ * @param actorId - The actor trying to go
+ * @returns on-foot when the actor is not in a vehicle; otherwise the model's answer
  */
-export declare function moveVehicle(world: WorldModel, vehicleId: string, destinationRoomId: string): boolean;
+export declare function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoing;
 /**
- * Check if a vehicle can move (is operational)
- */
-export declare function canVehicleMove(vehicle: IFEntity): {
-    canMove: boolean;
-    reason?: string;
-};
-/**
- * Check if an actor can exit their current location.
- * If in a vehicle that requires exit, they cannot simply walk out.
- */
-export declare function canActorLeaveLocation(world: WorldModel, actorId: string): {
-    canLeave: boolean;
-    mustExitVehicle?: IFEntity;
-};
-/**
- * Check if an actor in a vehicle can use GO/walk commands.
- * Some vehicles block walking movement entirely.
+ * Whether a room admits a vehicle (D6). A room admits no vehicle unless it
+ * names it.
  *
- * Returns:
- * - canWalk: true if actor can use GO commands (not in vehicle, or in walkable vehicle)
- * - vehicle: the vehicle entity if actor is in one (undefined if not in a vehicle)
+ * @param room - The room the vehicle would land in
+ * @param vehicle - The vehicle
  */
-export declare function canActorWalkInVehicle(world: WorldModel, actorId: string): {
-    canWalk: boolean;
-    vehicle?: IFEntity;
-};
+export declare function admitsVehicle(room: IFEntity, vehicle: IFEntity): boolean;
+/**
+ * Whether a room is one of a line vehicle's stops.
+ *
+ * @param vehicle - A vehicle; false when it has no line model
+ * @param roomId - The room to test
+ */
+export declare function isStop(vehicle: IFEntity, roomId: string): boolean;
+/**
+ * The stop a line vehicle is at, read from its location (D9).
+ *
+ * @returns the stop's room id, or undefined when the vehicle has no line or is between stops
+ */
+export declare function currentStop(world: WorldModel, vehicle: IFEntity): string | undefined;
+/**
+ * Move a line vehicle, and everything it holds, to one of its stops (D5a).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle with a line model
+ * @param stopId - The stop to move to
+ * @throws when the vehicle has no line or the room is not one of its stops
+ */
+export declare function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, stopId: string): void;
 ```
 
 ### traits/story-info/storyInfoTrait
@@ -8612,10 +8635,9 @@ export declare class VisibilityBehavior extends Behavior {
     static isVisible(entity: IFEntity, world: WorldModel): boolean;
     /**
      * Gets the location that should be described when an observer looks around.
-     * Accounts for vehicle/container transparency:
-     * - In a transparent vehicle → describe the room
-     * - In an open container → describe the room
-     * - In a closed container → describe the container
+     * One rule over any enclosure (container, supporter, vehicle):
+     * - In or on an enclosure that does not block sight → describe the room
+     * - In a closed, opaque, openable container → describe the container
      * - In a room → describe the room
      *
      * @returns The entity to describe and optionally the immediate container
@@ -8624,6 +8646,16 @@ export declare class VisibilityBehavior extends Behavior {
         location: IFEntity;
         immediateContainer: IFEntity | null;
     };
+    /** Something an actor can be in or on: a container, a supporter or a vehicle. */
+    private static isEnclosure;
+    /**
+     * Whether an entity blocks sight between its inside and outside: a
+     * container that is openable, closed and not transparent. Anything held
+     * on top (a supporter, a vehicle ridden `on`) never does, nor does an
+     * open, lidless or transparent container. The one definition for
+     * scope, reach and the describable location.
+     */
+    private static blocksSight;
 }
 ```
 

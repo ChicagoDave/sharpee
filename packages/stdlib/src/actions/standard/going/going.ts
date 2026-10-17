@@ -24,7 +24,8 @@ import {
   VisibilityBehavior,
   Direction,
   type DirectionType,
-  canActorWalkInVehicle,
+  goingFromVehicle,
+  admitsVehicle,
   type RegionCrossings,
   getOppositeDirection,
   NpcTrait,
@@ -62,7 +63,7 @@ export interface GoingSharedData {
   previousLocation?: string;  // Room we came from
   currentLocation?: string;   // Room we're now in
   direction?: DirectionType;
-  vehicleId?: string;         // If player is in a walkable vehicle, the vehicle ID
+  vehicleId?: string;         // The vehicle the player steers by GO, if any
   /** Region boundary crossings computed during execute (ADR-149) */
   regionCrossings?: RegionCrossings;
   /**
@@ -97,11 +98,10 @@ function resolveDirection(context: ActionContext): DirectionType | undefined {
   return direction || undefined;
 }
 
-/** The room movement starts from (the containing room when in a walkable vehicle). */
+/** The room movement starts from (the containing room when steering a vehicle). */
 function resolveSourceRoom(context: ActionContext): IFEntity | undefined {
-  const walkCheck = canActorWalkInVehicle(context.world, context.actor.id);
   let currentRoom = context.currentLocation;
-  if (walkCheck.vehicle && walkCheck.canWalk) {
+  if (goingFromVehicle(context.world, context.actor.id).kind === 'steers') {
     const containingRoom = context.world.getContainingRoom(context.actor.id);
     if (containingRoom) {
       currentRoom = containingRoom;
@@ -229,6 +229,9 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
   requiredMessages: [
     'no_direction',
     'not_in_room',
+    'vehicle_ride',
+    'vehicle_cannot_walk',
+    'vehicle_cannot_go',
     'no_exits',
     'no_exit_that_way',
     'movement_blocked',
@@ -264,26 +267,27 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
       };
     }
 
-    // Check if player is in a vehicle
-    const walkCheck = canActorWalkInVehicle(context.world, actor.id);
+    // From inside a vehicle, its movement model decides what GO means
+    // (ADR-366 D5): a line or model-less vehicle refuses, a streets vehicle
+    // is steered from the room it stands in.
+    const vehicleGoing = goingFromVehicle(context.world, actor.id);
     let currentRoom = context.currentLocation;
 
-    if (walkCheck.vehicle) {
-      // Player is in a vehicle - check if walking is allowed
-      if (!walkCheck.canWalk) {
-        // In a vehicle that blocks walking (bucket, etc.)
-        return {
-          valid: false,
-          error: GoingMessages.NOT_IN_ROOM,
-          params: { vehicle: walkCheck.vehicle ? nounPhraseFor(walkCheck.vehicle) : undefined }
-        };
-      }
-      // In a vehicle that allows walking (boat, etc.) - get the containing room
+    if (vehicleGoing.kind === 'rides' || vehicleGoing.kind === 'stays') {
+      return {
+        valid: false,
+        error: vehicleGoing.kind === 'rides'
+          ? GoingMessages.VEHICLE_RIDE
+          : GoingMessages.VEHICLE_CANNOT_WALK,
+        params: { vehicle: nounPhraseFor(vehicleGoing.vehicle) }
+      };
+    }
+    if (vehicleGoing.kind === 'steers') {
       const containingRoom = context.world.getContainingRoom(actor.id);
       if (containingRoom) {
         currentRoom = containingRoom;
-        // Store vehicle ID so execute() can move the vehicle instead of the player
-        sharedData.vehicleId = context.world.getLocation(actor.id);
+        // execute() moves the vehicle, which carries the player (D4)
+        sharedData.vehicleId = vehicleGoing.vehicle.id;
       }
     }
 
@@ -383,6 +387,26 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           valid: false,
           error: GoingMessages.DESTINATION_NOT_FOUND,
           params: { direction: direction }
+        };
+      }
+    }
+
+    // A steered vehicle lands only where it is admitted (ADR-366 D6). A
+    // computed exit's destination is drawn in execute, so every declared
+    // candidate has to admit it.
+    if (vehicleGoing.kind === 'steers') {
+      const landings = computedExit
+        ? computedExit.declaration.candidates
+        : [exitConfig!.destination];
+      const admitted = landings.every(id => {
+        const room = context.world.getEntity(id);
+        return room !== undefined && admitsVehicle(room, vehicleGoing.vehicle);
+      });
+      if (!admitted) {
+        return {
+          valid: false,
+          error: GoingMessages.VEHICLE_CANNOT_GO,
+          params: { vehicle: nounPhraseFor(vehicleGoing.vehicle), direction: direction }
         };
       }
     }

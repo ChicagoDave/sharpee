@@ -19,7 +19,7 @@ import {
   ReadableTrait,
   ButtonTrait
 } from '@sharpee/world-model';
-import { TreasureTrait, InflatableTrait, BurnableTrait } from '../traits';
+import { TreasureTrait, InflatableTrait, BurnableTrait, RiverNavigationTrait } from '../traits';
 
 export interface DamRoomIds {
   deepCanyon: string;
@@ -460,6 +460,15 @@ function createDamBaseObjects(world: WorldModel, roomId: string): void {
     deflatedDescription: 'There is a folded pile of plastic here which has a small valve attached.'
   }));
   world.moveEntity(boat.id, roomId);
+
+  // The boat is steered by GO once inflated; it goes on the river's water
+  // and lands at the rooms it can be launched from, and nowhere else
+  for (const room of world.getAllEntities()) {
+    const navigation = room.get(RiverNavigationTrait);
+    if (navigation?.isWaterRoom || navigation?.canLaunchBoat) {
+      room.get(RoomTrait)?.admits.push(boat.id);
+    }
+  }
 
   // Tan label - instructions for the boat (inside boat when inflated)
   const label = world.createEntity('tan label', EntityType.ITEM);

@@ -15,7 +15,7 @@
 
 import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 import { type ISemanticEvent } from '@sharpee/core';
-import { VehicleTrait, TraitType, RoomTrait, Direction } from '@sharpee/world-model';
+import { TraitType, RoomTrait, Direction } from '@sharpee/world-model';
 import { LAUNCH_ACTION_ID, LaunchMessages } from './types';
 import { RiverNavigationTrait, InflatableTrait } from '../../traits';
 
@@ -35,13 +35,8 @@ function getPlayerBoat(context: ActionContext): { boat: any; isInBoat: boolean }
     return { boat: null, isInBoat: false };
   }
 
-  // Check if location has VehicleTrait with watercraft type
-  if (!locationEntity.has(TraitType.VEHICLE)) {
-    return { boat: null, isInBoat: false };
-  }
-
-  const vehicleTrait = locationEntity.get(VehicleTrait);
-  if (!vehicleTrait || vehicleTrait.vehicleType !== 'watercraft') {
+  // The boat is the inflatable vehicle (it is a vehicle only while inflated)
+  if (!locationEntity.has(TraitType.VEHICLE) || !locationEntity.get(InflatableTrait)) {
     return { boat: null, isInBoat: false };
   }
 

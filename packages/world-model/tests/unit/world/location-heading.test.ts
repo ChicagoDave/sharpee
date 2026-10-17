@@ -161,11 +161,11 @@ describe('LocationHeadingBehavior.resolve (ADR-349 D11)', () => {
       shaft.add(new RegionTrait({ name: 'The Well Shaft' }));
       world.assignRoom(room.id, shaft.id);
 
-      // A transparent vehicle keeps the room as the place and becomes the
-      // enclosure (VisibilityBehavior.getDescribableLocation).
+      // A vehicle the player sees out of keeps the room as the place and
+      // becomes the enclosure (VisibilityBehavior.getDescribableLocation).
       const bucket = world.createEntity('bucket', 'container');
       bucket.add(new ContainerTrait());
-      bucket.add(new VehicleTrait({ transparent: true }));
+      bucket.add(new VehicleTrait());
       world.moveEntity(bucket.id, room.id);
       world.moveEntity(player.id, bucket.id);
 
@@ -220,9 +220,11 @@ describe('LocationHeadingBehavior.resolve (ADR-349 D11)', () => {
 
       const tube = world.createEntity('tube', 'container');
       tube.add(new ContainerTrait());
-      tube.add(new VehicleTrait({ transparent: false }));
+      tube.add(new VehicleTrait());
       world.moveEntity(tube.id, room.id);
       world.moveEntity(player.id, tube.id);
+      // close the lid behind the player: nothing moves into a closed container
+      tube.add(new OpenableTrait({ isOpen: false }));
 
       registerLocationName(room.id, [{ text: 'Top of Well' }]);
       registerLocationName(tube.id, [{ text: 'Inside the tube' }]);

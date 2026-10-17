@@ -92,6 +92,13 @@ export interface IRoomData {
 
   /** Tags for categorizing rooms */
   tags?: string[];
+
+  /**
+   * Ids of the vehicles this room admits (ADR-366 D6). Read when a
+   * vehicle steered by GO would land here; a room admits no vehicle by
+   * default.
+   */
+  admits?: string[];
   
   // Container functionality for rooms
   /** Capacity constraints for the room (optional) */
@@ -140,6 +147,7 @@ export class RoomTrait implements ITrait, IRoomData {
   regionId?: string;
   walls: string[];
   tags: string[];
+  admits: string[];
   
   // Container functionality
   capacity?: {
@@ -171,6 +179,7 @@ export class RoomTrait implements ITrait, IRoomData {
     this.regionId = data.regionId;
     this.walls = data.walls ?? [];
     this.tags = data.tags ?? [];
+    this.admits = data.admits ?? [];
     
     // Container properties
     this.capacity = data.capacity;

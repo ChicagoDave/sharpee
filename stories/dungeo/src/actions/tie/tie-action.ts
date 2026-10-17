@@ -15,9 +15,16 @@
 
 import { type Action, type ActionContext, type ValidationResult } from '@sharpee/stdlib';
 import { type ISemanticEvent } from '@sharpee/core';
-import { IdentityTrait, IFEntity, RoomTrait, Direction, VehicleTrait, moveVehicle } from '@sharpee/world-model';
+import { IdentityTrait, IFEntity, RoomTrait, Direction, moveVehicleToStop } from '@sharpee/world-model';
 import { TIE_ACTION_ID, TieMessages } from './types';
-import { BalloonStateTrait, isLedgePosition, BalloonPosition, RopeStateTrait } from '../../traits';
+import {
+  BalloonStateTrait,
+  isLedgePosition,
+  BalloonPosition,
+  RopeStateTrait,
+  balloonPosition,
+  balloonPositionRoom
+} from '../../traits';
 
 /**
  * Map mid-air positions to their corresponding ledge positions.
@@ -122,8 +129,7 @@ function validateBalloonTie(context: ActionContext): ValidationResult | null {
 
   const balloon = locationEntity;
   const balloonState = balloon.get(BalloonStateTrait);
-  const vehicleTrait = balloon.get(VehicleTrait);
-  const currentPos = (vehicleTrait?.currentPosition || 'vlbot') as BalloonPosition;
+  const currentPos = balloonPosition(world, balloon) ?? 'vlbot';
 
   // Check if balloon is at or near a dockable ledge position
   if (!balloonState || !canDockAtPosition(currentPos)) {
@@ -146,7 +152,7 @@ function validateBalloonTie(context: ActionContext): ValidationResult | null {
   // Find the hook in the ledge room (hooks are on rock face, not in balloon)
   // If at a vair position, look up the corresponding ledge room
   const lookupPos = VAIR_TO_LEDGE[currentPos] || currentPos;
-  const ledgeRoomId = vehicleTrait?.positionRooms?.[lookupPos];
+  const ledgeRoomId = balloonPositionRoom(balloon, lookupPos);
   const roomContents = ledgeRoomId ? world.getContents(ledgeRoomId) : [];
   const hook = roomContents.find(e => isHook(e));
 
@@ -236,18 +242,17 @@ export const tieAction: Action = {
       if (!balloon || !hook) return;
 
       const balloonState = balloon.get(BalloonStateTrait);
-      const vehicleTrait = balloon.get(VehicleTrait);
       const hookId = (hook.attributes?.hookId || 'hook1') as 'hook1' | 'hook2';
 
       if (!balloonState) return;
 
       // If at a mid-air position near a ledge, dock at the ledge room
-      const currentPos = (vehicleTrait?.currentPosition || 'vlbot') as BalloonPosition;
+      const currentPos = balloonPosition(context.world, balloon) ?? 'vlbot';
       const ledgePos = VAIR_TO_LEDGE[currentPos];
       if (ledgePos) {
-        const ledgeRoomId = vehicleTrait?.positionRooms?.[ledgePos];
+        const ledgeRoomId = balloonPositionRoom(balloon, ledgePos);
         if (ledgeRoomId) {
-          moveVehicle(context.world, balloon.id, ledgeRoomId);
+          moveVehicleToStop(context.world, balloon, ledgeRoomId);
         }
       }
 

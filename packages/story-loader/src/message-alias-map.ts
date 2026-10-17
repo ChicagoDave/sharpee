@@ -366,6 +366,9 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'going-nowhere-to-go': 'if.action.going.nowhere_to_go',
   'going-room-description': 'if.action.going.room_description',
   'going-too-dark': 'if.action.going.too_dark',
+  'going-vehicle-cannot-go': 'if.action.going.vehicle_cannot_go',
+  'going-vehicle-cannot-walk': 'if.action.going.vehicle_cannot_walk',
+  'going-vehicle-ride': 'if.action.going.vehicle_ride',
   'going-went': 'if.action.going.went',
   // if.action.help
   'help-first-time': 'if.action.help.first_time',

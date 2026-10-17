@@ -28,6 +28,11 @@ export const goingLanguage = {
     'nowhere_to_go': "{You}'ll have to say which compass direction to go in.",
     'no_direction': "{You}'ll have to say which direction to go.",
     'not_in_room': "{You're} not in a place where {you} can go anywhere.",
+    // Vehicle refusals (ADR-366 D7a): name nothing the author did not, and
+    // never explain the world's reason.
+    'vehicle_ride': "{You're} riding, not walking.",
+    'vehicle_cannot_walk': "{You} {can't} go anywhere from {the vehicle}.",
+    'vehicle_cannot_go': "{capitalize the vehicle} {can't} go that way.",
     'no_exits': "There are no obvious exits.",
     'movement_blocked': "{verbatim:message}",
     'destination_not_found': "{You} {can't} go that way.",

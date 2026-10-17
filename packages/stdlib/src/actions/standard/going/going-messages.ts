@@ -14,6 +14,10 @@ export const GoingMessages = {
   DESTINATION_NOT_FOUND: 'destination_not_found',
   TOO_DARK: 'too_dark',
   NEED_LIGHT: 'need_light',
+  // Vehicle refusals (ADR-366 D5, D7a)
+  VEHICLE_RIDE: 'vehicle_ride',
+  VEHICLE_CANNOT_WALK: 'vehicle_cannot_walk',
+  VEHICLE_CANNOT_GO: 'vehicle_cannot_go',
   // Success messages
   WENT: 'went',
   ARRIVED: 'arrived',
