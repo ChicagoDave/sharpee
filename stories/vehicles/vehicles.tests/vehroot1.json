@@ -1,0 +1,199 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "Depot"
+        ]
+      },
+      "command": "north",
+      "id": "vehnor01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Garage"
+        ]
+      },
+      "command": "north",
+      "id": "vehnor02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get into the car."
+        ]
+      },
+      "command": "enter car",
+      "id": "vehent01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The car can't go that way."
+        ],
+        "notContains": [
+          "Footpath"
+        ]
+      },
+      "command": "west",
+      "id": "vehwst01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Alley"
+        ]
+      },
+      "command": "east",
+      "id": "vehest01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Garage"
+        ]
+      },
+      "command": "west",
+      "id": "vehwst02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Market"
+        ]
+      },
+      "command": "north",
+      "id": "vehnor03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Garage"
+        ]
+      },
+      "command": "steer south",
+      "id": "vehstr01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You get out of the car."
+        ]
+      },
+      "command": "exit",
+      "id": "vehext01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Depot"
+        ]
+      },
+      "command": "south",
+      "id": "vehsou01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Harbour"
+        ]
+      },
+      "command": "east",
+      "id": "vehest02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Pad"
+        ]
+      },
+      "command": "east",
+      "id": "vehest03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You board the Sparrow.",
+          "Airlock"
+        ]
+      },
+      "command": "board the sparrow",
+      "id": "vehbrd01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You can't steer the Sparrow."
+        ]
+      },
+      "command": "steer north",
+      "id": "vehstr02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Sparrow is already at the Pad."
+        ]
+      },
+      "command": "set course for the pad",
+      "id": "vehcrs01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You set course for the Orbit Station."
+        ]
+      },
+      "command": "set course for the orbit station",
+      "id": "vehcrs02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Sparrow is under way."
+        ]
+      },
+      "command": "disembark",
+      "id": "vehdis01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Sparrow arrives at the Orbit Station."
+        ]
+      },
+      "command": "wait",
+      "id": "vehwat01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Orbit Station"
+        ]
+      },
+      "command": "disembark",
+      "id": "vehdis02",
+      "type": "turn"
+    }
+  ],
+  "id": "vehroot1"
+}

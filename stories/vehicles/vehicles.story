@@ -56,6 +56,7 @@ create the bucket
 create the Depot
   a room
   south to the Well Bottom
+  north to the Garage
   east to the Harbour
   west to the Lower Station
 
@@ -158,6 +159,7 @@ create the Harbour
   in the Open Water
   west to the Depot
   north to the Sound
+  east to the Pad
 
   A sheltered harbour.
 
@@ -208,6 +210,93 @@ create the anchor
 define phrase anchor-dropped
   The anchor goes over the side and the chain runs out.
 end phrase
+
+## The streets: a car steered by GO along ways that admit it (D5b, D6).
+## The High Street region admits it, the Alley admits it by itself, the
+## Footpath does not.
+
+create the High Street
+  a region
+  admits: the car
+
+create the Garage
+  a room
+  in the High Street
+  south to the Depot
+  north to the Market
+  east to the Alley
+  west to the Footpath
+
+  A garage opening onto the High Street.
+
+create the Market
+  a room
+  in the High Street
+  south to the Garage
+
+  The market square at the top of the High Street.
+
+create the Alley
+  a room
+  admits: the car
+  west to the Garage
+
+  A narrow alley, just wide enough for a car.
+
+create the Footpath
+  a room
+  east to the Garage
+
+  A footpath between hedges.
+
+create the car
+  a vehicle
+  in the Garage
+  movement: streets
+  carries: in
+  drive: player
+  commands: compass
+
+  A small car.
+
+## Free flight: a ship with rooms aboard, sent by the destinations set (D5d, D7).
+
+create the Pad
+  a room
+  west to the Harbour
+
+  A launch pad beside the harbour.
+
+create the Orbit Station
+  a room
+
+  A station in orbit.
+
+create the Sparrow
+  a vehicle
+  in the Pad
+  movement: flight
+  drive: player
+  commands: destinations
+  destinations: the Pad, the Orbit Station
+  passage: 2 turns
+  aboard: the Airlock, the Cabin
+  boarded through: the Airlock
+
+  A courier ship.
+
+create the Airlock
+  a room
+  east to the Cabin
+  west to outside
+
+  The Sparrow's airlock.
+
+create the Cabin
+  a room
+  west to the Airlock
+
+  The Sparrow's cabin.
 
 create Alex
   a person
