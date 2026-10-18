@@ -72,8 +72,8 @@ $restore wt-07
 # Now take the stick from inside the boat - bypasses puncture check
 > put stick in boat
 
-# Board boat
-> board boat
+# Get into the boat (`board` is for vehicles with rooms aboard; the boat has none)
+> enter boat
 
 # Launch into the river
 > launch
@@ -121,10 +121,10 @@ $restore wt-07
 
 > take shovel
 
-# Return to Rocky Shore and re-board
+# Return to Rocky Shore and get back into the boat
 > south
 
-> board boat
+> enter boat
 
 # Launch back onto the river
 > launch

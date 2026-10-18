@@ -97,7 +97,7 @@ description: Tests inflating and deflating the rubber boat
 > drop boat
 [OK: contains "drop"]
 
-> board boat
+> enter boat
 [OK: contains "boat"]
 
 # Verify we're in the boat
