@@ -678,6 +678,52 @@ create the tram line
   Two rails in a bed of grey dust, running north to the dome. A
   single open car sits at the pad end with its brake set.
 
+## The tram car is a line vehicle under control: its brake lever starts it,
+## and the line's machine carries it to the dome and halts it there. Quint
+## keeps the carrier out of it until the route card has been shown.
+
+create the tram car
+  a vehicle
+  in the Landing Pad
+  aka car, open car, tram's car
+  movement: line
+  carries: in
+  drive: control
+  stops: the Landing Pad, the Piazzi Platform
+  direction: both
+  pace: 2 turns
+
+  An open car on the tram line, a bench along each side and a brake
+  lever at the front.
+
+  on the player entering
+    refuse when the pad master is unconvinced: quint-blocks
+  end on
+
+create the brake lever
+  a thing, pushable
+  in the tram car
+  aka brake, lever
+
+  A brake lever, set hard.
+
+  on the player pushing
+    start the tram car when the tram car is not under way
+    phrase brake-released
+  end on
+
+define phrase brake-released
+  The brake comes off with a clank and the car takes up the slack.
+end phrase
+
+create the Piazzi Platform
+  a room
+  aka platform, piazzi, dome
+
+  The tram stops under the lip of the dome at a turnstile that takes
+  one brass token and gives nothing back. Beyond it the lit streets of
+  Piazzi Town climb away under the glass.
+
 define phrase depot-jump
   The sorting machine pauses mid-chuckle, then goes on without you.
 end phrase
