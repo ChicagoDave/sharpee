@@ -152,6 +152,9 @@ import { untyingLanguage } from './untying.js';
 // ADR-374: lamps that work as lamps
 import { lightingLanguage } from './lighting.js';
 import { extinguishingLanguage } from './extinguishing.js';
+// ADR-366: the vehicle command sets
+import { steeringLanguage } from './steering.js';
+import { settingCourseLanguage } from './setting-course.js';
 export * from './jumping.js';
 export * from './kissing.js';
 export * from './waving.js';
@@ -169,6 +172,8 @@ export * from './tying.js';
 export * from './untying.js';
 export * from './lighting.js';
 export * from './extinguishing.js';
+export * from './steering.js';
+export * from './setting-course.js';
 import { waitingLanguage } from './waiting.js';
 import { sleepingLanguage } from './sleeping.js';
 import { wakingLanguage } from './waking.js';
@@ -291,4 +296,7 @@ export const standardActionLanguage = [
   // ADR-374: lamps that work as lamps
   lightingLanguage,
   extinguishingLanguage,
+  // ADR-366: the vehicle command sets
+  steeringLanguage,
+  settingCourseLanguage,
 ];

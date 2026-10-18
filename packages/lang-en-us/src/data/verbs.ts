@@ -90,6 +90,9 @@ export const IFActions = {
   UNTYING: 'if.action.untying',
   LIGHTING: 'if.action.lighting',
   EXTINGUISHING: 'if.action.extinguishing',
+  // Vehicle command sets (ADR-366 D5i)
+  STEERING: 'if.action.steering',
+  SETTING_COURSE: 'if.action.setting_course',
 
   // Meta actions
   INVENTORY: 'if.action.inventory',
@@ -132,12 +135,14 @@ export const englishVerbs: VerbDefinition[] = [
   },
   {
     action: IFActions.ENTERING,
-    verbs: ['enter', 'go in', 'go into'],
+    // `board` and `get on` (ADR-366 D7): without them the parser leaves the
+    // verb phrase empty and entering cannot tell `board` from `enter`.
+    verbs: ['enter', 'go in', 'go into', 'board', 'get on'],
     requiresObject: true
   },
   {
     action: IFActions.EXITING,
-    verbs: ['exit', 'leave', 'go out', 'get out'],
+    verbs: ['exit', 'leave', 'go out', 'get out', 'disembark', 'get off', 'alight'],
     requiresObject: false
   },
   {
@@ -427,7 +432,19 @@ export const englishVerbs: VerbDefinition[] = [
     verbs: ['extinguish', 'put out', 'blow out', 'snuff', 'douse'],
     requiresObject: true
   },
-  
+  // ADR-366 D5i: the vehicle command sets
+  {
+    action: IFActions.STEERING,
+    verbs: ['steer', 'heave to'],
+    requiresObject: false
+  },
+  {
+    // `set course` shares its word with setting; the grammar's literals decide.
+    action: IFActions.SETTING_COURSE,
+    verbs: ['set course for', 'set a course for'],
+    requiresObject: true
+  },
+
   // Meta commands
   {
     action: IFActions.INVENTORY,

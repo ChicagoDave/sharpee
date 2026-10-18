@@ -2,21 +2,27 @@
  * Vehicle Behavior - the rules a vehicle's movement model decides
  *
  * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
- * `getVehicleOccupants` (where an actor rides), `goingFromVehicle` (what GO
- * means from inside), `admitsVehicle`, `isUnderWay`, the driving statements
- * `startVehicle`, `stopVehicle` and `sendVehicle`, the line model's
- * `isStop`, `currentStop` and `moveVehicleToStop`, and the rooms-aboard
- * half: `vehicleOutsideExitResolver` and `registerVehicleExitResolver`
- * (an exit `to outside` lands where the vehicle is).
+ * `getVehicleOccupants`, `isAboardVehicle`, `getVehicleAboard`,
+ * `takesCommandSet` (where an actor rides and what they may say there),
+ * `goingFromVehicle` (what GO means from inside), `admitsVehicle`,
+ * `isUnderWay`, the driving statements `startVehicle`, `stopVehicle` and
+ * `sendVehicle`, the machine's per-turn step `stepVehicle` with its result
+ * `VehicleStep`, the line model's `isStop`, `currentStop` and
+ * `moveVehicleToStop`, and the rooms-aboard half:
+ * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
+ * `to outside` lands where the vehicle is).
  *
  * Owner context: world-model vehicle behavior. Every answer is read from
  * the world and the trait's model; nothing here keeps a position of its own.
  * Moving a vehicle is `WorldModel.moveEntity`, which carries what the
- * vehicle holds because containment is relational.
+ * vehicle holds because containment is relational. The stepping functions
+ * are the whole of the vehicle's built-in machine: the turn host that calls
+ * them once per turn decides nothing about movement.
  *
  * References:
  * - ADR-366 D4 — moving a vehicle moves what it holds.
- * - ADR-366 D5, D5a — what GO means from inside; the line's stops.
+ * - ADR-366 D5, D5a–D5d — what GO means from inside; what a step is per type.
+ * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
  * - ADR-366 D6 — a room admits the steered vehicles it names.
  * - ADR-366 D7 — rooms aboard; `to outside` resolves to the vehicle's room,
  *   and refuses with `vehicle-under-way` while the vehicle is nowhere.
@@ -27,8 +33,11 @@
 import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
 import { WorldModel } from '../../world/WorldModel.js';
 import { IFEntity } from '../../entities/if-entity.js';
+import type { DirectionType } from '../../constants/directions.js';
 import { TraitType } from '../trait-types.js';
 import { RoomTrait } from '../room/roomTrait.js';
+import { RoomBehavior } from '../room/roomBehavior.js';
+import { OpenableBehavior } from '../openable/openableBehavior.js';
 import { AboardTrait } from './aboardTrait.js';
 import { VehicleTrait, VehicleLineModel } from './vehicleTrait.js';
 
@@ -272,4 +281,191 @@ export function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, stopId: 
     throw new Error(`moveVehicleToStop: ${stopId} is not a stop of ${vehicle.id}`);
   }
   world.moveEntity(vehicle.id, stopId);
+}
+
+/**
+ * Whether an entity is aboard a vehicle: inside it at any depth, or in a
+ * room aboard it (D7). An actor in a box in the hold is aboard the ship.
+ *
+ * @param world - The world model
+ * @param entityId - The entity to test, usually an actor
+ * @param vehicleId - The vehicle
+ */
+export function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: string): boolean {
+  const seen = new Set<string>();
+  let current: string | undefined = world.getLocation(entityId);
+  while (current !== undefined && !seen.has(current)) {
+    if (current === vehicleId) return true;
+    seen.add(current);
+    const entity = world.getEntity(current);
+    const aboard = entity?.get(AboardTrait);
+    if (aboard?.vehicleId === vehicleId) return true;
+    current = world.getLocation(current);
+  }
+  return false;
+}
+
+/**
+ * What one turn of the vehicle's machine did (D5e): it reached a room
+ * (`vehicle-arrived`, a stop, the room in its heading, or its destination),
+ * it ran out of way and took itself out of the way (`vehicle-stopped`,
+ * reported once), or it left its room for the passage (`departed`, which
+ * no stock line reports: the fold is the author's sequence on `becomes
+ * under way`).
+ */
+export type VehicleStep =
+  | { kind: 'arrived'; roomId: string }
+  | { kind: 'stopped' }
+  | { kind: 'departed' };
+
+/**
+ * One turn of the vehicle's built-in machine (ADR-366 D5e). The types share
+ * one machine and differ only in what a step is (D5f): a line steps to the
+ * next stop or to where its `position` block says, a compass vehicle steps
+ * along the exit in its heading, a flight vehicle leaves, is nowhere for
+ * the passage, and arrives. Every move is `WorldModel.moveEntity`, so what
+ * the vehicle holds comes along (D4), and every piece of machine state
+ * written here is a trait field (D5g).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle; nothing happens without a model that moves
+ * @param positionAnswer - For a `drive: state` line, the stop its
+ *   `position` block names this turn; the caller evaluates the block,
+ *   since its guards are code the trait cannot hold. Ignored by every
+ *   other model.
+ * @returns what the step did, or undefined when the vehicle stayed put
+ */
+export function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string): VehicleStep | undefined {
+  const model = vehicle.get(VehicleTrait)?.model;
+  switch (model?.kind) {
+    case 'line':
+      return model.drive === 'state' ? stepStateLine(world, vehicle, model, positionAnswer) : stepControlLine(world, vehicle, model);
+    case 'compass':
+      return stepCompass(world, vehicle, model);
+    case 'flight':
+      return stepFlight(world, vehicle, model);
+    default:
+      return undefined;
+  }
+}
+
+/** D5a, `drive: state`: the block's answer differs from where the vehicle is, so it moves there. */
+function stepStateLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineModel, positionAnswer: string | undefined): VehicleStep | undefined {
+  if (positionAnswer === undefined || !model.stops.includes(positionAnswer)) return undefined;
+  if (world.getLocation(vehicle.id) === positionAnswer) return undefined;
+  world.moveEntity(vehicle.id, positionAnswer);
+  return { kind: 'arrived', roomId: positionAnswer };
+}
+
+/**
+ * D5a, `drive: control`: every `pace` turns under way, one stop in the
+ * travel direction; the machine halts itself at the line's end. A vehicle
+ * found off its stops (a `move` the author wrote) halts where it is.
+ */
+function stepControlLine(world: WorldModel, vehicle: IFEntity, model: VehicleLineModel): VehicleStep | undefined {
+  if (!model.underWay) return undefined;
+  const stop = currentStop(world, vehicle);
+  if (stop === undefined) {
+    model.underWay = false;
+    model.turnsToStep = 0;
+    return { kind: 'stopped' };
+  }
+  model.turnsToStep -= 1;
+  if (model.turnsToStep > 0) return undefined;
+
+  // `startVehicle` turned a `both` line at its end and refused a one-way
+  // one, and arriving at an end halts below, so the next stop always exists.
+  const index = model.stops.indexOf(stop);
+  const nextIndex = model.travelDirection === 'onward' ? index + 1 : index - 1;
+  const next = model.stops[nextIndex];
+  world.moveEntity(vehicle.id, next);
+  const atEnd = nextIndex === 0 || nextIndex === model.stops.length - 1;
+  if (atEnd) {
+    model.underWay = false;
+    model.turnsToStep = 0;
+  } else {
+    model.turnsToStep = model.pace ?? 1;
+  }
+  return { kind: 'arrived', roomId: next };
+}
+
+/**
+ * D5c: every `pace` turns on a heading, one room along the exit that way
+ * while the exit exists, no closed door bars it, and the destination admits
+ * the vehicle (D6); when it cannot, the heading clears and the vehicle is
+ * stopped, once.
+ */
+function stepCompass(world: WorldModel, vehicle: IFEntity, model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'compass' }>): VehicleStep | undefined {
+  if (model.heading === null) return undefined;
+  model.turnsToStep -= 1;
+  if (model.turnsToStep > 0) return undefined;
+
+  const location = world.getLocation(vehicle.id);
+  const room = location !== undefined ? world.getEntity(location) : undefined;
+  const exit = room?.has(TraitType.ROOM) ? RoomBehavior.getExit(room, model.heading as DirectionType) : null;
+  const destination = exit ? world.getEntity(exit.destination) : undefined;
+  const door = exit?.via !== undefined ? world.getEntity(exit.via) : undefined;
+  const doorShut = door !== undefined && door.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door);
+  if (!destination || doorShut || !admitsVehicle(destination, vehicle)) {
+    model.heading = null;
+    model.turnsToStep = 0;
+    return { kind: 'stopped' };
+  }
+  world.moveEntity(vehicle.id, destination.id);
+  model.turnsToStep = model.pace;
+  return { kind: 'arrived', roomId: destination.id };
+}
+
+/**
+ * D5d: bound for a destination, the vehicle leaves its room on the first
+ * turn and is nowhere; the passage counts down a turn at a time; at zero
+ * it arrives and is no longer under way.
+ */
+function stepFlight(world: WorldModel, vehicle: IFEntity, model: Extract<NonNullable<VehicleTrait['model']>, { kind: 'flight' }>): VehicleStep | undefined {
+  if (model.destination === null) return undefined;
+  if (world.getLocation(vehicle.id) !== undefined) {
+    world.moveEntity(vehicle.id, null);
+    return { kind: 'departed' };
+  }
+  model.turnsRemaining -= 1;
+  if (model.turnsRemaining > 0) return undefined;
+  const destination = model.destination;
+  world.moveEntity(vehicle.id, destination);
+  model.destination = null;
+  model.turnsRemaining = 0;
+  return { kind: 'arrived', roomId: destination };
+}
+
+/**
+ * The vehicle an actor is aboard (D7): the vehicle they are inside at any
+ * depth, or the vehicle whose room they stand in. Undefined on foot.
+ *
+ * @param world - The world model
+ * @param actorId - The actor
+ */
+export function getVehicleAboard(world: WorldModel, actorId: string): IFEntity | undefined {
+  const seen = new Set<string>();
+  let current: string | undefined = world.getLocation(actorId);
+  while (current !== undefined && !seen.has(current)) {
+    seen.add(current);
+    const entity = world.getEntity(current);
+    if (!entity) return undefined;
+    if (isVehicle(entity)) return entity;
+    const aboard = entity.get(AboardTrait);
+    if (aboard) return world.getEntity(aboard.vehicleId);
+    current = world.getLocation(current);
+  }
+  return undefined;
+}
+
+/**
+ * Whether a vehicle lists a command set (ADR-366 D5i): the words are always
+ * grammar, so a set the vehicle does not take is the action's refusal,
+ * `vehicle-no-such-command`.
+ *
+ * @param vehicle - A vehicle
+ * @param set - `compass`, `destinations`, or an extension's set
+ */
+export function takesCommandSet(vehicle: IFEntity, set: string): boolean {
+  return vehicle.get(VehicleTrait)?.commands?.includes(set) ?? false;
 }

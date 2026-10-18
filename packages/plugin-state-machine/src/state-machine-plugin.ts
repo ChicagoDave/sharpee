@@ -1,14 +1,28 @@
 /**
  * StateMachinePlugin - Wraps state machine registry as a TurnPlugin (ADR-119, ADR-120)
  *
- * Priority 75: Runs after NPCs (100) but before scheduler (50).
- * Evaluates state machine transitions after each successful player action.
+ * Public interface: `StateMachinePlugin`, `StateMachinePluginOptions`.
+ * Owner context: plugin-state-machine, the one turn host for every machine
+ * a story runs: its own `define machine` blocks and each vehicle's built-in
+ * machine (ADR-377 D3). Evaluates state machine transitions after each
+ * successful player action, then steps every vehicle.
  */
 
 import { type ISemanticEvent } from '@sharpee/core';
 import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
 import { EvaluationContext, StateMachineRegistryState } from './types.js';
+import { tickVehicles, type VehiclePositionResolver } from './vehicle-machine.js';
+
+/** What the host lends the plugin's vehicle phase. */
+export interface StateMachinePluginOptions {
+  /**
+   * The host's reading of a `drive: state` line's `position` block (ADR-366
+   * D5a). Omit when the host lowers no state-driven lines; every other
+   * model steps without it.
+   */
+  vehiclePosition?: VehiclePositionResolver;
+}
 
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
@@ -16,9 +30,10 @@ import { EvaluationContext, StateMachineRegistryState } from './types.js';
  * Platform-phases band (ADR-332): after the scheduler's story reactions and
  * the actor phase, before scene evaluation — a machine reacts to what the
  * turn did.
- * Each turn it evaluates every machine in its {@link StateMachineRegistry} and
- * returns the events produced by any transitions that fired. Register the
- * plugin with the engine, then add machines via {@link getRegistry}.
+ * Each turn it evaluates every machine in its {@link StateMachineRegistry},
+ * then steps every vehicle's built-in machine (ADR-366 D5e, ADR-377 D3),
+ * and returns the events both produced. Register the plugin with the
+ * engine, then add machines via {@link getRegistry}.
  */
 export class StateMachinePlugin implements TurnPlugin {
   /** Stable plugin id. */
@@ -26,12 +41,17 @@ export class StateMachinePlugin implements TurnPlugin {
   /** Run order within a turn: after the actor phase, before scene evaluation (ADR-332). */
   priority = TURN_BANDS.platformPhases.floor + 40;
   private registry: StateMachineRegistry;
+  private readonly vehiclePosition?: VehiclePositionResolver;
 
-  constructor() {
+  constructor(options: StateMachinePluginOptions = {}) {
     this.registry = new StateMachineRegistry();
+    if (options.vehiclePosition) this.vehiclePosition = options.vehiclePosition;
   }
 
-  /** Evaluate all registered machines for this turn and return their events. */
+  /**
+   * Evaluate all registered machines for this turn, then step every
+   * vehicle's machine, and return the events of both in that order.
+   */
   onAfterAction(ctx: TurnPluginContext): ISemanticEvent[] {
     const evalCtx: EvaluationContext = {
       world: ctx.world,
@@ -50,7 +70,10 @@ export class StateMachinePlugin implements TurnPlugin {
       })),
     };
 
-    return this.registry.evaluate(evalCtx);
+    return [
+      ...this.registry.evaluate(evalCtx),
+      ...tickVehicles(ctx.world, ctx.playerId, this.vehiclePosition),
+    ];
   }
 
   /** Serialize all machine instances for saving. */

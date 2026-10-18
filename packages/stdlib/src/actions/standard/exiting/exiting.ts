@@ -82,7 +82,8 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     'exited_from',
     'nowhere_to_go',
     'not_in_that',
-    'not_on_that'
+    'not_on_that',
+    'vehicle_not_at_hatch'
   ],
   group: 'movement',
   
@@ -128,6 +129,12 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
     const isRoom = currentContainer.has(TraitType.ROOM);
 
     if (isRoom) {
+      // Aboard a vehicle (ADR-366 D7): the boarding room's `to outside` exit
+      // is the way off, and the vehicle command transformer sends `exit`
+      // there as going. Any other room aboard has no hatch.
+      if (currentContainer.has(TraitType.ABOARD)) {
+        return { valid: false, error: ExitingMessages.VEHICLE_NOT_AT_HATCH };
+      }
       return {
         valid: false,
         error: ExitingMessages.ALREADY_OUTSIDE

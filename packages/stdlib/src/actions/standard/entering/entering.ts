@@ -17,14 +17,20 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { type ISemanticEvent } from '@sharpee/core';
 import {
+  AboardTrait,
+  type IFEntity,
   TraitType,
   OpenableBehavior,
-  EnterableTrait
+  EnterableTrait,
+  getVehicleAboard,
+  VehicleTrait,
+  type WorldModel
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { EnteredEventData } from './entering-events.js';
 import { EnteringMessages } from './entering-messages.js';
 import { nounPhraseFor } from '../../../utils/index.js';
+import { captureRevealedRoom, revealedRoomEvents, type RevealedRoom } from '../illumination-shared.js';
 import {
   ActionLifecycleDescriptor,
   blockedMessageId
@@ -52,6 +58,35 @@ interface EnteringExecutionState {
   targetName: string;
   fromLocation?: string;
   preposition: 'in' | 'on';
+  /** Set when the target was a vehicle with rooms aboard: the boarding room, described on arrival (ADR-366 D7). */
+  boarded?: RevealedRoom;
+}
+
+/**
+ * The room `boarded through:` names on a vehicle with rooms aboard (ADR-366
+ * D7), or undefined for anything else — which is entered as itself.
+ */
+function boardingRoomOf(world: WorldModel, target: IFEntity): IFEntity | undefined {
+  const id = target.get(VehicleTrait)?.boardingRoom;
+  return id !== undefined ? world.getEntity(id) : undefined;
+}
+
+/**
+ * The hatch a boarding room's `to outside` exits pass through, when one is
+ * declared and closed (D7: the hatch is a door with its own `openable`).
+ */
+function closedHatchOf(world: WorldModel, boardingRoom: IFEntity): IFEntity | undefined {
+  for (const exit of Object.values(boardingRoom.get(AboardTrait)?.outside ?? {})) {
+    const door = exit.via !== undefined ? world.getEntity(exit.via) : undefined;
+    if (door?.has(TraitType.OPENABLE) && !OpenableBehavior.isOpen(door)) return door;
+  }
+  return undefined;
+}
+
+/** Whether the player's word was `board` (D7: for a vehicle with rooms aboard only). */
+function saidBoard(context: ActionContext): boolean {
+  const verb = context.command.parsed.structure.verb?.text || context.command.parsed.rawInput || '';
+  return verb.trim().toLowerCase().startsWith('board');
 }
 
 /**
@@ -84,7 +119,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     'too_full',
     'entered',
     'entered_on',
-    'cant_enter'
+    'cant_enter',
+    'boarded',
+    'vehicle_not_boardable'
   ],
   group: 'movement',
 
@@ -114,6 +151,25 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
         error: EnteringMessages.ALREADY_INSIDE,
         params: { place: nounPhraseFor(target) }
       };
+    }
+
+    // A vehicle with rooms aboard is boarded, not entered (ADR-366 D7): the
+    // player goes to its boarding room, through the hatch if it has one.
+    const boardingRoom = boardingRoomOf(context.world, target);
+    if (boardingRoom) {
+      if (getVehicleAboard(context.world, actor.id)?.id === target.id) {
+        return { valid: false, error: EnteringMessages.ALREADY_INSIDE, params: { place: nounPhraseFor(target) } };
+      }
+      const hatch = closedHatchOf(context.world, boardingRoom);
+      if (hatch) {
+        return { valid: false, error: EnteringMessages.CONTAINER_CLOSED, params: { container: nounPhraseFor(hatch) } };
+      }
+      return { valid: true };
+    }
+    if (saidBoard(context)) {
+      // `board` is for ships (D7): anything without rooms aboard refuses,
+      // naming nothing but the thing (D7a).
+      return { valid: false, error: EnteringMessages.VEHICLE_NOT_BOARDABLE, params: { vehicle: nounPhraseFor(target) } };
     }
 
     // Check enterability
@@ -146,6 +202,21 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     const target = context.command.directObject!.entity!; // Safe because validate ensures it exists
     const currentLocation = context.world.getLocation(actor.id);
     const sharedData = getEnteringSharedData(context);
+
+    // Boarding (ADR-366 D7): the player goes to the boarding room, and sees
+    // it as if they had looked.
+    const boardingRoom = boardingRoomOf(context.world, target);
+    if (boardingRoom) {
+      context.world.moveEntity(actor.id, boardingRoom.id);
+      sharedData.enteringState = {
+        targetId: target.id,
+        targetName: target.name,
+        fromLocation: currentLocation,
+        preposition: 'in',
+        boarded: captureRevealedRoom(context)
+      };
+      return;
+    }
 
     // Get preposition from EnterableTrait (required by validate)
     const enterableTrait = target.get(TraitType.ENTERABLE) as EnterableTrait;
@@ -184,19 +255,25 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
     }
 
     // Determine the message ID based on preposition
-    const messageId = state.preposition === 'on' ? EnteringMessages.ENTERED_ON : EnteringMessages.ENTERED;
+    const messageId = state.boarded
+      ? EnteringMessages.BOARDED
+      : state.preposition === 'on' ? EnteringMessages.ENTERED_ON : EnteringMessages.ENTERED;
 
     // Create the ENTERED event with messageId for text rendering.
     // params carry EntityInfo for the formatter chain (ADR-158).
     const target = context.command.directObject?.entity;
+    const place = target ? nounPhraseFor(target) : { name: state.targetName };
     const events: ISemanticEvent[] = [context.event('if.event.entered', {
       messageId: `${context.action.id}.${messageId}`,
-      params: { place: target ? nounPhraseFor(target) : { name: state.targetName } },
+      params: { place, vehicle: place },
       targetId: state.targetId,
       targetName: state.targetName,
       fromLocation: state.fromLocation,
       preposition: state.preposition
     } as EnteredEventData & { messageId: string; params: Record<string, any>; targetName: string })];
+
+    // Boarding lands in a room (ADR-366 D7): describe it, as arriving does.
+    if (state.boarded) events.push(...revealedRoomEvents(context, state.boarded));
 
     return events;
   },

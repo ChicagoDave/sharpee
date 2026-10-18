@@ -82,6 +82,8 @@ export const grammarBlocks: Record<string, string> = {
   "if.action.looking_under": "define action looking_under\n  grammar\n    look under the target\n    look beneath the target\n    look underneath the target",
   "if.action.emptying": "define action emptying\n  grammar\n    empty the target\n    empty out the target\n    empty the target into or in or onto or on the destination",
   "if.action.burning": "define action burning\n  grammar\n    burn the target\n    burn the target with or using the tool\n    ignite the target\n    set fire to the target\n  the tool is an instrument",
+  "if.action.steering": "define action steering\n  grammar\n    steer the direction\n    heave to\n  directions\n    north or n\n    south or s\n    east or e\n    west or w\n    northeast or ne\n    northwest or nw\n    southeast or se\n    southwest or sw\n    up or u\n    down or d",
+  "if.action.setting_course": "define action setting_course\n  grammar\n    set course for the destination\n    set a course for the destination\n  the destination is a topic",
   "if.action.setting": "define action setting\n  grammar\n    set the target to the value\n    turn the target to the value\n    adjust the target to the value\n    set the target\n  the value is a topic",
   "if.action.tying": "define action tying\n  grammar\n    tie the item to the anchor\n    fasten the item to the anchor\n    attach the item to the anchor\n    tie the item",
   "if.action.untying": "define action untying\n  grammar\n    untie the item\n    untie the item from the anchor\n    unfasten the item",

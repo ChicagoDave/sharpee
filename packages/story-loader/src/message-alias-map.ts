@@ -276,6 +276,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'emptying-not-a-container': 'if.action.emptying.not_a_container',
   // if.action.entering
   'entering-already-inside': 'if.action.entering.already_inside',
+  'entering-boarded': 'if.action.entering.boarded',
   'entering-cant-enter': 'if.action.entering.cant_enter',
   'entering-container-closed': 'if.action.entering.container_closed',
   'entering-entered': 'if.action.entering.entered',
@@ -286,6 +287,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'entering-occupied': 'if.action.entering.occupied',
   'entering-too-full': 'if.action.entering.too_full',
   'entering-too-small': 'if.action.entering.too_small',
+  'entering-vehicle-not-boardable': 'if.action.entering.vehicle_not_boardable',
   // if.action.examining
   'examining-brief-description': 'if.action.examining.brief_description',
   'examining-cant-see': 'if.action.examining.cant_see',
@@ -323,6 +325,7 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'exiting-not-in-that': 'if.action.exiting.not_in_that',
   'exiting-not-on-that': 'if.action.exiting.not_on_that',
   'exiting-nowhere-to-go': 'if.action.exiting.nowhere_to_go',
+  'exiting-vehicle-not-at-hatch': 'if.action.exiting.vehicle_not_at_hatch',
   // if.action.giving
   'extinguishing-extinguished': 'if.action.extinguishing.extinguished',
   'extinguishing-extinguished-into-darkness': 'if.action.extinguishing.extinguished_into_darkness',
@@ -366,9 +369,12 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'going-nowhere-to-go': 'if.action.going.nowhere_to_go',
   'going-room-description': 'if.action.going.room_description',
   'going-too-dark': 'if.action.going.too_dark',
+  'going-vehicle-arrived': 'if.action.going.vehicle_arrived',
   'going-vehicle-cannot-go': 'if.action.going.vehicle_cannot_go',
   'going-vehicle-cannot-walk': 'if.action.going.vehicle_cannot_walk',
   'going-vehicle-ride': 'if.action.going.vehicle_ride',
+  'going-vehicle-stopped': 'if.action.going.vehicle_stopped',
+  'going-vehicle-under-way': 'if.action.going.vehicle_under_way',
   'going-went': 'if.action.going.went',
   // if.action.help
   'help-first-time': 'if.action.help.first_time',
@@ -662,6 +668,14 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'setting-no-value': 'if.action.setting.no_value',
   'setting-not-a-setting': 'if.action.setting.not_a_setting',
   'setting-set': 'if.action.setting.set',
+  // if.action.setting_course (ADR-366 D5i)
+  'setting-course-already-there': 'if.action.setting_course.already_there',
+  'setting-course-course-set': 'if.action.setting_course.course_set',
+  'setting-course-no-destination': 'if.action.setting_course.no_destination',
+  'setting-course-not-a-destination': 'if.action.setting_course.not_a_destination',
+  'setting-course-not-in-vehicle': 'if.action.setting_course.not_in_vehicle',
+  'setting-course-vehicle-no-such-command': 'if.action.setting_course.vehicle_no_such_command',
+  'setting-course-vehicle-under-way': 'if.action.setting_course.vehicle_under_way',
   // if.action.showing
   'showing-no-item': 'if.action.showing.no_item',
   'showing-no-viewer': 'if.action.showing.no_viewer',
@@ -708,6 +722,13 @@ export const MESSAGE_ALIAS_TO_ACTION_ID: Readonly<Record<string, string>> = {
   'smelling-smelled-environment': 'if.action.smelling.smelled_environment',
   'smelling-smoke-detected': 'if.action.smelling.smoke_detected',
   'smelling-too-far': 'if.action.smelling.too_far',
+  // if.action.steering (ADR-366 D5i)
+  'steering-cannot-steer': 'if.action.steering.cannot_steer',
+  'steering-hove-to': 'if.action.steering.hove_to',
+  'steering-not-in-vehicle': 'if.action.steering.not_in_vehicle',
+  'steering-not-under-way': 'if.action.steering.not_under_way',
+  'steering-steered': 'if.action.steering.steered',
+  'steering-vehicle-no-such-command': 'if.action.steering.vehicle_no_such_command',
   // if.action.switching_off
   'switching-off-already-off': 'if.action.switching_off.already_off',
   'switching-off-device-stops': 'if.action.switching_off.device_stops',

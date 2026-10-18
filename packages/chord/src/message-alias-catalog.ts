@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 825 aliases across 76 actions.
+ * 844 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -283,6 +283,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'emptying-not-a-container',
   // if.action.entering
   'entering-already-inside',
+  'entering-boarded',
   'entering-cant-enter',
   'entering-container-closed',
   'entering-entered',
@@ -293,6 +294,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'entering-occupied',
   'entering-too-full',
   'entering-too-small',
+  'entering-vehicle-not-boardable',
   // if.action.examining
   'examining-brief-description',
   'examining-cant-see',
@@ -330,6 +332,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'exiting-not-in-that',
   'exiting-not-on-that',
   'exiting-nowhere-to-go',
+  'exiting-vehicle-not-at-hatch',
   // if.action.extinguishing
   'extinguishing-extinguished',
   'extinguishing-extinguished-into-darkness',
@@ -374,9 +377,12 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'going-nowhere-to-go',
   'going-room-description',
   'going-too-dark',
+  'going-vehicle-arrived',
   'going-vehicle-cannot-go',
   'going-vehicle-cannot-walk',
   'going-vehicle-ride',
+  'going-vehicle-stopped',
+  'going-vehicle-under-way',
   'going-went',
   // if.action.help
   'help-first-time',
@@ -669,6 +675,14 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'setting-no-value',
   'setting-not-a-setting',
   'setting-set',
+  // if.action.setting_course
+  'setting-course-already-there',
+  'setting-course-course-set',
+  'setting-course-no-destination',
+  'setting-course-not-a-destination',
+  'setting-course-not-in-vehicle',
+  'setting-course-vehicle-no-such-command',
+  'setting-course-vehicle-under-way',
   // if.action.showing
   'showing-no-item',
   'showing-no-viewer',
@@ -715,6 +729,13 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'smelling-smelled-environment',
   'smelling-smoke-detected',
   'smelling-too-far',
+  // if.action.steering
+  'steering-cannot-steer',
+  'steering-hove-to',
+  'steering-not-in-vehicle',
+  'steering-not-under-way',
+  'steering-steered',
+  'steering-vehicle-no-such-command',
   // if.action.switching_off
   'switching-off-already-off',
   'switching-off-device-stops',

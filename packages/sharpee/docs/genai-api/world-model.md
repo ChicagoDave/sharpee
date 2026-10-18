@@ -5208,8 +5208,8 @@ export declare class NpcTrait implements ITrait, INpcData {
 /**
  * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Public interface: `VehicleTrait` (data: the movement model and the
- * player's command sets), the model types `VehicleModel`, `VehicleNoneModel`,
+ * Public interface: `VehicleTrait` (data: the movement model, the player's
+ * command sets and the boarding room), the model types `VehicleModel`, `VehicleNoneModel`,
  * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
  * `VehicleFlightModel`, their declaration shapes `VehicleModelConfig`, the
  * type guard `isVehicleTrait`, and the factory `createVehicleTrait`.
@@ -5313,6 +5313,8 @@ export interface VehicleTraitConfig {
     model?: VehicleModelConfig;
     /** The player's command sets (`commands:`), present on a player-driven vehicle. */
     commands?: string[];
+    /** The room `boarded through:` names (ADR-366 D7), present on a vehicle with rooms aboard. */
+    boardingRoom?: string;
 }
 /**
  * Trait for vehicles - enterable things that transport what they hold
@@ -5324,6 +5326,12 @@ export declare class VehicleTrait implements ITrait {
     model?: VehicleModel;
     /** The player's command sets (ADR-366 D5i); absent when the player drives nothing. */
     commands?: string[];
+    /**
+     * The room id `boarded through:` names (ADR-366 D7): `enter` and `board`
+     * put the player there. Absent on a vehicle with no rooms aboard, which
+     * is entered as any enterable thing is.
+     */
+    boardingRoom?: string;
     constructor(config?: VehicleTraitConfig);
     /**
      * Build a model from its declaration, holding the invariants the analyzer
@@ -5407,21 +5415,27 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  * Vehicle Behavior - the rules a vehicle's movement model decides
  *
  * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
- * `getVehicleOccupants` (where an actor rides), `goingFromVehicle` (what GO
- * means from inside), `admitsVehicle`, `isUnderWay`, the driving statements
- * `startVehicle`, `stopVehicle` and `sendVehicle`, the line model's
- * `isStop`, `currentStop` and `moveVehicleToStop`, and the rooms-aboard
- * half: `vehicleOutsideExitResolver` and `registerVehicleExitResolver`
- * (an exit `to outside` lands where the vehicle is).
+ * `getVehicleOccupants`, `isAboardVehicle`, `getVehicleAboard`,
+ * `takesCommandSet` (where an actor rides and what they may say there),
+ * `goingFromVehicle` (what GO means from inside), `admitsVehicle`,
+ * `isUnderWay`, the driving statements `startVehicle`, `stopVehicle` and
+ * `sendVehicle`, the machine's per-turn step `stepVehicle` with its result
+ * `VehicleStep`, the line model's `isStop`, `currentStop` and
+ * `moveVehicleToStop`, and the rooms-aboard half:
+ * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
+ * `to outside` lands where the vehicle is).
  *
  * Owner context: world-model vehicle behavior. Every answer is read from
  * the world and the trait's model; nothing here keeps a position of its own.
  * Moving a vehicle is `WorldModel.moveEntity`, which carries what the
- * vehicle holds because containment is relational.
+ * vehicle holds because containment is relational. The stepping functions
+ * are the whole of the vehicle's built-in machine: the turn host that calls
+ * them once per turn decides nothing about movement.
  *
  * References:
  * - ADR-366 D4 — moving a vehicle moves what it holds.
- * - ADR-366 D5, D5a — what GO means from inside; the line's stops.
+ * - ADR-366 D5, D5a–D5d — what GO means from inside; what a step is per type.
+ * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
  * - ADR-366 D6 — a room admits the steered vehicles it names.
  * - ADR-366 D7 — rooms aboard; `to outside` resolves to the vehicle's room,
  *   and refuses with `vehicle-under-way` while the vehicle is nowhere.
@@ -5556,6 +5570,66 @@ export declare function currentStop(world: WorldModel, vehicle: IFEntity): strin
  * @throws when the vehicle has no line or the room is not one of its stops
  */
 export declare function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, stopId: string): void;
+/**
+ * Whether an entity is aboard a vehicle: inside it at any depth, or in a
+ * room aboard it (D7). An actor in a box in the hold is aboard the ship.
+ *
+ * @param world - The world model
+ * @param entityId - The entity to test, usually an actor
+ * @param vehicleId - The vehicle
+ */
+export declare function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: string): boolean;
+/**
+ * What one turn of the vehicle's machine did (D5e): it reached a room
+ * (`vehicle-arrived`, a stop, the room in its heading, or its destination),
+ * it ran out of way and took itself out of the way (`vehicle-stopped`,
+ * reported once), or it left its room for the passage (`departed`, which
+ * no stock line reports: the fold is the author's sequence on `becomes
+ * under way`).
+ */
+export type VehicleStep = {
+    kind: 'arrived';
+    roomId: string;
+} | {
+    kind: 'stopped';
+} | {
+    kind: 'departed';
+};
+/**
+ * One turn of the vehicle's built-in machine (ADR-366 D5e). The types share
+ * one machine and differ only in what a step is (D5f): a line steps to the
+ * next stop or to where its `position` block says, a compass vehicle steps
+ * along the exit in its heading, a flight vehicle leaves, is nowhere for
+ * the passage, and arrives. Every move is `WorldModel.moveEntity`, so what
+ * the vehicle holds comes along (D4), and every piece of machine state
+ * written here is a trait field (D5g).
+ *
+ * @param world - The world model
+ * @param vehicle - A vehicle; nothing happens without a model that moves
+ * @param positionAnswer - For a `drive: state` line, the stop its
+ *   `position` block names this turn; the caller evaluates the block,
+ *   since its guards are code the trait cannot hold. Ignored by every
+ *   other model.
+ * @returns what the step did, or undefined when the vehicle stayed put
+ */
+export declare function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string): VehicleStep | undefined;
+/**
+ * The vehicle an actor is aboard (D7): the vehicle they are inside at any
+ * depth, or the vehicle whose room they stand in. Undefined on foot.
+ *
+ * @param world - The world model
+ * @param actorId - The actor
+ */
+export declare function getVehicleAboard(world: WorldModel, actorId: string): IFEntity | undefined;
+/**
+ * Whether a vehicle lists a command set (ADR-366 D5i): the words are always
+ * grammar, so a set the vehicle does not take is the action's refusal,
+ * `vehicle-no-such-command`.
+ *
+ * @param vehicle - A vehicle
+ * @param set - `compass`, `destinations`, or an extension's set
+ */
+export declare function takesCommandSet(vehicle: IFEntity, set: string): boolean;
 ```
 
 ### traits/story-info/storyInfoTrait

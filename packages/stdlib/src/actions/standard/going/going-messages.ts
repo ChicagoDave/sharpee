@@ -18,6 +18,10 @@ export const GoingMessages = {
   VEHICLE_RIDE: 'vehicle_ride',
   VEHICLE_CANNOT_WALK: 'vehicle_cannot_walk',
   VEHICLE_CANNOT_GO: 'vehicle_cannot_go',
+  VEHICLE_UNDER_WAY: 'vehicle_under_way',
+  // The vehicle's machine reports (ADR-366 D5e, D7a)
+  VEHICLE_ARRIVED: 'vehicle_arrived',
+  VEHICLE_STOPPED: 'vehicle_stopped',
   // Success messages
   WENT: 'went',
   ARRIVED: 'arrived',

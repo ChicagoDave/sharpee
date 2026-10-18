@@ -492,7 +492,9 @@ entering-entered-on               entered_on                              {You} 
 entering-cant-enter               cant_enter                              {You} {can't} enter {the place}: {reason}.
 entering-not-here                 not_here                                {You} {don't} see {the place} here.
 entering-too-small                too_small                               {capitalize the place} {verb:is place} too small for {you} to enter.
-entering-occupied                 occupied                                {capitalize the place} {verb:is place} already occupied.</code></pre>
+entering-occupied                 occupied                                {capitalize the place} {verb:is place} already occupied.
+entering-boarded                  boarded                                 {You} {board} {the vehicle}.
+entering-vehicle-not-boardable    vehicle_not_boardable                   {You} {can't} board {the vehicle}.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.entered</code> (ADR-052).</p>
 <h2 id="examine-x-inspect-check-if-action-examining">examine, x, inspect, check — <code>if.action.examining</code></h2>
 <p><strong>Group</strong> <code>observation</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.examined</code></p>
@@ -563,7 +565,8 @@ exiting-nowhere-to-go             nowhere_to_go                           There'
 exiting-not-in-that               not_in_that                             But {you} {aren't} in {the container}.
 exiting-not-on-that               not_on_that                             But {you} {aren't} on {the container}.
 exiting-exit-blocked              exit_blocked                            The way out is blocked.
-exiting-must-stand-first          must_stand_first                        {You}'ll need to stand up first.</code></pre>
+exiting-must-stand-first          must_stand_first                        {You}'ll need to stand up first.
+exiting-vehicle-not-at-hatch      vehicle_not_at_hatch                    There's no way off from here.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.exited</code> (ADR-052).</p>
 <h2 id="extinguish-put-out-blow-out-snuff-if-action-extinguishing">extinguish, put out, blow out, snuff — <code>if.action.extinguishing</code></h2>
 <p><strong>Group</strong> <code>device_manipulation</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.extinguish_blocked</code>, <code>if.event.extinguished</code></p>
@@ -1311,6 +1314,25 @@ setting-no-value                  no_value                                Set {t
 setting-cant-set-that             cant_set_that                           {capitalize the target} isn't something {you} can set.
 setting-not-a-setting             not_a_setting                           {capitalize the target} goes to {values}.
 setting-set                       set                                     {You} {set} {the target} to {verbatim:value}.</code></pre>
+<h2 id="set-course-for-set-a-course-for-if-action-setting-course">set course for, set a course for — <code>if.action.setting_course</code></h2>
+<p><strong>Group</strong> <code>movement</code> · <strong>Slots</strong> <code>vehicle</code> · <strong>Emits</strong> <code>if.event.course_blocked</code>, <code>if.event.course_set</code></p>
+<pre><code class="language-chord">define action setting_course
+  grammar
+    set course for the destination
+    set a course for the destination
+  the destination is a topic</code></pre>
+<p>SET COURSE FOR - Send a vehicle you are aboard to one of its destinations. Example: SET COURSE FOR THE REEF</p>
+<p>The <code>destinations</code> command set (ADR-366 D5d, D5i): aboard a <code>movement: flight</code> vehicle whose <code>commands:</code> line lists <code>destinations</code>, <code>set course for &lt;destination&gt;</code> names one of its <code>destinations:</code> rooms and puts it under way; the vehicle's own machine then leaves, is nowhere for the passage, and arrives. The destination is typed as free text and matched against the destination rooms' names, since those rooms are never in the player's scope. Aboard a vehicle that does not list the set, the refusal is <code>vehicle_no_such_command</code>. A Chord <code>on the player setting_course</code> clause in the vehicle's block speaks in place of the stock lines.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                                     message id                   text
+setting-course-not-in-vehicle             not_in_vehicle               {You're} not aboard anything that takes a course.
+setting-course-vehicle-no-such-command    vehicle_no_such_command      {capitalize the vehicle} takes no course.
+setting-course-no-destination             no_destination               Set course for where?
+setting-course-not-a-destination          not_a_destination            {capitalize the vehicle} {verb:does vehicle} not go to {verbatim:destination}.
+setting-course-already-there              already_there                {capitalize the vehicle} {verb:is vehicle} already at {the destination}.
+setting-course-vehicle-under-way          vehicle_under_way            {capitalize the vehicle} {verb:is vehicle} already under way.
+setting-course-course-set                 course_set                   {You} {set} course for {the destination}.</code></pre>
+<p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.course_set</code> (ADR-052).</p>
 <h2 id="show-to-show-display-to-present-to-if-action-showing">show to, show, display to, present to — <code>if.action.showing</code></h2>
 <p><strong>Group</strong> <code>social</code> · direct object required · indirect object required · <strong>Slots</strong> <code>item</code>, <code>viewer</code> · <strong>Emits</strong> <code>if.event.show_blocked</code>, <code>if.event.shown</code></p>
 <pre><code class="language-chord">define action showing
@@ -1368,6 +1390,34 @@ sleeping-disturbed-sleep          disturbed_sleep                         {Your}
 sleeping-nightmares               nightmares                              {You} {have} unsettling dreams.
 sleeping-peaceful-sleep           peaceful_sleep                          {You} {enjoy} a peaceful sleep.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.sleep_blocked</code> (ADR-052).</p>
+<h2 id="steer-heave-to-if-action-steering">steer, heave to — <code>if.action.steering</code></h2>
+<p><strong>Group</strong> <code>movement</code> · <strong>Slots</strong> <code>vehicle</code> · <strong>Emits</strong> <code>if.event.steer_blocked</code>, <code>if.event.steered</code></p>
+<pre><code class="language-chord">define action steering
+  grammar
+    steer the direction
+    heave to
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d</code></pre>
+<p>STEER - Set the heading of a vehicle you are aboard; HEAVE TO clears it. Example: STEER NORTH</p>
+<p>The <code>compass</code> command set (ADR-366 D5c, D5i): aboard a <code>movement: compass</code> vehicle whose <code>commands:</code> line lists <code>compass</code>, <code>steer north</code> and <code>go north</code> are one action and set the heading; the vehicle's own machine then moves it one room that way every <code>pace</code> turns while the room ahead admits it, and <code>heave to</code> clears the heading. Aboard a <code>movement: streets</code> vehicle <code>steer north</code> is going — the vehicle moves one exit at once. Aboard a vehicle that does not list the set, the refusal is <code>vehicle_no_such_command</code>; on foot it is <code>not_in_vehicle</code>. A Chord <code>on the player steering</code> clause in the vehicle's block speaks in place of the stock lines, and <code>extend action steering</code> adds an author's own words to the set.</p>
+<p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
+<pre><code class="language-text">alias                                     message id                   text
+steering-not-in-vehicle                   not_in_vehicle               {You're} not aboard anything {you} can steer.
+steering-vehicle-no-such-command          vehicle_no_such_command      {You} {can't} steer {the vehicle}.
+steering-cannot-steer                     cannot_steer                 {You} {can't} steer {the vehicle} that way.
+steering-not-under-way                    not_under_way                {capitalize the vehicle} {verb:is vehicle} not under way.
+steering-steered                          steered                      {You} {steer} {the vehicle} {verbatim:direction}.
+steering-hove-to                          hove_to                      {You} {heave} to, and {the vehicle} loses way.</code></pre>
+<p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.steered</code> (ADR-052).</p>
 <h2 id="smell-sniff-if-action-smelling">smell, sniff — <code>if.action.smelling</code></h2>
 <p><strong>Group</strong> <code>sensory</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.smell_blocked</code>, <code>if.event.smelled</code></p>
 <pre><code class="language-chord">define action smelling

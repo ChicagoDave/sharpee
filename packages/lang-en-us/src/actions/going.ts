@@ -33,6 +33,11 @@ export const goingLanguage = {
     'vehicle_ride': "{You're} riding, not walking.",
     'vehicle_cannot_walk': "{You} {can't} go anywhere from {the vehicle}.",
     'vehicle_cannot_go': "{capitalize the vehicle} {can't} go that way.",
+    'vehicle_under_way': "{capitalize the vehicle} is under way.",
+    // The vehicle's machine reports (ADR-366 D5e, D7a): a vehicle it moved
+    // reaches a room; a vehicle with no way on halts, once.
+    'vehicle_arrived': "{capitalize the vehicle} arrives at {the stop}.",
+    'vehicle_stopped': "{capitalize the vehicle} comes to a stop.",
     'no_exits': "There are no obvious exits.",
     'movement_blocked': "{verbatim:message}",
     'destination_not_found': "{You} {can't} go that way.",

@@ -87,6 +87,9 @@ import { tyingLifecycle } from '../standard/tying/tying.js';
 import { untyingLifecycle } from '../standard/untying/untying.js';
 import { lightingLifecycle } from '../standard/lighting/lighting.js';
 import { extinguishingLifecycle } from '../standard/extinguishing/extinguishing.js';
+// ADR-366: the vehicle command sets
+import { steeringLifecycle } from '../standard/steering/steering.js';
+import { settingCourseLifecycle } from '../standard/setting-course/setting-course.js';
 
 /**
  * The descriptor table: all 62 entity-keyed standard actions (33 per
@@ -166,7 +169,10 @@ export const actionLifecycleDescriptors: readonly ActionLifecycleDescriptor[] = 
   tyingLifecycle,
   untyingLifecycle,
   lightingLifecycle,
-  extinguishingLifecycle
+  extinguishingLifecycle,
+  // ADR-366
+  steeringLifecycle,
+  settingCourseLifecycle
 ]);
 
 // Invariant: one descriptor per action — a duplicate primary id means two

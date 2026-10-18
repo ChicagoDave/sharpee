@@ -627,6 +627,37 @@ define action burning
     set fire to the target
   the tool is an instrument
 
+## ADR-366 D5i — the vehicle command sets. `compass` is steering: `steer
+## <direction>` and `heave to`; aboard a compass vehicle `go <direction>`
+## is the same action (the engine's vehicle command transformer). The
+## `destinations` set is setting_course, whose destination is typed free
+## text: the rooms a ship flies to are never in the player's scope.
+## ORDER IS LOAD-BEARING (ADR-268 D3): `set course for the destination`
+## must precede setting's `set the target`, which would otherwise take
+## `course for …` as its noun.
+
+define action steering
+  grammar
+    steer the direction
+    heave to
+  directions
+    north or n
+    south or s
+    east or e
+    west or w
+    northeast or ne
+    northwest or nw
+    southeast or se
+    southwest or sw
+    up or u
+    down or d
+
+define action setting_course
+  grammar
+    set course for the destination
+    set a course for the destination
+  the destination is a topic
+
 define action setting
   grammar
     set the target to the value

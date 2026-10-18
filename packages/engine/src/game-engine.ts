@@ -29,6 +29,7 @@ import {
   registerStandardChains,
   channelRegistry,
   createDeadlyRoomTransformer,
+  createVehicleCommandTransformer,
   type INpcService,
   type ActSlots,
   type ActResult,
@@ -533,6 +534,11 @@ export class GameEngine implements StoryEngine {
     this.commandExecutor.registerParsedCommandTransformer(
       createDeadlyRoomTransformer(this.randomService),
     );
+
+    // ADR-366 D5b, D5c, D7: aboard a vehicle, `go` and `steer` land on the
+    // action the vehicle's model owns, and `exit` in a boarding room takes
+    // its `to outside` exit. Early-returns for a player on foot.
+    this.commandExecutor.registerParsedCommandTransformer(createVehicleCommandTransformer());
 
     // Query handling is now managed by the platform layer
     // Platform owns the QueryManager and handles all queries

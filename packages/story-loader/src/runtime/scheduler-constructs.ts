@@ -14,12 +14,19 @@
  */
 import type { IREntity, IROnClause, IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { HealthTrait, WorldModel } from '@sharpee/world-model';
+import { HealthTrait, type IFEntity, isUnderWay, TraitType, WorldModel } from '@sharpee/world-model';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, SchedulerDaemon, knownTopicsIn, type RuntimeCore } from './core.js';
 
 export class SchedulerConstructsSection {
   constructor(private readonly core: RuntimeCore) {}
+
+  /** The built vehicle an IR entity id names, or undefined when it is no vehicle. */
+  private vehicleOf(irId: string, world: WorldModel): IFEntity | undefined {
+    const worldId = this.core.host.entityId(irId);
+    const entity = worldId !== undefined ? world.getEntity(worldId) : undefined;
+    return entity?.has(TraitType.VEHICLE) ? entity : undefined;
+  }
 
   /**
    * Build the story's scheduler daemons (`once` / `every N turns` /
@@ -62,6 +69,10 @@ export class SchedulerConstructsSection {
             if (step.anchor.owner === 'story') {
               return world.getStateValue(CHORD_STORY_STATE_KEY) === step.anchor.state;
             }
+            // ADR-366 D5e, D9: `becomes under way` is the vehicle's machine,
+            // read off the trait — never a second record in Chord state.
+            const vehicle = step.anchor.state === 'under way' ? this.vehicleOf(step.anchor.owner, world) : undefined;
+            if (vehicle) return isUnderWay(vehicle);
             return world.getStateValue(CHORD_STATE_PREFIX + step.anchor.owner) === step.anchor.state;
           }
         }

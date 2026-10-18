@@ -1,8 +1,8 @@
 /**
  * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Public interface: `VehicleTrait` (data: the movement model and the
- * player's command sets), the model types `VehicleModel`, `VehicleNoneModel`,
+ * Public interface: `VehicleTrait` (data: the movement model, the player's
+ * command sets and the boarding room), the model types `VehicleModel`, `VehicleNoneModel`,
  * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
  * `VehicleFlightModel`, their declaration shapes `VehicleModelConfig`, the
  * type guard `isVehicleTrait`, and the factory `createVehicleTrait`.
@@ -127,6 +127,8 @@ export interface VehicleTraitConfig {
   model?: VehicleModelConfig;
   /** The player's command sets (`commands:`), present on a player-driven vehicle. */
   commands?: string[];
+  /** The room `boarded through:` names (ADR-366 D7), present on a vehicle with rooms aboard. */
+  boardingRoom?: string;
 }
 
 /**
@@ -140,11 +142,18 @@ export class VehicleTrait implements ITrait {
   model?: VehicleModel;
   /** The player's command sets (ADR-366 D5i); absent when the player drives nothing. */
   commands?: string[];
+  /**
+   * The room id `boarded through:` names (ADR-366 D7): `enter` and `board`
+   * put the player there. Absent on a vehicle with no rooms aboard, which
+   * is entered as any enterable thing is.
+   */
+  boardingRoom?: string;
 
   constructor(config: VehicleTraitConfig = {}) {
     const model = config.model;
     if (model) this.model = VehicleTrait.buildModel(model);
     if (config.commands) this.commands = [...config.commands];
+    if (config.boardingRoom !== undefined) this.boardingRoom = config.boardingRoom;
   }
 
   /**

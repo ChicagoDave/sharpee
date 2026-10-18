@@ -97,6 +97,8 @@ export const IFActions = {
   UNTYING: 'if.action.untying', // ADR-373 D6
   LIGHTING: 'if.action.lighting', // ADR-374 D9
   EXTINGUISHING: 'if.action.extinguishing', // ADR-374 D9
+  STEERING: 'if.action.steering', // ADR-366 D5c, D5i: the `compass` command set
+  SETTING_COURSE: 'if.action.setting_course', // ADR-366 D5d, D5i: the `destinations` command set
   
   // Combat/interaction actions
   ATTACKING: 'if.action.attacking',

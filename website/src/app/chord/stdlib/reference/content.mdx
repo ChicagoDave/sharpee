@@ -558,6 +558,8 @@ entering-cant-enter               cant_enter                              {You} 
 entering-not-here                 not_here                                {You} {don't} see {the place} here.
 entering-too-small                too_small                               {capitalize the place} {verb:is place} too small for {you} to enter.
 entering-occupied                 occupied                                {capitalize the place} {verb:is place} already occupied.
+entering-boarded                  boarded                                 {You} {board} {the vehicle}.
+entering-vehicle-not-boardable    vehicle_not_boardable                   {You} {can't} board {the vehicle}.
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.entered` (ADR-052).
@@ -625,6 +627,7 @@ exiting-not-in-that               not_in_that                             But {y
 exiting-not-on-that               not_on_that                             But {you} {aren't} on {the container}.
 exiting-exit-blocked              exit_blocked                            The way out is blocked.
 exiting-must-stand-first          must_stand_first                        {You}'ll need to stand up first.
+exiting-vehicle-not-at-hatch      vehicle_not_at_hatch                    There's no way off from here.
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.exited` (ADR-052).
@@ -1472,6 +1475,31 @@ setting-not-a-setting             not_a_setting                           {capit
 setting-set                       set                                     {You} {set} {the target} to {verbatim:value}.
 ```
 
+## set course for, set a course for — `if.action.setting_course`
+
+**Group** `movement` · **Slots** `vehicle` · **Emits** `if.event.course_blocked`, `if.event.course_set`
+
+<GrammarBlock action="if.action.setting_course" />
+
+SET COURSE FOR - Send a vehicle you are aboard to one of its destinations. Example: SET COURSE FOR THE REEF
+
+The `destinations` command set (ADR-366 D5d, D5i): aboard a `movement: flight` vehicle whose `commands:` line lists `destinations`, `set course for <destination>` names one of its `destinations:` rooms and puts it under way; the vehicle's own machine then leaves, is nowhere for the passage, and arrives. The destination is typed as free text and matched against the destination rooms' names, since those rooms are never in the player's scope. Aboard a vehicle that does not list the set, the refusal is `vehicle_no_such_command`. A Chord `on the player setting_course` clause in the vehicle's block speaks in place of the stock lines.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                                     message id                   text
+setting-course-not-in-vehicle             not_in_vehicle               {You're} not aboard anything that takes a course.
+setting-course-vehicle-no-such-command    vehicle_no_such_command      {capitalize the vehicle} takes no course.
+setting-course-no-destination             no_destination               Set course for where?
+setting-course-not-a-destination          not_a_destination            {capitalize the vehicle} {verb:does vehicle} not go to {verbatim:destination}.
+setting-course-already-there              already_there                {capitalize the vehicle} {verb:is vehicle} already at {the destination}.
+setting-course-vehicle-under-way          vehicle_under_way            {capitalize the vehicle} {verb:is vehicle} already under way.
+setting-course-course-set                 course_set                   {You} {set} course for {the destination}.
+```
+
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.course_set` (ADR-052).
+
 ## show to, show, display to, present to — `if.action.showing`
 
 **Group** `social` · direct object required · indirect object required · **Slots** `item`, `viewer` · **Emits** `if.event.show_blocked`, `if.event.shown`
@@ -1533,6 +1561,30 @@ sleeping-peaceful-sleep           peaceful_sleep                          {You} 
 ```
 
 **Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.sleep_blocked` (ADR-052).
+
+## steer, heave to — `if.action.steering`
+
+**Group** `movement` · **Slots** `vehicle` · **Emits** `if.event.steer_blocked`, `if.event.steered`
+
+<GrammarBlock action="if.action.steering" />
+
+STEER - Set the heading of a vehicle you are aboard; HEAVE TO clears it. Example: STEER NORTH
+
+The `compass` command set (ADR-366 D5c, D5i): aboard a `movement: compass` vehicle whose `commands:` line lists `compass`, `steer north` and `go north` are one action and set the heading; the vehicle's own machine then moves it one room that way every `pace` turns while the room ahead admits it, and `heave to` clears the heading. Aboard a `movement: streets` vehicle `steer north` is going — the vehicle moves one exit at once. Aboard a vehicle that does not list the set, the refusal is `vehicle_no_such_command`; on foot it is `not_in_vehicle`. A Chord `on the player steering` clause in the vehicle's block speaks in place of the stock lines, and `extend action steering` adds an author's own words to the set.
+
+Messages — override any with `override message <alias>`:
+
+```text
+alias                                     message id                   text
+steering-not-in-vehicle                   not_in_vehicle               {You're} not aboard anything {you} can steer.
+steering-vehicle-no-such-command          vehicle_no_such_command      {You} {can't} steer {the vehicle}.
+steering-cannot-steer                     cannot_steer                 {You} {can't} steer {the vehicle} that way.
+steering-not-under-way                    not_under_way                {capitalize the vehicle} {verb:is vehicle} not under way.
+steering-steered                          steered                      {You} {steer} {the vehicle} {verbatim:direction}.
+steering-hove-to                          hove_to                      {You} {heave} to, and {the vehicle} loses way.
+```
+
+**Change it:** `override message` (above) · an action interceptor on the action id (ADR-090/228) · an event handler on `if.event.steered` (ADR-052).
 
 ## smell, sniff — `if.action.smelling`
 

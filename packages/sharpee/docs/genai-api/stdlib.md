@@ -1175,6 +1175,8 @@ export declare const IFActions: {
     readonly UNTYING: "if.action.untying";
     readonly LIGHTING: "if.action.lighting";
     readonly EXTINGUISHING: "if.action.extinguishing";
+    readonly STEERING: "if.action.steering";
+    readonly SETTING_COURSE: "if.action.setting_course";
     readonly ATTACKING: "if.action.attacking";
     readonly KISSING: "if.action.kissing";
     readonly BURNING: "if.action.burning";
@@ -1967,6 +1969,9 @@ export * from './tying/index.js';
 export * from './untying/index.js';
 export * from './lighting/index.js';
 export * from './extinguishing/index.js';
+export * from './steering/index.js';
+export * from './setting-course/index.js';
+export * from './vehicle-command-transformer.js';
 import { TraceAction } from '../author/index.js';
 export declare const standardActions: (import("../enhanced-types.js").Action | TraceAction)[];
 ```

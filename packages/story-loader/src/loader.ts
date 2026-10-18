@@ -283,6 +283,21 @@ export class ChordStory implements Story {
   }
 
   /**
+   * The stop a `drive: state` line's `position` block names this turn
+   * (ADR-366 D5a): the first row whose guard holds, else `otherwise`.
+   * The vehicle's machine moves the vehicle there when it differs from
+   * where it is.
+   * @param vehicleWorldId the vehicle's world entity id
+   * @param world the live world the guards read
+   * @returns the stop's world id, or undefined for a vehicle with no block
+   */
+  vehiclePositionAnswer(vehicleWorldId: string, world: WorldModel): string | undefined {
+    const block = this.vehiclePositions.get(vehicleWorldId);
+    if (!block) return undefined;
+    return block.rows.find((row) => row.guard(world))?.stopId ?? block.otherwise;
+  }
+
+  /**
    * ADR-366 D5, D5a–D5d, D5i: the vehicle's movement model, every stop and
    * destination resolved to its world id, and the `position` rows as live
    * guards. The analyzer has already refused every line outside the type's
@@ -319,7 +334,12 @@ export class ChordStory implements Story {
         };
         break;
     }
-    entity.add(new VehicleTrait({ model, ...(v.commands !== undefined ? { commands: v.commands } : {}) }));
+    entity.add(new VehicleTrait({
+      model,
+      ...(v.commands !== undefined ? { commands: v.commands } : {}),
+      // D7: `boarded through:` is where `enter` and `board` put the player.
+      ...(v.boardedThrough !== undefined ? { boardingRoom: this.requireWorldId(v.boardedThrough, irEntity) } : {}),
+    }));
     if (v.position) {
       this.vehiclePositions.set(entity.id, {
         rows: v.position.rows.map((row) => ({
@@ -1176,8 +1196,10 @@ export class ChordStory implements Story {
     // state-machine plugin, with its `define machine` blocks lowered in,
     // before the `use`d extensions — the same footing as the NPC service
     // above. A story with no machines still carries the plugin: it is the
-    // host every vehicle's built-in machine ticks in (ADR-366 D5e).
-    installStateMachines(this.ir, engine, installContext);
+    // host every vehicle's built-in machine ticks in (ADR-366 D5e), reading
+    // each `drive: state` line's `position` block through this loader's
+    // compiled guards (D5a).
+    installStateMachines(this.ir, engine, installContext, (vehicleWorldId, world) => this.vehiclePositionAnswer(vehicleWorldId, world));
 
     for (const [name, registration] of EXTENSION_REGISTRY) {
       if (!uses.includes(name)) continue;

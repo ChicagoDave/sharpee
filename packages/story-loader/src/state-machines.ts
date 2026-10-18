@@ -125,11 +125,16 @@ function buildMachineDefinition(
 /**
  * Register the story's state-machine plugin on the engine and lower every
  * `define machine` into it. Runs once per story at engine-ready, for every
- * story, whether or not it declares a machine (ADR-377 D2).
+ * story, whether or not it declares a machine (ADR-377 D2). The plugin's
+ * vehicle phase (ADR-377 D3) reads a `drive: state` line's `position`
+ * block through `vehiclePosition`, the loader's reading of the guards it
+ * compiled (ADR-366 D5a).
  *
  * @param ir the compiled story, whose `machines` are lowered
  * @param engine the engine's plugin registry host
  * @param context the loader-side services the lowering needs
+ * @param vehiclePosition the stop a state-driven line's block names this
+ *   turn, by world vehicle id, or undefined for a vehicle with no block
  * @returns the registered plugin, so a caller can add machine phases to it
  * @throws LoadError when a role or trigger target names an entity never built
  */
@@ -137,8 +142,11 @@ export function installStateMachines(
   ir: StoryIR,
   engine: ExtensionEngineHost,
   context: ExtensionInstallContext,
+  vehiclePosition?: (vehicleWorldId: string, world: WorldModel) => string | undefined,
 ): StateMachinePlugin {
-  const smPlugin = new StateMachinePlugin();
+  const smPlugin = new StateMachinePlugin(
+    vehiclePosition ? { vehiclePosition: (vehicle, world) => vehiclePosition(vehicle.id, world) } : {},
+  );
   engine.getPluginRegistry().register(smPlugin);
   const smRegistry = smPlugin.getRegistry();
   for (const machine of ir.machines ?? []) {

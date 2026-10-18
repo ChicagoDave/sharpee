@@ -235,6 +235,8 @@ describe('the vehicle kind lowers onto the trait (ADR-366 D1, D2, D5)', () => {
     });
     expect(sparrow.has(EnterableTrait.type)).toBe(false);
     expect(sparrow.has(ContainerTrait.type)).toBe(false);
+    // `boarded through: the Airlock` (D7) is where `enter` and `board` land.
+    expect(sparrow.get(VehicleTrait)?.boardingRoom).toBe(byName('Airlock').id);
   });
 });
 
@@ -313,11 +315,13 @@ create the Top of the Well
 
 create the Harbour
   a room
+  north to the Reef
 
   The harbour.
 
 create the Reef
   a room
+  admits: the Marigold
 
   The reef.
 
@@ -423,12 +427,18 @@ create the plotter
     const model = (name: string) => named(name).get(VehicleTrait)!.model;
 
     await engine.executeTurn('pull lever');
-    expect(model('tram car')).toMatchObject({ kind: 'line', underWay: true, turnsToStep: 2 });
+    // `start` arms the pace (2); the machine's tick on the same turn counts
+    // one down (Slice 3, ADR-366 D5e), so the turn ends one step away.
+    expect(model('tram car')).toMatchObject({ kind: 'line', underWay: true, turnsToStep: 1 });
     await engine.executeTurn('pull brake');
     expect(model('tram car')).toMatchObject({ kind: 'line', underWay: false });
 
     await engine.executeTurn('pull tiller');
+    // `start … heading north` sets the heading; at `pace: 1 turn` the
+    // machine's tick on the same turn steps the Marigold north to the Reef,
+    // which admits it, and re-arms the pace (Slice 3, ADR-366 D5c, D5e).
     expect(model('Marigold')).toMatchObject({ kind: 'compass', heading: 'NORTH', turnsToStep: 1 });
+    expect(world.getLocation(named('Marigold').id)).toBe(named('Reef').id);
     await engine.executeTurn('pull helm');
     expect(model('Marigold')).toMatchObject({ kind: 'compass', heading: null });
 
