@@ -223,7 +223,7 @@ describe('use phrasebook (ADR-250 D2/D3)', () => {
   });
 
   it('plain one-word use <extension> grammar is untouched', () => {
-    expect(errorCodes(story('', '  use state-machines'))).toEqual([]);
+    expect(errorCodes(story('', '  use chapters'))).toEqual([]);
     expect(errorCodes(story('', '  use combat extra'))).toContain('parse.use');
   });
 });

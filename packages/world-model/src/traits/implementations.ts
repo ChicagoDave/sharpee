@@ -66,6 +66,7 @@ import { CharacterModelTrait } from './character-model/characterModelTrait.js';
 
 // Transport traits
 import { VehicleTrait } from './vehicle/vehicleTrait.js';
+import { AboardTrait } from './vehicle/aboardTrait.js';
 import { EnterableTrait } from './enterable/enterableTrait.js';
 
 // Concealment traits (ADR-148)
@@ -147,6 +148,7 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
 
   // Transport traits
   [TraitType.VEHICLE]: VehicleTrait,
+  [TraitType.ABOARD]: AboardTrait,
   [TraitType.ENTERABLE]: EnterableTrait,
 
   // Concealment traits (ADR-148)
@@ -287,6 +289,7 @@ export {
 
   // Transport traits
   VehicleTrait,
+  AboardTrait,
   EnterableTrait,
 
   // System traits

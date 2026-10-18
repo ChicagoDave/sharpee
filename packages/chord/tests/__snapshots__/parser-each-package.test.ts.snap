@@ -829,6 +829,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "phraseOverrides": [],
       "placement": null,
       "placementLines": [],
+      "positionBlock": null,
       "pronouns": [],
       "resists": [],
       "roomGroups": [],
@@ -846,6 +847,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -970,6 +972,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
       "resists": [],
       "roomGroups": [],
@@ -987,6 +990,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {
@@ -1343,6 +1347,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
           },
         },
       ],
+      "positionBlock": null,
       "pronouns": [],
       "resists": [],
       "roomGroups": [],
@@ -1379,6 +1384,7 @@ exports[`each-package.story (E1 any / E2 no / E3 each, ratchet 2026-07-12) > mat
       "temperaments": [],
       "thinks": [],
       "timerClauses": [],
+      "vehicleLines": [],
       "wears": [],
     },
     {

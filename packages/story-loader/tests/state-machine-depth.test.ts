@@ -1,6 +1,6 @@
 /**
- * state-machine-depth.test.ts — ADR-215 `use state-machines` through the
- * REAL loader: `define machine` lowers onto the real StateMachinePlugin
+ * state-machine-depth.test.ts — the ADR-119 machine depth through the
+ * REAL loader, core with no `use` line (ADR-377): `define machine` lowers onto the real StateMachinePlugin
  * (role-bound action trigger, story-state condition trigger, onEnter
  * effects through the runtime's statement executor, terminal states).
  * REAL-PATH per Integration Reality: real @sharpee/chord compile, real
@@ -38,7 +38,7 @@ function compileSource(source: string): StoryIR {
 const messageIdsOf = (events: ISemanticEvent[]) =>
   events.map((e) => (e.data as { messageId?: string } | undefined)?.messageId).filter(Boolean);
 
-describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', () => {
+describe('define machine through the real loader (ADR-119 depth, core under ADR-377)', () => {
   let story: ChordStory;
   let world: WorldModel;
   let player: IFEntity;
@@ -71,7 +71,7 @@ describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', 
     const plugins: TurnPlugin[] = [];
     story.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
     smPlugin = plugins.find((p): p is StateMachinePlugin => p instanceof StateMachinePlugin)!;
-    expect(smPlugin, 'StateMachinePlugin registered under use state-machines').toBeDefined();
+    expect(smPlugin, 'StateMachinePlugin registered for every story').toBeDefined();
     turn = 0;
   });
 
@@ -180,16 +180,32 @@ describe('use state-machines through the real loader (ADR-215, ADR-119 depth)', 
     expect(registry.getMachineState('test.machine.bell')).toBe('rung');
   });
 
-  it('rogue IR with machines but no `use` → LoadError at engine-ready', () => {
+  it('a story that writes no `use` line at all still gets its machine (ADR-377 D1, D2)', () => {
     const ir = compileSource(FIXTURE);
-    ir.uses = [];
+    expect(ir.uses).toEqual([]);
+    const plugins: TurnPlugin[] = [];
+    const bare = createStory(ir, { seed: 11 });
+    const w = new WorldModel();
+    bare.initializeWorld(w);
+    const p = bare.createPlayer(w);
+    w.setPlayer(p.id);
+    bare.onEngineReady(stubStoryEngine({ getPluginRegistry: () => recordingPluginRegistry(plugins) }));
+    const plugin = plugins.find((x): x is StateMachinePlugin => x instanceof StateMachinePlugin)!;
+    expect(plugin.getRegistry().getMachineState('chord.machine.drawbridge')).toBe('raised');
+  });
+
+  it('a role naming an entity that was never built is a LoadError at engine-ready', () => {
+    // The compiler refuses an unknown entity, so only hand-edited IR reaches
+    // this throw; the loader still refuses it by name rather than binding `$winch`
+    // to nothing.
+    const ir = compileSource(FIXTURE);
+    ir.machines[0].roles[0].entity = 'ghost-winch';
     const rogue = createStory(ir, { seed: 11 });
     const w = new WorldModel();
     rogue.initializeWorld(w);
     const p = rogue.createPlayer(w);
     w.setPlayer(p.id);
-    expect(() =>
-      rogue.onEngineReady(stubStoryEngine()),
-    ).toThrow(LoadError);
+    expect(() => rogue.onEngineReady(stubStoryEngine())).toThrow(LoadError);
+    expect(() => rogue.onEngineReady(stubStoryEngine())).toThrow('was never built');
   });
 });

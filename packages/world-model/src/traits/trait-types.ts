@@ -75,6 +75,7 @@ export const TraitType = {
 
   // Transport traits
   VEHICLE: 'vehicle',
+  ABOARD: 'aboard',
   ENTERABLE: 'enterable',
 
   // Concealment traits (ADR-148)
@@ -176,6 +177,7 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
 
   // Transport traits
   [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,
+  [TraitType.ABOARD]: TraitCategory.INTERACTIVE,
   [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE,
 
   // Concealment traits (ADR-148)

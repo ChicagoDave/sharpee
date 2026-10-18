@@ -19,7 +19,7 @@ import type { IRCondition, IRStatement, IRValue, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { SOUND_EVENT_TYPES, type Choice, type ISound } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
-import { TraitType, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
+import { sendVehicle, startVehicle, stopVehicle, TraitType, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS } from '../event-contract.js';
@@ -318,6 +318,23 @@ export class StatementsSection {
           if (!holds) break;
           const fired = ledger.resolve(stmt, 'expiry', () => this.core.timers.runTimerVerb(stmt.verb, stmt.timer, ctx));
           if (phase !== 'mutations') events.push(...fired);
+          break;
+        }
+        case 'vehicle-start':
+        case 'vehicle-stop':
+        case 'vehicle-send': {
+          // ADR-366 D5f: the driving statements set the vehicle's machine
+          // state through the vehicle behavior; stepping is the machine's
+          // per-turn work. A refused start (a one-way line at its end) is
+          // the machine's `vehicle-at-end` report, so nothing is thrown.
+          if (phase !== 'reports' && holds) {
+            const vehicle = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.vehicle, ctx));
+            if (!vehicle) throw new LoadError('A vehicle statement names an entity that was never built.', stmt.span);
+            // A heading is the platform's direction word (`NORTH`), as going reads it.
+            if (stmt.kind === 'vehicle-start') startVehicle(ctx.world, vehicle, stmt.heading?.toUpperCase());
+            else if (stmt.kind === 'vehicle-stop') stopVehicle(vehicle);
+            else sendVehicle(vehicle, this.core.evaluator.entityValue(stmt.destination, ctx));
+          }
           break;
         }
         case 'raise':

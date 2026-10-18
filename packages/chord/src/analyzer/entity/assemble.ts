@@ -82,6 +82,8 @@ export function assembleEntity(draft: EntityDraft): IREntity {
     statesReversible: draft.statesReversible,
     counters: draft.counters,
     ...(draft.holds !== undefined ? { holds: draft.holds } : {}),
+    ...(draft.vehicle !== undefined ? { vehicle: draft.vehicle } : {}),
+    ...(draft.admits !== undefined ? { admits: draft.admits } : {}),
     descriptionKey: draft.descriptionKey,
     initialDescriptionKey: draft.initialDescriptionKey,
     ...(draft.descriptionSource !== undefined ? { descriptionSource: draft.descriptionSource } : {}),

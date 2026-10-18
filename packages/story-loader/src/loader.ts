@@ -95,6 +95,7 @@ import {
   createWandererBehavior,
 } from '@sharpee/stdlib';
 import {
+  AboardTrait,
   ActorTrait,
   addPlayerRoleVocabulary,
   AttachedTrait,
@@ -137,6 +138,9 @@ import {
   SceneryTrait,
   SupporterTrait,
   SwitchableTrait,
+  registerVehicleExitResolver,
+  VehicleTrait,
+  type VehicleModelConfig,
   type TemperamentDef,
   TraitType,
   WeaponTrait,
@@ -150,6 +154,7 @@ import { LoadError } from './errors.js';
 import { assertSelectIds, sweepRetiredSelectKeys } from './select-ids.js';
 import { translateEventId } from './event-id-map.js';
 import { COMBAT_FIELD_ROUTES, EXTENSION_REGISTRY, NPC_BEHAVIOR_ADJECTIVES, NPC_FIELD_ROUTES, type ExtensionInstallContext } from './extension-registry.js';
+import { installStateMachines } from './state-machines.js';
 import { HIDING_POSITIONS } from './setting-schema.js';
 import { Evaluator } from './evaluator.js';
 import { classifiesAs } from './kind-classification.js';
@@ -268,6 +273,124 @@ export class ChordStory implements Story {
   }
 
   /**
+   * The `position` block of a `drive: state` line vehicle (ADR-366 D5a), or
+   * undefined when the vehicle has none. Read by the vehicle's machine each
+   * turn; the first row whose guard holds names the stop, else the fallback.
+   * @param vehicleWorldId the vehicle's world entity id
+   */
+  getVehiclePosition(vehicleWorldId: string): { rows: Array<{ guard: (world: WorldModel) => boolean; stopId: string }>; otherwise: string } | undefined {
+    return this.vehiclePositions.get(vehicleWorldId);
+  }
+
+  /**
+   * ADR-366 D5, D5a–D5d, D5i: the vehicle's movement model, every stop and
+   * destination resolved to its world id, and the `position` rows as live
+   * guards. The analyzer has already refused every line outside the type's
+   * row, so the IR is read as true; the trait's constructor keeps the
+   * invariants the analyzer reports first.
+   */
+  private wireVehicle(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    const v = irEntity.vehicle!;
+    const ids = (list: string[] | undefined) => (list ?? []).map((id) => this.requireWorldId(id, irEntity));
+    let model: VehicleModelConfig;
+    switch (v.movement) {
+      case 'none':
+      case 'streets':
+        model = { kind: v.movement };
+        break;
+      case 'line':
+        model = {
+          kind: 'line',
+          stops: ids(v.stops),
+          oneWay: v.direction === 'one-way',
+          drive: v.drive === 'state' ? 'state' : 'control',
+          ...(v.pace !== undefined ? { pace: v.pace } : {}),
+        };
+        break;
+      case 'compass':
+        model = { kind: 'compass', drive: v.drive === 'control' ? 'control' : 'player', pace: v.pace ?? 1 };
+        break;
+      case 'flight':
+        model = {
+          kind: 'flight',
+          drive: v.drive === 'control' ? 'control' : 'player',
+          destinations: ids(v.destinations),
+          passage: v.passage ?? 1,
+        };
+        break;
+    }
+    entity.add(new VehicleTrait({ model, ...(v.commands !== undefined ? { commands: v.commands } : {}) }));
+    if (v.position) {
+      this.vehiclePositions.set(entity.id, {
+        rows: v.position.rows.map((row) => ({
+          guard: (w: WorldModel) => this.evaluator.evalCondition(row.condition, { world: w, it: irEntity.id }),
+          stopId: this.requireWorldId(row.stop, irEntity),
+        })),
+        otherwise: this.requireWorldId(v.position.otherwise, irEntity),
+      });
+    }
+  }
+
+  /**
+   * ADR-366 D6: `admits:` lands on RoomTrait.admits — the room's own, or
+   * every member room's when written on a region. A room admits no vehicle
+   * unless it names it, so the list only ever grows.
+   */
+  private wireAdmits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    const vehicleIds = (irEntity.admits ?? []).map((id) => this.requireWorldId(id, irEntity));
+    const rooms = entity.has(TraitType.ROOM)
+      ? [entity]
+      : (irEntity.containing ?? []).map((member) => world.getEntity(this.requireWorldId(member.id, irEntity))!);
+    for (const room of rooms) {
+      const trait = room.get(RoomTrait);
+      if (!trait) continue;
+      for (const id of vehicleIds) {
+        if (!trait.admits.includes(id)) trait.admits.push(id);
+      }
+    }
+  }
+
+  /**
+   * ADR-366 D7: a room some vehicle lists aboard carries AboardTrait, and
+   * each of its `to outside` exits is a computed exit whose candidates are
+   * the rooms the vehicle can be in — a line's stops, a flight's
+   * destinations, or the rooms that admit a steered vehicle. The resolver
+   * answers with the vehicle's room on each use. A door on the line is
+   * resolved and placed in the room; its room pair is the vehicle's to
+   * decide at each use, so no DoorTrait is stamped (the hatch work lands
+   * with the rooms-aboard phase).
+   */
+  private wireOutsideExits(world: WorldModel, irEntity: IREntity, entity: IFEntity): void {
+    const host = this.ir.entities.find((e) => e.vehicle?.aboard?.includes(irEntity.id));
+    if (!host) return;
+    const outside: Record<string, { candidates: string[]; via?: string }> = {};
+    const candidates = this.vehicleCandidateRooms(host);
+    for (const exit of irEntity.exits) {
+      if (!exit.toOutside) continue;
+      const direction = toDirection(exit.direction, irEntity);
+      const via = exit.via ? this.requireWorldId(exit.via, irEntity) : undefined;
+      if (via !== undefined) new AuthorModel(world.getDataStore(), world).moveEntity(via, entity.id);
+      outside[direction] = { candidates, ...(via !== undefined ? { via } : {}) };
+    }
+    entity.add(new AboardTrait({ vehicleId: this.requireWorldId(host.id, irEntity), outside }));
+    registerVehicleExitResolver(world);
+  }
+
+  /** The world ids of every room a vehicle can be in (ADR-366 D7's candidate set). */
+  private vehicleCandidateRooms(host: IREntity): string[] {
+    const v = host.vehicle!;
+    if (v.movement === 'line') return (v.stops ?? []).map((id) => this.requireWorldId(id, host));
+    if (v.movement === 'flight') return (v.destinations ?? []).map((id) => this.requireWorldId(id, host));
+    const admitting = new Set<string>();
+    for (const e of this.ir.entities) {
+      if (!e.admits?.includes(host.id)) continue;
+      if (e.kinds.some((k) => k.name === 'room')) admitting.add(this.requireWorldId(e.id, host));
+      for (const member of e.containing ?? []) admitting.add(this.requireWorldId(member.id, host));
+    }
+    return [...admitting];
+  }
+
+  /**
    * Deadly exits (ADR-227): world room id → DIRECTION → derived
    * cause/messageId (both the phrase key). Lowered in `onEngineReady` to ONE
    * pre-validate command transformer redirecting to the platform's generic
@@ -277,6 +400,13 @@ export class ChordStory implements Story {
   private readonly deadlyExits = new Map<string, Map<string, { cause: string; messageId: string }>>();
   /** World entity ID → IR entity ID (state lookups in the evaluator). */
   private readonly irIds = new Map<string, string>();
+  /**
+   * A `drive: state` line's `position` block (ADR-366 D5a), by world vehicle
+   * id: the rows in order, each a live guard over the world and the stop it
+   * names, then the fallback stop. Guards are code, not state — the trait
+   * holds only data (D5g) — so the vehicle's machine reads them from here.
+   */
+  private readonly vehiclePositions = new Map<string, { rows: Array<{ guard: (world: WorldModel) => boolean; stopId: string }>; otherwise: string }>();
   private world: WorldModel | null = null;
   /** True once initializeWorld has built the world content. */
   private worldBuilt = false;
@@ -433,6 +563,9 @@ export class ChordStory implements Story {
         );
       }
       for (const exit of irEntity.exits) {
+        // ADR-366 D7: `to outside` names no room — it is wired as the aboard
+        // room's computed exit below, resolved on each use to the vehicle's room.
+        if (exit.toOutside) continue;
         const toId = this.requireWorldId(exit.to, irEntity);
         const direction = toDirection(exit.direction, irEntity);
         // `, one-way` (ADR-234 D4, GH #327): the written direction only —
@@ -480,6 +613,11 @@ export class ChordStory implements Story {
         door?.add(new DoorTrait({ room1: entity.id, room2: toId }));
         world.connectRooms(entity.id, toId, direction, doorId, { oneWay });
       }
+      // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
+      // aboard it — every id resolvable now that every entity is built.
+      if (irEntity.vehicle) this.wireVehicle(world, irEntity, entity);
+      if (irEntity.admits) this.wireAdmits(world, irEntity, entity);
+      this.wireOutsideExits(world, irEntity, entity);
       // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
       // unconditional alike, are registered as live evaluators by the
       // runtime's bind(); nothing is stamped onto RoomTrait.blockedExits
@@ -1033,6 +1171,14 @@ export class ChordStory implements Story {
       evalCondition: (condition, world) => this.evaluator.evalCondition(condition, { world }),
       execMachineBody: (statements, world) => this.runtime.execMachineBody(statements, world),
     };
+
+    // ADR-377 D2: state machines are core. Every story gets one
+    // state-machine plugin, with its `define machine` blocks lowered in,
+    // before the `use`d extensions — the same footing as the NPC service
+    // above. A story with no machines still carries the plugin: it is the
+    // host every vehicle's built-in machine ticks in (ADR-366 D5e).
+    installStateMachines(this.ir, engine, installContext);
+
     for (const [name, registration] of EXTENSION_REGISTRY) {
       if (!uses.includes(name)) continue;
       registration.registerPlugin?.(engine.getPluginRegistry());
@@ -1555,6 +1701,25 @@ export class ChordStory implements Story {
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         // ADR-369 D2: `holds <n>` is the item capacity; absent means unbounded.
         entity.add(new SupporterTrait(irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {}));
+        break;
+      }
+      case 'vehicle': {
+        // ADR-366 D1, D2: a vehicle is enterable by construction, in or on it
+        // as `carries:` says (EnterableTrait.preposition, which entering,
+        // exiting and the location heading already read), and what may be
+        // put inside is the container or supporter behavior it composes,
+        // bounded by `holds` exactly as any container. A vehicle with rooms
+        // aboard (D7) is never entered itself and composes neither. The
+        // movement model needs every stop and destination built, so it is
+        // wired in pass 2 (`wireVehicle`).
+        entity = world.createEntity(irEntity.name, 'object');
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
+        const carries = irEntity.vehicle?.carries;
+        if (carries !== undefined) {
+          entity.add(new EnterableTrait({ preposition: carries }));
+          const capacity = irEntity.holds !== undefined ? { capacity: { maxItems: irEntity.holds } } : {};
+          entity.add(carries === 'on' ? new SupporterTrait(capacity) : new ContainerTrait(capacity));
+        }
         break;
       }
       case 'region': {

@@ -87,6 +87,8 @@ import {
   TraitField,
   UsePhrasebookDecl,
   ValueExpr,
+  Predicate,
+  TimerVerbStmt,
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
@@ -97,6 +99,7 @@ import { requiresOrderViolations, type OrderViolation } from './analyzer/require
 import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, lowerExit, newEntityDraft } from './analyzer/entity/index.js';
 import type { EntityBuildContext } from './analyzer/entity/context.js';
 import { expandRoomGroups, type RoomGroupOrigin } from './analyzer/room-groups.js';
+import { collectVehicles, MOVEMENT_TABLE, placeIdsOf, type VehicleDecl } from './analyzer/vehicles.js';
 
 export { normalizeTopic };
 import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
@@ -350,6 +353,12 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `knows(${value(cond.subject)},${p.topic.words.join(' ').toLowerCase()})`;
         case 'is-any':
           return `is-any(${value(cond.subject)},${p.condition})`;
+        case 'under-way':
+          return `under-way${p.negated ? '!' : ''}(${value(cond.subject)})`;
+        case 'at':
+          return `at${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
+        case 'heading':
+          return `heading${p.negated ? '!' : ''}(${value(cond.subject)},${p.direction})`;
         case 'recency':
           return `recency${p.negated ? '!' : ''}(${value(cond.subject)},${p.word})`;
         case 'was-discussed':
@@ -532,6 +541,11 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
           return nameIsIt(p.target);
         case 'knows':
           return nameIsIt(p.topic);
+        // ADR-366: the vehicle reads name a place by its own name, never `it`.
+        case 'at':
+          return nameIsIt(p.place);
+        case 'under-way':
+        case 'heading':
         case 'is-a':
         // `is here` has no object node — the subject was already visited above.
         case 'is-here':
@@ -867,6 +881,38 @@ export class Analyzer {
 
   /** Extensions admitted by validated `use` lines (ADR-215). */
   private usedExtensions = new Set<string>();
+  /** Every `vehicle` block's declaration (ADR-366), collected on first use. */
+  private vehicleDecls: Map<string, VehicleDecl> | null = null;
+  private get vehicles(): Map<string, VehicleDecl> {
+    this.vehicleDecls ??= collectVehicles(this.ast.declarations);
+    return this.vehicleDecls;
+  }
+
+  /**
+   * The vehicle a statement or condition names, or null when the name is no
+   * vehicle (unresolved names are the caller's to report).
+   */
+  private vehicleNamed(expr: ValueExpr | NameRef): VehicleDecl | null {
+    const ref: NameRef | null =
+      expr.kind === 'name' ? expr
+      : expr.kind === 'ref' ? expr.ref
+      : expr.kind === 'bare' ? { kind: 'name', article: null, words: expr.words, span: expr.span }
+      : null;
+    if (!ref || ref.words.length === 0) return null;
+    const sym = this.findEntitySilent(ref);
+    return sym ? (this.vehicles.get(sym.id) ?? null) : null;
+  }
+
+  /** `analysis.vehicle-statement-not-for-movement` for a verb a vehicle's type or drive does not take. */
+  private reportVehicleStatement(verb: string, vehicle: VehicleDecl, span: Span): void {
+    const type = vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'a vehicle with no movement type';
+    const drive = vehicle.drive ? ` under \`drive: ${vehicle.drive}\`` : '';
+    this.diagnostics.error(
+      'analysis.vehicle-statement-not-for-movement',
+      `\`${verb}\` is not a statement of \`${vehicle.name}\`, ${type}${drive}.`,
+      span,
+    );
+  }
   /** `use <name>, announce <mode>` per extension (ADR-262 D3), recorded by `validateUses`. */
   private announceModes: Record<string, string> = {};
   /** The lowered `use hunger` body, built before the IR and spread in only when present. */
@@ -1063,7 +1109,8 @@ export class Analyzer {
           use.span,
         );
       } else if (manifest.core) {
-        // ADR-215 Q4: NPC vocabulary is CORE — always on, never `use`d.
+        // ADR-215 Q4 (npc) and ADR-377 (state-machines): core vocabulary is
+        // always on, never `use`d.
         this.diagnostics.error(
           'analysis.extension-core',
           `\`${use.name}\` vocabulary is core — it is always available; remove the \`use\` line.`,
@@ -2941,6 +2988,9 @@ export class Analyzer {
             case 'lower':
             case 'set-counter':
             case 'timer':
+            case 'vehicle-start':
+            case 'vehicle-stop':
+            case 'vehicle-send':
             case 'win':
             case 'lose':
             case 'kill':
@@ -3048,20 +3098,13 @@ export class Analyzer {
   private readonly assets = new Map<string, { kind: 'sound' | 'image' | 'music'; path: string | null; span: Span }>();
 
   /**
-   * Build one `define machine` (ADR-215 `use state-machines` depth):
-   * gated on the `use`, states/targets/roles validated, single-word
-   * triggers resolved (declared condition or story state wins, else an
-   * action gerund), bodies in STORY_SCOPE (`it` unbound — the machine is
-   * story-owned).
+   * Build one `define machine` (the ADR-119 depth; core vocabulary under
+   * ADR-377, so no `use` line gates it): states/targets/roles validated,
+   * single-word triggers resolved (declared condition or story state wins,
+   * else an action gerund), bodies in STORY_SCOPE (`it` unbound — the
+   * machine is story-owned).
    */
   private buildMachine(decl: DefineMachine): IRMachineDef {
-    if (!this.usedExtensions.has('state-machines')) {
-      this.diagnostics.error(
-        'analysis.extension-not-used',
-        '`define machine` is `state-machines` extension vocabulary — add `use state-machines` to the story header.',
-        decl.span,
-      );
-    }
     const name = decl.name.join(' ');
     this.registerUnique('machine', name, decl.span, 'analysis.duplicate-machine');
     this.machineNames.add(name);
@@ -3178,6 +3221,22 @@ export class Analyzer {
     const id = this.resolveEntityId(step.owner);
     if (id === null) return null; // already reported
     const sym = this.byId.get(id);
+    if (step.state === 'under way') {
+      // ADR-366 D5e: the vehicle's own transition, on a type that moves over turns.
+      const vehicle = this.vehicles.get(id);
+      if (!vehicle) {
+        this.diagnostics.error('analysis.not-a-vehicle', `\`becomes under way\` anchors on a vehicle — \`${sym?.nameLower ?? id}\` is not \`a vehicle\`.`, step.span);
+        return null;
+      }
+      if (!vehicle.movement || !MOVEMENT_TABLE[vehicle.movement].conditions.has('under-way')) {
+        this.diagnostics.error(
+          'analysis.vehicle-condition-not-for-movement',
+          `\`becomes under way\` is not a transition of \`${vehicle.name}\`, ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'a vehicle with no movement type'} — it never gets under way.`,
+          step.span,
+        );
+      }
+      return { owner: id, state: 'under way' };
+    }
     if (sym && !sym.states.includes(step.state)) {
       this.diagnostics.error(
         'analysis.undeclared-state',
@@ -4163,6 +4222,7 @@ export class Analyzer {
         case 'raise':
         case 'lower':
         case 'timer-verb':
+        case 'send':
         case 'win':
         case 'lose':
         case 'must':
@@ -5486,6 +5546,8 @@ export class Analyzer {
         honorDefs: this.honorDefs,
         groupOrigins: this.groupOrigins,
         resolveEntityId: (ref) => this.resolveEntityId(ref),
+        resolveEntityIdSilent: (ref) => this.findEntitySilent(ref)?.id ?? null,
+        vehicles: this.vehicles,
         resolveCondition: (cond, scope) => this.resolveCondition(cond, scope),
         suggestText: (input, candidates) => this.suggestText(input, candidates),
         requirePhrase: (key, span, owner) => this.requirePhrase(key, span, owner),
@@ -5847,9 +5909,11 @@ export class Analyzer {
         case 'raise':
         case 'lower':
         case 'timer-verb':
+        case 'send':
           // `raise`/`lower` are mutations (D3) — a counter change is world
           // state, and a refusal after one is as dead as after a `change`.
-          // A timer verb (ADR-325 D3c) is the same kind of change.
+          // A timer verb (ADR-325 D3c) is the same kind of change, as is a
+          // vehicle's `send` (ADR-366 D5d).
           state.ended ??= { kind: 'mutation', what: statementWord(stmt) };
           break;
         case 'refuse':
@@ -6274,7 +6338,30 @@ export class Analyzer {
           span: stmt.span,
         };
       }
-      case 'move':
+      case 'move': {
+        // ADR-366 D5f: `move` of a vehicle is D4's shipped `move`, except a
+        // `drive: state` line, whose `position` block owns its place; a
+        // `drive: control` line is moved only to one of its stops.
+        const vehicle = this.vehicleNamed(stmt.entity);
+        if (vehicle && vehicle.movement === 'line') {
+          if (vehicle.drive === 'state') {
+            this.diagnostics.error(
+              'analysis.move-state-driven-vehicle',
+              `\`${vehicle.name}\` is where its \`position\` block says — a \`drive: state\` line is never moved by a statement. Change what the block reads instead.`,
+              stmt.span,
+            );
+          } else if (vehicle.drive === 'control') {
+            const stops = placeIdsOf(vehicle.stops, (ref) => this.findEntitySilent(ref)?.id ?? null);
+            const target = stmt.place.kind === 'name' ? (this.findEntitySilent(stmt.place.ref)?.id ?? null) : null;
+            if (target === null || !stops.includes(target)) {
+              this.diagnostics.error(
+                'analysis.not-a-stop',
+                `\`${stmt.place.kind === 'name' ? stmt.place.ref.words.join(' ') : 'that place'}\` is not a stop of \`${vehicle.name}\` — a line is moved only to one of its stops.`,
+                stmt.place.span,
+              );
+            }
+          }
+        }
         return {
           kind: 'move',
           entity: this.resolveEntityValue(stmt.entity, scope),
@@ -6282,6 +6369,43 @@ export class Analyzer {
           stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
           span: stmt.span,
         };
+      }
+      case 'send': {
+        // ADR-366 D5d: a flight vehicle under `drive: control`, to one of its destinations.
+        const vehicle = this.vehicleNamed(stmt.vehicle);
+        if (!vehicle) {
+          if (this.findEntitySilent(stmt.vehicle)) {
+            this.diagnostics.error(
+              'analysis.not-a-vehicle',
+              `\`send\` sends a vehicle on its way — \`${stmt.vehicle.words.join(' ')}\` is not \`a vehicle\`.`,
+              stmt.vehicle.span,
+            );
+          } else {
+            this.resolveEntityId(stmt.vehicle);
+          }
+          return { kind: 'vehicle-send', vehicle: { kind: 'entity', id: '' }, destination: { kind: 'entity', id: '' }, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        }
+        const legal = vehicle.movement ? MOVEMENT_TABLE[vehicle.movement].statements.get('send') : undefined;
+        if (!legal || !vehicle.drive || !legal.has(vehicle.drive)) {
+          this.reportVehicleStatement('send', vehicle, stmt.span);
+        }
+        const destinations = placeIdsOf(vehicle.destinations, (ref) => this.findEntitySilent(ref)?.id ?? null);
+        const destination = this.resolveEntityId(stmt.destination);
+        if (destination !== null && vehicle.movement === 'flight' && !destinations.includes(destination)) {
+          this.diagnostics.error(
+            'analysis.not-a-destination',
+            `\`${stmt.destination.words.join(' ')}\` is not a destination of \`${vehicle.name}\` — \`send\` names one of its \`destinations:\`.`,
+            stmt.destination.span,
+          );
+        }
+        return {
+          kind: 'vehicle-send',
+          vehicle: { kind: 'entity', id: vehicle.id },
+          destination: { kind: 'entity', id: destination ?? '' },
+          stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+          span: stmt.span,
+        };
+      }
       case 'wear':
       case 'take-off':
         return this.resolveWearStatement(stmt, scope);
@@ -6311,6 +6435,18 @@ export class Analyzer {
         return { kind: 'award', expression, once: stmt.once, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
       }
       case 'timer-verb': {
+        // ADR-366 D5f: `start` and `stop` naming a vehicle are its driving
+        // statements — the name decides, a timer first (ADR-325), then a
+        // vehicle, else the timer's own unknown-target error.
+        const vehicle = this.timerKeyOf(stmt.target, scope) === null ? this.vehicleNamed(stmt.target) : null;
+        if (vehicle) return this.resolveVehicleVerb(stmt, vehicle, scope);
+        if (stmt.heading) {
+          this.diagnostics.error(
+            'analysis.not-a-vehicle',
+            '`heading <direction>` sets a compass vehicle\'s heading — `start` here names no vehicle.',
+            stmt.heading.span,
+          );
+        }
         // ADR-325 D3c: the five timer verbs. A tally is not a timer.
         const timer = this.resolveTimerRef(stmt.target, scope, stmt.span, stmt.verb);
         return { kind: 'timer', verb: stmt.verb, timer: timer ?? '', stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
@@ -6501,6 +6637,50 @@ export class Analyzer {
         throw new Error(`Unhandled statement kind: ${(unhandled as { kind: string }).kind}`);
       }
     }
+  }
+
+  /**
+   * `start <vehicle> [heading <direction>]` and `stop <vehicle>` (ADR-366
+   * D5a, D5c, D5f): legal under the drives D5's table gives the vehicle's
+   * type; `heading` only on `start` of a compass vehicle under `drive:
+   * control`; the other timer verbs never act on a vehicle.
+   */
+  private resolveVehicleVerb(stmt: TimerVerbStmt, vehicle: VehicleDecl, scope: Scope): IRStatement {
+    const stmtWhen = this.resolveStmtWhen(stmt.stmtWhen, scope);
+    const value: IRValue = { kind: 'entity', id: vehicle.id };
+    if (stmt.verb !== 'start' && stmt.verb !== 'stop') {
+      this.diagnostics.error(
+        'analysis.vehicle-statement-not-for-movement',
+        `\`${stmt.verb}\` is a timer verb — a vehicle is \`start\`ed and \`stop\`ped.`,
+        stmt.span,
+      );
+      return { kind: 'vehicle-stop', vehicle: value, stmtWhen, span: stmt.span };
+    }
+    const legal = vehicle.movement ? MOVEMENT_TABLE[vehicle.movement].statements.get(stmt.verb) : undefined;
+    if (!legal || !vehicle.drive || !legal.has(vehicle.drive)) {
+      this.reportVehicleStatement(stmt.verb, vehicle, stmt.span);
+    }
+    if (stmt.verb === 'stop') return { kind: 'vehicle-stop', vehicle: value, stmtWhen, span: stmt.span };
+    if (stmt.heading && (vehicle.movement !== 'compass' || vehicle.drive !== 'control')) {
+      this.diagnostics.error(
+        'analysis.vehicle-statement-not-for-movement',
+        `\`heading <direction>\` sets the heading of a \`movement: compass\` vehicle under \`drive: control\` — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}${vehicle.drive ? ` under \`drive: ${vehicle.drive}\`` : ''}.`,
+        stmt.heading.span,
+      );
+    } else if (!stmt.heading && vehicle.movement === 'compass') {
+      this.diagnostics.error(
+        'analysis.vehicle-statement-not-for-movement',
+        `\`start ${vehicle.name}\` needs a heading — a compass vehicle is started \`heading <direction>\`.`,
+        stmt.span,
+      );
+    }
+    return {
+      kind: 'vehicle-start',
+      vehicle: value,
+      ...(stmt.heading && vehicle.movement === 'compass' ? { heading: stmt.heading.direction } : {}),
+      stmtWhen,
+      span: stmt.span,
+    };
   }
 
   /** Resolve a statement `when` suffix (ratchet D7), or null. */
@@ -7989,9 +8169,62 @@ export class Analyzer {
             // `it` bound to the subject at evaluation).
             this.requireOpenCondition(cond.predicate.condition, cond.predicate.span, 'any');
             return { kind: 'satisfies', subject, condition: cond.predicate.condition };
+          case 'under-way':
+          case 'at':
+          case 'heading':
+            return this.resolveVehiclePredicate(cond, cond.predicate, subject, scope);
         }
       }
     }
+  }
+
+  /**
+   * The vehicle reads (ADR-366 D5, D5c, D5e): the subject names a vehicle
+   * (`analysis.not-a-vehicle`) whose movement type takes the read
+   * (`analysis.vehicle-condition-not-for-movement`). Negation wraps in `not`.
+   */
+  private resolveVehiclePredicate(
+    cond: Extract<ConditionNode, { kind: 'predicate' }>,
+    predicate: Extract<Predicate, { kind: 'under-way' | 'at' | 'heading' }>,
+    subject: IRValue,
+    scope: Scope,
+  ): IRCondition {
+    const form = predicate.kind === 'under-way' ? 'is under way' : predicate.kind === 'at' ? 'is at <place>' : 'is heading <direction>';
+    const vehicle = subject.kind === 'entity' ? (this.vehicles.get(subject.id) ?? null) : null;
+    if (!vehicle) {
+      if (subject.kind === 'entity' && subject.id !== '') {
+        this.diagnostics.error(
+          'analysis.not-a-vehicle',
+          `\`${form}\` reads a vehicle — \`${subject.id}\` is not \`a vehicle\`.`,
+          predicate.span,
+        );
+      } else if (subject.kind !== 'entity') {
+        this.diagnostics.error('analysis.not-a-vehicle', `\`${form}\` reads a vehicle — name one as the subject.`, predicate.span);
+      }
+      return { kind: 'condition', name: '' };
+    }
+    const row = vehicle.movement ? MOVEMENT_TABLE[vehicle.movement] : null;
+    if (!row || !row.conditions.has(predicate.kind)) {
+      this.diagnostics.error(
+        'analysis.vehicle-condition-not-for-movement',
+        `\`${form}\` is not a read of \`${vehicle.name}\`, ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'a vehicle with no movement type'}.`,
+        predicate.span,
+      );
+    }
+    const value: IRValue = { kind: 'entity', id: vehicle.id };
+    let node: IRCondition;
+    switch (predicate.kind) {
+      case 'under-way':
+        node = { kind: 'vehicle-under-way', vehicle: value };
+        break;
+      case 'at':
+        node = { kind: 'vehicle-at', vehicle: value, place: this.resolveEntityValue(predicate.place, scope) };
+        break;
+      case 'heading':
+        node = { kind: 'vehicle-heading', vehicle: value, direction: predicate.direction };
+        break;
+    }
+    return predicate.negated ? { kind: 'not', operand: node } : node;
   }
 
   /**

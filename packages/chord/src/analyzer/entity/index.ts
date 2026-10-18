@@ -31,6 +31,7 @@ import { playableBuilder } from './playable.js';
 import { startsBuilder } from './starts.js';
 import { proseBuilder } from './prose.js';
 import { statesBuilder } from './states.js';
+import { vehicleBuilder } from './vehicle.js';
 
 export { assembleEntity } from './assemble.js';
 export { lowerExit } from './exits.js';
@@ -52,6 +53,7 @@ export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   statesBuilder,
   countersBuilder,
   holdsBuilder,
+  vehicleBuilder,
   proseBuilder,
   clausesBuilder,
 ];

@@ -64,7 +64,7 @@ function refusal(events: { data?: any }[]): string | undefined {
 describe('goingAction from inside a vehicle (ADR-366)', () => {
   test('a line vehicle rides: GO is refused and nothing moves', () => {
     const { world, player, room, north, vehicle } = setupVehicleWorld({
-      kind: 'line', stops: ['a', 'b'], oneWay: false
+      kind: 'line', stops: ['a', 'b'], oneWay: false, drive: 'control'
     });
 
     const events = executeWithValidation(goingAction, goNorth(world));

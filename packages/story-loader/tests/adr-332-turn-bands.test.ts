@@ -27,7 +27,6 @@ const SOURCE = `story
     grows 5 each turn
     peckish at 30
     fatal at 100
-  use state-machines
 
 define chapters
   one - Chapter I

@@ -466,7 +466,8 @@ function createBalloonObjects(world: WorldModel, roomIds: VolcanoRoomIds): Volca
     model: {
       kind: 'line',
       stops: BALLOON_POSITIONS.map(position => positionRooms[position]),
-      oneWay: false
+      oneWay: false,
+      drive: 'control'
     }
   }));
   balloon.add(new BalloonStateTrait({

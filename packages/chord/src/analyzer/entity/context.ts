@@ -38,6 +38,7 @@ import type {
   TimerClause,
 } from '../../ast.js';
 import type { DiagnosticBag } from '../../diagnostics.js';
+import type { VehicleDecl } from '../vehicles.js';
 import type {
   IRBlockedExit,
   IRComposition,
@@ -69,6 +70,7 @@ import type {
   IRTemperamentDef,
   IRThinksEntry,
   IRTimerClause,
+  IRVehicle,
 } from '../../ir.js';
 import type { Span } from '../../span.js';
 import type { EntitySymbol, Scope } from '../../analyzer.js';
@@ -128,6 +130,10 @@ export interface EntityDraft {
   counters: IRCounterDecl[];
   /** `holds <n>` (ADR-369 D2); undefined when the block has no line. */
   holds?: number;
+  /** The vehicle's declaration (ADR-366); undefined off a `vehicle` block. */
+  vehicle?: IRVehicle;
+  /** `admits:` (ADR-366 D6) as entity ids; undefined when the block has no line. */
+  admits?: string[];
   descriptionKey: string | null;
   initialDescriptionKey: string | null;
   descriptionSource?: IRTextSource;
@@ -162,6 +168,10 @@ export interface EntityBuildContext {
   readonly groupOrigins: ReadonlyMap<CreateDecl, RoomGroupOrigin>;
 
   resolveEntityId(ref: NameRef): string | null;
+  /** Resolve a name without reporting — for a check whose owner reports the name itself. */
+  resolveEntityIdSilent(ref: NameRef): string | null;
+  /** Every `vehicle` block's declaration, by entity id (ADR-366). */
+  readonly vehicles: ReadonlyMap<string, VehicleDecl>;
   resolveCondition(cond: ConditionNode, scope: Scope): IRCondition;
   suggestText(input: string, candidates: string[]): string;
   requirePhrase(key: string, span: Span, owner?: EntitySymbol | null): void;

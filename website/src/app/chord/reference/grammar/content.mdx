@@ -29,11 +29,12 @@ story
   story-version: 0.1.0
   description: One winter night to find the deed.
   states: evening, midnight
-  use state-machines
+  use scoring
+    rank "Trespasser" at 0
 ```
 
 The header holds `key: value` facts, story-wide `states:`, `use`
-lines admitting platform extensions (`combat`, `state-machines`,
+lines admitting platform extensions (`combat`,
 `scoring`, `hunger`, `chapters`), and
 the story-owned daemon (`on every turn … end on`). Everything after it
 is declarations: `create` blocks and `define` forms.
@@ -50,7 +51,9 @@ is declarations: `create` blocks and `define` forms.
 | Carrying / wearing | `carries the map` · `wears the greatcoat` |
 | Declared states | `states: guarded, softened` (`states, reversible:` allows going back) |
 | Pronouns (people) | `pronouns she` |
-| Exits (rooms) | `north to the Hall through the oak door` |
+| Exits (rooms) | `north to the Hall through the oak door` · `west to outside` (a room aboard a vehicle; lands where the vehicle is) |
+| Vehicle lines (vehicles) | `movement: line` · `carries: in` · `drive: control` · `stops: the Platform, the Terminus` · `direction: both` · `pace: 2 turns` · `commands: compass` · `destinations: …` · `passage: 5 turns` · `aboard: the Hold, the Airlock` · `boarded through: the Airlock` · `position … end position` (where a `drive: state` line is) |
+| Admitted vehicles (rooms, groups, regions) | `admits: the bicycle, the Marigold` — the steered vehicles that may enter |
 | Blocked exits (rooms) | `west is blocked while the boiler is off: frost-sealed` |
 | Region membership (regions) | `containing the Drive, the Hall` |
 | First-visit prose (rooms) | `first time` + indented paragraph |
@@ -89,7 +92,8 @@ The working vocabulary inside clause and action bodies:
 | `phrase <key>` | speak a declared phrase |
 | `refuse <key>` | block the action with a reason (in `on` clauses) |
 | `change <name> to <state>` | move an entity (or `the story`) to a declared state |
-| `move <name> to <name>` | relocate an entity — *move puts* |
+| `move <name> to <name>` | relocate an entity — *move puts*; a vehicle carries what it holds, and a `drive: control` line is moved only to one of its stops |
+| `start <vehicle> [heading <direction>]` / `stop <vehicle>` / `send <vehicle> to <destination>` | drive a vehicle's own machine: a `drive: control` line or compass vehicle under way or halted, a `drive: control` flight vehicle on its passage |
 | `<character> <verb> [<object>] [<preposition> <object>]` | that character performs the action now, through the same pipeline as a typed command — *acting does*: it can be refused, witnessed, and reacted to (never `the player`; not in `on` intercepts) |
 | `remove <name>` | take an entity out of play, permanently |
 | `award <words>` | score |
@@ -120,6 +124,11 @@ not (the fuse is lit) and the study door is open
 (`open`, `locked`, `lit`, …) resolve from trait state; declared states
 resolve by name; `any` / `no` quantify over a named open condition.
 
+A vehicle reads through three predicates its movement type decides:
+`the tram car is under way`, `the Marigold is at the Harbour`, `the
+Marigold is heading north`. A sequence may anchor on the first: `when
+the tram car becomes under way`.
+
 Under `use chapters`, a chapter is readable: `during market` (it is the
 current chapter), `before market`, `after market`. On an `on`/`after`
 head — and anywhere else a line takes `while` — `during market` may
@@ -138,7 +147,7 @@ stand alone as the suffix: `on the player talking during commerce` is
 | `define trait <name> … end trait` | an authored trait: data fields, states, phrases, clauses |
 | `define action <name>` | an authored action: grammar, requirements, refusals, body |
 | `define sequence <name> … end sequence` | a timeline: `at turn N`, `N turns later`, `when <entity> becomes <state>` |
-| `define machine … end machine` | a state machine (`use state-machines`) |
+| `define machine … end machine` | a state machine (core; no `use` line) |
 | `define chapters … end chapters` | the story's chapters (`use chapters`): one row per chapter — `<name> - <title>`, an optional description paragraph, and `begins when <event>` (`the game starts`, `the player visits <room> for the first time`, `<timer> expires`, `<entity> becomes <state>`); a chapter ends when the next begins, and the client is told on its own `story.chapter` channel |
 | `define sound/image/music <name> from "<file>"` | a media asset |
 

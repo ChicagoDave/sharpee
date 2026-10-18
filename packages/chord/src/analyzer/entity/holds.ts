@@ -10,8 +10,8 @@
  */
 import type { EntityLineBuilder } from './context.js';
 
-/** The kinds whose trait has an item capacity the platform checks. */
-const HOLDING_KINDS: ReadonlySet<string> = new Set(['container', 'supporter']);
+/** The kinds whose trait has an item capacity the platform checks; a vehicle composes a container or supporter (ADR-366 D2). */
+const HOLDING_KINDS: ReadonlySet<string> = new Set(['container', 'supporter', 'vehicle']);
 
 export const holdsBuilder: EntityLineBuilder = {
   name: 'holds',
@@ -23,7 +23,7 @@ export const holdsBuilder: EntityLineBuilder = {
     if (!HOLDING_KINDS.has(kind)) {
       context.diagnostics.error(
         'analysis.holds-owner',
-        `\`holds\` bounds what a container or a supporter can hold — \`${decl.name.words.join(' ')}\` is ${kind ? `a ${kind}` : 'neither'}.`,
+        `\`holds\` bounds what a container, a supporter or a vehicle can hold — \`${decl.name.words.join(' ')}\` is ${kind ? `a ${kind}` : 'none of those'}.`,
         lines[0].span,
       );
       return;

@@ -1,10 +1,11 @@
 A `use <extension>` line in the story header admits one trusted platform
-extension's vocabulary (`combat`, `state-machines`, `scoring`, `hunger`,
-`chapters`) and triggers its runtime registration; a `use`-only story
-stays pure IR. (NPC vocabulary is core and always on.) Each extension
+extension's vocabulary (`combat`, `scoring`, `hunger`, `chapters`) and
+triggers its runtime registration; a `use`-only story stays pure IR.
+(NPC vocabulary and state machines are core and always on: `define
+machine … end machine` needs no `use` line, and writing `use
+state-machines` is a compile error that says so.) Each extension
 brings manifest-typed trait adjectives (`combatant with health 20 and
-skill 40`, the NPC library's `guard`/`patrol`/…), `use state-machines`
-adds the `define machine … end machine` block, `use scoring` the ranks
+skill 40`, the NPC library's `guard`/`patrol`/…), `use scoring` the ranks
 and `award` ([Scoring](/chord/guide/flow/scoring)), `use hunger` the
 depleting meter ([Hunger](/chord/guide/flow/hunger)), and `use chapters`
 the `define chapters … end chapters` block with its `during`, `before`,

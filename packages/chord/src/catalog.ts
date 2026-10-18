@@ -28,6 +28,7 @@ export const KIND_NOUNS: ReadonlySet<string> = new Set([
   'container',
   'supporter',
   'region', // ratchet R1 (ADR-236 D1, 2026-07-17) — named room group; membership via `containing`
+  'vehicle', // ADR-366 D1 (2026-10-18) — enterable by construction; its movement model is its own lines
 ]);
 
 /** v1 trait adjectives (bare, no article). */

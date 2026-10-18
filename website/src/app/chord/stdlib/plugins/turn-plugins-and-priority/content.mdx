@@ -8,7 +8,7 @@ result, and the engine's seeded randomness; plugin state rides in saves.
 | Plugin | Priority | A Chord story has it | A TypeScript story has it |
 |---|---|---|---|
 | NPC behavior | 100 | always — NPCs are core vocabulary, no opt-in (ADR-215) | when the story registers it |
-| State machines | 75 | with `use state-machines` in the header | when the story registers it |
+| State machines | 75 | always — state machines are core vocabulary, no opt-in (ADR-377) | when the story registers it |
 | Scene evaluation | 60 | always on (engine level) | always on (engine level) |
 | Scheduler | 50 | exactly when at least one daemon compiled | when the story registers it |
 

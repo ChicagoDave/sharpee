@@ -31,6 +31,8 @@
  * References:
  * - ADR-215 — the names-vs-mappings split; the three-part contract
  *   (world, plugin, channels); the combat spelling; Q4's core NPC vocabulary.
+ * - ADR-377 — state machines are core: no entry here; the loader's core
+ *   path installs the plugin for every story (`state-machines.ts`).
  * - ADR-260 D6 — every `use`d extension gets a `registerPlugin` slot.
  * - ADR-276 Q-3 — the field routes derive from SETTING_SCHEMA.
  * - ADR-226 — `health`/`max-health` route to the required HealthTrait.
@@ -43,7 +45,6 @@ import { CHAPTERS_EXTENSION } from './extensions/chapters.js';
 import { COMBAT_EXTENSION } from './extensions/combat.js';
 import { HUNGER_EXTENSION } from './extensions/hunger.js';
 import { SCORING_EXTENSION } from './extensions/scoring.js';
-import { STATE_MACHINES_EXTENSION } from './extensions/state-machines.js';
 import { SETTING_SCHEMA } from './setting-schema';
 
 /**
@@ -162,7 +163,7 @@ export interface ExtensionRegistration {
   /**
    * Engine-ready, IR-shaped construction: the plugins built from the
    * story's own rows (a rank ladder's narrator, a hunger meter's daemon,
-   * the lowered machines, the chapter rows), registered on the engine.
+   * the chapter rows), registered on the engine.
    * Runs for every `use`d extension, after its `registerPlugin`.
    */
   installFromIR?: (ir: StoryIR, engine: ExtensionEngineHost, context: ExtensionInstallContext) => void;
@@ -172,7 +173,6 @@ export interface ExtensionRegistration {
 export const EXTENSION_REGISTRY: ReadonlyMap<string, ExtensionRegistration> = new Map<string, ExtensionRegistration>([
   ['combat', COMBAT_EXTENSION],
   ['scoring', SCORING_EXTENSION],
-  ['state-machines', STATE_MACHINES_EXTENSION],
   ['hunger', HUNGER_EXTENSION],
   ['chapters', CHAPTERS_EXTENSION],
 ]);

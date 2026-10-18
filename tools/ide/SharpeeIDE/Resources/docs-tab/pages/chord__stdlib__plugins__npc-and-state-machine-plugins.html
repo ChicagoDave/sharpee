@@ -51,7 +51,7 @@ Apple trees in crooked rows.
 
 You can see Mairead here.</code></pre>
 <p>Mairead walks her two-room route on the plugin's turns, silently by default: the plugin emits the <code>npc-moved</code> events, and narrating them (or not) is the story's choice.</p>
-<p><strong>The state-machine plugin</strong> (priority 75) evaluates declarative machines (states, guarded transitions triggered by actions, events, or conditions, enter/exit effects, terminal states), and it applies at most one transition per machine per turn. A Chord story reaches it by opting in: <code>use state-machines</code> in the story header, then <code>define machine</code>, which exposes the plugin's full depth, with Chord conditions as guards and Chord bodies as effects. Writing <code>define machine</code> without the <code>use</code> line is a compile error.</p>
+<p><strong>The state-machine plugin</strong> (priority 75) evaluates declarative machines (states, guarded transitions triggered by actions, events, or conditions, enter/exit effects, terminal states), and it applies at most one transition per machine per turn. Every Chord story carries it: state machines are core vocabulary, so <code>define machine</code> needs no <code>use</code> line and exposes the plugin's full depth, with Chord conditions as guards and Chord bodies as effects. Writing <code>use state-machines</code> is a compile error that says the vocabulary is core.</p>
 <p>The author writes:</p>
 <pre><code class="language-chord">story
   title: The Ferry
@@ -60,7 +60,6 @@ You can see Mairead here.</code></pre>
   id: plugins-machine
   story-version: 0.0.1
   states: waiting, signaled
-  use state-machines
 
 create the Slipway
   a room

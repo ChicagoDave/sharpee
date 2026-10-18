@@ -8,7 +8,6 @@ story
   publish-source: yes
   description: One cold winter night to find the deed that keeps Fernhill in the family.
   states: evening, midnight
-  use state-machines
   use scoring
     rank "Trespasser" at 0
     rank "Guest of the House" at 10 says settling-in

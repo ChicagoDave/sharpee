@@ -38,7 +38,7 @@ end sequence</code></pre>
   end on</code></pre>
 <p>An entity's <code>on every turn</code> clause fires only while the player is there to hear it. The <code>, once</code> modifier makes a beat that never repeats; a <code>while</code> gate makes one that tracks live state. (The fuse hisses the same way: <code>on every turn while the fuse is lit</code>.)</p>
 <h2 id="the-boiler-a-state-machine">The boiler: a state machine</h2>
-<p>The boiler is the estate's centerpiece. The brass plate says FILL. PRIME. LIGHT, and the machine enforces it. With <code>use state-machines</code> in the header:</p>
+<p>The boiler is the estate's centerpiece. The brass plate says FILL. PRIME. LIGHT, and the machine enforces it. State machines are core vocabulary, so no header line opens them:</p>
 <pre><code class="language-chord">define machine the boiler works
   role furnace is the boiler
   starts cold

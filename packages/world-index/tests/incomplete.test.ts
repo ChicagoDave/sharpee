@@ -497,13 +497,15 @@ create the lantern
 
   // SAY WHERE, EXACTLY (Amendment 2). A description spans several lines and the phrase
   // sits in one of them; publishing only the first line can only ever select the wrong
-  // one. Stage's description runs 34-38 and holds *tiring-house door* on 37.
+  // one. Stage's description runs 33-37 and holds *tiring-house door* on 36
+  // (one line up since 2026-10-18: ADR-377 dropped the header's `use
+  // state-machines` line).
   it('publishes the whole passage span, not its first line', () => {
     const stage = deriveIncomplete(idesOfMarch)
       .edges.map((edge) => edge.site)
       .find((site) => site.key === 'stage.description');
 
-    expect(stage?.span).toMatchObject({ line: 34, endLine: 38 });
+    expect(stage?.span).toMatchObject({ line: 33, endLine: 37 });
     expect(stage?.span?.endLine).toBeGreaterThan(stage?.span?.line ?? 0);
   });
 

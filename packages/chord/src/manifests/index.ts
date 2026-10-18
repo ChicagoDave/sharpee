@@ -29,8 +29,8 @@ export { STATE_MACHINES_MANIFEST } from './state-machines.js';
 
 /**
  * Name → manifest, for every extension the language knows. `use`-gated
- * manifests need their `use` line; `core: true` manifests (npc) are always
- * admitted and refuse a `use` line.
+ * manifests need their `use` line; `core: true` manifests (npc,
+ * state-machines) are always admitted and refuse a `use` line.
  */
 export const EXTENSION_MANIFESTS: ReadonlyMap<string, ExtensionManifest> = new Map(
   [CHAPTERS_MANIFEST, COMBAT_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),

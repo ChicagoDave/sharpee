@@ -45,6 +45,7 @@ import {
   type MoodModifier,
 } from '@sharpee/world-model';
 import { sceneWith } from '@sharpee/world-model';
+import { isUnderWay, VehicleTrait } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
@@ -217,6 +218,19 @@ export class Evaluator {
         const capabilities = this.capabilitiesProvider?.();
         if (!capabilities) return false;
         return (capabilities as Record<string, unknown>)[cond.capability] === true;
+      }
+      case 'vehicle-under-way': {
+        // ADR-366 D5e: the vehicle's machine is moving it — read off the trait.
+        const vehicle = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx));
+        return vehicle !== undefined && isUnderWay(vehicle);
+      }
+      case 'vehicle-at':
+        // ADR-366 D9: the vehicle's location is the one fact, read here.
+        return ctx.world.getLocation(this.entityValue(cond.vehicle, ctx)) === this.entityValue(cond.place, ctx);
+      case 'vehicle-heading': {
+        // ADR-366 D5c: a compass vehicle's heading, null when not under way.
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
+        return model?.kind === 'compass' && model.heading === cond.direction.toUpperCase();
       }
       case 'any-of':
         // E1 (ratchet 2026-07-12): true iff some entity satisfies the

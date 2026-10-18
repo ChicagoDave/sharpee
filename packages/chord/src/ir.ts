@@ -131,7 +131,7 @@ export interface StoryIR {
   /** Named-turn timers (ADR-325 D3), every owner — keyed by `qualified`. */
   timers: IRTimerDef[];
   sequences: IRSequenceDef[];
-  /** `define machine` blocks (ADR-215 `use state-machines` depth). */
+  /** `define machine` blocks (the ADR-119 depth; core under ADR-377). */
   machines: IRMachineDef[];
   /** `define channel` data projections (ADR-216) — pure IR; renderers are platform/extension territory. */
   channels: IRChannelDef[];
@@ -241,6 +241,44 @@ export interface IRMeta {
 // entities
 // --------------------------------------------------------------------------
 
+/** One `when <condition>: <stop>` row of a `position` block (ADR-366 D5a), resolved. */
+export interface IRPositionRow {
+  condition: IRCondition;
+  /** Entity id of the stop. */
+  stop: string;
+}
+
+/**
+ * A vehicle's declaration (ADR-366 D2, D5, D5a–D5d, D5i, D7), resolved to
+ * entity ids. Only the fields the movement type takes are present; the
+ * analyzer has already refused every line outside the type's row, so the
+ * loader reads this as true.
+ */
+export interface IRVehicle {
+  movement: 'none' | 'line' | 'streets' | 'compass' | 'flight';
+  /** `carries: in | on` — the player's preposition (`EnterableTrait.preposition`). Absent with rooms aboard. */
+  carries?: 'in' | 'on';
+  /** `drive:` — absent on `none`. */
+  drive?: 'state' | 'control' | 'player';
+  /** `commands:` — the player's command sets, `drive: player` only. */
+  commands?: string[];
+  /** A line's stops, in order (entity ids). */
+  stops?: string[];
+  direction?: 'both' | 'one-way';
+  /** Turns per step (`line` under `control`, `compass`). */
+  pace?: number;
+  /** A flight vehicle's destinations (entity ids). */
+  destinations?: string[];
+  /** A flight vehicle's passage, in turns. */
+  passage?: number;
+  /** The rooms inside the vehicle (entity ids), D7. */
+  aboard?: string[];
+  /** The boarding room (entity id), D7. */
+  boardedThrough?: string;
+  /** A `drive: state` line's `position` block: rows top to bottom, then the fallback stop. */
+  position?: { rows: IRPositionRow[]; otherwise: string };
+}
+
 export interface IREntity {
   /** Canonical slug (lowercased name words joined with `-`). Unique. */
   id: string;
@@ -322,6 +360,19 @@ export interface IREntity {
    * absent means unbounded.
    */
   holds?: number;
+  /**
+   * The vehicle's declaration (ADR-366): its movement type and the lines
+   * that type takes. Present exactly on `vehicle`-kind entities; the loader
+   * builds `VehicleTrait.model` from it and nothing else (D8).
+   */
+  vehicle?: IRVehicle;
+  /**
+   * `admits: <vehicle>, …` (ADR-366 D6): the steered vehicles that may enter
+   * this room, as entity ids. Rooms only (a region's line is copied to each
+   * member room; a group's to each room it creates). Absent means the room
+   * admits no vehicle.
+   */
+  admits?: string[];
   /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
   timerClauses?: IRTimerClause[];
   /** `when <entity> moves` clauses on this owner (ADR-325 D3h). */
@@ -894,6 +945,12 @@ export interface IRExit {
    * byte-identical).
    */
   oneWay?: true;
+  /**
+   * `<direction> to outside` (ADR-366 D7): `to` is '' and the destination is
+   * the containing vehicle's current room, resolved by the loader on each
+   * use. Present only when written.
+   */
+  toOutside?: true;
   span: Span;
 }
 
@@ -1391,8 +1448,8 @@ export interface IRSequenceStep {
 }
 
 /**
- * `define machine` (ADR-215 `use state-machines` depth; spelling A,
- * 2026-07-18). The loader lowers onto the ADR-119 plugin: platform machine
+ * `define machine` (the ADR-119 depth; spelling A, 2026-07-18; core
+ * under ADR-377). The loader lowers onto the ADR-119 plugin: platform machine
  * id `chord.machine.<slug>`, role bindings as `$<role>` refs, Chord
  * conditions as custom guards, Chord bodies as custom effects.
  */
@@ -1569,6 +1626,16 @@ export type IRStatement =
   | { kind: 'set-counter'; counter: string; owner: IRValue | null; value: number; stmtWhen?: IRCondition | null; span: Span }
   /** ADR-325 D3c: a timer verb. `timer` is the timer's `qualified` key. */
   | { kind: 'timer'; verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt'; timer: string; stmtWhen?: IRCondition | null; span: Span }
+  /**
+   * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f): put the
+   * vehicle's machine under way; `heading` is present only on a compass
+   * vehicle under `drive: control`.
+   */
+  | { kind: 'vehicle-start'; vehicle: IRValue; heading?: string; stmtWhen?: IRCondition | null; span: Span }
+  /** `stop <vehicle>` (ADR-366 D5f): halt the vehicle's machine where it is. */
+  | { kind: 'vehicle-stop'; vehicle: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  /** `send <vehicle> to <destination>` (ADR-366 D5d): a flight vehicle's voyage; `destination` is one of its destinations. */
+  | { kind: 'vehicle-send'; vehicle: IRValue; destination: IRValue; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -1764,4 +1831,10 @@ export type IRCondition =
    * thread's conclusion beat has fired between the evaluation context's
    * owner and the conversation partner. Negation wraps in `not`.
    */
-  | { kind: 'concluded'; thread: string };
+  | { kind: 'concluded'; thread: string }
+  /** `<vehicle> is under way` (ADR-366 D5e): the vehicle's machine is moving it. Negation wraps in `not`. */
+  | { kind: 'vehicle-under-way'; vehicle: IRValue }
+  /** `<vehicle> is at <place>` (ADR-366 D5): the vehicle's location is the named stop, room or destination. */
+  | { kind: 'vehicle-at'; vehicle: IRValue; place: IRValue }
+  /** `<vehicle> is heading <direction>` (ADR-366 D5c): a compass vehicle's heading. */
+  | { kind: 'vehicle-heading'; vehicle: IRValue; direction: string };

@@ -37,9 +37,13 @@ import type { EntityLineBuilder } from './context.js';
 export function lowerExit(e: ExitDecl, resolve: (ref: NameRef) => string | null): IRExit {
   return {
     direction: e.direction,
-    to: resolve(e.to) ?? '',
+    // ADR-366 D7: `to outside` names no entity — the loader resolves it to
+    // the containing vehicle's room on each use. Whether the room is aboard
+    // a vehicle at all is the vehicle builder's gate.
+    to: e.toOutside ? '' : (resolve(e.to) ?? ''),
     via: e.via ? (resolve(e.via) ?? '') : null,
     ...(e.oneWay ? { oneWay: true as const } : {}),
+    ...(e.toOutside ? { toOutside: true as const } : {}),
     span: e.span,
   };
 }

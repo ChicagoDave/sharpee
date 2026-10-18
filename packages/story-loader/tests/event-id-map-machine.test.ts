@@ -22,7 +22,6 @@ const SOURCE = `story
     Test
   id: chime
   story-version: 0.0.1
-  use state-machines
 
 create the Hall
   a room

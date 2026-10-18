@@ -148,6 +148,10 @@ import {
   ScoreDecl,
   CounterDecl,
   HoldsDecl,
+  VehicleLine,
+  PositionBlockDecl,
+  PositionRowDecl,
+  SendStmt,
   DefineCounter,
   CounterMutateStmt,
   TimerVerbStmt,
@@ -238,6 +242,8 @@ const DIRECTIONS = new Set([
 ]);
 /** The kind-noun settings the loader once read (ADR-369 D2a) — each a parse error naming `holds <n>`. */
 const REMOVED_CAPACITY_SETTINGS = new Set(['max items', 'max weight', 'capacity']);
+/** The vehicle colon-line keys (ADR-366) and the room's `admits:` key; `boarded through:` is matched by its two words. */
+const VEHICLE_COLON_KEYS = new Set(['movement', 'carries', 'drive', 'commands', 'stops', 'direction', 'pace', 'destinations', 'passage', 'aboard', 'admits']);
 /** Z5 strategy adverbs (ADR-211 Decision 4). `ordered`/`once` are retired — load errors naming their replacement. */
 const STRATEGIES = new Set(['randomly', 'cycling', 'stopping', 'sticky', 'first-time']);
 /** Retired strategy adverb → its replacement, for the AC-13 fix-it diagnostic. */
@@ -427,6 +433,8 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     scores: [],
     counters: [],
     holds: [],
+    vehicleLines: [],
+    positionBlock: null,
     description: null,
     initialDescription: null,
     phraseOverrides: [],
@@ -465,7 +473,7 @@ function looksLikeComment(line: Line): boolean {
 const STATEMENT_OPENERS = new Set([
   'refuse', 'phrase', 'emit', 'set', 'change', 'move', 'make', 'remove', 'award', 'win', 'lose', 'kill',
   'raise', 'lower',
-  'start', 'restart', 'reset', 'interrupt',
+  'start', 'restart', 'reset', 'interrupt', 'send',
   'if', 'select', 'each', 'end', 'else', 'or', 'when', 'at',
   // ADR-320 conversation-row statements (frozen 2026-08-17):
   'then', 'deflect', 'leave', 'hold',
@@ -857,7 +865,7 @@ class Parser {
         );
         // ADR-261 D2 / ADR-263 D1: `use scoring` (rank ladder) and `use hunger`
         // (satiety meter) are the `use` lines that take an indented body.
-        // `use combat` and `use state-machines` take none.
+        // `use combat` and `use chapters` take none.
         const body: Line[] = [];
         while (this.pos < this.lines.length && this.lines[this.pos].indent > useLine.indent) {
           body.push(this.lines[this.pos++]);
@@ -1768,7 +1776,156 @@ class Parser {
     return { kind: 'move-clause', mover, condition, body, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
-  /** `counter <name> [starts <n>] [between <lo> and <hi>]` in a `create` block (ADR-264 D1). */
+  /**
+   * One vehicle colon line or an `admits:` line (ADR-366): the key word, the
+   * colon, then the shape the key takes — a closed word (`movement:`,
+   * `carries:`, `drive:`, `direction:`), a turn count (`pace:`, `passage:`),
+   * a list of one-word sets (`commands:`), a list of names (`stops:`,
+   * `destinations:`, `aboard:`, `admits:`) or one name (`boarded through:`).
+   * A shape that does not fit is `parse.vehicle-line`, naming the form. Which
+   * block may carry the line, and under which movement type, is the
+   * analyzer's gate.
+   * @param line the line, at its key word
+   * @returns the parsed line, or null when reported
+   */
+  private parseVehicleLine(line: Line): VehicleLine | null {
+    const c = new Cursor(line.tokens, line);
+    const keyTok = c.next()!;
+    let key = keyTok.text;
+    if (key === 'boarded') {
+      c.next(); // through
+      key = 'boarded-through';
+    }
+    c.next(); // colon
+    const span = lineSpan(line);
+    const fail = (form: string): null => {
+      this.diagnostics.error('parse.vehicle-line', `Expected \`${form}\`.`, c.atEnd() ? span : c.restSpan());
+      return null;
+    };
+    const closedWord = <T extends string>(choices: readonly T[], form: string): T | null => {
+      const t = c.next();
+      if (!t || t.kind !== 'word' || !(choices as readonly string[]).includes(t.text) || !c.atEnd()) return fail(form);
+      return t.text as T;
+    };
+    const turnCount = (form: string): number | null => {
+      const n = c.next();
+      const unit = c.next();
+      if (!n || n.kind !== 'number' || !unit || unit.kind !== 'word' || (unit.text !== 'turn' && unit.text !== 'turns') || !c.atEnd()) {
+        return fail(form);
+      }
+      const turns = Number(n.text);
+      if (!Number.isInteger(turns) || turns < 1) return fail(form);
+      return turns;
+    };
+    const nameList = (form: string): NameRef[] | null => {
+      const names: NameRef[] = [];
+      for (;;) {
+        const name = this.parseNameRef(c, (t) => t.kind === 'comma');
+        if (name.words.length === 0) return fail(form);
+        names.push(name);
+        if (c.atEnd()) return names;
+        if (c.peek()?.kind !== 'comma') return fail(form);
+        c.next();
+      }
+    };
+    switch (key) {
+      case 'movement': {
+        const value = closedWord(['none', 'line', 'streets', 'compass', 'flight'] as const, 'movement: none | line | streets | compass | flight');
+        return value === null ? null : { key: 'movement', value, span };
+      }
+      case 'carries': {
+        const value = closedWord(['in', 'on'] as const, 'carries: in | on');
+        return value === null ? null : { key: 'carries', value, span };
+      }
+      case 'drive': {
+        const value = closedWord(['state', 'control', 'player'] as const, 'drive: state | control | player');
+        return value === null ? null : { key: 'drive', value, span };
+      }
+      case 'direction': {
+        const value = closedWord(['both', 'one-way'] as const, 'direction: both | one-way');
+        return value === null ? null : { key: 'direction', value, span };
+      }
+      case 'pace':
+      case 'passage': {
+        const turns = turnCount(`${key}: <n> turn | turns`);
+        return turns === null ? null : { key, turns, span };
+      }
+      case 'commands': {
+        const sets: Array<{ word: string; span: Span }> = [];
+        for (;;) {
+          const t = c.next();
+          if (!t || t.kind !== 'word') return fail('commands: <set>, <set>, …');
+          sets.push({ word: t.text, span: t.span });
+          if (c.atEnd()) return { key: 'commands', sets, span };
+          if (c.peek()?.kind !== 'comma') return fail('commands: <set>, <set>, …');
+          c.next();
+        }
+      }
+      case 'stops':
+      case 'destinations':
+      case 'aboard':
+      case 'admits': {
+        const names = nameList(`${key}: <name>, <name>, …`);
+        return names === null ? null : { key, names, span };
+      }
+      case 'boarded-through': {
+        const name = this.parseNameRef(c, () => false);
+        if (name.words.length === 0 || !c.atEnd()) return fail('boarded through: <room>');
+        return { key: 'boarded-through', name, span };
+      }
+      default:
+        return fail(`${key}: …`);
+    }
+  }
+
+  /**
+   * `position … end position` (ADR-366 D5a): `when <condition>: <stop>`
+   * rows, then `otherwise: <stop>`. A row of any other shape is
+   * `parse.position-row`; a row after `otherwise` is
+   * `parse.position-after-otherwise`. A missing `otherwise` is the analyzer's
+   * gate, as are the stops themselves.
+   * @param headLine the `position` line, already consumed
+   */
+  private parsePositionBlock(headLine: Line): PositionBlockDecl {
+    const rows: PositionRowDecl[] = [];
+    let otherwise: PositionBlockDecl['otherwise'] = null;
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const colonIndex = line.tokens.map((t) => t.kind === 'colon').lastIndexOf(true);
+      const first = line.tokens[0];
+      if (!first || first.kind !== 'word' || colonIndex === -1 || colonIndex >= line.tokens.length - 1) {
+        this.diagnostics.error('parse.position-row', 'Expected `when <condition>: <stop>` or `otherwise: <stop>` in the `position` block.', lineSpan(line));
+        continue;
+      }
+      const stopCursor = new Cursor(line.tokens.slice(colonIndex + 1), line);
+      const stop = this.parseNameRef(stopCursor, () => false);
+      if (stop.words.length === 0 || !stopCursor.atEnd()) {
+        this.diagnostics.error('parse.position-row', 'Expected one stop name after the colon in this `position` row.', stopCursor.restSpan());
+        continue;
+      }
+      if (otherwise) {
+        this.diagnostics.error('parse.position-after-otherwise', '`otherwise` is the last row of a `position` block — nothing follows it.', lineSpan(line));
+        continue;
+      }
+      if (first.text === 'otherwise' && colonIndex === 1) {
+        otherwise = { stop, span: lineSpan(line) };
+      } else if (first.text === 'when' && colonIndex > 1) {
+        const condition = this.parseCondition(new Cursor(line.tokens.slice(1, colonIndex), line), line);
+        rows.push({ condition, stop, span: lineSpan(line) });
+      } else {
+        this.diagnostics.error('parse.position-row', 'Expected `when <condition>: <stop>` or `otherwise: <stop>` in the `position` block.', lineSpan(line));
+      }
+    }
+    const endSpan = this.consumeEnd('position', headLine);
+    return { kind: 'position-block', rows, otherwise, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
   /**
    * `holds <n>` (ADR-369 D2): one whole number of one or more. Anything
    * else — a word, zero, a negative, a fraction, trailing words — is
@@ -2056,6 +2213,27 @@ class Parser {
         this.pos++;
         const cc = this.parseCounterLine(line);
         if (cc) decl.counters.push(cc);
+      } else if (word && VEHICLE_COLON_KEYS.has(word) && line.tokens[1]?.kind === 'colon') {
+        // ADR-366: a vehicle colon line, or a room's `admits:` line. The
+        // colon is what tells `carries: in` from the start-inventory
+        // `carries <name>` below.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'boarded' && cur.isWord('through', 1) && line.tokens[2]?.kind === 'colon') {
+        // ADR-366 D7: `boarded through: <room>` — the room `to outside` lands in.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'position' && line.tokens.length === 1) {
+        // ADR-366 D5a: the `position … end position` block of a `drive: state` line.
+        this.pos++;
+        const block = this.parsePositionBlock(line);
+        if (decl.positionBlock) {
+          this.diagnostics.error('parse.position-duplicate', 'A vehicle has one `position` block — this is the second.', block.span);
+        } else {
+          decl.positionBlock = block;
+        }
       } else if (word === 'holds') {
         // ADR-369 D2: the item capacity of a container or supporter.
         this.pos++;
@@ -2181,7 +2359,7 @@ class Parser {
         }
       } else if (word && DIRECTIONS.has(word) && cur.isWord('to', 1)) {
         this.pos++;
-        const { to, via } = this.parseExitCore(cur, line);
+        const { to, via, toOutside } = this.parseExitCore(cur, line);
         // `, one-way` (ADR-234 D4's reservation, wired 2026-09-03 for GH
         // #327): the exit is traversable in the written direction only —
         // the loader infers no reverse exit, and a door on the line is
@@ -2212,6 +2390,7 @@ class Parser {
           to,
           via,
           ...(oneWay ? { oneWay: true as const } : {}),
+          ...(toOutside ? { toOutside: true as const } : {}),
           span: lineSpan(line),
         } as ExitDecl);
       } else if (word === 'exits' && isExitsLineHead(line)) {
@@ -2279,10 +2458,21 @@ class Parser {
    * @param line the line, for spans
    * @returns the destination, the door if any, and the span the exit covers
    */
-  private parseExitCore(c: Cursor, line: Line): { direction: string; to: NameRef; via: NameRef | null; span: Span } {
+  private parseExitCore(c: Cursor, line: Line): { direction: string; to: NameRef; via: NameRef | null; toOutside?: true; span: Span } {
     const dirTok = c.next()!;
     c.next(); // to
-    const to = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'through');
+    // ADR-366 D7: `to outside` — the containing vehicle's current room. The
+    // word stands alone before `through`, a comma or the end of the line.
+    let toOutside: true | undefined;
+    let to: NameRef;
+    const after = c.peek(1);
+    if (c.isWord('outside') && (after === null || after.kind === 'comma' || (after.kind === 'word' && after.text === 'through'))) {
+      const outsideTok = c.next()!;
+      to = { kind: 'name', article: null, words: ['outside'], span: outsideTok.span };
+      toOutside = true;
+    } else {
+      to = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'through');
+    }
     let span = mergeSpans(dirTok.span, to.span);
     let via: NameRef | null = null;
     if (c.matchWord('through')) {
@@ -2298,7 +2488,7 @@ class Parser {
         span = mergeSpans(span, doorRef.span);
       }
     }
-    return { direction: dirTok.text, to, via, span };
+    return { direction: dirTok.text, to, via, ...(toOutside ? { toOutside } : {}), span };
   }
 
   /**
@@ -2357,6 +2547,7 @@ class Parser {
         to: core.to,
         via: core.via,
         ...(oneWay ? { oneWay: true as const } : {}),
+        ...(core.toOutside ? { toOutside: true as const } : {}),
         exitsLine,
         span: core.span,
       } as ExitDecl);
@@ -2456,6 +2647,7 @@ class Parser {
         to: core.to,
         via: core.via,
         ...(oneWay ? { oneWay: true as const } : {}),
+        ...(core.toOutside ? { toOutside: true as const } : {}),
         span: core.span,
       } as ExitDecl);
       if (c.atEnd()) break;
@@ -5442,7 +5634,12 @@ class Parser {
         owner = this.parseNameRef(sc, (t) => t.kind === 'word' && t.text === 'becomes');
         if (sc.matchWord('becomes')) {
           const st = sc.next();
-          if (st && st.kind === 'word') {
+          if (st && st.kind === 'word' && st.text === 'under' && sc.isWord('way')) {
+            // ADR-366 D5e: `when <vehicle> becomes under way` — one fixed phrase.
+            sc.next();
+            timing = 'becomes';
+            state = 'under way';
+          } else if (st && st.kind === 'word') {
             timing = 'becomes';
             state = st.text;
           } else {
@@ -8019,13 +8216,45 @@ class Parser {
       case 'restart':
       case 'reset':
       case 'interrupt': {
-        // ADR-325 D3c: `<verb> <timer> [when <cond>]`.
+        // ADR-325 D3c: `<verb> <timer> [when <cond>]`. ADR-366 D5c: `start
+        // <vehicle> heading <direction>` — the analyzer resolves the name.
         this.pos++;
         c.next();
-        const target = this.parseValueExpr(c, line, new Set(['when']));
+        const target = this.parseValueExpr(c, line, new Set(['when', 'heading']));
         if (target.kind === 'bare' && target.words.length === 0) return null;
+        let heading: TimerVerbStmt['heading'];
+        if (c.isWord('heading')) {
+          const headingTok = c.next()!;
+          const dirTok = c.next();
+          if (!dirTok || dirTok.kind !== 'word' || !DIRECTIONS.has(dirTok.text)) {
+            this.diagnostics.error('parse.heading-direction', 'Expected a direction after `heading` (`start the Marigold heading north`).', dirTok?.span ?? c.restSpan());
+            return null;
+          }
+          heading = { direction: dirTok.text, span: mergeSpans(headingTok.span, dirTok.span) };
+        }
         const stmtWhen = this.parseStatementWhen(c, line);
-        return { kind: 'timer-verb', verb: word, target, stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
+        return { kind: 'timer-verb', verb: word, target, ...(heading ? { heading } : {}), stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
+      }
+      case 'send': {
+        // ADR-366 D5d: `send <vehicle> to <destination> [when <cond>]`.
+        this.pos++;
+        c.next();
+        const vehicle = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'to');
+        if (vehicle.words.length === 0 || !c.matchWord('to')) {
+          this.diagnostics.error('parse.send', 'Expected `send <vehicle> to <destination>`.', c.restSpan());
+          return null;
+        }
+        const destination = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+        if (destination.words.length === 0) {
+          this.diagnostics.error('parse.send', 'Expected a destination after `to` in the `send` statement.', c.restSpan());
+          return null;
+        }
+        const stmtWhen = this.parseStatementWhen(c, line);
+        if (!c.atEnd()) {
+          this.diagnostics.error('parse.send', `Unexpected words after the destination: \`${restText(c)}\`.`, c.restSpan());
+          return null;
+        }
+        return { kind: 'send', vehicle, destination, stmtWhen, span: lineSpan(line) } as SendStmt;
       }
       case 'raise':
       case 'lower': {
@@ -9229,6 +9458,30 @@ class Parser {
           span: mergeSpans(subject.span, cmpValue.span),
         };
         return negated ? { kind: 'not', operand: node, span: node.span } : node;
+      }
+      // ADR-366: the vehicle reads — `is under way` (one fixed phrase), `is
+      // at <place>` (after the comparison words have had their turn, so `at
+      // least` stays a comparison) and `is heading <direction>`. The analyzer
+      // gates the subject and the movement type.
+      if (c.isWord('under') && c.isWord('way', 1)) {
+        const underTok = c.next()!;
+        const wayTok = c.next()!;
+        const span = mergeSpans(underTok.span, wayTok.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'under-way', negated, span }, span: mergeSpans(subject.span, span) };
+      }
+      if (c.isWord('at')) {
+        c.next();
+        const place = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        return { kind: 'predicate', subject, predicate: { kind: 'at', negated, place, span: place.span }, span: mergeSpans(subject.span, place.span) };
+      }
+      if (c.isWord('heading')) {
+        const dirTok = c.peek(1);
+        if (dirTok && dirTok.kind === 'word' && DIRECTIONS.has(dirTok.text)) {
+          const headingTok = c.next()!;
+          c.next();
+          const span = mergeSpans(headingTok.span, dirTok.span);
+          return { kind: 'predicate', subject, predicate: { kind: 'heading', negated, direction: dirTok.text, span }, span: mergeSpans(subject.span, span) };
+        }
       }
       const value = this.parseValueExpr(c, line, new Set());
       return {

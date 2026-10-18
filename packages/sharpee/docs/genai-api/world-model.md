@@ -2177,6 +2177,7 @@ export declare const TraitType: {
     readonly OPEN_INVENTORY: "openInventory";
     readonly CHARACTER_MODEL: "characterModel";
     readonly VEHICLE: "vehicle";
+    readonly ABOARD: "aboard";
     readonly ENTERABLE: "enterable";
     readonly CONCEALMENT: "if.trait.concealment";
     readonly CONCEALED_STATE: "if.trait.concealed_state";
@@ -2275,6 +2276,7 @@ import { NpcTrait } from './npc/npcTrait.js';
 import { OpenInventoryTrait } from './open-inventory/openInventoryTrait.js';
 import { CharacterModelTrait } from './character-model/characterModelTrait.js';
 import { VehicleTrait } from './vehicle/vehicleTrait.js';
+import { AboardTrait } from './vehicle/aboardTrait.js';
 import { EnterableTrait } from './enterable/enterableTrait.js';
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 /**
@@ -2313,7 +2315,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -5206,31 +5208,56 @@ export declare class NpcTrait implements ITrait, INpcData {
 /**
  * Vehicle Trait - an enterable thing that carries what it holds when it moves
  *
- * Public interface: `VehicleTrait` (data: the movement model), the model
- * types `VehicleModel`, `VehicleLineModel`, `VehicleStreetsModel`, the type
- * guard `isVehicleTrait`, and the factory `createVehicleTrait`.
+ * Public interface: `VehicleTrait` (data: the movement model and the
+ * player's command sets), the model types `VehicleModel`, `VehicleNoneModel`,
+ * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
+ * `VehicleFlightModel`, their declaration shapes `VehicleModelConfig`, the
+ * type guard `isVehicleTrait`, and the factory `createVehicleTrait`.
  *
  * Owner context: world-model traits. The trait carries exactly what the
- * language can write about a vehicle and nothing else (ADR-366 D8): its
- * movement model. Where the vehicle is, which stop it is at, and whether it
- * holds its riders in or on are read from the world (the vehicle's location,
- * D9) and from `EnterableTrait.preposition`, never copied here.
+ * language can write about a vehicle and nothing else: its movement model,
+ * which is the declaration of the vehicle's built-in machine, and the
+ * machine's own state as plain fields beside it, so a voyage survives a
+ * save with every other trait field. Where the vehicle is, which stop it is
+ * at, and whether it holds its riders in or on are read from the world (the
+ * vehicle's location) and from `EnterableTrait.preposition`, never copied
+ * here.
  *
- * Moving a vehicle moves what it holds (D4): containment is relational, so
+ * Moving a vehicle moves what it holds: containment is relational, so
  * `WorldModel.moveEntity` on the vehicle carries every held entity at every
  * depth, with no vehicle-specific move.
+ *
+ * References:
+ * - ADR-366 D5, D5a–D5d — the five movement types and what each declares.
+ * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
+ * - ADR-366 D8, D9 — nothing else on the trait; location is read, never copied.
+ * - ADR-366 D4 — moving a vehicle moves what it holds.
  */
 import { ITrait } from '../trait.js';
+/** A vehicle that does not move (ADR-366 D5): a bathtub, a crate the player sits in. */
+export interface VehicleNoneModel {
+    kind: 'none';
+}
 /**
- * The line (ADR-366 D5a): ordered stops the story drives the vehicle between.
- * GO from inside is refused; the player rides, the story drives.
+ * The line (ADR-366 D5a): ordered stops the vehicle runs between. GO from
+ * inside is refused; the player rides, the world's state or the story drives.
  */
 export interface VehicleLineModel {
     kind: 'line';
     /** Room ids of the stops, in line order. At least two, no repeats. */
     stops: string[];
-    /** True for `runs from ... to ...`: the line is travelled one way only. */
+    /** True for `direction: one-way`: the line is travelled first to last only. */
     oneWay: boolean;
+    /** `drive: state` (its `position` rows decide) or `drive: control` (`start`/`stop`). */
+    drive: 'state' | 'control';
+    /** Turns per step under `drive: control`, one or more. */
+    pace?: number;
+    /** Machine state: the vehicle is stepping along the line. */
+    underWay: boolean;
+    /** Machine state: which way along the stops it is travelling. */
+    travelDirection: 'onward' | 'back';
+    /** Machine state: turns left before the next step. */
+    turnsToStep: number;
 }
 /**
  * The streets (ADR-366 D5b): GO from inside moves the vehicle along the
@@ -5240,15 +5267,52 @@ export interface VehicleStreetsModel {
     kind: 'streets';
 }
 /**
- * How a vehicle moves. A vehicle with no model does not move under the
- * player's GO (a bathtub, a crate the player can sit in).
+ * The compass (ADR-366 D5c): the vehicle keeps a heading and moves one room
+ * that way every `pace` turns while the way is admitted.
  */
-export type VehicleModel = VehicleLineModel | VehicleStreetsModel;
+export interface VehicleCompassModel {
+    kind: 'compass';
+    drive: 'player' | 'control';
+    /** Turns per step, one or more. */
+    pace: number;
+    /** Machine state: the heading, or null when not under way. */
+    heading: string | null;
+    /** Machine state: turns left before the next step. */
+    turnsToStep: number;
+}
+/**
+ * Free flight (ADR-366 D5d): any destination to any other, nowhere for the
+ * passage, then arrival.
+ */
+export interface VehicleFlightModel {
+    kind: 'flight';
+    drive: 'player' | 'control';
+    /** Room ids the vehicle may fly between. At least two. */
+    destinations: string[];
+    /** Turns the passage takes, one or more. */
+    passage: number;
+    /** Machine state: where it is bound, or null when not under way. */
+    destination: string | null;
+    /** Machine state: turns left in the passage. */
+    turnsRemaining: number;
+}
+/** How a vehicle moves — the declaration of its built-in machine, with the machine's state beside it. */
+export type VehicleModel = VehicleNoneModel | VehicleLineModel | VehicleStreetsModel | VehicleCompassModel | VehicleFlightModel;
+type LineState = 'underWay' | 'travelDirection' | 'turnsToStep';
+type CompassState = 'heading' | 'turnsToStep';
+type FlightState = 'destination' | 'turnsRemaining';
+/**
+ * A model as declared: the machine's state fields are optional and start at
+ * rest (not under way, onward, no heading, no destination).
+ */
+export type VehicleModelConfig = VehicleNoneModel | VehicleStreetsModel | (Omit<VehicleLineModel, LineState> & Partial<Pick<VehicleLineModel, LineState>>) | (Omit<VehicleCompassModel, CompassState> & Partial<Pick<VehicleCompassModel, CompassState>>) | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>);
 /**
  * Configuration options for VehicleTrait
  */
 export interface VehicleTraitConfig {
-    model?: VehicleModel;
+    model?: VehicleModelConfig;
+    /** The player's command sets (`commands:`), present on a player-driven vehicle. */
+    commands?: string[];
 }
 /**
  * Trait for vehicles - enterable things that transport what they hold
@@ -5258,7 +5322,17 @@ export declare class VehicleTrait implements ITrait {
     readonly type: "vehicle";
     /** The movement model; undefined means the vehicle does not move under GO. */
     model?: VehicleModel;
+    /** The player's command sets (ADR-366 D5i); absent when the player drives nothing. */
+    commands?: string[];
     constructor(config?: VehicleTraitConfig);
+    /**
+     * Build a model from its declaration, holding the invariants the analyzer
+     * reports first: two stops, none repeated; two destinations; a pace of at
+     * least one. The machine's state starts at rest unless the declaration
+     * carries it.
+     * @throws when an invariant is broken
+     */
+    private static buildModel;
 }
 /**
  * Type guard for VehicleTrait
@@ -5268,6 +5342,62 @@ export declare function isVehicleTrait(trait: ITrait): trait is VehicleTrait;
  * Factory function for creating VehicleTrait
  */
 export declare function createVehicleTrait(config?: VehicleTraitConfig): VehicleTrait;
+export {};
+```
+
+### traits/vehicle/aboardTrait
+
+```typescript
+/**
+ * Aboard Trait - a room inside a vehicle, and its exits to outside
+ *
+ * Public interface: `AboardTrait` (data: the vehicle the room is aboard and
+ * the directions that lead outside, each a computed exit whose candidates
+ * are the rooms the vehicle can be in), `IAboardData`, `isAboardTrait`.
+ *
+ * Owner context: world-model traits. A room aboard a vehicle is that
+ * vehicle's interior: whoever is in it is aboard for every purpose, and an
+ * exit written `to outside` lands wherever the vehicle is. The trait is
+ * pure data; the traversal-time answer is the vehicle exit resolver in
+ * `vehicleBehavior.ts`, registered per world under this trait's type, as
+ * every computed exit's resolver is.
+ *
+ * References:
+ * - ADR-366 D7 — rooms aboard, the boarding room, `<direction> to outside`.
+ * - ADR-295 D3, D4 — computed exits: declared candidates, a registered resolver.
+ */
+import type { DirectionType } from '../../constants/directions.js';
+import type { IComputedExitCarrier, IComputedExitDeclaration } from '../room/computedExitContract.js';
+import { ITrait } from '../trait.js';
+/** One `to outside` exit of a room aboard a vehicle. */
+export interface IOutsideExit extends IComputedExitDeclaration {
+    /** The door the exit passes through, if the line named one. */
+    via?: string;
+}
+export interface IAboardData {
+    /** The vehicle this room is inside. */
+    vehicleId: string;
+    /** The directions that lead outside, each with the rooms the vehicle can be in. */
+    outside?: Partial<Record<DirectionType, IOutsideExit>>;
+}
+/**
+ * Trait for a room aboard a vehicle. Its `computedExits` are the room's
+ * `to outside` exits, so the room behavior's computed-exit lookup finds them
+ * without knowing vehicles exist.
+ */
+export declare class AboardTrait implements ITrait, IAboardData, IComputedExitCarrier {
+    static readonly type: "aboard";
+    readonly type: "aboard";
+    vehicleId: string;
+    outside: Partial<Record<DirectionType, IOutsideExit>>;
+    /** The computed-exit declarations (ADR-295 D3): one per `to outside` direction. */
+    computedExits: Partial<Record<DirectionType, IComputedExitDeclaration>>;
+    constructor(data: IAboardData);
+}
+/**
+ * Type guard for AboardTrait
+ */
+export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
 ```
 
 ### traits/vehicle/vehicleBehavior
@@ -5278,14 +5408,27 @@ export declare function createVehicleTrait(config?: VehicleTraitConfig): Vehicle
  *
  * Public interface: `isVehicle`, `isActorInVehicle`, `getActorVehicle`,
  * `getVehicleOccupants` (where an actor rides), `goingFromVehicle` (what GO
- * means from inside, ADR-366 D5), `admitsVehicle` (D6), and the line
- * model's `isStop`, `currentStop` and `moveVehicleToStop` (D5a).
+ * means from inside), `admitsVehicle`, `isUnderWay`, the driving statements
+ * `startVehicle`, `stopVehicle` and `sendVehicle`, the line model's
+ * `isStop`, `currentStop` and `moveVehicleToStop`, and the rooms-aboard
+ * half: `vehicleOutsideExitResolver` and `registerVehicleExitResolver`
+ * (an exit `to outside` lands where the vehicle is).
  *
  * Owner context: world-model vehicle behavior. Every answer is read from
- * the world and the trait's model; nothing here keeps a position of its own
- * (D9). Moving a vehicle is `WorldModel.moveEntity`, which carries what the
- * vehicle holds because containment is relational (D4).
+ * the world and the trait's model; nothing here keeps a position of its own.
+ * Moving a vehicle is `WorldModel.moveEntity`, which carries what the
+ * vehicle holds because containment is relational.
+ *
+ * References:
+ * - ADR-366 D4 — moving a vehicle moves what it holds.
+ * - ADR-366 D5, D5a — what GO means from inside; the line's stops.
+ * - ADR-366 D6 — a room admits the steered vehicles it names.
+ * - ADR-366 D7 — rooms aboard; `to outside` resolves to the vehicle's room,
+ *   and refuses with `vehicle-under-way` while the vehicle is nowhere.
+ * - ADR-366 D9 — the vehicle's location is the one fact, read, never copied.
+ * - ADR-295 D4 — the exit resolver seam the outside exit rides.
  */
+import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
 import { WorldModel } from '../../world/WorldModel.js';
 import { IFEntity } from '../../entities/if-entity.js';
 /**
@@ -5331,6 +5474,58 @@ export type VehicleGoing = {
  * @returns on-foot when the actor is not in a vehicle; otherwise the model's answer
  */
 export declare function goingFromVehicle(world: WorldModel, actorId: string): VehicleGoing;
+/**
+ * Whether a vehicle's machine is moving it (ADR-366 D5e): a line stepping
+ * along its stops, a compass vehicle on a heading, a flight vehicle in its
+ * passage. A `none` or streets vehicle is never under way.
+ *
+ * @param vehicle - A vehicle; false when it has no model
+ */
+export declare function isUnderWay(vehicle: IFEntity): boolean;
+/**
+ * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f): put the
+ * vehicle's machine under way. A line steps from its current stop in its
+ * travel direction, turning back at a `both` line's end; a compass vehicle
+ * takes the heading. The first step comes after `pace` turns; stepping is
+ * the machine's per-turn work.
+ *
+ * @param world - The world model
+ * @param vehicle - A line or compass vehicle
+ * @param heading - The heading, for a compass vehicle
+ * @returns false when the vehicle cannot start: a one-way line at its end
+ *   (`vehicle-at-end`), a compass vehicle with no heading, or a type with no
+ *   `start`
+ */
+export declare function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: string): boolean;
+/**
+ * `stop <vehicle>` (ADR-366 D5f): take the vehicle's machine out of the way
+ * where it is — a line halts at its stop, a compass vehicle loses its heading.
+ *
+ * @returns false when the type has no `stop`
+ */
+export declare function stopVehicle(vehicle: IFEntity): boolean;
+/**
+ * `send <vehicle> to <destination>` (ADR-366 D5d): a flight vehicle leaves
+ * its room and is nowhere for the passage, then arrives. The departure and
+ * the arrival are the machine's per-turn work; this records where it is
+ * bound.
+ *
+ * @returns false when the vehicle is not a flight vehicle or the room is not
+ *   one of its destinations
+ */
+export declare function sendVehicle(vehicle: IFEntity, destinationId: string): boolean;
+/**
+ * The resolver for a room aboard a vehicle (ADR-366 D7): an exit `to
+ * outside` leads to the room the vehicle is in, through the door the line
+ * named, and is blocked with `vehicle-under-way` while the vehicle is nowhere.
+ * Defers to static topology for a direction the trait does not declare.
+ */
+export declare const vehicleOutsideExitResolver: ExitResolver;
+/**
+ * Register the outside-exit resolver on a world. Idempotent; a story that
+ * has rooms aboard a vehicle registers it at load.
+ */
+export declare function registerVehicleExitResolver(world: WorldModel): void;
 /**
  * Whether a room admits a vehicle (D6). A room admits no vehicle unless it
  * names it.

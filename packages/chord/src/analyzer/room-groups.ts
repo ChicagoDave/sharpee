@@ -114,6 +114,10 @@ function refusedBodyLines(body: CreateDecl): Array<{ what: string; span: Span }>
   if (body.landing) add('a `landing` line', [body.landing]);
   add('a `wears` line', body.wears);
   add('a `carries` line', body.carries);
+  // ADR-366: a room admits vehicles (D6, copied to each room); every other
+  // vehicle line belongs in a vehicle block.
+  add('a vehicle line', body.vehicleLines.filter((l) => l.key !== 'admits'));
+  if (body.positionBlock) add('a `position` block', [body.positionBlock]);
   add('a character line', [
     ...body.pronouns,
     ...body.moods,
@@ -195,6 +199,9 @@ function createdRoom(region: CreateDecl, group: RoomGroupDecl, n: number): Creat
     states: [],
     scores: [],
     counters: [],
+    // ADR-366 D6: a group's `admits:` reaches every room it creates.
+    vehicleLines: body.vehicleLines.filter((l) => l.key === 'admits'),
+    positionBlock: null,
     phraseOverrides: body.phraseOverrides.filter((o) => o.key === 'room-name'),
     onClauses: [],
     timerClauses: [],

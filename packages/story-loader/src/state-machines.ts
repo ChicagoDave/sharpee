@@ -1,24 +1,25 @@
 /**
- * state-machines.ts — the `use state-machines` registry entry.
+ * state-machines.ts — the core state-machine plugin and `define machine` lowering.
  *
- * Engine-side only: `installFromIR` registers the state-machine plugin and
- * lowers every `define machine` into its registry — platform id
- * `chord.machine.<slug>`, role bindings as `$<role>` entries (world ids),
- * action triggers on `if.action.<gerund>`, Chord conditions as custom
- * guards over the shared evaluator, Chord bodies as one custom effect each
- * through the runtime's statement executor. The plugin instance is built
- * here because the machines must be lowered into it after construction.
- * `gatedConstruct` names `define machine` as the construct this `use`
- * unlocks, so rogue IR carrying one without the `use` is refused.
+ * Engine-side only: every story gets one state-machine plugin, registered
+ * at engine-ready beside the NPC service and the scheduler, with no `use`
+ * line to open it. Every `define machine` is lowered into the plugin's
+ * registry — platform id `chord.machine.<slug>`, role bindings as
+ * `$<role>` entries (world ids), action triggers on `if.action.<gerund>`,
+ * Chord conditions as custom guards over the shared evaluator, Chord
+ * bodies as one custom effect each through the runtime's statement
+ * executor. A story with no machines still carries the plugin: it is the
+ * host every vehicle's built-in machine ticks in, and an empty plugin does
+ * nothing per turn.
  *
- * Public interface: STATE_MACHINES_EXTENSION.
+ * Public interface: installStateMachines.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).
  *
  * References:
+ * - ADR-377 D2, D3 — state machines are core; one plugin per story on the
+ *   loader's core path, and the vehicle machine is a phase of it.
  * - ADR-119 — the state-machine shapes the definitions lower onto.
- * - ADR-215 — `use state-machines` and the loader's rogue-IR backstop.
  * - ADR-256 — event ids translate to the platform runtime type at the seam.
- * - ADR-335 D3 — IR-shaped construction lives in the registry entry.
  */
 import type { IRCondition, IRStatement, StoryIR } from '@sharpee/chord';
 import {
@@ -29,9 +30,9 @@ import {
   type TransitionDefinition,
 } from '@sharpee/plugin-state-machine';
 import type { WorldModel } from '@sharpee/world-model';
-import { LoadError } from '../errors.js';
-import { translateEventId } from '../event-id-map.js';
-import type { ExtensionInstallContext, ExtensionRegistration } from '../extension-registry.js';
+import { LoadError } from './errors.js';
+import { translateEventId } from './event-id-map.js';
+import type { ExtensionEngineHost, ExtensionInstallContext } from './extension-registry.js';
 
 type IRMachine = NonNullable<StoryIR['machines']>[number];
 
@@ -121,16 +122,28 @@ function buildMachineDefinition(
   };
 }
 
-export const STATE_MACHINES_EXTENSION: ExtensionRegistration = {
-  gatedConstruct: (ir) =>
-    (ir.machines ?? []).length > 0 ? { construct: 'define machine', span: ir.machines![0].span } : null,
-  installFromIR: (ir, engine, context) => {
-    const smPlugin = new StateMachinePlugin();
-    engine.getPluginRegistry().register(smPlugin);
-    const smRegistry = smPlugin.getRegistry();
-    for (const machine of ir.machines ?? []) {
-      const { definition, bindings } = buildMachineDefinition(machine, context);
-      smRegistry.register(definition, bindings);
-    }
-  },
-};
+/**
+ * Register the story's state-machine plugin on the engine and lower every
+ * `define machine` into it. Runs once per story at engine-ready, for every
+ * story, whether or not it declares a machine (ADR-377 D2).
+ *
+ * @param ir the compiled story, whose `machines` are lowered
+ * @param engine the engine's plugin registry host
+ * @param context the loader-side services the lowering needs
+ * @returns the registered plugin, so a caller can add machine phases to it
+ * @throws LoadError when a role or trigger target names an entity never built
+ */
+export function installStateMachines(
+  ir: StoryIR,
+  engine: ExtensionEngineHost,
+  context: ExtensionInstallContext,
+): StateMachinePlugin {
+  const smPlugin = new StateMachinePlugin();
+  engine.getPluginRegistry().register(smPlugin);
+  const smRegistry = smPlugin.getRegistry();
+  for (const machine of ir.machines ?? []) {
+    const { definition, bindings } = buildMachineDefinition(machine, context);
+    smRegistry.register(definition, bindings);
+  }
+  return smPlugin;
+}

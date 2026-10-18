@@ -255,6 +255,44 @@ export interface CounterDecl {
   span: Span;
 }
 
+/**
+ * One vehicle colon line (ADR-366 D2, D5, D5a–D5d, D5i, D7) or a room's
+ * `admits:` line (D6). The parser reads the shape; which lines a block may
+ * carry, and under which movement type, is the analyzer's gate.
+ */
+export type VehicleLine =
+  | { key: 'movement'; value: 'none' | 'line' | 'streets' | 'compass' | 'flight'; span: Span }
+  /** `carries: in` / `carries: on` — the colon tells it from `carries <name>`. */
+  | { key: 'carries'; value: 'in' | 'on'; span: Span }
+  | { key: 'drive'; value: 'state' | 'control' | 'player'; span: Span }
+  /** `commands: compass, destinations` — the player's command sets, each one word. */
+  | { key: 'commands'; sets: Array<{ word: string; span: Span }>; span: Span }
+  /** `stops:` / `destinations:` / `aboard:` / `admits:` — comma-separated entity names. */
+  | { key: 'stops' | 'destinations' | 'aboard' | 'admits'; names: NameRef[]; span: Span }
+  | { key: 'direction'; value: 'both' | 'one-way'; span: Span }
+  /** `pace: <n> turn[s]` / `passage: <n> turn[s]` — a whole number of one or more. */
+  | { key: 'pace' | 'passage'; turns: number; span: Span }
+  | { key: 'boarded-through'; name: NameRef; span: Span };
+
+/** One `when <condition>: <stop>` row of a `position` block (ADR-366 D5a). */
+export interface PositionRowDecl {
+  condition: ConditionNode;
+  stop: NameRef;
+  span: Span;
+}
+
+/**
+ * `position … end position` (ADR-366 D5a): where a `drive: state` line
+ * vehicle is, read top to bottom; `otherwise` is null when the block lacks
+ * its last row (the analyzer reports it).
+ */
+export interface PositionBlockDecl {
+  kind: 'position-block';
+  rows: PositionRowDecl[];
+  otherwise: { stop: NameRef; span: Span } | null;
+  span: Span;
+}
+
 /** `holds <n>` (ADR-369 D2) — the item capacity of a container or supporter. */
 export interface HoldsDecl {
   kind: 'holds';
@@ -278,7 +316,7 @@ export type Declaration =
   | DefineChapters
   // ADR-264 story-global numeric counter:
   | DefineCounter
-  // ADR-215 `use state-machines` depth (spelling A, David 2026-07-18):
+  // ADR-119 machine depth (spelling A, David 2026-07-18; core under ADR-377):
   | DefineMachine
   // ADR-216 declared media assets (DATA references, never hatches):
   | DefineAsset
@@ -862,6 +900,13 @@ export interface CreateDecl {
   counters: CounterDecl[];
   /** `holds <n>` lines (ADR-369 D2) — collected so the analyzer can refuse a second one. */
   holds: HoldsDecl[];
+  /**
+   * The vehicle colon lines and `admits:` lines (ADR-366), in declaration
+   * order. Which a block may carry is the analyzer's gate.
+   */
+  vehicleLines: VehicleLine[];
+  /** The `position … end position` block (ADR-366 D5a), or null. */
+  positionBlock: PositionBlockDecl | null;
   /** First bare indented paragraph. */
   description: TextValue | null;
   /**
@@ -1299,6 +1344,13 @@ export interface ExitDecl {
    * stories without it stay byte-identical).
    */
   oneWay?: true;
+  /**
+   * `<direction> to outside` (ADR-366 D7): the destination is the containing
+   * vehicle's current room, resolved on each use. `to` then carries the
+   * word `outside` and is never resolved as a name. Present only when
+   * written.
+   */
+  toOutside?: true;
   /**
    * The head of the `exits:` / `exits, one-way:` line this exit was folded
    * onto (ADR-362 D2) — absent on a single exit line and a table row. The
@@ -1819,8 +1871,9 @@ export interface ActionRefusal {
 // and story-owned schedules.
 
 /**
- * `define machine <name> … end machine` — the ADR-119 depth under
- * `use state-machines` (ADR-215; spelling A ratified by David 2026-07-18).
+ * `define machine <name> … end machine` — the ADR-119 depth, core
+ * vocabulary with no `use` line (ADR-377; spelling A ratified by David
+ * 2026-07-18 under ADR-215).
  * Role lines bind names to entities; `starts <state>`; one `state` block
  * per state carrying transition lines and `on enter`/`on exit` bodies.
  */
@@ -2042,7 +2095,9 @@ export type Statement =
   | ThenOpenStmt
   | DeflectStmt
   | LeaveStmt
-  | HoldTongueStmt;
+  | HoldTongueStmt
+  // ADR-366 D5d: the flight vehicle's driving statement.
+  | SendStmt;
 
 /**
  * `then asks <exchange-key>` / `then invites <exchange-key>` (ADR-320
@@ -2340,6 +2395,21 @@ export interface TimerVerbStmt {
   kind: 'timer-verb';
   verb: 'start' | 'stop' | 'restart' | 'reset' | 'interrupt';
   target: ValueExpr;
+  /**
+   * `start <vehicle> heading <direction>` (ADR-366 D5c): the compass
+   * vehicle's heading. Present only when written; the analyzer resolves
+   * the target by name, so a timer never carries one.
+   */
+  heading?: { direction: string; span: Span };
+  stmtWhen: ConditionNode | null;
+  span: Span;
+}
+
+/** `send <vehicle> to <destination> [when <cond>]` (ADR-366 D5d) — a flight vehicle's voyage. */
+export interface SendStmt {
+  kind: 'send';
+  vehicle: NameRef;
+  destination: NameRef;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2615,6 +2685,12 @@ export type Predicate =
    * its ordinary is-value parse.
    */
   | { kind: 'concluded'; negated: boolean; span: Span }
+  /** `<vehicle> is under way` (ADR-366 D5e) — the vehicle's machine is moving it. */
+  | { kind: 'under-way'; negated: boolean; span: Span }
+  /** `<vehicle> is at <place>` (ADR-366 D5) — the vehicle is at the named stop, room or destination. */
+  | { kind: 'at'; negated: boolean; place: NameRef; span: Span }
+  /** `<vehicle> is heading <direction>` (ADR-366 D5c) — a compass vehicle's heading. */
+  | { kind: 'heading'; negated: boolean; direction: string; span: Span }
   /**
    * `must be any <open-condition>` membership (David, 2026-07-12 — each
    * package P3): the subject satisfies the named open condition. Parsed

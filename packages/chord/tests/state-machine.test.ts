@@ -1,9 +1,10 @@
 /**
- * state-machine.test.ts — ADR-215 `use state-machines` depth, compile
- * side (spelling A, ratified 2026-07-18): `define machine … end machine`
- * with role bindings, `starts`, state blocks, transition triggers
- * (action-on-role, condition/story-state, bare word, event), `, terminal`,
- * and `on enter`/`on exit` bodies. Gates: the `use` requirement, unknown
+ * state-machine.test.ts — the ADR-119 machine depth, compile side
+ * (spelling A, ratified 2026-07-18 under ADR-215; core vocabulary with no
+ * `use` line under ADR-377): `define machine … end machine` with role
+ * bindings, `starts`, state blocks, transition triggers (action-on-role,
+ * condition/story-state, bare word, event), `, terminal`, and `on enter`/
+ * `on exit` bodies. Gates: `use state-machines` refused as core, unknown
  * states, duplicate machines/roles, and the story-owned `it` rule.
  * REAL-PATH: every case drives the real parse → analyze pipeline.
  */
@@ -17,7 +18,7 @@ const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'drawbridge.story'), 'u
 const errorCodes = (source: string) =>
   compile(source).diagnostics.filter((d) => d.severity === 'error').map((d) => d.code);
 
-const story = (machine: string, header = '  use state-machines\n') => `story
+const story = (machine: string, header = '') => `story
   title: Bridge
   authors:
     T
@@ -52,7 +53,7 @@ describe('define machine (ADR-215 state-machines depth, spelling A)', () => {
   it('compiles the drawbridge fixture to the full IR shape', () => {
     const result = compile(FIXTURE);
     expect(result.diagnostics.filter((d) => d.code !== 'analysis.missing-ifid')).toEqual([]);
-    expect(result.ir.uses).toEqual(['state-machines']);
+    expect(result.ir.uses).toEqual([]);
     const machine = result.ir.machines[0];
     expect(machine.name).toBe('drawbridge');
     expect(machine.initialState).toBe('raised');
@@ -106,7 +107,7 @@ end machine
     expect(transition.condition).not.toBeNull();
   });
 
-  it('`define machine` without `use state-machines` → analysis.extension-not-used', () => {
+  it('`define machine` compiles with no `use` line — state machines are core (ADR-377 D1)', () => {
     const codes = errorCodes(
       story(
         `define machine watch
@@ -115,10 +116,14 @@ end machine
   state idle
 end machine
 `,
-        '',
       ),
     );
-    expect(codes).toContain('analysis.extension-not-used');
+    expect(codes).toEqual([]);
+  });
+
+  it('`use state-machines` is analysis.extension-core (ADR-377 D1)', () => {
+    const codes = errorCodes(story('', '  use state-machines\n'));
+    expect(codes).toContain('analysis.extension-core');
   });
 
   it('an unknown transition target → analysis.machine-target with a suggestion', () => {

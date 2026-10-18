@@ -163,7 +163,21 @@ const PINNED = {
   // `define sound` without a file, `play sound` as its own statement,
   // `powered by`, and `starts lit`/`unlit`. Additive, on the unpublished
   // 4.0 surface — no bump.
-  ebnfSha256: '181c0c60e2acb05e6f87df9cb7c750e06d311e8c188d8b3f7313e7c4bbf4305e',
+  // Re-recorded 2026-10-18 (ADR-377 D1, session d76183): state machines are
+  // core — `use state-machines` leaves the `use-plain-line` note's gated
+  // list and joins npc as core vocabulary (writing it is
+  // analysis.extension-core); the machine depth's section heading says so.
+  // Comment-only EBNF motion; one `use` name withdrawn, on the unpublished
+  // 4.0 surface — no bump.
+  // Re-recorded 2026-10-18 (ADR-366 D1, D2, D5–D5i, D6, D7, session d76183,
+  // Chord 4.0 Phase 11 Slice 1): `KIND-NOUN` gains `vehicle`; `create-line`
+  // gains `vehicle-line`, `admits-line` and `position-block`; `group-line`
+  // gains `admits-line`; the `exit` destination admits `outside`; the timer
+  // verbs take `heading DIRECTION`; `send` joins `statement`; `is under way`,
+  // `is at <name>` and `is heading DIRECTION` join `predicate`; the state
+  // anchor admits `under way`. Additive, on the unpublished 4.0 surface — no
+  // bump.
+  ebnfSha256: '7eecbfb50dd9aa94ec19f803199fa001d1119e06457eb42d15b325c59f722a21',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

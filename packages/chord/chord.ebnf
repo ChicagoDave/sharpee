@@ -227,15 +227,16 @@ prose-field  = ( "prologue" | "description" ) ":" [ rest-of-line ] NL
 use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
 use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trusted
                                                               platform extension per
-                                                              line (combat,
-                                                              state-machines, chapters
+                                                              line (combat, chapters
                                                               — ADR-330); admits
                                                               the extension's manifest
                                                               vocabulary and triggers
                                                               its runtime registration.
                                                               Unknown/duplicate names
                                                               and `use` of CORE
-                                                              vocabulary (npc) are
+                                                              vocabulary (npc, and
+                                                              state-machines under
+                                                              ADR-377) are
                                                               compile errors; top-level
                                                               placement gets a header
                                                               fix-it. Takes NO body —
@@ -404,6 +405,67 @@ holds-line   = "holds" NUMBER NL ;                         (* ADR-369 D2: the it
                                                               NUMBER >= 1 (parse.holds-
                                                               number); at most one
                                                               (analysis.holds-duplicate) *)
+vehicle-line = "movement" ":" ( "none" | "line" | "streets"
+                              | "compass" | "flight" ) NL  (* ADR-366 D5: every vehicle
+                                                              names its movement type
+                                                              (analysis.vehicle-missing-
+                                                              movement). The lines
+                                                              below are legal only in a
+                                                              `vehicle` block and only
+                                                              under the types D5's
+                                                              table gives each
+                                                              (analysis.vehicle-line-
+                                                              not-for-movement) *)
+             | "carries" ":" ( "in" | "on" ) NL            (* D2: in or on the vehicle;
+                                                              required without rooms
+                                                              aboard, forbidden with
+                                                              them. The colon tells it
+                                                              from `carries <name>` *)
+             | "drive" ":" ( "state" | "control" | "player" ) NL
+                                                           (* D5: required on every
+                                                              type but `none` *)
+             | "commands" ":" WORD { "," WORD } NL         (* D5i: the player's command
+                                                              sets (`compass`,
+                                                              `destinations`); `drive:
+                                                              player` only *)
+             | "stops" ":" name { "," name } NL            (* D5a: a line's stops in
+                                                              order, two or more, none
+                                                              repeated *)
+             | "direction" ":" ( "both" | "one-way" ) NL  (* D5a *)
+             | "pace" ":" NUMBER ( "turn" | "turns" ) NL  (* D5a, D5c: turns per step,
+                                                              one or more *)
+             | "destinations" ":" name { "," name } NL    (* D5d: any to any, two or
+                                                              more *)
+             | "passage" ":" NUMBER ( "turn" | "turns" ) NL
+                                                           (* D5d: the fold, one or
+                                                              more turns *)
+             | "aboard" ":" name { "," name } NL           (* D7: the rooms inside *)
+             | "boarded" "through" ":" name NL ;           (* D7: one of them, where
+                                                              `to outside` lands *)
+admits-line  = "admits" ":" name { "," name } NL ;         (* ADR-366 D6: on a room, a
+                                                              `rooms` group or a region
+                                                              — the steered vehicles
+                                                              (`streets`, `compass`)
+                                                              that may enter it
+                                                              (analysis.admits-not-
+                                                              steered-vehicle); a block
+                                                              that is none of those is
+                                                              analysis.admits-owner *)
+position-block = "position" NL
+               >>> { "when" condition ":" name NL }
+                   "otherwise" ":" name NL
+                 "end" "position" NL ;                     (* ADR-366 D5a: a `drive:
+                                                              state` line's place, read
+                                                              top to bottom after each
+                                                              turn; every row names a
+                                                              stop (analysis.not-a-stop);
+                                                              the last row is `otherwise`
+                                                              (analysis.position-no-
+                                                              otherwise); on a one-way
+                                                              line no row names a stop
+                                                              behind an earlier row's
+                                                              (analysis.position-against-
+                                                              direction) *)
 counter-line = "counter" WORD [ "starts" NUMBER ]
                          [ "between" NUMBER "and" NUMBER ] NL ;
                (* ADR-264 D1: a per-entity numeric counter, legal in a create
@@ -589,6 +651,9 @@ create-line  = "aka" alias { "," alias } NL
              | score-line
              | counter-line                                (* ADR-264 D1 *)
              | holds-line                                  (* ADR-369 D2 *)
+             | vehicle-line                                (* ADR-366 D2, D5, D7 *)
+             | admits-line                                 (* ADR-366 D6 *)
+             | position-block                              (* ADR-366 D5a *)
              | composition { "," composition } NL          (* pre-blank paragraph only;
                                                               a kind noun takes no `with`
                                                               settings — parse.kind-
@@ -1098,6 +1163,9 @@ stem         = WORD { WORD | NUMBER } ;                    (* every token betwee
 group-line   = composition { "," composition } NL          (* trait adjectives only; the
                                                               kind is always `room` *)
              | "aka" alias { "," alias } NL
+             | admits-line                                 (* ADR-366 D6: copied to
+                                                              every room the group
+                                                              creates *)
              | room-name-block                             (* copied under each room's
                                                               own keys (D8) *)
              | "first" "time" NL >>> prose-paragraph
@@ -1130,10 +1198,17 @@ exits-line   = "exits" [ "," "one-way" ] ":" exit { "," exit } NL ;
                      (analysis.exit-line-owner); in a `rooms` group body it is
                      analysis.room-group-line. The colon tells it from ADR-360's table. A
                      blocked line beside it guards that exit as it would a single line. *)
-exit         = DIRECTION "to" name [ "through" name ] ;  (* the one exit production: a
+exit         = DIRECTION "to" ( name | "outside" )
+               [ "through" name ] ;                        (* the one exit production: a
                                                               room's exit line, a table
                                                               row and ADR-362's `exits:`
-                                                              line all read it *)
+                                                              line all read it. `outside`
+                                                              (ADR-366 D7) is legal only
+                                                              in a room some vehicle
+                                                              lists `aboard:` (analysis.
+                                                              outside-not-aboard) and
+                                                              resolves on each use to
+                                                              the vehicle's current room *)
 
 composition  = ( ARTICLE KIND-NOUN | WORD )                (* article => kind noun;
                                                               bare => trait *)
@@ -1185,7 +1260,13 @@ STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
              | "lit" | "unlit" ;                           (* ADR-374 D9: pair with
                                                               `light-source` *)
 KIND-NOUN    = "thing" | "room" | "door" | "person"
-             | "container" | "supporter" | "region" ;      (* ADR-359 D1: the WORD of a kind
+             | "container" | "supporter" | "region"
+             | "vehicle" ;                                 (* ADR-366 D1: `vehicle` is a
+                                                              kind, enterable by
+                                                              construction (`enterable`
+                                                              beside it is analysis.
+                                                              vehicle-already-enterable).
+                                                              ADR-359 D1: the WORD of a kind
                                                               composition; any other word
                                                               is analysis.unknown-kind-noun.
                                                               `a thing` is the plain object,
@@ -1338,7 +1419,7 @@ define-counter = "define" "counter" WORD [ "starts" NUMBER ]
                           [ "between" NUMBER "and" NUMBER ] NL ;
                  (* a story-global counter; `starts`/bounds optional *)
 
-(* ---- ADR-215 state-machine depth (`use state-machines`; spelling A) ---- *)
+(* ---- ADR-119 state-machine depth (spelling A per ADR-215; core, no `use` line, ADR-377) ---- *)
 
 define-machine = "define" "machine" WORD { WORD } NL
                  >>> { "role" WORD "is" name NL
@@ -1645,7 +1726,12 @@ PRONOUN-CASE    = "subject" | "object" | "possessive"
 sequence-step  = step-anchor NL >>> { statement } ;
 step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
                | NUMBER "turns" "later"                    (* relative to previous step *)
-               | "when" name "becomes" WORD ;              (* state anchor, D10 *)
+               | "when" name "becomes" ( WORD | "under" "way" ) ;
+                                                           (* state anchor, D10; `under
+                                                              way` is a vehicle's own
+                                                              transition (ADR-366 D5e),
+                                                              legal on a vehicle whose
+                                                              type moves over turns *)
 
 
 (* ---- must requirements (D6) -------------------------------------------- *)
@@ -1729,11 +1815,31 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               (analysis.wear-not-wearable,
                                                               analysis.wear-actor-not-
                                                               person) *)
-             | timer-verb value-expr [ stmt-when ] NL      (* ADR-325 D3c: bare name in
+             | timer-verb value-expr [ "heading" DIRECTION ]
+               [ stmt-when ] NL                            (* ADR-325 D3c: bare name in
                                                               the owner's block,
                                                               possessive elsewhere;
                                                               `stop music|ambient` is
-                                                              the media statement *)
+                                                              the media statement.
+                                                              ADR-366 D5f: `start` and
+                                                              `stop` naming a vehicle
+                                                              are its driving statements
+                                                              (the analyzer resolves the
+                                                              name: a timer, a vehicle,
+                                                              else analysis.unknown-
+                                                              timer); `heading` is legal
+                                                              only on `start` of a
+                                                              `compass` vehicle under
+                                                              `drive: control`; a
+                                                              statement outside the
+                                                              type's row is analysis.
+                                                              vehicle-statement-not-for-
+                                                              movement *)
+             | "send" name "to" name [ stmt-when ] NL     (* ADR-366 D5d: a `flight`
+                                                              vehicle under `drive:
+                                                              control` to one of its
+                                                              destinations (analysis.
+                                                              not-a-destination) *)
              | "kill" "the" "player" [ phrase-key ] [ stmt-when ] NL
                [ >>> prose-paragraph ]                     (* ADR-227; ADR-325 D3i: an
                                                               indented body in place of
@@ -1935,6 +2041,25 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                                                                   is a THREAD KEY; same
                                                                   standalone rule as the
                                                                   recency words *)
+                              | "under" "way"                  (* ADR-366 D5e: the subject
+                                                                  is a VEHICLE whose type
+                                                                  moves over turns; one
+                                                                  fixed phrase *)
+                              | "at" name                      (* ADR-366 D5: the vehicle
+                                                                  is at the named stop,
+                                                                  room or destination;
+                                                                  `at least`/`at most`
+                                                                  stay the comparison *)
+                              | "heading" DIRECTION            (* ADR-366 D5c: a compass
+                                                                  vehicle's heading.
+                                                                  A non-vehicle subject
+                                                                  on any of the three is
+                                                                  analysis.not-a-vehicle;
+                                                                  a vehicle whose type
+                                                                  lacks the condition is
+                                                                  analysis.vehicle-
+                                                                  condition-not-for-
+                                                                  movement *)
                               | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
              | "has" [ "not" ] ( "started" | "expired" )      (* ADR-325 D3d: a TIMER's

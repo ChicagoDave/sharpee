@@ -1,7 +1,7 @@
 /**
  * gatehouse.test.ts — the ADR-215/216 elegance-parity fixture (Phase 7):
- * the FULL S3 stack in one coherent story — `use combat` +
- * `use state-machines`, a guard combatant, a patrol NPC, a role-bound
+ * the FULL S3 stack in one coherent story — `use combat`, a core
+ * `define machine` (ADR-377), a guard combatant, a patrol NPC, a role-bound
  * drawbridge machine, payloaded emits feeding a custom channel, media
  * sugar behind `client has sound` — proving the whole surface composes in
  * ~90 lines of Chord that would take several hand-written TS files
@@ -34,7 +34,7 @@ function compileSource(source: string): StoryIR {
 describe('the gatehouse — full S3 stack in one story (elegance parity)', () => {
   it('compiles and loads every subsystem together', () => {
     const ir = compileSource(FIXTURE);
-    expect(ir.uses.sort()).toEqual(['combat', 'state-machines']);
+    expect(ir.uses).toEqual(['combat']);
 
     // A real engine (ADR-328 D5): installStory runs the story's engine-ready
     // hook against the engine's own plugin registry and NPC service; the

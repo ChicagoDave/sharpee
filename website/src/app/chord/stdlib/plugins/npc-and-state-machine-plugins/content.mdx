@@ -79,11 +79,11 @@ default: the plugin emits the `npc-moved` events, and narrating them
 **The state-machine plugin** (priority 75) evaluates declarative
 machines (states, guarded transitions triggered by actions, events,
 or conditions, enter/exit effects, terminal states), and it applies at
-most one transition per machine per turn. A Chord story reaches it by
-opting in: `use state-machines` in the story header, then `define
-machine`, which exposes the plugin's full depth, with Chord conditions
-as guards and Chord bodies as effects. Writing `define machine` without
-the `use` line is a compile error.
+most one transition per machine per turn. Every Chord story carries it:
+state machines are core vocabulary, so `define machine` needs no `use`
+line and exposes the plugin's full depth, with Chord conditions as
+guards and Chord bodies as effects. Writing `use state-machines` is a
+compile error that says the vocabulary is core.
 
 The author writes:
 
@@ -95,7 +95,6 @@ story
   id: plugins-machine
   story-version: 0.0.1
   states: waiting, signaled
-  use state-machines
 
 create the Slipway
   a room
