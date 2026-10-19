@@ -194,7 +194,7 @@ export const englishVerbs: VerbDefinition[] = [
   // Manipulation
   {
     action: IFActions.TAKING,
-    verbs: ['take', 'get', 'pick', 'grab', 'acquire', 'pick up', 'take up'],
+    verbs: ['take', 'get', 'pick', 'grab', 'acquire', 'pick up', 'take up', 'retrieve'],
     requiresObject: true
   },
   {
@@ -435,7 +435,8 @@ export const englishVerbs: VerbDefinition[] = [
   // ADR-366 D5i: the vehicle command sets
   {
     action: IFActions.STEERING,
-    verbs: ['steer', 'heave to'],
+    // ADR-375 D3, D7: the naval set's words ride the same action.
+    verbs: ['steer', 'heave to', 'port', 'starboard', 'hard to port', 'hard to starboard', 'ahead', 'come about', 'make sail', 'shorten sail', 'furl sails', 'furl'],
     requiresObject: false
   },
   {

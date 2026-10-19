@@ -37,7 +37,10 @@ import {
   findTraitWithCapability,
   type CapabilityBehavior,
   type CapabilityEffect,
-  type ITrait
+  type ITrait,
+  getVehicleAboard,
+  lookoutOf,
+  receiveInExpanse,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { runBreakingLifecycle } from '../breaking/breaking.js';
@@ -194,7 +197,9 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     'fragile_breaks',
     'target_ducks',
     'target_catches',
-    'target_angry'
+    'target_angry',
+    'thrown_afloat',
+    'lost_overboard'
   ],
 
   metadata: {
@@ -409,6 +414,20 @@ export const throwingAction: Action & { metadata: ActionMetadata } = {
     }
 
     sharedData.finalLocation = finalLocation;
+
+    // Into an expanse (ADR-376 D9, D10): thrown from the vehicle or beside
+    // it, a thing that would land in the expanse room lands at the
+    // thrower's cell — afloat if it floats, lost offstage otherwise.
+    const lookout = finalLocation ? lookoutOf(context.world, actor) : undefined;
+    const overTheSide = sharedData.throwType !== 'at_target' && finalLocation === context.world.getLocation(actor.id) && getVehicleAboard(context.world, actor.id)?.id === finalLocation;
+    if (lookout && (finalLocation === lookout.expanse.id || overTheSide)) {
+      const receipt = receiveInExpanse(context.world, item, lookout.expanse.id, lookout.cell);
+      sharedData.messageId = receipt === 'floats' ? 'thrown_afloat' : 'lost_overboard';
+      // Where it truly landed: the expanse room, or nowhere.
+      sharedData.finalLocation = receipt === 'floats' ? lookout.expanse.id : null;
+      if (sharedData.willBreak) BreakableBehavior.break(item, context.world);
+      return;
+    }
 
     // Perform the actual move - this is the critical mutation! A broken
     // thing is still a thing: it lands where it falls, broken, and removing

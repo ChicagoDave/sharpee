@@ -3,7 +3,7 @@ story: vehicles
 description: The tram car runs its three stops under a brake at a pace of
   two turns, halting at each end; a second push at the Terminus runs it
   back. The funicular is the same line one way: at its end a further start
-  does nothing.
+  is refused with the stock line and nothing moves.
 
 ---
 
@@ -61,9 +61,10 @@ description: The tram car runs its three stops under a brake at a pace of
 [OK: contains "You throw the switch."]
 [OK: contains "The funicular arrives at the Upper Station."]
 
-# At the end of a one-way line a start is refused and nothing moves
+# At the end of a one-way line a start is refused with the stock line and nothing moves
 > push switch
 [OK: contains "You throw the switch."]
+[OK: contains "The funicular is at the end of its line."]
 [OK: not contains "arrives"]
 
 > look

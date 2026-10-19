@@ -120,6 +120,8 @@ import {
   getOppositeDirection,
   EdibleTrait,
   EnterableTrait,
+  ExpanseTrait,
+  FloatingTrait,
   findTraitWithCapability,
   IFEntity,
   IdentityTrait,
@@ -136,6 +138,7 @@ import {
   RoomBehavior,
   RoomTrait,
   SceneryTrait,
+  SightTrait,
   SupporterTrait,
   SwitchableTrait,
   registerVehicleExitResolver,
@@ -334,11 +337,22 @@ export class ChordStory implements Story {
         };
         break;
       case 'open':
-        // ADR-376 D3: the open model is the expanse runtime's (Chord 4.0
-        // Phase 13, Slices 2–3). The front end compiles it; the loader has
-        // nothing to build it onto yet, so the story is refused by name
-        // rather than played with the vehicle silently fixed in place.
-        throw new LoadError(`\`${irEntity.name}\` is \`movement: open\`, which this runtime cannot play yet.`, irEntity.span);
+        // ADR-376 D3, D5: a position in an expanse, from the placement's
+        // `at` tail; null when the vehicle starts in a landmark room, where
+        // its location is the one record. `pace:`, `stride:` and `sight:`
+        // are required by the analyzer. ADR-375 D5, D7: the sailing table
+        // stands in for `pace:`; the sails start in their declared setting.
+        model = {
+          kind: 'open',
+          drive: v.drive === 'control' ? 'control' : 'player',
+          pace: v.pace ?? 1,
+          stride: v.stride ?? 1,
+          sight: v.sight ?? 0,
+          position: this.openVehicleStart(world, irEntity, entity),
+          ...(v.sailing ? { sailing: { bands: v.sailing.bands.map((b) => ({ from: b.from, to: b.to, paces: b.paces.map((p) => ({ setting: p.setting, pace: p.pace })) })), calm: v.sailing.calm } } : {}),
+          ...(v.sails ? { sails: { settings: [...v.sails.settings], current: v.sails.start } } : {}),
+        };
+        break;
     }
     entity.add(new VehicleTrait({
       model,
@@ -355,6 +369,52 @@ export class ChordStory implements Story {
         otherwise: this.requireWorldId(v.position.otherwise, irEntity),
       });
     }
+  }
+
+  /**
+   * ADR-376 D3, D5: where an open vehicle starts. Placed `in <expanse> at
+   * <x>, <y>` on an open cell, it is in the expanse room at that cell; on a
+   * landmark's cell, it is in the landmark's room with no position, since
+   * at a landmark the location is the one record. Pass 2 has already placed
+   * it in the expanse room; a landmark start moves it on.
+   */
+  private openVehicleStart(world: WorldModel, irEntity: IREntity, entity: IFEntity): { x: number; y: number } | null {
+    const at = irEntity.placement?.at;
+    if (!at || !irEntity.placement) return null;
+    const expanse = this.ir.entities.find((e) => e.id === irEntity.placement!.place)?.expanse;
+    const landmark = expanse?.landmarks.find((row) => row.x === at.x && row.y === at.y);
+    if (landmark) {
+      world.moveEntity(entity.id, this.requireWorldId(landmark.room, irEntity));
+      return null;
+    }
+    return { x: at.x, y: at.y };
+  }
+
+  /**
+   * ADR-376 D2, D6, D8, D10: the expanse's size, each landmark row resolved
+   * to its room's world id, the sight cap, the drift interval, and the edges
+   * — the four sides' unconditional blocked-exit lines, by their phrase
+   * key. The analyzer has refused every other exit and every `while`.
+   */
+  private wireExpanse(irEntity: IREntity, entity: IFEntity): void {
+    const x = irEntity.expanse!;
+    const landmarks: Record<string, { x: number; y: number }> = {};
+    for (const row of x.landmarks) landmarks[this.requireWorldId(row.room, irEntity)] = { x: row.x, y: row.y };
+    const edges: Partial<Record<'NORTH' | 'SOUTH' | 'EAST' | 'WEST', string>> = {};
+    for (const blocked of irEntity.blockedExits) {
+      const side = blocked.direction.toUpperCase();
+      if (blocked.condition === null && (side === 'NORTH' || side === 'SOUTH' || side === 'EAST' || side === 'WEST')) edges[side] = blocked.phraseKey;
+    }
+    entity.add(new ExpanseTrait({
+      width: x.width,
+      height: x.height,
+      landmarks,
+      ...(x.visibility !== undefined ? { visibility: x.visibility } : {}),
+      ...(x.drift !== undefined ? { drift: x.drift } : {}),
+      // ADR-375 D4: the wind, a bearing it comes from or a calm.
+      ...(x.wind !== undefined ? { wind: x.wind === 'calm' ? 'calm' : x.wind.bearing } : {}),
+      edges,
+    }));
   }
 
   /**
@@ -537,6 +597,10 @@ export class ChordStory implements Story {
         if (irEntity.placement.places) {
           entity.add(new BackdropTrait({ roomIds: irEntity.placement.places.map((id) => this.requireWorldId(id, irEntity)) }));
         }
+        // ADR-376 D10: a `floats` thing placed `in <expanse> at <x>, <y>`
+        // holds that cell; an open vehicle's cell is on its model (wireVehicle).
+        const floating = entity.get(FloatingTrait);
+        if (floating && irEntity.placement.at) floating.position = { x: irEntity.placement.at.x, y: irEntity.placement.at.y };
       }
       // `carries the X` / `wears the X` are facts about the holder, whoever it
       // is — a character's inventory is world construction exactly as its
@@ -642,6 +706,7 @@ export class ChordStory implements Story {
       // ADR-366: the vehicle's model, the rooms that admit it, and the rooms
       // aboard it — every id resolvable now that every entity is built.
       if (irEntity.vehicle) this.wireVehicle(world, irEntity, entity);
+      if (irEntity.expanse) this.wireExpanse(irEntity, entity);
       if (irEntity.admits) this.wireAdmits(world, irEntity, entity);
       this.wireOutsideExits(world, irEntity, entity);
       // Blocked exits — ADR-240 D2 (Option A): ALL of them, conditional and
@@ -1205,7 +1270,15 @@ export class ChordStory implements Story {
     // host every vehicle's built-in machine ticks in (ADR-366 D5e), reading
     // each `drive: state` line's `position` block through this loader's
     // compiled guards (D5a).
-    installStateMachines(this.ir, engine, installContext, (vehicleWorldId, world) => this.vehiclePositionAnswer(vehicleWorldId, world));
+    installStateMachines(
+      this.ir,
+      engine,
+      installContext,
+      (vehicleWorldId, world) => this.vehiclePositionAnswer(vehicleWorldId, world),
+      // ADR-376 D8: an edge's authored phrase, resolved at report time as a
+      // blocked exit's is, so a varied phrase varies.
+      (messageKey, world) => this.runtime.derived.blockedPhraseText(messageKey, world),
+    );
 
     for (const [name, registration] of EXTENSION_REGISTRY) {
       if (!uses.includes(name)) continue;
@@ -1786,10 +1859,33 @@ export class ChordStory implements Story {
         entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
         break;
       }
+      case 'expanse': {
+        // ADR-376 D2: an expanse is a room — its heading, looking and scope
+        // read it as one — carrying ExpanseTrait, wired in pass 2 once its
+        // landmark rooms are built (`wireExpanse`).
+        entity = world.createEntity(irEntity.name, 'room');
+        entity.add(new RoomTrait({}));
+        entity.add(new IdentityTrait({ name: irEntity.name, descriptionId, aliases }));
+        break;
+      }
       default:
         // ADR-276 census 17: the compiler's gate refuses this
         // (analysis.unknown-kind-noun) — defensive backstop.
         throw new LoadError(`\`${irEntity.name}\`: unknown kind noun \`${kind}\`.`, irEntity.span);
+    }
+
+    // ADR-376 D6: `sight:` off a vehicle is a landmark room's outlook or an
+    // instrument's reach; `seen from afar:` is the one distant-prose field,
+    // whatever the kind (a vehicle's rides `vehicle.seenFromAfar`).
+    if (irEntity.sight !== undefined) {
+      const room = entity.get(RoomTrait);
+      if (room) room.sight = irEntity.sight;
+      else entity.add(new SightTrait({ sight: irEntity.sight }));
+    }
+    const seenFromAfar = irEntity.seenFromAfar ?? irEntity.vehicle?.seenFromAfar;
+    if (seenFromAfar !== undefined) {
+      const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
+      if (identity) identity.seenFromAfar = seenFromAfar;
     }
 
     this.applyTraitAdjectives(entity, irEntity, kind);
@@ -2083,6 +2179,13 @@ export class ChordStory implements Story {
           // (IdentityTrait.contentsUnlisted). The Secret Letter stall displays.
           const identity = entity.get(TraitType.IDENTITY) as IdentityTrait | undefined;
           if (identity) identity.contentsUnlisted = true;
+          break;
+        }
+        case 'floats': {
+          // ADR-376 D10: marker adjective — the thing may hold a position in
+          // an expanse and drift there; its starting cell is written in
+          // pass 2 from the placement's `at` tail.
+          if (!entity.has(TraitType.FLOATING)) entity.add(new FloatingTrait());
           break;
         }
         case 'transparent': {

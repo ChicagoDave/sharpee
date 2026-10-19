@@ -56,7 +56,8 @@ export function createVehicleCommandTransformer(): (parsed: IParsedCommand, worl
       const vehicle = getVehicleAboard(world, player.id);
       const model = vehicle?.get(VehicleTrait)?.model;
       if (!vehicle || !takesCommandSet(vehicle, COMPASS_COMMAND_SET)) return parsed;
-      if (parsed.action === IFActions.GOING && model?.kind === 'compass') return retarget(parsed, IFActions.STEERING);
+      // A compass or an open vehicle (ADR-376 D3) is steered by heading.
+      if (parsed.action === IFActions.GOING && (model?.kind === 'compass' || model?.kind === 'open')) return retarget(parsed, IFActions.STEERING);
       if (parsed.action === IFActions.STEERING && model?.kind === 'streets') return retarget(parsed, IFActions.GOING);
       return parsed;
     }

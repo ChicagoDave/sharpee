@@ -34,7 +34,7 @@ import type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './conte
  * `drift:` on an expanse, `sight:` on a landmark room or an instrument,
  * `seen from afar:` on a landmark room (ADR-376 D2, D6, D10).
  */
-const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits', 'size', 'visibility', 'drift', 'sight', 'seen-from-afar']);
+const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits', 'size', 'visibility', 'drift', 'sight', 'seen-from-afar', 'wind']);
 
 /** The movement types whose vehicles a room's `admits:` line may name (D6). */
 const STEERED: ReadonlySet<string> = new Set(['streets', 'compass']);
@@ -125,6 +125,8 @@ export const vehicleBuilder: EntityLineBuilder = {
     // `commands:` is judged by the drive first (D5i), below.
     for (const line of vehicleLines) {
       if (line.key === 'movement' || line.key === 'carries' || line.key === 'commands') continue;
+      // `wind:` is an expanse's line; on a vehicle the sailing builder names it (ADR-375 D1).
+      if (line.key === 'wind') continue;
       if (!row.lines.has(line.key)) {
         context.diagnostics.error(
           'analysis.vehicle-line-not-for-movement',
@@ -243,7 +245,14 @@ export const vehicleBuilder: EntityLineBuilder = {
       } else {
         const sets: string[] = [];
         for (const set of commandsLine.sets) {
-          if (!row.sets.has(set.word)) {
+          if (set.word === 'naval' && movement !== 'open') {
+            // ADR-375 D1: the naval set is a sailing vehicle's, and sailing is `movement: open`.
+            context.diagnostics.error(
+              'analysis.sailing-not-open',
+              `\`commands: naval\` is a sailing vehicle's set, and sailing is \`movement: open\` — \`${name}\` is \`movement: ${movement}\`.`,
+              set.span,
+            );
+          } else if (!row.sets.has(set.word)) {
             context.diagnostics.error(
               'analysis.commands-not-for-movement',
               `\`${set.word}\` is not a command set of a \`movement: ${movement}\` vehicle — one of ${[...row.sets].map((s) => `\`${s}\``).join(', ')}.`,
@@ -307,10 +316,11 @@ function buildOpen(
   vehicle: IRVehicle,
   paceLine: VehicleLineOf<'pace'> | undefined,
 ): void {
-  if (!paceLine) {
+  // ADR-375 D4, D5: a `sailing` block stands in for `pace:`; both, or neither, is the sailing builder's.
+  if (!paceLine && !decl.sailingBlock) {
     context.diagnostics.error(
       'analysis.vehicle-missing-pace',
-      `\`${name}\` moves across an expanse and says nothing about how often — add \`pace: <n> turns\`.`,
+      `\`${name}\` moves across an expanse and says nothing about how often — add \`pace: <n> turns\` or a \`sailing\` block.`,
       decl.span,
     );
   }

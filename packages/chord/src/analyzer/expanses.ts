@@ -24,6 +24,8 @@ export interface ExpanseDecl {
   readonly landmarks: readonly LandmarkRowDecl[];
   /** True when the expanse writes `drift:`. */
   readonly drifts: boolean;
+  /** True when the expanse writes `wind:` (ADR-375 D4). */
+  readonly hasWind: boolean;
 }
 
 /** True for a block composed `an expanse`. */
@@ -51,6 +53,7 @@ export function collectExpanses(decls: readonly { kind: string }[]): Map<string,
       size: sizeLine ? { width: sizeLine.width, height: sizeLine.height } : null,
       landmarks: create.landmarksBlock?.rows ?? [],
       drifts: vehicleLineOf(create, 'drift') !== undefined,
+      hasWind: vehicleLineOf(create, 'wind') !== undefined,
     });
   }
   return out;

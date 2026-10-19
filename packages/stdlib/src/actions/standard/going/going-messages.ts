@@ -19,6 +19,8 @@ export const GoingMessages = {
   VEHICLE_CANNOT_WALK: 'vehicle_cannot_walk',
   VEHICLE_CANNOT_GO: 'vehicle_cannot_go',
   VEHICLE_UNDER_WAY: 'vehicle_under_way',
+  /** ADR-376 D9: on foot in an expanse, the player stays by the vehicle. */
+  STAYS_BY_VEHICLE: 'stays_by_vehicle',
   // The vehicle's machine reports (ADR-366 D5e, D7a)
   VEHICLE_ARRIVED: 'vehicle_arrived',
   VEHICLE_STOPPED: 'vehicle_stopped',

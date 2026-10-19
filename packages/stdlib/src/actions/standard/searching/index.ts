@@ -3,4 +3,5 @@
  */
 
 export { searchingAction } from './searching.js';
+export { lookThroughBehavior, registerLookThroughBehavior } from './look-through-behavior.js';
 export type { SearchedEventData, SearchingErrorData, SearchingEventMap } from './searching-events.js';

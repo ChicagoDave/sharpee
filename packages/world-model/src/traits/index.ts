@@ -54,6 +54,9 @@ export * from './deadly-room/index.js';
 export * from './vehicle/index.js';
 export * from './enterable/index.js';
 
+// Expanse traits (ADR-376)
+export * from './expanse/index.js';
+
 // NPC traits
 export * from './npc/index.js';
 export * from './open-inventory/index.js';

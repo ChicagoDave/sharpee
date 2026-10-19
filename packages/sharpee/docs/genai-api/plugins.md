@@ -876,7 +876,7 @@ export interface EvaluationContext {
 import { type ISemanticEvent } from '@sharpee/core';
 import { type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
-import { type VehiclePositionResolver } from './vehicle-machine.js';
+import { type ExpanseEdgeTextResolver, type VehiclePositionResolver } from './vehicle-machine.js';
 /** What the host lends the plugin's vehicle phase. */
 export interface StateMachinePluginOptions {
     /**
@@ -885,6 +885,12 @@ export interface StateMachinePluginOptions {
      * model steps without it.
      */
     vehiclePosition?: VehiclePositionResolver;
+    /**
+     * The host's text for an expanse edge the author wrote a phrase for
+     * (ADR-376 D8). Omit when the host lowers no expanses; an edge with no
+     * phrase, or no resolver, reports the stock `expanse-edge` line.
+     */
+    expanseEdgeText?: ExpanseEdgeTextResolver;
 }
 /**
  * The {@link TurnPlugin} that drives declarative state machines (ADR-119).
@@ -904,6 +910,7 @@ export declare class StateMachinePlugin implements TurnPlugin {
     priority: number;
     private registry;
     private readonly vehiclePosition?;
+    private readonly expanseEdgeText?;
     constructor(options?: StateMachinePluginOptions);
     /**
      * Evaluate all registered machines for this turn, then step every
@@ -1016,33 +1023,48 @@ export declare function executeEffects(effects: Effect[], world: WorldModel, bin
 
 ```typescript
 /**
- * Vehicle Machine - the per-turn phase that steps every vehicle's built-in machine
+ * Vehicle Machine - the per-turn phase that steps every vehicle's built-in machine and drifts every expanse
  *
  * Public interface: `VehiclePositionResolver` (the host's answer for a
- * `drive: state` line's `position` block), `tickVehicles` (one turn over
- * every vehicle in the world, returning the events the steps earned), and
- * the event types `VEHICLE_ARRIVED_EVENT` and `VEHICLE_STOPPED_EVENT`.
+ * `drive: state` line's `position` block), `ExpanseEdgeTextResolver` (the
+ * host's text for an authored edge phrase), `VehicleTickOptions`,
+ * `tickVehicles` (one turn over every vehicle and every expanse in the
+ * world, returning the events the steps earned), and the event types
+ * `VEHICLE_ARRIVED_EVENT`, `VEHICLE_STOPPED_EVENT`, `VEHICLE_ALONGSIDE_EVENT`
+ * and `EXPANSE_EDGE_EVENT`.
  *
  * Owner context: plugin-state-machine. The vehicle's machine is a phase of
  * the state-machine plugin, run after the story's own machines each turn
- * (ADR-377 D3). The stepping itself is world-model's `stepVehicle`; this
- * module only decides which vehicles to step, hands a state-driven line
- * the stop its `position` block names, and turns each step into the event
- * the player can read: `vehicle-arrived` when they are aboard or in the
- * room the vehicle reached, `vehicle-stopped` when they are aboard.
+ * (ADR-377 D3). The stepping itself is world-model's `stepVehicle` and the
+ * drift world-model's `driftExpanse`; this module only decides which
+ * vehicles to step, hands a state-driven line the stop its `position` block
+ * names, draws drift from the session's random service, and turns each step
+ * into the event the player can read: `vehicle-arrived` when they are aboard
+ * or in the room the vehicle reached, `vehicle-stopped` and
+ * `vehicle-alongside` when they are aboard, an edge once when they are
+ * aboard — the author's phrase through going's blocked-movement line, else
+ * the stock `expanse-edge`. Drift and wash-up are silent: the author's
+ * `when <thing> moves` clause is the hook.
  *
  * References:
  * - ADR-366 D5e — the machine is ticked by the engine's turn cycle here.
  * - ADR-366 D5a — a `drive: state` line reads its `position` block each turn.
  * - ADR-366 D7a — `vehicle-arrived` and `vehicle-stopped` are stock lines.
+ * - ADR-376 D8, D10 — the edge and alongside reports; drift from the seeded service.
  * - ADR-377 D3 — no second turn host; the vehicle phase runs in this plugin.
  */
-import { type ISemanticEvent } from '@sharpee/core';
-import { type IFEntity, WorldModel } from '@sharpee/world-model';
+import { type ISemanticEvent, type RandomService } from '@sharpee/core';
+import { type ExpanseSide, type IFEntity, WorldModel } from '@sharpee/world-model';
 /** The event a vehicle's machine records when it reaches a room. */
 export declare const VEHICLE_ARRIVED_EVENT = "if.event.vehicle_arrived";
 /** The event a vehicle's machine records when it runs out of way and halts. */
 export declare const VEHICLE_STOPPED_EVENT = "if.event.vehicle_stopped";
+/** The event an open vehicle's machine records when it stops alongside a floating thing (ADR-376 D10). */
+export declare const VEHICLE_ALONGSIDE_EVENT = "if.event.vehicle_alongside";
+/** The event an open vehicle's machine records when it stops at an edge of its expanse (ADR-376 D8). */
+export declare const EXPANSE_EDGE_EVENT = "if.event.expanse_edge";
+/** The event a sailing vehicle's machine records when it lies in irons (ADR-375 D5), once. */
+export declare const VEHICLE_IN_IRONS_EVENT = "if.event.vehicle_in_irons";
 /**
  * The host's reading of a `drive: state` line's `position` block (ADR-366
  * D5a): the stop the block names this turn, or undefined when the vehicle
@@ -1051,15 +1073,28 @@ export declare const VEHICLE_STOPPED_EVENT = "if.event.vehicle_stopped";
  */
 export type VehiclePositionResolver = (vehicle: IFEntity, world: WorldModel) => string | undefined;
 /**
- * Step every vehicle's machine once (ADR-366 D5e) and return the reports
- * the player can read. A vehicle at rest earns nothing; a world with no
- * vehicles costs one trait lookup.
+ * The host's text for an expanse edge the author wrote a phrase for (ADR-376
+ * D8): the phrase key is trait data, its text is the host's phrasebook. The
+ * host resolves it at report time so a varied phrase varies.
+ */
+export type ExpanseEdgeTextResolver = (expanse: IFEntity, side: ExpanseSide, messageKey: string, world: WorldModel) => string | undefined;
+/** What the host lends the tick. */
+export interface VehicleTickOptions {
+    positionOf?: VehiclePositionResolver;
+    edgeText?: ExpanseEdgeTextResolver;
+}
+/**
+ * Step every vehicle's machine once (ADR-366 D5e), drift every expanse
+ * (ADR-376 D10), and return the reports the player can read. A vehicle at
+ * rest earns nothing; a world with no vehicles and no expanses costs two
+ * trait lookups.
  *
  * @param world - The live world
  * @param playerId - The player, whose place decides what is reported
- * @param positionOf - The host's `position` block reader; absent when the
- *   host lowers no state-driven lines
- * @returns the turn's `vehicle_arrived` and `vehicle_stopped` events
+ * @param random - The session's random service, for drift (ADR-293)
+ * @param options - The host's `position` block reader and edge-phrase text,
+ *   each absent when the host lowers nothing that needs it
+ * @returns the turn's `vehicle_arrived`, `vehicle_stopped`, `vehicle_alongside` and `expanse_edge` events
  */
-export declare function tickVehicles(world: WorldModel, playerId: string, positionOf?: VehiclePositionResolver): ISemanticEvent[];
+export declare function tickVehicles(world: WorldModel, playerId: string, random: RandomService, options?: VehicleTickOptions): ISemanticEvent[];
 ```

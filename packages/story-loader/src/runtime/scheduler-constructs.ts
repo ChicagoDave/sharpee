@@ -14,7 +14,7 @@
  */
 import type { IREntity, IROnClause, IRStatement } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
-import { HealthTrait, type IFEntity, isUnderWay, TraitType, WorldModel } from '@sharpee/world-model';
+import { HealthTrait, type IFEntity, inSight, isUnderWay, TraitType, WorldModel } from '@sharpee/world-model';
 import { CHORD_OCCURRENCE_PREFIX, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, CHORD_TRAIT_PREFIX, clauseOccurrenceKey } from '../state-keys.js';
 import { ExecContext, SchedulerDaemon, knownTopicsIn, type RuntimeCore } from './core.js';
 
@@ -73,6 +73,16 @@ export class SchedulerConstructsSection {
             // read off the trait — never a second record in Chord state.
             const vehicle = step.anchor.state === 'under way' ? this.vehicleOf(step.anchor.owner, world) : undefined;
             if (vehicle) return isUnderWay(vehicle);
+            // ADR-376 D7: `comes into sight` is read live off the traits each
+            // turn — the first turn the thing is within the player's sight
+            // arms the step, which covers a step that crossed the boundary
+            // mid-path and ended inside it.
+            if (step.anchor.state === 'in sight') {
+              const worldId = this.core.host.entityId(step.anchor.owner);
+              const thing = worldId !== undefined ? world.getEntity(worldId) : undefined;
+              const player = world.getPlayer();
+              return thing !== undefined && player !== undefined && inSight(world, player, thing);
+            }
             return world.getStateValue(CHORD_STATE_PREFIX + step.anchor.owner) === step.anchor.state;
           }
         }

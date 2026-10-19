@@ -35,7 +35,10 @@ export const searchingLanguage = {
     // article-decorate ("Hidden an on…").
     'found_concealed_in_container': "Hidden inside {the target}, {you} {discover}: {items}.",
     'found_concealed_on_supporter': "Hidden on {the target}, {you} {discover}: {items}.",
-    'found_concealed_here': "Hidden here, {you} {discover}: {items}."
+    'found_concealed_here': "Hidden here, {you} {discover}: {items}.",
+    // ADR-376 D6: `look through <instrument>` — the sighting rows follow under looking's ids.
+    'looked_through': "{You} {look} through {the target}.",
+    'looked_through_nothing': "{You} {see} nothing through {the target}."
   },
   
   help: {

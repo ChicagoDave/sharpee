@@ -15,7 +15,7 @@
  * Public interface: MESSAGE_OVERRIDE_ALIASES.
  * Owner context: @sharpee/chord (language frontend; browser-safe; generated artifact).
  *
- * 844 aliases across 78 actions.
+ * 879 aliases across 78 actions.
  *
  * References:
  * - ADR-255 D2 — one hand-maintained table; Interface Contract 3 — names
@@ -239,6 +239,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'drinking-thirst-quenched',
   // if.action.dropping
   'dropping-dropped',
+  'dropping-lost-overboard',
   'dropping-dropped-breaks',
   'dropping-dropped-in',
   'dropping-dropped-multi',
@@ -246,6 +247,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'dropping-no-target',
   'dropping-not-held',
   'dropping-nothing-to-drop',
+  'dropping-dropped-afloat',
   'dropping-still-worn',
   // if.action.eating
   'eating-already-consumed',
@@ -306,6 +308,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'examining-default-description-self',
   'examining-description',
   'examining-examined',
+  'examining-seen-from-afar',
   'examining-examined-container',
   'examining-examined-door',
   'examining-examined-readable',
@@ -377,12 +380,18 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'going-nowhere-to-go',
   'going-room-description',
   'going-too-dark',
+  'going-expanse-edge',
+  'going-vehicle-alongside',
   'going-vehicle-arrived',
+  'going-vehicle-at-end',
+  'going-vehicle-in-irons',
+  'going-sailing-edge',
   'going-vehicle-cannot-go',
   'going-vehicle-cannot-walk',
   'going-vehicle-ride',
   'going-vehicle-stopped',
   'going-vehicle-under-way',
+  'going-stays-by-vehicle',
   'going-went',
   // if.action.help
   'help-first-time',
@@ -486,6 +495,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'looking-examine-surroundings',
   'looking-hidden-at',
   'looking-surface-contents',
+  'looking-sighting-close-by',
+  'looking-sighting-here',
+  'looking-sighting-in-the-distance',
+  'looking-sighting-on-the-horizon',
   'looking-you-see',
   // if.action.looking_under
   'looking-under-found-under',
@@ -667,6 +680,8 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'searching-not-visible',
   'searching-nothing-special',
   'searching-searched-location',
+  'searching-looked-through',
+  'searching-looked-through-nothing',
   'searching-searched-object',
   'searching-supporter-contents',
   // if.action.setting
@@ -682,6 +697,10 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'setting-course-not-a-destination',
   'setting-course-not-in-vehicle',
   'setting-course-vehicle-no-such-command',
+  'setting-course-coordinates-outside-expanse',
+  'setting-course-course-set-cell',
+  'setting-course-edge-blocked',
+  'setting-course-expanse-edge',
   'setting-course-vehicle-under-way',
   // if.action.showing
   'showing-no-item',
@@ -730,10 +749,23 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'smelling-smoke-detected',
   'smelling-too-far',
   // if.action.steering
+  'steering-ahead',
+  'steering-came-about',
   'steering-cannot-steer',
+  'steering-naval-cannot-come-about',
+  'steering-naval-how-far',
+  'steering-naval-no-wind',
+  'steering-sail-made',
+  'steering-sail-shortened',
+  'steering-sails-already-furled',
+  'steering-sails-at-full',
+  'steering-sails-furled',
+  'steering-turned',
   'steering-hove-to',
   'steering-not-in-vehicle',
   'steering-not-under-way',
+  'steering-edge-blocked',
+  'steering-expanse-edge',
   'steering-steered',
   'steering-vehicle-no-such-command',
   // if.action.switching_off
@@ -774,6 +806,7 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'taking-fixed-in-place',
   'taking-no-target',
   'taking-nothing-to-take',
+  'taking-retrieved',
   'taking-taken',
   'taking-taken-from',
   'taking-taken-multi',
@@ -838,7 +871,9 @@ export const MESSAGE_OVERRIDE_ALIASES: ReadonlySet<string> = new Set([
   'throwing-target-ducks',
   'throwing-target-not-here',
   'throwing-target-not-visible',
+  'throwing-lost-overboard',
   'throwing-thrown',
+  'throwing-thrown-afloat',
   'throwing-thrown-at',
   'throwing-thrown-direction',
   'throwing-thrown-down',

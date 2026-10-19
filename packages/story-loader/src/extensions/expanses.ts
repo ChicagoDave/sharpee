@@ -3,10 +3,10 @@
  *
  * One moment today. `gatedConstruct` names an expanse or an `open` vehicle
  * written without the `use` line, the backstop every entry carries behind
- * the analyzer's own gate. The runtime parts — the expanse and floating
- * traits, the open model's stepping, drift, sight as scope — are the
- * expanse runtime's, and until they land the loader refuses an `open`
- * vehicle by name at wiring rather than playing it fixed in place.
+ * the analyzer's own gate. The runtime parts live where every vehicle's do:
+ * the loader lowers the expanse, the open model, `floats` and `sight:`
+ * (`wireExpanse`, `wireVehicle`, `applyTraitAdjectives`), the core
+ * state-machine plugin steps and drifts, the evaluator reads sight.
  *
  * Public interface: EXPANSES_EXTENSION.
  * Owner context: @sharpee/story-loader (language-neutral IR consumer).

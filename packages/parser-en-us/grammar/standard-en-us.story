@@ -67,6 +67,7 @@ define action taking
     collect the item
     pick up the item
     take up the item
+    retrieve the item
 
 define action eating
   grammar
@@ -640,6 +641,19 @@ define action steering
   grammar
     steer the direction
     heave to
+    port the turn
+    starboard the turn
+    port
+    starboard
+    hard to port
+    hard to starboard
+    ahead
+    come about
+    make sail
+    shorten sail
+    furl sails
+    furl the sails
+  the turn is a topic
   directions
     north or n
     south or s

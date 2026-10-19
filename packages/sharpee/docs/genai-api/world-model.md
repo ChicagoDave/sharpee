@@ -2179,6 +2179,9 @@ export declare const TraitType: {
     readonly VEHICLE: "vehicle";
     readonly ABOARD: "aboard";
     readonly ENTERABLE: "enterable";
+    readonly EXPANSE: "expanse";
+    readonly FLOATING: "floating";
+    readonly SIGHT: "sight";
     readonly CONCEALMENT: "if.trait.concealment";
     readonly CONCEALED_STATE: "if.trait.concealed_state";
     readonly ACOUSTIC: "if.trait.acoustic";
@@ -2278,6 +2281,9 @@ import { CharacterModelTrait } from './character-model/characterModelTrait.js';
 import { VehicleTrait } from './vehicle/vehicleTrait.js';
 import { AboardTrait } from './vehicle/aboardTrait.js';
 import { EnterableTrait } from './enterable/enterableTrait.js';
+import { ExpanseTrait } from './expanse/expanseTrait.js';
+import { FloatingTrait } from './expanse/floatingTrait.js';
+import { SightTrait } from './expanse/sightTrait.js';
 import { StoryInfoTrait } from './story-info/storyInfoTrait.js';
 /**
  * Map of trait types to their constructors
@@ -2315,7 +2321,7 @@ export declare function createTrait(type: TraitType, data?: any): InstanceType<I
 export declare function rehydrateTrait(traitData: {
     type: string;
 } & Record<string, unknown>): ITrait;
-export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, StoryInfoTrait };
+export { IdentityTrait, ContainerTrait, SupporterTrait, RoomTrait, WearableTrait, EdibleTrait, SceneryTrait, OpenableTrait, LockableTrait, CuttableTrait, DiggableTrait, FlammableTrait, PurchasableTrait, SwitchableTrait, ReadableTrait, LightSourceTrait, DoorTrait, RegionTrait, SceneTrait, ActorTrait, ExitTrait, ClimbableTrait, PullableTrait, AttachedTrait, PushableTrait, ButtonTrait, MoveableSceneryTrait, WeaponTrait, BreakableTrait, DestructibleTrait, CombatantTrait, EquippedTrait, HealthTrait, DeadlyRoomTrait, NpcTrait, OpenInventoryTrait, CharacterModelTrait, VehicleTrait, AboardTrait, EnterableTrait, ExpanseTrait, FloatingTrait, SightTrait, StoryInfoTrait };
 ```
 
 ### state-adjectives
@@ -2519,6 +2525,13 @@ export declare class IdentityTrait implements ITrait {
      * it is. The Chord loader compiles an entity's `{marker}` phrases here.
      */
     snippets?: SnippetMap;
+    /**
+     * What the entity shows when seen from a distance in an expanse (ADR-376
+     * D6): `seen from afar:` on a landmark room or an open vehicle. Examining
+     * a thing in sight but out of reach shows this instead of `description`.
+     * Absent on anything never seen across an expanse.
+     */
+    seenFromAfar?: string;
     /** Alternative names/aliases the entity can be referred to by */
     aliases: string[];
     /** Brief description shown in room listings */
@@ -2864,6 +2877,12 @@ export interface IRoomData {
      * default.
      */
     admits?: string[];
+    /**
+     * A landmark room's outlook over its expanse (ADR-376 D6), in expanse
+     * units: from here the player sees what lies within this distance of the
+     * room's cell. Absent means the room sees nothing of the expanse.
+     */
+    sight?: number;
     /** Capacity constraints for the room (optional) */
     capacity?: {
         /** Maximum total weight the room can hold (in kg) */
@@ -2904,6 +2923,7 @@ export declare class RoomTrait implements ITrait, IRoomData {
     walls: string[];
     tags: string[];
     admits: string[];
+    sight?: number;
     capacity?: {
         maxWeight?: number;
         maxVolume?: number;
@@ -5211,8 +5231,9 @@ export declare class NpcTrait implements ITrait, INpcData {
  * Public interface: `VehicleTrait` (data: the movement model, the player's
  * command sets and the boarding room), the model types `VehicleModel`, `VehicleNoneModel`,
  * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
- * `VehicleFlightModel`, their declaration shapes `VehicleModelConfig`, the
- * type guard `isVehicleTrait`, and the factory `createVehicleTrait`.
+ * `VehicleFlightModel`, `VehicleOpenModel`, their declaration shapes
+ * `VehicleModelConfig`, the type guard `isVehicleTrait`, and the factory
+ * `createVehicleTrait`.
  *
  * Owner context: world-model traits. The trait carries exactly what the
  * language can write about a vehicle and nothing else: its movement model,
@@ -5232,8 +5253,30 @@ export declare class NpcTrait implements ITrait, INpcData {
  * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
  * - ADR-366 D8, D9 — nothing else on the trait; location is read, never copied.
  * - ADR-366 D4 — moving a vehicle moves what it holds.
+ * - ADR-376 D3, D5 — the open model under `use expanses`: heading or course,
+ *   a position held only while the vehicle is in the expanse.
+ * - ADR-375 D2, D5, D7 — under `use sailing`: a bearing, the pace table by
+ *   the angle off the wind, the sails, and irons.
  */
 import { ITrait } from '../trait.js';
+import type { ExpanseSide, IExpanseCell } from '../expanse/expanseTrait.js';
+/** One pace cell of a sailing band (ADR-375 D5): turns per step, or `stopped`. */
+export type SailingPace = number | 'stopped';
+/** One band of a sailing table (ADR-375 D5, D7): `from` to `to` degrees off the wind, a pace per setting. */
+export interface SailingBand {
+    from: number;
+    to: number;
+    /** The setting `null` is the one cell of a vehicle without sails. */
+    paces: Array<{
+        setting: string | null;
+        pace: SailingPace;
+    }>;
+}
+/** The `sailing` block (ADR-375 D5): the bands and the calm row. */
+export interface SailingTable {
+    bands: SailingBand[];
+    calm: SailingPace;
+}
 /** A vehicle that does not move (ADR-366 D5): a bathtub, a crate the player sits in. */
 export interface VehicleNoneModel {
     kind: 'none';
@@ -5296,16 +5339,63 @@ export interface VehicleFlightModel {
     /** Machine state: turns left in the passage. */
     turnsRemaining: number;
 }
+/**
+ * Open movement (ADR-376 D3, `use expanses`): a position in an expanse
+ * rather than a room, stepped `stride` units every `pace` turns along a
+ * heading or toward a course. Under way means exactly one of `heading` and
+ * `course` is set; at rest both are null. `position` is held only while the
+ * vehicle is in the expanse room (D5): at a landmark it is null and the
+ * vehicle's location is the one record.
+ */
+export interface VehicleOpenModel {
+    kind: 'open';
+    drive: 'player' | 'control';
+    /** Turns per step, one or more. Under sail (`sailing` present) the table sets the pace and this is unread. */
+    pace: number;
+    /** Units per step, one or more. */
+    stride: number;
+    /** How far one sees from aboard, in expanse units (D6). `seen from afar:` is `IdentityTrait.seenFromAfar`. */
+    sight: number;
+    /**
+     * The `sailing` block (ADR-375 D5): present on a sailing vehicle, whose
+     * heading is then a bearing and whose pace is the band's.
+     */
+    sailing?: SailingTable;
+    /** `sails:` (ADR-375 D7): the settings, least to most canvas, and the current one (machine state). */
+    sails?: {
+        settings: string[];
+        current: string;
+    };
+    /**
+     * Machine state: the heading — one of the eight compass words, or a
+     * bearing in degrees under sail (ADR-375 D2). Null when the vehicle has
+     * none; a sailing vehicle keeps its bearing when hove to.
+     */
+    heading: string | number | null;
+    /** Machine state: the cell the vehicle is bound for, or null when not on a course. */
+    course: IExpanseCell | null;
+    /** Machine state: the coordinates in the expanse (fractional under sail), or null at a landmark (D5). */
+    position: IExpanseCell | null;
+    /** Machine state: whether the machine is moving the vehicle. */
+    underWay: boolean;
+    /** Machine state: turns left before the next step. */
+    turnsToStep: number;
+    /** Machine state: the edge the vehicle stopped at, refusing headings toward it until it steps away (D8). */
+    atEdge: ExpanseSide | null;
+    /** Machine state (ADR-375 D5): lying still in a `stopped` band under the fullest setting, reported once. */
+    inIrons: boolean;
+}
 /** How a vehicle moves — the declaration of its built-in machine, with the machine's state beside it. */
-export type VehicleModel = VehicleNoneModel | VehicleLineModel | VehicleStreetsModel | VehicleCompassModel | VehicleFlightModel;
+export type VehicleModel = VehicleNoneModel | VehicleLineModel | VehicleStreetsModel | VehicleCompassModel | VehicleFlightModel | VehicleOpenModel;
 type LineState = 'underWay' | 'travelDirection' | 'turnsToStep';
 type CompassState = 'heading' | 'turnsToStep';
 type FlightState = 'destination' | 'turnsRemaining';
+type OpenState = 'heading' | 'course' | 'position' | 'underWay' | 'turnsToStep' | 'atEdge' | 'inIrons';
 /**
  * A model as declared: the machine's state fields are optional and start at
  * rest (not under way, onward, no heading, no destination).
  */
-export type VehicleModelConfig = VehicleNoneModel | VehicleStreetsModel | (Omit<VehicleLineModel, LineState> & Partial<Pick<VehicleLineModel, LineState>>) | (Omit<VehicleCompassModel, CompassState> & Partial<Pick<VehicleCompassModel, CompassState>>) | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>);
+export type VehicleModelConfig = VehicleNoneModel | VehicleStreetsModel | (Omit<VehicleLineModel, LineState> & Partial<Pick<VehicleLineModel, LineState>>) | (Omit<VehicleCompassModel, CompassState> & Partial<Pick<VehicleCompassModel, CompassState>>) | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>) | (Omit<VehicleOpenModel, OpenState> & Partial<Pick<VehicleOpenModel, OpenState>>);
 /**
  * Configuration options for VehicleTrait
  */
@@ -5335,8 +5425,9 @@ export declare class VehicleTrait implements ITrait {
     constructor(config?: VehicleTraitConfig);
     /**
      * Build a model from its declaration, holding the invariants the analyzer
-     * reports first: two stops, none repeated; two destinations; a pace of at
-     * least one. The machine's state starts at rest unless the declaration
+     * reports first: two stops, none repeated; two destinations; a pace, a
+     * stride of at least one; an open vehicle on at most one of heading and
+     * course. The machine's state starts at rest unless the declaration
      * carries it.
      * @throws when an invariant is broken
      */
@@ -5423,7 +5514,10 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  * `VehicleStep`, the line model's `isStop`, `currentStop` and
  * `moveVehicleToStop`, and the rooms-aboard half:
  * `vehicleOutsideExitResolver` and `registerVehicleExitResolver` (an exit
- * `to outside` lands where the vehicle is).
+ * `to outside` lands where the vehicle is), the expanse half of exiting
+ * and entering: `leaveVehicleIntoExpanse` and `boardFromExpanse` (ADR-376 D9),
+ * and the sailing half (ADR-375): `turnHeading`, `comeAbout`, `setSails`,
+ * `makeSail`, `shortenSail`, `furlSails`, `paceUnderSail`, `windOf`.
  *
  * Owner context: world-model vehicle behavior. Every answer is read from
  * the world and the trait's model; nothing here keeps a position of its own.
@@ -5441,10 +5535,17 @@ export declare function isAboardTrait(trait: ITrait): trait is AboardTrait;
  *   and refuses with `vehicle-under-way` while the vehicle is nowhere.
  * - ADR-366 D9 — the vehicle's location is the one fact, read, never copied.
  * - ADR-295 D4 — the exit resolver seam the outside exit rides.
+ * - ADR-376 D3, D5, D8, D9, D10 — the open model's step: a path walked cell by
+ *   cell, arrival, alongside, the edge, departure from a landmark, the hold
+ *   while the player is out.
+ * - ADR-375 D2, D3, D5, D7 — a bearing's step, the pace by the angle off the
+ *   wind, irons, coming about, the sails.
  */
 import type { ExitResolver } from '../../capabilities/exit-resolver-binding.js';
-import { WorldModel } from '../../world/WorldModel.js';
-import { IFEntity } from '../../entities/if-entity.js';
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { IFEntity } from '../../entities/if-entity.js';
+import { type ExpanseSide, type ExpanseWind, type IExpanseCell } from '../expanse/expanseTrait.js';
+import type { SailingPace } from './vehicleTrait.js';
 /**
  * Check if an entity is a vehicle
  */
@@ -5491,43 +5592,118 @@ export declare function goingFromVehicle(world: WorldModel, actorId: string): Ve
 /**
  * Whether a vehicle's machine is moving it (ADR-366 D5e): a line stepping
  * along its stops, a compass vehicle on a heading, a flight vehicle in its
- * passage. A `none` or streets vehicle is never under way.
+ * passage, an open vehicle on a heading or a course. A `none` or streets
+ * vehicle is never under way.
  *
  * @param vehicle - A vehicle; false when it has no model
  */
 export declare function isUnderWay(vehicle: IFEntity): boolean;
 /**
- * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f): put the
- * vehicle's machine under way. A line steps from its current stop in its
- * travel direction, turning back at a `both` line's end; a compass vehicle
- * takes the heading. The first step comes after `pace` turns; stepping is
- * the machine's per-turn work.
+ * `start <vehicle> [heading <direction>]` (ADR-366 D5a, D5c, D5f; ADR-376
+ * D3): put the vehicle's machine under way. A line steps from its current
+ * stop in its travel direction, turning back at a `both` line's end; a
+ * compass vehicle takes the heading; an open vehicle takes one of the eight
+ * headings, dropping any course, and leaves its landmark for the expanse
+ * at the landmark's cell (D5). The first step comes after `pace` turns;
+ * stepping is the machine's per-turn work.
  *
  * @param world - The world model
- * @param vehicle - A line or compass vehicle
- * @param heading - The heading, for a compass vehicle
+ * @param vehicle - A line, compass or open vehicle
+ * @param heading - The heading, for a compass or open vehicle
  * @returns false when the vehicle cannot start: a one-way line at its end
- *   (`vehicle-at-end`), a compass vehicle with no heading, or a type with no
- *   `start`
+ *   (`vehicle-at-end`), a compass or open vehicle with no heading, an open
+ *   vehicle with a heading that is not one of the eight or that points
+ *   toward the edge it is at (D8, the edge's phrase), one outside any
+ *   expanse, or a type with no `start`
  */
-export declare function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: string): boolean;
+export declare function startVehicle(world: WorldModel, vehicle: IFEntity, heading?: string | number): boolean;
 /**
- * `stop <vehicle>` (ADR-366 D5f): take the vehicle's machine out of the way
- * where it is — a line halts at its stop, a compass vehicle loses its heading.
+ * The wind an open vehicle sails in (ADR-375 D4): its expanse's `wind`, or
+ * undefined when the expanse carries none or the vehicle is in no expanse.
+ */
+export declare function windOf(world: WorldModel, vehicle: IFEntity): ExpanseWind | undefined;
+/**
+ * The pace a sailing vehicle makes now (ADR-375 D5, D7): the cell of its
+ * band for the angle off the wind, under its sail setting — or `stopped`.
+ * Undefined when the vehicle does not sail or has no heading.
+ *
+ * @param world - The world model
+ * @param vehicle - An open vehicle with a `sailing` table
+ * @param setting - A setting to read instead of the current one (the
+ *   fullest, for irons)
+ */
+export declare function paceUnderSail(world: WorldModel, vehicle: IFEntity, setting?: string): SailingPace | undefined;
+/**
+ * `port <n>` / `starboard <n>` (ADR-375 D3): turn a sailing vehicle's
+ * bearing by `degrees` — negative to port, positive to starboard — under
+ * way or not; a ship with no bearing yet is taken as pointing north. Only
+ * a sailing vehicle turns by degrees.
+ *
+ * @returns the new bearing, or undefined when the vehicle does not sail
+ */
+export declare function turnHeading(vehicle: IFEntity, degrees: number): number | undefined;
+/** Why `come about` was refused (ADR-375 D3). */
+export type ComeAboutRefusal = 'no-wind' | 'cannot';
+/**
+ * `come about` (ADR-375 D3): tack through the wind — the bearing turns to
+ * the same angle off the wind on the other side of it (wind from 45,
+ * heading 90, comes about to 0). Refused with `no-wind` aboard a vehicle
+ * that does not sail or in a calm, and with `cannot` dead into or dead
+ * before the wind, where there is no other side.
+ *
+ * @returns the new bearing, or the refusal
+ */
+export declare function comeAbout(world: WorldModel, vehicle: IFEntity): number | ComeAboutRefusal;
+/**
+ * `set the <vehicle>'s sails to <setting>` (ADR-375 D7): the current
+ * setting, from the next step. False when the vehicle has no sails or the
+ * setting is not one of its own.
+ */
+export declare function setSails(vehicle: IFEntity, setting: string): boolean;
+/** `make sail` (ADR-375 D7): one setting up. False at the fullest (`sails-at-full`) or without sails. */
+export declare function makeSail(vehicle: IFEntity): boolean;
+/** `shorten sail` (ADR-375 D7): one setting down. False at the first (`sails-already-furled`) or without sails. */
+export declare function shortenSail(vehicle: IFEntity): boolean;
+/** `furl sails` (ADR-375 D7): to the first setting. False when already there or without sails. */
+export declare function furlSails(vehicle: IFEntity): boolean;
+/**
+ * The edge an open vehicle is at when a way with any component toward it is
+ * asked for (ADR-376 D8), or undefined when the way is open. The actions
+ * read it to refuse with the edge's phrase before `startVehicle` or
+ * `sendVehicle` would.
+ *
+ * @param vehicle - An open vehicle
+ * @param vector - The direction's components, x east and y north (a
+ *   heading's unit vector, or the signs of a course's first leg)
+ */
+export declare function edgeAhead(vehicle: IFEntity, vector: IExpanseCell): ExpanseSide | undefined;
+/**
+ * `stop <vehicle>` (ADR-366 D5f; ADR-376 D3): take the vehicle's machine
+ * out of the way where it is — a line halts at its stop, a compass vehicle
+ * loses its heading, an open vehicle loses heading and course and keeps
+ * its position.
  *
  * @returns false when the type has no `stop`
  */
 export declare function stopVehicle(vehicle: IFEntity): boolean;
 /**
- * `send <vehicle> to <destination>` (ADR-366 D5d): a flight vehicle leaves
- * its room and is nowhere for the passage, then arrives. The departure and
- * the arrival are the machine's per-turn work; this records where it is
- * bound.
+ * `send <vehicle> to <destination>` (ADR-366 D5d; ADR-376 D3): a flight
+ * vehicle leaves its room and is nowhere for the passage, then arrives; an
+ * open vehicle takes a course for a landmark's cell or a cell of its
+ * expanse, dropping any heading, and leaves its landmark for the expanse
+ * (D5). The departure and the arrival are the machine's per-turn work; this
+ * records where it is bound.
  *
- * @returns false when the vehicle is not a flight vehicle or the room is not
- *   one of its destinations
+ * @param world - The world model
+ * @param vehicle - A flight or open vehicle
+ * @param destination - A room id (a flight destination, or an open vehicle's
+ *   landmark), or a cell for an open vehicle
+ * @returns false when the vehicle takes no `send`, the room is not one of
+ *   its destinations or landmarks, the cell lies outside its expanse
+ *   (`coordinates-outside-expanse`), the course's first leg heads into the
+ *   edge it is at (D8), or the vehicle is in no expanse
  */
-export declare function sendVehicle(vehicle: IFEntity, destinationId: string): boolean;
+export declare function sendVehicle(world: WorldModel, vehicle: IFEntity, destination: string | IExpanseCell): boolean;
 /**
  * The resolver for a room aboard a vehicle (ADR-366 D7): an exit `to
  * outside` leads to the room the vehicle is in, through the door the line
@@ -5581,11 +5757,14 @@ export declare function moveVehicleToStop(world: WorldModel, vehicle: IFEntity, 
 export declare function isAboardVehicle(world: WorldModel, entityId: string, vehicleId: string): boolean;
 /**
  * What one turn of the vehicle's machine did (D5e): it reached a room
- * (`vehicle-arrived`, a stop, the room in its heading, or its destination),
- * it ran out of way and took itself out of the way (`vehicle-stopped`,
- * reported once), or it left its room for the passage (`departed`, which
- * no stock line reports: the fold is the author's sequence on `becomes
- * under way`).
+ * (`vehicle-arrived`, a stop, the room in its heading, its destination, or
+ * a landmark), it ran out of way or reached its course and took itself out
+ * of the way (`vehicle-stopped`, reported once), it left its room for the
+ * passage (`departed`, which no stock line reports: the fold is the
+ * author's sequence on `becomes under way`), it came alongside a floating
+ * thing and stopped (`vehicle-alongside`, ADR-376 D10), or it reached an
+ * edge of its expanse and stopped (`expanse-edge` or the edge's own phrase,
+ * ADR-376 D8).
  */
 export type VehicleStep = {
     kind: 'arrived';
@@ -5594,6 +5773,18 @@ export type VehicleStep = {
     kind: 'stopped';
 } | {
     kind: 'departed';
+} | {
+    kind: 'alongside';
+    thingId: string;
+} | {
+    kind: 'edge';
+    side: ExpanseSide;
+    messageKey?: string;
+    sailing?: boolean;
+}
+/** ADR-375 D5: a sailing vehicle lies in irons, reported once. */
+ | {
+    kind: 'in-irons';
 };
 /**
  * One turn of the vehicle's built-in machine (ADR-366 D5e). The types share
@@ -5614,6 +5805,28 @@ export type VehicleStep = {
  */
 export declare function stepVehicle(world: WorldModel, vehicle: IFEntity, positionAnswer?: string): VehicleStep | undefined;
 /**
+ * ADR-376 D9: an actor leaves an open vehicle that is positioned in its
+ * expanse. They are put in the expanse room holding the vehicle's cell on
+ * a floating trait of their own (added when they have none), so the
+ * machine holds while they are out and `enter` reaches any open vehicle in
+ * that cell. Nothing happens when the vehicle is at a landmark or
+ * anywhere else: the caller's ordinary exit applies.
+ *
+ * @param world - The world model
+ * @param actor - The actor leaving
+ * @param vehicle - The open vehicle they are in
+ * @returns true when the actor was put out into the expanse
+ */
+export declare function leaveVehicleIntoExpanse(world: WorldModel, actor: IFEntity, vehicle: IFEntity): boolean;
+/**
+ * ADR-376 D9: an actor out in the expanse boards a vehicle, dropping the
+ * position they held; the machine resumes on its next step. The move into
+ * the vehicle is entering's own.
+ *
+ * @returns true when the actor held a position
+ */
+export declare function boardFromExpanse(actor: IFEntity): boolean;
+/**
  * The vehicle an actor is aboard (D7): the vehicle they are inside at any
  * depth, or the vehicle whose room they stand in. Undefined on foot.
  *
@@ -5630,6 +5843,448 @@ export declare function getVehicleAboard(world: WorldModel, actorId: string): IF
  * @param set - `compass`, `destinations`, or an extension's set
  */
 export declare function takesCommandSet(vehicle: IFEntity, set: string): boolean;
+```
+
+### traits/expanse/expanseTrait
+
+```typescript
+/**
+ * Expanse Trait - a bounded space with coordinates, held by the room an expanse lowers to
+ *
+ * Public interface: `ExpanseTrait` (data: the size, the landmark rooms and
+ * their cells, the optional sight cap and drift interval, the edge phrases,
+ * and the drift machine's state), `IExpanseCell`, `ExpanseSide`,
+ * `IExpanseData`, `isExpanseTrait`, `isInsideExpanse`, `sameCell`.
+ *
+ * Owner context: world-model traits. An expanse is a room (its heading,
+ * looking and scope read it as one) carrying this trait, so an open vehicle
+ * or a floating thing between landmarks is simply *in* that room, and where
+ * in it is the position on the holder's own trait. The expanse stores its
+ * size and its landmarks, never its cells, so a thousand-unit sea costs what
+ * a twenty-unit pond does. Coordinates are whole units: `x` runs east from 0
+ * to `width - 1`, `y` runs north from 0 to `height - 1`.
+ *
+ * References:
+ * - ADR-376 D2 — the expanse kind, its size and landmarks; it lowers to a room.
+ * - ADR-376 D6 — `visibility:` caps every looker's sight in it.
+ * - ADR-376 D8 — edges, one phrase per side, never crossed.
+ * - ADR-376 D10 — `drift:`, the interval floating things move on.
+ * - ADR-375 D4 — `wind:`, the bearing the wind comes from, or a calm.
+ * - ADR-375 D2 — a sailing vehicle's coordinates are fractional; a cell is a rounded coordinate.
+ * - ADR-366 D5g — machine state is trait data, so `turnsToDrift` rides a save.
+ */
+import { ITrait } from '../trait.js';
+/** A cell of an expanse: whole-unit coordinates, x east, y north. */
+export interface IExpanseCell {
+    x: number;
+    y: number;
+}
+/** The four sides an expanse's edge lines may name (ADR-376 D8). */
+export type ExpanseSide = 'NORTH' | 'SOUTH' | 'EAST' | 'WEST';
+/** A wind (ADR-375 D4): the bearing it comes from, 0 north clockwise, or a calm. */
+export type ExpanseWind = number | 'calm';
+export interface IExpanseData {
+    /** `size: <w> by <h>` — cells run 0..width-1 east. One or more. */
+    width: number;
+    /** `size: <w> by <h>` — cells run 0..height-1 north. One or more. */
+    height: number;
+    /** The landmark rooms by entity id, each at its cell inside the size. */
+    landmarks?: Record<string, IExpanseCell>;
+    /** `visibility: <n>` — a cap on every looker's sight here; absent means uncapped. */
+    visibility?: number;
+    /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
+    drift?: number;
+    /** The phrase key of each written edge line, by side; an unwritten side uses the stock line. */
+    edges?: Partial<Record<ExpanseSide, string>>;
+    /** Machine state: turns left before the next drift step. */
+    turnsToDrift?: number;
+    /** `wind: from <bearing>` / `wind: calm` (ADR-375 D4); absent means the expanse carries no wind. */
+    wind?: ExpanseWind;
+}
+/**
+ * Trait for an expanse. The landmark map is the one record of where a
+ * landmark room lies; a vehicle at that landmark holds no coordinates of
+ * its own (ADR-376 D5).
+ */
+export declare class ExpanseTrait implements ITrait, IExpanseData {
+    static readonly type: "expanse";
+    readonly type: "expanse";
+    width: number;
+    height: number;
+    landmarks: Record<string, IExpanseCell>;
+    visibility?: number;
+    drift?: number;
+    edges: Partial<Record<ExpanseSide, string>>;
+    turnsToDrift: number;
+    wind?: ExpanseWind;
+    /**
+     * Build the trait, holding the invariants the analyzer reports first: a
+     * size of whole units one or more on each axis, every landmark inside it,
+     * a drift interval of one turn or more, a visibility of zero or more.
+     * @throws when an invariant is broken
+     */
+    constructor(data: IExpanseData);
+}
+/**
+ * Whether a cell lies inside an expanse's size.
+ *
+ * @param expanse - The expanse's trait
+ * @param cell - The cell to test
+ */
+export declare function isInsideExpanse(expanse: Pick<IExpanseData, 'width' | 'height'>, cell: IExpanseCell): boolean;
+/** The cell a coordinate lies in: each axis rounded (ADR-375 D2, fractional positions under sail). */
+export declare function cellOf(at: IExpanseCell): IExpanseCell;
+/** Whether two coordinates lie in the same cell. */
+export declare function sameCell(a: IExpanseCell, b: IExpanseCell): boolean;
+/**
+ * Type guard for ExpanseTrait
+ */
+export declare function isExpanseTrait(trait: ITrait): trait is ExpanseTrait;
+```
+
+### traits/expanse/floatingTrait
+
+```typescript
+/**
+ * Floating Trait - a position in an expanse for something that is not a vehicle
+ *
+ * Public interface: `FloatingTrait` (data: the cell, held only while the
+ * holder is in an expanse), `IFloatingData`, `isFloatingTrait`.
+ *
+ * Owner context: world-model traits. Two things hold one: a thing marked
+ * `floats`, which drifts on the expanse's interval and is retrieved
+ * alongside, and a player out of their vehicle in the expanse, who holds
+ * the vehicle's cell while they are out and never drifts. In either case
+ * the position is held only while the holder is in the expanse room; at a
+ * landmark, or anywhere else, it is null and the holder's location is the
+ * one record, as for a vehicle (ADR-376 D5).
+ *
+ * References:
+ * - ADR-376 D10 — floating things: marked, positioned, drifting, retrieved.
+ * - ADR-376 D9 — the player out of the vehicle holds a floating position of their own.
+ */
+import { ITrait } from '../trait.js';
+import type { IExpanseCell } from './expanseTrait.js';
+export interface IFloatingData {
+    /** The cell in the expanse the holder is in, or null when it is not in one. */
+    position?: IExpanseCell | null;
+}
+/**
+ * Trait for a floating position. Pure data; the drift and the retrieval
+ * rules are `expanseBehavior.ts` and the actions.
+ */
+export declare class FloatingTrait implements ITrait, IFloatingData {
+    static readonly type: "floating";
+    readonly type: "floating";
+    position: IExpanseCell | null;
+    constructor(data?: IFloatingData);
+}
+/**
+ * Type guard for FloatingTrait
+ */
+export declare function isFloatingTrait(trait: ITrait): trait is FloatingTrait;
+```
+
+### traits/expanse/sightTrait
+
+```typescript
+/**
+ * Sight Trait - an instrument: a thing one looks through to see farther in an expanse
+ *
+ * Public interface: `SightTrait` (data: how far it sees, in expanse units),
+ * `ISightData`, `isSightTrait`.
+ *
+ * Owner context: world-model traits. `sight:` on a thing makes it an
+ * instrument; `look through <instrument>` looks once with this sight in
+ * place of the looker's own, still capped by the expanse's visibility. It is
+ * a trait rather than a field on identity so the verb can dispatch on it
+ * (ADR-090): the trait claims `if.action.searching`, where `look through`
+ * maps, and the host registers the looking-through behavior per world. A vehicle's sight is on its open model and a landmark room's on
+ * `RoomTrait.sight`; this trait is the instrument's alone.
+ *
+ * References:
+ * - ADR-376 D6 — instruments, and the visibility cap that still applies through one.
+ */
+import { ITrait } from '../trait.js';
+export interface ISightData {
+    /** How far the instrument sees, in expanse units; zero or more. */
+    sight: number;
+}
+/**
+ * Trait for an instrument's reach.
+ */
+export declare class SightTrait implements ITrait, ISightData {
+    static readonly type: "sight";
+    readonly type: "sight";
+    /** The action an instrument takes over (ADR-090): `look through` is searching's. */
+    static readonly capabilities: readonly ["if.action.searching"];
+    sight: number;
+    /** @throws when the sight is not a number of zero or more */
+    constructor(data: ISightData);
+}
+/**
+ * Type guard for SightTrait
+ */
+export declare function isSightTrait(trait: ITrait): trait is SightTrait;
+```
+
+### traits/expanse/expanseBehavior
+
+```typescript
+/**
+ * Expanse Behavior - the geometry of an expanse, where things in it are, and the drift of what floats
+ *
+ * Public interface: the compass over cells (`COMPASS_HEADINGS`,
+ * `headingVector`, `directionOf`), `distance`, the distance bands
+ * (`SightBand`, `sightBandOf`), `landmarkAt`, `landmarkCellOf`, `expanseOfLandmark`,
+ * `floatingThingsAt`, `placeOf` with its result `ExpansePlace`, `holderOf`
+ * (the positioned thing an entity is in or is), `receiveInExpanse` (what
+ * becomes of a thing that lands in an expanse), `clearFloatingPosition`,
+ * and the drift step `driftExpanse` with its result `DriftStep`.
+ *
+ * Owner context: world-model expanse behavior. Every answer is read from the
+ * world and the traits; nothing here keeps a position of its own. The
+ * mutations are drift (a floating thing's cell, or a wash-up into a
+ * landmark's room), a thing received by the expanse (afloat at a cell, or
+ * lost offstage, D9/D10), and a floating thing taken out of it. The vehicle's own
+ * stepping is `vehicleBehavior.ts`, which reads this module for the
+ * landmarks, the floating things and the compass.
+ *
+ * References:
+ * - ADR-376 D2 — landmarks occupy their cells; the expanse is the room between them.
+ * - ADR-376 D3 — x grows east, y grows north; the eight headings.
+ * - ADR-376 D6 — distance bands at thirds of the sight in use, with a direction.
+ * - ADR-376 D10 — drift: one unit a random way per interval, never past an edge,
+ *   washing up on a landmark; drawn from the seeded random service (ADR-293).
+ */
+import { type RandomService } from '@sharpee/core';
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { IFEntity } from '../../entities/if-entity.js';
+import { ExpanseTrait, type IExpanseCell } from './expanseTrait.js';
+/** The eight compass headings a vehicle or a drift may take, in the world's direction spelling. */
+export declare const COMPASS_HEADINGS: readonly ["NORTH", "NORTHEAST", "EAST", "SOUTHEAST", "SOUTH", "SOUTHWEST", "WEST", "NORTHWEST"];
+export type CompassHeading = typeof COMPASS_HEADINGS[number];
+/**
+ * The unit vector of a heading (D3: x east, y north) — one of the eight
+ * words, or a bearing in degrees (ADR-375 D2, 0 north, clockwise) — or
+ * undefined for a word that is not one of the eight.
+ */
+export declare function headingVector(heading: string | number): IExpanseCell | undefined;
+/** A compass word's bearing (ADR-375 D2), or undefined for any other word. */
+export declare function bearingOf(heading: string | number): number | undefined;
+/**
+ * The angle between a bearing and the bearing a wind comes from (ADR-375
+ * D5): 0 dead into the wind, 180 dead before it.
+ */
+export declare function angleOffWind(heading: number, wind: number): number;
+/**
+ * The compass direction from one cell to another, to the nearest of the
+ * eight points; undefined when they are the same cell.
+ */
+export declare function directionOf(from: IExpanseCell, to: IExpanseCell): CompassHeading | undefined;
+/** The straight-line distance between two cells, in units. */
+export declare function distance(a: IExpanseCell, b: IExpanseCell): number;
+/** The three distance bands (D6), fixed at thirds of the sight in use. */
+export type SightBand = 'close-by' | 'in-the-distance' | 'on-the-horizon';
+/**
+ * The band a distance falls in for a given sight, or undefined when it is
+ * out of sight. Thirds: close by to a third, in the distance to two thirds,
+ * on the horizon to the sight itself.
+ */
+export declare function sightBandOf(d: number, sight: number): SightBand | undefined;
+/** The landmark room at a cell, by id, or undefined when the cell is open. */
+export declare function landmarkAt(expanse: ExpanseTrait, cell: IExpanseCell): string | undefined;
+/** A landmark room's cell in an expanse, or undefined when the room is not one of its landmarks. */
+export declare function landmarkCellOf(expanse: ExpanseTrait, roomId: string): IExpanseCell | undefined;
+/**
+ * The expanse a room is a landmark of, or undefined. A room is a landmark
+ * of at most one expanse; the first match is the answer.
+ */
+export declare function expanseOfLandmark(world: WorldModel, roomId: string): IFEntity | undefined;
+/**
+ * The floating things (not actors) in an expanse room at a cell.
+ *
+ * @param world - The world model
+ * @param expanseId - The expanse room
+ * @param cell - The cell to look at
+ */
+export declare function floatingThingsAt(world: WorldModel, expanseId: string, cell: IExpanseCell): IFEntity[];
+/**
+ * Where something is in an expanse: the expanse room, its trait, and the
+ * cell. Answered for an entity directly in an expanse room with a position
+ * of its own (an open vehicle, a floating thing, a player out of the
+ * vehicle), and for a landmark room, whose cell is its row. Undefined for
+ * anything else — the entity is not positioned in any expanse.
+ */
+export interface ExpansePlace {
+    expanse: IFEntity;
+    trait: ExpanseTrait;
+    cell: IExpanseCell;
+}
+/**
+ * The place of an entity that holds a position, or of a landmark room.
+ *
+ * @param world - The world model
+ * @param entity - A vehicle, a floating thing, an actor out of a vehicle, or a room
+ */
+export declare function placeOf(world: WorldModel, entity: IFEntity): ExpansePlace | undefined;
+/**
+ * The positioned thing an entity is, or is held in at any depth: an open
+ * vehicle, a floating thing, or an actor out of a vehicle with a position.
+ * Undefined when nothing on the way up holds one. The holder's place is
+ * the entity's place for sight and reach (D6, D10): a lamp in a distant
+ * ship is as far off as the ship.
+ *
+ * @param world - The world model
+ * @param entity - Any entity
+ */
+export declare function holderOf(world: WorldModel, entity: IFEntity): IFEntity | undefined;
+/** What became of a thing that landed in an expanse (D9, D10). */
+export type ExpanseReceipt = 'floats' | 'lost';
+/**
+ * A thing lands in an expanse at a cell (D9, D10): one that floats takes the
+ * cell and is in the expanse room; anything else is lost — offstage, with
+ * no position. The caller reports `lost-overboard`; the move itself is the
+ * ordinary `WorldModel.moveEntity`.
+ *
+ * @param world - The world model
+ * @param thing - The thing dropped, thrown or moved into the expanse
+ * @param expanseId - The expanse room
+ * @param cell - Where it lands, the dropper's cell
+ */
+export declare function receiveInExpanse(world: WorldModel, thing: IFEntity, expanseId: string, cell: IExpanseCell): ExpanseReceipt;
+/**
+ * A floating thing leaves the expanse (D10, retrieved; D9, the player boards
+ * again): its position is dropped. The move that takes it out is the
+ * caller's — taking's, entering's.
+ *
+ * @returns true when the thing held a position
+ */
+export declare function clearFloatingPosition(thing: IFEntity): boolean;
+/** What one drift step did to one floating thing (D10). */
+export type DriftStep = {
+    kind: 'drifted';
+    thingId: string;
+    heading: CompassHeading;
+    cell: IExpanseCell;
+} | {
+    kind: 'held';
+    thingId: string;
+    heading: CompassHeading;
+} | {
+    kind: 'washed-up';
+    thingId: string;
+    heading: CompassHeading;
+    roomId: string;
+};
+/**
+ * One turn of an expanse's drift (ADR-376 D10). Every `drift` turns, each
+ * floating thing in the expanse (actors never drift, D9) moves one unit in
+ * a compass direction drawn from the seeded service at the point
+ * `vehicle.drift.<expanseId>`: a drift that would leave the expanse is not
+ * taken, and one that enters a landmark's cell washes the thing up into
+ * that room, where it holds no position. The interval is the trait's
+ * `turnsToDrift`, so a drift due survives a save.
+ *
+ * @param world - The world model
+ * @param expanse - The expanse room; nothing happens without a `drift:`
+ * @param random - The session's random service
+ * @returns what moved this turn, empty between drift steps
+ */
+export declare function driftExpanse(world: WorldModel, expanse: IFEntity, random: RandomService): DriftStep[];
+```
+
+### traits/expanse/sightBehavior
+
+```typescript
+/**
+ * Sight Behavior - where a looker looks from in an expanse, how far they see, and what is in sight
+ *
+ * Public interface: `lookoutOf` with its result `Lookout` (the place a
+ * looker sees from and their naked sight there), `sightOf` (the sight in
+ * use, through an instrument or not, capped by the expanse), `sightingOf`
+ * with its result `Sighting` (one thing's distance, band and direction from
+ * a lookout), `inSight`, and `sightings` (everything in sight from a
+ * lookout, nearest first — the looking report's rows and scope's additions).
+ *
+ * Owner context: world-model expanse behavior. A looker is an actor: aboard
+ * an open vehicle they see from its cell with its sight; out of it in the
+ * expanse they see from their own floating position with the sight of the
+ * open vehicles in that cell, since they are beside one; in a landmark room
+ * they see from its row with its `sight:`, and nothing without the line.
+ * Scope reads this (sight is scope in an expanse, D6) and so do the sight
+ * conditions and the looking report. Nothing here mutates.
+ *
+ * References:
+ * - ADR-376 D6 — sight, bands, instruments, the visibility cap, a landmark's outlook.
+ * - ADR-376 D7 — the sight conditions read the same answers.
+ * - ADR-376 D9 — the player out of the vehicle sees with the vehicle's sight.
+ */
+import type { WorldModel } from '../../world/WorldModel.js';
+import type { IFEntity } from '../../entities/if-entity.js';
+import { type CompassHeading, type ExpansePlace, type SightBand } from './expanseBehavior.js';
+/** Where a looker sees from, and how far with the naked eye. */
+export interface Lookout extends ExpansePlace {
+    /** Naked sight from here, before the expanse's cap; zero from a landmark room without `sight:`. */
+    sight: number;
+}
+/**
+ * The lookout of an actor (D6, D9): their vehicle's place and sight when
+ * aboard an open vehicle in an expanse, their own place beside the open
+ * vehicles of their cell when out of it, or their landmark room's row and
+ * outlook. Undefined when the actor is positioned in no expanse.
+ *
+ * @param world - The world model
+ * @param actor - The looker
+ */
+export declare function lookoutOf(world: WorldModel, actor: IFEntity): Lookout | undefined;
+/**
+ * The sight in use from a lookout (D6): the instrument's when looking
+ * through one, else the naked sight, either capped by the expanse's
+ * `visibility` when it has one.
+ *
+ * @param lookout - Where the looker looks from
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export declare function sightOf(lookout: Lookout, instrument?: IFEntity): number;
+/** One thing seen from a lookout: how far, in which band, which way. */
+export interface Sighting {
+    thing: IFEntity;
+    distance: number;
+    band: SightBand;
+    /** Undefined when the thing shares the looker's cell. */
+    direction: CompassHeading | undefined;
+}
+/**
+ * The sighting of a thing from a lookout, or undefined when it is in
+ * another expanse, in no expanse, or beyond the sight in use. Rooms never
+ * see rooms: a landmark room is a thing here only when the looker is not
+ * in one.
+ *
+ * @param world - The world model
+ * @param lookout - Where the looker looks from
+ * @param thing - An open vehicle, a floating thing or a landmark room
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export declare function sightingOf(world: WorldModel, lookout: Lookout, thing: IFEntity, instrument?: IFEntity): Sighting | undefined;
+/**
+ * Everything in sight from a lookout (D6): the expanse's landmark rooms,
+ * its open vehicles and its floating things within the sight in use,
+ * nearest first, never the looker's own holder. The looking report's rows
+ * and scope's additions both read this.
+ *
+ * @param world - The world model
+ * @param lookout - Where the looker looks from
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ * @param ownHolderId - The vehicle the looker is aboard, or the looker
+ *   themself out of it, excluded from the list
+ */
+export declare function sightings(world: WorldModel, lookout: Lookout, instrument?: IFEntity, ownHolderId?: string): Sighting[];
+/**
+ * Whether a thing is within an actor's sight in their expanse (D6, D7).
+ * False when either is positioned in no expanse.
+ */
+export declare function inSight(world: WorldModel, actor: IFEntity, thing: IFEntity, instrument?: IFEntity): boolean;
 ```
 
 ### traits/story-info/storyInfoTrait
@@ -8837,6 +9492,18 @@ export declare class VisibilityBehavior extends Behavior {
      */
     static canSee(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
     /**
+     * The expanse's answer for a target positioned in the observer's expanse
+     * (ADR-376 D6), or undefined when the ordinary rules apply: the observer
+     * has no lookout, the target and everything holding it is unpositioned,
+     * or the target rides the observer's own holder (their vehicle, or
+     * themself out of it).
+     *
+     * A positioned thing itself is visible iff in sight; something held in
+     * one is unseen out of sight and otherwise left to the room and
+     * line-of-sight rules, so a distant ship's cabin stays dark.
+     */
+    private static seenAcrossExpanse;
+    /**
      * Gets all entities visible to an observer
      */
     static getVisible(observer: IFEntity, world: WorldModel): IFEntity[];
@@ -8973,6 +9640,8 @@ export declare class ReachabilityBehavior extends Behavior {
      * @returns true if the target is physically reachable
      */
     static canReach(observer: IFEntity, target: IFEntity, world: WorldModel): boolean;
+    /** False when the target's positioned holder lies in the observer's expanse at another cell. */
+    private static reachableAcrossExpanse;
     /**
      * Gets all entities the observer can physically reach.
      *

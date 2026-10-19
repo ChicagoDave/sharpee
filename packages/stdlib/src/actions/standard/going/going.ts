@@ -29,6 +29,7 @@ import {
   type RegionCrossings,
   getOppositeDirection,
   NpcTrait,
+  FloatingTrait,
 } from '@sharpee/world-model';
 import type { ExitResolution } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
@@ -284,6 +285,11 @@ export const goingAction: Action & { metadata: ActionMetadata } = {
           : GoingMessages.VEHICLE_CANNOT_WALK,
         params: { vehicle: nounPhraseFor(vehicleGoing.vehicle) }
       };
+    }
+    if (vehicleGoing.kind === 'on-foot' && actor.get(FloatingTrait)?.position && currentRoom.has(TraitType.EXPANSE)) {
+      // ADR-376 D9: out of the vehicle in the expanse, the player cannot
+      // walk off; they stay in the vehicle's cell to board it again.
+      return { valid: false, error: GoingMessages.STAYS_BY_VEHICLE };
     }
     if (vehicleGoing.kind === 'steers') {
       const containingRoom = context.world.getContainingRoom(actor.id);

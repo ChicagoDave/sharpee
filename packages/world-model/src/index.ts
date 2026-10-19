@@ -70,6 +70,7 @@ export * from './traits/pullable/index.js';
 export * from './traits/pushable/index.js';
 export * from './traits/npc/index.js';
 export * from './traits/vehicle/index.js';
+export * from './traits/expanse/index.js';
 export * from './traits/story-info/index.js';
 export * from './traits/character-model/index.js';
 export * from './traits/concealment/index.js';

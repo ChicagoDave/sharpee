@@ -406,7 +406,9 @@ dropping-still-worn               still_worn                              {You}'
 dropping-dropped-in               dropped_in                              {You} {put} {the item} in {the container}.
 dropping-dropped-on               dropped_on                              {You} {put} {the item} on {the surface}.
 dropping-dropped-multi            dropped_multi                           {item}: Dropped.
-dropping-dropped-breaks           dropped_breaks                          {capitalize the item} {verb:hits item} the floor and {verb:breaks item}.</code></pre>
+dropping-dropped-breaks           dropped_breaks                          {capitalize the item} {verb:hits item} the floor and {verb:breaks item}.
+dropping-dropped-afloat           dropped_afloat                          {capitalize the item} {verb:floats item} where {verb:it item} {verb:falls item}.
+dropping-lost-overboard           lost_overboard                          {capitalize the item} drifts away.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.drop_blocked</code> (ADR-052).</p>
 <h2 id="eat-consume-devour-munch-if-action-eating">eat, consume, devour, munch — <code>if.action.eating</code></h2>
 <p><strong>Group</strong> <code>interaction</code> · direct object required · <strong>Slots</strong> <code>item</code> · <strong>Emits</strong> <code>if.event.eaten</code>, <code>if.event.taken</code></p>
@@ -535,7 +537,8 @@ examining-container-empty         container_empty                         {capit
 examining-container-contents      container_contents                      In {the container} {you} {see} {items}.
 examining-surface-contents        surface_contents                        On {the surface} {you} {see} {items}.
 examining-worn-by-you             worn_by_you                             {You} {are} wearing {the item}.
-examining-worn-by-other           worn_by_other                           {actor} {verb:is actor} wearing {the item}.</code></pre>
+examining-worn-by-other           worn_by_other                           {actor} {verb:is actor} wearing {the item}.
+examining-seen-from-afar          seen_from_afar                          {verbatim:description}</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.examined</code> (ADR-052).</p>
 <h2 id="go-out-exit-get-out-leave-if-action-exiting">go out, exit, get out, leave — <code>if.action.exiting</code></h2>
 <p><strong>Group</strong> <code>movement</code> · <strong>Slots</strong> <code>container</code> · <strong>Emits</strong> <code>if.event.exited</code></p>
@@ -662,6 +665,12 @@ going-movement-blocked            movement_blocked                        {verba
 going-destination-not-found       destination_not_found                   {You} {can't} go that way.
 going-need-light                  need_light                              It's too dark to go that way safely.
 going-went                        went                                    {You} {go} {verbatim:direction}.
+going-vehicle-at-end              vehicle_at_end                          {capitalize the vehicle} is at the end of its line.
+going-expanse-edge                expanse_edge                            {You} can go no farther that way.
+going-vehicle-alongside           vehicle_alongside                       {capitalize the vehicle} comes alongside {the thing}.
+going-vehicle-in-irons            vehicle_in_irons                        {capitalize the vehicle} {verb:is vehicle} in irons.
+going-sailing-edge                sailing_edge                            Wind and sea drive {you} back.
+going-stays-by-vehicle            stays_by_vehicle                        {You} {stay} where {you} {are}, by the vehicle.
 going-arrived                     arrived                                 {You} {arrive}.
 going-cant-go                     cant_go                                 {You} {can't} go that way.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.actor_entered</code> (ADR-052).</p>
@@ -881,6 +890,10 @@ looking-contents-list             contents_list                           {You} 
 looking-nothing-special           nothing_special                         {You} {see} nothing special.
 looking-container-contents        container_contents                      In {the container} {you} {see} {items}.
 looking-surface-contents          surface_contents                        On {the surface} {you} {see} {items}.
+looking-sighting-close-by         sighting_close_by                       {capitalize the thing}, close by, to the {verbatim:direction}.
+looking-sighting-in-the-distance  sighting_in_the_distance                {capitalize the thing}, in the distance, to the {verbatim:direction}.
+looking-sighting-on-the-horizon   sighting_on_the_horizon                 {capitalize the thing}, on the horizon, to the {verbatim:direction}.
+looking-sighting-here             sighting_here                           {capitalize the thing}, right here.
 looking-hidden-at                 hidden_at                               ({You're} hiding {verbatim:position} {the spot}.)</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.looked</code> (ADR-052).</p>
 <h2 id="look-under-look-beneath-look-underneath-if-action-looking-under">look under, look beneath, look underneath — <code>if.action.looking_under</code></h2>
@@ -1294,7 +1307,9 @@ searching-searched-location       searched_location                       {You} 
 searching-searched-object         searched_object                         {You} {search} {the target} thoroughly.
 searching-found-concealed-in-contafound_concealed_in_container            Hidden inside {the target}, {you} {discover}: {items}.
 searching-found-concealed-on-suppofound_concealed_on_supporter            Hidden on {the target}, {you} {discover}: {items}.
-searching-found-concealed-here    found_concealed_here                    Hidden here, {you} {discover}: {items}.</code></pre>
+searching-found-concealed-here    found_concealed_here                    Hidden here, {you} {discover}: {items}.
+searching-looked-through          looked_through                          {You} {look} through {the target}.
+searching-looked-through-nothing  looked_through_nothing                  {You} {see} nothing through {the target}.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.searched</code> (ADR-052).</p>
 <h2 id="set-to-turn-to-adjust-to-if-action-setting">set to, turn to, adjust to — <code>if.action.setting</code></h2>
 <p><strong>Group</strong> <code>manipulation</code> · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.set_blocked</code>, <code>if.event.set</code></p>
@@ -1323,6 +1338,7 @@ setting-set                       set                                     {You} 
   the destination is a topic</code></pre>
 <p>SET COURSE FOR - Send a vehicle you are aboard to one of its destinations. Example: SET COURSE FOR THE REEF</p>
 <p>The <code>destinations</code> command set (ADR-366 D5d, D5i): aboard a <code>movement: flight</code> vehicle whose <code>commands:</code> line lists <code>destinations</code>, <code>set course for &lt;destination&gt;</code> names one of its <code>destinations:</code> rooms and puts it under way; the vehicle's own machine then leaves, is nowhere for the passage, and arrives. The destination is typed as free text and matched against the destination rooms' names, since those rooms are never in the player's scope. Aboard a vehicle that does not list the set, the refusal is <code>vehicle_no_such_command</code>. A Chord <code>on the player setting_course</code> clause in the vehicle's block speaks in place of the stock lines.</p>
+<p>The <code>coordinates</code> command set (ADR-376 D4, under <code>use expanses</code>): aboard a <code>movement: open</code> vehicle whose <code>commands:</code> line lists <code>coordinates</code>, <code>set course for 14, 9</code> sets a course for that cell of its expanse and <code>set course for the Derelict</code> for one of the expanse's landmarks; the vehicle's machine runs diagonally until one axis matches, then straight, and a landmark's cell is arrived at. Coordinates beyond the expanse's size refuse with <code>coordinates_outside_expanse</code>; a course whose first leg points into the edge the vehicle has reached refuses with the author's edge phrase (<code>edge_blocked</code>) or the stock <code>expanse_edge</code>.</p>
 <p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
 <pre><code class="language-text">alias                                     message id                   text
 setting-course-not-in-vehicle             not_in_vehicle               {You're} not aboard anything that takes a course.
@@ -1331,7 +1347,11 @@ setting-course-no-destination             no_destination               Set cours
 setting-course-not-a-destination          not_a_destination            {capitalize the vehicle} {verb:does vehicle} not go to {verbatim:destination}.
 setting-course-already-there              already_there                {capitalize the vehicle} {verb:is vehicle} already at {the destination}.
 setting-course-vehicle-under-way          vehicle_under_way            {capitalize the vehicle} {verb:is vehicle} already under way.
-setting-course-course-set                 course_set                   {You} {set} course for {the destination}.</code></pre>
+setting-course-course-set                 course_set                   {You} {set} course for {the destination}.
+setting-course-course-set-cell            course_set_cell              {You} {set} course for {verbatim:x}, {verbatim:y}.
+setting-course-coordinates-outside-expanse coordinates_outside_expanse {verbatim:destination} lies beyond the edge.
+setting-course-expanse-edge               expanse_edge                 {You} can go no farther that way.
+setting-course-edge-blocked               edge_blocked                 {verbatim:message}</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.course_set</code> (ADR-052).</p>
 <h2 id="show-to-show-display-to-present-to-if-action-showing">show to, show, display to, present to — <code>if.action.showing</code></h2>
 <p><strong>Group</strong> <code>social</code> · direct object required · indirect object required · <strong>Slots</strong> <code>item</code>, <code>viewer</code> · <strong>Emits</strong> <code>if.event.show_blocked</code>, <code>if.event.shown</code></p>
@@ -1396,6 +1416,19 @@ sleeping-peaceful-sleep           peaceful_sleep                          {You} 
   grammar
     steer the direction
     heave to
+    port the turn
+    starboard the turn
+    port
+    starboard
+    hard to port
+    hard to starboard
+    ahead
+    come about
+    make sail
+    shorten sail
+    furl sails
+    furl the sails
+  the turn is a topic
   directions
     north or n
     south or s
@@ -1409,6 +1442,8 @@ sleeping-peaceful-sleep           peaceful_sleep                          {You} 
     down or d</code></pre>
 <p>STEER - Set the heading of a vehicle you are aboard; HEAVE TO clears it. Example: STEER NORTH</p>
 <p>The <code>compass</code> command set (ADR-366 D5c, D5i): aboard a <code>movement: compass</code> vehicle whose <code>commands:</code> line lists <code>compass</code>, <code>steer north</code> and <code>go north</code> are one action and set the heading; the vehicle's own machine then moves it one room that way every <code>pace</code> turns while the room ahead admits it, and <code>heave to</code> clears the heading. Aboard a <code>movement: streets</code> vehicle <code>steer north</code> is going — the vehicle moves one exit at once. Aboard a vehicle that does not list the set, the refusal is <code>vehicle_no_such_command</code>; on foot it is <code>not_in_vehicle</code>. A Chord <code>on the player steering</code> clause in the vehicle's block speaks in place of the stock lines, and <code>extend action steering</code> adds an author's own words to the set.</p>
+<p>Aboard a <code>movement: open</code> vehicle (ADR-376 D3, under <code>use expanses</code>) the same set steers across an expanse: the vehicle steps <code>stride</code> units along the heading every <code>pace</code> turns, arrives at a landmark whose cell its path crosses, stops alongside a floating thing, and stops at an edge, after which a heading with any component toward that edge refuses with the author's edge phrase (<code>edge_blocked</code>) or the stock <code>expanse_edge</code>.</p>
+<p>The <code>naval</code> command set (ADR-375 D3, D7, under <code>use sailing</code>): aboard an open vehicle whose <code>commands:</code> line lists <code>naval</code>, <code>port 15</code> and <code>starboard 15 degrees</code> turn the bearing by that many degrees, under way or not (a ship with no bearing yet turns from north); a bare <code>port</code> or <code>starboard</code> asks <code>naval_how_far</code>; <code>hard to port</code> and <code>hard to starboard</code> turn ninety; <code>ahead</code> puts the ship under way on her bearing, and <code>heave to</code> takes her out of it keeping the bearing; <code>come about</code> tacks through the wind to the same angle on its other side, refusing in a calm (<code>naval_no_wind</code>) or dead into or before the wind (<code>naval_cannot_come_about</code>). Aboard a ship with <code>sails:</code>, <code>make sail</code>, <code>shorten sail</code> and <code>furl sails</code> move one setting at a time, refusing at the ends (<code>sails_at_full</code>, <code>sails_already_furled</code>); the ship's <code>sailing</code> block then sets her pace from the band for her angle off the expanse's wind, and in a <code>stopped</code> band she lies in irons (going's <code>vehicle_in_irons</code>) until turned out or the wind shifts.</p>
 <p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
 <pre><code class="language-text">alias                                     message id                   text
 steering-not-in-vehicle                   not_in_vehicle               {You're} not aboard anything {you} can steer.
@@ -1416,7 +1451,20 @@ steering-vehicle-no-such-command          vehicle_no_such_command      {You} {ca
 steering-cannot-steer                     cannot_steer                 {You} {can't} steer {the vehicle} that way.
 steering-not-under-way                    not_under_way                {capitalize the vehicle} {verb:is vehicle} not under way.
 steering-steered                          steered                      {You} {steer} {the vehicle} {verbatim:direction}.
-steering-hove-to                          hove_to                      {You} {heave} to, and {the vehicle} loses way.</code></pre>
+steering-hove-to                          hove_to                      {You} {heave} to, and {the vehicle} loses way.
+steering-expanse-edge                     expanse_edge                 {You} can go no farther that way.
+steering-edge-blocked                     edge_blocked                 {verbatim:message}
+steering-naval-how-far                    naval_how_far                How many degrees?
+steering-naval-no-wind                    naval_no_wind                There is no wind to come about through.
+steering-naval-cannot-come-about          naval_cannot_come_about      {capitalize the vehicle} {verb:lies vehicle} dead to the wind, with no other side to come about to.
+steering-sails-at-full                    sails_at_full                All sail is set.
+steering-sails-already-furled             sails_already_furled         The sails are already furled.
+steering-turned                           turned                       {You} {bring} {the vehicle} to {verbatim:side}, to {verbatim:bearing} degrees.
+steering-ahead                            ahead                        {capitalize the vehicle} gathers way on {verbatim:bearing} degrees.
+steering-came-about                       came_about                   {You} {come} about, and {the vehicle} settles on {verbatim:bearing} degrees.
+steering-sail-made                        sail_made                    {You} {make} sail.
+steering-sail-shortened                   sail_shortened               {You} {shorten} sail.
+steering-sails-furled                     sails_furled                 {You} {furl} the sails.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.steered</code> (ADR-052).</p>
 <h2 id="smell-sniff-if-action-smelling">smell, sniff — <code>if.action.smelling</code></h2>
 <p><strong>Group</strong> <code>sensory</code> · direct object required · <strong>Slots</strong> <code>target</code> · <strong>Emits</strong> <code>if.event.smell_blocked</code>, <code>if.event.smelled</code></p>
@@ -1511,7 +1559,8 @@ switching-on-illuminates-darkness illuminates_darkness                    {capit
     acquire the item
     collect the item
     pick up the item
-    take up the item</code></pre>
+    take up the item
+    retrieve the item</code></pre>
 <p>TAKE/GET/PICK UP - Pick up objects and add them to your inventory. Example: TAKE LAMP</p>
 <p>Messages — override any with <code>override message &lt;alias&gt;</code>:</p>
 <pre><code class="language-text">alias                             message id                              text
@@ -1527,7 +1576,8 @@ taking-cannot-take                cannot_take                             {You} 
 taking-taken                      taken                                   Taken.
 taking-nothing-to-take            nothing_to_take                         You take in everything you see and enjoy the moment.
 taking-taken-from                 taken_from                              {You} {take} {the item} from {the container}.
-taking-taken-multi                taken_multi                             {item}: Taken.</code></pre>
+taking-taken-multi                taken_multi                             {item}: Taken.
+taking-retrieved                  retrieved                               {You} {haul} {the item} aboard.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · an event handler on <code>if.event.removed</code> (ADR-052).</p>
 <h2 id="remove-doff-unequip-take-off-if-action-taking-off">remove, doff, unequip, take off — <code>if.action.taking_off</code></h2>
 <p><strong>Group</strong> <code>wearable_manipulation</code> · direct object required · <strong>Slots</strong> <code>item</code></p>
@@ -1644,7 +1694,9 @@ throwing-breaks-against           breaks_against                          {capit
 throwing-fragile-breaks           fragile_breaks                          The fragile {item} breaks into pieces.
 throwing-target-ducks             target_ducks                            {capitalize the target} ducks out of the way.
 throwing-target-catches           target_catches                          {capitalize the target} catches {the item}!
-throwing-target-angry             target_angry                            {capitalize the target} doesn't appreciate being hit with {the item}.</code></pre>
+throwing-target-angry             target_angry                            {capitalize the target} doesn't appreciate being hit with {the item}.
+throwing-thrown-afloat            thrown_afloat                           {capitalize the item} {verb:floats item} where {verb:it item} {verb:falls item}.
+throwing-lost-overboard           lost_overboard                          {capitalize the item} drifts away.</code></pre>
 <p><strong>Change it:</strong> <code>override message</code> (above) · an action interceptor on the action id (ADR-090/228) · <code>after the player breaking</code> on a fragile thing, which a break fires (ADR-373) · an event handler on <code>if.event.thrown</code> (ADR-052).</p>
 <h2 id="tie-fasten-attach-if-action-tying">tie, fasten, attach — <code>if.action.tying</code></h2>
 <p><strong>Group</strong> <code>object_manipulation</code> · <strong>Slots</strong> <code>item</code>, <code>anchor</code> · <strong>Emits</strong> <code>if.event.tie_blocked</code>, <code>if.event.tied</code></p>

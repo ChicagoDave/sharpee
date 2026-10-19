@@ -4,8 +4,9 @@
  * Public interface: `VehicleTrait` (data: the movement model, the player's
  * command sets and the boarding room), the model types `VehicleModel`, `VehicleNoneModel`,
  * `VehicleLineModel`, `VehicleStreetsModel`, `VehicleCompassModel`,
- * `VehicleFlightModel`, their declaration shapes `VehicleModelConfig`, the
- * type guard `isVehicleTrait`, and the factory `createVehicleTrait`.
+ * `VehicleFlightModel`, `VehicleOpenModel`, their declaration shapes
+ * `VehicleModelConfig`, the type guard `isVehicleTrait`, and the factory
+ * `createVehicleTrait`.
  *
  * Owner context: world-model traits. The trait carries exactly what the
  * language can write about a vehicle and nothing else: its movement model,
@@ -25,10 +26,32 @@
  * - ADR-366 D5e, D5g — the machine is the vehicle's own; its state is trait data.
  * - ADR-366 D8, D9 — nothing else on the trait; location is read, never copied.
  * - ADR-366 D4 — moving a vehicle moves what it holds.
+ * - ADR-376 D3, D5 — the open model under `use expanses`: heading or course,
+ *   a position held only while the vehicle is in the expanse.
+ * - ADR-375 D2, D5, D7 — under `use sailing`: a bearing, the pace table by
+ *   the angle off the wind, the sails, and irons.
  */
 
 import { TraitType } from '../trait-types.js';
 import { ITrait } from '../trait.js';
+import type { ExpanseSide, IExpanseCell } from '../expanse/expanseTrait.js';
+
+/** One pace cell of a sailing band (ADR-375 D5): turns per step, or `stopped`. */
+export type SailingPace = number | 'stopped';
+
+/** One band of a sailing table (ADR-375 D5, D7): `from` to `to` degrees off the wind, a pace per setting. */
+export interface SailingBand {
+  from: number;
+  to: number;
+  /** The setting `null` is the one cell of a vehicle without sails. */
+  paces: Array<{ setting: string | null; pace: SailingPace }>;
+}
+
+/** The `sailing` block (ADR-375 D5): the bands and the calm row. */
+export interface SailingTable {
+  bands: SailingBand[];
+  calm: SailingPace;
+}
 
 /** A vehicle that does not move (ADR-366 D5): a bathtub, a crate the player sits in. */
 export interface VehicleNoneModel {
@@ -97,17 +120,63 @@ export interface VehicleFlightModel {
   turnsRemaining: number;
 }
 
+/**
+ * Open movement (ADR-376 D3, `use expanses`): a position in an expanse
+ * rather than a room, stepped `stride` units every `pace` turns along a
+ * heading or toward a course. Under way means exactly one of `heading` and
+ * `course` is set; at rest both are null. `position` is held only while the
+ * vehicle is in the expanse room (D5): at a landmark it is null and the
+ * vehicle's location is the one record.
+ */
+export interface VehicleOpenModel {
+  kind: 'open';
+  drive: 'player' | 'control';
+  /** Turns per step, one or more. Under sail (`sailing` present) the table sets the pace and this is unread. */
+  pace: number;
+  /** Units per step, one or more. */
+  stride: number;
+  /** How far one sees from aboard, in expanse units (D6). `seen from afar:` is `IdentityTrait.seenFromAfar`. */
+  sight: number;
+  /**
+   * The `sailing` block (ADR-375 D5): present on a sailing vehicle, whose
+   * heading is then a bearing and whose pace is the band's.
+   */
+  sailing?: SailingTable;
+  /** `sails:` (ADR-375 D7): the settings, least to most canvas, and the current one (machine state). */
+  sails?: { settings: string[]; current: string };
+  /**
+   * Machine state: the heading — one of the eight compass words, or a
+   * bearing in degrees under sail (ADR-375 D2). Null when the vehicle has
+   * none; a sailing vehicle keeps its bearing when hove to.
+   */
+  heading: string | number | null;
+  /** Machine state: the cell the vehicle is bound for, or null when not on a course. */
+  course: IExpanseCell | null;
+  /** Machine state: the coordinates in the expanse (fractional under sail), or null at a landmark (D5). */
+  position: IExpanseCell | null;
+  /** Machine state: whether the machine is moving the vehicle. */
+  underWay: boolean;
+  /** Machine state: turns left before the next step. */
+  turnsToStep: number;
+  /** Machine state: the edge the vehicle stopped at, refusing headings toward it until it steps away (D8). */
+  atEdge: ExpanseSide | null;
+  /** Machine state (ADR-375 D5): lying still in a `stopped` band under the fullest setting, reported once. */
+  inIrons: boolean;
+}
+
 /** How a vehicle moves — the declaration of its built-in machine, with the machine's state beside it. */
 export type VehicleModel =
   | VehicleNoneModel
   | VehicleLineModel
   | VehicleStreetsModel
   | VehicleCompassModel
-  | VehicleFlightModel;
+  | VehicleFlightModel
+  | VehicleOpenModel;
 
 type LineState = 'underWay' | 'travelDirection' | 'turnsToStep';
 type CompassState = 'heading' | 'turnsToStep';
 type FlightState = 'destination' | 'turnsRemaining';
+type OpenState = 'heading' | 'course' | 'position' | 'underWay' | 'turnsToStep' | 'atEdge' | 'inIrons';
 
 /**
  * A model as declared: the machine's state fields are optional and start at
@@ -118,7 +187,8 @@ export type VehicleModelConfig =
   | VehicleStreetsModel
   | (Omit<VehicleLineModel, LineState> & Partial<Pick<VehicleLineModel, LineState>>)
   | (Omit<VehicleCompassModel, CompassState> & Partial<Pick<VehicleCompassModel, CompassState>>)
-  | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>);
+  | (Omit<VehicleFlightModel, FlightState> & Partial<Pick<VehicleFlightModel, FlightState>>)
+  | (Omit<VehicleOpenModel, OpenState> & Partial<Pick<VehicleOpenModel, OpenState>>);
 
 /**
  * Configuration options for VehicleTrait
@@ -158,8 +228,9 @@ export class VehicleTrait implements ITrait {
 
   /**
    * Build a model from its declaration, holding the invariants the analyzer
-   * reports first: two stops, none repeated; two destinations; a pace of at
-   * least one. The machine's state starts at rest unless the declaration
+   * reports first: two stops, none repeated; two destinations; a pace, a
+   * stride of at least one; an open vehicle on at most one of heading and
+   * course. The machine's state starts at rest unless the declaration
    * carries it.
    * @throws when an invariant is broken
    */
@@ -216,6 +287,41 @@ export class VehicleTrait implements ITrait {
           passage: config.passage,
           destination: config.destination ?? null,
           turnsRemaining: config.turnsRemaining ?? 0,
+        };
+      }
+      case 'open': {
+        if (!Number.isInteger(config.pace) || config.pace < 1) {
+          throw new Error('VehicleTrait: a pace is a whole number of turns, one or more');
+        }
+        if (!Number.isInteger(config.stride) || config.stride < 1) {
+          throw new Error('VehicleTrait: a stride is a whole number of units, one or more');
+        }
+        if (typeof config.sight !== 'number' || config.sight < 0) {
+          throw new Error('VehicleTrait: sight is zero or more');
+        }
+        const heading = config.heading ?? null;
+        const course = config.course ? { x: config.course.x, y: config.course.y } : null;
+        if (heading !== null && course !== null && !config.sailing) {
+          throw new Error('VehicleTrait: an open vehicle steers by a heading or a course, not both');
+        }
+        if (config.sails && (config.sails.settings.length === 0 || !config.sails.settings.includes(config.sails.current))) {
+          throw new Error('VehicleTrait: sails name their settings and start in one of them');
+        }
+        return {
+          kind: 'open',
+          drive: config.drive,
+          pace: config.pace,
+          stride: config.stride,
+          sight: config.sight,
+          ...(config.sailing ? { sailing: { bands: config.sailing.bands.map((b) => ({ from: b.from, to: b.to, paces: b.paces.map((p) => ({ ...p })) })), calm: config.sailing.calm } } : {}),
+          ...(config.sails ? { sails: { settings: [...config.sails.settings], current: config.sails.current } } : {}),
+          heading,
+          course,
+          position: config.position ? { x: config.position.x, y: config.position.y } : null,
+          underWay: config.underWay ?? (heading !== null || course !== null),
+          turnsToStep: config.turnsToStep ?? 0,
+          atEdge: config.atEdge ?? null,
+          inIrons: config.inIrons ?? false,
         };
       }
     }

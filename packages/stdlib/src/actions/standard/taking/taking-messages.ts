@@ -22,6 +22,8 @@ export const TakingMessages = {
   TAKEN: 'taken',
   TAKEN_FROM: 'taken_from',
   TAKEN_MULTI: 'taken_multi',  // Compact format for multi-object: "{item}: Taken."
+  /** ADR-376 D10: a floating thing hauled in from the expanse. */
+  RETRIEVED: 'retrieved',
 } as const;
 
 export type TakingMessageId = typeof TakingMessages[keyof typeof TakingMessages];

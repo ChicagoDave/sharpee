@@ -1,0 +1,201 @@
+{
+  "cards": [
+    {
+      "assertions": {
+        "contains": [
+          "You get into the skiff."
+        ]
+      },
+      "command": "enter skiff",
+      "id": "expent01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the skiff east."
+        ]
+      },
+      "command": "steer east",
+      "id": "expstr01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The Mining Platform, close by, to the west.",
+          "The cask, close by, to the east.",
+          "The skiff comes alongside the cask."
+        ],
+        "notContains": [
+          "Derelict"
+        ]
+      },
+      "command": "look",
+      "id": "explok01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You haul the cask aboard."
+        ]
+      },
+      "command": "retrieve cask",
+      "id": "expret01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You look through the telescope.",
+          "The Derelict, on the horizon, to the east."
+        ]
+      },
+      "command": "look through telescope",
+      "id": "expthr01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You set course for 14, 6."
+        ]
+      },
+      "command": "set course for 14, 6",
+      "id": "expcrs01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "lookout"
+        ]
+      },
+      "command": "wait",
+      "id": "expwat02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "lookout"
+        ]
+      },
+      "command": "wait",
+      "id": "expwat03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The lookout cries: the Derelict is in sight."
+        ]
+      },
+      "command": "wait",
+      "id": "expwat04",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "a long dead hull, turning slowly end over end"
+        ]
+      },
+      "command": "examine Derelict",
+      "id": "expexm01",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "wait",
+      "id": "expwat05",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "wait",
+      "id": "expwat06",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "notContains": [
+          "arrives"
+        ]
+      },
+      "command": "wait",
+      "id": "expwat07",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "The skiff arrives at the Derelict."
+        ]
+      },
+      "command": "wait",
+      "id": "expwat08",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Derelict"
+        ]
+      },
+      "command": "look",
+      "id": "explok02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the skiff north."
+        ]
+      },
+      "command": "steer north",
+      "id": "expstr02",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ice closes the way north"
+        ]
+      },
+      "command": "wait",
+      "id": "expwat10",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "Ice closes the way north"
+        ]
+      },
+      "command": "steer north",
+      "id": "expstr03",
+      "type": "turn"
+    },
+    {
+      "assertions": {
+        "contains": [
+          "You steer the skiff west."
+        ]
+      },
+      "command": "steer west",
+      "id": "expstr04",
+      "type": "turn"
+    }
+  ],
+  "id": "exproot1"
+}

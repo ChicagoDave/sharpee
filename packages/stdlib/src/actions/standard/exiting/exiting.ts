@@ -9,7 +9,8 @@ import { type ISemanticEvent } from '@sharpee/core';
 import {
   TraitType,
   OpenableBehavior,
-  IFEntity
+  IFEntity,
+  leaveVehicleIntoExpanse,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ExitedEventData } from './exiting-events.js';
@@ -182,8 +183,12 @@ export const exitingAction: Action & { metadata: ActionMetadata } = {
       preposition = 'off';
     }
     
-    // Simply move the actor to the parent location - that's all!
-    context.world.moveEntity(actor.id, parentLocation);
+    // Out of an open vehicle positioned in its expanse (ADR-376 D9), the
+    // actor takes the vehicle's cell as a position of their own; from
+    // anything else, the move to the parent is the whole of it.
+    if (!(currentContainer.has(TraitType.VEHICLE) && leaveVehicleIntoExpanse(context.world, actor, currentContainer))) {
+      context.world.moveEntity(actor.id, parentLocation);
+    }
     
     // Store state for report phase using sharedData
     const state: ExitingExecutionState = {

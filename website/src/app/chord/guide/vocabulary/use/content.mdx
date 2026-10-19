@@ -1,6 +1,7 @@
 A `use <extension>` line in the story header admits one trusted platform
-extension's vocabulary (`combat`, `scoring`, `hunger`, `chapters`) and
-triggers its runtime registration; a `use`-only story stays pure IR.
+extension's vocabulary (`combat`, `scoring`, `hunger`, `chapters`,
+`expanses`, `sailing`) and triggers its runtime registration; a
+`use`-only story stays pure IR.
 (NPC vocabulary and state machines are core and always on: `define
 machine … end machine` needs no `use` line, and writing `use
 state-machines` is a compile error that says so.) Each extension
@@ -9,7 +10,14 @@ skill 40`, the NPC library's `guard`/`patrol`/…), `use scoring` the ranks
 and `award` ([Scoring](/chord/guide/flow/scoring)), `use hunger` the
 depleting meter ([Hunger](/chord/guide/flow/hunger)), and `use chapters`
 the `define chapters … end chapters` block with its `during`, `before`,
-and `after` conditions ([Chapters](/chord/guide/flow/chapters)).
+and `after` conditions ([Chapters](/chord/guide/flow/chapters)), `use
+expanses` the `expanse` kind — a bounded space with coordinates — and
+`movement: open` for a vehicle that crosses it by heading or by course,
+with sight in distance bands, edges, floating things that drift, and the
+`coordinates` command set (ADR-376), and `use sailing`, which builds on
+`use expanses` and must be written beside it, bearings in degrees, the
+`naval` command set, the expanse's `wind:`, the vehicle's `sailing` block
+of paces by the angle off the wind, and sails (ADR-375).
 Alongside these, the media surface (`define
 sound/image/music … from "<file>"`, `play sound`, `play ambient`, `show
 image`, `define channel` data projections, and the `client has
@@ -35,3 +43,100 @@ create the sentry
   a person, combatant with health 20 and skill 40
   in the Guardhouse
 ```
+
+An expanse and a ship on it. The skiff is steered by compass heading or
+sent to a cell; the Marigold is turned by degrees and makes the pace her
+`sailing` row gives for her angle off the wind:
+
+```chord
+story
+  title: Open Water
+  authors:
+    ref
+  id: open-water
+  story-version: 0.0.1
+  use expanses
+  use sailing
+
+create the Sargasso
+  an expanse
+  size: 40 by 40
+  wind: from northeast
+  north is blocked: ice-fields
+
+  Weed-choked water under a sky the colour of pewter.
+
+  landmarks
+    Port Royal: 3, 4
+    the Reef: 12, 30
+  end landmarks
+
+create Port Royal
+  a room
+  seen from afar: a smudge of smoke over a low green shore
+  sight: 20
+
+  The quay.
+
+create the Reef
+  a room
+  seen from afar: a line of white where the swell breaks
+
+  Coral under a foot of water.
+
+create the skiff
+  a vehicle
+  in the Sargasso at 3, 5
+  movement: open
+  carries: in
+  drive: player
+  commands: compass, coordinates
+  pace: 1 turn
+  stride: 1 unit
+  sight: 6
+  seen from afar: a glint of hull against the dark
+
+  A skiff.
+
+create the Marigold
+  a vehicle
+  in the Sargasso at 20, 20
+  movement: open
+  carries: in
+  drive: player
+  commands: naval
+  stride: 1 unit
+  sight: 8
+  seen from afar: three masts leaning to the wind
+  sails: furled, reefed, full
+  sails start: furled
+
+  A barque.
+
+  sailing
+    0 to 44 degrees: furled stopped, reefed stopped, full stopped
+    45 to 74 degrees: furled stopped, reefed 6 turns, full 4 turns
+    75 to 119 degrees: furled stopped, reefed 3 turns, full 2 turns
+    120 to 180 degrees: furled 6 turns, reefed 2 turns, full 1 turn
+    calm: stopped
+  end sailing
+
+create the cask
+  a thing, floats
+  in the Sargasso at 22, 20
+
+  A tarred cask, riding low.
+
+define phrase ice-fields
+  Ice closes the way north.
+end phrase
+```
+
+Aboard the skiff, `steer east` and `set course for 12, 30` move it; `look`
+names what is in sight by band and direction, `examine` a landmark shows
+its `seen from afar:` line, and the step whose path crosses the cask's
+cell stops alongside it for `retrieve cask`. Aboard the Marigold,
+`starboard 15 degrees` turns her, `ahead` puts her under way, `make sail`
+sets more canvas, and dead into the wind she lies in irons until turned
+out or the story writes `set the Sargasso's wind to southwest`. The
+Sargasso's unwritten edges are weather for her; the written one is ice.

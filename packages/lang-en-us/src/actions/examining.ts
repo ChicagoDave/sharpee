@@ -58,7 +58,9 @@ export const examiningLanguage = {
     'container_contents': "In {the container} {you} {see} {items}.",
     'surface_contents': "On {the surface} {you} {see} {items}.",
     'worn_by_you': "{You} {are} wearing {the item}.",
-    'worn_by_other': "{actor} {verb:is actor} wearing {the item}."
+    'worn_by_other': "{actor} {verb:is actor} wearing {the item}.",
+    // ADR-376 D6: a thing in sight across an expanse but out of reach shows its `seen from afar:` line.
+    'seen_from_afar': "{verbatim:description}"
   },
   
   help: {

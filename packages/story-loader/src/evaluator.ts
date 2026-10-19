@@ -45,7 +45,7 @@ import {
   type MoodModifier,
 } from '@sharpee/world-model';
 import { sceneWith } from '@sharpee/world-model';
-import { isUnderWay, VehicleTrait } from '@sharpee/world-model';
+import { bearingOf, distance, type IFEntity, inSight, isUnderWay, landmarkCellOf, lookoutOf, placeOf, sightingOf, VehicleTrait } from '@sharpee/world-model';
 import { askedWordFor, dialogueTurn, recencyWordFor } from '@sharpee/character';
 import { CHAPTER_CURRENT_KEY } from '@sharpee/ext-chapters';
 import { LoadError } from './errors.js';
@@ -228,17 +228,55 @@ export class Evaluator {
         // ADR-366 D9: the vehicle's location is the one fact, read here.
         return ctx.world.getLocation(this.entityValue(cond.vehicle, ctx)) === this.entityValue(cond.place, ctx);
       case 'vehicle-heading': {
-        // ADR-366 D5c: a compass vehicle's heading, null when not under way.
+        // ADR-366 D5c, ADR-376 D3: a compass or open vehicle's heading, null
+        // when it has none. ADR-375 D2: a bearing compares as a number, and a
+        // compass word names its bearing, so `is heading east` holds a ship
+        // on 90 degrees too.
         const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
-        return model?.kind === 'compass' && model.heading === cond.direction.toUpperCase();
+        if (model?.kind !== 'compass' && model?.kind !== 'open') return false;
+        if (model.heading === null) return false;
+        if (cond.bearing === undefined && typeof model.heading === 'string') return model.heading === (cond.direction ?? '').toUpperCase();
+        const want = cond.bearing ?? bearingOf((cond.direction ?? '').toUpperCase());
+        const have = bearingOf(model.heading);
+        return want !== undefined && have !== undefined && want === have;
       }
-      case 'in-sight':
-      case 'sight-band':
-      case 'vehicle-within':
-        // ADR-376 D7: the expanse runtime's reads (Chord 4.0 Phase 13,
-        // Slice 3). The front end compiles them; nothing here measures a
-        // distance yet, so evaluating one is a refusal by name, never false.
-        throw new LoadError(`\`${cond.kind}\` reaches a runtime that cannot play expanses yet.`);
+      case 'in-irons': {
+        // ADR-375 D5: lying still in a `stopped` band under the fullest setting.
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
+        return model?.kind === 'open' && model.inIrons;
+      }
+      case 'vehicle-sails': {
+        // ADR-375 D7: the current setting.
+        const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
+        return model?.kind === 'open' && model.sails?.current === cond.setting;
+      }
+      case 'in-sight': {
+        // ADR-376 D6, D7: within the player's sight from where they look —
+        // their open vehicle, their own cell out of it, or a landmark room
+        // with `sight:`. False when either is positioned in no expanse.
+        const player = ctx.world.getPlayer();
+        const thing = ctx.world.getEntity(this.entityValue(cond.thing, ctx));
+        return player !== undefined && thing !== undefined && inSight(ctx.world, player, thing);
+      }
+      case 'sight-band': {
+        const player = ctx.world.getPlayer();
+        const thing = ctx.world.getEntity(this.entityValue(cond.thing, ctx));
+        const lookout = player ? lookoutOf(ctx.world, player) : undefined;
+        const sighting = lookout && thing ? sightingOf(ctx.world, lookout, thing) : undefined;
+        return sighting?.band === cond.band;
+      }
+      case 'vehicle-within': {
+        // ADR-376 D7: an open vehicle's straight-line distance from a
+        // landmark's cell or a literal cell of its expanse. A vehicle at a
+        // landmark measures from that landmark's row.
+        const vehicle = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx));
+        const place = vehicle ? placeOf(ctx.world, vehicle) ?? landmarkPlaceOf(ctx.world, vehicle) : undefined;
+        if (!place) return false;
+        const target = 'kind' in cond.of
+          ? landmarkCellOf(place.trait, this.entityValue(cond.of, ctx))
+          : { x: cond.of.x, y: cond.of.y };
+        return target !== undefined && distance(place.cell, target) <= cond.distance;
+      }
       case 'any-of':
         // E1 (ratchet 2026-07-12): true iff some entity satisfies the
         // named open condition; false over the empty set. Short-circuits.
@@ -956,4 +994,14 @@ export class Evaluator {
     world.setStateValue(CHORD_RNG_KEY, this.rng.getSeed());
     return pick;
   }
+}
+
+/**
+ * The place of an open vehicle sitting in a landmark room (ADR-376 D5): its
+ * position is null there, so the landmark's row stands for it.
+ */
+function landmarkPlaceOf(world: WorldModel, vehicle: IFEntity): ReturnType<typeof placeOf> {
+  const location = world.getLocation(vehicle.id);
+  const room = location !== undefined ? world.getEntity(location) : undefined;
+  return room ? placeOf(world, room) : undefined;
 }

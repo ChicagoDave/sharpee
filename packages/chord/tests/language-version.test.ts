@@ -185,7 +185,13 @@ const PINNED = {
   // sight reads and `within`; `send` takes `NUMBER , NUMBER`; `step-anchor`
   // admits `comes into sight`. Additive, on the unpublished 4.0 surface — no
   // bump.
-  ebnfSha256: '73f3ff25e5aeb052b0ebfd29e06bfcf307f7494c05f2a5b7f30fae75fcb0cd9e',
+  // Re-pinned 2026-10-19 (session 2fb329, ADR-375, Chord 4.0 Phase 13 Slice
+  // 5): `use sailing` — `heading` takes `NUMBER degrees`; `expanse-line`
+  // gains `wind`; `vehicle-line` gains `sails`, `sails start` and the
+  // `sailing-block`; `commands:` admits `naval`; `set … wind` and `set …
+  // sails`; `predicate` gains `in irons` and `are WORD` on a sails subject.
+  // Additive, on the unpublished 4.0 surface — no bump.
+  ebnfSha256: 'ac5e72db324da577ce1838fb9b7408c9cde2bf2611ee787cab07fe7bb2258b9e',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

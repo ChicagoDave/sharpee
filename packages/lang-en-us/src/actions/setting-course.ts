@@ -20,9 +20,14 @@ export const settingCourseLanguage = {
     'not_a_destination': "{capitalize the vehicle} {verb:does vehicle} not go to {verbatim:destination}.",
     'already_there': "{capitalize the vehicle} {verb:is vehicle} already at {the destination}.",
     'vehicle_under_way': "{capitalize the vehicle} {verb:is vehicle} already under way.",
+    // ADR-376 D4, D8: a course by coordinates.
+    'coordinates_outside_expanse': "{verbatim:destination} lies beyond the edge.",
+    'expanse_edge': "{You} can go no farther that way.",
+    'edge_blocked': "{verbatim:message}",
 
     // Success
-    'course_set': "{You} {set} course for {the destination}."
+    'course_set': "{You} {set} course for {the destination}.",
+    'course_set_cell': "{You} {set} course for {verbatim:x}, {verbatim:y}."
   },
 
   help: {

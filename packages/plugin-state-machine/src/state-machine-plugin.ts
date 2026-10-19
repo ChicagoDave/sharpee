@@ -12,7 +12,7 @@ import { type ISemanticEvent } from '@sharpee/core';
 import { TURN_BANDS, type TurnPlugin, type TurnPluginContext } from '@sharpee/plugins';
 import { StateMachineRegistry } from './state-machine-runtime.js';
 import { EvaluationContext, StateMachineRegistryState } from './types.js';
-import { tickVehicles, type VehiclePositionResolver } from './vehicle-machine.js';
+import { tickVehicles, type ExpanseEdgeTextResolver, type VehiclePositionResolver } from './vehicle-machine.js';
 
 /** What the host lends the plugin's vehicle phase. */
 export interface StateMachinePluginOptions {
@@ -22,6 +22,12 @@ export interface StateMachinePluginOptions {
    * model steps without it.
    */
   vehiclePosition?: VehiclePositionResolver;
+  /**
+   * The host's text for an expanse edge the author wrote a phrase for
+   * (ADR-376 D8). Omit when the host lowers no expanses; an edge with no
+   * phrase, or no resolver, reports the stock `expanse-edge` line.
+   */
+  expanseEdgeText?: ExpanseEdgeTextResolver;
 }
 
 /**
@@ -42,10 +48,12 @@ export class StateMachinePlugin implements TurnPlugin {
   priority = TURN_BANDS.platformPhases.floor + 40;
   private registry: StateMachineRegistry;
   private readonly vehiclePosition?: VehiclePositionResolver;
+  private readonly expanseEdgeText?: ExpanseEdgeTextResolver;
 
   constructor(options: StateMachinePluginOptions = {}) {
     this.registry = new StateMachineRegistry();
     if (options.vehiclePosition) this.vehiclePosition = options.vehiclePosition;
+    if (options.expanseEdgeText) this.expanseEdgeText = options.expanseEdgeText;
   }
 
   /**
@@ -72,7 +80,7 @@ export class StateMachinePlugin implements TurnPlugin {
 
     return [
       ...this.registry.evaluate(evalCtx),
-      ...tickVehicles(ctx.world, ctx.playerId, this.vehiclePosition),
+      ...tickVehicles(ctx.world, ctx.playerId, ctx.random, { positionOf: this.vehiclePosition, edgeText: this.expanseEdgeText }),
     ];
   }
 

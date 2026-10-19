@@ -232,7 +232,11 @@ use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trust
                                                               ADR-376, which may
                                                               contribute a kind noun and
                                                               a movement type under
-                                                              ADR-366 D12); admits
+                                                              ADR-366 D12; sailing —
+                                                              ADR-375, which requires
+                                                              `use expanses`: analysis.
+                                                              sailing-needs-expanses);
+                                                              admits
                                                               the extension's manifest
                                                               vocabulary and triggers
                                                               its runtime registration.
@@ -433,6 +437,12 @@ vehicle-line = "movement" ":" ( "none" | "line" | "streets"
                                                            (* D5: required on every
                                                               type but `none` *)
              | "commands" ":" WORD { "," WORD } NL         (* D5i: the player's command
+                                                              sets; `naval` is ADR-375
+                                                              D3's, on an open vehicle
+                                                              under `use sailing`
+                                                              (analysis.sailing-needs-
+                                                              use, sailing-not-open).
+                                                              D5i: the player's command
                                                               sets (`compass`,
                                                               `destinations`); `drive:
                                                               player` only *)
@@ -459,9 +469,47 @@ vehicle-line = "movement" ":" ( "none" | "line" | "streets"
              | sight-line                                  (* ADR-376 D6: required on an
                                                               open vehicle (analysis.
                                                               open-missing-sight) *)
-             | seen-from-afar-line ;                       (* ADR-376 D6: required on an
+             | seen-from-afar-line                         (* ADR-376 D6: required on an
                                                               open vehicle (analysis.
                                                               missing-seen-from-afar) *)
+             | "sails" ":" WORD { "," WORD } NL            (* ADR-375 D7, under `use
+                                                              sailing`, on an open vehicle
+                                                              with a sailing block: the
+                                                              settings, least to most
+                                                              canvas (analysis.sails-
+                                                              without-sailing, sails-
+                                                              unknown-setting) *)
+             | "sails" "start" ":" WORD NL                 (* ADR-375 D7: the starting
+                                                              setting, required with
+                                                              `sails:` (analysis.sails-
+                                                              missing-start) *)
+             | sailing-block ;                             (* ADR-375 D5, below *)
+sailing-block = "sailing" NL
+              >>> { NUMBER "to" NUMBER "degrees" ":" sailing-cells NL
+                  | "calm" ":" sailing-pace NL }
+                "end" "sailing" NL ;                       (* ADR-375 D5, D7, under `use
+                                                              sailing`: the pace by the
+                                                              angle off the wind, 0 dead
+                                                              into it, 180 dead before;
+                                                              the bands cover 0 to 180
+                                                              once (analysis.sailing-gap,
+                                                              -overlap); one `calm:` row
+                                                              (analysis.sailing-no-calm);
+                                                              in place of `pace:`
+                                                              (analysis.sailing-and-pace);
+                                                              the expanse carries a wind
+                                                              (analysis.sailing-without-
+                                                              wind); off an open vehicle
+                                                              analysis.sailing-not-open;
+                                                              a row of another shape
+                                                              parse.sailing-row *)
+sailing-cells = sailing-pace                               (* without `sails:` *)
+              | WORD sailing-pace { "," WORD sailing-pace } ;
+                                                           (* with `sails:`, every
+                                                              setting once (analysis.
+                                                              sailing-row-missing-
+                                                              setting) *)
+sailing-pace = NUMBER ( "turn" | "turns" ) | "stopped" ;
 sight-line   = "sight" ":" NUMBER NL ;                     (* ADR-376 D6: expanse units.
                                                               On an open vehicle, how far
                                                               one sees from it; on a
@@ -485,6 +533,14 @@ expanse-line = "size" ":" NUMBER "by" NUMBER NL            (* ADR-376 D2: the tw
                                                               0..w-1 east, 0..h-1 north *)
              | "visibility" ":" NUMBER NL                  (* ADR-376 D6: a cap on every
                                                               looker's sight *)
+             | "wind" ":" ( "from" ( DIRECTION | NUMBER "degrees" )
+                          | "calm" ) NL                    (* ADR-375 D4, under `use
+                                                              sailing`: the wind an
+                                                              expanse carries, from a
+                                                              compass direction or a
+                                                              bearing 0..359; on anything
+                                                              but an expanse analysis.
+                                                              sailing-not-open *)
              | "drift" ":" "1" "unit" "every" NUMBER ( "turn" | "turns" ) NL ;
                                                            (* ADR-376 D10: floating things
                                                               move one unit per interval;
@@ -1864,6 +1920,14 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               event.data *)
              | media-statement                             (* ADR-216 sugar, below *)
              | "set" value-expr "to" value-expr [ stmt-when ] NL
+                                                           (* ADR-375 D4, D7, under `use
+                                                              sailing`: `set the
+                                                              <expanse>'s wind to
+                                                              <DIRECTION | NUMBER degrees
+                                                              | calm>` (parse.set-wind) and
+                                                              `set the <vehicle>'s sails
+                                                              to WORD` (analysis.sails-
+                                                              unknown-setting) *)
                                                            (* a trait field, a region's
                                                               landing (ADR-325 D5), or
                                                               a tally's absolute value
@@ -1913,8 +1977,12 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               (analysis.wear-not-wearable,
                                                               analysis.wear-actor-not-
                                                               person) *)
-             | timer-verb value-expr [ "heading" DIRECTION ]
-               [ stmt-when ] NL                            (* ADR-325 D3c: bare name in
+             | timer-verb value-expr
+               [ "heading" ( DIRECTION | NUMBER "degrees" ) ]
+               [ stmt-when ] NL                            (* ADR-375 D2: a bearing
+                                                              0..359 under `use sailing`
+                                                              on an open vehicle.
+                                                              ADR-325 D3c: bare name in
                                                               the owner's block,
                                                               possessive elsewhere;
                                                               `stop music|ambient` is
@@ -2177,7 +2245,16 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                                                                   room or destination;
                                                                   `at least`/`at most`
                                                                   stay the comparison *)
-                              | "heading" DIRECTION            (* ADR-366 D5c: a compass
+                              | "in" "irons"                   (* ADR-375 D5, under `use
+                                                                  sailing`: a sailing
+                                                                  vehicle lies still in a
+                                                                  `stopped` band *)
+                              | "heading" ( DIRECTION
+                                          | NUMBER "degrees" )   (* ADR-366 D5c: a compass
+                                                                  or open vehicle's heading;
+                                                                  a bearing under `use
+                                                                  sailing` (ADR-375 D2).
+                                                                  ADR-366 D5c: a compass
                                                                   vehicle's heading.
                                                                   A non-vehicle subject
                                                                   on any of the three is
@@ -2189,6 +2266,12 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                                                                   movement *)
                               | word-compare NUMBER            (* ADR-264 D3 word form *)
                               | value-expr )                   (* is *)
+             | "are" [ "not" ] WORD                           (* ADR-375 D7: the subject is
+                                                                  `<vehicle>'s sails`; the
+                                                                  word one of its settings
+                                                                  (parse.sails-setting;
+                                                                  analysis.sails-unknown-
+                                                                  setting) *)
              | "has" [ "not" ] ( "started" | "expired" )      (* ADR-325 D3d: a TIMER's
                                                                   lifecycle, only when the
                                                                   word stands alone; `is`

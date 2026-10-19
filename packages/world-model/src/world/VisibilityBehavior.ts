@@ -13,6 +13,9 @@ import { SceneryTrait } from '../traits/scenery/sceneryTrait.js';
 import { IdentityTrait } from '../traits/identity/identityTrait.js';
 import { PresenceBehavior } from './PresenceBehavior.js';
 import { findTraitWithCapability } from '../capabilities/index.js';
+import { holderOf } from '../traits/expanse/expanseBehavior.js';
+import { lookoutOf, sightingOf, sightings } from '../traits/expanse/sightBehavior.js';
+import { getVehicleAboard } from '../traits/vehicle/vehicleBehavior.js';
 
 /**
  * Standard capability ID for visibility control.
@@ -167,6 +170,14 @@ export class VisibilityBehavior extends Behavior {
       }
     }
 
+    // In an expanse, scope is sight (ADR-376 D6): a positioned thing — an
+    // open vehicle, a floating thing, a landmark room — or anything held in
+    // one is seen only within the looker's sight. Answered here, before the
+    // room rule, so two ships thirty units apart in one room do not see
+    // each other; undefined means the ordinary rules decide.
+    const expanseAnswer = this.seenAcrossExpanse(observer, target, world);
+    if (expanseAnswer !== undefined) return expanseAnswer;
+
     // Get rooms
     const observerRoom = world.getContainingRoom(observer.id);
     const targetRoom = world.getContainingRoom(target.id);
@@ -220,6 +231,30 @@ export class VisibilityBehavior extends Behavior {
     // Check line of sight through containers
     const hasLineOfSight = this.hasLineOfSight(observer.id, target.id, world);
     return hasLineOfSight;
+  }
+
+  /**
+   * The expanse's answer for a target positioned in the observer's expanse
+   * (ADR-376 D6), or undefined when the ordinary rules apply: the observer
+   * has no lookout, the target and everything holding it is unpositioned,
+   * or the target rides the observer's own holder (their vehicle, or
+   * themself out of it).
+   *
+   * A positioned thing itself is visible iff in sight; something held in
+   * one is unseen out of sight and otherwise left to the room and
+   * line-of-sight rules, so a distant ship's cabin stays dark.
+   */
+  private static seenAcrossExpanse(observer: IFEntity, target: IFEntity, world: WorldModel): boolean | undefined {
+    const holder = holderOf(world, target);
+    if (!holder) return undefined;
+    const own = getVehicleAboard(world, observer.id)?.id ?? observer.id;
+    if (holder.id === own) return undefined;
+    const lookout = lookoutOf(world, observer);
+    if (!lookout) return undefined;
+    if (holder.hasTrait(TraitType.ROOM) && world.getContainingRoom(observer.id)?.id === holder.id) return undefined;
+    const seen = sightingOf(world, lookout, holder) !== undefined;
+    if (holder.id === target.id) return seen;
+    return seen ? undefined : false;
   }
 
   /**
@@ -295,6 +330,22 @@ export class VisibilityBehavior extends Behavior {
       if (this.canSee(observer, present, world)) {
         visible.push(present);
         seen.add(present.id);
+      }
+    }
+
+    // In an expanse (ADR-376 D6): the landmark rooms, open vehicles and
+    // floating things within sight, wherever the looker stands — a
+    // landmark room's outlook reaches things in the expanse room, and a
+    // ship's lookout reaches the landmark rooms.
+    const lookout = lookoutOf(world, observer);
+    if (lookout) {
+      const own = getVehicleAboard(world, observer.id)?.id ?? observer.id;
+      for (const sighting of sightings(world, lookout, undefined, own)) {
+        if (seen.has(sighting.thing.id)) continue;
+        if (this.canSee(observer, sighting.thing, world)) {
+          visible.push(sighting.thing);
+          seen.add(sighting.thing.id);
+        }
       }
     }
 

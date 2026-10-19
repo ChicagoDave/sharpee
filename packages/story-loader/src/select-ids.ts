@@ -76,6 +76,8 @@ function* walk(body: IRStatement[]): Generator<IRStatement> {
       case 'vehicle-stop':
       case 'vehicle-send':
       case 'expanse-visibility':
+      case 'expanse-wind':
+      case 'vehicle-sails':
       case 'win':
       case 'lose':
       case 'kill':

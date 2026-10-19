@@ -30,7 +30,12 @@ export const lookingLanguage = {
     'contents_list': "{You} can {see} {items} here.",
     'nothing_special': "{You} {see} nothing special.",
     'container_contents': "In {the container} {you} {see} {items}.",
-    'surface_contents': "On {the surface} {you} {see} {items}."
+    'surface_contents': "On {the surface} {you} {see} {items}.",
+    // ADR-376 D6: one row per thing in sight across an expanse, nearest first.
+    'sighting_close_by': "{capitalize the thing}, close by, to the {verbatim:direction}.",
+    'sighting_in_the_distance': "{capitalize the thing}, in the distance, to the {verbatim:direction}.",
+    'sighting_on_the_horizon': "{capitalize the thing}, on the horizon, to the {verbatim:direction}.",
+    'sighting_here': "{capitalize the thing}, right here."
   },
   
   help: {

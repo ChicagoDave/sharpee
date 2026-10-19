@@ -38,6 +38,16 @@ export const goingLanguage = {
     // reaches a room; a vehicle with no way on halts, once.
     'vehicle_arrived': "{capitalize the vehicle} arrives at {the stop}.",
     'vehicle_stopped': "{capitalize the vehicle} comes to a stop.",
+    // ADR-366 D7a: `start` on a one-way line at its end (GH #600).
+    'vehicle_at_end': "{capitalize the vehicle} is at the end of its line.",
+    // ADR-376 D8, D10: the open model's reports — an unwritten edge, plain
+    // because the base serves space as well as water; coming alongside a
+    // floating thing.
+    'expanse_edge': "{You} can go no farther that way.",
+    'vehicle_alongside': "{capitalize the vehicle} comes alongside {the thing}.",
+    // ADR-375 D5, D6: a sailing vehicle lies in irons; an unwritten edge of a sea under sail.
+    'vehicle_in_irons': "{capitalize the vehicle} {verb:is vehicle} in irons.",
+    'sailing_edge': "Wind and sea drive {you} back.",
     'no_exits': "There are no obvious exits.",
     'movement_blocked': "{verbatim:message}",
     'destination_not_found': "{You} {can't} go that way.",
@@ -48,7 +58,9 @@ export const goingLanguage = {
     // actor, so `{You}` always renders as the mover's name.
     'departs': "{You} {leave} to the {verbatim:direction}.",
     'arrives': "{You} {enter} from the {verbatim:direction}.",
-    'cant_go': "{You} {can't} go that way."
+    'cant_go': "{You} {can't} go that way.",
+    // ADR-376 D9: out of the vehicle in an expanse, the player stays by it.
+    'stays_by_vehicle': "{You} {stay} where {you} {are}, by the vehicle."
   },
   
   help: {

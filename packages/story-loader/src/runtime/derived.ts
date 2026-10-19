@@ -92,7 +92,7 @@ export class DerivedSection {
    * through a world-state counter, `sticky` through a stored pick — so
    * refusal text varies exactly as ADR-211 phrase semantics intend.
    */
-  private blockedPhraseText(key: string, world: WorldModel): string {
+  blockedPhraseText(key: string, world: WorldModel): string {
     const phrase = this.core.ir.phrases.locales[this.core.ir.phrases.defaultLocale]?.[key];
     if (!phrase) return '';
     const variants = phrase.variants;

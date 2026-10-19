@@ -21,7 +21,7 @@ import type {
   WorldModel,
   IFEntity
 } from '@sharpee/world-model';
-import { IdentityTrait, WallEntity, deriveNameVocabulary } from '@sharpee/world-model';
+import { IdentityTrait, WallEntity, deriveNameVocabulary, holderOf } from '@sharpee/world-model';
 
 import type { ValidatedCommand, ScopeInfo } from './types.js';
 import type { SenseType } from '../scope/types.js';
@@ -675,17 +675,27 @@ export class CommandValidator implements CommandValidator {
 
   /**
    * Find candidate entities the noun phrase matches at any tier
-   * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
-   * player with an IdentityTrait ("yourself", aliases me/self/myself)
-   * must match "examine me", "x yourself", etc. (ISSUE #154).
+   * (ADR-231 D3). Rooms are skipped — except a landmark room seen across
+   * an expanse (ADR-376 D6), which is a thing in the distance the player
+   * can name and examine; the player IS resolvable here: a player with an
+   * IdentityTrait ("yourself", aliases me/self/myself) must match
+   * "examine me", "x yourself", etc. (ISSUE #154).
    */
   private findCandidates(ref: INounPhrase): IFEntity[] {
     return this.world.findWhere(entity => {
-      if (entity.type === 'room') {
+      if (entity.type === 'room' && !this.isLandmarkInSight(entity)) {
         return false;
       }
       return this.matchEntityName(entity, ref) !== null;
     });
+  }
+
+  /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
+  private isLandmarkInSight(room: IFEntity): boolean {
+    const player = this.world.getPlayer();
+    if (!player || !holderOf(this.world, room)) return false;
+    if (this.world.getContainingRoom(player.id)?.id === room.id) return false;
+    return this.scopeResolver.canSee(player, room);
   }
 
   /**

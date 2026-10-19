@@ -605,40 +605,40 @@ export declare const standardActionLanguage: ({
     actionId: string;
     patterns: string[];
     messages: {
-        no_target: string;
-        not_enterable: string;
-        already_inside: string;
-        container_closed: string;
-        too_full: string;
-        entered: string;
-        entered_on: string;
-        cant_enter: string;
-        not_here: string;
-        too_small: string;
-        occupied: string;
-        boarded: string;
-        vehicle_not_boardable: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        already_outside: string;
-        container_closed: string;
-        cant_exit: string;
-        exited: string;
-        exited_from: string;
+        room_description: string;
+        contents_list: string;
+        no_exit: string;
+        no_exit_that_way: string;
+        door_closed: string;
+        door_locked: string;
+        too_dark: string;
+        moved: string;
+        cant_go_through: string;
+        already_there: string;
         nowhere_to_go: string;
-        not_in_that: string;
-        not_on_that: string;
-        exit_blocked: string;
-        must_stand_first: string;
-        vehicle_not_at_hatch: string;
+        no_direction: string;
+        not_in_room: string;
+        vehicle_ride: string;
+        vehicle_cannot_walk: string;
+        vehicle_cannot_go: string;
+        vehicle_under_way: string;
+        vehicle_arrived: string;
+        vehicle_stopped: string;
+        vehicle_at_end: string;
+        expanse_edge: string;
+        vehicle_alongside: string;
+        vehicle_in_irons: string;
+        sailing_edge: string;
+        no_exits: string;
+        movement_blocked: string;
+        destination_not_found: string;
+        need_light: string;
+        went: string;
+        arrived: string;
+        departs: string;
+        arrives: string;
+        cant_go: string;
+        stays_by_vehicle: string;
     };
     help: {
         description: string;
@@ -659,6 +659,7 @@ export declare const standardActionLanguage: ({
         too_heavy: string;
         cannot_take: string;
         taken: string;
+        retrieved: string;
         nothing_to_take: string;
         taken_from: string;
         taken_multi: string;
@@ -674,6 +675,7 @@ export declare const standardActionLanguage: ({
     messages: {
         no_target: string;
         not_held: string;
+        lost_overboard: string;
         nothing_to_drop: string;
         dropped: string;
         still_worn: string;
@@ -681,6 +683,7 @@ export declare const standardActionLanguage: ({
         dropped_on: string;
         dropped_multi: string;
         dropped_breaks: string;
+        dropped_afloat: string;
     };
     help: {
         description: string;
@@ -703,6 +706,10 @@ export declare const standardActionLanguage: ({
         nothing_special: string;
         container_contents: string;
         surface_contents: string;
+        sighting_close_by: string;
+        sighting_in_the_distance: string;
+        sighting_on_the_horizon: string;
+        sighting_here: string;
     };
     help: {
         description: string;
@@ -765,44 +772,7 @@ export declare const standardActionLanguage: ({
         surface_contents: string;
         worn_by_you: string;
         worn_by_other: string;
-    };
-    help: {
-        description: string;
-        examples: string;
-        summary: string;
-    };
-} | {
-    actionId: string;
-    patterns: string[];
-    messages: {
-        room_description: string;
-        contents_list: string;
-        no_exit: string;
-        no_exit_that_way: string;
-        door_closed: string;
-        door_locked: string;
-        too_dark: string;
-        moved: string;
-        cant_go_through: string;
-        already_there: string;
-        nowhere_to_go: string;
-        no_direction: string;
-        not_in_room: string;
-        vehicle_ride: string;
-        vehicle_cannot_walk: string;
-        vehicle_cannot_go: string;
-        vehicle_under_way: string;
-        vehicle_arrived: string;
-        vehicle_stopped: string;
-        no_exits: string;
-        movement_blocked: string;
-        destination_not_found: string;
-        need_light: string;
-        went: string;
-        arrived: string;
-        departs: string;
-        arrives: string;
-        cant_go: string;
+        seen_from_afar: string;
     };
     help: {
         description: string;
@@ -1023,6 +993,50 @@ export declare const standardActionLanguage: ({
     patterns: string[];
     messages: {
         no_target: string;
+        not_enterable: string;
+        already_inside: string;
+        container_closed: string;
+        too_full: string;
+        entered: string;
+        entered_on: string;
+        cant_enter: string;
+        not_here: string;
+        too_small: string;
+        occupied: string;
+        boarded: string;
+        vehicle_not_boardable: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        already_outside: string;
+        container_closed: string;
+        cant_exit: string;
+        exited: string;
+        exited_from: string;
+        nowhere_to_go: string;
+        not_in_that: string;
+        not_on_that: string;
+        exit_blocked: string;
+        must_stand_first: string;
+        vehicle_not_at_hatch: string;
+    };
+    help: {
+        description: string;
+        examples: string;
+        summary: string;
+    };
+} | {
+    actionId: string;
+    patterns: string[];
+    messages: {
+        no_target: string;
         not_climbable: string;
         climb_nowhere: string;
         cant_go_that_way: string;
@@ -1058,6 +1072,8 @@ export declare const standardActionLanguage: ({
         found_concealed_in_container: string;
         found_concealed_on_supporter: string;
         found_concealed_here: string;
+        looked_through: string;
+        looked_through_nothing: string;
     };
     help: {
         description: string;
@@ -1493,6 +1509,8 @@ export declare const standardActionLanguage: ({
         target_ducks: string;
         target_catches: string;
         target_angry: string;
+        thrown_afloat: string;
+        lost_overboard: string;
     };
     help: {
         description: string;
@@ -2195,8 +2213,21 @@ export declare const standardActionLanguage: ({
         vehicle_no_such_command: string;
         cannot_steer: string;
         not_under_way: string;
+        expanse_edge: string;
+        edge_blocked: string;
+        naval_how_far: string;
+        naval_no_wind: string;
+        naval_cannot_come_about: string;
+        sails_at_full: string;
+        sails_already_furled: string;
         steered: string;
         hove_to: string;
+        turned: string;
+        ahead: string;
+        came_about: string;
+        sail_made: string;
+        sail_shortened: string;
+        sails_furled: string;
     };
     help: {
         description: string;
@@ -2213,7 +2244,11 @@ export declare const standardActionLanguage: ({
         not_a_destination: string;
         already_there: string;
         vehicle_under_way: string;
+        coordinates_outside_expanse: string;
+        expanse_edge: string;
+        edge_blocked: string;
         course_set: string;
+        course_set_cell: string;
     };
     help: {
         description: string;

@@ -57,7 +57,10 @@ export const throwingLanguage = {
     // Target reactions
     'target_ducks': "{capitalize the target} ducks out of the way.",
     'target_catches': "{capitalize the target} catches {the item}!",
-    'target_angry': "{capitalize the target} doesn't appreciate being hit with {the item}."
+    'target_angry': "{capitalize the target} doesn't appreciate being hit with {the item}.",
+    // ADR-376 D9, D10: thrown into the expanse — afloat where it falls, or lost.
+    'thrown_afloat': "{capitalize the item} {verb:floats item} where {verb:it item} {verb:falls item}.",
+    'lost_overboard': "{capitalize the item} drifts away."
   },
   
   help: {

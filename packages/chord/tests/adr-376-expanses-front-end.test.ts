@@ -393,6 +393,15 @@ ${body}
   end on
 `;
 
+describe('`start … heading` on an open vehicle (D3)', () => {
+  it('`start <vehicle> heading <direction>` is admitted under `drive: control` and refused under `drive: player`', () => {
+    const ir = compiled(story(BELT, CONTROLLED_SKIFF, LANDMARKS, console('    start the skiff heading east')));
+    expect(findNodes(ir, 'vehicle-start')[0]).toMatchObject({ vehicle: { kind: 'entity', id: 'skiff' }, heading: 'east' });
+    expect(errorCodes(story(BELT, SKIFF, LANDMARKS, console('    start the skiff heading east')))).toContain('analysis.vehicle-statement-not-for-movement');
+    expect(errorCodes(story(BELT, CONTROLLED_SKIFF, LANDMARKS, console('    start the skiff')))).toContain('analysis.vehicle-statement-not-for-movement');
+  });
+});
+
 describe('`send` to coordinates or a landmark (D3)', () => {
   it('`send <vehicle> to <x>, <y>` lowers to a course; `to <landmark>` to the room', () => {
     const ir = compiled(story(BELT, CONTROLLED_SKIFF, LANDMARKS, console('    send the skiff to 14, 9\n    send the skiff to the Derelict')));

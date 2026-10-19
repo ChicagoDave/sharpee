@@ -14,6 +14,7 @@
 import { CHAPTERS_MANIFEST } from './chapters.js';
 import { COMBAT_MANIFEST } from './combat.js';
 import { EXPANSES_MANIFEST } from './expanses.js';
+import { SAILING_MANIFEST } from './sailing.js';
 import { HUNGER_MANIFEST } from './hunger.js';
 import { NPC_MANIFEST } from './npc.js';
 import { SCORING_MANIFEST } from './scoring.js';
@@ -24,6 +25,7 @@ export type { ExtensionManifest, ManifestAdjective, ManifestField } from './type
 export { CHAPTERS_MANIFEST } from './chapters.js';
 export { COMBAT_MANIFEST } from './combat.js';
 export { EXPANSES_MANIFEST } from './expanses.js';
+export { SAILING_MANIFEST } from './sailing.js';
 export { HUNGER_MANIFEST } from './hunger.js';
 export { NPC_MANIFEST } from './npc.js';
 export { SCORING_MANIFEST } from './scoring.js';
@@ -35,7 +37,7 @@ export { STATE_MACHINES_MANIFEST } from './state-machines.js';
  * state-machines) are always admitted and refuse a `use` line.
  */
 export const EXTENSION_MANIFESTS: ReadonlyMap<string, ExtensionManifest> = new Map(
-  [CHAPTERS_MANIFEST, COMBAT_MANIFEST, EXPANSES_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
+  [CHAPTERS_MANIFEST, COMBAT_MANIFEST, EXPANSES_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SAILING_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
 );
 
 /** The manifest contributing a kind noun (`expanse`), or null for a core kind or an unknown word. */

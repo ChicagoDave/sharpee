@@ -23,7 +23,9 @@ import {
   ActorBehavior,
   BreakableBehavior,
   type IDropItemResult,
-  IFEntity
+  IFEntity,
+  FloatingTrait,
+  receiveInExpanse,
 } from '@sharpee/world-model';
 import { buildEventData } from '../../data-builder-types.js';
 import { IFActions } from '../../constants.js';
@@ -154,6 +156,15 @@ function executeSingleEntity(
   // Delegate to ActorBehavior for dropping validation
   ActorBehavior.dropItem(actor, noun, context.world);
 
+  // Into an expanse (ADR-376 D9, D10): out of the vehicle, the player
+  // drops into the expanse at their cell — a floating thing floats there,
+  // anything else is lost offstage.
+  const cell = actor.get(FloatingTrait)?.position;
+  if (dropLocation && cell && context.world.getEntity(dropLocation)?.has(TraitType.EXPANSE)) {
+    scratch.overboard = receiveInExpanse(context.world, noun, dropLocation, cell);
+    return;
+  }
+
   // Actually move the item to the drop location
   if (dropLocation) {
     context.world.moveEntity(noun.id, dropLocation);
@@ -220,7 +231,9 @@ function reportSingleSuccess(
   }
 
   // Use compact format for multi-object commands
-  if (scratch.brokeOnDrop) {
+  if (scratch.overboard) {
+    messageKey = scratch.overboard === 'floats' ? DroppingMessages.DROPPED_AFLOAT : DroppingMessages.LOST_OVERBOARD;
+  } else if (scratch.brokeOnDrop) {
     messageKey = DroppingMessages.DROPPED_BREAKS;
   } else if (isMultiObject) {
     messageKey = DroppingMessages.DROPPED_MULTI;
@@ -371,10 +384,17 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
 
     // Actually move the item to the drop location
     const dropLocation = context.world.getLocation(actor.id);
-    if (dropLocation) {
-      context.world.moveEntity(noun.id, dropLocation);
+    sharedData.dropLocation = dropLocation;
+    // Into an expanse (ADR-376 D9, D10): as the per-item path above.
+    const cell = actor.get(FloatingTrait)?.position;
+    if (dropLocation && cell && context.world.getEntity(dropLocation)?.has(TraitType.EXPANSE)) {
+      sharedData.overboard = receiveInExpanse(context.world, noun, dropLocation, cell);
+    } else {
+      if (dropLocation) {
+        context.world.moveEntity(noun.id, dropLocation);
+      }
+      sharedData.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
     }
-    sharedData.brokeOnDrop = breakIfFragileOnFloor(context, noun, dropLocation);
 
     // Store result for report phase using sharedData
     sharedData.dropResult = result;
@@ -405,8 +425,12 @@ export const droppingAction: Action & { metadata: ActionMetadata } = {
     const actor = context.actor;
     const noun = context.command.directObject!.entity!;
 
-    // Determine success message
-    const { messageId, params } = determineDroppingMessage(droppedData, context);
+    // Determine success message; into an expanse (ADR-376 D9, D10) the
+    // receipt decides it.
+    const determined = determineDroppingMessage(droppedData, context);
+    const overboard = getDroppingSharedData(context).overboard;
+    const messageId = overboard ? (overboard === 'floats' ? DroppingMessages.DROPPED_AFLOAT : DroppingMessages.LOST_OVERBOARD) : determined.messageId;
+    const params = determined.params;
 
     // Build events array
     const events: ISemanticEvent[] = [

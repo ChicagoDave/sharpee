@@ -78,6 +78,11 @@ export const TraitType = {
   ABOARD: 'aboard',
   ENTERABLE: 'enterable',
 
+  // Expanse traits (ADR-376)
+  EXPANSE: 'expanse',
+  FLOATING: 'floating',
+  SIGHT: 'sight',
+
   // Concealment traits (ADR-148)
   CONCEALMENT: 'if.trait.concealment',
   CONCEALED_STATE: 'if.trait.concealed_state',
@@ -179,6 +184,11 @@ export const TRAIT_CATEGORIES: Record<TraitType, TraitCategory> = {
   [TraitType.VEHICLE]: TraitCategory.INTERACTIVE,
   [TraitType.ABOARD]: TraitCategory.INTERACTIVE,
   [TraitType.ENTERABLE]: TraitCategory.INTERACTIVE,
+
+  // Expanse traits (ADR-376)
+  [TraitType.EXPANSE]: TraitCategory.INTERACTIVE,
+  [TraitType.FLOATING]: TraitCategory.INTERACTIVE,
+  [TraitType.SIGHT]: TraitCategory.INTERACTIVE,
 
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: TraitCategory.INTERACTIVE,

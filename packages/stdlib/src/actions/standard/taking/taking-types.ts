@@ -71,6 +71,8 @@ export interface TakingItemScratch {
   implicitlyRemoved?: boolean;
   /** True if the item was being worn (used with implicitlyRemoved) */
   wasWorn?: boolean;
+  /** ADR-376 D10: the item held a position in an expanse and was hauled in. */
+  retrieved?: boolean;
 }
 
 /**

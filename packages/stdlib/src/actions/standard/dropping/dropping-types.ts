@@ -17,6 +17,8 @@ export interface DroppingItemScratch {
   dropLocation?: EntityId;
   /** Set when the item was fragile and broke on a floor (ADR-373 D4) */
   brokeOnDrop?: boolean;
+  /** ADR-376 D9, D10: dropped into an expanse — afloat at the dropper's cell, or lost offstage. */
+  overboard?: 'floats' | 'lost';
 }
 
 /**

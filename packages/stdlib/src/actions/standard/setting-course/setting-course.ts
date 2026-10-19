@@ -30,6 +30,13 @@ import {
   takesCommandSet,
   VehicleTrait,
   type WorldModel,
+  edgeAhead,
+  ExpanseTrait,
+  expanseOfLandmark,
+  isInsideExpanse,
+  landmarkCellOf,
+  placeOf,
+  type IExpanseCell,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
@@ -37,9 +44,52 @@ import { ScopeLevel } from '../../../scope/types.js';
 import { nounPhraseFor } from '../../../utils/index.js';
 import { ActionLifecycleDescriptor, blockedMessageId } from '../../lifecycle/index.js';
 import { SettingCourseMessages } from './setting-course-messages.js';
+import { exitMessageKey } from '../going/going.js';
 
 /** The command set this action speaks for (ADR-366 D5i). */
 export const DESTINATIONS_COMMAND_SET = 'destinations';
+/** The command set an open vehicle lists for `set course for <x>, <y>` and `<landmark>` (ADR-376 D4). */
+export const COORDINATES_COMMAND_SET = 'coordinates';
+
+/** `<x>, <y>` as typed, or undefined for any other text. */
+function typedCell(typed: string): IExpanseCell | undefined {
+  const m = /^(\d+)\s*,\s*(\d+)$/.exec(typed);
+  return m ? { x: Number(m[1]), y: Number(m[2]) } : undefined;
+}
+
+/**
+ * An open vehicle's expanse (ADR-376 D5): the expanse room it is in, or the
+ * one its landmark room belongs to.
+ */
+function expanseOfOpenVehicle(world: WorldModel, vehicle: IFEntity): IFEntity | undefined {
+  const location = world.getLocation(vehicle.id);
+  const here = location !== undefined ? world.getEntity(location) : undefined;
+  if (!here) return undefined;
+  return here.has(ExpanseTrait.type) ? here : expanseOfLandmark(world, here.id);
+}
+
+/** The open vehicle's current cell: its position, or its landmark's row. */
+function cellOfOpenVehicle(world: WorldModel, vehicle: IFEntity, expanse: IFEntity): IExpanseCell | undefined {
+  const place = placeOf(world, vehicle);
+  if (place) return place.cell;
+  const location = world.getLocation(vehicle.id);
+  const trait = expanse.get(ExpanseTrait);
+  return location !== undefined && trait ? landmarkCellOf(trait, location) : undefined;
+}
+
+/** The course an open vehicle is asked for: a cell, or a landmark room with its cell. */
+type OpenCourse = { cell: IExpanseCell; room?: IFEntity };
+
+function matchOpenCourse(world: WorldModel, expanse: IFEntity, typed: string): OpenCourse | { error: string } | undefined {
+  const trait = expanse.get(ExpanseTrait)!;
+  const cell = typedCell(typed);
+  if (cell) return isInsideExpanse(trait, cell) ? { cell } : { error: SettingCourseMessages.COORDINATES_OUTSIDE_EXPANSE };
+  for (const roomId of Object.keys(trait.landmarks)) {
+    const room = world.getEntity(roomId);
+    if (room && room.name.trim().toLowerCase() === typed) return { cell: landmarkCellOf(trait, roomId)!, room };
+  }
+  return undefined;
+}
 
 /** The typed destination, trimmed and lowercased with a leading article dropped; undefined when none was typed. */
 function typedDestination(context: ActionContext): string | undefined {
@@ -61,6 +111,8 @@ function matchDestination(world: WorldModel, vehicle: IFEntity, typed: string): 
 interface SettingCourseSharedData {
   vehicleId?: string;
   destinationId?: string;
+  /** ADR-376 D4: the cell a course was set for, when not a room. */
+  cell?: IExpanseCell;
 }
 
 /**
@@ -90,7 +142,11 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     SettingCourseMessages.NOT_A_DESTINATION,
     SettingCourseMessages.ALREADY_THERE,
     SettingCourseMessages.VEHICLE_UNDER_WAY,
-    SettingCourseMessages.COURSE_SET
+    SettingCourseMessages.COORDINATES_OUTSIDE_EXPANSE,
+    SettingCourseMessages.EXPANSE_EDGE,
+    SettingCourseMessages.EDGE_BLOCKED,
+    SettingCourseMessages.COURSE_SET,
+    SettingCourseMessages.COURSE_SET_CELL
   ],
   group: 'movement',
 
@@ -100,7 +156,9 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
       return { valid: false, error: SettingCourseMessages.NOT_IN_VEHICLE };
     }
     const params = { vehicle: nounPhraseFor(vehicle) };
-    if (!takesCommandSet(vehicle, DESTINATIONS_COMMAND_SET) || vehicle.get(VehicleTrait)?.model?.kind !== 'flight') {
+    const model = vehicle.get(VehicleTrait)?.model;
+    const open = model?.kind === 'open' && takesCommandSet(vehicle, COORDINATES_COMMAND_SET);
+    if (!open && (!takesCommandSet(vehicle, DESTINATIONS_COMMAND_SET) || model?.kind !== 'flight')) {
       return { valid: false, error: SettingCourseMessages.VEHICLE_NO_SUCH_COMMAND, params };
     }
     const typed = typedDestination(context);
@@ -109,6 +167,28 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
     }
     if (isUnderWay(vehicle)) {
       return { valid: false, error: SettingCourseMessages.VEHICLE_UNDER_WAY, params };
+    }
+    if (open) {
+      // ADR-376 D3, D4, D8: a cell of the vehicle's expanse or one of its
+      // landmarks; a course whose first leg heads into the edge it is at
+      // is refused with the edge's phrase.
+      const expanse = expanseOfOpenVehicle(context.world, vehicle);
+      if (!expanse) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
+      const course = matchOpenCourse(context.world, expanse, typed);
+      if (!course) return { valid: false, error: SettingCourseMessages.NOT_A_DESTINATION, params: { ...params, destination: typed } };
+      if ('error' in course) return { valid: false, error: course.error, params: { ...params, destination: typed } };
+      if (course.room && context.world.getLocation(vehicle.id) === course.room.id) {
+        return { valid: false, error: SettingCourseMessages.ALREADY_THERE, params: { ...params, destination: nounPhraseFor(course.room) } };
+      }
+      const from = cellOfOpenVehicle(context.world, vehicle, expanse);
+      const side = from ? edgeAhead(vehicle, { x: Math.sign(course.cell.x - from.x), y: Math.sign(course.cell.y - from.y) }) : undefined;
+      if (side) {
+        const message = context.world.evaluate(exitMessageKey(expanse.id, side));
+        return typeof message === 'string' && message.length > 0
+          ? { valid: false, error: SettingCourseMessages.EDGE_BLOCKED, params: { ...params, message } }
+          : { valid: false, error: SettingCourseMessages.EXPANSE_EDGE, params };
+      }
+      return { valid: true };
     }
     const destination = matchDestination(context.world, vehicle, typed);
     if (!destination) {
@@ -122,16 +202,40 @@ export const settingCourseAction: Action & { metadata: ActionMetadata } = {
 
   execute(context: ActionContext): void {
     const vehicle = getVehicleAboard(context.world, context.actor.id)!;
-    const destination = matchDestination(context.world, vehicle, typedDestination(context)!)!;
-    sendVehicle(vehicle, destination.id);
     const sharedData = context.sharedData as SettingCourseSharedData;
     sharedData.vehicleId = vehicle.id;
+    const typed = typedDestination(context)!;
+    if (vehicle.get(VehicleTrait)?.model?.kind === 'open') {
+      const expanse = expanseOfOpenVehicle(context.world, vehicle)!;
+      const course = matchOpenCourse(context.world, expanse, typed) as OpenCourse;
+      if (course.room) {
+        sendVehicle(context.world, vehicle, course.room.id);
+        sharedData.destinationId = course.room.id;
+      } else {
+        sendVehicle(context.world, vehicle, course.cell);
+        sharedData.cell = course.cell;
+      }
+      return;
+    }
+    const destination = matchDestination(context.world, vehicle, typed)!;
+    sendVehicle(context.world, vehicle, destination.id);
     sharedData.destinationId = destination.id;
   },
 
   report(context: ActionContext): ISemanticEvent[] {
     const sharedData = context.sharedData as SettingCourseSharedData;
     const vehicle = context.world.getEntity(sharedData.vehicleId!)!;
+    if (sharedData.cell) {
+      return [
+        context.event('if.event.course_set', {
+          messageId: `${context.action.id}.${SettingCourseMessages.COURSE_SET_CELL}`,
+          params: { vehicle: nounPhraseFor(vehicle), x: sharedData.cell.x, y: sharedData.cell.y },
+          vehicleId: vehicle.id,
+          cell: sharedData.cell,
+          actorId: context.actor.id
+        })
+      ];
+    }
     const destination = context.world.getEntity(sharedData.destinationId!)!;
     return [
       context.event('if.event.course_set', {

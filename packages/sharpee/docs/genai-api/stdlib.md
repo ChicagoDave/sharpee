@@ -2413,11 +2413,15 @@ export declare class CommandValidator implements CommandValidator {
     private resolveTopic;
     /**
      * Find candidate entities the noun phrase matches at any tier
-     * (ADR-231 D3). Rooms are skipped; the player IS resolvable here: a
-     * player with an IdentityTrait ("yourself", aliases me/self/myself)
-     * must match "examine me", "x yourself", etc. (ISSUE #154).
+     * (ADR-231 D3). Rooms are skipped — except a landmark room seen across
+     * an expanse (ADR-376 D6), which is a thing in the distance the player
+     * can name and examine; the player IS resolvable here: a player with an
+     * IdentityTrait ("yourself", aliases me/self/myself) must match
+     * "examine me", "x yourself", etc. (ISSUE #154).
      */
     private findCandidates;
+    /** A landmark room of an expanse the player is positioned in, seen from outside it (ADR-376 D6). */
+    private isLandmarkInSight;
     /**
      * Match a noun phrase against one entity's naming surface (ADR-231 D3,
      * PIN 2's tiered model).

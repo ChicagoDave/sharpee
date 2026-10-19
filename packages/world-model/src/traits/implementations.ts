@@ -69,6 +69,11 @@ import { VehicleTrait } from './vehicle/vehicleTrait.js';
 import { AboardTrait } from './vehicle/aboardTrait.js';
 import { EnterableTrait } from './enterable/enterableTrait.js';
 
+// Expanse traits (ADR-376)
+import { ExpanseTrait } from './expanse/expanseTrait.js';
+import { FloatingTrait } from './expanse/floatingTrait.js';
+import { SightTrait } from './expanse/sightTrait.js';
+
 // Concealment traits (ADR-148)
 import { ConcealmentTrait } from './concealment/concealmentTrait.js';
 import { ConcealedStateTrait } from './concealment/concealedStateTrait.js';
@@ -150,6 +155,11 @@ export const TRAIT_IMPLEMENTATIONS: Record<TraitType, ITraitConstructor> = {
   [TraitType.VEHICLE]: VehicleTrait,
   [TraitType.ABOARD]: AboardTrait,
   [TraitType.ENTERABLE]: EnterableTrait,
+
+  // Expanse traits (ADR-376)
+  [TraitType.EXPANSE]: ExpanseTrait,
+  [TraitType.FLOATING]: FloatingTrait,
+  [TraitType.SIGHT]: SightTrait,
 
   // Concealment traits (ADR-148)
   [TraitType.CONCEALMENT]: ConcealmentTrait as unknown as ITraitConstructor,
@@ -291,6 +301,11 @@ export {
   VehicleTrait,
   AboardTrait,
   EnterableTrait,
+
+  // Expanse traits (ADR-376)
+  ExpanseTrait,
+  FloatingTrait,
+  SightTrait,
 
   // System traits
   StoryInfoTrait

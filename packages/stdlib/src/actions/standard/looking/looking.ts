@@ -11,7 +11,7 @@
 import { Action, ActionContext, ValidationResult } from '../../enhanced-types.js';
 import { blockedMessageId } from '../../lifecycle/index.js';
 import { type ISemanticEvent } from '@sharpee/core';
-import { TraitType, RoomBehavior, ConcealedStateTrait } from '@sharpee/world-model';
+import { TraitType, RoomBehavior, ConcealedStateTrait, getVehicleAboard, lookoutOf, sightings, type IFEntity, type Sighting } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { ActionMetadata } from '../../../validation/index.js';
 import { captureRoomSnapshot } from '../../base/snapshot-utils.js';
@@ -78,6 +78,42 @@ export function containedListingEvents(
     }));
   }
   return events;
+}
+
+/** The message id a sighting's band renders through. */
+export const SIGHTING_MESSAGE_BY_BAND: Record<Sighting['band'], string> = {
+  'close-by': LookingMessages.SIGHTING_CLOSE_BY,
+  'in-the-distance': LookingMessages.SIGHTING_IN_THE_DISTANCE,
+  'on-the-horizon': LookingMessages.SIGHTING_ON_THE_HORIZON,
+};
+
+/**
+ * The sighting rows of a look across an expanse (ADR-376 D6): one
+ * `if.event.sighted` per thing in sight, nearest first, under
+ * `<actionId>.sighting_<band>` with the thing and its compass direction.
+ * Empty when the looker has no lookout. `look through` emits the same rows
+ * through an instrument.
+ *
+ * @param context - The action context
+ * @param actionId - The action whose namespace the rows render in
+ * @param instrument - A thing with `SightTrait`, when looking through it
+ */
+export function sightingEvents(context: ActionContext, actionId: string, instrument?: IFEntity): ISemanticEvent[] {
+  const lookout = lookoutOf(context.world, context.actor);
+  if (!lookout) return [];
+  const own = getVehicleAboard(context.world, context.actor.id)?.id ?? context.actor.id;
+  return sightings(context.world, lookout, instrument, own).map((sighting) =>
+    context.event('if.event.sighted', {
+      messageId: `${actionId}.${sighting.direction ? SIGHTING_MESSAGE_BY_BAND[sighting.band] : LookingMessages.SIGHTING_HERE}`,
+      params: { thing: nounPhraseFor(sighting.thing), direction: (sighting.direction ?? 'here').toLowerCase() },
+      thingId: sighting.thing.id,
+      band: sighting.band,
+      direction: sighting.direction ?? null,
+      distance: sighting.distance,
+      throughId: instrument?.id,
+      actorId: context.actor.id
+    }),
+  );
 }
 
 export const lookingAction: Action & { metadata: ActionMetadata } = {
@@ -169,6 +205,11 @@ export const lookingAction: Action & { metadata: ActionMetadata } = {
     // Emit messages for container/supporter contents
     const openContainerContents = listData.openContainerContents as ContainerContentsInfo[] | undefined;
     events.push(...containedListingEvents(context, openContainerContents ?? [], context.action.id));
+
+    // In an expanse (ADR-376 D6): what lies in sight, nearest first, each in
+    // its band with its direction — from the vehicle, beside it, or from a
+    // landmark room's outlook.
+    events.push(...sightingEvents(context, context.action.id));
 
     // GH #245 (6): a hidden player sees their own concealment — the one
     // observable a hiding spot has when nothing is there to be hidden from.

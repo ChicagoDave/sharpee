@@ -97,10 +97,11 @@ import { CHARACTER_MANIFEST } from './character-manifest.js';
 import { levenshtein } from './edit-distance.js';
 import { normalizeTopic } from './analyzer/topic.js';
 import { requiresOrderViolations, type OrderViolation } from './analyzer/requires.js';
+import { windToIR } from './analyzer/sailing.js';
 import { ENTITY_LINE_BUILDERS, assembleEntity, isPersonDecl, isPlayableDecl, lowerExit, newEntityDraft } from './analyzer/entity/index.js';
 import type { EntityBuildContext } from './analyzer/entity/context.js';
 import { expandRoomGroups, type RoomGroupOrigin } from './analyzer/room-groups.js';
-import { collectVehicles, MOVEMENT_TABLE, placeIdsOf, type VehicleDecl } from './analyzer/vehicles.js';
+import { collectVehicles, MOVEMENT_TABLE, placeIdsOf, type VehicleDecl, vehicleLineOf } from './analyzer/vehicles.js';
 
 export { normalizeTopic };
 import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
@@ -361,7 +362,11 @@ function conditionFingerprint(cond: ConditionNode): string {
         case 'at':
           return `at${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
         case 'heading':
-          return `heading${p.negated ? '!' : ''}(${value(cond.subject)},${p.direction})`;
+          return `heading${p.negated ? '!' : ''}(${value(cond.subject)},${p.direction ?? `${p.bearing}deg`})`;
+        case 'in-irons':
+          return `in-irons${p.negated ? '!' : ''}(${value(cond.subject)})`;
+        case 'sails':
+          return `sails${p.negated ? '!' : ''}(${value(cond.subject)},${p.setting})`;
         case 'in-sight':
           return `in-sight${p.negated ? '!' : ''}(${value(cond.subject)})`;
         case 'sight-band':
@@ -557,6 +562,8 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
           return p.of.kind === 'coordinates' ? false : nameIsIt(p.of);
         case 'under-way':
         case 'heading':
+        case 'in-irons':
+        case 'sails':
         case 'in-sight':
         case 'sight-band':
         case 'is-a':
@@ -3035,6 +3042,8 @@ export class Analyzer {
             case 'vehicle-stop':
             case 'vehicle-send':
             case 'expanse-visibility':
+            case 'expanse-wind':
+            case 'vehicle-sails':
             case 'win':
             case 'lose':
             case 'kill':
@@ -6251,6 +6260,31 @@ export class Analyzer {
           }
           return { kind: 'set-counter', counter: tally.counter, owner: tally.owner, value: literal ?? 0, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
+        // ADR-375 D4: `set the <expanse>'s wind to …` — the parser read the wind.
+        if (stmt.wind && stmt.target.kind === 'possessive' && stmt.target.base.kind === 'ref') {
+          const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
+          this.requireSailing('`set … wind`', stmt.span, null);
+          if (expanseId === null || !this.expanses.has(expanseId)) {
+            this.diagnostics.error('analysis.sailing-not-open', `\`set … wind\` names an expanse — \`${stmt.target.base.ref.words.join(' ')}\` is not one.`, stmt.span);
+          }
+          return { kind: 'expanse-wind', expanse: { kind: 'entity', id: expanseId ?? '' }, wind: windToIR(stmt.wind), stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+        }
+        // ADR-375 D7: `set the <vehicle>'s sails to <setting>`.
+        if (stmt.target.kind === 'possessive' && stmt.target.field.length === 1 && stmt.target.field[0] === 'sails' && stmt.target.base.kind === 'ref') {
+          const vehicleId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
+          const vehicle = vehicleId !== null ? this.vehicles.get(vehicleId) ?? null : null;
+          if (vehicle) {
+            this.requireSailing('`set … sails`', stmt.span, vehicle);
+            const v = stmt.value;
+            const setting = v.kind === 'bare' && v.words.length === 1 ? v.words[0] : v.kind === 'ref' && v.ref.words.length === 1 ? v.ref.words[0] : null;
+            if (setting === null) {
+              this.diagnostics.error('analysis.sails-unknown-setting', '`set … sails to` takes one setting word.', stmt.span);
+            } else {
+              this.checkSailSetting(vehicle, setting, stmt.span);
+            }
+            return { kind: 'vehicle-sails', vehicle: { kind: 'entity', id: vehicle.id }, setting: setting ?? '', stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+          }
+        }
         // ADR-376 D6: `set the <expanse>'s visibility to <n>` — the base is an
         // expanse, the value a whole number; the loader caps every looker's sight.
         if (stmt.target.kind === 'possessive' && stmt.target.field.length === 1 && stmt.target.field[0] === 'visibility' && stmt.target.base.kind === 'ref') {
@@ -6750,23 +6784,31 @@ export class Analyzer {
       this.reportVehicleStatement(stmt.verb, vehicle, stmt.span);
     }
     if (stmt.verb === 'stop') return { kind: 'vehicle-stop', vehicle: value, stmtWhen, span: stmt.span };
-    if (stmt.heading && (vehicle.movement !== 'compass' || vehicle.drive !== 'control')) {
+    // ADR-366 D5c and ADR-376 D3: a compass or an open vehicle under
+    // `drive: control` is started `heading <direction>`; no other type takes a heading.
+    const steersByHeading = vehicle.movement === 'compass' || vehicle.movement === 'open';
+    if (stmt.heading && (!steersByHeading || vehicle.drive !== 'control')) {
       this.diagnostics.error(
         'analysis.vehicle-statement-not-for-movement',
-        `\`heading <direction>\` sets the heading of a \`movement: compass\` vehicle under \`drive: control\` — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}${vehicle.drive ? ` under \`drive: ${vehicle.drive}\`` : ''}.`,
+        `\`heading <direction>\` sets the heading of a \`movement: compass\` or \`movement: open\` vehicle under \`drive: control\` — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}${vehicle.drive ? ` under \`drive: ${vehicle.drive}\`` : ''}.`,
         stmt.heading.span,
       );
-    } else if (!stmt.heading && vehicle.movement === 'compass') {
+    } else if (!stmt.heading && steersByHeading) {
       this.diagnostics.error(
         'analysis.vehicle-statement-not-for-movement',
-        `\`start ${vehicle.name}\` needs a heading — a compass vehicle is started \`heading <direction>\`.`,
+        `\`start ${vehicle.name}\` needs a heading — a ${vehicle.movement === 'open' ? 'open' : 'compass'} vehicle is started \`heading <direction>\`.`,
         stmt.span,
       );
+    }
+    if (stmt.heading?.bearing !== undefined) {
+      // ADR-375 D2: a bearing in degrees is `use sailing` vocabulary, on an open vehicle.
+      this.requireSailing('`heading <n> degrees`', stmt.heading.span, vehicle);
     }
     return {
       kind: 'vehicle-start',
       vehicle: value,
-      ...(stmt.heading && vehicle.movement === 'compass' ? { heading: stmt.heading.direction } : {}),
+      ...(stmt.heading && steersByHeading && stmt.heading.direction !== undefined ? { heading: stmt.heading.direction } : {}),
+      ...(stmt.heading && steersByHeading && stmt.heading.bearing !== undefined ? { bearing: stmt.heading.bearing } : {}),
       stmtWhen,
       span: stmt.span,
     };
@@ -8262,12 +8304,66 @@ export class Analyzer {
           case 'at':
           case 'heading':
           case 'within':
+          case 'in-irons':
             return this.resolveVehiclePredicate(cond, cond.predicate, subject, scope);
+          case 'sails':
+            return this.resolveSailsPredicate(cond, cond.predicate, scope);
           case 'in-sight':
           case 'sight-band':
             return this.resolveSightPredicate(cond.predicate, subject);
         }
       }
+    }
+  }
+
+  /**
+   * ADR-375 D1: a sailing word needs `use sailing`, and sits on an open
+   * vehicle. Reports each once at the word; a missing use line is
+   * `sailing-needs-use`, a vehicle of another type `sailing-not-open`.
+   * @param form the word as the author reads it, for the message
+   * @param vehicle the vehicle the word names, when it names one
+   */
+  private requireSailing(form: string, span: Span, vehicle: VehicleDecl | null): void {
+    if (!this.usedExtensions.has('sailing')) {
+      this.diagnostics.error('analysis.sailing-needs-use', `${form} is \`use sailing\` vocabulary — add \`use sailing\` to the story header.`, span);
+    }
+    if (vehicle && vehicle.movement !== 'open') {
+      this.diagnostics.error(
+        'analysis.sailing-not-open',
+        `${form} is a sailing vehicle's, and sailing is \`movement: open\` — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}.`,
+        span,
+      );
+    }
+  }
+
+  /**
+   * `<vehicle>'s sails are <setting>` (ADR-375 D7): the subject is a sailing
+   * vehicle that declares `sails:`, and the setting one of its own.
+   */
+  private resolveSailsPredicate(
+    cond: Extract<ConditionNode, { kind: 'predicate' }>,
+    predicate: Extract<Predicate, { kind: 'sails' }>,
+    scope: Scope,
+  ): IRCondition {
+    const base = cond.subject.kind === 'possessive' ? this.possessiveBase(cond.subject, scope) : null;
+    const vehicle = base?.kind === 'entity' ? this.vehicles.get(base.id) ?? null : null;
+    this.requireSailing('`sails are <setting>`', predicate.span, vehicle);
+    if (!vehicle) {
+      this.diagnostics.error('analysis.not-a-vehicle', '`sails are <setting>` reads a vehicle\'s sails — name a vehicle as the owner.', predicate.span);
+      return { kind: 'condition', name: '' };
+    }
+    this.checkSailSetting(vehicle, predicate.setting, predicate.span);
+    const node: IRCondition = { kind: 'vehicle-sails', vehicle: { kind: 'entity', id: vehicle.id }, setting: predicate.setting };
+    return predicate.negated ? { kind: 'not', operand: node } : node;
+  }
+
+  /** ADR-375 D7: a setting read or written is one the vehicle's `sails:` line names. */
+  private checkSailSetting(vehicle: VehicleDecl, setting: string, span: Span): void {
+    const sails = vehicleLineOf(vehicle.decl, 'sails');
+    if (!sails) {
+      this.diagnostics.error('analysis.sails-without-sailing', `\`${vehicle.name}\` declares no \`sails:\` — nothing to set or read.`, span);
+    } else if (!sails.settings.some((s) => s.word === setting)) {
+      this.diagnostics.error('analysis.sails-unknown-setting', `\`${setting}\` is not a setting of \`${vehicle.name}\` — one of ${sails.settings.map((s) => `\`${s.word}\``).join(', ')}.`, span);
     }
   }
 
@@ -8306,11 +8402,21 @@ export class Analyzer {
    */
   private resolveVehiclePredicate(
     cond: Extract<ConditionNode, { kind: 'predicate' }>,
-    predicate: Extract<Predicate, { kind: 'under-way' | 'at' | 'heading' | 'within' }>,
+    predicate: Extract<Predicate, { kind: 'under-way' | 'at' | 'heading' | 'within' | 'in-irons' }>,
     subject: IRValue,
     scope: Scope,
   ): IRCondition {
-    const form = predicate.kind === 'under-way' ? 'is under way' : predicate.kind === 'at' ? 'is at <place>' : 'is heading <direction>';
+    const form =
+      predicate.kind === 'under-way' ? 'is under way'
+      : predicate.kind === 'at' ? 'is at <place>'
+      : predicate.kind === 'in-irons' ? 'is in irons'
+      : predicate.kind === 'within' ? 'is within <n> of …'
+      : predicate.bearing !== undefined ? 'is heading <n> degrees'
+      : 'is heading <direction>';
+    // ADR-375 D1, D2, D5: `is in irons` and a bearing are `use sailing` vocabulary, on an open vehicle.
+    if (predicate.kind === 'in-irons' || (predicate.kind === 'heading' && predicate.bearing !== undefined)) {
+      this.requireSailing(`\`${form}\``, predicate.span, subject.kind === 'entity' ? this.vehicles.get(subject.id) ?? null : null);
+    }
     const vehicle = subject.kind === 'entity' ? (this.vehicles.get(subject.id) ?? null) : null;
     if (!vehicle) {
       if (subject.kind === 'entity' && subject.id !== '') {
@@ -8342,7 +8448,12 @@ export class Analyzer {
         node = { kind: 'vehicle-at', vehicle: value, place: this.resolveEntityValue(predicate.place, scope) };
         break;
       case 'heading':
-        node = { kind: 'vehicle-heading', vehicle: value, direction: predicate.direction };
+        node = predicate.bearing !== undefined
+          ? { kind: 'vehicle-heading', vehicle: value, bearing: predicate.bearing }
+          : { kind: 'vehicle-heading', vehicle: value, direction: predicate.direction ?? 'north' };
+        break;
+      case 'in-irons':
+        node = { kind: 'in-irons', vehicle: value };
         break;
       case 'within': {
         // ADR-376 D7: the point is a landmark of the vehicle's expanse, or coordinates inside it.

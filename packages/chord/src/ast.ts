@@ -285,7 +285,40 @@ export type VehicleLine =
   /** `drift: 1 unit every <n> turn[s]` (ADR-376 D10) — an expanse's drift interval. */
   | { key: 'drift'; turns: number; span: Span }
   /** `seen from afar: <text>` (ADR-376 D6) — the distant prose of a landmark room or an open vehicle. */
-  | { key: 'seen-from-afar'; text: string; span: Span };
+  | { key: 'seen-from-afar'; text: string; span: Span }
+  /** `wind: from <direction | n degrees>` / `wind: calm` (ADR-375 D4) — an expanse's wind. */
+  | { key: 'wind'; wind: WindValue; span: Span }
+  /** `sails: <setting>, …` (ADR-375 D7) — a sailing vehicle's settings, least to most canvas. */
+  | { key: 'sails'; settings: Array<{ word: string; span: Span }>; span: Span }
+  /** `sails start: <setting>` (ADR-375 D7) — the setting the vehicle starts in. */
+  | { key: 'sails-start'; setting: { word: string; span: Span }; span: Span };
+
+/** A wind as written (ADR-375 D4): a compass direction it comes from, a bearing in degrees, or a calm. */
+export type WindValue =
+  | { kind: 'direction'; direction: string }
+  | { kind: 'bearing'; bearing: number }
+  | { kind: 'calm' };
+
+/** One pace cell of a `sailing` row (ADR-375 D5, D7): `<n> turn[s]`, or `stopped`. */
+export type SailingPace = number | 'stopped';
+
+/** One `<a> to <b> degrees: …` row of a `sailing` block (ADR-375 D5, D7). */
+export interface SailingRowDecl {
+  from: number;
+  to: number;
+  /** One cell without sails (`setting` null); one per setting with them. */
+  paces: Array<{ setting: string | null; pace: SailingPace; span: Span }>;
+  span: Span;
+}
+
+/** `sailing … end sailing` (ADR-375 D5): the pace by angle off the wind, and the calm row. */
+export interface SailingBlockDecl {
+  kind: 'sailing-block';
+  rows: SailingRowDecl[];
+  /** The `calm:` row's pace, or null when the row is missing (the analyzer reports it). */
+  calm: SailingPace | null;
+  span: Span;
+}
 
 /** One `<Room>: <x>, <y>` row of a `landmarks` block (ADR-376 D2). */
 export interface LandmarkRowDecl {
@@ -937,6 +970,8 @@ export interface CreateDecl {
   positionBlock: PositionBlockDecl | null;
   /** The `landmarks … end landmarks` block (ADR-376 D2), or null. */
   landmarksBlock: LandmarksBlockDecl | null;
+  /** `sailing … end sailing` on a vehicle (ADR-375 D5), or null. */
+  sailingBlock: SailingBlockDecl | null;
   /** First bare indented paragraph. */
   description: TextValue | null;
   /**
@@ -2288,6 +2323,8 @@ export interface SetStmt {
   kind: 'set';
   target: ValueExpr;
   value: ValueExpr;
+  /** `set the <expanse>'s wind to <direction | n degrees | calm>` (ADR-375 D4): the wind as written. */
+  wind?: WindValue;
   /** Statement `when` suffix (ratchet D7) — execute only if it holds. */
   stmtWhen: ConditionNode | null;
   span: Span;
@@ -2437,7 +2474,7 @@ export interface TimerVerbStmt {
    * vehicle's heading. Present only when written; the analyzer resolves
    * the target by name, so a timer never carries one.
    */
-  heading?: { direction: string; span: Span };
+  heading?: { direction?: string; bearing?: number; span: Span };
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2739,7 +2776,11 @@ export type Predicate =
   /** `<vehicle> is at <place>` (ADR-366 D5) — the vehicle is at the named stop, room or destination. */
   | { kind: 'at'; negated: boolean; place: NameRef; span: Span }
   /** `<vehicle> is heading <direction>` (ADR-366 D5c) — a compass vehicle's heading. */
-  | { kind: 'heading'; negated: boolean; direction: string; span: Span }
+  | { kind: 'heading'; negated: boolean; direction?: string; bearing?: number; span: Span }
+  /** `<vehicle> is in irons` (ADR-375 D5): lying still in a `stopped` band. */
+  | { kind: 'in-irons'; negated: boolean; span: Span }
+  /** `<vehicle>'s sails are <setting>` (ADR-375 D7). */
+  | { kind: 'sails'; negated: boolean; setting: string; span: Span }
   /** `<thing> is in sight` (ADR-376 D7) — within the looker's sight in its expanse. */
   | { kind: 'in-sight'; negated: boolean; span: Span }
   /** `<thing> is close by | in the distance | on the horizon` (ADR-376 D7) — the distance band it is seen in. */

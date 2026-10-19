@@ -58,6 +58,7 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("collect :item").mapsTo("if.action.taking").build();
   grammar.define("pick up :item").mapsTo("if.action.taking").build();
   grammar.define("take up :item").mapsTo("if.action.taking").build();
+  grammar.define("retrieve :item").mapsTo("if.action.taking").build();
   grammar.define("eat :item").mapsTo("if.action.eating").build();
   grammar.define("consume :item").mapsTo("if.action.eating").build();
   grammar.define("devour :item").mapsTo("if.action.eating").build();
@@ -507,6 +508,18 @@ export function defineGrammar(grammar: GrammarBuilder): void {
   grammar.define("steer down").mapsTo("if.action.steering").withDefaultSemantics({"direction":"down"}).build();
   grammar.define("steer d").mapsTo("if.action.steering").withDefaultSemantics({"direction":"down"}).build();
   grammar.define("heave to").mapsTo("if.action.steering").build();
+  grammar.define("port :turn").mapsTo("if.action.steering").topic("turn").build();
+  grammar.define("starboard :turn").mapsTo("if.action.steering").topic("turn").build();
+  grammar.define("port").mapsTo("if.action.steering").build();
+  grammar.define("starboard").mapsTo("if.action.steering").build();
+  grammar.define("hard to port").mapsTo("if.action.steering").build();
+  grammar.define("hard to starboard").mapsTo("if.action.steering").build();
+  grammar.define("ahead").mapsTo("if.action.steering").build();
+  grammar.define("come about").mapsTo("if.action.steering").build();
+  grammar.define("make sail").mapsTo("if.action.steering").build();
+  grammar.define("shorten sail").mapsTo("if.action.steering").build();
+  grammar.define("furl sails").mapsTo("if.action.steering").build();
+  grammar.define("furl :sails").mapsTo("if.action.steering").build();
   grammar.define("set course for :destination").mapsTo("if.action.setting_course").topic("destination").build();
   grammar.define("set a course for :destination").mapsTo("if.action.setting_course").topic("destination").build();
   grammar.define("set :target to :value").mapsTo("if.action.setting").topic("value").build();

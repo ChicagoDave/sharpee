@@ -47,8 +47,8 @@ export interface MovementRow {
   sets: ReadonlySet<string>;
   /** `start`, `stop` and `send`, with the drives each is legal under. */
   statements: ReadonlyMap<'start' | 'stop' | 'send', ReadonlySet<VehicleDrive>>;
-  /** `under-way`, `at`, `heading`, and `within` (ADR-376 D7, open vehicles). */
-  conditions: ReadonlySet<'under-way' | 'at' | 'heading' | 'within'>;
+  /** `under-way`, `at`, `heading`, `within` (ADR-376 D7, open vehicles), and `in-irons` (ADR-375 D5, under `use sailing`). */
+  conditions: ReadonlySet<'under-way' | 'at' | 'heading' | 'within' | 'in-irons'>;
 }
 
 const aboardLines: VehicleLine['key'][] = ['aboard', 'boarded-through'];
@@ -99,13 +99,15 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
   },
   // ADR-376 D3: a position in an expanse. `start … heading` and `send` under
   // `control`; `stop` under either drive, as for a compass vehicle (ADR-366 D5f).
+  // ADR-375 adds, under `use sailing`: `sails:`, `sails start:`, the `naval`
+  // set and `is in irons` — each gated on the use line by the sailing builder.
   open: {
-    lines: set<VehicleLine['key']>('drive', 'commands', 'pace', 'stride', 'sight', 'seen-from-afar', ...aboardLines),
+    lines: set<VehicleLine['key']>('drive', 'commands', 'pace', 'stride', 'sight', 'seen-from-afar', 'sails', 'sails-start', ...aboardLines),
     position: false,
     drives: set<VehicleDrive>('player', 'control'),
-    sets: set('compass', 'coordinates'),
+    sets: set('compass', 'coordinates', 'naval'),
     statements: stmts([['start', ['control']], ['send', ['control']], ['stop', ['control', 'player']]]),
-    conditions: set<'under-way' | 'at' | 'heading' | 'within'>('under-way', 'at', 'heading', 'within'),
+    conditions: set<'under-way' | 'at' | 'heading' | 'within' | 'in-irons'>('under-way', 'at', 'heading', 'within', 'in-irons'),
   },
 };
 

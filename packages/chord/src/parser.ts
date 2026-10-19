@@ -151,6 +151,10 @@ import {
   VehicleLine,
   PositionBlockDecl,
   LandmarksBlockDecl,
+  SailingBlockDecl,
+  SailingPace,
+  SailingRowDecl,
+  WindValue,
   LandmarkRowDecl,
   CoordinatesExpr,
   PositionRowDecl,
@@ -250,6 +254,12 @@ const VEHICLE_COLON_KEYS = new Set([
   'movement', 'carries', 'drive', 'commands', 'stops', 'direction', 'pace', 'destinations', 'passage', 'aboard', 'admits',
   // ADR-376: the expanse's and the open vehicle's lines.
   'stride', 'sight', 'size', 'visibility', 'drift',
+  // ADR-375: the expanse's wind and the sailing vehicle's sails; `sails start:` is matched by its two words.
+  'wind', 'sails',
+]);
+/** The eight compass words a bearing names (ADR-375 D2), each with its bearing. */
+const COMPASS_BEARINGS: ReadonlyMap<string, number> = new Map([
+  ['north', 0], ['northeast', 45], ['east', 90], ['southeast', 135], ['south', 180], ['southwest', 225], ['west', 270], ['northwest', 315],
 ]);
 /** Z5 strategy adverbs (ADR-211 Decision 4). `ordered`/`once` are retired — load errors naming their replacement. */
 const STRATEGIES = new Set(['randomly', 'cycling', 'stopping', 'sticky', 'first-time']);
@@ -262,7 +272,8 @@ const ORDINALS: Record<string, number> = {
 /** Words that terminate a noun phrase in condition/statement positions. */
 // `feels`/`knows` joined for the ADR-310 D13 interior-state predicates;
 // `was` joined for the ADR-320 D9 `was discussed` predicate (frozen 2026-08-17).
-const PHRASE_STOPS = new Set(['is', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'was', 'and', 'or', 'then', 'to', 'while', 'with']);
+// `are` joins the stops for ADR-375 D7's `<vehicle>'s sails are <setting>`: a name read as a condition's subject ends at it.
+const PHRASE_STOPS = new Set(['is', 'are', 'has', 'holds', 'wears', 'can', 'feels', 'knows', 'was', 'and', 'or', 'then', 'to', 'while', 'with']);
 /** Stop words ending an emit-payload value expression (ADR-216). */
 const EMIT_VALUE_STOPS = new Set(['and', 'when']);
 /**
@@ -443,6 +454,7 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     vehicleLines: [],
     positionBlock: null,
     landmarksBlock: null,
+    sailingBlock: null,
     description: null,
     initialDescription: null,
     phraseOverrides: [],
@@ -1807,6 +1819,9 @@ class Parser {
       c.next(); // from
       c.next(); // afar
       key = 'seen-from-afar';
+    } else if (key === 'sails' && c.isWord('start')) {
+      c.next(); // start
+      key = 'sails-start';
     }
     c.next(); // colon
     const span = lineSpan(line);
@@ -1896,6 +1911,34 @@ class Parser {
         const text = restText(c);
         if (text === '') return fail('seen from afar: <text>');
         return { key: 'seen-from-afar', text, span };
+      }
+      case 'wind': {
+        // ADR-375 D4: `wind: from <direction | n degrees>` or `wind: calm`.
+        const form = 'wind: from <direction> | from <n> degrees | calm';
+        if (c.isWord('calm')) {
+          c.next();
+          return c.atEnd() ? { key: 'wind', wind: { kind: 'calm' }, span } : fail(form);
+        }
+        if (!c.matchWord('from')) return fail(form);
+        const wind = this.parseWindValue(c);
+        return wind === null || !c.atEnd() ? fail(form) : { key: 'wind', wind, span };
+      }
+      case 'sails': {
+        // ADR-375 D7: `sails: <setting>, <setting>, …` — one word each, least to most canvas.
+        const settings: Array<{ word: string; span: Span }> = [];
+        for (;;) {
+          const t = c.next();
+          if (!t || t.kind !== 'word') return fail('sails: <setting>, <setting>, …');
+          settings.push({ word: t.text, span: t.span });
+          if (c.atEnd()) return { key: 'sails', settings, span };
+          if (c.peek()?.kind !== 'comma') return fail('sails: <setting>, <setting>, …');
+          c.next();
+        }
+      }
+      case 'sails-start': {
+        const t = c.next();
+        if (!t || t.kind !== 'word' || !c.atEnd()) return fail('sails start: <setting>');
+        return { key: 'sails-start', setting: { word: t.text, span: t.span }, span };
       }
       case 'carries': {
         const value = closedWord(['in', 'on'] as const, 'carries: in | on');
@@ -2023,6 +2066,122 @@ class Parser {
     }
     const endSpan = this.consumeEnd('landmarks', headLine);
     return { kind: 'landmarks-block', rows, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `sailing … end sailing` (ADR-375 D5, D7): rows `<a> to <b> degrees: <pace>`
+   * — one pace cell, or with sails one `<setting> <pace>` cell per setting,
+   * comma-separated — and one `calm: <pace>` row, where a pace is `<n>
+   * turn[s]` or `stopped`. A row of any other shape is `parse.sailing-row`.
+   * That the bands cover 0 to 180 once, every setting is named, and the
+   * calm row is present is the analyzer's gate.
+   * @param headLine the `sailing` line, already consumed
+   */
+  private parseSailingBlock(headLine: Line): SailingBlockDecl {
+    const rows: SailingRowDecl[] = [];
+    let calm: SailingPace | null = null;
+    const paceCell = (c: Cursor): SailingPace | null => {
+      if (c.isWord('stopped')) {
+        c.next();
+        return 'stopped';
+      }
+      const n = c.next();
+      const unit = c.next();
+      if (!n || n.kind !== 'number' || !unit || unit.kind !== 'word' || (unit.text !== 'turn' && unit.text !== 'turns')) return null;
+      const turns = Number(n.text);
+      return Number.isInteger(turns) && turns >= 1 ? turns : null;
+    };
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const c = new Cursor(line.tokens, line);
+      const bad = (): void => {
+        this.diagnostics.error('parse.sailing-row', 'Expected `<a> to <b> degrees: <n> turns | stopped` (with sails, `<setting> <n> turns, …`) or `calm: <n> turns | stopped` in the `sailing` block.', lineSpan(line));
+      };
+      if (c.isWord('calm') && c.peek(1)?.kind === 'colon') {
+        c.next();
+        c.next();
+        const pace = paceCell(c);
+        if (pace === null || !c.atEnd()) {
+          bad();
+          continue;
+        }
+        if (calm !== null) this.diagnostics.error('parse.sailing-row', 'A `sailing` block has one `calm:` row — this is the second.', lineSpan(line));
+        calm = pace;
+        continue;
+      }
+      const a = c.next();
+      const to = c.next();
+      const b = c.next();
+      const degrees = c.next();
+      const colon = c.next();
+      if (!a || a.kind !== 'number' || !to || to.kind !== 'word' || to.text !== 'to' || !b || b.kind !== 'number' || !degrees || degrees.kind !== 'word' || degrees.text !== 'degrees' || !colon || colon.kind !== 'colon') {
+        bad();
+        continue;
+      }
+      const from = Number(a.text);
+      const upTo = Number(b.text);
+      if (!Number.isInteger(from) || !Number.isInteger(upTo) || from < 0 || upTo > 180 || from > upTo) {
+        bad();
+        continue;
+      }
+      const paces: SailingRowDecl['paces'] = [];
+      let ok = true;
+      for (;;) {
+        const start = c.peek();
+        if (!start) {
+          ok = false;
+          break;
+        }
+        // A named setting precedes its pace: a word that is neither `stopped` nor a number.
+        let setting: string | null = null;
+        if (start.kind === 'word' && start.text !== 'stopped') {
+          setting = start.text;
+          c.next();
+        }
+        const pace = paceCell(c);
+        if (pace === null) {
+          ok = false;
+          break;
+        }
+        paces.push({ setting, pace, span: mergeSpans(start.span, c.peek(-1)?.span ?? start.span) });
+        if (c.atEnd()) break;
+        if (c.peek()?.kind !== 'comma') {
+          ok = false;
+          break;
+        }
+        c.next();
+      }
+      if (!ok) {
+        bad();
+        continue;
+      }
+      rows.push({ from, to: upTo, paces, span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('sailing', headLine);
+    return { kind: 'sailing-block', rows, calm, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * A wind or a heading's direction form (ADR-375 D2, D4): a compass word, or
+   * `<n> degrees` with n in 0..359. Null, with the cursor moved past what
+   * was read, when the tokens are neither.
+   */
+  private parseWindValue(c: Cursor): WindValue | null {
+    const t = c.next();
+    if (!t) return null;
+    if (t.kind === 'word' && COMPASS_BEARINGS.has(t.text)) return { kind: 'direction', direction: t.text };
+    if (t.kind === 'number') {
+      const bearing = Number(t.text);
+      if (!Number.isInteger(bearing) || bearing < 0 || bearing > 359 || !c.matchWord('degrees')) return null;
+      return { kind: 'bearing', bearing };
+    }
+    return null;
   }
 
   /**
@@ -2329,6 +2488,20 @@ class Parser {
         this.pos++;
         const v = this.parseVehicleLine(line);
         if (v) decl.vehicleLines.push(v);
+      } else if (word === 'sails' && cur.isWord('start', 1) && line.tokens[2]?.kind === 'colon') {
+        // ADR-375 D7: `sails start: <setting>` — the setting a sailing vehicle starts in.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'sailing' && line.tokens.length === 1) {
+        // ADR-375 D5: the `sailing … end sailing` block of a sailing vehicle.
+        this.pos++;
+        const block = this.parseSailingBlock(line);
+        if (decl.sailingBlock) {
+          this.diagnostics.error('parse.sailing-duplicate', 'A vehicle has one `sailing` block — this is the second.', block.span);
+        } else {
+          decl.sailingBlock = block;
+        }
       } else if (word === 'landmarks' && line.tokens.length === 1) {
         // ADR-376 D2: the `landmarks … end landmarks` block of an expanse.
         this.pos++;
@@ -8345,6 +8518,23 @@ class Parser {
           this.diagnostics.error('parse.set-to', `Expected \`to <value>\` in the \`set\` statement.${this.misparseHint(line)}`, c.restSpan());
           return null;
         }
+        if (target.kind === 'possessive' && target.field.length === 1 && target.field[0] === 'wind') {
+          // ADR-375 D4: `set the <expanse>'s wind to <direction | n degrees | calm>`.
+          const first = c.peek();
+          const wind: WindValue | null = c.isWord('calm') ? (c.next(), { kind: 'calm' }) : this.parseWindValue(c);
+          if (!wind || !first) {
+            this.diagnostics.error('parse.set-wind', 'Expected `to <direction>`, `to <n> degrees` or `to calm` after `wind`.', first?.span ?? c.restSpan());
+            return null;
+          }
+          const valueSpan = mergeSpans(first.span, c.peek(-1)?.span ?? first.span);
+          const stmtWhen = this.parseStatementWhen(c, line);
+          if (!c.atEnd()) {
+            this.diagnostics.error('parse.set-trailing', `Unexpected words after the \`set\` value: \`${c.peek()!.text}\`.`, c.restSpan());
+            return null;
+          }
+          const value: ValueExpr = { kind: 'bare', words: [wind.kind === 'calm' ? 'calm' : wind.kind === 'direction' ? wind.direction : `${wind.bearing} degrees`], span: valueSpan };
+          return { kind: 'set', target, value, wind, stmtWhen, span: lineSpan(line) } as SetStmt;
+        }
         const value = this.parseValueExpr(c, line, new Set(['when']));
         const stmtWhen = this.parseStatementWhen(c, line);
         if (!c.atEnd()) {
@@ -8366,12 +8556,25 @@ class Parser {
         let heading: TimerVerbStmt['heading'];
         if (c.isWord('heading')) {
           const headingTok = c.next()!;
-          const dirTok = c.next();
-          if (!dirTok || dirTok.kind !== 'word' || !DIRECTIONS.has(dirTok.text)) {
-            this.diagnostics.error('parse.heading-direction', 'Expected a direction after `heading` (`start the Marigold heading north`).', dirTok?.span ?? c.restSpan());
-            return null;
+          const dirTok = c.peek();
+          if (dirTok?.kind === 'number' && c.isWord('degrees', 1)) {
+            // ADR-375 D2: a bearing in whole degrees, 0..359.
+            c.next();
+            const degTok = c.next()!;
+            const bearing = Number(dirTok.text);
+            if (!Number.isInteger(bearing) || bearing < 0 || bearing > 359) {
+              this.diagnostics.error('parse.heading-direction', 'Expected a bearing of 0 to 359 degrees after `heading`.', dirTok.span);
+              return null;
+            }
+            heading = { bearing, span: mergeSpans(headingTok.span, degTok.span) };
+          } else {
+            c.next();
+            if (!dirTok || dirTok.kind !== 'word' || !DIRECTIONS.has(dirTok.text)) {
+              this.diagnostics.error('parse.heading-direction', 'Expected a direction after `heading` (`start the Marigold heading north`, or `heading 135 degrees`).', dirTok?.span ?? c.restSpan());
+              return null;
+            }
+            heading = { direction: dirTok.text, span: mergeSpans(headingTok.span, dirTok.span) };
           }
-          heading = { direction: dirTok.text, span: mergeSpans(headingTok.span, dirTok.span) };
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         return { kind: 'timer-verb', verb: word, target, ...(heading ? { heading } : {}), stmtWhen, span: lineSpan(line) } as TimerVerbStmt;
@@ -9542,6 +9745,13 @@ class Parser {
       // alone (the recency rule), so a room named Sight keeps `is in <room>`;
       // and `is within <n> of <landmark | x, y>`. The analyzer gates the use
       // line and the subject.
+      // ADR-375 D5: `is in irons` — a fixed phrase, as `is in sight` is.
+      if (c.isWord('in') && c.isWord('irons', 1) && this.isBareConditionRef(c, 1)) {
+        const inTok = c.next()!;
+        const ironsTok = c.next()!;
+        const span = mergeSpans(inTok.span, ironsTok.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'in-irons', negated, span }, span: mergeSpans(subject.span, span) };
+      }
       if (c.isWord('in') && c.isWord('sight', 1) && this.isBareConditionRef(c, 1)) {
         const inTok = c.next()!;
         const sightTok = c.next()!;
@@ -9686,6 +9896,18 @@ class Parser {
           const span = mergeSpans(headingTok.span, dirTok.span);
           return { kind: 'predicate', subject, predicate: { kind: 'heading', negated, direction: dirTok.text, span }, span: mergeSpans(subject.span, span) };
         }
+        if (dirTok && dirTok.kind === 'number' && c.isWord('degrees', 2)) {
+          // ADR-375 D2: `is heading <n> degrees`.
+          const headingTok = c.next()!;
+          c.next();
+          const degTok = c.next()!;
+          const span = mergeSpans(headingTok.span, degTok.span);
+          const bearing = Number(dirTok.text);
+          if (!Number.isInteger(bearing) || bearing < 0 || bearing > 359) {
+            this.diagnostics.error('parse.heading-direction', 'Expected a bearing of 0 to 359 degrees after `heading`.', dirTok.span);
+          }
+          return { kind: 'predicate', subject, predicate: { kind: 'heading', negated, bearing, span }, span: mergeSpans(subject.span, span) };
+        }
       }
       const value = this.parseValueExpr(c, line, new Set());
       return {
@@ -9694,6 +9916,18 @@ class Parser {
         predicate: { kind: 'is', negated, value, span: value.span },
         span: mergeSpans(subject.span, value.span),
       };
+    }
+
+    if (t.text === 'are' && subject.kind === 'possessive' && subject.field.length === 1 && subject.field[0] === 'sails') {
+      // ADR-375 D7: `<vehicle>'s sails are [not] <setting>`.
+      c.next();
+      const negated = !!c.matchWord('not');
+      const setting = c.next();
+      if (!setting || setting.kind !== 'word' || !c.atEnd()) {
+        this.diagnostics.error('parse.sails-setting', 'Expected one setting word after `sails are` (`the Marigold\'s sails are full`).', setting?.span ?? c.restSpan());
+        return { kind: 'predicate', subject, predicate: { kind: 'sails', negated, setting: '', span: t.span }, span: mergeSpans(subject.span, t.span) };
+      }
+      return { kind: 'predicate', subject, predicate: { kind: 'sails', negated, setting: setting.text, span: setting.span }, span: mergeSpans(subject.span, setting.span) };
     }
 
     if (t.text === 'has' && this.isTimerHasRead(c)) {

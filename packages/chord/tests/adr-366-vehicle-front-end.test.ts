@@ -277,7 +277,8 @@ describe('the command sets (ADR-366 D5i)', () => {
 
   it('a set the type does not take is analysis.commands-not-for-movement', () => {
     expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: destinations')))).toContain('analysis.commands-not-for-movement');
-    expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: naval')))).toContain('analysis.commands-not-for-movement');
+    // `naval` is a sailing vehicle's set (ADR-375 D1): off an open vehicle it is named as sailing's, not as an unknown set.
+    expect(errorCodes(story(BICYCLE.replace('commands: compass', 'commands: naval')))).toContain('analysis.sailing-not-open');
   });
 
   it('the sets lower in order, once each', () => {

@@ -27,6 +27,7 @@
 import type { IRStatement, StoryIR } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import type { ActResult, ActSlots } from '@sharpee/stdlib';
+import { registerLookThroughBehavior } from '@sharpee/stdlib';
 import { type DialogueSelectorRegistration, type InitiativeSeizure, type SceneOccasion, type SceneStrength, WorldModel } from '@sharpee/world-model';
 import { Evaluator } from './evaluator.js';
 import { BindSection } from './runtime/bind.js';
@@ -240,6 +241,8 @@ export const RUNTIME_BIND_STEPS: readonly RuntimeBindStep[] = [
   { name: 'settable', requires: [], run: (r, w) => r.settable.bindSettable(w) },
   // ADR-372 D5: every priced thing gets PurchasableTrait and the buying implementation.
   { name: 'purchasable', requires: [], run: (r, w) => r.purchasable.bindPrices(w) },
+  // ADR-376 D6: every instrument (`sight:` on a thing) answers `look through`.
+  { name: 'instruments', requires: [], run: (_r, w) => registerLookThroughBehavior(w) },
   // Derived properties (`dark while`, blocked exits) — ADR-240: registered
   // as live evaluators consulted at point of use. Nothing is stamped and
   // nothing recomputes: mutations are instant, every reader sees current

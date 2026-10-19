@@ -89,7 +89,9 @@ export const searchingAction: Action & { metadata: ActionMetadata } = {
     'searched_object',
     'found_concealed_in_container',
     'found_concealed_on_supporter',
-    'found_concealed_here'
+    'found_concealed_here',
+    'looked_through',
+    'looked_through_nothing'
   ],
   metadata: {
     requiresDirectObject: true,

@@ -288,8 +288,8 @@ describe('Vehicle model', () => {
 
     it('send binds a flight vehicle to one of its destinations and nothing else', () => {
       const courier = vehicle('courier', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [top.id, bottom.id], passage: 4 } }));
-      expect(sendVehicle(courier, elsewhere.id)).toBe(false);
-      expect(sendVehicle(courier, bottom.id)).toBe(true);
+      expect(sendVehicle(world, courier, elsewhere.id)).toBe(false);
+      expect(sendVehicle(world, courier, bottom.id)).toBe(true);
       expect(courier.get(VehicleTrait)!.model).toMatchObject({ destination: bottom.id, turnsRemaining: 4 });
       expect(isUnderWay(courier)).toBe(true);
     });
@@ -307,7 +307,7 @@ describe('Vehicle model', () => {
       expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toEqual({ kind: 'exit', destination: top.id, via: 'd-hatch' });
       world.moveEntity(courier.id, bottom.id);
       expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toEqual({ kind: 'exit', destination: bottom.id, via: 'd-hatch' });
-      sendVehicle(courier, top.id);
+      sendVehicle(world, courier, top.id);
       expect(RoomBehavior.resolveExit(airlock, 'WEST', ctx)).toMatchObject({ kind: 'blocked', messageId: 'if.action.going.vehicle_under_way' });
       expect(RoomBehavior.resolveExit(airlock, 'EAST', ctx)).toBeUndefined();
     });

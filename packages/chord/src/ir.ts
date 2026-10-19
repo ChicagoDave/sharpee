@@ -284,6 +284,34 @@ export interface IRVehicle {
   sight?: number;
   /** An open vehicle's `seen from afar:` line (ADR-376 D6): what it shows from a distance. */
   seenFromAfar?: string;
+  /**
+   * The `sailing` block (ADR-375 D5, D7), under `use sailing`: pace by the
+   * angle off the wind, each band's cells by setting (`null` for the one
+   * cell of a vehicle without sails), and the calm row. Present in place
+   * of `pace`.
+   */
+  sailing?: IRSailing;
+  /** `sails:` and `sails start:` (ADR-375 D7): the settings, least to most canvas, and the starting one. */
+  sails?: { settings: string[]; start: string };
+}
+
+/** A wind (ADR-375 D4): the bearing it comes from, or a calm. A compass word is lowered to its bearing. */
+export type IRWind = { bearing: number } | 'calm';
+
+/** One pace cell (ADR-375 D5): turns per step, or `stopped`. */
+export type IRSailingPace = number | 'stopped';
+
+/** One band of a `sailing` block (ADR-375 D5, D7): `from` to `to` degrees off the wind, inclusive. */
+export interface IRSailingBand {
+  from: number;
+  to: number;
+  /** The pace per setting; the key `null` is the one cell of a vehicle without sails. */
+  paces: Array<{ setting: string | null; pace: IRSailingPace }>;
+}
+
+export interface IRSailing {
+  bands: IRSailingBand[];
+  calm: IRSailingPace;
 }
 
 /** One `<Room>: <x>, <y>` row of an expanse's `landmarks` block (ADR-376 D2). */
@@ -309,6 +337,8 @@ export interface IRExpanse {
   visibility?: number;
   /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
   drift?: number;
+  /** `wind: from … | calm` (ADR-375 D4), under `use sailing`; absent means the expanse carries no wind. */
+  wind?: IRWind;
 }
 
 /** `in <expanse> at <x>, <y>` — a position in an expanse (ADR-376 D3, D10). */
@@ -1686,7 +1716,15 @@ export type IRStatement =
    * vehicle's machine under way; `heading` is present only on a compass
    * vehicle under `drive: control`.
    */
-  | { kind: 'vehicle-start'; vehicle: IRValue; heading?: string; stmtWhen?: IRCondition | null; span: Span }
+  | {
+      kind: 'vehicle-start';
+      vehicle: IRValue;
+      heading?: string;
+      /** `heading <n> degrees` (ADR-375 D2): a bearing, 0..359, on a sailing vehicle. */
+      bearing?: number;
+      stmtWhen?: IRCondition | null;
+      span: Span;
+    }
   /** `stop <vehicle>` (ADR-366 D5f): halt the vehicle's machine where it is. */
   | { kind: 'vehicle-stop'; vehicle: IRValue; stmtWhen?: IRCondition | null; span: Span }
   /** `send <vehicle> to <destination>` (ADR-366 D5d): a flight vehicle's voyage; `destination` is one of its destinations. */
@@ -1702,6 +1740,10 @@ export type IRStatement =
     }
   /** `set the <expanse>'s visibility to <n>` (ADR-376 D6): caps every looker's sight in the expanse. */
   | { kind: 'expanse-visibility'; expanse: IRValue; value: number; stmtWhen?: IRCondition | null; span: Span }
+  /** `set the <expanse>'s wind to <direction | n degrees | calm>` (ADR-375 D4). */
+  | { kind: 'expanse-wind'; expanse: IRValue; wind: IRWind; stmtWhen?: IRCondition | null; span: Span }
+  /** `set the <vehicle>'s sails to <setting>` (ADR-375 D7). */
+  | { kind: 'vehicle-sails'; vehicle: IRValue; setting: string; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -1902,8 +1944,12 @@ export type IRCondition =
   | { kind: 'vehicle-under-way'; vehicle: IRValue }
   /** `<vehicle> is at <place>` (ADR-366 D5): the vehicle's location is the named stop, room or destination. */
   | { kind: 'vehicle-at'; vehicle: IRValue; place: IRValue }
-  /** `<vehicle> is heading <direction>` (ADR-366 D5c): a compass vehicle's heading. */
-  | { kind: 'vehicle-heading'; vehicle: IRValue; direction: string }
+  /** `<vehicle> is heading <direction>` (ADR-366 D5c): a compass or open vehicle's heading; `bearing` under `use sailing` (ADR-375 D2). */
+  | { kind: 'vehicle-heading'; vehicle: IRValue; direction?: string; bearing?: number }
+  /** `<vehicle> is in irons` (ADR-375 D5): a sailing vehicle lying still in a `stopped` band. */
+  | { kind: 'in-irons'; vehicle: IRValue }
+  /** `<vehicle>'s sails are <setting>` (ADR-375 D7). */
+  | { kind: 'vehicle-sails'; vehicle: IRValue; setting: string }
   /** `<thing> is in sight` (ADR-376 D7): within the looker's sight in its expanse. Negation wraps in `not`. */
   | { kind: 'in-sight'; thing: IRValue }
   /** `<thing> is close by | in the distance | on the horizon` (ADR-376 D6, D7): the band it is seen in. */

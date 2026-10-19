@@ -200,7 +200,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
       hold.add(new AboardTrait({ vehicleId: sparrow.id }));
       world.moveEntity(hold.id, sparrow.id);
       world.moveEntity(player.id, hold.id);
-      expect(sendVehicle(sparrow, c.id)).toBe(true);
+      expect(sendVehicle(world, sparrow, c.id)).toBe(true);
 
       expect(stepVehicle(world, sparrow)).toEqual({ kind: 'departed' });
       expect(world.getLocation(sparrow.id)).toBeUndefined();
@@ -243,7 +243,7 @@ describe('the vehicle machine (ADR-366 D5e)', () => {
   describe('the machine state survives a save (D5g)', () => {
     it('a voyage restored mid-passage still arrives on schedule', () => {
       const sparrow = vehicle('Sparrow', new VehicleTrait({ model: { kind: 'flight', drive: 'control', destinations: [a.id, c.id], passage: 3 } }), a);
-      sendVehicle(sparrow, c.id);
+      sendVehicle(world, sparrow, c.id);
       stepVehicle(world, sparrow);
       stepVehicle(world, sparrow);
 

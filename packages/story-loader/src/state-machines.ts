@@ -135,6 +135,8 @@ function buildMachineDefinition(
  * @param context the loader-side services the lowering needs
  * @param vehiclePosition the stop a state-driven line's block names this
  *   turn, by world vehicle id, or undefined for a vehicle with no block
+ * @param expanseEdgeText the text of an expanse edge's authored phrase, by
+ *   phrase key (ADR-376 D8), or undefined for a host without expanses
  * @returns the registered plugin, so a caller can add machine phases to it
  * @throws LoadError when a role or trigger target names an entity never built
  */
@@ -143,10 +145,12 @@ export function installStateMachines(
   engine: ExtensionEngineHost,
   context: ExtensionInstallContext,
   vehiclePosition?: (vehicleWorldId: string, world: WorldModel) => string | undefined,
+  expanseEdgeText?: (messageKey: string, world: WorldModel) => string | undefined,
 ): StateMachinePlugin {
-  const smPlugin = new StateMachinePlugin(
-    vehiclePosition ? { vehiclePosition: (vehicle, world) => vehiclePosition(vehicle.id, world) } : {},
-  );
+  const smPlugin = new StateMachinePlugin({
+    ...(vehiclePosition ? { vehiclePosition: (vehicle, world) => vehiclePosition(vehicle.id, world) } : {}),
+    ...(expanseEdgeText ? { expanseEdgeText: (_expanse, _side, messageKey, world) => expanseEdgeText(messageKey, world) } : {}),
+  });
   engine.getPluginRegistry().register(smPlugin);
   const smRegistry = smPlugin.getRegistry();
   for (const machine of ir.machines ?? []) {

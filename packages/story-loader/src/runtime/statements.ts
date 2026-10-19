@@ -19,7 +19,7 @@ import type { IRCondition, IRStatement, IRValue, Span } from '@sharpee/chord';
 import type { ISemanticEvent } from '@sharpee/core';
 import { SOUND_EVENT_TYPES, type Choice, type ISound } from '@sharpee/if-domain';
 import { killPlayer } from '@sharpee/stdlib';
-import { sendVehicle, startVehicle, stopVehicle, TraitType, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
+import { ExpanseTrait, type IFEntity, isAboardVehicle, sendVehicle, setSails, startVehicle, stopVehicle, TraitType, VehicleTrait, WearableBehavior, type WearableTrait, WorldModel } from '@sharpee/world-model';
 import { DecisionLedger } from '../decisions.js';
 import { LoadError } from '../errors.js';
 import { EVENT_TRIGGERS } from '../event-contract.js';
@@ -325,15 +325,26 @@ export class StatementsSection {
         case 'vehicle-send': {
           // ADR-366 D5f: the driving statements set the vehicle's machine
           // state through the vehicle behavior; stepping is the machine's
-          // per-turn work. A refused start (a one-way line at its end) is
-          // the machine's `vehicle-at-end` report, so nothing is thrown.
+          // per-turn work. A refused start of a one-way line at its end is
+          // reported with the stock `vehicle-at-end` (ADR-366 D7a, GH #600)
+          // to a player aboard or in the vehicle's room; every other refusal
+          // is the analyzer's to have caught, so nothing is thrown.
           if (phase !== 'reports' && holds) {
             const vehicle = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.vehicle, ctx));
             if (!vehicle) throw new LoadError('A vehicle statement names an entity that was never built.', stmt.span);
             // A heading is the platform's direction word (`NORTH`), as going reads it.
-            if (stmt.kind === 'vehicle-start') startVehicle(ctx.world, vehicle, stmt.heading?.toUpperCase());
-            else if (stmt.kind === 'vehicle-stop') stopVehicle(vehicle);
-            else sendVehicle(vehicle, this.core.evaluator.entityValue(stmt.destination, ctx));
+            if (stmt.kind === 'vehicle-start') {
+              // ADR-375 D2: a bearing in degrees, or the platform's direction word (`NORTH`).
+              const started = startVehicle(ctx.world, vehicle, stmt.bearing ?? stmt.heading?.toUpperCase());
+              if (!started && vehicle.get(VehicleTrait)?.model?.kind === 'line') this.reportVehicleAtEnd(vehicle, ctx.world);
+            } else if (stmt.kind === 'vehicle-stop') {
+              stopVehicle(vehicle);
+            } else if (stmt.coordinates) {
+              // ADR-376 D3: a course for a cell of the vehicle's expanse.
+              sendVehicle(ctx.world, vehicle, { x: stmt.coordinates.x, y: stmt.coordinates.y });
+            } else {
+              sendVehicle(ctx.world, vehicle, this.core.evaluator.entityValue(stmt.destination, ctx));
+            }
           }
           break;
         }
@@ -436,11 +447,33 @@ export class StatementsSection {
             events.push(...this.execStatements(stmt.body, { ...ctx, match: irId, ledger: DecisionLedger.live() }, phase));
           }
           break;
-        case 'expanse-visibility':
-          // ADR-376 D6: the expanse runtime's (Chord 4.0 Phase 13, Slice 3).
-          // The front end compiles the statement; nothing here holds a
-          // visibility yet, so reaching it is a load-time refusal by name.
-          throw new LoadError('`set … visibility` reaches a runtime that cannot play expanses yet.', stmt.span);
+        case 'expanse-visibility': {
+          // ADR-376 D6: the cap on every looker's sight in the expanse, for
+          // fog and night; trait data, so it rides a save.
+          if (phase !== 'reports' && holds) {
+            const expanse = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.expanse, ctx))?.get(ExpanseTrait);
+            if (!expanse) throw new LoadError('`set … visibility` names an entity that is not an expanse.', stmt.span);
+            expanse.visibility = stmt.value;
+          }
+          break;
+        }
+        case 'expanse-wind': {
+          // ADR-375 D4: the wind an expanse carries — the sailing table reads it live.
+          if (phase !== 'reports' && holds) {
+            const expanse = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.expanse, ctx))?.get(ExpanseTrait);
+            if (!expanse) throw new LoadError('`set … wind` names an entity that is not an expanse.', stmt.span);
+            expanse.wind = stmt.wind === 'calm' ? 'calm' : stmt.wind.bearing;
+          }
+          break;
+        }
+        case 'vehicle-sails': {
+          // ADR-375 D7: the current setting, read from the next step.
+          if (phase !== 'reports' && holds) {
+            const vehicle = ctx.world.getEntity(this.core.evaluator.entityValue(stmt.vehicle, ctx));
+            if (!vehicle || !setSails(vehicle, stmt.setting)) throw new LoadError(`\`set … sails to ${stmt.setting}\` names a setting the vehicle does not declare.`, stmt.span);
+          }
+          break;
+        }
         case 'then-open':
         case 'deflect':
         case 'leave':
@@ -553,6 +586,13 @@ export class StatementsSection {
     const roomOf = (id: string): string | undefined =>
       world.getContainingRoom(id)?.id ?? world.getLocation(id);
     const fromRoom = roomOf(thingWorldId);
+    // ADR-376 D9: only an open vehicle or a floating thing has a place in an
+    // expanse; anything else the story moves there is lost — offstage, with
+    // the stock `lost-overboard` unless the thing's own phrase says how.
+    if (placeWorldId !== null && this.lostInExpanse(thingWorldId, placeWorldId, world)) {
+      this.reportLostOverboard(thingWorldId, placeWorldId, world);
+      placeWorldId = null;
+    }
     world.moveEntity(thingWorldId, placeWorldId);
     const toRoom = roomOf(thingWorldId);
     // A move back into the world revives a gone entity (ADR-325 Z6 as
@@ -589,6 +629,58 @@ export class StatementsSection {
       // well: it is the same lifecycle (ADR-325 Z6 as amended).
       this.fireMoveDeparture(thingWorldId, fromRoom, world);
     }
+  }
+
+  /** Whether a move into `placeWorldId` would drop the thing into an expanse it cannot float in (ADR-376 D9). */
+  private lostInExpanse(thingWorldId: string, placeWorldId: string, world: WorldModel): boolean {
+    const place = world.getEntity(placeWorldId);
+    if (!place?.has(TraitType.EXPANSE)) return false;
+    const thing = world.getEntity(thingWorldId);
+    if (!thing || thing.has(TraitType.FLOATING) || thing.has(TraitType.ACTOR)) return false;
+    return thing.get(VehicleTrait)?.model?.kind !== 'open';
+  }
+
+  /**
+   * The `lost-overboard` report (ADR-376 D9): the thing's own `phrase
+   * lost-overboard` when written, else the stock line under dropping, told
+   * in the expanse room so whoever is there reads it.
+   */
+  private reportLostOverboard(thingWorldId: string, expanseWorldId: string, world: WorldModel): void {
+    const irId = this.core.host.irIdOf(thingWorldId);
+    const own = irId !== undefined ? this.core.phrases.channelEvent(irId, 'lost-overboard', world) : null;
+    const thing = world.getEntity(thingWorldId);
+    const event: ISemanticEvent = own ?? {
+      id: `lost-overboard-${thingWorldId}-${Date.now()}`,
+      type: 'if.event.lost_overboard',
+      timestamp: Date.now(),
+      entities: { target: thingWorldId },
+      data: { messageId: 'if.action.dropping.lost_overboard', params: { item: thing?.name ?? thingWorldId }, itemId: thingWorldId, expanseId: expanseWorldId },
+      tags: ['expanse'],
+    };
+    this.core.phrases.enqueueChannelEvent({
+      ...event,
+      entities: { ...event.entities, actor: event.entities?.actor ?? thingWorldId, location: expanseWorldId },
+    });
+  }
+
+  /**
+   * The `vehicle-at-end` report (ADR-366 D7a, GH #600): a one-way line's
+   * `start` at its end is refused, and a player aboard or in the vehicle's
+   * room reads the stock line under going.
+   */
+  private reportVehicleAtEnd(vehicle: IFEntity, world: WorldModel): void {
+    const player = world.getPlayer();
+    const location = world.getLocation(vehicle.id);
+    if (!player || location === undefined) return;
+    if (!isAboardVehicle(world, player.id, vehicle.id) && world.getContainingRoom(player.id)?.id !== location) return;
+    this.core.phrases.enqueueChannelEvent({
+      id: `vehicle-at-end-${vehicle.id}-${Date.now()}`,
+      type: 'if.event.vehicle_at_end',
+      timestamp: Date.now(),
+      entities: { target: vehicle.id, location },
+      data: { messageId: 'if.action.going.vehicle_at_end', params: { vehicle: vehicle.name }, vehicleId: vehicle.id },
+      tags: ['vehicle'],
+    });
   }
 
   /**

@@ -24,7 +24,8 @@ import {
   EnterableTrait,
   getVehicleAboard,
   VehicleTrait,
-  type WorldModel
+  type WorldModel,
+  boardFromExpanse,
 } from '@sharpee/world-model';
 import { IFActions } from '../../constants.js';
 import { EnteredEventData } from './entering-events.js';
@@ -224,6 +225,9 @@ export const enteringAction: Action & { metadata: ActionMetadata } = {
 
     // Simply move the actor to the target - that's all!
     context.world.moveEntity(actor.id, target.id);
+    // Back aboard from the expanse (ADR-376 D9): the position they held
+    // out there is dropped, and the vehicle's machine resumes.
+    boardFromExpanse(actor);
 
     // Store state for report phase using sharedData
     const state: EnteringExecutionState = {
