@@ -1070,6 +1070,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1164,6 +1165,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1341,6 +1343,7 @@ exports[`traits-basic.story (design.md §2.2/§3.2 + ownership package) > matche
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1547,6 +1550,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -1654,6 +1658,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -2983,6 +2988,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3225,6 +3231,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3397,6 +3404,7 @@ exports[`zoo-actions.story (design.md §3.4 + ownership package) > matches the g
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3633,6 +3641,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -3739,6 +3748,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -4624,6 +4634,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -4719,6 +4730,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {
@@ -5097,6 +5109,7 @@ exports[`zoo-timeline.story (design.md §3.3 + ownership package) > matches the 
       "kind": "create",
       "knows": [],
       "landing": null,
+      "landmarksBlock": null,
       "moods": [],
       "moveClauses": [],
       "name": {

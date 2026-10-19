@@ -150,6 +150,9 @@ import {
   HoldsDecl,
   VehicleLine,
   PositionBlockDecl,
+  LandmarksBlockDecl,
+  LandmarkRowDecl,
+  CoordinatesExpr,
   PositionRowDecl,
   SendStmt,
   DefineCounter,
@@ -243,7 +246,11 @@ const DIRECTIONS = new Set([
 /** The kind-noun settings the loader once read (ADR-369 D2a) — each a parse error naming `holds <n>`. */
 const REMOVED_CAPACITY_SETTINGS = new Set(['max items', 'max weight', 'capacity']);
 /** The vehicle colon-line keys (ADR-366) and the room's `admits:` key; `boarded through:` is matched by its two words. */
-const VEHICLE_COLON_KEYS = new Set(['movement', 'carries', 'drive', 'commands', 'stops', 'direction', 'pace', 'destinations', 'passage', 'aboard', 'admits']);
+const VEHICLE_COLON_KEYS = new Set([
+  'movement', 'carries', 'drive', 'commands', 'stops', 'direction', 'pace', 'destinations', 'passage', 'aboard', 'admits',
+  // ADR-376: the expanse's and the open vehicle's lines.
+  'stride', 'sight', 'size', 'visibility', 'drift',
+]);
 /** Z5 strategy adverbs (ADR-211 Decision 4). `ordered`/`once` are retired — load errors naming their replacement. */
 const STRATEGIES = new Set(['randomly', 'cycling', 'stopping', 'sticky', 'first-time']);
 /** Retired strategy adverb → its replacement, for the AC-13 fix-it diagnostic. */
@@ -435,6 +442,7 @@ function newCreateDecl(name: NameRef, span: Span): CreateDecl {
     holds: [],
     vehicleLines: [],
     positionBlock: null,
+    landmarksBlock: null,
     description: null,
     initialDescription: null,
     phraseOverrides: [],
@@ -1795,6 +1803,10 @@ class Parser {
     if (key === 'boarded') {
       c.next(); // through
       key = 'boarded-through';
+    } else if (key === 'seen') {
+      c.next(); // from
+      c.next(); // afar
+      key = 'seen-from-afar';
     }
     c.next(); // colon
     const span = lineSpan(line);
@@ -1828,10 +1840,62 @@ class Parser {
         c.next();
       }
     };
+    // A whole number of one or more, then the unit words, then the end of the line.
+    const countThen = (form: string, units: readonly string[]): number | null => {
+      const n = c.next();
+      if (!n || n.kind !== 'number') return fail(form);
+      for (const unit of units) {
+        const u = c.next();
+        if (!u || u.kind !== 'word' || u.text !== unit) return fail(form);
+      }
+      if (!c.atEnd()) return fail(form);
+      const value = Number(n.text);
+      if (!Number.isInteger(value) || value < 1) return fail(form);
+      return value;
+    };
     switch (key) {
       case 'movement': {
-        const value = closedWord(['none', 'line', 'streets', 'compass', 'flight'] as const, 'movement: none | line | streets | compass | flight');
+        // `open` is `use expanses`' type (ADR-376 D3); the analyzer gates the use line.
+        const value = closedWord(['none', 'line', 'streets', 'compass', 'flight', 'open'] as const, 'movement: none | line | streets | compass | flight | open');
         return value === null ? null : { key: 'movement', value, span };
+      }
+      case 'stride': {
+        const unitTok = c.peek(1);
+        const units = countThen('stride: <n> unit | units', [unitTok?.kind === 'word' && unitTok.text === 'units' ? 'units' : 'unit']);
+        return units === null ? null : { key: 'stride', units, span };
+      }
+      case 'sight':
+      case 'visibility': {
+        const value = countThen(`${key}: <n>`, []);
+        return value === null ? null : { key, value, span };
+      }
+      case 'size': {
+        const w = c.next();
+        const by = c.next();
+        const h = c.next();
+        const form = 'size: <width> by <height>';
+        if (!w || w.kind !== 'number' || !by || by.kind !== 'word' || by.text !== 'by' || !h || h.kind !== 'number' || !c.atEnd()) return fail(form);
+        const width = Number(w.text);
+        const height = Number(h.text);
+        if (!Number.isInteger(width) || width < 1 || !Number.isInteger(height) || height < 1) return fail(form);
+        return { key: 'size', width, height, span };
+      }
+      case 'drift': {
+        // `drift: 1 unit every <n> turn[s]` — the one unit is fixed by ADR-376 D10.
+        const form = 'drift: 1 unit every <n> turn | turns';
+        const one = c.next();
+        const unit = c.next();
+        const every = c.next();
+        if (!one || one.kind !== 'number' || Number(one.text) !== 1 || !unit || unit.kind !== 'word' || unit.text !== 'unit' || !every || every.kind !== 'word' || every.text !== 'every') {
+          return fail(form);
+        }
+        const turns = turnCount(form);
+        return turns === null ? null : { key: 'drift', turns, span };
+      }
+      case 'seen-from-afar': {
+        const text = restText(c);
+        if (text === '') return fail('seen from afar: <text>');
+        return { key: 'seen-from-afar', text, span };
       }
       case 'carries': {
         const value = closedWord(['in', 'on'] as const, 'carries: in | on');
@@ -1924,6 +1988,41 @@ class Parser {
     }
     const endSpan = this.consumeEnd('position', headLine);
     return { kind: 'position-block', rows, otherwise, span: mergeSpans(lineSpan(headLine), endSpan) };
+  }
+
+  /**
+   * `landmarks … end landmarks` (ADR-376 D2): `<Room>: <x>, <y>` rows. A row
+   * of any other shape is `parse.landmark-row`. That each room exists, lies
+   * inside the size and is named once is the analyzer's gate.
+   * @param headLine the `landmarks` line, already consumed
+   */
+  private parseLandmarksBlock(headLine: Line): LandmarksBlockDecl {
+    const rows: LandmarkRowDecl[] = [];
+    while (this.pos < this.lines.length) {
+      const line = this.lines[this.pos];
+      if (line.indent <= headLine.indent) break;
+      if (looksLikeComment(line)) {
+        this.skipCommentInsideBlock(line);
+        continue;
+      }
+      this.pos++;
+      const c = new Cursor(line.tokens, line);
+      const room = this.parseNameRef(c, (t) => t.kind === 'colon');
+      const colon = c.next();
+      const x = c.next();
+      const comma = c.next();
+      const y = c.next();
+      if (
+        room.words.length === 0 || !colon || colon.kind !== 'colon' || !x || x.kind !== 'number' || !comma || comma.kind !== 'comma' ||
+        !y || y.kind !== 'number' || !c.atEnd() || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))
+      ) {
+        this.diagnostics.error('parse.landmark-row', 'Expected `<room>: <x>, <y>` in the `landmarks` block.', lineSpan(line));
+        continue;
+      }
+      rows.push({ room, x: Number(x.text), y: Number(y.text), span: lineSpan(line) });
+    }
+    const endSpan = this.consumeEnd('landmarks', headLine);
+    return { kind: 'landmarks-block', rows, span: mergeSpans(lineSpan(headLine), endSpan) };
   }
 
   /**
@@ -2225,6 +2324,20 @@ class Parser {
         this.pos++;
         const v = this.parseVehicleLine(line);
         if (v) decl.vehicleLines.push(v);
+      } else if (word === 'seen' && cur.isWord('from', 1) && cur.isWord('afar', 2) && line.tokens[3]?.kind === 'colon') {
+        // ADR-376 D6: `seen from afar: <text>` — distant prose of a landmark room or an open vehicle.
+        this.pos++;
+        const v = this.parseVehicleLine(line);
+        if (v) decl.vehicleLines.push(v);
+      } else if (word === 'landmarks' && line.tokens.length === 1) {
+        // ADR-376 D2: the `landmarks … end landmarks` block of an expanse.
+        this.pos++;
+        const block = this.parseLandmarksBlock(line);
+        if (decl.landmarksBlock) {
+          this.diagnostics.error('parse.landmarks-duplicate', 'An expanse has one `landmarks` block — this is the second.', block.span);
+        } else {
+          decl.landmarksBlock = block;
+        }
       } else if (word === 'position' && line.tokens.length === 1) {
         // ADR-366 D5a: the `position … end position` block of a `drive: state` line.
         this.pos++;
@@ -3442,9 +3555,12 @@ class Parser {
     // final `and`. Which relation and which thing may take a list is the
     // analyzer's question; a one-place line is unchanged.
     const isAnd = (t: Token) => t.kind === 'word' && t.text === 'and';
+    // ADR-376 D3: `at` followed by a number opens the coordinates tail, so
+    // a place name stops there; `at` elsewhere stays part of the name.
+    const isAt = (t: Token) => t.kind === 'word' && t.text === 'at' && c.peek(1)?.kind === 'number';
     const places: NameRef[] = [];
     for (;;) {
-      const place = this.parseNameRef(c, isAnd);
+      const place = this.parseNameRef(c, (t) => isAnd(t) || isAt(t));
       places.push(place);
       if (c.peek()?.kind === 'comma') {
         c.next();
@@ -3457,7 +3573,22 @@ class Parser {
       this.diagnostics.error('parse.placement', 'Expected a place name.', lineSpan(line));
     }
     const [place, ...more] = places;
-    return more.length > 0 ? { kind: 'placement', relation, place, more, span: lineSpan(line) } : { kind: 'placement', relation, place, span: lineSpan(line) };
+    const placement: Placement =
+      more.length > 0 ? { kind: 'placement', relation, place, more, span: lineSpan(line) } : { kind: 'placement', relation, place, span: lineSpan(line) };
+    // ADR-376 D3, D10: `in <expanse> at <x>, <y>` — a position in an expanse.
+    // `parseNameRef` stops at `at`, so the tail is read here.
+    if (c.isWord('at')) {
+      const atTok = c.next()!;
+      const x = c.next();
+      const comma = c.next();
+      const y = c.next();
+      if (!x || x.kind !== 'number' || !comma || comma.kind !== 'comma' || !y || y.kind !== 'number' || !c.atEnd() || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))) {
+        this.diagnostics.error('parse.placement-at', 'Expected `at <x>, <y>` after the place — two whole numbers.', c.atEnd() ? atTok.span : c.restSpan());
+      } else {
+        placement.at = { x: Number(x.text), y: Number(y.text), span: mergeSpans(atTok.span, y.span) };
+      }
+    }
+    return placement;
   }
 
   private parseBlockedExit(direction: string, line: Line): BlockedExitDecl | null {
@@ -5631,8 +5762,18 @@ class Parser {
       } else if (sc.isWord('when')) {
         // `when <owner> becomes <state>` — state anchor (ratchet D10).
         sc.next();
-        owner = this.parseNameRef(sc, (t) => t.kind === 'word' && t.text === 'becomes');
-        if (sc.matchWord('becomes')) {
+        owner = this.parseNameRef(sc, (t) => t.kind === 'word' && (t.text === 'becomes' || t.text === 'comes'));
+        if (sc.isWord('comes')) {
+          // ADR-376 D7: `when <thing> comes into sight` — one fixed phrase,
+          // carried as the state `in sight` beside `under way`.
+          sc.next();
+          if (sc.matchWord('into') && sc.matchWord('sight')) {
+            timing = 'becomes';
+            state = 'in sight';
+          } else {
+            this.diagnostics.error('parse.sequence-anchor', 'Expected `when <thing> comes into sight` in the step anchor.', sc.restSpan());
+          }
+        } else if (sc.matchWord('becomes')) {
           const st = sc.next();
           if (st && st.kind === 'word' && st.text === 'under' && sc.isWord('way')) {
             // ADR-366 D5e: `when <vehicle> becomes under way` — one fixed phrase.
@@ -8244,10 +8385,23 @@ class Parser {
           this.diagnostics.error('parse.send', 'Expected `send <vehicle> to <destination>`.', c.restSpan());
           return null;
         }
-        const destination = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
-        if (destination.words.length === 0) {
-          this.diagnostics.error('parse.send', 'Expected a destination after `to` in the `send` statement.', c.restSpan());
-          return null;
+        let destination: SendStmt['destination'];
+        if (c.peek()?.kind === 'number') {
+          // ADR-376 D3: `send <vehicle> to <x>, <y>` — a course to a cell.
+          const x = c.next()!;
+          const comma = c.next();
+          const y = c.next();
+          if (!comma || comma.kind !== 'comma' || !y || y.kind !== 'number' || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))) {
+            this.diagnostics.error('parse.send', 'Expected `send <vehicle> to <x>, <y>` — two whole numbers.', c.atEnd() ? x.span : c.restSpan());
+            return null;
+          }
+          destination = { kind: 'coordinates', x: Number(x.text), y: Number(y.text), span: mergeSpans(x.span, y.span) };
+        } else {
+          destination = this.parseNameRef(c, (t) => t.kind === 'word' && t.text === 'when');
+          if (destination.words.length === 0) {
+            this.diagnostics.error('parse.send', 'Expected a destination after `to` in the `send` statement.', c.restSpan());
+            return null;
+          }
         }
         const stmtWhen = this.parseStatementWhen(c, line);
         if (!c.atEnd()) {
@@ -9382,6 +9536,56 @@ class Parser {
           predicate: { kind: 'is-a', negated, classifier: cls.words, span: cls.span ?? t.span },
           span: mergeSpans(subject.span, cls.span ?? t.span),
         };
+      }
+      // ADR-376 D7: the sight reads — `is in sight`, `is close by`, `is in
+      // the distance`, `is on the horizon` — each a fixed phrase that stands
+      // alone (the recency rule), so a room named Sight keeps `is in <room>`;
+      // and `is within <n> of <landmark | x, y>`. The analyzer gates the use
+      // line and the subject.
+      if (c.isWord('in') && c.isWord('sight', 1) && this.isBareConditionRef(c, 1)) {
+        const inTok = c.next()!;
+        const sightTok = c.next()!;
+        const span = mergeSpans(inTok.span, sightTok.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'in-sight', negated, span }, span: mergeSpans(subject.span, span) };
+      }
+      {
+        const bandOf = (): { band: 'close-by' | 'in-the-distance' | 'on-the-horizon'; length: number } | null => {
+          if (c.isWord('close') && c.isWord('by', 1) && this.isBareConditionRef(c, 1)) return { band: 'close-by', length: 2 };
+          if (c.isWord('in') && c.isWord('the', 1) && c.isWord('distance', 2) && this.isBareConditionRef(c, 2)) return { band: 'in-the-distance', length: 3 };
+          if (c.isWord('on') && c.isWord('the', 1) && c.isWord('horizon', 2) && this.isBareConditionRef(c, 2)) return { band: 'on-the-horizon', length: 3 };
+          return null;
+        };
+        const found = bandOf();
+        if (found) {
+          const first = c.next()!;
+          let last = first;
+          for (let i = 1; i < found.length; i++) last = c.next()!;
+          const span = mergeSpans(first.span, last.span);
+          return { kind: 'predicate', subject, predicate: { kind: 'sight-band', negated, band: found.band, span }, span: mergeSpans(subject.span, span) };
+        }
+      }
+      if (c.isWord('within') && c.peek(1)?.kind === 'number' && c.isWord('of', 2)) {
+        const withinTok = c.next()!;
+        const n = c.next()!;
+        c.next(); // of
+        const distance = Number(n.text);
+        const bad = (span: Span): ConditionNode => {
+          this.diagnostics.error('parse.within', 'Expected `is within <n> of <landmark>` or `is within <n> of <x>, <y>` — a whole number, then a landmark name or two whole numbers.', span);
+          return { kind: 'predicate', subject, predicate: { kind: 'within', negated, distance: 0, of: { kind: 'coordinates', x: 0, y: 0, span }, span }, span: mergeSpans(subject.span, span) };
+        };
+        if (!Number.isInteger(distance) || distance < 0) return bad(n.span);
+        if (c.peek()?.kind === 'number') {
+          const x = c.next()!;
+          const comma = c.next();
+          const y = c.next();
+          if (!comma || comma.kind !== 'comma' || !y || y.kind !== 'number' || !Number.isInteger(Number(x.text)) || !Number.isInteger(Number(y.text))) return bad(c.atEnd() ? x.span : c.restSpan());
+          const span = mergeSpans(withinTok.span, y.span);
+          return { kind: 'predicate', subject, predicate: { kind: 'within', negated, distance, of: { kind: 'coordinates', x: Number(x.text), y: Number(y.text), span: mergeSpans(x.span, y.span) }, span }, span: mergeSpans(subject.span, span) };
+        }
+        const of = this.parseNameRef(c, (tok) => tok.kind === 'word' && PHRASE_STOPS.has(tok.text));
+        if (of.words.length === 0) return bad(c.atEnd() ? withinTok.span : c.restSpan());
+        const span = mergeSpans(withinTok.span, of.span);
+        return { kind: 'predicate', subject, predicate: { kind: 'within', negated, distance, of, span }, span: mergeSpans(subject.span, span) };
       }
       if (c.isWord('in')) {
         c.next();

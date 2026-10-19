@@ -89,6 +89,7 @@ import {
   ValueExpr,
   Predicate,
   TimerVerbStmt,
+  CoordinatesExpr,
 } from './ast.js';
 import { capabilityKeyOf, CLIENT_CAPABILITY_FLAGS, EVENT_VERBS, TAILED_EVENT_VERBS, KIND_NOUNS, MESSAGE_OVERRIDE_ALIASES, PLATFORM_STATE_PAIRS, PRONOUN_CASES, PRONOUN_WORDS, SCOPE_REQUIREMENT_PREDICATES, STARTS_STATE_PAIRINGS, STATE_ADJECTIVES, TRAIT_ADJECTIVES } from './catalog.js';
 import { STDLIB_MANIFEST } from './stdlib-manifest.js';
@@ -104,7 +105,8 @@ import { collectVehicles, MOVEMENT_TABLE, placeIdsOf, type VehicleDecl } from '.
 export { normalizeTopic };
 import { buildSingleValuedAxes, provablyDisjoint, type SingleValuedAxes } from './condition-disjoint.js';
 import type { ScopeRequirementWord } from './catalog.js';
-import { EXTENSION_MANIFESTS, manifestForAdjective } from './manifests/index.js';
+import { EXTENSION_MANIFESTS, manifestForAdjective, manifestForKindNoun } from './manifests/index.js';
+import { collectExpanses, type ExpanseDecl } from './analyzer/expanses.js';
 import { PHRASEBOOK_REGISTRY } from './phrasebooks.js';
 import { DiagnosticBag } from './diagnostics.js';
 import { CHORD_LANGUAGE_VERSION } from './version.js';
@@ -171,6 +173,7 @@ import {
   IRConversationBeat,
   IRTraitDef,
   IRValue,
+  IRCoordinates,
   IRStoryFields,
   StoryIR,
 } from './ir.js';
@@ -359,6 +362,12 @@ function conditionFingerprint(cond: ConditionNode): string {
           return `at${p.negated ? '!' : ''}(${value(cond.subject)},${p.place.words.join(' ').toLowerCase()})`;
         case 'heading':
           return `heading${p.negated ? '!' : ''}(${value(cond.subject)},${p.direction})`;
+        case 'in-sight':
+          return `in-sight${p.negated ? '!' : ''}(${value(cond.subject)})`;
+        case 'sight-band':
+          return `sight-band${p.negated ? '!' : ''}(${value(cond.subject)},${p.band})`;
+        case 'within':
+          return `within${p.negated ? '!' : ''}(${value(cond.subject)},${p.distance},${p.of.kind === 'coordinates' ? `${p.of.x},${p.of.y}` : p.of.words.join(' ').toLowerCase()})`;
         case 'recency':
           return `recency${p.negated ? '!' : ''}(${value(cond.subject)},${p.word})`;
         case 'was-discussed':
@@ -544,8 +553,12 @@ function conditionReferencesIt(cond: ConditionNode): boolean {
         // ADR-366: the vehicle reads name a place by its own name, never `it`.
         case 'at':
           return nameIsIt(p.place);
+        case 'within':
+          return p.of.kind === 'coordinates' ? false : nameIsIt(p.of);
         case 'under-way':
         case 'heading':
+        case 'in-sight':
+        case 'sight-band':
         case 'is-a':
         // `is here` has no object node — the subject was already visited above.
         case 'is-here':
@@ -883,6 +896,12 @@ export class Analyzer {
   private usedExtensions = new Set<string>();
   /** Every `vehicle` block's declaration (ADR-366), collected on first use. */
   private vehicleDecls: Map<string, VehicleDecl> | null = null;
+  private expanseDecls: Map<string, ExpanseDecl> | null = null;
+  /** Every `expanse` block's declaration, by entity id (ADR-376), collected once. */
+  private get expanses(): Map<string, ExpanseDecl> {
+    this.expanseDecls ??= collectExpanses(this.ast.declarations);
+    return this.expanseDecls;
+  }
   private get vehicles(): Map<string, VehicleDecl> {
     this.vehicleDecls ??= collectVehicles(this.ast.declarations);
     return this.vehicleDecls;
@@ -1126,7 +1145,20 @@ export class Analyzer {
         this.usedExtensions.add(use.name);
       }
     }
-
+    // ADR-366 D12: an extension that builds on another says so, and the
+    // author writes both lines — no `use` line turns on another.
+    for (const use of this.ast.header?.uses ?? []) {
+      const manifest = EXTENSION_MANIFESTS.get(use.name);
+      for (const required of manifest?.requires ?? []) {
+        if (!this.usedExtensions.has(required)) {
+          this.diagnostics.error(
+            `analysis.${use.name}-needs-${required}`,
+            `\`use ${use.name}\` builds on \`use ${required}\` — add \`use ${required}\` to the story header as well.`,
+            use.span,
+          );
+        }
+      }
+    }
   }
 
   /**
@@ -1473,7 +1505,16 @@ export class Analyzer {
       // `a thing` clean): kind nouns are the closed catalog set the loader's
       // entity builder switches on.
       for (const k of entity.kinds) {
-        if (!KIND_NOUNS.has(k.name)) {
+        // ADR-366 D12, ADR-376 D2: an extension's kind noun is admitted only
+        // under its `use` line.
+        const contributedKind = manifestForKindNoun(k.name);
+        if (contributedKind && !contributedKind.core && !this.usedExtensions.has(contributedKind.name)) {
+          this.diagnostics.error(
+            `analysis.${contributedKind.name}-needs-use`,
+            `\`${entity.name}\`: \`a ${k.name}\` is \`use ${contributedKind.name}\` vocabulary — add \`use ${contributedKind.name}\` to the story header.`,
+            k.span,
+          );
+        } else if (!KIND_NOUNS.has(k.name) && !contributedKind) {
           this.diagnostics.error(
             'analysis.unknown-kind-noun',
             `\`${entity.name}\`: unknown kind noun \`${k.name}\`.`,
@@ -1590,7 +1631,9 @@ export class Analyzer {
         }
         if (comp.name === 'transparent') {
           const kind = entity.kinds[0]?.name ?? 'thing';
-          if (kind !== 'container') {
+          // ADR-366 D2, D3: a vehicle the player is in composes a container,
+          // and the enclosure rule reads `transparent` on it for seeing out.
+          if (kind !== 'container' && kind !== 'vehicle') {
             this.diagnostics.error(
               'analysis.transparent-not-container',
               `\`transparent\` is a container word — \`${entity.name}\` is a ${kind}. A thing that shows what is inside it is \`a container, transparent\`.`,
@@ -2991,6 +3034,7 @@ export class Analyzer {
             case 'vehicle-start':
             case 'vehicle-stop':
             case 'vehicle-send':
+            case 'expanse-visibility':
             case 'win':
             case 'lose':
             case 'kill':
@@ -3221,6 +3265,14 @@ export class Analyzer {
     const id = this.resolveEntityId(step.owner);
     if (id === null) return null; // already reported
     const sym = this.byId.get(id);
+    if (step.state === 'in sight') {
+      // ADR-376 D7: `when <thing> comes into sight` — the first step that
+      // brings it within the looker's sight; any named entity may anchor it.
+      if (!this.usedExtensions.has('expanses')) {
+        this.diagnostics.error('analysis.expanses-needs-use', '`comes into sight` is `use expanses` vocabulary — add `use expanses` to the story header.', step.span);
+      }
+      return { owner: id, state: 'in sight' };
+    }
     if (step.state === 'under way') {
       // ADR-366 D5e: the vehicle's own transition, on a type that moves over turns.
       const vehicle = this.vehicles.get(id);
@@ -5548,6 +5600,7 @@ export class Analyzer {
         resolveEntityId: (ref) => this.resolveEntityId(ref),
         resolveEntityIdSilent: (ref) => this.findEntitySilent(ref)?.id ?? null,
         vehicles: this.vehicles,
+        expanses: this.expanses,
         resolveCondition: (cond, scope) => this.resolveCondition(cond, scope),
         suggestText: (input, candidates) => this.suggestText(input, candidates),
         requirePhrase: (key, span, owner) => this.requirePhrase(key, span, owner),
@@ -6198,6 +6251,22 @@ export class Analyzer {
           }
           return { kind: 'set-counter', counter: tally.counter, owner: tally.owner, value: literal ?? 0, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
+        // ADR-376 D6: `set the <expanse>'s visibility to <n>` — the base is an
+        // expanse, the value a whole number; the loader caps every looker's sight.
+        if (stmt.target.kind === 'possessive' && stmt.target.field.length === 1 && stmt.target.field[0] === 'visibility' && stmt.target.base.kind === 'ref') {
+          const expanseId = this.findEntitySilent(stmt.target.base.ref)?.id ?? null;
+          if (expanseId !== null && this.expanses.has(expanseId)) {
+            if (!this.usedExtensions.has('expanses')) {
+              this.diagnostics.error('analysis.expanses-needs-use', '`set … visibility` is `use expanses` vocabulary — add `use expanses` to the story header.', stmt.span);
+            }
+            const v = stmt.value;
+            const literal = v.kind === 'literal' && v.literalKind === 'number' ? Number(v.value) : null;
+            if (literal === null || !Number.isInteger(literal) || literal < 0) {
+              this.diagnostics.error('analysis.visibility-value', '`set … visibility to` takes a whole number of expanse units.', stmt.span);
+            }
+            return { kind: 'expanse-visibility', expanse: { kind: 'entity', id: expanseId }, value: literal ?? 0, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
+          }
+        }
         const target = this.resolveValue(stmt.target, scope);
         // ADR-325 D5: `set <region>'s landing to <room>` — the base must be
         // a region that declared a landing (a `set` replaces, never creates).
@@ -6388,6 +6457,26 @@ export class Analyzer {
         const legal = vehicle.movement ? MOVEMENT_TABLE[vehicle.movement].statements.get('send') : undefined;
         if (!legal || !vehicle.drive || !legal.has(vehicle.drive)) {
           this.reportVehicleStatement('send', vehicle, stmt.span);
+        }
+        if (vehicle.movement === 'open') {
+          // ADR-376 D3: a course to a landmark or to coordinates of the vehicle's expanse.
+          const of = this.resolveExpanseTarget(vehicle, stmt.destination, '`send`');
+          return {
+            kind: 'vehicle-send',
+            vehicle: { kind: 'entity', id: vehicle.id },
+            destination: 'kind' in of ? of : { kind: 'entity', id: '' },
+            ...('kind' in of ? {} : { coordinates: of }),
+            stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope),
+            span: stmt.span,
+          };
+        }
+        if (stmt.destination.kind === 'coordinates') {
+          this.diagnostics.error(
+            'analysis.vehicle-statement-not-for-movement',
+            `\`send\` to coordinates is for a \`movement: open\` vehicle — \`${vehicle.name}\` is ${vehicle.movement ? `\`movement: ${vehicle.movement}\`` : 'not one'}.`,
+            stmt.destination.span,
+          );
+          return { kind: 'vehicle-send', vehicle: { kind: 'entity', id: vehicle.id }, destination: { kind: 'entity', id: '' }, stmtWhen: this.resolveStmtWhen(stmt.stmtWhen, scope), span: stmt.span };
         }
         const destinations = placeIdsOf(vehicle.destinations, (ref) => this.findEntitySilent(ref)?.id ?? null);
         const destination = this.resolveEntityId(stmt.destination);
@@ -8172,10 +8261,42 @@ export class Analyzer {
           case 'under-way':
           case 'at':
           case 'heading':
+          case 'within':
             return this.resolveVehiclePredicate(cond, cond.predicate, subject, scope);
+          case 'in-sight':
+          case 'sight-band':
+            return this.resolveSightPredicate(cond.predicate, subject);
         }
       }
     }
+  }
+
+  /**
+   * The sight reads (ADR-376 D7): `<thing> is in sight` and the three band
+   * forms, seen from where the player looks. Any named entity may be the
+   * subject; the words need `use expanses`.
+   */
+  private resolveSightPredicate(
+    predicate: Extract<Predicate, { kind: 'in-sight' | 'sight-band' }>,
+    subject: IRValue,
+  ): IRCondition {
+    if (!this.usedExtensions.has('expanses')) {
+      this.diagnostics.error(
+        'analysis.expanses-needs-use',
+        `\`is ${predicate.kind === 'in-sight' ? 'in sight' : predicate.band.replace(/-/g, ' ')}\` is \`use expanses\` vocabulary — add \`use expanses\` to the story header.`,
+        predicate.span,
+      );
+    }
+    if (subject.kind !== 'entity') {
+      this.diagnostics.error(
+        'analysis.sight-subject',
+        `\`is ${predicate.kind === 'in-sight' ? 'in sight' : predicate.band.replace(/-/g, ' ')}\` reads a thing's distance — name one as the subject.`,
+        predicate.span,
+      );
+    }
+    const node: IRCondition =
+      predicate.kind === 'in-sight' ? { kind: 'in-sight', thing: subject } : { kind: 'sight-band', thing: subject, band: predicate.band };
+    return predicate.negated ? { kind: 'not', operand: node } : node;
   }
 
   /**
@@ -8185,7 +8306,7 @@ export class Analyzer {
    */
   private resolveVehiclePredicate(
     cond: Extract<ConditionNode, { kind: 'predicate' }>,
-    predicate: Extract<Predicate, { kind: 'under-way' | 'at' | 'heading' }>,
+    predicate: Extract<Predicate, { kind: 'under-way' | 'at' | 'heading' | 'within' }>,
     subject: IRValue,
     scope: Scope,
   ): IRCondition {
@@ -8223,8 +8344,46 @@ export class Analyzer {
       case 'heading':
         node = { kind: 'vehicle-heading', vehicle: value, direction: predicate.direction };
         break;
+      case 'within': {
+        // ADR-376 D7: the point is a landmark of the vehicle's expanse, or coordinates inside it.
+        const of = this.resolveExpanseTarget(vehicle, predicate.of, `\`${form}\``);
+        node = { kind: 'vehicle-within', vehicle: value, distance: predicate.distance, of };
+        break;
+      }
     }
     return predicate.negated ? { kind: 'not', operand: node } : node;
+  }
+
+  /**
+   * A point in an open vehicle's expanse (ADR-376 D3, D7): a landmark room
+   * of the expanse the vehicle starts in (`analysis.not-a-destination`), or
+   * literal coordinates inside its size (`analysis.coordinates-outside-expanse`).
+   * @param vehicle the open vehicle whose expanse is read
+   * @param target the written point
+   * @param form the construct, for the message
+   */
+  private resolveExpanseTarget(vehicle: VehicleDecl, target: NameRef | CoordinatesExpr, form: string): IRValue | IRCoordinates {
+    const placeId = vehicle.decl.placement ? this.findEntitySilent(vehicle.decl.placement.place)?.id ?? null : null;
+    const expanse = placeId !== null ? this.expanses.get(placeId) : undefined;
+    if (target.kind === 'coordinates') {
+      if (expanse?.size && (target.x >= expanse.size.width || target.y >= expanse.size.height)) {
+        this.diagnostics.error(
+          'analysis.coordinates-outside-expanse',
+          `${target.x}, ${target.y} lies outside \`${expanse.name}\`, which is ${expanse.size.width} by ${expanse.size.height}.`,
+          target.span,
+        );
+      }
+      return { x: target.x, y: target.y };
+    }
+    const id = this.resolveEntityId(target);
+    if (id !== null && expanse && !expanse.landmarks.some((row) => this.findEntitySilent(row.room)?.id === id)) {
+      this.diagnostics.error(
+        'analysis.not-a-destination',
+        `\`${target.words.join(' ')}\` is not a landmark of \`${expanse.name}\` — ${form} names one of its \`landmarks\`, or \`<x>, <y>\`.`,
+        target.span,
+      );
+    }
+    return { kind: 'entity', id: id ?? '' };
   }
 
   /**

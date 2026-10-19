@@ -333,6 +333,12 @@ export class ChordStory implements Story {
           passage: v.passage ?? 1,
         };
         break;
+      case 'open':
+        // ADR-376 D3: the open model is the expanse runtime's (Chord 4.0
+        // Phase 13, Slices 2–3). The front end compiles it; the loader has
+        // nothing to build it onto yet, so the story is refused by name
+        // rather than played with the vehicle silently fixed in place.
+        throw new LoadError(`\`${irEntity.name}\` is \`movement: open\`, which this runtime cannot play yet.`, irEntity.span);
     }
     entity.add(new VehicleTrait({
       model,

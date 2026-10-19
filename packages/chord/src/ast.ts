@@ -261,7 +261,8 @@ export interface CounterDecl {
  * carry, and under which movement type, is the analyzer's gate.
  */
 export type VehicleLine =
-  | { key: 'movement'; value: 'none' | 'line' | 'streets' | 'compass' | 'flight'; span: Span }
+  /** The base types, and `open` under `use expanses` (ADR-376 D3). */
+  | { key: 'movement'; value: 'none' | 'line' | 'streets' | 'compass' | 'flight' | 'open'; span: Span }
   /** `carries: in` / `carries: on` — the colon tells it from `carries <name>`. */
   | { key: 'carries'; value: 'in' | 'on'; span: Span }
   | { key: 'drive'; value: 'state' | 'control' | 'player'; span: Span }
@@ -272,7 +273,34 @@ export type VehicleLine =
   | { key: 'direction'; value: 'both' | 'one-way'; span: Span }
   /** `pace: <n> turn[s]` / `passage: <n> turn[s]` — a whole number of one or more. */
   | { key: 'pace' | 'passage'; turns: number; span: Span }
-  | { key: 'boarded-through'; name: NameRef; span: Span };
+  | { key: 'boarded-through'; name: NameRef; span: Span }
+  /** `stride: <n> unit[s]` (ADR-376 D3) — an open vehicle's units per step, one or more. */
+  | { key: 'stride'; units: number; span: Span }
+  /** `sight: <n>` (ADR-376 D6) — expanse units; on a vehicle, a landmark room or an instrument. */
+  | { key: 'sight'; value: number; span: Span }
+  /** `size: <w> by <h>` (ADR-376 D2) — an expanse's two axes, each one or more. */
+  | { key: 'size'; width: number; height: number; span: Span }
+  /** `visibility: <n>` (ADR-376 D6) — an expanse's cap on every looker's sight. */
+  | { key: 'visibility'; value: number; span: Span }
+  /** `drift: 1 unit every <n> turn[s]` (ADR-376 D10) — an expanse's drift interval. */
+  | { key: 'drift'; turns: number; span: Span }
+  /** `seen from afar: <text>` (ADR-376 D6) — the distant prose of a landmark room or an open vehicle. */
+  | { key: 'seen-from-afar'; text: string; span: Span };
+
+/** One `<Room>: <x>, <y>` row of a `landmarks` block (ADR-376 D2). */
+export interface LandmarkRowDecl {
+  room: NameRef;
+  x: number;
+  y: number;
+  span: Span;
+}
+
+/** `landmarks … end landmarks` (ADR-376 D2): the rooms an expanse holds, each at its coordinates. */
+export interface LandmarksBlockDecl {
+  kind: 'landmarks-block';
+  rows: LandmarkRowDecl[];
+  span: Span;
+}
 
 /** One `when <condition>: <stop>` row of a `position` block (ADR-366 D5a). */
 export interface PositionRowDecl {
@@ -907,6 +935,8 @@ export interface CreateDecl {
   vehicleLines: VehicleLine[];
   /** The `position … end position` block (ADR-366 D5a), or null. */
   positionBlock: PositionBlockDecl | null;
+  /** The `landmarks … end landmarks` block (ADR-376 D2), or null. */
+  landmarksBlock: LandmarksBlockDecl | null;
   /** First bare indented paragraph. */
   description: TextValue | null;
   /**
@@ -1324,6 +1354,13 @@ export interface Placement {
    * the Gate`), after `place`. Absent on a one-place line.
    */
   more?: NameRef[];
+  /**
+   * ADR-376 D3, D10: the `at <x>, <y>` tail of a placement in an expanse.
+   * The parser reads the shape; that the place is an expanse and the thing
+   * an `open` vehicle or a `floats` thing is the analyzer's gate. Absent on
+   * a plain placement.
+   */
+  at?: { x: number; y: number; span: Span };
   span: Span;
 }
 
@@ -2405,11 +2442,23 @@ export interface TimerVerbStmt {
   span: Span;
 }
 
-/** `send <vehicle> to <destination> [when <cond>]` (ADR-366 D5d) — a flight vehicle's voyage. */
+/** `<x>, <y>` written as a place (ADR-376 D3, D7): a `send` destination or a `within … of` target. */
+export interface CoordinatesExpr {
+  kind: 'coordinates';
+  x: number;
+  y: number;
+  span: Span;
+}
+
+/**
+ * `send <vehicle> to <destination> [when <cond>]` (ADR-366 D5d) — a flight
+ * vehicle's voyage; under `use expanses` the destination may be `<x>, <y>`
+ * or a landmark of an open vehicle's expanse (ADR-376 D3).
+ */
 export interface SendStmt {
   kind: 'send';
   vehicle: NameRef;
-  destination: NameRef;
+  destination: NameRef | CoordinatesExpr;
   stmtWhen: ConditionNode | null;
   span: Span;
 }
@@ -2691,6 +2740,12 @@ export type Predicate =
   | { kind: 'at'; negated: boolean; place: NameRef; span: Span }
   /** `<vehicle> is heading <direction>` (ADR-366 D5c) — a compass vehicle's heading. */
   | { kind: 'heading'; negated: boolean; direction: string; span: Span }
+  /** `<thing> is in sight` (ADR-376 D7) — within the looker's sight in its expanse. */
+  | { kind: 'in-sight'; negated: boolean; span: Span }
+  /** `<thing> is close by | in the distance | on the horizon` (ADR-376 D7) — the distance band it is seen in. */
+  | { kind: 'sight-band'; negated: boolean; band: 'close-by' | 'in-the-distance' | 'on-the-horizon'; span: Span }
+  /** `<vehicle> is within <n> of <landmark | x, y>` (ADR-376 D7) — an open vehicle's distance. */
+  | { kind: 'within'; negated: boolean; distance: number; of: NameRef | CoordinatesExpr; span: Span }
   /**
    * `must be any <open-condition>` membership (David, 2026-07-12 — each
    * package P3): the subject satisfies the named open condition. Parsed

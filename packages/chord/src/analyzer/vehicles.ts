@@ -19,7 +19,8 @@
  */
 import type { CreateDecl, NameRef, VehicleLine } from '../ast.js';
 
-export type VehicleMovement = 'none' | 'line' | 'streets' | 'compass' | 'flight';
+/** The base types (ADR-366 D5) and `open`, contributed by `use expanses` (ADR-376 D3). */
+export type VehicleMovement = 'none' | 'line' | 'streets' | 'compass' | 'flight' | 'open';
 export type VehicleDrive = 'state' | 'control' | 'player';
 
 /** One vehicle block's declared lines, by key, names unresolved. */
@@ -46,8 +47,8 @@ export interface MovementRow {
   sets: ReadonlySet<string>;
   /** `start`, `stop` and `send`, with the drives each is legal under. */
   statements: ReadonlyMap<'start' | 'stop' | 'send', ReadonlySet<VehicleDrive>>;
-  /** `under-way`, `at` and `heading`. */
-  conditions: ReadonlySet<'under-way' | 'at' | 'heading'>;
+  /** `under-way`, `at`, `heading`, and `within` (ADR-376 D7, open vehicles). */
+  conditions: ReadonlySet<'under-way' | 'at' | 'heading' | 'within'>;
 }
 
 const aboardLines: VehicleLine['key'][] = ['aboard', 'boarded-through'];
@@ -95,6 +96,16 @@ export const MOVEMENT_TABLE: Readonly<Record<VehicleMovement, MovementRow>> = {
     sets: set('destinations'),
     statements: stmts([['send', ['control']]]),
     conditions: set<'under-way' | 'at' | 'heading'>('under-way', 'at'),
+  },
+  // ADR-376 D3: a position in an expanse. `start … heading` and `send` under
+  // `control`; `stop` under either drive, as for a compass vehicle (ADR-366 D5f).
+  open: {
+    lines: set<VehicleLine['key']>('drive', 'commands', 'pace', 'stride', 'sight', 'seen-from-afar', ...aboardLines),
+    position: false,
+    drives: set<VehicleDrive>('player', 'control'),
+    sets: set('compass', 'coordinates'),
+    statements: stmts([['start', ['control']], ['send', ['control']], ['stop', ['control', 'player']]]),
+    conditions: set<'under-way' | 'at' | 'heading' | 'within'>('under-way', 'at', 'heading', 'within'),
   },
 };
 

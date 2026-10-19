@@ -177,7 +177,15 @@ const PINNED = {
   // `is at <name>` and `is heading DIRECTION` join `predicate`; the state
   // anchor admits `under way`. Additive, on the unpublished 4.0 surface — no
   // bump.
-  ebnfSha256: '7eecbfb50dd9aa94ec19f803199fa001d1119e06457eb42d15b325c59f722a21',
+  // 2026-10-18 (ADR-376, Chord 4.0 Phase 13 Slice 1): `use expanses` —
+  // KIND-NOUN gains `expanse`; `movement:` gains `open`; `vehicle-line` gains
+  // `stride`, `sight-line` and `seen-from-afar-line`; `create-line` gains
+  // `expanse-line`, `sight-line`, `seen-from-afar-line` and `landmarks-block`;
+  // `placement` takes an `at NUMBER , NUMBER` tail; `predicate` gains the
+  // sight reads and `within`; `send` takes `NUMBER , NUMBER`; `step-anchor`
+  // admits `comes into sight`. Additive, on the unpublished 4.0 surface — no
+  // bump.
+  ebnfSha256: '73f3ff25e5aeb052b0ebfd29e06bfcf307f7494c05f2a5b7f30fae75fcb0cd9e',
 };
 
 // Colocated with the version pin it gates (2026-08-14). It previously lived at

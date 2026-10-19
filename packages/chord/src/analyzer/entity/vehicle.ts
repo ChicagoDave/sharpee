@@ -25,10 +25,16 @@ import type { CreateDecl, NameRef, VehicleLine } from '../../ast.js';
 import type { IRPositionRow, IRVehicle } from '../../ir.js';
 import type { Scope } from '../../analyzer.js';
 import { MOVEMENT_TABLE, placeIdsOf, vehicleLineOf, type VehicleDecl, type VehicleLineOf } from '../vehicles.js';
+import { manifestForMovementType } from '../../manifests/index.js';
 import type { EntityBuildContext, EntityDraft, EntityLineBuilder } from './context.js';
 
-/** The line keys a room, a group or a region may carry: `admits:` alone. */
-const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits']);
+/**
+ * The line keys a block that is not a vehicle may carry: a room's `admits:`
+ * (ADR-366 D6), and the expanse builder's lines — `size:`, `visibility:`,
+ * `drift:` on an expanse, `sight:` on a landmark room or an instrument,
+ * `seen from afar:` on a landmark room (ADR-376 D2, D6, D10).
+ */
+const PLACE_LINE_KEYS: ReadonlySet<VehicleLine['key']> = new Set(['admits', 'size', 'visibility', 'drift', 'sight', 'seen-from-afar']);
 
 /** The movement types whose vehicles a room's `admits:` line may name (D6). */
 const STEERED: ReadonlySet<string> = new Set(['streets', 'compass']);
@@ -101,6 +107,17 @@ export const vehicleBuilder: EntityLineBuilder = {
       return;
     }
     const movement = movementLine.value;
+    // ADR-366 D12, ADR-376 D3: an extension's movement type is admitted only
+    // under its `use` line; the row's checks still run so the block is
+    // reported once for the line and once for each other fault.
+    const contributed = manifestForMovementType(movement);
+    if (contributed && !contributed.core && !context.usedExtensions.has(contributed.name)) {
+      context.diagnostics.error(
+        `analysis.${contributed.name}-needs-use`,
+        `\`movement: ${movement}\` is \`use ${contributed.name}\` vocabulary — add \`use ${contributed.name}\` to the story header.`,
+        movementLine.span,
+      );
+    }
     const row = MOVEMENT_TABLE[movement];
     const vehicle: IRVehicle = { movement };
 
@@ -265,6 +282,9 @@ export const vehicleBuilder: EntityLineBuilder = {
       case 'flight':
         buildFlight(decl, context, name, vehicle);
         break;
+      case 'open':
+        buildOpen(decl, context, name, vehicle, paceLine);
+        break;
       case 'none':
       case 'streets':
         break;
@@ -273,6 +293,66 @@ export const vehicleBuilder: EntityLineBuilder = {
     entity.vehicle = vehicle;
   },
 };
+
+/**
+ * The open vehicle's own lines (ADR-376 D3, D6): `pace:`, `stride:`,
+ * `sight:` and `seen from afar:`, each required, and a placement `in
+ * <expanse> at <x>, <y>` (the coordinates themselves are the expanse
+ * builder's check, shared with floating things).
+ */
+function buildOpen(
+  decl: CreateDecl,
+  context: EntityBuildContext,
+  name: string,
+  vehicle: IRVehicle,
+  paceLine: VehicleLineOf<'pace'> | undefined,
+): void {
+  if (!paceLine) {
+    context.diagnostics.error(
+      'analysis.vehicle-missing-pace',
+      `\`${name}\` moves across an expanse and says nothing about how often — add \`pace: <n> turns\`.`,
+      decl.span,
+    );
+  }
+  const strideLine = vehicleLineOf(decl, 'stride');
+  if (!strideLine) {
+    context.diagnostics.error(
+      'analysis.open-missing-stride',
+      `\`${name}\` says nothing about how far a step goes — add \`stride: <n> units\`.`,
+      decl.span,
+    );
+  } else {
+    vehicle.stride = strideLine.units;
+  }
+  const sightLine = vehicleLineOf(decl, 'sight');
+  if (!sightLine) {
+    context.diagnostics.error(
+      'analysis.open-missing-sight',
+      `\`${name}\` says nothing about how far one sees from it — add \`sight: <n>\`.`,
+      decl.span,
+    );
+  } else {
+    vehicle.sight = sightLine.value;
+  }
+  const afarLine = vehicleLineOf(decl, 'seen-from-afar');
+  if (!afarLine) {
+    context.diagnostics.error(
+      'analysis.missing-seen-from-afar',
+      `\`${name}\` can be seen across an expanse and says nothing of how it looks from there — add \`seen from afar: <text>\`.`,
+      decl.span,
+    );
+  } else {
+    vehicle.seenFromAfar = afarLine.text;
+  }
+  const placed = decl.placement ? context.resolveEntityIdSilent(decl.placement.place) : null;
+  if (placed === null || !context.expanses.has(placed)) {
+    context.diagnostics.error(
+      'analysis.open-not-in-expanse',
+      `\`${name}\` is \`movement: open\` and must start in an expanse — ${decl.placement ? `\`${decl.placement.place.words.join(' ')}\` is not one` : 'it has no \`in\` line'}. Write \`in <expanse> at <x>, <y>\`.`,
+      decl.placement?.span ?? decl.span,
+    );
+  }
+}
 
 /**
  * `admits: <vehicle>, …` (D6) on a room or a region; a group's line has

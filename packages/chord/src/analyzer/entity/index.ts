@@ -32,6 +32,7 @@ import { startsBuilder } from './starts.js';
 import { proseBuilder } from './prose.js';
 import { statesBuilder } from './states.js';
 import { vehicleBuilder } from './vehicle.js';
+import { expanseBuilder } from './expanse.js';
 
 export { assembleEntity } from './assemble.js';
 export { lowerExit } from './exits.js';
@@ -54,6 +55,7 @@ export const ENTITY_LINE_BUILDERS: ReadonlyArray<EntityLineBuilder> = [
   countersBuilder,
   holdsBuilder,
   vehicleBuilder,
+  expanseBuilder,
   proseBuilder,
   clausesBuilder,
 ];

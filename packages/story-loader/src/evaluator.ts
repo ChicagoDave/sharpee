@@ -232,6 +232,13 @@ export class Evaluator {
         const model = ctx.world.getEntity(this.entityValue(cond.vehicle, ctx))?.get(VehicleTrait)?.model;
         return model?.kind === 'compass' && model.heading === cond.direction.toUpperCase();
       }
+      case 'in-sight':
+      case 'sight-band':
+      case 'vehicle-within':
+        // ADR-376 D7: the expanse runtime's reads (Chord 4.0 Phase 13,
+        // Slice 3). The front end compiles them; nothing here measures a
+        // distance yet, so evaluating one is a refusal by name, never false.
+        throw new LoadError(`\`${cond.kind}\` reaches a runtime that cannot play expanses yet.`);
       case 'any-of':
         // E1 (ratchet 2026-07-12): true iff some entity satisfies the
         // named open condition; false over the empty set. Short-circuits.

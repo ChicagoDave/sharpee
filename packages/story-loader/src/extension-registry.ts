@@ -43,6 +43,7 @@ import type { ISemanticEvent } from '@sharpee/core';
 import type { WorldModel } from '@sharpee/world-model';
 import { CHAPTERS_EXTENSION } from './extensions/chapters.js';
 import { COMBAT_EXTENSION } from './extensions/combat.js';
+import { EXPANSES_EXTENSION } from './extensions/expanses.js';
 import { HUNGER_EXTENSION } from './extensions/hunger.js';
 import { SCORING_EXTENSION } from './extensions/scoring.js';
 import { SETTING_SCHEMA } from './setting-schema';
@@ -175,4 +176,5 @@ export const EXTENSION_REGISTRY: ReadonlyMap<string, ExtensionRegistration> = ne
   ['scoring', SCORING_EXTENSION],
   ['hunger', HUNGER_EXTENSION],
   ['chapters', CHAPTERS_EXTENSION],
+  ['expanses', EXPANSES_EXTENSION],
 ]);

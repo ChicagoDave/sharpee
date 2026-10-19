@@ -255,7 +255,8 @@ export interface IRPositionRow {
  * loader reads this as true.
  */
 export interface IRVehicle {
-  movement: 'none' | 'line' | 'streets' | 'compass' | 'flight';
+  /** The base types (ADR-366 D5), and `open` under `use expanses` (ADR-376 D3). */
+  movement: 'none' | 'line' | 'streets' | 'compass' | 'flight' | 'open';
   /** `carries: in | on` — the player's preposition (`EnterableTrait.preposition`). Absent with rooms aboard. */
   carries?: 'in' | 'on';
   /** `drive:` — absent on `none`. */
@@ -277,6 +278,43 @@ export interface IRVehicle {
   boardedThrough?: string;
   /** A `drive: state` line's `position` block: rows top to bottom, then the fallback stop. */
   position?: { rows: IRPositionRow[]; otherwise: string };
+  /** An open vehicle's `stride: <n> unit[s]` (ADR-376 D3): units per step. */
+  stride?: number;
+  /** An open vehicle's `sight: <n>` (ADR-376 D6): how far one sees from it, in expanse units. */
+  sight?: number;
+  /** An open vehicle's `seen from afar:` line (ADR-376 D6): what it shows from a distance. */
+  seenFromAfar?: string;
+}
+
+/** One `<Room>: <x>, <y>` row of an expanse's `landmarks` block (ADR-376 D2). */
+export interface IRLandmark {
+  /** The landmark room's entity id. */
+  room: string;
+  x: number;
+  y: number;
+}
+
+/**
+ * An expanse's declaration (ADR-376 D2, D6, D8, D10): its size, its landmarks,
+ * and the optional lines that cap sight and move floating things. Present
+ * exactly on `expanse`-kind entities; the edges are the entity's
+ * `blockedExits` (unconditional, one of the four sides).
+ */
+export interface IRExpanse {
+  /** `size: <w> by <h>` — coordinates run 0..w-1 east and 0..h-1 north. */
+  width: number;
+  height: number;
+  landmarks: IRLandmark[];
+  /** `visibility: <n>` — a cap on every looker's sight in the expanse; absent means no cap. */
+  visibility?: number;
+  /** `drift: 1 unit every <n> turns` — turns between drift steps; absent means floating things hold still. */
+  drift?: number;
+}
+
+/** `in <expanse> at <x>, <y>` — a position in an expanse (ADR-376 D3, D10). */
+export interface IRCoordinates {
+  x: number;
+  y: number;
 }
 
 export interface IREntity {
@@ -373,6 +411,18 @@ export interface IREntity {
    * admits no vehicle.
    */
   admits?: string[];
+  /**
+   * The expanse's declaration (ADR-376 D2): present exactly on `expanse`-kind
+   * entities, under `use expanses`.
+   */
+  expanse?: IRExpanse;
+  /**
+   * `sight: <n>` off a vehicle (ADR-376 D6): on a landmark room, its outlook
+   * over the expanse; on a thing, an instrument's reach. Absent otherwise.
+   */
+  sight?: number;
+  /** `seen from afar:` on a landmark room (ADR-376 D6): what it shows from a distance. */
+  seenFromAfar?: string;
   /** `when <timer> expires` clauses on this owner (ADR-325 D3e). */
   timerClauses?: IRTimerClause[];
   /** `when <entity> moves` clauses on this owner (ADR-325 D3h). */
@@ -925,6 +975,11 @@ export interface IRPlacement {
    * or region placement names. Absent on a one-place placement.
    */
   places?: string[];
+  /**
+   * ADR-376 D3, D10: the coordinates of an `in <expanse> at <x>, <y>`
+   * placement, on an `open` vehicle or a `floats` thing. Absent otherwise.
+   */
+  at?: IRCoordinates;
   span: Span;
 }
 
@@ -1635,7 +1690,18 @@ export type IRStatement =
   /** `stop <vehicle>` (ADR-366 D5f): halt the vehicle's machine where it is. */
   | { kind: 'vehicle-stop'; vehicle: IRValue; stmtWhen?: IRCondition | null; span: Span }
   /** `send <vehicle> to <destination>` (ADR-366 D5d): a flight vehicle's voyage; `destination` is one of its destinations. */
-  | { kind: 'vehicle-send'; vehicle: IRValue; destination: IRValue; stmtWhen?: IRCondition | null; span: Span }
+  | {
+      kind: 'vehicle-send';
+      vehicle: IRValue;
+      /** The destination room; `{ kind: 'entity', id: '' }` when `coordinates` carries the target (ADR-376 D3). */
+      destination: IRValue;
+      /** `send <vehicle> to <x>, <y>` (ADR-376 D3): a course to a cell of the vehicle's expanse. */
+      coordinates?: IRCoordinates;
+      stmtWhen?: IRCondition | null;
+      span: Span;
+    }
+  /** `set the <expanse>'s visibility to <n>` (ADR-376 D6): caps every looker's sight in the expanse. */
+  | { kind: 'expanse-visibility'; expanse: IRValue; value: number; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'win'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'lose'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
   | { kind: 'kill'; phraseKey: string | null; stmtWhen?: IRCondition | null; span: Span }
@@ -1837,4 +1903,10 @@ export type IRCondition =
   /** `<vehicle> is at <place>` (ADR-366 D5): the vehicle's location is the named stop, room or destination. */
   | { kind: 'vehicle-at'; vehicle: IRValue; place: IRValue }
   /** `<vehicle> is heading <direction>` (ADR-366 D5c): a compass vehicle's heading. */
-  | { kind: 'vehicle-heading'; vehicle: IRValue; direction: string };
+  | { kind: 'vehicle-heading'; vehicle: IRValue; direction: string }
+  /** `<thing> is in sight` (ADR-376 D7): within the looker's sight in its expanse. Negation wraps in `not`. */
+  | { kind: 'in-sight'; thing: IRValue }
+  /** `<thing> is close by | in the distance | on the horizon` (ADR-376 D6, D7): the band it is seen in. */
+  | { kind: 'sight-band'; thing: IRValue; band: 'close-by' | 'in-the-distance' | 'on-the-horizon' }
+  /** `<vehicle> is within <n> of <landmark | x, y>` (ADR-376 D7): an open vehicle's distance from a point. */
+  | { kind: 'vehicle-within'; vehicle: IRValue; distance: number; of: IRValue | IRCoordinates };

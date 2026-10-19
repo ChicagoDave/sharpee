@@ -13,6 +13,7 @@
  */
 import { CHAPTERS_MANIFEST } from './chapters.js';
 import { COMBAT_MANIFEST } from './combat.js';
+import { EXPANSES_MANIFEST } from './expanses.js';
 import { HUNGER_MANIFEST } from './hunger.js';
 import { NPC_MANIFEST } from './npc.js';
 import { SCORING_MANIFEST } from './scoring.js';
@@ -22,6 +23,7 @@ import type { ExtensionManifest, ManifestAdjective } from './types.js';
 export type { ExtensionManifest, ManifestAdjective, ManifestField } from './types.js';
 export { CHAPTERS_MANIFEST } from './chapters.js';
 export { COMBAT_MANIFEST } from './combat.js';
+export { EXPANSES_MANIFEST } from './expanses.js';
 export { HUNGER_MANIFEST } from './hunger.js';
 export { NPC_MANIFEST } from './npc.js';
 export { SCORING_MANIFEST } from './scoring.js';
@@ -33,8 +35,24 @@ export { STATE_MACHINES_MANIFEST } from './state-machines.js';
  * state-machines) are always admitted and refuse a `use` line.
  */
 export const EXTENSION_MANIFESTS: ReadonlyMap<string, ExtensionManifest> = new Map(
-  [CHAPTERS_MANIFEST, COMBAT_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
+  [CHAPTERS_MANIFEST, COMBAT_MANIFEST, EXPANSES_MANIFEST, HUNGER_MANIFEST, NPC_MANIFEST, SCORING_MANIFEST, STATE_MACHINES_MANIFEST].map((m) => [m.name, m]),
 );
+
+/** The manifest contributing a kind noun (`expanse`), or null for a core kind or an unknown word. */
+export function manifestForKindNoun(word: string): ExtensionManifest | null {
+  for (const manifest of EXTENSION_MANIFESTS.values()) {
+    if (manifest.kindNouns?.includes(word)) return manifest;
+  }
+  return null;
+}
+
+/** The manifest contributing a movement type (`open`), or null for a base type or an unknown word. */
+export function manifestForMovementType(word: string): ExtensionManifest | null {
+  for (const manifest of EXTENSION_MANIFESTS.values()) {
+    if (manifest.movementTypes?.includes(word)) return manifest;
+  }
+  return null;
+}
 
 /**
  * The manifest (and adjective entry) contributing a trait-adjective word,

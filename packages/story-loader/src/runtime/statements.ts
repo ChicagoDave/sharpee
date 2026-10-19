@@ -436,6 +436,11 @@ export class StatementsSection {
             events.push(...this.execStatements(stmt.body, { ...ctx, match: irId, ledger: DecisionLedger.live() }, phase));
           }
           break;
+        case 'expanse-visibility':
+          // ADR-376 D6: the expanse runtime's (Chord 4.0 Phase 13, Slice 3).
+          // The front end compiles the statement; nothing here holds a
+          // visibility yet, so reaching it is a load-time refusal by name.
+          throw new LoadError('`set … visibility` reaches a runtime that cannot play expanses yet.', stmt.span);
         case 'then-open':
         case 'deflect':
         case 'leave':

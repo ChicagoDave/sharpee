@@ -29,7 +29,8 @@ import type { EntityLineBuilder, EntityBuildContext } from './context.js';
  * list, so a thing whose name contains `and` is placed into by an alias.
  */
 function placementOf(line: Placement, context: EntityBuildContext): IRPlacement {
-  const base = { relation: line.relation, span: line.span };
+  // ADR-376 D3: the coordinates tail rides along; the expanse builder gates it.
+  const base = { relation: line.relation, ...(line.at ? { at: { x: line.at.x, y: line.at.y } } : {}), span: line.span };
   const place = context.resolveEntityId(line.place) ?? '';
   if (!line.more) return { ...base, place };
   const rest = line.more.map((ref) => context.resolveEntityId(ref) ?? '');

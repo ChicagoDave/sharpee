@@ -228,7 +228,11 @@ use-line     = use-scoring-line | use-hunger-line | use-plain-line ;
 use-plain-line = "use" WORD [ announce-suffix ] NL ;       (* ADR-215: one trusted
                                                               platform extension per
                                                               line (combat, chapters
-                                                              — ADR-330); admits
+                                                              — ADR-330; expanses —
+                                                              ADR-376, which may
+                                                              contribute a kind noun and
+                                                              a movement type under
+                                                              ADR-366 D12); admits
                                                               the extension's manifest
                                                               vocabulary and triggers
                                                               its runtime registration.
@@ -406,10 +410,14 @@ holds-line   = "holds" NUMBER NL ;                         (* ADR-369 D2: the it
                                                               number); at most one
                                                               (analysis.holds-duplicate) *)
 vehicle-line = "movement" ":" ( "none" | "line" | "streets"
-                              | "compass" | "flight" ) NL  (* ADR-366 D5: every vehicle
+                              | "compass" | "flight"
+                              | "open" ) NL               (* ADR-366 D5: every vehicle
                                                               names its movement type
                                                               (analysis.vehicle-missing-
-                                                              movement). The lines
+                                                              movement). `open` is
+                                                              `use expanses` vocabulary
+                                                              (ADR-376 D3; analysis.
+                                                              expanses-needs-use). The lines
                                                               below are legal only in a
                                                               `vehicle` block and only
                                                               under the types D5's
@@ -440,8 +448,68 @@ vehicle-line = "movement" ":" ( "none" | "line" | "streets"
                                                            (* D5d: the fold, one or
                                                               more turns *)
              | "aboard" ":" name { "," name } NL           (* D7: the rooms inside *)
-             | "boarded" "through" ":" name NL ;           (* D7: one of them, where
+             | "boarded" "through" ":" name NL            (* D7: one of them, where
                                                               `to outside` lands *)
+             | "stride" ":" NUMBER ( "unit" | "units" ) NL
+                                                           (* ADR-376 D3: an open
+                                                              vehicle's units per step,
+                                                              one or more, required
+                                                              (analysis.open-missing-
+                                                              stride) *)
+             | sight-line                                  (* ADR-376 D6: required on an
+                                                              open vehicle (analysis.
+                                                              open-missing-sight) *)
+             | seen-from-afar-line ;                       (* ADR-376 D6: required on an
+                                                              open vehicle (analysis.
+                                                              missing-seen-from-afar) *)
+sight-line   = "sight" ":" NUMBER NL ;                     (* ADR-376 D6: expanse units.
+                                                              On an open vehicle, how far
+                                                              one sees from it; on a
+                                                              landmark room, its outlook
+                                                              over the expanse; on a
+                                                              thing, an instrument
+                                                              (`look through`). Elsewhere
+                                                              analysis.sight-owner *)
+seen-from-afar-line = "seen" "from" "afar" ":" rest-of-line NL ;
+                                                           (* ADR-376 D6: the distant
+                                                              prose of an open vehicle or
+                                                              a landmark room, required
+                                                              on both (analysis.missing-
+                                                              seen-from-afar); elsewhere
+                                                              analysis.seen-from-afar-
+                                                              owner *)
+expanse-line = "size" ":" NUMBER "by" NUMBER NL            (* ADR-376 D2: the two axes,
+                                                              each one or more, required
+                                                              (analysis.expanse-missing-
+                                                              size); coordinates run
+                                                              0..w-1 east, 0..h-1 north *)
+             | "visibility" ":" NUMBER NL                  (* ADR-376 D6: a cap on every
+                                                              looker's sight *)
+             | "drift" ":" "1" "unit" "every" NUMBER ( "turn" | "turns" ) NL ;
+                                                           (* ADR-376 D10: floating things
+                                                              move one unit per interval;
+                                                              required once anything
+                                                              floats in the expanse
+                                                              (analysis.floats-without-
+                                                              drift). Each line is an
+                                                              expanse's alone (analysis.
+                                                              expanse-line-owner) *)
+landmarks-block = "landmarks" NL
+                >>> { name ":" NUMBER "," NUMBER NL }
+                  "end" "landmarks" NL ;                   (* ADR-376 D2: the rooms an
+                                                              expanse holds at its
+                                                              coordinates (parse.landmark-
+                                                              row; analysis.landmark-not-
+                                                              room, -outside-expanse,
+                                                              -duplicate); on anything
+                                                              but an expanse analysis.
+                                                              landmarks-owner. An
+                                                              expanse's blocked-exit
+                                                              lines are its edges, the
+                                                              four sides only and never
+                                                              `while` (analysis.expanse-
+                                                              exit, analysis.edge-while);
+                                                              it has no exits (D8) *)
 admits-line  = "admits" ":" name { "," name } NL ;         (* ADR-366 D6: on a room, a
                                                               `rooms` group or a region
                                                               — the steered vehicles
@@ -654,6 +722,11 @@ create-line  = "aka" alias { "," alias } NL
              | vehicle-line                                (* ADR-366 D2, D5, D7 *)
              | admits-line                                 (* ADR-366 D6 *)
              | position-block                              (* ADR-366 D5a *)
+             | expanse-line                                (* ADR-376 D2, D6, D10: under
+                                                              `use expanses` *)
+             | sight-line | seen-from-afar-line            (* ADR-376 D6: on a landmark
+                                                              room or an instrument *)
+             | landmarks-block                             (* ADR-376 D2 *)
              | composition { "," composition } NL          (* pre-blank paragraph only;
                                                               a kind noun takes no `with`
                                                               settings — parse.kind-
@@ -1261,7 +1334,15 @@ STATE-INIT   = "locked" | "unlocked" | "closed" | "open"
                                                               `light-source` *)
 KIND-NOUN    = "thing" | "room" | "door" | "person"
              | "container" | "supporter" | "region"
-             | "vehicle" ;                                 (* ADR-366 D1: `vehicle` is a
+             | "vehicle"
+             | "expanse" ;                                 (* ADR-376 D2: `expanse` is
+                                                              `use expanses` vocabulary
+                                                              (analysis.expanses-needs-
+                                                              use) — a bounded space
+                                                              with coordinates, written
+                                                              with `size:` and a
+                                                              `landmarks` block.
+                                                              ADR-366 D1: `vehicle` is a
                                                               kind, enterable by
                                                               construction (`enterable`
                                                               beside it is analysis.
@@ -1303,7 +1384,18 @@ name-list-value = "[" name { "," name } "]" ;              (* ADR-215: only wher
                                                               manifest declares a list
                                                               field (patrol route,
                                                               allowed-rooms, …) *)
-placement    = ( "in" | "on" ) ARTICLE name                (* on + article = placement; *)
+placement    = ( "in" | "on" ) ARTICLE name
+               [ "at" NUMBER "," NUMBER ]                  (* on + article = placement.
+                                                              `at <x>, <y>`: ADR-376 D3,
+                                                              D10 — a position in an
+                                                              expanse, on an `open`
+                                                              vehicle or a `floats`
+                                                              thing only (analysis.
+                                                              expanse-not-open-vehicle,
+                                                              at-not-expanse,
+                                                              coordinates-outside-
+                                                              expanse, placement-missing-
+                                                              at; parse.placement-at) *)
              | "in" ARTICLE name { "," ARTICLE name }
                "and" ARTICLE name                          (* ADR-374 D2: a backdrop,
                                                               present in every listed
@@ -1726,12 +1818,18 @@ PRONOUN-CASE    = "subject" | "object" | "possessive"
 sequence-step  = step-anchor NL >>> { statement } ;
 step-anchor    = "at" "turn" NUMBER                        (* absolute from story start *)
                | NUMBER "turns" "later"                    (* relative to previous step *)
-               | "when" name "becomes" ( WORD | "under" "way" ) ;
-                                                           (* state anchor, D10; `under
+               | "when" name "becomes" ( WORD | "under" "way" )
+               | "when" name "comes" "into" "sight" ;      (* state anchor, D10; `under
                                                               way` is a vehicle's own
                                                               transition (ADR-366 D5e),
                                                               legal on a vehicle whose
-                                                              type moves over turns *)
+                                                              type moves over turns.
+                                                              `comes into sight` (ADR-376
+                                                              D7, under `use expanses`):
+                                                              the first step that brings
+                                                              the thing within the
+                                                              looker's sight, carried as
+                                                              the state `in sight` *)
 
 
 (* ---- must requirements (D6) -------------------------------------------- *)
@@ -1835,11 +1933,20 @@ statement    = "refuse" phrase-key { param } NL            (* not in `after` bod
                                                               type's row is analysis.
                                                               vehicle-statement-not-for-
                                                               movement *)
-             | "send" name "to" name [ stmt-when ] NL     (* ADR-366 D5d: a `flight`
+             | "send" name "to" ( name | NUMBER "," NUMBER )
+               [ stmt-when ] NL                            (* ADR-366 D5d: a `flight`
                                                               vehicle under `drive:
                                                               control` to one of its
                                                               destinations (analysis.
-                                                              not-a-destination) *)
+                                                              not-a-destination). ADR-376
+                                                              D3: an `open` vehicle to a
+                                                              landmark of its expanse or
+                                                              to `<x>, <y>` inside it
+                                                              (analysis.coordinates-
+                                                              outside-expanse); the pair
+                                                              on any other type is
+                                                              analysis.vehicle-statement-
+                                                              not-for-movement *)
              | "kill" "the" "player" [ phrase-key ] [ stmt-when ] NL
                [ >>> prose-paragraph ]                     (* ADR-227; ADR-325 D3i: an
                                                               indented body in place of
@@ -2045,6 +2152,26 @@ predicate    = "is" [ "not" ] ( ( "a" | "an" ) WORD { WORD }   (* is-a *)
                                                                   is a VEHICLE whose type
                                                                   moves over turns; one
                                                                   fixed phrase *)
+                              | "in" "sight"
+                              | "close" "by"
+                              | "in" "the" "distance"
+                              | "on" "the" "horizon"           (* ADR-376 D7, under `use
+                                                                  expanses`: the subject is
+                                                                  seen from where the
+                                                                  player looks, in sight or
+                                                                  in one band; each phrase
+                                                                  stands alone (the recency
+                                                                  rule), so `is in <room>`
+                                                                  keeps its reading *)
+                              | "within" NUMBER "of"
+                                ( name | NUMBER "," NUMBER )   (* ADR-376 D7: an OPEN
+                                                                  vehicle's distance from a
+                                                                  landmark of its expanse
+                                                                  or from coordinates
+                                                                  (analysis.not-a-
+                                                                  destination, coordinates-
+                                                                  outside-expanse;
+                                                                  parse.within) *)
                               | "at" name                      (* ADR-366 D5: the vehicle
                                                                   is at the named stop,
                                                                   room or destination;

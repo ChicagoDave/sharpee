@@ -39,6 +39,7 @@ import type {
 } from '../../ast.js';
 import type { DiagnosticBag } from '../../diagnostics.js';
 import type { VehicleDecl } from '../vehicles.js';
+import type { ExpanseDecl } from '../expanses.js';
 import type {
   IRBlockedExit,
   IRComposition,
@@ -71,6 +72,7 @@ import type {
   IRThinksEntry,
   IRTimerClause,
   IRVehicle,
+  IRExpanse,
 } from '../../ir.js';
 import type { Span } from '../../span.js';
 import type { EntitySymbol, Scope } from '../../analyzer.js';
@@ -134,6 +136,12 @@ export interface EntityDraft {
   vehicle?: IRVehicle;
   /** `admits:` (ADR-366 D6) as entity ids; undefined when the block has no line. */
   admits?: string[];
+  /** The expanse's declaration (ADR-376 D2); undefined off an `expanse` block. */
+  expanse?: IRExpanse;
+  /** `sight: <n>` on a landmark room or an instrument (ADR-376 D6); undefined when absent. */
+  sight?: number;
+  /** `seen from afar:` on a landmark room (ADR-376 D6); undefined when absent. */
+  seenFromAfar?: string;
   descriptionKey: string | null;
   initialDescriptionKey: string | null;
   descriptionSource?: IRTextSource;
@@ -172,6 +180,8 @@ export interface EntityBuildContext {
   resolveEntityIdSilent(ref: NameRef): string | null;
   /** Every `vehicle` block's declaration, by entity id (ADR-366). */
   readonly vehicles: ReadonlyMap<string, VehicleDecl>;
+  /** Every `expanse` block's declaration, by entity id (ADR-376). */
+  readonly expanses: ReadonlyMap<string, ExpanseDecl>;
   resolveCondition(cond: ConditionNode, scope: Scope): IRCondition;
   suggestText(input: string, candidates: string[]): string;
   requirePhrase(key: string, span: Span, owner?: EntitySymbol | null): void;
