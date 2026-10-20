@@ -151,4 +151,24 @@ export {
   type WalkStopReason,
 } from './claims/claims-walk.js';
 export { runClaims, formatClaimsRun, type ClaimsRunOptions, type ClaimsRunResult } from './claims/claims-runner.js';
+// The lock (ADR-367): a reached state locked as a claim, its set proposed
+// from the line; and the floor (D5): every line a proof, every lock checked
+// at its card. Both filesystem-free; devkit and the tab's sidecar write.
+export {
+  proposeLock,
+  spliceLockIntoFragment,
+  freshFragmentWith,
+  pinLockOnCard,
+  type LockGame,
+  type LockOffer,
+  type LockProposal,
+  type LockRequest,
+} from './claims/claim-lock.js';
+export {
+  createClaimFloor,
+  type ClaimFloor,
+  type ClaimFloorReach,
+  type ClaimFloorReading,
+  type ClaimPinResult,
+} from './claims/claim-floor.js';
 export type { ClaimsEngine, ClaimsEntity, ClaimsGame, ClaimsGameLoader, ClaimsTurnEvent, ClaimsWorld, WorldSnapshot } from './claims/claims-game.js';

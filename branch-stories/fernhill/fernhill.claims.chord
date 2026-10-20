@@ -56,4 +56,10 @@ claims
     needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed
     needs things: the stopcock
     needs verbs: turn
+
+  claim the deed box is open
+    the deed box is open
+    needs rooms: the Iron Gates, the Gravel Drive, the Fountain Court, the Boiler Shed, the Entrance Hall, the Kitchen, the Greenhouse, Folly Hill, the Folly
+    needs things: Tobias, the stopcock, the boiler, the primer plunger, the vine, the garden shears, the silver locket, the folly door, the fuse, the deed box
+    needs verbs: ask, turn, push, switch on, take, give, prune, open
 end claims

@@ -22,12 +22,21 @@
  * derived report; no claim event rides the wire (GH #555 holds the wire
  * field and the Testing tab row as their own discussion).
  *
- * Public interface: runClaimsTests(options) → process exit code,
+ * The fragment is compiled BEFORE the tree runs (`compileClaimsFragment`),
+ * because the tree run's floor (ADR-367 D5) evaluates every positive claim
+ * at every card it replays: a claim a line reached is held by that line and
+ * never walked, and a card's `locks` are checked where they were taken.
+ * The floor's reading is handed to `runClaimsTests` with the compiled set.
+ *
+ * Public interface: compileClaimsFragment(dir, claimsFile) → the compiled
+ * set or an exit code, runClaimsTests(options) → process exit code,
  * CLAIMS_WALK_BUDGET.
  * Owner context: @sharpee/devkit (author tool).
  */
 import * as path from 'node:path';
 import { readFileSync } from 'node:fs';
+import type { ClaimFloorReading, ClaimSet } from '@sharpee/branch-tester';
+import type { StoryIR } from '@sharpee/chord';
 import { findStoryFile, loadAuthorGame, makeFsImportResolver } from '../standalone/author-game.js';
 
 /**
@@ -38,38 +47,28 @@ import { findStoryFile, loadAuthorGame, makeFsImportResolver } from '../standalo
  */
 export const CLAIMS_WALK_BUDGET = { maxSeconds: 120, maxStates: 500_000, maxDepth: 80 } as const;
 
-export interface ClaimsTestOptions {
-  /** Resolved project directory (absolute). */
-  dir: string;
-  /** The claims fragment the manifest names, relative to the `.story` file. */
+/** The fragment compiled against its story, ready to run. */
+export interface CompiledClaimsFragment {
+  storyFile: string;
   claimsFile: string;
-  /** The pinned seed every walk boots at — the tree document's. */
-  seed: number;
-  /** The run-event stream owns stdout; the claims report goes to stderr. */
-  json: boolean;
-  verbose: boolean;
+  ir: StoryIR;
+  claimSet: ClaimSet;
 }
 
 /**
- * Run the claims the manifest names and print the runner's report.
+ * Compile the claims fragment the manifest names, against the project's
+ * story, and normalize it through branch-tester's gate. Nothing runs.
  *
- * @param options the project, the fragment, the seed, and the output mode
- * @returns process exit code — 0 the claims ran, whatever their verdicts
- *   (D9); 2 the claims file is missing, does not compile, or is refused by
- *   the gate (nothing ran); 3 the story would not boot. Never calls
- *   `process.exit()`.
+ * @param dir resolved project directory (absolute)
+ * @param claimsFile the fragment's path, relative to the `.story` file
+ * @returns the compiled set, or the exit code to return — 2 the file is
+ *   missing, does not compile, or is refused by the gate; 3 the project has
+ *   more than one `.story` file
  */
-export async function runClaimsTests(options: ClaimsTestOptions): Promise<number> {
+export function compileClaimsFragment(dir: string, claimsFile: string): CompiledClaimsFragment | number {
   // Lazy require (the test.ts pattern): the harness loads only when testing.
   const { compileClaims } = require('@sharpee/chord') as typeof import('@sharpee/chord');
-  const { normalizeClaimSet, runClaims, formatClaimsRun } =
-    require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
-
-  const { dir, claimsFile, seed, json, verbose } = options;
-  const out = (line: string): void => {
-    if (json) console.error(line);
-    else console.log(line);
-  };
+  const { normalizeClaimSet } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
 
   let storyFile: string | null;
   try {
@@ -107,13 +106,44 @@ export async function runClaimsTests(options: ClaimsTestOptions): Promise<number
     return 2;
   }
 
-  let claimSet: ReturnType<typeof normalizeClaimSet>;
+  let claimSet: ClaimSet;
   try {
     claimSet = normalizeClaimSet(compiled.claims, claimsFile);
   } catch (error) {
     console.error(`test: ${error instanceof Error ? error.message : error}`);
     return 2;
   }
+  return { storyFile, claimsFile, ir: compiled.ir, claimSet };
+}
+
+export interface ClaimsTestOptions {
+  /** The fragment, compiled before the tree ran. */
+  compiled: CompiledClaimsFragment;
+  /** The pinned seed every walk boots at — the tree document's. */
+  seed: number;
+  /** What the tree run's floor saw (ADR-367 D5); absent when no tree ran. */
+  floor?: ClaimFloorReading;
+  /** The run-event stream owns stdout; the claims report goes to stderr. */
+  json: boolean;
+  verbose: boolean;
+}
+
+/**
+ * Run the compiled claims and print the runner's report.
+ *
+ * @param options the compiled fragment, the seed, the floor's reading, and
+ *   the output mode
+ * @returns process exit code — 0 the claims ran, whatever their verdicts
+ *   (D9); 3 the story would not boot. Never calls `process.exit()`.
+ */
+export async function runClaimsTests(options: ClaimsTestOptions): Promise<number> {
+  const { runClaims, formatClaimsRun } = require('@sharpee/branch-tester') as typeof import('@sharpee/branch-tester');
+  const { compiled, seed, floor, json, verbose } = options;
+  const { storyFile, claimsFile, ir, claimSet } = compiled;
+  const out = (line: string): void => {
+    if (json) console.error(line);
+    else console.log(line);
+  };
 
   if (verbose) {
     out(`Claims budget per walk: ${CLAIMS_WALK_BUDGET.maxSeconds}s, ${CLAIMS_WALK_BUDGET.maxStates} states, depth ${CLAIMS_WALK_BUDGET.maxDepth}`);
@@ -121,9 +151,10 @@ export async function runClaimsTests(options: ClaimsTestOptions): Promise<number
 
   let result: Awaited<ReturnType<typeof runClaims>>;
   try {
-    result = await runClaims(compiled.ir, claimSet, () => loadAuthorGame(storyFile!, { seed }), {
+    result = await runClaims(ir, claimSet, () => loadAuthorGame(storyFile, { seed }), {
       seed,
       ...CLAIMS_WALK_BUDGET,
+      ...(floor !== undefined ? { floor } : {}),
     });
   } catch (error) {
     console.error(`Error running the claims: ${error instanceof Error ? error.message : error}`);

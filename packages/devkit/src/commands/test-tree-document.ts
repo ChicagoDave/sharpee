@@ -28,7 +28,10 @@
  * The claims tier (ADR-365 D9/D10) runs after the derived tier, at the same
  * seed, only when the manifest names a claims fragment, through
  * `test-claims.ts`: a claim's verdict never changes the exit code, a claims
- * file the command cannot run exits 2 like a tree it cannot read.
+ * file the command cannot run exits 2 like a tree it cannot read. The
+ * fragment compiles before the tree runs, so the tree run can carry the
+ * claims floor (ADR-367 D5): every positive claim evaluated at every card,
+ * every lock checked at its card; the reading goes to the claims tier.
  *
  * Public interface: findTreeDirectory(projectDir), readTreeFiles(treePath),
  * runTreeDocumentCommand(options) → process exit code.
@@ -40,7 +43,7 @@ import type { RefusalExplainer, TreeFiles } from '@sharpee/branch-tester';
 import { deriveReach, explainRefusal } from '@sharpee/world-index';
 import { compileChordStory, findStoryFile, loadAuthorGame } from '../standalone/author-game.js';
 import { runDerivedTests } from './test-derived.js';
-import { runClaimsTests } from './test-claims.js';
+import { compileClaimsFragment, runClaimsTests, type CompiledClaimsFragment } from './test-claims.js';
 
 /**
  * Find a project's test tree: the `<story-id>.tests/` directory beside the
@@ -138,6 +141,7 @@ export async function runTreeDocumentCommand(
     assembleTree,
     channelIdsReferencedBy,
     checkCanonicalTree,
+    createClaimFloor,
     flattenTreeLines,
     formatTreeDocumentRun,
     runTreeDocument,
@@ -180,6 +184,16 @@ export async function runTreeDocumentCommand(
     );
     return 2;
   }
+
+  // ADR-367 D5: the claims compile first, so the tree run can stand the floor
+  // under them. A fragment that cannot run exits 2 before anything runs.
+  let compiledClaims: CompiledClaimsFragment | undefined;
+  if (document.claims !== undefined) {
+    const compiled = compileClaimsFragment(dir, document.claims);
+    if (typeof compiled === 'number') return compiled;
+    compiledClaims = compiled;
+  }
+  const floor = compiledClaims !== undefined ? createClaimFloor(compiledClaims.ir, compiledClaims.claimSet) : undefined;
 
   const { lines } = flattenTreeLines(document);
   const stream = json
@@ -229,8 +243,10 @@ export async function runTreeDocumentCommand(
         onCommandResult: (command) =>
           stream.commandResult(currentLine, streamableCommandResult(command), captureOutput),
       },
-      lineObserver: stream && {
+      lineObserver: {
+        ...(floor !== undefined ? { onCard: floor.onCard } : {}),
         onLineStart: ({ line, label }) => {
+          if (!stream) return;
           currentLine = line.id;
           announced.add(line.id);
           // Never `replayed: true` here: on the wire that flag means "this
@@ -245,6 +261,7 @@ export async function runTreeDocumentCommand(
           });
         },
         onLineEnd: ({ line, outcome }) => {
+          if (!stream) return;
           // A replay-diverged line never reached onLineStart; announce it so
           // the stream is still start-then-end, never an error from nowhere.
           if (!announced.has(line.id)) {
@@ -264,6 +281,7 @@ export async function runTreeDocumentCommand(
         },
         onLineBlocked: ({ line, outcome }) => {
           blockedCount += 1;
+          if (!stream) return;
           stream.transcriptStart(line.id, executionIndex++, { label: outcome.label });
           stream.transcriptUnreached(line.id, outcome.blockedBy ?? '(unknown)');
         },
@@ -306,9 +324,9 @@ export async function runTreeDocumentCommand(
   // ADR-365 D9/D10: the claims tier, only when the manifest names a file.
   // Verdicts never move the exit code; a claims file that cannot run does.
   const claimsCode =
-    document.claims === undefined
+    compiledClaims === undefined
       ? 0
-      : await runClaimsTests({ dir, claimsFile: document.claims, seed: document.seed, json, verbose });
+      : await runClaimsTests({ compiled: compiledClaims, seed: document.seed, floor: floor?.reading(), json, verbose });
   const code = Math.max(treeCode, derivedCode, claimsCode);
 
   const results = run.lines.filter((l) => l.result !== undefined).map((l) => l.result!);

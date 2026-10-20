@@ -29,11 +29,11 @@
  */
 
 import { createHash } from 'node:crypto';
-import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, clauseOccurrenceKey } from '@sharpee/story-loader';
+import { CHORD_IR_ID_ATTRIBUTE, CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
 import { captureSave, restoreSave } from '@sharpee/transcript-tester';
 import { claimCone, type IRClaim, type StoryIR } from '@sharpee/chord';
 import type { Claim, ClaimGroup, ClaimKind, NecessarySet } from './claim-set.js';
-import { claimHolds } from './claim-predicates.js';
+import { claimHolds, clauseKeysByFiredOf, entityIdByIrOf } from './claim-predicates.js';
 import { candidateCommands, deriveCommandVocabulary, type CandidateBreadth } from './claim-candidates.js';
 import type { ClaimsGame, ClaimsTurnEvent, WorldSnapshot } from './claims-game.js';
 import { irIdOf, readWorldSnapshot } from './claims-game.js';
@@ -52,11 +52,17 @@ export interface ClaimVerdict {
   readonly never: boolean;
   readonly kind: ClaimKind;
   readonly verdict: ClaimOutcome;
-  /** How the verdict was reached: a witness path, the frontier's exhaustion, or a budget stop that left it open. */
-  readonly settledBy: 'witness' | 'exhaustion' | 'budget';
+  /**
+   * How the verdict was reached: a played line that reached the state
+   * (ADR-367 D5's floor — no walk ran), a witness path, the frontier's
+   * exhaustion, or a budget stop that left it open.
+   */
+  readonly settledBy: 'line' | 'witness' | 'exhaustion' | 'budget';
   /** The first path to a state satisfying the claim — present with `settledBy: 'witness'`. */
   readonly witness?: readonly string[];
   readonly depth?: number;
+  /** The line and turn that reached the claim — present with `settledBy: 'line'`. */
+  readonly line?: { readonly id: string; readonly label: string; readonly turn: number };
   /** How many things the claim's set carries — each independent one doubles the states to exhaust. */
   readonly thingsInSet: number;
   /** How many of those things the claim can never depend on under this set (ADR-365 D12) — the ones to trim. */
@@ -225,25 +231,12 @@ export async function walkClaims(game: ClaimsGame, ir: StoryIR, group: ClaimGrou
 
   const vocabulary = deriveCommandVocabulary(ir, engine);
   const nameByIrId = new Map<string, string>();
-  const entityIdByIr = new Map<string, string>();
   for (const entity of world.getAllEntities()) {
     const irId = irIdOf(entity);
-    if (irId === undefined) continue;
-    nameByIrId.set(irId, entity.name);
-    entityIdByIr.set(irId, entity.id);
+    if (irId !== undefined) nameByIrId.set(irId, entity.name);
   }
-  // `<thing> has been <participle>` → the counters of the thing's own `on`
-  // clauses for that action, by clause position (the compiler's `fired`
-  // text names the thing and the action; the loader's key names the clause).
-  const clauseKeysByFired = new Map<string, string[]>();
-  for (const entity of ir.entities) {
-    entity.onClauses.forEach((clause, index) => {
-      const fired = `${entity.id}.${clause.action}`;
-      const keys = clauseKeysByFired.get(fired) ?? [];
-      keys.push(clauseOccurrenceKey(entity.id, index + 1));
-      clauseKeysByFired.set(fired, keys);
-    });
-  }
+  const entityIdByIr = entityIdByIrOf(world);
+  const clauseKeysByFired = clauseKeysByFiredOf(ir);
 
   const roomsSeen = new Set<string>();
   const noteRoom = () => {

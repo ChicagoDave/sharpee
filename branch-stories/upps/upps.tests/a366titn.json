@@ -345,6 +345,9 @@
       },
       "command": "exit",
       "id": "t1500031",
+      "locks": [
+        "the player is in the Kraken Landing"
+      ],
       "type": "turn"
     },
     {

@@ -150,6 +150,12 @@ export interface TreeLine {
    * replay must match that stream exactly or the pinned seed means nothing.
    */
   readonly prefix: string[];
+  /**
+   * Typed turns in the prefix — the boot look excluded. A card's turn number
+   * as a player counts it (ADR-367's "turn 41") is this plus the typed turns
+   * from the line's first card through that card.
+   */
+  readonly prefixTurns: number;
   /** The line's own cards. */
   readonly cards: TreeCard[];
   /** The line's first typed command — half of a branch's derived label. */
@@ -201,6 +207,14 @@ export interface TreeLineObserver {
   onLineEnd?(info: { line: TreeLine; outcome: TreeLineOutcome }): void;
   /** A line that never ran — an ancestor's execution error blocked it. */
   onLineBlocked?(info: { line: TreeLine; outcome: TreeLineOutcome }): void;
+  /**
+   * One of the line's own cards has run and the game is in hand, after its
+   * command and before the next (ADR-367 D5's floor reads the world here).
+   * `turn` counts typed turns from the root through this card, prefix
+   * included; the boot look is turn 0. Never called for a replayed prefix
+   * command — the owning line already saw that state.
+   */
+  onCard?(info: { line: TreeLine; label: string; card: TreeCard; cardIndex: number; turn: number; game: TreeWalkerGame }): void;
 }
 
 /**
@@ -276,6 +290,7 @@ export function flattenTreeLines(document: TreeDocument): {
     isMain: boolean,
     parent?: { parentId: string; ordinal: number; forkIndex: number },
     prefix: string[] = [],
+    prefixTurns = 0,
   ): void => {
     const endingIndex = cards.findIndex((card) => card.ending !== undefined);
     lines.push({
@@ -284,12 +299,14 @@ export function flattenTreeLines(document: TreeDocument): {
         ? { parentId: parent.parentId, ordinal: parent.ordinal, forkIndex: parent.forkIndex }
         : {}),
       prefix,
+      prefixTurns,
       cards,
       ...(firstCommandOf(cards) !== undefined ? { firstCommand: firstCommandOf(cards) } : {}),
       ...(endingIndex !== -1 ? { endingIndex } : {}),
     });
 
     const stream = [...prefix];
+    let turns = prefixTurns;
     cards.forEach((card, index) => {
       const cardPath = `${path}[${index}]`;
       if (card.type === 'opening' && !(isMain && index === 0)) {
@@ -316,6 +333,7 @@ export function flattenTreeLines(document: TreeDocument): {
       // executed, so part of what a replay must repeat), the opening nothing.
       const command = commandOf(card);
       if (command !== undefined) stream.push(command);
+      if (card.type === 'turn') turns += 1;
       (card.branches ?? []).forEach((branch, position) => {
         walk(
           branch.cards,
@@ -324,6 +342,7 @@ export function flattenTreeLines(document: TreeDocument): {
           false,
           { parentId: id, ordinal: position + 1, forkIndex: index },
           [...stream],
+          turns,
         );
       });
     });
@@ -463,6 +482,11 @@ export async function runTreeDocument(
     // engine is stopped after it, so every later card is one the run never
     // reached, and a branch forking at or after it is blocked below.
     const { transcript, cardIndexOfCommand } = transcriptOfLine(line, game.capturedChannels ?? []);
+    // The card each executed row came from, and its turn number, for the
+    // observer's `onCard` (ADR-367 D5): rows arrive in transcript order, the
+    // opening row first when the line has one.
+    let executedRow = 0;
+    let turn = line.prefixTurns;
     const result = await runTranscript(transcript, game as never, {
       ...options,
       observer: {
@@ -472,6 +496,13 @@ export async function runTreeDocument(
         onCommandResult: (commandResult) => {
           noteRoom();
           attachCause(commandResult, playerRoomIrIdOf(game), options.explain);
+          if (commandResult.command.input !== '(opening)' && options.lineObserver?.onCard) {
+            const cardIndex = cardIndexOfCommand[executedRow];
+            const card = line.cards[cardIndex];
+            if (card?.type === 'turn') turn += 1;
+            if (card !== undefined) options.lineObserver.onCard({ line, label, card, cardIndex, turn, game });
+          }
+          if (commandResult.command.input !== '(opening)') executedRow += 1;
           options.observer?.onCommandResult?.(commandResult);
         },
       },

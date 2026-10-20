@@ -24,12 +24,19 @@
 import type { StoryIR } from '@sharpee/chord';
 import { groupClaimsBySet, type ClaimSet } from './claim-set.js';
 import type { ClaimsGameLoader } from './claims-game.js';
+import type { ClaimFloorReading, ClaimPinResult } from './claim-floor.js';
 import { walkClaims, type ClaimVerdict, type ClaimsWalkOptions, type ClaimsWalkReport } from './claims-walk.js';
 
 /** The run's budgets (per walk) and the seed the report names. */
 export interface ClaimsRunOptions extends ClaimsWalkOptions {
   /** The seed the loader boots at — recorded, not applied; the loader owns the boot. */
   readonly seed?: number;
+  /**
+   * What the tree run's floor saw (ADR-367 D5): a positive claim some line
+   * reached is held by that line and not walked; a lock's check at its card
+   * rides the report. Absent when no tree ran before the claims.
+   */
+  readonly floor?: ClaimFloorReading;
 }
 
 /** A whole run: every walk, every verdict, and the held-over-declared ratio (D6). */
@@ -43,6 +50,10 @@ export interface ClaimsRunResult {
   readonly violated: number;
   readonly unproven: number;
   readonly totalWalkMs: number;
+  /** Whether a tree run's floor stood under this run — the report's vocabulary depends on it. */
+  readonly floored: boolean;
+  /** Every lock the tree run checked at its card (ADR-367 D5). */
+  readonly pins: readonly ClaimPinResult[];
 }
 
 /**
@@ -55,13 +66,35 @@ export interface ClaimsRunResult {
  * @returns the verdicts and the walks behind them
  */
 export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: ClaimsGameLoader, options: ClaimsRunOptions = {}): Promise<ClaimsRunResult> {
-  const { seed, ...walkOptions } = options;
+  const { seed, floor, ...walkOptions } = options;
+  // The floor (ADR-367 D5): a positive claim a line reached is held by that
+  // line, and only the rest are walked. Verdict indices are the declaration's.
+  const byLine: ClaimVerdict[] = [];
+  const toWalk = claimSet.claims.filter((claim) => {
+    const reach = floor?.reached.get(claim.index);
+    if (claim.never || reach === undefined) return true;
+    byLine.push({
+      set: claim.ownSet ? `the set of "${claim.name}"` : 'the declared set',
+      index: claim.index,
+      name: claim.name,
+      never: false,
+      kind: claim.predicate.kind,
+      verdict: 'held',
+      settledBy: 'line',
+      line: { id: reach.lineId, label: reach.label, turn: reach.turn },
+      thingsInSet: claim.set.things.length,
+      inertInSet: 0,
+    });
+    return false;
+  });
   const walks: ClaimsWalkReport[] = [];
-  for (const group of groupClaimsBySet(claimSet)) {
-    const game = await loadGame();
-    walks.push(await walkClaims(game, ir, group, walkOptions));
+  if (toWalk.length > 0 || claimSet.claims.length === 0) {
+    for (const group of groupClaimsBySet({ ...claimSet, claims: toWalk })) {
+      const game = await loadGame();
+      walks.push(await walkClaims(game, ir, group, walkOptions));
+    }
   }
-  const claims = walks.flatMap((walk) => walk.claims).sort((a, b) => a.index - b.index);
+  const claims = [...byLine, ...walks.flatMap((walk) => walk.claims)].sort((a, b) => a.index - b.index);
   const count = (verdict: ClaimVerdict['verdict']) => claims.filter((claim) => claim.verdict === verdict).length;
   return {
     source: claimSet.source,
@@ -73,6 +106,8 @@ export async function runClaims(ir: StoryIR, claimSet: ClaimSet, loadGame: Claim
     violated: count('violated'),
     unproven: count('unproven'),
     totalWalkMs: walks.reduce((total, walk) => total + walk.walkMs, 0),
+    floored: floor !== undefined,
+    pins: floor?.pins ?? [],
   };
 }
 
@@ -97,10 +132,14 @@ export function formatClaimsRun(result: ClaimsRunResult): string {
   const walkBySet = new Map(result.walks.map((walk) => [walk.set, walk]));
   for (const claim of result.claims) {
     const head = `${claim.verdict.toUpperCase()}  ${claim.name}${claim.never ? ' (never)' : ''}`;
-    if (claim.settledBy === 'witness') {
-      lines.push(`${head} — at depth ${claim.depth}: ${claim.witness?.join(' / ')}`);
+    // Under a floor, a walked positive claim is one no line reached (ADR-367 D5).
+    const unreached = result.floored && !claim.never ? 'not reached by any line; ' : '';
+    if (claim.settledBy === 'line') {
+      lines.push(`${head} — by line ${claim.line?.id} "${claim.line?.label}" at turn ${claim.line?.turn}`);
+    } else if (claim.settledBy === 'witness') {
+      lines.push(`${head} — ${unreached}${result.floored && !claim.never ? 'by walk ' : ''}at depth ${claim.depth}: ${claim.witness?.join(' / ')}`);
     } else if (claim.settledBy === 'exhaustion') {
-      lines.push(`${head} — ${claim.never ? 'every reachable state under its set was tried' : 'no reachable state under its set satisfies it'} (${claim.set})`);
+      lines.push(`${head} — ${unreached}${claim.never ? 'every reachable state under its set was tried' : 'no reachable state under its set satisfies it'} (${claim.set})`);
     } else {
       const walk = walkBySet.get(claim.set);
       const stopped = walk ? `${walk.stopReason} after ${walk.statesDiscovered} states` : 'a budget';
@@ -108,8 +147,14 @@ export function formatClaimsRun(result: ClaimsRunResult): string {
         claim.inertInSet > 0
           ? `its set carries ${claim.thingsInSet} things, ${claim.inertInSet} of which the claim's rules never reach; each independent thing doubles the states to exhaust`
           : `its set carries ${claim.thingsInSet} things, and each independent thing doubles the states to exhaust`;
-      lines.push(`${head} — the walk stopped at ${stopped}; ${cost}`);
+      lines.push(`${head} — ${unreached}the walk stopped at ${stopped}; ${cost}`);
     }
+  }
+  for (const pin of result.pins) {
+    const where = `line ${pin.lineId} "${pin.label}" at turn ${pin.turn}`;
+    if (pin.outcome === 'held') lines.push(`  lock "${pin.claim}" at ${where} — held there`);
+    else if (pin.outcome === 'not-held') lines.push(`  lock "${pin.claim}" at ${where} — NOT held there`);
+    else lines.push(`  lock "${pin.claim}" at ${where} — lock-unknown-claim: the fragment declares no claim of that name`);
   }
   return lines.join('\n');
 }

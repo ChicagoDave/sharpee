@@ -1,0 +1,11 @@
+## UPPS (United Planetary Postal Service)'s claims: what the finished story can reach, each under the
+## rooms, things and verbs that are load-bearing on the way. The test tree's
+## manifest names this file; the story never imports it.
+
+claims
+  claim the player is in the Kraken Landing
+    the player is in the Kraken Landing
+    needs rooms: the Sorting Room, the Loading Dock, the Cable Trench, the Hold, the Cockpit, the Airlock, the Landing Pad, the Collar Vestibule, the Shuttle Gate, the Kraken Landing
+    needs things: the mail satchel, the sorting machine, the route card, the dead letter, the returns bin, the disposal torch, the ration bar, the flask of coffee, the route placard, the inspection plate, the sample jar, the parcel twine, the sodium lights, the mail bundle, the dock door, the mail crates, the loader robot, the courier ship, the call button, the mail sack, the flint striker, the blackout lantern, the work lamp, the power cell, the suit locker, the space suit, the cockpit hatch, the guidance selector, the flight couch, the viewport, the flight manual, the fold drive, the outer hatch, the pressure gauge, the pad master, the tram line, the drop shuttle, the drop lever
+    needs verbs: look, wear, take, examine, read, jump, yes, no, sorry, wave, look under, empty, kiss, throw, burn, drop, buy, pull, tie, untie, lower, raise, push, light, blow out, switch on, put, board, give, open, set, turn, consult, look up hatch in, read about guidance in, enter, switch off, exit, show, close, wait
+end claims

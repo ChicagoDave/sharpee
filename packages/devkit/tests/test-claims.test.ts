@@ -96,7 +96,8 @@ describe('sharpee test — the claims tier runs when the manifest names a file (
     expect(stdout[heading + 1]).toBe('claims: 2 of 2 held (seed 7)');
     expect(stdout[heading + 2]).toMatch(/^1 walk, \d+\.\ds in all$/);
     expect(stdout[heading + 3]).toMatch(/^ {2}under the declared set: 2 rooms, 1 things, 1 verbs — \d+ states, \d+ commands, \d+\.\ds, stopped: frontier-exhausted$/);
-    expect(stdout).toContain('HELD  the note has been read — at depth 1: read note');
+    // The fixture's tree has no typed turn, so no line reached the claim: the walk did (ADR-367 D5's floor says so).
+    expect(stdout).toContain('HELD  the note has been read — not reached by any line; by walk at depth 1: read note');
     expect(stdout).toContain('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
   }, 60_000);
 
@@ -138,7 +139,7 @@ describe('sharpee test — a claim never gates the build (ADR-365 D9, AC-3)', ()
     const { code, stdout } = await runCapturing([dir]);
     expect(code).toBe(0);
     expect(stdout).toContain('claims: 1 of 2 held, 1 unproven (seed 7)');
-    expect(stdout).toContain('UNPROVEN  the note has been read — no reachable state under its set satisfies it (the declared set)');
+    expect(stdout).toContain('UNPROVEN  the note has been read — not reached by any line; no reachable state under its set satisfies it (the declared set)');
     expect(stdout).toContain('HELD  the note leaves the Hall (never) — every reachable state under its set was tried (the declared set)');
   }, 60_000);
 
@@ -169,8 +170,8 @@ describe('sharpee test — a claims file the command cannot run exits 2 (ADR-365
     const dir = projectVariant(FIXTURE, 'claims-tier', 7, 'absent.claims.chord');
     const { code, stdout, stderr } = await runCapturing([dir]);
     expect(code).toBe(2);
-    // The tree and the derived tier ran first; the claims file is what failed.
-    expect(stdout.some((line) => line.startsWith('Rooms entered:'))).toBe(true);
+    // The fragment compiles before the tree runs (ADR-367 D5's floor needs it), so nothing ran.
+    expect(stdout.some((line) => line.startsWith('Rooms entered:'))).toBe(false);
     expect(stderr.some((line) => line.startsWith("test: claims file 'absent.claims.chord' named by manifest.json: not found ("))).toBe(true);
     expect(stdout.some((line) => line.startsWith('Claims:'))).toBe(false);
   }, 60_000);
@@ -193,17 +194,23 @@ const describeFernhill = existsSync(path.join(FERNHILL, 'fernhill.story')) ? des
 describeFernhill('REAL-PATH: Fernhill\'s claims through sharpee test (ADR-365 end-to-end scenario)', () => {
   let withClaims: { code: number; stdout: string[] };
 
-  it('reports 8 held and 1 violated from the manifest line, at the tree\'s seed', async () => {
+  it('reports 9 held and 1 violated from the manifest line, at the tree\'s seed — six held by lines, four walks', async () => {
     withClaims = await runCapturing([FERNHILL]);
     expect(withClaims.code).toBe(0);
     const heading = withClaims.stdout.indexOf('Claims: fernhill.claims.chord');
     expect(heading).toBeGreaterThan(withClaims.stdout.findIndex((line) => line.startsWith('Rooms entered:')));
-    expect(withClaims.stdout[heading + 1]).toBe('claims: 8 of 9 held, 1 violated (seed 42)');
-    expect(withClaims.stdout[heading + 2]).toMatch(/^8 walks, \d+\.\ds in all$/);
+    expect(withClaims.stdout[heading + 1]).toBe('claims: 9 of 10 held, 1 violated (seed 42)');
+    // ADR-367 D5: the lines prove six of the positive claims, so only the two
+    // `never`s and the two claims no line reaches are walked — four walks.
+    expect(withClaims.stdout[heading + 2]).toMatch(/^4 walks, \d+\.\ds in all$/);
     const violated = withClaims.stdout.filter((line) => line.startsWith('VIOLATED'));
     expect(violated).toHaveLength(1);
     expect(violated[0]).toMatch(/^VIOLATED {2}the deed box leaves the Folly \(never\) — at depth \d+: /);
-    expect(withClaims.stdout.filter((line) => line.startsWith('HELD'))).toHaveLength(8);
+    const held = withClaims.stdout.filter((line) => line.startsWith('HELD'));
+    expect(held).toHaveLength(9);
+    expect(held.filter((line) => line.includes(' — by line ')).length).toBe(6);
+    expect(withClaims.stdout).toContain('HELD  the deed box is open — by line weefpbmr "opening-iron-gates" at turn 23');
+    expect(withClaims.stdout).toContain('  lock "the deed box is open" at line hpjuaufx "folly · open deed box with locket" at turn 22 — held there');
   }, 300_000);
 
   it('exits as the same run exits without the manifest line, and prints the same report up to the claims', async () => {

@@ -49,9 +49,12 @@
  *   unreachable segment is MALFORMED — never repaired, never thrown.
  * - The grammar is closed: unknown keys and unknown file names are
  *   malformed, and so is any shape the writer cannot emit (an empty
- *   continuation, a card without an id). Additive fields arrive with a
- *   version bump, never silently. File names beginning with `.`
- *   (`.DS_Store`) are not the tree's and are ignored.
+ *   continuation, a card without an id). The version number is dormant
+ *   until a released story exists (David, 2026-10-20: "there is no legacy
+ *   (yet)"): an additive field such as a card's `locks` arrives without a
+ *   bump, and no tree written by an older build is owed a reader. File
+ *   names beginning with `.` (`.DS_Store`) are not the tree's and are
+ *   ignored.
  * - The reader does NOT check formatting — any valid JSON of the right
  *   shape reads — so a hand edit is flagged, not made unreadable. Formatting
  *   is the canonical gate's ({@link checkCanonicalTree}): a tree file whose
@@ -74,12 +77,9 @@
  */
 
 /**
- * The newest tree version this build reads and writes (the manifest's).
- *
- * 2 (ADR-356 D4): a turn card may declare `ending`.
- * 3 (ADR-355): the tree is a directory of segments and a manifest.
- * Older versions are read as malformed — there is no shim; a one-shot
- * conversion wrote every tree in the repository at version 3.
+ * The tree version this build reads and writes (the manifest's). Dormant:
+ * no story has shipped, so the number does not move for an additive field
+ * and no older tree is owed a reader (see the header's invariants).
  */
 export const TREE_DOCUMENT_VERSION = 3;
 
@@ -152,6 +152,13 @@ export interface TreeCard {
    * on a `'turn'` card.
    */
   ending?: string;
+  /**
+   * The claims locked at this card (ADR-367 D5): names of claims in the
+   * manifest's fragment whose predicate the lock saw hold here. The run
+   * evaluates each at this card; a name the fragment no longer declares is
+   * reported as `lock-unknown-claim`. Written by the lock, never by hand.
+   */
+  locks?: string[];
   /** Forks taken from this card, in sibling order. */
   branches?: TreeBranch[];
   /**
@@ -926,7 +933,7 @@ function validateCards(value: unknown, path: string): string | undefined {
  */
 function validateCard(value: unknown, path: string): string | undefined {
   if (!isPlainObject(value)) return `'${path}' must be an object`;
-  const unknownKey = firstUnknownKey(value, ['id', 'type', 'command', 'assertions', 'skip', 'ending']);
+  const unknownKey = firstUnknownKey(value, ['id', 'type', 'command', 'assertions', 'skip', 'ending', 'locks']);
   if (unknownKey !== undefined) return `unknown key '${unknownKey}' in '${path}'`;
 
   const type = value['type'];
@@ -955,6 +962,16 @@ function validateCard(value: unknown, path: string): string | undefined {
 
   if (value['skip'] !== undefined && typeof value['skip'] !== 'boolean') {
     return `'${path}.skip' must be a boolean`;
+  }
+
+  // A lock names claims (ADR-367 D5); only a typed turn can carry one, since
+  // a claim is a fact the line reached by playing.
+  const locks = value['locks'];
+  if (locks !== undefined) {
+    if (!Array.isArray(locks) || locks.length === 0 || locks.some((name) => typeof name !== 'string' || name === '')) {
+      return `'${path}.locks' must be a non-empty array of claim names`;
+    }
+    if (type !== 'turn') return `'${path}' is type '${type}' and cannot carry 'locks'`;
   }
 
   if (value['assertions'] !== undefined) {

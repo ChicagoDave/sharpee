@@ -10,7 +10,7 @@
  * runs through the real parser and engine, and every fork is the engine's
  * own save/restore. No stub of any owned dependency.
  *
- * Nine claims, eight distinct sets, eight walks: every predicate kind is
+ * Ten claims, nine distinct sets, nine walks: every predicate kind is
  * exercised (ending, placement in, event, state, placement notIn, room,
  * never-room, flag, fired) and every verdict (held by witness, held by
  * exhaustion, violated). The corpus lives beside the spike's measurement
@@ -70,7 +70,7 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
     return run;
   };
 
-  it('settles all nine claims with the measured verdicts and witness depths', async () => {
+  it('settles all ten claims with the measured verdicts and witness depths', async () => {
     const result = await fernhill();
     const verdicts = result.claims.map((claim) => [claim.name, claim.verdict, claim.depth ?? null]);
     expect(verdicts).toEqual([
@@ -83,8 +83,10 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       ['the Study is reached without the sherry', 'held', null],
       ['the auction notice has been read', 'held', 1],
       ['the stopcock has been turned', 'held', 4],
+      // Locked from the tree's deed line on 2026-10-20 (ADR-367); walked here, held by line under `sharpee test`.
+      ['the deed box is open', 'held', 20],
     ]);
-    expect([result.declared, result.held, result.violated, result.unproven]).toEqual([9, 8, 1, 0]);
+    expect([result.declared, result.held, result.violated, result.unproven]).toEqual([10, 9, 1, 0]);
   }, 300_000);
 
   it('runs one walk per distinct set; every walk is settled by its claims or by exhaustion, never by a budget', async () => {
@@ -98,6 +100,7 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       ['the set of "the Study is reached without the sherry"', 'frontier-exhausted'],
       ['the set of "the auction notice has been read"', 'all-claims-settled'],
       ['the set of "the stopcock has been turned"', 'all-claims-settled'],
+      ['the set of "the deed box is open"', 'all-claims-settled'],
     ]);
     // The negative claim held by exhaustion: fifteen states, the spike's measurement.
     expect(result.walks[5].statesDiscovered).toBe(15);
@@ -150,6 +153,8 @@ describeWithCorpus('REAL-PATH — Fernhill\'s claims through the real engine (AD
       'the Study is reached without the sherry': ['garden-shears'],
       'the auction notice has been read': [],
       'the stopcock has been turned': [],
+      // The lock already trimmed the sherry bottle and Mrs Kettle from this set (ADR-367 D2).
+      'the deed box is open': [],
     });
   }, 300_000);
 });

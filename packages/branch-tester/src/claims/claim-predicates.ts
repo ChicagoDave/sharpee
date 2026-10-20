@@ -11,14 +11,54 @@
  * entity instances and keeps their ids, so an instance held across a
  * restore reads stale.
  *
- * Public interface: `claimHolds`, `ClaimContext`.
+ * Public interface: `claimHolds`, `ClaimContext`, `entityIdByIrOf`,
+ *   `clauseKeysByFiredOf`.
  * Owner context: @sharpee/branch-tester — the claims runner (ADR-365 D10).
  */
 
-import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY } from '@sharpee/story-loader';
+import type { StoryIR } from '@sharpee/chord';
+import { CHORD_STATE_PREFIX, CHORD_STORY_STATE_KEY, clauseOccurrenceKey } from '@sharpee/story-loader';
 import type { Claim } from './claim-set.js';
 import type { ClaimsEntity, ClaimsTurnEvent, ClaimsWorld, WorldSnapshot } from './claims-game.js';
 import { irIdOf } from './claims-game.js';
+
+/**
+ * Runtime entity id by IR id, read off a booted world once. The engine's
+ * restore keeps ids, so the map built at boot stays valid across forks.
+ *
+ * @param world the booted world
+ * @returns IR id to runtime id, for every entity the loader stamped
+ */
+export function entityIdByIrOf(world: ClaimsWorld): Map<string, string> {
+  const map = new Map<string, string>();
+  for (const entity of world.getAllEntities()) {
+    const irId = irIdOf(entity);
+    if (irId !== undefined) map.set(irId, entity.id);
+  }
+  return map;
+}
+
+/**
+ * The firing-counter keys behind each `<thing> has been <participle>` text
+ * (`<thing-id>.<action>`), built once from the IR: the counters of the
+ * thing's own `on` clauses for that action, by clause position, composed by
+ * the loader's own key function.
+ *
+ * @param ir the compiled story
+ * @returns the compiler's `fired` text to the loader's counter keys
+ */
+export function clauseKeysByFiredOf(ir: StoryIR): Map<string, string[]> {
+  const map = new Map<string, string[]>();
+  for (const entity of ir.entities) {
+    entity.onClauses.forEach((clause, index) => {
+      const fired = `${entity.id}.${clause.action}`;
+      const keys = map.get(fired) ?? [];
+      keys.push(clauseOccurrenceKey(entity.id, index + 1));
+      map.set(fired, keys);
+    });
+  }
+  return map;
+}
 
 /** What a predicate reads: the live world, its snapshot, the turn's events, and the boot-time id map. */
 export interface ClaimContext {
